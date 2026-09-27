@@ -6,6 +6,7 @@
  * It still renders through the SHARED FeedPostCard / FeedPost model / getCommunityFeed(), which
  * remain live for Friends + Squad and the community golden tests — nothing shared was removed.
  */
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -141,7 +142,7 @@ export default function CommunityScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── PENDING-ASSET cover banner — geometric bronze/charcoal placeholder, never a fabricated image ── */}
         <BannerPlaceholder />
 

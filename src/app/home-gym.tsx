@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -119,7 +120,7 @@ export default function HomeGymScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 132 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 132 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {/* intro */}
         <View style={styles.intro}>
           <View style={styles.microRow}>

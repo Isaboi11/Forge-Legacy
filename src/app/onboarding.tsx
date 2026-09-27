@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -569,7 +570,7 @@ export default function Onboarding() {
          * lifts in its first session. It replaces "Every legacy begins with a single workout", which was
          * a promise, with the workout itself.
          */
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.revealScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.revealScroll} showsVerticalScrollIndicator={false}>
           <Text style={styles.tEyebrow}>Built for you</Text>
           <Text style={styles.revealTitle}>{firstWeek.programName}</Text>
           <Text style={styles.revealMeta}>
@@ -618,7 +619,7 @@ export default function Onboarding() {
           </View>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {step === 'theme' ? (
             <>
               <Heading eyebrow="Before we begin" title={'Choose the Forge\nthat feels like yours.'} body="You can change this anytime in Preferences." />

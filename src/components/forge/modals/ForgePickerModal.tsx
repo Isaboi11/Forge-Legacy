@@ -11,6 +11,7 @@
  * Used for: Exercise Picker, Date Picker, Program/Goal/Challenge Picker.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useCallback, useState } from 'react'
 import {
   Animated,
@@ -268,7 +269,7 @@ export function ForgePickerModal({
             </View>
 
             {filters.length > 0 ? (
-              <ScrollView keyboardDismissMode="on-drag"
+              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.filterRow}
@@ -296,7 +297,7 @@ export function ForgePickerModal({
           </View>
 
           {/* Item list */}
-          <ScrollView keyboardDismissMode="on-drag"
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
             style={styles.list}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"

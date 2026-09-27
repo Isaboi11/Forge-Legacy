@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -196,7 +197,7 @@ export default function MyFoodsScreen() {
       {!editor ? (
         <>
           {/* ═══════════ LIST ═══════════ */}
-          <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identity}>
               <Text style={styles.eyebrow}>Nutrition</Text>
               <Text style={styles.title}>My foods & meals</Text>
@@ -290,7 +291,7 @@ export default function MyFoodsScreen() {
       ) : (
         <>
           {/* ═══════════ MEAL EDITOR ═══════════ */}
-          <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identityForm}>
               <Text style={styles.eyebrow}>My meals</Text>
               <Text style={styles.title}>{editor.id ? 'Edit meal' : 'New meal'}</Text>

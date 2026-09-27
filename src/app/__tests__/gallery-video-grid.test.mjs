@@ -133,7 +133,7 @@ test('⭐ the poses inside a card are a strip you drag, and a flick lands ON a p
   // instruction protects. `Forge Transformation.dc.html` draws this row as `overflow-x:auto` anyway, so
   // the strip is both the instruction and the design. The shelf it was competing with is now gone.
   const card = GALLERY.slice(GALLERY.indexOf('function EntryCard('));
-  assert.match(card, /<ScrollView\s+(?:keyboardDismissMode="on-drag"\s+)?horizontal/, 'the pose strip stopped scrolling sideways');
+  assert.match(card, /<ScrollView\s+(?:keyboardDismissMode=\{KEYBOARD_DISMISS_MODE\}\s+)?horizontal/, 'the pose strip stopped scrolling sideways');
   assert.match(card, /snapToInterval=\{POSE_W \+ POSE_GAP\}/, 'the strip no longer snaps to the pose pitch, so a flick stops between two photographs');
   assert.doesNotMatch(card, /styles\.poseGrid/, 'the poses are a wrapped grid again, which is the card-height regression');
   assert.match(card, /\{shot\.map\(\(p\) => \(/, 'the strip is no longer drawn from the captured poses');
@@ -142,7 +142,7 @@ test('⭐ the poses inside a card are a strip you drag, and a flick lands ON a p
 test('the strip is the screen’s ONLY horizontal scroller, and carries no workaround for a shelf', () => {
   // `bounces={false}` and `nestedScrollEnabled` existed solely to share the horizontal axis with the
   // card shelf. The shelf is gone; a prop kept "just in case" is a prop the next reader has to explain.
-  const strips = GALLERY.match(/<ScrollView\s+(?:keyboardDismissMode="on-drag"\s+)?horizontal/g) ?? [];
+  const strips = GALLERY.match(/<ScrollView\s+(?:keyboardDismissMode=\{KEYBOARD_DISMISS_MODE\}\s+)?horizontal/g) ?? [];
   assert.equal(strips.length, 1, 'a second horizontal scroller is back on this screen');
   const card = GALLERY.slice(GALLERY.indexOf('function EntryCard('));
   const strip = card.slice(card.indexOf('<ScrollView'), card.indexOf('</ScrollView>'));

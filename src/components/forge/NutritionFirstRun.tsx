@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -43,7 +44,7 @@ export function NutritionFirstRun({ onLog, onTargets }: { onLog: () => void; onT
 
   return (
     <View style={styles.root}>
-      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={[styles.content, s.content]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={[styles.content, s.content]} showsVerticalScrollIndicator={false}>
         <View style={[styles.mark, s.mark]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <RingMark size={s.ringSize} dotted={!compact} />
         </View>

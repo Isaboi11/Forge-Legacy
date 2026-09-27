@@ -34,6 +34,7 @@
  * loosening the rule.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { Image } from 'expo-image';
@@ -424,7 +425,7 @@ function MediaBand({ media, bleed }: { media: LedgerMediaItem[]; bleed: number }
       ) : (
         /* Swipe IN PLACE, inside the same band — not a grid and not a stack. Several photos are a set
            the author composed; a grid re-crops all of them to show none of them properly. */
-        <ScrollView keyboardDismissMode="on-drag"
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}

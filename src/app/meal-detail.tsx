@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Animated, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -261,7 +262,7 @@ export default function MealDetailScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>{mealDateLabel(iso, todayIso)}</Text>
           <Text style={styles.mealName}>{MEAL_LABELS[meal]}</Text>

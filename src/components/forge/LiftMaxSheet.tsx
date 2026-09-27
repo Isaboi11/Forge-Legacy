@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -237,7 +238,7 @@ export function LiftMaxSheet({
         </Button>
       }
     >
-      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
         {warning ? <Text style={styles.warning}>{warning}</Text> : null}
         <Text style={styles.help}>
           This program prescribes weight as a percentage of your max, so it needs a number to work from.

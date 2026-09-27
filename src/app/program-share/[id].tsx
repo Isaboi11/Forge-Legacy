@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -124,7 +125,7 @@ export default function ProgramShareScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.32)' }} />
       <AppBar title="Shared Program" onBack={goBack} />
 
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.from}>
           <Avatar src={data.fromAvatarUrl ?? undefined} name={data.fromName} size={40} />
           <View style={styles.fromText}>

@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -116,7 +117,8 @@ import { getRestMode, nextRestMode, setRestMode, type RestMode } from '@/lib/res
 import { getWheelInput, setWheelInput } from '@/lib/set-input-pref';
 import { getSwipeHintSeen, markSwipeHintSeen } from '@/lib/swipe-hint';
 import { useScreenPrompt, useTour } from '@/hooks/useTour';
-import { useKeyboardInset } from '@/lib/useKeyboardInset';
+import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardLift } from '@/lib/useKeyboardLift';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/lib/exercise-inbox';
 import type { ActiveSession, SessionExercise, SessionSet, WorkoutSectionKind } from '@/domain/workout/types';
 import { registerWatchCommands } from '@/domain/workout/watch-commands';
@@ -556,7 +558,12 @@ export default function WorkoutScreen() {
      the browser will open a keyboard at all. Full reasoning above the focus effect. */
   const primerRef = useRef<TextInput | null>(null);
   const primeKeyboard = useKeyboardPrimer();
-  const keyboardInset = useKeyboardInset();
+  /* Web/Android: `keyboardInset`, as before. iOS: `kbLift` per frame, so the set, note and name sheets
+     ride the keyboard's own curve instead of jumping (see `useKeyboardLift`). `kbTouch` goes on each
+     sheet: it holds the sheet still while a finger rests on it, which is what keeps Log Set a ONE-tap
+     button on iOS now that the 340 ms collapse hold only runs on web. */
+  const { inset: keyboardInset, lift: kbLift, touchHandlers: kbTouch } = useKeyboardLift();
+  const panelLift = useAnimatedStyle(() => ({ paddingBottom: kbLift.value }));
   const [wheelMode, setWheelMode] = useState(false); // typing is the default; the saved pref loads on mount
   const [endConfirmOpen, setEndConfirmOpen] = useState(false);
   /* The resume prompt's "Discard & start the new one" — asked first, because it deletes logged sets
@@ -3710,7 +3717,7 @@ export default function WorkoutScreen() {
         during a live cardio bout. Swiping past a running treadmill bout is exactly the hole the bout
         lock was built to close, so the pager snaps back instead.
       */}
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={pagerRef}
         horizontal
         pagingEnabled
@@ -3727,7 +3734,7 @@ export default function WorkoutScreen() {
             {pi !== exIdx ? (
               <ExercisePeek ex={pe} />
             ) : (
-            <ScrollView keyboardDismissMode="on-drag"
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
               ref={tourScroller}
               onScroll={onTourScroll}
               scrollEventThrottle={16}
@@ -4711,9 +4718,9 @@ export default function WorkoutScreen() {
       {sheet && sheetSet ? (
         /* `paddingBottom` and not `bottom`: the backdrop must keep covering the full screen, including
            the strip behind the keyboard, or a tap that lands there closes nothing. */
-        <View style={[styles.pickerWrap, keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
+        <Reanimated.View style={[styles.pickerWrap, FOLLOWS_KEYBOARD_PER_FRAME ? panelLift : keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setSheet(null)} accessibilityLabel="Close" />
-          <View style={styles.picker}>
+          <View style={styles.picker} {...kbTouch}>
             <View style={styles.pickerHead}>
               <View style={styles.setSheetTitleWrap}>
                 <Text style={styles.pickerTitle} numberOfLines={1}>{sheetEx?.name ?? 'Set'}</Text>
@@ -4787,7 +4794,7 @@ export default function WorkoutScreen() {
               </Button>
             </View>
           </View>
-        </View>
+        </Reanimated.View>
       ) : null}
 
       {/* Same rule again — mounted in the branch that can open it. `overlay-branch.test.mjs` exists
@@ -4820,9 +4827,9 @@ export default function WorkoutScreen() {
       ) : null}
 
       {noteOpen != null ? (
-        <View style={[styles.pickerWrap, keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
+        <Reanimated.View style={[styles.pickerWrap, FOLLOWS_KEYBOARD_PER_FRAME ? panelLift : keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setNoteOpen(null)} accessibilityLabel="Close" />
-          <View style={styles.picker}>
+          <View style={styles.picker} {...kbTouch}>
             <Text style={styles.pickerTitle}>{session.exercises[noteOpen]?.name ?? 'Note'}</Text>
             {/* ⚠ SAYS WHAT THE NOTE IS FOR, which the sheet never did. The note's whole value is that it
                 comes back — it is shown as LAST TIME the next time this lift comes round — and an athlete
@@ -4852,15 +4859,15 @@ export default function WorkoutScreen() {
               </Button>
             </View>
           </View>
-        </View>
+        </Reanimated.View>
       ) : null}
 
       {/* Same rule as the End Workout sheet below: mounted in the branch that can open it. The row
           lives in ⋯ Options, which closes first, so this is a sibling of it rather than a child. */}
       {wNameOpen ? (
-        <View style={[styles.pickerWrap, keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
+        <Reanimated.View style={[styles.pickerWrap, FOLLOWS_KEYBOARD_PER_FRAME ? panelLift : keyboardInset > 0 && { paddingBottom: keyboardInset }]}>
           <Pressable style={styles.pickerBackdrop} onPress={() => setWNameOpen(false)} accessibilityLabel="Close" />
-          <View style={styles.picker}>
+          <View style={styles.picker} {...kbTouch}>
             <Text style={styles.pickerTitle}>Name this workout</Text>
             <TextInput
               value={wNameDraft}
@@ -4886,7 +4893,7 @@ export default function WorkoutScreen() {
               </Button>
             </View>
           </View>
-        </View>
+        </Reanimated.View>
       ) : null}
 
       {/* END WORKOUT — mounted in the SAME branch as the ⋮ row that opens it (see
@@ -4974,7 +4981,7 @@ export default function WorkoutScreen() {
           <Pressable style={styles.pickerBackdrop} onPress={() => setOverviewOpen(false)} accessibilityLabel="Close" />
           <View style={[styles.picker, styles.overviewSheet]}>
             <Text style={styles.pickerTitle}>All Exercises</Text>
-            <ScrollView keyboardDismissMode="on-drag" style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
               {session.exercises.map((e, i) => {
                 const total = e.sets.length;
                 const done = e.sets.filter((s) => s.done).length;
@@ -5072,7 +5079,7 @@ export default function WorkoutScreen() {
           */}
           <View style={[styles.picker, styles.optionsSheet]}>
             <Text style={styles.pickerTitle}>Workout Options</Text>
-            <ScrollView keyboardDismissMode="on-drag" style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
               <OptionRow
                 onPress={openWorkoutName}
                 title="Name this workout"
@@ -5193,7 +5200,7 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerHeaderTitle}>Invite to join</Text>
               <Text style={styles.partnerCount}>{ex.name}</Text>
             </View>
-            <ScrollView keyboardDismissMode="on-drag" style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
               {(partners ?? []).length === 0 ? (
                 <Text style={styles.partnerEmpty}>Add a friend or join a squad, and the people you train alongside show up here.</Text>
               ) : (
@@ -5235,7 +5242,7 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerHeaderTitle}>Trained with</Text>
               <Text style={styles.partnerCount}>{taggedPartners.length} of 3</Text>
             </View>
-            <ScrollView keyboardDismissMode="on-drag" style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
               {(partners ?? []).length === 0 ? (
                 <Text style={styles.partnerEmpty}>
                   Add a friend or join a squad, and the people you train alongside show up here.
@@ -6169,7 +6176,7 @@ function WheelPicker({ options, value, unit, onChange }: { options: number[]; va
       <View style={styles.wheelBand} pointerEvents="none" />
       <LinearGradient colors={[flColor.charcoal900, 'rgba(0,0,0,0)']} style={styles.wheelFadeTop} pointerEvents="none" />
       <LinearGradient colors={['rgba(0,0,0,0)', flColor.charcoal900]} style={styles.wheelFadeBottom} pointerEvents="none" />
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         snapToInterval={WHEEL_ITEM}

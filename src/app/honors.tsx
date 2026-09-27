@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useMemo, useState } from 'react';
 import { Animated, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -135,7 +136,7 @@ export default function HonorsScreen() {
       ) : total === 0 ? (
         <EmptyHonors />
       ) : (
-        <ScrollView keyboardDismissMode="on-drag"
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -144,7 +145,7 @@ export default function HonorsScreen() {
         >
           <TourAnchor id="honors-recent">
             <Text style={styles.sectionLabel}>Recent</Text>
-            <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
               {recent.map((h) => (
                 <HonorTile key={h.slug} honor={h} size={72} showYear={recentNeedsYear} onPress={() => setSelected(h)} />
               ))}
@@ -161,7 +162,7 @@ export default function HonorsScreen() {
                 </View>
                 <Text style={styles.catCount}>{group.honors.length}</Text>
               </View>
-              <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
                 {group.honors.map((h) => (
                   <HonorTile key={h.slug} honor={h} size={56} onPress={() => setSelected(h)} />
                 ))}

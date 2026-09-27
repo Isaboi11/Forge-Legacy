@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -83,7 +84,7 @@ export default function RankProgressionScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 48 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 48 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {/* masthead */}
           <Text style={styles.eyebrow}>The Forge Path</Text>
           <View style={styles.rule}>

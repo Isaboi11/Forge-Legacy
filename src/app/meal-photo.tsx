@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -161,7 +162,7 @@ export default function MealPhotoScreen() {
         {iso !== today ? <Text style={styles.mealLineDay}>{dayLabel(iso, today)}</Text> : null}
       </Pressable>
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
         {stage.step === 'start' ? (
           <View style={styles.intro}>
             <Text style={styles.introTitle}>Snap the plate, check the list, log it.</Text>

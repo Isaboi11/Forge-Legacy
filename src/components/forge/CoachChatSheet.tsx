@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 /*
@@ -15,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * `useSafeAreaInsets` crash that shipped with every gate green.
  */
 import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import Reanimated, { useAnimatedRef, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -172,7 +174,7 @@ import {
   SCOPE_CHOICES,
   type EditChangeId,
 } from '@/domain/coach/edit-chat';
-import { useKeyboardInset } from '@/lib/useKeyboardInset';
+import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardAnchoredScroll, useKeyboardLift } from '@/lib/useKeyboardLift';
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
@@ -365,8 +367,21 @@ export function CoachChatSheet({
       },
     }),
   )[0];
-  const keyboardInset = useKeyboardInset();
-  const scroller = useRef<ScrollView | null>(null);
+  /*
+   * ══ THE COMPOSER RIDES THE KEYBOARD, AND THE THREAD STAYS ON ITS NEWEST LINE ══
+   *
+   * PO, 2026-09-26: *"I swipe down, it's gone. I need it to be smooth … like the iPhone texting."*
+   * Web/Android: `keyboardInset` pads the sheet exactly as before. iOS: `kbLift` is the keyboard per frame
+   * (UI thread) and a spacer under the composer takes its height, so the composer follows the keyboard —
+   * including when the athlete drags it down through the thread (`keyboardDismissMode="interactive"`).
+   * `anchorScroll` keeps a thread that was scrolled to its end glued to the composer while that happens,
+   * and never lets the close leave blank space under the last line (see `useKeyboardAnchoredScroll`).
+   * `kbTouch` holds the sheet still while a finger rests on it — the two-tap guard.
+   */
+  const { inset: keyboardInset, lift: kbLift, touchHandlers: kbTouch } = useKeyboardLift();
+  const scroller = useAnimatedRef<Reanimated.ScrollView>();
+  const kbSpacer = useAnimatedStyle(() => ({ height: kbLift.value }));
+  const anchorScroll = useKeyboardAnchoredScroll(kbLift, scroller);
 
   /**
    * ══ ROOM UNDER THE OPTIONS ══
@@ -511,7 +526,9 @@ export function CoachChatSheet({
     if (!thread.some((t) => t.kind === 'me')) return;
     const id = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
     return () => clearTimeout(id);
-  }, [thread, busy]);
+    // `scroller` is an animated ref — stable for the component's life, listed only because the lint
+    // cannot tell it from a value.
+  }, [thread, busy, scroller]);
 
   /* §15.2/15.3 — one rolling thread that survives leaving the app, and leaving for the Builder. Loaded
      once; if there is anything stored, it replaces the introduction and the intro beats stop. */
@@ -2423,6 +2440,7 @@ export function CoachChatSheet({
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={[styles.sheet, keyboardInset > 0 && { paddingBottom: keyboardInset }]}
+        {...kbTouch}
       >
         {/*
           §1's warm wash — the ONE atmospheric layer, over the top 300px and nothing below it. RN has no
@@ -2551,11 +2569,16 @@ export function CoachChatSheet({
             }}
           />
         ) : (
-        <ScrollView keyboardDismissMode="on-drag"
+        <Reanimated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           ref={scroller}
           style={styles.thread}
           contentContainerStyle={[styles.threadInner, { paddingBottom: threadPad }]}
+          /* ⚠ "handled" is load-bearing twice now: a chip tapped with the keyboard up must not dismiss
+             the keyboard first (the native two-tap bug), and with the sheet following the keyboard per
+             frame, that dismissal would also move the chip out from under the finger. */
           keyboardShouldPersistTaps="handled"
+          onScroll={FOLLOWS_KEYBOARD_PER_FRAME ? anchorScroll : undefined}
+          scrollEventThrottle={16}
         >
           {blocks.map((b, bi) => {
             /*
@@ -2610,7 +2633,7 @@ export function CoachChatSheet({
             );
           })}
           {waiting ? <Waiting kind={waiting} /> : null}
-        </ScrollView>
+        </Reanimated.ScrollView>
         )}
 
         {/* §12.3 — four states, and each says something different: ready is quiet, typing lights the
@@ -2714,6 +2737,8 @@ export function CoachChatSheet({
           )}
         </View>
         )}
+        {/* iOS: the keyboard's height, per frame — the space the composer and thread are lifted by. */}
+        {FOLLOWS_KEYBOARD_PER_FRAME ? <Reanimated.View style={kbSpacer} pointerEvents="none" /> : null}
       </LinearGradient>
       </Animated.View>
 
@@ -3932,7 +3957,7 @@ function PlanPreview({
         </Text>
       </View>
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
         <View style={styles.draftBanner}>
           <Text style={styles.draftBannerText}>DRAFT — NOT SAVED YET</Text>
         </View>
@@ -5094,6 +5119,23 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     lineHeight: 20,
     outlineWidth: 0,
+    /*
+     * ⚠ THE RING IS ALWAYS THERE, JUST INVISIBLE — OR THE FIRST LETTER CLOSES THE KEYBOARD (PO, 09-26:
+     * "when I type the first letter the keyboard goes down", iPhone only).
+     *
+     * RN 0.85 Fabric, `RCTViewComponentView`: a view that clips (`overflow: 'hidden'`) AND has a
+     * `boxShadow` gets a private container view so the shadow can draw outside the clip
+     * (`styleWouldClipOverflowInk` → `currentContainerView`). Creating that container MOVES every
+     * subview into it — here the native UITextView doing the editing — and it moves them while the
+     * container is not yet in the window. A first responder that leaves the window resigns, so the
+     * keyboard drops. `inputTyping` added the ring on the first non-space character; the clip arrived
+     * the same day (a6a1627a). Deleting back to empty removed the ring and did it again.
+     *
+     * A zero-alpha ring from the start means the container exists before the field is ever focused,
+     * and typing only recolours it. Web never had the problem (no container), and looks the same.
+     * Guarded by `focused-input-no-reparent.test.mjs`.
+     */
+    boxShadow: `0 0 0 3px ${bronzeWash(0)}`,
   },
   inputTyping: { borderColor: flColor.accentBorder, boxShadow: `0 0 0 3px ${bronzeWash(0.07)}` },
   sendWrap: { width: 44, height: 44 },

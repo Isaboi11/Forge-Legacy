@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -68,7 +69,7 @@ export default function HealthConsentScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag"
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >

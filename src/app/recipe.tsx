@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -179,7 +180,7 @@ export default function RecipeScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
       <AppBar title="" transparent onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} onScroll={onScroll} scrollEventThrottle={64}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} onScroll={onScroll} scrollEventThrottle={64}>
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>Nutrition</Text>
           <Text style={styles.title}>{r.name}</Text>

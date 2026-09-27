@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -258,7 +259,7 @@ export function SessionCoachSheet({
         </View>
         </View>
 
-        <ScrollView keyboardDismissMode="on-drag" style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
           {/*
             ══ 1 · THE ADAPTATION, WHEN THERE IS ONE — AND IT SITS ABOVE THE CARD ══
 

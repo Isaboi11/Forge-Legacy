@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -532,7 +533,7 @@ export default function CoachScreen() {
           </Button>
         </View>
       ) : mode == null ? (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll}>
           <Eyebrow>COACH HOLT</Eyebrow>
           <Text style={styles.question}>What do you need?</Text>
           <View style={styles.options}>
@@ -588,7 +589,7 @@ export default function CoachScreen() {
       ) : ack ? (
         <Acknowledgement label={ack.label} line={ack.line} />
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll}>
           <Eyebrow>
             COACH HOLT{'\n'}
             <Text style={styles.chapter}>
@@ -651,7 +652,7 @@ function Intro({ onDone }: { onDone: () => void }) {
   const barBottom = useBarBottom();
   return (
     <>
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.introScroll}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.introScroll}>
         <Text style={styles.introName}>I&apos;m Holt.</Text>
         <Text style={styles.introBody}>
           Tell me what you&apos;re after and I&apos;ll write the training that gets you there — a full block,
@@ -1251,7 +1252,7 @@ function Reveal({
   const barBottom = useBarBottom();
   return (
     <>
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll}>
         <Eyebrow>BUILT BY HOLT</Eyebrow>
         <Text style={styles.revealTitle}>{built.title}</Text>
         <View style={styles.statRow}>

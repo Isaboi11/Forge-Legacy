@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -96,7 +97,7 @@ export function EntryStrip({
   return (
     <View style={styles.stripBlock}>
       <Text style={styles.stripLabel}>{label}</Text>
-      <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
         {entries.map((e) => {
           const on = e.id === selectedId;
           const taken = e.id === otherId;

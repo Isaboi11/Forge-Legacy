@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -109,7 +110,7 @@ export default function InboxScreen() {
           <Text style={styles.emptyText}>Requests, invitations and what your squads are doing all land here.</Text>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {grouped.map((group) => (
             <View key={group.label} style={styles.group}>
               <Text style={styles.sectionLabel}>{group.label}</Text>

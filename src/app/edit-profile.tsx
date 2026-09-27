@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -184,7 +185,7 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   return (
     <>
       {cropEditor}
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         contentContainerStyle={[styles.scroll, { paddingBottom: 40 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

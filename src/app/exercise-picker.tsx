@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -779,7 +780,7 @@ export default function ExercisePickerScreen() {
       </View>
 
       {/* body */}
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {hasAnything ? (
           <>
             {sections.best.length ? (
@@ -947,7 +948,7 @@ export default function ExercisePickerScreen() {
           <Pressable style={styles.sheetBackdrop} onPress={() => setFilterOpen(false)} accessibilityLabel="Close" />
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Filter</Text>
-            <ScrollView keyboardDismissMode="on-drag" style={styles.filterScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.filterScroll} showsVerticalScrollIndicator={false}>
               <FilterGroup
                 label="Category"
                 options={EXERCISE_CATEGORIES.map((c) => ({ value: c.key, label: c.label }))}

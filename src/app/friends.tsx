@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 /* ⚠ ALIASED, BECAUSE `Animated` IS ALREADY TAKEN in this file by React Native's own legacy API — the
@@ -198,7 +199,7 @@ export default function FriendsFeedScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag"
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           ref={tourScroller}
           onScroll={onTourScroll}
           scrollEventThrottle={16}

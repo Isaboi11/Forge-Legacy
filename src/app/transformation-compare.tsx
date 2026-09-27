@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -123,7 +124,7 @@ export default function TransformationCompareRoute() {
       {/* ⚠ THE PAGE MUST NOT SCROLL UNDER AN ADJUSTING FINGER. A drag on a photograph is vertical as often
           as it is horizontal, and the responder claims it — but the scroller is the outer view and would
           still take the gesture on some paths. Off is the honest answer for a mode you leave. */}
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} scrollEnabled={!adjusting}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} scrollEnabled={!adjusting}>
         <Text style={styles.framing}>Side by side, only when you choose to look.</Text>
 
         <View style={styles.selectRow}>
@@ -250,7 +251,7 @@ export default function TransformationCompareRoute() {
       </ScrollView>
 
       <BottomSheet open={!!pickerFor} onClose={() => setPickerFor(null)} title={pickerFor === 'a' ? 'Earlier entry' : 'Later entry'}>
-        <ScrollView keyboardDismissMode="on-drag" style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
           {entries.map((e, i) => (
             <Pressable key={e.id} onPress={() => selectEntry(e.id)} accessibilityRole="button" accessibilityLabel={`Select ${e.label}`} style={[styles.pickerRow, i > 0 ? styles.pickerRowDiv : null]}>
               <Text style={styles.pickerName}>{e.label}</Text>

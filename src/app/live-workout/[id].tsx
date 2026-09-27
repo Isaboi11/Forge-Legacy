@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -91,7 +92,7 @@ export default function LiveWorkoutScreen() {
           <Text style={styles.quiet}>Nothing to show here.</Text>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.who}>
             <Avatar name={view.name} src={view.avatarUrl ?? undefined} size="listRow" presence={view.training} />
             <View style={styles.whoText}>

@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -52,7 +53,7 @@ export default function ProgramCatalogScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Programs" onBack={goBack} />
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.filterLabel}>Focus</Text>
         {/* Wraps rather than scrolling sideways — six chips fit a 360pt phone in two lines. */}
         <View style={styles.chips}>

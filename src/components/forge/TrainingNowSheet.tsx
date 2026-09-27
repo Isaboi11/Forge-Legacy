@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -50,7 +51,7 @@ export function TrainingNowSheet({ open, onClose, athletes, onAthlete, onAskToJo
           </Pressable>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false}>
           {athletes.map((a) => (
             <Pressable
               key={a.userId}

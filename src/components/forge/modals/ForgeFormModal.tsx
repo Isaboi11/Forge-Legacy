@@ -7,6 +7,7 @@
  * Children are the form content; consumer controls the fields.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React from 'react'
 import {
   ActivityIndicator,
@@ -112,7 +113,7 @@ export function ForgeFormModal({
             </View>
 
             {/* Form content */}
-            <ScrollView keyboardDismissMode="on-drag"
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
               style={styles.formArea}
               contentContainerStyle={styles.formContent}
               showsVerticalScrollIndicator={false}

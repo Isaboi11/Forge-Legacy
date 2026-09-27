@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -292,7 +293,7 @@ export default function WorkoutsScreen() {
         </Pressable>
       ) : null}
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -577,7 +578,7 @@ export default function WorkoutsScreen() {
                     wrapped block; no "See all" — All Programs sits on For You. ── */}
                 <View>
                   <SectionHeader label="Browse by Focus" />
-                  <ScrollView keyboardDismissMode="on-drag"
+                  <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={styles.focusScroller}

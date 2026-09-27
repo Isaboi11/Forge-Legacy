@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { Fragment, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -113,7 +114,7 @@ export default function ProgressHubScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.28} overlay={{ flat: 'rgba(5,5,5,0.5)' }} />
       <AppBar title="Progress" onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

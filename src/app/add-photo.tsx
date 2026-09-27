@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -240,7 +241,7 @@ export default function AddPhotoScreen() {
       <AppBar title="Add a Photo" onClose={close} />
 
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text style={styles.destination}>
             Adding to <Text style={styles.destinationName}>{target.name}</Text>
           </Text>
@@ -415,7 +416,7 @@ export default function AddPhotoScreen() {
             accessibilityLabel="Search exercises"
             autoFocus
           />
-          <ScrollView keyboardDismissMode="on-drag" style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {liftResults.map((x) => (
               <Pressable
                 key={x.key}

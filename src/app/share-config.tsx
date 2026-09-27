@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import type { GestureResponderHandlers } from 'react-native';
 import { Animated, Modal, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
@@ -398,7 +399,7 @@ export default function ShareConfigRoute() {
           </Pressable>
         </View>
 
-        <ScrollView keyboardDismissMode="on-drag" style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
           {/* ── LAYOUT (compare) ── */}
           {isCompare ? (
             <>
@@ -546,7 +547,7 @@ export default function ShareConfigRoute() {
         <Pressable style={styles.pickerBackdrop} onPress={() => setSquadPickerOpen(false)}>
           <Pressable style={styles.pickerCard} onPress={() => {}}>
             <Text style={styles.pickerTitle}>Share to which squads?</Text>
-            <ScrollView keyboardDismissMode="on-drag" style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.pickerScroll} showsVerticalScrollIndicator={false}>
               <SquadSelectList squads={mySquads ?? []} selected={squadPick} onChange={setSquadPick} disabled={sharing} />
             </ScrollView>
             <Pressable

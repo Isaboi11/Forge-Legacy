@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -246,7 +247,7 @@ export default function FoodDetailScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* identity */}
         <View style={styles.identity}>
           <Text style={styles.name}>{food.name}</Text>

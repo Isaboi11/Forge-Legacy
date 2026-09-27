@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -128,7 +129,7 @@ export default function ProfileVisibilityScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           <Text style={styles.intro}>
             Choose who can see each part of your Legacy when they open your profile. Anything set to a smaller audience
             simply won’t appear for others.

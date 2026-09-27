@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -1139,7 +1140,7 @@ function ProgramBuilderScreen() {
       </BottomSheet>
 
       <BottomSheet open={jumpOpen} onClose={() => setJumpOpen(false)} title="Jump to week">
-        <ScrollView keyboardDismissMode="on-drag" style={styles.jumpScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.jumpScroll} showsVerticalScrollIndicator={false}>
           {(draft.weekPlans ?? []).map((w, i) => {
             const done = weekComplete(w);
             const current = i === draft.openWeek;
@@ -1671,7 +1672,7 @@ function SetupView({
     <>
       <AppBar title={title} onClose={onCancel} />
 
-      <Animated.ScrollView keyboardDismissMode="on-drag"
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -2036,7 +2037,7 @@ function WeekDaysView({
         <ProgressBar value={built} max={draft.weeks} />
       </Pressable>
 
-      <Animated.ScrollView keyboardDismissMode="on-drag" style={rise} contentContainerStyle={styles.setupScroll} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={rise} contentContainerStyle={styles.setupScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.listHeader}>
           <SectionHeader label="Workouts" />
           <Text style={styles.listSummary}>{plural(totalEx, 'exercise')}</Text>
@@ -2174,7 +2175,7 @@ function DayBuilder({
     <>
       <AppBar title={dayName(day)} onBack={onBack} />
 
-      <Animated.ScrollView keyboardDismissMode="on-drag"
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

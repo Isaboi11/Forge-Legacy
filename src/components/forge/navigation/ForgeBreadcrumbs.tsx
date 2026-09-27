@@ -6,6 +6,7 @@
  * Ancestors are tappable gray; the current node is white and never a link.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React from 'react'
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native'
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
@@ -15,7 +16,7 @@ import type { ForgeBreadcrumbsProps } from './types'
 
 export function ForgeBreadcrumbs({ items }: ForgeBreadcrumbsProps) {
   return (
-    <ScrollView keyboardDismissMode="on-drag"
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}

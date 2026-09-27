@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -102,7 +103,7 @@ export default function ForgeTemplatesScreen() {
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title="Built by Forge" onBack={goBack} />
 
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
         <View style={styles.filterWrap}>
           <FilterRow label="Focus">
             <Chip label="All" on={focus === null} onPress={() => setFocus(null)} />
@@ -201,7 +202,7 @@ function FilterRow({ label, children }: { label: string; children: React.ReactNo
   return (
     <View style={styles.filterRow}>
       <Text style={styles.filterLabel}>{label}</Text>
-      <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {children}
       </ScrollView>
     </View>

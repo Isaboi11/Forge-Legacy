@@ -10,6 +10,7 @@
  * States:    default | loading | disabled | error
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useCallback } from 'react'
 import {
   ActivityIndicator,
@@ -66,7 +67,7 @@ export function ForgeModal({
   const isFullScreen = variant === 'fullScreen'
 
   const BodyContent = scrollable ? (
-    <ScrollView keyboardDismissMode="on-drag"
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
       style={styles.scrollBody}
       contentContainerStyle={styles.scrollBodyContent}
       showsVerticalScrollIndicator={false}

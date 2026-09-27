@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -934,7 +935,7 @@ export default function WorkoutComplete() {
 
     return (
       <Shell>
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.capScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.capScroll} showsVerticalScrollIndicator={false}>
           <Animated.View style={[styles.capBlock, { opacity: rise, transform: [{ translateY: riseY }] }]}>
             {/* No ember glow and no pulse. The glow belongs to the ceremony, and this is not one. */}
             <CaptureSeal size={72} />
@@ -1057,7 +1058,7 @@ export default function WorkoutComplete() {
           <EngravedIcon name="book" size={20} />
           <Text style={styles.recHeaderTitle}>The Record</Text>
         </View>
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
           {/* NAME IT HERE, WHERE YOU ALREADY KNOW WHAT IT WAS. The eyebrow has always shown the
               session's name; it was simply not a control, and nothing anywhere else was either — the
               app could name a workout and the athlete could not. Tapping opens the same sheet the

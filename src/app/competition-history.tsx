@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -237,7 +238,7 @@ export default function CompetitionHistoryScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag"
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           stickyHeaderIndices={groups.map((_, i) => i * 2)}
@@ -294,7 +295,7 @@ function ChipRow<T extends string>({
   return (
     <View style={styles.chipBlock}>
       <Text style={styles.chipLabel}>{label}</Text>
-      <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
         {items.map((it) => {
           const on = it === current;
           return (

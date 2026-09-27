@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -233,7 +234,7 @@ export default function AthleteProfileScreen() {
         actions={data.isSelf ? null : <OverflowButton onPress={() => setActionsOpen(true)} />}
       />
 
-      <Animated.ScrollView keyboardDismissMode="on-drag"
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -395,7 +396,7 @@ export default function AthleteProfileScreen() {
             <View style={styles.sectionHeaderPad}>
               <SectionHeader label="Accomplishments" />
             </View>
-            <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
               {data.accomplishments.map((a) => (
                 <AccomplishmentCard key={a.id} item={toAccomplishment(a)} />
               ))}

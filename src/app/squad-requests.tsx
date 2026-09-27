@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -174,7 +175,7 @@ export default function SquadRequestsScreen() {
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Join Requests" onBack={goBack} />
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

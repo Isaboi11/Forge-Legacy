@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -121,7 +122,7 @@ export default function FormHistoryScreen() {
             </Pressable>
           }
         />
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[s.body, { paddingBottom: 24 + insets.bottom }]}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[s.body, { paddingBottom: 24 + insets.bottom }]}>
           <View style={s.head}>
             <Text style={s.h2}>{liftName}</Text>
             {/* The .dc says "bottom of the rep". These are the frames Holt MARKED, which are not always the
@@ -130,7 +131,7 @@ export default function FormHistoryScreen() {
           </View>
           <View style={s.group}>
             <Text style={s.label}>PICK TWO DATES</Text>
-            <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.dates}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.dates}>
               {[...list].reverse().map((e) => {
                 const on = pick.includes(e.id);
                 return (
@@ -179,7 +180,7 @@ export default function FormHistoryScreen() {
           ) : undefined
         }
       />
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[s.body, { paddingBottom: 24 + insets.bottom }]}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[s.body, { paddingBottom: 24 + insets.bottom }]}>
         <View style={s.head}>
           <Text style={s.h2}>{liftName}</Text>
           {entries ? <Text style={s.meta}>{`${list.length} form check${list.length === 1 ? '' : 's'}${since}`}</Text> : null}

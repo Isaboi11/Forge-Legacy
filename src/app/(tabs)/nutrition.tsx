@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -254,7 +255,7 @@ export default function NutritionScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: TAB_SCREEN_BOTTOM_GAP }]}
         showsVerticalScrollIndicator={false}

@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
@@ -273,7 +274,7 @@ function AlbumsView({
   }
 
   return (
-    <ScrollView keyboardDismissMode="on-drag"
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
       ref={tourScroller}
       onScroll={onTourScroll}
       scrollEventThrottle={16}
@@ -412,7 +413,7 @@ function AlbumView({
   }, [album, months]);
 
   return (
-    <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <View style={styles.albumHead}>
         <View style={styles.albumChip}>
           {sealed ? <FlameGlyph size={11} color={flColor.gray400} /> : <BookGlyph size={11} color={flColor.bronze300} />}

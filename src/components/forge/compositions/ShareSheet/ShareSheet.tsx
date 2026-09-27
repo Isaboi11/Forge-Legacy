@@ -35,6 +35,7 @@
  * shared with the session sheet and Share Transformation so the three cannot drift.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
 import { BottomSheet } from '../../composites/BottomSheet'
@@ -195,7 +196,7 @@ export function ShareSheet({ open, onClose, content, milestone = null }: ShareSh
           </Button>
         }
       >
-        <ScrollView keyboardDismissMode="on-drag" style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.previewWrap}>
             <ShareCard content={content} hiddenKeys={hidden} includeName={includeName} />
           </View>

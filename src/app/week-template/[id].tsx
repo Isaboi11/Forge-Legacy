@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -173,7 +174,7 @@ export default function WeekTemplateDetail() {
         </View>
       ) : week ? (
         <>
-          <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <Text style={styles.eyebrow}>WEEK TEMPLATE</Text>
             <Text style={styles.title}>{week.name}</Text>
             <Text style={styles.summary}>{weekSummary(week)}</Text>

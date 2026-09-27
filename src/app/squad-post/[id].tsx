@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { Fragment, useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +24,8 @@ import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilest
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useKeyboardInset } from '@/lib/useKeyboardInset';
+import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardLift } from '@/lib/useKeyboardLift';
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
@@ -49,7 +51,11 @@ export default function SquadPostRoute() {
 
   // Optimistic reaction override (event-handler writes only — base values come from `data`).
   const [reactOverride, setReactOverride] = useState<{ on: boolean; n: number } | null>(null);
-  const keyboardInset = useKeyboardInset();
+  /* Web/Android: `keyboardInset`, as before. iOS: `kbLift` per frame, so the composer follows the keyboard
+     when it is dragged down through the thread (see `useKeyboardLift`). Same rule as below either way:
+     the keyboard's height when it is up, the home-indicator inset when it is down — never both. */
+  const { inset: keyboardInset, lift: kbLift, touchHandlers: kbTouch } = useKeyboardLift();
+  const composerLift = useAnimatedStyle(() => ({ paddingBottom: 16 + Math.max(kbLift.value, insets.bottom) }));
   /** The composer's field, so the comment count above can put the cursor in it. See `jumpToComposer`. */
   const composerRef = useRef<TextInput>(null);
   /** The press-and-hold kind chooser (SOC-A4-D3). */
@@ -406,7 +412,7 @@ export default function SquadPostRoute() {
         targetName={post.authorName}
       />
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
           {/* author — or the squad itself, on a post nobody wrote (a goal's close, 0200). No profile to open,
               and "Athlete" over the squad's own announcement would invent a person. */}
@@ -600,7 +606,10 @@ export default function SquadPostRoute() {
         reports `endCoordinates.height` from the bottom of the SCREEN, so it already contains the
         indicator's space; adding the inset on top would leave a 34pt gap under a raised keyboard.
       */}
-      <View style={[styles.composer, { paddingBottom: 16 + (keyboardInset > 0 ? keyboardInset : insets.bottom) }]}>
+      <Reanimated.View
+        style={[styles.composer, FOLLOWS_KEYBOARD_PER_FRAME ? composerLift : { paddingBottom: 16 + (keyboardInset > 0 ? keyboardInset : insets.bottom) }]}
+        {...kbTouch}
+      >
         <TextInput
           ref={composerRef}
           value={commentText}
@@ -618,7 +627,7 @@ export default function SquadPostRoute() {
         <Pressable onPress={onSend} disabled={!commentText.trim() || sending} accessibilityRole="button" accessibilityLabel="Send comment" style={[styles.sendBtn, commentText.trim() && !sending ? styles.sendBtnOn : styles.sendBtnOff]}>
           <SendIcon active={!!commentText.trim() && !sending} />
         </Pressable>
-      </View>
+      </Reanimated.View>
     </View>
   );
 }

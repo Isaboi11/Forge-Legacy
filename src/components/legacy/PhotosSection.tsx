@@ -5,6 +5,7 @@
  * (not deleted) as reference — still consumed by the non-tab `/legacy-design-test`
  * dev route.
  */
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { LC, LS } from '@/constants/legacy-theme'
@@ -25,7 +26,7 @@ export function PhotosSection({ photos, totalCount, onPhotoPress, onViewAll }: P
   return (
     <View>
       <SectionLabel label="Photos" count={totalCount} />
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.strip}

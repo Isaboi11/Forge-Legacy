@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -130,7 +131,7 @@ export default function PreferencesScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {/* display / units */}
           <Text style={styles.sectionLabel}>Display</Text>
           <View style={styles.card}>

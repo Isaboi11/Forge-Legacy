@@ -14,6 +14,7 @@
  *   fullHeight 96% viewport — near-fullscreen task
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Animated,
@@ -108,7 +109,7 @@ export function ForgeBottomSheet({
   }, [dismissible, onClose])
 
   const BodyContent = scrollableContent ? (
-    <ScrollView keyboardDismissMode="on-drag"
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
       style={styles.scrollContent}
       contentContainerStyle={[styles.scrollPad, { paddingBottom: insets.bottom + 12 }]}
       showsVerticalScrollIndicator={false}

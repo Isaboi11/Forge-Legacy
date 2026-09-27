@@ -28,12 +28,14 @@
  * so every sheet in the app dismisses at the same distance and the same fling.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React from 'react'
-import { Animated, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { Animated, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import Reanimated, { useAnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 import { useSheetDrag } from '@/hooks/useSheetDrag'
-import { useKeyboardInset } from '@/lib/useKeyboardInset'
+import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardLift } from '@/lib/useKeyboardLift'
 
 export interface BottomSheetProps {
   open: boolean
@@ -71,7 +73,22 @@ export interface BottomSheetProps {
   onDismiss?: () => void
 }
 
-export function BottomSheet({ open, onClose, dismissible = true, title, header, showHandle = true, scroll = false, children, footer, onDismiss }: BottomSheetProps) {
+export function BottomSheet(props: BottomSheetProps) {
+  const { open, onClose, onDismiss } = props
+  /*
+   * The body is its own component so its hooks — above all the keyboard follower — only run while the
+   * sheet is actually on screen. RN's Modal renders nothing while closed, and this component is mounted
+   * by ~49 screens whether or not their sheet is open; one keyboard subscription per closed sheet would
+   * be forty-odd UI-thread listeners doing nothing on every keyboard frame.
+   */
+  return (
+    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
+      <SheetBody {...props} />
+    </Modal>
+  )
+}
+
+function SheetBody({ onClose, dismissible = true, title, header, showHandle = true, scroll = false, children, footer }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
 
@@ -100,12 +117,24 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
    * ⚠ AND WHEN WE LIFT, `automaticallyAdjustKeyboardInsets` MUST COME OFF. The sheet has moved clear of
    * the keyboard, so a second correction inside the scroller would scroll the body out from under the
    * athlete by the keyboard's height a second time.
+   *
+   * ══ iOS: THE WHOLE SHEET RIDES THE KEYBOARD, FRAME BY FRAME ══
+   *
+   * PO, 2026-09-26: *"I swipe down, it's gone. I need it to be smooth … like the iPhone texting."* On iOS
+   * `keyboardInset` is now always 0 and `kbLift` (a UI-thread shared value, see `useKeyboardLift`) pads
+   * the ROOT instead — for EVERY sheet, scrolling or not, replacing the old `KeyboardAvoidingView`
+   * (event-driven, one jump per keyboard event, and wrong inside a Modal for the scrolling case). The
+   * geometry is the same as both old paths: the sheet sits on top of the keyboard and its visible part
+   * stays capped at 88%. What changes is that it now follows the keyboard's own curve, and follows the
+   * finger when the athlete drags the keyboard down from the body (`keyboardDismissMode="interactive"`).
+   * The scroller's own keyboard adjustment is off on iOS for the same reason as the web lift above.
    */
-  const keyboardInset = useKeyboardInset()
+  const { inset: keyboardInset, lift: kbLift, touchHandlers } = useKeyboardLift()
   const lift = Platform.OS === 'android' ? 0 : Platform.OS === 'web' || scroll ? keyboardInset : 0
+  const iosLift = useAnimatedStyle(() => ({ paddingBottom: kbLift.value }))
 
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
+    <>
       {/*
         ══ THE BACKDROP IS A SIBLING, NOT A PARENT — AND THAT IS WHAT MAKES THE BODY SCROLL ══
 
@@ -138,8 +167,12 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
         it only ever bit the ONE scrolling sheet that takes typed input: Edit Identity, whose Save button
         became unreachable. A scrolling sheet does not need it — `automaticallyAdjustKeyboardInsets` moves
         the keyboard out of the way INSIDE the scroller, which is modal-safe.
+
+        ⚠ 2026-09-26: the KAV is GONE. On web and Android its `behavior` was always undefined, which renders
+        a plain View — so this root is exactly that there. On iOS its padding is now `iosLift`, per frame,
+        for every sheet (see `useKeyboardLift`).
       */}
-      <KeyboardAvoidingView style={styles.root} behavior={!scroll && Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Reanimated.View style={[styles.root, FOLLOWS_KEYBOARD_PER_FRAME && iosLift]}>
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={dismissible ? onClose : undefined}
@@ -152,6 +185,9 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
              would spend a third of the allowance on empty space and squeeze the body that much. What
              stays capped at 88% is the part still on screen. */
           style={[styles.sheet, { paddingBottom: 22 + insets.bottom + lift, maxHeight: windowHeight * 0.88 + lift }, drag.style]}
+          /* iOS: holds the sheet still while a finger rests on it, so a keyboard that starts to hide
+             mid-tap cannot pull the button out from under the press (the "two taps" bug). Empty elsewhere. */
+          {...touchHandlers}
         >
           {/*
             The pan lives here, on the grab area — the handle AND the title, as one target. PO, 2026-08-28,
@@ -173,7 +209,7 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
           ) : null}
 
           {scroll ? (
-            <ScrollView keyboardDismissMode="on-drag"
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
               /*
                * The cap is EXPLICIT, not just `flexShrink: 1`. Shrinking a flex child relies on the
                * parent resolving a definite height from `maxHeight: '88%'`, and when it doesn't the
@@ -185,7 +221,7 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
               contentContainerStyle={styles.content}
               showsVerticalScrollIndicator
               keyboardShouldPersistTaps="handled"
-              automaticallyAdjustKeyboardInsets={lift === 0}
+              automaticallyAdjustKeyboardInsets={!FOLLOWS_KEYBOARD_PER_FRAME && lift === 0}
             >
               {children}
             </ScrollView>
@@ -195,8 +231,8 @@ export function BottomSheet({ open, onClose, dismissible = true, title, header, 
 
           {footer ? <View style={styles.footer}>{footer}</View> : null}
         </Animated.View>
-      </KeyboardAvoidingView>
-    </Modal>
+      </Reanimated.View>
+    </>
   )
 }
 

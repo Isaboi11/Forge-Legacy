@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -277,7 +278,7 @@ export default function LogFoodScreen() {
 
       {/* filters — hidden while searching, because a search spans all of them */}
       {results == null ? (
-        <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
           {FILTERS.map((f) => (
             <Pressable key={f.id} accessibilityRole="button" onPress={() => setFilter(f.id)} style={[styles.pill, filter === f.id && styles.pillOn]}>
               <Text style={[styles.pillText, filter === f.id && styles.pillTextOn]}>{f.label}</Text>
@@ -286,7 +287,7 @@ export default function LogFoodScreen() {
         </ScrollView>
       ) : null}
 
-      <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
         {searching ? <Text style={styles.status}>Searching…</Text> : null}
 
         {/* My Meals is a different row shape: it logs several foods at once. */}

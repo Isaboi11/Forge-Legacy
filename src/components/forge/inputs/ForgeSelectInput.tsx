@@ -7,6 +7,7 @@
  * Options menu slides up as a light Modal overlay.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useState } from 'react'
 import {
   ActivityIndicator,
@@ -154,7 +155,7 @@ export function ForgeSelectInput({
             <Pressable>
               {/* Inner pressable stops backdrop tap from propagating */}
               <View style={styles.menu}>
-                <ScrollView keyboardDismissMode="on-drag"
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
                   bounces={false}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"

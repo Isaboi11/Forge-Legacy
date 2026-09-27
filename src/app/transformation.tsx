@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -153,7 +154,7 @@ export default function TransformationRoute() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -402,7 +403,7 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
         shelf is gone; neither workaround is needed and neither is left behind.
       */}
       {shot.length > 0 ? (
-        <ScrollView keyboardDismissMode="on-drag"
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           horizontal
           showsHorizontalScrollIndicator={false}
           decelerationRate="fast"

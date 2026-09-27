@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -584,7 +585,7 @@ export default function SubscriptionScreen() {
         </View>
       ) : (
         <>
-          <ScrollView keyboardDismissMode="on-drag"
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
             ref={scrollRef}
             contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom + (canBuy ? 96 : 0) }]}
             showsVerticalScrollIndicator={false}

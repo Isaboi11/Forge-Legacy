@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -196,7 +197,7 @@ export default function CustomExerciseScreen() {
         </Pressable>
       }
     >
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {capNote ? (
           <View style={[styles.banner, atLimit ? styles.bannerStop : null]}>
             <Text style={styles.bannerText}>{capNote}</Text>
@@ -442,7 +443,7 @@ function MultiSelectSheet({
 }) {
   return (
     <BottomSheet open={open} onClose={onClose} title={title}>
-      <ScrollView keyboardDismissMode="on-drag" style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
         {groups.map((g) => (
           <View key={g.label} style={styles.sheetGroup}>
             <Text style={styles.sheetGroupLabel}>{g.label.toUpperCase()}</Text>

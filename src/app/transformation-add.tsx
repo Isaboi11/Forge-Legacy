@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -230,7 +231,7 @@ export default function TransformationAddRoute() {
   return (
     <View style={styles.root}>
       <TopBar title={isEdit ? 'Edit Progress Set' : 'New Progress Set'} onClose={() => router.back()} />
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.tiedRow}>
           <Text style={styles.tiedText}>
             Tied to <Text style={styles.tiedName}>{chapterName}</Text>

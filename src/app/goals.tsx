@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -276,7 +277,7 @@ function GoalHub({
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title="Goals" onBack={() => router.back()} />
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -391,7 +392,7 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
           ) : undefined
         }
       />
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {goal.isPrimary ? <Text style={styles.detailEyebrow}>Chapter Goal</Text> : null}
         <Text style={styles.detailName}>{goal.name}</Text>
 
@@ -708,7 +709,7 @@ function GoalForm({
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title={existing ? 'Edit Goal' : isPrimary ? 'Chapter Goal' : 'Supporting Goal'} onClose={cancel} />
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Field label="Goal" counter={`${name.length}/${GOAL_NAME_MAX}`} hint={GOAL_HINT}>
           <TextInput style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, GOAL_NAME_MAX))} placeholder="e.g. Squat 405 lb" placeholderTextColor={flColor.gray600} maxLength={GOAL_NAME_MAX} />
         </Field>
@@ -933,7 +934,7 @@ function GoalForm({
             placeholderTextColor={flColor.gray600}
             autoFocus
           />
-          <ScrollView keyboardDismissMode="on-drag" style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {liftResults.map((n) => (
               <Pressable
                 key={n}

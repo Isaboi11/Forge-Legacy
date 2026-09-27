@@ -118,7 +118,7 @@ test('⚠ BottomSheet lifts itself where KeyboardAvoidingView does nothing at al
 });
 
 test('the scroller does not correct for the keyboard a second time once the sheet has moved', () => {
-  assert.match(SHEET, /automaticallyAdjustKeyboardInsets=\{lift === 0\}/, 'the scroller and the sheet will both shift — the body scrolls out from under the athlete');
+  assert.match(SHEET, /automaticallyAdjustKeyboardInsets=\{!FOLLOWS_KEYBOARD_PER_FRAME && lift === 0\}/, 'the scroller and the sheet will both shift — the body scrolls out from under the athlete');
 });
 
 test('the sheet height cap grows with the lift, so the body is not squeezed by invisible padding', () => {

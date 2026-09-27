@@ -33,6 +33,7 @@
  *   seeded-name case is exactly where it is tempting: `effName` is derived inline (`name ?? generated`)
  *   the same way `coach.tsx` derives `effGoal` from the profile.
  */
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -344,7 +345,7 @@ function Guided() {
       {/* A sibling, not a wrapper — `ScreenBackground` paints behind and takes no children. */}
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
       {started ? <AppBar title="Build a Program" onBack={back} /> : <AppBar title="Build a Program" onClose={() => router.back()} />}
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 120 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

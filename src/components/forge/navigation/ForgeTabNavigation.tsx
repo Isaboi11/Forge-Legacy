@@ -5,6 +5,7 @@
  * Five in-screen tab styles for switching views within a single destination.
  */
 
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React from 'react'
 import {
   Pressable,
@@ -293,7 +294,7 @@ const cardStyles = StyleSheet.create({
 
 function ScrollableTabs({ items, activeKey, onPress }: InnerTabProps) {
   return (
-    <ScrollView keyboardDismissMode="on-drag"
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={scrollStyles.content}

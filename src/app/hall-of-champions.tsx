@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -132,7 +133,7 @@ function Body({ hall, onOpen }: { hall: SquadHall; onOpen: (id: string) => void 
 
   return (
     <Animated.View style={[styles.bodyWrap, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>
-      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={groups.map((_, i) => i * 2)}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={groups.map((_, i) => i * 2)}>
         {groups.flatMap((g) => [
           <View key={`y${g.year}`} style={styles.yearHead}>
             <Text style={styles.yearLabel}>{g.year}</Text>

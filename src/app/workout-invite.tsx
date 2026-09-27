@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -190,7 +191,7 @@ export default function WorkoutInviteScreen() {
         </View>
       ) : (
         <>
-          <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.senderWrap}>
               <View style={styles.ember} pointerEvents="none" />
               <Avatar name={invite.fromName} src={invite.fromAvatarUrl ?? undefined} size={88} ring />

@@ -23,6 +23,7 @@
  * ⚠ A READ IS CACHED PER PHOTO for the life of the screen. Each read costs Premium AI credits and API
  * money; going back from the preview to add one more photo must not re-read the three already read.
  */
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -282,7 +283,7 @@ function ProgramImport() {
         }
       />
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 140 }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

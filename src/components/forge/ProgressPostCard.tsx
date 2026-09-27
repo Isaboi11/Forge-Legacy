@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { Image } from 'expo-image';
@@ -142,7 +143,7 @@ function HeroCard({ card, s, w, h, onSlideChange }: { card: ProgressCardData; s:
         Slides are sized in POINTS, not `100%`. A horizontal ScrollView's content box is unbounded on the
         main axis, so a percentage width there has nothing to resolve against and the slides collapse.
       */}
-      <ScrollView keyboardDismissMode="on-drag" horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16} style={StyleSheet.absoluteFill}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16} style={StyleSheet.absoluteFill}>
         {card.photos.map((p, i) => (
           <HeroSlide key={`${p.pose}-${i}`} card={card} photo={p} s={s} w={w} h={h} counter={multi ? `${i + 1}/${card.photos.length}` : null} />
         ))}

@@ -124,7 +124,7 @@ export function useTourAnchor(id: TourAnchorId | undefined) {
 }
 
 /**
- * Hand a screen's scroll view to the tour: `<ScrollView keyboardDismissMode="on-drag" ref={useTourScroller()} onScroll={useTourScrollTracker()} …>`.
+ * Hand a screen's scroll view to the tour: a `ScrollView` with `ref={useTourScroller()} onScroll={useTourScrollTracker()}`.
  * Without it the spotlight can still ring a card, but only one already in view — and four of the seven Home
  * steps sit below the fold on a phone.
  */

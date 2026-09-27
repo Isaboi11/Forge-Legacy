@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -259,7 +260,7 @@ export default function ExerciseLibraryScreen() {
         </View>
       ) : null}
 
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -394,7 +395,7 @@ export default function ExerciseLibraryScreen() {
       {/* filter sheet */}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Filter">
         <View style={styles.sheet}>
-          <ScrollView keyboardDismissMode="on-drag" style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
             <FilterGroup
               label="Where you train"
               options={ENVIRONMENTS.map((e) => ({ value: e, label: e }))}

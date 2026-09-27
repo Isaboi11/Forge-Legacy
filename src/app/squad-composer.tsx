@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
@@ -429,7 +430,7 @@ export default function SquadComposerRoute() {
           subtitle={fromSquad ? 'Training, recognition & coordination' : 'Share it where it belongs'}
           onBack={() => router.back()}
         />
-        <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
           {/*
             The destination, chosen before the type, and only when it IS a choice — entering from a
             squad has already answered it.
@@ -470,7 +471,7 @@ export default function SquadComposerRoute() {
 
               {/* Which squad, once one is needed. */}
               {needsSquad && (squads ?? []).length > 0 ? (
-                <ScrollView keyboardDismissMode="on-drag" horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
                   {(squads ?? []).map((s) => (
                     <Pressable
                       key={s.id}
@@ -549,7 +550,7 @@ export default function SquadComposerRoute() {
           </Pressable>
         }
       />
-      <ScrollView keyboardDismissMode="on-drag"
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

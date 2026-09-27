@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -84,7 +85,7 @@ export function EditMetricsSheet({
                 style={styles.search}
               />
             ) : null}
-          <ScrollView keyboardDismissMode="on-drag" style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {selectedRows.map((m, idx) => (
               <View key={m.id} style={styles.row}>
                 <View style={styles.arrows}>
