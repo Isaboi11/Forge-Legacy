@@ -16,7 +16,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 - **💻 PO laptop work (from the 09-26 QA fixes; ask Claude to put each on the clipboard):**
   - ✅ `pending-0200.sql` applied 09-27 (squad goals close; 10/10 rows green). First paste stopped on the grant check — revokes from PUBLIC alone left the new functions callable; fixed to also revoke from anon + authenticated, re-pasted clean. Moch 1 closes as **met, silent** (deadline >7 days gone)
   - ✅ Re-pasted 4 coach functions 09-27 (stronger food/diet safety stops, `2738fdc4`): coach-ask, coach-interpret, coach-form-check, coach-kitchen
-  - ⬜ Turn Premium AI back off for claudetest (one SQL line; Claude has it)
+  - ✅ Premium AI turned back off for claudetest — 09-27
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
 | Who | Premium | Premium AI |
@@ -100,7 +100,7 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   include 15-minute meals and vegan
 - 🔨 Gentle message for sustained under-eating — 09-25: PO said "come up with something"; wording in the mock review
   (passes); built `8bd673ca` (Home, Details, Targets; Targets holds Lose at 0.25 lb/wk while it shows) ·
-  ✅ web 09-25 `index-583836d8…` (from `deploy/care-line`, before the unapplied Holt work) · ✅ build 9 OTA 09-25, now inside the combined iOS `01a0daaa-8db8…` (lane `ota/build9-js` `97b4344e`; an update from the old `ota/build9` rolled it off for ~25 min) · ⬜ PO sees it — **must-do before opening**
+  ✅ web 09-25 `index-583836d8…` (from `deploy/care-line`, before the unapplied Holt work) · ✅ build 9 OTA 09-25, now inside the combined iOS `01a0daaa-8db8…` (lane `ota/build9-js` `97b4344e`; an update from the old `ota/build9` rolled it off for ~25 min) · ✅ PO saw it 09-27
 - ✅ Holt's 4 safety fixes (Coach Holt stress test, Decision Queue #36) — fixed 09-21 (`d7ce6dde`), on build 8.
   Re-verified 09-24: 0 limitation breaks in 1,800 programs + 5,760 days + 480 race plans (controls fire);
   edits land on the right day in all 127 rest-day patterns (5,888 edits; the old code fails 6,404)
@@ -108,7 +108,7 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   privacy rewrite (nutrition, AI/Anthropic, all providers, route correction, Holt memory) `94010207`, new
   `/health-data` page, subscription terms (auto-renew, trial, Early Bird, refunds, Apple EULA) `f198ea07`.
   In-app legal summaries updated too: web `index-4e10f078…` + build 9 iOS `01a0df09-5476…` (lane `da09e79c`).
-  🔨 in-app consent for Washington (Nutrition + AI sharing) — built 09-26 `3414c39d` (all 7 AI functions gated client-side; Settings → Health Data & AI to withdraw) · ✅ 0224 applied 09-26 · ✅ LIVE: build 9 iOS `01a0df2f-a17b…` (lane `f2adcd4f`) + web `index-de14dc70…` · ⬜ PO sees both prompts · ⬜ server-side refusal in the AI functions (follow-up) · ✅ legal review signed off (PO 09-26)
+  🔨 in-app consent for Washington (Nutrition + AI sharing) — built 09-26 `3414c39d` (all 7 AI functions gated client-side; Settings → Health Data & AI to withdraw) · ✅ 0224 applied 09-26 · ✅ LIVE: build 9 iOS `01a0df2f-a17b…` (lane `f2adcd4f`) + web `index-de14dc70…` · ✅ PO saw both prompts 09-27 · ⬜ server-side refusal in the AI functions (follow-up) · ✅ legal review signed off (PO 09-26)
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
