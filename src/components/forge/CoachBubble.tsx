@@ -45,6 +45,12 @@ const HOME_SURFACES = new Set(['/', '/workouts', '/legacy', '/squads', '/nutriti
 const KITCHEN_SURFACE = '/nutrition';
 
 /**
+ * How long a line stays up before it leaves on its own (QA F10). Long enough to read three lines of 15px
+ * type twice; short enough that a line sitting over a tab's content is a moment, not a fixture.
+ */
+const LINE_HOLD_MS = 6000;
+
+/**
  * The coach, one tap from anywhere.
  *
  * ══ WHY A FLOATING BUBBLE AND NOT A TAB OR A CARD ══
@@ -263,7 +269,8 @@ export function CoachBubble() {
      * *"have him prompt your way there."* The draft teaser opens its own sheet the same way; only the
      * introduction opens the chat.
      */
-    if (!introducing && !teaser && nudge) {
+    /* Only while the line is UP: once it is closed or has timed out, the coin is just the coin (QA F10). */
+    if (shownLine && !introducing && !teaser && nudge) {
       setNudgeOpen(true);
       /* ⚠ NO `shown` WRITE HERE ANY MORE. The display records it (see the effect below), and writing it
          again on the tap would re-stamp `shown_at` later than the moment he actually said it, pushing
@@ -271,7 +278,7 @@ export function CoachBubble() {
       return;
     }
     /* ⚠ THE DRAFT LINE OPENS THE DRAFT, not the generic chat — see `draftRoute`. */
-    if (!introducing && teaser && draftName) {
+    if (shownLine && !introducing && teaser && draftName) {
       retireDraftLine();
       setDraftSheet(draftName);
       return;
@@ -366,6 +373,34 @@ export function CoachBubble() {
     void markNudge(nudge.def.id, 'shown');
   }, [nudgeOnScreen, nudge]);
 
+  /*
+   * ══ EVERY LINE CAN BE CLOSED, AND NONE OF THEM STAYS UP (QA F10, 2026-09-26) ══
+   *
+   * The introduction had no close control and no end: "I build the training. Tap me…" sat over START
+   * WORKOUT on Home (and CREATE A SQUAD on Squads) until the athlete gave in and opened him. A line he
+   * says is a line — read, then gone. So each one now has the X, and each one leaves on its own after
+   * `LINE_HOLD_MS`; the coin stays either way, and tapping it still opens him.
+   *
+   * ⚠ CLOSED FOR THIS SESSION, NOT RETIRED. Closing the introduction does NOT mark Holt as met — that
+   * flag also decides whether the chat plays his introduction, and an X on a floating line is not the
+   * athlete having met him. The draft line keeps its own permanent retirement (`retireDraftLine`), and a
+   * nudge's display is already recorded above, so its cadence does the rest. The bubble lives outside the
+   * navigator, so "this session" spans every tab.
+   */
+  const [closedLine, setClosedLine] = useState<string | null>(null);
+  const shownLine = line && line !== closedLine ? line : null;
+  const lineOnScreen =
+    shownLine != null && !open && !session && !ceremony && tourStatus !== 'running' && HOME_SURFACES.has(pathname);
+  useEffect(() => {
+    if (!lineOnScreen || !shownLine) return;
+    const t = setTimeout(() => setClosedLine(shownLine), LINE_HOLD_MS);
+    return () => clearTimeout(t);
+  }, [lineOnScreen, shownLine]);
+  const closeLine = () => {
+    if (!introducing && teaser) retireDraftLine();
+    setClosedLine(line);
+  };
+
   if (session) return null;
   if (ceremony) return null;
   if (tourStatus === 'running') return null;
@@ -452,10 +487,10 @@ export function CoachBubble() {
       {/* Placement is the caller’s: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The
           Active Workout mounts the same component at its own height, above its action bar. */}
       <CoachSays
-      line={line}
+      line={shownLine}
       named={introducing}
       onPress={openCoach}
-      onDismiss={!introducing && teaser ? retireDraftLine : undefined}
+      onDismiss={shownLine ? closeLine : undefined}
       openLabel={kitchen ? 'Open Coach Holt in the kitchen' : 'Open Coach Holt'}
       kitchen={kitchen}
       style={{ bottom: 96 + insets.bottom, right: 20 }}

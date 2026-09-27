@@ -87,6 +87,7 @@ import {
   type EnduranceConcern,
   type EnduranceOpts,
   type SessionRole,
+  type Stretch,
   type TrainingPaces,
 } from './rulebook/endurance.ts';
 import { cueFor } from './rulebook/cues.ts';
@@ -1391,10 +1392,10 @@ function assembleRaceAndLift(
   if (refused) return { ok: false, refusal: refused };
 
   const concerns: string[] = [];
-  const stretchKeys = stretchKeysIn(pool);
+  const stretches = stretchesIn(pool);
   const eopts = (enduranceDays: number): EnduranceOpts => ({
     todayISO: new Date().toISOString().slice(0, 10),
-    stretchKeys,
+    stretches,
     canRunContinuously: c.canRunContinuously ?? undefined,
     recentRaceMi: c.recentRaceMi,
     recentRaceSec: c.recentRaceSec,
@@ -1575,11 +1576,11 @@ function liftIndexIn(slots: readonly RaceSlot[], day: number): number | null {
  * other goal — and pulled from the pool rather than named in the rulebook, because a cool-down naming an
  * exercise nobody can open is worse than no cool-down.
  */
-const stretchKeysIn = (pool: readonly CatalogExercise[]): string[] =>
+const stretchesIn = (pool: readonly CatalogExercise[]): Stretch[] =>
   pool
-    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name))
-    .map((e) => e.key)
-    .sort()
+    .filter((e) => e.modality === 'Mobility' && /stretch/i.test(e.name) && e.name.trim() !== '')
+    .map((e) => ({ key: e.key, name: e.name }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
     .slice(0, 6);
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -1692,7 +1693,7 @@ function assembleHybrid(c: CoachConstraints, pool: readonly CatalogExercise[], c
     recentRaceSec: c.recentRaceSec,
     goalTimeSec: c.goalTimeSec,
   });
-  const stretchKeys = stretchKeysIn(pool);
+  const stretches = stretchesIn(pool);
   const bannedActivities = plan.bannedActivities;
   // A holder, not a `let` — it is written inside the day builder's closure below.
   const swap: { to: string | null } = { to: null };
@@ -1712,7 +1713,7 @@ function assembleHybrid(c: CoachConstraints, pool: readonly CatalogExercise[], c
         if (e.intent.kind === 'lift') return liftDay(plan, e.lift!, letter, weekIndex, pool, c, notes);
         const size = sizes.get(e.at);
         if (e.intent.kind === 'run' && !(runsBanned && !runsOverridden)) {
-          return marked(runDay(size, e.at === keyAt, c, paces, stretchKeys, letter, isDeload), isDeload);
+          return marked(runDay(size, e.at === keyAt, c, paces, stretches, letter, isDeload), isDeload);
         }
         // A cardio day, or a run the athlete's limitation turned into one.
         const preferred = e.intent.kind === 'cardio' ? e.intent.focus : null;
@@ -1829,7 +1830,7 @@ function runDay(
   isKey: boolean,
   c: CoachConstraints,
   paces: TrainingPaces | null,
-  stretchKeys: readonly string[],
+  stretches: readonly Stretch[],
   letter: string,
   isDeload: boolean,
 ): ProgramDay {
@@ -1841,7 +1842,7 @@ function runDay(
   const mi = size?.mi != null ? Math.round(size.mi * cut * 10) / 10 : null;
   const min = size?.min != null ? size.min * cut : null;
   const day = buildRunDay(
-    { role, weeklyMi: mi ?? 1, longRunMi: isKey ? (mi ?? 1) : 0, paces, stretchKeys, hardCount: 6, progress: 0 },
+    { role, weeklyMi: mi ?? 1, longRunMi: isKey ? (mi ?? 1) : 0, paces, stretches, hardCount: 6, progress: 0 },
     letter,
   );
   if (role === 'run_walk') return day;
@@ -1946,11 +1947,11 @@ function arrangeWeek(
  * than read inside a pure module, so the whole thing stays testable against a fixed date.
  */
 function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExercise[]): AssembleResult {
-  const stretchKeys = stretchKeysIn(pool);
+  const stretches = stretchesIn(pool);
 
   const result = assembleEndurance(c, {
     todayISO: new Date().toISOString().slice(0, 10),
-    stretchKeys,
+    stretches,
     canRunContinuously: c.canRunContinuously ?? undefined,
     recentRaceMi: c.recentRaceMi,
     recentRaceSec: c.recentRaceSec,

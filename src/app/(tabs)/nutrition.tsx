@@ -36,7 +36,7 @@ import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/con
 import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
 import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
 import { useProfile } from '@/lib/profile';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -256,7 +256,7 @@ export default function NutritionScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP }]}
+        contentContainerStyle={[styles.content, { paddingBottom: TAB_SCREEN_BOTTOM_GAP }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── day strip ─────────────────────────────────────────────────── */}

@@ -723,3 +723,17 @@ test('every Kitchen door goes to a screen that exists, and "What can I make?" wo
   const make = KITCHEN_CARDS.find((c) => c.tag === 'MAKE');
   assert.ok(make?.ask, 'MAKE starts a question in the composer');
 });
+
+test('⚠ QA F14 — a run/walk race plan claims no "longest run" — it has none', () => {
+  const volume = [
+    { mileage: 3.3, longRunMi: 1.7 },
+    { mileage: 4, longRunMi: 2 },
+  ];
+  const runWalk = { ...raceConstraints, goal: 'run_marathon', canRunContinuously: false, currentWeeklyMi: 0 };
+  const card = programCardFor(runWalk, { name: '6-Week Marathon Plan', weeks: 2, daysPerWeek: 3 }, volume, 'because');
+  assert.ok(!card.stats.some((s) => s.label === 'LONGEST RUN'));
+  for (const w of card.weeks) assert.doesNotMatch(w.detail, /long run/);
+  // A continuous runner's card still carries it.
+  const runs = programCardFor({ ...runWalk, canRunContinuously: true }, { name: 'x', weeks: 2, daysPerWeek: 3 }, volume, 'because');
+  assert.equal(runs.stats.find((s) => s.label === 'LONGEST RUN')?.value, '2 mi');
+});

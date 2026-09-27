@@ -836,23 +836,21 @@ export function CoachChatSheet({
          * anything said mid-set would never reach the athletes who need it. See `startingLoadLine`.
          */
         const load = startingLoadLine(c);
+        /* The concern, once — and BEFORE the card (QA F14): a Start button above the warning reads as
+           "fine to go", and the athlete should hear the risk before the one tap that commits them. It is
+           still built (PO 2026-09-21, "suggest, then build"); the suggestion is a chip, never a wall —
+           tapping it rebuilds for that race with every other answer kept. */
+        const concern = res.assembly.concern;
+        const alt = concern?.altGoal;
         say(
           { kind: 'holt', text: preamble(c, structure.weeks) },
           ...(load ? [{ kind: 'holt' as const, text: load }] : []),
+          ...(concern ? [{ kind: 'holt' as const, text: concern.message }] : []),
+          ...(concern && alt && alt !== c.goal
+            ? [{ kind: 'chips' as const, chips: [{ label: `Build the ${RACE_SPEC[alt].label} instead`, patch: { goal: alt } }] }]
+            : []),
           { kind: 'program', card: programCard },
         );
-        /* The concern, once — after the card, so the plan they asked for is what they see first. The
-           suggestion is a chip, never a wall: tapping it rebuilds for that race with every other answer kept. */
-        const concern = res.assembly.concern;
-        if (concern) {
-          const alt = concern.altGoal;
-          say(
-            { kind: 'holt', text: concern.message },
-            ...(alt && alt !== c.goal
-              ? [{ kind: 'chips' as const, chips: [{ label: `Build the ${RACE_SPEC[alt].label} instead`, patch: { goal: alt } }] }]
-              : []),
-          );
-        }
         /*
          * ⚠ WHAT THE ATHLETE ASKED FOR THAT DID NOT LAND IS SAID, NEVER DROPPED (Coach-AI-Amendment-001 §4.2).
          * A name the catalogue could not place is asked back; an exercise held out for a limitation or missing
@@ -1520,8 +1518,11 @@ export function CoachChatSheet({
       }
       setMode('program');
       void (async () => {
+        const request: ChatState = { ...constraints, ...chip.patch };
+        /* Saved before the active-program question, so "Replace it" carries this request on (QA R2-F8). */
+        setConstraints(request);
         if (!(await guardActiveProgram())) return;
-        await advance({ ...constraints, ...chip.patch }, 'program');
+        await advance(request, 'program');
       })();
       return;
     }
@@ -1629,10 +1630,14 @@ export function CoachChatSheet({
         /* ⚠ THE LENGTH QUESTION USED TO BE ASKED HERE, AT THE DOOR, AND IT MOVED INTO `askProgram` —
            after the goal, so a race can skip it instead of having its answer overruled by the calendar.
            See the note on `sizeQuestion`. Nothing special happens at this door any more. */
-        if (opener.mode === 'program' && !(await guardActiveProgram())) return;
         /* A door is a NEW request: only the athlete's facts come with them, never the last request's
-           answers — otherwise a second "Build me something" asks nothing and rebuilds the same block. */
-        await advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
+           answers — otherwise a second "Build me something" asks nothing and rebuilds the same block.
+           Saved BEFORE the active-program question so "Replace it" continues this request, not the last
+           one (QA R2-F8). */
+        const request: ChatState = { ...athleteFacts(constraints), ...opener.patch };
+        setConstraints(request);
+        if (opener.mode === 'program' && !(await guardActiveProgram())) return;
+        await advance(request, opener.mode);
       })();
       return;
     }
@@ -2109,8 +2114,13 @@ export function CoachChatSheet({
           return say({ kind: 'holt', text: pick(opens === 'day' ? 'allowance_day' : 'allowance_program') });
         }
         setMode(opens);
+        const request: ChatState = { ...athleteFacts(constraints), ...patch };
+        /* ⚠ SAVED BEFORE THE ACTIVE-PROGRAM QUESTION (QA R2-F8). The guard can stop here to ask about the
+           block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
+           to be in state first, or a fully typed build comes back as "What's the goal?". */
+        setConstraints(request);
         if (opens === 'program' && !(await guardActiveProgram())) return;
-        return void advance({ ...athleteFacts(constraints), ...patch }, opens);
+        return void advance(request, opens);
       }
     }
   };

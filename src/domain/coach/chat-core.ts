@@ -1623,6 +1623,7 @@ export function programCardFor(
 ): ProgramCard {
   const endurance = isEnduranceGoal(c.goal);
   const spec = endurance ? RACE_SPEC[c.goal as keyof typeof RACE_SPEC] : null;
+  const runWalk = endurance && c.goal !== 'triathlon' && c.canRunContinuously === false;
 
   const stats: { value: string; label: string }[] = [
     { value: String(structure.weeks), label: 'WEEKS' },
@@ -1638,7 +1639,10 @@ export function programCardFor(
     stats.push({ value: `${Math.floor(peak / 60)}h ${String(Math.round(peak % 60)).padStart(2, '0')}m`, label: 'PEAK WEEK' });
   } else if (volume.length) {
     stats.push({ value: `${Math.round(Math.max(...volume.map((v) => v.mileage)))} mi`, label: 'PEAK WEEK' });
-    stats.push({ value: `${Math.max(...volume.map((v) => v.longRunMi))} mi`, label: 'LONGEST RUN' });
+    /* ⚠ A RUN/WALK PLAN HAS NO LONG RUN (QA F14). Every session is intervals (`composeRunWeek`), so the
+       curve's long-run figure describes a run the plan never prescribes — "2 mi longest run" on a card
+       whose sessions are all run/walk. Omitted, like every stat the engine cannot answer. */
+    if (!runWalk) stats.push({ value: `${Math.max(...volume.map((v) => v.longRunMi))} mi`, label: 'LONGEST RUN' });
   }
   /* Non-race builds get their own six (§11.1.7): the things that actually shaped the block. A cell the
      engine cannot answer is DROPPED and the grid reflows — never rendered empty. */
@@ -1665,7 +1669,7 @@ export function programCardFor(
     weeks: volume.length
       ? volume.map((v, i) => ({
           label: 'Week ' + (i + 1),
-          detail: Math.round(v.mileage) + ' mi · long run ' + v.longRunMi + ' mi',
+          detail: Math.round(v.mileage) + ' mi' + (runWalk ? '' : ' · long run ' + v.longRunMi + ' mi'),
           days: daysOfWeek(structure, i),
         }))
       : Array.from({ length: structure.weeks }, (_, i) => {

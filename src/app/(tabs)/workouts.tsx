@@ -13,7 +13,7 @@ import { Pill } from '@/components/forge/composites/Pill';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
 import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: 20,
     paddingTop: 22,
-    paddingBottom: SCREEN_BOTTOM_GAP,
+    paddingBottom: TAB_SCREEN_BOTTOM_GAP,
   },
   stack: { gap: 36 },
   stackTight: { gap: 10 },

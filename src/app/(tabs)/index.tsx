@@ -36,7 +36,7 @@ import { fetchChallengeHub } from '@/data/challenges-live';
 import { fetchTrainingNow, trainingSummary } from '@/data/presence-live';
 import { fetchFriendLists } from '@/data/friends-live';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
@@ -1641,7 +1641,7 @@ const styles = StyleSheet.create({
   startedSub: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
 
   scrollContent: {
-    paddingBottom: SCREEN_BOTTOM_GAP,
+    paddingBottom: TAB_SCREEN_BOTTOM_GAP,
   },
   content: {
     paddingHorizontal: 18,

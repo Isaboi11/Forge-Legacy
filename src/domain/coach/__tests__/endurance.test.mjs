@@ -32,7 +32,11 @@ import {
 } from '../rulebook/endurance.ts';
 
 const TODAY = '2026-08-09';
-const STRETCHES = ['hamstring-stretch', 'pigeon-stretch', 'standing-quad-stretch'];
+const STRETCHES = [
+  { key: 'hamstring-stretch', name: 'Hamstring Stretch' },
+  { key: 'pigeon-stretch', name: 'Pigeon Stretch' },
+  { key: 'standing-quad-stretch', name: 'Standing Quad Stretch' },
+];
 
 const base = (over = {}) => ({
   goal: 'run_marathon',
@@ -48,7 +52,7 @@ const base = (over = {}) => ({
 });
 
 const build = (over = {}, opts = {}) =>
-  assembleEndurance(base(over), { todayISO: TODAY, stretchKeys: STRETCHES, canRunContinuously: true, ...opts });
+  assembleEndurance(base(over), { todayISO: TODAY, stretches: STRETCHES, canRunContinuously: true, ...opts });
 
 /** Race day is a distance, not a training session — exclude it when judging the training. */
 const trainingDays = (day) => day.name !== 'Race Day';

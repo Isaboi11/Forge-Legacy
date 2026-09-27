@@ -23,7 +23,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { textHalo } from '@/constants/washes';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
    * Home 8 under its title block. 14 matches Legacy, which is the closest screen in shape — a titled
    * bar over a stack of cards.
    */
-  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: SCREEN_BOTTOM_GAP },
+  scroll: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: TAB_SCREEN_BOTTOM_GAP },
   stack: { gap: 16 },
   cardStack: { gap: 16 },
   sectionHeaderPad: { paddingHorizontal: 4, marginTop: 4 },

@@ -27,7 +27,11 @@ import {
 } from '../rulebook/endurance.ts';
 
 const TODAY = '2026-09-21';
-const STRETCHES = ['hamstring-stretch', 'pigeon-stretch', 'standing-quad-stretch'];
+const STRETCHES = [
+  { key: 'hamstring-stretch', name: 'Hamstring Stretch' },
+  { key: 'pigeon-stretch', name: 'Pigeon Stretch' },
+  { key: 'standing-quad-stretch', name: 'Standing Quad Stretch' },
+];
 const EXPERIENCES = ['beginner', 'intermediate', 'advanced'];
 const SPEC = RACE_SPEC.triathlon;
 const PEAK_MIN = SPEC.peakHours * 60;
@@ -48,7 +52,7 @@ const build = ({ weeks, days, experience, buildAnyway, mi = 10 }) =>
       currentWeeklyMi: mi,
       buildAnyway,
     },
-    { todayISO: TODAY, stretchKeys: STRETCHES },
+    { todayISO: TODAY, stretches: STRETCHES },
   );
 
 /** The minutes a day prescribes in its main block — the training, not the warm-up around it. */

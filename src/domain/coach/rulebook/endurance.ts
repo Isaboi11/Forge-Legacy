@@ -1157,11 +1157,24 @@ function runWarmup(): ProgramExercise[] {
   return [cardio('run', { targetSec: 600 }, 'Easy Warm-Up', 'Ten minutes easy to open up. Leg swings and a few high knees before you go.')];
 }
 
-function runCooldown(stretchKeys: readonly string[]): ProgramExercise[] {
+/**
+ * A catalogue stretch for the cool-down — its key AND its name, handed in by the caller.
+ *
+ * ⚠ THE NAME TRAVELS WITH THE KEY (QA F13, 2026-09-26). This module reads no catalogue, and it used to be
+ * handed bare keys and write `name: ''` — so every Holt-built run day saved three nameless cool-down rows
+ * ("1 sets / 1 reps", "30s | 30s | 30s") that the builder and the saved program then showed as blanks.
+ * A row is never written without a name: a stretch that arrives nameless is left out, not blanked.
+ */
+export interface Stretch {
+  key: string;
+  name: string;
+}
+
+function runCooldown(stretches: readonly Stretch[]): ProgramExercise[] {
   const out: ProgramExercise[] = [cardio('walk', { targetSec: 300 }, 'Cool-Down Walk')];
   // Static stretching AFTER, never before — the one part of §11.4 the catalogue can actually satisfy.
-  for (const key of stretchKeys.slice(0, 3)) {
-    out.push({ catalogKey: key, name: '', sets: 1, durationSec: 30 } as unknown as ProgramExercise);
+  for (const s of stretches.filter((x) => x.key && x.name.trim()).slice(0, 3)) {
+    out.push({ catalogKey: s.key, name: s.name, sets: 1, durationSec: 30 } as unknown as ProgramExercise);
   }
   return out;
 }
@@ -1171,7 +1184,7 @@ export interface RunDayInput {
   weeklyMi: number;
   longRunMi: number;
   paces: TrainingPaces | null;
-  stretchKeys: readonly string[];
+  stretches: readonly Stretch[];
   hardCount: number;
   /**
    * 0 → 1 across the build, 1 through the taper.
@@ -1228,7 +1241,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
             'Conversational the whole way. If you cannot talk, you are running it too fast.',
           ),
         ],
-        cooldown: runCooldown(input.stretchKeys),
+        cooldown: runCooldown(input.stretches),
       };
 
     case 'tempo':
@@ -1244,7 +1257,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
             'Comfortably hard — you could speak a sentence, not hold a conversation.',
           ),
         ],
-        cooldown: runCooldown(input.stretchKeys),
+        cooldown: runCooldown(input.stretches),
       };
 
     case 'intervals':
@@ -1260,7 +1273,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
             `${intervalReps} × 3 minutes hard, 3 minutes easy jog between. The jog is part of the session.`,
           ),
         ],
-        cooldown: runCooldown(input.stretchKeys),
+        cooldown: runCooldown(input.stretches),
       };
 
     case 'run_walk':
@@ -1352,7 +1365,7 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
             'Easy means easy. This is where the base is built, and running it hard costs you the session that matters.',
           ),
         ],
-        cooldown: runCooldown(input.stretchKeys),
+        cooldown: runCooldown(input.stretches),
       };
   }
 }
@@ -1370,7 +1383,7 @@ export interface TriDayInput {
   lastBeforeRace: boolean;
   /** 0 → 1 across the build, 1 through the taper — as for the run plans. */
   progress: number;
-  stretchKeys: readonly string[];
+  stretches: readonly Stretch[];
 }
 
 /**
@@ -1530,7 +1543,7 @@ export function buildTriDay(input: TriDayInput, letter: string): ProgramDay {
               : `Easy means easy — you have a swim and a ride to recover from as well.${recovery}`,
           ),
         ],
-        cooldown: runCooldown(input.stretchKeys),
+        cooldown: runCooldown(input.stretches),
       };
   }
 }
@@ -1560,7 +1573,7 @@ export const isEndurance = (g: Goal): g is EnduranceGoal => isEnduranceGoal(g);
 /** What the rulebook needs from outside itself: the clock, and catalogue keys for the cool-down. */
 export interface EnduranceOpts {
   todayISO: string;
-  stretchKeys: readonly string[];
+  stretches: readonly Stretch[];
   canRunContinuously?: boolean;
   recentRaceMi?: number | null;
   recentRaceSec?: number | null;
@@ -1720,7 +1733,7 @@ export function enduranceBlock(c: CoachConstraints, opts: EnduranceOpts): Endura
               isRaceWeek,
               lastBeforeRace: isRaceWeek && i === roles.length - 2,
               progress,
-              stretchKeys: opts.stretchKeys,
+              stretches: opts.stretches,
             },
             String.fromCharCode(65 + i),
           ),
@@ -1752,7 +1765,7 @@ export function enduranceBlock(c: CoachConstraints, opts: EnduranceOpts): Endura
             weeklyMi: v.mileage,
             longRunMi,
             paces,
-            stretchKeys: opts.stretchKeys,
+            stretches: opts.stretches,
             hardCount,
             progress,
             isLongest: i === roles.length - 1,

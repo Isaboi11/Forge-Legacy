@@ -65,6 +65,16 @@ export const BAR_BOTTOM_MIN = 20;
 export const SCREEN_BOTTOM_GAP = 44;
 
 /**
+ * The scroll-end gap for the TAB screens, which carry Coach Holt's coin (QA F10, 2026-09-26).
+ *
+ * The coin floats 18 above the tab bar and is 52 across, so it covers the bottom ~70 pt of every tab's
+ * content — and with only `SCREEN_BOTTOM_GAP` there, the last row of each tab could never scroll out from
+ * under it ("Competitions", "See your circle", the Programs chevron, the Trophy Case tile). 88 is the coin's
+ * band plus the same 18 of air, so the end of every tab clears it.
+ */
+export const TAB_SCREEN_BOTTOM_GAP = 88;
+
+/**
  * Bottom padding for a control anchored to the foot of the screen.
  *
  * ⚠ `Math.max`, NOT ADDITION. Adding the inset to the floor gives a home-indicator phone 54 pt of dead

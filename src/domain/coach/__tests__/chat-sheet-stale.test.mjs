@@ -45,7 +45,10 @@ test('⚠ only the newest card has buttons; older ones say so instead of acting 
 test('⚠ a new request starts from the athlete, not from the last request', () => {
   assert.match(sheet, /const athleteFacts = \(c: ChatState\): ChatState =>/);
   // Both doors — the tapped opener and the typed one — and the shelf.
-  assert.equal((sheet.match(/advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch \}, opener\.mode\)/g) ?? []).length, 2);
+  // The tapped opener names the request first (so "Replace it" can carry it on — QA R2-F8); the typed one inline.
+  assert.match(sheet, /const request: ChatState = \{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch \};/);
+  assert.match(sheet, /advance\(request, opener\.mode\)/);
+  assert.equal((sheet.match(/advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch \}, opener\.mode\)/g) ?? []).length, 1);
   assert.match(sheet, /advance\(athleteFacts\(constraints\), 'pick'\)/);
   assert.doesNotMatch(sheet, /advance\(\{ \.\.\.constraints, \.\.\.opener\.patch \}/);
 });
@@ -54,4 +57,22 @@ test('⚠ a race the athlete asked for is built, and the concern is said once wi
   assert.match(sheet, /\.\.\.\(isEnduranceGoal\(c\.goal\) \? \{ buildAnyway: true \} : \{\}\)/);
   assert.match(sheet, /const concern = res\.assembly\.concern;/);
   assert.match(sheet, /label: `Build the \$\{RACE_SPEC\[alt\]\.label\} instead`, patch: \{ goal: alt \}/);
+});
+
+test('⚠ QA R2-F8 — a request interrupted by the active-program question is kept for "Replace it"', () => {
+  // Each build path that can stop at `guardActiveProgram` puts the request in state FIRST, because the
+  // "Replace it" chip continues from `constraints` — a typed build used to come back as "What's the goal?".
+  const guarded = [...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(\)/g)];
+  assert.equal(guarded.length, 3, 'typed sentence, tapped opener, shelf-to-build');
+  for (const m of guarded) assert.match(m[1], /setConstraints\(request\);/);
+  assert.match(sheet, /if \(chip\.label === 'Replace it'\) \{\s*say\(\{ kind: 'me', text: chip\.label \}\);\s*void advance\(constraints, mode \?\? 'program'\);/);
+});
+
+test('⚠ QA F14 — a race concern is said BEFORE the card with the Start button, never after it', () => {
+  const at = sheet.indexOf('const concern = res.assembly.concern;');
+  assert.ok(at > 0);
+  const said = sheet.slice(at, sheet.indexOf('const asm = res.assembly;', at));
+  const concernAt = said.indexOf('text: concern.message');
+  const cardAt = said.indexOf("{ kind: 'program', card: programCard }");
+  assert.ok(concernAt > 0 && cardAt > concernAt, 'the concern line precedes the program card in the same say()');
 });

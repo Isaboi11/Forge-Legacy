@@ -14,7 +14,7 @@ import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons'
 import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { ensurePinPoster } from '@/data/pin-poster';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
@@ -862,7 +862,7 @@ const styles = StyleSheet.create({
   inviteChevron: { fontSize: 18, color: flColor.bronzeInk },
 
   root: { flex: 1 },
-  scroll: { paddingBottom: SCREEN_BOTTOM_GAP },
+  scroll: { paddingBottom: TAB_SCREEN_BOTTOM_GAP },
 
   // loading / error status slot
   statusWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 40 },

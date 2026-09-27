@@ -108,3 +108,29 @@ test('the coach never appears signed out, or over a workout, ceremony or tour', 
   assert.match(src, /if \(ceremony\) return null;/);
   assert.match(src, /if \(tourStatus === 'running'\) return null;/);
 });
+
+/*
+ * QA F10 (2026-09-26): Holt's introduction sat over START WORKOUT on Home with no close control and no end,
+ * and the coin covered each tab's last row because the tabs left only 44 pt under their content.
+ */
+test('⚠ QA F10 — every line the coach bubble shows can be closed, and none stays up', () => {
+  const src = readFileSync(path.join(here, '../../components/forge/CoachBubble.tsx'), 'utf8');
+  const says = src.slice(src.indexOf('<CoachSays'), src.indexOf('/>', src.indexOf('<CoachSays')));
+  assert.match(says, /line=\{shownLine\}/, 'the bubble renders the line minus the one closed');
+  assert.match(says, /onDismiss=\{shownLine \? closeLine : undefined\}/, 'every shown line gets the X, the introduction included');
+  assert.match(src, /const LINE_HOLD_MS = \d+;/);
+  assert.match(src, /setTimeout\(\(\) => setClosedLine\(shownLine\), LINE_HOLD_MS\)/, 'a line leaves on its own');
+  assert.match(src, /return \(\) => clearTimeout\(t\);/);
+});
+
+test('⚠ QA F10 — every tab leaves room under its content for the coin', () => {
+  const insets = readFileSync(path.join(here, '../../lib/screen-insets.ts'), 'utf8');
+  const gap = Number(insets.match(/export const TAB_SCREEN_BOTTOM_GAP = (\d+);/)?.[1]);
+  // 18 above the tab bar + the 52 pt coin + 18 of air.
+  assert.ok(gap >= 88, `tab scroll end ${gap} does not clear the coin`);
+  for (const tab of ['index', 'workouts', 'legacy', 'squads', 'nutrition']) {
+    const src = readFileSync(path.join(here, `../(tabs)/${tab}.tsx`), 'utf8');
+    assert.match(src, /paddingBottom: TAB_SCREEN_BOTTOM_GAP/, `${tab} scrolls its last row under the coin`);
+    assert.doesNotMatch(src, /paddingBottom: SCREEN_BOTTOM_GAP\b/, tab);
+  }
+});

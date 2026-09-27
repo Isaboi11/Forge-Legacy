@@ -29,7 +29,11 @@ import {
 import { assemble, refusalFor } from '../assemble.ts';
 
 const TODAY = '2026-09-21';
-const STRETCHES = ['hamstring-stretch', 'pigeon-stretch', 'standing-quad-stretch'];
+const STRETCHES = [
+  { key: 'hamstring-stretch', name: 'Hamstring Stretch' },
+  { key: 'pigeon-stretch', name: 'Pigeon Stretch' },
+  { key: 'standing-quad-stretch', name: 'Standing Quad Stretch' },
+];
 const RACES = ['run_5k', 'run_10k', 'run_half', 'run_marathon', 'triathlon'];
 const BASES = [0, 2, 5, 10, 20, 40];
 const DAYS = [2, 3, 4, 5, 6];
@@ -48,7 +52,7 @@ const constraints = (over = {}) => ({
 });
 
 const build = (over, canRunContinuously) =>
-  assembleEndurance(constraints(over), { todayISO: TODAY, stretchKeys: STRETCHES, canRunContinuously });
+  assembleEndurance(constraints(over), { todayISO: TODAY, stretches: STRETCHES, canRunContinuously });
 
 const longRunsOf = (r) =>
   r.structure.weekPlans.flatMap((w) => w.days).filter((d) => d.name === 'Long Run').map((d) => d.main[0].targetMi);
@@ -201,4 +205,32 @@ test('an unconcerning race carries no concern through assemble either', () => {
   const built = assemble(constraints({ goal: 'run_5k', weeks: 8, currentWeeklyMi: 5, canRunContinuously: true, buildAnyway: true }), [], () => true);
   assert.equal(built.ok, true);
   assert.equal(built.assembly.concern, undefined);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QA F14 (2026-09-26) — the compressed build goes as far as the rulebook allows, and the card is honest
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('⚠ QA F14 — a compressed race build climbs its long run at the spike cap every ramp week, no slower', () => {
+  /* "As far as safely possible" is EPS-D3b: each build week's long run is 110% of the longest so far. A
+     short block must not ramp SLOWER than that — the shortfall the concern names must be the caps', not
+     slack in the curve. (Whether a compressed marathon may shorten its 3-week taper is not in the
+     rulebook — EPS-D5 fixes it by distance — so the taper is left exactly as decided.) */
+  for (const [goal, weeksAway, base] of [['run_marathon', 6, 20], ['run_marathon', 10, 5], ['run_half', 6, 0], ['run_5k', 8, 0]]) {
+    const raceDate = new Date(Date.parse(TODAY) + weeksAway * 7 * 86400000).toISOString().slice(0, 10);
+    const r = build({ goal, raceDate, currentWeeklyMi: base, buildAnyway: true }, true);
+    const build_ = r.volume.filter((v) => v.phase !== 'taper' && !v.isDeload);
+    let longest = null;
+    for (const v of r.volume.filter((x) => x.phase !== 'taper')) {
+      if (!v.isDeload && longest != null) {
+        const capped = Math.min(longest * LONG_RUN_SPIKE_CAP, RACE_SPEC[goal].peakLongMi, LONG_RUN_DISTANCE_CAP_MI);
+        assert.ok(v.longRunMi >= Math.round(capped * 10) / 10 - 0.11, `${goal} ${weeksAway}w: week ${v.weekIndex + 1} ramps slower than the cap`);
+      }
+      longest = Math.max(longest ?? 0, v.longRunMi);
+    }
+    assert.ok(build_.length > 0);
+    // The concern names the long run the athlete will actually meet.
+    const top = Math.max(...longRunsOf(r));
+    if (r.concern && top < RACE_SPEC[goal].raceMi) assert.match(r.concern.message, /the long run tops out around/);
+  }
 });
