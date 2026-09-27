@@ -170,6 +170,32 @@ export const ALLOWED: Gate = { outcome: 'allowed' };
 export const UNKNOWN: Gate = { outcome: 'unknown' };
 
 /**
+ * Where the entitlement read stands for the athlete signed in NOW (QA F6, 2026-09-26).
+ *
+ * ⚠ A READ FOR SOMEBODY ELSE IS STILL LOADING, NOT UNKNOWN. The provider's query re-runs when `uid`
+ * changes, but it does not flip back to `loading` — so between signing in and the new read landing it
+ * still holds the signed-out answer (`null`) with `loading: false`, and that used to surface as
+ * `unknown`. An invite link that sent you to sign in then auto-joined inside that window and told you
+ * "Unable to verify your subscription" on every slow network. The answer is tagged with the uid it was
+ * read for, and one read for a different uid (including the signed-out `null`) reads as `loading`.
+ *
+ * `read` is `null` when the query has never answered or its last run rejected — that is `unknown`
+ * unless a run is in flight.
+ */
+export type EntitlementReadStatus = 'loading' | 'ready' | 'unknown';
+
+export function entitlementReadStatus<S>(
+  loading: boolean,
+  read: { uid: string | null; snap: S | null } | null,
+  uid: string | null,
+): EntitlementReadStatus {
+  if (loading) return 'loading';
+  if (!read) return 'unknown';
+  if (read.uid !== uid) return 'loading';
+  return read.snap ? 'ready' : 'unknown';
+}
+
+/**
  * The pre-action check. Call this BEFORE opening a flow, never partway through one.
  *
  * ⚠ "PRE-ACTION" IS THE SPEC, NOT A PREFERENCE (M-7 §2). An athlete must never choose a photo, name a

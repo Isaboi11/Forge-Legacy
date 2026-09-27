@@ -5,6 +5,7 @@ import {
   CAP_KEYS,
   UNLIMITED,
   capAllows,
+  entitlementReadStatus,
   gateFor,
   m7Benefits,
   m7Content,
@@ -229,4 +230,27 @@ test('the usage label reads "n of cap", and never exposes the -1 sentinel', () =
   assert.equal(usageLabel(38, 75), '38 of 75');
   assert.equal(usageLabel(38, UNLIMITED), '38');
   assert.ok(!usageLabel(38, UNLIMITED).includes('-1'));
+});
+
+test('QA F6: signing in on a slow network reads as loading until the new read lands, never unknown', () => {
+  const snap = { tier: 'PREMIUM' };
+  // Boot, signed out: the query is in flight, then answers null for nobody.
+  assert.equal(entitlementReadStatus(true, null, null), 'loading');
+  const signedOut = { uid: null, snap: null };
+  assert.equal(entitlementReadStatus(false, signedOut, null), 'unknown');
+  // Sign-in completes and the invite link lands on /join-squad. useQuery re-runs for the new uid but does
+  // NOT flip `loading` back on, so for the whole round trip (1.5 s in the QA repro) it still holds the
+  // signed-out answer. That window used to read `unknown` → "Unable to verify your subscription".
+  assert.equal(entitlementReadStatus(false, signedOut, 'athlete-1'), 'loading');
+  // The read lands.
+  assert.equal(entitlementReadStatus(false, { uid: 'athlete-1', snap }, 'athlete-1'), 'ready');
+  // Account switch: athlete-1's answer is not athlete-2's.
+  assert.equal(entitlementReadStatus(false, { uid: 'athlete-1', snap }, 'athlete-2'), 'loading');
+});
+
+test('QA F6: a read that genuinely failed is still unknown, so the gate still refuses honestly', () => {
+  assert.equal(entitlementReadStatus(false, null, 'athlete-1'), 'unknown');
+  assert.equal(entitlementReadStatus(false, { uid: 'athlete-1', snap: null }, 'athlete-1'), 'unknown');
+  // A refetch in flight is loading again, whatever it held before.
+  assert.equal(entitlementReadStatus(true, null, 'athlete-1'), 'loading');
 });

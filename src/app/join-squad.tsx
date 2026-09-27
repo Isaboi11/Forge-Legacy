@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import { fetchSquadByCode, joinSquadByCode, type SquadByCode } from '@/data/squa
 import { errorMessage } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { useEntitlementState } from '@/lib/entitlement';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
 
@@ -40,8 +41,11 @@ export default function JoinSquadRoute() {
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const guard = usePremiumGate();
+  const { status: entitlement, refetch: refetchEntitlement } = useEntitlementState();
 
-  const canContinue = code.trim().length >= 4 && !busy;
+  // Not while the entitlement is still being read: `guard` would answer "unable to verify" for a read
+  // that simply has not landed yet (QA F6). The wait is one network round trip.
+  const canContinue = code.trim().length >= 4 && !busy && entitlement !== 'loading';
 
   /*
    * ⚠ THE CAP IS CHECKED HERE, WHERE EVERY PATH MEETS.
@@ -59,7 +63,13 @@ export default function JoinSquadRoute() {
    * before the write, not halfway through it.
    */
   const join = (accept: boolean, forCode: string = code) => {
-    if (!guard('squads')) return;
+    if (!guard('squads')) {
+      // `guard` has shown "Unable to verify your subscription. Try again." — make the try-again real.
+      // The provider re-reads only when the uid changes, so without this a failed read stays failed and
+      // every retry tap gets the same toast until the screen is reopened (QA F6).
+      if (entitlement === 'unknown') refetchEntitlement();
+      return;
+    }
     setBusy(true);
     joinSquadByCode(forCode.trim(), accept).then(
       (res) => {
@@ -80,30 +90,35 @@ export default function JoinSquadRoute() {
     );
   };
 
-  /** Resolve first. A squad that states values gets its own stage; one that doesn't joins outright. */
-  const resolve = useCallback(
-    (forCode: string) => {
-      setBusy(true);
-      fetchSquadByCode(forCode.trim()).then(
-        (found) => {
-          setBusy(false);
-          if (found?.commitment && !found.already) {
-            setAccepted(false);
-            setSquad(found);
-            return;
-          }
-          join(false, forCode);
-        },
-        // Pre-0055 (or an unreachable peek) — fall through to the ungated join rather than dead-end.
-        () => {
-          setBusy(false);
-          join(false, forCode);
-        },
-      );
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `join` is stable in practice and closes over router/toast only
-    [],
-  );
+  /**
+   * Resolve first. A squad that states values gets its own stage; one that doesn't joins outright.
+   *
+   * ⚠ A PLAIN FUNCTION, NOT A `useCallback([])` (QA F6). It used to be memoised with an empty dep list
+   * and the exhaustive-deps rule switched off — "`join` is stable in practice" — but `join` closes over
+   * `guard`, and `guard` closes over the entitlement. So every resolve, including every Continue tap,
+   * ran the FIRST render's guard, which on an invite link followed straight from sign-in was the one
+   * that had not read the subscription yet: "Unable to verify your subscription" forever, until the
+   * screen was reopened. react-compiler memoises this on what it actually reads.
+   */
+  const resolve = (forCode: string) => {
+    setBusy(true);
+    fetchSquadByCode(forCode.trim()).then(
+      (found) => {
+        setBusy(false);
+        if (found?.commitment && !found.already) {
+          setAccepted(false);
+          setSquad(found);
+          return;
+        }
+        join(false, forCode);
+      },
+      // Pre-0055 (or an unreachable peek) — fall through to the ungated join rather than dead-end.
+      () => {
+        setBusy(false);
+        join(false, forCode);
+      },
+    );
+  };
 
   const onContinue = () => {
     if (!canContinue) return;
@@ -134,13 +149,22 @@ export default function JoinSquadRoute() {
    * every athlete who signed up FROM an invite through this exact effect, so this is the path most
    * newcomers now arrive on rather than an edge case.
    */
+  /*
+   * ⚠ AND IT WAITS FOR THE ENTITLEMENT (QA F6). An athlete who followed the link signed-out arrives
+   * here the moment sign-in completes — before their subscription has been read. Resolving then took
+   * `join` straight into `guard`, which refused with "Unable to verify your subscription" on every slow
+   * network. The effect re-runs when the read settles, and only a settled read (ready, or a genuine
+   * `unknown` that `join` will offer to retry) starts the resolve. `useEffectEvent` so the resolve it
+   * fires sees the settled render's guard, not the one the effect was first created with.
+   */
+  const autoResolve = useEffectEvent((incoming: string) => resolve(incoming));
   const autoStarted = useRef(false);
   useEffect(() => {
     const incoming = normalizeCode(String(params.code ?? ''));
-    if (autoStarted.current || incoming.length < 4) return;
+    if (autoStarted.current || incoming.length < 4 || entitlement === 'loading') return;
     autoStarted.current = true;
-    resolve(incoming);
-  }, [params.code, resolve]);
+    autoResolve(incoming);
+  }, [params.code, entitlement]);
 
   if (squad?.commitment) {
     return (

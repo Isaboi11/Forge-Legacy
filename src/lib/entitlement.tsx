@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useMemo } from 'react';
 
 import { fetchEntitlement, type EntitlementSnapshot } from '@/data/entitlement-live';
 import {
+  entitlementReadStatus,
   gateFor,
   remaining,
   usageLabel,
@@ -79,18 +80,20 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
 
-  const { data, loading, refetch } = useQuery<EntitlementSnapshot | null>(
+  // Tagged with the uid it was read FOR — see `entitlementReadStatus` (QA F6): until the read for the
+  // athlete signed in now has landed, the signed-out answer must read as `loading`, not `unknown`.
+  const { data, loading, refetch } = useQuery<{ uid: string | null; snap: EntitlementSnapshot | null }>(
     async () => {
-      if (!uid) return null;
+      if (!uid) return { uid, snap: null };
       try {
         const snap = await fetchEntitlement();
         if (snap) LAST_GOOD.set(uid, snap);
-        return snap;
+        return { uid, snap };
       } catch (e) {
         /* A refresh that fails leaves the previous answer standing. Only a read that has NEVER
            succeeded for this athlete is allowed to surface as `unknown`. */
         const prev = LAST_GOOD.get(uid);
-        if (prev) return prev;
+        if (prev) return { uid, snap: prev };
         throw e;
       }
     },
@@ -137,11 +140,12 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
    */
   const value = useMemo<EntitlementState>(
     () => ({
-      snapshot: data,
-      status: loading ? 'loading' : data ? 'ready' : 'unknown',
+      // Never another athlete's snapshot, even for the render before their read lands.
+      snapshot: data && data.uid === uid ? data.snap : null,
+      status: entitlementReadStatus(loading, data, uid),
       refetch,
     }),
-    [data, loading, refetch],
+    [data, loading, refetch, uid],
   );
 
   return <EntitlementContext.Provider value={value}>{children}</EntitlementContext.Provider>;

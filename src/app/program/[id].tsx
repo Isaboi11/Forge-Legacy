@@ -1295,16 +1295,23 @@ export default function ProgramDetailScreen() {
               Share Card
             </Button>
           </View>
-          <View style={styles.ctaHalf}>
-            <Button
-              variant="secondary"
-              fullWidth
-              onPress={() => router.push({ pathname: '/send-program', params: { id: program!.id } })}
-              accessibilityLabel="Send this program to a friend or squad"
-            >
-              Send Program
-            </Button>
-          </View>
+          {/* ⚠ ONLY WITH A REAL ROW (QA F12, first logged as Launch Audit P0-29). `/send-program` reads
+              the `programs` row by id and sends a COPY of it; a catalogue preview has `program === null`
+              by design, so this read `program!.id` and threw on tap. Hidden rather than adopt-then-send:
+              sending must not quietly add the program to the sender's own Planned list, and a catalogue
+              program is already in every friend's Discover. Same rule as Edit/Duplicate above. */}
+          {program ? (
+            <View style={styles.ctaHalf}>
+              <Button
+                variant="secondary"
+                fullWidth
+                onPress={() => router.push({ pathname: '/send-program', params: { id: program.id } })}
+                accessibilityLabel="Send this program to a friend or squad"
+              >
+                Send Program
+              </Button>
+            </View>
+          ) : null}
         </View>
         <View style={styles.secondaryRow}>
           {state === 'active' ? (
