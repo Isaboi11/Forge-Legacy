@@ -87,6 +87,26 @@ function hitsFor(food: string): IngredientKey[] {
   return hits.map((h) => h.key);
 }
 
+/**
+ * Words that describe HOW a food is bought or cut, not WHICH food it is — dropped for a second, still-exact
+ * match. ⚠ Never a word that changes the numbers: "cooked", "dry", "canned", "reduced-fat", "light cream
+ * cheese" are left alone (and an exact whole-name match always wins first, so "Light butter" stays light).
+ */
+const DESCRIPTORS = new Set([
+  'fresh', 'freshly', 'extra', 'virgin', 'unsalted', 'salted', 'packed', 'kosher', 'sea', 'fine', 'coarse', 'flaky',
+  'organic', 'chopped', 'minced', 'diced', 'sliced', 'grated', 'shredded', 'crushed', 'smooth', 'warm', 'large',
+  'medium', 'small', 'clove', 'white', 'good', 'quality', 'pure', 'plain',
+]);
+
+/** "freshly ground black pepper" → "black pepper"; "garlic clove" → "garlic". Normalised words in, out. */
+function bareFood(want: string): string {
+  return want
+    .replace(/\bfreshly ground\b/g, ' ')
+    .split(' ')
+    .filter((w) => w && !DESCRIPTORS.has(w))
+    .join(' ');
+}
+
 /** A certain match, or null. Certain = a hit whose name (before the comma, parentheses dropped) IS the food. */
 export function matchFood(food: string): { key: IngredientKey | null; candidates: IngredientKey[] } {
   const want = norm(food);
@@ -94,6 +114,15 @@ export function matchFood(food: string): { key: IngredientKey | null; candidates
   let candidates = hitsFor(food);
   const exact = candidates.find((k) => head(INGREDIENTS[k].name) === want);
   if (exact) return { key: exact, candidates };
+  // A recipe page's words around the food — "extra-virgin olive oil", "unsalted butter", "freshly ground
+  // black pepper", "garlic cloves" — are the same food. Still an EXACT name match, only on the bare food.
+  const bare = bareFood(want);
+  if (bare && bare !== want) {
+    const bareHits = hitsFor(bare);
+    const exactBare = bareHits.find((k) => head(INGREDIENTS[k].name) === bare);
+    if (exactBare) return { key: exactBare, candidates: bareHits };
+    if (!candidates.length) candidates = bareHits;
+  }
   // No hit on the whole phrase: offer what each word finds, as CHOICES only ("cheddar cheese" → the cheddars).
   if (!candidates.length) {
     const seen = new Set<IngredientKey>();

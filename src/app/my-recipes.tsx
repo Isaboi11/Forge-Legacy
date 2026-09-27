@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -51,7 +52,9 @@ import {
   type RecipeForm,
 } from '@/domain/nutrition/user-recipes';
 import { RECIPE_PICK_FAILED, draftFromRead, importToast, ingredientFrom, unmatchedNote, type UnmatchedLine } from '@/domain/nutrition/recipe-import';
-import { recipePhotoError } from '@/domain/nutrition/recipe-photo-read';
+import { recipePhotoError, type RecipeRead } from '@/domain/nutrition/recipe-photo-read';
+import { PASTE_PLACEHOLDER, pasteError, pasteKind, readPastedText } from '@/domain/nutrition/recipe-paste';
+import { readRecipeLink } from '@/data/recipe-link-live';
 import { fetchMealPlanWeek, fetchMyFoods, fetchUserRecipes, saveUserRecipe } from '@/data/nutrition-live';
 import { takeRecipeDraft } from '@/lib/recipe-draft-stash';
 import { takeRecipeFood } from '@/lib/recipe-food-handoff';
@@ -75,6 +78,12 @@ const FILTERS: { key: PlanSlot | 'all'; label: string }[] = [{ key: 'all', label
  */
 type Pick = { key?: IngredientKey; food?: OwnFood; unit: 'g' | 'portion'; qty: number; index: number | null; line?: number };
 
+const IMPORTED_LINE = {
+  picture: 'Read from your picture.',
+  link: 'Read from the recipe page.',
+  text: 'Read from what you pasted.',
+} as const;
+
 const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
   no_match: 'Not in Forge’s foods. Search for something close, or drop it.',
   ambiguous: 'Which one is it?',
@@ -92,7 +101,9 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  *
  * Deltas from the `.dc`, each deliberate:
  *  · Its preview fixtures (two sample recipes) are not seeded — a real list starts empty.
- *  · "Paste a recipe" shows as "Soon", exactly as the `.dc` draws it. "Add a picture" (was "Scan a recipe") is LIVE (PO
+ *  · "Paste a recipe" is LIVE (PO 2026-09-27): a link or the recipe's text → the same draft, no model
+ *    (`recipe-paste.ts`, `recipe-text-read.ts`; a link is opened by `data/recipe-link-live.ts`).
+ *  · "Add a picture" (was "Scan a recipe") is LIVE (PO
  *    2026-09-25) for athletes with Premium AI and Nutrition, and hidden for everyone else: a screenshot is
  *    read by `recipe-photo-read`, matched to the catalogue by `draftFromRead`, and opens as an UNSAVED,
  *    UNCONFIRMED draft of this same form. Lines Forge can't match with certainty are listed as written
@@ -149,7 +160,11 @@ export default function MyRecipesScreen() {
   const [saving, setSaving] = useState(false);
   /* Recipe photo import — lines the draft could not match, and the read's own status. */
   const [unmatched, setUnmatched] = useState<UnmatchedLine[]>(() => seed?.unmatched ?? []);
-  const [fromPhoto, setFromPhoto] = useState(false);
+  /* Where an unsaved draft was read from — a picture, a recipe page, or pasted text — for the form's line. */
+  const [importedFrom, setImportedFrom] = useState<'picture' | 'link' | 'text' | null>(null);
+  /* "Paste a recipe" (PO 2026-09-27): a link or the recipe's text, read on the device (`recipe-paste.ts`). */
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
   const [fromHolt] = useState(() => seed != null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -192,8 +207,23 @@ export default function MyRecipesScreen() {
 
   const clearImport = () => {
     setUnmatched([]);
-    setFromPhoto(false);
+    setImportedFrom(null);
   };
+
+  /** A read — from a picture, a page or a paste — opened as an UNSAVED, UNCONFIRMED draft of the form. */
+  const openDraft = useCallback(
+    (read: RecipeRead, from: 'picture' | 'link' | 'text') => {
+      const draft = draftFromRead(read);
+      setPick(null);
+      setFoodQ('');
+      setEditAllergens(false);
+      setUnmatched(draft.unmatched);
+      setImportedFrom(from);
+      setOverride({ form: draft.form });
+      showToast(importToast(draft));
+    },
+    [showToast],
+  );
 
   /** The read itself, once a picture is picked. */
   const readPicked = useCallback(async (uri: string) => {
@@ -209,18 +239,39 @@ export default function MyRecipesScreen() {
         setScanError(recipePhotoError(r));
         return;
       }
-      const draft = draftFromRead(r.read);
-      setPick(null);
-      setFoodQ('');
-      setEditAllergens(false);
-      setUnmatched(draft.unmatched);
-      setFromPhoto(true);
-      setOverride({ form: draft.form });
-      showToast(importToast(draft));
+      openDraft(r.read, 'picture');
     } finally {
       setScanBusy(false);
     }
-  }, [showToast]);
+  }, [openDraft]);
+
+  /* A pasted link or text. The box keeps what was pasted, so a failure can be fixed and read again. */
+  const readPaste = async () => {
+    if (scanning.current) return;
+    const kind = pasteKind(pasteText);
+    if (kind === 'empty') return;
+    scanning.current = true;
+    setPasteOpen(false);
+    setScanError(null);
+    setScanBusy(true);
+    try {
+      const r = kind === 'link' ? await readRecipeLink(pasteText) : readPastedText(pasteText);
+      if (r.kind !== 'ok') {
+        setScanError(pasteError(r, scanOn));
+        return;
+      }
+      openDraft(r.read, r.from);
+      setPasteText('');
+    } finally {
+      setScanBusy(false);
+      scanning.current = false;
+    }
+  };
+
+  const pasteFromClipboard = async () => {
+    const t = await Clipboard.getStringAsync().catch(() => '');
+    if (t) setPasteText(t);
+  };
 
   /*
    * ⚠ ONE READ AT A TIME, HELD BY A REF — a fast double tap would otherwise pay for two reads before the
@@ -408,8 +459,8 @@ export default function MyRecipesScreen() {
             <View style={styles.identityForm}>
               <Text style={styles.eyebrow}>My recipes</Text>
               <Text style={styles.title}>{form.editId ? 'Edit recipe' : 'New recipe'}</Text>
-              {fromPhoto ? (
-                <Text style={styles.lede}>Read from your picture. Nothing is saved until you do: check the amounts and confirm the allergens.</Text>
+              {importedFrom ? (
+                <Text style={styles.lede}>{`${IMPORTED_LINE[importedFrom]} Nothing is saved until you do: check the amounts and confirm the allergens.`}</Text>
               ) : fromHolt && !form.editId ? (
                 <Text style={styles.lede}>Holt&apos;s dish. The numbers are the app&apos;s, from these ingredients. Nothing is saved until you do: check the amounts and confirm the allergens.</Text>
               ) : null}
@@ -784,7 +835,7 @@ export default function MyRecipesScreen() {
         <View style={styles.methods}>
           {[
             { id: 'manual', title: 'Type it in', sub: 'Add the ingredients one at a time.', soon: false },
-            { id: 'paste', title: 'Paste a recipe', sub: 'Paste text or a recipe link.', soon: true },
+            { id: 'paste', title: 'Paste a recipe', sub: 'A link to a recipe page, or the recipe’s text.', soon: false },
             ...(scanOn ? [{ id: 'scan', title: 'Add a picture', sub: 'A screenshot or photo of a recipe. You check it before it’s saved.', soon: false }] : []),
           ].map((m, j, all) => (
             <Pressable
@@ -796,6 +847,12 @@ export default function MyRecipesScreen() {
               onPress={() => {
                 if (m.id === 'scan') {
                   void scanRecipe();
+                  return;
+                }
+                if (m.id === 'paste') {
+                  setAddSheet(false);
+                  // iOS drops a sheet presented while another is still closing — wait for the add sheet to go.
+                  void callerModalGone().then(() => setPasteOpen(true));
                   return;
                 }
                 setAddSheet(false);
@@ -813,6 +870,46 @@ export default function MyRecipesScreen() {
               {!m.soon ? <Chevron /> : null}
             </Pressable>
           ))}
+        </View>
+      </BottomSheet>
+
+      {/* paste sheet */}
+      <BottomSheet
+        open={pasteOpen}
+        onClose={() => setPasteOpen(false)}
+        title="Paste a recipe"
+        footer={
+          <Button variant="primary" fullWidth disabled={pasteKind(pasteText) === 'empty'} onPress={() => void readPaste()}>
+            {pasteKind(pasteText) === 'link' ? 'Read the recipe page' : 'Read recipe'}
+          </Button>
+        }
+      >
+        <View style={styles.pasteBody}>
+          <Text style={styles.pasteHint}>
+            A link to a recipe website, or the recipe itself — like a caption you copied. You check everything before it’s saved.
+          </Text>
+          <TextInput
+            value={pasteText}
+            onChangeText={setPasteText}
+            multiline
+            scrollEnabled
+            autoCorrect={false}
+            autoCapitalize="none"
+            placeholder={PASTE_PLACEHOLDER}
+            placeholderTextColor={flColor.gray600}
+            accessibilityLabel="Paste a recipe"
+            style={styles.pasteBox}
+          />
+          <View style={styles.pasteLinks}>
+            <Pressable accessibilityRole="button" hitSlop={6} onPress={() => void pasteFromClipboard()}>
+              <Text style={styles.editLink}>Paste from clipboard</Text>
+            </Pressable>
+            {pasteText ? (
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setPasteText('')}>
+                <Text style={styles.editLink}>Clear</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
       </BottomSheet>
 
@@ -1206,6 +1303,25 @@ const styles = StyleSheet.create({
   methodSub: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
 
   pickBody: { paddingBottom: 12 },
+  pasteBody: { gap: 10, paddingBottom: 8 },
+  pasteHint: { marginTop: -6, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  pasteBox: {
+    minHeight: 150,
+    maxHeight: 260,
+    overflow: 'hidden',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1.5,
+    borderColor: flColor.charcoal500,
+    backgroundColor: flColor.surfaceRecessed,
+    color: flColor.cream100,
+    fontSize: 14.5,
+    lineHeight: 20,
+    textAlignVertical: 'top',
+  },
+  pasteLinks: { flexDirection: 'row', justifyContent: 'space-between' },
   pickPer: { marginTop: -8, fontSize: 13, color: flColor.gray400 },
   pickAsk: { marginTop: 14, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   pickUnits: { flexDirection: 'row', gap: 6, marginTop: 18 },

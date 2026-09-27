@@ -177,8 +177,8 @@ test('the one picker path, library only, after the sheet is gone; the draft is n
     SCREEN,
     /await callerModalGone\(\);\n(?:\s*\/\*[\s\S]*?\*\/\n)?\s*if \(!\(await ensureConsent\('ai_sharing'\)\)\) return;\n\s*const picked = await pickImagesFromLibrary\(1\);/,
   );
-  // The read is its own step (`readPicked`) so a picture picked on the Nutrition tab runs the same one.
-  const scan = SCREEN.slice(at('const readPicked = useCallback', SCREEN), at('const pickForLine', SCREEN));
+  // The draft is its own step (`openDraft`), shared by a picture, a recipe page and pasted text.
+  const scan = SCREEN.slice(at('const openDraft = useCallback', SCREEN), at('const pickForLine', SCREEN));
   assert.ok(!/saveUserRecipe/.test(scan), 'a read opens a draft; only Save saves');
   assert.match(scan, /setOverride\(\{ form: draft\.form \}\);/);
   assert.match(scan, /if \(scanning\.current\) return;/);
