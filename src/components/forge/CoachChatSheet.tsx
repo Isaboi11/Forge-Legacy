@@ -2622,6 +2622,7 @@ export function CoachChatSheet({
                     live={bi === blocks.length - 1}
                     onChip={onChip}
                     handoff={handoff}
+                    kitchen={kitchen}
                   />
                 </TurnEnter>
               );
@@ -3150,6 +3151,7 @@ function HoltTurn({
   live,
   onChip,
   handoff,
+  kitchen,
 }: {
   text: string;
   at?: number;
@@ -3158,12 +3160,14 @@ function HoltTurn({
   live: boolean;
   onChip: (c: Chip) => void;
   handoff: Handoff;
+  /** Kitchen Mode: every reply wears the chef's hat, not just the header (PO 09-27). */
+  kitchen: boolean;
 }) {
   const clock = clockOf(at);
   return (
     <View style={styles.holtRow}>
       <View style={[styles.holtGutter, !live && styles.holtGutterPast]}>
-        <HoltMark size={40} />
+        <HoltMark size={40} kitchen={kitchen} />
         {clock ? <Text style={styles.holtTime} numberOfLines={1}>{clock}</Text> : null}
       </View>
       <View style={styles.holtBody}>
