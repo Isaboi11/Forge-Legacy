@@ -15,7 +15,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
 - **Claude to-do:** build 9 (paywall, mic, form check, barcode) → sandbox purchase test
 - **💻 PO laptop work (from the 09-26 QA fixes; ask Claude to put each on the clipboard):**
   - ✅ `pending-0200.sql` applied 09-27 (squad goals close; 10/10 rows green). First paste stopped on the grant check — revokes from PUBLIC alone left the new functions callable; fixed to also revoke from anon + authenticated, re-pasted clean. Moch 1 closes as **met, silent** (deadline >7 days gone)
-  - ⬜ Re-paste 4 coach functions (stronger food/diet safety stops): coach-ask, coach-interpret, coach-form-check, coach-kitchen
+  - ✅ Re-pasted 4 coach functions 09-27 (stronger food/diet safety stops, `2738fdc4`): coach-ask, coach-interpret, coach-form-check, coach-kitchen
   - ⬜ Turn Premium AI back off for claudetest (one SQL line; Claude has it)
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
