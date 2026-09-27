@@ -907,6 +907,10 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### Android groundwork (2026-09-26 · branch `feat/android` `905e0088`, worktree `C:/Users/isaia/forge-android-wt` · ⛔ NOT merged, NOT built — stays apart until Apple approves iOS)
+
+Label scan on Android (ML Kit module, same line contract as iOS Vision) · Google Play billing path (empty `goog_` key slot → honest "unavailable"; Play free-trial read) · paywall FAQ / renewal note / Terms summary say Google Play on Android, iPhone copy unchanged (tested) · RouteMap draws the traced route on Android until a Maps key is in the binary · Android icon replaced (was Expo's placeholder). Server (`0214`) already accepts Play purchases if the Play product IDs match Apple's. PO steps + everything left: `Docs/Android-Launch-Checklist.md` (on the branch). ⚠ Merging moves app.json + modules/ → `fingerprint:compare` before the next iOS OTA.
+
 ### ⭐ QA fix batch 2 (2026-09-26 · ✅ WEB `index-28df53ca4ee35bc47ba9a60c9e20ac60.js` (alias + deployment MATCH) · ✅ OTA build 9 iOS `01a0e069-5405-721f-9f49-40506b642361` (manifest serves it) from `ota/build9-js` `c0d79e56`, fingerprint MATCHED; carries the other session's Alabaster sweep `96a29515`/`a447dc37` · ⛔ 0200 + 4 coach bundles NOT yet pasted)
 
 Main commits: `64355182` F7 (End workout saves; Discard asks) · `b92fb0b6` F6/F12 (invite join waits for the entitlement read; Send hidden on a preview) · `2331a3a1` R2-F3/F4 (repeat foods log real numbers; drinks pass looksSane) · `cf126173` F4 (M-5 confirm seals; L-6 Skip writes nothing; chapter honors = this chapter's only — ⚠ PO to decide on one-time honors) · `f249713a` F9 (`records-core.ts`, one best/record rule, credited per workout) · `2738fdc4` R2-F6 (medical stops: 21/21 QA phrasings, 0/41 false stops) · `e0fb66f4` R2-F8/F10/F13/F14 (Holt) · `7a0b0596` + `edcc3051` F11 (149 catalogue corrections, 343 coaching records regenerated and **published by the PO**, 735 published) · `6dc45d6d` 0200 re-audited, safe to paste.
