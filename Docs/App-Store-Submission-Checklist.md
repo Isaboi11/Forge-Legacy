@@ -78,14 +78,14 @@ No lifetime plan. United States only at launch.
 - ✅ Description, age rating, reviewer account, support URL
 - ✅ Redo screenshots before submitting — 09-25: PO uploaded the new set
 - ✅ Release set to "Manually release this version" — 09-23
-- ⬜ Regulated medical device declaration (App Information) → **No** (fitness/nutrition, not a medical device) — banner seen 09-27, required for US/UK/EU
-- 🔨 App Privacy labels — answer sheet v1.1 ready 09-26 (`Docs/App-Store-Privacy-Labels.md`, `6b157bba`: Nutrition, AI, purchases, search log) · ✅ entered in App Store Connect, all 13 types match the sheet (checked by Claude in Chrome 09-27) · ⬜ PO confirms they're Published
+- ✅ Regulated medical device declaration → **No**, saved 09-27 (banner gone)
+- ✅ App Privacy labels — answer sheet v1.1 ready 09-26 (`Docs/App-Store-Privacy-Labels.md`, `6b157bba`: Nutrition, AI, purchases, search log) · ✅ entered in App Store Connect, all 13 types match the sheet (checked by Claude in Chrome 09-27) · ✅ Published 09-27
 
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
   route trim, Anthropic gets photos/video frames, missing providers, Terms say "no subscription"; Washington
   My Health My Data Act needs a consent step. ✅ text fixes applied (live 09-26) · ✅ PO: legal review of Terms + Privacy Policy is good — 09-26
-- 🔨 Terms + Privacy links (Apple 3.1.2) · ✅ paywall: beside the buy button's renewal terms + at the foot — 09-27 (not yet on web/OTA) · ⬜ App Store description (Claude in Chrome)
+- ✅ Terms + Privacy links (Apple 3.1.2) · ✅ paywall: beside the buy button's renewal terms + at the foot — 09-27 (not yet on web/OTA) · ✅ App Store description: Terms + Privacy lines added and saved 09-27
 
 ## 5. Nutrition (only if it ships in the first release — PO to decide)
 Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web preview NOT updated with it.
