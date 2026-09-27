@@ -21,7 +21,7 @@ import {
 import { ADJUST_TOUCH_STYLE, useFrameAdjust } from '@/hooks/useFrameAdjust';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { themeGround } from '@/constants/theme-scrim';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 
 /**
  * Compare (Transformation) — built to the Compare overlay of `Forge Transformation.dc.html`. Two entries,
@@ -244,7 +244,7 @@ export default function TransformationCompareRoute() {
           accessibilityLabel="Share this comparison"
           style={styles.shareBtn}
         >
-          <EngravedIcon name="share" size={16} />
+          <EngravedIcon name="share" size={16} color={forgeOr<string | undefined>(undefined, flColor.onBronze)} />
           <Text style={styles.shareText}>Share this comparison</Text>
         </Pressable>
       </ScrollView>
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   elapsedText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
 
   posesHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: 16, paddingBottom: 9, paddingHorizontal: 2 },
-  posesLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  posesLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   posesHint: { fontSize: 10, color: flColor.gray600 },
   poseChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   poseChip: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1 },
@@ -392,8 +392,8 @@ const styles = StyleSheet.create({
   dateChip: { position: 'absolute', top: 8, left: 8, paddingVertical: 3, paddingHorizontal: 8, borderRadius: flRadius.sm, backgroundColor: 'rgba(8,11,14,0.72)', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, maxWidth: '80%' },
   dateChipText: { fontSize: 9.5, fontWeight: '600', color: flColor.bronze300 },
 
-  shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 22, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A' },
-  shareText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
+  shareBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 22, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid) },
+  shareText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
 
   pickerScroll: { maxHeight: 340 },
   pickerRow: { paddingVertical: 14, paddingHorizontal: 4 },

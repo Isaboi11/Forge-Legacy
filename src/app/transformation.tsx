@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
 
   introQ: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 16, lineHeight: 24, color: flColor.bronze300, marginBottom: 6 },
   introThesis: { fontSize: 12.5, lineHeight: 19, color: flColor.gray600, marginBottom: 8 },
-  introSummary: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400, marginBottom: 18 },
+  introSummary: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk, marginBottom: 18 },
 
   remindRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700 },
   remindText: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'baseline', gap: 7 },
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   poseSlotLabel: { fontSize: 8.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray600 },
 
   captionWrap: { flexDirection: 'row', gap: 9, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 22 },
-  captionQuote: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', lineHeight: 18, color: flColor.bronze400 },
+  captionQuote: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', lineHeight: 18, color: flColor.bronzeInk },
   captionText: { flex: 1, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 13.5, lineHeight: 21, color: flColor.gray400, paddingTop: 2 },
 
   /* `marginBottom` because the CTA now has the first chapter heading under it rather than the bottom of

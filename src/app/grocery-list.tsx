@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 32 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 6 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.3, color: flColor.cream100 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
   addWrap: { paddingTop: 16 },
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     borderBottomColor: flColor.charcoal700,
   },
   haveName: { fontSize: 14.5, color: flColor.gray400 },
-  link: { paddingVertical: 12, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  link: { paddingVertical: 12, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   linkQuiet: { paddingVertical: 12, paddingHorizontal: 8, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   footer: {

@@ -19,6 +19,7 @@ import { Pressable, StyleSheet, Text, View, type PressableProps, type StyleProp,
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation'
+import { forgeOr } from '@/constants/theme-scrim'
 
 export interface TabBarProps {
   children?: React.ReactNode
@@ -71,7 +72,9 @@ export function TabBarButton({ label, renderIcon, emphasized = false, isFocused 
             end={flGradient.bronzeFill.end}
             style={[styles.iconWrap, styles.iconWrapEmphasized, { boxShadow: flShadow.glowSubtle }]}
           >
-            {renderIcon(flColor.bronze300)}
+            {/* Forge's lit-bronze glyph; on Alabaster `bronze300` (#BD9257) on the #836A3E fill is 1.81:1 and
+                the book vanished into its tile, so the glyph takes the same ink as every bronze button. */}
+            {renderIcon(forgeOr(flColor.bronze300, flColor.onBronze))}
           </LinearGradient>
         ) : (
           <View style={styles.iconWrap}>{renderIcon(color)}</View>

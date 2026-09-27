@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal700,
     backgroundColor: flColor.charcoal900,
   },
-  sourceTagText: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
+  sourceTagText: { fontSize: 9, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   // post body
   body: { paddingHorizontal: 18, paddingTop: 16 },
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   // comments
   comments: { paddingHorizontal: 18, paddingTop: 16, borderTopWidth: 8, borderTopColor: flColor.charcoal900, marginTop: 8 },
   commentsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   sortTabs: { flexDirection: 'row', gap: 3, padding: 3, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800 },
   sortTab: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600, paddingVertical: 4, paddingHorizontal: 11, borderRadius: flRadius.pill },
   sortTabOn: { color: flColor.cream100, backgroundColor: flColor.charcoal600 },

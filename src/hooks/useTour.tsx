@@ -655,7 +655,7 @@ export function useScreenPrompt(key: ScreenKey): {
 
 const styles = StyleSheet.create({
   viewHonor: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 },
-  viewHonorText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze400 },
+  viewHonorText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronzeInk },
 });
 
 export type { TourLeg };

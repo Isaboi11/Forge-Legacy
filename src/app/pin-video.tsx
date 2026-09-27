@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { flColor, flFont } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Fullscreen player for a video Pinned moment (the 485 deadlift). Opened from the Legacy pinned strip
@@ -47,5 +48,6 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronze400,
     backgroundColor: 'rgba(8,11,14,0.6)',
   },
-  closeText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
+  // On a dark chip over the always-black video viewer: the LIGHTER bronze on Alabaster, not the cream-ground ink.
+  closeText: { color: forgeOr<string>(flColor.bronze400, flColor.bronze300), fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 });

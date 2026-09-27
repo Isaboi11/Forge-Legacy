@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
   blocker: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center' },
   mealLine: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
-  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   saveOnly: { alignSelf: 'center', paddingVertical: 6, fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'center' },
   saveOnlyOff: { opacity: 0.4 },
 

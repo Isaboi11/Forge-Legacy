@@ -581,9 +581,9 @@ const styles = StyleSheet.create({
   emptyBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
 
   // section labels — one token, used everywhere
-  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginHorizontal: 2, marginBottom: 10 },
-  sectionLabelInline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
-  sectionLabelFlex: { flex: 1, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginHorizontal: 2, marginBottom: 10 },
+  sectionLabelInline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabelFlex: { flex: 1, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   chipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   chipOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },

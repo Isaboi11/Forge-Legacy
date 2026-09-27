@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 32 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 28, lineHeight: 32, letterSpacing: -0.3, color: flColor.cream100 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
   missing: { paddingHorizontal: 22 },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: flColor.charcoal700,
   },
-  stepN: { width: 28, fontFamily: flFont.display, fontSize: 20, lineHeight: 24, color: flColor.bronze400 },
+  stepN: { width: 28, fontFamily: flFont.display, fontSize: 20, lineHeight: 24, color: flColor.bronzeInk },
   stepBody: { flex: 1, minWidth: 0, gap: 4 },
   stepTitleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
   stepTitle: { flex: 1, fontSize: 15, fontWeight: '600', lineHeight: 20, color: flColor.cream100 },
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   },
   footerLinks: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   lockLink: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  link: { paddingVertical: 12, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  link: { paddingVertical: 12, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   logWrap: { flex: 1, alignItems: 'flex-end' },
   logWrapFull: { alignItems: 'stretch' },
 });

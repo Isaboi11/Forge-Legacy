@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
   liftTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   liftPerf: { marginTop: 2, fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
   field: { marginTop: 24 },
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   fieldHint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
 
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 9, paddingHorizontal: 6, paddingVertical: 6, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
   stepBtnOff: { opacity: 0.45 },
   dateText: { flex: 1, textAlign: 'center', fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   todayRow: { marginTop: 8, alignSelf: 'flex-start' },
-  todayText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  todayText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },

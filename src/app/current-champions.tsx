@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   },
   tileMine: { borderColor: flColor.bronzeBorder },
   tileHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  tileCategory: { flex: 1, minWidth: 0, fontSize: 9, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', lineHeight: 13, color: flColor.bronze400 },
+  tileCategory: { flex: 1, minWidth: 0, fontSize: 9, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', lineHeight: 13, color: flColor.bronzeInk },
   tileChamp: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   tileNames: { flex: 1, minWidth: 0 },
   tileName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },

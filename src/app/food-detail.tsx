@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
 
   calorieRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, paddingHorizontal: 2, paddingBottom: 22 },
   calorieValue: { fontFamily: flFont.display, fontSize: 56, color: flColor.cream100, letterSpacing: -1, lineHeight: 56 },
-  calorieLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 8 },
+  calorieLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 8 },
   impact: { flex: 1, textAlign: 'right', fontSize: 13, color: flColor.gray400, paddingBottom: 2 },
 
   servingCard: {
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   mealLine: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
-  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   editingLine: { alignSelf: 'center', paddingVertical: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
 
   sheetBody: { gap: 10, paddingBottom: 8 },

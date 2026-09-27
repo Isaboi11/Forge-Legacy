@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   /* v2 §5's content column: eyebrow over text at gap 7, and the same 15px/16px gutter the cards use. */
   bubbleInner: { paddingHorizontal: 15, paddingVertical: 11, gap: 7 },
-  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
+  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
   /* Was 12.5/18 in `gray400` — a caption. The chat sets Holt's live line at 16.5/24 in `cream100`; this
      is that voice stepped down one notch for a floating overlay, not a different one. */
   text: { fontSize: 15, lineHeight: 21.5, color: flColor.cream100 },

@@ -658,12 +658,12 @@ const styles = StyleSheet.create({
   standScoreUnit: { marginTop: 1, fontSize: 9, fontWeight: '600', letterSpacing: 0.9, textTransform: 'uppercase', color: flColor.gray600 },
 
   // recognition
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
-  sectionLabelInline: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabelInline: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
   badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   badgeIcon: { width: 38, height: 38, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   badgeBody: { flex: 1, minWidth: 0, gap: 2 },
-  badgeTitle: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  badgeTitle: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
   badgeWho: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   badgeDetail: { flexShrink: 0, maxWidth: 118, fontSize: 11.5, lineHeight: 16, textAlign: 'right', color: flColor.gray600 },
 

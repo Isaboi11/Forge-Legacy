@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingBottom: 22 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
 
   tabs: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: flRadius.pill, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600 },
@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   gateActions: { gap: 10, paddingTop: 8 },
   gateFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   gateFootText: { fontSize: 12.5, color: flColor.gray600 },
-  linkText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  linkText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   reviewBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
   heightCell: { flex: 1, minWidth: 0 },
 
   activityBlock: { gap: 9 },
-  activityLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  activityLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
   activityList: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
   activityRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingVertical: 9, paddingHorizontal: 16 },
   activityRowOn: { backgroundColor: 'rgba(191,143,79,0.06)' },

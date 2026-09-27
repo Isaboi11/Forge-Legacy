@@ -440,8 +440,8 @@ const styles = StyleSheet.create({
   // The edit target could not be read (or is gone). Never a blank, saveable form — see `canSave`.
   loadErrorTitle: { fontFamily: flFont.display, fontSize: 20, color: flColor.cream100, marginBottom: 8, textAlign: 'center' },
   loadErrorBody: { fontSize: 13, lineHeight: 19, color: flColor.gray400, textAlign: 'center', paddingHorizontal: 34 },
-  loadErrorBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 26, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A' },
-  loadErrorBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
+  loadErrorBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 26, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid) },
+  loadErrorBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
 
   topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   poseCount: { fontSize: 10.5, fontWeight: '600', color: flColor.gray600 },
   reassure: { marginTop: 8, fontSize: 13, lineHeight: 20, color: flColor.gray600 },
 
-  fieldLabel: { marginTop: 18, marginBottom: 8, fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { marginTop: 18, marginBottom: 8, fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   input: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 14, paddingHorizontal: 14, paddingVertical: 12 },
 
   poseGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, rowGap: 22, marginTop: 22 },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   poseLabel: { fontSize: 10, fontWeight: '600', color: flColor.gray400, textAlign: 'center' },
 
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingTop: 28, paddingBottom: 12 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   tagsLabel: { paddingTop: 28, paddingBottom: 4 },
   videoSlot: { width: '100%', height: 132, borderRadius: flRadius.xl, alignItems: 'center', justifyContent: 'center', gap: 8, position: 'relative' },
   videoEmpty: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(186, 134, 84,0.06)', ...DASH },
@@ -484,18 +484,18 @@ const styles = StyleSheet.create({
   tagChipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
   tagChipTextOn: { color: flColor.bronze300 },
   tagChipCustom: { borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: 'transparent' },
-  tagChipCustomText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  tagChipCustomText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   customRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   customInput: { flex: 1, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 13.5, paddingHorizontal: 13, paddingVertical: 10 },
   customAdd: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: flRadius.md, borderWidth: 1 },
-  customAddOn: { borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A' },
+  customAddOn: { borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid) },
   customAddOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   customAddText: { fontSize: 13, fontWeight: '700' },
-  customAddTextOn: { color: flColor.bronze300 },
+  customAddTextOn: { color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
   customAddTextOff: { color: flColor.gray600 },
 
   reflHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 28, paddingBottom: 11 },
-  reflQuote: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', lineHeight: 22, color: flColor.bronze400 },
+  reflQuote: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', lineHeight: 22, color: flColor.bronzeInk },
   reflInput: {
     minHeight: 100,
     borderRadius: flRadius.lg,
@@ -514,10 +514,10 @@ const styles = StyleSheet.create({
 
   saveWrap: { marginTop: 24 },
   saveBtn: { paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, alignItems: 'center' },
-  saveBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
+  saveBtnOn: { borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
   saveBtnOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   saveText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.3 },
-  saveTextOn: { color: flColor.bronze300 },
+  saveTextOn: { color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
   saveTextOff: { color: flColor.gray600 },
   saveHint: { marginTop: 9, textAlign: 'center', fontSize: 9.5, letterSpacing: 0.2, color: flColor.gray600, opacity: 0.75 },
 });

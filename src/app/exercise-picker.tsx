@@ -1127,7 +1127,7 @@ const styles = StyleSheet.create({
 
   catRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 15, paddingHorizontal: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   catRowLabel: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
-  catRowCount: { fontSize: 12, fontWeight: '600', color: flColor.bronze400, fontVariant: ['tabular-nums'] },
+  catRowCount: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk, fontVariant: ['tabular-nums'] },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   rowSel: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
@@ -1222,10 +1222,10 @@ const styles = StyleSheet.create({
   sheetWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' },
   sheetBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(6,9,12,0.62)' },
   sheet: { backgroundColor: flColor.charcoal900, borderTopLeftRadius: flRadius.xl, borderTopRightRadius: flRadius.xl, borderTopWidth: 1, borderColor: flColor.charcoal600, paddingHorizontal: 22, paddingTop: 18, paddingBottom: 24, gap: 14, maxHeight: '84%' },
-  sheetTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  sheetTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   filterScroll: { maxHeight: 380 },
   filterGroup: { marginBottom: 20 },
-  filterGroupLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 11 },
+  filterGroupLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 11 },
   // Sits between the label and its chips, so it is read before the choice rather than after it.
   filterGroupHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, marginTop: -5, marginBottom: 11 },
   filterChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

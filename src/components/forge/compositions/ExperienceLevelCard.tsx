@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
   buttonWrap: { marginTop: 18 },
 
   // suggested face
-  eyebrow: { marginTop: 22, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { marginTop: 22, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   progName: { marginTop: 6, fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.3, lineHeight: 30, color: flColor.cream100 },
   metaLine: { marginTop: 6, fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
   because: { marginTop: 6, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600 },

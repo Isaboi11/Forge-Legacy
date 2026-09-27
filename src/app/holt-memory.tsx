@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   list: { gap: 8 },
   row: {
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
   note: { fontSize: 15, lineHeight: 21, color: flColor.cream100 },
   date: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.gray400 },
   rowActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 20 },
-  edit: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  edit: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   delete: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
   pressed: { opacity: 0.6 },
   editActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },

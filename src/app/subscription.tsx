@@ -1113,7 +1113,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2.4,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginTop: 13,
   },
   tagline: {
@@ -1199,7 +1199,7 @@ const styles = StyleSheet.create({
   planTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   planTitleQuiet: { fontSize: 15 },
   planCadence: { fontSize: 12, color: flColor.gray600, marginTop: 2 },
-  planTrial: { fontSize: 12, fontWeight: '600', color: flColor.bronze400, marginTop: 4 },
+  planTrial: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk, marginTop: 4 },
   planPrice: { alignItems: 'flex-end', gap: 3 },
   priceText: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', color: flColor.cream100 },
   priceTextQuiet: { fontSize: 19 },
@@ -1214,10 +1214,10 @@ const styles = StyleSheet.create({
   },
   saveText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
   emptyPlans: { fontSize: 13, lineHeight: 20, color: flColor.gray400, padding: 16, textAlign: 'center' },
-  emptyRetry: { fontSize: 13, fontWeight: '700', color: flColor.bronze400, textAlign: 'center', paddingBottom: 16 },
+  emptyRetry: { fontSize: 13, fontWeight: '700', color: flColor.bronzeInk, textAlign: 'center', paddingBottom: 16 },
 
   cta: { marginTop: 16 },
-  notice: { fontSize: 12.5, color: flColor.bronze400, textAlign: 'center', marginTop: 10 },
+  notice: { fontSize: 12.5, color: flColor.bronzeInk, textAlign: 'center', marginTop: 10 },
   trialLine: { fontSize: 12.5, color: flColor.gray400, textAlign: 'center', marginTop: 12 },
   fineprint: { fontSize: 10.5, lineHeight: 15, color: flColor.gray600, textAlign: 'center', marginTop: 5, paddingHorizontal: 10 },
   linkRow: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 36 },
@@ -1226,7 +1226,7 @@ const styles = StyleSheet.create({
   seeMore: { alignItems: 'center', marginTop: 22, gap: 4 },
   seeMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch' },
   seeMoreRule: { flex: 1, height: 1, backgroundColor: flColor.bronzeBorderSubtle },
-  seeMoreText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  seeMoreText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
 
   // ── information zone ──
   sectionLabel: {
@@ -1234,7 +1234,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginTop: 26,
     marginBottom: 10,
   },
@@ -1263,7 +1263,7 @@ const styles = StyleSheet.create({
   benefitText: { flex: 1 },
   benefitTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   benefitDetail: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, marginTop: 3 },
-  benefitNote: { fontSize: 12, fontWeight: '600', color: flColor.bronze400, marginTop: 6 },
+  benefitNote: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk, marginTop: 6 },
   allowance: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, paddingHorizontal: 15, paddingBottom: 13 },
 
   upsell: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, padding: 15, borderColor: flColor.bronzeBorder },
@@ -1308,7 +1308,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
     boxShadow: flShadow.card,
   },
-  planCardLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  planCardLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   planCardValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
   planCardLine: { fontSize: 12.5, color: flColor.gray400, marginTop: 5 },
   manage: { marginTop: 22 },

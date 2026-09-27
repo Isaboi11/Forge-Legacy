@@ -179,12 +179,12 @@ const styles = StyleSheet.create({
   macroValue: { fontWeight: '600', color: flColor.cream100 },
 
   gap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
-  gapWho: { fontWeight: '600', color: flColor.bronze400 },
+  gapWho: { fontWeight: '600', color: flColor.bronzeInk },
   ask: { gap: 8, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   askText: { fontSize: 12, color: flColor.gray600 },
   askRow: { flexDirection: 'row', gap: 18 },
   askBtn: { paddingVertical: 4 },
-  askYes: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  askYes: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   askNo: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   track: { height: 4, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden' },

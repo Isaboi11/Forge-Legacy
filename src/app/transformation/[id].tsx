@@ -14,7 +14,7 @@ import { deleteTransformationEntry, fetchTransformationEntries, filledPoses, typ
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Transformation Entry Detail — built to `Forge Transformation Entry Detail.dc.html`, wired to real data.
@@ -381,14 +381,14 @@ const styles = StyleSheet.create({
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   date: { marginTop: 6, fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.3, lineHeight: 32, color: flColor.cream100 },
   captureType: { marginTop: 8, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
-  chapterLabel: { marginTop: 5, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  chapterLabel: { marginTop: 5, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   metaLine: { marginTop: 6, fontSize: 12.5, color: flColor.gray600 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 11 },
   tagPill: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
-  tagPillText: { fontSize: 10.5, fontWeight: '600', color: flColor.bronze400 },
+  tagPillText: { fontSize: 10.5, fontWeight: '600', color: flColor.bronzeInk },
 
   /* The same segmented shape Compare uses for Side by side / Slider, so the two read as one control. */
   layoutToggle: { flexDirection: 'row', gap: 8, marginTop: 22 },
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   viewValue: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
 
   reflSection: { marginTop: 22, paddingTop: 20, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  reflLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
+  reflLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
   reflText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17.5, lineHeight: 28, color: flColor.gray400 },
 
   siblings: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 24, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   sibText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
 
   footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
-  compareBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.card },
+  compareBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.card },
   compareText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.5, color: '#F7F5F1' },
   shareBtn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
 

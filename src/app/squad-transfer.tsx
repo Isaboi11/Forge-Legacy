@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   factIcon: { width: 30, height: 30, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   factText: { flex: 1, minWidth: 0, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   emptyCard: { padding: 18, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },
   emptyText: { fontSize: 13, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
 
@@ -246,10 +246,10 @@ const styles = StyleSheet.create({
 
   commitBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(9,9,9,0.6)') },
   commit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
-  commitOn: { borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
+  commitOn: { borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
   commitOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   commitText: { fontSize: 15, fontWeight: '600' },
-  commitTextOn: { color: flColor.bronze300 },
+  commitTextOn: { color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
   commitTextOff: { color: flColor.gray600 },
 
   confirmBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28, backgroundColor: flColor.overlayDark },
@@ -258,8 +258,8 @@ const styles = StyleSheet.create({
   confirmTitle: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
   confirmBody: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400, textAlign: 'center', marginTop: 11 },
   confirmActions: { gap: 10, marginTop: 22 },
-  confirmPrimary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
-  confirmPrimaryText: { fontSize: 14.5, fontWeight: '600', color: flColor.bronze300 },
+  confirmPrimary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
+  confirmPrimaryText: { fontSize: 14.5, fontWeight: '600', color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
   confirmCancel: { paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center' },
   confirmCancelText: { fontSize: 14.5, fontWeight: '600', color: flColor.gray400 },
 });

@@ -166,7 +166,7 @@ const s = StyleSheet.create({
   tileTextFill: { flex: 0, alignItems: 'center' },
   tileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
   mark: { fontFamily: flFont.display, fontSize: 15, color: flColor.gray600, width: 22, textAlign: 'center' },
-  markOn: { color: flColor.bronze400 },
+  markOn: { color: flColor.bronzeInk },
   tileText: { flex: 1, minWidth: 0, gap: 2 },
   tileTitle: { fontFamily: flFont.sans, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
   tileTitleOn: { color: flColor.cream100 },
@@ -190,7 +190,7 @@ const s = StyleSheet.create({
   hint: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
 
   headingWrap: { gap: 10, paddingBottom: 6 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 30, fontWeight: '600', lineHeight: 31, color: flColor.cream100, letterSpacing: -0.3 },
   body: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 22, color: flColor.gray400 },
 });

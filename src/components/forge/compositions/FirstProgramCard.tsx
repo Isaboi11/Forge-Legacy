@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  eyebrow: { marginTop: 20, fontSize: 11, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
+  eyebrow: { marginTop: 20, fontSize: 11, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk, textAlign: 'center' },
   headline: { marginTop: 11, fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: -0.4, lineHeight: 30, color: flColor.cream100, textAlign: 'center' },
   body: { marginTop: 11, maxWidth: 274, fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, textAlign: 'center' },
 
@@ -155,5 +155,5 @@ const styles = StyleSheet.create({
   dividerText: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.gray600 },
 
   startBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 6, paddingHorizontal: 4 },
-  startText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze400 },
+  startText: { fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronzeInk },
 });

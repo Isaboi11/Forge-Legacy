@@ -25,6 +25,7 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Squad Join Requests — the owner's approval queue. Built to `Squad Join Requests.dc.html`, wired to
@@ -398,7 +399,7 @@ function RequestCard({
               style={({ pressed }) => [styles.approveBtn, pressed ? styles.approvePressed : null, busy ? styles.btnBusy : null]}
             >
               <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={StyleSheet.absoluteFill} />
-              {busy ? <ActivityIndicator color={flColor.bronze300} size="small" /> : <CheckGlyph size={16} color={flColor.bronze300} />}
+              {busy ? <ActivityIndicator color={APPROVE_INK} size="small" /> : <CheckGlyph size={16} color={APPROVE_INK} />}
               <Text style={styles.approveLabel}>Approve</Text>
             </Pressable>
           </View>
@@ -439,6 +440,9 @@ function ShareGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; c
   return <EngravedIcon name="share" size={size} color={engravedTint(color)} />;
 }
 
+/** Ink on the Approve button's bronze fill — Forge's lit bronze; on Alabaster the fill's own white. */
+const APPROVE_INK = forgeOr<string>(flColor.bronze300, flColor.onBronze);
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 40 },
@@ -466,7 +470,7 @@ const styles = StyleSheet.create({
 
   // section
   sectionRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 22, marginBottom: 14, marginHorizontal: 4 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   countBadge: {
     minWidth: 22,
     height: 22,
@@ -494,10 +498,10 @@ const styles = StyleSheet.create({
   ageText: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.gray400 },
 
   // note
-  noteBox: { marginTop: 13, marginHorizontal: 15, paddingHorizontal: 12, paddingVertical: 9, borderRadius: flRadius.md, backgroundColor: 'rgba(255,255,255,0.022)', borderWidth: 1, borderColor: flColor.charcoal700 },
+  noteBox: { marginTop: 13, marginHorizontal: 15, paddingHorizontal: 12, paddingVertical: 9, borderRadius: flRadius.md, backgroundColor: forgeOr<string>('rgba(255,255,255,0.022)', flColor.surfaceRecessed), borderWidth: 1, borderColor: flColor.charcoal700 },
   noteText: { fontSize: 13, lineHeight: 18.85, fontStyle: 'italic', color: flColor.gray400 },
   readMore: { marginTop: 5, alignSelf: 'flex-start' },
-  readMoreText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  readMoreText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
 
   // actions — the design's 1 : 1.7 weighting, so Approve reads as the primary
   actions: { flexDirection: 'row', gap: 10, paddingHorizontal: 15, paddingTop: 14, paddingBottom: 15 },

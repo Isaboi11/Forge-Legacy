@@ -11,7 +11,7 @@
 import React from 'react'
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { flColor, flRadius, flShadow } from '@/constants/foundation'
+import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation'
 
 export type SurfaceVariant = 'card' | 'elevated' | 'recessed' | 'panel' | 'modal'
 export type SurfaceRadius = keyof typeof flRadius
@@ -53,7 +53,10 @@ export function Surface({ variant = 'card', radius = 'lg', bronzeEdge = false, g
       {variant === 'card' && !s.flat ? (
         <LinearGradient
           pointerEvents="none"
-          colors={['#181A1C', flColor.charcoal800]}
+          /* ⚠ THE TOKEN, NOT A LITERAL. This was '#181A1C' → charcoal800, which is Forge's surfaceCard
+             exactly — so the dark side is unchanged — but on Alabaster it painted a near-black top fading
+             into cream: every Nutrition meal card read as a dark block. */
+          {...flGradient.surfaceCard}
           style={[StyleSheet.absoluteFill, { borderRadius: flRadius[radius] }]}
         />
       ) : null}

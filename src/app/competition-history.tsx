@@ -18,7 +18,7 @@ import {
 } from '@/data/challenges-live';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { themeGround } from '@/constants/theme-scrim';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 
 /**
  * Competition History — every competition this athlete has finished, filterable.
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
 
   /* border-TOP, so the first row of each year carries the hairline under its header. */
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  rowPressed: { backgroundColor: 'rgba(255,255,255,0.02)' },
+  rowPressed: { backgroundColor: forgeOr<string>('rgba(255,255,255,0.02)', flColor.hoverWash) },
   markChamp: { width: 34, height: 34, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.round, boxShadow: `${flShadow.glowSubtle}` },
   markPlace: { width: 34, height: 34, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   markPlaceText: { fontFamily: flFont.display, fontSize: 14, fontWeight: '700', color: flColor.gray400 },

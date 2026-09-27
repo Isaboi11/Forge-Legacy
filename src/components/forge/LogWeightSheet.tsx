@@ -121,6 +121,6 @@ const styles = StyleSheet.create({
   well: { borderRadius: flRadius.lg, borderWidth: 1, backgroundColor: flColor.surfaceRecessed, paddingHorizontal: 14 },
   input: { height: 46, fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   addMeasures: { paddingVertical: 4 },
-  addMeasuresText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  addMeasuresText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   measureGrid: { flexDirection: 'row', gap: 10 },
 });

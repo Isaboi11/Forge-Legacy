@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { COMPARE_TOUCH_STYLE, useCompareDrag } from '@/hooks/useCompareDrag';
 import { ADJUST_TOUCH_STYLE, useFrameAdjust, type PhotoFrame } from '@/hooks/useFrameAdjust';
 import { flColor, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Before/After comparison slider — one framed 3:4 image with a draggable divider. The "after" image is the
@@ -157,7 +158,8 @@ const styles = StyleSheet.create({
   chip: { position: 'absolute', top: 8, paddingVertical: 3, paddingHorizontal: 8, borderRadius: flRadius.sm, backgroundColor: 'rgba(8,11,14,0.72)', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, maxWidth: '46%' },
   chipLeft: { left: 8 },
   chipRight: { right: 8 },
-  chipText: { fontSize: 9.5, fontWeight: '600', color: flColor.gray400 },
+  // The chip is dark over a photo in both themes, so its muted ink is fixed on Alabaster (gray400 flips dark).
+  chipText: { fontSize: 9.5, fontWeight: '600', color: forgeOr<string>(flColor.gray400, 'rgba(247,245,241,0.72)') },
   chipTextNow: { color: flColor.bronze300 },
   /* ⚠ `left: 0` IS LOAD-BEARING NOW. Both of these used to be positioned by an inline `left:` recomputed
      every render; they are driven by `translateX` from the UI thread instead, and a transform moves an

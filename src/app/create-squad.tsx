@@ -17,7 +17,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Create Squad — the first squad WRITE path. Built to `Create Squad.dc.html`.
@@ -237,7 +237,7 @@ export default function CreateSquadScreen() {
           <Pressable onPress={onCreate} disabled={!nameOk || busy} accessibilityRole="button" accessibilityState={{ disabled: !nameOk || busy }} accessibilityLabel="Create squad">
             {nameOk ? (
               <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={[styles.commitBtn, styles.commitBtnOn]}>
-                <ForgeGlyph color={flColor.bronze300} />
+                <ForgeGlyph color={forgeOr<string>(flColor.bronze300, flColor.onBronze)} />
                 <Text style={styles.commitLabel}>{busy ? 'Forging…' : 'Create Squad'}</Text>
               </LinearGradient>
             ) : (
@@ -361,13 +361,13 @@ const styles = StyleSheet.create({
   heroCrestSmall: { marginTop: 14, width: 58, height: 58 },
   heroPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
   heroActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 11 },
-  heroLink: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  heroLink: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   heroLinkMuted: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
   heroDot: { fontSize: 11.5, color: flColor.gray600 },
   heroHintTiny: { marginTop: 3, fontSize: 11, letterSpacing: 0.2, color: flColor.gray600 },
 
   // sections + cards
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   card: {
     backgroundColor: flColor.charcoal900,
     borderWidth: 1,
@@ -392,9 +392,9 @@ const styles = StyleSheet.create({
   fieldLabelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   fieldLabelLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
-  reqMark: { fontSize: 12, fontWeight: '700', color: flColor.bronze400, lineHeight: 12 },
+  reqMark: { fontSize: 12, fontWeight: '700', color: flColor.bronzeInk, lineHeight: 12 },
   fieldCount: { fontSize: 11, color: flColor.gray600, fontVariant: ['tabular-nums'] },
-  fieldCountNear: { color: flColor.bronze400 },
+  fieldCountNear: { color: flColor.bronzeInk },
   csInput: {
     backgroundColor: flColor.charcoal900,
     borderWidth: 1,

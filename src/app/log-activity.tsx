@@ -16,7 +16,7 @@ import { useUnits } from '@/lib/settings';
 import { errorMessage } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Log a Run — a lightweight distance-activity logger (Part 1 of auto-tracking goals). Records a run/walk/
@@ -183,7 +183,7 @@ export default function LogActivityScreen() {
           <Pressable onPress={onSave} disabled={!canSave || busy} accessibilityRole="button" accessibilityState={{ disabled: !canSave || busy }} accessibilityLabel="Save activity">
             {canSave ? (
               <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={[styles.commitBtn, styles.commitBtnOn]}>
-                <ForgeGlyph color={flColor.bronze300} />
+                <ForgeGlyph color={forgeOr<string>(flColor.bronze300, flColor.onBronze)} />
                 <Text style={styles.commitLabel}>{busy ? 'Saving…' : 'Log It'}</Text>
               </LinearGradient>
             ) : (
@@ -208,9 +208,9 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 },
 
-  sectionLabel: { marginTop: 22, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 22, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   card: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, padding: 16, gap: 18, boxShadow: flShadow.card },
-  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 9 },
+  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
 
   // activity chips
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

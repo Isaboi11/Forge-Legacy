@@ -148,7 +148,7 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 2 },
   intro: { fontSize: 13, lineHeight: 20, color: flColor.gray400, marginBottom: 14 },
-  count: { color: flColor.bronze400, fontWeight: '700' },
+  count: { color: flColor.bronzeInk, fontWeight: '700' },
 
   list: { maxHeight: 380 },
   listPad: { gap: 8, paddingBottom: 6 },
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
 
   section: { gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 6, paddingBottom: 2, paddingHorizontal: 2 },
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   sectionCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.gray600, fontVariant: ['tabular-nums'] },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },

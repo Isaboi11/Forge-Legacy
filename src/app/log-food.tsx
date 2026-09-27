@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
 
   mealLine: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', marginHorizontal: 20, marginBottom: 4, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
-  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
 
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16 },
   searchField: { flex: 1, minWidth: 0 },
@@ -717,7 +717,7 @@ const styles = StyleSheet.create({
   portionMeta: { flex: 1, fontSize: 12.5, color: flColor.gray600 },
   previewRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingTop: 4 },
   previewKcal: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100 },
-  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   previewMacros: { flex: 1, textAlign: 'right', fontSize: 12.5, color: flColor.gray400 },
   attribution: { fontSize: 11, color: flColor.gray600, letterSpacing: 0.3 },
 });

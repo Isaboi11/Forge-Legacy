@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 14,
   },
   section: { marginBottom: 18 },

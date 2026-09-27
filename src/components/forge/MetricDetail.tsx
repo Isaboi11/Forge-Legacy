@@ -8,7 +8,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { themeGround } from '@/constants/theme-scrim';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 import { changeLabel, currentLabel, monthYear, pointLabel, tickIndices, type MetricSeries } from '@/domain/progress/lift-series';
 import { useUnits } from '@/lib/settings';
 import { unitLabel } from '@/domain/settings/units';
@@ -137,8 +137,8 @@ export function MetricDetail({ metric, onClose }: { metric: MetricSeries; onClos
               {t.label}
             </SvgText>
           ))}
-          {sel != null && coords[sel] ? <Circle cx={coords[sel].x} cy={coords[sel].y} r={4.5} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.4} /> : null}
-          {last ? <Circle cx={last.x} cy={last.y} r={4.6} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.5} /> : null}
+          {sel != null && coords[sel] ? <Circle cx={coords[sel].x} cy={coords[sel].y} r={4.5} fill={flColor.bronze300} stroke={DOT_RING} strokeWidth={1.4} /> : null}
+          {last ? <Circle cx={last.x} cy={last.y} r={4.6} fill={flColor.bronze300} stroke={DOT_RING} strokeWidth={1.5} /> : null}
         </Svg>
         {sel != null && pts[sel] ? (
           <View style={styles.selReadout}>
@@ -218,6 +218,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** The ring that cuts a chart dot out of its line — the card ground it sits on, so it reads in both themes. */
+const DOT_RING = forgeOr<string>('#070707', flColor.charcoal800);
+
 const styles = StyleSheet.create({
   root: { backgroundColor: themeGround('#050505'), zIndex: 70 },
   bar: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 8, paddingBottom: 6 },
@@ -225,7 +228,7 @@ const styles = StyleSheet.create({
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
 
   body: { paddingHorizontal: 22, paddingTop: 8 },
-  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   big: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', letterSpacing: -1, color: flColor.cream100, marginTop: 6 },
   sub: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 2 },
   gain: { fontFamily: flFont.sans, fontSize: 13, color: flColor.bronze300, marginTop: 6 },
@@ -243,7 +246,7 @@ const styles = StyleSheet.create({
   stripUnit: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600, marginTop: 7, textAlign: 'right' },
 
   section: { marginTop: 28 },
-  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
+  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
   mRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   mName: { flex: 1, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   mDate: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },

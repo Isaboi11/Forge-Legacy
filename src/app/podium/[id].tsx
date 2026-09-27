@@ -15,6 +15,7 @@ import { markPodiumSeen } from '@/lib/podium-seen';
 import { svgStop } from '@/lib/svg-color';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Podium Reveal — the coronation. Built to `Forge Podium Reveal.dc.html`.
@@ -114,31 +115,38 @@ const BEATS = {
   afterClimax: { crown: 550, eyebrow: 750, name: 950, cta: 1300, end: 2100 },
 } as const;
 
-/** Gold / silver / bronze TIER, indexed by podium slot — never by place, so ties can't shift the look. */
+/**
+ * Gold / silver / bronze TIER, indexed by podium slot — never by place, so ties can't shift the look.
+ *
+ * ⚠ ALABASTER DRAFT (2026-09-26): every `forgeOr` below keeps Forge's value byte for byte. On cream the
+ * champion's pedestal is struck in the bronze fill with a white numeral (it was a near-black block), silver
+ * and copper trade their glow-on-black lightness for weight (silver `#C7CAD0` measured 1.44:1 on cream),
+ * and the dark insets/drop shadows soften to warm umber. Same metals as the Trophy Case draft.
+ */
 const SLOT = [
   {
     avatar: 78,
     avatarFs: 28,
     ring: flColor.bronze400,
     glow: '0 0 26px rgba(186, 134, 84, 0.5)',
-    medal: flColor.bronze300,
+    medal: forgeOr<string>(flColor.bronze300, flColor.bronze400),
     medalSize: 24,
     name: 15,
     dropDur: 900,
     pedestal: 128,
     pedestalDur: 560,
     pedestalBorder: flColor.bronzeBorder,
-    pedestalFill: ['#3a2c1a', '#241a0f'] as const,
-    pedestalShadow: 'inset 0 1px 0 rgba(186, 134, 84, 0.35), 0 -2px 14px rgba(186, 134, 84, 0.18)',
+    pedestalFill: forgeOr<readonly [string, string, ...string[]]>(['#3a2c1a', '#241a0f'], flGradient.bronzeFill.colors),
+    pedestalShadow: forgeOr('inset 0 1px 0 rgba(186, 134, 84, 0.35), 0 -2px 14px rgba(186, 134, 84, 0.18)', 'inset 0 1px 0 rgba(255,255,255,0.28), 0 -2px 14px rgba(164,122,61,0.22)'),
     numeral: 30,
-    numeralColor: flColor.bronze300,
+    numeralColor: forgeOr<string>(flColor.bronze300, flColor.onBronze),
   },
   {
     avatar: 60,
     avatarFs: 21,
-    ring: 'rgba(190,193,199,0.75)',
-    glow: '0 0 14px rgba(185,188,194,0.18)',
-    medal: '#C7CAD0',
+    ring: forgeOr('rgba(190,193,199,0.75)', '#9AA0A8'),
+    glow: forgeOr('0 0 14px rgba(185,188,194,0.18)', '0 0 14px rgba(95,100,108,0.16)'),
+    medal: forgeOr('#C7CAD0', '#858B94'),
     medalSize: 20,
     name: 13.5,
     dropDur: 640,
@@ -146,16 +154,16 @@ const SLOT = [
     pedestalDur: 520,
     pedestalBorder: flColor.charcoal500,
     pedestalFill: [flColor.charcoal600, flColor.charcoal800] as const,
-    pedestalShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+    pedestalShadow: forgeOr('inset 0 1px 0 rgba(255,255,255,0.06)', 'inset 0 1px 0 rgba(255,255,255,0.9)'),
     numeral: 24,
     numeralColor: flColor.gray400,
   },
   {
     avatar: 56,
     avatarFs: 19,
-    ring: 'rgba(196,140,90,0.7)',
-    glow: '0 0 12px rgba(176,124,78,0.16)',
-    medal: '#B07C4E',
+    ring: forgeOr('rgba(196,140,90,0.7)', 'rgba(138,82,48,0.55)'),
+    glow: forgeOr('0 0 12px rgba(176,124,78,0.16)', '0 0 12px rgba(138,82,48,0.14)'),
+    medal: forgeOr('#B07C4E', '#A86A42'),
     medalSize: 20,
     name: 13,
     dropDur: 640,
@@ -163,18 +171,26 @@ const SLOT = [
     pedestalDur: 520,
     pedestalBorder: flColor.charcoal500,
     pedestalFill: [flColor.charcoal600, flColor.charcoal800] as const,
-    pedestalShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+    pedestalShadow: forgeOr('inset 0 1px 0 rgba(255,255,255,0.05)', 'inset 0 1px 0 rgba(255,255,255,0.9)'),
     numeral: 22,
     numeralColor: flColor.gray600,
   },
 ] as const;
 
 /** The design's three avatar tints, picked per athlete so a podium is never three identical discs. */
-const TINT = [
-  { cx: '42%', cy: '32%', from: '#4a3826', to: '#1c1510' },
-  { cx: '45%', cy: '35%', from: '#34302a', to: '#17130f' },
-  { cx: '40%', cy: '30%', from: '#40301f', to: '#17120c' },
-] as const;
+const TINT = forgeOr<readonly { cx: string; cy: string; from: string; to: string }[]>(
+  [
+    { cx: '42%', cy: '32%', from: '#4a3826', to: '#1c1510' },
+    { cx: '45%', cy: '35%', from: '#34302a', to: '#17130f' },
+    { cx: '40%', cy: '30%', from: '#40301f', to: '#17120c' },
+  ],
+  // Alabaster draft: the same three wells — warm bronze, stone, amber — as lit parchment, not soot.
+  [
+    { cx: '42%', cy: '32%', from: '#F3E9D8', to: '#D9C4A0' },
+    { cx: '45%', cy: '35%', from: '#EFEBE4', to: '#D2CBBF' },
+    { cx: '40%', cy: '30%', from: '#F2E6D3', to: '#D6BE9B' },
+  ],
+);
 
 /** The three embers, verbatim: offset, size, drift, loop length and the delay after the climax. */
 const EMBERS = [
@@ -522,7 +538,7 @@ function Ceremony({ result: r, onDone }: { result: ChallengeResultsDetail; onDon
             style={StyleSheet.absoluteFill}
           />
           <Text style={styles.ctaLabel}>See Full Results</Text>
-          <ArrowGlyph />
+          <ArrowGlyph color={forgeOr<string>(flColor.bronze300, flColor.onBronze)} />
         </Pressable>
       </Animated.View>
 
@@ -788,12 +804,12 @@ const styles = StyleSheet.create({
   grain: { opacity: 0.06, zIndex: 20 },
 
   topBar: { height: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 20, paddingRight: 10, zIndex: 6 },
-  eyebrow: { flexShrink: 1, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { flexShrink: 1, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   skip: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 8, paddingHorizontal: 12 },
   skipText: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
 
   headline: { alignItems: 'center', paddingTop: 6, paddingHorizontal: 24, zIndex: 4 },
-  headEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronze300 },
+  headEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk) },
   engraveClip: { marginTop: 5 },
   headWipe: { position: 'absolute', top: 0, left: 0, bottom: 0, overflow: 'hidden' },
   headMeasure: { opacity: 0 },
@@ -808,8 +824,8 @@ const styles = StyleSheet.create({
     fontSize: 96,
     lineHeight: COUNT_LINE,
     fontWeight: '700',
-    color: flColor.bronze300,
-    textShadowColor: 'rgba(0,0,0,0.7)',
+    color: forgeOr<string>(flColor.bronze300, flColor.bronze400),
+    textShadowColor: forgeOr('rgba(0,0,0,0.7)', 'rgba(70,58,42,0.25)'),
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 20,
   },
@@ -820,21 +836,21 @@ const styles = StyleSheet.create({
   column: { flex: 1, alignItems: 'center' },
 
   athleteBlock: { alignItems: 'center' },
-  crown: { position: 'absolute', top: -30, zIndex: 3, filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.7))' },
+  crown: { position: 'absolute', top: -30, zIndex: 3, filter: forgeOr('drop-shadow(0 2px 5px rgba(0,0,0,0.7))', 'drop-shadow(0 2px 4px rgba(70,58,42,0.35))') },
   /** `translate(-50%,-50%)` on a 170px bloom — its CENTRE sits at the design's `top`, not its edge. */
   flash: { position: 'absolute', top: -55, width: 170, height: 170, borderRadius: flRadius.round, overflow: 'hidden' },
   avatarRow: { flexDirection: 'row', gap: 6 },
   avatarDisc: { flex: 1, borderWidth: 2, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
-  avatarInset: { boxShadow: 'inset 0 1px 5px rgba(0,0,0,0.55)' },
-  avatarInitials: { fontFamily: flFont.display, fontWeight: '700', color: flColor.bronze300 },
+  avatarInset: { boxShadow: forgeOr('inset 0 1px 5px rgba(0,0,0,0.55)', 'inset 0 1px 4px rgba(70,58,42,0.28)') },
+  avatarInitials: { fontFamily: flFont.display, fontWeight: '700', color: forgeOr<string>(flColor.bronze300, flColor.bronzeDark) },
   overflowText: { marginTop: 4, fontSize: 10, color: flColor.gray600 },
   medal: { marginTop: 9 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 7, maxWidth: 108 },
   name: { flexShrink: 1, fontWeight: '500', textAlign: 'center', color: flColor.cream100 },
   nameStrong: { fontWeight: '700' },
-  nameSelf: { color: flColor.bronze300, fontWeight: '700' },
+  nameSelf: { color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk), fontWeight: '700' },
   youPill: { flexGrow: 0, flexShrink: 0, paddingHorizontal: 6, paddingVertical: 1, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  youPillText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
+  youPillText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk) },
   score: { marginTop: 2, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
 
   pedestal: {

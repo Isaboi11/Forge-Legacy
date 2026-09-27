@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 24 },
 
   programCard: { padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  programEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  programEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   programName: { marginTop: 6, fontSize: 20, fontWeight: '700', color: flColor.cream100 },
   programMeta: { marginTop: 4, fontSize: 12, color: flColor.gray400 },
 
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   error: { fontSize: 13, color: '#A97E68' },
 
   section: { marginTop: 24 },
-  sectionLabel: { marginBottom: 10, paddingHorizontal: 2, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginBottom: 10, paddingHorizontal: 2, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.charcoal700 },

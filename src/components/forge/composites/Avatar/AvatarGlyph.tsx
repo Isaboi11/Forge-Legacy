@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     fontWeight: '700',
     letterSpacing: 0.5,
   },

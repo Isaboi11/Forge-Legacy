@@ -129,5 +129,5 @@ const styles = StyleSheet.create({
   action: { minHeight: 44, justifyContent: 'center' },
   pressed: { opacity: 0.7 },
   secondary: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  primary: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  primary: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 });

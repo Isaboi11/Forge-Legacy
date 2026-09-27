@@ -12,7 +12,7 @@ import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { themeGround, themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeGround, themeScrim } from '@/constants/theme-scrim';
 import {
   chipMeta,
   eventLabel,
@@ -97,7 +97,9 @@ import { useQuery } from '@/lib/useQuery';
  * and 3rd-place bronze have no token because the foundation has no such colours; they are named here
  * rather than inlined so the two places each is used cannot drift apart.
  */
-const TIER: Record<TrophyTier, { accent: string; ring: string; emblem: readonly [string, string]; glyph: string; glow: string }> = {
+type TierLook = { accent: string; ring: string; emblem: readonly [string, string]; glyph: string; glow: string };
+
+const TIER_FORGE: Record<TrophyTier, TierLook> = {
   gold: {
     accent: flColor.bronze300,
     ring: flColor.bronze400,
@@ -120,6 +122,22 @@ const TIER: Record<TrophyTier, { accent: string; ring: string; emblem: readonly 
     glow: 'rgba(176,124,78,0.12)',
   },
 };
+
+/*
+ * ⚠ ALABASTER DRAFT (2026-09-26) — the three metals struck for a cream ground. Forge's metals are LIGHT
+ * inks made to glow on black; on cream they vanished (silver `#C7CAD0` measured 1.44:1). Each tier keeps its
+ * hue and trades lightness for weight: text inks clear 4.5:1 on the canvas (gold 4.51 · silver 5.23 ·
+ * copper 5.54), glyphs clear 3:1 as graphics. Gold's crown still sits on the themed metallic disc, in white.
+ */
+const TIER_PAPER: Record<TrophyTier, TierLook> = {
+  gold: { accent: flColor.bronzeInk, ring: flColor.bronze400, emblem: TIER_FORGE.gold.emblem, glyph: flColor.onBronze, glow: 'rgba(164,122,61,0.22)' },
+  silver: { accent: '#5F646C', ring: 'rgba(95,100,108,0.45)', emblem: TIER_FORGE.silver.emblem, glyph: '#858B94', glow: 'rgba(95,100,108,0.10)' },
+  bronze: { accent: '#8A5230', ring: 'rgba(138,82,48,0.45)', emblem: TIER_FORGE.bronze.emblem, glyph: '#A86A42', glow: 'rgba(138,82,48,0.12)' },
+};
+
+const TIER = forgeOr(TIER_FORGE, TIER_PAPER);
+/** The seat of the gold emblem: a deep inset on black, a soft one on cream. */
+const EMBLEM_INSET = forgeOr('inset 0 1px 4px rgba(0,0,0,0.5)', 'inset 0 1px 3px rgba(70,58,42,0.30)');
 
 export default function TrophyCaseScreen() {
   const router = useRouter();
@@ -350,7 +368,7 @@ function TallyCell({ tier, count, label, divided = false }: { tier: TrophyTier; 
   const t = TIER[tier];
   return (
     <View style={[styles.tallyCell, divided ? styles.tallyDivided : null]}>
-      {tier === 'gold' ? <CrownGlyph size={15} color={flColor.bronze300} /> : <MedalGlyph size={16} color={t.glyph} />}
+      {tier === 'gold' ? <CrownGlyph size={15} color={forgeOr<string>(flColor.bronze300, flColor.bronze400)} /> : <MedalGlyph size={16} color={t.glyph} />}
       <Text style={[styles.tallyCount, { color: t.accent }]}>{count}</Text>
       <Text style={styles.tallyLabel}>{label}</Text>
     </View>
@@ -374,7 +392,7 @@ function ChampionTile({ finish: f, onPress }: { finish: TrophyFinish; onPress: (
         pointerEvents="none"
       />
 
-      <View style={[styles.emblem, { borderColor: TIER.gold.ring, boxShadow: `inset 0 1px 4px rgba(0,0,0,0.5), 0 0 12px ${TIER.gold.glow}` }]}>
+      <View style={[styles.emblem, { borderColor: TIER.gold.ring, boxShadow: `${EMBLEM_INSET}, 0 0 12px ${TIER.gold.glow}` }]}>
         <LinearGradient
           colors={flGradient.bronzeMetallic.colors}
           locations={flGradient.bronzeMetallic.locations}
@@ -463,7 +481,7 @@ const styles = StyleSheet.create({
 
   /* Label · engraved rule · value — the rule fills whatever the two ends leave. */
   sublineRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 22, paddingBottom: 15 },
-  sublineLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
+  sublineLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
   sublineRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal700 },
   sublineValue: { fontSize: 10.5, color: flColor.gray600 },
 
@@ -474,7 +492,7 @@ const styles = StyleSheet.create({
   tallyLabel: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
 
   scroll: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 40 },
-  sectionLabel: { paddingHorizontal: 2, paddingBottom: 12, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { paddingHorizontal: 2, paddingBottom: 12, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   sectionLabelGap: { paddingTop: 24 },
 
   /* 1px gaps over a charcoal ground read as engraved hairlines between the cells. */

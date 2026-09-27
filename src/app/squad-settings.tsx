@@ -964,7 +964,7 @@ const styles = StyleSheet.create({
 
   missingTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
   backBtn: { marginTop: 6, paddingVertical: 10, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronze400 },
-  backText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
+  backText: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
 
   // header
   header: { alignItems: 'center', paddingTop: 6 },
@@ -987,7 +987,7 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 15 },
 
   // sections
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   dangerLabel: { marginTop: 44, color: flColor.redMuted },
   stdRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   stdBtn: {
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
   infoFieldDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   infoLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   infoValue: { fontSize: 14, lineHeight: 20, color: flColor.cream100 },
-  infoProgress: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400, marginTop: 2 },
+  infoProgress: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk, marginTop: 2 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 15, paddingVertical: 13 },
   infoRowIcon: { width: 32, height: 32, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   infoRowLabel: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.gray400 },
@@ -1101,12 +1101,12 @@ const styles = StyleSheet.create({
 
   // edit sheet
   sheetBody: { gap: 18 },
-  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 9 },
+  faLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
   editPhotoWrap: { alignItems: 'center', gap: 10 },
   editPhotoDisc: { width: 76, height: 76, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 0 14px rgba(186, 134, 84,0.26)` },
   editPhotoImg: { width: '100%', height: '100%', borderRadius: flRadius.round },
   editPhotoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  editLink: { fontSize: 12, fontWeight: '600', color: flColor.bronze400 },
+  editLink: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
   editLinkMuted: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
   editDot: { fontSize: 12, color: flColor.gray600 },
   sheetFooter: { flexDirection: 'row', gap: 10 },

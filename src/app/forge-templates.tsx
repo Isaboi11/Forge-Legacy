@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   cardOwned: { opacity: 0.62 },
   cardText: { flex: 1, minWidth: 0 },
   cardName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100 },
-  cardMeta: { marginTop: 3, fontSize: 11.5, color: flColor.bronze400 },
+  cardMeta: { marginTop: 3, fontSize: 11.5, color: flColor.bronzeInk },
   cardBlurb: { marginTop: 5, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   cta: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   ctaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300 },

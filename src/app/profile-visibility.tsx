@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   calloutTitle: { fontSize: 13.5, fontWeight: '700', color: flColor.bronze300, marginBottom: 4 },
   calloutBody: { fontSize: 12, lineHeight: 18, color: flColor.gray400 },
 
-  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 11 },
+  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 11 },
 
   card: { padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, marginBottom: 11 },
   secHead: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },

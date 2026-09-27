@@ -288,14 +288,14 @@ const styles = StyleSheet.create({
   },
   chipPressed: { opacity: 0.75 },
   chipLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 14, color: flColor.cream100 },
-  chipOpen: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.bronze400 },
+  chipOpen: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.bronzeInk },
   chipAction: { width: 32, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   sheetBody: { gap: 14 },
   sheetBlurb: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
   recentBlock: { gap: 8 },
-  recentLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronze400 },
+  recentLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronzeInk },
   recentRow: {
     flexDirection: 'row',
     alignItems: 'center',

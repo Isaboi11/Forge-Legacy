@@ -29,6 +29,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 
 import { flColor, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /** The design's barbell mark, 168px at 0.11 opacity — what fills the frame before the clip loads. */
 function BarbellWatermark() {
@@ -131,6 +132,9 @@ export function ExerciseDemo({ url, caption = 'Side view · Full ROM · Normal t
   );
 }
 
+/** Muted ink on the demo stage, which is dark in both themes: Forge's gray400, a fixed muted cream on Alabaster. */
+const STAGE_MUTED = forgeOr<string>(flColor.gray400, 'rgba(247,245,241,0.72)');
+
 const styles = StyleSheet.create({
   wrap: { paddingTop: 6 },
   frame: {
@@ -158,7 +162,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorder,
   },
   badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze300 },
-  badgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
+  badgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: STAGE_MUTED },
   playWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   playCircle: {
     width: 54,
@@ -171,5 +175,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingLeft: 3,
   },
-  caption: { position: 'absolute', bottom: 13, left: 15, fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
+  caption: { position: 'absolute', bottom: 13, left: 15, fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: STAGE_MUTED },
 });

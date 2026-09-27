@@ -170,7 +170,7 @@ export function PickPreview({ pick }: { pick: TransformationPick }) {
 const styles = StyleSheet.create({
   pressed: { opacity: 0.85 },
   stripBlock: { gap: 8 },
-  stripLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  stripLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
   strip: { gap: 9, paddingRight: 4 },
   chip: { width: 76, gap: 5, padding: 5, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   chipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   chipLabelOn: { color: flColor.bronze300, fontWeight: '600' },
 
   preview: { gap: 9, padding: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800 },
-  previewLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.bronze400 },
+  previewLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.bronzeInk },
   pair: { flexDirection: 'row', gap: 3 },
   half: { flex: 1, position: 'relative', overflow: 'hidden', borderRadius: flRadius.sm },
   img: { width: '100%', aspectRatio: 4 / 5, backgroundColor: flColor.charcoal900 },

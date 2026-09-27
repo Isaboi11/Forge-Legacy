@@ -34,6 +34,7 @@ import {
   blockConfirmBody,
 } from '@/domain/moderation/moderation-core';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { themeGround } from '@/constants/theme-scrim';
 
 /**
  * Athlete Profile (`/athlete/[id]`) — the specs' "Limited Athlete Profile", built to
@@ -743,7 +744,7 @@ function FriendsGlyph() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  plate: { backgroundColor: '#000' },
+  plate: { backgroundColor: themeGround('#000') }, // on Alabaster the plate dissolves the art into cream, not mud
   // ── Guideline 1.2 controls (0171) ──
   overflow: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', gap: 3 },
   overflowDot: { width: 3.5, height: 3.5, borderRadius: 2, backgroundColor: flColor.cream100 },
@@ -768,12 +769,12 @@ const styles = StyleSheet.create({
   name: { flexShrink: 1, fontFamily: flFont.display, fontSize: 24, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100 },
   handle: { fontSize: 12, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray600 },
   markerRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 1 },
-  rank: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  rank: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   athleteType: { fontSize: 11.5, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400 },
   dot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: flColor.bronze400 },
   chipRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' },
   chip: { flexShrink: 1, paddingVertical: 2, paddingHorizontal: 7, borderRadius: flRadius.sm, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
-  chipText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  chipText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   chipMore: { fontSize: 10, color: flColor.gray600 },
 
   statsRow: { flexDirection: 'row', marginTop: 26, marginHorizontal: 24, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },

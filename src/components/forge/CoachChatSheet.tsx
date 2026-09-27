@@ -22,7 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { bronzeWash, wash } from '@/constants/washes';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
@@ -2669,7 +2669,7 @@ export function CoachChatSheet({
                   end={flGradient.bronzeFill.end}
                   style={styles.sendOn}
                 >
-                  <StopGlyph color={flColor.bronze300} />
+                  <StopGlyph color={SEND_INK} />
                 </LinearGradient>
               ) : (
                 <View style={styles.sendOff}>
@@ -2693,7 +2693,7 @@ export function CoachChatSheet({
                 end={flGradient.bronzeFill.end}
                 style={styles.sendOn}
               >
-                <SendGlyph color={flColor.bronze300} />
+                <SendGlyph color={SEND_INK} />
               </LinearGradient>
             ) : (
               <View style={styles.sendOff}>
@@ -3246,6 +3246,9 @@ function MenuRow({ label, onPress, divided = false }: { label: string; onPress: 
 function MicGlyph({ color }: { color: string }) {
   return <EngravedIcon name="microphone" size={18} color={color} />;
 }
+
+/** Ink on the bronze send/stop button — Forge's lit bronze; on Alabaster the fill's own white. */
+const SEND_INK = forgeOr<string>(flColor.bronze300, flColor.onBronze);
 
 function StopGlyph({ color }: { color: string }) {
   return <EngravedIcon name="stop" size={14} color={color} />;
@@ -4503,7 +4506,7 @@ const styles = StyleSheet.create({
      here turns the header into a toolbar and the sheet into a screen. */
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
   headerText: { flex: 1, gap: 5 },
-  headerName: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: 1.4, color: flColor.bronze400 },
+  headerName: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: 1.4, color: flColor.bronzeInk },
   headerStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   headerStatus: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.gray600 },
   /* The only green on this surface, and it is a liveness indicator rather than a palette colour. */
@@ -4566,7 +4569,7 @@ const styles = StyleSheet.create({
   },
   homeCardPlain: { backgroundColor: wash(0.028), borderWidth: 1, borderColor: wash(0.07) },
   homeCardPressed: { backgroundColor: bronzeWash(0.08), borderColor: flColor.bronzeBorderSubtle },
-  homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronze400 },
+  homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.bronzeInk },
   homeCardTitle: { fontSize: 13.5, fontWeight: '600', lineHeight: 17.5, color: flColor.cream100 },
   homeCardSub: { fontSize: 11, lineHeight: 15.5, color: flColor.gray600 },
   /* ⚠ `marginTop: auto` is load-bearing — it holds the three arrows on one baseline when the three subs
@@ -4609,11 +4612,11 @@ const styles = StyleSheet.create({
   /* §4 — the conversation begins here, and only once there is one. */
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 18, paddingBottom: 4 },
   dividerRule: { flex: 1, height: 1 },
-  dividerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
+  dividerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
 
   /* ══ THE ATHLETE'S TURN (§5) ══ Eyebrow, bubble, then the time and the ticks. */
   meBlock: { alignItems: 'flex-end', gap: 5 },
-  meEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
+  meEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   meRow: {
     maxWidth: '78%',
     paddingHorizontal: 15,
@@ -4639,7 +4642,7 @@ const styles = StyleSheet.create({
   holtGutterPast: { opacity: 0.7 },
   holtTime: { fontSize: 9, color: flColor.gray600 },
   holtBody: { flex: 1, minWidth: 0, gap: 7 },
-  holtEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
+  holtEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
   holtText: { fontSize: 16.5, lineHeight: 24, color: flColor.cream100 },
   holtTextPast: { fontSize: 15.5, lineHeight: 22.5, color: flColor.gray400 },
   /* ⚠ INSIDE the content column, so the answers align to the question and not to the mark. */
@@ -4778,7 +4781,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     boxShadow: flShadow.trainTogetherCard,
   },
-  buildLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
+  buildLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   buildSteps: { gap: 11 },
   buildStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   buildIcon: { width: 14, height: 14, alignItems: 'center', justifyContent: 'center' },
@@ -4794,7 +4797,7 @@ const styles = StyleSheet.create({
   errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: flColor.dangerText },
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
-  kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
+  kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 2 },
   reasoning: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
 
@@ -4807,7 +4810,7 @@ const styles = StyleSheet.create({
   markerList: {},
   markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
   markerRowPressed: { backgroundColor: bronzeWash(0.06) },
-  marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
+  marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
   markerText: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.cream100 },
   /* The sessions inside a week. Indented to the marker column so they read as belonging to the row
      above rather than as more weeks, and recessed so an open week is visibly a drawer. */
@@ -4935,7 +4938,7 @@ const styles = StyleSheet.create({
     borderTopColor: flColor.charcoal500,
   },
   pickAltLabel: { flex: 1, fontSize: 12.5, color: flColor.gray600 },
-  pickAltName: { color: flColor.bronze400 },
+  pickAltName: { color: flColor.bronzeInk },
 
   refusalCard: {
     borderRadius: flRadius.xl,
@@ -5036,13 +5039,13 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderBottomColor: flColor.bronzeBorderSubtle,
   },
-  draftBannerText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronze400 },
+  draftBannerText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   cardTitle: { fontFamily: flFont.display, fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: 0.4, color: flColor.cream100 },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 10 },
   // Three across, so six stats form two clean rows and a dropped cell reflows rather than leaving a hole.
   stat: { width: '31%', gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100 },
-  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.bronze400 },
+  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.bronzeInk },
   ribbonWrap: { gap: 7 },
   ribbon: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 46 },
   bar: { flex: 1, borderRadius: 1, backgroundColor: flColor.bronze600 },

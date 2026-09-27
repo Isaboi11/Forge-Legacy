@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 40 },
   lede: { marginBottom: 22, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   fieldGap: { marginTop: 26 },
   fieldHint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
 

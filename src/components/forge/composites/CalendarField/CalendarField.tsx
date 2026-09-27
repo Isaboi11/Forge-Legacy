@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.9 },
   fieldText: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   fieldPlaceholder: { fontWeight: '500', color: flColor.gray600 },
-  chevron: { fontSize: 12, color: flColor.bronze400 },
+  chevron: { fontSize: 12, color: flColor.bronzeInk },
 
   glyph: { width: 16, height: 16, borderRadius: 3, borderWidth: 1.4, borderColor: flColor.bronze400, justifyContent: 'flex-start' },
   glyphTop: { height: 3.4, backgroundColor: flColor.bronze400, borderTopLeftRadius: 1, borderTopRightRadius: 1 },

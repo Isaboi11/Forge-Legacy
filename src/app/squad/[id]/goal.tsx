@@ -8,6 +8,7 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution, type PastGoal } from '@/data/squad-live';
@@ -578,7 +579,7 @@ const styles = StyleSheet.create({
 
   hero: { marginHorizontal: -16, paddingHorizontal: 18, paddingTop: 20, paddingBottom: 24, position: 'relative' },
   heroKicker: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  kickerText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  kickerText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   goalTitle: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', color: flColor.cream100, lineHeight: 32, marginTop: 12 },
   figures: { flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 20 },
   done: { fontFamily: flFont.display, fontSize: 46, fontWeight: '700', letterSpacing: -1.2, color: flColor.cream100, lineHeight: 46 },
@@ -594,11 +595,11 @@ const styles = StyleSheet.create({
   paceCell: { flex: 1, alignItems: 'center', gap: 8, paddingVertical: 17, paddingHorizontal: 6 },
   paceCellDiv: { borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
   paceValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '700', color: flColor.cream100, textAlign: 'center' },
-  paceLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center', lineHeight: 13 },
+  paceLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk, textAlign: 'center', lineHeight: 13 },
   paceNote: { fontSize: 12.5, lineHeight: 19, color: flColor.gray400, marginTop: 14, marginHorizontal: 2 },
 
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   sectionMeta: { fontSize: 11.5, color: flColor.gray600 },
 
   contribCard: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, paddingHorizontal: 16 },
@@ -622,7 +623,7 @@ const styles = StyleSheet.create({
   barNum: { fontSize: 10.5, fontWeight: '600', color: flColor.gray600 },
   barNumOn: { color: flColor.bronze300 },
   weekBar: { width: '100%', borderTopLeftRadius: 3, borderTopRightRadius: 3 },
-  weekBarOff: { backgroundColor: '#3A342C' },
+  weekBarOff: { backgroundColor: forgeOr<string>('#3A342C', flColor.charcoal600) },
   barLabels: { flexDirection: 'row', gap: 8, marginTop: 9, paddingTop: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   barLabel: { flex: 1, textAlign: 'center', fontSize: 9.5, letterSpacing: 0.4, color: flColor.gray600 },
 
@@ -655,7 +656,7 @@ const styles = StyleSheet.create({
   ownerNote: { fontSize: 12, color: flColor.gray400, marginTop: 12 },
 
   closeCard: { marginTop: 26, paddingVertical: 17, paddingHorizontal: 18, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card, overflow: 'hidden' },
-  closeLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  closeLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
   closeTitle: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100, lineHeight: 21, marginTop: 7 },
   closeBody: { fontSize: 12.5, lineHeight: 19, color: flColor.gray400, marginTop: 8 },
 });

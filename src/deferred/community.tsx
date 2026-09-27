@@ -1152,7 +1152,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 12,
     paddingHorizontal: 4,
   },
@@ -1199,7 +1199,7 @@ const styles = StyleSheet.create({
   roleBadgeMod: { borderColor: flColor.bronzeBorderSubtle, backgroundColor: 'rgba(186, 134, 84,0.08)' },
   roleBadgeText: { fontSize: 9.5, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase' },
   roleTextOwner: { color: flColor.bronze300 },
-  roleTextMod: { color: flColor.bronze400 },
+  roleTextMod: { color: flColor.bronzeInk },
 
   // engagement
   engageRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 12 },
@@ -1232,7 +1232,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   pinnedBody: { padding: 15 },
 
@@ -1306,7 +1306,7 @@ const styles = StyleSheet.create({
   contribNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   contribName: { flexShrink: 1, fontSize: 14, color: flColor.cream100 },
   distinctionRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  distinctionText: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze400 },
+  distinctionText: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronzeInk },
   contribRespect: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   contribRespectText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
   leaderboardBtn: {
@@ -1422,14 +1422,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     textTransform: 'uppercase',
     textAlign: 'center',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   aboutEyebrow: {
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginTop: 22,
     marginBottom: 12,
     paddingHorizontal: 4,

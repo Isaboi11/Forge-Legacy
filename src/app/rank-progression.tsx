@@ -7,7 +7,7 @@ import { RankSeal } from '@/components/forge/RankSeal';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { themeGround } from '@/constants/theme-scrim';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { rankIdentity } from '@/domain/rank/identity';
@@ -248,7 +248,7 @@ function BadgeTile({
 }
 
 const styles = StyleSheet.create({
-  std: { marginTop: 18, borderTopWidth: 1, borderTopColor: '#1B1510', paddingTop: 16, gap: 13 },
+  std: { marginTop: 18, borderTopWidth: 1, borderTopColor: forgeOr<string>('#1B1510', flColor.charcoal700), paddingTop: 16, gap: 13 },
   stdHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   stdTitle: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: '#7A5E38' },
   stdEarned: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.greenMuted },
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   reqLabelMet: { color: flColor.cream100 },
   reqCount: { fontFamily: flFont.sans, fontSize: 12, color: '#8A7F70', fontVariant: ['tabular-nums'] },
   reqCountMet: { color: flColor.bronze300 },
-  reqTrack: { height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden' },
+  reqTrack: { height: 3, borderRadius: 2, backgroundColor: flColor.progressTrack, overflow: 'hidden' },
   reqFill: { height: 3, backgroundColor: flColor.bronze400 },
   reqFillMet: { backgroundColor: flColor.greenMuted },
   reqDetail: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: '#6A6154' },
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   mastSub: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: '#B08A55', textAlign: 'center', marginTop: 14 },
 
   rankRow: { marginTop: 26, paddingTop: 24 },
-  rankRowBorder: { borderTopWidth: 1, borderTopColor: '#201811' },
+  rankRowBorder: { borderTopWidth: 1, borderTopColor: forgeOr<string>('#201811', flColor.charcoal700) },
   rankHead: { marginBottom: 16 },
   rankIndex: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2.6, color: '#7A5E38' },
   rankName: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: 0.5, color: flColor.bronze300, marginTop: 8 },

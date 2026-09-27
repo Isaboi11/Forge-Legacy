@@ -11,6 +11,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { themeScrim } from '@/constants/theme-scrim';
 import { localToday, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
 import {
   canEditPortion,
@@ -335,7 +336,8 @@ export default function MealDetailScreen() {
       {/* the pair under the fade */}
       <View style={styles.footer} pointerEvents="box-none">
         <LinearGradient
-          colors={['rgba(10,10,12,0)', 'rgba(10,10,12,0.92)', 'rgba(10,10,12,0.98)']}
+          /* themeScrim: no media under this fade, so on Alabaster it must fade to cream, not a black band. */
+          colors={[themeScrim('rgba(10,10,12,0)'), themeScrim('rgba(10,10,12,0.92)'), themeScrim('rgba(10,10,12,0.98)')]}
           locations={[0, 0.26, 1]}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
@@ -664,7 +666,7 @@ const styles = StyleSheet.create({
   moreButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingBottom: 22 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   mealName: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
 
   totalsRow: {
@@ -676,7 +678,7 @@ const styles = StyleSheet.create({
     paddingBottom: 26,
   },
   totalCal: { fontFamily: flFont.display, fontSize: 48, color: flColor.cream100, letterSpacing: -0.8, lineHeight: 48 },
-  totalCalLabel: { marginTop: 8, fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  totalCalLabel: { marginTop: 8, fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   totalsMacros: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingBottom: 1 },
   totalMacro: { alignItems: 'flex-end', gap: 5 },
   totalMacroValue: { fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
@@ -720,7 +722,7 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: 8, paddingTop: 36, paddingHorizontal: 24 },
   emptyTitle: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100, textAlign: 'center' },
   emptyMessage: { fontSize: 13.5, lineHeight: 20, color: flColor.gray600, textAlign: 'center' },
-  emptyAction: { paddingTop: 6, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze400 },
+  emptyAction: { paddingTop: 6, fontSize: 12.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronzeInk },
 
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0 },
   footerRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, paddingTop: 16, paddingBottom: SCREEN_BOTTOM_GAP },

@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     fontSize: 19,
     lineHeight: 28,
     fontWeight: '500',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     letterSpacing: -0.2,
     textAlign: 'center',
   },

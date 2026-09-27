@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 18 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   titleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
   range: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
     borderTopColor: flColor.charcoal700,
   },
   shortText: { fontSize: 13, color: flColor.gray400 },
-  shortLink: { paddingVertical: 10, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  shortLink: { paddingVertical: 10, paddingHorizontal: 2, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   footer: {
     gap: 6,
@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
   },
   footerLinks: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   budgetLine: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400, paddingBottom: 4 },
-  linkBronze: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  linkBronze: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   linkQuiet: { paddingVertical: 10, paddingHorizontal: 4, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   sheetBody: { paddingBottom: 12 },

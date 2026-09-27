@@ -1714,7 +1714,8 @@ function TrashIcon() {
 }
 
 function PlusGlyph({ size = 14 }: { size?: number }) {
-  return <EngravedIcon name="plus" size={size} color={flColor.bronze300} />;
+  // Only drawn on the New Post pill's bronze fill, so on Alabaster it takes the fill's ink.
+  return <EngravedIcon name="plus" size={size} color={forgeOr<string>(flColor.bronze300, flColor.onBronze)} />;
 }
 function ChevronDownGlyph() {
   return <EngravedIcon name="chevron-down" size={14} color={flColor.gray400} />;
@@ -1729,7 +1730,7 @@ function VideoPlusGlyph() {
   return <EngravedIcon name="video" size={22} />;
 }
 function CloseX({ size = 22 }: { size?: number }) {
-  return <EngravedIcon name="close" size={size} color={flColor.cream100} />;
+  return <EngravedIcon name="close" size={size} color={flColor.onMedia} />; // on the always-dark video viewer
 }
 const styles = StyleSheet.create({
   root: { flex: 1 },
@@ -1740,7 +1741,7 @@ const styles = StyleSheet.create({
   missingTitle: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
   missingBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   backBtn: { marginTop: 12, paddingVertical: 10, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronze400 },
-  backText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
+  backText: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
 
   // hero
   hero: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8 },
@@ -1781,7 +1782,7 @@ const styles = StyleSheet.create({
 
   // current goal
   goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
   goalTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, color: flColor.cream100, marginBottom: 14 },
   progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   progressFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
@@ -1805,7 +1806,7 @@ const styles = StyleSheet.create({
   // edit goal sheet
   goalSheetBody: { gap: 16 },
   goalSheetSub: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
-  goalFieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 9 },
+  goalFieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
   goalChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   goalSubChips: { marginTop: 8 },
   goalChip: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
@@ -1817,7 +1818,7 @@ const styles = StyleSheet.create({
   goalDateCol: { flex: 1, minWidth: 0 },
   goalDateErr: { fontSize: 12, color: flColor.redMuted },
   goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600 },
-  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   goalPressed: { opacity: 0.82 },
   // A closed goal's bar keeps its length and loses the bronze — bronze on this screen means "still going".
   progressFillClosed: { backgroundColor: flColor.gray600, boxShadow: undefined },
@@ -1933,13 +1934,13 @@ const styles = StyleSheet.create({
   /* `paddingTop` is supplied by the component from `insets.top` — see the note on `CheckinViewer`. */
   viewerTop: { position: 'absolute', top: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, paddingBottom: 16, paddingHorizontal: 18 },
   viewerWho: { flex: 1, minWidth: 0 },
-  viewerName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
+  viewerName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.onMedia },
   viewerTime: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
   /* ⚠ ITS OWN GROUND, NOT A TINT. `rgba(255,255,255,0.12)` over video is whatever the video is; this is
      opaque enough to read on a white gym wall and bronze-edged so it belongs to the app. */
   viewerClose: { flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(12,10,8,0.92)' },
   viewerClosePressed: { opacity: 0.7 },
-  viewerCloseText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.cream100 },
+  viewerCloseText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.onMedia },
   viewerBottom: { position: 'absolute', left: 0, right: 0, bottom: 0, alignItems: 'center', paddingHorizontal: 20 },
   viewerReplace: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(23,16,9,0.85)' },
   viewerReplaceText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
@@ -1947,23 +1948,23 @@ const styles = StyleSheet.create({
   // squad feed
   feedSection: { paddingHorizontal: 20, marginTop: 10 },
   feedHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
-  feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
   viewAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronze400 },
+  viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronzeInk },
   compCard: { position: 'relative', overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
   compTop: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   compEmblem: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.glowSubtle },
   compIdentity: { flex: 1, minWidth: 0, gap: 4 },
-  compEyebrow: { fontSize: 9, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  compEyebrow: { fontSize: 9, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
   compName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   compStat: { flexShrink: 0, alignItems: 'center', gap: 2, paddingLeft: 13, borderLeftWidth: 1, borderLeftColor: flColor.charcoal600 },
   compStatLabel: { fontSize: 8, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
   compRank: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300 },
   compScore: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100 },
-  compFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingHorizontal: 15, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle, backgroundColor: 'rgba(0,0,0,0.18)' },
+  compFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingHorizontal: 15, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle, backgroundColor: forgeOr<string>('rgba(0,0,0,0.18)', flColor.surfaceRecessed) },
   compGap: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   compEnds: { flexShrink: 0, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
   hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   ackRow: {
@@ -1981,11 +1982,11 @@ const styles = StyleSheet.create({
   ackRowPressed: { opacity: 0.75 },
   ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   ackRowTextOn: { color: flColor.bronze300 },
-  ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   hallCrest: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md },
-  newPostBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.glowSubtle },
-  newPostText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3, color: flColor.bronze300 },
+  newPostBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
+  newPostText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.3, color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
   /* No gap. Posts are separated by the hairline each one carries at its foot — a gap on top of that
      would put a gutter between rows and the ledger would read as cards again. */
   feedList: { gap: 0 },
@@ -2004,7 +2005,7 @@ const styles = StyleSheet.create({
   weeklyLine: { marginTop: 4, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
   weeklyFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 11 },
   weeklyTime: { fontSize: 11.5, color: flColor.gray600 },
-  weeklyMore: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  weeklyMore: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
 
   feedCard: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: `${flShadow.borderInset}, ${flShadow.card}`, padding: 15 },
   feedCardRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
@@ -2021,9 +2022,9 @@ const styles = StyleSheet.create({
   feedMediaThumb: { flex: 1, minWidth: 0, height: 118, borderRadius: flRadius.md, backgroundColor: flColor.charcoal900 },
   feedMediaMoreWrap: { flex: 1, minWidth: 0, position: 'relative' },
   feedMediaMore: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(6,7,8,0.62)' },
-  feedMediaMoreText: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
+  feedMediaMoreText: { fontSize: 15, fontWeight: '700', color: flColor.onMedia }, // over a dimmed photo
   feedVideoTile: { height: 96, borderRadius: flRadius.md, marginTop: 10, backgroundColor: forgeOr('#171009', flColor.surfaceRecessed), borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center' },
-  feedPlayDisc: { width: 40, height: 40, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderWidth: 1, borderColor: flColor.bronzeBorder },
+  feedPlayDisc: { width: 40, height: 40, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: forgeOr<string>('rgba(0,0,0,0.4)', flColor.bronzeTint), borderWidth: 1, borderColor: flColor.bronzeBorder },
   feedActions: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 11 },
   feedAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   feedActionText: { fontSize: 12.5, color: flColor.gray600 },
@@ -2046,7 +2047,7 @@ const styles = StyleSheet.create({
   // members page
   membersScroll: { paddingHorizontal: 16, paddingTop: 4, paddingBottom: 40 },
   membersHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginHorizontal: 4, marginBottom: 12 },
-  membersSquad: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  membersSquad: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   membersCount: { fontSize: 11.5, color: flColor.gray600 },
   membersHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, textAlign: 'center', marginTop: 14, paddingHorizontal: 20 },
   membersCard: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, paddingHorizontal: 16, boxShadow: flShadow.card },

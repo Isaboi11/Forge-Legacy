@@ -1434,7 +1434,7 @@ const styles = StyleSheet.create({
   cue: { marginTop: 8, paddingHorizontal: 10, paddingVertical: 3.5, borderRadius: 999, borderWidth: 1 },
   cueOn: { borderColor: 'rgba(122,155,110,0.5)', backgroundColor: 'rgba(122,155,110,0.14)' },
   cueOff: { borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(191,143,79,0.1)' },
-  cueText: { fontFamily: flFont.sans, fontSize: 9.5, letterSpacing: 1.3, color: flColor.bronze400 },
+  cueText: { fontFamily: flFont.sans, fontSize: 9.5, letterSpacing: 1.3, color: flColor.bronzeInk },
   cueTextOn: { color: flColor.greenMuted },
   /* The distance goal, along the foot of the band. */
   goalTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 3, backgroundColor: flColor.progressTrack },
@@ -1474,7 +1474,7 @@ const styles = StyleSheet.create({
   liveDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: flColor.greenMuted },
   bandCaption: { position: 'absolute', bottom: 11, right: 14, fontSize: 11, fontWeight: '600', letterSpacing: 0.2, color: flColor.gray400 },
   bandLabel: { position: 'absolute', top: 11, left: 14, flexDirection: 'row', alignItems: 'center', gap: 6 },
-  bandLabelText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: flColor.bronze400 },
+  bandLabelText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, color: flColor.bronzeInk },
   loggedBadge: { position: 'absolute', top: 10, right: 12, flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 4, paddingHorizontal: 9, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(90,158,104,0.34)', backgroundColor: 'rgba(90,158,104,0.12)' },
   loggedBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1, color: flColor.greenMuted },
 
@@ -1495,7 +1495,7 @@ const styles = StyleSheet.create({
   stripCell: { flex: 1, minWidth: 0, gap: 3, paddingHorizontal: 12, borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   stripCellFirst: { paddingLeft: 0, borderLeftWidth: 0 },
   stripLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 1.2, color: flColor.gray600 },
-  stripLabelAccent: { fontWeight: '700', color: flColor.bronze400 },
+  stripLabelAccent: { fontWeight: '700', color: flColor.bronzeInk },
   stripValue: { fontFamily: flFont.display, fontSize: 16, lineHeight: 18, fontWeight: '600', color: flColor.cream100 },
   stripValueBig: { fontSize: 20, lineHeight: 23 },
   stripValueAccent: { color: flColor.bronze300 },
@@ -1507,7 +1507,7 @@ const styles = StyleSheet.create({
   fieldText: { gap: 2, minWidth: 0 },
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, color: flColor.gray600 },
-  fieldHint: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronze400 },
+  fieldHint: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronzeInk },
   fieldValue: { fontFamily: flFont.display, fontSize: 22, lineHeight: 24, fontWeight: '600', color: flColor.cream100 },
   /* A dotted rule under a typeable value — enough to read as an editable field, quiet enough that the
      value is still the thing you see. Same weight the set table uses for its editable cells. */
@@ -1526,7 +1526,7 @@ const styles = StyleSheet.create({
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
   stepGlyph: { fontSize: 22, lineHeight: 26, color: flColor.bronze300 },
   computed: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 2 },
-  computedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronze400 },
+  computedLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, color: flColor.bronzeInk },
   computedValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.bronze300 },
   formActions: { flexDirection: 'row', gap: 9 },
   half: { flex: 1 },

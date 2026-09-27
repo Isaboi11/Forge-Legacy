@@ -492,20 +492,25 @@ function MealCard({
 
   return (
     <Surface variant="card" radius="lg" onPress={onPress} style={styles.mealCard}>
-      <View style={styles.mealThumb}>
-        <EngravedIcon name="bowl" size={22} />
-      </View>
-      <View style={styles.mealBody}>
-        <Text style={styles.mealEyebrow}>{group.label}</Text>
-        <Text style={styles.mealName} numberOfLines={1}>
-          {mealTitle(group)}
-        </Text>
-        <Text style={styles.mealSummary} numberOfLines={1}>
-          {group.summary}
-        </Text>
-      </View>
-      <View style={styles.mealRight}>
-        <Text style={styles.mealKcal}>{group.kcal}</Text>
+      {/* ⚠ The row lives HERE, not on the Surface's style. Surface wraps its children in a content layer,
+          so a flexDirection handed to the Surface lays out that one layer — the thumb, text and kcal then
+          stacked in a column instead of sitting in a row. */}
+      <View style={styles.mealRow}>
+        <View style={styles.mealThumb}>
+          <EngravedIcon name="bowl" size={22} />
+        </View>
+        <View style={styles.mealBody}>
+          <Text style={styles.mealEyebrow}>{group.label}</Text>
+          <Text style={styles.mealName} numberOfLines={1}>
+            {mealTitle(group)}
+          </Text>
+          <Text style={styles.mealSummary} numberOfLines={1}>
+            {group.summary}
+          </Text>
+        </View>
+        <View style={styles.mealRight}>
+          <Text style={styles.mealKcal}>{group.kcal}</Text>
+        </View>
       </View>
     </Surface>
   );
@@ -545,7 +550,7 @@ const styles = StyleSheet.create({
   dayName: { fontFamily: flFont.display, fontSize: 23, color: flColor.cream100, letterSpacing: -0.2, lineHeight: 26 },
   dayDate: { fontSize: 12, fontWeight: '500', letterSpacing: 1.4, color: flColor.gray600, marginTop: 2 },
   detailsLink: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 6 },
-  detailsText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  detailsText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
 
   heroWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 6, paddingBottom: 4 },
   heroGlow: {
@@ -558,9 +563,9 @@ const styles = StyleSheet.create({
   },
   heroCentre: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 4 },
   heroValue: { fontFamily: flFont.display, fontSize: 52, color: flColor.cream100, letterSpacing: -1, lineHeight: 54 },
-  heroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  heroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   heroCaption: { fontSize: 13, color: flColor.gray400 },
-  heroSetTarget: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  heroSetTarget: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   macroRow: { flexDirection: 'row', gap: 8, paddingTop: 16, paddingBottom: 22 },
   macro: { flex: 1, alignItems: 'center', gap: 9 },
@@ -592,7 +597,8 @@ const styles = StyleSheet.create({
   mealsTotal: { fontSize: 11, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
 
   mealList: { gap: 10 },
-  mealCard: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 12, paddingHorizontal: 14, boxShadow: flShadow.cardSoft },
+  mealCard: { paddingVertical: 12, paddingHorizontal: 14, boxShadow: flShadow.cardSoft },
+  mealRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   mealThumb: {
     width: 52,
     height: 52,
@@ -604,7 +610,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mealBody: { flex: 1, minWidth: 0, gap: 3 },
-  mealEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronze400 },
+  mealEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk },
   mealName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   mealSummary: { fontSize: 12.5, color: flColor.gray600 },
   mealRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -623,5 +629,5 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
   emptyEyebrow: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.gray600 },
   emptyText: { fontSize: 14, color: flColor.gray400 },
-  copyLink: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronze400 },
+  copyLink: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronzeInk },
 });

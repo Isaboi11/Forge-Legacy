@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   // ── eyebrow (§4)
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 14, width: '100%', maxWidth: 300 },
   rule: { flex: 1, height: 1 },
-  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 4.6, color: flColor.bronze400 },
+  eyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 4.6, color: flColor.bronzeInk },
 
   // ── title (§5). `width: '100%'` is required — see the note at the call site.
   title: {

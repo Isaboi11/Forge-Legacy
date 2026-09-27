@@ -1575,7 +1575,7 @@ const styles = StyleSheet.create({
     fontFamily: flFont.display,
     fontSize: 16,
     lineHeight: 22,
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   holtBandChevron: {
     flexShrink: 0,
@@ -1589,7 +1589,7 @@ const styles = StyleSheet.create({
   },
   /* Lifted from gray600 — a real exit that some athletes genuinely want should be readable, not a
      watermark. Named plainly too: "library" is a word this app has never taught anybody. */
-  pathQuietText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronze400 },
+  pathQuietText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronzeInk },
   root: {
     flex: 1,
   },

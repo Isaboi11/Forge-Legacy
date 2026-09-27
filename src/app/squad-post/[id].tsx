@@ -809,7 +809,7 @@ function CommentGlyph() {
   return <EngravedIcon name="chat" size={16} color={flColor.gray400} />;
 }
 function SendIcon({ active }: { active: boolean }) {
-  return <EngravedIcon name="send" size={19} color={active ? flColor.bronze300 : flColor.gray600} />;
+  return <EngravedIcon name="send" size={19} color={active ? forgeOr<string>(flColor.bronze300, flColor.onBronze) : flColor.gray600} />;
 }
 
 /** The Report affordance in the app bar. A flag reads as "report" without a label at this size. */
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
   },
   achValue: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', lineHeight: 46, color: flColor.bronze300, textShadowColor: 'rgba(186, 134, 84,0.45)', textShadowOffset: { width: 0, height: 3 }, textShadowRadius: 18 },
   achExercise: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  achLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronze400 },
+  achLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronzeInk },
 
   bodyText: { fontSize: 15.5, lineHeight: 24, color: flColor.cream100, marginTop: 13 },
   detailImage: { width: '100%', borderRadius: flRadius.lg, marginTop: 14, backgroundColor: flColor.charcoal900 },
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
   recapExName: { flexShrink: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   recapExSub: { fontSize: 12.5, color: flColor.gray400 },
   prBadge: { paddingVertical: 2, paddingHorizontal: 7, borderRadius: flRadius.sm, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronze400 },
-  prBadgeText: { fontSize: 8.5, fontWeight: '800', letterSpacing: 0.8, color: flColor.bronze400 },
+  prBadgeText: { fontSize: 8.5, fontWeight: '800', letterSpacing: 0.8, color: flColor.bronzeInk },
 
   engagement: { flexDirection: 'row', alignItems: 'center', gap: 22, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   engItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
@@ -910,7 +910,7 @@ const styles = StyleSheet.create({
   engTextOn: { color: flColor.bronze300 },
 
   comments: { paddingHorizontal: 18, paddingTop: 16, marginTop: 10, borderTopWidth: 8, borderTopColor: flColor.charcoal900 },
-  commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 14 },
+  commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 14 },
   noComments: { fontSize: 13, color: flColor.gray600, paddingVertical: 6 },
   comment: { flexDirection: 'row', gap: 11, marginBottom: 16 },
   commentBody: { flex: 1, minWidth: 0 },
@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
   commentText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, marginTop: 4 },
 
   /* The kind, named under the count — a flame alone cannot say which of four it was. */
-  engKind: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze400 },
+  engKind: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronzeInk },
 
   ackIntro: { fontSize: 13, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
   ackList: { gap: 8 },
@@ -939,11 +939,11 @@ const styles = StyleSheet.create({
   ackRowPressed: { opacity: 0.75 },
   ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   ackRowTextOn: { color: flColor.bronze300 },
-  ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   commentEdited: { fontSize: 11, fontStyle: 'italic', color: flColor.gray600 },
   commentEditBtn: { alignSelf: 'flex-start', paddingVertical: 4, paddingRight: 8 },
-  commentEditText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze400 },
+  commentEditText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronzeInk },
 
   editInput: {
     minHeight: 108,
@@ -990,6 +990,6 @@ const styles = StyleSheet.create({
     color: flColor.cream100,
   },
   sendBtn: { width: 42, height: 42, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  sendBtnOn: { backgroundColor: '#3D2F1A', borderColor: flColor.bronzeBorder },
+  sendBtnOn: { backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), borderColor: flColor.bronzeBorder },
   sendBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600 },
 });

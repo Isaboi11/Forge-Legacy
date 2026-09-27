@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     letterSpacing: 0.2,
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
 })

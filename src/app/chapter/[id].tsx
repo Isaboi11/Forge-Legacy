@@ -16,6 +16,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { fetchChapterDetail, renameChapter } from '@/data/chapter-detail-live';
@@ -444,7 +445,7 @@ const styles = StyleSheet.create({
   err: { fontSize: 14, color: flColor.gray400 },
   body: { paddingHorizontal: 18, paddingTop: 8 },
 
-  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   nameInput: { fontFamily: flFont.sans, fontSize: 16, color: flColor.cream100, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, borderRadius: flRadius.md, paddingHorizontal: 14, paddingVertical: 12 },
@@ -460,9 +461,9 @@ const styles = StyleSheet.create({
   creed: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 14, lineHeight: 21, color: flColor.gray400, marginTop: 16 },
 
   section: { marginTop: 30 },
-  sectionEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 12 },
+  sectionEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 12 },
 
-  primaryCard: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(46, 35, 20, 0.42)' },
+  primaryCard: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('rgba(46, 35, 20, 0.42)', flColor.bronzeTint) },
   primaryName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100, marginBottom: 14 },
   primaryProgRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 },
   primaryPct: { fontFamily: flFont.display, fontSize: 38, fontWeight: '700', color: flColor.bronze300 },
@@ -470,7 +471,7 @@ const styles = StyleSheet.create({
   narrative: { fontSize: 13, color: flColor.gray400 },
   viewGoalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 },
   viewGoalLink: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  viewGoal: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  viewGoal: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   expected: { fontSize: 12, color: flColor.gray400 },
 
   supRow: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
@@ -478,23 +479,23 @@ const styles = StyleSheet.create({
   supDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: flColor.bronze400 },
   supName: { flex: 1, fontSize: 14, fontWeight: '500', color: flColor.cream100 },
   supDone: { color: flColor.gray400 },
-  supRight: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  supRight: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   supBar: { marginTop: 9, marginLeft: 16 },
   supVal: { fontSize: 11.5, color: flColor.gray400, marginTop: 5 },
 
   allRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14 },
-  allText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  allText: { fontSize: 11.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   programRow: { paddingVertical: 13, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, marginBottom: 9 },
   programHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   programIcon: { width: 30, height: 30, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   programName: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  programCount: { fontSize: 13, fontWeight: '700', color: flColor.bronze400 },
+  programCount: { fontSize: 13, fontWeight: '700', color: flColor.bronzeInk },
   programNext: { fontSize: 11.5, color: flColor.gray600, marginTop: 8 },
   workoutTally: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 4, paddingVertical: 14, paddingHorizontal: 14, borderRadius: flRadius.lg, backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.charcoal600 },
   tallyNum: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', color: flColor.cream100 },
   tallyLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400 },
-  tallySub: { fontSize: 12, color: flColor.bronze400, marginTop: 2 },
+  tallySub: { fontSize: 12, color: flColor.bronzeInk, marginTop: 2 },
 
   honorStrip: { gap: 18, paddingVertical: 4, paddingRight: 18 },
 
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
   outcomeMiss: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
 
   reflectionCard: { padding: 20, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  quoteMark: { fontFamily: flFont.display, fontSize: 44, lineHeight: 40, color: flColor.bronze400, marginBottom: -6 },
+  quoteMark: { fontFamily: flFont.display, fontSize: 44, lineHeight: 40, color: flColor.bronzeInk, marginBottom: -6 },
   reflectionBody: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 18, lineHeight: 28, color: flColor.cream100 },
   reflectionMeta: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600, marginTop: 16 },
   addReflection: { padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },

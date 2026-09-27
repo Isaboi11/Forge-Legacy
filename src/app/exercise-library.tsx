@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   gymNoteText: { flex: 1, fontSize: 11.5, color: flColor.gray400 },
-  gymNoteLink: { fontSize: 11.5, fontWeight: '700', color: flColor.bronze400 },
+  gymNoteLink: { fontSize: 11.5, fontWeight: '700', color: flColor.bronzeInk },
 
   body: { paddingHorizontal: 18, paddingBottom: 32 },
   hubSection: { marginBottom: 26 },
@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   count: { fontSize: 11.5, color: flColor.gray600 },
   viewAll: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  viewAllText: { fontSize: 12, fontWeight: '600', color: flColor.bronze400 },
+  viewAllText: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
 
   rows: { gap: 8 },
   row: {
@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   cardName: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
-  cardCount: { fontSize: 11.5, color: flColor.bronze400 },
+  cardCount: { fontSize: 11.5, color: flColor.bronzeInk },
 
   empty: { paddingVertical: 56, alignItems: 'center', gap: 8 },
   emptyTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 10,
   },
   // Sits between the label and its chips, so it is read before the choice rather than after it.

@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
 import type { AlignedPhoto, TransformationLayoutData } from '@/data/squad-feed-live';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Renders a shared transformation in the chosen format, from `TransformationLayoutData`. Used in the Share
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
   cellImg: { width: '100%', height: '100%' },
   chip: { position: 'absolute', top: 8, left: 8, paddingVertical: 3, paddingHorizontal: 8, borderRadius: flRadius.sm, backgroundColor: 'rgba(8,11,14,0.72)', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   chipNow: {},
-  chipText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray400 },
+  chipText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: forgeOr<string>(flColor.gray400, 'rgba(247,245,241,0.72)') }, // dark chip over a photo
   chipTextNow: { color: flColor.bronze300 },
 
   elapsedHero: { alignItems: 'center' },

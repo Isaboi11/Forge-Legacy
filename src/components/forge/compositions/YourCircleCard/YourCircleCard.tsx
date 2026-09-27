@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.7,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   othersText: {
     marginLeft: 'auto',

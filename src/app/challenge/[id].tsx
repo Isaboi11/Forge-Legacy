@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
 
   // standings
   standHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 26, marginBottom: 12, marginHorizontal: 4 },
-  standLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
+  standLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendText: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, color: flColor.gray600 },
   standList: { gap: 8 },
@@ -649,14 +649,14 @@ const styles = StyleSheet.create({
   standRowPressed: { opacity: 0.9 },
   rankSlot: { width: 24, alignItems: 'center', flexShrink: 0 },
   rankNum: { fontFamily: flFont.display, fontSize: 17, fontWeight: '700', color: flColor.gray600 },
-  rankNumPodium: { color: flColor.bronze400 },
+  rankNumPodium: { color: flColor.bronzeInk },
   avatarWrap: { position: 'relative', flexShrink: 0 },
   dotRinged: { position: 'absolute', right: -1, bottom: -1, borderWidth: 2, borderColor: flColor.charcoal800 },
   standBody: { flex: 1, minWidth: 0, gap: 3 },
   standName: { fontSize: 15, fontWeight: '500', color: flColor.cream100 },
   standNameStrong: { fontWeight: '700' },
   momRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  momText: { fontSize: 11.5, color: flColor.bronze400 },
+  momText: { fontSize: 11.5, color: flColor.bronzeInk },
   standScore: { flexShrink: 0, alignItems: 'flex-end' },
   standScoreValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '700', color: flColor.cream100 },
   standScoreLeader: { color: flColor.bronze300 },
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
   callOffLabel: { fontSize: 13, fontWeight: '600', color: flColor.gray600 },
 
   // how it works
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   rulesCard: { gap: 14, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
   ruleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   ruleIcon: { width: 30, height: 30, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint },

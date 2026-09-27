@@ -414,7 +414,8 @@ function CheckIcon({ color = flColor.bronze300 }: { color?: string }) {
   return <EngravedIcon name="check" size={15} color={color} />;
 }
 function ShareGlyph() {
-  return <EngravedIcon name="share" size={22} />;
+  // Only ever drawn in the primary (bronze-filled) tile, so on Alabaster it takes the fill's ink.
+  return <EngravedIcon name="share" size={22} color={forgeOr<string | undefined>(undefined, flColor.onBronze)} />;
 }
 function MessageGlyph() {
   return <EngravedIcon name="chat" size={22} />;
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
     boxShadow: `${flShadow.borderInset}, ${flShadow.card}`,
   },
   codeCardTop: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 18, alignItems: 'center' },
-  codeEyebrow: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  codeEyebrow: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   codeValue: {
     fontFamily: MONO,
     fontSize: 38,
@@ -481,7 +482,7 @@ const styles = StyleSheet.create({
   regenText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
 
   // share
-  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 30, marginBottom: 12, marginLeft: 4 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 30, marginBottom: 12, marginLeft: 4 },
   tileGrid: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, alignItems: 'center', gap: 11, paddingVertical: 18, paddingHorizontal: 8, borderRadius: flRadius.lg, borderWidth: 1 },
   tilePrimary: { backgroundColor: forgeOr('#17120B', flColor.charcoal700), borderColor: flColor.bronzeBorder, boxShadow: `${flShadow.borderInset}, ${flShadow.card}` },
@@ -489,7 +490,7 @@ const styles = StyleSheet.create({
   tilePressed: { transform: [{ scale: 0.96 }] },
   tileDisabled: { opacity: 0.4 },
   tileIcon: { width: 44, height: 44, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
-  tileIconPrimary: { backgroundColor: '#3D2F1A', borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
+  tileIconPrimary: { backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
   tileIconSecondary: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorderSubtle },
   tileLabel: { fontSize: 12.5 },
   tileLabelPrimary: { fontWeight: '600', color: flColor.cream100 },
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
   linkRowCopied: { borderColor: flColor.bronzeBorder },
   linkText: { flex: 1, minWidth: 0, fontFamily: MONO, fontSize: 12.5, color: flColor.gray400 },
   linkCopyWrap: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0 },
-  linkCopyText: { fontSize: 12, fontWeight: '600', color: flColor.bronze400 },
+  linkCopyText: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
   linkCopyTextDone: { color: flColor.greenMuted },
 
   // footer

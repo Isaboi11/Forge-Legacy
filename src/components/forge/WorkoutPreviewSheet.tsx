@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     lineHeight: 16,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 10,
   },
   section: { marginTop: 6 },
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.7,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   blockRounds: { fontFamily: flFont.display, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 });

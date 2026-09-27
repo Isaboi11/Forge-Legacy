@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { useReduceMotion } from '@/lib/settings';
 import {
   photosCount,
@@ -84,7 +85,13 @@ const GRADE = {
 const SCRIM = ['rgba(5,5,5,0.10)', 'rgba(5,5,5,0.42)', 'rgba(5,5,5,0.93)'] as const;
 const SCRIM_STOPS = [0, 0.52, 1] as const;
 
-const RECESSED_BASE = '#100e0b';
+/*
+ * ⚠ ALABASTER DRAFT (2026-09-26). A tile with a PHOTO keeps the dark grade + scrim + light ink in both
+ * themes — a photograph is not a theme surface. A tile WITHOUT one is a plate, and on Alabaster a plate is
+ * recessed cream: the scrim fades to cream and the ink is the theme's own. Forge is byte-identical.
+ */
+const RECESSED_BASE = forgeOr<string>('#100e0b', flColor.surfaceRecessed);
+const PLATE_SCRIM = SCRIM.map(themeScrim) as unknown as typeof SCRIM;
 const CROWN = require('../../../assets/competition/competition-crown-mask.png');
 /** The mask asset's own proportions — the emblem is laid in by width, so height follows from these. */
 const CROWN_ASPECT = 1536 / 1024;
@@ -114,6 +121,7 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
         width={tileW}
         label="Transformation"
         count={t ? transformationCount(t) : ''}
+        media={!!t?.newest}
         onPress={onTransformation}
       >
         {diptych ? (
@@ -129,7 +137,7 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
         )}
       </Tile>
 
-      <Tile testID="lg-photos" width={tileW} label="Photos" count={p ? photosCount(p) : ''} onPress={onPhotos}>
+      <Tile testID="lg-photos" width={tileW} label="Photos" count={p ? photosCount(p) : ''} media={!!p?.latest} onPress={onPhotos}>
         {p?.latest ? (
           <GradedImage uri={p.latest} width={tileW} height={TILE_H} grade={GRADE.photo} focalY={0.42} overscan={1.3} />
         ) : (
@@ -137,7 +145,7 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
         )}
       </Tile>
 
-      <Tile testID="lg-trophies" width={tileW} label="Trophy Case" count={tr ? trophyCount(tr) : ''} bronzeEdge onPress={onTrophies}>
+      <Tile testID="lg-trophies" width={tileW} label="Trophy Case" count={tr ? trophyCount(tr) : ''} media={false} bronzeEdge onPress={onTrophies}>
         <RecessedSurface id="trophy" />
         {/* An empty trophy case does not display a crown. */}
         {tr && tr.entered > 0 ? <CrownEmblem tileWidth={tileW} /> : null}
@@ -151,6 +159,7 @@ function Tile({
   width,
   label,
   count,
+  media,
   bronzeEdge = false,
   onPress,
   children,
@@ -159,6 +168,8 @@ function Tile({
   width: number;
   label: string;
   count: string;
+  /** Whether a photograph fills the tile — decides the scrim and the ink on Alabaster. */
+  media: boolean;
   bronzeEdge?: boolean;
   onPress: () => void;
   children: ReactNode;
@@ -181,13 +192,13 @@ function Tile({
     >
       {children}
 
-      <LinearGradient colors={SCRIM} locations={SCRIM_STOPS} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <LinearGradient colors={media ? SCRIM : PLATE_SCRIM} locations={SCRIM_STOPS} style={StyleSheet.absoluteFill} pointerEvents="none" />
 
       <View style={styles.labelBlock} pointerEvents="none">
-        <Text style={[styles.labelLine, { fontSize: labelSize }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
+        <Text style={[styles.labelLine, media ? null : styles.labelLinePlate, { fontSize: labelSize }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
           {label}
         </Text>
-        {count ? <Text style={styles.countLine}>{count}</Text> : null}
+        {count ? <Text style={[styles.countLine, media ? null : styles.countLinePlate]}>{count}</Text> : null}
       </View>
     </Pressable>
   );
@@ -301,5 +312,9 @@ const styles = StyleSheet.create({
 
   labelBlock: { position: 'absolute', left: 9, right: 9, bottom: 9, gap: 3 },
   labelLine: { fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: flColor.onMedia },
-  countLine: { fontSize: 10, fontWeight: '600', color: flColor.bronze400 },
+  // On a photo's dark scrim: Forge's bronze, and on Alabaster the LIGHTER bronze (the deep ink sinks into black).
+  countLine: { fontSize: 10, fontWeight: '600', color: forgeOr<string>(flColor.bronze400, flColor.bronze300) },
+  // On the plate (no photo): Forge unchanged; on Alabaster the theme's own inks.
+  labelLinePlate: { color: forgeOr<string>(flColor.onMedia, flColor.cream100) },
+  countLinePlate: { color: flColor.bronzeInk },
 });

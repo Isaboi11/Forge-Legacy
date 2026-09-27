@@ -681,7 +681,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 18, paddingTop: 8 },
   addBtn: { padding: 6 },
-  editLink: { fontSize: 13, fontWeight: '700', color: flColor.bronze400 },
+  editLink: { fontSize: 13, fontWeight: '700', color: flColor.bronzeInk },
 
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, paddingHorizontal: 44 },
   emptyText: { fontSize: 14, lineHeight: 21, color: flColor.gray400, textAlign: 'center' },
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   detailDate: { fontSize: 13, color: flColor.gray400, marginTop: 6 },
   detailChapter: { marginTop: 18 },
   detailChapterLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
-  detailChapterName: { fontSize: 14, fontWeight: '600', color: flColor.bronze400, marginTop: 3 },
+  detailChapterName: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk, marginTop: 3 },
   detailNote: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17, lineHeight: 26, color: flColor.gray400, marginTop: 20 },
 
   featRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 26, paddingVertical: 15, paddingHorizontal: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   // form
   field: { marginBottom: 20 },
   fieldHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   fieldCounter: { fontSize: 11, color: flColor.gray600 },
   input: {
     borderRadius: flRadius.md,

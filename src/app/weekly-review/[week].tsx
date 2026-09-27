@@ -336,11 +336,11 @@ const styles = StyleSheet.create({
 
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   dateRule: { width: 18, height: 1, backgroundColor: flColor.bronzeBorder },
-  dates: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
+  dates: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   holt: { flexDirection: 'row', alignItems: 'flex-start', gap: 15, marginTop: 18 },
   holtBody: { flex: 1, minWidth: 0, gap: 8 },
-  holtByline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronze400 },
+  holtByline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.bronzeInk },
   note: { fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
   /* Two rows of two rather than one row of four: at 390pt a quarter-width column cannot hold "5:38:22"
@@ -371,10 +371,10 @@ const styles = StyleSheet.create({
   statValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
   statValue: { fontFamily: flFont.display, fontSize: 25, fontWeight: '600', lineHeight: 27, color: flColor.cream100 },
   statUnit: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
-  statLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  statLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   section: { marginTop: 26 },
-  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 8 },
+  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
   card: {
     overflow: 'hidden',
     borderRadius: flRadius.lg,

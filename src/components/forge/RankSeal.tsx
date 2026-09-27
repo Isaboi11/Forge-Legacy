@@ -23,6 +23,7 @@
  */
 import React from 'react';
 import { flColor } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import Svg, {
   Circle, ClipPath, Defs, G, Image as SvgImage, LinearGradient, Path, RadialGradient, Rect, Stop, Text, TextPath,
 } from 'react-native-svg';
@@ -72,12 +73,25 @@ const GOLD: SealAccent = {
   discRing: '#9A7038',
 };
 
+/*
+ * ⚠ ALABASTER DRAFT (2026-09-26). On cream the black outer channel read as a hole punched in the page. The
+ * INNER disc stays dark on purpose — it is the enamel window the baked fire-bowl raster was painted for, and
+ * the flame only glows against black. The outer channel becomes parchment and the rank text is engraved
+ * into it in a deep metal instead of lit out of it. Forge is byte-identical.
+ */
+const SEAL_CHANNEL = forgeOr({ edge: '#2A2016', groove: '#0B0E11' }, { edge: '#B89A6C', groove: '#EAE0CD' });
+const PAPER_TEXT: Record<'bronze' | 'gold', { top: string; bottom: string }> = {
+  bronze: { top: '#7A5C30', bottom: '#6B4F28' },
+  gold: { top: '#8A6420', bottom: '#74531A' },
+};
+
 /** family → accent. Only legend/hall is non-bronze; everything else falls through to bronze. */
 const SEAL_ACCENT: Record<string, SealAccent> = { legend: GOLD, hall: GOLD };
 
 export function RankSeal({ size = 300, family = 'Foundation', level = 1 }: { size?: number; family?: string; level?: 1 | 2 | 3 | 4 }) {
   const lvl = Math.max(1, Math.min(4, level));
   const acc = SEAL_ACCENT[family.toLowerCase()] ?? BRONZE;
+  const text = forgeOr({ top: acc.textTop, bottom: acc.textBottom }, PAPER_TEXT[acc === GOLD ? 'gold' : 'bronze']);
   // Warmth rises with the sub-rank — modulated ONLY in the vector glow opacity (flame raster is constant).
   const glowInnerOp = 0.34 + (lvl - 1) * 0.15; // I 0.34 → IV 0.79
   const glowMidOp = 0.1 + (lvl - 1) * 0.05;
@@ -109,18 +123,18 @@ export function RankSeal({ size = 300, family = 'Foundation', level = 1 }: { siz
 
       {/* machined edge + bevel rim */}
       <Circle cx={310} cy={310} r={302} fill="none" stroke={acc.knurl} strokeWidth={13} strokeDasharray="2.4 6.4" />
-      <Circle cx={310} cy={310} r={300} fill="none" stroke="#2A2016" strokeWidth={20} />
+      <Circle cx={310} cy={310} r={300} fill="none" stroke={SEAL_CHANNEL.edge} strokeWidth={20} />
       <Circle cx={310} cy={310} r={299} fill="none" stroke="url(#bevelAccent)" strokeWidth={15} />
       <Circle cx={310} cy={310} r={291.5} fill="none" stroke={acc.rimHi} strokeWidth={1.2} />
 
       {/* recessed text groove + curved rank text */}
-      <Circle cx={310} cy={310} r={272} fill="none" stroke="#0B0E11" strokeWidth={42} />
+      <Circle cx={310} cy={310} r={272} fill="none" stroke={SEAL_CHANNEL.groove} strokeWidth={42} />
       <Circle cx={310} cy={310} r={293} fill="none" stroke={acc.groove} strokeWidth={1} />
       <Circle cx={310} cy={310} r={251} fill="none" stroke={acc.groove} strokeWidth={1} />
-      <Text fill={acc.textTop} fontSize={42} fontWeight="600" letterSpacing={13}>
+      <Text fill={text.top} fontSize={42} fontWeight="600" letterSpacing={13}>
         <TextPath href="#topArc" startOffset="50%" textAnchor="middle">{family.toUpperCase()}</TextPath>
       </Text>
-      <Text fill={acc.textBottom} fontSize={40} fontWeight="600" letterSpacing={15}>
+      <Text fill={text.bottom} fontSize={40} fontWeight="600" letterSpacing={15}>
         <TextPath href="#botArc" startOffset="50%" textAnchor="middle">{`TIER ${ROMAN[lvl - 1]}`}</TextPath>
       </Text>
       <Rect x={32} y={304} width={12} height={12} rx={1.5} transform="rotate(45 38 310)" fill={acc.diamond} />

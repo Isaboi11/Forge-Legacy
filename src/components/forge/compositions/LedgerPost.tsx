@@ -605,10 +605,10 @@ const styles = StyleSheet.create({
   playOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   playDisc: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, backgroundColor: 'rgba(0,0,0,0.45)', borderWidth: 1, borderColor: flColor.bronzeBorder },
   counter: { position: 'absolute', right: 12, bottom: 12, paddingHorizontal: 9, paddingVertical: 4, borderRadius: flRadius.pill, backgroundColor: 'rgba(6,7,9,0.62)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.09)' },
-  counterText: { fontSize: 11, fontWeight: '600', color: flColor.cream100 },
+  counterText: { fontSize: 11, fontWeight: '600', color: flColor.onMedia }, // a fixed dark chip over media
 
   marker: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 17, paddingHorizontal: LEDGER_GUTTER },
-  markerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  markerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   title: { marginTop: 7, paddingHorizontal: LEDGER_GUTTER, fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 25.3, letterSpacing: 0.2, color: flColor.cream100 },
   context: { marginTop: 4, paddingHorizontal: LEDGER_GUTTER, fontSize: 12.5, color: flColor.gray600 },
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 26, marginTop: 15, paddingHorizontal: LEDGER_GUTTER },
   stat: { gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', lineHeight: 21, color: flColor.cream100 },
-  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronze400 },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   playlist: {
     flexDirection: 'row',

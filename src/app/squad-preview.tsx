@@ -29,7 +29,7 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
 /**
  * Squad Preview — what a non-member sees before deciding to join. Built to `Squad Preview.dc.html`,
@@ -372,9 +372,9 @@ export default function SquadPreviewScreen() {
             <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={StyleSheet.absoluteFill} />
           ) : null}
           {busy ? (
-            <ActivityIndicator color={commit.filled ? flColor.bronze300 : flColor.gray400} />
+            <ActivityIndicator color={commit.filled ? forgeOr<string>(flColor.bronze300, flColor.onBronze) : flColor.gray400} />
           ) : commit.filled ? (
-            <PlusGlyph size={16} color={flColor.bronze300} />
+            <PlusGlyph size={16} color={forgeOr<string>(flColor.bronze300, flColor.onBronze)} />
           ) : (
             <CheckGlyph size={16} color={flColor.gray400} />
           )}
@@ -565,15 +565,15 @@ const styles = StyleSheet.create({
   statCol: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 15, paddingHorizontal: 6 },
   statColDivided: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   statValue: { fontFamily: flFont.display, fontSize: 21, fontWeight: '700', lineHeight: 22, color: flColor.cream100 },
-  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   // sections + cards
-  sectionLabel: { marginTop: 22, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 22, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   card: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, paddingHorizontal: 15, paddingVertical: 16 },
 
   // goal
-  goalKicker: { marginBottom: 7, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  goalKicker: { marginBottom: 7, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   goalTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', lineHeight: 23, color: flColor.cream100 },
   goalTrack: { marginTop: 14, height: 10, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   goalFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden', boxShadow: flShadow.glowSubtle },
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
 
   // request-note sheet
   sheetBody: { gap: 8 },
-  sheetLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  sheetLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
   sheetInput: {
     minHeight: 96,
     paddingHorizontal: 13,

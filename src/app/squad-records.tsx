@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   intro: { fontSize: 13, lineHeight: 20, color: flColor.gray400 },
   countRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 12, marginBottom: 16 },
   countDot: { width: 5, height: 5, borderRadius: flRadius.round, backgroundColor: flColor.bronze400 },
-  countText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  countText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   stack: { gap: 10 },
   row: {
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   value: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.bronze300 },
   unit: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   deltaRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },
-  deltaText: { fontSize: 9.5, fontWeight: '600', color: flColor.bronze400 },
+  deltaText: { fontSize: 9.5, fontWeight: '600', color: flColor.bronzeInk },
 
   footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 26, opacity: 0.7 },
   footerText: { fontSize: 11, color: flColor.gray600 },
@@ -395,12 +395,12 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorder,
     backgroundColor: flColor.bronzeTint,
   },
-  newBannerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: flColor.bronze400 },
+  newBannerLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: flColor.bronzeInk },
   newBannerRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   oldValue: { fontFamily: flFont.display, fontSize: 17, color: flColor.gray600, textDecorationLine: 'line-through' },
   newValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.bronze300 },
 
-  sheetLabel: { marginBottom: 11, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sheetLabel: { marginBottom: 11, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   currentCard: {
     flexDirection: 'row',
     alignItems: 'center',

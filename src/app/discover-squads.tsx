@@ -23,6 +23,7 @@ import {
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Discover Squads — public squad browse. Built to `Discover Squads.dc.html`, wired to real data
@@ -375,7 +376,7 @@ function SquadResultCard({
             {filled ? (
               <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={StyleSheet.absoluteFill} />
             ) : null}
-            {done ? <CheckGlyph size={15} color={flColor.gray400} /> : <PlusGlyph size={15} color={flColor.bronze300} />}
+            {done ? <CheckGlyph size={15} color={flColor.gray400} /> : <PlusGlyph size={15} color={filled ? forgeOr<string>(flColor.bronze300, flColor.onBronze) : flColor.bronze300} />}
             <Text style={[styles.actionLabel, done ? styles.actionLabelDone : null]}>{label}</Text>
           </Pressable>
         </View>
@@ -490,7 +491,7 @@ const styles = StyleSheet.create({
 
   // results header
   resultsHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, marginBottom: 12, marginHorizontal: 4 },
-  resultsLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  resultsLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   resultsCount: { fontSize: 11.5, color: flColor.gray600 },
 
   // card
@@ -513,7 +514,7 @@ const styles = StyleSheet.create({
   name: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', letterSpacing: -0.1, color: flColor.cream100 },
   motto: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400 },
   activeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
-  activeText: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronze400 },
+  activeText: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronzeInk },
 
   // capacity / join tag
   tag: { flexShrink: 0, minWidth: 94, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: flRadius.pill, borderWidth: 1 },

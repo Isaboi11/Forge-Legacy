@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   },
   error: { fontSize: 13, lineHeight: 18, color: flColor.redMuted, marginTop: 10 },
   quietBtn: { alignSelf: 'flex-start', marginTop: 12, paddingVertical: 4 },
-  quiet: { fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  quiet: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   exampleLabel: { fontSize: 13, color: flColor.gray400, marginTop: 22, marginBottom: 8 },
   exampleCard: {

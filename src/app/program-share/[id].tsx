@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   takenBanner: { marginTop: 16, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   takenText: { fontSize: 12, color: flColor.bronze300 },
 
-  sectionLabel: { marginTop: 26, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   sectionSub: { marginTop: 5, marginBottom: 12, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
 
   days: { gap: 10 },
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   secLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
   circuit: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, paddingHorizontal: 9, paddingVertical: 7, gap: 3 },
   circuitHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
-  circuitName: { flex: 1, fontSize: 11, fontWeight: '700', color: flColor.bronze400 },
+  circuitName: { flex: 1, fontSize: 11, fontWeight: '700', color: flColor.bronzeInk },
   circuitRounds: { fontSize: 10.5, fontWeight: '600', color: flColor.bronze300 },
   exRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 3 },
   exName: { flex: 1, minWidth: 0, fontSize: 13, color: flColor.cream100 },

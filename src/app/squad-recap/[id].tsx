@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.glowSubtle,
   },
   heroTitle: { marginTop: 15, fontFamily: flFont.display, fontSize: 24, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
-  heroRange: { marginTop: 5, fontSize: 12.5, letterSpacing: 0.4, color: flColor.bronze400 },
+  heroRange: { marginTop: 5, fontSize: 12.5, letterSpacing: 0.4, color: flColor.bronzeInk },
   heroSquad: { fontSize: 12, color: flColor.gray600 },
 
   statStrip: {
@@ -240,9 +240,9 @@ const styles = StyleSheet.create({
   statCol: { flex: 1, alignItems: 'center', gap: 4, paddingVertical: 15, paddingHorizontal: 6 },
   statColDivided: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   statValue: { fontFamily: flFont.display, fontSize: 21, fontWeight: '700', lineHeight: 22, color: flColor.cream100 },
-  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
 
-  sectionLabel: { marginTop: 22, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 22, marginBottom: 12, marginHorizontal: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   card: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, paddingHorizontal: 15, paddingVertical: 16 },
   listCard: { overflow: 'hidden', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card },
 

@@ -8,6 +8,7 @@ import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/
 import type { ProgressCardPhoto, ProgressPostCard as ProgressCardData } from '@/data/squad-feed-live';
 import { PREVIEW_W, clampIndex, formatSpec, gridColumns } from '@/domain/share/progress-card';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * The Progress Photo Post card — the ONE renderer, used by the composer's live preview, the squad feed
@@ -243,7 +244,8 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: 'row', alignItems: 'flex-end' },
   athlete: { fontFamily: flFont.display, fontWeight: '700', letterSpacing: -0.2, color: flColor.onMedia },
   meta: { color: flColor.onMedia },
-  chapter: { fontWeight: '700', textTransform: 'uppercase', color: flColor.bronze400 },
+  // The card is dark in both themes (its siblings are onMedia), so on Alabaster it takes the lighter bronze.
+  chapter: { fontWeight: '700', textTransform: 'uppercase', color: forgeOr<string>(flColor.bronze400, flColor.bronze300) },
 
   slide: { position: 'relative', overflow: 'hidden' },
   heroTop: { position: 'absolute', flexDirection: 'row', alignItems: 'center' },

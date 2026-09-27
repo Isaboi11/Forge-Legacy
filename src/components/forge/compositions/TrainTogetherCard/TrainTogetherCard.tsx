@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   joinText: {
     fontSize: 12.5,
     fontWeight: '600',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   emptyRow: {
     paddingVertical: 14,

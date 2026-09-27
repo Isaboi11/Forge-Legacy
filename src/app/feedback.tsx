@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.1,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 9,
   },
   well: {
@@ -247,5 +247,5 @@ const styles = StyleSheet.create({
   consentLabel: { flex: 1, fontSize: 13.5, color: flColor.gray400 },
 
   actions: { marginBottom: 18 },
-  email: { textAlign: 'center', fontSize: 12.5, color: flColor.bronze400 },
+  email: { textAlign: 'center', fontSize: 12.5, color: flColor.bronzeInk },
 });

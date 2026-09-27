@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
   statusText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15, textAlign: 'center' },
   statusDetail: { marginTop: 6, color: flColor.gray600, fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, textAlign: 'center' },
   retryBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronze400 },
-  retryText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
+  retryText: { color: flColor.bronzeInk, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 
   scroll: { paddingTop: 18, paddingBottom: 40 },
   sectionLabel: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   strip: { gap: 16, paddingHorizontal: 24, paddingTop: 16, paddingBottom: 4 },
   tile: { alignItems: 'center', gap: 8 },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   sheetName: {
     fontFamily: flFont.display,

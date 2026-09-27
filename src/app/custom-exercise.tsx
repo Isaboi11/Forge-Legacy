@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
   dividerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, color: flColor.gray600, textTransform: 'uppercase' },
   dividerLine: { flex: 1, height: 1, backgroundColor: flColor.charcoal700 },
 
-  label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronze400, marginTop: 18, marginBottom: 8, textTransform: 'uppercase' },
+  label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, color: flColor.bronzeInk, marginTop: 18, marginBottom: 8, textTransform: 'uppercase' },
   input: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
   textarea: { minHeight: 96, textAlignVertical: 'top' },
   counter: { marginTop: 5, fontSize: 11, color: flColor.gray600, textAlign: 'right' },

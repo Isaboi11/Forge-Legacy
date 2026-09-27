@@ -7,6 +7,7 @@ import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { fetchBodyEntries } from '@/data/body-metrics-live';
 import { exactWeight } from '@/domain/settings/units';
 import { useBodyGoalSync } from '@/hooks/useBodyGoalSync';
@@ -175,8 +176,8 @@ export function BodySection() {
           {coords.map((c, i) => (
             <Circle key={`d${i}`} cx={c.x} cy={c.y} r={2.5} fill="rgba(186, 134, 84,0.5)" />
           ))}
-          {sel != null && coords[sel] ? <Circle cx={coords[sel].x} cy={coords[sel].y} r={4} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.4} /> : null}
-          <Circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r={3.4} fill={flColor.bronze300} stroke="#070707" strokeWidth={1.5} />
+          {sel != null && coords[sel] ? <Circle cx={coords[sel].x} cy={coords[sel].y} r={4} fill={flColor.bronze300} stroke={DOT_RING} strokeWidth={1.4} /> : null}
+          <Circle cx={coords[coords.length - 1].x} cy={coords[coords.length - 1].y} r={3.4} fill={flColor.bronze300} stroke={DOT_RING} strokeWidth={1.5} />
         </Svg>
         <View style={styles.ticks}>
           {ticks.map((t, i) => (
@@ -277,15 +278,18 @@ function tickIndices(n: number): number[] {
   return [0, Math.round(n / 3), Math.round((2 * n) / 3), n - 1];
 }
 
+/** The ring that cuts a chart dot out of its line — the card ground it sits on, so it reads in both themes. */
+const DOT_RING = forgeOr<string>('#070707', flColor.charcoal800);
+
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 22, paddingTop: 20 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2, paddingBottom: 12 },
-  label: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  label: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   changeCtl: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   changeLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  logText: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  logText: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
 
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
   ctaIcon: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.charcoal600 },
@@ -294,7 +298,7 @@ const styles = StyleSheet.create({
   ctaSub: { fontFamily: flFont.sans, fontSize: 11.5, color: flColor.gray600 },
 
   emptyLog: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 20, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  emptyLogText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  emptyLogText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   card: { padding: 16, borderRadius: flRadius.lg, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal700 },
   latestRow: { flexDirection: 'row', alignItems: 'baseline', gap: 12, paddingHorizontal: 2, paddingBottom: 4 },

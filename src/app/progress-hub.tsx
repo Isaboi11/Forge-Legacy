@@ -523,15 +523,15 @@ const styles = StyleSheet.create({
   factValue: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   pinned: { flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 12, paddingVertical: 11, paddingHorizontal: 14, borderRadius: flRadius.lg, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   pinnedText: { flex: 1, minWidth: 0, gap: 1 },
-  pinnedLabel: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  pinnedLabel: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   pinnedValue: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.cream100 },
 
   section: { paddingHorizontal: 22, paddingTop: 20 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 2, paddingBottom: 8 },
-  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   sectionCaption: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
   editLink: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  editText: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  editText: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
 
   // journey
   journey: { position: 'relative', paddingTop: 10, paddingBottom: 4 },
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
   strengthCaption: { marginTop: 11, fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16.5, color: flColor.gray600 },
   spark: { marginTop: 2 },
   strengthEmpty: { alignItems: 'center', justifyContent: 'center', padding: 22, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
-  strengthEmptyText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  strengthEmptyText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   // consistency
   bigStatRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, paddingHorizontal: 2, paddingTop: 4, paddingBottom: 16 },

@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   // "From Forge" shelf
   shelf: { marginBottom: 22, gap: 10 },
   shelfHead: { marginBottom: 2 },
-  shelfLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  shelfLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   shelfSub: { marginTop: 3, fontSize: 12, color: flColor.gray600 },
   yoursHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   reorderBtn: { paddingVertical: 6, paddingLeft: 12 },
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
   starterCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   starterText: { flex: 1, minWidth: 0 },
   starterName: { fontFamily: flFont.display, fontSize: 16.5, fontWeight: '600', color: flColor.cream100 },
-  starterStructure: { marginTop: 3, fontSize: 11.5, color: flColor.bronze400 },
+  starterStructure: { marginTop: 3, fontSize: 11.5, color: flColor.bronzeInk },
   starterBlurb: { marginTop: 5, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   starterCta: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   starterCtaLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300 },

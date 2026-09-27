@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.bronzeTint,
   },
   headerText: { flex: 1, gap: 2 },
-  headerName: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronze400 },
+  headerName: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, color: flColor.bronzeInk },
   headerStatus: { fontSize: 12.5, color: flColor.gray400 },
   close: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
 
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   cardTop: { flexDirection: 'row', alignItems: 'baseline', gap: 7 },
-  cardReps: { fontSize: 19, fontWeight: '600', color: flColor.bronze400, letterSpacing: 0.2 },
+  cardReps: { fontSize: 19, fontWeight: '600', color: flColor.bronzeInk, letterSpacing: 0.2 },
   /* Cream rather than the gray `basis` used elsewhere — inside the card it is the coach's own sentence,
      and at 40% grey over an illustration it stopped being readable. */
   cardBasis: { fontSize: 13, lineHeight: 19, color: flColor.gray400, maxWidth: '78%' },
@@ -790,11 +790,11 @@ const styles = StyleSheet.create({
     color: flColor.cream100,
     letterSpacing: -0.4,
   },
-  cardUnit: { fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
+  cardUnit: { fontSize: 12, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
   cardVerdict: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
   /* The disclosure, not a button — it carries no border because it is a question, not a decision. */
   whyRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 2, minHeight: 22 },
-  whyText: { fontSize: 12.5, color: flColor.bronze400 },
+  whyText: { fontSize: 12.5, color: flColor.bronzeInk },
   why: { fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
   /* An adaptation. Charcoal rather than bronze-tinted so it cannot be mistaken for the card, and a
@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
   },
-  noticeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronze400 },
+  noticeLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
 
   /* ── TREATMENT THREE: rows. The divider is on the row, so the last one in a list has one too —
      which is correct here: every list in this sheet is followed by another group, never by the edge. */
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
   planBox: { borderWidth: 1, borderColor: flColor.charcoal600, borderRadius: flRadius.md, paddingHorizontal: 14, backgroundColor: flColor.charcoal900 },
   rowPressed: { opacity: 0.6 },
   rowLabel: { fontSize: 14.5, lineHeight: 19, color: flColor.cream100 },
-  rowLabelAccent: { fontSize: 13.5, color: flColor.bronze400 },
+  rowLabelAccent: { fontSize: 13.5, color: flColor.bronzeInk },
   rowSub: { fontSize: 12, lineHeight: 16, color: flColor.gray600, marginTop: 2 },
   chevOpen: { transform: [{ rotate: '90deg' }] },
 

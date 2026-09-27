@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 18 },
   identityForm: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 20 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.3, color: flColor.cream100 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
@@ -916,8 +916,8 @@ const styles = StyleSheet.create({
   missing: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400 },
 
   labelRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingTop: 22, paddingBottom: 9 },
-  fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
-  fieldLabelSolo: { paddingBottom: 9, fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
+  fieldLabelSolo: { paddingBottom: 9, fontSize: 11, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
   fieldHint: { fontSize: 12, color: flColor.gray400 },
   types: { flexDirection: 'row', gap: 6 },
   typeBtn: {
@@ -982,7 +982,7 @@ const styles = StyleSheet.create({
   totMacroVal: { fontSize: 16, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   totMacroLabel: { fontSize: 12, color: flColor.gray400 },
   totWhole: { fontSize: 12, color: flColor.gray400 },
-  totApprox: { marginTop: -6, fontSize: 12, fontWeight: '600', color: flColor.bronze400 },
+  totApprox: { marginTop: -6, fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
 
   scanStatus: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 2, paddingBottom: 14 },
   scanStatusText: { fontSize: 14, color: flColor.gray400 },
@@ -1046,11 +1046,11 @@ const styles = StyleSheet.create({
   allergenActions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 14 },
   confirmed: { height: 44, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 4 },
   confirmedText: { fontSize: 14, fontWeight: '600', color: flColor.bronze300 },
-  editLink: { paddingVertical: 12, paddingHorizontal: 6, fontSize: 13.5, fontWeight: '600', color: flColor.bronze400 },
+  editLink: { paddingVertical: 12, paddingHorizontal: 6, fontSize: 13.5, fontWeight: '600', color: flColor.bronzeInk },
 
   steps: { gap: 8, paddingTop: 12 },
   stepRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepN: { width: 24, textAlign: 'center', fontFamily: flFont.display, fontSize: 18, color: flColor.bronze400 },
+  stepN: { width: 24, textAlign: 'center', fontFamily: flFont.display, fontSize: 18, color: flColor.bronzeInk },
   stepInput: { flex: 1, minWidth: 0 },
   addStep: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingLeft: 30 },
 

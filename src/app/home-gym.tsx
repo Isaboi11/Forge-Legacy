@@ -196,14 +196,14 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   clearBtn: { paddingVertical: 6, paddingHorizontal: 10 },
-  clearText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronze400 },
+  clearText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronzeInk },
   clearTextOff: { color: flColor.gray600 },
 
   body: { paddingHorizontal: 18 },
 
   intro: { paddingTop: 6, paddingBottom: 22 },
   microRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 9 },
-  micro: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  micro: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
   h1: { fontFamily: flFont.display, fontSize: 27, fontWeight: '600', color: flColor.cream100, marginBottom: 9 },
   lede: { fontSize: 13, lineHeight: 20, color: flColor.gray400 },
   ledeStrong: { color: flColor.cream100, fontWeight: '700' },

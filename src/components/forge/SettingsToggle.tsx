@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { flColor, flGradient } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * The settings toggle, matched exactly to `Forge Notifications.dc.html` / `Forge Preferences.dc.html`.
@@ -46,7 +47,7 @@ export function SettingsToggle({
         />
       ) : null}
       <Animated.View
-        style={[styles.knob, { backgroundColor: value ? '#1A1206' : flColor.charcoal500, transform: [{ translateX }] }]}
+        style={[styles.knob, { backgroundColor: value ? forgeOr<string>('#1A1206', flColor.onBronze) : flColor.charcoal500, transform: [{ translateX }] }]}
       />
     </Pressable>
   );

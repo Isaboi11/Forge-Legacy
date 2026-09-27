@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
 
   mealLine: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', marginHorizontal: 20, marginBottom: 4, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
-  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   mealLineDay: { fontSize: 12.5, color: flColor.gray600, marginLeft: 4 },
 
   list: { flex: 1 },
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
 
   totals: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingBottom: 6 },
   totalKcal: { fontFamily: flFont.display, fontSize: 40, color: flColor.cream100 },
-  totalLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  totalLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   totalMacros: { flex: 1, textAlign: 'right', fontSize: 13, color: flColor.gray400 },
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600, paddingTop: 10, paddingBottom: 2 },
 
@@ -513,8 +513,8 @@ const styles = StyleSheet.create({
   rowName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   rowSeen: { fontSize: 12, color: flColor.gray400 },
   rowMeta: { fontSize: 12.5, color: flColor.gray600 },
-  rowMetaWarn: { color: flColor.bronze400 },
-  rowCheck: { fontSize: 12, color: flColor.bronze400 },
+  rowMetaWarn: { color: flColor.bronzeInk },
+  rowCheck: { fontSize: 12, color: flColor.bronzeInk },
   rowKcal: { fontSize: 15, fontWeight: '600', color: flColor.cream100, minWidth: 44, textAlign: 'right' },
 
   more: { alignItems: 'center', paddingVertical: 16 },
@@ -555,6 +555,6 @@ const styles = StyleSheet.create({
   },
   previewRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingTop: 4 },
   previewKcal: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100 },
-  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   previewMacros: { flex: 1, textAlign: 'right', fontSize: 12.5, color: flColor.gray400 },
 });

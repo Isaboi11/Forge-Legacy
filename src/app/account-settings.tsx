@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   avatarInitials: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.onBronze },
   identityText: { flex: 1 },
   name: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
-  rank: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 3 },
+  rank: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 3 },
   handle: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600, marginTop: 3 },
 
   sectionLabel: {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 10,
   },
   card: {
@@ -434,9 +434,9 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600, marginTop: 2 },
   rowRight: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  rowValue: { fontSize: 12.5, color: flColor.bronze400 },
+  rowValue: { fontSize: 12.5, color: flColor.bronzeInk },
   rowMuted: { fontSize: 12.5, color: flColor.gray400 },
-  rowAction: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze400 },
+  rowAction: { fontSize: 12.5, fontWeight: '700', color: flColor.bronzeInk },
 
   iconTile: {
     width: 36,
@@ -450,13 +450,13 @@ const styles = StyleSheet.create({
   },
 
   signOut: { alignItems: 'center', justifyContent: 'center', paddingVertical: 16, marginBottom: 22 },
-  signOutText: { fontSize: 15, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronze400 },
+  signOutText: { fontSize: 15, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   /* Dimmed while the read runs. A ROLE token, so it means the same thing in Forge and in Alabaster. */
   exportBusy: { color: flColor.gray600 },
 
   footer: { alignItems: 'center', gap: 10, paddingTop: 4 },
   legalRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  legalLink: { fontSize: 12, color: flColor.bronze400 },
+  legalLink: { fontSize: 12, color: flColor.bronzeInk },
   dot: { fontSize: 12, color: flColor.gray600 },
   version: { fontSize: 11, color: flColor.gray600 },
 

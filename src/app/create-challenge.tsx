@@ -780,7 +780,7 @@ const styles = StyleSheet.create({
   pillTextBronze: { color: flColor.bronze300 },
 
   // sections
-  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   card: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, padding: 15, gap: 16, boxShadow: flShadow.card },
 
   // badges — still used by the measure rows in the picker sheet
@@ -844,16 +844,16 @@ const styles = StyleSheet.create({
   scoreIcon: { width: 30, height: 30, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint },
   scoreBody: { flex: 1, gap: 8 },
   scoreText: { fontSize: 12.5, lineHeight: 19, color: flColor.gray400 },
-  baselineText: { fontSize: 11.5, lineHeight: 17, color: flColor.bronze400 },
+  baselineText: { fontSize: 11.5, lineHeight: 17, color: flColor.bronzeInk },
 
   // fields
   field: { gap: 7 },
   fieldHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   fieldLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
-  reqMark: { fontSize: 12, fontWeight: '700', color: flColor.bronze400, lineHeight: 12 },
+  reqMark: { fontSize: 12, fontWeight: '700', color: flColor.bronzeInk, lineHeight: 12 },
   count: { fontSize: 11, color: flColor.gray600, fontVariant: ['tabular-nums'] },
-  countNear: { color: flColor.bronze400 },
+  countNear: { color: flColor.bronzeInk },
   input: {
     backgroundColor: flColor.charcoal900,
     borderWidth: 1,
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
   chipSub: { fontSize: 10, color: flColor.gray600, opacity: 0.6 },
-  chipSubOn: { color: flColor.bronze400 },
+  chipSubOn: { color: flColor.bronzeInk },
   customRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   customLabel: { fontSize: 13, color: flColor.gray400 },
   customHint: { marginLeft: 'auto', fontSize: 11, color: flColor.gray600 },
@@ -906,7 +906,7 @@ const styles = StyleSheet.create({
   },
   eyebrowRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   eyebrowRule: { width: 16, height: 1, backgroundColor: flColor.bronzeBorder },
-  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2, color: flColor.bronze400 },
+  eyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2, color: flColor.bronzeInk },
   reviewName: { marginTop: 10, fontFamily: flFont.display, fontSize: 26, fontWeight: '700', textAlign: 'center', color: flColor.cream100, textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 0 },
   reviewNameMuted: { color: flColor.charcoal500 },
   reviewTagline: { marginTop: 7, fontSize: 11.5, textAlign: 'center', color: flColor.gray600 },

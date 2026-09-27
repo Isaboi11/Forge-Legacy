@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   text: {
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     fontWeight: '700',
     letterSpacing: 0.5,
   },

@@ -1800,7 +1800,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.bronzeTint,
   },
-  nextLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  nextLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   nextName: { fontFamily: flFont.display, fontSize: 18, lineHeight: 24, color: flColor.cream100 },
   sharpen: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.bronzeBorderSubtle, gap: 9 },
   sharpenLabel: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
@@ -1863,7 +1863,7 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.bronze300, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
 
-  sectionLabel: { marginTop: 26, marginBottom: 6, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 26, marginBottom: 6, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   sectionSub: { marginBottom: 12, fontSize: 12.5, color: flColor.gray600 },
 
   weeks: { gap: 8 },
@@ -1901,12 +1901,12 @@ const styles = StyleSheet.create({
 
   exList: { paddingLeft: 51, paddingRight: 15, paddingBottom: 12 },
   exRow: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  blockLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 5 },
+  blockLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 5 },
   exName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100, marginBottom: 5 },
   setList: { gap: 3 },
   setRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   setLabel: { fontSize: 11.5, color: flColor.gray600 },
-  setValue: { fontSize: 12.5, color: flColor.bronze400, fontVariant: ['tabular-nums'] },
+  setValue: { fontSize: 12.5, color: flColor.bronzeInk, fontVariant: ['tabular-nums'] },
   plannedText: { fontSize: 12.5, color: flColor.gray600, fontVariant: ['tabular-nums'] },
   restText: { paddingVertical: 10, fontSize: 12.5, fontStyle: 'italic', color: flColor.gray600 },
 

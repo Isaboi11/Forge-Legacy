@@ -382,7 +382,7 @@ const chrome = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
   },
-  roleBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  roleBadgeText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   // sanctioned: clip the radial glow to the plate's rounded corners + the value text-shadow.
   glowClip: { overflow: 'hidden' },
   glowText: { textShadowColor: 'rgba(186, 134, 84,0.55)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 22 },
@@ -404,7 +404,7 @@ const sf = StyleSheet.create({
   },
   achValue: { fontFamily: flFont.display, fontSize: 44, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronze300 },
   achExercise: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
-  achLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 8 },
+  achLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 8 },
 
   // honor plate (vertical milestone)
   milestone: {
@@ -417,7 +417,7 @@ const sf = StyleSheet.create({
     boxShadow: flShadow.glowSubtle,
   },
   mileHead: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 9 },
-  mileKind: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  mileKind: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   mileTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   mileSub: { fontSize: 12, color: flColor.gray400, marginTop: 4 },
 
@@ -440,7 +440,7 @@ const sf = StyleSheet.create({
     borderBottomColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.bronzeTint,
   },
-  programKind: { flex: 1, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  programKind: { flex: 1, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   pricePill: {
     paddingVertical: 2,
     paddingHorizontal: 9,
@@ -635,7 +635,7 @@ const sf = StyleSheet.create({
     paddingHorizontal: 13,
   },
   trainTogHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  trainTogText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  trainTogText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   joinBtn: {
     flexShrink: 0,
     paddingVertical: 8,
@@ -671,7 +671,7 @@ const sd = StyleSheet.create({
     color: flColor.bronze300,
   },
   achExercise: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginTop: 8 },
-  achLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 2.5, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 9 },
+  achLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 2.5, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 9 },
 
   // honor / program plate (horizontal)
   plate: {
@@ -698,7 +698,7 @@ const sd = StyleSheet.create({
     boxShadow: flShadow.glowSubtle,
   },
   plateText: { flex: 1, minWidth: 0, gap: 3 },
-  plateLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  plateLabel: { fontSize: 9.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   plateTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   plateSub: { fontSize: 12, color: flColor.gray400 },
 
@@ -721,7 +721,7 @@ const sd = StyleSheet.create({
     borderBottomColor: flColor.bronzeBorderSubtle,
     backgroundColor: flColor.bronzeTint,
   },
-  programKind: { flex: 1, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  programKind: { flex: 1, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   pricePill: {
     paddingVertical: 2,
     paddingHorizontal: 9,
@@ -878,7 +878,7 @@ const sd = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   trainTogHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  trainTogText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  trainTogText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   joinBtn: {
     flexShrink: 0,
     paddingVertical: 9,

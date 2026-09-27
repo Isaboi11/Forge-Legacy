@@ -12,7 +12,7 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { Button } from '@/components/forge/composites/Button/Button';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
-import { themeScrim } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -447,20 +447,20 @@ const styles = StyleSheet.create({
   outlineBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
 
   scroll: { padding: 20, paddingBottom: 28 },
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: flColor.bronze400, marginBottom: 8 },
+  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 2, color: flColor.bronzeInk, marginBottom: 8 },
   title: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', lineHeight: 33, color: flColor.cream100 },
   summary: { marginTop: 10, fontSize: 13, color: flColor.gray400 },
 
   stats: { flexDirection: 'row', gap: 1, marginTop: 18, backgroundColor: flColor.charcoal700, borderWidth: 1, borderColor: flColor.charcoal700, borderRadius: flRadius.lg, overflow: 'hidden' },
   statCell: { flex: 1, gap: 5, paddingVertical: 15, paddingHorizontal: 10, backgroundColor: flColor.surfaceRecessed, alignItems: 'center' },
   statValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', color: flColor.cream100 },
-  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, color: flColor.bronze400, textAlign: 'center' },
+  statLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 1.2, color: flColor.bronzeInk, textAlign: 'center' },
 
   block: { marginTop: 26 },
   secBlock: { marginBottom: 20 },
   secHead: { flexDirection: 'row', alignItems: 'baseline', gap: 9, paddingHorizontal: 2, paddingBottom: 9 },
   secLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, color: flColor.gray600 },
-  secLabelMain: { fontSize: 11, color: flColor.bronze400 },
+  secLabelMain: { fontSize: 11, color: flColor.bronzeInk },
   spacer: { flex: 1 },
   secCount: { fontSize: 10, fontWeight: '600', color: flColor.gray600 },
   exList: { gap: 8 },
@@ -473,8 +473,8 @@ const styles = StyleSheet.create({
   exEquip: { fontSize: 11.5, color: flColor.gray600 },
   exScheme: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
 
-  histRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingVertical: 13, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.04)' },
-  histRowPressed: { backgroundColor: 'rgba(255,255,255,0.02)' },
+  histRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingVertical: 13, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: forgeOr<string>('rgba(255,255,255,0.04)', flColor.charcoal700) },
+  histRowPressed: { backgroundColor: forgeOr<string>('rgba(255,255,255,0.02)', flColor.hoverWash) },
   histDot: { marginTop: 5, width: 8, height: 8, borderRadius: 4, backgroundColor: flColor.bronze400 },
   histBody: { flex: 1, minWidth: 0, gap: 3 },
   histTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },

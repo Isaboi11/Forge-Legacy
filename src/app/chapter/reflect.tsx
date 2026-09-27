@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
   body: { paddingHorizontal: 26, paddingTop: 8 },
-  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 28, fontWeight: '700', letterSpacing: -0.3, lineHeight: 30, color: flColor.cream100, marginTop: 10 },
   range: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, marginTop: 10 },
   goalRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 12 },
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   promptItem: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
 
   lockedCard: { marginTop: 24, padding: 22, borderRadius: flRadius.xl, borderWidth: 1, borderColor: HAIRLINE, backgroundColor: flColor.surfaceRecessed },
-  lockedLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 14 },
+  lockedLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 14 },
   lockedText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17.5, lineHeight: 29, color: flColor.gray400 },
   lockedMeta: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
 
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   sealedScroll: { alignItems: 'center', paddingHorizontal: 30 },
   savedMark: { width: 52, height: 52, borderRadius: flRadius.md, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
 
-  sealedEyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
+  sealedEyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk, textAlign: 'center' },
   sealedName: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.gray400, textAlign: 'center', marginTop: 14 },
   sealedTitleBig: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.4, lineHeight: 35, color: flColor.cream100, textAlign: 'center', marginTop: 6 },
   sealedRange: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400, textAlign: 'center', marginTop: 12 },
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   statLabel: { fontFamily: flFont.sans, fontSize: 10.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600, marginTop: 7 },
 
   sealedReflection: { marginTop: 28, padding: 20, borderRadius: flRadius.xl, borderWidth: 1, borderColor: HAIRLINE, backgroundColor: flColor.surfaceRecessed, alignSelf: 'stretch' },
-  sealedReflectionLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 12 },
+  sealedReflectionLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 12 },
   sealedReflectionText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 16, lineHeight: 27, color: flColor.gray400 },
 
   sealedPermanence: { fontFamily: flFont.sans, fontSize: 12.5, lineHeight: 20, color: flColor.gray600, textAlign: 'center', marginTop: 28 },

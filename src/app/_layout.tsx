@@ -3,6 +3,7 @@ import {
   PlayfairDisplay_600SemiBold,
 } from '@expo-google-fonts/playfair-display';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { flColor, IS_PAPER } from '@/constants/foundation';
 import { useFonts } from 'expo-font';
 import { useColorScheme } from 'react-native';
 import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
@@ -81,6 +82,16 @@ installErrorSink();
  * unlock ceremony can defer to a live one (never stack over an earned moment), and inside
  * TourAnchorProvider so a tour run can be filtered to the cards actually mounted on screen.
  */
+/**
+ * The navigator's own ground (what shows between screens during a transition) follows the APP's theme on
+ * Alabaster, not the phone's: keyed on the OS it flashed black under a cream app whenever the phone was in
+ * dark mode. Forge keeps its existing OS-keyed behaviour untouched.
+ */
+const PAPER_NAV_THEME = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, background: flColor.base, card: flColor.base, border: flColor.charcoal600, text: flColor.cream100 },
+};
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [fontsLoaded, fontError] = useFonts({
@@ -121,7 +132,7 @@ export default function RootLayout() {
      * and then jumped.
      */
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={IS_PAPER ? PAPER_NAV_THEME : colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <ProfileProvider>
         {/*

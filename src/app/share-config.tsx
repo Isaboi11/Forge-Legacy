@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
   missingText: { fontSize: 14, color: flColor.gray400, textAlign: 'center' },
 
   // layout picker
-  sectionLabelFirst: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 4, marginBottom: 10, marginLeft: 2 },
+  sectionLabelFirst: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 4, marginBottom: 10, marginLeft: 2 },
   templateRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tplChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1 },
   tplChipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
@@ -672,16 +672,16 @@ const styles = StyleSheet.create({
   kindGlyph: { width: 70, height: 70, borderRadius: 35, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.glowSubtle },
 
   cardTitleBlock: { alignItems: 'center', marginTop: 16 },
-  cardEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  cardEyebrow: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   cardTitle: { marginTop: 4, fontFamily: flFont.display, fontSize: 25, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100, textAlign: 'center' },
   line: { textAlign: 'center', maxWidth: '100%' },
-  lineBronze: { marginTop: 12, fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  lineBronze: { marginTop: 12, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   lineBody: { marginTop: 9, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   lineMuted: { marginTop: 5, fontSize: 11, color: flColor.gray600 },
   cardFooter: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, alignSelf: 'stretch', alignItems: 'center' },
   athlete: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
 
-  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 24, marginBottom: 10, marginLeft: 2 },
+  sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 24, marginBottom: 10, marginLeft: 2 },
   detailCard: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, overflow: 'hidden' },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 15 },
   detailRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
@@ -709,14 +709,14 @@ const styles = StyleSheet.create({
   outsideLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
 
   footer: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A', boxShadow: flShadow.card },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.card },
   ctaText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.4, color: '#F7F5F1' },
 
   pickerBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: flColor.overlayDark },
   pickerCard: { width: '100%', maxWidth: 320, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.xl, paddingVertical: 20, paddingHorizontal: 20, boxShadow: flShadow.ambient },
   pickerTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginBottom: 12 },
   pickerScroll: { maxHeight: 300 },
-  pickerCta: { marginTop: 16, alignItems: 'center', paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: '#3D2F1A' },
+  pickerCta: { marginTop: 16, alignItems: 'center', paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid) },
   pickerCtaOff: { opacity: 0.45 },
   pickerCtaText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: '#F7F5F1' },
 });

@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   body: { paddingHorizontal: 18, paddingTop: 6 },
 
   section: { marginBottom: 22 },
-  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 4 },
+  sectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 4 },
   blurb: { fontSize: 12, lineHeight: 18, color: flColor.gray400, marginBottom: 11 },
 
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, overflow: 'hidden' },
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   /* 0159 — the schedule editor. A column inside the card, not a row: it is the one control here that
      needs two lines of its own rather than a switch at the end of a sentence. */
   editor: { flexDirection: 'column', alignItems: 'stretch', gap: 0, paddingTop: 13, paddingBottom: 15 },
-  editorLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 9 },
+  editorLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 9 },
   editorLabelSpaced: { marginTop: 16 },
   editorSummary: { fontSize: 12, lineHeight: 18, color: flColor.gray400, marginTop: 14 },
 

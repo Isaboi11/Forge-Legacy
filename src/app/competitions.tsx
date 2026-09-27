@@ -512,8 +512,8 @@ const styles = StyleSheet.create({
   chipLabelOn: { color: flColor.bronze300 },
 
   // sections
-  sectionLabel: { marginTop: 24, marginBottom: 12, marginHorizontal: 22, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
-  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  sectionLabel: { marginTop: 24, marginBottom: 12, marginHorizontal: 22, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
+  sectionLabelInline: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 24, marginBottom: 12, marginHorizontal: 22 },
   section: { marginHorizontal: 22, gap: 10 },
   stack: { marginHorizontal: 22, gap: 12 },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     boxShadow: `${flShadow.card}, ${flShadow.glowSubtle}`,
   },
   typeRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  typeName: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  typeName: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   activeName: { marginTop: 9, fontFamily: flFont.display, fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   oppRow: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 6 },
   oppText: { flexShrink: 1, fontSize: 12.5, color: flColor.gray400 },
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   barTrack: { marginTop: 14, height: 8, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700 },
   barFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden', boxShadow: flShadow.glowSubtle },
   activeFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
-  standing: { fontSize: 12, fontWeight: '600', color: flColor.bronze400 },
+  standing: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
   days: { fontSize: 11.5, color: flColor.gray600 },
 
   // history
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
   championsTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   championsSub: { marginTop: 2, fontSize: 11.5, color: flColor.gray600 },
   viewAllRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronze400 },
+  viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronzeInk },
   statCell: { flexGrow: 1, flexBasis: '48%', alignItems: 'center', gap: 5, paddingVertical: 18, backgroundColor: flColor.surfaceRecessed },
   statValue: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', color: flColor.cream100 },
   statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.glowSubtle,
   },
   favBody: { flex: 1, minWidth: 0, gap: 2 },
-  favEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  favEyebrow: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   favType: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100 },
 
   // empties

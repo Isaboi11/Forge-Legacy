@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1.6,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   tileTitle: {
     fontFamily: flFont.display,
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   plannedNote: {
     fontSize: 11,
     fontWeight: '600',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   subtle: {
     fontSize: 12.5,

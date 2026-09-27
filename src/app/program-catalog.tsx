@@ -134,5 +134,5 @@ const styles = StyleSheet.create({
   noResultsText: { fontSize: 13, color: flColor.gray600 },
   helpMe: { marginTop: 22, paddingVertical: 6 },
   helpMeText: { fontSize: 13, color: flColor.gray600 },
-  helpMeLink: { color: flColor.bronze400, fontWeight: '600' },
+  helpMeLink: { color: flColor.bronzeInk, fontWeight: '600' },
 });

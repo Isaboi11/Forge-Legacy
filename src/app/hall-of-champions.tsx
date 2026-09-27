@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
   scoreUnit: { marginTop: 3, fontSize: 8.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
 
   closing: { marginTop: 12, marginHorizontal: 24, fontSize: 11, lineHeight: 17, color: flColor.gray600 },
-  podium: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 16, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: 'rgba(0,0,0,0.16)' },
+  podium: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 16, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(0,0,0,0.16)') },
   podiumEntry: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 },
   podiumPlace: { width: 15, height: 15, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1 },
   podiumSilver: { borderColor: 'rgba(185,188,194,0.6)' },

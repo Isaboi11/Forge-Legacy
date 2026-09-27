@@ -235,7 +235,7 @@ function SessionRow({ record, onPress }: { record: ActivityRecord; onPress: () =
 
 const styles = StyleSheet.create({
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 6 },
-  logBtnText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
+  logBtnText: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
 

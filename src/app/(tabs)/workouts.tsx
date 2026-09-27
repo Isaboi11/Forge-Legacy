@@ -852,7 +852,7 @@ const styles = StyleSheet.create({
   stack: { gap: 36 },
   stackTight: { gap: 10 },
   discoverBack: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', paddingHorizontal: 18, paddingVertical: 10 },
-  discoverBackText: { fontSize: 14, fontWeight: '600', color: flColor.bronze400 },
+  discoverBackText: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
 
   /* ── THE ARRIVAL VIEW (ONB-A6-D3) ─────────────────────────────────────────────────────────────── */
   firstRun: { gap: 26 },
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
   },
   tipText: { flex: 1, minWidth: 0, gap: 6 },
-  tipTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.bronze400 },
+  tipTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.bronzeInk },
   tipBody: { fontSize: 14, lineHeight: 20, color: flColor.gray400 },
 
   kicker: {

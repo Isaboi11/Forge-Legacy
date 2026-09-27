@@ -1376,7 +1376,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.6,
     lineHeight: 15,
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 6,
   },
   chapter: { color: flColor.gray600, letterSpacing: 1.4 },
@@ -1417,7 +1417,7 @@ const styles = StyleSheet.create({
   bigTitle: { fontSize: 16, fontWeight: '700', letterSpacing: 0.2, color: flColor.cream100 },
   bigTitleOn: { color: flColor.bronze300 },
   bigSub: { fontSize: 13, lineHeight: 19, color: flColor.gray600 },
-  holtMark: { fontFamily: flFont.display, fontSize: 15, color: flColor.bronze400 },
+  holtMark: { fontFamily: flFont.display, fontSize: 15, color: flColor.bronzeInk },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   chip: {
@@ -1493,7 +1493,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: flColor.gray400,
   },
-  tag: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.1, color: flColor.bronze400, marginTop: 2 },
+  tag: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.1, color: flColor.bronzeInk, marginTop: 2 },
 
   why: { marginTop: 14, gap: 6 },
   whyHead: { fontSize: 14.5, fontWeight: '700', color: flColor.cream100 },
@@ -1536,7 +1536,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: flColor.charcoal700,
   },
-  dayName: { fontSize: 11.5, fontWeight: '700', letterSpacing: 1.1, color: flColor.bronze400 },
+  dayName: { fontSize: 11.5, fontWeight: '700', letterSpacing: 1.1, color: flColor.bronzeInk },
   dayMeta: { fontSize: 11, color: flColor.gray600 },
   item: { paddingHorizontal: 14, paddingVertical: 9, gap: 2 },
   itemName: { fontSize: 14.5, color: flColor.cream100 },

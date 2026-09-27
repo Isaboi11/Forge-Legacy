@@ -13,6 +13,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { ensurePinPoster } from '@/data/pin-poster';
 import { useProfile } from '@/lib/profile';
@@ -671,8 +672,9 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
           </View>
         </View>
       )}
-      <View style={styles.pinKind}>
-        <Text style={styles.pinKindText}>{pin.kind}</Text>
+      {/* The kind chip has the title's two grounds too: a dark chip over media, the recessed tone on the card. */}
+      <View style={[styles.pinKind, media ? null : styles.pinKindOnCard]}>
+        <Text style={[styles.pinKindText, media ? null : styles.pinKindTextOnCard]}>{pin.kind}</Text>
       </View>
       {/*
         ⚠ THE TITLE HAS TWO GROUNDS AND THEREFORE TWO COLOURS. Over MEDIA it sits on a 0.92 black scrim,
@@ -824,7 +826,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
     marginBottom: 10,
   },
   firstRunTitle: {
@@ -857,7 +859,7 @@ const styles = StyleSheet.create({
   inviteText: { flex: 1, minWidth: 0 },
   inviteHeading: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   inviteSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 3 },
-  inviteChevron: { fontSize: 18, color: flColor.bronze400 },
+  inviteChevron: { fontSize: 18, color: flColor.bronzeInk },
 
   root: { flex: 1 },
   scroll: { paddingBottom: SCREEN_BOTTOM_GAP },
@@ -866,7 +868,7 @@ const styles = StyleSheet.create({
   statusWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 40 },
   statusText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15, textAlign: 'center' },
   retryBtn: { paddingVertical: 10, paddingHorizontal: 22, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronze400 },
-  retryText: { color: flColor.bronze400, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
+  retryText: { color: flColor.bronzeInk, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600' },
 
   // hero identity
   identityRow: {
@@ -957,7 +959,7 @@ const styles = StyleSheet.create({
      that one is an optional space to fill, this is the spine of the product being absent, and it should
      read as the primary thing to do rather than as one more empty shelf. */
   inviteCard: { padding: 24, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
-  inviteEyebrow: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  inviteEyebrow: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   inviteTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100, marginTop: 12 },
   inviteBody: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, marginTop: 10 },
   inviteBtn: { marginTop: 20, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center' },
@@ -1011,7 +1013,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pinText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronze400 },
+  pinText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronzeInk },
 
   // pinned media card (.dc §pinned)
   pinCard: {
@@ -1061,7 +1063,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
   },
+  pinKindOnCard: { backgroundColor: forgeOr<string>('rgba(8,11,14,0.72)', flColor.surfaceRecessed) },
   pinKindText: { fontSize: 8, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
+  pinKindTextOnCard: { color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk) },
   pinTitle: {
     position: 'absolute',
     left: 12,
@@ -1078,7 +1082,7 @@ const styles = StyleSheet.create({
   storyStack: { gap: 12 },
   timelineBlock: { paddingTop: 16 },
   viewTimeline: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 12, paddingHorizontal: 6 },
-  viewTimelineText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronze400 },
+  viewTimelineText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   // what endures
   enduresStack: { marginTop: 46, gap: 26 },

@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 28 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 8 },
-  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },
 
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   gateActions: { gap: 10, paddingTop: 8 },
   gateFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
   gateFootText: { fontSize: 12.5, color: flColor.gray400 },
-  linkText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400, paddingVertical: 10, paddingHorizontal: 4 },
+  linkText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk, paddingVertical: 10, paddingHorizontal: 4 },
 
   stepHead: { gap: 12, paddingTop: 30, paddingBottom: 4, paddingHorizontal: 2 },
   bars: { flexDirection: 'row', gap: 6 },

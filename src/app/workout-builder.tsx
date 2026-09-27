@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 18, paddingBottom: 190 },
 
   head: { paddingTop: 6, paddingBottom: 16, gap: 7 },
-  fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.bronzeInk },
   nameInput: {
     fontFamily: flFont.display,
     fontSize: 21,
@@ -873,14 +873,14 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  cardioSymbol: { fontSize: 18, color: flColor.bronze400, width: 22, textAlign: 'center' },
+  cardioSymbol: { fontSize: 18, color: flColor.bronzeInk, width: 22, textAlign: 'center' },
   cardioRowText: { flex: 1, gap: 2 },
   cardioRowName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   cardioRowSub: { fontSize: 12, color: flColor.gray600 },
   sectionRuled: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
-  sectionLabelMain: { color: flColor.bronze400 },
+  sectionLabelMain: { color: flColor.bronzeInk },
   sectionReq: { fontSize: 10, color: flColor.gray600 },
   spacer: { flex: 1 },
   sectionCount: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
@@ -903,7 +903,7 @@ const styles = StyleSheet.create({
   stepUnit: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
 
   pairHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 7, paddingHorizontal: 13, backgroundColor: flColor.bronzeTint, borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorderSubtle },
-  pairHeadText: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze400 },
+  pairHeadText: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronzeInk },
   pairBreak: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400 },
   /* Same row as the Program Builder's, to the pixel — the two builders author one field and should not
      look like they author two. */
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
   noteActions: { gap: 8, marginTop: 12 },
 
   pairLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  pairLinkText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, color: flColor.bronze400 },
+  pairLinkText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, color: flColor.bronzeInk },
 
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle },
   addText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
@@ -944,7 +944,7 @@ const styles = StyleSheet.create({
      which was generous on a home-button phone and still under the home indicator on a modern one. */
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: SCREEN_GUTTER, paddingTop: 16, gap: 8 },
   laterBtn: { alignItems: 'center', paddingVertical: 8 },
-  laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   laterTextOff: { color: flColor.gray600 },
   gate: { textAlign: 'center', fontSize: 11.5, color: flColor.gray600 },
 });

@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 24, paddingTop: 8, gap: 22 },
 
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
-  changePhoto: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronze400 },
+  changePhoto: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   group: { gap: 8 },
   groupLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   typeCol: { gap: 8 },
 
   handleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronze400, paddingBottom: 12 },
+  at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronzeInk, paddingBottom: 12 },
   uStatus: { fontFamily: flFont.sans, fontSize: 13 },
   uStatusGap: { height: 18 },
 

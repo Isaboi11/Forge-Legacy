@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
   barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
   body: { paddingHorizontal: 26, paddingTop: 8, paddingBottom: 28 },
-  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronze400 },
+  eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', letterSpacing: -0.3, lineHeight: 32, color: flColor.cream100, marginTop: 10 },
   sub: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400, marginTop: 12 },
 
-  fieldLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginTop: 22, marginBottom: 8 },
+  fieldLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 22, marginBottom: 8 },
   well: { paddingVertical: 14, borderTopWidth: 1, borderBottomWidth: 1, borderColor: HAIRLINE, marginTop: 20 },
   input: { fontFamily: flFont.sans, fontSize: 17, fontWeight: '500', color: flColor.cream100 },
   counter: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 8, textAlign: 'right' },

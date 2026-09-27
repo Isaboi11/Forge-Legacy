@@ -13,6 +13,7 @@ import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/
 import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import {
   albumStatus,
   dayLabel,
@@ -593,7 +594,7 @@ function Viewer({
     <View style={[styles.viewer, { paddingTop: insets.top }]}>
       <View style={styles.viewerBar}>
         <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={styles.barBtn}>
-          <CloseGlyph />
+          <CloseGlyph color={VIEWER_MUTED} />
         </Pressable>
         <Text style={styles.viewerChapter} numberOfLines={1}>
           {chapter}
@@ -622,10 +623,10 @@ function Viewer({
           <>
             {/* 44pt, not the design's 40 — this is the one control tapped over and over. */}
             <Pressable onPress={() => step(-1)} accessibilityRole="button" accessibilityLabel="Previous photo" style={[styles.arrow, styles.arrowLeft]}>
-              <ChevronGlyph dir="left" />
+              <ChevronGlyph dir="left" color={VIEWER_MUTED} />
             </Pressable>
             <Pressable onPress={() => step(1)} accessibilityRole="button" accessibilityLabel="Next photo" style={[styles.arrow, styles.arrowRight]}>
-              <ChevronGlyph dir="right" />
+              <ChevronGlyph dir="right" color={VIEWER_MUTED} />
             </Pressable>
           </>
         ) : null}
@@ -711,6 +712,9 @@ function ChevronGlyph({ dir, size = 20, color = flColor.gray400 }: { dir: 'left'
   );
 }
 
+/** Secondary ink on the always-black viewer: Forge's gray400, and a fixed muted cream on Alabaster. */
+const VIEWER_MUTED = forgeOr<string>(flColor.gray400, 'rgba(247,245,241,0.72)');
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   fill: { flex: 1 },
@@ -747,7 +751,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: -0.4,
     lineHeight: 26.3,
-    color: flColor.cream100,
+    // onMedia, not cream100: the cover is always dark (photo + 0.90 fade), so the ink must not flip.
+    color: flColor.onMedia,
     textShadowColor: 'rgba(0,0,0,0.78)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 12,
@@ -808,7 +813,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', textAlign: 'center', color: flColor.gray600 },
 
   monthStack: { marginTop: 24, gap: 30 },
-  monthLabel: { paddingHorizontal: 2, paddingBottom: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400 },
+  monthLabel: { paddingHorizontal: 2, paddingBottom: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk },
   dayStack: { position: 'relative', gap: 16 },
   connector: { position: 'absolute', left: SPINE_X, top: 10, bottom: 10, width: 1 },
 
@@ -841,23 +846,25 @@ const styles = StyleSheet.create({
   thumbCapText: { fontSize: 8, fontWeight: '600', textAlign: 'center', color: flColor.onMedia },
 
   // ── viewer ──
+  // The viewer stays black in BOTH themes (a photo viewer is a media stage), so everything on it takes a
+  // fixed ink — role tokens flip to dark ink on Alabaster and vanished here. Forge keeps its exact values.
   viewer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 80, backgroundColor: '#050505', flexDirection: 'column' },
-  viewerBar: { flexShrink: 0, height: 56, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal800 },
+  viewerBar: { flexShrink: 0, height: 56, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: forgeOr<string>(flColor.charcoal800, 'rgba(255,255,255,0.08)') },
   viewerChapter: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
-  viewerPos: { paddingRight: 12, fontSize: 11, color: flColor.gray600, fontVariant: ['tabular-nums'] },
+  viewerPos: { paddingRight: 12, fontSize: 11, color: forgeOr<string>(flColor.gray600, 'rgba(247,245,241,0.5)'), fontVariant: ['tabular-nums'] },
 
   stage: { flex: 1, minHeight: 0, alignItems: 'center', justifyContent: 'center', padding: 16 },
   frame: { aspectRatio: 3 / 4, maxHeight: '100%', borderRadius: flRadius.lg, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: '#0b0a09', boxShadow: flShadow.elevated },
   playBig: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(5,5,5,0.28)' },
-  arrow: { position: 'absolute', top: '50%', marginTop: -22, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'rgba(8,11,14,0.6)' },
+  arrow: { position: 'absolute', top: '50%', marginTop: -22, width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: forgeOr<string>(flColor.charcoal600, 'rgba(255,255,255,0.14)'), backgroundColor: 'rgba(8,11,14,0.6)' },
   arrowLeft: { left: 6 },
   arrowRight: { right: 6 },
 
   caption: { flexShrink: 0, paddingHorizontal: 22, paddingTop: 16, paddingBottom: 20 },
-  capDate: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
-  posePill: { alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  poseText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6, color: flColor.gray400 },
-  capBody: { marginTop: 10, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 14, lineHeight: 21, color: flColor.gray400 },
+  capDate: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: flColor.onMedia },
+  posePill: { alignSelf: 'flex-start', marginTop: 6, paddingHorizontal: 10, paddingVertical: 3, borderRadius: flRadius.pill, borderWidth: 1, borderColor: forgeOr<string>(flColor.charcoal600, 'rgba(255,255,255,0.14)'), backgroundColor: forgeOr<string>(flColor.surfaceRecessed, 'rgba(255,255,255,0.06)') },
+  poseText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6, color: VIEWER_MUTED },
+  capBody: { marginTop: 10, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 14, lineHeight: 21, color: VIEWER_MUTED },
 
   // ── states ──
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 4 },

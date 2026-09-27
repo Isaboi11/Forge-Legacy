@@ -342,14 +342,14 @@ const styles = StyleSheet.create({
 
   headRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, paddingHorizontal: 2, paddingBottom: 24 },
   headText: { flex: 1, minWidth: 0, gap: 6 },
-  kicker: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  kicker: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   range: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100, letterSpacing: -0.3, lineHeight: 34 },
   stepper: { flexDirection: 'row', alignItems: 'center', marginRight: -10 },
   stepButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   summaryRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, paddingHorizontal: 2, paddingBottom: 26 },
   bigNumber: { fontFamily: flFont.display, fontSize: 48, color: flColor.cream100, letterSpacing: -0.8, lineHeight: 48 },
-  bigLabel: { marginTop: 8, fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronze400 },
+  bigLabel: { marginTop: 8, fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.bronzeInk },
   summaryRight: { alignItems: 'flex-end', gap: 5, paddingBottom: 1 },
   summaryValue: { fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   summaryLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
@@ -411,7 +411,7 @@ const styles = StyleSheet.create({
   calloutRight: { right: 0 },
   calloutTitle: { fontSize: 12, fontWeight: '600', color: flColor.cream100 },
   calloutDetail: { fontSize: 11, color: flColor.gray600 },
-  calloutGood: { color: flColor.bronze400 },
+  calloutGood: { color: flColor.bronzeInk },
 
   dayLabels: { flexDirection: 'row', gap: 8, paddingTop: 10 },
   dayLabel: { flex: 1, textAlign: 'center', fontSize: 10.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
@@ -443,11 +443,11 @@ const styles = StyleSheet.create({
   macroAvg: { fontSize: 15, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   macroTarget: { fontSize: 13, color: flColor.gray600, fontVariant: ['tabular-nums'] },
   macroNote: { fontSize: 12, color: flColor.gray600 },
-  macroNoteGood: { color: flColor.bronze400 },
+  macroNoteGood: { color: flColor.bronzeInk },
 
   gapBlock: { marginTop: 30, paddingTop: 14, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 8 },
   gapText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600 },
-  gapAction: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
+  gapAction: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
 
   sheetBody: { paddingBottom: 16 },
   sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 12 },
@@ -461,6 +461,6 @@ const styles = StyleSheet.create({
   histFillNone: { backgroundColor: 'transparent' },
   histTick: { position: 'absolute', top: -4, bottom: -4, width: 1, backgroundColor: flColor.bronzeBorder },
   histValue: { width: 64, textAlign: 'right', fontSize: 13, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
-  histValueHit: { color: flColor.bronze400 },
+  histValueHit: { color: flColor.bronzeInk },
   histValueNone: { color: flColor.gray600 },
 });

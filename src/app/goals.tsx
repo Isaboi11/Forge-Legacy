@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
 
   primary: { padding: 18, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, marginBottom: 16 },
   primaryDone: { borderColor: flColor.bronzeBorderSubtle },
-  primaryEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 8 },
+  primaryEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
   primaryName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
   primaryProgress: { marginTop: 16 },
   narrativeState: { fontSize: 13, color: flColor.gray400, marginTop: 12 },
@@ -1034,7 +1034,7 @@ const styles = StyleSheet.create({
   addText: { fontSize: 14, fontWeight: '600', color: flColor.bronze300 },
 
   // detail
-  detailEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 8 },
+  detailEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 8 },
   detailName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
   detailBlock: { marginTop: 28, gap: 12 },
   detailLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600 },
@@ -1055,7 +1055,7 @@ const styles = StyleSheet.create({
   // form
   field: { marginBottom: 20 },
   fieldHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400 },
+  fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk },
   fieldCounter: { fontSize: 11, color: flColor.gray600 },
   fieldHeadTight: { marginBottom: 5 },
   fieldHint: { marginBottom: 10, fontSize: 12, lineHeight: 17.5, color: flColor.gray600 },
@@ -1077,11 +1077,11 @@ const styles = StyleSheet.create({
 
   // body goals — direction, form, and the reading they start from
   dirBlock: { marginTop: 4 },
-  dirLabel: { marginTop: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  dirLabel: { marginTop: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
   dirSummary: { marginTop: 12, fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
   dirProblem: { marginTop: 12, fontSize: 12.5, lineHeight: 18, color: flColor.redMuted },
   startRow: { marginTop: 14 },
-  startLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze400 },
+  startLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronzeInk },
   startInput: { marginTop: 8 },
   startNote: { marginTop: 7, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   autoNote: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint, marginTop: 4 },
@@ -1107,6 +1107,6 @@ const styles = StyleSheet.create({
 
   // sheet
   sheet: { paddingHorizontal: 2, paddingBottom: 8 },
-  sheetLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
+  sheetLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginBottom: 10 },
   sheetActions: { marginTop: 16 },
 });

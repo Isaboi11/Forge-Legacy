@@ -97,7 +97,7 @@ export class ScreenBoundary extends React.Component<
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: flColor.base, paddingHorizontal: 24, paddingTop: 90, gap: 12 },
-  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, color: flColor.bronze400 },
+  eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.5, color: flColor.bronzeInk },
   title: { fontFamily: flFont.display, fontSize: 24, lineHeight: 31, color: flColor.cream100 },
   body: { fontSize: 14.5, lineHeight: 22, color: flColor.gray400 },
   errBox: {

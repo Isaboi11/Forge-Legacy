@@ -976,9 +976,9 @@ const styles = StyleSheet.create({
   // Feedback (0167). Stacked rather than tabular: the body is the point and it needs the full width.
   feedbackList: { marginTop: 10 },
   // ── Errors (0176) ──────────────────────────────────────────────────────────
-  errCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.bronze400 },
+  errCount: { flex: 1, fontSize: 11, fontWeight: '600', color: flColor.bronzeInk },
   errMessage: { marginTop: 5, fontSize: 13, lineHeight: 19, color: flColor.cream100 },
-  errStale: { marginTop: 4, fontSize: 11, fontWeight: '600', color: flColor.bronze400 },
+  errStale: { marginTop: 4, fontSize: 11, fontWeight: '600', color: flColor.bronzeInk },
   errBuilds: { marginTop: 3, fontSize: 10.5, color: flColor.gray400 },
   errActions: { flexDirection: 'row', gap: 6, marginTop: 8 },
   errChip: {
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
   errChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.charcoal800 },
   errChipPressed: { opacity: 0.7 },
   errChipText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.6, color: flColor.gray400 },
-  errChipTextOn: { color: flColor.bronze400 },
+  errChipTextOn: { color: flColor.bronzeInk },
   errDetail: { marginTop: 10, gap: 10 },
   errOccurrence: {
     padding: 10,
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.8,
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   feedbackWho: { flex: 1, minWidth: 0, fontSize: 11.5, color: flColor.gray600 },
   feedbackWhen: { flexShrink: 0, fontSize: 11.5, color: flColor.gray400 },

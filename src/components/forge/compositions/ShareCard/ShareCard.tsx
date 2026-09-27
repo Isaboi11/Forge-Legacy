@@ -44,7 +44,7 @@ function KindGlyph({ kind }: { kind: ShareKind }) {
 
 const LINE_STYLE: Record<FieldEmphasis, TextStyle> = {
   value: { fontSize: 15, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronze300 },
-  bronze: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze400 },
+  bronze: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   body: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   muted: { fontSize: 11, color: flColor.gray600 },
 }
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.8,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
   title: {
     fontFamily: flFont.display,
@@ -181,6 +181,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    color: flColor.bronze400,
+    color: flColor.bronzeInk,
   },
 })

@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   outlineBtnText: { fontSize: 13, color: flColor.cream100 },
 
   scroll: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 176 },
-  eyebrow: { fontSize: 10, letterSpacing: 1.6, color: flColor.bronze400, marginBottom: 6 },
+  eyebrow: { fontSize: 10, letterSpacing: 1.6, color: flColor.bronzeInk, marginBottom: 6 },
   title: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
   summary: { marginTop: 4, fontSize: 13, color: flColor.gray400 },
 
