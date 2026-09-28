@@ -1,6 +1,12 @@
 # App Privacy labels — the answer sheet
 
-**v1.1 · 2026-09-26 · Launch Checklist §10.3** (v1.0 2026-08-19)
+**v1.2 · 2026-09-27 · Launch Checklist §10.3** (v1.1 2026-09-26 · v1.0 2026-08-19)
+
+> ⚠ **v1.2 — CRASH DATA AND OTHER DIAGNOSTIC DATA ARE YES.** v1.0 answered No on 2026-08-19 because *no crash SDK
+> was installed* — two days BEFORE `0176` (the app's own error reporter) went live on 08-21. That reporter sends
+> every error, with the account id when signed in, the device model and app version, to our own database, and
+> Apple counts first-party collection. `site/privacy.html` § *Diagnostics* has disclosed it since then; only this
+> sheet (and the published labels) lagged. Found 2026-09-27 while weighing Sentry. Rows changed are marked **(v1.2)**.
 
 > ✅ **v1.1 — WHAT CHANGED, AND WHY IT IS NOW SAFE TO SIGN.** The policy was rewritten and went live
 > 2026-09-26 (Cloudflare `102ae125`): Nutrition, the AI features (Anthropic), RevenueCat, food databases,
@@ -127,6 +133,17 @@ declaration about a real stored value.
 ⚠ This is the ONE row that is **not linked**. If the query is removed from that log line
 (`supabase/functions/food-search/index.ts`, the `search "…"` log), this row goes away.
 
+### Diagnostics **(v1.2)**
+
+| Data type | Linked? | Purposes | Source |
+|---|---|---|---|
+| **Crash Data** | Linked | App Functionality | *Diagnostics: when something goes wrong* — the error message and the trace of where in our code it happened (`client_errors`, 0176). `user_id` is set whenever the athlete is signed in. |
+| **Other Diagnostic Data** | Linked | App Functionality | Same section — the screen, app version and phone model sent with each report. |
+
+*Not collected: Performance Data* — the reporter records faults, not timings. The step trail sent with a report
+is usage, already declared under **Product Interaction**. Not used for tracking. **If Sentry is ever added
+(Error-Reporting.md Stage 2), re-check this section and the policy's "no third-party crash reporting" line together.**
+
 ---
 
 ## 3 · Do NOT declare these — and why each was considered
@@ -139,8 +156,8 @@ Recorded so they read as decisions rather than omissions, and so the next person
 | ~~Search History~~ | **Moved to §2 (v1.1)** | Analytics still never carry queries (P6-A1-D3), but the food-search function log does. |
 | **Browsing History** | No | Not a browser and no web-content history. |
 | **Contacts** | No | No address-book access anywhere. Invites are handled in-app and by share sheet — the share sheet is the OS's, and Forge never reads the contact list. |
-| **Crash Data / Performance Data** | No | **No crash-reporting SDK is installed.** Verified against `package.json` 2026-08-19. |
-| **Other Diagnostic Data** | No | Screen, app version and platform *are* collected with feedback — declared under **Customer Support**, where they belong, rather than twice. |
+| ~~Crash Data~~ · ~~Other Diagnostic Data~~ | **Moved to §2 (v1.2)** | Were No on 2026-08-19 ("no crash SDK installed") — true that day, false from 08-21 when `0176` went live. First-party collection counts. |
+| **Performance Data** | No | The error reporter records faults, not timings; no performance SDK. |
 | **Payment Info / Credit Info** | No | The app never sees a card. Apple processes every transaction. |
 | ~~Purchase History~~ | **Moved to §2 (v1.1)** | The flip in §4 happened with build 9. |
 | **Environment Scanning · Hands · Head · Other Data** | No | Nothing in the app touches these. |

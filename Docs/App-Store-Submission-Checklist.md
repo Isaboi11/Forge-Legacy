@@ -80,6 +80,7 @@ No lifetime plan. United States only at launch.
 - ✅ Release set to "Manually release this version" — 09-23
 - ✅ Regulated medical device declaration → **No**, saved 09-27 (banner gone)
 - ✅ App Privacy labels — answer sheet v1.1 ready 09-26 (`Docs/App-Store-Privacy-Labels.md`, `6b157bba`: Nutrition, AI, purchases, search log) · ✅ entered in App Store Connect, all 13 types match the sheet (checked by Claude in Chrome 09-27) · ✅ Published 09-27
+  · ⬜ **Add Crash Data + Other Diagnostic Data** (Yes · linked · App Functionality · not tracking) and re-publish — sheet v1.2, 09-27: the app's own error reporter (0176) collects them; v1.0 said No before it went live
 
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
