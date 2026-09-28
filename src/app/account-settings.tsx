@@ -1,7 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,8 @@ import { isAppAdmin } from '@/data/admin-live';
 import { usePersist } from '@/hooks/usePersist';
 import { useToast } from '@/hooks/useCeremony';
 import { fetchHomeGym } from '@/data/home-gym-live';
+import { fetchAppleHealthRow } from '@/data/apple-health-sync-live';
+import { needsLookBadge } from '@/domain/health/import-rows';
 import { fetchAccountIdentity } from '@/domain/profile/live';
 import {
   ABOUT_BODY,
@@ -166,6 +168,11 @@ export default function AccountSettingsScreen() {
   /* The operator row (0129). `isAppAdmin()` fails closed and never throws, so `data` is true only for
      a confirmed admin — while it loads, and on any error, the row simply is not there. */
   const { data: isAdmin } = useQuery(isAppAdmin, []);
+  /* Apple Health (build 10, plan §3.2): 'not-here' on the web and on any build without HealthKit — the
+     row then opens the "next update" sheet — else Connected / Off. Read on every visit, so a disconnect
+     or a sync that held a possible duplicate shows the moment the athlete comes back here. */
+  const { data: appleHealthRow, refetch: refetchAppleHealth } = useQuery(fetchAppleHealthRow, []);
+  useFocusEffect(useCallback(() => refetchAppleHealth(), [refetchAppleHealth]));
 
   const [sheet, setSheet] = useState<LegalKey | 'about' | 'appleHealth' | null>(null);
 
@@ -180,9 +187,8 @@ export default function AccountSettingsScreen() {
     hasPreferences: true,
     hasHoltMemory: true,
     hasHealthConsent: true,
-    /* Apple-Health-Build-Plan §3.2: no build has the HealthKit module yet, and the web never will, so the
-       row says when it arrives. Build 10 passes 'connected' / 'off' from `appleHealthAvailable()`. */
-    appleHealth: 'not-here',
+    appleHealth: appleHealthRow?.state ?? 'not-here',
+    appleHealthNote: needsLookBadge(appleHealthRow?.held ?? 0),
     isAdmin: isAdmin === true,
     /* `null` while entitlement is loading or unverifiable, which the row reads as "say nothing". */
     tier: useTier() ?? undefined,

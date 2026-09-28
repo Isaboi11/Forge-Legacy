@@ -8,8 +8,8 @@
  * `ended_at` here; stamping `now()` would drop 90 days of history into this week's goals and streaks. This
  * payload carries both ends so the server never has to guess.
  *
- * ⚠ The RPC (migration 0234) is not written yet. The field names below are this module's proposal; the
- *   migration must read the same names, and `import-rows.test.mjs` pins them so a rename is a visible edit.
+ * ⚠ Migration 0234's `import_external_workouts` reads exactly these field names (applied 09-28);
+ *   `import-rows.test.mjs` pins them so a rename is a visible edit on both sides.
  */
 
 import type { ImportCandidate } from './dedup.ts';

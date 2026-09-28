@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { writeBackWorkout } from '@/data/apple-health-sync-live';
 import { itemByKey } from '@/domain/exercise-picker/data';
 import { sessionActivityType } from './conditioning';
 import { detectPRs, doneSetCount, PR_MAX_REPS, sessionVolume, type DetectedPR } from './metrics';
@@ -165,6 +166,7 @@ export async function saveWorkout(
   if (error) {
     const recovered = await findCommittedWorkout(user.id, session.startedAt);
     if (!recovered) throw error;
+    void writeBackWorkout(recovered); // Apple Health write-back (§3.5) — fire and forget, never blocks a save
     return { workoutId: recovered, prs, volume: sessionVolume(session), sets: doneSetCount(session) };
   }
 
@@ -239,6 +241,11 @@ export async function saveWorkout(
     }
   }
 
+  /* APPLE HEALTH WRITE-BACK (Build 10 · Apple-Health-Build-Plan §3.5) — the same post-commit rule: fire and
+     forget, only when this phone is connected with "Save Forge workouts to Apple Health" on, and it can never
+     fail or delay the save. Every Finish (live session, GPS run, the offline replay) passes through here. */
+  void writeBackWorkout(data.workout_id);
+
   return { workoutId: data.workout_id, prs, volume: sessionVolume(session), sets: doneSetCount(session) };
 }
 
@@ -287,6 +294,7 @@ export async function saveActivity(input: ActivityInput): Promise<{ workoutId: s
     p_distance_unit: 'mi',
   });
   if (error) throw error;
+  void writeBackWorkout(data.workout_id); // Apple Health write-back (§3.5), as `saveWorkout` does
   return { workoutId: data.workout_id };
 }
 

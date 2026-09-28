@@ -9,8 +9,9 @@ import { FAMILIES, type AthleteType, type RankFamily } from '@/domain/rank/thres
  * workouts (consistency · volume · longevity · recent · endurance PBs), load PRs (strength improvement),
  * graduated programs, sealed chapters, and chapter-resolved goals — and hands them to the pure engine.
  *
- * Read-only: this computes what the athlete has EARNED; Slice 3 persists it + fires ceremonies. All
- * sessions are native (no import path exists yet), so import credit is inert.
+ * Read-only: this computes what the athlete has EARNED; Slice 3 persists it + fires ceremonies. Apple
+ * Health imports (0234, build 10) are marked `imported` from `workouts.source`, so they take the locked
+ * import credit (R-D46, CAL Q7/Q11 — `signals.ts`); everything else is native.
  */
 
 const ATHLETE_TYPE: Record<string, AthleteType> = {
@@ -26,6 +27,8 @@ interface WorkoutRow {
   duration_sec: number | null;
   activity_type: string;
   distance: number | null;
+  /** 0234. Absent (undefined) before the column existed — read as native. */
+  source?: string | null;
 }
 interface PRRow {
   achieved_on: string | null;
@@ -60,7 +63,7 @@ async function fetchDatedRankInputs(): Promise<{ dated: DatedRankInputs; session
 
   const [prof, workoutsRes, prRes, programsRes, chaptersRes, goalsRes] = await Promise.all([
     supabase.from('profiles').select('athlete_type').eq('id', uid).single(),
-    supabase.from('workouts').select('id, workout_name, saved_at, started_at, duration_sec, activity_type, distance').eq('athlete_id', uid).eq('state', 'saved'),
+    supabase.from('workouts').select('id, workout_name, saved_at, started_at, duration_sec, activity_type, distance, source').eq('athlete_id', uid).eq('state', 'saved'),
     supabase.from('personal_records').select('achieved_on, created_at').eq('athlete_id', uid).eq('measure_kind', 'load'),
     supabase.from('programs').select('id, source_definition_id, ended_at, updated_at').eq('athlete_id', uid).eq('state', 'graduated'),
     supabase.from('chapters').select('id, sealed_at').eq('athlete_id', uid).not('sealed_at', 'is', null),
@@ -77,6 +80,7 @@ async function fetchDatedRankInputs(): Promise<{ dated: DatedRankInputs; session
     state: 'saved',
     activityType: w.activity_type ?? 'strength',
     distance: w.distance,
+    imported: w.source === 'apple_health',
   }));
 
   const loadPRDates = ((prRes.data ?? []) as PRRow[]).map((r) => r.achieved_on ?? r.created_at?.slice(0, 10)).filter((d): d is string => !!d).map((d) => clamp(d));

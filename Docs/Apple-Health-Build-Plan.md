@@ -2,7 +2,7 @@
 
 **PO decisions 09-28 ("whatever you feel is best" = all recommendations):** free for everyone (history, ongoing sync, write-back) · Rank per the lock (full credit except half at prestige ranks; revisit if testers feel it) · no route import in v1 · 90-day first pull, honors from it granted quietly as one summary line · imported distances DO count toward endurance improvement (PO 09-28, answers the RCM open point).
 
-**v1.0 · 2026-09-28** · PO decision 2026-09-28: connect to Apple Health in native build 10 · Status: PLANNED, not started
+**v1.0 · 2026-09-28** · PO decision 2026-09-28: connect to Apple Health in native build 10 · Status: phases 1–7 BUILT in code (09-28, `feat/build10`) — native wrapper, sync, write-back, `/apple-health`, rank wiring; untested until the build-10 device test (§11). Still open: the "Imported from" line + "Remove from Forge" on activity detail/history (§10 step 5), policy text (§7, other agent)
 **Why:** runs recorded on a Garmin (Garmin Connect writes them to Apple Health), an Apple Watch or Strava should
 show up in Forge without being typed in again.
 **Governs:** this plan is the build spec for `External-Activity-Import-Architecture-Evaluation.md` (EAI) and

@@ -61,6 +61,8 @@ export const withdrawConsent = (kind: ConsentKind): Promise<boolean> => gate.ans
 export const refreshConsents = (): Promise<void> => gate.refresh();
 /** Start the read without waiting on it (a screen that wants the answer ready before it is needed). */
 export const warmConsents = (): void => void gate.ready();
+/** Wait for the answers to be read (never asks) — for background work that then checks `consentAllowsNow`. */
+export const consentsReady = (): Promise<void> => gate.ready().catch(() => {});
 
 /**
  * Before pushing a route from OUTSIDE the Nutrition tab: a nutrition screen asks for the Nutrition consent

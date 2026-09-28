@@ -326,3 +326,10 @@ test('where it is not (web, builds without the module), the row is honest and ro
   const all = [APPLE_HEALTH_NOT_HERE.title, APPLE_HEALTH_NOT_HERE.updated, ...APPLE_HEALTH_NOT_HERE.body].join(' ');
   assert.doesNotMatch(all, /Connected|Tap to connect|Connect now/);
 });
+
+test('Apple Health row: a held possible duplicate replaces "Connected"; Off never shows it', () => {
+  const row = (opts) => settingsSections(opts).flatMap((s) => s.rows).find((r) => r.key === 'applehealth');
+  assert.equal(row({ appleHealth: 'connected', appleHealthNote: '1 workout needs a look' }).value, '1 workout needs a look');
+  assert.equal(row({ appleHealth: 'connected', appleHealthNote: null }).value, 'Connected');
+  assert.equal(row({ appleHealth: 'off', appleHealthNote: '1 workout needs a look' }).value, 'Off');
+});

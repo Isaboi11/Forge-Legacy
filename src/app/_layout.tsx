@@ -26,6 +26,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { PendingSaveDrain } from '@/components/pending-save-drain';
+import { AppleHealthSync } from '@/components/apple-health-sync';
 import { CoachBubble } from '@/components/forge/CoachBubble';
 import { ConsentHost } from '@/components/forge/ConsentSheet';
 import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
@@ -209,6 +210,8 @@ export default function RootLayout() {
                       {/* Replays workouts held offline (W-9 §13.4). Same boundary, same reason: a thing
                           mounted on every screen must never be able to take the app down. */}
                       <PendingSaveDrain />
+                      {/* Apple Health, on open + foreground (build 10, plan §3.4). Inert anywhere HealthKit isn't. */}
+                      <AppleHealthSync />
                     </OverlayBoundary>
                     </CoachDoorProvider>
                   </TourProvider>
@@ -430,6 +433,7 @@ function RootNavigator() {
         {/* Health Data & AI (0224) — Account Settings → Privacy & Alerts. The athlete's two consents
             (Nutrition, AI sharing), each shown with its date and withdrawable (MHMDA / Nevada SB 370). */}
         <Stack.Screen name="health-consent" />
+        <Stack.Screen name="apple-health" />
         <Stack.Screen name="notifications" />
         {/* Blocked People (0171). Account Settings → Privacy & Alerts, and the ONLY way to undo a block:
             once one lands, that athlete's content is gone from every feed and their profile — carrying the

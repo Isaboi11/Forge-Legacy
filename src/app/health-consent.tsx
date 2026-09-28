@@ -18,6 +18,7 @@ import {
   type ConsentKind,
 } from '@/domain/consent/consent';
 import { useToast } from '@/hooks/useCeremony';
+import { appleHealthAvailable } from '@/lib/apple-health';
 import { ensureConsent, refreshConsents, useConsent, withdrawConsent } from '@/lib/consent';
 
 /**
@@ -87,9 +88,9 @@ export default function HealthConsentScreen() {
 
           <Text style={styles.sectionLabel}>Your consents</Text>
 
-          {/* Apple Health is listed only where it can be connected (no build can yet: plan §3.2) or once it
-              has been answered on some device, so it stays withdrawable from here. */}
-          {consentKindsShown(consent.status, false).map((kind) => {
+          {/* Apple Health is listed only where it can be connected (an iPhone on build 10+, plan §3.2) or
+              once it has been answered on some device, so it stays withdrawable from here. */}
+          {consentKindsShown(consent.status, appleHealthAvailable()).map((kind) => {
             const s = CONSENT_SETTINGS[kind];
             const status = consent.status[kind];
             const on = status === 'granted';
@@ -119,6 +120,12 @@ export default function HealthConsentScreen() {
             Withdrawing stops anything new being saved or sent. To delete what is already stored, use Delete Account
             in Account Settings, or write to support@forgelegacy.app.
           </Text>
+          {/* Plan §3.3 step 1: the one-line way from here to the connection itself. */}
+          {appleHealthAvailable() ? (
+            <Pressable accessibilityRole="link" hitSlop={8} onPress={() => router.push('/apple-health' as never)} style={styles.linkWrap}>
+              <Text style={styles.link}>Manage the Apple Health connection</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="link"
             hitSlop={8}

@@ -1,8 +1,8 @@
 /**
  * Apple Health workout types → Forge workouts, and back (Build 10 · `Docs/Apple-Health-Build-Plan.md` §4).
  *
- * Pure: no HealthKit, no React, no clock of its own. The native wrapper (`src/lib/apple-health.ts`, not
- * built yet) normalises a library sample into plain fields and this module decides what Forge makes of it.
+ * Pure: no HealthKit, no React, no clock of its own. The native wrapper (`src/lib/apple-health.ts`, via
+ * `normalize.ts`) turns a library sample into plain fields and this module decides what Forge makes of it.
  *
  * ══ WHAT IS IMPORTED ══
  *
@@ -15,9 +15,9 @@
  *
  * The plan names types by their HealthKit case name (`running`, `stairClimbing`). The library may hand the
  * data layer either that name or the raw `HKWorkoutActivityType` number, so both are accepted.
- * ⚠ The raw numbers below are Apple's documented enum values; confirm them against
- *   `@kingstinct/react-native-healthkit@16.0.0`'s `WorkoutActivityType` when the wrapper is written — a
- *   wrong number silently drops a type as "not imported", it can never import the wrong one.
+ * The raw numbers below are Apple's enum values, VERIFIED 09-28 against
+ * `@kingstinct/react-native-healthkit@16.0.0`'s generated `WorkoutActivityType` (every entry matches).
+ * A wrong number would silently drop a type as "not imported" — it can never import the wrong one.
  */
 
 /** Forge's `modality` enum values an import can land on (a subset of the DB enum). */
@@ -36,7 +36,7 @@ export interface MappedType {
   name: string;
 }
 
-/** HKWorkoutActivityType raw values for every type §4 names (see the ⚠ in the header). */
+/** HKWorkoutActivityType raw values for every type §4 names, plus write-back's `flexibility` (see the header). */
 const HK_RAW_TO_NAME: Readonly<Record<number, string>> = {
   11: 'crossTraining',
   13: 'cycling',
@@ -50,6 +50,7 @@ const HK_RAW_TO_NAME: Readonly<Record<number, string>> = {
   50: 'traditionalStrengthTraining',
   52: 'walking',
   57: 'yoga',
+  62: 'flexibility',
   63: 'highIntensityIntervalTraining',
   68: 'stairs',
   70: 'wheelchairWalkPace',
@@ -88,6 +89,15 @@ const BASE_NAME: Readonly<Record<ImportActivity, string>> = {
 export function hkTypeName(type: string | number): string | null {
   if (typeof type === 'number') return HK_RAW_TO_NAME[type] ?? null;
   return type.length ? type : null;
+}
+
+const HK_NAME_TO_RAW: Readonly<Record<string, number>> = Object.fromEntries(
+  Object.entries(HK_RAW_TO_NAME).map(([n, name]) => [name, Number(n)]),
+);
+
+/** The raw `HKWorkoutActivityType` for a case name — what `saveWorkoutSample` takes. Unknown → `other` (3000). */
+export function hkTypeNumber(name: string): number {
+  return HK_NAME_TO_RAW[name] ?? 3000;
 }
 
 /** HealthKit type → Forge type + name, or null when the type is not imported in v1. */

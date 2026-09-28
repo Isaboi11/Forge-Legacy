@@ -188,6 +188,11 @@ export function settingsSections(opts: {
    */
   appleHealth?: 'connected' | 'off' | 'not-here';
   /**
+   * Replaces "Connected" when a sync held possible duplicates back — "1 workout needs a look" (plan §5
+   * rule 4). Passed in as words so this module keeps no runtime import outside its folder.
+   */
+  appleHealthNote?: string | null;
+  /**
    * The operator dashboard row (0129/0130). Absent for everybody who is not in `app_admins`, and
    * absent by DEFAULT — an undefined flag must produce exactly the section list every athlete has
    * today, which is what `content.test.mjs` asserts.
@@ -242,7 +247,7 @@ export function settingsSections(opts: {
     training.push({
       key: 'applehealth',
       label: 'Apple Health',
-      value: opts.appleHealth === 'connected' ? 'Connected' : 'Off',
+      value: opts.appleHealth === 'connected' ? opts.appleHealthNote || 'Connected' : 'Off',
       action: { type: 'route', path: '/apple-health' },
     });
   }
