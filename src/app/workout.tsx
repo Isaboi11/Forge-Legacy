@@ -3646,6 +3646,7 @@ export default function WorkoutScreen() {
     setSsOpen(null);
     restSkip();
     showToast(`${name} removed`);
+  };
 
   /**
    * All Exercises → drag a row to a new place (PO 2026-09-28). The rules for supersets live in
@@ -3666,7 +3667,6 @@ export default function WorkoutScreen() {
     setNoteOpen(null);
     setSsOpen(null);
     setEffortAsk(null);
-  };
   };
   /**
    * ⋮ → End workout — ASK FIRST.
@@ -4555,6 +4555,7 @@ export default function WorkoutScreen() {
               <View style={styles.nav}>
                 <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityRole="button" accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
                   <EngravedIcon name="chevron-left" size={22} color={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} />
+                </Pressable>
                 <View style={styles.navMid}>
                   {/* ONE ROW, ALWAYS — as it was before 09-11. It used to wrap, and with nothing giving the
                       middle a width it shrank to the width of "7 / 7": seven dots stacked 3-3-1 and pushed
@@ -4582,7 +4583,6 @@ export default function WorkoutScreen() {
                     {exIdx + 1} / {session.exercises.length}
                   </Text>
                 </View>
-                </Pressable>
                 <NextArrow disabled={isLastEx} ready={nextReady} onPress={() => goExercise(exIdx + 1)} />
               </View>
 
@@ -7158,6 +7158,19 @@ const styles = StyleSheet.create({
      thumb never lands on the wrong one. */
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 6 },
   navArrow: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+  /* The dot strip + "2 / 5" between the arrows (restored 2026-09-28). ⚠ NO WRAP and no `flexShrink`:
+     together they let the middle collapse to the width of the count and stack the dots 3-3-1. A long
+     session uses `dotsTight` instead of a second row. */
+  navMid: { alignItems: 'center', gap: 6 },
+  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  dotsTight: { gap: 5 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: flColor.charcoal600 },
+  dotTight: { width: 6, height: 6, borderRadius: 3 },
+  dotCurrent: { width: 22, backgroundColor: flColor.bronze400 },
+  dotCurrentTight: { width: 16 },
+  dotDone: { backgroundColor: flColor.greenMuted },
+  dotSkipped: { backgroundColor: flColor.emberFlame },
+  navCount: { fontSize: 10, fontWeight: '600', letterSpacing: 1, color: flColor.gray600, fontVariant: ['tabular-nums'] },
   /* Text-level, left-aligned with the band's gutter; `minHeight` is the tap target, not visual weight. */
   allExRow: { flexDirection: 'row', alignItems: 'center', gap: 9, alignSelf: 'flex-start', minHeight: 44, marginTop: 4, paddingHorizontal: 18 },
   allExText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
@@ -7243,19 +7256,6 @@ const styles = StyleSheet.create({
     fontFamily: flFont.sans,
     fontSize: 16,
     lineHeight: 23,
-  /* The dot strip + "2 / 5" between the arrows (restored 2026-09-28). ⚠ NO WRAP and no `flexShrink`:
-     together they let the middle collapse to the width of the count and stack the dots 3-3-1. A long
-     session uses `dotsTight` instead of a second row. */
-  navMid: { alignItems: 'center', gap: 6 },
-  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
-  dotsTight: { gap: 5 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: flColor.charcoal600 },
-  dotTight: { width: 6, height: 6, borderRadius: 3 },
-  dotCurrent: { width: 22, backgroundColor: flColor.bronze400 },
-  dotCurrentTight: { width: 16 },
-  dotDone: { backgroundColor: flColor.greenMuted },
-  dotSkipped: { backgroundColor: flColor.emberFlame },
-  navCount: { fontSize: 10, fontWeight: '600', letterSpacing: 1, color: flColor.gray600, fontVariant: ['tabular-nums'] },
     color: flColor.cream100,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
@@ -7366,6 +7366,12 @@ const styles = StyleSheet.create({
   ovRemove: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   ovRowCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   ovStatusDot: { width: 9, height: 9, borderRadius: 5 },
+  /* Absolutely placed at `i × pitch` so a dragged row moves without the others reflowing (`OverviewList`). */
+  ovRowPlaced: { position: 'absolute', left: 0, right: 0, height: OV_ROW },
+  ovRowWithGrip: { paddingLeft: 0 },
+  ovRowLifted: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal700 },
+  // `userSelect: 'none'` is load-bearing on web — a text selection steals the drag (see `useListReorder`).
+  ovGrip: { width: 36, height: OV_ROW, alignItems: 'center', justifyContent: 'center', userSelect: 'none' },
   ovRowText: { flex: 1, minWidth: 0, gap: 2 },
   ovRowName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   ovRowSub: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
@@ -7438,9 +7444,3 @@ const styles = StyleSheet.create({
   pCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
   pCheckOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
 });
-  /* Absolutely placed at `i × pitch` so a dragged row moves without the others reflowing (`OverviewList`). */
-  ovRowPlaced: { position: 'absolute', left: 0, right: 0, height: OV_ROW },
-  ovRowWithGrip: { paddingLeft: 0 },
-  ovRowLifted: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal700 },
-  // `userSelect: 'none'` is load-bearing on web — a text selection steals the drag (see `useListReorder`).
-  ovGrip: { width: 36, height: OV_ROW, alignItems: 'center', justifyContent: 'center', userSelect: 'none' },
