@@ -41,6 +41,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useProfile } from '@/lib/profile';
@@ -597,6 +598,18 @@ export default function HomeScreen() {
   const startFromTemplate = () => {
     closeElse();
     router.push('/templates');
+  };
+
+  /**
+   * "Paste a workout" (PO 2026-09-27: *"a spot when you start a workout to paste the day that you want"*). The
+   * import screen in its `today` mode: paste or a picture, check it, Start workout — saved as a template only
+   * if they tick the box. Gated on the imports cap, the one every import door checks first.
+   */
+  const guardImport = usePremiumGate();
+  const pasteWorkout = () => {
+    closeElse();
+    if (!guardImport('imports')) return;
+    router.push({ pathname: '/program-import', params: { for: 'today', m: 'paste' } });
   };
 
   /**
@@ -1324,6 +1337,12 @@ export default function HomeScreen() {
                 <Text style={styles.startSectionSub}>Lift. Move. Get stronger.</Text>
               </View>
               <StartOptionRow {...START_COPY.template} icon={START_ICON.template} onPress={startFromTemplate} />
+              <StartOptionRow
+                title="Paste a workout"
+                sub="Paste it or add a picture, then start right away."
+                icon="copy"
+                onPress={pasteWorkout}
+              />
               <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} onPress={() => void buildAsYouGo()} />
 
               <View style={styles.startRule} />

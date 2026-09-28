@@ -29,6 +29,12 @@
  * readers; the scope is one DAY (`fitToScope('day')`), one photo, and Create writes the Workout Builder's draft
  * (`workoutDraftFromImport`) instead of the Program Builder's. `?read=1` arrives from Holt's chat with the
  * photo already read (`import-read-stash`) and opens on the preview.
+ *
+ * ══ AND A WORKOUT TO DO NOW (`?for=today`, PO 2026-09-27) ══
+ *
+ * Home → Start a Workout → "Paste a workout". The same one-day read, but the button is Start workout: the rows
+ * the builder WOULD save (`toTemplateExercises`) launch as a one-off (`writeWorkoutLaunch({ exercises })`, the
+ * door "Build for later" uses), and "Also save as a template" keeps them — spending a template slot only then.
  */
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState } from 'react';
@@ -58,6 +64,11 @@ import { draftFromImport } from '@/lib/program-import-draft';
 import { takeImportRead } from '@/lib/import-read-stash';
 import { workoutDraftFromImport } from '@/lib/workout-import-draft';
 import { loadWorkoutDraft, saveWorkoutDraft, workoutDraftHasContent } from '@/lib/workout-builder-draft';
+import { toTemplateExercises } from '@/lib/workout-template-rows';
+import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { saveTemplate } from '@/data/templates-live';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { errorMessage } from '@/lib/useQuery';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 
@@ -109,10 +120,18 @@ function ProgramImport() {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { m, for: forWhat, read } = useLocalSearchParams<{ m?: string; for?: string; read?: string }>();
-  /** Build a Template's import: one day, one photo, and Create opens the Workout Builder. */
-  const isTemplate = forWhat === 'template';
+  /** Home's "Paste a workout": one day, started now (see the header). */
+  const isToday = forWhat === 'today';
+  /**
+   * Build a Template's import — and Home's, which reads exactly the same thing: one day, one photo, the
+   * workout copy. `isTemplate` is "one workout, not a program"; only what Create does differs.
+   */
+  const isTemplate = forWhat === 'template' || isToday;
   const scope = isTemplate ? ('day' as const) : ('program' as const);
   const maxPhotos = isTemplate ? 1 : MAX_PHOTOS;
+  const guard = usePremiumGate();
+  /** "Also save as a template" — off by default: a pasted workout is usually a one-off. */
+  const [saveToo, setSaveToo] = useState(false);
   /* Holt read the photo in the chat — taken ONCE, here, and fitted to this screen's scope. */
   const [seed] = useState(() => {
     const r = read === '1' ? takeImportRead() : null;
@@ -146,8 +165,9 @@ function ProgramImport() {
     }
     router.back();
   };
-  /* Cancel leaves Build a Program altogether — back to Workouts, which is where every door into it is. */
-  const cancel = () => router.dismissTo('/workouts');
+  /* Cancel leaves Build a Program altogether — back to Workouts, which is where every door into it is. Home's
+     "Paste a workout" came from Home, so it goes back there. */
+  const cancel = () => (isToday ? router.back() : router.dismissTo('/workouts'));
 
   const showPreview = (weeks: ParsedWeek[], notRead: string[] = []) => {
     const fit = fitToScope(weeks, scope);
@@ -266,6 +286,29 @@ function ProgramImport() {
    */
   const [confirmReplace, setConfirmReplace] = useState(false);
 
+  const startNow = async () => {
+    if (!preview?.length) return;
+    const w = workoutDraftFromImport(preview, (n) => resolveExerciseName(n)?.key);
+    if (!w) {
+      setError('Nothing in that read could go in a workout. Go back and check the paste.');
+      return;
+    }
+    const name = w.draft.name.trim() || 'Pasted Workout';
+    const rows = toTemplateExercises(w.draft);
+    if (saveToo) {
+      if (!guard('templates')) return;
+      try {
+        await saveTemplate(name, rows);
+      } catch (e) {
+        setError(`Couldn’t save it as a template: ${errorMessage(e)}`);
+        return;
+      }
+    }
+    await writeWorkoutLaunch({ exercises: rows, workoutName: name });
+    showToast(saveToo ? 'Saved to your templates — let’s go' : 'Let’s go');
+    router.replace('/workout');
+  };
+
   const writeDraft = async () => {
     if (!preview?.length) return;
     if (isTemplate) {
@@ -291,6 +334,8 @@ function ProgramImport() {
 
   const create = async () => {
     if (!preview?.length) return;
+    // Starting now writes no builder draft, so there is nothing in progress to ask about.
+    if (isToday) return void (await startNow());
     const inProgress = isTemplate
       ? await loadWorkoutDraft().then((d) => !!d && workoutDraftHasContent(d))
       : await loadProgramDraft().then((d) => !!d && draftHasContent(d));
@@ -307,7 +352,7 @@ function ProgramImport() {
     <View style={styles.screen}>
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
       <AppBar
-        title={isTemplate ? 'Build a Template' : 'Build a Program'}
+        title={isToday ? 'Paste a Workout' : isTemplate ? 'Build a Template' : 'Build a Program'}
         onBack={back}
         actions={
           <Pressable onPress={cancel} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
@@ -363,6 +408,12 @@ function ProgramImport() {
               <Pressable onPress={() => void uploadPdf()} accessibilityRole="button" hitSlop={6} style={styles.quietBtn}>
                 <Text style={styles.quiet}>Upload a PDF instead</Text>
               </Pressable>
+              {/* A screenshot is the other way a workout arrives — offered here rather than behind another door. */}
+              {photoOn ? (
+                <Pressable onPress={() => router.setParams({ m: 'photo' })} accessibilityRole="button" hitSlop={6} style={styles.quietBtn}>
+                  <Text style={styles.quiet}>{isTemplate ? 'Use a picture instead' : 'Use pictures instead'}</Text>
+                </Pressable>
+              ) : null}
 
               <Text style={styles.exampleLabel}>Example format:</Text>
               <View style={styles.exampleCard}>
@@ -487,6 +538,19 @@ function ProgramImport() {
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
         <View style={styles.column}>
+          {preview && isToday ? (
+            <Pressable
+              onPress={() => setSaveToo((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: saveToo }}
+              style={styles.saveToo}
+            >
+              <View style={[styles.box, saveToo ? styles.boxOn : null]}>
+                {saveToo ? <EngravedIcon name="check" size={10} color={flColor.onBronze} /> : null}
+              </View>
+              <Text style={styles.saveTooText}>Also save as a template</Text>
+            </Pressable>
+          ) : null}
           {preview ? (
             <View style={styles.previewActions}>
               <View style={styles.previewBack}>
@@ -496,7 +560,7 @@ function ProgramImport() {
               </View>
               <View style={styles.previewCreate}>
                 <Button variant="primary" fullWidth onPress={() => void create()}>
-                  {isTemplate ? 'Create template' : 'Create program'}
+                  {isToday ? 'Start workout' : isTemplate ? 'Create template' : 'Create program'}
                 </Button>
               </View>
             </View>
@@ -724,6 +788,18 @@ const styles = StyleSheet.create({
   modalActions: { gap: 8 },
 
   previewActions: { flexDirection: 'row', gap: 10 },
+  saveToo: { flexDirection: 'row', alignItems: 'center', gap: 10, alignSelf: 'flex-start', paddingVertical: 8, marginBottom: 6 },
+  saveTooText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  box: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: flColor.charcoal500,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronze400 },
   previewBack: { flexBasis: 96 },
   previewCreate: { flex: 1 },
 });
