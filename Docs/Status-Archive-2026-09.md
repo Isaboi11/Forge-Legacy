@@ -4,6 +4,10 @@ Overflow from `Forge-Legacy-Master-Status.md` § Recently Completed, moved **ver
 
 ---
 
+### ⭐ Drag down to put the keyboard away — everywhere (2026-09-26, `9781c218` · ✅ OTA build 9 iOS `01a0e08c-699c-7d40-a192-a9270850c0e5` (manifest serves it) · ✅ WEB `index-08bd9c6901b102209c8b2e3b03a6543c.js` (alias MATCH), both from `ota/build9-js`, which also carries the other session's sun/moon switch `25a1d838`)
+
+PO: *"I need to be able to swipe down on the keyboard to make it disappear. Nowhere does it do that now."* `keyboardDismissMode="on-drag"` on all 195 scroll containers, including Holt's chat and BottomSheet's scrolling body. The guard test `src/app/__tests__/keyboard-dismiss.test.mjs` fails on any new container without it. A sheet whose body doesn't scroll still has no drag-to-dismiss for the keyboard.
+
 ### ⭐ Home: sun/moon theme switch (2026-09-26, `92d88212` · ✅ WEB `index-3bee386ce519a80ea5a6fae3f8eb7d12.js` (200 + hash MATCH, alias and deployment URL) · ✅ BUILD 9 iOS `01a0e088-aaa2-7958-bfcf-069c2b8020ae` from lane `a30fae78` (fingerprint MATCHED; manifest serves it; also carries the parallel session's keyboard-dismiss `a30fae78`) · tsc 0 · lint 0)
 
 PO asked for the mockup's light/dark control in the header. Home only, left of the bell (wordmark | theme · bell · avatar). Moon on Alabaster, sun on Forge. 30px disc vs the 36px avatar with a subtle edge — PO review asked for it ~8–12% quieter than the mockup so the avatar stays the stronger circle. Saves first, then restarts (same path as Preferences), fading to the splash colour; disabled until prefs load. New engraved glyphs `sun`, `moon`. Mockup: claude.ai/artifact/GTWzErS1yyfMMnBm5KvZDP. **White-flash fix `82724bf1`:** expo-updates' reload screen defaults to `#ffffff`; now the splash's dark ground, no spinner, and the fade lands on it (web: on the new theme's ground). Web `index-08bd9c6901b102209c8b2e3b03a6543c.js` (hash MATCH) · build 9 iOS `01a0e094-0872-7d4f-a828-540eb4bb2c7c` (lane `82ccfe19`, fingerprint MATCHED).
