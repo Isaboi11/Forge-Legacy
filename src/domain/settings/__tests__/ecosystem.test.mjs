@@ -259,6 +259,8 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     careLineUntil: null,
     // Auto-post is OFF: no friends, no squads, never asked. Nobody is opted into posting by a code change.
     autoPost: { friends: false, squadIds: [], asked: false },
+    // PO, 2026-09-28: spoken mile splits on every run — ON, and absence means on.
+    runVoice: true,
   });
 });
 
@@ -278,9 +280,15 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false } });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false }, runVoice: true });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
+});
+
+test('Spoken splits: a boolean, on unless the athlete turned it off', () => {
+  assert.equal(sanitizePrefs({}).runVoice, true);
+  assert.equal(sanitizePrefs({ runVoice: false }).runVoice, false);
+  assert.equal(sanitizePrefs({ runVoice: 'no' }).runVoice, true, 'a stray string is not an answer');
 });
 
 test('Tips from Holt: three states, validated, and absence means ask once', () => {

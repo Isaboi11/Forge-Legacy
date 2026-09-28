@@ -40,7 +40,11 @@ const BG = read('src', 'domain', 'run', 'background-task.ts');
 test('⚠ iOS declares the location background mode', () => {
   // Without this the OS suspends the app on lock and never delivers another fix. It is also the single
   // line that makes the whole feature a NEW BUILD rather than an OTA.
-  assert.deepEqual(APP.ios?.infoPlist?.UIBackgroundModes, ['location']);
+  //
+  // Build 10 added `audio` beside it, for the mile marker's chime and spoken split with the phone locked
+  // (`lib/mile-voice.ts`). Exactly these two — anything else is a background capability App Review asks
+  // us to justify.
+  assert.deepEqual([...(APP.ios?.infoPlist?.UIBackgroundModes ?? [])].sort(), ['audio', 'location']);
 });
 
 test('and asks for the permission that background tracking actually requires', () => {
@@ -170,4 +174,23 @@ test('⚠ buffered fixes go through acceptFix, not their own arithmetic', () => 
 
 test('a new run does not inherit the last one’s buffered tail', () => {
   assert.match(TRACKER, /clearBackgroundFixes\(\)/, 'a run the app was killed during would add its leftovers to the next one');
+});
+
+// ── build 10 · the miles arrive while locked, not in one lump on unlock ─────────
+
+test('⚠ the hook drains while backgrounded when the task says new fixes arrived', () => {
+  // The mile marker (and the lock-screen card) need distance AS IT HAPPENS. Without this subscription the
+  // background miles are only folded in when the screen next comes on, and every marker in a pocketed run
+  // would be passed silently as stale.
+  assert.match(BG, /export function subscribeBackgroundFixes/);
+  assert.match(TRACKER, /subscribeBackgroundFixes\(/, 'nothing drains while the phone is locked');
+});
+
+test('⚠ every buffer read-modify-write is serialized — append and drain now overlap', () => {
+  for (const fn of ['drainBackgroundFixes', 'clearBackgroundFixes']) {
+    const m = BG.match(new RegExp(`export function ${fn}\\(\\)[^{]*\\{[\\s\\S]*?\\n\\}`));
+    assert.ok(m, `${fn} is gone`);
+    assert.match(m[0], /serial\(/, `${fn} must go through the queue`);
+  }
+  assert.match(BG, /return serial\(\(\) => appendNow\(fixes\)\)/, 'the task append must go through the queue');
 });

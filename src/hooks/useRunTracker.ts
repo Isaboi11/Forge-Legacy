@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 
 import { ACCURACY_FLOOR_M, acceptFix, totalMiles, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
-import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes } from '@/domain/run/background-task';
+import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes, subscribeBackgroundFixes } from '@/domain/run/background-task';
 import { AUTO_PAUSE_WINDOW_SEC, autoResumeStep, probeAt, shouldAutoPause, type AutoResumeProbe } from '@/domain/run/auto-pause';
 
 /**
@@ -506,6 +506,34 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     });
     return () => sub.remove();
   }, [kind, commit]);
+
+  /**
+   * ══ WHILE LOCKED: FOLD THE MILES IN AS THEY ARRIVE (build 10) ══
+   *
+   * With the location background mode on and updates started from the foreground, iOS keeps this app
+   * RUNNING in a pocket — the task below this hook's feet fires with every batch. Until build 10 those
+   * batches just sat in the buffer until the screen came back on. That was fine for a number nobody could
+   * see; it is not fine for the mile marker, which has to speak AT the mile, nor for the lock-screen
+   * card's distance. So the task now says "new fixes" and, in the background only, this drains them
+   * through the same `applyFixes` → `acceptFix` as every other path.
+   *
+   * ⚠ FOREGROUND IS UNCHANGED. `onFix` is the live stream there, and the buffer is left to the existing
+   *   drains (coming forward, and `stop`). Draining here too would only race them for the same fixes.
+   * ⚠ NOT WHILE PAUSED. A resume clears the buffer on purpose (see `resume`); crediting it here first
+   *   would add the walk to the water fountain back in.
+   * ⚠ No `stopped` check on the COMMIT. The buffer is serialized (`background-task.ts`), so a `stop()`
+   *   racing this drain reads after it — and this drain's fixes must land in the track `stop` finishes.
+   */
+  useEffect(
+    () =>
+      subscribeBackgroundFixes(() => {
+        if (appActive.current || !running.current) return;
+        void drainBackgroundFixes().then((fixes) => {
+          if (fixes.length) commit(applyFixes(trackRef.current, fixes, kind));
+        });
+      }),
+    [kind, commit],
+  );
 
   // Everything below is DERIVED. "Acquiring" becomes "tracking" the moment a fix is good enough to have
   // entered the track, and patience runs out on its own — both are functions of state already held, and

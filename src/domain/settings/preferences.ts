@@ -102,6 +102,14 @@ export interface AppPrefs {
    * into social posting by a code change. No migration: one more key in the `app_prefs` blob.
    */
   autoPost: AutoPostPref;
+  /**
+   * Spoken splits on a GPS run or walk — "Mile 3. 8 minutes 42 seconds." at each mile (km on metric).
+   * PO 2026-09-28: the mile marker is a chime + a buzz + the split, with the phone locked; this is the
+   * switch for the VOICE. The chime follows Sound and the buzz follows Haptics, like every other cue.
+   * ON by default and a stored blob without the key lands there too — the PO asked for it on every run.
+   * No migration: one more key in the `app_prefs` blob. See `domain/run/mile-marker.ts`.
+   */
+  runVoice: boolean;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -116,6 +124,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   holtTips: 'ask',
   careLineUntil: null,
   autoPost: AUTO_POST_DEFAULT,
+  runVoice: true,
 };
 
 export type HoltTips = 'ask' | 'on' | 'off';
@@ -158,6 +167,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (r.holtTips === 'ask' || r.holtTips === 'on' || r.holtTips === 'off') out.holtTips = r.holtTips;
     if (typeof r.careLineUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.careLineUntil)) out.careLineUntil = r.careLineUntil;
     out.autoPost = sanitizeAutoPost(r.autoPost);
+    if (typeof r.runVoice === 'boolean') out.runVoice = r.runVoice;
   }
   return out;
 }

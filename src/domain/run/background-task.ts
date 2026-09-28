@@ -45,8 +45,44 @@ const BUFFER_KEY = 'forge_run_bg_fixes_v1';
  */
 const MAX_BUFFERED = 5000;
 
+/**
+ * ══ EVERY READ-MODIFY-WRITE OF THE BUFFER GOES THROUGH ONE QUEUE ══
+ *
+ * Build 10 drains WHILE LOCKED (the mile marker needs the miles as they happen — see
+ * `subscribeBackgroundFixes`), so the task's append and the hook's drain now genuinely overlap. Unqueued,
+ * `append` could read the buffer, a drain clear it, and the append write the old fixes back — the same
+ * stretch of road credited twice. Two drains could also both read before either removed. All of it is
+ * one JS runtime, so a promise chain is a complete lock.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function serial<T>(job: () => Promise<T>): Promise<T> {
+  const run = queue.then(job, job);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
+/**
+ * Told when the task has buffered new fixes. The hook subscribes, and — only while the app is in the
+ * background — drains at once, so distance (and every mile marker) is live with the phone in a pocket
+ * instead of arriving in one lump when the screen next comes on.
+ *
+ * ⚠ ONLY REACHES A RUNNING APP. After a cold background launch there is no hook mounted and no
+ *   subscriber; the fixes simply wait in the buffer, exactly as before.
+ */
+const listeners = new Set<() => void>();
+export function subscribeBackgroundFixes(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 /** Read and clear. Draining is destructive on purpose: a fix applied twice is distance counted twice. */
-export async function drainBackgroundFixes(): Promise<Fix[]> {
+export function drainBackgroundFixes(): Promise<Fix[]> {
+  return serial(drainNow);
+}
+
+async function drainNow(): Promise<Fix[]> {
   try {
     const raw = await AsyncStorage.getItem(BUFFER_KEY);
     if (!raw) return [];
@@ -61,16 +97,22 @@ export async function drainBackgroundFixes(): Promise<Fix[]> {
 }
 
 /** Throw away anything left over — called at START so a new run never inherits the last one's tail. */
-export async function clearBackgroundFixes(): Promise<void> {
-  try {
-    await AsyncStorage.removeItem(BUFFER_KEY);
-  } catch {
-    /* nothing to do, and nothing worth failing a run over */
-  }
+export function clearBackgroundFixes(): Promise<void> {
+  return serial(async () => {
+    try {
+      await AsyncStorage.removeItem(BUFFER_KEY);
+    } catch {
+      /* nothing to do, and nothing worth failing a run over */
+    }
+  });
 }
 
-async function appendFixes(fixes: Fix[]): Promise<void> {
-  if (!fixes.length) return;
+function appendFixes(fixes: Fix[]): Promise<void> {
+  if (!fixes.length) return Promise.resolve();
+  return serial(() => appendNow(fixes));
+}
+
+async function appendNow(fixes: Fix[]): Promise<void> {
   const raw = await AsyncStorage.getItem(BUFFER_KEY);
   const prev: Fix[] = raw ? ((JSON.parse(raw) as Fix[]) ?? []) : [];
   const next = [...prev, ...fixes];
@@ -99,6 +141,13 @@ TaskManager.defineTask(RUN_LOCATION_TASK, async ({ data, error }) => {
         altAccuracy: l.coords.altitudeAccuracy ?? null,
       })),
     );
+    for (const l of listeners) {
+      try {
+        l();
+      } catch {
+        /* a listener's failure is not the task's */
+      }
+    }
   } catch {
     // Never throw out of a task: on iOS a task that throws repeatedly gets its budget cut.
   }

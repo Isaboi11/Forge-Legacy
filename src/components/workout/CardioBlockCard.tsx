@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
@@ -9,6 +9,11 @@ import { useWallClockTimer } from '@/hooks/useWallClockTimer';
 import { cardioTimerKey } from '@/domain/workout/cardio-timer-store';
 import { useKeepScreenAwake } from '@/hooks/useKeepScreenAwake';
 import { useRunTracker } from '@/hooks/useRunTracker';
+import { useMileMarker } from '@/hooks/useMileMarker';
+import { useToast } from '@/hooks/useCeremony';
+import { activeTheme } from '@/constants/theme-choice';
+/* Resolves `live-activity.ts` on native and the no-op `live-activity.web.ts` on web. */
+import { pushLiveActivityRun } from '@/lib/live-activity';
 import { useAppPrefs, useReduceMotion } from '@/lib/settings';
 import {
   activitySymbol,
@@ -242,7 +247,8 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
    * reached — the hook is instantiated but idle. The fallback kind is therefore never consulted; it is
    * here because the hook needs A kind, not because any machine has one.
    */
-  const tracker = useRunTracker(OUTDOOR_CAPABLE[activity] ? (activity as ActivityKind) : 'walk');
+  const trackerKind: ActivityKind = OUTDOOR_CAPABLE[activity] ? (activity as ActivityKind) : 'walk';
+  const tracker = useRunTracker(trackerKind);
 
   /**
    * One notion of "in progress" across both modalities: the belt is moving, or GPS is.
@@ -290,6 +296,56 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
   const dU = distanceUnitFor(activity, units === 'metric', prefs.rowUnit);
   /** Pace is per mile or km, never per metre or yard — see `paceUnitFor`. */
   const pU = paceUnitFor(units === 'metric');
+
+  /**
+   * ══ THE MILE MARKER (build 10, PO 2026-09-28) ══
+   *
+   * A chime, a buzz and the spoken split at every mile — km on metric — of a GPS run or walk, phone locked
+   * or not. Rides are left out: a marker every three minutes is noise, not a cue. The on-screen line is a
+   * toast, which is also everything the web preview gets (it makes no sound — see `mile-voice.web.ts`).
+   */
+  const { showToast } = useToast();
+  const onMarker = useCallback((label: string) => showToast(label), [showToast]);
+  useMileMarker({
+    track: tracker.track,
+    elapsedSec: tracker.elapsedSec,
+    phase: tracker.phase,
+    units,
+    enabled: tracking && (trackerKind === 'run' || trackerKind === 'walk'),
+    onMarker,
+  });
+
+  /**
+   * ══ THE LOCK-SCREEN CARD, FOR A RUN (build 10, PO 2026-09-28: "runs too") ══
+   *
+   * While a GPS bout is under way the Live Activity shows it — distance, pace, moving time — instead of
+   * the lifting; when it ends the card goes back to the lifting, or away. `lib/live-activity` owns the
+   * card and throttles the run numbers; this only reports. The moving clock is drawn natively from
+   * `clockStart`, so it keeps counting on the lock screen between reports.
+   */
+  const bouting = tracking;
+  const runPaused = tracker.phase === 'paused';
+  const runAutoPaused = tracker.autoPaused;
+  const runElapsed = tracker.elapsedSec;
+  useEffect(() => {
+    pushLiveActivityRun(
+      bouting
+        ? {
+            kind: trackerKind,
+            miles: liveMi,
+            elapsedSec: runElapsed,
+            paceSecPerMi: livePaceSec,
+            paused: runPaused,
+            autoPaused: runAutoPaused,
+            metric: units === 'metric',
+            theme: activeTheme(),
+            nowMs: Date.now(),
+          }
+        : null,
+    );
+  }, [bouting, trackerKind, liveMi, runElapsed, livePaceSec, runPaused, runAutoPaused, units]);
+  /* Leaving the screen mid-bout takes the run off the card; the lifting (or nothing) comes back. */
+  useEffect(() => () => pushLiveActivityRun(null), []);
   const pool = dU === 'yd' || dU === 'm';
   /** A display figure back to canonical miles — the one conversion, replacing four inline `/ 1.609344`. */
   const dMi = (v: number) => fromDistanceIn(v, dU);

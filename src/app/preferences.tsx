@@ -95,6 +95,7 @@ export default function PreferencesScreen() {
   const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
   const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity });
   const setHoltTips = (on: boolean) => commit({ ...prefs, holtTips: on ? 'on' : 'off' });
+  const setRunVoice = (runVoice: boolean) => commit({ ...prefs, runVoice });
 
   /**
    * ⚠ THIS ONE DOES NOT USE `commit`, AND THE DIFFERENCE MATTERS.
@@ -282,6 +283,25 @@ export default function PreferencesScreen() {
                 <Text style={styles.rowHint}>Short notes on Home, like what’s left to hit your protein today</Text>
               </View>
               <SettingsToggle value={prefs.holtTips !== 'off'} onChange={setHoltTips} accessibilityLabel="Tips from Holt" />
+            </View>
+          </View>
+
+          {/* runs — the mile marker's voice (PO 2026-09-28). The chime and the buzz follow Sound and Haptics
+              below, like every other cue; this is only the spoken split. */}
+          <Text style={styles.sectionLabel}>Runs</Text>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={styles.iconTile}>
+                <ForgeSymbol name="sound" size={18} color={flColor.bronze300} />
+              </View>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>Spoken splits</Text>
+                <Text style={styles.rowHint}>
+                  Each {prefs.units === 'metric' ? 'kilometer' : 'mile'} of a GPS run or walk, Forge says your split, even with the phone locked
+                </Text>
+                <Text style={styles.nativeNote}>Applies on the mobile app.</Text>
+              </View>
+              <SettingsToggle value={prefs.runVoice} onChange={setRunVoice} accessibilityLabel="Spoken splits" />
             </View>
           </View>
 
