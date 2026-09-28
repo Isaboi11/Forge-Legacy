@@ -1,6 +1,7 @@
 # Sentry — Build Plan (Build 10)
 
 **v1.0 · 2026-09-28** · Queued PO 09-27 · Status: PLANNED, not started
+**PO decisions 09-28:** "integrate all of the free Sentry" — account id ON (feeds the PO's planned CRM) · web ON · performance tracing ON (adds the **Performance Data** privacy label) · Session Replay: ⏳ asked, Claude recommends OFF (screens show body photos, meals, health numbers). Stay on the free plan: over the monthly cap Sentry drops events, it never bills.
 **What:** `@sentry/react-native` + its Expo config plugin. Sentry org `forge-legacy-llc`, project `forge-legacy`.
 **Why:** native crash traces (the app quitting to the home screen) and source-mapped JS stacks. The
 in-app reporter (`0176`, /admin → Errors) cannot see a hard native crash (`Docs/Error-Reporting.md` §4).

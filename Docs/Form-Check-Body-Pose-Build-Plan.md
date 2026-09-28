@@ -1,6 +1,7 @@
 # Form Check Body Pose: Build Plan
 
 **Date:** 2026-09-28 · **Status:** PLAN, for PO review. Nothing here is built.
+**PO decisions 09-28:** all three as recommended — 2D pose only · Holt's mark + depth line on the read, faint skeleton only full-screen · save the numbers (reps, depth, tempo), never the joints.
 **Implements:** Phase 3 of `Docs/Coach-Holt-Form-Reading-Plan-v1.0.md` ("the skeleton"), §5.1 Engine B.
 **Ships in:** native **Build 10** (queued in `Forge-Legacy-Master-Status.md`, Build 10 queue).
 **Why (eval 09-25, `scripts/form-check-eval.mjs`, 21 PO clips):** Holt picks the right frame about 17/19, but his dot lands **on the exact body part only 6/18** (14/18 somewhere on the body). Asking for pixels fixed the frame, not the dot. A vision model's pointing is the ceiling; Apple Vision body pose gives the real joint positions.

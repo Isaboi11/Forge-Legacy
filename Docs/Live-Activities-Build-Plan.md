@@ -1,6 +1,7 @@
 # Live Activities — Build Plan (Build 10)
 
 **v1.0 · 2026-09-28** · Queued PO 09-27 · Status: PLANNED, not started
+**PO decisions 09-28:** built with `@bacons/apple-targets` (as the Watch) · read-only in build 10, buttons next native build · ⭐ **RUNS TOO** (distance, pace, elapsed — overrides the strength-only recommendation in §9) · ⭐ NEW: a **mile marker** on runs — a sound + buzz each mile (see §9 note: can ship by OTA as a local notification before build 10).
 **What:** during a workout, a Live Activity shows the current exercise and set, plus the rest countdown, on the
 lock screen and in the Dynamic Island. The athlete never has to unlock the phone.
 **How:** a new `widget` extension target (`@bacons/apple-targets@5.0.0`, the same plugin that builds the Watch)
