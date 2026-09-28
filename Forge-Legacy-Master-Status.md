@@ -76,7 +76,7 @@ reinstall, or a tester needs one of these.
 | **Scan a nutrition label (Create Food)** | `expo-camera` + NEW local `modules/label-reader` (Apple Vision, on-device, free) | built 09-25 to `Scan Nutrition Label v2.dc.html` (A1–C2); parser `domain/nutrition/label-read.ts` tested on HAND-BUILT fixtures — first real iPhone read is the real test. ⚠ Swift never compiled here: build 9 is its first compile |
 | **Paywall: buying Premium / Premium AI** | `react-native-purchases` 10.10.2 (RevenueCat) | built 09-24, inert on build 8 (`billingAvailable()` false: "Plans aren't available on this device yet") |
 
-**✅ BUILD 9 CUT 2026-09-25** — EAS `6c59b9c9`, commit `f7704585`, on TestFlight (submission `38ff62e2`). Everything in the table above is in it; nothing is device-tested yet. Commits after `f7704585` reach it only by OTA.
+**✅ BUILD 9 CUT 2026-09-25** — EAS `6c59b9c9`, commit `f7704585`, on TestFlight (submission `38ff62e2`). Everything in the table above is in it. Device-tested by the PO: barcode + label scan (09-26), paywall buy/restore (09-27), mic (09-28). Not yet: form check, Watch bridge. Commits after `f7704585` reach it only by OTA.
 
 **OTA 1 to build 9 (09-25):** barcode fix only (`de8772a6` → `310114e4` on `ota/build9`, worktree `C:/Users/isaia/forge-b9-ota`), iOS update `01a0da07-25dc-705c…` on runtime `b322e3de…`. ⚠ That worktree needed `.gitignore`, `eas.json` and `modules/*/ios` copied BYTE-FOR-BYTE from the main tree (LF): its autocrlf checkout wrote CRLF and broke the fingerprint. Server half (`food-search`: parallel sources, USDA `gtinUpc`, Open Food Facts typed search) ✅ redeployed by the PO 09-25.
 
@@ -87,12 +87,14 @@ and keep build 8 fed until testers have reinstalled.
 
 **Build 10 queue (native, not started):**
 
+**Plans written 09-28** (not built; each ends with PO decisions): `Docs/Form-Check-Body-Pose-Build-Plan.md` · `Docs/Sentry-Build-Plan.md` (policy text in `site/privacy.html` §2 + `Docs/Legal/Privacy-Policy.md` §3 must change first) · `Docs/Live-Activities-Build-Plan.md` (new App ID `com.qest4.forgelegacy.liveactivity`; design owed).
+
 | Feature | Native piece | Why |
 |---|---|---|
 | **Form check body tracking** | NEW local module over Apple Vision body pose (same pattern as `modules/label-reader`) | Eval 09-25: Holt's dot lands on the exact body part only 6/18. Pose puts it on the real joint, finds each rep's top/bottom, and gives depth/tempo numbers. Plan §5.1 Phase 3. Re-test with `scripts/form-check-eval.mjs` |
 | **Sentry crash reporting** *(added PO 09-27)* | `@sentry/react-native` + config plugin (org `forge-legacy-llc`, project `forge-legacy`, account already made) | Fuller native crash traces than the in-app reporter (0176). ⚠ Before shipping: the privacy policy promises NO third-party crash reporting — change it, and re-check the App Store privacy labels |
 | **Live Activities (lock-screen / Dynamic Island workout card)** *(added PO 09-27)* | NEW widget extension target (`@bacons/apple-targets`, same as the Watch) + ActivityKit bridge | Current set + rest countdown without unlocking. Reads the same command surface the Watch uses. ⚠ Not yet specced: needs a short plan before it's built |
-| **Build 9 native fixes** *(placeholder)* | whatever device testing of build 9 finds (mic, form check, watch bridge, barcode, label reader) | Nothing native in build 9 is device-tested yet. ⭐ Cut build 10 only AFTER build 9 has been tried on a phone |
+| **Build 9 native fixes** *(placeholder)* | whatever device testing of build 9 finds (form check, watch bridge still untested) | ✅ Mic + label scan work on the PO's phone (09-28); barcode + paywall passed earlier. ⭐ Cut build 10 only after form check + Watch have been tried |
 
 ## 🏃 Current Sprint
 
