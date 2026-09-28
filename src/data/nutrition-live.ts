@@ -39,6 +39,7 @@ import { reportError } from '@/lib/diagnostics';
 // The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — no new dependency.
 import { uuid } from '@/lib/app-session';
 import { supabase } from '@/lib/supabase';
+import { gtin14, hasNutrition, pickBarcodeResult, type BarcodeOutcome } from '@/domain/nutrition/barcode-result';
 
 /**
  * Nutrition data (0205) — the ONE read/write path for the food diary and its targets.
@@ -747,6 +748,52 @@ export async function lookupBarcode(barcode: string): Promise<CatalogFood[]> {
   return off ? [off] : [];
 }
 
+/** A shared Forge food by its `cf:<gtin14>` key, or null (none, reported by this athlete, or hidden). */
+async function readCommunityFood(key: string): Promise<CatalogFood | null> {
+  const { data } = await supabase
+    .from('community_foods')
+    .select('key, name, brand, kcal_100, protein_100, carb_100, fat_100, servings, micros, confirmations')
+    .eq('key', key)
+    .maybeSingle();
+  if (!data) return null;
+  const r = data as Record<string, any>;
+  return {
+    key: r.key,
+    source: 'community',
+    name: r.name,
+    brand: r.brand,
+    kcal100: Number(r.kcal_100),
+    protein100: Number(r.protein_100),
+    carb100: Number(r.carb_100),
+    fat100: Number(r.fat_100),
+    servings: (r.servings ?? []) as Serving[],
+    micros: r.micros ?? null,
+    attribution: Number(r.confirmations) >= 2 ? 'Added by Forge athletes · confirmed' : 'Added by Forge athletes',
+  };
+}
+
+/**
+ * A scan, decided (PO 2026-09-28 — the protein bar whose numbers were all zero). See `pickBarcodeResult`.
+ *
+ * ⚠ THE SHARED FOOD IS READ HERE, BY THE PHONE, ALONGSIDE `food-search` — not left to the server. The
+ * server answers a barcode from its `food_catalog` cache before it looks at shared foods, so once an empty
+ * record is cached, an athlete's fix would never be seen through it. Reading `community_foods` directly
+ * (under `community_foods_read`) makes the fix win on the next scan with no server change.
+ *
+ * And when nothing that came back has nutrition, the phone's own Open Food Facts read gets its chance too —
+ * it used to run only when the server found nothing at all.
+ */
+export async function resolveBarcode(barcode: string): Promise<BarcodeOutcome<CatalogFood>> {
+  const [found, shared] = await Promise.all([
+    lookupBarcode(barcode),
+    readCommunityFood(`cf:${gtin14(barcode)}`).catch(() => null),
+  ]);
+  const first = pickBarcodeResult(found, shared);
+  if (first.kind !== 'empty' || found.length === 0) return first;
+  const off = await offOnDevice(barcode);
+  return off && hasNutrition(off) ? { kind: 'food', food: off } : first;
+}
+
 /** One Open Food Facts product, read from the phone. Null on a miss, a timeout or no signal. */
 async function offOnDevice(code: string): Promise<CatalogFood | null> {
   const digits = code.replace(/\D/g, '').replace(/^0+/, '');
@@ -810,28 +857,7 @@ export async function fetchFoodByKey(key: string): Promise<CatalogFood | null> {
 
   /* Amendment 004: a food another athlete shared. Read under `community_foods_read`, so one this athlete
      reported, or one three athletes hid, comes back as gone — which is what it now is, for them. */
-  if (key.startsWith('cf:')) {
-    const { data } = await supabase
-      .from('community_foods')
-      .select('key, name, brand, kcal_100, protein_100, carb_100, fat_100, servings, micros, confirmations')
-      .eq('key', key)
-      .maybeSingle();
-    if (!data) return null;
-    const r = data as Record<string, any>;
-    return {
-      key: r.key,
-      source: 'community',
-      name: r.name,
-      brand: r.brand,
-      kcal100: Number(r.kcal_100),
-      protein100: Number(r.protein_100),
-      carb100: Number(r.carb_100),
-      fat100: Number(r.fat_100),
-      servings: (r.servings ?? []) as Serving[],
-      micros: r.micros ?? null,
-      attribution: Number(r.confirmations) >= 2 ? 'Added by Forge athletes · confirmed' : 'Added by Forge athletes',
-    };
-  }
+  if (key.startsWith('cf:')) return readCommunityFood(key);
 
   if (key.includes(':')) {
     const { data } = await supabase

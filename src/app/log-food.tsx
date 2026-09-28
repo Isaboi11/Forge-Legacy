@@ -36,14 +36,13 @@ import {
   fetchSavedMeals,
   fetchUserRecipes,
   logSavedMeal,
-  lookupBarcode,
+  resolveBarcode,
   searchFoods,
   type RecentFood,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { filterList, recipeRowMeta, savedRecipes, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import { logRecipeEaten } from '@/lib/log-recipe';
-import { labelScanAvailable } from '@/lib/label-scan';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
@@ -66,7 +65,7 @@ import { forgeOr } from '@/constants/theme-scrim';
  * viewfinder exists only in a binary built after it was added. `BarcodeCamera` is `require`d only when
  * `ExpoCamera` is present (see `ScanCamera` below); build 8 and the web preview keep the typed box, which
  * stays under the camera on build 9 too for a code the camera cannot read. Both feed the same
- * `lookupBarcode` call and the same not-found → Create Food route (Nutrition Architecture §5, Phase 1).
+ * `resolveBarcode` call and the same not-found → Create Food route (Nutrition Architecture §5, Phase 1).
  *
  * The camera button beside it opens **Log from Photo** (`meal-photo.tsx`, Premium AI) — shown only to an
  * athlete with Premium AI AND Nutrition access, and absent (not "Soon") for everyone else.
@@ -444,17 +443,28 @@ export default function LogFoodScreen() {
           setBarcodeOpen(false);
           router.push({ pathname: '/food-detail', params: { key: food.key, date: iso, meal } });
         }}
-        onNotFound={(digits) => {
+        onNotFound={(digits, empty) => {
           setBarcodeOpen(false);
-          /* Where Scan label exists, Create Food says "No barcode match" itself, above the Scan label
-             card (`Scan Nutrition Label v2.dc.html` A2) — a toast on top of that would say it twice. */
-          if (labelScanAvailable()) {
-            /* The barcode travels with it: Amendment 004 shares the food under it, so the next scan finds it. */
-            router.push({ pathname: '/create-food', params: { date: iso, meal, from: 'barcode', gtin: digits } });
-            return;
-          }
-          goCreateFood();
-          showToast('Not in the database — add it yourself');
+          /*
+           * ⚠ THE BARCODE ALWAYS TRAVELS NOW — Amendment 004 shares the food under it, so the next scan
+           * finds it. It used to travel only where Scan label exists, so a miss on the web preview (or
+           * build 8) opened a Create Food with no barcode and no "Share with Forge": fixable for yourself,
+           * never for anyone else. Create Food says "No barcode match" itself (`.dc` A2).
+           *
+           * `empty` — Forge found a record for this code but it has no nutrition (PO 2026-09-28, the
+           * protein bar whose numbers were all zero). Its name and brand come along so only the numbers
+           * are left to type. See `pickBarcodeResult`.
+           */
+          router.push({
+            pathname: '/create-food',
+            params: {
+              date: iso,
+              meal,
+              from: empty ? 'barcode-empty' : 'barcode',
+              gtin: digits,
+              ...(empty ? { name: empty.name, brand: empty.brand ?? '' } : {}),
+            },
+          });
         }}
       />
 
@@ -640,7 +650,7 @@ function BarcodeSheet({
   open: boolean;
   onClose: () => void;
   onFound: (food: CatalogFood) => void;
-  onNotFound: (digits: string) => void;
+  onNotFound: (digits: string, empty: { name: string; brand: string | null } | null) => void;
 }) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
@@ -650,11 +660,11 @@ function BarcodeSheet({
       const digits = raw.replace(/\D/g, '');
       if (digits.length < 8) return;
       setBusy(true);
-      const found = await lookupBarcode(digits);
+      const result = await resolveBarcode(digits);
       setBusy(false);
       setCode('');
-      if (found.length) onFound(found[0]);
-      else onNotFound(digits);
+      if (result.kind === 'food') onFound(result.food);
+      else onNotFound(digits, result.kind === 'empty' ? { name: result.name, brand: result.brand } : null);
     },
     [onFound, onNotFound],
   );

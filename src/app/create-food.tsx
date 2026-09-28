@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { requireOptionalNativeModule } from 'expo';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -77,12 +78,23 @@ interface ScanState {
 
 type Fields = Record<string, string>;
 
+/**
+ * The barcode viewfinder, or `null` on a build without the camera (web, build 8) — the same optional load
+ * as Log Food's, for "add its barcode" on a food the athlete already made. Never a top-level import:
+ * `expo-camera` throws on load when its native half is missing.
+ */
+const ScanCamera: ComponentType<{ paused: boolean; onScan: (digits: string) => void }> | null =
+  Platform.OS !== 'web' && requireOptionalNativeModule('ExpoCamera')
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      (require('@/components/forge/BarcodeCamera') as typeof import('@/components/forge/BarcodeCamera')).BarcodeCamera
+    : null;
+
 const EMPTY: Fields = { name: '', brand: '', amount: '', unitWeight: '', cal: '', protein: '', carb: '', fat: '' };
 
 export default function CreateFoodScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string; for?: string; scan?: string }>();
+  const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string; for?: string; scan?: string; name?: string; brand?: string }>();
   const { width } = useWindowDimensions();
 
   const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
@@ -100,7 +112,13 @@ export default function CreateFoodScreen() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [unitKey, setUnitKey] = useState('g');
-  const [edited, setEdited] = useState<Fields | null>(null);
+  /* A scan that found this barcode with NO nutrition brings the record's name and brand along
+     (`from=barcode-empty`, PO 2026-09-28), so only the label's numbers are left to type. */
+  const [edited, setEdited] = useState<Fields | null>(() =>
+    params.from === 'barcode-empty' && typeof params.name === 'string' && params.name.trim()
+      ? { ...EMPTY, name: params.name.trim().slice(0, 60), brand: typeof params.brand === 'string' ? params.brand.trim().slice(0, 40) : '' }
+      : null,
+  );
   const [scan, setScan] = useState<ScanState | null>(null);
   const [labelOpen, setLabelOpen] = useState(false);
   const canScan = !editing && labelScanAvailable();
@@ -114,7 +132,13 @@ export default function CreateFoodScreen() {
   }, [params.scan, canScan, router]);
   /* Amendment 004 (LOCKED): a food made after a barcode missed can be shared under that barcode. The box
      starts ticked (PO, Q1) and appears ONLY with a barcode (CF-D2) — "overnight oats" stays personal. */
-  const gtin = !editing && typeof params.gtin === 'string' ? params.gtin.replace(/\D/g, '') : '';
+  /* ⚠ AND ON A FOOD THEY ALREADY MADE, THEY CAN ADD THE BARCODE (PO 2026-09-28). The PO made their protein
+     bar by hand because the scan "found" an empty record — so it was theirs alone, with no way to share it
+     short of typing it all again. Editing now takes a barcode (typed, or scanned on build 9+). */
+  const [addedGtin, setAddedGtin] = useState('');
+  const [gtinScanOpen, setGtinScanOpen] = useState(false);
+  const addedDigits = addedGtin.replace(/\D/g, '');
+  const gtin = editing ? (addedDigits.length >= 8 ? addedDigits : '') : typeof params.gtin === 'string' ? params.gtin.replace(/\D/g, '') : '';
   const [shareIt, setShareIt] = useState(true);
 
   /* A scan lands here on the way back from the camera. Taken once, so a later focus cannot re-apply
@@ -255,7 +279,7 @@ export default function CreateFoodScreen() {
       /* Shared AFTER the athlete's own copy is saved, so a refusal costs them nothing: the toast says
          "saved", and adds why it was not shared. */
       let shared: { shared: boolean; reason: ShareRefusal | null } | null = null;
-      if (!editing && gtin && shareIt) {
+      if (gtin && shareIt) {
         shared = await shareCommunityFood({ ...input, gtin }, scan ? 'label_scan' : 'typed');
       }
       const shareNote = !shared ? '' : shared.shared ? ' · shared with Forge' : ` · not shared: ${SHARE_REFUSAL[shared.reason ?? 'unavailable']}`;
@@ -312,17 +336,19 @@ export default function CreateFoodScreen() {
         </Text>
 
         {/* A1 / A2 — the shortcut into the form, and the one line of context after a barcode miss */}
-        {canScan && !scan ? (
-          <>
-            {params.from === 'barcode' ? (
-              <View style={styles.missNote}>
-                <Text style={styles.missTitle}>No barcode match</Text>
-                <Text style={styles.missText}>You can still scan the Nutrition Facts label.</Text>
-              </View>
-            ) : null}
-            <ScanCard onPress={() => router.push('/scan-label')} />
-          </>
+        {!editing && !scan && (params.from === 'barcode' || params.from === 'barcode-empty') ? (
+          <View style={styles.missNote}>
+            <Text style={styles.missTitle}>{params.from === 'barcode-empty' ? 'Found it, but with no nutrition' : 'No barcode match'}</Text>
+            <Text style={styles.missText}>
+              {params.from === 'barcode-empty'
+                ? 'Add the numbers from the label. Share it and everyone who scans it gets them.'
+                : canScan
+                  ? 'You can still scan the Nutrition Facts label.'
+                  : 'Add it from the label. Share it and the next scan finds it.'}
+            </Text>
+          </View>
         ) : null}
+        {canScan && !scan ? <ScanCard onPress={() => router.push('/scan-label')} /> : null}
 
         {/* A3 / A4 — what the scan did */}
         {scan ? <ScanSummary scan={scan} onView={() => setLabelOpen(true)} onRescan={() => router.push('/scan-label')} /> : null}
@@ -464,6 +490,31 @@ export default function CreateFoodScreen() {
           </View>
         ) : null}
 
+        {/* Editing: attach the barcode so this food can be shared (PO 2026-09-28). */}
+        {editing ? (
+          <View style={styles.addGtin}>
+            <Text style={styles.sectionLabel}>Barcode</Text>
+            <View style={styles.addGtinRow}>
+              <View style={styles.addGtinInput}>
+                <InputField
+                  accessibilityLabel="Barcode number"
+                  placeholder="Type the number under it"
+                  keyboardType="number-pad"
+                  value={addedGtin}
+                  onChange={setAddedGtin}
+                  maxLength={18}
+                />
+              </View>
+              {ScanCamera ? (
+                <Button variant="secondary" onPress={() => setGtinScanOpen(true)} accessibilityLabel="Scan the barcode">
+                  Scan
+                </Button>
+              ) : null}
+            </View>
+            <Text style={styles.missText}>Add it to share this food with Forge — the next person who scans it gets your numbers.</Text>
+          </View>
+        ) : null}
+
         {/* Amendment 004 CF-D1 — one choice on this food, only when it has a barcode */}
         {gtin ? (
           <Pressable
@@ -539,6 +590,21 @@ export default function CreateFoodScreen() {
       </BottomSheet>
 
       {/* A5 — the photo, so values can be checked without picking the package back up */}
+      {ScanCamera ? (
+        <BottomSheet open={gtinScanOpen} onClose={() => setGtinScanOpen(false)} title="Scan its barcode">
+          {/* Mounted only while open, so the camera is off (and its one-read lock reset) when it closes. */}
+          {gtinScanOpen ? (
+            <ScanCamera
+              paused={false}
+              onScan={(digits) => {
+                setAddedGtin(digits);
+                setGtinScanOpen(false);
+              }}
+            />
+          ) : null}
+        </BottomSheet>
+      ) : null}
+
       <BottomSheet open={labelOpen} onClose={() => setLabelOpen(false)} title="Original label">
         <View style={styles.labelSheet}>
           <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false}
@@ -713,6 +779,9 @@ const styles = StyleSheet.create({
   missNote: { gap: 3, paddingHorizontal: 2, paddingBottom: 10 },
   missTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
   missText: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray600 },
+  addGtin: { gap: 8, marginTop: 22 },
+  addGtinRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  addGtinInput: { flex: 1 },
 
   /* A3 / A4 — the scan summary */
   summary: {
