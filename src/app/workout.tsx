@@ -135,6 +135,8 @@ import type { ActiveSession, SessionExercise, SessionSet, WorkoutSectionKind } f
 import { registerWatchCommands } from '@/domain/workout/watch-commands';
 import { projectWatchState } from '@/domain/workout/watch-projection';
 import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
+/* Resolves `live-activity.ts` on native and the no-op `live-activity.web.ts` on web. */
+import { endLiveActivity, pushLiveActivityState } from '@/lib/live-activity';
 import { activeTheme } from '@/constants/theme-choice';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -456,6 +458,8 @@ export default function WorkoutScreen() {
   const endSession = useCallback(() => {
     endedRef.current = true;
     finishWorkout();
+    /* The lock-screen card: a "Workout complete" card stays five minutes, anything else goes now. */
+    endLiveActivity('finished');
   }, [finishWorkout]);
   /**
    * ⚠ THERE ARE NOW THREE EXITS, NOT TWO, AND THE THIRD IS THE ONE THE SQUAD FEELS.
@@ -477,10 +481,13 @@ export default function WorkoutScreen() {
   const discardSession = useCallback(() => {
     endedRef.current = true;
     abandonWorkout();
+    endLiveActivity('discarded');
   }, [abandonWorkout]);
   const leaveSession = useCallback(() => {
     endedRef.current = true;
     leaveWorkout();
+    /* Off the lock screen too. Resuming from Home remounts this screen, and its first push starts a fresh card. */
+    endLiveActivity('discarded');
   }, [leaveWorkout]);
   const [session, setSession] = useState<ActiveSession | null>(null);
   const [resumable, setResumable] = useState<ActiveSession | null>(null);
@@ -1898,6 +1905,17 @@ export default function WorkoutScreen() {
   useEffect(() => {
     pushWatchState(watchState);
   }, [watchState]);
+  /**
+   * The lock screen / Dynamic Island card (`Docs/Live-Activities-Build-Plan.md`) — a SECOND listener for
+   * the same projection. `lib/live-activity` decides start/update/end and drops identical states, so this
+   * re-running every second of a rest costs a comparison. A live GPS bout takes the card over from
+   * `CardioBlockCard`. No-op on the web and on build 9 (no native module).
+   */
+  const laName = session?.workoutName ?? '';
+  const laStartedAt = session?.startedAt ?? '';
+  useEffect(() => {
+    pushLiveActivityState(watchState, { workoutName: laName, startedAt: laStartedAt });
+  }, [watchState, laName, laStartedAt]);
   /**
    * They answered. Write the new weight into every set of this exercise still to come, and hand the
    * sentence to the same coin the nudge uses.

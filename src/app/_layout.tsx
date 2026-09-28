@@ -18,6 +18,9 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
  * fix taken while the screen was on.
  */
 import '@/domain/run/background-task';
+/* Build 10: removes a lock-screen Live Activity left behind by a killed process — once, at launch, before any
+   session can resume. See `lib/live-activity.ts`. A no-op on the web and on builds without the module. */
+import '@/lib/live-activity';
 
 import { startDiagnostics } from '@/lib/diagnostics';
 import { startSentry, useSentryNavigation, useSentryUser, wrapRoot } from '@/lib/sentry';
