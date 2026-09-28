@@ -907,6 +907,17 @@ Open decisions blocking progress. **Remove a row only when the decision is resol
 
 ## ✅ Recently Completed (last ~20 milestones)
 
+### Scan an ingredient's barcode while building a recipe (2026-09-28, `41b8c8b3` · ✅ WEB `index-327d0bb24b7e2f58bb26e05ee2af9c84.js` (built from `96153610` + this commit so the unpublished squads `fa6d2947` stays out; deployment + alias MATCH, new copy found live) · ✅ OTA build 9 iOS `01a0e8a5-26b4-7269-b735-c6793ed385db` from `ota/build9-js` `84bccd31`, fingerprint MATCHED, manifest serves it)
+
+PO asked to be able to scan the barcode, not just the label, when building a recipe. What shipped:
+- Recipe ingredients now offer Barcode · Label · Type it in.
+- Log Food's scanner moved into `components/forge/BarcodeSheet`, shared by both screens.
+- A found food opens its amount straight away (after the sheet has closed, for iOS). The ingredient carries its own numbers.
+- `ownFoodFromScan` uses the labelled serving, or 100 g.
+- A miss, or a food with no calories, opens Create Food for the recipe with the barcode, its name, and the label camera.
+
+Not yet seen on a device.
+
 ### Your Circle: "2 more from …" opens everyone training (2026-09-28, `da3ecded` · ✅ WEB `index-4f8b6749f7526e53ac8f1aa961442ddd.js` from lane `0123fcd8` (deployment URL + alias MATCH) · ✅ OTA build 9 iOS `01a0e828-b9fa-73fe-92e1-f1091576cde7`, fingerprint MATCHED · ⏳ not yet seen by the PO)
 
 PO: *"I have a couple of people working out but I can only see one of them … should I be able to click a see all button?"* The card draws one live person; the "N more from …" line now opens the existing Training Now sheet (everyone training, each with Join) — the same list Train Together opens.
