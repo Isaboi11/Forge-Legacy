@@ -17,9 +17,9 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
   - ✅ `pending-0200.sql` applied 09-27 (squad goals close; 10/10 rows green). First paste stopped on the grant check — revokes from PUBLIC alone left the new functions callable; fixed to also revoke from anon + authenticated, re-pasted clean. Moch 1 closes as **met, silent** (deadline >7 days gone)
   - ✅ Re-pasted 4 coach functions 09-27 (stronger food/diet safety stops, `2738fdc4`): coach-ask, coach-interpret, coach-form-check, coach-kitchen
   - ✅ Premium AI turned back off for claudetest — 09-27
-  - ⬜ Paste `pending-0230.sql` (pin + edit squad posts) — added 09-28
-  - ⬜ Paste `pending-0232.sql` ("Fix it with AI" credit). Expect `workout_tidy_credits 1 · meal_photo_credits 3 · tidies 0` — added 09-28
-  - ⬜ Deploy new function `workout-tidy`: dashboard → Edge Functions → new → paste all of `supabase/functions/workout-tidy/index.ts` (AFTER 0232) — added 09-28
+  - ✅ `pending-0230.sql` applied 09-28 (pin + edit squad posts): 248 posts · 0 pinned · 0 edited, as predicted
+  - ✅ `pending-0232.sql` applied 09-28 ("Fix it with AI" = 1 credit): workout_tidy 1 · tidies 0 ✓. ⚠ It showed **meal_photo = 1**, not the 3 that 0223 set — changed by hand at some point, no record in the repo; PO to say if intended
+  - ✅ Edge Function `workout-tidy` deployed 09-28 (Verify JWT on; probe: OPTIONS 200, no-auth POST 401)
   - ⬜ Then tell Claude "go": publish web + phone update (Squatober posts, pin/edit, Fix it with AI) — added 09-28
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
