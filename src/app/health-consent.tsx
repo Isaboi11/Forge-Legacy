@@ -11,8 +11,8 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
 import {
-  CONSENT_KINDS,
   CONSENT_SETTINGS,
+  consentKindsShown,
   consentStatusLine,
   HEALTH_DATA_URL,
   type ConsentKind,
@@ -23,8 +23,9 @@ import { ensureConsent, refreshConsents, useConsent, withdrawConsent } from '@/l
 /**
  * Health Data & AI — Account Settings → Privacy & Alerts (0224).
  *
- * The athlete's two consents (MHMDA / Nevada SB 370): Nutrition (collecting food and body data) and AI
- * features (sharing what a feature needs with Anthropic). Each shows whether it is in place and since
+ * The athlete's consents (MHMDA / Nevada SB 370): Nutrition (collecting food and body data), AI features
+ * (sharing what a feature needs with Anthropic) and — where it can be connected, or once answered —
+ * Apple Health (collecting workouts from Health, build 10). Each shows whether it is in place and since
  * when, and can be withdrawn here, or given again. Agreeing goes through the same sheet as everywhere
  * else, so the words agreed to are always the same words.
  *
@@ -74,8 +75,8 @@ export default function HealthConsentScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Text style={styles.intro}>
-            Two parts of Forge need your OK first, because some states treat what they use as health data. Each is
-            separate, and you can withdraw either one here at any time.
+            Some parts of Forge need your OK first, because some states treat what they use as health data. Each is
+            separate, and you can withdraw any of them here at any time.
           </Text>
 
           {consent.unreadable ? (
@@ -86,7 +87,9 @@ export default function HealthConsentScreen() {
 
           <Text style={styles.sectionLabel}>Your consents</Text>
 
-          {CONSENT_KINDS.map((kind) => {
+          {/* Apple Health is listed only where it can be connected (no build can yet: plan §3.2) or once it
+              has been answered on some device, so it stays withdrawable from here. */}
+          {consentKindsShown(consent.status, false).map((kind) => {
             const s = CONSENT_SETTINGS[kind];
             const status = consent.status[kind];
             const on = status === 'granted';

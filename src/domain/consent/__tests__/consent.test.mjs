@@ -10,6 +10,7 @@ import {
   CONSENT_KINDS,
   CONSENT_POLICY_VERSION,
   consentAllows,
+  consentKindsShown,
   consentStatus,
   consentStatusLine,
   grantedAt,
@@ -84,6 +85,33 @@ test('the Settings status line', () => {
   assert.equal(consentStatusLine('withdrawn', null), 'Withdrawn');
   assert.equal(consentStatusLine('declined', null), 'Not agreed');
   assert.equal(consentStatusLine('none', null), 'Not agreed');
+});
+
+test('apple_health is its own consent — agreeing to Nutrition or AI is not agreeing to read Apple Health', () => {
+  const rows = [row('nutrition', 'granted', '2026-09-26T10:00:00Z'), row('ai_sharing', 'granted', '2026-09-26T10:00:00Z')];
+  assert.equal(consentStatus(rows, 'apple_health'), 'none');
+  assert.equal(consentStatus([...rows, row('apple_health', 'granted', '2026-09-28T10:00:00Z')], 'apple_health'), 'granted');
+  // Rows off the wire with the new kind survive sanitizing (0234 widened the server check to match).
+  assert.equal(
+    sanitizeConsentRows([{ kind: 'apple_health', action: 'granted', policy_version: V.apple_health, created_at: '2026-09-28T10:00:00Z' }]).length,
+    1,
+  );
+});
+
+test('Health Data & AI lists Apple Health only where it can be connected, or once it has been answered', () => {
+  const st = (apple) => ({ nutrition: 'none', ai_sharing: 'granted', apple_health: apple });
+  assert.deepEqual(consentKindsShown(st('none'), false), ['nutrition', 'ai_sharing'], 'web / build 9: no Agree button for a feature that is not there');
+  assert.deepEqual(consentKindsShown(st('none'), true), ['nutrition', 'ai_sharing', 'apple_health']);
+  for (const answered of ['granted', 'declined', 'withdrawn']) {
+    assert.ok(consentKindsShown(st(answered), false).includes('apple_health'), `${answered} on the phone stays visible (and withdrawable) on the web`);
+  }
+});
+
+test('the Apple Health prompt says what the plan says is read — and what is not', () => {
+  const t = CONSENT_COPY.apple_health.body.join(' ');
+  for (const w of ['type', 'started and ended', 'distance', 'which app or watch']) assert.match(t, new RegExp(w), w);
+  for (const w of ['heart rate', 'calories', 'routes', 'sleep']) assert.match(t, new RegExp(`not read[^.]*${w}`), `says it does not read ${w}`);
+  assert.match(CONSENT_COPY.apple_health.title, /Apple Health/);
 });
 
 // ── routes ──────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ABOUT_BODY,
+  APPLE_HEALTH_NOT_HERE,
   forgingSince,
   LEGAL,
   rankLine,
@@ -290,4 +291,38 @@ test('the delete row sits in its own section, never beside an ordinary setting',
     menu.every((s) => s.key === 'danger' || s.rows.every((r) => r.action.type !== 'deleteAccount')),
     'no other section may carry a delete action',
   );
+});
+
+// ── Apple Health (Build 10 · Apple-Health-Build-Plan §3.3, P-7) ─────────────
+
+test('Apple Health sits under Training after Preferences, and only when a state is passed', () => {
+  assert.ok(!settingsSections({}).flatMap((s) => s.rows).some((r) => r.key === 'applehealth'), 'gated off by default');
+  const training = (opts) => settingsSections(opts).find((s) => s.key === 'training').rows;
+  assert.deepEqual(
+    training({ hasPreferences: true, hasHoltMemory: true, appleHealth: 'off' }).map((r) => r.key),
+    ['gym', 'prefs', 'applehealth', 'holt'],
+  );
+  // It is about where workouts come from, so it is never in Privacy & Alerts.
+  const privacy = settingsSections({ hasVisibility: true, hasHealthConsent: true, appleHealth: 'off' }).find((s) => s.key === 'privacy');
+  assert.ok(!privacy.rows.some((r) => r.key === 'applehealth'));
+});
+
+test('where HealthKit is here, the row opens the connect screen and says Connected or Off', () => {
+  const row = (state) => settingsSections({ appleHealth: state }).flatMap((s) => s.rows).find((r) => r.key === 'applehealth');
+  assert.equal(row('connected').label, 'Apple Health', 'Apple’s own name (Guideline 2.5.1)');
+  assert.equal(row('connected').value, 'Connected');
+  assert.equal(row('off').value, 'Off');
+  assert.deepEqual(row('off').action, { type: 'route', path: '/apple-health' });
+});
+
+test('where it is not (web, builds without the module), the row is honest and routes nowhere', () => {
+  const row = settingsSections({ appleHealth: 'not-here' }).flatMap((s) => s.rows).find((r) => r.key === 'applehealth');
+  assert.equal(row.label, 'Apple Health');
+  assert.equal(row.value, 'Next update');
+  assert.deepEqual(row.action, { type: 'sheet', key: 'appleHealth' }, 'never a push to a screen that cannot work here');
+  assert.equal(APPLE_HEALTH_NOT_HERE.updated, 'Available on iPhone with the next app update');
+  assert.ok(APPLE_HEALTH_NOT_HERE.body.length >= 2);
+  // It never claims to be connected, or offers to connect.
+  const all = [APPLE_HEALTH_NOT_HERE.title, APPLE_HEALTH_NOT_HERE.updated, ...APPLE_HEALTH_NOT_HERE.body].join(' ');
+  assert.doesNotMatch(all, /Connected|Tap to connect|Connect now/);
 });

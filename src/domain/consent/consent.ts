@@ -6,6 +6,9 @@
  *       used to set them, allergies and dislikes);
  *   (b) a SEPARATE consent before it is SHARED — here, `ai_sharing`: every AI feature sends what it needs
  *       to Anthropic, and that send counts as sharing.
+ *   (c) `apple_health` (Build 10 · Apple-Health-Build-Plan §3.3): reading workouts out of Apple Health is
+ *       COLLECTING health data from another app, so it gets its own opt-in, asked when the athlete taps
+ *       Connect — before the permission sheet, before anything is read. Stored by 0234's widened check.
  *
  * The live policies say what the prompts say: `site/health-data.html` (§1 what is collected, §4 who
  * receives it) and `site/privacy.html` §4 (Anthropic: "your question, the training or nutrition details
@@ -19,21 +22,26 @@
  * Pure and import-free, so `node --test` can hold it (`__tests__/consent.test.mjs`).
  */
 
-export type ConsentKind = 'nutrition' | 'ai_sharing';
+export type ConsentKind = 'nutrition' | 'ai_sharing' | 'apple_health';
 export type ConsentAction = 'granted' | 'declined' | 'withdrawn';
 /** `none` = never answered, or agreed to an older policy version. Both mean: ask. */
 export type ConsentStatus = 'granted' | 'declined' | 'withdrawn' | 'none';
 
-export const CONSENT_KINDS: readonly ConsentKind[] = ['nutrition', 'ai_sharing'];
+export const CONSENT_KINDS: readonly ConsentKind[] = ['nutrition', 'ai_sharing', 'apple_health'];
 
 /**
  * The policy each consent was given against — the "Last updated" date of `site/health-data.html` and
  * `site/privacy.html` (both 25 September 2026). Raise it when a policy changes in substance: every stored
  * grant for an older version then reads as `none`, and the athlete is asked again.
+ *
+ * ⚠ `apple_health` — the §7 policy text naming Apple Health is not live yet (it must be before build 10
+ *   reaches a tester, and `site/health-data.html` gets a new "Last updated" when it lands). Move this to
+ *   that date in the same pass. Nobody can give this consent before then: only build 10 asks for it.
  */
 export const CONSENT_POLICY_VERSION: Readonly<Record<ConsentKind, string>> = {
   nutrition: '2026-09-25',
   ai_sharing: '2026-09-25',
+  apple_health: '2026-09-25',
 };
 
 export interface ConsentRecord {
@@ -192,6 +200,20 @@ export const CONSENT_COPY: Readonly<Record<ConsentKind, ConsentCopy>> = {
     agree: 'Agree',
     notNow: 'Not now',
   },
+  /* Plan §7: exactly what is read, and what is not — the same list as the privacy policy's Apple Health
+     paragraph. Uses Apple's own name for it (Guideline 2.5.1). */
+  apple_health: {
+    title: 'Before you connect Apple Health',
+    body: [
+      'Forge will read your workouts from Apple Health: the type (run, walk, ride, swim, row), when each started and ended, its distance, and which app or watch recorded it.',
+      'It does not read heart rate, calories, routes, sleep, or any other Health data. The workouts you add become part of your training history. We don’t sell them and we don’t use them for ads.',
+      'Some states treat this as health data, so we ask first. You can withdraw this any time in Settings, under Health Data & AI.',
+    ],
+    linkLabel: 'Read the health data policy',
+    linkUrl: HEALTH_DATA_URL,
+    agree: 'Agree',
+    notNow: 'Not now',
+  },
 };
 
 /** Said where an AI feature was stopped because the athlete chose "Not now". Nothing left the phone. */
@@ -222,7 +244,24 @@ export const CONSENT_SETTINGS: Readonly<Record<ConsentKind, { label: string; hin
     withdrawTitle: 'Withdraw AI consent?',
     withdrawBody: 'Holt’s AI features stop sending anything to Anthropic. You can agree again whenever you want to use them.',
   },
+  apple_health: {
+    label: 'Apple Health',
+    hint: 'Reading your workouts from Apple Health: the type, when, how far, and which app or watch recorded them.',
+    withdrawTitle: 'Withdraw Apple Health consent?',
+    withdrawBody:
+      'Forge stops reading workouts from Apple Health. Workouts already added stay in your training history until you remove them or delete your account.',
+  },
 };
+
+/**
+ * Which consents Settings → Health Data & AI lists. Nutrition and AI always. Apple Health only where it
+ * can be connected (build 10 on an iPhone), or once the athlete has answered it on some device — an
+ * answer given on the phone must stay withdrawable from the web. Elsewhere it would be an "Agree" button
+ * for a feature that is not there.
+ */
+export function consentKindsShown(status: Readonly<Record<ConsentKind, ConsentStatus>>, appleHealthHere: boolean): ConsentKind[] {
+  return CONSENT_KINDS.filter((k) => k !== 'apple_health' || appleHealthHere || status.apple_health !== 'none');
+}
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 

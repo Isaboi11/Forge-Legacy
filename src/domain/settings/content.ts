@@ -124,10 +124,28 @@ export interface SettingsRow {
   /** Trailing value text, e.g. the membership state or the home-gym item count. Empty renders just a chevron. */
   value?: string;
   /** What tapping does: push a route, or open one of the in-app sheets. */
-  action: { type: 'route'; path: string } | { type: 'sheet'; key: LegalKey | 'about' } | { type: 'deleteAccount' };
+  action: { type: 'route'; path: string } | { type: 'sheet'; key: LegalKey | 'about' | 'appleHealth' } | { type: 'deleteAccount' };
   /** Renders in the destructive treatment. Only ever the one row — see `settingsSections`. */
   destructive?: boolean;
 }
+
+/**
+ * What the Apple Health row opens where Apple Health cannot be connected — the web, and any build without
+ * the HealthKit module (Apple-Health-Build-Plan §3.2). The row still exists there, and says honestly when
+ * it arrives, in the words the other build-gated surfaces use ("needs the latest version of the app",
+ * "arrives with the next app update"). Nothing on it pretends to connect.
+ */
+export const APPLE_HEALTH_NOT_HERE: LegalDocument = {
+  /* The sheet's header label: P-7's own name, as the About sheet's is "About". */
+  host: 'Connected Apps',
+  title: 'Apple Health',
+  updated: 'Available on iPhone with the next app update',
+  body: [
+    'Connect Apple Health and the runs, walks, rides, swims and rows recorded on your Apple Watch, Garmin or another app show up in your Forge training history, on the day you did them. No typing them in again.',
+    'Workouts you finish in Forge can go to Apple Health too, so they count toward your rings.',
+    'It arrives on iPhone with the next app update. Apple Health lives on your phone, so it is connected from the iPhone app, not from a browser.',
+  ],
+};
 
 export interface SettingsSection {
   key: string;
@@ -159,6 +177,16 @@ export function settingsSections(opts: {
    * flag keeps the exact menu the tests pin.
    */
   hasHealthConsent?: boolean;
+  /**
+   * "Apple Health" under Training — the plan's `hasAppleHealth` row (Apple-Health-Build-Plan §3.3, the first
+   * P-7 Connected Apps row P-4 §2.1 reserved), widened to carry its value:
+   *   · 'connected' / 'off' — HealthKit is here (`appleHealthAvailable()`, build 10 on an iPhone): opens
+   *     `/apple-health`, and the value reads Connected / Off.
+   *   · 'not-here' — the web, or a build without the module: opens `APPLE_HEALTH_NOT_HERE`, value
+   *     "Next update". Never a route to a screen that cannot work here.
+   * Undefined keeps the exact menu the tests pin.
+   */
+  appleHealth?: 'connected' | 'off' | 'not-here';
   /**
    * The operator dashboard row (0129/0130). Absent for everybody who is not in `app_admins`, and
    * absent by DEFAULT — an undefined flag must produce exactly the section list every athlete has
@@ -206,6 +234,17 @@ export function settingsSections(opts: {
   ];
   if (opts.hasPreferences) {
     training.push({ key: 'prefs', label: 'Preferences', action: { type: 'route', path: '/preferences' } });
+  }
+  // In Training, not Privacy & Alerts: it is about where workouts come from (plan §3.3).
+  if (opts.appleHealth === 'not-here') {
+    training.push({ key: 'applehealth', label: 'Apple Health', value: 'Next update', action: { type: 'sheet', key: 'appleHealth' } });
+  } else if (opts.appleHealth) {
+    training.push({
+      key: 'applehealth',
+      label: 'Apple Health',
+      value: opts.appleHealth === 'connected' ? 'Connected' : 'Off',
+      action: { type: 'route', path: '/apple-health' },
+    });
   }
   if (opts.hasHoltMemory) {
     training.push({ key: 'holt', label: 'What Holt Remembers', action: { type: 'route', path: '/holt-memory' } });

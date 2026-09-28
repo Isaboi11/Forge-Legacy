@@ -23,6 +23,7 @@ import { fetchHomeGym } from '@/data/home-gym-live';
 import { fetchAccountIdentity } from '@/domain/profile/live';
 import {
   ABOUT_BODY,
+  APPLE_HEALTH_NOT_HERE,
   LEGAL,
   rankLine,
   settingsSections,
@@ -166,7 +167,7 @@ export default function AccountSettingsScreen() {
      a confirmed admin — while it loads, and on any error, the row simply is not there. */
   const { data: isAdmin } = useQuery(isAppAdmin, []);
 
-  const [sheet, setSheet] = useState<LegalKey | 'about' | null>(null);
+  const [sheet, setSheet] = useState<LegalKey | 'about' | 'appleHealth' | null>(null);
 
   const gymSummary =
     homeGym == null ? undefined : homeGym.length === 0 ? 'Bodyweight only' : `${homeGym.length} item${homeGym.length === 1 ? '' : 's'}`;
@@ -179,6 +180,9 @@ export default function AccountSettingsScreen() {
     hasPreferences: true,
     hasHoltMemory: true,
     hasHealthConsent: true,
+    /* Apple-Health-Build-Plan §3.2: no build has the HealthKit module yet, and the web never will, so the
+       row says when it arrives. Build 10 passes 'connected' / 'off' from `appleHealthAvailable()`. */
+    appleHealth: 'not-here',
     isAdmin: isAdmin === true,
     /* `null` while entitlement is loading or unverifiable, which the row reads as "say nothing". */
     tier: useTier() ?? undefined,
@@ -202,7 +206,7 @@ export default function AccountSettingsScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-  const doc = sheet === 'about' ? null : sheet ? LEGAL[sheet] : null;
+  const doc = sheet === 'about' ? null : sheet === 'appleHealth' ? APPLE_HEALTH_NOT_HERE : sheet ? LEGAL[sheet] : null;
 
   return (
     <View style={styles.root}>
@@ -336,7 +340,7 @@ export default function AccountSettingsScreen() {
         </ScrollView>
       )}
 
-      {/* legal / about — an in-app content sheet, not a browser. Nothing is fetched. */}
+      {/* legal / about / Apple Health-not-here — an in-app content sheet, not a browser. Nothing is fetched. */}
       <BottomSheet open={sheet !== null} onClose={() => setSheet(null)} title={sheet === 'about' ? 'About' : doc?.host ?? ''}>
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
           <Text style={styles.sheetTitle}>{sheet === 'about' ? 'Forge Legacy' : doc?.title ?? ''}</Text>
