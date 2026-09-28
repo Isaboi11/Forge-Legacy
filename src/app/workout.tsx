@@ -74,6 +74,8 @@ import {
 import { durText, supersetLabels } from '@/domain/program/prescription';
 import { coachLine } from '@/domain/coach/coach-says';
 import { squadAnnouncedLine } from '@/domain/coach/squad-announce';
+import { cheerLine, nextCheer, type Cheer } from '@/domain/coach/cheers';
+import { fetchUnseenCheers, markCheerSeen } from '@/data/cheers-live';
 import { profileFor } from '@/domain/coach/rulebook/intensity';
 import { intraSetSuggestion } from '@/domain/coach/intra-set';
 import { addSuggestions, swapSuggestions } from '@/domain/coach/session-suggest';
@@ -783,6 +785,34 @@ export default function WorkoutScreen() {
    * and the coin never leaves the screen — closing the bubble hides a sentence, not the coach.
    */
   const [dismissedSay, setDismissedSay] = useState<string | null>(null);
+  /*
+   * ══ A WORD FROM THE SQUAD (0231, PO 2026-09-28) ══
+   *
+   * A squad-mate tapped "started training" and wrote something; Holt shows it here, first, until the
+   * athlete closes it. Polled — the app has no realtime, and 20 s is well inside "during the workout".
+   * Only while a session is live. The window reaches four hours before this start (the same window 0187
+   * uses for "one start") so a message sent just before a resume or an app restart is not lost.
+   * A failed poll, or a database without 0231, finds nothing and changes nothing.
+   */
+  const [cheers, setCheers] = useState<Cheer[]>([]);
+  const [closedCheers, setClosedCheers] = useState<ReadonlySet<string>>(() => new Set());
+  const cheerSince = liveSession?.startedAt ? new Date(Date.parse(liveSession.startedAt) - 4 * 60 * 60 * 1000).toISOString() : null;
+  useEffect(() => {
+    if (!cheerSince) return;
+    let alive = true;
+    const tick = () => {
+      void fetchUnseenCheers(cheerSince).then((c) => {
+        if (alive) setCheers(c);
+      });
+    };
+    tick();
+    const t = setInterval(tick, 20_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [cheerSince]);
+  const cheerNow = nextCheer(cheers, closedCheers);
   /**
    * The athlete's home gym, read once when Holt's sheet is first opened.
    *
@@ -2831,6 +2861,8 @@ export default function WorkoutScreen() {
         })
       : null;
   const saysRaw = coachLine({
+    /* A squad-mate's message, verbatim — first, and it waits for the athlete to close it. */
+    cheer: cheerNow ? cheerLine(cheerNow) : null,
     announce: announceText && announceText !== dismissedSay ? announceText : null,
     /* Retires at the first logged set of the SESSION — it is a start line, not an exercise line. */
     setsDoneThisSession: session.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0),
@@ -2963,7 +2995,7 @@ export default function WorkoutScreen() {
           saysRaw.source === 'plan'
             ? `${inUnits(saysRaw.text)} — that holds for every set.`
             : /* No weights in it, and its text is what `dismissedSay` compares against — untouched. */
-              saysRaw.source === 'announce'
+              saysRaw.source === 'announce' || saysRaw.source === 'cheer'
               ? saysRaw.text
               : inUnits(saysRaw.text),
       }
@@ -4706,7 +4738,19 @@ export default function WorkoutScreen() {
          */
         <CoachSays
           line={says?.text ?? null}
-          onDismiss={says ? () => setDismissedSay(says.text) : undefined}
+          onDismiss={
+            says
+              ? () => {
+                  /* Closing a squad-mate's message marks it read on the server, so it never shows again;
+                     the next one queued (if any) takes its place on the same render. */
+                  if (says.source === 'cheer' && cheerNow) {
+                    const id = cheerNow.id;
+                    setClosedCheers((s) => new Set(s).add(id));
+                    void markCheerSeen(id);
+                  } else setDismissedSay(says.text);
+                }
+              : undefined
+          }
           onPress={() => {
             setCoachOpen(true);
             /* The home gym, once per session. `undefined` until it lands, which `session-suggest`

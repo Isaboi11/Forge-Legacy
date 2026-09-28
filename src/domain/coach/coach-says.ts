@@ -34,9 +34,18 @@
  */
 
 /** Which of the four the line came from. The caller may attribute; it does not have to. */
-export type CoachLineSource = 'announce' | 'live' | 'progression' | 'plan';
+export type CoachLineSource = 'cheer' | 'announce' | 'live' | 'progression' | 'plan';
 
 export interface CoachLineInput {
+  /**
+   * ⚠ **A SQUAD-MATE'S MESSAGE — IT OUTRANKS EVERYTHING, AND IT WAITS TO BE READ.** (0231, PO 2026-09-28)
+   *
+   * `cheerLine()`'s sentence: somebody in the athlete's squad saw they started and wrote to them. A person
+   * talking beats the coach talking, so it goes first. Unlike the announcement it does NOT retire when a
+   * set is logged — a message that vanished because the athlete was mid-set when it arrived would be a
+   * message they never got. Only closing it retires it (the caller passes the next one, or null).
+   */
+  cheer?: string | null;
   /**
    * ⚠ **THE SQUAD WAS JUST TOLD — AND IT OUTRANKS EVERYTHING, BRIEFLY.** (PO, 2026-09-25)
    *
@@ -160,6 +169,9 @@ export function coachLine(input: CoachLineInput): CoachLine | null {
    * every line the coin exists to carry, gone before it could be read.
    */
   const started = (input.setsDoneThisExercise ?? 0) > 0;
+
+  const cheer = clean(input.cheer);
+  if (cheer) return { text: cheer, source: 'cheer' };
 
   const announce = clean(input.announce);
   if (announce && (input.setsDoneThisSession ?? 0) === 0) return { text: announce, source: 'announce' };

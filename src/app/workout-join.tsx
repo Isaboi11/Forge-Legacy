@@ -12,6 +12,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchWorkoutInvite, requestToJoinWorkout, type WorkoutInvite } from '@/data/train-together-live';
 import { fetchTrainingNow } from '@/data/presence-live';
+import { CHEER_MAX, sendCheer } from '@/data/cheers-live';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -61,6 +62,10 @@ export default function WorkoutJoinScreen() {
   const [sending, setSending] = useState(false);
   const [waited, setWaited] = useState(0);
   const [gone, setGone] = useState(false);
+  /** The message for Holt to pass on (0231) — separate from the join note, which goes to the host's ask. */
+  const [cheer, setCheer] = useState('');
+  const [cheerSending, setCheerSending] = useState(false);
+  const [cheerSent, setCheerSent] = useState(false);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -168,6 +173,22 @@ export default function WorkoutJoinScreen() {
   }, [requestId, launch]);
 
   const name = host?.name ?? 'They';
+  /* A message is personal — "Let's go Jordan!", not "Let's go Jordan Reyes!". */
+  const first = host?.name?.trim().split(/\s+/)[0] || 'them';
+
+  const sendMessage = async () => {
+    if (cheerSending || !hostId || !cheer.trim()) return;
+    setCheerSending(true);
+    try {
+      await sendCheer(hostId, cheer);
+      setCheer('');
+      setCheerSent(true);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setCheerSending(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -217,8 +238,49 @@ export default function WorkoutJoinScreen() {
         ) : (
           <>
             <Text style={styles.eyebrow}>Training now</Text>
-            <Text style={styles.headline}>Join {name}?</Text>
-            <View style={styles.card}>
+            <Text style={styles.headline}>{name} is training</Text>
+
+            {/*
+              ══ SAY SOMETHING — HOLT PASSES IT ON (0231, PO 2026-09-28) ══
+              *"I click on the notification and type in 'let's go Jordan! Kill this workout' and then coach
+              holt lets them know during their workout."* First on the screen, because it is the quick,
+              common answer to "they started"; joining is the bigger commitment and sits below it.
+            */}
+            <View style={styles.cheer}>
+              <Text style={styles.cheerLabel}>Send {first} a message</Text>
+              <View style={styles.cheerRow}>
+                <TextInput
+                  value={cheer}
+                  onChangeText={(t) => {
+                    setCheer(t);
+                    if (cheerSent) setCheerSent(false);
+                  }}
+                  placeholder={`Let’s go ${first}!`}
+                  placeholderTextColor={flColor.gray600}
+                  style={[styles.noteInput, styles.cheerInput]}
+                  accessibilityLabel={`A message for ${first}`}
+                  maxLength={CHEER_MAX}
+                  returnKeyType="send"
+                  onSubmitEditing={() => void sendMessage()}
+                  editable={!cheerSending}
+                />
+                <Pressable
+                  onPress={() => void sendMessage()}
+                  disabled={cheerSending || !cheer.trim() || !hostId}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Send the message to ${first}`}
+                  style={({ pressed }) => [styles.cheerSend, (cheerSending || !cheer.trim()) && styles.cheerSendOff, pressed && styles.cheerSendPressed]}
+                >
+                  <EngravedIcon name="send" size={18} color={flColor.onBronze} />
+                </Pressable>
+              </View>
+              <Text style={styles.cheerHint}>
+                {cheerSent ? `Sent. Coach Holt will tell ${first} during the workout.` : `Coach Holt will tell ${first} during the workout.`}
+              </Text>
+            </View>
+
+            <Text style={styles.orJoin}>Or train with them</Text>
+            <View style={[styles.card, styles.cardAfterCheer]}>
               <View style={styles.cardRow}>
                 <View style={styles.cardIcon}>
                   <DumbbellGlyph />
@@ -294,6 +356,17 @@ const styles = StyleSheet.create({
   cardBody: { flex: 1, minWidth: 0 },
   cardName: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   cardSub: { marginTop: 2, fontSize: 12.5, color: flColor.gray400 },
+
+  cheer: { width: '100%', marginTop: 24, gap: 8 },
+  cheerLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
+  cheerRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cheerInput: { flex: 1, width: undefined, marginTop: 0 },
+  cheerSend: { width: 46, height: 46, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronze400 },
+  cheerSendOff: { opacity: 0.4 },
+  cheerSendPressed: { opacity: 0.8 },
+  cheerHint: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  orJoin: { alignSelf: 'flex-start', marginTop: 28, fontSize: 11, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
+  cardAfterCheer: { marginTop: 10 },
 
   noteInput: { width: '100%', marginTop: 14, fontSize: 14, color: flColor.cream100, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed, borderRadius: flRadius.md, paddingHorizontal: 14, paddingVertical: 12 },
 
