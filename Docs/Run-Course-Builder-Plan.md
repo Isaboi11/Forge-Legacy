@@ -1,5 +1,7 @@
 # Run Course Builder — Build Plan (Build 10)
 
+**PO decisions 09-28:** OpenRouteService via our `course-build` function (confirm commercial terms first) · ⭐ **ships WITH build 10, no early OTA** (overrides §Timing rec) · ⭐ **PREMIUM** — building/following courses is a Premium feature (overrides the free-with-limits rec; Premium keeps 25 builds/day, unlimited saved courses; free users see the paywall).
+
 **Date:** 2026-09-28 · **Status:** plan only, nothing built · **Target:** native build 10, with parts shippable by OTA first (§9)
 **PO request 09-28:** *"put the goal run amount and it shows and build the course for us"*: the athlete types a goal
 distance, Forge draws a loop on real roads and paths from where they are standing, and then guides them round it.
