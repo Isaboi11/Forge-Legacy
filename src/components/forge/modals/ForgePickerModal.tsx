@@ -269,7 +269,7 @@ export function ForgePickerModal({
             </View>
 
             {filters.length > 0 ? (
-              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.filterRow}
@@ -297,7 +297,7 @@ export function ForgePickerModal({
           </View>
 
           {/* Item list */}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
             style={styles.list}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"

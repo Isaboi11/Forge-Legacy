@@ -171,7 +171,7 @@ export default function AccomplishmentsScreen() {
           </Button>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
           ref={tourScroller}
           onScroll={onTourScroll}
           scrollEventThrottle={16}
@@ -290,7 +290,7 @@ function AccomplishmentDetail({
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar title="" onBack={onBack} actions={<Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit" hitSlop={8} style={styles.addBtn}><Text style={styles.editLink}>Edit</Text></Pressable>} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {featured ? (
           <View style={styles.featBadge}>
             <EngravedIcon name="star" size={11} />
@@ -477,9 +477,9 @@ function AccomplishmentForm({
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(6,7,8,0.34)' }} />
       <AppBar title={existing ? 'Edit Accomplishment' : 'New Accomplishment'} onClose={onCancel} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Field label="Accomplishment" counter={`${name.length}/${NAME_MAX}`}>
-          <TextInput style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, NAME_MAX))} placeholder="e.g. Marathon Finisher" placeholderTextColor={flColor.gray600} maxLength={NAME_MAX} />
+          <TextInput returnKeyType="done" style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, NAME_MAX))} placeholder="e.g. Marathon Finisher" placeholderTextColor={flColor.gray600} maxLength={NAME_MAX} />
         </Field>
 
         <Field label="Date · optional">

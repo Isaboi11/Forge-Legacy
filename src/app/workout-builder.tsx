@@ -341,10 +341,10 @@ export default function WorkoutBuilderScreen() {
           the activity made every door into it read as "start training now". */}
       <AppBar title={draft.editId ? 'Edit Template' : 'Build a Template'} onBack={onBack} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.head}>
           <Text style={styles.fieldLabel}>Workout name</Text>
-          <TextInput
+          <TextInput returnKeyType="done"
             value={draft.name}
             onChangeText={(v) => mutate((d) => ({ ...d, name: v }))}
             placeholder="e.g. Push Day A"

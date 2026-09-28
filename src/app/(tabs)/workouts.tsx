@@ -37,6 +37,7 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { forgeOr } from '@/constants/theme-scrim';
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
 /**
  * Workouts tab root (plural). Distinct from `/workout` (singular) — the active session.
@@ -293,7 +294,7 @@ export default function WorkoutsScreen() {
         </Pressable>
       ) : null}
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -523,7 +524,7 @@ export default function WorkoutsScreen() {
                   returnKeyType="search"
                 />
                 {query ? (
-                  <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10} style={styles.searchClear}>
+                  <Pressable onPress={() => setQuery('')} accessibilityRole="button" {...KEEP_KEYBOARD} accessibilityLabel="Clear search" hitSlop={10} style={styles.searchClear}>
                     <EngravedIcon name="close" size={16} color={flColor.gray400} />
                   </Pressable>
                 ) : null}
@@ -578,7 +579,7 @@ export default function WorkoutsScreen() {
                     wrapped block; no "See all" — All Programs sits on For You. ── */}
                 <View>
                   <SectionHeader label="Browse by Focus" />
-                  <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+                  <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     style={styles.focusScroller}

@@ -241,7 +241,7 @@ export default function AddPhotoScreen() {
       <AppBar title="Add a Photo" onClose={close} />
 
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text style={styles.destination}>
             Adding to <Text style={styles.destinationName}>{target.name}</Text>
           </Text>
@@ -353,7 +353,7 @@ export default function AddPhotoScreen() {
                 <Text style={[styles.chipText, pickedKey ? styles.chipTextOn : null]}>{pickedKey ? picked?.name : 'A lift…'}</Text>
               </Pressable>
             </View>
-            <TextInput
+            <TextInput returnKeyType="done"
               value={label}
               onChangeText={setLabel}
               placeholder="Or write your own"
@@ -407,7 +407,7 @@ export default function AddPhotoScreen() {
           the label AND the attachment, which is the whole reason this replaced a chip reading "Lift". */}
       <BottomSheet open={liftOpen} onClose={() => setLiftOpen(false)} title="Which lift?">
         <View style={styles.liftSheet}>
-          <TextInput
+          <TextInput returnKeyType="done"
             style={styles.input}
             value={liftSearch}
             onChangeText={setLiftSearch}
@@ -416,7 +416,7 @@ export default function AddPhotoScreen() {
             accessibilityLabel="Search exercises"
             autoFocus
           />
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {liftResults.map((x) => (
               <Pressable
                 key={x.key}

@@ -67,7 +67,7 @@ export function ForgeModal({
   const isFullScreen = variant === 'fullScreen'
 
   const BodyContent = scrollable ? (
-    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
       style={styles.scrollBody}
       contentContainerStyle={styles.scrollBodyContent}
       showsVerticalScrollIndicator={false}

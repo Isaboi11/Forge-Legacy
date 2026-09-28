@@ -7,10 +7,15 @@ import type { SessionExercise } from './types.ts';
  * PO, 2026-09-21: *"have him recognize when someone is building a super set by seeing that they're
  * adding another exercise before finishing the one before."*
  *
- * The signal is the ORDER of two things the athlete did: they started a lift (at least one set logged),
- * and before its last set they went and added another. Nobody adds the next lift halfway through this
- * one unless they mean to alternate them — that is what a superset is. Holt asks; he never assumes. A
- * "no" leaves the added lift exactly where it would have landed without him.
+ * The signal is the ORDER of two things the athlete did: they added another lift while the one they are
+ * on still has work left in it. Holt asks; he never assumes. A "no" leaves the added lift exactly where
+ * it would have landed without him.
+ *
+ * PO, 2026-09-28: *"Coach holt should suggest to super set if I add an exercise while I still have an
+ * exercise that has two or less sets completed. Just offer."* So the window is now **0–2 sets logged**
+ * on the lift they are on (and not finished). It used to need at least one set logged, which read "added
+ * before starting" as planning ahead — the PO wants the offer there too; it costs one "No thanks". Three
+ * or more sets in, the lift is mostly done and a new one is the next exercise, not a partner.
  *
  * ⚠ ONE LIFT, ADDED AS MAIN WORK, BESIDE A STRENGTH LIFT. Everything else is refused rather than guessed:
  *   · several added at once — which one would pair? The Picker already has its own superset switch for that.
@@ -18,8 +23,11 @@ import type { SessionExercise } from './types.ts';
  *   · a warm-up or cool-down on either side — nobody supersets a stretch with a squat.
  *   · cardio on either side — a run is not a set.
  *   · the lift they were on is in a CIRCUIT — joining that is a different structure, not this one.
- *   · nothing logged yet, or everything logged — the first is planning ahead, the second is moving on.
+ *   · everything logged — that is moving on.
+ *   · three or more sets logged — see the PO's rule above.
  */
+export const SUPERSET_OFFER_MAX_DONE = 2;
+
 export function supersetOffer(o: {
   /** The session BEFORE the new lift was appended. */
   exercises: readonly SessionExercise[];
@@ -36,7 +44,7 @@ export function supersetOffer(o: {
   const b = blockAt(o.exercises, o.currentIdx);
   if (b && b.kind !== 'superset') return null;
   const done = prev.sets.filter((s) => s.done).length;
-  if (done === 0 || done === prev.sets.length) return null;
+  if (done >= prev.sets.length || done > SUPERSET_OFFER_MAX_DONE) return null;
   return { prevIdx: o.currentIdx };
 }
 

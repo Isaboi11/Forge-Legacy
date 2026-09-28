@@ -294,7 +294,7 @@ const cardStyles = StyleSheet.create({
 
 function ScrollableTabs({ items, activeKey, onPress }: InnerTabProps) {
   return (
-    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={scrollStyles.content}

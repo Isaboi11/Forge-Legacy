@@ -622,7 +622,7 @@ export default function ExercisePickerScreen() {
           <View style={styles.searchIcon}>
             <EngravedIcon name="search" size={17} color={flColor.gray600} />
           </View>
-          <TextInput
+          <TextInput returnKeyType="search"
             style={styles.search}
             value={search}
             onChangeText={setSearch}
@@ -780,7 +780,7 @@ export default function ExercisePickerScreen() {
       </View>
 
       {/* body */}
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {hasAnything ? (
           <>
             {sections.best.length ? (
@@ -948,7 +948,7 @@ export default function ExercisePickerScreen() {
           <Pressable style={styles.sheetBackdrop} onPress={() => setFilterOpen(false)} accessibilityLabel="Close" />
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Filter</Text>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.filterScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.filterScroll} showsVerticalScrollIndicator={false}>
               <FilterGroup
                 label="Category"
                 options={EXERCISE_CATEGORIES.map((c) => ({ value: c.key, label: c.label }))}

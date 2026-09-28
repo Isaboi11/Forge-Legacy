@@ -122,7 +122,7 @@ export default function TransformationEntryRoute() {
       <DetailBg />
       <TopBar onBack={() => router.back()} onOverflow={() => setOverflowOpen(true)} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* identity */}
         <Text style={styles.eyebrow}>Captured</Text>
         <Text style={styles.date}>{entry.label}</Text>
@@ -192,7 +192,7 @@ export default function TransformationEntryRoute() {
                   {activeOpt?.isVideo && entry.videoUrl ? <VideoBlock uri={entry.videoUrl} /> : active && active !== 'video' && entry.photos[active] ? <Image source={{ uri: entry.photos[active] }} style={styles.heroImage} contentFit="cover" /> : null}
                 </View>
                 {options.length > 1 ? (
-                  <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbStrip}>
+                  <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.thumbStrip}>
                     {options.map((o) => {
                       const on = o.key === active;
                       return (

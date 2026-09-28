@@ -303,7 +303,7 @@ export default function LogFoodScreen() {
 
       {/* filters — hidden while searching, because a search spans all of them */}
       {results == null ? (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
           {FILTERS.map((f) => (
             <Pressable key={f.id} accessibilityRole="button" onPress={() => setFilter(f.id)} style={[styles.pill, filter === f.id && styles.pillOn]}>
               <Text style={[styles.pillText, filter === f.id && styles.pillTextOn]}>{f.label}</Text>
@@ -312,7 +312,7 @@ export default function LogFoodScreen() {
         </ScrollView>
       ) : null}
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
         {searching ? <Text style={styles.status}>Searching…</Text> : null}
 
         {/* Your recipes — the filter's list, or the ones matching a search, above the food results. Tapping
@@ -671,7 +671,7 @@ function BarcodeSheet({
             ? 'Hold the barcode a few inches away until it sharpens. Or type the number under it.'
             : 'Type the number under the barcode.'}
         </Text>
-        <TextInput
+        <TextInput returnKeyType="done"
           value={code}
           onChangeText={setCode}
           keyboardType="number-pad"
@@ -736,7 +736,7 @@ function NumberField({ label, value, onChange }: { label: string; value: string;
   return (
     <View style={styles.numberField}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
+      <TextInput returnKeyType="done"
         value={value}
         onChangeText={onChange}
         keyboardType="decimal-pad"

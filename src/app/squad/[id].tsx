@@ -323,7 +323,7 @@ export default function SquadDetailRoute() {
       <View style={styles.root}>
         <DetailBg />
         <AppBar title="Members" onBack={() => setView('detail')} />
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.membersScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.membersScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.membersHead}>
             <Text style={styles.membersSquad}>{squad.name}</Text>
             <Text style={styles.membersCount}>{members.length === 1 ? '1 member' : `${members.length} members`}</Text>
@@ -667,7 +667,7 @@ export default function SquadDetailRoute() {
         }
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -710,7 +710,7 @@ export default function SquadDetailRoute() {
               <Text style={styles.feedLabel}>Check-ins</Text>
               <Text style={styles.checkinDate}>Video · disappears in 24h</Text>
             </View>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.checkinStrip}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.checkinStrip}>
               {iHaveActive ? null : <CheckinCta onPress={() => void startCheckin()} uploading={uploadingCheckin} pct={checkinPct} />}
               {checkinPeople.map((m) => (
                 <CheckinDisc key={m.id} member={m} watched={m.watched || watchedIds.has(m.id)} onPress={() => openCheckin(m)} />

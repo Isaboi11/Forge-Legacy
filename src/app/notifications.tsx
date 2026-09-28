@@ -132,7 +132,7 @@ export default function NotificationsScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {NOTIF_SECTIONS.map((sec) => (
             <View key={sec.key} style={styles.section}>
               <Text style={styles.sectionLabel}>{sec.label}</Text>
@@ -175,7 +175,7 @@ export default function NotificationsScreen() {
                     </View>
 
                     <Text style={[styles.editorLabel, styles.editorLabelSpaced]}>Time</Text>
-                    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourRow}>
+                    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourRow}>
                       {BRIEFING_HOURS.map((h) => {
                         const on = briefing.hour === h;
                         return (

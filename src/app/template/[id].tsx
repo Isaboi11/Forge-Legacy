@@ -201,7 +201,7 @@ export default function TemplateDetailScreen() {
         </View>
       ) : t ? (
         <>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {/* hero */}
             <Text style={styles.eyebrow}>WORKOUT TEMPLATE</Text>
             <Text style={styles.title}>{t.name}</Text>
@@ -367,7 +367,7 @@ export default function TemplateDetailScreen() {
       </BottomSheet>
 
       <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title="Rename template">
-        <TextInput
+        <TextInput returnKeyType="done"
           value={draftName}
           onChangeText={setDraftName}
           placeholder="Template name"

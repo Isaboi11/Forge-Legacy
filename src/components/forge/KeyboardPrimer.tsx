@@ -86,7 +86,7 @@ export function KeyboardPrimerProvider({ children }: { children: ReactNode }) {
         * `accessibilityElementsHidden` / `importantForAccessibility` so a screen reader never lands on
         * three nameless fields.
         */}
-      <TextInput
+      <TextInput returnKeyType="done"
         ref={plain}
         style={styles.primer}
         value=""
@@ -95,7 +95,7 @@ export function KeyboardPrimerProvider({ children }: { children: ReactNode }) {
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       />
-      <TextInput
+      <TextInput returnKeyType="done"
         ref={numberPad}
         style={styles.primer}
         value=""
@@ -105,7 +105,7 @@ export function KeyboardPrimerProvider({ children }: { children: ReactNode }) {
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       />
-      <TextInput
+      <TextInput returnKeyType="done"
         ref={decimalPad}
         style={styles.primer}
         value=""

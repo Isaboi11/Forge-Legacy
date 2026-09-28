@@ -109,7 +109,7 @@ export function ForgeBottomSheet({
   }, [dismissible, onClose])
 
   const BodyContent = scrollableContent ? (
-    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
       style={styles.scrollContent}
       contentContainerStyle={[styles.scrollPad, { paddingBottom: insets.bottom + 12 }]}
       showsVerticalScrollIndicator={false}

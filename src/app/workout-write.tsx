@@ -139,7 +139,7 @@ export default function WorkoutWriteScreen() {
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.4)' }} />
       <AppBar title={editId ? 'Edit the workout' : 'Write a workout'} transparent onBack={() => router.back()} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
         {editId && editText === '' ? (
           /* Posted from a saved workout: something in it has no words here, so it is not reopened as words. */
           <Text style={styles.warn}>
@@ -187,7 +187,7 @@ export default function WorkoutWriteScreen() {
         {written && rows.length ? (
           <>
             <Text style={styles.section}>What your squad will see</Text>
-            <TextInput
+            <TextInput returnKeyType="done"
               value={name ?? written.name}
               onChangeText={setName}
               style={styles.name}

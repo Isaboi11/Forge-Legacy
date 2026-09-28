@@ -127,7 +127,7 @@ export default function MealPlanSetupScreen() {
         }}
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets ref={scrollRef} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.identity}>
           <Text style={styles.eyebrow}>Nutrition</Text>
           <Text style={styles.title}>Your first plan.</Text>

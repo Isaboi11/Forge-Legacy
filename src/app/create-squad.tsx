@@ -115,7 +115,7 @@ export default function CreateSquadScreen() {
       <AppBar title="Create Squad" onBack={() => router.back()} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* ── Hero: live identity ── */}
           <View style={styles.hero}>
             <Text style={[styles.heroTitle, editing && styles.heroTitleSmall, !trimmedName && styles.heroTitleMuted]} numberOfLines={2}>
@@ -299,7 +299,7 @@ function CsField({
           </Text>
         ) : null}
       </View>
-      <TextInput
+      <TextInput returnKeyType={multiline ? undefined : 'done'}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}

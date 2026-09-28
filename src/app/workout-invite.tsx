@@ -191,7 +191,7 @@ export default function WorkoutInviteScreen() {
         </View>
       ) : (
         <>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.senderWrap}>
               <View style={styles.ember} pointerEvents="none" />
               <Avatar name={invite.fromName} src={invite.fromAvatarUrl ?? undefined} size={88} ring />

@@ -174,7 +174,7 @@ export function LiftMaxSheet({
   const input = (key: string, value: string, set: (v: string) => void, placeholder: string, label: string) =>
     well(
       key,
-      <TextInput
+      <TextInput returnKeyType="done"
         value={value}
         onChangeText={(t) => set(t.replace(/[^0-9.]/g, ''))}
         onFocus={() => setFocus(key)}
@@ -252,7 +252,7 @@ export function LiftMaxSheet({
         </Button>
       }
     >
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.scroll} contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
         {warning ? <Text style={styles.warning}>{warning}</Text> : null}
         <Text style={styles.help}>
           This program prescribes weight as a percentage of your max, so it needs a number to work from.

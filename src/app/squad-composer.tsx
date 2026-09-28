@@ -457,7 +457,7 @@ export default function SquadComposerRoute() {
           subtitle={fromSquad ? 'Training, recognition & coordination' : 'Share it where it belongs'}
           onBack={() => router.back()}
         />
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.pickScroll} showsVerticalScrollIndicator={false}>
           {/*
             The destination, chosen before the type, and only when it IS a choice — entering from a
             squad has already answered it.
@@ -498,7 +498,7 @@ export default function SquadComposerRoute() {
 
               {/* Which squad, once one is needed. */}
               {needsSquad && (squads ?? []).length > 0 ? (
-                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.squadStrip}>
                   {(squads ?? []).map((s) => (
                     <Pressable
                       key={s.id}
@@ -577,7 +577,7 @@ export default function SquadComposerRoute() {
           </Pressable>
         }
       />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -885,7 +885,7 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
   return (
     <View style={styles.fieldWrap}>
       <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput
+      <TextInput returnKeyType="done"
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}

@@ -77,6 +77,8 @@ import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { enrichSessionExercises } from '@/domain/home-artwork/catalog';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { forgeOr } from '@/constants/theme-scrim';
+import { HoltWelcomeSheet } from '@/components/forge/HoltWelcomeSheet';
+import { clearHoltWelcome, isHoltWelcomeOwed } from '@/lib/holt-welcome';
 
 /**
  * "Chapter I — Building Your Foundation" → { number, name }, from the live DB chapter name (no hardcode).
@@ -297,6 +299,35 @@ export default function HomeScreen() {
   /* Holt is mounted outside the navigator, so opening him is a context call rather than a route
      push — the sheet grows out of the bubble instead of taking Home off the screen. */
   const { open: coachOpen, openCoach } = useCoachDoor();
+  /*
+   * Coach Holt's welcome, once, after signing up (PO 2026-09-28) — see `HoltWelcomeSheet`. `null` while the
+   * flag is being read, and the tour below waits on it: a spotlight walkthrough drawn under a welcome sheet
+   * is a walkthrough nobody sees, and its "seen" flag would be burnt.
+   *
+   * Only while Home is FOCUSED, so it never floats over a screen pushed on top (the plans screen that a
+   * Free athlete is sent to on the same first mount) — it is simply still owed when they come back.
+   */
+  const [welcomeOwed, setWelcomeOwed] = useState<boolean | null>(null);
+  const [homeFocused, setHomeFocused] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void isHoltWelcomeOwed().then((v) => {
+      if (alive) setWelcomeOwed(v);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setHomeFocused(true);
+      return () => setHomeFocused(false);
+    }, []),
+  );
+  const welcomeDone = () => {
+    setWelcomeOwed(false);
+    void clearHoltWelcome();
+  };
   // The guided tour measures Home's real cards, and four of the seven sit below the fold — so it needs the
   // scroll view itself, not just the anchors inside it.
   const tourScroller = useTourScroller();
@@ -991,10 +1022,11 @@ export default function HomeScreen() {
    */
   useFocusEffect(
     useCallback(() => {
-      if (!ready) return;
+      // Held while Holt's welcome is owed or still being read — see `welcomeOwed`.
+      if (!ready || welcomeOwed !== false) return;
       requestTour(hasProgram || !awaiting ? 'settled' : 'first-run');
       if (hasProgramSignal) requestPrompt();
-    }, [ready, awaiting, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
+    }, [ready, welcomeOwed, awaiting, hasProgram, hasProgramSignal, requestPrompt, requestTour]),
   );
 
   /**
@@ -1044,7 +1076,7 @@ export default function HomeScreen() {
         onAvatar={() => router.push('/account-settings')}
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -1491,6 +1523,12 @@ export default function HomeScreen() {
           }}
         />
       ) : null}
+      <HoltWelcomeSheet
+        open={ready && homeFocused && welcomeOwed === true}
+        firstName={liveProfile?.firstName}
+        onDone={welcomeDone}
+        onAsk={() => openCoach()}
+      />
     </View>
   );
 }

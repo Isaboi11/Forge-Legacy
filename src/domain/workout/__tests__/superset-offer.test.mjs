@@ -21,8 +21,20 @@ test('⭐ mid-lift, one lift added → Holt offers to superset it with the lift 
   assert.deepEqual(offer([lift('Bench Press', 3, 1)], 0), { prevIdx: 0 });
 });
 
-test('nothing logged yet is planning ahead, not a superset — no offer', () => {
-  assert.equal(offer([lift('Bench Press', 3, 0)], 0), null);
+// PO 2026-09-28: "suggest to super set if I add an exercise while I still have an exercise that has two
+// or less sets completed. Just offer."
+test('⭐ nothing logged yet on the lift they are on → offer (PO 09-28: two or less)', () => {
+  assert.deepEqual(offer([lift('Bench Press', 3, 0)], 0), { prevIdx: 0 });
+});
+
+test('⭐ two sets logged of four → offer; three of four → no offer', () => {
+  assert.deepEqual(offer([lift('Bench Press', 4, 2)], 0), { prevIdx: 0 });
+  assert.equal(offer([lift('Bench Press', 4, 3)], 0), null);
+  assert.equal(offer([lift('Bench Press', 5, 3)], 0), null);
+});
+
+test('a lift with no sets at all is not something to pair with', () => {
+  assert.equal(offer([lift('Bench Press', 0, 0)], 0), null);
 });
 
 test('every set logged is moving on — no offer', () => {

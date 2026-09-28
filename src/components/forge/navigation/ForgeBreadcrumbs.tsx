@@ -16,7 +16,7 @@ import type { ForgeBreadcrumbsProps } from './types'
 
 export function ForgeBreadcrumbs({ items }: ForgeBreadcrumbsProps) {
   return (
-    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.container}

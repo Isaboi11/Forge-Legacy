@@ -540,7 +540,7 @@ export default function MealPlanScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
       <AppBar title="" transparent onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}

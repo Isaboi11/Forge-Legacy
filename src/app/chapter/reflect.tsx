@@ -161,7 +161,7 @@ export default function ChapterReflectionScreen() {
         <View style={styles.center}>{loading ? <ActivityIndicator color={flColor.bronze400} /> : <Text style={styles.err}>Chapter not found.</Text>}</View>
       ) : (
         <>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 32 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 32 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* what they built — read-only. True on both paths: this screen only ever shows a sealed chapter
                 (M-5 seals before Path A opens; Path B is reached from L-4). */}
             <Text style={styles.eyebrow}>Chapter Sealed</Text>
@@ -293,7 +293,7 @@ export default function ChapterReflectionScreen() {
       {saved ? (
         <View style={[StyleSheet.absoluteFill, styles.savedWrap]}>
           <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.3} overlay={{ flat: 'rgba(5,5,5,0.72)' }} />
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.sealedScroll, { paddingTop: insets.top + 28, paddingBottom: 190 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.sealedScroll, { paddingTop: insets.top + 28, paddingBottom: 190 + insets.bottom }]} showsVerticalScrollIndicator={false}>
             <View style={styles.savedMark}>
               <EngravedIcon name="check" size={26} color={flColor.onBronze} />
             </View>

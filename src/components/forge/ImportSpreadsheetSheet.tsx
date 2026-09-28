@@ -572,7 +572,7 @@ export function ImportPreview({
                         <View style={styles.impItemText}>
                           <View style={styles.impNameRow}>
                             {it.section ? <Text style={styles.impSectionTag}>{it.section === 'warmup' ? 'WARM-UP' : 'COOL-DOWN'}</Text> : null}
-                            <TextInput
+                            <TextInput returnKeyType="done"
                               value={it.name}
                               onChangeText={(v) => renameItem(wi, di, ii, v)}
                               accessibilityLabel={`Name of exercise ${ii + 1} in ${d.name}`}

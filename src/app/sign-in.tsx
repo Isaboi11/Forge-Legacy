@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { flColor, flFont } from '@/constants/foundation';
 import { themeGround } from '@/constants/theme-scrim';
 import { track } from '@/lib/analytics';
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
 /**
  * The auth route (no session) — Welcome → Create Account → Sign In → Reset Password, the screens
@@ -184,7 +185,7 @@ export default function AuthFlow() {
             </View>
           </View>
         ) : (
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
             {/* No way back out of `reset`: they hold a recovery session and nothing else in the app
                 will let them set a password, so an escape here strands them exactly where they started. */}
             {step === 'reset' ? null : (
@@ -274,7 +275,7 @@ export default function AuthFlow() {
                         onPress={() => setReveal((v) => !v)}
                         accessibilityRole="button"
                         accessibilityState={{ checked: reveal }}
-                        accessibilityLabel={reveal ? 'Hide password' : 'Show password'}
+                        {...KEEP_KEYBOARD} accessibilityLabel={reveal ? 'Hide password' : 'Show password'}
                         hitSlop={8}
                         style={styles.reveal}
                       >
@@ -369,7 +370,7 @@ export default function AuthFlow() {
 
       {/* The same in-app content sheet Account Settings uses. Nothing is fetched; no browser is opened. */}
       <BottomSheet open={legal !== null} onClose={() => setLegal(null)} title={legal ? LEGAL[legal].host : ''}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
           <Text style={styles.sheetTitle}>{legal ? LEGAL[legal].title : ''}</Text>
           <Text style={styles.sheetUpdated}>{legal ? LEGAL[legal].updated : ''}</Text>
           {(legal ? LEGAL[legal].body : []).map((p) => (

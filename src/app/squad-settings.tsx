@@ -274,7 +274,7 @@ export default function SquadSettingsScreen() {
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Settings" onBack={backToSquad} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -665,7 +665,7 @@ function MemberSettings({ squad, members, onBack }: { squad: SquadDetail; member
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Settings" onBack={onBack} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* header */}
         <View style={styles.header}>
           <View style={styles.headerCrest}>

@@ -206,7 +206,7 @@ function Body({ champions: d, onOpen }: { champions: CurrentChampions; onOpen: (
 
   return (
     <Animated.View style={[styles.bodyWrap, { opacity: rise, transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }]}>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <FeaturedTitle title={featured} onPress={() => onOpen(featured)} />
 
         {rest.length > 0 ? (

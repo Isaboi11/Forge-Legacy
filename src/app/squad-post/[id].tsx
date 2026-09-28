@@ -33,6 +33,7 @@ import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { openPlaylist, PlaylistChip } from '@/components/forge/composites/Playlist';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { playlistFromRow } from '@/domain/workout/playlist';
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
 /**
  * Squad Post Detail — the real, squad-backed thread (built to `Post Detail.dc.html`'s squad chrome).
@@ -469,7 +470,7 @@ export default function SquadPostRoute() {
       </BottomSheet>
 
       <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title={shapedTitle ? 'Rename this post' : 'Name this post'}>
-        <TextInput
+        <TextInput returnKeyType="done"
           value={renameDraft}
           onChangeText={setRenameDraft}
           editable={!working}
@@ -512,7 +513,7 @@ export default function SquadPostRoute() {
         targetName={post.authorName}
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
           {/* author — or the squad itself, on a post nobody wrote (a goal's close, 0200). No profile to open,
               and "Athlete" over the squad's own announcement would invent a person. */}
@@ -735,7 +736,7 @@ export default function SquadPostRoute() {
           returnKeyType="send"
           blurOnSubmit
         />
-        <Pressable onPress={onSend} disabled={!commentText.trim() || sending} accessibilityRole="button" accessibilityLabel="Send comment" style={[styles.sendBtn, commentText.trim() && !sending ? styles.sendBtnOn : styles.sendBtnOff]}>
+        <Pressable onPress={onSend} disabled={!commentText.trim() || sending} accessibilityRole="button" {...KEEP_KEYBOARD} accessibilityLabel="Send comment" style={[styles.sendBtn, commentText.trim() && !sending ? styles.sendBtnOn : styles.sendBtnOff]}>
           <SendIcon active={!!commentText.trim() && !sending} />
         </Pressable>
       </Reanimated.View>

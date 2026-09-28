@@ -264,7 +264,7 @@ export default function CreateChallengeScreen() {
       <AppBar title="Create Challenge" onBack={() => router.back()} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* ── Live preview seal ── */}
           <View style={styles.hero}>
             <View style={[styles.seal, editing && styles.sealSmall]}>
@@ -361,7 +361,7 @@ export default function CreateChallengeScreen() {
                   {name.length}/{NAME_MAX}
                 </Text>
               </View>
-              <TextInput
+              <TextInput returnKeyType="done"
                 value={name}
                 onChangeText={setName}
                 placeholder="e.g. The March Grind"
@@ -416,7 +416,7 @@ export default function CreateChallengeScreen() {
             {preset === 'custom' ? (
               <View style={styles.customRow}>
                 <Text style={styles.customLabel}>Runs for</Text>
-                <TextInput
+                <TextInput returnKeyType="done"
                   value={customDays}
                   onChangeText={(v) => setCustomDays(v.replace(/[^0-9]/g, '').slice(0, 3))}
                   keyboardType="number-pad"

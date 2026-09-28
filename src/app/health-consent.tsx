@@ -69,7 +69,7 @@ export default function HealthConsentScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
           contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >

@@ -174,7 +174,7 @@ export default function WeekTemplateDetail() {
         </View>
       ) : week ? (
         <>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <Text style={styles.eyebrow}>WEEK TEMPLATE</Text>
             <Text style={styles.title}>{week.name}</Text>
             <Text style={styles.summary}>{weekSummary(week)}</Text>

@@ -277,7 +277,7 @@ function GoalHub({
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title="Goals" onBack={() => router.back()} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -392,7 +392,7 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
           ) : undefined
         }
       />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {goal.isPrimary ? <Text style={styles.detailEyebrow}>Chapter Goal</Text> : null}
         <Text style={styles.detailName}>{goal.name}</Text>
 
@@ -508,7 +508,7 @@ function UpdateProgressSheet({ open, goal, onClose, onSaved }: { open: boolean; 
     <BottomSheet open={open} onClose={onClose} title="Update Progress">
       <View style={styles.sheet}>
         <Text style={styles.sheetLabel}>Current{goal.unit ? ` (${goal.unit})` : ''}</Text>
-        <TextInput
+        <TextInput returnKeyType="done"
           style={styles.input}
           value={value}
           onChangeText={(t) => setValue(t.replace(/[^0-9.]/g, ''))}
@@ -709,13 +709,13 @@ function GoalForm({
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title={existing ? 'Edit Goal' : isPrimary ? 'Chapter Goal' : 'Supporting Goal'} onClose={cancel} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Field label="Goal" counter={`${name.length}/${GOAL_NAME_MAX}`} hint={GOAL_HINT}>
-          <TextInput style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, GOAL_NAME_MAX))} placeholder="e.g. Squat 405 lb" placeholderTextColor={flColor.gray600} maxLength={GOAL_NAME_MAX} />
+          <TextInput returnKeyType="done" style={styles.input} value={name} onChangeText={(t) => setName(t.slice(0, GOAL_NAME_MAX))} placeholder="e.g. Squat 405 lb" placeholderTextColor={flColor.gray600} maxLength={GOAL_NAME_MAX} />
         </Field>
 
         <Field label={targetLabel} hint={targetHint}>
-          <TextInput
+          <TextInput returnKeyType="done"
             style={styles.input}
             value={target}
             onChangeText={(t) => setTarget(t.replace(/[^0-9.]/g, ''))}
@@ -798,7 +798,7 @@ function GoalForm({
                 {isBody ? (
                   <View style={styles.startRow}>
                     <Text style={styles.startLabel}>{metricKind === 'body_weight' ? `Starting weight (${effectiveUnit})` : `Starting measurement (${effectiveUnit})`}</Text>
-                    <TextInput
+                    <TextInput returnKeyType="done"
                       style={[styles.input, styles.startInput]}
                       value={startShown}
                       onChangeText={(t) => setStartInput(t.replace(/[^0-9.]/g, ''))}
@@ -864,7 +864,7 @@ function GoalForm({
               </Pressable>
             </View>
             {customUnit ? (
-              <TextInput style={[styles.input, styles.customUnit]} value={unit} onChangeText={(t) => setUnit(t.slice(0, UNIT_MAX))} placeholder="min/side, rooms, books…" placeholderTextColor={flColor.gray600} maxLength={UNIT_MAX} autoFocus />
+              <TextInput returnKeyType="done" style={[styles.input, styles.customUnit]} value={unit} onChangeText={(t) => setUnit(t.slice(0, UNIT_MAX))} placeholder="min/side, rooms, books…" placeholderTextColor={flColor.gray600} maxLength={UNIT_MAX} autoFocus />
             ) : null}
           </Field>
         ) : null}
@@ -926,7 +926,7 @@ function GoalForm({
       {/* A lift: search the real catalog and pick the exercise whose max weight this goal tracks. */}
       <BottomSheet open={liftOpen} onClose={() => setLiftOpen(false)} title="Choose a Lift">
         <View style={styles.liftSheet}>
-          <TextInput
+          <TextInput returnKeyType="done"
             style={styles.input}
             value={liftSearch}
             onChangeText={setLiftSearch}
@@ -934,7 +934,7 @@ function GoalForm({
             placeholderTextColor={flColor.gray600}
             autoFocus
           />
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.liftList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             {liftResults.map((n) => (
               <Pressable
                 key={n}

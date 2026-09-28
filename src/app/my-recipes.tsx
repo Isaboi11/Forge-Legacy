@@ -361,7 +361,7 @@ export default function MyRecipesScreen() {
       {!form ? (
         <>
           {/* ═══════════ LIST ═══════════ */}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identity}>
               <Text style={styles.eyebrow}>Nutrition</Text>
               <Text style={styles.title}>My recipes</Text>
@@ -385,7 +385,7 @@ export default function MyRecipesScreen() {
             {list.length ? (
               <>
                 <InputField value={q} onChange={setQ} placeholder="Search recipes" accessibilityLabel="Search recipes" leadingIcon={<SearchGlyph />} />
-                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
                   {FILTERS.map((fl) => {
                     const on = filter === fl.key;
                     return (
@@ -457,7 +457,7 @@ export default function MyRecipesScreen() {
       ) : (
         <>
           {/* ═══════════ FORM ═══════════ */}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identityForm}>
               <Text style={styles.eyebrow}>My recipes</Text>
               <Text style={styles.title}>{form.editId ? 'Edit recipe' : 'New recipe'}</Text>

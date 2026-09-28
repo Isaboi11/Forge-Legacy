@@ -425,7 +425,7 @@ function MediaBand({ media, bleed }: { media: LedgerMediaItem[]; bleed: number }
       ) : (
         /* Swipe IN PLACE, inside the same band — not a grid and not a stack. Several photos are a set
            the author composed; a grid re-crops all of them to show none of them properly. */
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}

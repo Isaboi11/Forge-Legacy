@@ -196,7 +196,7 @@ export function ShareSheet({ open, onClose, content, milestone = null }: ShareSh
           </Button>
         }
       >
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.previewWrap}>
             <ShareCard content={content} hiddenKeys={hidden} includeName={includeName} />
           </View>

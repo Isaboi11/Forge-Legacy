@@ -259,7 +259,7 @@ export function SessionCoachSheet({
         </View>
         </View>
 
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.thread} contentContainerStyle={styles.threadInner} showsVerticalScrollIndicator={false}>
           {/*
             ══ 1 · THE ADAPTATION, WHEN THERE IS ONE — AND IT SITS ABOVE THE CARD ══
 

@@ -137,8 +137,13 @@ test('⚠ removal is reachable WITHOUT Coach Holt, who is entitlement-gated', ()
 });
 
 test('the Overview two targets are SIBLINGS — a pressable inside a pressable eats the touch', () => {
-  const ov = WORKOUT.slice(WORKOUT.indexOf('styles.ovRow, isCur'));
-  assert.match(ov.slice(0, 1200), /style=\{styles\.ovRowMain\}/, 'the jump-to target is no longer its own pressable');
+  // The rows moved into `OverviewList` (drag to reorder, PO 2026-09-28) — the row is an Animated.View now,
+  // still NOT a pressable, holding the grip, the jump-to pressable and the remove pressable side by side.
+  const ov = WORKOUT.slice(WORKOUT.indexOf('function OverviewList('));
+  const row = ov.slice(ov.indexOf('<Animated.View'), ov.indexOf('</Animated.View>'));
+  assert.match(row, /style=\{styles\.ovRowMain\}/, 'the jump-to target is no longer its own pressable');
+  assert.match(row, /accessibilityLabel=\{`Remove \$\{e\.name\} from this workout`\}/, 'the remove target is gone from the row');
+  assert.doesNotMatch(row.slice(0, row.indexOf('style={styles.ovRowMain}')), /<Pressable[\s\S]*<Pressable/, 'a pressable is nested around the jump-to target');
 });
 
 test('⚠ "Move past this" and "Take it out" both say which is which', () => {

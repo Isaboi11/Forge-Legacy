@@ -121,7 +121,7 @@ export function Field({ label, hint, showCount, ...input }: { label: string; hin
           </Text>
         ) : null}
       </View>
-      <TextInput style={s.input} placeholderTextColor={flColor.gray600} {...input} />
+      <TextInput returnKeyType="done" style={s.input} placeholderTextColor={flColor.gray600} {...input} />
       {hint ? <Text style={s.hint}>{hint}</Text> : null}
     </View>
   );

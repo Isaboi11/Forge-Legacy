@@ -231,7 +231,7 @@ export default function TransformationAddRoute() {
   return (
     <View style={styles.root}>
       <TopBar title={isEdit ? 'Edit Progress Set' : 'New Progress Set'} onClose={() => router.back()} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.tiedRow}>
           <Text style={styles.tiedText}>
             Tied to <Text style={styles.tiedName}>{chapterName}</Text>
@@ -339,7 +339,7 @@ export default function TransformationAddRoute() {
         />
 
         <Text style={[styles.sectionLabel, styles.tagsLabel]}>Context · optional</Text>
-        <TextInput value={meta} onChangeText={setMeta} placeholder="e.g. 183 lb · Week 12 · Morning" placeholderTextColor={flColor.gray600} style={styles.input} accessibilityLabel="Context" />
+        <TextInput returnKeyType="done" value={meta} onChangeText={setMeta} placeholder="e.g. 183 lb · Week 12 · Morning" placeholderTextColor={flColor.gray600} style={styles.input} accessibilityLabel="Context" />
         <Text style={styles.tagsHelp}>Bodyweight, prep phase, week, lighting — whatever you’ll want to remember years from now.</Text>
 
         <View style={styles.saveWrap}>

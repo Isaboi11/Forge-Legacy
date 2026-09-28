@@ -113,7 +113,7 @@ export function ForgeFormModal({
             </View>
 
             {/* Form content */}
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
               style={styles.formArea}
               contentContainerStyle={styles.formContent}
               showsVerticalScrollIndicator={false}

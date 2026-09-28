@@ -234,7 +234,7 @@ export default function AthleteProfileScreen() {
         actions={data.isSelf ? null : <OverflowButton onPress={() => setActionsOpen(true)} />}
       />
 
-      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -396,7 +396,7 @@ export default function AthleteProfileScreen() {
             <View style={styles.sectionHeaderPad}>
               <SectionHeader label="Accomplishments" />
             </View>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
               {data.accomplishments.map((a) => (
                 <AccomplishmentCard key={a.id} item={toAccomplishment(a)} />
               ))}

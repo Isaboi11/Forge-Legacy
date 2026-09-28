@@ -105,7 +105,7 @@ export default function NutritionDetailsScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
       <AppBar title="" transparent onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.scroll} contentContainerStyle={styles.content}>
         {/* week + stepper */}
         <View style={styles.headRow}>
           <View style={styles.headText}>

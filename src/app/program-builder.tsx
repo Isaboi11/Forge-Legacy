@@ -949,7 +949,7 @@ function ProgramBuilderScreen() {
               ? 'How many MINUTES? A 90-minute ride is 90; two and a half hours is 150. Leave it empty for no target.'
               : `How far, in ${targetUnitLabel}? Leave it empty for no target.`}
           </Text>
-          <TextInput
+          <TextInput returnKeyType="done"
             value={targetDraft}
             onChangeText={setTargetDraft}
             keyboardType="decimal-pad"
@@ -1143,7 +1143,7 @@ function ProgramBuilderScreen() {
       </BottomSheet>
 
       <BottomSheet open={jumpOpen} onClose={() => setJumpOpen(false)} title="Jump to week">
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.jumpScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.jumpScroll} showsVerticalScrollIndicator={false}>
           {(draft.weekPlans ?? []).map((w, i) => {
             const done = weekComplete(w);
             const current = i === draft.openWeek;
@@ -1430,7 +1430,7 @@ function TemplateDaySheet({
           editing the day never touches the template.
         </Text>
 
-        <TextInput
+        <TextInput returnKeyType="done"
           value={q}
           onChangeText={setQ}
           placeholder="Search templates"
@@ -1675,7 +1675,7 @@ function SetupView({
     <>
       <AppBar title={title} onClose={onCancel} />
 
-      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -2040,7 +2040,7 @@ function WeekDaysView({
         <ProgressBar value={built} max={draft.weeks} />
       </Pressable>
 
-      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={rise} contentContainerStyle={styles.setupScroll} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={rise} contentContainerStyle={styles.setupScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.listHeader}>
           <SectionHeader label="Workouts" />
           <Text style={styles.listSummary}>{plural(totalEx, 'exercise')}</Text>
@@ -2178,7 +2178,7 @@ function DayBuilder({
     <>
       <AppBar title={dayName(day)} onBack={onBack} />
 
-      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

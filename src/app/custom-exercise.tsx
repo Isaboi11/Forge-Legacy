@@ -197,7 +197,7 @@ export default function CustomExerciseScreen() {
         </Pressable>
       }
     >
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {capNote ? (
           <View style={[styles.banner, atLimit ? styles.bannerStop : null]}>
             <Text style={styles.bannerText}>{capNote}</Text>
@@ -206,7 +206,7 @@ export default function CustomExerciseScreen() {
 
         <Divider label="Required" />
         <Text style={styles.label}>Exercise Name</Text>
-        <TextInput
+        <TextInput returnKeyType="done"
           value={d.name}
           onChangeText={(v) => set('name', v.slice(0, NAME_MAX))}
           onBlur={() => setNameTouched(true)}
@@ -443,7 +443,7 @@ function MultiSelectSheet({
 }) {
   return (
     <BottomSheet open={open} onClose={onClose} title={title}>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
         {groups.map((g) => (
           <View key={g.label} style={styles.sheetGroup}>
             <Text style={styles.sheetGroupLabel}>{g.label.toUpperCase()}</Text>

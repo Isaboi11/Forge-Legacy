@@ -119,7 +119,7 @@ export default function TrainInviteScreen() {
       <AppBar title="Train Together" onClose={close} />
 
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <Text style={styles.lede}>They’ll get their own copy to log. At the end you’re both credited for training together.</Text>
 
           <Text style={styles.fieldLabel}>Who</Text>
@@ -204,7 +204,7 @@ export default function TrainInviteScreen() {
           <Text style={styles.fieldHint}>
             {source === 'free' ? 'Or just name it and build it as you go together.' : 'Rename it if you want.'}
           </Text>
-          <TextInput
+          <TextInput returnKeyType="done"
             value={name}
             onChangeText={setName}
             placeholder={sourceName || 'Legs, Push Day, whatever you’re calling it'}

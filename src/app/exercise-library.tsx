@@ -209,7 +209,7 @@ export default function ExerciseLibraryScreen() {
           <View style={styles.searchIcon}>
             <EngravedIcon name="search" size={17} color={flColor.gray600} />
           </View>
-          <TextInput
+          <TextInput returnKeyType="search"
             style={styles.search}
             value={query}
             onChangeText={(t) => {
@@ -260,7 +260,7 @@ export default function ExerciseLibraryScreen() {
         </View>
       ) : null}
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -395,7 +395,7 @@ export default function ExerciseLibraryScreen() {
       {/* filter sheet */}
       <BottomSheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Filter">
         <View style={styles.sheet}>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
             <FilterGroup
               label="Where you train"
               options={ENVIRONMENTS.map((e) => ({ value: e, label: e }))}

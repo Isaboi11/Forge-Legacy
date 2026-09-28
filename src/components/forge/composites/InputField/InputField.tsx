@@ -77,7 +77,7 @@ export function InputField({
         ]}
       >
         {leadingIcon ? <View style={styles.leading}>{leadingIcon}</View> : null}
-        <TextInput
+        <TextInput returnKeyType="done"
           value={value}
           onChangeText={onChange}
           maxLength={maxLength}

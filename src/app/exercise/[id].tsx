@@ -78,7 +78,7 @@ export default function ExerciseDetailScreen() {
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
       <AppBar title="Exercise" onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* 1 · demonstration — the `.dc`'s first block, above the name */}
         <ExerciseDemo url={demoUrl} />
 

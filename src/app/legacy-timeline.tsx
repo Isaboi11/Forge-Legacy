@@ -182,7 +182,7 @@ export default function LegacyTimelineScreen() {
           <Text style={styles.emptyBody}>Your first workout opens the first chapter, and the rail starts from there.</Text>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}

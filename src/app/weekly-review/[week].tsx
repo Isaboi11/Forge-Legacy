@@ -139,7 +139,7 @@ export default function WeeklyReviewScreen() {
           <Text style={styles.emptyBody}>Reviews arrive the week after you train. Log a session and this fills in.</Text>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
           <View style={styles.dateRow}>
             <View style={styles.dateRule} />
             <Text style={styles.dates}>{formatWeekRange(review.weekStart, review.weekEnd)}</Text>

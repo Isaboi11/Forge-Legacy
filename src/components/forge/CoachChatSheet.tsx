@@ -185,6 +185,7 @@ import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardAnchoredScroll, useKeyboardLift 
 import { useReducedMotion } from '@/lib/useReducedMotion';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
 /**
  * Coach Holt, as a conversation — `Coach Holt Chat.dc.html`.
@@ -2708,7 +2709,7 @@ export function CoachChatSheet({
             }}
           />
         ) : (
-        <Reanimated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <Reanimated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false}
           ref={scroller}
           style={styles.thread}
           contentContainerStyle={[styles.threadInner, { paddingBottom: threadPad }]}
@@ -2902,7 +2903,7 @@ export function CoachChatSheet({
             onPress={send}
             disabled={picture ? holding : !draft.trim()}
             accessibilityRole="button"
-            accessibilityLabel="Send"
+            {...KEEP_KEYBOARD} accessibilityLabel="Send"
             style={styles.sendWrap}
           >
             {draft.trim() || (picture && !holding) ? (
@@ -4154,7 +4155,7 @@ function PlanPreview({
         </Text>
       </View>
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.previewScroll} contentContainerStyle={styles.previewInner}>
         <View style={styles.draftBanner}>
           <Text style={styles.draftBannerText}>DRAFT — NOT SAVED YET</Text>
         </View>

@@ -334,7 +334,7 @@ export default function NutritionScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: TAB_SCREEN_BOTTOM_GAP }]}
         showsVerticalScrollIndicator={false}

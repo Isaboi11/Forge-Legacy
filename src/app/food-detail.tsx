@@ -247,7 +247,7 @@ export default function FoodDetailScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {/* identity */}
         <View style={styles.identity}>
           <Text style={styles.name}>{food.name}</Text>
@@ -278,7 +278,7 @@ export default function FoodDetailScreen() {
             </Pressable>
 
             <View style={styles.amountWrap}>
-              <TextInput
+              <TextInput returnKeyType="done"
                 value={amountText ?? String(amount)}
                 onChangeText={(t) => setAmountText(t.replace(/[^0-9.]/g, '').slice(0, 6))}
                 keyboardType="decimal-pad"

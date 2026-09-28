@@ -76,7 +76,7 @@ export function EditMetricsSheet({
         ) : (
           <>
             {metrics.length > 8 ? (
-              <TextInput
+              <TextInput returnKeyType="done"
                 value={q}
                 onChangeText={setQ}
                 placeholder={`Search ${metrics.length} lifts`}
@@ -85,7 +85,7 @@ export function EditMetricsSheet({
                 style={styles.search}
               />
             ) : null}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.list} contentContainerStyle={styles.listPad} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {selectedRows.map((m, idx) => (
               <View key={m.id} style={styles.row}>
                 <View style={styles.arrows}>

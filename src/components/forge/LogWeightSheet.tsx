@@ -74,7 +74,7 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
     <View style={[styles.fieldWrap, grow ? styles.fieldGrow : null]}>
       <Text style={styles.fieldLabel}>{label}</Text>
       <View style={[styles.well, { borderColor: focus === key ? flColor.bronze400 : flColor.charcoal500, boxShadow: focus === key ? `${WELL_INSET}, ${flShadow.glowSubtle}` : WELL_INSET }]}>
-        <TextInput
+        <TextInput returnKeyType="done"
           value={value}
           onChangeText={(t) => set(t.replace(/[^0-9.]/g, ''))}
           onFocus={() => setFocus(key)}

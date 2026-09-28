@@ -142,7 +142,7 @@ export default function CommunityScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── PENDING-ASSET cover banner — geometric bronze/charcoal placeholder, never a fabricated image ── */}
         <BannerPlaceholder />
 

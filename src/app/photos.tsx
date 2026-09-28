@@ -274,7 +274,7 @@ function AlbumsView({
   }
 
   return (
-    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
       ref={tourScroller}
       onScroll={onTourScroll}
       scrollEventThrottle={16}
@@ -413,7 +413,7 @@ function AlbumView({
   }, [album, months]);
 
   return (
-    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <View style={styles.albumHead}>
         <View style={styles.albumChip}>
           {sealed ? <FlameGlyph size={11} color={flColor.gray400} /> : <BookGlyph size={11} color={flColor.bronze300} />}

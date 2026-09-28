@@ -42,6 +42,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
 import { useUnits } from '@/lib/settings';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
 /**
  * Friends Feed — built to `Forge Friends Feed.dc.html`, on real posts (migration 0074).
@@ -199,7 +200,7 @@ export default function FriendsFeedScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
           ref={tourScroller}
           onScroll={onTourScroll}
           scrollEventThrottle={16}
@@ -586,7 +587,7 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
             onPress={send}
             disabled={!draft.trim() || sending}
             accessibilityRole="button"
-            accessibilityLabel="Send comment"
+            {...KEEP_KEYBOARD} accessibilityLabel="Send comment"
             style={({ pressed }) => [styles.sendBtn, draft.trim() ? styles.sendBtnOn : null, pressed ? styles.pressed : null]}
           >
             <Text style={[styles.sendLabel, draft.trim() ? styles.sendLabelOn : null]}>Send</Text>

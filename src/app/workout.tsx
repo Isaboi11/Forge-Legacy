@@ -94,6 +94,8 @@ import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
 import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds, syncSupersetRounds } from '@/domain/workout/session-core';
 import { joinAsSuperset, supersetOffer } from '@/domain/workout/superset-offer';
+import { indexAfterMove, moveExercise } from '@/domain/workout/reorder-exercise';
+import { useListReorder } from '@/hooks/useListReorder';
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
@@ -3610,6 +3612,27 @@ export default function WorkoutScreen() {
     setSsOpen(null);
     restSkip();
     showToast(`${name} removed`);
+
+  /**
+   * All Exercises → drag a row to a new place (PO 2026-09-28). The rules for supersets live in
+   * `moveExercise`; the athlete stays on the exercise they were on, wherever it went.
+   *
+   * ⚠ BLOCKED WHILE A BOUT IS LIVE, like remove and jump: `liveBoutIdx` names the running cardio card by
+   * INDEX, and a move shifts indices. The same index-keyed panels `doRemove` closes are closed here for
+   * the same reason — they would reopen on whatever slid into their slot.
+   */
+  const moveInWorkout = (from: number, to: number) => {
+    if (blockedByBout()) return;
+    mutate((s) => {
+      const cur = s.exerciseIndex ?? 0;
+      const next = moveExercise(s.exercises, from, to);
+      return { ...s, exercises: next, exerciseIndex: indexAfterMove(next, s.exercises[cur]?.position, cur) };
+    });
+    setGoalOpen(null);
+    setNoteOpen(null);
+    setSsOpen(null);
+    setEffortAsk(null);
+  };
   };
   /**
    * ⋮ → End workout — ASK FIRST.
@@ -3657,7 +3680,7 @@ export default function WorkoutScreen() {
           is the only kind of focus a browser will open a keyboard for. `decimal-pad` matches the real
           fields so the keypad does not visibly change type when focus hands over a frame later.
           Never `display: none` — a hidden element cannot take focus, which would defeat the point. */}
-      <TextInput
+      <TextInput returnKeyType="done"
         ref={primerRef}
         style={styles.keyboardPrimer}
         keyboardType="decimal-pad"
@@ -3903,7 +3926,7 @@ export default function WorkoutScreen() {
         during a live cardio bout. Swiping past a running treadmill bout is exactly the hole the bout
         lock was built to close, so the pager snaps back instead.
       */}
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={pagerRef}
         horizontal
         pagingEnabled
@@ -3920,7 +3943,7 @@ export default function WorkoutScreen() {
             {pi !== exIdx ? (
               <ExercisePeek ex={pe} />
             ) : (
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
               ref={tourScroller}
               onScroll={onTourScroll}
               scrollEventThrottle={16}
@@ -4486,11 +4509,35 @@ export default function WorkoutScreen() {
                 </Pressable>
               )}
 
-              {/* Previous / next — bare arrows, the fallback for anyone who hasn't found the swipe. No dots
-                  and no count between them: position lives in All Exercises, progress in "Done". */}
+              {/*
+                Previous / next, with the DOT STRIP and the count back between them.
+
+                PO, 2026-09-28: *"We got rid of the dots and number of workouts at the bottom of the active
+                workout page, I want them back."* They came out on 09-11 (`0b33510c`) on the theory that
+                position lived in All Exercises. It does — but the strip is how you see where you are
+                WITHOUT opening anything, and each dot is a one-tap jump. Colours as before: bronze = here,
+                green = done, ember = passed without finishing.
+              */}
               <View style={styles.nav}>
                 <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityRole="button" accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
                   <EngravedIcon name="chevron-left" size={22} color={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} />
+                <View style={styles.navMid}>
+                  <View style={styles.dots}>
+                    {session.exercises.map((e, i) => {
+                      const eDone = e.sets.length > 0 && e.sets.every((s) => s.done);
+                      const isCur = i === exIdx;
+                      const skipped = !isCur && !eDone && i < exIdx;
+                      return (
+                        <Pressable key={e.position ?? i} onPress={() => goExercise(i)} accessibilityRole="button" accessibilityLabel={`Go to ${e.name}`} hitSlop={6}>
+                          <View style={[styles.dot, isCur ? styles.dotCurrent : eDone ? styles.dotDone : skipped ? styles.dotSkipped : null]} />
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Text style={styles.navCount}>
+                    {exIdx + 1} / {session.exercises.length}
+                  </Text>
+                </View>
                 </Pressable>
                 <NextArrow disabled={isLastEx} ready={nextReady} onPress={() => goExercise(exIdx + 1)} />
               </View>
@@ -5167,79 +5214,22 @@ export default function WorkoutScreen() {
           <Pressable style={styles.pickerBackdrop} onPress={() => setOverviewOpen(false)} accessibilityLabel="Close" />
           <View style={[styles.picker, styles.overviewSheet]}>
             <Text style={styles.pickerTitle}>All Exercises</Text>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
-              {session.exercises.map((e, i) => {
-                const total = e.sets.length;
-                const done = e.sets.filter((s) => s.done).length;
-                const eDone = done === total;
-                const isCur = i === exIdx;
-                const status = isCur ? 'Current' : eDone ? 'Completed' : i < exIdx ? 'Skipped' : 'Up Next';
-                const w = e.sets[0]?.weight;
-                const tint = isCur ? flColor.bronze400 : eDone ? flColor.greenMuted : status === 'Skipped' ? flColor.emberFlame : flColor.gray600;
-                return (
-                  <View key={i} style={[styles.ovRow, isCur && styles.ovRowCurrent]}>
-                    <Pressable
-                      onPress={() => {
-                        setOverviewOpen(false);
-                        goExercise(i);
-                      }}
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        e.section === 'main' ? `${e.name}, ${status}` : `${e.name}, ${SECTION_LABEL[e.section]}, ${status}`
-                      }
-                      style={styles.ovRowMain}
-                    >
-                      <View style={[styles.ovStatusDot, { backgroundColor: tint }]} />
-                      <View style={styles.ovRowText}>
-                        <Text style={styles.ovRowName} numberOfLines={1}>{e.name}</Text>
-                        {/* ══ THE PLAN IS THE ONE PLACE THE SHAPE OF THE SESSION IS VISIBLE ══
-                            Its own comment already says so — *"this screen is the whole plan at once,
-                            which is where you actually notice that today has three warm-ups you are not
-                            going to do"* — written for the Remove control beside it, at a time when the
-                            screen could not tell you which three those were. The sub-line joins the
-                            section to the status rather than adding a row, because this list is scrolled
-                            to find one exercise and a second line per row halves how many fit.
-                            Prefixed, not appended: it is what the thing IS, before how it is going. */}
-                        <Text style={styles.ovRowSub}>
-                          {e.section !== 'main' ? `${SECTION_LABEL[e.section]} · ` : ''}
-                          {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
-                        </Text>
-                      </View>
-                      <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
-                    </Pressable>
-                    {/*
-                      ══ THE SECOND WAY TO TAKE AN EXERCISE OUT, AND THE ONE THAT SCALES ══
-
-                      Holt's "Take it out" removes the lift you are STANDING ON. This screen is the whole
-                      plan at once, which is where you actually notice that today has three warm-ups you
-                      are not going to do — and walking to each one to delete it is the workout the
-                      feature was meant to save you from.
-
-                      ⚠ ITS OWN `Pressable`, SIBLING TO THE ROW, NOT NESTED INSIDE IT. A pressable inside
-                      a pressable claims the touch through the responder system on web and the row stops
-                      jumping — the same nesting fault the `BottomSheet` backdrop note describes. So the
-                      row is a plain `View` now and holds two targets side by side.
-
-                      ⚠ ALSO ENTITLEMENT-FREE, which Holt's row is not (`holt_in_workout`). This is the
-                      path that is always there.
-                    */}
-                    {session.exercises.length > 1 ? (
-                      <Pressable
-                        onPress={() => {
-                          setOverviewOpen(false);
-                          askRemove(i);
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Remove ${e.name} from this workout`}
-                        hitSlop={10}
-                        style={({ pressed }) => [styles.ovRemove, pressed && styles.ctlPressed]}
-                      >
-                        <EngravedIcon name="close" size={16} color={flColor.gray600} />
-                      </Pressable>
-                    ) : null}
-                  </View>
-                );
-              })}
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.overviewList} contentContainerStyle={styles.overviewListContent} showsVerticalScrollIndicator={false}>
+              <OverviewList
+                exercises={session.exercises}
+                exIdx={exIdx}
+                units={units}
+                haptics={haptics}
+                onJump={(i) => {
+                  setOverviewOpen(false);
+                  goExercise(i);
+                }}
+                onRemove={(i) => {
+                  setOverviewOpen(false);
+                  askRemove(i);
+                }}
+                onMove={moveInWorkout}
+              />
             </ScrollView>
             <Button variant="text" fullWidth onPress={() => setOverviewOpen(false)} accessibilityLabel="Close">
               Close
@@ -5265,7 +5255,7 @@ export default function WorkoutScreen() {
           */}
           <View style={[styles.picker, styles.optionsSheet]}>
             <Text style={styles.pickerTitle}>Workout Options</Text>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.optScroll} contentContainerStyle={styles.optList} showsVerticalScrollIndicator={false}>
               <OptionRow
                 onPress={openWorkoutName}
                 title="Name this workout"
@@ -5386,7 +5376,7 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerHeaderTitle}>Invite to join</Text>
               <Text style={styles.partnerCount}>{ex.name}</Text>
             </View>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
               {(partners ?? []).length === 0 ? (
                 <Text style={styles.partnerEmpty}>Add a friend or join a squad, and the people you train alongside show up here.</Text>
               ) : (
@@ -5428,7 +5418,7 @@ export default function WorkoutScreen() {
               <Text style={styles.partnerHeaderTitle}>Trained with</Text>
               <Text style={styles.partnerCount}>{taggedPartners.length} of 3</Text>
             </View>
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.partnerScroll} showsVerticalScrollIndicator={false}>
               {(partners ?? []).length === 0 ? (
                 <Text style={styles.partnerEmpty}>
                   Add a friend or join a squad, and the people you train alongside show up here.
@@ -6099,6 +6089,114 @@ function AddSetButton({ onPress }: { onPress: () => void }) {
     </Pressable>
   );
 }
+/** All Exercises row height + gap. Fixed, because `useListReorder` steps by one pitch. */
+const OV_ROW = 62;
+const OV_GAP = 6;
+
+/**
+ * ══ ALL EXERCISES — THE WHOLE SESSION, JUMP / REMOVE / DRAG TO REORDER ══
+ *
+ * PO, 2026-09-28: *"When you click on the list of your workouts during an active workout, we should make
+ * it where you can drag around the exercises to rearrange if you're wanting."* The drag is the one the
+ * program-day and template sheets already use (`useListReorder`) — same grip, same haptics, same feel.
+ * What a move does to a superset is `moveExercise`'s business, not this list's.
+ *
+ * ⚠ THE GRIP CARRIES THE GESTURE, NOT THE ROW. A responder on the row cannot tell "lift me" from "scroll
+ * the sheet", and the row is also the tap that jumps to the exercise.
+ *
+ * ⚠ ONE LINE PER ROW, FIXED HEIGHT. The rows are absolutely positioned at `i × pitch` so a drag can move
+ * one without the others reflowing under it — so the sub-line is clipped to one line rather than wrapping.
+ * Its own component so the hook sits in a component with no early returns (the screen has several).
+ */
+function OverviewList({
+  exercises,
+  exIdx,
+  units,
+  haptics,
+  onJump,
+  onRemove,
+  onMove,
+}: {
+  exercises: readonly SessionExercise[];
+  exIdx: number;
+  units: UnitSystem;
+  haptics: { light: () => void; medium: () => void };
+  onJump: (i: number) => void;
+  onRemove: (i: number) => void;
+  onMove: (from: number, to: number) => void;
+}) {
+  const drag = useListReorder({
+    rowHeight: OV_ROW + OV_GAP,
+    count: exercises.length,
+    canMove: () => exercises.length > 1,
+    onMove,
+    haptics,
+  });
+  return (
+    <View style={{ height: exercises.length * (OV_ROW + OV_GAP) - OV_GAP }}>
+      {exercises.map((e, i) => {
+        const total = e.sets.length;
+        const done = e.sets.filter((s) => s.done).length;
+        const eDone = done === total;
+        const isCur = i === exIdx;
+        const status = isCur ? 'Current' : eDone ? 'Completed' : i < exIdx ? 'Skipped' : 'Up Next';
+        const w = e.sets[0]?.weight;
+        const tint = isCur ? flColor.bronze400 : eDone ? flColor.greenMuted : status === 'Skipped' ? flColor.emberFlame : flColor.gray600;
+        return (
+          <Animated.View
+            key={e.position ?? i}
+            style={[styles.ovRow, styles.ovRowPlaced, exercises.length > 1 && styles.ovRowWithGrip, { top: i * (OV_ROW + OV_GAP) }, isCur && styles.ovRowCurrent, drag.dragging === i && styles.ovRowLifted, drag.rowStyle(i)]}
+          >
+            {exercises.length > 1 ? (
+              <View {...drag.handlers(i)} accessibilityLabel={`Drag ${e.name} to reorder`} style={styles.ovGrip}>
+                <EngravedIcon name="reorder" size={18} color={flColor.gray600} />
+              </View>
+            ) : null}
+            <Pressable
+              onPress={() => onJump(i)}
+              accessibilityRole="button"
+              accessibilityLabel={e.section === 'main' ? `${e.name}, ${status}` : `${e.name}, ${SECTION_LABEL[e.section]}, ${status}`}
+              style={styles.ovRowMain}
+            >
+              <View style={[styles.ovStatusDot, { backgroundColor: tint }]} />
+              <View style={styles.ovRowText}>
+                <Text style={styles.ovRowName} numberOfLines={1}>{e.name}</Text>
+                {/* ══ THE PLAN IS THE ONE PLACE THE SHAPE OF THE SESSION IS VISIBLE ══
+                    The sub-line joins the section to the status rather than adding a row, because this list
+                    is scrolled to find one exercise and a second line per row halves how many fit. Prefixed,
+                    not appended: it is what the thing IS, before how it is going. */}
+                <Text style={styles.ovRowSub} numberOfLines={1}>
+                  {e.section !== 'main' ? `${SECTION_LABEL[e.section]} · ` : ''}
+                  {status} · {done}/{total} sets{w != null ? ` · ${w} ${unitLabel(units)}` : ''}
+                </Text>
+              </View>
+              <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
+            </Pressable>
+            {/*
+              ══ THE SECOND WAY TO TAKE AN EXERCISE OUT, AND THE ONE THAT SCALES ══
+              Holt's "Take it out" removes the lift you are STANDING ON; this is the whole plan at once,
+              which is where you notice today has three warm-ups you are not going to do.
+              ⚠ ITS OWN `Pressable`, SIBLING TO THE ROW, NOT NESTED — a pressable inside a pressable claims
+              the touch on web and the row stops jumping. ⚠ Entitlement-free: the path that is always there.
+            */}
+            {exercises.length > 1 ? (
+              <Pressable
+                onPress={() => onRemove(i)}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${e.name} from this workout`}
+                hitSlop={10}
+                style={({ pressed }) => [styles.ovRemove, pressed && styles.ctlPressed]}
+              >
+                <EngravedIcon name="close" size={16} color={flColor.gray600} />
+              </Pressable>
+            ) : null}
+          </Animated.View>
+        );
+      })}
+    </View>
+  );
+}
+
 
 function ExercisePeek({ ex }: { ex: SessionExercise }) {
   const done = ex.sets.filter((s) => s.done).length;
@@ -6379,7 +6477,7 @@ function WheelPicker({ options, value, unit, onChange }: { options: number[]; va
       <View style={styles.wheelBand} pointerEvents="none" />
       <LinearGradient colors={[flColor.charcoal900, 'rgba(0,0,0,0)']} style={styles.wheelFadeTop} pointerEvents="none" />
       <LinearGradient colors={['rgba(0,0,0,0)', flColor.charcoal900]} style={styles.wheelFadeBottom} pointerEvents="none" />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         snapToInterval={WHEEL_ITEM}
@@ -7002,7 +7100,7 @@ const styles = StyleSheet.create({
   // exercise nav
   /* A pair, not a spread to the edges — close enough to read as one control, far enough apart that a
      thumb never lands on the wrong one. */
-  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 56, paddingVertical: 6 },
+  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 6 },
   navArrow: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   /* Text-level, left-aligned with the band's gutter; `minHeight` is the tap target, not visual weight. */
   allExRow: { flexDirection: 'row', alignItems: 'center', gap: 9, alignSelf: 'flex-start', minHeight: 44, marginTop: 4, paddingHorizontal: 18 },
@@ -7089,6 +7187,15 @@ const styles = StyleSheet.create({
     fontFamily: flFont.sans,
     fontSize: 16,
     lineHeight: 23,
+  /* The dot strip + "2 / 5" between the arrows (restored 2026-09-28). `flexShrink` + wrap so a long
+     session breaks onto a second row of dots instead of pushing the arrows off the screen. */
+  navMid: { flexShrink: 1, alignItems: 'center', gap: 6 },
+  dots: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: flColor.charcoal600 },
+  dotCurrent: { width: 22, backgroundColor: flColor.bronze400 },
+  dotDone: { backgroundColor: flColor.greenMuted },
+  dotSkipped: { backgroundColor: flColor.emberFlame },
+  navCount: { fontSize: 10, fontWeight: '600', letterSpacing: 1, color: flColor.gray600, fontVariant: ['tabular-nums'] },
     color: flColor.cream100,
     borderWidth: 1,
     borderColor: flColor.charcoal600,
@@ -7271,3 +7378,9 @@ const styles = StyleSheet.create({
   pCheck: { width: 26, height: 26, borderRadius: 13, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
   pCheckOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeSolid },
 });
+  /* Absolutely placed at `i × pitch` so a dragged row moves without the others reflowing (`OverviewList`). */
+  ovRowPlaced: { position: 'absolute', left: 0, right: 0, height: OV_ROW },
+  ovRowWithGrip: { paddingLeft: 0 },
+  ovRowLifted: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal700 },
+  // `userSelect: 'none'` is load-bearing on web — a text selection steals the drag (see `useListReorder`).
+  ovGrip: { width: 36, height: OV_ROW, alignItems: 'center', justifyContent: 'center', userSelect: 'none' },

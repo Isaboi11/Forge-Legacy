@@ -250,7 +250,7 @@ export default function SquadInviteRoute() {
       <InviteBg />
       <AppBar title="Invite to Squad" onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* SQUAD HEADER */}
         <View style={styles.headerRow}>
           <View style={styles.headerCrest}>

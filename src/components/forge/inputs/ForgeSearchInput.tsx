@@ -21,6 +21,7 @@ import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
 import type { InputBaseProps } from './_types'
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway'
 
 export interface ForgeSearchInputProps
   extends Omit<InputBaseProps, 'iconLeft' | 'iconRight'> {
@@ -102,7 +103,7 @@ export function ForgeSearchInput({
         {showClear && (
           <Pressable
             onPress={onClear}
-            accessibilityLabel="Clear search"
+            {...KEEP_KEYBOARD} accessibilityLabel="Clear search"
             hitSlop={8}
             style={styles.clearBtn}
           >

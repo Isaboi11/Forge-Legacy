@@ -96,7 +96,7 @@ export default function SquadTransferRoute() {
       <TransferBg />
       <AppBar title="Transfer Ownership" onBack={backToSquad} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* header */}
         <View style={styles.header}>
           <View style={styles.headerCrest}>

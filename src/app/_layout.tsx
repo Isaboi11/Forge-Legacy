@@ -30,6 +30,7 @@ import { CoachBubble } from '@/components/forge/CoachBubble';
 import { ConsentHost } from '@/components/forge/ConsentSheet';
 import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
 import { OverlayBoundary } from '@/components/overlay-boundary';
+import { KeyboardTapAway } from '@/components/KeyboardTapAway';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { useStoreIdentity } from '@/lib/billing';
 import { ProfileProvider, useProfile } from '@/lib/profile';
@@ -132,6 +133,9 @@ export default function RootLayout() {
      * and then jumped.
      */
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+    {/* Tap anything that is not a text field and the keyboard goes away (PO 2026-09-28) — see
+        `KeyboardTapAway`. Outermost, so every touch in every screen, sheet and Modal bubbles through it. */}
+    <KeyboardTapAway>
     <ThemeProvider value={IS_PAPER ? PAPER_NAV_THEME : colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <ProfileProvider>
@@ -219,6 +223,7 @@ export default function RootLayout() {
         </ProfileProvider>
       </AuthProvider>
     </ThemeProvider>
+    </KeyboardTapAway>
     </SafeAreaProvider>
   );
 }

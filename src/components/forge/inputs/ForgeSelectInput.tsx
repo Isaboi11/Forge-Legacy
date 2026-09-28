@@ -155,7 +155,7 @@ export function ForgeSelectInput({
             <Pressable>
               {/* Inner pressable stops backdrop tap from propagating */}
               <View style={styles.menu}>
-                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
                   bounces={false}
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"

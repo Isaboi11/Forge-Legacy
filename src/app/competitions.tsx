@@ -149,7 +149,7 @@ export default function CompetitionsScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           {/* ── Create ── the design's one metal-rim, white-inked button. Kept as drawn. */}
           <View style={styles.createWrap}>
             <Pressable
@@ -180,7 +180,7 @@ export default function CompetitionsScreen() {
           ) : null}
 
           {/* ── Filters ── */}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} style={styles.chipRail} contentContainerStyle={styles.chipRailContent}>
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} style={styles.chipRail} contentContainerStyle={styles.chipRailContent}>
             {FILTERS.map((f) => {
               const on = filter === f;
               return (

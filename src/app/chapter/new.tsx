@@ -139,7 +139,7 @@ export default function NewChapterScreen() {
       </View>
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {step === 'name' ? (
             <>
               <Text style={styles.eyebrow}>Begin</Text>
@@ -186,7 +186,7 @@ export default function NewChapterScreen() {
 
               <Text style={styles.fieldLabel}>Goal</Text>
               <View style={styles.well}>
-                <TextInput
+                <TextInput returnKeyType="done"
                   value={goalName}
                   onChangeText={setGoalName}
                   placeholder="Squat 405"
@@ -201,7 +201,7 @@ export default function NewChapterScreen() {
                 <View style={styles.rowCell}>
                   <Text style={styles.fieldLabel}>Target</Text>
                   <View style={styles.well}>
-                    <TextInput
+                    <TextInput returnKeyType="done"
                       value={goalTarget}
                       onChangeText={(v) => setGoalTarget(v.replace(/[^0-9.]/g, ''))}
                       placeholder="405"
@@ -215,7 +215,7 @@ export default function NewChapterScreen() {
                 <View style={styles.rowCell}>
                   <Text style={styles.fieldLabel}>Unit</Text>
                   <View style={styles.well}>
-                    <TextInput
+                    <TextInput returnKeyType="done"
                       value={goalUnit}
                       onChangeText={setGoalUnit}
                       placeholder="lb"

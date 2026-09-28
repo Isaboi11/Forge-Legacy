@@ -20,6 +20,7 @@ import {
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr, themeGround } from '@/constants/theme-scrim';
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
 /**
  * Competition History — every competition this athlete has finished, filterable.
@@ -188,7 +189,7 @@ export default function CompetitionHistoryScreen() {
             returnKeyType="search"
           />
           {search ? (
-            <Pressable onPress={() => reset(setSearch)('')} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={10}>
+            <Pressable onPress={() => reset(setSearch)('')} accessibilityRole="button" {...KEEP_KEYBOARD} accessibilityLabel="Clear search" hitSlop={10}>
               <ClearGlyph />
             </Pressable>
           ) : null}
@@ -238,7 +239,7 @@ export default function CompetitionHistoryScreen() {
           </Pressable>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           stickyHeaderIndices={groups.map((_, i) => i * 2)}
@@ -295,7 +296,7 @@ function ChipRow<T extends string>({
   return (
     <View style={styles.chipBlock}>
       <Text style={styles.chipLabel}>{label}</Text>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipStrip}>
         {items.map((it) => {
           const on = it === current;
           return (

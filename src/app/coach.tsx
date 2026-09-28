@@ -533,7 +533,7 @@ export default function CoachScreen() {
           </Button>
         </View>
       ) : mode == null ? (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll}>
           <Eyebrow>COACH HOLT</Eyebrow>
           <Text style={styles.question}>What do you need?</Text>
           <View style={styles.options}>
@@ -589,7 +589,7 @@ export default function CoachScreen() {
       ) : ack ? (
         <Acknowledgement label={ack.label} line={ack.line} />
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll}>
           <Eyebrow>
             COACH HOLT{'\n'}
             <Text style={styles.chapter}>
@@ -652,7 +652,7 @@ function Intro({ onDone }: { onDone: () => void }) {
   const barBottom = useBarBottom();
   return (
     <>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.introScroll}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.introScroll}>
         <Text style={styles.introName}>I&apos;m Holt.</Text>
         <Text style={styles.introBody}>
           Tell me what you&apos;re after and I&apos;ll write the training that gets you there — a full block,
@@ -858,7 +858,7 @@ function Step({
             onPress={(v) => set.setResultMi(state.resultMi === Number(v) ? null : Number(v))}
           />
           {state.resultMi != null ? (
-            <TextInput
+            <TextInput returnKeyType="done"
               value={state.resultTime}
               onChangeText={set.setResultTime}
               placeholder="Time — 22:30, or 3:45:00"
@@ -1252,7 +1252,7 @@ function Reveal({
   const barBottom = useBarBottom();
   return (
     <>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll}>
         <Eyebrow>BUILT BY HOLT</Eyebrow>
         <Text style={styles.revealTitle}>{built.title}</Text>
         <View style={styles.statRow}>

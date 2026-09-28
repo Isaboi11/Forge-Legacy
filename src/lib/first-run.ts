@@ -31,6 +31,8 @@ import { clearThread, forgetMetHolt } from './coach-thread';
 import { forgetWorkoutsLogged } from './tour-phase';
 // The once-after-onboarding plans screen (Onboarding Amendment 007) — plain AsyncStorage, no router.
 import { clearPlansPending } from './onboarding-plans';
+// Holt's once-after-signup welcome — plain AsyncStorage, no router.
+import { clearHoltWelcome } from './holt-welcome';
 
 /*
  * CLEARING STORAGE IS ONLY HALF OF A HANDOVER — the other half is telling whoever already read it.
@@ -121,6 +123,7 @@ export async function resetFirstRunFlags(): Promise<void> {
      */
     forgetWorkoutsLogged(),
     clearPlansPending(),
+    clearHoltWelcome(),
   ]);
 
   /*

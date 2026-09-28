@@ -173,7 +173,7 @@ export default function JoinSquadRoute() {
         <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.15)' }} />
         <AppBar title="Join a Squad" onBack={() => setSquad(null)} />
 
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.commitScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.commitScroll} showsVerticalScrollIndicator={false}>
           <View style={styles.identity}>
             <View style={styles.squadCrest}>
               {squad.photoUrl ? <Image source={{ uri: squad.photoUrl }} style={styles.squadCrestPhoto} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={30} color={flColor.bronze300} />}

@@ -214,7 +214,7 @@ export default function AccountSettingsScreen() {
           <ActivityIndicator color={flColor.bronze400} />
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {/* identity — the design's clean header: bronze disc, name, rank. Now the entry point to P-1.1
               Edit Profile: the header is the identity, so tapping it to change the identity needs no new
               row and keeps the design's uncluttered header intact. The chevron is the only addition. */}
@@ -338,7 +338,7 @@ export default function AccountSettingsScreen() {
 
       {/* legal / about — an in-app content sheet, not a browser. Nothing is fetched. */}
       <BottomSheet open={sheet !== null} onClose={() => setSheet(null)} title={sheet === 'about' ? 'About' : doc?.host ?? ''}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
           <Text style={styles.sheetTitle}>{sheet === 'about' ? 'Forge Legacy' : doc?.title ?? ''}</Text>
           <Text style={styles.sheetUpdated}>{sheet === 'about' ? version : doc?.updated ?? ''}</Text>
           {(sheet === 'about' ? ABOUT_BODY : (doc?.body ?? [])).map((p) => (

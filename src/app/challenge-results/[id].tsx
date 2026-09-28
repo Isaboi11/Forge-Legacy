@@ -118,7 +118,7 @@ export default function ChallengeResultsScreen() {
 
   return (
     <Shell onBack={goBack}>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Hero result={data} />
         <ChampionSpotlight result={data} />
         <YourResult result={data} />

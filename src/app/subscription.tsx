@@ -587,7 +587,7 @@ export default function SubscriptionScreen() {
         </View>
       ) : (
         <>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
             ref={scrollRef}
             contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom + (canBuy ? 96 : 0) }]}
             showsVerticalScrollIndicator={false}

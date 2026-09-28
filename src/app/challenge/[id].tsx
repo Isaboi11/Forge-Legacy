@@ -174,7 +174,7 @@ export default function ChallengeDetailScreen() {
 
   return (
     <Shell onBack={goBack}>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Hero challenge={data} />
 
         {/* A lifecycle transition that was REFUSED. Never fatal — the standings above are real and worth

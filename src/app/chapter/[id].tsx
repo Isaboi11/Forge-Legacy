@@ -172,7 +172,7 @@ export default function ChapterDetailScreen() {
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title={data.number} onBack={() => router.back()} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
         onScroll={onTourScroll}
         scrollEventThrottle={16}
@@ -362,7 +362,7 @@ export default function ChapterDetailScreen() {
         {data.honors.length ? (
           <View style={styles.section}>
             <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
-            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStrip}>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStrip}>
               {data.honors.slice(0, 6).map((h) => (
                 <HonorInsignia key={h.id} honor={h} />
               ))}

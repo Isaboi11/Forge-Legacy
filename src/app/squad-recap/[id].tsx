@@ -84,7 +84,7 @@ export default function SquadRecapScreen() {
 
   return (
     <Shell onBack={goBack}>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Header ── */}
         <View style={styles.hero}>
           <View style={styles.heroDisc}>

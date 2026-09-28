@@ -22,6 +22,7 @@ import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/hom
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, chapterNameFrom, DEFAULT_CHAPTER_I_TITLE } from '@/domain/legacy/chapter-name';
 import { track } from '@/lib/analytics';
 import { markPlansPending } from '@/lib/onboarding-plans';
+import { markHoltWelcomeOwed } from '@/lib/holt-welcome';
 import { activeTheme, applyThemeAndReload, DEFAULT_THEME, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
 import { fetchAppPrefs, saveAppPrefs } from '@/data/settings-live';
 import { useAuth } from '@/lib/auth';
@@ -481,6 +482,8 @@ export default function Onboarding() {
       }
       // Home opens the plans screen once, for a Free athlete only (ONB-A7-D2).
       await markPlansPending();
+      // Coach Holt greets them by name on Home, once (PO 2026-09-28) — see `holt-welcome.ts`.
+      await markHoltWelcomeOwed();
       /*
        * ⭐ THE FIRST WEEK, BUILT BEFORE THEY EVER SEE HOME.
        *
@@ -570,7 +573,7 @@ export default function Onboarding() {
          * lifts in its first session. It replaces "Every legacy begins with a single workout", which was
          * a promise, with the workout itself.
          */
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.revealScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.revealScroll} showsVerticalScrollIndicator={false}>
           <Text style={styles.tEyebrow}>Built for you</Text>
           <Text style={styles.revealTitle}>{firstWeek.programName}</Text>
           <Text style={styles.revealMeta}>
@@ -619,7 +622,7 @@ export default function Onboarding() {
           </View>
         </View>
       ) : (
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           {step === 'theme' ? (
             <>
               <Heading eyebrow="Before we begin" title={'Choose the Forge\nthat feels like yours.'} body="You can change this anytime in Preferences." />

@@ -28,6 +28,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 import { color } from '@/constants/tokens'
 import { NAV } from './_navigationTokens'
 import type { ForgeSearchHeaderProps } from './types'
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway'
 
 export function ForgeSearchHeader({
   placeholder = 'Search',
@@ -139,7 +140,7 @@ export function ForgeSearchHeader({
         {showClear && value.length > 0 ? (
           <Pressable
             onPress={onClear}
-            accessibilityLabel="Clear search"
+            {...KEEP_KEYBOARD} accessibilityLabel="Clear search"
             accessibilityRole="button"
             hitSlop={8}
             style={styles.clearBtn}

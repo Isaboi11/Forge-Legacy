@@ -26,7 +26,7 @@ export function PhotosSection({ photos, totalCount, onPhotoPress, onViewAll }: P
   return (
     <View>
       <SectionLabel label="Photos" count={totalCount} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.strip}

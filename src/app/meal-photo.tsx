@@ -162,7 +162,7 @@ export default function MealPhotoScreen() {
         {iso !== today ? <Text style={styles.mealLineDay}>{dayLabel(iso, today)}</Text> : null}
       </Pressable>
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.list} contentContainerStyle={styles.listContent} keyboardShouldPersistTaps="handled">
         {stage.step === 'start' ? (
           <View style={styles.intro}>
             <Text style={styles.introTitle}>Snap the plate, check the list, log it.</Text>
@@ -427,7 +427,7 @@ function RowSheet({
             </View>
             <View style={styles.qtyRow}>
               <Text style={styles.fieldLabel}>Amount</Text>
-              <TextInput
+              <TextInput returnKeyType="done"
                 value={qty}
                 onChangeText={setQuantity}
                 keyboardType="decimal-pad"

@@ -107,7 +107,7 @@ export function ForgeNumberInput({
           disabled && styles.disabled,
         ]}
       >
-        <TextInput
+        <TextInput returnKeyType="done"
           value={displayValue}
           placeholder={placeholder}
           placeholderTextColor={color.text.tertiary}

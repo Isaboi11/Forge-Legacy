@@ -40,7 +40,7 @@ test("⚠ Holt's session sheet drags too — the same hook, on the grabber and t
   assert.match(s, /<Animated\.View onLayout=\{drag\.onLayout\} style=\{\[styles\.sheet, drag\.style\]\}>/, 'the sheet does not translate with the drag');
   assert.match(s, /<View \{\.\.\.drag\.panHandlers\}>\s*<View style=\{styles\.grabWrap\}>/, 'the pan is not on the grabber + header wrapper');
   // The body is a ScrollView and must stay OUT of the pan, or the sheet dismisses when the athlete scrolls.
-  const panned = s.slice(s.indexOf('{...drag.panHandlers}'), s.indexOf('<ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.thread}'));
+  const panned = s.slice(s.indexOf('{...drag.panHandlers}'), s.indexOf('<ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.thread}'));
   assert.ok(panned.length > 0 && !panned.includes('ScrollView'), 'the pan wrapper must close before the scrolling body');
 });
 

@@ -21,6 +21,7 @@ import { color } from '@/constants/tokens'
 import { INP } from './_inputTokens'
 import { getBorderColor, getBgColor, getGlow, getHelperColor, resolveHelper } from './_inputUtils'
 import type { InputBaseProps } from './_types'
+import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway'
 
 export type ForgePasswordInputProps =
   Omit<InputBaseProps, 'iconLeft' | 'iconRight' | 'keyboardType'>
@@ -79,7 +80,7 @@ export function ForgePasswordInput({
         {/* Lock icon — always present */}
         <EngravedIcon name="lock" size={INP.ICON_SIZE} color={color.text.tertiary} />
 
-        <TextInput
+        <TextInput returnKeyType="done"
           value={value}
           placeholder={placeholder}
           placeholderTextColor={color.text.tertiary}
@@ -101,7 +102,7 @@ export function ForgePasswordInput({
           <Pressable
             onPress={() => setRevealed(r => !r)}
             disabled={disabled}
-            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            {...KEEP_KEYBOARD} accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
             hitSlop={8}
           >
             <EngravedIcon

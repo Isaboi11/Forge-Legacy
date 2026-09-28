@@ -227,7 +227,7 @@ export default function MyFoodsScreen() {
       {!editor ? (
         <>
           {/* ═══════════ LIST ═══════════ */}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identity}>
               <Text style={styles.eyebrow}>Nutrition</Text>
               <Text style={styles.title}>My foods & meals</Text>
@@ -343,7 +343,7 @@ export default function MyFoodsScreen() {
       ) : (
         <>
           {/* ═══════════ MEAL EDITOR ═══════════ */}
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={styles.scroll} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.identityForm}>
               <Text style={styles.eyebrow}>My meals</Text>
               <Text style={styles.title}>{editor.id ? 'Edit meal' : 'New meal'}</Text>

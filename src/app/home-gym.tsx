@@ -120,7 +120,7 @@ export default function HomeGymScreen() {
         }
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.body, { paddingBottom: 132 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 132 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {/* intro */}
         <View style={styles.intro}>
           <View style={styles.microRow}>
