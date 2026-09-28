@@ -6,7 +6,12 @@ a **postal address** (deliberately omitted — required by some regimes) and **E
 specifics if distribution ever widens.
 
 **Effective date:** 11 August 2026
-**Last updated:** 11 August 2026
+**Last updated:** 28 September 2026
+
+> ⚠ **2026-09-28 — the live, authoritative text is `site/privacy.html`** (forgelegacy.app/privacy, "Last
+> updated 28 September 2026"). This file mirrors the build-10 changes only — Sentry (errors, crashes and
+> performance data), Apple Health, and on-device body pose for form checks. Other sections here (e.g. § 4
+> location, § 7 providers, § 1 operator) predate the site text and are stale; read the site, not this.
 
 ---
 
@@ -60,12 +65,26 @@ resale, because none of those things exist in this product.
 - Personal records, goals, honors earned, rank, and the chapters of your training history.
 - Cardio sessions: distance, pace, duration, and activity type.
 - Body metrics you choose to log, such as body weight and measurements.
+- **Apple Health (iPhone, only if you connect it).** If you connect Apple Health in Settings, Forge reads
+  your workouts from it: the type (run, walk, ride, swim, row), when it started and ended, its distance, and
+  which app or device recorded it (for example “Garmin Connect” or “Apple Watch”). We do not read heart
+  rate, calories, routes, sleep, or any other Health data. Each workout you choose to add becomes part of
+  your training history. If you turn on “Save Forge workouts to Apple Health”, Forge also writes the
+  workouts you finish in Forge to Health on your phone. Data from Apple Health is never used for
+  advertising or marketing, never sold, never sent to Sentry, and never shared except as this policy
+  describes. Workouts Forge saved to Apple Health stay in the Health app when you delete your account;
+  delete them there. Disconnect in Settings › Apple Health, and revoke access in the Health app › Sharing ›
+  Apps.
 
 ### Photos and video
 - Progress photos, workout or accomplishment photos, squad posts, form-check videos, check-in videos, and
   profile pictures — all only when you add them.
 - Photos are resized on your device before upload. We do not read or retain the original full-resolution
   file, and we do not extract or store camera metadata such as the location a photo was taken.
+- **Form checks (iPhone).** Your phone first measures your movement on the device: it works out where your
+  joints are in each frame. **Those joint positions never leave your phone and are never stored.** Only a
+  few numbers worked out from them, such as how many reps, how deep and how fast, are sent to our AI
+  provider along with the frames you chose.
 
 ### Social activity
 - Squads you belong to, friend connections, posts, comments, reactions, competition entries and results,
@@ -110,7 +129,7 @@ account deletes them along with everything else.
 ### Diagnostics — when something goes wrong
 
 When the app hits an error, it sends us a report so we can fix it without having to ask you what
-happened. This stays in our own database and is never sent anywhere else.
+happened. It goes to our own database; error and crash reports also go to Sentry, described below.
 
 What a diagnostic report contains, in full:
 
@@ -143,6 +162,18 @@ the steps you took. We still record that the app broke, on which screen, and on 
 that is a fault in our software rather than a record of what you did. That is the whole difference:
 without the trail we know something is broken; with it we know how to reproduce it.
 
+**Sentry.** Error and crash reports are also sent to Sentry, a crash-reporting service we use, including
+crashes that close the app before our own report can be sent. A Sentry report contains the technical trace
+of the error, your app version, phone model and operating system, and your account identifier (a random
+code, not your name or email) so we can tell how many people a problem affects. For a sample of sessions
+Sentry also receives **performance data**: how long the app took to start, and how long screens and network
+requests took, so we can find what is slow. Web addresses in it are cut off before any search terms. Sentry
+never receives the step trail above, your name, email, training figures, food log, health data, photos,
+location, or anything you typed; the same honest exception about error messages applies, and we remove
+email addresses and search terms from them before they are sent. Turning off “Help improve Forge” also
+stops the performance data. Sentry processes these reports only to provide them to us, and keeps them for
+up to 90 days.
+
 **You can see it.** These reports are readable by your own account and by nobody else’s. Reports from
 before you signed in belong to no account and are readable only by us. Deleting your account deletes
 yours along with everything else.
@@ -158,13 +189,13 @@ Stated plainly, because these are the things people reasonably assume an app is 
   *We do keep our own record of which screens and features get used — described under “Product usage”
   above. It stays in our database, is never sold or shared, and is never joined to anything outside your
   account.*
-- **No third-party crash or error reporting.** No Sentry, Bugsnag, Crashlytics or similar. Diagnostic
-  reports, described under “Diagnostics” above, go to our own database and nowhere else.
+- **No third-party analytics or advertising SDKs.** Crash reports go to Sentry, a crash-reporting
+  service, as described under “Diagnostics” above.
 - **No advertising SDKs**, no ad identifiers, no cross-app or cross-site tracking.
 - **No sale of personal information**, under any definition, to anyone.
 - **No contacts access.** We never read your address book.
 - **No background location.** See below.
-- **No health-app integration.** We do not read from Apple Health.
+- **Apple Health only if you connect it**, and then only workouts — see “Training records” above.
 
 ---
 
@@ -218,6 +249,7 @@ We do not sell or rent your information. We share it only where it is necessary 
 |---|---|
 | Supabase | Hosting, database and file storage |
 | Apple | App distribution, and — if you subscribe in future — payment processing. We never see or store your card details |
+| Sentry | Error, crash and performance reporting. Receives the reports described under “Diagnostics” and your account identifier — never your name, email, health data or anything you typed |
 
 We may also disclose information if we are legally required to, or where it is necessary to protect
 someone’s safety.
