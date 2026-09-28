@@ -20,7 +20,7 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
   - ✅ `pending-0230.sql` applied 09-28 (pin + edit squad posts): 248 posts · 0 pinned · 0 edited, as predicted
   - ✅ `pending-0232.sql` applied 09-28 ("Fix it with AI" = 1 credit): workout_tidy 1 · tidies 0 ✓. ⚠ It showed **meal_photo = 1**, not the 3 that 0223 set — changed by hand at some point, no record in the repo; PO to say if intended
   - ✅ Edge Function `workout-tidy` deployed 09-28 (Verify JWT on; probe: OPTIONS 200, no-auth POST 401)
-  - ⬜ Then tell Claude "go": publish web + phone update (Squatober posts, pin/edit, Fix it with AI) — added 09-28
+  - ✅ Published 09-28: web `index-825813ed…` + build 9 iOS `01a0e80d` (Squatober posts, pin/edit, Fix it with AI)
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
 | Who | Premium | Premium AI |
