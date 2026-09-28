@@ -71,7 +71,8 @@ test('templates keep the prescription through their read whitelist', () => {
 const WRITE = read('../workout-write.tsx');
 
 test('pinned posts sit above the feed, are drawn once, with the same card (0230)', () => {
-  assert.match(FEED, /const \{ data: pinnedData, refetch: refetchPinned \} = useQuery\(\(\) => fetchPinnedSquadPosts\(squadId\), \[squadId\]\);/);
+  // The read waits for the week's summary to exist, because that summary is pinned for 24 hours (PO 09-28).
+  assert.match(FEED, /const \{ data: pinnedData, refetch: refetchPinned \} = useQuery\(async \(\) => \{\s*await ensureWeeklyRecap\(squadId\);\s*return fetchPinnedSquadPosts\(squadId\);\s*\}, \[squadId\]\);/);
   assert.match(FEED, /\.filter\(\(p\) => !pinnedPosts\.some\(\(q\) => q\.id === p\.id\)\)/);
   assert.match(FEED, /<Text style=\{styles\.pinnedLabel\}>Pinned<\/Text>\s*\{feedCard\(p, i\)\}/);
   assert.match(FEED, /\{feedPosts\.map\(\(p, i\) => feedCard\(p, i\)\)\}/);

@@ -97,6 +97,7 @@ export default function SquadRecapScreen() {
             recap={recap}
             facts={recap.story}
             meId={session?.user.id ?? null}
+            squadKey={data?.squadName ?? ''}
             onStartWorkout={() => router.push('/(tabs)/workouts')}
           />
         </ScrollView>

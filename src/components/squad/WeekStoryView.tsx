@@ -32,15 +32,18 @@ export function WeekStoryView({
   recap,
   facts,
   meId,
+  squadKey,
   onStartWorkout,
 }: {
   postId: string;
+  /** Chooses Holt's phrasing, so every member of the squad reads the same words (see `makePick`). */
+  squadKey: string;
   recap: WeeklyRecap;
   facts: StoryFacts;
   meId: string | null;
   onStartWorkout: () => void;
 }) {
-  const story = useMemo(() => buildWeekStory(recap, facts), [recap, facts]);
+  const story = useMemo(() => buildWeekStory(recap, facts, squadKey), [recap, facts, squadKey]);
   const haptics = useHaptics();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [piece, setPiece] = useState<string | null>(null);

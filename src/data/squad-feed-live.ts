@@ -978,6 +978,43 @@ export async function fetchPostMarks(postId: string): Promise<{ supported: boole
  * `squad_post_one`, the same row the feed draws, so a pinned card is the same card. Empty before 0230.
  */
 export async function fetchPinnedSquadPosts(squadId: string): Promise<SquadFeedPost[]> {
+  const [fresh, pinned] = await Promise.all([fetchFreshWeeklySummary(squadId), fetchOwnerPinnedPosts(squadId)]);
+  return fresh ? [fresh, ...pinned.filter((p) => p.id !== fresh.id)] : pinned;
+}
+
+/** How long a new Weekly Summary stays pinned at the top of the squad (PO 2026-09-28). */
+export const WEEKLY_PIN_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The Weekly Summary, while it is less than a day old — pinned first, above even the owner's pins.
+ *
+ * PO, 2026-09-28: *"the weekly summary should be pinned at the top for 24 hours so it doesn't get buried in
+ * other posts."* It is the squad's story of the week, read on Monday; after a day it goes back to being a
+ * post in the feed.
+ *
+ * ⚠ READ ON ITS OWN, NOT PICKED OUT OF THE FEED PAGE. The feed loads five at a time, so on a busy squad the
+ * summary could already have slid off the first page — exactly the burying this exists to stop. Needs no
+ * migration: it reads `created_at` and `type`, which every summary has had since 0057.
+ */
+async function fetchFreshWeeklySummary(squadId: string): Promise<SquadFeedPost | null> {
+  const since = new Date(Date.now() - WEEKLY_PIN_MS).toISOString();
+  const { data, error } = await supabase
+    .from('squad_posts')
+    .select('id')
+    .eq('squad_id', squadId)
+    .eq('type', 'weekly')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  const id = !error ? ((data ?? []) as { id: string }[])[0]?.id : undefined;
+  if (!id) return null;
+  const one = await supabase.rpc('squad_post_one', { p_post: id });
+  const r = ((one.data ?? []) as FeedRow[])[0];
+  return one.error || !r ? null : toPost(r);
+}
+
+/** The posts the squad owner pinned (0230). Empty before 0230. */
+async function fetchOwnerPinnedPosts(squadId: string): Promise<SquadFeedPost[]> {
   if (pinEdit0230 === false) return [];
   const { data, error } = await supabase
     .from('squad_posts')

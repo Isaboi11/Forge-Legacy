@@ -253,7 +253,12 @@ export default function SquadDetailRoute() {
 
   /* Pinned posts (0230, PO 2026-09-28): above the feed, most recently pinned first — so tomorrow's workout is not
      buried under today's check-ins. Empty on a database without 0230. */
-  const { data: pinnedData, refetch: refetchPinned } = useQuery(() => fetchPinnedSquadPosts(squadId), [squadId]);
+  /* The week's summary is pinned for its first 24 hours (PO 2026-09-28), and it is CREATED by the first visit of
+     the week — so this read waits for that, as the feed's does. Idempotent: a second call finds it and returns. */
+  const { data: pinnedData, refetch: refetchPinned } = useQuery(async () => {
+    await ensureWeeklyRecap(squadId);
+    return fetchPinnedSquadPosts(squadId);
+  }, [squadId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1509,7 +1514,7 @@ function FeedCard({
   // the squad talking, not a person — and against a feed of hairline-separated rows the contrast is
   // now doing real work instead of competing with twenty other bordered boxes.
   if (post.type === 'weekly' && post.recap) {
-    const weeklyStory = post.recap.story ? buildWeekStory(post.recap, post.recap.story) : null;
+    const weeklyStory = post.recap.story ? buildWeekStory(post.recap, post.recap.story, squadName) : null;
     return (
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Open weekly summary" style={[styles.feedCard, styles.weeklyCard]}>
         <LinearGradient colors={['rgba(186, 134, 84,0.06)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
