@@ -43,8 +43,12 @@ type Mode = 'known' | 'fromSet';
 export interface LiftMaxSheetProps {
   open: boolean;
   onClose: () => void;
-  /** Written to this run's frozen snapshot. */
-  programId: string;
+  /**
+   * Written to this run's frozen snapshot. NULL for a one-off workout (a squad's posted day, PO 2026-09-27): the
+   * maxes go to the athlete's own record only, and a save that cannot reach the server still hands the numbers
+   * back — a workout in a basement gym is never held hostage to a write.
+   */
+  programId: string | null;
   /** Catalog keys this program needs, in program order. */
   keys: string[];
   /** Key → the lift's display name. */
@@ -127,6 +131,16 @@ export function LiftMaxSheet({
         // session that never happened.
         setAt: null,
       };
+    }
+
+    if (programId == null) {
+      void Promise.all(Object.entries(patch).map(([k, m]: [string, LiftMax]) => saveMyLiftMax(k, m.lb, m.source).catch(() => {})))
+        .then(() => {
+          onSaved({ ...known, ...patch });
+          onClose();
+        })
+        .finally(() => setBusy(false));
+      return;
     }
 
     void setProgramLiftMaxes(programId, patch)

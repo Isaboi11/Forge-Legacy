@@ -1,8 +1,8 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -42,7 +42,9 @@ import {
   useTransformationPick,
 } from '@/components/forge/compositions/TransformationPicker';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
-import { errorMessage } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { clearWrittenDraft, peekWrittenDraft } from '@/lib/written-workout-intent';
+import { postedTally } from '@/domain/workout/posted-workout-lines';
 import { UploadError } from '@/lib/storage-upload';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
@@ -169,7 +171,23 @@ export default function SquadComposerRoute() {
    */
   const [templates, setTemplates] = useState<WorkoutTemplate[] | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
-  const chosenTemplate = templates?.find((t) => t.id === templateId) ?? null;
+  /*
+   * ══ OR WRITE ONE (PO 2026-09-27, Squatober) ══ A coach's day — percentages, a ramp, supersets, the rest after
+   * each set — written or pasted on `/workout-write`, which hands it back here. Peeked on every focus (the picker,
+   * a keyboard, a sheet all blur this screen) and cleared when Workout is chosen afresh, a saved one is picked
+   * instead, or the post goes. What it carries beyond a saved template: its `how` and `after` words.
+   */
+  const [focusTick, setFocusTick] = useState(0);
+  useFocusEffect(useCallback(() => setFocusTick((n) => n + 1), []));
+  const writtenQ = useQuery(peekWrittenDraft, [focusTick]);
+  const [writtenOff, setWrittenOff] = useState<object | null>(null);
+  const writtenDraft = writtenQ.data && writtenQ.data !== writtenOff ? writtenQ.data : null;
+  const savedTemplate = templates?.find((t) => t.id === templateId) ?? null;
+  /* The workout this post will carry — the written one when there is one, else the saved template picked. */
+  const chosenTemplate = useMemo(
+    () => (writtenDraft ? { id: 'written', name: writtenDraft.name, exercises: writtenDraft.exercises } : savedTemplate),
+    [writtenDraft, savedTemplate],
+  );
 
   // Shared with the friends composer: one definition of what a comparison is.
   const xform = useTransformationPick(entries, thenId, nowId);
@@ -243,6 +261,8 @@ export default function SquadComposerRoute() {
     }
     if (t === 'workout') {
       setTemplateId(null);
+      clearWrittenDraft();
+      setWrittenOff(writtenQ.data ?? null);
       setTemplates(null);
       setLoadingList(true);
       fetchTemplates().then(
@@ -356,7 +376,13 @@ export default function SquadComposerRoute() {
       type === 'transformation'
         ? layoutFromPick(xform)
         : type === 'workout' && chosenTemplate
-          ? { kind: 'posted-workout' as const, name: chosenTemplate.name, exercises: chosenTemplate.exercises }
+          ? {
+              kind: 'posted-workout' as const,
+              name: chosenTemplate.name,
+              exercises: chosenTemplate.exercises,
+              ...(writtenDraft?.how ? { how: writtenDraft.how } : null),
+              ...(writtenDraft?.after ? { after: writtenDraft.after } : null),
+            }
           : null;
     const xformMedia = layout
       ? mediaFromPick(xform).map((m) => ({ url: m.url, kind: 'image' as SquadMediaKind }))
@@ -371,6 +397,7 @@ export default function SquadComposerRoute() {
      */
     const done = () => {
       setPosting(false);
+      clearWrittenDraft();
       showToast(audience === 'SQUAD' ? 'Posted to your squad' : audience === 'BOTH' ? 'Posted to your friends and squad' : 'Posted to your friends');
       router.back();
     };
@@ -686,8 +713,23 @@ export default function SquadComposerRoute() {
             <>
               <View style={styles.recapCard}>
                 <Text style={styles.recapName}>{chosenTemplate.name}</Text>
-                <Text style={styles.pickerRowSub}>{templateSummary(chosenTemplate)}</Text>
-                <Pressable onPress={() => setTemplateId(null)} accessibilityRole="button" accessibilityLabel="Choose a different workout" style={styles.recapChange} hitSlop={6}>
+                <Text style={styles.pickerRowSub}>{writtenDraft ? postedTally(chosenTemplate.exercises) : templateSummary(chosenTemplate as WorkoutTemplate)}</Text>
+                {writtenDraft ? (
+                  <Pressable onPress={() => router.push('/workout-write')} accessibilityRole="button" style={styles.recapChange} hitSlop={6}>
+                    <Text style={styles.recapChangeText}>Write it again</Text>
+                  </Pressable>
+                ) : null}
+                <Pressable
+                  onPress={() => {
+                    setTemplateId(null);
+                    clearWrittenDraft();
+                    setWrittenOff(writtenQ.data ?? null);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose a different workout"
+                  style={styles.recapChange}
+                  hitSlop={6}
+                >
                   <Text style={styles.recapChangeText}>Choose a different workout</Text>
                 </Pressable>
               </View>
@@ -707,6 +749,14 @@ export default function SquadComposerRoute() {
           ) : (
             <View style={styles.pickerWrap}>
               <Text style={styles.pickerLabel}>Choose a workout to post</Text>
+              {/* A coach's day as written — percentages, supersets, rest — typed, pasted or read from a photo. */}
+              <Pressable onPress={() => router.push('/workout-write')} accessibilityRole="button" style={[styles.pickerRow, styles.writeRow]}>
+                <View style={styles.pickerRowText}>
+                  <Text style={styles.pickerRowName}>Write or paste one</Text>
+                  <Text style={styles.pickerRowSub}>Percentages, supersets, rest. From a photo too.</Text>
+                </View>
+                <ChevronRight />
+              </Pressable>
               {loadingList ? (
                 <View style={styles.pickerBusy}>
                   <ActivityIndicator color={flColor.bronze400} />
@@ -1053,6 +1103,7 @@ const styles = StyleSheet.create({
   pickerEmpty: { fontSize: 13, lineHeight: 20, color: flColor.gray400, paddingVertical: 18, paddingHorizontal: 4 },
   pickerList: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
   pickerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 15 },
+  writeRow: { marginBottom: 10, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   pickerRowText: { flex: 1, minWidth: 0, gap: 2 },
   pickerRowName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },

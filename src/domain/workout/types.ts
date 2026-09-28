@@ -98,6 +98,16 @@ export interface SessionSet {
    * logs the 38 they managed.
    */
   targetSec?: number | null;
+  /**
+   * The PERCENTAGE of a max this set's `targetWeight` came from (PO 2026-09-27, Squatober) — kept so a max the
+   * athlete changes mid-workout re-draws every gray weight still to come. Absent on any set not prescribed by %.
+   */
+  targetPct?: number | null;
+  /**
+   * The REST the workout prescribes after this set, in seconds — "87% rest 20s, 87% rest 20s, 90% rest 2:30".
+   * The rest timer starts on it by itself when the set is logged. Absent = the athlete's own rest setting.
+   */
+  restSec?: number | null;
   /** Entered reps (the Actual column); null until edited — completing back-fills actual = target. */
   actualReps: number | null;
   done: boolean;
@@ -129,6 +139,11 @@ export interface SessionExercise {
    * Only a TIMED move carries one; the Start timer run plays it between moves. Absent = straight on.
    */
   restAfterSec?: number | null;
+  /**
+   * The catalogue key whose max this exercise's percentages resolve against (PO 2026-09-27) — its own lift, or
+   * another's ("33% of your bench max" on close-grip). Absent when nothing on it is a percentage.
+   */
+  maxKey?: string | null;
   /**
    * 'cardio' marks a run, walk or ride sitting anywhere in the session. Absent means 'strength', so
    * every session written before this reads correctly without migration.
@@ -222,6 +237,12 @@ export interface ActiveSession {
    */
   continuingWorkoutId?: string;
   workoutName: string;
+  /**
+   * The author's words around the workout (PO 2026-09-27, a squad's posted day): `how` it runs — the warm-up,
+   * "super sets: 1a then 1b, then rest" — and what comes `after` ("30 min walk, steak & eggs, 8-9 hrs sleep").
+   * Shown on the logger; never saved as the athlete's own session notes, which are theirs to write.
+   */
+  brief?: { how?: string | null; after?: string | null } | null;
   /**
    * How the session went, in the athlete's words. Lands in `workouts.notes` — a column that has taken a
    * value through `save_workout`'s `p_notes` since 0010, which every client path has passed as `null`.

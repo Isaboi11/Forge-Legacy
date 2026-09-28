@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { prescriptionOf, type TemplatePrescription } from '@/domain/workout/template-prescription';
 import { fetchActiveProgram, fetchProgramSessions } from './programs-live';
 import { nextOpenSlot } from '@/domain/program/progress-core';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
@@ -27,7 +28,7 @@ export type { TemplateSection };
  * are the sessions with no home — a program day is already reusable BY the program.
  */
 
-export interface TemplateExercise {
+export interface TemplateExercise extends TemplatePrescription {
   catalogKey: string | null;
   name: string;
   sets: number;
@@ -64,6 +65,15 @@ export interface TemplateExercise {
    * Absent on every template saved before this, which read as having no cue — which they didn't.
    */
   coachNote?: string | null;
+  /*
+   * ══ A PRESCRIPTION, NOT JUST A SHAPE (PO 2026-09-27, Squatober) ══
+   *
+   * `repScheme` · `repsMax` · `percentOfMax` · `percentScheme` · `percentOf` · `restSec` · `restScheme`, from
+   * `TemplatePrescription` below. A posted workout "goes off of percentages of your squat max", and a coach's
+   * day has its own rep count and rest after each set. They mirror `ProgramExercise` field for field, so a
+   * template row runs through the SAME `sessionSetsFor` a program day does — one rule for turning 67% into a
+   * bar, not two. Stored in the jsonb `exercises`; no migration. Absent on every row saved before.
+   */
 }
 
 export interface WorkoutTemplate {
@@ -116,6 +126,8 @@ const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   // ⚠ THIS IS A WHITELIST. A field absent from here is silently dropped on every read, however faithfully
   // the writer stored it — which is why the cue has to be named explicitly rather than spread through.
   coachNote: typeof e.coachNote === 'string' && e.coachNote.trim() ? e.coachNote.trim() : null,
+  // The prescription (PO 2026-09-27) — a whitelist of its own, each field only when it holds something usable.
+  ...prescriptionOf(e),
 });
 
 const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({

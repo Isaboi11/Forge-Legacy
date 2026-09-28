@@ -300,6 +300,8 @@ function RootNavigator() {
         <Stack.Screen name="add-friend" />
         <Stack.Screen name="squad-post/[id]" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="squad-composer" options={{ presentation: 'fullScreenModal' }} />
+        {/* Write a workout for the squad (PO 2026-09-27) — opened from the composer, over it. */}
+        <Stack.Screen name="workout-write" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="workout-invite" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="train-invite" options={{ presentation: 'fullScreenModal' }} />
         {/* The other direction (0121): asking to join a session already under way. */}

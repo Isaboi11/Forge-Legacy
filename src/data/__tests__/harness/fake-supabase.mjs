@@ -24,6 +24,7 @@ export const db = {
     this.missing = new Set();
     this.log = [];
     this.fail = null;
+    this.rpcs = {};
   },
   rows(table) {
     if (!this.tables.has(table)) this.tables.set(table, []);
@@ -180,5 +181,15 @@ export const supabase = {
     getUser: async () => ({ data: { user: { id: ATHLETE } }, error: null }),
   },
   functions: { invoke: async () => ({ data: null, error: { message: 'not in tests' } }) },
-  rpc: async () => ({ data: null, error: { message: 'not in tests' } }),
+  /* An RPC the test registers on `db.rpcs` runs; any other answers the way a missing function does. */
+  rpc: async (name, args) => {
+    if (db.offline) return { data: null, error: TRANSPORT };
+    const fn = db.rpcs?.[name];
+    if (!fn) return { data: null, error: { code: 'PGRST202', message: `function ${name} not found` } };
+    try {
+      return { data: fn(args), error: null };
+    } catch (e) {
+      return { data: null, error: { code: 'P0001', message: e.message } };
+    }
+  },
 };

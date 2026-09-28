@@ -59,6 +59,7 @@ import { useQuery } from '@/lib/useQuery';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchPlannedWorkout, takePostedWorkout } from '@/data/planned-workout-live';
+import { postedTally, usesMaxes } from '@/domain/workout/posted-workout-lines';
 import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
@@ -1379,17 +1380,21 @@ function FeedProgressCard({ card }: { card: ProgressCardData }) {
  * `taken` is the athlete's OWN slot pointing at this post, so the card can say "In your workouts"
  * rather than offering a take that would silently replace itself.
  */
-function FeedPostedWorkout({ card, taken, busy, onTake }: { card: PostedWorkoutCard; taken: boolean; busy: boolean; onTake: () => void }) {
-  const lifts = card.exercises.length;
-  const sets = card.exercises.reduce((n, e) => n + (e.sets || 0), 0);
+function FeedPostedWorkout({ card, taken, busy, onTake, onOpen }: { card: PostedWorkoutCard; taken: boolean; busy: boolean; onTake: () => void; onOpen: () => void }) {
   return (
     <View style={styles.postedWorkout}>
-      <Text style={styles.postedWorkoutName} numberOfLines={2}>
-        {card.name}
-      </Text>
-      <Text style={styles.postedWorkoutMeta}>
-        {lifts} {lifts === 1 ? 'lift' : 'lifts'} · {sets} {sets === 1 ? 'set' : 'sets'}
-      </Text>
+      {/* PO 2026-09-27: "click on it, look at it" — the name and tally open the whole workout, with the
+          member's own weights, before anything is taken. */}
+      <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`See ${card.name}`} style={styles.postedWorkoutOpen}>
+        <Text style={styles.postedWorkoutName} numberOfLines={2}>
+          {card.name}
+        </Text>
+        <Text style={styles.postedWorkoutMeta}>
+          {postedTally(card.exercises)}
+          {usesMaxes(card.exercises) ? ' · by % of your max' : ''}
+        </Text>
+        <Text style={styles.postedWorkoutSee}>See the workout ›</Text>
+      </Pressable>
       <Pressable
         onPress={onTake}
         disabled={taken || busy}
@@ -1579,7 +1584,7 @@ function FeedCard({
         ) : card ? (
           <FeedProgressCard card={card} />
         ) : posted ? (
-          <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} />
+          <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} onOpen={onOpen} />
         ) : shaped ? (
           <TransformationLayout data={shaped} compact />
         ) : undefined
@@ -2038,6 +2043,8 @@ const styles = StyleSheet.create({
   postedWorkout: { padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, gap: 4 },
   postedWorkoutName: { fontSize: 16, fontWeight: '700', letterSpacing: 0.2, color: flColor.cream100 },
   postedWorkoutMeta: { fontSize: 12, color: flColor.gray400 },
+  postedWorkoutOpen: { gap: 4 },
+  postedWorkoutSee: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk, marginTop: 2 },
   postedWorkoutBtn: { marginTop: 10, paddingVertical: 12, borderRadius: flRadius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronze400 },
   postedWorkoutBtnDone: { backgroundColor: 'transparent', borderWidth: 1, borderColor: flColor.charcoal500 },
   postedWorkoutBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: flColor.onBronze },

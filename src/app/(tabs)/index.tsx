@@ -621,7 +621,7 @@ export default function HomeScreen() {
    */
   const startPlannedWorkout = async () => {
     if (!planned) return;
-    await writeWorkoutLaunch({ exercises: planned.exercises, workoutName: planned.name });
+    await writeWorkoutLaunch({ exercises: planned.exercises, workoutName: planned.name, brief: planned.brief });
     void clearPlannedWorkout().then(refetchPlanned);
     router.push('/workout');
   };

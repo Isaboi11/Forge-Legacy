@@ -34,6 +34,11 @@ export interface PlannedWorkout {
   createdAt: string;
   /** Null when they built it themselves. */
   source: PlannedWorkoutSource | null;
+  /**
+   * The poster's words around the day (PO 2026-09-27) — how it runs, what comes after. Read from the POST, not
+   * the slot: `take_posted_workout` copies the exercises only, and the words belong with the post they came in.
+   */
+  brief: { how: string | null; after: string | null } | null;
 }
 
 /**
@@ -91,6 +96,7 @@ export async function fetchPlannedWorkout(): Promise<PlannedWorkout | null> {
     name: row.name as string,
     exercises,
     createdAt: row.created_at as string,
+    brief: postId ? await postBrief(postId) : null,
     source: postId
       ? {
           postId,
@@ -169,4 +175,23 @@ export async function clearPlannedWorkout(): Promise<void> {
   } = await supabase.auth.getUser();
   if (!user) return;
   await supabase.from('planned_workouts').delete().eq('athlete_id', user.id);
+}
+
+/**
+ * The notes a posted workout carried — its OWN read, never a join on the slot's select: a join that failed would
+ * throw away the provenance above with it, and "From your squad" is worth more than a warm-up line. A post that
+ * is gone, unreadable or older than the notes answers null.
+ */
+async function postBrief(postId: string): Promise<{ how: string | null; after: string | null } | null> {
+  try {
+    const { data } = await supabase.from('squad_posts').select('layout').eq('id', postId).maybeSingle();
+    const l = (data as { layout?: Record<string, unknown> | null } | null)?.layout;
+    if (!l || l.kind !== 'posted-workout') return null;
+    const text = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null);
+    const how = text(l.how);
+    const after = text(l.after);
+    return how || after ? { how, after } : null;
+  } catch {
+    return null;
+  }
 }

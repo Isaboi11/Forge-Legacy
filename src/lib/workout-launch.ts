@@ -68,6 +68,11 @@ export interface WorkoutLaunch {
    * was carrying instead of having it thrown away on arrival.
    */
   exercises?: TemplateExercise[];
+  /**
+   * The author's words around a posted / planned workout (PO 2026-09-27): how it runs and what comes after.
+   * Carried beside `exercises`, never inside it — it is about the day, not about any one lift.
+   */
+  brief?: { how?: string | null; after?: string | null } | null;
   /** Overrides the session's name — a shared workout is named by whoever invited you (0092). */
   workoutName?: string;
   /**

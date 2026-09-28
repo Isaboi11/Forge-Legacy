@@ -38,7 +38,12 @@ import { useToast } from '@/hooks/useCeremony';
    network is not. See `PendingSave.athleteId`. */
 import { useAuth } from '@/lib/auth';
 import { useAppPrefs, useCoachIntensity, useHaptics, useSoundEnabled, useUnits } from '@/lib/settings';
-import { loadContextFor } from '@/domain/program/percent-max';
+import { loadContextFor, type LiftMaxes, type LoadContext } from '@/domain/program/percent-max';
+import { hasPrescription, maxKeyOf, maxKeysNeeded, prescribedSets, withMaxes } from '@/domain/workout/template-prescription';
+import { fetchMyLiftMaxes } from '@/data/lift-maxes-live';
+import { LiftMaxSheet } from '@/components/forge/LiftMaxSheet';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { displayWeight, exactWeight, unitLabel, weightInExact, type UnitSystem } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
@@ -933,6 +938,24 @@ export default function WorkoutScreen() {
     };
   }, [session?.workoutName, liveSession, startWorkout]);
 
+  /*
+   * ══ YOUR MAXES — ASKED AT THE START, CHANGEABLE ANY TIME (PO 2026-09-27, Squatober) ══
+   *
+   * "Maybe just have them type it in every single time at the beginning" — a workout prescribed by percentage
+   * opens this sheet as it starts, filled in with the athlete's last numbers: one tap to keep them, a few to
+   * change them. The "Maxes" chip under the header opens it again at any point, and every gray weight not yet
+   * lifted re-draws (`withMaxes`); a weight the athlete TYPED is theirs and never moves.
+   */
+  const [maxesOpen, setMaxesOpen] = useState(false);
+  const [myMaxes, setMyMaxes] = useState<LiftMaxes>({});
+  const maxLoad = (maxes: LiftMaxes) => loadContextFor(maxes, units === 'metric', (lb) => weightInExact(lb, units));
+  /** For a launch: read the maxes (none on a failed read — the sheet asks), and the ask to make once started. */
+  const prescribedStart = async (rows: readonly TemplateExercise[]): Promise<{ load?: LoadContext; ask: () => void }> => {
+    if (!rows.some((r) => hasPrescription(r) && maxKeyOf(r) != null)) return { ask: () => {} };
+    const maxes = await fetchMyLiftMaxes().catch(() => ({}) as LiftMaxes);
+    setMyMaxes(maxes);
+    return { load: maxLoad(maxes), ask: () => setMaxesOpen(true) };
+  };
   // Resume-or-fresh on mount. A fresh session prefers the launch context (Program Detail's "Continue
   // Training" names the exact program + slot, so the prescription is that day's and the saved workout
   // is attributed back to the program); with no context it falls back to the demo active program.
@@ -1061,11 +1084,14 @@ export default function WorkoutScreen() {
          * `domain/program/shared-session.ts`.
          */
         const slot = await resolveSharedSessionSlot(shape);
+        /* A squad's posted day prescribes by percentage — its gray weights come from the athlete's own maxes. */
+        const prescribed = await prescribedStart(shape);
         startSession({
           workoutName: nm,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
           templated: true, // arrived with a prescribed shape — see `ActiveSession.templated`
+          ...(launch.brief && (launch.brief.how || launch.brief.after) ? { brief: launch.brief } : null),
           /* Both coordinates travel, which is the exception `workout-launch.ts` names: the server picks
              the first OPEN slot when it is sent none, and the slot this shape covers is not always that
              one. A resolution made from live marks two seconds ago cannot go stale the way a card can. */
@@ -1084,9 +1110,10 @@ export default function WorkoutScreen() {
            * the session they built before. The `starterId` field in `workout-launch.ts` names this very
            * failure as its reason for existing; the planned workout was walking into it regardless.
            */
-          exercises: templateToSessionExercises(shape),
+          exercises: templateToSessionExercises(shape, prescribed.load),
         });
         setPhase('active');
+        prescribed.ask();
         return;
       }
 
@@ -1112,6 +1139,7 @@ export default function WorkoutScreen() {
         try {
           const t = (await fetchTemplates()).find((x) => x.id === launch.templateId);
           if (t) {
+            const prescribed = await prescribedStart(t.exercises);
             startSession({
               workoutName: launch.workoutName ?? t.name,
               activityType: 'strength',
@@ -1120,9 +1148,10 @@ export default function WorkoutScreen() {
               // and session history real, and what makes them count only sessions actually finished.
               templateId: t.id,
               templated: true,
-              exercises: templateToSessionExercises(t.exercises),
+              exercises: templateToSessionExercises(t.exercises, prescribed.load),
             });
             setPhase('active');
+            prescribed.ask();
             return;
           }
         } catch {
@@ -1490,7 +1519,8 @@ export default function WorkoutScreen() {
 
   const mutate = useCallback((fn: (s: ActiveSession) => ActiveSession) => setSession((s) => (s ? fn(s) : s)), []);
 
-  const startRest = useCallback(() => {
+  /** Start the rest clock on `sec` — the athlete's own setting, or the rest the workout prescribes for this set. */
+  const startRestFor = useCallback((sec: number) => {
     /*
      * UNLOCK THE AUDIO HERE, INSIDE THE TAP.
      *
@@ -1502,11 +1532,25 @@ export default function WorkoutScreen() {
     primeDing();
     const ms = Date.now();
     setNow(ms);
-    setRestTotal(restSec);
-    setRestEndsAt(ms + restSec * 1000);
+    setRestTotal(sec);
+    setRestEndsAt(ms + sec * 1000);
     setRestPaused(false);
     setPausedRemaining(null);
-  }, [restSec]);
+  }, []);
+  const startRest = useCallback(() => startRestFor(restSec), [startRestFor, restSec]);
+
+  const openMaxes = async () => {
+    const stored = await fetchMyLiftMaxes().catch(() => ({}) as LiftMaxes);
+    /* What they typed this session wins over the stored copy — a save made with no signal never reached it. */
+    setMyMaxes((mine) => ({ ...stored, ...mine }));
+    setMaxesOpen(true);
+  };
+  const applyMaxes = (merged: LiftMaxes) => {
+    setMyMaxes(merged);
+    const load = maxLoad(merged);
+    mutate((s) => ({ ...s, exercises: withMaxes(s.exercises, load) }));
+  };
+  const [briefOpen, setBriefOpen] = useState(false);
   const restRemaining =
     restPaused && pausedRemaining != null
       ? pausedRemaining
@@ -1729,9 +1773,20 @@ export default function WorkoutScreen() {
        */
       const b = blockAt(ns.exercises, ei);
       const holdRest = b?.kind === 'superset' && !endsSupersetRound(ns.exercises, b, ei, si);
+      /*
+       * ══ THE WORKOUT'S OWN REST (PO 2026-09-27) ══
+       *
+       * "87% then rest 20s, 87% then rest 20s, 90% then rest two and a half minutes … another one just says 90 sec
+       * rest between sets." A set that carries a prescribed rest starts the clock on THAT number, by itself —
+       * whatever the athlete's own rest setting is, because the rest is part of the workout they were given
+       * (Skip is one tap). In a superset the round's rest is the longest any member prescribes for this round.
+       */
+      const members = ex.groupId ? ns.exercises.filter((e2) => e2.groupId === ex.groupId) : [ex];
+      const prescribedRest = Math.max(0, ...members.map((e2) => e2.sets[si]?.restSec ?? 0));
+      if (!holdRest && prescribedRest > 0) startRestFor(prescribedRest);
       /* ⚠ `auto` ONLY. On `manual` the timer exists and is armed — it just waits for ▶ on the chip,
          which is the whole difference the mode buys (see `lib/rest-timer-pref`). */
-      if (restMode === 'auto' && !holdRest) startRest();
+      else if (restMode === 'auto' && !holdRest) startRest();
     }
   };
 
@@ -2005,6 +2060,16 @@ export default function WorkoutScreen() {
   const prefillWeight = (exI: number, setI: number): string => {
     const e = session?.exercises[exI];
     if (!e) return '';
+
+    /* 0 · a PERCENTAGE set names its own bar (PO 2026-09-27) — what they already lifted at the SAME percentage
+         today, else the prescription itself. A ramp's next rung is never last rung's weight, and never the coach's
+         or last session's guess over what the workout asked for. */
+    const own = e.sets[setI];
+    if (own?.targetPct != null) {
+      const same = e.sets.slice(0, setI).reverse().find((s) => s.weight != null && s.targetPct === own.targetPct);
+      if (same?.weight != null) return String(same.weight);
+      if (own.targetWeight != null) return String(own.targetWeight);
+    }
 
     // 1 · what they are already lifting today, which outranks anything history has to say
     const earlier = e.sets.slice(0, setI).reverse().find((s) => s.weight != null);
@@ -3728,6 +3793,71 @@ export default function WorkoutScreen() {
         />
       ) : null}
 
+      {/* THE DAY'S NOTES AND THE MAXES (PO 2026-09-27, a squad's posted workout): how it runs and what comes
+          after, one tap away; and the maxes its gray weights come from, changeable at any time. Only when the
+          workout has either — an ordinary session shows nothing here. */}
+      {(() => {
+        const keys = maxKeysNeeded(session.exercises);
+        const brief = session.brief && (session.brief.how || session.brief.after) ? session.brief : null;
+        if (!keys.length && !brief) return null;
+        const first = keys[0] ? myMaxes[keys[0]] : undefined;
+        const maxText = first ? `${Math.round(units === 'metric' ? weightInExact(first.lb, units) : first.lb)} ${unitLabel(units)}` : 'Set yours';
+        return (
+          <View style={styles.dayRow}>
+            {brief ? (
+              <Pressable
+                onPress={() => setBriefOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="How this workout works"
+                style={({ pressed }) => [styles.dayChip, pressed && styles.ctlPressed]}
+              >
+                <EngravedIcon name="book" size={14} color={flColor.gray400} />
+                <Text style={styles.dayChipText} numberOfLines={1}>How it works</Text>
+              </Pressable>
+            ) : null}
+            {keys.length ? (
+              <Pressable
+                onPress={() => void openMaxes()}
+                accessibilityRole="button"
+                accessibilityLabel="Your maxes. Change them and every weight not yet lifted updates."
+                style={({ pressed }) => [styles.dayChip, pressed && styles.ctlPressed]}
+              >
+                <Text style={styles.dayChipLabel}>{keys.length > 1 ? 'Maxes' : 'Max'}</Text>
+                <Text style={styles.dayChipText} numberOfLines={1}>{maxText}</Text>
+                <EngravedIcon name="chevron-right" size={12} color={flColor.gray600} />
+              </Pressable>
+            ) : null}
+          </View>
+        );
+      })()}
+      {maxesOpen ? (
+        <LiftMaxSheet
+          open
+          onClose={() => setMaxesOpen(false)}
+          programId={null}
+          keys={maxKeysNeeded(session.exercises)}
+          names={Object.fromEntries(
+            maxKeysNeeded(session.exercises).map((k) => [k, session.exercises.find((e) => e.catalogKey === k)?.name ?? exerciseNameFor(k)]),
+          )}
+          known={myMaxes}
+          units={units}
+          title="Your maxes"
+          warning="Every weight you haven't lifted yet updates. Anything you typed stays."
+          onSaved={applyMaxes}
+        />
+      ) : null}
+      <BottomSheet open={briefOpen} onClose={() => setBriefOpen(false)} title="How it works" scroll>
+        <View style={styles.briefBody}>
+          {session.brief?.how ? <Text style={styles.briefText}>{session.brief.how}</Text> : null}
+          {session.brief?.after ? (
+            <>
+              <Text style={styles.briefLabel}>After</Text>
+              <Text style={styles.briefText}>{session.brief.after}</Text>
+            </>
+          ) : null}
+        </View>
+      </BottomSheet>
+
       {/*
         ══ ALL EXERCISES — THE WAY TO THE WHOLE WORKOUT, AT THE TOP ══
 
@@ -5427,7 +5557,7 @@ function cardioExercise(
  * feature at a time. `StarterTemplateDefinition.exercises` is `TemplateExercise[]` already, so there is
  * nothing to convert; the two callers differ only in where the rows came from.
  */
-function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionExercise[] {
+function templateToSessionExercises(rows: readonly TemplateExercise[], load?: LoadContext): SessionExercise[] {
   return rows.map((e, i) => {
     // A template that ended in a run comes back as a cardio block, not as sets of it. The modality it
     // was trained in comes back too (0097) — a treadmill session shouldn't silently become a road run
@@ -5445,6 +5575,7 @@ function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionE
         coachNote: e.coachNote ?? null,
       });
     }
+    const prescribed = hasPrescription(e);
     return {
       name: e.name,
       catalogKey: e.catalogKey ?? undefined,
@@ -5465,16 +5596,22 @@ function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionE
         : null),
       // The rest after a timed move, for the Start timer run (PO 2026-09-27).
       ...(e.restAfterSec != null ? { restAfterSec: e.restAfterSec } : null),
-      /* A TIMED row (a strength row with a clock — "Plank 3 × 30s", a 40-on interval) starts as timed sets:
-         the logger's clock, no reps asked for. It used to start as sets of 8 (PO 2026-09-27). */
-      sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
-        setIndex: si,
-        targetReps: e.targetDurationSec != null ? 0 : e.targetReps || 8,
-        ...(e.targetDurationSec != null ? { targetSec: e.targetDurationSec } : null),
-        weight: null,
-        actualReps: null,
-        done: false,
-      })),
+      /* A PRESCRIBED row (a squad's posted day — "4,6,8,6,4 @ 67%, 2 min rest") builds its sets through the same
+         rule a program day does: each set's reps, its gray bar from the athlete's max, its rest. Only such rows —
+         every other template builds exactly as it always has. */
+      ...(prescribed ? { maxKey: maxKeyOf(e) } : null),
+      sets: prescribed
+        ? prescribedSets(e, load)
+        : /* A TIMED row (a strength row with a clock — "Plank 3 × 30s", a 40-on interval) starts as timed sets:
+             the logger's clock, no reps asked for. It used to start as sets of 8 (PO 2026-09-27). */
+          Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
+            setIndex: si,
+            targetReps: e.targetDurationSec != null ? 0 : e.targetReps || 8,
+            ...(e.targetDurationSec != null ? { targetSec: e.targetDurationSec } : null),
+            weight: null,
+            actualReps: null,
+            done: false,
+          })),
     } satisfies SessionExercise;
   });
 }
@@ -5624,8 +5761,13 @@ function ghostSet(ex: SessionExercise, si: number, hist: LiftHistory | null, uni
   if (!set) return { weight: null, reps: null };
   const earlier = ex.sets.slice(0, si).reverse();
   const last = hist?.sessions[0]?.sets[si];
+  /*
+   * ⚠ A RAMP IS NOT "THE SAME AGAIN" (PO 2026-09-27). On a percentage day each set names its own bar — 65%, then
+   * 75%, then 80% — so the weight just lifted only carries to a set asking for the SAME percentage (5 × 5 @ 75%:
+   * go heavier on set 1 and set 2 follows you). A set asking for a different one shows its own gray bar.
+   */
   const weight =
-    earlier.find((s) => s.done && s.weight != null)?.weight ??
+    earlier.find((s) => s.done && s.weight != null && (set.targetPct == null || s.targetPct === set.targetPct))?.weight ??
     set.targetWeight ??
     (last?.weight != null && last.weight > 0 ? exactWeight(last.weight, units).value : null);
   if (set.toFailure || set.targetSec != null) return { weight, reps: null };
@@ -6362,6 +6504,26 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.bronze400,
   },
   intervalBarText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.4, color: flColor.onBronze },
+  /* The day's notes + maxes (PO 2026-09-27). Quiet chips, not buttons: information one tap away, not an action
+     competing with the set in front of them. */
+  dayRow: { flexDirection: 'row', gap: 8, marginHorizontal: 18, marginTop: 10 },
+  dayChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+    flexShrink: 1,
+  },
+  dayChipLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk },
+  dayChipText: { fontSize: 13, fontWeight: '600', color: flColor.cream100, flexShrink: 1 },
+  briefBody: { gap: 8, paddingBottom: 8 },
+  briefLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 10 },
+  briefText: { fontSize: 15, lineHeight: 22, color: flColor.cream100 },
   bandTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   doneLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
   doneAccent: { color: flColor.bronze400 },

@@ -18,9 +18,10 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
+import { PostedWorkoutPanel } from '@/components/forge/PostedWorkoutPanel';
 import { cardioStats, partnersLine } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
-import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, isPostedWorkout, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -491,7 +492,10 @@ export default function SquadPostRoute() {
               A ceremony share draws the identical band the two feeds draw, at full width: the post detail
               showing a rank ascension as bare text while the feed showed the seal is exactly the one-post,
               two-answers split the transformation layout was fixed for. */}
-          {isMilestoneCard(post.layout) ? (
+          {isPostedWorkout(post.layout) ? (
+            /* A squad's posted workout (0192): the whole day, with THIS reader's weights, and Take it (PO 09-27). */
+            <PostedWorkoutPanel card={post.layout} postId={post.id} />
+          ) : isMilestoneCard(post.layout) ? (
             <MilestoneBand card={post.layout} postId={post.id} />
           ) : isProgressCard(post.layout) ? (
             <View style={styles.sliderWrap} onLayout={(e) => setCardW(e.nativeEvent.layout.width)}>

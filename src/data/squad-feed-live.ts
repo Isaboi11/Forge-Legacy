@@ -202,6 +202,10 @@ export interface PostedWorkoutCard {
   kind: 'posted-workout';
   name: string;
   exercises: TemplateExercise[];
+  /** The poster's words around the day (PO 2026-09-27): how it runs — warm-up, supersets — and what comes after
+      ("30 min walk, steak & eggs, 8-9 hrs sleep"). Absent on every workout posted before. */
+  how?: string | null;
+  after?: string | null;
 }
 
 // ── Milestone card (the ceremony share, SCR-D3) ──
