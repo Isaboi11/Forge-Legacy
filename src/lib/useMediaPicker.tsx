@@ -218,6 +218,24 @@ export async function pickImageFromLibrary(): Promise<string | null> {
   }
 }
 
+/**
+ * A PASTED picture (Holt's chat, PO 2026-09-27: *"paste a picture at any time"*) gets the same treatment a
+ * picked one does: capped in size and re-encoded to JPEG, so a full-resolution screenshot from the clipboard
+ * cannot reach the photo readers as a 12-megapixel PNG. `uri` is a blob: URL on the web (a paste event's file)
+ * or the clipboard's data: URI on a phone. A failure returns the original — the reader will say if it can't use it.
+ */
+export async function preparePastedImage(uri: string): Promise<string> {
+  try {
+    const first = await ImageManipulator.manipulate(uri).renderAsync();
+    const target = downscaleTarget(first.width, first.height);
+    const rendered = target ? await ImageManipulator.manipulate(uri).resize(target).renderAsync() : first;
+    const saved = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: DOWNSCALE_COMPRESS });
+    return saved.uri;
+  } catch {
+    return uri;
+  }
+}
+
 /** What the photo reader (`program-photo-read`) accepts. Anything else is re-encoded below. */
 const READABLE_IMAGE = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 

@@ -58,7 +58,8 @@ export type Turn =
   /** `at` is epoch ms, stamped when the turn is appended. Absent on threads stored before v2. */
   /** `stopped` — the app answered this line with a stop card (medical, care, crisis, urgent). It stays on
    *  screen and is NEVER sent to a model again: `askHistory` (`chat-history.ts`) drops it (QA R2-F1). */
-  | { kind: 'me'; text: string; at?: number; stopped?: boolean }
+  /** `picture` — a picture went with this line (Holt reads it; the image itself is not kept in the thread). */
+  | { kind: 'me'; text: string; at?: number; stopped?: boolean; picture?: boolean }
   /** `live` types itself out, character by character. Exactly one turn at a time may be live. */
   /** `streaming` while a coach-ask reply is still arriving; cleared when it is complete. `sid` names the
    *  stream that owns the turn, so two answers in flight never write into each other (QA R2-F5). */
@@ -219,6 +220,11 @@ export interface Chip {
   webSearch?: string;
   /** Holt's Kitchen: cook from the list ('go'), or ask again a different way (Kitchen Scope §1.3). */
   kitchen?: 'go' | 'more' | 'quicker' | 'protein' | 'style';
+  /**
+   * What a picture the athlete sent IS, when their words did not say (`attach-intent.ts`). The picture itself
+   * waits in the sheet, not the thread — a chip restored after a reload finds nothing and asks for it again.
+   */
+  attach?: 'program' | 'template' | 'recipe';
   label: string;
   /** What tapping it fills in. The typed path resolves to the same thing — see `interpret`. */
   /* Widened to ChatState so a chip can carry `dayFocus`, which describes one WORKOUT rather than the

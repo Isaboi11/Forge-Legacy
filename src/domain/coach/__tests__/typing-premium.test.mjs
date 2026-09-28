@@ -75,7 +75,8 @@ test('spoken words take the typed path, so every guard and the model see them th
   assert.match(sheet, /const dictation = useDictation\(sendText\);/);
   // The mic replaces the empty send button only where the device can hear.
   // ...and while the composer holds only Kitchen Mode's "What can I make with " seed (2026-09-25).
-  assert.match(sheet, /const micShown = dictation\.available && \(!draft\.trim\(\) \|\| draft === KITCHEN_MAKE_SEED\);/);
+  // ...and never while a picture waits to be sent — then the button is Send (PO 2026-09-27).
+  assert.match(sheet, /const micShown = dictation\.available && !picture && \(!draft\.trim\(\) \|\| draft === KITCHEN_MAKE_SEED\);/);
   assert.match(sheet, /\{micShown \? \(/);
 });
 
@@ -140,4 +141,15 @@ test('⚠ several things in one message run in order; a skip saves as skip marks
   assert.match(finish, /if \(pe\.plan\.kind === 'skip'\) \{\s*for \(const at of pe\.plan\.sessions\) await skipProgramSession\(pe\.programId, at\.weekIndex, at\.dayIndex\);/);
   // Loaded in parallel with the program and the recipe book since 2026-09-25 (`Promise.all`).
   assert.match(sheet, /askBriefLive\(text, units\)/);
+});
+
+test('a picture for Holt is Premium AI only, and is read before any screen opens (PO 2026-09-27)', () => {
+  // The button exists only for the add-on: every read spends Premium AI credits.
+  assert.match(sheet, /\{premiumAi && !dictation\.listening \? \(\s*<Pressable\s*onPress=\{\(\) => void attach\(\)\}/);
+  // A web paste is listened for only with the add-on too.
+  assert.match(sheet, /if \(Platform\.OS !== 'web' \|\| !premiumAi \|\| typeof window === 'undefined'\) return;/);
+  // Program and template reads go through the same caps as the other import doors, before anything is spent.
+  assert.match(sheet, /if \(!guard\('imports'\)\) return;\s*if \(!guard\(kind === 'program' \? 'programs' : 'templates'\)\) return;\s*\}\s*setBusy\('reading'\);/);
+  // A recipe needs Nutrition; the reader refuses without it anyway, but no credit-spending call is made.
+  assert.match(sheet, /if \(kind === 'recipe' && !nutritionAccess\) \{/);
 });

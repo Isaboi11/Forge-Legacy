@@ -15,7 +15,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * `@types/react-native`, so the types are correct and the runtime is not — the same shape as the
  * `useSafeAreaInsets` crash that shipped with every gate green.
  */
-import { Animated, Easing, PanResponder, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Image, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import Reanimated, { useAnimatedRef, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -48,6 +49,12 @@ import { dietAvoid, dishCards, dishLine, type DishCard } from '@/domain/nutritio
 import { isMakeRequest, kitchenError, rotationLeanToday, type KitchenNudge } from '@/domain/nutrition/kitchen-dishes';
 import { localToday } from '@/domain/nutrition/day';
 import { stashRecipeDraft } from '@/lib/recipe-draft-stash';
+import { readProgramPhoto } from '@/data/program-photo-live';
+import { readRecipePhoto } from '@/data/recipe-photo-live';
+import { parseProgramTable } from '@/domain/program/import-parse';
+import { stashImportRead } from '@/lib/import-read-stash';
+import { pickImagesFromLibrary, preparePastedImage } from '@/lib/useMediaPicker';
+import { ATTACH_ASK, attachChoices, attachDoneLine, attachErrorLine, attachKind, type AttachKind } from '@/domain/coach/attach-intent';
 import { fetchNutritionSummary } from '@/data/holt-nutrition-live';
 import {
   DIETITIAN_STOP,
@@ -417,6 +424,29 @@ export function CoachChatSheet({
   const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: intro[0] }]));
   const [introStep, setIntroStep] = useState(1);
   const [draft, setDraft] = useState('');
+  /*
+   * ══ A PICTURE, SENT WITH THE NEXT MESSAGE ══ (PO 2026-09-27: *"paste a picture at any time and tell him to
+   * add it as a program, template, recipe"*). Premium AI only — reading a picture spends that tier's credits.
+   * `picture` is the one waiting in the composer; `pasteOffer` is the phone's "you have a copied picture"
+   * choice; `pendingPicture` holds a sent picture while Holt asks what it is.
+   */
+  const [picture, setPicture] = useState<string | null>(null);
+  const [pasteOffer, setPasteOffer] = useState(false);
+  const pendingPicture = useRef<string | null>(null);
+  /* On the web a picture pasted anywhere while Holt is open (Cmd/Ctrl+V) lands in the composer. A phone's text
+     box cannot take a pasted image, so there the attach button offers the clipboard instead. */
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !premiumAi || typeof window === 'undefined') return;
+    const onPaste = (e: ClipboardEvent) => {
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) => i.type.startsWith('image/'));
+      const file = item?.getAsFile();
+      if (!file) return;
+      e.preventDefault();
+      void preparePastedImage(URL.createObjectURL(file)).then(setPicture);
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [premiumAi]);
   /* Declared ABOVE the intro effect, which sets it: a hook cannot close over a const declared below it,
      and react-compiler catches the attempt rather than letting it become a stale closure. */
   /* ⚠ `reading` IS NOT A SYNONYM FOR `building`. He is not building anything when he reads the shelf —
@@ -1728,9 +1758,110 @@ export function CoachChatSheet({
 
   const send = () => {
     const text = draft.trim();
+    if (picture) {
+      if (holding) return; // the button is disabled too; a picture is never queued behind a reply
+      const uri = picture;
+      setPicture(null);
+      setDraft('');
+      sendPicture(uri, text);
+      return;
+    }
     if (!text) return;
     setDraft('');
     sendText(text);
+  };
+
+  /* ── pictures ─────────────────────────────────────────────────────────────────────────────────────── */
+
+  /** The attach button: a copied picture on a phone is offered first; otherwise straight to the photo library. */
+  const attach = async () => {
+    if (Platform.OS !== 'web') {
+      const copied = await Clipboard.hasImageAsync().catch(() => false);
+      if (copied) {
+        setPasteOffer(true);
+        return;
+      }
+    }
+    await choosePicture();
+  };
+
+  const choosePicture = async () => {
+    setPasteOffer(false);
+    const picked = await pickImagesFromLibrary(1);
+    if (picked === 'failed') {
+      say({ kind: 'holt', text: 'That picture couldn’t be opened here. Take a screenshot of it and send that.' });
+      return;
+    }
+    if (picked[0]) setPicture(picked[0]);
+  };
+
+  const pasteCopied = async () => {
+    setPasteOffer(false);
+    const img = await Clipboard.getImageAsync({ format: 'jpeg', jpegQuality: 0.9 }).catch(() => null);
+    if (!img?.data) {
+      say({ kind: 'holt', text: 'There’s no picture on your clipboard any more. Copy it again, or pick it from your photos.' });
+      return;
+    }
+    setPicture(await preparePastedImage(img.data));
+  };
+
+  /** A picture sent: read it as what the words said it is, or ask (`attach-intent.ts` never guesses). */
+  const sendPicture = (uri: string, text: string) => {
+    say({ kind: 'me', text: text || 'Here’s a picture.', picture: true });
+    const kind = attachKind(text);
+    if (kind) {
+      void readAttached(kind, uri);
+      return;
+    }
+    pendingPicture.current = uri;
+    say(
+      { kind: 'holt', text: ATTACH_ASK },
+      { kind: 'chips', chips: attachChoices(nutritionAccess).map((c) => ({ label: c.label, patch: {}, attach: c.kind })) },
+    );
+  };
+
+  /**
+   * Read the picture HERE, so a failure is said in the conversation, then open the screen that checks it:
+   * a recipe → My Recipes, unsaved (the same door Holt's own dishes use); a program or a workout → the import
+   * screen, straight on its preview, where Create is still the athlete's tap. The gates are the ones every
+   * other door to those screens runs — the imports cap and a program or template slot.
+   */
+  const readAttached = async (kind: AttachKind, uri: string) => {
+    if (kind === 'recipe' && !nutritionAccess) {
+      say({ kind: 'holt', text: attachErrorLine('recipe', 'no_nutrition') });
+      return;
+    }
+    if (kind !== 'recipe') {
+      if (!guard('imports')) return;
+      if (!guard(kind === 'program' ? 'programs' : 'templates')) return;
+    }
+    setBusy('reading');
+    try {
+      if (kind === 'recipe') {
+        const r = await readRecipePhoto(uri);
+        if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
+        if (r.kind !== 'ok') return void say({ kind: 'holt', text: attachErrorLine(kind, r.kind) });
+        say({ kind: 'holt', text: attachDoneLine(kind) });
+        stashRecipeDraft(r.read);
+        handOff();
+        router.push('/my-recipes?draft=1');
+        return;
+      }
+      const r = await readProgramPhoto(uri);
+      if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
+      if (r.kind !== 'ok') return void say({ kind: 'holt', text: attachErrorLine(kind, r.kind) });
+      const parsed = parseProgramTable(r.tsv);
+      if (!parsed.ok) {
+        say({ kind: 'holt', text: `I read it, but couldn’t turn it into a ${kind === 'template' ? 'workout' : 'program'}. ${parsed.error}` });
+        return;
+      }
+      stashImportRead({ weeks: parsed.weeks, skipped: parsed.skipped ?? [] });
+      say({ kind: 'holt', text: attachDoneLine(kind) });
+      handOff();
+      router.push(kind === 'template' ? '/program-import?read=1&for=template' : '/program-import?read=1');
+    } finally {
+      setBusy(null);
+    }
   };
 
   const sendText = (text: string) => {
@@ -1748,7 +1879,7 @@ export function CoachChatSheet({
   const dictation = useDictation(sendText);
   /* The mic stays up while the composer holds only What can I make?'s seed — a voice user must be able to
      say their ingredients (stress test 2026-09-25). */
-  const micShown = dictation.available && (!draft.trim() || draft === KITCHEN_MAKE_SEED);
+  const micShown = dictation.available && !picture && (!draft.trim() || draft === KITCHEN_MAKE_SEED);
 
   /**
    * ══ PREMIUM AI: THE MODEL READS THE SENTENCE ══
@@ -2014,6 +2145,14 @@ export function CoachChatSheet({
    * `tapChip`, unchanged. Declared after `askAloud` because it calls it.
    */
   const onChip = (chip: Chip) => {
+    if (chip.attach) {
+      say({ kind: 'me', text: chip.label });
+      const uri = pendingPicture.current;
+      pendingPicture.current = null;
+      if (!uri) return void say({ kind: 'holt', text: 'I don’t have that picture any more. Send it again and tell me what it is.' });
+      void readAttached(chip.attach, uri);
+      return;
+    }
     if (chip.kitchen) {
       say({ kind: 'me', text: chip.label });
       const k = kitchenAsk.current;
@@ -2659,7 +2798,54 @@ export function CoachChatSheet({
         {/* The inset below is for the day this returns rather than something anyone can see now — fixed
             alongside the two visible ones so all three stop guessing at the home indicator together. */}
         {preview || !canType ? null : (
+        <>
+        {picture || pasteOffer ? (
+          <View style={styles.attachRow}>
+            {picture ? (
+              <View style={styles.attachThumb}>
+                <Image source={{ uri: picture }} style={styles.attachImg} resizeMode="cover" accessibilityLabel="Picture to send" />
+                <Pressable
+                  onPress={() => setPicture(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove the picture"
+                  hitSlop={8}
+                  style={styles.attachRemove}
+                >
+                  <EngravedIcon name="close" size={11} color={flColor.cream100} />
+                </Pressable>
+              </View>
+            ) : null}
+            {picture ? (
+              <Text style={styles.attachHint}>Say what it is — a program, a workout template or a recipe — and send.</Text>
+            ) : (
+              <View style={styles.attachChoices}>
+                <Pressable onPress={() => void pasteCopied()} accessibilityRole="button" style={styles.attachChoice}>
+                  <Text style={styles.attachChoiceText}>Paste copied picture</Text>
+                </Pressable>
+                <Pressable onPress={() => void choosePicture()} accessibilityRole="button" style={styles.attachChoice}>
+                  <Text style={styles.attachChoiceText}>Choose from photos</Text>
+                </Pressable>
+                <Pressable onPress={() => setPasteOffer(false)} accessibilityRole="button" accessibilityLabel="Never mind" hitSlop={8}>
+                  <EngravedIcon name="close" size={12} color={flColor.gray600} />
+                </Pressable>
+              </View>
+            )}
+          </View>
+        ) : null}
         <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, holding ? styles.composerBusy : null]}>
+          {premiumAi && !dictation.listening ? (
+            <Pressable
+              onPress={() => void attach()}
+              accessibilityRole="button"
+              accessibilityLabel="Send Holt a picture"
+              accessibilityHint="A program, a workout or a recipe, to add"
+              style={styles.sendWrap}
+            >
+              <View style={styles.sendOff}>
+                <EngravedIcon name="image" size={18} color={flColor.gray400} />
+              </View>
+            </Pressable>
+          ) : null}
           <TextInput
             /* While listening, the words so far — read-only — so the athlete can see they are being heard. */
             value={dictation.listening ? dictation.heard : draft}
@@ -2714,12 +2900,12 @@ export function CoachChatSheet({
           ) : (
           <Pressable
             onPress={send}
-            disabled={!draft.trim()}
+            disabled={picture ? holding : !draft.trim()}
             accessibilityRole="button"
             accessibilityLabel="Send"
             style={styles.sendWrap}
           >
-            {draft.trim() ? (
+            {draft.trim() || (picture && !holding) ? (
               <LinearGradient
                 colors={flGradient.bronzeFill.colors}
                 locations={flGradient.bronzeFill.locations}
@@ -2737,6 +2923,7 @@ export function CoachChatSheet({
           </Pressable>
           )}
         </View>
+        </>
         )}
         {/* iOS: the keyboard's height, per frame — the space the composer and thread are lifted by. */}
         {FOLLOWS_KEYBOARD_PER_FRAME ? <Reanimated.View style={kbSpacer} pointerEvents="none" /> : null}
@@ -3192,12 +3379,18 @@ function HoltTurn({
  * already said, not a thing to act on. Bronze-TINTED, never bronze-filled, so it cannot be mistaken for
  * a button.
  */
-function MeTurn({ text, at }: { text: string; at?: number }) {
+function MeTurn({ text, at, picture }: { text: string; at?: number; picture?: boolean }) {
   const clock = clockOf(at);
   return (
     <View style={styles.meBlock}>
       <Text style={styles.meEyebrow}>YOU</Text>
       <View style={styles.meRow}>
+        {picture ? (
+          <View style={styles.mePicture}>
+            <EngravedIcon name="image" size={13} color={flColor.gray400} />
+            <Text style={styles.mePictureText}>Picture</Text>
+          </View>
+        ) : null}
         <Text style={styles.meText}>{text}</Text>
       </View>
       <View style={styles.meMeta}>
@@ -3453,7 +3646,7 @@ function TurnView({
 }) {
   switch (turn.kind) {
     case 'me':
-      return <MeTurn text={turn.text} at={turn.at} />;
+      return <MeTurn text={turn.text} at={turn.at} picture={turn.picture} />;
 
     /* Reached only by a stored thread whose Holt line lost its grouping — `layOut` renders every live
        one as a `HoltTurn`. Kept so a turn can never render as nothing. */
@@ -5105,6 +5298,42 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
   },
   composerBusy: { opacity: 0.55 },
+  attachRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  attachThumb: { width: 56, height: 56, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.charcoal600 },
+  attachImg: { width: '100%', height: '100%' },
+  attachRemove: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+  attachHint: { flex: 1, fontSize: 12.5, lineHeight: 17, color: flColor.gray400 },
+  attachChoices: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  attachChoice: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal900,
+  },
+  attachChoiceText: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
+  mePicture: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 4 },
+  mePictureText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
   input: {
     flex: 1,
     minHeight: 44,

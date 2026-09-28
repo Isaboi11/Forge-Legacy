@@ -22,6 +22,13 @@
  *
  * ⚠ A READ IS CACHED PER PHOTO for the life of the screen. Each read costs Premium AI credits and API
  * money; going back from the preview to add one more photo must not re-read the three already read.
+ *
+ * ══ AND A TEMPLATE, THE SAME WAY (`?for=template`, PO 2026-09-27) ══
+ *
+ * *"On templates I should be able to paste a picture or do text just like for a program."* Same screen, same
+ * readers; the scope is one DAY (`fitToScope('day')`), one photo, and Create writes the Workout Builder's draft
+ * (`workoutDraftFromImport`) instead of the Program Builder's. `?read=1` arrives from Holt's chat with the
+ * photo already read (`import-read-stash`) and opens on the preview.
  */
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState } from 'react';
@@ -48,6 +55,9 @@ import { loadProgramDraft, newDraft, saveProgramDraft } from '@/lib/program-draf
 import { draftHasContent } from '@/lib/program-draft-model';
 import { usePremiumAi } from '@/lib/entitlement';
 import { draftFromImport } from '@/lib/program-import-draft';
+import { takeImportRead } from '@/lib/import-read-stash';
+import { workoutDraftFromImport } from '@/lib/workout-import-draft';
+import { loadWorkoutDraft, saveWorkoutDraft, workoutDraftHasContent } from '@/lib/workout-builder-draft';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 
@@ -58,6 +68,7 @@ const MAX_PHOTOS = 6;
 const MIN_PASTE_CHARS = 6;
 
 const EXAMPLE = 'Week 1\nDay 1 – Upper\nBench Press 4x8\nBarbell Row 4x8\n\nDay 2 – Lower\nBack Squat 4x6\nRDL 3x8';
+const TEMPLATE_EXAMPLE = 'Push A\nBench Press 4x8\nIncline DB Press 3x10\nCable Fly 3x12\nDips 3x12';
 
 /** The photo reader's outcomes, in words — kept identical to the sheet's, so both doors say the same. */
 function photoError(r: Exclude<PhotoReadResult, { kind: 'ok' }>, n: number, total: number): string {
@@ -97,7 +108,16 @@ function ProgramImport() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
-  const { m } = useLocalSearchParams<{ m?: string }>();
+  const { m, for: forWhat, read } = useLocalSearchParams<{ m?: string; for?: string; read?: string }>();
+  /** Build a Template's import: one day, one photo, and Create opens the Workout Builder. */
+  const isTemplate = forWhat === 'template';
+  const scope = isTemplate ? ('day' as const) : ('program' as const);
+  const maxPhotos = isTemplate ? 1 : MAX_PHOTOS;
+  /* Holt read the photo in the chat — taken ONCE, here, and fitted to this screen's scope. */
+  const [seed] = useState(() => {
+    const r = read === '1' ? takeImportRead() : null;
+    return r ? { ...fitToScope(r.weeks, isTemplate ? 'day' : 'program'), skipped: r.skipped } : null;
+  });
   /*
    * ⚠ THE PHOTO READER IS PREMIUM AI ONLY (0203), AND A LINK IS NOT A CARD. Build a Program hides the
    * Upload pictures card from everyone else, but `/program-import?m=photo` still opened the uploader —
@@ -112,10 +132,10 @@ function ProgramImport() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [preview, setPreview] = useState<ParsedWeek[] | null>(null);
-  const [scopeNote, setScopeNote] = useState<string | null>(null);
+  const [preview, setPreview] = useState<ParsedWeek[] | null>(seed?.weeks ?? null);
+  const [scopeNote, setScopeNote] = useState<string | null>(seed?.note ?? null);
   /** Lines the parser did not take as training — the preview lists them (`ParseResult.skipped`). */
-  const [skipped, setSkipped] = useState<string[]>([]);
+  const [skipped, setSkipped] = useState<string[]>(seed?.skipped ?? []);
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
   const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[] }>());
 
@@ -130,7 +150,7 @@ function ProgramImport() {
   const cancel = () => router.dismissTo('/workouts');
 
   const showPreview = (weeks: ParsedWeek[], notRead: string[] = []) => {
-    const fit = fitToScope(weeks, 'program');
+    const fit = fitToScope(weeks, scope);
     setError(null);
     setScopeNote(fit.note);
     setSkipped(notRead);
@@ -160,7 +180,7 @@ function ProgramImport() {
 
   // ── photos ───────────────────────────────────────────────────────────────────────────────────────
   const addPhotos = async () => {
-    const picked = await pickImagesFromLibrary(MAX_PHOTOS - photos.length);
+    const picked = await pickImagesFromLibrary(maxPhotos - photos.length);
     if (picked === 'failed') {
       // The browser could not open one of them — on a computer that is nearly always an iPhone HEIC —
       // and the picker drops the whole selection when that happens. See `pickImagesFromLibrary`.
@@ -171,7 +191,7 @@ function ProgramImport() {
     }
     if (!picked.length) return; // Cancelled — not an error.
     setError(null);
-    setPhotos((cur) => [...cur, ...picked].slice(0, MAX_PHOTOS));
+    setPhotos((cur) => [...cur, ...picked].slice(0, maxPhotos));
   };
   const removePhoto = (i: number) => setPhotos((cur) => cur.filter((_, k) => k !== i));
   /* Order is the order the days run (`mergeParsedWeeks`), so it is movable — one step earlier per tap. */
@@ -248,6 +268,17 @@ function ProgramImport() {
 
   const writeDraft = async () => {
     if (!preview?.length) return;
+    if (isTemplate) {
+      const w = workoutDraftFromImport(preview, (n) => resolveExerciseName(n)?.key);
+      if (!w) {
+        setError('Nothing in that read could go in a workout. Go back and check the paste.');
+        return;
+      }
+      await saveWorkoutDraft(w.draft);
+      showToast(w.toast);
+      router.replace('/workout-builder');
+      return;
+    }
     const r = draftFromImport(newDraft(), preview, {
       isWeek: false,
       resolveKey: (n) => resolveExerciseName(n)?.key,
@@ -260,8 +291,10 @@ function ProgramImport() {
 
   const create = async () => {
     if (!preview?.length) return;
-    const existing = await loadProgramDraft();
-    if (existing && draftHasContent(existing)) {
+    const inProgress = isTemplate
+      ? await loadWorkoutDraft().then((d) => !!d && workoutDraftHasContent(d))
+      : await loadProgramDraft().then((d) => !!d && draftHasContent(d));
+    if (inProgress) {
       setConfirmReplace(true);
       return;
     }
@@ -274,7 +307,7 @@ function ProgramImport() {
     <View style={styles.screen}>
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
       <AppBar
-        title="Build a Program"
+        title={isTemplate ? 'Build a Template' : 'Build a Program'}
         onBack={back}
         actions={
           <Pressable onPress={cancel} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
@@ -290,13 +323,13 @@ function ProgramImport() {
       >
         <View style={styles.column}>
           {preview ? (
-            <ImportPreview weeks={preview} onChange={setPreview} scope="program" scopeNote={scopeNote} skipped={skipped} />
+            <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} />
           ) : mode === 'paste' ? (
             <>
               <IconPlate>
                 <DocGlyph />
               </IconPlate>
-              <Text style={styles.title}>Paste your program</Text>
+              <Text style={styles.title}>{isTemplate ? 'Paste your workout' : 'Paste your program'}</Text>
               <Text style={styles.sub}>Copy and paste your workout from anywhere — Notes, Google Sheets, a PDF, etc.</Text>
 
               <View style={styles.infoCard}>
@@ -305,8 +338,10 @@ function ProgramImport() {
                 </View>
                 <View style={styles.infoText}>
                   <Text style={styles.infoLabel}>We’ll look for</Text>
-                  <Text style={styles.infoStrong}>Week, Day, Exercise, Sets, Reps</Text>
-                  <Text style={styles.infoSub}>One week or the full program — either works.</Text>
+                  <Text style={styles.infoStrong}>{isTemplate ? 'Exercise, Sets, Reps' : 'Week, Day, Exercise, Sets, Reps'}</Text>
+                  <Text style={styles.infoSub}>
+                    {isTemplate ? 'One workout. If you paste more days, the first one is used.' : 'One week or the full program — either works.'}
+                  </Text>
                 </View>
               </View>
 
@@ -318,9 +353,9 @@ function ProgramImport() {
                 }}
                 multiline
                 scrollEnabled
-                placeholder="Paste your program here…"
+                placeholder={isTemplate ? 'Paste your workout here…' : 'Paste your program here…'}
                 placeholderTextColor={flColor.gray600}
-                accessibilityLabel="Paste your program"
+                accessibilityLabel={isTemplate ? 'Paste your workout' : 'Paste your program'}
                 style={styles.pasteBox}
               />
               {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -331,10 +366,10 @@ function ProgramImport() {
 
               <Text style={styles.exampleLabel}>Example format:</Text>
               <View style={styles.exampleCard}>
-                <Text style={styles.exampleText}>{EXAMPLE}</Text>
+                <Text style={styles.exampleText}>{isTemplate ? TEMPLATE_EXAMPLE : EXAMPLE}</Text>
                 <Pressable
                   onPress={() => {
-                    void Clipboard.setStringAsync(EXAMPLE);
+                    void Clipboard.setStringAsync(isTemplate ? TEMPLATE_EXAMPLE : EXAMPLE);
                     showToast('Example copied');
                   }}
                   accessibilityRole="button"
@@ -351,20 +386,24 @@ function ProgramImport() {
               <IconPlate>
                 <CameraGlyph />
               </IconPlate>
-              <Text style={styles.title}>Upload pictures</Text>
-              <Text style={styles.sub}>Upload screenshots or photos of your program and we’ll convert it for you.</Text>
+              <Text style={styles.title}>{isTemplate ? 'Upload a picture' : 'Upload pictures'}</Text>
+              <Text style={styles.sub}>
+                {isTemplate
+                  ? 'Upload a screenshot or photo of your workout and we’ll convert it for you.'
+                  : 'Upload screenshots or photos of your program and we’ll convert it for you.'}
+              </Text>
 
               {photos.length === 0 ? (
                 <Pressable
                   onPress={() => void addPhotos()}
                   accessibilityRole="button"
-                  accessibilityLabel="Tap to upload photos"
+                  accessibilityLabel={isTemplate ? 'Tap to upload a photo' : 'Tap to upload photos'}
                   style={({ pressed }) => [styles.dropZone, pressed ? styles.pressed : null]}
                 >
                   <UploadGlyph />
-                  <Text style={styles.dropTitle}>Tap to upload photos</Text>
-                  <Text style={styles.dropSub}>You can select multiple images</Text>
-                  <Text style={styles.dropFine}>JPG, PNG or HEIC · up to {MAX_PHOTOS}</Text>
+                  <Text style={styles.dropTitle}>{isTemplate ? 'Tap to upload a photo' : 'Tap to upload photos'}</Text>
+                  {isTemplate ? null : <Text style={styles.dropSub}>You can select multiple images</Text>}
+                  <Text style={styles.dropFine}>{isTemplate ? 'JPG, PNG or HEIC' : `JPG, PNG or HEIC · up to ${MAX_PHOTOS}`}</Text>
                 </Pressable>
               ) : (
                 <>
@@ -399,7 +438,7 @@ function ProgramImport() {
                     ))}
                   </View>
                   {photos.length > 1 ? <Text style={styles.orderHint}>Days run in this order.</Text> : null}
-                  {photos.length < MAX_PHOTOS ? (
+                  {photos.length < maxPhotos ? (
                     <Pressable
                       onPress={() => void addPhotos()}
                       disabled={busy != null}
@@ -422,7 +461,7 @@ function ProgramImport() {
       <Modal visible={confirmReplace} transparent animationType="fade" onRequestClose={() => setConfirmReplace(false)}>
         <View style={styles.modalScrim}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Replace the program you’re building?</Text>
+            <Text style={styles.modalTitle}>{isTemplate ? 'Replace the workout you’re building?' : 'Replace the program you’re building?'}</Text>
             <Text style={styles.modalBody}>
               You have one in progress in the builder. Creating this import writes over it, and there is only
               one draft.
@@ -457,7 +496,7 @@ function ProgramImport() {
               </View>
               <View style={styles.previewCreate}>
                 <Button variant="primary" fullWidth onPress={() => void create()}>
-                  Create program
+                  {isTemplate ? 'Create template' : 'Create program'}
                 </Button>
               </View>
             </View>

@@ -28,6 +28,10 @@ import { usePremiumAi } from '@/lib/entitlement';
  *                       "I'll set it up myself" on every step, so the dense builder is one tap away
  *   · Import          → `/program-import`, gated on `imports` + `programs` exactly as Build a Program's
  *                       own import cards are (`program-guided.tsx` `openImport`)
+ *   · Import Template → `/program-import?for=template` (PO 2026-09-27: *"on templates I should be able to
+ *                       paste a picture or do text just like for a program"*), gated on `imports` +
+ *                       `templates` — the Workout Builder's own import link checks `imports`, and a new
+ *                       template spends a template slot
  *
  * ⚠ WEEK TEMPLATES ARE NOT A ROW HERE, BY DECISION. The model is Program → Weeks → Workouts → Exercises;
  * a week is built inside a program. The `week_templates` data and everything reading it (Program
@@ -53,7 +57,7 @@ export function CreateNewSheet({ open, onClose, onFreestyle }: CreateNewSheetPro
   const premiumAi = usePremiumAi();
   const photoOn = PHOTO_IMPORT_LIVE && premiumAi;
   /** Import has two ways in only for Premium AI (photo reads are that tier's, 0203). Everyone else goes straight to paste. */
-  const [step, setStep] = useState<'root' | 'import'>('root');
+  const [step, setStep] = useState<'root' | 'import' | 'importTemplate'>('root');
 
   const close = () => {
     setStep('root');
@@ -70,9 +74,19 @@ export function CreateNewSheet({ open, onClose, onFreestyle }: CreateNewSheetPro
     if (!guard('programs')) return;
     router.push({ pathname: '/program-import', params: { m } });
   };
+  const openTemplateImport = (m: 'paste' | 'photo') => {
+    close();
+    if (!guard('imports')) return;
+    if (!guard('templates')) return;
+    router.push({ pathname: '/program-import', params: { m, for: 'template' } });
+  };
 
   return (
-    <BottomSheet open={open} onClose={close} title={step === 'import' ? 'Import a Program' : 'Create New'}>
+    <BottomSheet
+      open={open}
+      onClose={close}
+      title={step === 'import' ? 'Import a Program' : step === 'importTemplate' ? 'Import a Workout' : 'Create New'}
+    >
       {step === 'root' ? (
         <View style={styles.stack}>
           <StartOptionRow
@@ -90,6 +104,12 @@ export function CreateNewSheet({ open, onClose, onFreestyle }: CreateNewSheetPro
             })}
           />
           <StartOptionRow
+            title="Import Workout Template"
+            sub="Paste a workout, or upload a picture of one."
+            icon={ICON.importProgram}
+            onPress={() => (photoOn ? setStep('importTemplate') : openTemplateImport('paste'))}
+          />
+          <StartOptionRow
             title="Build Program"
             sub="Weeks of training, built around your goal."
             icon={ICON.program}
@@ -101,6 +121,11 @@ export function CreateNewSheet({ open, onClose, onFreestyle }: CreateNewSheetPro
             icon={ICON.importProgram}
             onPress={() => (photoOn ? setStep('import') : openImport('paste'))}
           />
+        </View>
+      ) : step === 'importTemplate' ? (
+        <View style={styles.stack}>
+          <StartOptionRow title="Paste a workout" sub="Copy it from a note, spreadsheet or message." icon={ICON.paste} onPress={() => openTemplateImport('paste')} />
+          <StartOptionRow title="Upload a picture" sub="A screenshot or photo of the workout." icon={ICON.photo} onPress={() => openTemplateImport('photo')} />
         </View>
       ) : (
         <View style={styles.stack}>
