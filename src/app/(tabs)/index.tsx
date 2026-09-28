@@ -1290,6 +1290,8 @@ export default function HomeScreen() {
               onViewAthlete={(userId) => router.push({ pathname: '/live-workout/[id]', params: { id: userId } })}
               onFriendActivity={() => router.push('/friends')}
               onSeeCircle={() => router.push('/friends')}
+              /* "2 more from …" opens everyone training — the same Training Now list as Train Together. */
+              onSeeAllLive={() => setFriendSheetOpen(true)}
             />
           </TourAnchor>
 

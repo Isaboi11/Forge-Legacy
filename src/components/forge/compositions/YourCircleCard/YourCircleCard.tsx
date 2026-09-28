@@ -74,6 +74,12 @@ export interface YourCircleCardProps {
   onViewAthlete: (userId: string) => void
   onFriendActivity: () => void
   onSeeCircle: () => void
+  /**
+   * Everyone training right now (PO 2026-09-28: "I have a couple of people working out but I can only see
+   * one of them … should I be able to click a see all button?"). The card draws ONE live person; the
+   * "2 more from …" line opens the full list, each with its own Join. Omitted → the line is plain text.
+   */
+  onSeeAllLive?: () => void
 }
 
 /** `training_now()` already returns squad-first then most-recent; this keeps the guarantee local too. */
@@ -93,7 +99,7 @@ function ProgressGlyph() {
   )
 }
 
-export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, onAddFriends, onAskToJoin, onViewAthlete, onFriendActivity, onSeeCircle }: YourCircleCardProps) {
+export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, onAddFriends, onAskToJoin, onViewAthlete, onFriendActivity, onSeeCircle, onSeeAllLive }: YourCircleCardProps) {
   const sorted = useMemo(() => mostRelevantFirst(liveUsers), [liveUsers])
   const live = sorted[0]
   const others = othersLine(sorted.slice(1))
@@ -115,7 +121,20 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
             <View style={styles.liveHeader}>
               <View style={styles.liveDot} />
               <Text style={styles.liveLabel}>Live Now</Text>
-              {others ? <Text style={styles.othersText}>{others}</Text> : null}
+              {others && onSeeAllLive ? (
+                <Pressable
+                  onPress={onSeeAllLive}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${others}. See everyone training`}
+                  hitSlop={10}
+                  style={({ pressed }) => [styles.othersBtn, pressed ? styles.othersPressed : null]}
+                >
+                  <Text style={styles.othersText}>{others}</Text>
+                  <ChevronRightIcon size={12} color={flColor.gray400} />
+                </Pressable>
+              ) : others ? (
+                <Text style={[styles.othersText, styles.othersAlone]}>{others}</Text>
+              ) : null}
             </View>
             <View style={styles.liveRow}>
               <Pressable
@@ -262,10 +281,17 @@ const styles = StyleSheet.create({
     color: flColor.bronzeInk,
   },
   othersText: {
-    marginLeft: 'auto',
     fontSize: 12,
     color: flColor.gray400,
   },
+  othersAlone: { marginLeft: 'auto' },
+  othersBtn: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  othersPressed: { opacity: 0.7 },
   liveRow: {
     flexDirection: 'row',
     alignItems: 'center',
