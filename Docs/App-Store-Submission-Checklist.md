@@ -18,9 +18,9 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
   - ✅ Re-pasted 4 coach functions 09-27 (stronger food/diet safety stops, `2738fdc4`): coach-ask, coach-interpret, coach-form-check, coach-kitchen
   - ✅ Premium AI turned back off for claudetest — 09-27
   - ✅ `pending-0230.sql` applied 09-28 (pin + edit squad posts): 248 posts · 0 pinned · 0 edited, as predicted
-  - ✅ `pending-0232.sql` applied 09-28 ("Fix it with AI" = 1 credit): workout_tidy 1 · tidies 0 ✓. ⚠ It showed **meal_photo = 1**, not the 3 that 0223 set — changed by hand at some point, no record in the repo; PO to say if intended
+  - ✅ `pending-0232.sql` applied 09-28 ("Fix it with AI" = 1 credit): workout_tidy 1 · tidies 0 ✓. ⚠ It showed **meal_photo = 1**, not the 3 that 0223 set — changed by hand at some point; ✅ PO 09-28: 1 credit is intentional
   - ✅ Edge Function `workout-tidy` deployed 09-28 (Verify JWT on; probe: OPTIONS 200, no-auth POST 401)
-  - ✅ Published 09-28: web `index-825813ed…` + build 9 iOS `01a0e80d` (Squatober posts, pin/edit, Fix it with AI)
+  - ✅ Published 09-28: web `index-643eddfd…` + build 9 iOS `01a0e80d` (coach's workout posts, pin/edit, Fix it with AI)
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
 | Who | Premium | Premium AI |
