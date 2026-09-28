@@ -7,9 +7,14 @@
 //
 // Nothing else is changed here; a project that had no `metro.config.js` for three months should not
 // grow opinions in it now.
-const { getDefaultConfig } = require('expo/metro-config');
+//
+// ⭐ Build 10: `getSentryExpoConfig` in place of `getDefaultConfig` (Sentry-Build-Plan §3). It is Expo's
+// default config plus a serializer that stamps a DEBUG ID into every bundle and its source map — that is
+// what lets `npx sentry-expo-upload-sourcemaps dist` match an OTA's minified stack to its source. No
+// token, no network, and nothing else changes; the resolver rule below is untouched.
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 const upstreamResolve = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {

@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -46,6 +46,7 @@ import {
 import { column, RANGES, rangeLabel, rangeToDays, type RangeKey } from '@/domain/admin/series';
 import { pctOf } from '@/domain/admin/chart-core';
 import { useQuery } from '@/lib/useQuery';
+import { sentryStatus, throwTestJsError, triggerTestNativeCrash } from '@/lib/sentry';
 
 /**
  * The operator dashboard (migrations 0129–0133).
@@ -89,6 +90,8 @@ export default function AdminScreen() {
   const tz = dashboardTz();
 
   const admin = useQuery(() => isAppAdmin(), []);
+  // Fixed for the life of the bundle (set once at boot), so reading it in render is a plain value read.
+  const sentry = sentryStatus();
 
   const overview = useQuery(() => fetchAdminOverview(days, tz), [days, tz]);
   const growth = useQuery(() => fetchAdminGrowth(days, tz), [days, tz]);
@@ -411,6 +414,39 @@ export default function AdminScreen() {
               </>
             ) : null}
           </Section>
+
+          {/*
+            ⭐ SENTRY (build 10) — the status line and the test crash (Sentry-Build-Plan §8). Outside the
+            errors query's <Section> on purpose: whether Sentry is armed is a fact about THIS bundle, and it
+            must read even when the 0176 query fails. The screen itself is already admin-gated above.
+            JS error: uncaught, thrown outside every boundary, so it proves the handler chain — it should
+            land in Sentry AND in the list above. Native crash: the app closes; Sentry sends on relaunch.
+          */}
+          <View style={styles.sentryBlock}>
+            <StatLine label="Sentry" value={sentry.reason} />
+            {sentry.on ? (
+              <View style={styles.reportActions}>
+                <Pressable
+                  onPress={throwTestJsError}
+                  accessibilityRole="button"
+                  accessibilityLabel="Send a test JS error to Sentry"
+                  style={styles.reportAction}
+                >
+                  <Text style={styles.reportActionLabel}>Test JS error</Text>
+                </Pressable>
+                {Platform.OS === 'web' ? null : (
+                  <Pressable
+                    onPress={triggerTestNativeCrash}
+                    accessibilityRole="button"
+                    accessibilityLabel="Crash the app natively to test Sentry"
+                    style={styles.reportAction}
+                  >
+                    <Text style={styles.reportActionLabel}>Test native crash</Text>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
+          </View>
         </SectionCard>
 
         {/* ── Feedback (0167) ──────────────────────────────────────────── */}
@@ -940,6 +976,8 @@ const styles = StyleSheet.create({
   reportActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
   reportAction: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   reportActionLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.bronze300 },
+  // Sentry status + test crash (build 10), under the Errors list.
+  sentryBlock: { marginTop: 12, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: flColor.charcoal700 },
   root: { flex: 1, backgroundColor: flColor.base },
   boot: { flex: 1, backgroundColor: flColor.base, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 16, paddingBottom: 56, gap: 14 },

@@ -2,7 +2,7 @@ import {
   PlayfairDisplay_500Medium,
   PlayfairDisplay_600SemiBold,
 } from '@expo-google-fonts/playfair-display';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useNavigationContainerRef } from 'expo-router';
 import { flColor, IS_PAPER } from '@/constants/foundation';
 import { useFonts } from 'expo-font';
 import { useColorScheme } from 'react-native';
@@ -20,6 +20,7 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
 import '@/domain/run/background-task';
 
 import { startDiagnostics } from '@/lib/diagnostics';
+import { startSentry, useSentryNavigation, useSentryUser, wrapRoot } from '@/lib/sentry';
 import { installErrorSink } from '@/data/errors-live';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -70,6 +71,14 @@ import { CoachDoorProvider } from '@/hooks/useCoachDoor';
  * Reports raised between the two are queued and flushed, so the ordering here is safe either way.
  * Both are idempotent, synchronous, and cannot throw.
  */
+/*
+ * ⚠ SENTRY FIRST, THEN `startDiagnostics()` — THE ORDER IS THE CHAIN (Sentry-Build-Plan §9).
+ * Each installs a global handler that calls the one it replaced, so the last installed runs first:
+ * diagnostics → Sentry → React Native. Reversed, Sentry would run first and, on a fatal, reach `0176`
+ * only after its own flush — too late for that report to leave before the app dies.
+ * Inert (returns at once) without `EXPO_PUBLIC_SENTRY_DSN`, and always in development.
+ */
+startSentry();
 startDiagnostics();
 installErrorSink();
 
@@ -94,8 +103,10 @@ const PAPER_NAV_THEME = {
   colors: { ...DefaultTheme.colors, background: flColor.base, card: flColor.base, border: flColor.charcoal600, text: flColor.cream100 },
 };
 
-export default function RootLayout() {
+function RootLayout() {
   const colorScheme = useColorScheme();
+  // Route-named performance spans (no-op unless Sentry is on). Above the splash return: hooks run every render.
+  useSentryNavigation(useNavigationContainerRef());
   const [fontsLoaded, fontError] = useFonts({
     PlayfairDisplay_500Medium,
     PlayfairDisplay_600SemiBold,
@@ -261,6 +272,8 @@ function RootNavigator() {
   usePendingInvite(route);
   // RevenueCat's user id = the signed-in athlete, so the purchase webhook knows whose row to write.
   useStoreIdentity(session?.user?.id ?? null);
+  // Sentry's user = the account UUID only (PO 09-28), cleared on sign-out. No-op unless Sentry is on.
+  useSentryUser(session?.user?.id ?? null);
 
   if (route === 'splash') return <BootLoading />;
   return (
@@ -484,3 +497,6 @@ function RootNavigator() {
 function BootLoading() {
   return <ForgeSplash />;
 }
+
+/** Sentry's wrapper (profiler + touch boundary) when Sentry is on; the plain component when it is not. */
+export default wrapRoot(RootLayout);

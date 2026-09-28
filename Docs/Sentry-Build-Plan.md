@@ -1,7 +1,28 @@
 # Sentry — Build Plan (Build 10)
 
-**v1.0 · 2026-09-28** · Queued PO 09-27 · Status: PLANNED, not started
+**v1.1 · 2026-09-28** · Queued PO 09-27 · Status: **CODE BUILT on `feat/build10` (09-28), inert until the DSN is set** · policy text edited, NOT published
 **PO decisions 09-28:** "integrate all of the free Sentry" — account id ON (feeds the PO's planned CRM) · web ON · performance tracing ON (adds the **Performance Data** privacy label) · Session Replay: ⏳ asked, Claude recommends OFF (screens show body photos, meals, health numbers). Stay on the free plan: over the monthly cap Sentry drops events, it never bills.
+> **As built (09-28) — where it differs from the plan below, this block wins:**
+> - **DSN from `EXPO_PUBLIC_SENTRY_DSN`**, not hard-coded (overrides §3). Unset → `Sentry.init` never runs:
+>   no client, no native start, no network. Also off whenever `__DEV__`.
+> - **Web ON** (overrides §5 `enabled` + Decision 2): environment `web-preview` on web, `production` on the phone.
+> - **Tracing ON** (overrides §5 + Decision 3): `tracesSampler` 0.2, and 0 when "Help improve Forge" is off
+>   (re-checked at send time). Profiling off. `tracePropagationTargets: []` — no `sentry-trace`/`baggage` header
+>   on any request (the native default is every URL; on web it would break Edge Function CORS).
+>   Navigation spans named by route via `reactNavigationIntegration` + expo-router's `useNavigationContainerRef`.
+> - **Scrubber:** `src/domain/diagnostics/sentry-scrub.ts` (+ tests) on `beforeSend`, `beforeSendTransaction`,
+>   `beforeSendSpan`: drops request/extra/breadcrumbs/server_name/device name, user = UUID only, cuts URL
+>   queries, emails, tokens, Postgres value echoes, quoted prose. `maxBreadcrumbs: 0` + `beforeBreadcrumb → null`.
+> - **Alongside `0176`:** `reportError` forwards only `boundary`/`overlay`/`query`/`manual` to Sentry (Sentry's own
+>   handlers already catch `global`/`rejection`), tagged `fl_session`, `update_id`, `fl_source`, `fl_screen`.
+> - **Files:** `src/lib/sentry.ts` (new), `src/app/_layout.tsx` (`startSentry()` above `startDiagnostics()`,
+>   `wrapRoot`, user + navigation hooks), `src/lib/diagnostics.ts`, `src/app/admin.tsx` (Errors → "Sentry"
+>   status line + *Test JS error* / *Test native crash*), `metro.config.js` (`getSentryExpoConfig`),
+>   `eas.json` (`SENTRY_ALLOW_FAILURE=true` in every build profile so a missing/bad token can never fail a
+>   build — the upload errors in the log instead), deploy-web skill §4b (OTA source maps).
+> - **PO setup** is §6 plus: add **`EXPO_PUBLIC_SENTRY_DSN`** (Plain text or Sensitive — not secret) to EAS
+>   env **production + preview**, and to the local `.env` for web exports.
+
 **What:** `@sentry/react-native` + its Expo config plugin. Sentry org `forge-legacy-llc`, project `forge-legacy`.
 **Why:** native crash traces (the app quitting to the home screen) and source-mapped JS stacks. The
 in-app reporter (`0176`, /admin → Errors) cannot see a hard native crash (`Docs/Error-Reporting.md` §4).

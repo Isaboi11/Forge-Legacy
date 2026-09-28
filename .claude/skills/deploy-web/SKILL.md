@@ -142,6 +142,22 @@ only the new code contains.
 npx --yes eas-cli@22.3.0 update --channel production --environment production --message "<what changed, in the PO's words>" --non-interactive
 ```
 
+### 4b. Sentry source maps — right after EVERY `eas update` on build 10+ (Sentry-Build-Plan §7)
+
+```
+npx sentry-expo-upload-sourcemaps dist
+```
+
+- Needs `SENTRY_AUTH_TOKEN` in the shell (the PO keeps it in `.env.local`; never print it, never commit it).
+  Without it the script exits with an error and nothing is uploaded — the OTA itself is fine, but its JS
+  stacks arrive in Sentry minified.
+- ⚠ **Run it BEFORE anything else touches `dist`.** The web export (§2) wipes and rewrites the same folder,
+  so the order is: `eas update` → upload maps → only then any web export.
+- "no associated releases … expected" in its output is normal: maps match by debug ID (`metro.config.js`
+  uses `getSentryExpoConfig`), not by release.
+- Build 9 has no Sentry. Its OTAs come from `ota/build9-js` and skip this step.
+- Optional, for the web preview: the same command after the §2 export uploads the web bundle's maps.
+
 ## 5. Record it
 
 Put the deployed bundle hash (`entry-` or `index-`, whichever the export emitted) and the date in `Forge-Legacy-Master-Status.md`. That hash is

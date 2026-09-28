@@ -14,6 +14,7 @@ import {
   type CrumbType,
 } from '@/domain/diagnostics/breadcrumb-core';
 import { currentAppSession } from '@/lib/app-session';
+import { forwardToSentry, setSentryPerformanceEnabled } from '@/lib/sentry';
 
 /**
  * The error reporter: what broke, on which build, and the path they took to get there.
@@ -216,6 +217,8 @@ export function noteRoute(path: string): void {
 export function setTrailEnabled(on: boolean): void {
   trailEnabled = on;
   if (!on) crumbs = [];
+  // Sentry's performance data follows the same switch (policy: "also stops the performance data").
+  setSentryPerformanceEnabled(on);
 }
 
 /** The current trail. Exported for the tour/debug surfaces and for tests; callers must not mutate it. */
@@ -285,6 +288,23 @@ export function reportError(error: unknown, options: ReportOptions = {}): void {
 
     if (sink) sink(report);
     else if (pending.length < MAX_PENDING) pending.push(report);
+
+    /*
+     * The optional second sink: Sentry (build 10), inert without a DSN. Only for what Sentry's own handlers
+     * never see — a boundary or overlay catch, a failed query, a manual report. `global` and `rejection`
+     * already reached Sentry through the handler chain (`startSentry` runs before `startDiagnostics`), so
+     * forwarding those would count every uncaught error twice. The trail is NOT sent; see `lib/sentry`.
+     */
+    if (report.source !== 'global' && report.source !== 'rejection') {
+      forwardToSentry(error, {
+        name,
+        message,
+        source: report.source,
+        screen: report.screen,
+        fatal: report.fatal,
+        componentStack: report.component_stack,
+      });
+    }
   } catch {
     /* ⛔ see the doc comment. There is no failure here worth propagating. */
   }

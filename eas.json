@@ -8,11 +8,13 @@
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
+      "env": { "SENTRY_ALLOW_FAILURE": "true" },
       "channel": "development"
     },
     "preview": {
       "distribution": "internal",
       "environment": "preview",
+      "env": { "SENTRY_ALLOW_FAILURE": "true" },
       "android": {
         "buildType": "apk"
       },
@@ -21,6 +23,7 @@
     "production": {
       "distribution": "store",
       "environment": "production",
+      "env": { "SENTRY_ALLOW_FAILURE": "true" },
       "channel": "production"
     }
   },
