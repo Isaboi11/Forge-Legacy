@@ -55,7 +55,7 @@ test('a timed set keeps its clock into the template draft, with nothing clamped 
   const r = workoutDraftFromImport(weeksOf('Chest Fly 0:40\nPlank 3x30s\nBench Press 4x8'), () => undefined);
   assert.ok(r);
   assert.deepEqual(r.draft.main.map((x) => [x.name, x.sets, x.durationSec ?? null]), [
-    ['Chest Fly', 3, 40],
+    ['Chest Fly', 1, 40], // no count stated → one bout (PO 09-27)
     ['Plank', 3, 30],
     ['Bench Press', 4, null],
   ]);

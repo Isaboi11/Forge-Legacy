@@ -269,8 +269,9 @@ function calendarOrder<T extends { name: string }>(days: T[]): T[] {
 
 function item(name: string, sets: number | undefined, reps: number | undefined, durationSec?: number): ParsedItem {
   if (durationSec != null) {
-    // A timed set: the clock is what was prescribed, so there are no reps to assume.
-    return { name, sets: sets ?? DEFAULT_SETS, reps: 0, setsAssumed: sets == null, repsAssumed: false, durationSec };
+    // A timed set: the clock is what was prescribed, so there are no reps to assume. And when the source said
+    // no count, it is ONE — an interval timer's "Chest Fly 0:40" is one 40-second bout, not three (PO 09-27).
+    return { name, sets: sets ?? 1, reps: 0, setsAssumed: sets == null, repsAssumed: false, durationSec };
   }
   return {
     name,
