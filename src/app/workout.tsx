@@ -3440,6 +3440,8 @@ export default function WorkoutScreen() {
     liveBoutIdx != null;
 
   const isLastEx = exIdx >= session.exercises.length - 1;
+  /* Past 12 exercises the dots shrink so one row still fits between the arrows on a phone. */
+  const tightDots = session.exercises.length > 12;
   const primaryLabel = isLastEx ? 'Finish Workout' : 'Next Exercise';
   /* Everything on this card is logged and there is somewhere to go — the next arrow's cue to nudge. A
      fused superset is one card over several lifts, so it is ready when every member is, not just the
@@ -4554,14 +4556,24 @@ export default function WorkoutScreen() {
                 <Pressable disabled={exIdx === 0} onPress={() => goExercise(exIdx - 1)} accessibilityRole="button" accessibilityLabel="Previous exercise" style={({ pressed }) => [styles.navArrow, pressed && styles.ctlPressed]}>
                   <EngravedIcon name="chevron-left" size={22} color={exIdx === 0 ? flColor.charcoal500 : flColor.bronze400} />
                 <View style={styles.navMid}>
-                  <View style={styles.dots}>
+                  {/* ONE ROW, ALWAYS — as it was before 09-11. It used to wrap, and with nothing giving the
+                      middle a width it shrank to the width of "7 / 7": seven dots stacked 3-3-1 and pushed
+                      the arrows out of line (PO 09-28, "jacked up"). A long session gets smaller dots
+                      instead of a second row. */}
+                  <View style={[styles.dots, tightDots && styles.dotsTight]}>
                     {session.exercises.map((e, i) => {
                       const eDone = e.sets.length > 0 && e.sets.every((s) => s.done);
                       const isCur = i === exIdx;
                       const skipped = !isCur && !eDone && i < exIdx;
                       return (
                         <Pressable key={e.position ?? i} onPress={() => goExercise(i)} accessibilityRole="button" accessibilityLabel={`Go to ${e.name}`} hitSlop={6}>
-                          <View style={[styles.dot, isCur ? styles.dotCurrent : eDone ? styles.dotDone : skipped ? styles.dotSkipped : null]} />
+                          <View
+                            style={[
+                              styles.dot,
+                              tightDots && styles.dotTight,
+                              isCur ? [styles.dotCurrent, tightDots && styles.dotCurrentTight] : eDone ? styles.dotDone : skipped ? styles.dotSkipped : null,
+                            ]}
+                          />
                         </Pressable>
                       );
                     })}
@@ -7231,12 +7243,16 @@ const styles = StyleSheet.create({
     fontFamily: flFont.sans,
     fontSize: 16,
     lineHeight: 23,
-  /* The dot strip + "2 / 5" between the arrows (restored 2026-09-28). `flexShrink` + wrap so a long
-     session breaks onto a second row of dots instead of pushing the arrows off the screen. */
-  navMid: { flexShrink: 1, alignItems: 'center', gap: 6 },
-  dots: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  /* The dot strip + "2 / 5" between the arrows (restored 2026-09-28). ⚠ NO WRAP and no `flexShrink`:
+     together they let the middle collapse to the width of the count and stack the dots 3-3-1. A long
+     session uses `dotsTight` instead of a second row. */
+  navMid: { alignItems: 'center', gap: 6 },
+  dots: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  dotsTight: { gap: 5 },
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: flColor.charcoal600 },
+  dotTight: { width: 6, height: 6, borderRadius: 3 },
   dotCurrent: { width: 22, backgroundColor: flColor.bronze400 },
+  dotCurrentTight: { width: 16 },
   dotDone: { backgroundColor: flColor.greenMuted },
   dotSkipped: { backgroundColor: flColor.emberFlame },
   navCount: { fontSize: 10, fontWeight: '600', letterSpacing: 1, color: flColor.gray600, fontVariant: ['tabular-nums'] },
