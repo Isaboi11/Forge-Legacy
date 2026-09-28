@@ -352,7 +352,7 @@ function ProgramImport() {
     <View style={styles.screen}>
       <ScreenBackground image={SCREEN_BG.bg2} overlay={{ flat: 'rgba(6,7,8,0.3)' }} />
       <AppBar
-        title={isToday ? 'Paste a Workout' : isTemplate ? 'Build a Template' : 'Build a Program'}
+        title={isToday ? 'Import a Workout' : isTemplate ? 'Build a Template' : 'Build a Program'}
         onBack={back}
         actions={
           <Pressable onPress={cancel} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>

@@ -14,7 +14,7 @@ import { usePlansAfterOnboarding } from '@/hooks/usePlansAfterOnboarding';
 import { ChevronRightIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader/SectionHeader';
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
-import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
@@ -1315,9 +1315,8 @@ export default function HomeScreen() {
           elseView === 'root' ? (
             <View style={styles.startHead}>
               <View style={styles.startHeadText}>
-                <Text style={styles.startEyebrow}>Train today</Text>
-                <Text style={styles.startTitle}>Start a Workout</Text>
-                <Text style={styles.startSub}>Choose how you want to train.</Text>
+                <Text style={styles.startEyebrow}>Start a Workout</Text>
+                <Text style={styles.startTitle}>How are you training today?</Text>
               </View>
               <Pressable onPress={closeElse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={6} style={({ pressed }) => [styles.startClose, pressed ? styles.pathPressed : null]}>
                 <EngravedIcon name="close" size={16} color={flColor.gray400} />
@@ -1331,29 +1330,23 @@ export default function HomeScreen() {
         <View style={styles.elseList}>
           {elseView === 'root' ? (
             <>
-              {/* Section labels, not cards: information gets a label, only the rows you act on get a surface. */}
-              <View style={styles.startSection}>
-                <Text style={styles.startSectionLabel}>Strength</Text>
-                <Text style={styles.startSectionSub}>Lift. Move. Get stronger.</Text>
-              </View>
+              {/*
+                ══ ORDERED BY WHAT SOMEBODY IS MOST LIKELY DOING RIGHT NOW (PO 2026-09-28) ══
+                "Build as you go" leads and wears the bronze edge: with no program, the lowest-friction
+                answer to Start a Workout is *just start training*. A template or an import both ask
+                that something already be prepared. One-line section labels, not headings with a
+                sentence under each — this is a quick launcher, not a settings page.
+              */}
+              <StartSectionLabel icon="barbell" label="Strength" />
+              <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} primary onPress={() => void buildAsYouGo()} />
               <StartOptionRow {...START_COPY.template} icon={START_ICON.template} onPress={startFromTemplate} />
-              <StartOptionRow
-                title="Paste a workout"
-                sub="Paste it or add a picture, then start right away."
-                icon="copy"
-                onPress={pasteWorkout}
-              />
-              <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} onPress={() => void buildAsYouGo()} />
+              {/* "Import", not "Paste": it takes pasted text OR a picture, and "paste" undersold that. */}
+              <StartOptionRow title="Import a workout" sub="Paste a workout or add a photo." icon="image" onPress={pasteWorkout} />
 
-              <View style={styles.startRule} />
-
-              <View style={styles.startSection}>
-                <Text style={styles.startSectionLabel}>Cardio</Text>
-                <Text style={styles.startSectionSub}>Run, ride, row, swim and more.</Text>
-              </View>
+              <StartSectionLabel icon={START_ICON.cardio} label="Cardio" />
               <StartOptionRow
                 title="Track cardio"
-                sub="Measure distance, time, and pace."
+                sub="Run, ride, row, swim and more."
                 icon={START_ICON.cardio}
                 onPress={() => setElseView('cardio')}
               />
@@ -1502,6 +1495,17 @@ export default function HomeScreen() {
   );
 }
 
+/** "🏋 STRENGTH ────" — a label with a rule, not a heading with a sentence. Information gets a label. */
+function StartSectionLabel({ icon, label }: { icon: EngravedName; label: string }) {
+  return (
+    <View style={styles.startSection} accessibilityRole="header">
+      <EngravedIcon name={icon} size={16} />
+      <Text style={styles.startSectionLabel}>{label}</Text>
+      <View style={styles.startSectionRule} />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   elseList: { gap: 10 },
   elseBack: { paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
@@ -1521,7 +1525,6 @@ const styles = StyleSheet.create({
   startHeadText: { flex: 1, minWidth: 0 },
   startEyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.labelInk },
   startTitle: { marginTop: 6, fontFamily: flFont.display, fontSize: 28, lineHeight: 32, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },
-  startSub: { marginTop: 6, fontSize: 14, lineHeight: 19, color: flColor.gray400 },
   startClose: {
     width: 38,
     height: 38,
@@ -1531,10 +1534,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  startSection: { gap: 3, marginBottom: 2 },
+  startSection: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   startSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.labelInk },
-  startSectionSub: { fontSize: 13, lineHeight: 18, color: flColor.gray400 },
-  startRule: { height: 1, backgroundColor: flColor.charcoal600, marginVertical: 10 },
+  startSectionRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
   /* Tightened from 12 — the stack read as a web form at its old height. The lead card carries the
      hierarchy now, so the gaps no longer have to do it. */
   pathBlock: { gap: 10 },

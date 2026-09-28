@@ -41,15 +41,15 @@ export interface StartStrengthSheetProps {
 export const START_ICON: Record<'template' | 'buildFirst' | 'buildAsYouGo' | 'cardio', EngravedName> = {
   template: 'document',
   buildFirst: 'list-plus',
-  buildAsYouGo: 'spark',
+  buildAsYouGo: 'lightning',
   cardio: 'shoe',
 };
 
 /** The copy both sheets say, so Home's rows and this sheet's rows are one sentence each, not two. */
 export const START_COPY = {
-  template: { title: 'From a template', sub: 'Start a workout you’ve saved — or one built by Forge.' },
+  template: { title: 'From a template', sub: 'Use a saved workout or one from Forge.' },
   buildFirst: { title: 'Build it first', sub: 'Plan every exercise, then start the session.' },
-  buildAsYouGo: { title: 'Build as you go', sub: 'Pick your first move, then add more as you lift.' },
+  buildAsYouGo: { title: 'Build as you go', sub: 'Start lifting now. Add exercises as you train.' },
 };
 
 export function StartStrengthSheet({ open, onClose, onFreestyle }: StartStrengthSheetProps) {
@@ -80,13 +80,26 @@ export function StartStrengthSheet({ open, onClose, onFreestyle }: StartStrength
  * being an accent (PO rule, 2026-08-24: *"bronze is not a border colour"*). The bronze now lives in the
  * glyph and the chevron, which is where the eye should land; the pressed state is what warms the edge.
  */
-export function StartOptionRow({ title, sub, icon, onPress }: { title: string; sub: string; icon: EngravedName | React.ReactNode; onPress: () => void }) {
+export function StartOptionRow({
+  title,
+  sub,
+  icon,
+  onPress,
+  primary = false,
+}: {
+  title: string;
+  sub: string;
+  icon: EngravedName | React.ReactNode;
+  onPress: () => void;
+  /** The likeliest answer — drawn with the bronze edge so the eye lands there first. One per sheet. */
+  primary?: boolean;
+}) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${sub}`}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+      style={({ pressed }) => [styles.row, primary && styles.rowPrimary, pressed && styles.rowPressed]}
     >
       <View style={styles.ring}>
         {typeof icon === 'string' ? (
@@ -119,6 +132,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
+  rowPrimary: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   rowPressed: { opacity: 0.88, borderColor: flColor.accentBorder },
   ring: {
     width: 42,

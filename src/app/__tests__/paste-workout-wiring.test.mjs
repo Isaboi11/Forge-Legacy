@@ -12,8 +12,8 @@ const HOME = read('../(tabs)/index.tsx');
 const IMPORT = read('../program-import.tsx');
 const BUILDER = read('../workout-builder.tsx');
 
-test('Home offers "Paste a workout", behind the imports cap, opening the today mode', () => {
-  assert.match(HOME, /title="Paste a workout"/);
+test('Home offers "Import a workout", behind the imports cap, opening the today mode', () => {
+  assert.match(HOME, /title="Import a workout"/);
   assert.match(HOME, /if \(!guardImport\('imports'\)\) return;\s*router\.push\(\{ pathname: '\/program-import', params: \{ for: 'today', m: 'paste' \} \}\);/);
 });
 
