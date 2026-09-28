@@ -96,11 +96,40 @@ test('the sheet reads it on open, records every landed post, and refuses what al
   assert.match(src, /\{already \? \(/, 'the sheet must say where the session already is');
 });
 
-test('the completion screen says "Shared" and keeps saying it on the way back', () => {
+test('the completion screen says "Posted" and keeps saying it on the way back', () => {
   const src = strip(COMPLETE);
   assert.match(src, /void fetchWorkoutShares\(workoutIdForShares\)/, 'the screen must read prior shares on arrival, not only learn them from the sheet');
   assert.match(src, /onShared=\{setShares\}/, 'the sheet must be able to update the screen');
-  assert.match(src, /\{shares\?\.length \? 'Shared ✓ · Share again' : 'Share your workout'\}/, 'the button must say Shared once it is');
+  // 2026-09-28: POST is the in-app word. The button says so, and says who sees it.
+  assert.match(src, /subLabel="Share with Friends or your Squad"/, 'the Post to Forge sub-line is gone');
+  assert.match(src, />\s*Post to Forge\s*</, 'the primary CTA no longer says Post to Forge');
+  assert.match(src, /const postedWhere = postedFor\(postedState, mySquads \?\? \[\]\);/, 'the posted state no longer names where');
+  assert.doesNotMatch(src, /'Share your workout'/, 'the old share wording is back on the completion screen');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3b. auto-post: after the save, never in review, never with a map or a caption
+// ─────────────────────────────────────────────────────────────────────────────
+test('auto-post never runs in review or outside the just-finished window, and waits for real prefs', () => {
+  const src = strip(COMPLETE);
+  assert.match(src, /const autoEligible = !review && withinAutoPostWindow\(data\?\.savedAt \?\? null\);/);
+  assert.match(src, /if \(!workoutIdForShares \|\| !autoPost\.loaded\) return;/, 'deciding on unloaded (default OFF) prefs would silently skip the post');
+  assert.match(src, /autoPostOnArrival\(workoutIdForShares, autoPost\.pref, autoEligible\)/);
+});
+
+test('an auto-post carries no caption, no photos, and never the map (D-RS-3)', () => {
+  const src = strip(read('../../data/auto-post-live.ts'));
+  assert.match(src, /body: '',\s*media: \[\],/, 'auto-post must not put words or photos in the athlete’s mouth');
+  assert.match(src, /workoutSummary: \{ \.\.\.recap\.summary, shareRoute: false, food: null, auto: true \}/, 'the route and the food must never ride an automatic post');
+  assert.doesNotMatch(src, /shareRoute: true/);
+});
+
+test('the post sheet speaks POST inside Forge and keeps SHARE for outside it', () => {
+  const src = strip(SHEET);
+  assert.match(src, /'Post your workout'/);
+  assert.match(src, /<Text style=\{styles\.group\}>Post to<\/Text>/);
+  assert.match(src, /<Text style=\{styles\.group\}>Outside Forge<\/Text>/);
+  assert.doesNotMatch(src, /Within Forge|'Share your workout'|'Sharing…'/);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

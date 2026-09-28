@@ -67,6 +67,12 @@ export interface ButtonProps {
   disabled?: boolean
   onPress?: () => void
   children?: React.ReactNode
+  /**
+   * A small second line under a PRIMARY button's label, in sentence case — "Share with Friends or your
+   * Squad" under POST TO FORGE. For a label that alone would not say what the button does. Ignored by
+   * the other variants.
+   */
+  subLabel?: string
   accessibilityLabel?: string
 }
 
@@ -79,6 +85,7 @@ export function Button({
   disabled = false,
   onPress,
   children,
+  subLabel,
   accessibilityLabel,
 }: ButtonProps) {
   const [pressed, setPressed] = useState(false)
@@ -129,7 +136,12 @@ export function Button({
             ]}
           >
             {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
-            {hasLabel ? (
+            {hasLabel && subLabel ? (
+              <View style={styles.stack}>
+                <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? flColor.disabledLabel : flColor.onBronze }]}>{children}</Text>
+                <Text style={[styles.subLabel, { color: disabled ? flColor.disabledLabel : flColor.onBronze }]}>{subLabel}</Text>
+              </View>
+            ) : hasLabel ? (
               <Text style={[styles.filledLabel, lg && styles.filledLabelLg, { color: disabled ? flColor.disabledLabel : flColor.onBronze }]}>{children}</Text>
             ) : null}
             {trailingIcon ? <View style={styles.iconWrap}>{trailingIcon}</View> : null}
@@ -270,6 +282,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 0.2,
   },
+  stack: { alignItems: 'flex-start', gap: 2 },
+  subLabel: { fontSize: 11.5, fontWeight: '500', letterSpacing: 0.1, opacity: 0.82 },
   iconWrap: {
     flexShrink: 0,
   },

@@ -34,7 +34,7 @@ import {
   type Reaction,
 } from '@/data/friends-feed-live';
 import { isMilestoneCard, milestoneAckLabel } from '@/domain/share/milestone-card';
-import { partnersLine } from '@/domain/share/recap-stats';
+import { recapNoteLines } from '@/domain/share/recap-stats';
 import { fetchFriendLists } from '@/data/friends-live';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -376,7 +376,7 @@ function FeedLedgerPost({
       context={summary ? summary.context ?? null : shape === 'milestone' ? post.prValue : null}
       /* Who else was there, off the same snapshot the squad card reads — the two feeds share this
          renderer precisely so a post cannot say one thing here and another there. */
-      partners={summary ? partnersLine(summary.partners) : null}
+      partners={summary ? recapNoteLines(summary.partners, summary.food) : null}
       stats={summary ? workoutStats(summary, units, rowUnit) : []}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}

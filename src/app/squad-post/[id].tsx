@@ -19,7 +19,7 @@ import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { PostedWorkoutPanel } from '@/components/forge/PostedWorkoutPanel';
-import { cardioStats, partnersLine } from '@/domain/share/recap-stats';
+import { cardioStats, foodLine, partnersLine } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
 import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadPost, fetchPostMarks, isMilestoneCard, isPostedWorkout, pinSquadPost, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -808,9 +808,12 @@ function RecapBlock({ summary }: { summary: WorkoutSummary }) {
      session. A card that says "Trained with Selene" opening a screen that does not is the same defect
      as "Under Iron" over a run. */
   const withWho = partnersLine(summary.partners);
+  /* Only there when the author ticked "Post what I ate" on this post. */
+  const ate = foodLine(summary.food);
   return (
     <View style={styles.recapBlock}>
       {withWho ? <Text style={styles.recapPartners}>{withWho}</Text> : null}
+      {ate ? <Text style={styles.recapPartners}>{ate}</Text> : null}
       <View style={styles.recapStatRow}>
         {cardioRow ? (
           cardioRow.map((st, i) => (

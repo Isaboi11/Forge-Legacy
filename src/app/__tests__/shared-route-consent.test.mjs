@@ -57,7 +57,7 @@ test('the choice rides the post snapshot, and is forced to a real boolean', () =
   // `canShareRoute &&` matters: a snapshot that lost its route must not post a tick that outlived it.
   assert.match(
     SHEET,
-    /workoutSummary: \{ \.\.\.snapshot, lead: effectiveLead \?\? snapshot\.lead, shareRoute: canShareRoute && shareRoute \}/,
+    /workoutSummary: \{\s*\.\.\.snapshot,\s*lead: effectiveLead \?\? snapshot\.lead,\s*shareRoute: canShareRoute && shareRoute,/,
     'the posted snapshot no longer carries the guarded shareRoute',
   );
 });

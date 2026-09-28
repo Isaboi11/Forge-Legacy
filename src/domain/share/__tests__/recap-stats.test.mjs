@@ -14,6 +14,8 @@ import {
   deriveLead,
   liftsLabel,
   partnersLine,
+  foodLine,
+  recapNoteLines,
   recapCardioFrom,
 } from '../recap-stats.ts';
 
@@ -128,6 +130,12 @@ test('a rowing post leads with metres by default; the viewer’s miles choice is
 // ── who else was there ──────────────────────────────────────────────────────
 
 test('the post names the people — nobody tagged draws no line at all', () => {
+  assert.equal(foodLine(null), null, 'no tick, no food line');
+  assert.equal(foodLine({ kcal: 0, protein: 0 }), null, 'never "0 cal"');
+  assert.equal(foodLine({ kcal: 2140.4, protein: 180 }), 'Ate today: 2,140 cal · 180 g protein');
+  assert.equal(foodLine({ kcal: 900, protein: 0 }), 'Ate today: 900 cal');
+  assert.equal(recapNoteLines(['Selene'], { kcal: 900, protein: 50 }), 'Trained with Selene\nAte today: 900 cal · 50 g protein');
+  assert.equal(recapNoteLines(null, null), null);
   assert.equal(partnersLine(null), null);
   assert.equal(partnersLine(undefined), null, 'an old post has no key; absent is not an empty sentence');
   assert.equal(partnersLine([]), null);

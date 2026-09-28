@@ -23,6 +23,8 @@ import { DEFAULT_INTENSITY, INTENSITY_LEVELS, type IntensityLevel } from '../coa
 import type { SymbolName } from '@/components/forge/ForgeSymbol';
 // Type-only, so it is erased before `node --test` runs and adds no runtime edge to the workout model.
 import type { RowUnit } from '../workout/conditioning.ts';
+// Relative and extensioned for the same reason as the intensity import above: `sanitizeAutoPost` is a runtime value.
+import { AUTO_POST_DEFAULT, sanitizeAutoPost, type AutoPostPref } from '../share/auto-post.ts';
 
 export interface AppPrefs {
   units: UnitSystem;
@@ -94,6 +96,12 @@ export interface AppPrefs {
    * is a JSONB blob and this is one more key in it.
    */
   careLineUntil: string | null;
+  /**
+   * Where a finished workout posts itself, if anywhere — see `domain/share/auto-post.ts`. OFF by default
+   * (no friends, no squads), and a stored blob without the key lands there too, so nobody is ever opted
+   * into social posting by a code change. No migration: one more key in the `app_prefs` blob.
+   */
+  autoPost: AutoPostPref;
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -107,6 +115,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   rowUnit: 'm',
   holtTips: 'ask',
   careLineUntil: null,
+  autoPost: AUTO_POST_DEFAULT,
 };
 
 export type HoltTips = 'ask' | 'on' | 'off';
@@ -148,6 +157,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (r.rowUnit === 'm' || r.rowUnit === 'road') out.rowUnit = r.rowUnit;
     if (r.holtTips === 'ask' || r.holtTips === 'on' || r.holtTips === 'off') out.holtTips = r.holtTips;
     if (typeof r.careLineUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.careLineUntil)) out.careLineUntil = r.careLineUntil;
+    out.autoPost = sanitizeAutoPost(r.autoPost);
   }
   return out;
 }

@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { AutoPostRow } from '@/components/forge/AutoPostSheet';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
@@ -185,6 +186,15 @@ export default function ProfileVisibilityScreen() {
             <Text style={styles.resetText}>Reset to defaults</Text>
           </Pressable>
 
+          {/* Auto-post (2026-09-28). The same row and sheet the completion screen shows, over the same
+              `app_prefs.autoPost` — one preference, reachable from where it is taught and from where
+              privacy lives. Below the reset, because "Reset to defaults" governs profile audiences and
+              must not quietly start or stop posting anything. */}
+          <Text style={styles.sectionLabel}>Posting</Text>
+          <View style={styles.autoPost}>
+            <AutoPostRow />
+          </View>
+
           {/* P-6's third toggle (P6-A1-D5). It governs nothing another athlete can see — which is why it
               sits below the reset, outside "What others can see", rather than among the audience rows.
               The copy states what is collected in the same breath as the control: a toggle whose effect
@@ -270,6 +280,7 @@ const styles = StyleSheet.create({
   segText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
   segTextOn: { color: flColor.bronze300 },
 
+  autoPost: { marginBottom: 22 },
   reset: { alignSelf: 'center', paddingVertical: 14, paddingHorizontal: 16, marginTop: 8 },
   resetText: { fontSize: 12.5, fontWeight: '700', color: flColor.gray400 },
 });

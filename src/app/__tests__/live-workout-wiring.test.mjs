@@ -149,10 +149,10 @@ test('the screen distinguishes not-training, not-sharing, sharing-but-empty, and
 // the share confirmation
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('a successful share becomes a confirmation that stays until Done', () => {
+test('a successful post becomes a confirmation that stays until Done', () => {
   const s = strip(SHEET);
-  assert.match(s, /setSharedResult\(shareSummary\(landed, includeFriends\)\);/, 'a landed share no longer sets the confirmation');
+  assert.match(s, /setSharedResult\(\{\s*line: postedLine\(landed, includeFriends\),/, 'a landed post no longer sets the confirmation');
   assert.match(s, /\{sharedResult \? \(\s*<View style=\{styles\.sharedWrap\} accessibilityRole="alert"/, 'the confirmation is not rendered as an alert');
-  assert.match(s, /setSharedResult\(null\);\s*onClose\(\);/, 'Done must clear the confirmation and close');
-  assert.match(s, /squadStep && !sharedResult \?/, 'the picker footer must not show over the confirmation');
+  assert.match(s, /const finish = \(\) => \{\s*setSharedResult\(null\);\s*setTeach\(false\);\s*onClose\(\);/, 'Done must clear the confirmation and close');
+  assert.match(s, /footer=\{\s*sharedResult \? null :/, 'no footer may show over the confirmation');
 });

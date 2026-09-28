@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Linking, Platform, Pressable, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -8,10 +9,13 @@ import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectL
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
 import { addSquadPost, buildWorkoutRecap, fetchWorkoutShares, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
-import { cardioMarkerLabel, type RecapLead } from '@/domain/share/recap-stats';
+import { cardioMarkerLabel, foodLine, type RecapFood, type RecapLead } from '@/domain/share/recap-stats';
 import { createFriendPost, type PostAudience } from '@/data/friends-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
-import { sharedLine, shareState, shareSummary, shareTargets, shareVerb, type PriorShare } from '@/domain/share/fanout';
+import { shareState, shareTargets, type PriorShare } from '@/domain/share/fanout';
+import { autoPostFromPost, autoPostLabel, postedFor, postedLine, postVerb, shouldOfferAutoPost } from '@/domain/share/auto-post';
+import { useAutoPost } from '@/hooks/useAutoPost';
+import { errorMessage } from '@/lib/useQuery';
 
 /**
  * WHERE A SESSION GOES — one sheet, every destination, wherever it is opened from.
@@ -54,7 +58,26 @@ import { sharedLine, shareState, shareSummary, shareTargets, shareVerb, type Pri
  * that names the count. The row taps stopped committing, which is why this sheet gained a footer.
  *
  * The rows that produces are NOT one per squad when Friends is included: see `domain/share/fanout`.
+ *
+ * ══ POST, NOT SHARE (2026-09-28) ══
+ *
+ * Some athletes never realised this sheet published anything inside Forge — "Share" reads as the phone's
+ * share sheet. So the words split: POST is inside Forge (Friends, Squads), SHARE is outside it (Messages,
+ * More…). The destination tiles now SELECT rather than send, and the pinned button says where it is about
+ * to go — "Post to My Squad" — so nobody learns the destination by reading a feed afterwards.
+ *
+ * The first successful post also teaches auto-post, once, for the place just posted to (see
+ * `domain/share/auto-post.ts`). "Turn on auto-post" or "Not now" both end the lesson for good.
  */
+
+/** What the confirmation says, and what "Turn on auto-post" would save. */
+interface PostedResult {
+  line: string;
+  friends: boolean;
+  squadIds: string[];
+  /** The first post with a page of its own (a squad or Both row) — for "View post". */
+  postId: string | null;
+}
 
 export interface ShareSessionSheetProps {
   open: boolean;
@@ -108,9 +131,15 @@ export interface ShareSessionSheetProps {
    * double post."*
    */
   onShared?: (prior: PriorShare[]) => void;
+  /**
+   * What the athlete has logged to eat today — offered as a tick box, OFF every time (PO 2026-09-28:
+   * *"put log food as a 'post logged food?' … check mark next to it for me to click if I want it
+   * included"*). Null or zero calories = no row. Only Workout Complete passes it.
+   */
+  food?: RecapFood | null;
 }
 
-export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview, onShared }: ShareSessionSheetProps) {
+export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview, onShared, food = null }: ShareSessionSheetProps) {
   const { showToast } = useToast();
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadStep, setSquadStep] = useState<PostAudience | null>(null);
@@ -140,6 +169,9 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
    * So: no remembered last answer, no profile setting, no pre-tick. Every post asks again.
    */
   const [shareRoute, setShareRoute] = useState(false);
+  /** "Post what I ate" — off on every open and after every post, exactly like the map. */
+  const [shareFood, setShareFood] = useState(false);
+  const foodText = foodLine(food);
   /** Posts this session already has. `null` until read; the tiles treat that as "nothing yet". */
   const [prior, setPrior] = useState<PriorShare[] | null>(null);
   /*
@@ -162,7 +194,15 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
    * back from the tap. Now a successful share turns THIS sheet into the confirmation — where it went,
    * in one sentence, with a Done button — and it stays there until the athlete dismisses it.
    */
-  const [sharedResult, setSharedResult] = useState<string | null>(null);
+  const [sharedResult, setSharedResult] = useState<PostedResult | null>(null);
+  /** The destination tile chosen on the first step, before the pinned button sends it. Nothing is pre-picked. */
+  const [choice, setChoice] = useState<PostAudience | null>(null);
+  const router = useRouter();
+  const autoPost = useAutoPost();
+  /* Decided when the post lands, so answering cannot make the card vanish mid-sentence, and a pref that
+     loads a beat late cannot make it appear on a second post. */
+  const [teach, setTeach] = useState(false);
+  const [savingAuto, setSavingAuto] = useState(false);
   const body = (bodyDraft ?? note ?? '').trim();
 
   const snapshot = summary ?? fetched;
@@ -205,7 +245,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const state = shareState(prior ?? []);
   const unshared = (mySquads ?? []).filter((s) => !state.squadIds.includes(s.id));
   const allSquadsShared = hasSquad && unshared.length === 0;
-  const already = sharedLine(state, mySquads ?? []);
+  const already = postedFor(state, mySquads ?? []);
 
   /**
    * Send it — to every squad chosen, and to friends if they were.
@@ -242,11 +282,17 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
          what was chosen when it was written. `shared_workout_detail` reads this key and nothing else —
          a session's stored route is never enough on its own. Forced to a real boolean rather than
          passed through, so the key is always present and always means what it says. */
-      workoutSummary: { ...snapshot, lead: effectiveLead ?? snapshot.lead, shareRoute: canShareRoute && shareRoute },
+      workoutSummary: {
+        ...snapshot,
+        lead: effectiveLead ?? snapshot.lead,
+        shareRoute: canShareRoute && shareRoute,
+        food: shareFood && foodText && food ? { kcal: food.kcal, protein: food.protein } : null,
+      },
       media,
     };
     const run = async () => {
       const landed: string[] = [];
+      let firstSquadPost: string | null = null;
       /* What actually got inserted — recorded per target, so a failure halfway still marks the posts that
          exist and the tiles cannot offer them a second time. */
       const done: PriorShare[] = [];
@@ -257,11 +303,11 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       };
       try {
         for (const t of targets) {
-          if (t.audience === 'SQUAD' && t.squadId) {
-            await addSquadPost({ squadId: t.squadId, ...recap });
-          } else {
-            await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId });
-          }
+          const id =
+            t.audience === 'SQUAD' && t.squadId
+              ? await addSquadPost({ squadId: t.squadId, ...recap })
+              : await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId });
+          if (t.squadId && !firstSquadPost) firstSquadPost = id;
           done.push({ audience: t.audience, squadId: t.squadId });
           const name = squads.find((s) => s.id === t.squadId)?.name;
           if (name) landed.push(name);
@@ -271,31 +317,74 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
         setSharing(false);
         // Anything already inserted STAYS inserted, so the message says what got through rather than
         // implying the whole share failed and inviting a second, duplicating attempt.
-        const done = landed.length ? ` ${shareSummary(landed, includeFriends)}.` : '';
-        showToast(`${e instanceof Error ? e.message : 'Couldn’t share that.'}${done}`);
+        const done = landed.length ? ` ${postedLine(landed, includeFriends)}.` : '';
+        showToast(`${e instanceof Error ? e.message : 'Couldn’t post that.'}${done}`);
         return;
       }
       record();
       setSharing(false);
       setSquadStep(null);
       setPicked(new Set());
+      setChoice(null);
       setBodyDraft(null);
       /* Same rule as `close`, and this is the case that matters most: having posted to a squad WITH the
          map, the next destination must ask again rather than inherit the answer. */
       setShareRoute(false);
-      setSharedResult(shareSummary(landed, includeFriends));
+      setShareFood(false);
+      setTeach(autoPost.loaded && shouldOfferAutoPost(autoPost.pref));
+      setSharedResult({
+        line: postedLine(landed, includeFriends),
+        friends: includeFriends,
+        squadIds: targets.map((t) => t.squadId).filter((id): id is string => !!id),
+        postId: firstSquadPost,
+      });
     };
     void run();
   };
 
+  /*
+   * A tile SELECTS; the pinned button sends. Friends, or a squad audience with one squad left to post
+   * to, is complete on the tap and the button then names it. Several squads are a choice of ANY of them,
+   * so that tile goes straight to the picker, whose own button names the count.
+   */
   const choose = (audience: PostAudience) => {
-    if (audience === 'FRIENDS') return post('FRIENDS', []);
     // Only the squads that do not have it yet — the ones that do are not a choice.
     const squads = unshared;
-    // One squad is not a choice. More than one is, and it is a choice of ANY of them.
-    if (squads.length === 1) return post(audience, squads);
-    setPicked(new Set());
-    setSquadStep(audience);
+    if (audience !== 'FRIENDS' && squads.length > 1) {
+      setPicked(new Set());
+      setSquadStep(audience);
+      return;
+    }
+    setChoice((c) => (c === audience ? null : audience));
+  };
+  const choiceSquads = choice && choice !== 'FRIENDS' ? unshared : [];
+  const choiceVerb = choice ? postVerb(choiceSquads.map((s) => s.id), choice !== 'SQUAD', mySquads ?? []) : 'Choose where to post';
+
+  /** "Turn on auto-post" saves exactly where they just posted; "Not now" only records the answer. */
+  const answerTeach = async (on: boolean) => {
+    if (!sharedResult || savingAuto) return;
+    setSavingAuto(true);
+    try {
+      const next = on ? autoPostFromPost(sharedResult.friends, sharedResult.squadIds) : { ...autoPost.pref, asked: true };
+      await autoPost.save(next);
+      setTeach(false);
+      if (on) showToast(`Auto-post is on — ${autoPostLabel(next, mySquads ?? [])}.`);
+    } catch (e) {
+      showToast(errorMessage(e) || 'Couldn’t save that. Try again.');
+    } finally {
+      setSavingAuto(false);
+    }
+  };
+
+  const finish = () => {
+    setSharedResult(null);
+    setTeach(false);
+    onClose();
+  };
+  const viewPost = () => {
+    const id = sharedResult?.postId;
+    finish();
+    if (id) router.push({ pathname: '/squad-post/[id]', params: { id } });
   };
 
   const stepSquads = unshared;
@@ -335,11 +424,15 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const close = () => {
     setSquadStep(null);
     setPicked(new Set());
+    setChoice(null);
+    setSharedResult(null);
+    setTeach(false);
     /* ⚠ THE TICK DIES WITH THE SHEET (D-RS-3). This component is not unmounted between opens, so a
        `shareRoute` left standing would be a remembered answer — precisely the sticky default §4 forbids.
        Reset here rather than in an effect: `react-hooks/set-state-in-effect` is an ERROR in this repo,
        and a close is an event, which is where state changes belong anyway. */
     setShareRoute(false);
+    setShareFood(false);
     onClose();
   };
 
@@ -358,7 +451,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       open={open}
       onClose={close}
       scroll
-      title={squadStep ? (squadStep === 'BOTH' ? 'Friends and which squads?' : 'Share to which squads?') : 'Share your workout'}
+      title={sharedResult ? undefined : squadStep ? (squadStep === 'BOTH' ? 'Friends and which squads?' : 'Post to which squads?') : 'Post your workout'}
       /*
        * ⚠ THE STEP NEEDS A FOOTER BECAUSE THE TAPS NO LONGER COMMIT.
        *
@@ -367,39 +460,68 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
        * the count so nobody discovers how many posts they made by reading their feeds afterwards.
        */
       footer={
-        squadStep && !sharedResult ? (
+        sharedResult ? null : squadStep ? (
           <Button
             variant="primary"
             fullWidth
             disabled={sharing || (squadStep !== 'FRIENDS' && stepPicked.length === 0)}
             onPress={() => post(squadStep, stepPicked)}
-            accessibilityLabel={shareVerb(stepPicked.length, squadStep === 'BOTH')}
+            accessibilityLabel={postVerb(stepPicked.map((s) => s.id), squadStep === 'BOTH', mySquads ?? [])}
           >
-            {sharing ? 'Sharing…' : shareVerb(stepPicked.length, squadStep === 'BOTH')}
+            {sharing ? 'Posting…' : postVerb(stepPicked.map((s) => s.id), squadStep === 'BOTH', mySquads ?? [])}
           </Button>
-        ) : null
+        ) : (
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={sharing || !snapshot || !choice}
+            onPress={() => choice && post(choice, choiceSquads)}
+            accessibilityLabel={choiceVerb}
+          >
+            {sharing ? 'Posting…' : choiceVerb}
+          </Button>
+        )
       }
     >
       {/* A plain View, not a second ScrollView: `scroll` above already gives the sheet one, and nesting
           two on the same axis is what `BottomSheet`'s own header warns against. */}
       {sharedResult ? (
-        <View style={styles.sharedWrap} accessibilityRole="alert" accessibilityLabel={sharedResult}>
+        <View style={styles.sharedWrap} accessibilityRole="alert" accessibilityLabel={`Workout posted. ${sharedResult.line}`}>
           <View style={styles.sharedDisc}>
             <EngravedIcon name="check" size={26} />
           </View>
-          <Text style={styles.sharedTitle}>Shared</Text>
-          <Text style={styles.sharedLine}>{sharedResult}</Text>
-          <Text style={styles.sharedHint}>It’s in the feed now. Sharing again from here would post it again.</Text>
-          <Button
-            variant="primary"
-            fullWidth
-            onPress={() => {
-              setSharedResult(null);
-              onClose();
-            }}
-          >
-            Done
-          </Button>
+          <Text style={styles.sharedTitle}>Workout posted</Text>
+          <Text style={styles.sharedLine}>{sharedResult.line}</Text>
+          {teach ? (
+            /*
+             * ══ THE ONE-TIME LESSON ══ The first manual post is the moment the athlete has just shown
+             * where they post, so auto-post is offered for exactly that place — never as a blank settings
+             * question in onboarding. Either answer sets `asked`, and Settings can change it later.
+             */
+            <View style={styles.teach}>
+              <View style={styles.teachHead}>
+                <EngravedIcon name="lightning" size={16} color={flColor.bronze300} />
+                <Text style={styles.teachTitle}>Post here automatically?</Text>
+              </View>
+              <Text style={styles.teachBody}>
+                Save time and post every completed workout to{' '}
+                {autoPostLabel(autoPostFromPost(sharedResult.friends, sharedResult.squadIds), mySquads ?? [])}.
+              </Text>
+              <Button variant="primary" fullWidth disabled={savingAuto} onPress={() => void answerTeach(true)} accessibilityLabel="Turn on auto-post">
+                {savingAuto ? 'Saving…' : 'Turn on auto-post'}
+              </Button>
+              <Button variant="secondary" fullWidth disabled={savingAuto} onPress={() => void answerTeach(false)} accessibilityLabel="Not now">
+                Not now
+              </Button>
+            </View>
+          ) : sharedResult.postId ? (
+            <Button variant="primary" fullWidth onPress={viewPost} accessibilityLabel="View post">
+              View post
+            </Button>
+          ) : null}
+          <Pressable onPress={finish} accessibilityRole="button" accessibilityLabel="Done" style={styles.doneLink}>
+            <Text style={styles.doneText}>Done</Text>
+          </Pressable>
         </View>
       ) : squadStep ? (
         <SquadSelectList
@@ -490,6 +612,29 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
             </View>
           ) : null}
 
+          {/* "Post what I ate?" — a tick, off until they tick it. Asked only when something was logged. */}
+          {foodText ? (
+            <View style={styles.leadBlock}>
+              <Text style={styles.group}>Your food</Text>
+              <Pressable
+                onPress={() => setShareFood((v) => !v)}
+                disabled={sharing}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: shareFood, disabled: sharing }}
+                accessibilityLabel="Include what you ate today on this post"
+                style={[styles.mapRow, shareFood && styles.mapRowOn]}
+              >
+                <View style={[styles.mapBox, shareFood && styles.mapBoxOn]}>
+                  {shareFood ? <EngravedIcon name="check" size={12} color={flColor.charcoal900} /> : null}
+                </View>
+                <View style={styles.mapText}>
+                  <Text style={[styles.mapLabel, shareFood && styles.mapLabelOn]}>Post what I ate?</Text>
+                  <Text style={styles.mapSub}>{foodText}</Text>
+                </View>
+              </Pressable>
+            </View>
+          ) : null}
+
           {/* Where the session already is. The durable half of the answer to "did that work?" — the
               toast is the other half and it is gone in three seconds. */}
           {already ? (
@@ -499,7 +644,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
             </View>
           ) : null}
 
-          <Text style={styles.group}>Within Forge</Text>
+          <Text style={styles.group}>Post to</Text>
           {/*
             ⚠ THREE TILES, NOT TWO. The handoff draws Friends and Squads; "Friends & Squad" is a THIRD
             audience the database models directly — `(audience = 'FRIENDS') = (squad_id is null)` is an
@@ -511,28 +656,31 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
             <Tile
               icon={<FriendsGlyph />}
               label="Friends"
+              selected={choice === 'FRIENDS'}
               onPress={() => choose('FRIENDS')}
               disabled={sharing || !snapshot || state.friends}
-              hint={state.friends ? 'Already shared with your friends' : "Everyone you're connected to"}
+              hint={state.friends ? 'Already posted to your friends' : "Everyone you're connected to"}
             />
             <Tile
               icon={<SquadGlyph />}
-              label="Squads"
+              label={manySquads ? 'Squads' : 'My Squad'}
+              selected={choice === 'SQUAD'}
               onPress={() => choose('SQUAD')}
               disabled={sharing || !hasSquad || !snapshot || allSquadsShared}
               hint={
                 !hasSquad
                   ? 'You’re not in a squad yet'
                   : allSquadsShared
-                    ? manySquads ? 'Already shared with your squads' : 'Already shared with your squad'
+                    ? manySquads ? 'Already posted to your squads' : 'Already posted to your squad'
                     : state.squadIds.length
-                      ? `${unshared.length} squad${unshared.length === 1 ? '' : 's'} left to share with`
+                      ? `${unshared.length} squad${unshared.length === 1 ? '' : 's'} left to post to`
                       : manySquads ? 'Any of the squads you train with' : 'Just the people you train with'
               }
             />
             <Tile
               icon={<BothGlyph />}
               label="Both"
+              selected={choice === 'BOTH'}
               onPress={() => choose('BOTH')}
               disabled={sharing || !hasSquad || !snapshot || state.friends || allSquadsShared}
               hint={
@@ -547,7 +695,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
             />
           </View>
           {!hasSquad ? (
-            <Text style={styles.note}>You’re not in a squad yet, so Friends is the only place inside Forge to share this.</Text>
+            <Text style={styles.note}>You’re not in a squad yet, so Friends is the only place inside Forge to post this.</Text>
           ) : null}
 
           <Text style={styles.group}>Outside Forge</Text>
@@ -577,12 +725,14 @@ function Tile({
   hint,
   onPress,
   disabled,
+  selected = false,
 }: {
   icon: ReactNode;
   label: string;
   hint: string;
   onPress: () => void;
   disabled?: boolean;
+  selected?: boolean;
 }) {
   return (
     <Pressable
@@ -590,11 +740,11 @@ function Tile({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={`${label} — ${hint}`}
-      accessibilityState={{ disabled: !!disabled }}
-      style={({ pressed }) => [styles.tile, disabled ? styles.tileOff : null, pressed && !disabled ? styles.tilePressed : null]}
+      accessibilityState={{ disabled: !!disabled, selected }}
+      style={({ pressed }) => [styles.tile, selected ? styles.tileOn : null, disabled ? styles.tileOff : null, pressed && !disabled ? styles.tilePressed : null]}
     >
       {icon}
-      <Text style={styles.tileLabel}>{label}</Text>
+      <Text style={[styles.tileLabel, selected ? styles.tileLabelOn : null]}>{label}</Text>
     </Pressable>
   );
 }
@@ -650,7 +800,12 @@ const styles = StyleSheet.create({
   sharedDisc: { width: 56, height: 56, borderRadius: flRadius.round, borderWidth: 1.5, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
   sharedTitle: { fontSize: 20, fontWeight: '700', color: flColor.cream100 },
   sharedLine: { fontSize: 14, fontWeight: '600', color: flColor.bronze300, textAlign: 'center' },
-  sharedHint: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center', marginBottom: 8 },
+  teach: { alignSelf: 'stretch', gap: 9, marginTop: 8, padding: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  teachHead: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  teachTitle: { fontSize: 14.5, fontWeight: '700', color: flColor.cream100 },
+  teachBody: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, marginBottom: 2 },
+  doneLink: { paddingVertical: 12, paddingHorizontal: 24 },
+  doneText: { fontSize: 13.5, fontWeight: '700', color: flColor.gray400 },
   bodyInput: { minHeight: 64, maxHeight: 140, overflow: 'hidden', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 14, lineHeight: 20, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: 'top' },
   already: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   alreadyText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },
@@ -697,6 +852,8 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.surfaceRecessed,
   },
   tilePressed: { borderColor: flColor.accentBorder },
+  tileOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  tileLabelOn: { color: flColor.bronze300 },
   tileOff: { opacity: 0.45 },
   tileLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
 

@@ -33,6 +33,12 @@ import { recapSummaryFrom, fetchWorkoutShares } from '@/data/squad-feed-live';
 import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live';
 import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
+import { AutoPostRow } from '@/components/forge/AutoPostSheet';
+import { autoPostOnArrival, fetchWorkoutPostId, runAutoPost, type AutoPostResult } from '@/data/auto-post-live';
+import { fetchMySquads } from '@/data/squad-live';
+import { postedFor, postedLine, withinAutoPostWindow } from '@/domain/share/auto-post';
+import { shareState } from '@/domain/share/fanout';
+import { useAutoPost } from '@/hooks/useAutoPost';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { PriorShare } from '@/domain/share/fanout';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -229,6 +235,48 @@ export default function WorkoutComplete() {
     };
   }, [workoutIdForShares]);
   const reflection = (reflectionEdit !== undefined ? reflectionEdit : (data?.reflection ?? '')).trim();
+
+  /*
+   * ══ AUTO-POST — AFTER THE SAVE, NEVER IN THE WAY OF IT ══
+   *
+   * This screen is only ever reached with a workout `save_workout` already committed, so the post below
+   * can fail in any way it likes and the session is still sealed — it is a second thing, reported on the
+   * capture stage with a Retry, never a gate. It fires on ARRIVAL rather than on the hold, because the
+   * record exists either way and an athlete who leaves before holding still asked for it to be posted.
+   *
+   * Never in review (a session reopened from history is not "just finished"), never outside the window
+   * `withinAutoPostWindow` allows (a stale tab or reload hours later), and never before the prefs have
+   * actually loaded — until then the pref reads OFF, and deciding on that would silently skip it.
+   * `autoPostOnArrival` decides ONCE per workout, so turning auto-post on from this screen applies from
+   * the next workout rather than re-posting this one.
+   */
+  const autoPost = useAutoPost();
+  const [autoResult, setAutoResult] = useState<AutoPostResult | null>(null);
+  const [autoRetrying, setAutoRetrying] = useState(false);
+  const autoEligible = !review && withinAutoPostWindow(data?.savedAt ?? null);
+  useEffect(() => {
+    if (!workoutIdForShares || !autoPost.loaded) return;
+    let alive = true;
+    void autoPostOnArrival(workoutIdForShares, autoPost.pref, autoEligible).then((r) => {
+      if (!alive || !r) return;
+      setAutoResult(r);
+      if (r.prior.length) setShares(r.prior);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [workoutIdForShares, autoPost.loaded, autoPost.pref, autoEligible]);
+  const retryAutoPost = () => {
+    if (!workoutIdForShares || autoRetrying) return;
+    setAutoRetrying(true);
+    void runAutoPost(workoutIdForShares, autoResult?.pref ?? autoPost.pref).then((r) => {
+      setAutoRetrying(false);
+      setAutoResult(r);
+      if (r.prior.length) setShares(r.prior);
+    });
+  };
+  /* Squad names for "Posted to The Real Cut" and the auto-post row's "My Squad". Failure is "no names". */
+  const { data: mySquads } = useQuery(() => fetchMySquads().catch(() => []), []);
 
   /*
    * HOW MANY PHOTOS THIS SCREEN PUT IN THE ARCHIVE — a delta, not a count.
@@ -745,6 +793,9 @@ export default function WorkoutComplete() {
       media={sharePhotos}
       onShared={setShares}
       preview={shareCard}
+      /* Today's food, OFFERED as a tick box on the sheet — never posted unless ticked. Same gate as the
+         "Log what you ate" row: no Nutrition access or a reviewed session, no offer. */
+      food={showFoodRow && today ? totals(today.entries) : null}
     />
   );
 
@@ -923,6 +974,18 @@ export default function WorkoutComplete() {
    * done-affordance is the icon shifting from bronze-primary to bronze-bright; no ticks, no badges.
    */
   if (stage === 'capture') {
+    /* What this session's posts add up to — the screen's own read, plus anything auto-post landed that
+       the read (which began earlier) may not have seen. `shareState` collapses the overlap. */
+    const postedState = shareState([...(shares ?? []), ...(autoResult?.prior ?? [])]);
+    const postedWhere = postedFor(postedState, mySquads ?? []);
+    const autoFailed = !!autoResult?.error;
+    const autoPartial = autoResult && (autoResult.friends || autoResult.squadNames.length) ? postedLine(autoResult.squadNames, autoResult.friends) : null;
+    /* A squad post has a page; a friends-only post lives in the friends feed. */
+    const viewPost = async () => {
+      const id = autoResult?.squadPostId ?? (await fetchWorkoutPostId(data.workoutId));
+      if (id) router.push({ pathname: '/squad-post/[id]', params: { id } });
+      else router.push('/friends');
+    };
     const noteFilled = reflection.length > 0;
     const playlistName = playlist ? playlistLabel(playlist) : '';
     /* One line instead of the seal stage's boxed stat strip — the numbers are a fact you already read a
@@ -991,23 +1054,59 @@ export default function WorkoutComplete() {
               ) : null}
             </View>
 
-            {/* The only filled button on this screen. */}
+            {/*
+              ══ POST TO FORGE — the only filled button on this screen ══
+
+              It said "Share your workout", and some athletes never realised it published anything inside
+              Forge: "share" reads as the phone's share sheet. POST is the in-app word now (Friends,
+              Squads); SHARE is kept for leaving the app. The sub-line says who sees it.
+
+              Once the session is posted — by hand or by auto-post — the button gives way to a quiet
+              confirmation that names where, with View post. Posting somewhere else stays one tap away
+              underneath: the sheet refuses destinations that already have it, so it cannot duplicate.
+            */}
             <View style={styles.capShare}>
-              <Button
-                variant="primary"
-                fullWidth
-                onPress={() => setSheet('share')}
-                accessibilityLabel={shares?.length ? 'Shared — share again' : 'Share your workout'}
-              >
-                {shares?.length ? 'Shared ✓ · Share again' : 'Share your workout'}
-              </Button>
-              {/* Still tappable after a share: posting to a squad that does not have it yet is legitimate,
-                  and the sheet refuses the ones that do. The line says what a second tap means. */}
-              {shares?.length ? (
-                <Text style={styles.sharedNote}>
-                  {shares.length === 1 ? 'This session is posted.' : `This session is posted ${shares.length} times.`} Sharing again adds another post.
-                </Text>
+              {postedWhere ? (
+                <>
+                  <View style={styles.postedBox} accessibilityRole="text" accessibilityLabel={postedWhere}>
+                    <EngravedIcon name="check" size={15} color={flColor.bronze300} />
+                    <Text style={styles.postedText} numberOfLines={2}>
+                      {postedWhere}
+                    </Text>
+                    <Pressable onPress={() => void viewPost()} accessibilityRole="button" accessibilityLabel="View post" hitSlop={8}>
+                      <Text style={styles.postedLink}>View post</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable onPress={() => setSheet('share')} accessibilityRole="button" accessibilityLabel="Post somewhere else" style={styles.postAgain}>
+                    <Text style={styles.postAgainText}>Post somewhere else</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <Button
+                  variant="primary"
+                  fullWidth
+                  icon={<EngravedIcon name="upload" size={18} color={flColor.onBronze} />}
+                  subLabel="Share with Friends or your Squad"
+                  onPress={() => setSheet('share')}
+                  accessibilityLabel="Post to Forge. Share with Friends or your Squad"
+                >
+                  Post to Forge
+                </Button>
+              )}
+              {/* An auto-post that did not finish. The session is sealed regardless; this is only the post. */}
+              {autoFailed ? (
+                <View style={styles.autoFail}>
+                  <Text style={styles.autoFailText}>
+                    {autoPartial ? `${autoPartial}, but the rest didn’t post.` : 'Couldn’t post automatically.'} Your workout is saved.
+                  </Text>
+                  <Pressable onPress={retryAutoPost} disabled={autoRetrying} accessibilityRole="button" accessibilityLabel="Retry posting" hitSlop={8}>
+                    <Text style={styles.postedLink}>{autoRetrying ? 'Posting…' : 'Retry'}</Text>
+                  </Pressable>
+                </View>
               ) : null}
+              <View style={styles.autoRowWrap}>
+                <AutoPostRow squads={mySquads ?? null} />
+              </View>
             </View>
 
             {/* Two bare text buttons, never full-width ones. The weight difference is the whole hierarchy:
@@ -1676,7 +1775,24 @@ const styles = StyleSheet.create({
   capRowLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
   capRowLabelFilled: { color: flColor.cream100 },
   capShare: { width: '100%', maxWidth: 322, marginTop: 22 },
-  sharedNote: { marginTop: 8, textAlign: 'center', fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
+  postedBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 52,
+    paddingHorizontal: 15,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.accentBorder,
+    backgroundColor: flColor.bronzeTint,
+  },
+  postedText: { flex: 1, fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  postedLink: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.bronze300 },
+  postAgain: { alignSelf: 'center', minHeight: 40, justifyContent: 'center', paddingHorizontal: 12 },
+  postAgainText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  autoFail: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingHorizontal: 4 },
+  autoFailText: { flex: 1, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
+  autoRowWrap: { marginTop: 10 },
   capExits: { marginTop: 10, gap: 6, alignItems: 'center' },
   capExitBtn: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
   capExit: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.gray400 },

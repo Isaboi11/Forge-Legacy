@@ -137,7 +137,7 @@ export default function ActivityDetailScreen() {
         onBack={() => router.back()}
         actions={
           data && data.viewer !== 'shared' ? (
-            <Pressable onPress={() => setShareOpen(true)} accessibilityRole="button" accessibilityLabel="Share this session" hitSlop={8}>
+            <Pressable onPress={() => setShareOpen(true)} accessibilityRole="button" accessibilityLabel="Post this session" hitSlop={8}>
               <EngravedIcon name="share" size={20} color={flColor.bronze300} />
             </Pressable>
           ) : null

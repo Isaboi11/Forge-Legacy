@@ -152,6 +152,27 @@ export function cardioMarkerLabel(activityType: string | null): string {
  * The ampersand rather than "and": this sits in the same quiet line the program context uses, where
  * every character is competing with the stat strip underneath it.
  */
+/**
+ * What the athlete ate that day, when they ticked "Post what I ate" (PO 2026-09-28). Absent — every post
+ * before today, every auto-post, every post they left unticked — is no line at all, never "0 cal".
+ */
+export interface RecapFood {
+  kcal: number;
+  protein: number;
+}
+
+export function foodLine(food: RecapFood | null | undefined): string | null {
+  if (!food || !(food.kcal > 0)) return null;
+  const kcal = Math.round(food.kcal).toLocaleString('en-US');
+  const protein = Math.round(food.protein);
+  return protein > 0 ? `Ate today: ${kcal} cal · ${protein} g protein` : `Ate today: ${kcal} cal`;
+}
+
+/** The quiet line under a recap's title: who was there, then what they ate — each only if present. */
+export function recapNoteLines(partners: readonly string[] | null | undefined, food: RecapFood | null | undefined): string | null {
+  return [partnersLine(partners), foodLine(food)].filter(Boolean).join('\n') || null;
+}
+
 export function partnersLine(partners: readonly string[] | null | undefined): string | null {
   const names = (partners ?? []).map((n) => n.trim()).filter(Boolean);
   if (names.length === 0) return null;

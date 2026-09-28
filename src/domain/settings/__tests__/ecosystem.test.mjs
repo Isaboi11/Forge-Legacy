@@ -257,6 +257,8 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     holtTips: 'ask',
     // The Nutrition care line has never been dismissed until somebody dismisses it.
     careLineUntil: null,
+    // Auto-post is OFF: no friends, no squads, never asked. Nobody is opted into posting by a code change.
+    autoPost: { friends: false, squadIds: [], asked: false },
   });
 });
 
@@ -276,7 +278,7 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false } });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
 });

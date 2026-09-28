@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { annotateRecords } from '@/domain/workout/records-core';
 import { fetchLoadRecordRows } from '@/data/records-live';
 import type { PriorShare } from '@/domain/share/fanout';
-import { deriveLead, recapCardioFrom, type RecapCardio, type RecapLead } from '@/domain/share/recap-stats';
+import { deriveLead, recapCardioFrom, type RecapCardio, type RecapFood, type RecapLead } from '@/domain/share/recap-stats';
 import { extensionFor, MAX_CHECKIN_BYTES, MAX_IMAGE_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { fetchCompletion } from '@/data/workout-complete-live';
 // Type only: the snapshot arrives already validated by `fetchCompletion`, and `RecapBlock` re-validates
@@ -329,6 +329,18 @@ export interface WorkoutSummary {
    * `partnersLine`.
    */
   partners?: string[] | null;
+  /**
+   * Posted by the athlete's auto-post preference rather than by a tap (2026-09-28). The feeds do not
+   * read it — an auto-post is the same card as a manual one. It exists for `squad_posts_auto_once`
+   * (0229), the unique index that makes a retried auto-post land once per workout per destination.
+   */
+  auto?: boolean;
+  /**
+   * The day's food totals — ONLY when the athlete ticked "Post what I ate" on this post (PO 2026-09-28:
+   * food was reading as posted with the workout, and it must be their choice). Never set by auto-post,
+   * never remembered between posts. Absent = no food line.
+   */
+  food?: RecapFood | null;
 }
 
 export interface SquadPostTypeDef {

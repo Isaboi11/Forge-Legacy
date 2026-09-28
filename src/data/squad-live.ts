@@ -3,6 +3,7 @@ import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import { extensionFor, MAX_CHECKIN_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { goalState, mergePastGoals, type GoalOutcome, type GoalState } from '@/domain/squad/goal-state';
+import { sanitizePrefs } from '@/domain/settings/preferences';
 
 /**
  * Squad Core data (Social · Part 1) — real `squads` + `squad_members` (migrations 0029/0030). Create is
@@ -622,6 +623,27 @@ export async function leaveSquad(squadId: string): Promise<void> {
   if (!user) throw new Error('Not signed in');
   const { error } = await supabase.from('squad_members').delete().eq('squad_id', squadId).eq('user_id', user.id);
   if (error) throw error;
+  await forgetAutoPostSquad(user.id, squadId);
+}
+
+/**
+ * A squad you left is no longer somewhere your workouts post themselves. Emptying the last destination
+ * turns auto-post OFF — nothing is kept to resume posting if you rejoin.
+ *
+ * Best effort and never thrown: the leave already happened, and auto-post prunes memberships again
+ * before every run (`pruneAutoPost`), which also covers being removed by an owner or a deleted squad.
+ */
+async function forgetAutoPostSquad(uid: string, squadId: string): Promise<void> {
+  try {
+    const { data, error } = await supabase.from('profiles').select('app_prefs').eq('id', uid).single();
+    if (error) return;
+    const prefs = sanitizePrefs((data as { app_prefs: unknown } | null)?.app_prefs ?? null);
+    if (!prefs.autoPost.squadIds.includes(squadId)) return;
+    const autoPost = { ...prefs.autoPost, squadIds: prefs.autoPost.squadIds.filter((id) => id !== squadId) };
+    await supabase.from('profiles').update({ app_prefs: { ...prefs, autoPost } }).eq('id', uid);
+  } catch {
+    // See above — the next auto-post run prunes it anyway.
+  }
 }
 
 /** Owner removes a member (0046 delete policy allows the owner to delete a non-owner row). */
