@@ -46,6 +46,13 @@ export interface LogEntry {
    * Present only for a source whose licence permits keeping them (`MAY_STORE_MICROS`).
    */
   micros?: Record<string, number> | null;
+  /**
+   * On the plan, NOT EATEN (0228). Counts toward nothing — the ring, the week, Holt — until it is checked off.
+   * `fetchDay` hands these back apart from `entries`, so no summing caller can count one by accident.
+   */
+  planned?: boolean;
+  /** Put on its day AHEAD of time (0228). Never changes, so a checked row stays in the day's checklist, ticked. */
+  preLogged?: boolean;
 }
 
 export interface Macros {
@@ -243,7 +250,18 @@ export function shiftDay(iso: string, days: number): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-/** Tomorrow is not loggable: a diary of the future is a plan, and plans live in the meal planner. */
+/**
+ * How far ahead the day strip goes (PO 09-27, plan ahead). Two weeks covers this week's Meal Plan and next
+ * week's shop; past it a tap on › would only be scrolling through empty days.
+ */
+export const PLAN_AHEAD_DAYS = 14;
+
+/** The › arrow: open into the future now — a future day is where food is planned (0228). */
 export function canGoForward(iso: string, todayIso: string): boolean {
-  return iso < todayIso;
+  return iso < shiftDay(todayIso, PLAN_AHEAD_DAYS);
+}
+
+/** A day that has not begun. Food put on it is PLANNED; it can be checked off once the day comes. */
+export function isAhead(iso: string, todayIso: string): boolean {
+  return iso > todayIso;
 }

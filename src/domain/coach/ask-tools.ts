@@ -1334,11 +1334,13 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
         const [entries, target] = await Promise.all([
           ctx.db
             .from('food_log_entries')
-            .select('logged_on, kcal, protein, carb, fat')
+            /* `*`, not a column list: 0228's `planned` is skipped below, and naming it would fail the whole read
+               on a database it has not reached yet. A planned row was not eaten — it is never Holt's evidence. */
+            .select('*')
             .eq('athlete_id', ctx.uid)
             .gte('logged_on', from)
             .lte('logged_on', today)
-            .then((r: { data: unknown[] | null }) => r.data ?? []),
+            .then((r: { data: unknown[] | null }) => (r.data ?? []).filter((e) => (e as { planned?: boolean }).planned !== true)),
           ctx.db
             .from('nutrition_targets')
             .select('kcal, protein_g, carb_g, fat_g, effective_from')

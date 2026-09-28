@@ -11,7 +11,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { grouped, localToday } from '@/domain/nutrition/day';
+import { grouped, localToday, shiftDay } from '@/domain/nutrition/day';
 import { ALLERGENS } from '@/domain/nutrition/meal-plan-setup';
 import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, recipeView, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
 import { batchNote, ingredientRows, servingsFor, servingsLabel } from '@/domain/nutrition/recipe-view';
@@ -217,8 +217,10 @@ export default function RecipeScreen() {
     }
     setBusy(true);
     try {
-      const out = await togglePlanLog(week, ctx.d, ctx.i, todayIso);
-      await save(out.week, out.logged ? 'Added to today’s diary' : 'Removed from diary');
+      /* On the day it is PLANNED for (0228), not today. */
+      const dayIso = shiftDay(monday, ctx.d);
+      const out = await togglePlanLog(week, ctx.d, ctx.i, dayIso);
+      await save(out.week, out.logged ? (dayIso === todayIso ? 'Added to today’s diary' : `Added to ${DAY_NAMES[ctx.d]}’s diary`) : 'Removed from diary');
     } catch (e) {
       showToast(errorMessage(e));
     } finally {

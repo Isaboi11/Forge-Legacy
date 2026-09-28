@@ -1618,13 +1618,15 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
                 const [entries, target] = await Promise.all([
                     ctx.db
                         .from('food_log_entries')
-                        .select('logged_on, kcal, protein, carb, fat')
+                        .select('*')
                         .eq('athlete_id', ctx.uid)
                         .gte('logged_on', from)
                         .lte('logged_on', today)
                         .then((r: {
                         data: unknown[] | null;
-                    }) => r.data ?? []),
+                    }) => (r.data ?? []).filter((e) => (e as {
+                        planned?: boolean;
+                    }).planned !== true)),
                     ctx.db
                         .from('nutrition_targets')
                         .select('kcal, protein_g, carb_g, fat_g, effective_from')

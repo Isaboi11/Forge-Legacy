@@ -14,7 +14,7 @@ import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
-import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   defaultServing,
   energyKnown,
@@ -262,7 +262,8 @@ export default function LogFoodScreen() {
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
-      <AppBar title="Log Food" transparent onBack={() => router.back()} />
+      {/* On a day that has not begun this is planning (0228) — the food waits there for its check. */}
+      <AppBar title={isAhead(iso, localToday()) ? 'Plan Food' : 'Log Food'} transparent onBack={() => router.back()} />
 
       {/* meal destination — one quiet line, tap to change */}
       <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>

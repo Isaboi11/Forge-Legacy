@@ -1,9 +1,10 @@
 import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
-import { localToday } from '@/domain/nutrition/day';
+import { isAhead, localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { offProductToFood } from '@/domain/nutrition/off-product';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
+import { locatePlanItem, mayCheck, splitPlanned } from '@/domain/nutrition/plan-ahead';
 import { isFirstRun } from '@/domain/nutrition/first-run';
 import type { SavedItemRow } from '@/domain/nutrition/my-foods';
 import { cleanRoutine, routineOf, type MealPlanPrefs } from '@/domain/nutrition/meal-plan-setup';
@@ -15,6 +16,7 @@ import {
   isSavedMeal,
   itemTotals,
   logKey,
+  mondayOf,
   portionLabel,
   registerSavedMeals,
   withoutRecipe,
@@ -59,7 +61,14 @@ import { supabase } from '@/lib/supabase';
  */
 
 export interface DayLog {
+  /** What was EATEN — the only rows any total may sum. */
   entries: LogEntry[];
+  /**
+   * On the day but not eaten yet (0228) — pre-logged and unchecked. Kept apart so every caller that sums
+   * `entries` (the ring, Home's card, Holt, Workout Complete) stays right without knowing plan-ahead exists.
+   * Missing from an older cached read; treat as empty.
+   */
+  planned?: LogEntry[];
   targets: Targets | null;
 }
 
@@ -78,6 +87,8 @@ interface EntryRow {
   source_key: string | null;
   grams: number | null;
   micros: Record<string, number> | null;
+  planned?: boolean | null;
+  pre_logged?: boolean | null;
 }
 
 /** The columns every read of the diary asks for — one list, so no screen sees a narrower row. */
@@ -99,7 +110,18 @@ const toEntry = (r: EntryRow): LogEntry => ({
   sourceKey: r.source_key,
   grams: r.grams != null ? Number(r.grams) : null,
   micros: r.micros ?? null,
+  ...(r.planned ? { planned: true } : {}),
+  ...(r.pre_logged ? { preLogged: true } : {}),
 });
+
+/**
+ * Is `food_log_entries.planned` there yet (0228)? Latched per session, like `targetWeightColumn`. Before it is
+ * pasted the diary reads as it always did, and a future day refuses food with `PLAN_NOT_LIVE` rather than
+ * writing it as eaten.
+ */
+let plannedColumn: boolean | null = null;
+const PLAN_COLUMNS = ', planned, pre_logged';
+export const PLAN_NOT_LIVE = 'Planning ahead needs an update that isn’t live yet.';
 
 /**
  * Who is signed in, from the CACHED session. `getUser()` asks the server, so with no signal it answered
@@ -184,6 +206,9 @@ const entryRow = (athlete: string, iso: string, e: LogEntry) => ({
   carb: e.carb,
   fat: e.fat,
   micros: e.micros ?? null,
+  /* Only on a pre-logged row: an ordinary one leaves both to their `false` default, so it still writes
+     before 0228 is pasted. */
+  ...(e.preLogged ? { planned: !!e.planned, pre_logged: true } : {}),
 });
 
 /** One write against the server. Returns the error rather than throwing — the caller decides hold vs. surface. */
@@ -214,8 +239,13 @@ async function apply(athlete: string, op: OutboxOp): Promise<unknown> {
       ).error;
     case 'move':
       return (
-        await supabase.from('food_log_entries').update({ logged_on: op.iso, meal: op.meal }).eq('id', op.id)
+        await supabase
+          .from('food_log_entries')
+          .update(op.planned ? { logged_on: op.iso, meal: op.meal, planned: true, pre_logged: true } : { logged_on: op.iso, meal: op.meal })
+          .eq('id', op.id)
       ).error;
+    case 'check':
+      return (await supabase.from('food_log_entries').update({ planned: op.planned }).eq('id', op.id)).error;
   }
 }
 
@@ -254,29 +284,43 @@ export async function fetchDay(iso: string): Promise<DayLog> {
   const id = await athleteId();
   if (!id) return { entries: [], targets: null };
 
-  const [entries, targets, held] = await Promise.all([
+  const read = (withPlan: boolean) =>
     supabase
       .from('food_log_entries')
-      .select(ENTRY_COLUMNS)
+      .select(withPlan ? ENTRY_COLUMNS + PLAN_COLUMNS : ENTRY_COLUMNS)
       .eq('athlete_id', id)
       .eq('logged_on', iso)
-      .order('created_at', { ascending: true }),
-    fetchTargetsOn(iso),
-    heldOps(id),
-  ]);
-
-  /* No signal: the last read of this day, with what is held drawn on top — never an empty diary for a
-     day the athlete can see they logged. */
-  if (entries.error) {
-    if (!isTransportFailure(entries.error)) return { entries: [], targets: null };
-    const cached = await readCache<DayLog>(id, `day:${iso}`);
-    return { entries: overlayDay(iso, cached?.entries ?? [], held), targets: cached?.targets ?? null };
+      .order('created_at', { ascending: true });
+  const [first, targets, held] = await Promise.all([read(plannedColumn !== false), fetchTargetsOn(iso), heldOps(id)]);
+  let entries = first;
+  if (entries.error && plannedColumn !== false && isMissingColumn(entries.error)) {
+    plannedColumn = false;
+    entries = await read(false);
+  } else if (!entries.error && plannedColumn == null) {
+    plannedColumn = true;
   }
 
-  const server: DayLog = { entries: ((entries.data ?? []) as EntryRow[]).map(toEntry), targets };
-  void writeCache(id, `day:${iso}`, server);
-  return { entries: overlayDay(iso, server.entries, held), targets };
+  /* No signal: the last read of this day, with what is held drawn on top — never an empty diary for a
+     day the athlete can see they logged. The cache keeps EVERY row, planned too, and is split after. */
+  if (entries.error) {
+    if (!isTransportFailure(entries.error)) return { entries: [], planned: [], targets: null };
+    const cached = await readCache<DayLog>(id, `day:${iso}`);
+    const rows = overlayDay(iso, [...(cached?.entries ?? []), ...(cached?.planned ?? [])], held);
+    return { ...split(rows), targets: cached?.targets ?? null };
+  }
+
+  const rows = ((entries.data ?? []) as unknown as EntryRow[]).map(toEntry);
+  void writeCache(id, `day:${iso}`, { entries: rows, targets } satisfies DayLog);
+  return { ...split(overlayDay(iso, rows, held)), targets };
 }
+
+const split = (rows: LogEntry[]): { entries: LogEntry[]; planned: LogEntry[] } => {
+  const { eaten, planned } = splitPlanned(rows);
+  return { entries: eaten, planned };
+};
+
+/** Every row of a day, eaten and planned — Meal Detail and the checklist draw both. */
+export const allRows = (day: DayLog | null | undefined): LogEntry[] => [...(day?.entries ?? []), ...(day?.planned ?? [])];
 
 export interface TargetHistoryRow {
   from: string;
@@ -299,17 +343,25 @@ export async function fetchRangeTotals(fromIso: string, toIso: string): Promise<
   const id = await athleteId();
   if (!id) return [];
 
-  const { data, error } = await supabase
-    .from('food_log_entries')
-    .select('logged_on, kcal, protein, carb, fat')
-    .eq('athlete_id', id)
-    .gte('logged_on', fromIso)
-    .lte('logged_on', toIso);
+  const read = (withPlan: boolean) =>
+    supabase
+      .from('food_log_entries')
+      .select(withPlan ? 'logged_on, kcal, protein, carb, fat, planned' : 'logged_on, kcal, protein, carb, fat')
+      .eq('athlete_id', id)
+      .gte('logged_on', fromIso)
+      .lte('logged_on', toIso);
+  let { data, error } = await read(plannedColumn !== false);
+  if (error && plannedColumn !== false && isMissingColumn(error)) {
+    plannedColumn = false;
+    ({ data, error } = await read(false));
+  }
   const cacheKey = `range:${fromIso}:${toIso}`;
   if (error) return isTransportFailure(error) ? ((await readCache<DayTotals[]>(id, cacheKey)) ?? []) : [];
 
   const byDay = new Map<string, DayTotals>();
   for (const r of (data ?? []) as Record<string, any>[]) {
+    /* ⚠ A planned row was not eaten (0228). A day holding only planned food is absent, not a zero. */
+    if (r.planned === true) continue;
     const iso = r.logged_on as string;
     const acc = byDay.get(iso) ?? { iso, kcal: 0, protein: 0, carb: 0, fat: 0, logged: true };
     acc.kcal += Number(r.kcal);
@@ -411,6 +463,10 @@ export interface NewEntry {
 export async function addEntries(iso: string, entries: NewEntry[]): Promise<LogEntry[]> {
   const id = await athleteId();
   if (!id || !entries.length) return [];
+  /* A day that has not begun cannot have been eaten on: its food is PLANNED, checked off on the day (0228).
+     Decided here, once, so every way food gets onto a day — search, a scan, a saved meal, a copy — agrees. */
+  const ahead = isAhead(iso, localToday());
+  if (ahead && plannedColumn === false) throw new Error(PLAN_NOT_LIVE);
 
   const logged: LogEntry[] = entries.map((e) => ({
     id: uuid(),
@@ -427,10 +483,31 @@ export async function addEntries(iso: string, entries: NewEntry[]): Promise<LogE
     carb: e.macros.carb,
     fat: e.macros.fat,
     micros: e.micros ?? null,
+    ...(ahead ? { planned: true, preLogged: true } : {}),
   }));
 
-  await sendOrHold(id, { kind: 'add', iso, entries: logged });
+  try {
+    await sendOrHold(id, { kind: 'add', iso, entries: logged });
+  } catch (e) {
+    if (ahead && isMissingColumn(e)) {
+      plannedColumn = false;
+      throw new Error(PLAN_NOT_LIVE);
+    }
+    throw e;
+  }
   return logged;
+}
+
+/**
+ * The plan-ahead checkbox on a pre-logged row (0228): `eaten` true logs it — from then on it counts like any
+ * row — and false puts it back on the plan. The row keeps its id either way, so a replay is the same tick.
+ */
+export async function checkEntry(entryId: string, eaten: boolean, dayIso: string): Promise<void> {
+  /* The screens only offer the tick on a day that has begun; this holds even if one forgets to. */
+  if (eaten && !mayCheck(dayIso, localToday())) throw new Error(PLAN_NOT_YET);
+  const id = await athleteId();
+  if (!id) return;
+  await sendOrHold(id, { kind: 'check', id: entryId, planned: !eaten });
 }
 
 export async function removeEntry(entryId: string): Promise<void> {
@@ -472,8 +549,7 @@ export async function copyMealTo(
 ): Promise<LogEntry[]> {
   /* Read through `fetchDay`, not a query of its own: offline it answers from the cache plus what is
      held, so "copy yesterday's breakfast" works in the same kitchen with no signal. */
-  const { entries } = await fetchDay(from.iso);
-  const source = entries.filter((e) => e.meal === from.meal);
+  const source = mealRows(await fetchDay(from.iso), from.iso, from.meal);
   if (!source.length) return [];
 
   return addEntries(
@@ -497,6 +573,16 @@ export async function copyMealTo(
  * `copyMealTo` rather than a second copy of the mapping: two implementations of "copy a meal" is how
  * one of them quietly stops carrying a column the other learned about.
  */
+/**
+ * The rows that ARE a meal, for copying or saving it: what was eaten — or, on a day that has not begun, what is
+ * planned there (everything on it is). Unticked food on a past day was not eaten, so it is never carried.
+ */
+function mealRows(day: DayLog, iso: string, meal: MealSlot): LogEntry[] {
+  const eaten = day.entries.filter((e) => e.meal === meal);
+  if (eaten.length || !isAhead(iso, localToday())) return eaten;
+  return (day.planned ?? []).filter((e) => e.meal === meal);
+}
+
 export async function copyMealFrom(fromIso: string, toIso: string, meal: MealSlot): Promise<LogEntry[]> {
   return copyMealTo({ iso: fromIso, meal }, { iso: toIso, meal });
 }
@@ -514,7 +600,10 @@ export async function moveEntry(
 ): Promise<void> {
   const id = await athleteId();
   if (!id) return;
-  await sendOrHold(id, { kind: 'move', id: entryId, iso: to.iso, meal: to.meal, entry });
+  /* Onto a day that has not begun, it waits there for its check. Back from one, it keeps its tick as it was. */
+  const planned = isAhead(to.iso, localToday()) ? true : undefined;
+  if (planned && plannedColumn === false) throw new Error(PLAN_NOT_LIVE);
+  await sendOrHold(id, { kind: 'move', id: entryId, iso: to.iso, meal: to.meal, entry, ...(planned ? { planned } : {}) });
 }
 
 /** Empty one meal of one day. Owner-scoped by RLS; the explicit day and slot keep it to what was asked. */
@@ -523,26 +612,7 @@ export async function clearMeal(iso: string, meal: MealSlot): Promise<void> {
   if (!id) return;
   /* One remove per row the athlete can see — never a (day, meal) filter, which replayed late would also
      delete food logged into this meal after the clear (see `domain/nutrition/outbox.ts`). */
-  const { entries } = await fetchDay(iso);
-  for (const e of entries) if (e.meal === meal) await sendOrHold(id, { kind: 'remove', id: e.id });
-}
-
-/**
- * Is there food logged on a day after this one? Nutrition Home's ⟩ is otherwise closed at today
- * (`canGoForward`), which was correct until Meal Detail could copy a meal FORWARD — meal prep writes a
- * real row on a real day, and a day you cannot reach is a day the athlete cannot fix.
- */
-export async function hasFoodAfter(iso: string): Promise<boolean> {
-  const id = await athleteId();
-  if (!id) return false;
-  const { data, error } = await supabase
-    .from('food_log_entries')
-    .select('id')
-    .eq('athlete_id', id)
-    .gt('logged_on', iso)
-    .limit(1);
-  if (error) return false;
-  return !!data?.length;
+  for (const e of allRows(await fetchDay(iso))) if (e.meal === meal) await sendOrHold(id, { kind: 'remove', id: e.id });
 }
 
 /**
@@ -566,16 +636,8 @@ export async function isNutritionFirstRun(): Promise<boolean> {
 
 /** Which meal "Copy yesterday" would fill — null when yesterday's slot was empty too. */
 export async function mealHasFood(iso: string, meal: MealSlot): Promise<boolean> {
-  const id = await athleteId();
-  if (!id) return false;
-  const { data } = await supabase
-    .from('food_log_entries')
-    .select('id')
-    .eq('athlete_id', id)
-    .eq('logged_on', iso)
-    .eq('meal', meal)
-    .limit(1);
-  return Boolean(data?.length);
+  /* Through `fetchDay`, so it asks exactly what `copyMealFrom` will copy — planned food excluded (0228). */
+  return mealRows(await fetchDay(iso), iso, meal).length > 0;
 }
 
 export interface RecentFood {
@@ -983,8 +1045,7 @@ export async function saveMealFromDay(name: string, iso: string, meal: MealSlot)
   if (!id) return;
   /* Through `fetchDay`, so a meal logged offline and not yet drained is saved whole. The insert below
      still needs signal — and throws without it, rather than the old silent "saved" on an empty read. */
-  const rows = (await fetchDay(iso)).entries
-    .filter((e) => e.meal === meal)
+  const rows = mealRows(await fetchDay(iso), iso, meal)
     .map((e) => ({
       source: e.source,
       source_key: e.sourceKey ?? null,
@@ -1492,19 +1553,27 @@ export async function saveMealPlanWeek(week: MealPlanWeek): Promise<void> {
   if (error) throw error;
 }
 
+/** A meal planned for a day that has not begun cannot be logged yet — it is ticked on the day. */
+export const PLAN_NOT_YET = 'You can check this off on the day you eat it.';
+
 /**
- * "Log meal" / "Logged" for one planned meal — shared by Meal Plan and Recipe so both write the same row.
+ * "Log meal" / "Logged" for one planned meal — shared by Meal Plan, Recipe and Nutrition Home's checklist, so all
+ * three write the same row.
  *
- * Logging writes a real diary row TODAY, in the meal's slot, as a quick-add labelled "Forge recipe"
- * (one serving, the recipe's per-serving numbers — which are USDA-derived, NUT-D4). Unlogging removes
- * exactly that row, by the id the plan remembered. Returns the week with `logged` updated; the caller
- * saves it.
+ * Logging writes a real diary row ON THE DAY THE MEAL IS PLANNED FOR, in the meal's slot, as a quick-add labelled
+ * "Forge recipe" (the recipe's per-serving numbers — which are USDA-derived, NUT-D4). It was always TODAY until
+ * 0228, which filed Monday's dinner logged on Tuesday on Tuesday (`Docs/Nutrition-Flow-Scenarios-2026-09-26.md`
+ * A7). `dayIso` is that day's date; a day that has not begun throws `PLAN_NOT_YET` — the future cannot have been
+ * eaten, and a row written there would only be planned.
+ *
+ * Unlogging removes exactly that row, by the id the plan remembered. Returns the week with `logged` updated; the
+ * caller saves it.
  */
 export async function togglePlanLog(
   week: MealPlanWeek,
   d: number,
   i: number,
-  todayIso: string,
+  dayIso: string,
 ): Promise<{ week: MealPlanWeek; logged: boolean }> {
   const it = week.days[d]?.items[i];
   const r = it ? RECIPE_BY_ID[it.recipeId] : undefined;
@@ -1518,14 +1587,15 @@ export async function togglePlanLog(
     delete logged[key];
     return { week: { ...week, logged }, logged: false };
   }
+  if (!mayCheck(dayIso, localToday())) throw new Error(PLAN_NOT_YET);
   /* A saved meal logs its real foods (with their micros), exactly as logging it from My Meals does. */
   if (isSavedMeal(it.recipeId)) {
-    const rows = await logSavedMeal(it.recipeId.slice(MEAL_ID_PREFIX.length), todayIso, it.slot);
+    const rows = await logSavedMeal(it.recipeId.slice(MEAL_ID_PREFIX.length), dayIso, it.slot);
     if (rows.length) logged[key] = rows.map((e) => e.id).join(',');
     return { week: { ...week, logged }, logged: rows.length > 0 };
   }
   const mine = itemTotals(it);
-  const [entry] = await addEntries(todayIso, [
+  const [entry] = await addEntries(dayIso, [
     {
       meal: it.slot,
       source: 'quick',
@@ -1537,6 +1607,53 @@ export async function togglePlanLog(
   ]);
   if (entry) logged[key] = entry.id;
   return { week: { ...week, logged }, logged: true };
+}
+
+/**
+ * Nutrition Home's checkbox on one of the Meal Plan's meals (0228). Reads the week FRESH and finds the meal by
+ * its key — the screen's copy may be stale — then ticks (`eaten` true) or unticks it on `dayIso`, and saves.
+ *
+ * ⚠ **THE DIARY AND THE MARK MOVE TOGETHER.** If the week fails to save after the diary row was written, the row
+ * is taken back out: a row the plan does not remember would show the meal unticked AND counted, and ticking it
+ * again would log it twice. Asking for the state it is already in does nothing — a double tap is one tick.
+ */
+export async function checkPlanMeal(weekStart: string, planKey: string, dayIso: string, eaten: boolean): Promise<void> {
+  const week = await fetchMealPlanWeek(weekStart);
+  /* The screen drew this meal from a week it read, so no week now is a read that failed — usually signal. */
+  if (!week) throw new Error('Couldn’t reach your meal plan. Check your signal and try again.');
+  const at = locatePlanItem(week, planKey);
+  if (!at) throw new Error('That meal is no longer in your plan.');
+  if (!!week.logged[planKey] === eaten) return;
+  const out = await togglePlanLog(week, at.d, at.i, dayIso);
+  try {
+    await saveMealPlanWeek(out.week);
+  } catch (e) {
+    if (out.logged) for (const id of (out.week.logged[planKey] ?? '').split(',').filter(Boolean)) await removeEntry(id).catch(() => undefined);
+    throw e;
+  }
+}
+
+/** Nutrition Home's read: one day, and the Meal Plan week it falls in (null when none is saved). */
+export interface PlanDayView {
+  iso: string;
+  day: DayLog;
+  week: MealPlanWeek | null;
+}
+
+/**
+ * The day and its plan in ONE read, so a tick never lands between two answers — a day re-read with the new row
+ * beside a week not yet re-read would draw the meal counted and unticked for a frame. The athlete's recipes are
+ * read first: a week naming one of them only resolves once it is in the book. A plan that cannot be read is no
+ * plan — the diary still draws.
+ */
+export async function fetchPlanDay(iso: string): Promise<PlanDayView> {
+  const [day, week] = await Promise.all([
+    fetchDay(iso),
+    fetchUserRecipes()
+      .then(() => fetchMealPlanWeek(mondayOf(iso)))
+      .catch(() => null),
+  ]);
+  return { iso, day, week };
 }
 
 /* ── Grocery List marks (0212) ──────────────────────────────────────────── */

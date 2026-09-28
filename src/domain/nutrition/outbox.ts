@@ -45,7 +45,17 @@ export type OutboxOp =
    * fetched on this device, so without the snapshot an offline move would make the food vanish from both
    * days until the drain ran.
    */
-  | { kind: 'move'; id: string; iso: string; meal: MealSlot; entry: LogEntry | null };
+  | {
+      kind: 'move';
+      id: string;
+      iso: string;
+      meal: MealSlot;
+      entry: LogEntry | null;
+      /** Moved onto a day that has not begun: it becomes planned (0228). Absent = unchanged. */
+      planned?: boolean;
+    }
+  /** The plan-ahead checkbox (0228): `planned: false` is "I ate it", `true` is the untick. */
+  | { kind: 'check'; id: string; planned: boolean };
 
 export interface OutboxItem {
   /** Bumped if the shape changes; an item from an older build is dropped rather than guessed at. */
@@ -126,7 +136,12 @@ export function overlayDay(iso: string, base: LogEntry[], ops: OutboxOp[]): LogE
           break;
         }
         const cur = rows.get(op.id) ?? op.entry;
-        if (cur) rows.set(op.id, { ...cur, meal: op.meal });
+        if (cur) rows.set(op.id, op.planned ? { ...cur, meal: op.meal, planned: true, preLogged: true } : { ...cur, meal: op.meal });
+        break;
+      }
+      case 'check': {
+        const cur = rows.get(op.id);
+        if (cur) rows.set(op.id, { ...cur, planned: op.planned });
         break;
       }
     }

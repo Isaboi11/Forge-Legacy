@@ -97,8 +97,9 @@ const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
  * Deltas from the `.dc`, each deliberate:
  *  · The budget line ("Estimated $X of your $Y budget") uses the Grocery List's sourced USDA ERS / BLS
  *    prices, and says how many items it could not price rather than inventing them.
- *  · **"Log meal" writes a real diary row** (a quick-add labelled "Forge recipe", today, in that meal's
- *    slot) and "Logged" removes exactly that row.
+ *  · **"Log meal" writes a real diary row** (a quick-add labelled "Forge recipe", ON THE MEAL'S OWN DAY, in
+ *    that meal's slot) and "Logged" removes exactly that row. A day that has not begun cannot be logged —
+ *    its meals wait on Nutrition Home with a checkbox (0228, plan ahead).
  *  · The `.dc`'s preview fixtures (a pre-locked Wednesday dinner, a pre-logged Monday breakfast) are
  *    not reproduced.
  *  · Open recipe goes to Recipe (`Recipe.dc.html`), whose Swap comes back here and opens this sheet;
@@ -485,14 +486,26 @@ export default function MealPlanScreen() {
             <ActionRow
               icon={<LogGlyph logged={!!loggedId} />}
               label={loggedId ? 'Logged' : 'Log meal'}
-              hint={loggedId ? 'Tap to remove from the diary' : 'Adds it to today’s diary'}
+              hint={
+                loggedId
+                  ? 'Tap to remove from the diary'
+                  : dates[d].iso === todayIso
+                    ? 'Adds it to today’s diary'
+                    : dates[d].iso < todayIso
+                      ? `Adds it to ${dates[d].name}’s diary`
+                      : `It waits on Nutrition · check it off on ${dates[d].name}`
+              }
               last
               onPress={async () => {
                 if (busy) return;
                 setBusy(true);
                 try {
-                  const out = await togglePlanLog(week, d, i, todayIso);
-                  await commit(out.week, out.logged ? 'Added to today’s diary' : 'Removed from diary');
+                  /* On the day it is PLANNED for (0228) — Monday's dinner logged on Tuesday is Monday's. */
+                  const out = await togglePlanLog(week, d, i, dates[d].iso);
+                  await commit(
+                    out.week,
+                    out.logged ? (dates[d].iso === todayIso ? 'Added to today’s diary' : `Added to ${dates[d].name}’s diary`) : 'Removed from diary',
+                  );
                 } catch (e) {
                   setSheet(null);
                   showToast(errorMessage(e));

@@ -109,9 +109,12 @@ test('shiftDay crosses months, years and a DST boundary without drifting', () =>
   assert.equal(shiftDay('2026-11-01', 1), '2026-11-02');
 });
 
-test('you cannot log the future', () => {
+test('the › arrow goes two weeks into the future, and no further (plan ahead, 0228)', () => {
   assert.equal(canGoForward('2026-09-15', '2026-09-16'), true);
-  assert.equal(canGoForward('2026-09-16', '2026-09-16'), false);
+  assert.equal(canGoForward('2026-09-16', '2026-09-16'), true, 'today → tomorrow: planning');
+  assert.equal(canGoForward('2026-09-29', '2026-09-16'), true, 'day 13 → day 14');
+  assert.equal(canGoForward('2026-09-30', '2026-09-16'), false, 'day 14 is the last day');
+  assert.equal(canGoForward('2026-12-29', '2026-12-20'), true, 'across a year end');
 });
 
 /* ── the day key ──────────────────────────────────────────────────────────── */

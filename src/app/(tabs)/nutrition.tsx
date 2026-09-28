@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
@@ -24,6 +24,7 @@ import {
   mealForHour,
   dayLabel,
   groupByMeal,
+  isAhead,
   mealTitle,
   ringDash,
   ringFraction,
@@ -32,7 +33,17 @@ import {
   type MealGroup,
   type MealSlot,
 } from '@/domain/nutrition/day';
-import { copyMealFrom, fetchDay, hasFoodAfter, isNutritionFirstRun, mealHasFood } from '@/data/nutrition-live';
+import {
+  allRows,
+  checkEntry,
+  checkPlanMeal,
+  copyMealFrom,
+  fetchPlanDay,
+  isNutritionFirstRun,
+  mealHasFood,
+  type PlanDayView,
+} from '@/data/nutrition-live';
+import { applyChecks, checklistByMeal, checklistCount, mayCheck, plannedKcal, type ChecklistRow } from '@/domain/nutrition/plan-ahead';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
 import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/consent';
@@ -41,7 +52,7 @@ import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlem
 import { labelScanAvailable } from '@/lib/label-scan';
 import { useProfile } from '@/lib/profile';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Nutrition tab root — built to `Nutrition Home.dc.html` (Claude Design), wired to the real diary (0205).
@@ -120,16 +131,21 @@ export default function NutritionScreen() {
   const [addOpen, setAddOpen] = useState(false);
   const canScanLabel = labelScanAvailable();
 
-  const { data: day, loading } = useQuery(useCallback(() => fetchDay(iso), [iso]), [iso, reloads]);
+  /* The day and its Meal Plan week, read together (`fetchPlanDay`). */
+  const { data: view, loading } = useQuery(
+    useCallback(() => (mayUseNutrition ? fetchPlanDay(iso) : Promise.resolve(null)), [iso, mayUseNutrition]),
+    [iso, reloads, mayUseNutrition],
+  );
+  const day = view?.day ?? null;
   /**
-   * ⚠ THE FORWARD ARROW IS NOT ONLY ABOUT TODAY ANY MORE. `canGoForward` closes the strip at today
-   * because a diary of the future is a plan — still true of LOGGING. But Meal Detail can now copy a meal
-   * FORWARD (meal prep is the reason the `.dc` defaults its copy to tomorrow), and that writes real rows
-   * on a real day. A day the athlete cannot reach is a day they cannot correct, so the arrow also opens
-   * when there is already food out there.
+   * ══ PLAN AHEAD (PO 09-27, 0228) ══ The › arrow goes into the future (`canGoForward`, two weeks). Food put on
+   * a day that has not begun is PLANNED — it counts toward nothing and waits in its meal's checklist; the Meal
+   * Plan's meals are in the same checklists, read from the week. A tick logs it; on a day ahead nothing can
+   * be ticked yet (`mayCheck`).
    */
-  const { data: foodAhead } = useQuery(useCallback(() => hasFoodAfter(iso), [iso]), [iso, reloads]);
-  const mayGoForward = canGoForward(iso, todayIso) || !!foodAhead;
+  const mayGoForward = canGoForward(iso, todayIso);
+  const ahead = isAhead(iso, todayIso);
+  const checkable = mayCheck(iso, todayIso);
   /* Any return to the tab re-reads — food logged on another screen has to be here when you come back. */
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
   /* The care line (`domain/nutrition/care-line.ts`): about the athlete's last seven days, not the day on screen. */
@@ -140,10 +156,56 @@ export default function NutritionScreen() {
 
   /* Memoised before the two derived reads: `day?.entries ?? []` mints a new array on every render, which
      would make both useMemos below recompute every time (react-compiler flags exactly this). */
-  const entries = useMemo(() => day?.entries ?? [], [day]);
+  /*
+   * Ticks tapped but not yet re-read (`applyChecks`), tied to the read they were made on: the re-read after the
+   * last write lands carries them for real, and the map gives way — the same pattern as Meal Plan's `edits`.
+   */
+  const [checks, setChecks] = useState<{ base: PlanDayView; map: Record<string, boolean> } | null>(null);
+  const inflight = useRef(new Set<string>());
+  const liveChecks = view && checks && checks.base === view ? checks.map : null;
+  const shown = useMemo(
+    () => (view ? applyChecks(allRows(view.day), view.week, view.iso, liveChecks ?? {}) : { rows: [], week: null }),
+    [view, liveChecks],
+  );
+  const entries = useMemo(() => shown.rows.filter((e) => !e.planned), [shown]);
   const eaten = useMemo(() => totals(entries), [entries]);
   const groups = useMemo(() => groupByMeal(entries), [entries]);
+  const lists = useMemo(() => checklistByMeal(shown.rows, shown.week, view?.iso ?? iso), [shown, view, iso]);
+  const waiting = useMemo(() => plannedKcal(lists), [lists]);
   const targets = day?.targets ?? null;
+
+  /**
+   * The checkbox. Drawn at once; written behind. A tick on a day that has not begun says when it can be ticked
+   * instead. A failure un-draws the tick and says why — a check that silently didn't log is the one thing
+   * this feature must never do.
+   */
+  const toggleCheck = async (row: ChecklistRow) => {
+    if (!view) return;
+    if (!row.checked && !checkable) {
+      showToast(iso === shiftDay(todayIso, 1) ? 'You can check this off tomorrow' : `You can check this off on ${dayLabel(iso, todayIso)}`);
+      return;
+    }
+    if (inflight.current.has(row.key)) return;
+    inflight.current.add(row.key);
+    const next = !row.checked;
+    setChecks((c) => ({ base: view, map: { ...(c && c.base === view ? c.map : {}), [row.key]: next } }));
+    try {
+      if (row.kind === 'entry' && row.entryId) await checkEntry(row.entryId, next, view.iso);
+      else if (row.kind === 'plan' && row.weekStart && row.planKey) await checkPlanMeal(row.weekStart, row.planKey, view.iso, next);
+    } catch (e) {
+      setChecks((c) => {
+        if (!c) return c;
+        const map = { ...c.map };
+        delete map[row.key];
+        return { ...c, map };
+      });
+      showToast(errorMessage(e));
+    } finally {
+      inflight.current.delete(row.key);
+      /* Re-read once the LAST tick lands, so a quick run of ticks never flickers back mid-way. */
+      if (inflight.current.size === 0) setReloads((n) => n + 1);
+    }
+  };
 
   const headline = targets
     ? calorieHeadline(eaten.kcal, targets.kcal, 'eaten')
@@ -416,8 +478,13 @@ export default function NutritionScreen() {
 
         {/* ── meals ─────────────────────────────────────────────────────── */}
         <View style={styles.mealsHeader}>
-          <Text style={styles.mealsTitle}>{iso === todayIso ? "Today's Meals" : 'Meals'}</Text>
-          <Text style={styles.mealsTotal}>{loading && !day ? '—' : `${eaten.kcal.toLocaleString('en-US')} cal`}</Text>
+          <Text style={styles.mealsTitle}>{iso === todayIso ? "Today's Meals" : ahead ? 'Planned Meals' : 'Meals'}</Text>
+          <Text style={styles.mealsTotal}>
+            {loading && !day
+              ? '—'
+              : /* What waits on a tick is said beside the total, never added to it. */
+                `${eaten.kcal.toLocaleString('en-US')} cal${waiting > 0 ? ` · ${waiting.toLocaleString('en-US')} planned` : ''}`}
+          </Text>
         </View>
 
         <View style={styles.mealList}>
@@ -425,11 +492,15 @@ export default function NutritionScreen() {
             <MealCard
               key={group.meal}
               group={group}
+              checklist={lists[group.meal]}
+              ahead={ahead}
+              checkable={checkable}
+              onToggle={toggleCheck}
               /* A meal WITH food opens itself — Meal Detail is where a portion is fixed, a mis-tap is
-                 deleted and the plate is saved. An empty one has nothing to show, so its card stays the
-                 shortcut into the search it has always been. */
+                 deleted and the plate is saved. Pre-logged food is food there too. A meal holding only the
+                 plan's dish has nothing of its own to show, so its card stays the shortcut into the search. */
               onPress={() =>
-                group.entries.length
+                group.entries.length || lists[group.meal].some((r) => r.kind === 'entry')
                   ? router.push({ pathname: '/meal-detail', params: { date: iso, meal: group.meal } })
                   : goLog(group.meal)
               }
@@ -569,14 +640,56 @@ function MacroRing({ label, value, target, color }: { label: string; value: numb
 
 function MealCard({
   group,
+  checklist,
+  ahead,
+  checkable,
+  onToggle,
   onPress,
   onCopyYesterday,
 }: {
   group: MealGroup;
+  checklist: ChecklistRow[];
+  ahead: boolean;
+  checkable: boolean;
+  onToggle: (row: ChecklistRow) => void;
   onPress: () => void;
   onCopyYesterday: () => void;
 }) {
   const empty = group.entries.length === 0;
+
+  /* ── with a plan: the card, then its checklist ── */
+  if (checklist.length) {
+    return (
+      <Surface variant="card" radius="lg" onPress={onPress} style={styles.mealCard}>
+        <View style={styles.mealRow}>
+          <View style={styles.mealThumb}>
+            <EngravedIcon name="bowl" size={22} />
+          </View>
+          <View style={styles.mealBody}>
+            <Text style={styles.mealEyebrow}>{group.label}</Text>
+            <Text style={[styles.mealName, empty && styles.mealNameQuiet]} numberOfLines={1}>
+              {empty ? (ahead ? 'Planned' : 'Nothing checked off yet') : mealTitle(group)}
+            </Text>
+            {empty ? null : (
+              <Text style={styles.mealSummary} numberOfLines={1}>
+                {group.summary}
+              </Text>
+            )}
+          </View>
+          <View style={styles.mealRight}>
+            <Text style={[styles.mealKcal, empty && styles.mealKcalQuiet]}>{group.kcal}</Text>
+          </View>
+        </View>
+
+        <View style={styles.checkList}>
+          <Text style={styles.checkHead}>{ahead ? 'Planned' : checklistCount(checklist)}</Text>
+          {checklist.map((row) => (
+            <CheckRow key={row.key} row={row} disabled={!row.checked && !checkable} onPress={() => onToggle(row)} />
+          ))}
+        </View>
+      </Surface>
+    );
+  }
 
   if (empty) {
     return (
@@ -586,7 +699,7 @@ function MealCard({
         </View>
         <View style={styles.mealBody}>
           <Text style={styles.emptyEyebrow}>{group.label}</Text>
-          <Text style={styles.emptyText}>Nothing logged yet</Text>
+          <Text style={styles.emptyText}>{ahead ? 'Nothing planned yet' : 'Nothing logged yet'}</Text>
         </View>
         {/* Only the first empty slot of the day carries the shortcut in the `.dc`; here every empty slot
             offers it, because the reason to copy is the slot, not its position. */}
@@ -620,6 +733,38 @@ function MealCard({
         </View>
       </View>
     </Surface>
+  );
+}
+
+/**
+ * One line of a meal's checklist: the box, the food, its portion, its calories. The whole row is the target —
+ * a 22pt box alone is a hard tap with a fork in the other hand. On a day that has not begun the box is drawn
+ * dim, and a tap says when it can be ticked (`toggleCheck`) rather than doing nothing.
+ */
+function CheckRow({ row, disabled, onPress }: { row: ChecklistRow; disabled: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: row.checked, disabled }}
+      accessibilityLabel={`${row.name}, ${row.kcal} calories`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.checkRow, pressed && styles.checkRowPressed]}
+    >
+      <View style={[styles.checkBox, row.checked && styles.checkBoxOn, disabled && styles.checkBoxDim]}>
+        {row.checked ? <EngravedIcon name="check" size={14} color={flColor.onBronze} /> : null}
+      </View>
+      <View style={styles.checkText}>
+        <Text style={[styles.checkName, row.checked && styles.checkNameDone]} numberOfLines={1}>
+          {row.name}
+        </Text>
+        {row.detail ? (
+          <Text style={styles.checkDetail} numberOfLines={1}>
+            {row.detail}
+          </Text>
+        ) : null}
+      </View>
+      <Text style={[styles.checkKcal, !row.checked && styles.checkKcalWaiting]}>{row.kcal}</Text>
+    </Pressable>
   );
 }
 
@@ -732,6 +877,31 @@ const styles = StyleSheet.create({
   mealSummary: { fontSize: 12.5, color: flColor.gray600 },
   mealRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   mealKcal: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
+  mealNameQuiet: { color: flColor.gray400, fontWeight: '500' },
+  mealKcalQuiet: { color: flColor.gray600 },
+
+  /* Plan ahead (0228). The bronze fill is earned by a tick; food still waiting reads quieter. */
+  checkList: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 2 },
+  checkHead: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk, paddingBottom: 4 },
+  checkRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: flRadius.sm },
+  checkRowPressed: { backgroundColor: flColor.hoverWash },
+  checkBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: flColor.gray400,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkBoxOn: { backgroundColor: flColor.bronze400, borderColor: flColor.bronze400 },
+  checkBoxDim: { borderColor: flColor.charcoal500, borderStyle: 'dashed' },
+  checkText: { flex: 1, minWidth: 0, gap: 1 },
+  checkName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  checkNameDone: { color: flColor.gray400 },
+  checkDetail: { fontSize: 12, color: flColor.gray600 },
+  checkKcal: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  checkKcalWaiting: { color: flColor.gray600 },
 
   emptyMeal: {
     flexDirection: 'row',

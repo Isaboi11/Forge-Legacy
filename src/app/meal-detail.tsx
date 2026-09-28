@@ -13,7 +13,8 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
-import { localToday, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
+import { isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
+import { mayCheck } from '@/domain/nutrition/plan-ahead';
 import {
   canEditPortion,
   countLabel,
@@ -31,6 +32,8 @@ import {
   type MoveMode,
 } from '@/domain/nutrition/meal';
 import {
+  allRows,
+  checkEntry,
   clearMeal,
   copyMealFrom,
   copyMealTo,
@@ -90,9 +93,20 @@ export default function MealDetailScreen() {
   /* One read, one write, no race — see `meal-hint`. */
   const { data: showHint } = useQuery(consumeMealHint, []);
 
-  const entries = useMemo(() => (day?.entries ?? []).filter((e) => e.meal === meal), [day, meal]);
-  const sum = useMemo(() => totals(entries), [entries]);
-  const breakdown = useMemo(() => mealBreakdown(entries), [entries]);
+  /*
+   * PLAN AHEAD (0228): the list is EVERY row of the meal — pre-logged food is fixed, moved and deleted here like
+   * any other, and says "Planned". The numbers are what was EATEN; on a day that has not begun (all of it is
+   * planned) they are the plan's, and the label says so. Unticked food on a past day counts toward nothing.
+   */
+  const entries = useMemo(() => allRows(day).filter((e) => e.meal === meal), [day, meal]);
+  const ahead = isAhead(iso, todayIso);
+  const counted = useMemo(() => {
+    const eaten = entries.filter((e) => !e.planned);
+    return eaten.length || !ahead ? eaten : entries;
+  }, [entries, ahead]);
+  const showingPlan = counted.length > 0 && counted.every((e) => e.planned);
+  const sum = useMemo(() => totals(counted), [counted]);
+  const breakdown = useMemo(() => mealBreakdown(counted), [counted]);
 
   const [sheet, setSheet] = useState<SheetKind | null>(null);
   const [targetId, setTargetId] = useState<string | null>(null);
@@ -115,6 +129,19 @@ export default function MealDetailScreen() {
     setTargetDay(defaultTargetDay(iso, kind));
     setTargetSlot(meal);
     setSheet(kind === 'copy' ? 'copy' : 'move');
+  };
+
+  /** "Mark as eaten" / "Not eaten yet" on a pre-logged row — the same tick Nutrition Home's checklist makes. */
+  const markEaten = async (entry: LogEntry, eaten: boolean) => {
+    setSheet(null);
+    try {
+      await checkEntry(entry.id, eaten, iso);
+      reload();
+      showToast(eaten ? `Logged ${entry.name}` : `${entry.name} is back on the plan`);
+    } catch (e) {
+      showToast(errorMessage(e));
+      reload();
+    }
   };
 
   const deleteEntry = async (entry: LogEntry) => {
@@ -278,7 +305,7 @@ export default function MealDetailScreen() {
         >
           <View>
             <Text style={styles.totalCal}>{sum.kcal.toLocaleString('en-US')}</Text>
-            <Text style={styles.totalCalLabel}>Calories</Text>
+            <Text style={styles.totalCalLabel}>{showingPlan ? 'Calories planned' : 'Calories'}</Text>
           </View>
           <View style={styles.totalsMacros}>
             <TotalMacro label="Protein" value={sum.protein} />
@@ -409,6 +436,13 @@ export default function MealDetailScreen() {
                             danger: false,
                             run: () => editPortion(targetEntry),
                           },
+                        ]
+                      : []),
+                    ...(targetEntry.preLogged && (targetEntry.planned ? mayCheck(iso, todayIso) : true)
+                      ? [
+                          targetEntry.planned
+                            ? { label: 'Mark as eaten', note: '', danger: false, run: () => markEaten(targetEntry, true) }
+                            : { label: 'Not eaten yet', note: 'Back on the plan', danger: false, run: () => markEaten(targetEntry, false) },
                         ]
                       : []),
                     { label: 'Move to…', note: '', danger: false, run: () => openMove('move') },
@@ -650,6 +684,7 @@ function EntryRow({
           </View>
           <View style={styles.rowLine}>
             <Text style={styles.rowSub} numberOfLines={1}>
+              {entry.planned ? <Text style={styles.rowPlanned}>{'Planned · '}</Text> : null}
               {entrySubtitle(entry)}
             </Text>
             <Text style={styles.rowMacros}>{entryMacroLine(entry)}</Text>
@@ -662,6 +697,7 @@ function EntryRow({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: flColor.base },
+  rowPlanned: { color: flColor.labelInk, fontWeight: '600' },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 140 },
   moreButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },

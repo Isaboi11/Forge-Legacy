@@ -118,7 +118,9 @@ export async function fetchExportNutrition(): Promise<ExportNutrition> {
     readAll<Record<string, any>>((from, to) =>
       supabase
         .from('food_log_entries')
-        .select('logged_on, meal, name, brand, serving_label, quantity, grams, kcal, protein, carb, fat, source, created_at, id')
+        /* `*` so 0228's `planned` comes back where it exists without failing where it doesn't — an unticked
+           plan row is not something the athlete ate, and the export is their food diary (filtered below). */
+        .select('*')
         .eq('athlete_id', me)
         .order('logged_on', { ascending: true })
         .order('created_at', { ascending: true })
@@ -176,7 +178,7 @@ export async function fetchExportNutrition(): Promise<ExportNutrition> {
   const numOrNull = (v: unknown) => (v == null ? null : Number(v));
 
   return {
-    entries: entries.map((r) => ({
+    entries: entries.filter((r) => r.planned !== true).map((r) => ({
       loggedOn: r.logged_on,
       meal: r.meal,
       name: r.name,
