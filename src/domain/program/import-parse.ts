@@ -1140,6 +1140,18 @@ function matchColumns(headerCells: string[]) {
       used.add(i);
     }
   }
+  /*
+   * A clock column by what its header SAYS, not only its exact name — "Time (sec)", "Work Time", "Timer",
+   * "Duration (s)" (PO 2026-09-27: a photographed interval timer still came through as 3 × 10). Never a rest
+   * column: "Rest Time" is the gap between sets, not the work.
+   */
+  if (at.time === undefined) {
+    const i = header.findIndex((h, idx) => !used.has(idx) && /time|sec|duration|interval|hold/.test(h) && !/rest|break|recover/.test(h));
+    if (i >= 0) {
+      at.time = i;
+      used.add(i);
+    }
+  }
   return { header, at, used };
 }
 
@@ -1513,6 +1525,23 @@ export function parseProgramTable(raw: string): ParseResult {
      * have its names rewritten on the strength of a second opinion nobody asked for. And the name is
      * only ever trimmed when a scheme genuinely came out of it.
      */
+    /*
+     * LAST, A CLOCK ANYWHERE ELSE ON THE ROW — the Sets cell, an unnamed column, a header nobody could guess.
+     * Only a cell that is WHOLLY a clock ("0:40", "40 sec"), and never in a rest column. A clock in the Sets
+     * cell is not a set count: "1:30" there read as ONE set.
+     */
+    if (durationSec == null && reps == null) {
+      for (let c = 0; c < cells.length; c++) {
+        if (c === at.exercise || c === at.week || c === at.day) continue;
+        if (/rest|break|recover/.test(header[c] ?? '')) continue;
+        const sec = timeOfCell(cells[c]);
+        if (sec == null) continue;
+        durationSec = sec;
+        if (c === at.sets) sets = undefined;
+        break;
+      }
+    }
+
     let named = rawName;
     if (durationSec != null) reps = undefined; // a clock in its own column outranks a first-number read of it
     if (sets == null || (reps == null && durationSec == null)) {

@@ -133,6 +133,9 @@ const TRAINING_VOCABULARY = [
   'exercise', 'movement', 'lift', 'name',
   'set', 'rep', 'scheme', 'volume',
   'week', 'day', 'session', 'workout', 'split',
+  // A clock column is training vocabulary too: an interval timer's list is "Exercise | Time" and was refused as
+  // not-a-program for having one word (PO 2026-09-27).
+  'time', 'duration', 'interval',
 ];
 
 /**
@@ -266,11 +269,13 @@ Output ONLY tab-separated rows. A header row first, then one row per line. No pr
 
 # The columns
 
-Use these header names where the source has them: Week, Day, Exercise, Sets, Reps.
+Use these header names where the source has them: Week, Day, Exercise, Sets, Reps, Time.
 
 - Keep the source's own column layout when it differs. If the sheet is one row per day with the whole session written out as a sentence, use Week, Day, Session and put the sentence in the Session cell whole.
 - If a column is not in the image, leave the cell empty. An empty cell is a true statement about the photograph.
 - If the image shows no Week column, do not invent one — omit it entirely.
+- If an exercise is prescribed by TIME instead of a rep count — an interval timer's "0:40", a hold's "45s", "1 min" — put that time in a Time column exactly as written. Never move a time into Sets or Reps, and never leave it out.
+- Rest rows ("Rest 0:20") are rows like any other: transcribe them.
 
 # What you must never do
 

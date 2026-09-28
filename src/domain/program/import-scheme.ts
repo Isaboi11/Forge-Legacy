@@ -64,16 +64,24 @@ export function timeCell(cell: string | undefined): number | undefined {
   return /^\d{1,3}$/.test(t) ? capped(Number(t)) : undefined;
 }
 
-/** True when a whole cell is a clock and nothing else — "0:40", "40s", ":30". Used on a REPS cell. */
+/** A cell's clock, tidied: ":30" → "0:30", and a unit after a clock dropped — "0:40 min" is still 0:40. */
+function tidyClock(cell: string | undefined): string {
+  return (cell ?? '')
+    .trim()
+    .replace(/^:(\d\d)$/, '0:$1')
+    .replace(/^(\d{1,2}:\d{2})\s*(?:mins?|minutes?|secs?|seconds?|s|m)\.?$/i, '$1');
+}
+
+/** True when a whole cell is a clock and nothing else — "0:40", "40s", ":30", "0:40 min". */
 export function isTimeCell(cell: string | undefined): boolean {
-  const t = (cell ?? '').trim().replace(/^:(\d\d)$/, '0:$1');
+  const t = tidyClock(cell);
   const hit = timeIn(t);
   return !!hit && hit.at[0] === 0 && hit.at[1] === t.length;
 }
 
 /** A REPS cell's clock, when the whole cell is one — ":30" included. */
 export function timeOfCell(cell: string | undefined): number | undefined {
-  const t = (cell ?? '').trim().replace(/^:(\d\d)$/, '0:$1');
+  const t = tidyClock(cell);
   return isTimeCell(t) ? timeIn(t)?.sec : undefined;
 }
 

@@ -85,3 +85,26 @@ test('one workout reads as one workout (PO: "this is just one day, nothing more"
   assert.equal(summarize(r.weeks, 'workout'), '1 workout · 2 exercises');
   assert.equal(summarize(r.weeks), '1 week · 1 day each · 2 exercises', 'a program still reads as one');
 });
+
+test('a clock is found wherever the photo reader put it (PO’s second try, 2026-09-27)', async () => {
+  const layouts = {
+    'Time (sec)': 'Exercise\tTime (sec)\nChest Fly\t40\nT Push Up\t40',
+    'Work Time': 'Exercise\tWork Time\nChest Fly\t0:40\nT Push Up\t0:40',
+    Timer: 'Exercise\tTimer\nChest Fly\t0:40\nT Push Up\t0:40',
+    'the Sets column': 'Exercise\tSets\nChest Fly\t0:40\nT Push Up\t0:40',
+    'an unnamed column': 'Exercise\t\nChest Fly\t0:40\nT Push Up\t0:40',
+    'a unit after the clock': 'Exercise\tReps\nChest Fly\t0:40 min\nT Push Up\t0:40 min',
+  };
+  for (const [how, text] of Object.entries(layouts)) {
+    assert.deepEqual(itemsOf(text).map((i) => [i.name, i.sets, i.durationSec]), [['Chest Fly', 3, 40], ['T Push Up', 3, 40]], how);
+  }
+  // "1:30" in the Sets cell is ninety seconds, not ONE set
+  const r = itemsOf('Exercise\tSets\tReps\nPlank\t1:30\t');
+  assert.deepEqual([r[0].sets, r[0].setsAssumed, r[0].durationSec], [3, true, 90]);
+  // a rest column is never the work; a time of day is never a set
+  assert.equal(itemsOf('Exercise\tSets\tReps\tRest Time\nChest Fly\t3\t10\t0:20')[0].durationSec, undefined);
+  assert.equal(itemsOf('Exercise\tSets\tReps\tTime\nSquat\t5\t5\t7:00 AM')[0].durationSec, undefined);
+
+  const { sanitizeTranscript } = await import('../photo-transcript.ts');
+  assert.equal(sanitizeTranscript('Exercise\tTime\nChest Fly\t0:40\nRest\t0:20').ok, true, 'an interval list is a program');
+});

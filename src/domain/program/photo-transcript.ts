@@ -74,6 +74,9 @@ const TRAINING_VOCABULARY = [
   'exercise', 'movement', 'lift', 'name',
   'set', 'rep', 'scheme', 'volume',
   'week', 'day', 'session', 'workout', 'split',
+  // A clock column is training vocabulary too: an interval timer's list is "Exercise | Time" and was refused as
+  // not-a-program for having one word (PO 2026-09-27).
+  'time', 'duration', 'interval',
 ];
 
 /**
