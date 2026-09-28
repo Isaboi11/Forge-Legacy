@@ -27,14 +27,19 @@ export function workoutDraftFromImport(
 ): ImportedWorkout | null {
   const day = toProgramStructure(weeks, '', resolveKey).days[0];
   if (!day) return null;
-  // A cardio bout carries 1 × 0 on purpose (see `toProgramStructure`); clamping it would invent a rep.
+  // A cardio bout carries 1 × 0 on purpose (see `toProgramStructure`); clamping it would invent a rep. A timed
+  // set keeps its clock (`durationSec`) and has no reps to clamp.
   const rows = (list: typeof day.main): ProgramExercise[] =>
     list.map(
       (x) =>
         ({
           ...x,
           id: newExerciseId(),
-          ...(x.kind === 'cardio' ? {} : { sets: clampSets(x.sets), reps: clampReps(x.reps) }),
+          ...(x.kind === 'cardio'
+            ? {}
+            : 'durationSec' in x && x.durationSec != null
+              ? { sets: clampSets(x.sets) }
+              : { sets: clampSets(x.sets), reps: clampReps(x.reps) }),
         }) as unknown as ProgramExercise,
     );
   const draft: WorkoutDraft = {

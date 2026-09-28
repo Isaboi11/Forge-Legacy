@@ -38,6 +38,8 @@ import {
   dayHeadingRow,
   extractScheme,
   firstNumber,
+  timeCell,
+  timeOfCell,
   hasQualifier,
   isAnnotation,
   isChatter,
@@ -62,6 +64,11 @@ export interface ParsedItem {
   /** True when the sheet did not say, so the preview can show the athlete what it filled in. */
   setsAssumed: boolean;
   repsAssumed: boolean;
+  /**
+   * A TIMED set — "0:40", "3 × 30s", a Time column (PO 2026-09-27). When set, `reps` is 0 and not assumed:
+   * the clock IS the prescription. Becomes `ProgramExercise.durationSec`, which the logger already times.
+   */
+  durationSec?: number;
   /**
    * ══ THE CARDIO FIELDS ══
    *
@@ -143,6 +150,8 @@ const COLUMNS = {
   reps: ['reps', 'rep', 'repetitions'],
   /** One column holding both — "Sets x Reps", "Scheme", "3x8". Common enough to be worth reading. */
   scheme: ['setsxreps', 'setsreps', 'scheme', 'setrep', 'volume', 'prescription'],
+  /** A clock per exercise — an interval timer's "0:40", a hold's "45s" (PO 2026-09-27). */
+  time: ['time', 'duration', 'work', 'secs', 'seconds', 'sec', 'interval', 'hold', 'length'],
 } as const;
 
 type ColumnKey = keyof typeof COLUMNS;
@@ -258,7 +267,11 @@ function calendarOrder<T extends { name: string }>(days: T[]): T[] {
     .map((x) => x.d);
 }
 
-function item(name: string, sets: number | undefined, reps: number | undefined): ParsedItem {
+function item(name: string, sets: number | undefined, reps: number | undefined, durationSec?: number): ParsedItem {
+  if (durationSec != null) {
+    // A timed set: the clock is what was prescribed, so there are no reps to assume.
+    return { name, sets: sets ?? DEFAULT_SETS, reps: 0, setsAssumed: sets == null, repsAssumed: false, durationSec };
+  }
   return {
     name,
     sets: sets ?? DEFAULT_SETS,
@@ -326,9 +339,11 @@ function parseFreeform(lines: string[]): ParseResult {
     .map((line) => {
       const wk = weekHeading(line);
       const { scheme, rest } = extractScheme(line);
-      const hasScheme = scheme.sets != null || scheme.reps != null;
+      const setsReps = scheme.sets != null || scheme.reps != null;
       const label = wk == null ? splitDayLabel(line) : null;
-      const cardio = wk == null && !hasScheme ? cardioItems(line) : null;
+      const cardio = wk == null && !setsReps ? cardioItems(line) : null;
+      // A clock alone is work too ("Chest Fly 0:40") — unless it named a cardio bout, which wins.
+      const hasScheme = setsReps || (scheme.durationSec != null && cardio == null);
       return {
         line,
         wk,
@@ -475,7 +490,7 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (rest && progressionLift && !cleanExerciseName(extractScheme(rest).rest) && hasScheme(rest)) {
         const { scheme } = extractScheme(rest);
-        b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(progressionLift, scheme.sets, scheme.reps));
+        b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(progressionLift, scheme.sets, scheme.reps, scheme.durationSec));
         return;
       }
       if (rest && (hasScheme(rest) || (activityIn(rest) != null && cardioItems(rest) != null) || (!/\d/.test(rest) && !isChatter(rest) && !isRestEntry(rest) && !/\bdeload\b/i.test(rest)))) {
@@ -561,7 +576,7 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (next?.hasScheme && !next.rest) {
         const name = cleanExerciseName(row.line);
-        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', noted(item(name, next.scheme.sets, next.scheme.reps), next.line));
+        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', noted(item(name, next.scheme.sets, next.scheme.reps, next.scheme.durationSec), next.line));
         consumed.add(next);
         return;
       }
@@ -693,16 +708,17 @@ function expandWeekSpans(weeks: ParsedWeek[], spans: Map<number, number>): Parse
   return [...byIndex.values()].sort((a, b) => a.index - b.index);
 }
 
-/** Does this text carry a sets×reps of its own? */
+/** Does this text carry a sets×reps of its own — or a timed set's clock that is not a cardio bout? */
 function hasScheme(text: string): boolean {
   const { scheme } = extractScheme(text);
-  return scheme.sets != null || scheme.reps != null;
+  if (scheme.sets != null || scheme.reps != null) return true;
+  return scheme.durationSec != null && cardioItems(text) == null;
 }
 
-/** Does this text prescribe anything — a sets×reps, or a bout with a distance or a clock? */
+/** Does this text prescribe anything — a sets×reps, a timed set, or a bout with a distance or a clock? */
 function hasWork(text: string): boolean {
   const { scheme } = extractScheme(text);
-  return scheme.sets != null || scheme.reps != null || cardioItems(text) != null;
+  return scheme.sets != null || scheme.reps != null || scheme.durationSec != null || cardioItems(text) != null;
 }
 
 /**
@@ -749,7 +765,9 @@ function workItems(text: string, source: string, skipped: string[]): ParsedItem[
     .split(/\s*(?:[,;]|\s[/+&]\s|\s+and\s+|\s+then\s+)\s*/i)
     .map((p) => p.trim())
     .filter(Boolean);
-  const pieces = parts.length >= 2 && parts.every(hasWork) ? parts : [text];
+  /* …and every piece NAMES something: "Hollow Hold 3 sets, 20s each" is one hold, not a second lift called "each". */
+  const named = (p: string) => !/^(?:each|ea|per|per side|each side|total|hold)?$/i.test(cleanExerciseName(extractScheme(p).rest));
+  const pieces = parts.length >= 2 && parts.every(hasWork) && parts.every(named) ? parts : [text];
 
   const out: ParsedItem[] = [];
   for (const piece of pieces) {
@@ -759,7 +777,7 @@ function workItems(text: string, source: string, skipped: string[]): ParsedItem[
       continue;
     }
     const { scheme, rest } = extractScheme(piece);
-    const hasNumbers = scheme.sets != null || scheme.reps != null;
+    const hasNumbers = scheme.sets != null || scheme.reps != null || scheme.durationSec != null;
     const name = cleanExerciseName(hasNumbers ? rest : rest || piece);
     /*
      * A line that is NOTHING but a prescription has no exercise to give it to — "Week 1: 3x8" under a
@@ -770,7 +788,7 @@ function workItems(text: string, source: string, skipped: string[]): ParsedItem[
       skipped.push(source);
       continue;
     }
-    out.push(noted(item(name, scheme.sets, scheme.reps), pieces.length > 1 ? piece : source));
+    out.push(noted(item(name, scheme.sets, scheme.reps, scheme.durationSec), pieces.length > 1 ? piece : source));
   }
   return out;
 }
@@ -1104,7 +1122,7 @@ function parseColumnPerDay(lines: string[], delimiter: '\t' | ';' | ','): ParseR
       if (!cell) continue;
       const { scheme, rest } = extractScheme(cell);
       const name = cleanExerciseName(rest || cell);
-      if (name) b.add(1, label, cleanDayName(label), item(name, scheme.sets, scheme.reps));
+      if (name) b.add(1, label, cleanDayName(label), item(name, scheme.sets, scheme.reps, scheme.durationSec));
     }
   }
   return b.rowsRead ? { ok: true, weeks: b.done(), ignoredColumns: [], rowsRead: b.rowsRead, skipped: lines.slice(0, at) } : null;
@@ -1437,7 +1455,14 @@ export function parseProgramTable(raw: string): ParseResult {
      */
     const setsText = at.sets !== undefined ? (cells[at.sets] ?? '').trim() : '';
     const repsText = at.reps !== undefined ? (cells[at.reps] ?? '').trim() : '';
-    if (!setsText && !repsText && SECTION_WORD.test(cleanExerciseName(rawName))) continue;
+    const timeText = at.time !== undefined ? (cells[at.time] ?? '').trim() : '';
+    if (!setsText && !repsText && !timeText && SECTION_WORD.test(cleanExerciseName(rawName))) continue;
+    /*
+     * A CLOCK, from a Time column or written in the Reps cell ("0:40") — PO 2026-09-27: an interval timer's
+     * 40-on/20-off list imported as 3 × 10 because a time is not a number of reps. A "Rest 0:20" row never
+     * gets here (REST_ENTRY above).
+     */
+    let durationSec = timeCell(timeText) ?? timeOfCell(repsText);
 
     let sets = at.sets !== undefined ? firstNumber(cells[at.sets]) : undefined;
     let reps = at.reps !== undefined ? firstNumber(cells[at.reps]) : undefined;
@@ -1446,11 +1471,12 @@ export function parseProgramTable(raw: string): ParseResult {
      * The whole scheme typed into the SETS cell — "3 X 10-15" with Reps left empty. First-number
      * reading took the 3 and lost the reps, which then showed as an assumed 10.
      */
-    if (reps == null && setsText) {
+    if (reps == null && durationSec == null && setsText) {
       const inSets = extractScheme(setsText).scheme;
-      if (inSets.sets != null && inSets.reps != null) {
+      if (inSets.sets != null && (inSets.reps != null || inSets.durationSec != null)) {
         sets = inSets.sets;
         reps = inSets.reps;
+        durationSec = inSets.durationSec;
       }
     }
     /*
@@ -1464,14 +1490,18 @@ export function parseProgramTable(raw: string): ParseResult {
         sets = inReps.sets;
         // "3x failure" states the sets and leaves the reps to the day — shown as an assumption, not as 3.
         reps = inReps.reps;
+        if (inReps.durationSec != null) durationSec = inReps.durationSec;
       }
     }
 
-    // A single "Sets x Reps" column, when that is how the sheet keeps it.
-    if ((sets == null || reps == null) && at.scheme !== undefined) {
+    // A single "Sets x Reps" column, when that is how the sheet keeps it — "3x30s" there is a timed set.
+    if ((sets == null || (reps == null && durationSec == null)) && at.scheme !== undefined) {
       const fromScheme = extractScheme(cells[at.scheme] ?? '').scheme;
       sets = sets ?? fromScheme.sets;
-      reps = reps ?? fromScheme.reps;
+      if (reps == null && durationSec == null) {
+        reps = fromScheme.reps;
+        durationSec = fromScheme.durationSec;
+      }
     }
 
     /*
@@ -1484,11 +1514,15 @@ export function parseProgramTable(raw: string): ParseResult {
      * only ever trimmed when a scheme genuinely came out of it.
      */
     let named = rawName;
-    if (sets == null || reps == null) {
+    if (durationSec != null) reps = undefined; // a clock in its own column outranks a first-number read of it
+    if (sets == null || (reps == null && durationSec == null)) {
       const { scheme: inName, rest } = extractScheme(rawName);
       if (sets == null) sets = inName.sets;
-      if (reps == null) reps = inName.reps;
-      if (inName.sets != null || inName.reps != null) named = rest || rawName;
+      if (reps == null && durationSec == null) {
+        reps = inName.reps;
+        durationSec = inName.durationSec;
+      }
+      if (inName.sets != null || inName.reps != null || inName.durationSec != null) named = rest || rawName;
     }
 
     /*
@@ -1496,11 +1530,11 @@ export function parseProgramTable(raw: string): ParseResult {
      * the Exercise column but prescribes nothing, and outside a preamble the very same shape is a real
      * item the sheet simply did not put numbers on — a Zone 2 run — which must still import.
      */
-    if (inPreamble && sets == null && reps == null) continue;
+    if (inPreamble && sets == null && reps == null && durationSec == null) continue;
 
     const name = cleanExerciseName(named);
     if (!name) continue;
-    b.add(week, repeatMode === 'days' ? `${dayRun}:${day}` : day, day, item(name, sets, reps));
+    b.add(week, repeatMode === 'days' ? `${dayRun}:${day}` : day, day, item(name, sets, reps, durationSec));
   }
 
   if (b.rowsRead === 0) {
@@ -1509,9 +1543,13 @@ export function parseProgramTable(raw: string): ParseResult {
   return { ok: true, weeks: b.done(), ignoredColumns, rowsRead: b.rowsRead };
 }
 
-/** "3 weeks · 4 days each · 48 exercises" — the design's "Here's what we read". */
-export function summarize(weeks: readonly ParsedWeek[]): string {
+/**
+ * "3 weeks · 4 days each · 48 exercises" — the design's "Here's what we read". A WORKOUT (one day, the template
+ * import) reads "1 workout · 5 exercises": "1 week · 1 day each" described a program nobody imported (PO 09-27).
+ */
+export function summarize(weeks: readonly ParsedWeek[], unit: 'program' | 'workout' = 'program'): string {
   const items = weeks.reduce((n, w) => n + w.days.reduce((m, d) => m + d.items.length, 0), 0);
+  if (unit === 'workout') return `1 workout · ${items} exercise${items === 1 ? '' : 's'}`;
   const dayCounts = [...new Set(weeks.map((w) => w.days.length))];
   const days = dayCounts.length === 1 ? `${dayCounts[0]} day${dayCounts[0] === 1 ? '' : 's'} each` : 'varying days';
   const wk = `${weeks.length} week${weeks.length === 1 ? '' : 's'}`;
@@ -1522,7 +1560,7 @@ export function summarize(weeks: readonly ParsedWeek[]): string {
 export function weeksAreIdentical(weeks: readonly ParsedWeek[]): boolean {
   if (weeks.length < 2) return true;
   const shape = (w: ParsedWeek) =>
-    JSON.stringify(w.days.map((d) => [d.name, d.items.map((i) => [i.name, i.sets, i.reps])]));
+    JSON.stringify(w.days.map((d) => [d.name, d.items.map((i) => [i.name, i.sets, i.reps, i.durationSec ?? null])]));
   const first = shape(weeks[0]);
   return weeks.every((w) => shape(w) === first);
 }
@@ -1607,7 +1645,14 @@ export function toProgramStructure(
       };
     }
     const key = resolveKey(i.name);
-    const base = { name: i.name, sets: i.sets, reps: i.reps, ...(i.note ? { coachNote: i.note } : {}) };
+    const base = {
+      name: i.name,
+      sets: i.sets,
+      reps: i.reps,
+      // A timed set carries its clock into the program (`ProgramExercise.durationSec`, which the logger times).
+      ...(i.durationSec != null ? { durationSec: i.durationSec } : {}),
+      ...(i.note ? { coachNote: i.note } : {}),
+    };
     return key ? { ...base, catalogKey: key } : base;
   };
 

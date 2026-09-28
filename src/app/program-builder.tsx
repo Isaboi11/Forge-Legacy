@@ -17,6 +17,7 @@ import { draftFromImport } from '@/lib/program-import-draft';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
+import { bumpTimedSet, durText } from '@/domain/program/prescription';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useUnits } from '@/lib/settings';
 import { EquipIcon, equipmentLabel } from '@/components/forge/EquipIcon';
@@ -833,7 +834,9 @@ function ProgramBuilderScreen() {
               list.map((x, k) =>
                 k !== i
                   ? x
-                  : x.kind !== 'cardio'
+                  : x.kind !== 'cardio' && x.durationSec != null
+                    ? { ...x, durationSec: bumpTimedSet(x.durationSec, dir) }
+                    : x.kind !== 'cardio'
                     ? { ...x, reps: clampReps((x.reps ?? 1) + dir) }
                     : x.activity === 'bike'
                       ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir, FIRST_TARGET[x.activity ?? 'bike'].spdMph) }
@@ -2413,8 +2416,14 @@ function ExerciseCard({
   // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed. Time is cardio-only.
   const aVal = cardio ? (item.targetMi == null ? 'Open' : fmtDistanceIn(item.targetMi, distUnit)) : String(item.sets ?? 1);
   const aUnit = cardio ? (item.targetMi == null ? '' : distUnit) : 'sets';
-  const bVal = cardio ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality, targetMi: item.targetMi ?? null }, id, id) : String(item.reps ?? 1);
-  const bUnit = cardio ? (speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi') : 'reps';
+  // A TIMED lift ("Plank 3 × 30s", an interval) shows its clock in the reps slot — it has no reps (PO 2026-09-27).
+  const timedLift = !cardio && item.durationSec != null;
+  const bVal = cardio
+    ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality, targetMi: item.targetMi ?? null }, id, id)
+    : timedLift
+      ? durText(item.durationSec)
+      : String(item.reps ?? 1);
+  const bUnit = cardio ? (speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi') : timedLift ? '' : 'reps';
   const tVal = item.targetSec == null ? 'Open' : fmtDuration(item.targetSec);
   const tOpen = item.targetSec == null;
   // Bronze on an open target is what makes "no target" read as a deliberate authored state rather than
@@ -2556,11 +2565,11 @@ function ExerciseCard({
           </View>
         ) : (
           <View style={styles.exMeter}>
-            <RoundStep label={`Fewer reps for ${item.name}`} sign="−" onPress={() => onSlotB(-1)} />
+            <RoundStep label={timedLift ? `Less time for ${item.name}` : `Fewer reps for ${item.name}`} sign="−" onPress={() => onSlotB(-1)} />
             <Text style={styles.exMeterText}>
               <Text style={[styles.exMeterValue, bOpen ? styles.exMeterOpen : null]}>{bVal}</Text> {bUnit}
             </Text>
-            <RoundStep label={`More reps for ${item.name}`} sign="+" onPress={() => onSlotB(1)} />
+            <RoundStep label={timedLift ? `More time for ${item.name}` : `More reps for ${item.name}`} sign="+" onPress={() => onSlotB(1)} />
           </View>
         )}
       </View>

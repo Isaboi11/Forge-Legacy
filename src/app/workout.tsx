@@ -5407,9 +5407,12 @@ function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionE
             groupRounds: e.groupRounds ?? undefined,
           }
         : null),
+      /* A TIMED row (a strength row with a clock — "Plank 3 × 30s", a 40-on interval) starts as timed sets:
+         the logger's clock, no reps asked for. It used to start as sets of 8 (PO 2026-09-27). */
       sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
         setIndex: si,
-        targetReps: e.targetReps || 8,
+        targetReps: e.targetDurationSec != null ? 0 : e.targetReps || 8,
+        ...(e.targetDurationSec != null ? { targetSec: e.targetDurationSec } : null),
         weight: null,
         actualReps: null,
         done: false,

@@ -103,7 +103,8 @@ function toProgramExercise(e: TemplateExercise, lookup: CatalogLookup): ProgramE
     muscles: rec?.muscles ?? [],
     ...(rec?.cat ? { type: rec.cat } : null),
     sets: Math.max(1, e.sets),
-    reps: Math.max(1, e.targetReps),
+    // A timed row keeps its clock into the program day (`durationSec`), and has no reps to invent.
+    ...(e.targetDurationSec != null ? { durationSec: e.targetDurationSec } : { reps: Math.max(1, e.targetReps) }),
     ...(e.coachNote ? { coachNote: e.coachNote } : null),
     ...group,
   };

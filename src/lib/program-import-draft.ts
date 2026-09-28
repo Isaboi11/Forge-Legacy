@@ -89,9 +89,10 @@ export function draftFromImport(
    * Clamping silently would be the worse fix. An athlete whose seventh day vanished must be told which
    * day went, not left to discover it on a Thursday. `importLimitNotes` is the one list of what is cut.
    */
-  // A cardio bout carries 1 × 0 on purpose (see `toProgramStructure`); clamping would invent a rep.
-  const fitRow = <T extends { kind?: string; sets: number; reps: number }>(x: T) =>
-    x.kind === 'cardio' ? x : { ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) };
+  // A cardio bout carries 1 × 0 on purpose (see `toProgramStructure`); clamping would invent a rep. A TIMED set
+  // (`durationSec`) has no reps either — its clock is the prescription — so only its sets are clamped.
+  const fitRow = <T extends { kind?: string; sets: number; reps: number; durationSec?: number }>(x: T) =>
+    x.kind === 'cardio' ? x : x.durationSec != null ? { ...x, sets: clampSets(x.sets) } : { ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) };
   const fit = (list: typeof imported.days) =>
     list.slice(0, DAYS_MAX).map((d) => ({
       ...d,

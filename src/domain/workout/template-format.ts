@@ -20,6 +20,9 @@ interface ExerciseShape {
   sets: number;
   targetReps: number;
   section?: TemplateSection;
+  /** A timed row's clock — set for a strength row only when it is timed (PO 2026-09-27). */
+  targetDurationSec?: number | null;
+  kind?: 'strength' | 'cardio';
 }
 
 /**
@@ -51,6 +54,12 @@ export function estimatedMinutes(exercises: readonly ExerciseShape[]): number {
  * the threshold moved to 30, because 20 reps is an ordinary set and 30 reps of anything is not programmed.
  */
 export function schemeText(e: ExerciseShape): string {
+  // A TIMED row says its clock: "3 × 40s", "3 × 1m 30s". (A cardio row's clock is its bout, drawn elsewhere.)
+  if (e.kind !== 'cardio' && e.targetDurationSec != null && e.targetDurationSec > 0) {
+    const m = Math.floor(e.targetDurationSec / 60);
+    const sec = e.targetDurationSec % 60;
+    return `${e.sets} × ${m ? `${m}m${sec ? ` ${sec}s` : ''}` : `${sec}s`}`;
+  }
   const seconds = (e.section ?? 'main') === 'cooldown' && e.targetReps >= 30;
   return `${e.sets} × ${e.targetReps}${seconds ? 's' : ''}`;
 }

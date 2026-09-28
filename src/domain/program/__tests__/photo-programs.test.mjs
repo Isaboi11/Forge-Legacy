@@ -55,7 +55,8 @@ for (const [file, what, days, exercises] of PHOTOS) {
     const items = r.weeks[0].days.flatMap((d) => d.items);
     assert.equal(items.length, exercises, summarize(r.weeks));
     assert.ok(items.every((i) => i.name.trim().length > 1), 'every exercise has a name');
-    assert.ok(items.every((i) => i.sets >= 1 && i.reps >= 1), 'every exercise has usable numbers');
+    // A timed set ("Plank 60 sec") has a clock instead of reps — PO 2026-09-27.
+    assert.ok(items.every((i) => i.sets >= 1 && (i.reps >= 1 || i.durationSec >= 1)), 'every exercise has usable numbers');
   });
 }
 

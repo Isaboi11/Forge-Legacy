@@ -50,3 +50,14 @@ test('the toast names library misses, and a matched name gains its catalogue key
 test('nothing read → no draft', () => {
   assert.equal(workoutDraftFromImport([], () => undefined), null);
 });
+
+test('a timed set keeps its clock into the template draft, with nothing clamped into reps', () => {
+  const r = workoutDraftFromImport(weeksOf('Chest Fly 0:40\nPlank 3x30s\nBench Press 4x8'), () => undefined);
+  assert.ok(r);
+  assert.deepEqual(r.draft.main.map((x) => [x.name, x.sets, x.durationSec ?? null]), [
+    ['Chest Fly', 3, 40],
+    ['Plank', 3, 30],
+    ['Bench Press', 4, null],
+  ]);
+  assert.equal(r.draft.main[2].reps, 8);
+});

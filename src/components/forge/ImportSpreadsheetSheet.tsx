@@ -12,6 +12,7 @@ import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
 import { pickTextFile } from '@/lib/pick-text-file';
 import { REPS_MAX, SETS_MAX } from '@/lib/program-draft-model';
+import { MAX_TIMED_SET_SEC } from '@/domain/program/import-scheme';
 import { importLimitNotes } from '@/lib/program-import-draft';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
@@ -424,8 +425,11 @@ export function ImportPreview({
    */
   const limitNotes = scope === 'day' ? [] : importLimitNotes(preview, { isWeek: scope === 'week' });
 
-  /** Adjust a parsed set/rep count before creating. The design's − / + on every preview row. */
-  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps', delta: number) =>
+  /**
+   * Adjust a parsed set/rep count — or a timed set's clock, 5 s a tap — before creating. The design's − / + on
+   * every preview row.
+   */
+  const bumpPreview = (wi: number, di: number, ii: number, field: 'sets' | 'reps' | 'durationSec', delta: number) =>
     onChange(
       preview.map((w, a) =>
         a !== wi
@@ -440,7 +444,9 @@ export function ImportPreview({
                       items: d.items.map((it, c) =>
                         c !== ii
                           ? it
-                          : {
+                          : field === 'durationSec'
+                            ? { ...it, durationSec: Math.max(5, Math.min(MAX_TIMED_SET_SEC, (it.durationSec ?? 0) + delta)) }
+                            : {
                               ...it,
                               // The builder's own ceilings — a stepper that climbs past them offers a
                               // number the program would silently cut on Create.
@@ -541,7 +547,7 @@ export function ImportPreview({
           ) : null}
           <View style={styles.impSummary}>
             <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
-            <Text style={styles.impSummaryText}>{summarize(preview)}</Text>
+            <Text style={styles.impSummaryText}>{summarize(preview, scope === 'day' ? 'workout' : 'program')}</Text>
           </View>
           <Text style={styles.impNote}>
             Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
@@ -642,9 +648,21 @@ export function ImportPreview({
                           <Text style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}>{it.sets}</Text>
                           <ImpStep label={`More sets of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'sets', 1)} />
                           <Text style={styles.impTimes}>×</Text>
-                          <ImpStep label={`Fewer reps of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'reps', -1)} />
-                          <Text style={[styles.impNum, styles.impNumWide, it.repsAssumed ? styles.impNumAssumed : null]}>{it.reps}</Text>
-                          <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
+                          {/* A TIMED set (PO 2026-09-27: "my picture is in seconds and not reps") — the clock
+                              is the prescription, stepped 5 s at a time, and there are no reps to show. */}
+                          {it.durationSec != null ? (
+                            <>
+                              <ImpStep label={`Less time for ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'durationSec', -5)} />
+                              <Text style={[styles.impNum, styles.impNumWide]}>{clockText(it.durationSec)}</Text>
+                              <ImpStep label={`More time for ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'durationSec', 5)} />
+                            </>
+                          ) : (
+                            <>
+                              <ImpStep label={`Fewer reps of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'reps', -1)} />
+                              <Text style={[styles.impNum, styles.impNumWide, it.repsAssumed ? styles.impNumAssumed : null]}>{it.reps}</Text>
+                              <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
+                            </>
+                          )}
                         </View>
                         )}
                         {/* ⚠ LAST IN THE ROW, not inside the name. Tucked beside the name it sat UNDER the
@@ -680,6 +698,11 @@ export function ImportPreview({
           ) : null}
         </View>
   );
+}
+
+/** "0:40", "1:30" — a timed set's clock as a timer shows it. */
+function clockText(sec: number): string {
+  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
 
 /** The library as the matcher sees it — built once, on first need, not on every render. */

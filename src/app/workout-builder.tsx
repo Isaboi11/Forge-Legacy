@@ -39,6 +39,7 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/program/import-parse';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
+import { bumpTimedSet, durText } from '@/domain/program/prescription';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   clampReps,
@@ -406,6 +407,8 @@ export default function WorkoutBuilderScreen() {
                     patch(sec.key, (l) =>
                       l.map((x, k) => {
                         if (k !== i) return x;
+                        // A TIMED set steps its clock, not reps (PO 2026-09-27).
+                        if (x.kind !== 'cardio' && x.durationSec != null) return { ...x, durationSec: bumpTimedSet(x.durationSec, dir) };
                         if (x.kind !== 'cardio') return { ...x, reps: clampReps((x.reps ?? 1) + dir) };
                         // Row B counts pace for a run and speed for a bike. The machines offer neither,
                         // and the stepper is hidden for them rather than stepping a value nothing renders.
@@ -677,7 +680,9 @@ function Row({
             name={item.name}
           />
         ) : null}
-        {!cardio ? (
+        {!cardio && item.durationSec != null ? (
+          <Stepper label="time" value={durText(item.durationSec)} onDown={() => onReps(-1)} onUp={() => onReps(1)} name={item.name} />
+        ) : !cardio ? (
           <Stepper label="reps" value={String(item.reps ?? 1)} onDown={() => onReps(-1)} onUp={() => onReps(1)} name={item.name} />
         ) : hasRate ? (
           <Stepper
@@ -784,7 +789,8 @@ function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
           : (x.catalogKey ?? null),
       name: x.name,
       sets: x.sets ?? 1,
-      targetReps: x.reps ?? 0,
+      // A TIMED set has no reps — its clock goes in `targetDurationSec`, the column cardio already uses.
+      targetReps: x.kind !== 'cardio' && x.durationSec != null ? 0 : (x.reps ?? 0),
       section,
       // ⚠ WAS HARDCODED `'strength'`, WITH BOTH TARGETS NULLED. Every cardio block an athlete authored
       // was silently saved as a strength row with no distance — the exact write-only-field failure the
@@ -795,7 +801,7 @@ function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
       groupKind: x.groupKind ?? null,
       groupRounds: x.groupRounds ?? null,
       targetMi: x.targetMi ?? null,
-      targetDurationSec: x.targetSec ?? null,
+      targetDurationSec: x.kind === 'cardio' ? (x.targetSec ?? null) : (x.durationSec ?? null),
       coachNote: x.coachNote ?? null,
     }));
   return [...of(d.warmup, 'warmup'), ...of(d.main, 'main'), ...of(d.cooldown, 'cooldown')];
@@ -827,7 +833,9 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
             targetMi: e.targetMi ?? null,
             targetSec: e.targetDurationSec ?? null,
           }
-        : null),
+        : e.targetDurationSec != null
+          ? { durationSec: e.targetDurationSec, reps: undefined }
+          : null),
       ...(e.coachNote ? { coachNote: e.coachNote } : null),
       ...(e.groupId
         ? { groupId: e.groupId, groupName: e.groupName ?? undefined, groupKind: e.groupKind ?? 'circuit', groupRounds: e.groupRounds ?? undefined }

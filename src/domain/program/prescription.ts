@@ -59,6 +59,14 @@ export const isFailure = (r: RepTarget): boolean => r === 'F';
  *
  * Whole minutes never render a trailing `0s` — "8m 0s" is not something anybody wrote on a card.
  */
+/**
+ * One tap on a TIMED set's clock — 5 s, held between 5 s and 5 min (PO 2026-09-27: a 40-on/20-off circuit).
+ * Past five minutes a clock is a cardio bout, which has its own control.
+ */
+export function bumpTimedSet(sec: number | null | undefined, dir: 1 | -1): number {
+  return Math.max(5, Math.min(300, (sec ?? 30) + dir * 5));
+}
+
 export function durText(sec: number | null | undefined): string {
   if (sec == null || sec <= 0) return '';
   const m = Math.floor(sec / 60);

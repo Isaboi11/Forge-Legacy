@@ -13,6 +13,68 @@
 export interface Scheme {
   sets?: number;
   reps?: number;
+  /**
+   * Performed for TIME — "0:40", "40s", "3 × 30s" (PO 2026-09-27: a 40-on/20-off circuit imported as 3 × 10,
+   * and "Plank 3x30s" as THIRTY REPS). Set instead of `reps`, never beside it.
+   */
+  durationSec?: number;
+}
+
+/**
+ * The longest a single timed SET runs — five minutes. Past this a clock is a cardio bout ("Rowing Machine 10 min",
+ * photo-14) or a session, not a hold or an interval, and the session/cardio readers own it — so it is left alone
+ * here, exactly as before.
+ */
+export const MAX_TIMED_SET_SEC = 300;
+
+const CLOCK = /(?<![\d.:])(\d{1,2}):([0-5]\d)(?![\d:])/;
+const SECONDS = /(?<![\d.:])(\d{1,3})\s*(?:s|secs?|seconds?)\b/i;
+const MINUTES = /(?<![\d.:])(\d{1,2})\s*(?:mins?|minutes?)\b/i;
+
+function capped(sec: number): number | undefined {
+  return sec > 0 && sec <= MAX_TIMED_SET_SEC ? sec : undefined;
+}
+
+/**
+ * The first clock in a piece of text, in seconds, and where it sat — "0:40", "1:30", "40s", "45 sec", "2 min".
+ * A bare number is NOT a time here (it is reps everywhere else); `timeCell` reads one under a Time header.
+ */
+export function timeIn(text: string): { sec: number; at: [number, number] } | null {
+  const readers: [RegExp, (m: RegExpMatchArray) => number][] = [
+    [CLOCK, (m) => Number(m[1]) * 60 + Number(m[2])],
+    [SECONDS, (m) => Number(m[1])],
+    [MINUTES, (m) => Number(m[1]) * 60],
+  ];
+  for (const [re, toSec] of readers) {
+    const m = text.match(re);
+    if (m?.index != null) {
+      const sec = capped(toSec(m));
+      if (sec != null) return { sec, at: [m.index, m.index + m[0].length] };
+    }
+  }
+  return null;
+}
+
+/** A cell under a Time / Duration header: a clock, or a bare number of seconds ("40"). */
+export function timeCell(cell: string | undefined): number | undefined {
+  const t = (cell ?? '').trim();
+  if (!t) return undefined;
+  const hit = timeIn(t);
+  if (hit) return hit.sec;
+  return /^\d{1,3}$/.test(t) ? capped(Number(t)) : undefined;
+}
+
+/** True when a whole cell is a clock and nothing else — "0:40", "40s", ":30". Used on a REPS cell. */
+export function isTimeCell(cell: string | undefined): boolean {
+  const t = (cell ?? '').trim().replace(/^:(\d\d)$/, '0:$1');
+  const hit = timeIn(t);
+  return !!hit && hit.at[0] === 0 && hit.at[1] === t.length;
+}
+
+/** A REPS cell's clock, when the whole cell is one — ":30" included. */
+export function timeOfCell(cell: string | undefined): number | undefined {
+  const t = (cell ?? '').trim().replace(/^:(\d\d)$/, '0:$1');
+  return isTimeCell(t) ? timeIn(t)?.sec : undefined;
 }
 
 /**
@@ -176,6 +238,8 @@ export function cleanExerciseName(raw: string): string {
     .replace(PERCENT, '')
     .replace(PER_SIDE, '')
     .replace(TO_FAILURE, '')
+    // "…3 sets, 20s each" once its clock is read — a trailing "each" after punctuation qualifies the set, not the lift.
+    .replace(/[\s,;:–—-]+\beach\.?\s*$/i, '')
     .replace(DANGLING_X, ' ')
     .replace(EMPTY_PAREN, '')
     .replace(TRAILING_PAREN, '')
@@ -228,9 +292,18 @@ export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
 
   const compact = compactMatch(text) ?? text.match(SLASHED);
   if (compact?.index != null) {
+    const span: [number, number][] = [[compact.index, compact.index + compact[0].length]];
+    /* "Plank 3x30s", "Hang 4 x 1 min" — the unit says the second number is a CLOCK, not reps. A bare "m" is
+       metres (a carry), so it is not read as minutes. */
+    const unit = /(secs?|seconds?|s|mins?|minutes?)$/i.exec(compact[0].trim())?.[1]?.toLowerCase();
+    if (unit) {
+      const n = Number(compact[2]);
+      const sec = capped(unit.startsWith('m') ? n * 60 : n);
+      if (sec != null) return { scheme: { sets: num(compact[1]), durationSec: sec }, rest: cut(text, span) };
+    }
     return {
       scheme: { sets: num(compact[1]), reps: num(compact[2]) },
-      rest: cut(text, [[compact.index, compact.index + compact[0].length]]),
+      rest: cut(text, span),
     };
   }
 
@@ -248,6 +321,24 @@ export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
 
   if (setsM?.index != null) {
     spans.push([setsM.index, setsM.index + setsM[0].length]);
+    const end = setsM.index + setsM[0].length;
+    const after = text.slice(end);
+    /* "3 sets of 30 sec" — the number after "of" carries a clock unit. */
+    const unit = setsM[2] ? /^\s*(secs?|seconds?|s|mins?|minutes?)\b/i.exec(after) : null;
+    if (unit) {
+      const n = Number(setsM[2]);
+      const sec = capped(unit[1].toLowerCase().startsWith('m') ? n * 60 : n);
+      if (sec != null) {
+        spans.push([end, end + unit[0].length]);
+        return { scheme: { sets: num(setsM[1]), durationSec: sec }, rest: cut(text, spans) };
+      }
+    }
+    /* "3 sets, 45s each" — the sets are said, and the work is a clock. */
+    const clock = !setsM[2] && !repsAll.length && !/\brest\b/i.test(after) ? timeIn(after) : null;
+    if (clock) {
+      spans.push([end + clock.at[0], end + clock.at[1]]);
+      return { scheme: { sets: num(setsM[1]), durationSec: clock.sec }, rest: cut(text, spans) };
+    }
     let reps = num(setsM[2]);
     if (reps == null && repsAll[0]?.index != null) {
       reps = num(repsAll[0][1]);
@@ -266,6 +357,15 @@ export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
   if (repsAll.length === 1 && repsAll[0].index != null) {
     spans.push([repsAll[0].index, repsAll[0].index + repsAll[0][0].length]);
     return { scheme: { reps: num(repsAll[0][1]) }, rest: cut(text, spans) };
+  }
+
+  /*
+   * Last: a clock on its own — "Chest Fly 0:40", "Wall sit 45s". A line that mentions REST is left alone: its
+   * clock is the gap, not the work ("Squat 90s rest", "Rest 0:20").
+   */
+  if (!/\brest\b/i.test(text)) {
+    const clock = timeIn(text);
+    if (clock) return { scheme: { durationSec: clock.sec }, rest: cut(text, [clock.at]) };
   }
 
   return { scheme: {}, rest: text.trim() };
@@ -375,7 +475,8 @@ export function isRestEntry(text: string): boolean {
 
 /** "Rest 3 min between sets", "Rest 90s" — an instruction about the gaps, on a line of its own. */
 export function isRestInstruction(text: string): boolean {
-  return /^rest\b[^a-z]*\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?)\b/i.test(text.trim());
+  // "Rest 0:20" — an interval timer writes the gap as a clock (PO's 40/20 circuit, 2026-09-27).
+  return /^rest\b[^a-z]*(?:\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?)\b|\d{1,2}:\d{2}\b)/i.test(text.trim());
 }
 
 /**

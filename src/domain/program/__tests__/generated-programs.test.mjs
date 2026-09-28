@@ -322,7 +322,8 @@ const check = (id, text, expect) => {
       const [n, s, rp] = want[j];
       assert.equal(it.name, n, id + ' day' + (i + 1) + '.' + (j + 1) + ' name');
       if (s != null) assert.equal(it.sets, s, id + ' "' + n + '" sets');
-      if (rp != null) assert.equal(it.reps, rp, id + ' "' + n + '" reps');
+      // A clock-unit scheme ("3x8s") is a TIMED set since 2026-09-27 — the number is its seconds, not reps.
+      if (rp != null) assert.equal(it.durationSec ?? it.reps, rp, id + ' "' + n + '" reps');
     });
   });
 };

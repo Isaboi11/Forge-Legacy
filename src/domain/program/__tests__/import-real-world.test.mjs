@@ -168,7 +168,10 @@ test('what people put around a name is stripped from it and kept as the note', (
   assert.deepEqual(items.map((i) => i.name), [
     'Lateral Raise', 'Plank', 'RDL', 'Lunges', 'Bench', 'Pull Ups', 'Deadlift', 'Cable Fly', 'Seated Row', 'Squat', 'Row',
   ]);
-  assert.deepEqual(items.map((i) => [i.sets, i.reps]).slice(0, 5), [[3, 8], [3, 30], [3, 8], [4, 8], [5, 5]]);
+  assert.deepEqual(items.map((i) => [i.sets, i.reps]).slice(0, 5), [[3, 8], [3, 0], [3, 8], [4, 8], [5, 5]]);
+  // "Plank 3x30s" is three 30-SECOND holds, not thirty reps (PO 2026-09-27).
+  assert.equal(items[1].durationSec, 30);
+  assert.equal(items[1].repsAssumed, false);
   assert.equal(items[5].sets, 3, '3 x AMRAP is three sets');
   assert.equal(items[5].repsAssumed, true);
   assert.equal(items[1].note, 'Plank 3x30s', 'the seconds survive as the note');

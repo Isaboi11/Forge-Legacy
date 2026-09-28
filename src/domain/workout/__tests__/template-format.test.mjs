@@ -115,3 +115,11 @@ test('groupBySection: every exercise survives the grouping', () => {
   const total = groupBySection(items).reduce((n, s) => n + s.items.length, 0);
   assert.equal(total, items.length);
 });
+
+test('a TIMED row says its clock, not reps (PO 2026-09-27)', () => {
+  assert.equal(schemeText({ sets: 3, targetReps: 0, targetDurationSec: 40, section: 'main', kind: 'strength' }), '3 × 40s');
+  assert.equal(schemeText({ sets: 2, targetReps: 0, targetDurationSec: 90, kind: 'strength' }), '2 × 1m 30s');
+  assert.equal(schemeText({ sets: 1, targetReps: 0, targetDurationSec: 120 }), '1 × 2m');
+  // a plain row is unchanged
+  assert.equal(schemeText({ sets: 3, targetReps: 8 }), '3 × 8');
+});
