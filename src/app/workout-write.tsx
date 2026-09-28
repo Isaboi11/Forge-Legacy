@@ -14,7 +14,7 @@ import { readProgramPhoto } from '@/data/program-photo-live';
 import type { TemplateExercise } from '@/data/templates-live';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
-import { readWrittenWorkout, roundTrips, rowsToWrittenText, tsvToWrittenText, writtenToTemplate, MAX_LIFT_KEYS, type WrittenTemplateRow } from '@/domain/workout/written-workout';
+import { checkBeforePosting, readWrittenWorkout, roundTrips, rowsToWrittenText, tsvToWrittenText, writtenToTemplate, MAX_LIFT_KEYS, type WrittenTemplateRow } from '@/domain/workout/written-workout';
 import { editSquadPost, fetchSquadPost, isPostedWorkout } from '@/data/squad-feed-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -75,7 +75,8 @@ export default function WorkoutWriteScreen() {
 
   const written = useMemo(() => (text.trim() ? readWrittenWorkout(text) : null), [text]);
   const rows = useMemo<TemplateExercise[]>(() => (written ? (writtenToTemplate(written, resolveKey) as TemplateExercise[]) : []), [written]);
-  const unmatched = rows.filter((r) => !r.catalogKey).map((r) => r.name);
+  /* Anything the reader is not sure of, pointed at before posting — never guessed at (`checkBeforePosting`). */
+  const checks = useMemo(() => (written ? checkBeforePosting(written, rows as unknown as WrittenTemplateRow[]) : []), [written, rows]);
   const maxNames = Object.fromEntries(Object.values(MAX_LIFT_KEYS).map((k) => [k, exerciseNameFor(k)]));
   const title = (name ?? written?.name ?? '').trim() || 'Workout';
 
@@ -194,13 +195,17 @@ export default function WorkoutWriteScreen() {
               accessibilityLabel="Workout name"
               maxLength={60}
             />
-            <PostedWorkoutView rows={rows} how={written.how} after={written.after} maxNames={maxNames} />
-            {unmatched.length ? (
-              <Text style={styles.warn}>
-                Not in the exercise library, so no how-to or history: {unmatched.join(', ')}. They’ll show as written.
-              </Text>
+            {checks.length ? (
+              <View style={styles.checks}>
+                <Text style={styles.checksHead}>Check {checks.length === 1 ? 'this' : 'these'} before posting</Text>
+                {checks.map((c) => (
+                  <Text key={c} style={styles.checkLine}>
+                    · {c}
+                  </Text>
+                ))}
+              </View>
             ) : null}
-            {written.unread.length ? <Text style={styles.warn}>Couldn’t read: {written.unread.join(' · ')}</Text> : null}
+            <PostedWorkoutView rows={rows} how={written.how} after={written.after} maxNames={maxNames} />
           </>
         ) : text.trim() && written?.how && !/\d+\s*(?:sets?|reps?|x)\b/i.test(text) ? (
           /* Squatober's Days 4 & 5 — a walk, food, sleep. Nothing to run, so nothing is invented to fill it. */
@@ -255,5 +260,8 @@ const styles = StyleSheet.create({
   section: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 6 },
   name: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
   warn: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  checks: { gap: 4, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
+  checksHead: { fontSize: 11, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
+  checkLine: { fontSize: 13, lineHeight: 19, color: flColor.cream100 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, backgroundColor: flColor.base },
 });

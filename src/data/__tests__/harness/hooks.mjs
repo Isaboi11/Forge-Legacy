@@ -1,5 +1,5 @@
 import { registerHooks } from 'node:module';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, resolve as joinPath } from 'node:path';
 
@@ -29,6 +29,11 @@ function fileFor(base) {
 }
 
 registerHooks({
+  /* The app's bundler imports JSON as a module (the exercise catalogue); Node needs telling. */
+  load(url, context, next) {
+    if (url.endsWith('.json')) return { format: 'module', source: `export default ${readFileSync(fileURLToPath(url), 'utf8')}`, shortCircuit: true };
+    return next(url, context);
+  },
   resolve(specifier, context, next) {
     if (FAKES[specifier]) return { url: FAKES[specifier], shortCircuit: true };
     if (specifier.startsWith('@/')) {

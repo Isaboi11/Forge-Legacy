@@ -191,7 +191,7 @@ function tidyName(raw: string): string {
  * that starts the prescription ("4,6,8" / "4 sets" / "4x15" / "5 total" / "10/50%" / "100 reps").
  */
 function splitName(rest: string): { name: string; rx: string } {
-  const m = /\s(?=\d{1,3}\s*(?:,|x|×|sets?\b|total\b|reps?\b|\/|@|%|yds?\b|yards?\b))/i.exec(` ${rest}`);
+  const m = /\s(?=\d{1,3}\s*(?:,|x|×|sets?\b|total\b|reps?\b|\/|@|%|yds?\b|yards?\b)|[x×]\s*\d{1,3}\s*reps?\b)/i.exec(` ${rest}`);
   if (!m) return { name: rest.replace(/["“”]/g, '').trim(), rx: '' };
   const at = m.index; // index in the padded string == index of the space before the number in `rest`
   return { name: rest.slice(0, at).trim(), rx: rest.slice(at).trim() };
@@ -307,7 +307,7 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
    * added as they go). Fifty or more is a TOTAL to reach ("100 reps with 33% of your Bench Max", "125 reps of
    * Triceps"), in as many sets as it takes — no rep target, never a 100-rep set.
    */
-  const count = !ex.sets && !ex.repScheme ? /(\d{1,4})\s*reps?\b/i.exec(text) : null;
+  const count = !ex.sets && !ex.repScheme ? /(?:[x×]\s*)?(\d{1,4})\s*reps?\b/i.exec(text) : null;
   if (count) {
     const c = Number(count[1]);
     ex.sets = 1;
@@ -524,6 +524,27 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       return;
     }
 
+    /*
+     * "Option One: 33 reps @ 70%" … "Option Five: 10 reps @ 90%" (2024 Day 11, "At Your Discretion") — a CHOICE, not a
+     * prescription: each option is kept word for word in the note (the preview puts the athlete's own weight beside
+     * it), and none of them becomes the lift's sets. How to break the reps up is the athlete's call, as the card says.
+     */
+    if (cur && /^option\s+\w+\s*[:.–-]/i.test(line)) {
+      (cur as WrittenExercise).note = joinNote((cur as WrittenExercise).note, tidySentence(line.replace(/\s+e\s+(?=\d)/i, ' @ ')));
+      return;
+    }
+
+    /* "EZ Bar/or BB" / "Skullcrushers x 50 reps" (2024 Day 10): a name cut at its "or", finished on the next line with
+       the numbers — read again as one line, in the same place. */
+    if (cur && !(cur as WrittenExercise).sets && !(cur as WrittenExercise).group && /\/\s*or\s+\S+$/i.test((cur as WrittenExercise).name)) {
+      const was = out.exercises.pop()!;
+      if (was.label && /^\d+$/.test(was.label)) lastN = String(Number(was.label) - 1);
+      cur = out.exercises[out.exercises.length - 1] ?? null;
+      liftLine(`${was.name} ${line}`, null);
+      if (was.note) (cur as WrittenExercise).note = joinNote(was.note, (cur as WrittenExercise).note ?? '');
+      return;
+    }
+
     /* One rung of a ramp on its own line: "5 reps @ 65%" — before the rest check, because a rung can carry its
        own rest ("3 reps @ 87% rest 20 sec"). */
     if (RAMP_LINE.test(line) && cur) {
@@ -628,7 +649,8 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
         /* A SENTENCE that carries numbers ("Get 100 reps with 33% of your Bench Max.") is kept whole as the
            author wrote it — the numbers are read out of it, but the words are not left as fragments. A percentage
            line always is ("use around 50-60% of your DEAD max"): the range and the "around" are the author's. */
-        const wordy = probe.percent != null || (left.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !FILLER.test(w)).length >= 2;
+        const words = (left.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !FILLER.test(w)).length;
+        const wordy = words >= 2 || (probe.percent != null && words >= 1);
         ex.note = joinNote(ex.note, wordy ? tidySentence(line) : (probe.note ?? ''));
         if (!ex.note) ex.note = null;
         return;
@@ -755,6 +777,13 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       return;
     }
 
+    /* "BACK SQUAT: Choose an option below" — the lift, then the author's words about it. */
+    const colon = /^([A-Za-z][^:\d]{1,40}):\s*([A-Za-z].*)$/.exec(body);
+    if (colon && !/\d/.test(colon[2])) {
+      body = colon[1];
+      ex.note = joinNote(ex.note, tidySentence(colon[2]));
+    }
+
     /* "125 reps of Triceps" — the count comes first and the lift after it. */
     const countFirst = /^(\d{1,4})\s*reps?\s+of\s+([A-Za-z].*)$/i.exec(body);
     const split = countFirst ? { name: countFirst[2], rx: `${countFirst[1]} reps` } : splitName(body);
@@ -762,10 +791,12 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     const rx = split.rx;
     /* "DB/or KB Farmers Walk", "EZ Bar/or BB Skullcrushers" — the first is the lift; the other is the author's
        "or", kept as a note. The catalogue matches "DB Farmers Walk"; it does not match the slash. */
-    const alt = /^(.*?)\s*\/\s*or\s+(\S+)\s+(.+)$/i.exec(name);
-    if (alt && alt[1]) {
-      name = `${alt[1]} ${alt[3]}`;
-      ex.note = joinNote(ex.note, `Or ${alt[2]}`);
+    /* …and "Suitcase/waiter's Carry", "KB/or DB Suitcase/waiter Carry": every "A/B" pair in a name, as many as it has. */
+    for (let k = 0; k < 3; k++) {
+      const pair = /^(.*?)\b(\w+)\s*\/\s*(?:or\s+)?(?!or\b)([\w']+)\s+(.+)$/i.exec(name);
+      if (!pair) break;
+      name = `${pair[1]}${pair[2]} ${pair[4]}`;
+      ex.note = joinNote(ex.note, `Or ${pair[3]}`);
     }
     ex.name = tidyName(name);
     const left = applyRx(ex, rx, true);
@@ -816,6 +847,7 @@ function tidySentence(s: string): string {
   const t = s
     .replace(/^[*•\-\s,;:]+/, '')
     .replace(/^\((.*)\)\.?$/, '$1')
+    .replace(/[\s*]+$/, '')
     .replace(/\s+/g, ' ')
     .trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
@@ -936,7 +968,9 @@ export function writtenToTemplate(w: WrittenWorkout, resolveKey: (name: string) 
     /* "Slow Strict Chin Up" matched as Chin-Up: the words that were taken off to match it are HOW to do it,
        so they go at the front of the note, never lost. */
     const how = key && resolveKey(e.name) == null ? howWordsOf(e.name) : null;
-    if (how) e = { ...e, note: joinNote(`${how.charAt(0).toUpperCase()}${how.slice(1).toLowerCase()}`, e.note ?? '') };
+    const howText = how ? `${how.charAt(0).toUpperCase()}${how.slice(1).toLowerCase()}` : null;
+    /* Once: a workout reopened for editing already carries it, and must not gain a second "Strict · Strict". */
+    if (howText && !(e.note ?? '').toLowerCase().startsWith(howText.toLowerCase())) e = { ...e, note: joinNote(howText, e.note ?? '') };
     const row: WrittenTemplateRow = {
       catalogKey: key,
       name: e.name,
@@ -1104,4 +1138,24 @@ export function roundTrips(w: { name: string; how?: string | null; after?: strin
     rows.length === w.rows.length &&
     rows.every((r, i) => norm(r) === norm(w.rows[i] as WrittenTemplateRow))
   );
+}
+
+
+/**
+ * What the poster should look at before posting (PO 2026-09-28: "I don't know why we keep having to fix things").
+ * The reader follows written rules; a card written a new way can fall outside them. Nothing here guesses — it
+ * points: a name still carrying symbols or numbers, a lift with no sets or reps read, a name the library does
+ * not know, a line nothing was made of. The write screen lists these above the preview.
+ */
+export function checkBeforePosting(w: WrittenWorkout, rows: readonly WrittenTemplateRow[]): string[] {
+  const out: string[] = [];
+  rows.forEach((r, i) => {
+    const e = w.exercises[i];
+    if (/[/:"\d]/.test(r.name)) out.push(`“${r.name}” — the name may have part of its numbers or another lift in it.`);
+    else if (!r.catalogKey) out.push(`“${r.name}” isn’t in the exercise library, so it has no how-to. Check the spelling.`);
+    const noCount = !r.targetReps && !r.repScheme?.length && !/yds|reps total|option|discretion|seconds|each way/i.test(r.coachNote ?? '');
+    if (noCount && e?.section !== 'warmup') out.push(`“${r.name}” — no reps were read. Add them (“5 sets of 5 reps”) if the card has them.`);
+  });
+  for (const u of w.unread) out.push(`Couldn’t read: “${u}”`);
+  return out;
 }

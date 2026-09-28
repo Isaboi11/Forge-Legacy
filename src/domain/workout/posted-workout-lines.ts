@@ -161,7 +161,8 @@ export function postedLines(rows: readonly PostedRow[], load?: LoadContext, maxN
       summary: parts.join(' · '),
       sets,
       rest,
-      note: r.coachNote ?? null,
+      /* "Option one: 33 reps @ 70%" — each option gets the reader's own weight beside it (2024 Day 11). */
+      note: r.coachNote ? withOptionWeights(r.coachNote, r.percentOf ?? r.catalogKey, load) : null,
       superset,
     });
   }
@@ -178,4 +179,15 @@ export function postedTally(rows: readonly PostedRow[]): string {
 /** Does anything here go off a max? The preview then says whose max it used — or asks for one. */
 export function usesMaxes(rows: readonly PostedRow[]): boolean {
   return rows.some((r) => r.percentOfMax != null || !!r.percentScheme?.some((p) => p != null));
+}
+
+
+/** "33 reps @ 70%" in a note → "33 reps @ 70% (220 lb)", from the reader's max. Unchanged without one. */
+function withOptionWeights(note: string, key: string | null, load?: LoadContext): string {
+  const max = key && load ? load.maxes[key] : undefined;
+  if (!load || !max) return note;
+  return note.replace(/(\d{1,3}\s*reps?\s*(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\s*%)(?!\s*\()/gi, (m, _all, p) => {
+    const w = resolveLoad(max, Number(p), load.rules)?.weight;
+    return w != null ? `${m} (${w} ${load.unit})` : m;
+  });
 }
