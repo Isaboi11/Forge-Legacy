@@ -159,12 +159,21 @@ test('both prompts link to the health data page, and it exists', () => {
 
 test('the policy version is the policies’ own "Last updated" date', () => {
   const months = { January: '01', February: '02', March: '03', April: '04', May: '05', June: '06', July: '07', August: '08', September: '09', October: '10', November: '11', December: '12' };
-  for (const [file, kind] of [['health-data.html', 'nutrition'], ['health-data.html', 'ai_sharing']]) {
+  /*
+   * A page date that is NOT a kind's version is allowed only once somebody has decided that edit needs no
+   * re-ask for that kind, and written the date down here with the reason in `consent.ts`.
+   * 2026-09-28 (build 10: Sentry, Apple Health, on-device body pose): nutrition and ai_sharing not re-asked.
+   */
+  const reviewedNoReask = { nutrition: ['2026-09-28'], ai_sharing: ['2026-09-28'], apple_health: [] };
+  for (const [file, kind] of [['health-data.html', 'nutrition'], ['health-data.html', 'ai_sharing'], ['health-data.html', 'apple_health']]) {
     const src = readFileSync(join(process.cwd(), 'site', file), 'utf8');
     const m = src.match(/Last updated (\d{1,2}) (\w+) (\d{4})/);
     assert.ok(m, `${file} has no Last updated line`);
     const iso = `${m[3]}-${months[m[2]]}-${m[1].padStart(2, '0')}`;
-    assert.equal(V[kind], iso, `${file} was updated — decide whether the ${kind} consent must be asked again, then move CONSENT_POLICY_VERSION`);
+    assert.ok(
+      V[kind] === iso || reviewedNoReask[kind].includes(iso),
+      `${file} was updated — decide whether the ${kind} consent must be asked again, then move CONSENT_POLICY_VERSION`,
+    );
   }
   assert.ok(AI_DECLINED_LINE.startsWith('Nothing was sent'));
 });

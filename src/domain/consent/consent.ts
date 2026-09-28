@@ -31,17 +31,22 @@ export const CONSENT_KINDS: readonly ConsentKind[] = ['nutrition', 'ai_sharing',
 
 /**
  * The policy each consent was given against — the "Last updated" date of `site/health-data.html` and
- * `site/privacy.html` (both 25 September 2026). Raise it when a policy changes in substance: every stored
- * grant for an older version then reads as `none`, and the athlete is asked again.
+ * `site/privacy.html` when that consent's text last changed in substance. Raise it when a policy changes in
+ * substance: every stored grant for an older version then reads as `none`, and the athlete is asked again.
  *
- * ⚠ `apple_health` — the §7 policy text naming Apple Health is not live yet (it must be before build 10
- *   reaches a tester, and `site/health-data.html` gets a new "Last updated" when it lands). Move this to
- *   that date in the same pass. Nobody can give this consent before then: only build 10 asks for it.
+ * `apple_health` is 28 September 2026: the day both pages gained the Apple Health text (privacy.html §2
+ * "Apple Health", health-data.html §1/§2). ⚠ That text must be PUBLISHED before build 10 reaches a tester —
+ * a grant stamped with this version is a grant against those pages. Nobody could give this consent before
+ * then: only build 10 asks for it.
+ *
+ * `nutrition` and `ai_sharing` stay on 25 September on purpose. The 28 September edits (Sentry, Apple
+ * Health, on-device body pose) change nothing either of them agreed to: Sentry never receives health data,
+ * and the only new thing sent to Anthropic — imported workouts — exists only after an `apple_health` grant.
  */
 export const CONSENT_POLICY_VERSION: Readonly<Record<ConsentKind, string>> = {
   nutrition: '2026-09-25',
   ai_sharing: '2026-09-25',
-  apple_health: '2026-09-25',
+  apple_health: '2026-09-28',
 };
 
 export interface ConsentRecord {

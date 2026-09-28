@@ -1,6 +1,16 @@
 # App Privacy labels — the answer sheet
 
-**v1.2 · 2026-09-27 · Launch Checklist §10.3** (v1.1 2026-09-26 · v1.0 2026-08-19)
+**v1.3 · 2026-09-28 · Launch Checklist §10.3** (v1.2 2026-09-27 · v1.1 2026-09-26 · v1.0 2026-08-19)
+
+> ⚠ **v1.3 — BUILD 10: PERFORMANCE DATA IS YES, AND SENTRY IS A SECOND DIAGNOSTICS SOURCE.** PO 09-28 turned
+> Sentry performance tracing ON (`Docs/Sentry-Build-Plan.md` header), so *Performance Data* moves from §3 to
+> §2: **Linked · App Functionality · not tracking.** Crash Data and Other Diagnostic Data do not change (already
+> Linked, v1.2) — Sentry is a processor for us, not a tracker, so "Used for tracking" stays **No** and there is
+> still no ATT prompt. Apple Health (build 10) adds no new type: its workouts are **Fitness**, already declared.
+> Body pose for form checks runs on the phone and the joint positions never leave it, so nothing new is
+> collected there either. Policy text: `site/privacy.html` "Last updated 28 September 2026" — ⚠ **must be
+> PUBLISHED before build 10 reaches a tester, and these labels entered for build 10 only.** Build 9 has no
+> Sentry; its labels stay v1.2. Rows changed are marked **(v1.3)**.
 
 > ⚠ **v1.2 — CRASH DATA AND OTHER DIAGNOSTIC DATA ARE YES.** v1.0 answered No on 2026-08-19 because *no crash SDK
 > was installed* — two days BEFORE `0176` (the app's own error reporter) went live on 08-21. That reporter sends
@@ -36,6 +46,9 @@ data broker. Neither happens, and it is verifiable rather than asserted:
   not track you across other apps or websites."*
 - Confirmed against `package.json` on 2026-08-19: **no Sentry, Bugsnag, Firebase, Amplitude, Mixpanel,
   Segment, Facebook SDK, AdMob, AppsFlyer, Adjust or Branch.** There is no SDK present that *could* track.
+  **(v1.3, 2026-09-28)** Build 10 adds `@sentry/react-native` — a crash/performance processor that reports to
+  us, with `sendDefaultPii: false`, no advertising id and no cross-app linking. That is not tracking under
+  Apple's definition, so the answer stays **NO**. The rest of that list is still absent.
 
 **Consequences, both worth knowing:**
 - **"Used for Tracking" is NO for every data type below.** No exceptions, no judgement calls.
@@ -62,7 +75,7 @@ and **Not used for tracking**. So the only column that varies is the purpose.
 
 | Data type | Purposes | Source |
 |---|---|---|
-| **Fitness** | App Functionality, **Product Personalization** | §2 *Training and health-related data* — workouts, sets, reps, weights, durations, distances, PRs, goals, rank |
+| **Fitness** | App Functionality, **Product Personalization** | §2 *Training and health-related data* — workouts, sets, reps, weights, durations, distances, PRs, goals, rank; **(v1.3)** *Apple Health (if connected)* — imported workouts: type, start/end, distance, source app |
 | **Health** | App Functionality, **Product Personalization** | §2 — body measurements; **(v1.1)** *Food and nutrition* — food log, calorie/macro targets and the age/sex/height/weight/activity used to set them, food allergies and diet. Allergies filter meal plans (personalization). |
 
 ⚠ **Product Personalization is not optional here and is the answer most likely to be under-declared.** Apple
@@ -137,12 +150,13 @@ declaration about a real stored value.
 
 | Data type | Linked? | Purposes | Source |
 |---|---|---|---|
-| **Crash Data** | Linked | App Functionality | *Diagnostics: when something goes wrong* — the error message and the trace of where in our code it happened (`client_errors`, 0176). `user_id` is set whenever the athlete is signed in. |
-| **Other Diagnostic Data** | Linked | App Functionality | Same section — the screen, app version and phone model sent with each report. |
+| **Crash Data** | Linked | App Functionality | *Diagnostics: when something goes wrong* — the error message and the trace of where in our code it happened (`client_errors`, 0176). `user_id` is set whenever the athlete is signed in. **(v1.3)** And Sentry (build 10): native crashes and JS errors, with the account UUID. |
+| **Other Diagnostic Data** | Linked | App Functionality | Same section — the screen, app version and phone model sent with each report. **(v1.3)** Sentry adds OS version and the OTA update id. |
+| **Performance Data** **(v1.3)** | Linked | App Functionality | *Diagnostics → Sentry* — app-start time, screen and network-request timings for a sample of sessions (`tracesSampleRate` 0.2, off when "Help improve Forge" is off). URLs are cut at the query string. Profiling is off. |
 
-*Not collected: Performance Data* — the reporter records faults, not timings. The step trail sent with a report
-is usage, already declared under **Product Interaction**. Not used for tracking. **If Sentry is ever added
-(Error-Reporting.md Stage 2), re-check this section and the policy's "no third-party crash reporting" line together.**
+The step trail sent with a `0176` report is usage, already declared under **Product Interaction**; Sentry never
+receives it (breadcrumbs off). Not used for tracking. ⚠ **Session Replay and screenshots stay OFF** — either would
+add screen content (photos, meals, health numbers) to what Sentry receives and would need new rows here.
 
 ---
 
@@ -157,7 +171,8 @@ Recorded so they read as decisions rather than omissions, and so the next person
 | **Browsing History** | No | Not a browser and no web-content history. |
 | **Contacts** | No | No address-book access anywhere. Invites are handled in-app and by share sheet — the share sheet is the OS's, and Forge never reads the contact list. |
 | ~~Crash Data~~ · ~~Other Diagnostic Data~~ | **Moved to §2 (v1.2)** | Were No on 2026-08-19 ("no crash SDK installed") — true that day, false from 08-21 when `0176` went live. First-party collection counts. |
-| **Performance Data** | No | The error reporter records faults, not timings; no performance SDK. |
+| ~~Performance Data~~ | **Moved to §2 (v1.3)** | Was No while no performance SDK existed; Sentry tracing (PO 09-28, build 10) makes it Yes. |
+| **Body pose (form check)** **(v1.3)** | Not collected | Joint positions are computed on the phone and never leave it. Only a few derived numbers (reps, depth, tempo) travel with the frames to the AI provider and are not retained — the same "not collected" reasoning as the frames in §2. Not biometric data collected by us. |
 | **Payment Info / Credit Info** | No | The app never sees a card. Apple processes every transaction. |
 | ~~Purchase History~~ | **Moved to §2 (v1.1)** | The flip in §4 happened with build 9. |
 | **Environment Scanning · Hands · Head · Other Data** | No | Nothing in the app touches these. |
@@ -191,7 +206,7 @@ was built to enforce, and the reason 10.2 closed cleanly.
 |---|---|---|
 | 10.1 | Privacy + terms URLs | ✅ `forgelegacy.app/privacy` · `/terms`, both 200 |
 | 10.2 | Policy copy corrected before any label signed | ✅ `cc2b5de`, 2026-08-15 |
-| **10.3** | **App Privacy labels** | **This document, v1.1 — ready to enter for build 9+.** |
+| **10.3** | **App Privacy labels** | **This document. v1.2 for build 9; v1.3 (adds Performance Data) for build 10, after the 09-28 policy is published.** |
 | 10.4 | Support URL | ✅ `forgelegacy.app/support`, 200, verified 08-18 |
 | 10.5 | Screenshots, description, keywords, age rating | ⛔ Not started. ⚠ **One iPhone size (6.5" **or** 6.9"), not two.** ⚠ **Never state the program-catalogue count.** |
 | 10.6 | Seeded reviewer account | ⛔ Not started. The social pillar is unreviewable from an empty account. |

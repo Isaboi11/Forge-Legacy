@@ -51,7 +51,7 @@
 <header>
   <p class="brand">Forge Legacy</p>
   <h1>Privacy Policy</h1>
-  <p class="meta">Last updated 25 September 2026 · Forge Legacy LLC</p>
+  <p class="meta">Last updated 28 September 2026 · Forge Legacy LLC</p>
 </header>
 
 <p>Forge Legacy is a training record. This policy describes exactly what the app collects, why it
@@ -63,6 +63,14 @@ survived.</p>
   usage data to understand which parts people actually use. We do not sell your data, we do not run
   advertising, and we do not share your training or your food log with anyone you have not chosen. You
   can delete your account, and everything in it, from inside the app.</p>
+</div>
+
+<div class="card">
+  <p><strong>What changed on 28 September 2026.</strong> Error and crash reports, and some performance
+  data, now also go to Sentry, a crash-reporting service (see “Diagnostics”). On iPhone you can connect
+  Apple Health so workouts recorded by a watch or another app appear in Forge (see “Apple Health”). And a
+  form check now measures your movement on your phone first; the positions of your joints never leave it
+  (see “Coach Holt and the AI features”).</p>
 </div>
 
 <div class="card">
@@ -97,6 +105,7 @@ in Utah, United States. For anything in this policy, contact
   <li>Personal records, goals, chapters, honors and rank.</li>
   <li>Notes and reflections you write.</li>
   <li>Body measurements you choose to log, where a goal requires one.</li>
+  <li>Workouts imported from Apple Health, if you connect it (see “Apple Health” below).</li>
 </ul>
 
 <h3>Food and nutrition</h3>
@@ -141,6 +150,10 @@ you only and are deleted with your account.</p>
 <p>Some AI features read a photo or video you choose, for example a picture of a program, a recipe or a
 meal, or a clip for a form check. That photo or those video frames are sent to our AI provider so it can
 be read.</p>
+<p>For a form check on iPhone, your phone first measures your movement on the device: it works out where
+your joints are in each frame. <strong>Those joint positions never leave your phone and are never
+stored.</strong> Only a few numbers worked out from them, such as how many reps, how deep and how fast,
+are sent to our AI provider along with the frames you chose.</p>
 
 <h3>Voice input</h3>
 <p>If you talk to Coach Holt with the microphone, your phone's own speech recognition turns your voice
@@ -159,6 +172,16 @@ does.</p>
   post at a time, and that choice is off by default. A route usually starts and ends at your door, so
   think about that before you add a map to a post.</p>
 </div>
+
+<h3>Apple Health (iPhone, only if you connect it)</h3>
+<p>If you connect Apple Health in Settings, Forge reads your workouts from it: the type (run, walk, ride,
+swim, row), when it started and ended, its distance, and which app or device recorded it (for example
+“Garmin Connect” or “Apple Watch”). We do not read heart rate, calories, routes, sleep, or any other Health
+data. Each workout you choose to add becomes part of your Forge training history and is stored with the
+rest of it. If you turn on “Save Forge workouts to Apple Health”, Forge also writes the workouts you finish
+in Forge to Health on your phone. <strong>Data from Apple Health is never used for advertising or
+marketing, never sold, and never shared except as this policy describes.</strong> It is never sent to
+Sentry.</p>
 
 <h3>Photos and video</h3>
 <ul>
@@ -184,9 +207,7 @@ used, so we can tell what is worth building and what is being ignored. These are
 account identifier so we can count people rather than taps. They never include the names of foods you
 log. <strong>They are never sold, never shared with advertisers, and are not used to build a profile
 about you.</strong> We do not use third-party advertising or tracking SDKs, and the app does not track
-you across other apps or websites. <strong>We also use no third-party crash or error reporting</strong>
-(no Sentry, Bugsnag or Crashlytics). The diagnostic reports described below go to our own database and
-nowhere else.</p>
+you across other apps or websites. Error reports are covered separately below, under “Diagnostics”.</p>
 
 <h3>Diagnostics: when something goes wrong</h3>
 <p>When the app hits an error it sends us a report, so we can fix it without having to ask you what
@@ -200,6 +221,17 @@ days, stored in our own database, and read only by us.</p>
 <p><strong>The “Help improve Forge” switch turns off the trail, not the report.</strong> With it off we
 still learn that the app broke, on which screen and on which version, because that is a fault in our
 software, not a record of what you did. We no longer record the steps that got you there.</p>
+<p><strong>Sentry.</strong> Error and crash reports are also sent to Sentry, a crash-reporting service we
+use, including crashes that close the app before our own report can be sent. A Sentry report contains the
+technical trace of the error, your app version, phone model and operating system, and your account
+identifier (a random code, not your name or email) so we can tell how many people a problem affects. For
+a sample of sessions Sentry also receives <strong>performance data</strong>: how long the app took to
+start, and how long screens and network requests took, so we can find what is slow. Web addresses in it
+are cut off before any search terms. Sentry never receives the step trail described above, your name,
+email, training figures, food log, health data, photos, location, or anything you typed; the same
+honest exception about error messages applies, and we remove email addresses and search terms from them
+before they are sent. Turning off “Help improve Forge” also stops the performance data. Sentry processes
+these reports only to provide them to us, and keeps them for up to 90 days.</p>
 
 <h3>Notifications</h3>
 <p>If you enable push notifications, we store a device push token so messages can reach your phone.
@@ -247,13 +279,18 @@ providers who process data on our behalf, only to provide the app:</p>
       anonymous account identifier and your purchase records. Payment details stay with Apple.</li>
   <li><strong>Anthropic</strong>: powers the Coach Holt AI features, for accounts that have them. When you
       use an AI feature, what that feature needs is sent to Anthropic: your question, the training or
-      nutrition details needed to answer it, and any photo or video frames you chose for that feature.
+      nutrition details needed to answer it (including workouts imported from Apple Health), and any
+      photo or video frames you chose for that feature.
       Your name and email are not sent. Under its commercial terms, Anthropic does not use this data to
       train its models.</li>
+  <li><strong>Sentry</strong>: error, crash and performance reporting. It receives the reports described
+      under “Diagnostics” and your account identifier, and never your name, email, health data or
+      anything you typed.</li>
   <li><strong>USDA FoodData Central, FatSecret and Open Food Facts</strong>: food databases. They receive
       only a search term or a barcode (see “Food and nutrition”).</li>
   <li><strong>Cloudflare</strong>: hosts this website.</li>
 </ul>
+<p>Apple Health is on your own phone, not a company we send data to.</p>
 <p>We may disclose data if the law requires it, or to protect someone's safety. If the companies we use
 change in a way that affects your data, we will update this page.</p>
 
@@ -271,6 +308,7 @@ preferences, foods, meals, recipes and meal plans; and your conversations with C
 shared from a barcode scan stay in the shared list as anonymous product information. If you own a squad
 with other members in it, ownership passes to the longest-standing member so that other people do not
 lose their own records. A squad with nobody else in it is deleted with your account.</p>
+<p>Workouts Forge saved to Apple Health stay in the Health app on your phone. You can delete them there.</p>
 <p>Backups may keep copies for a short period before they are rotated out. Before you delete, you can
 download your data from <strong>Account Settings → Export My Data</strong>.</p>
 
@@ -282,6 +320,8 @@ download your data from <strong>Account Settings → Export My Data</strong>.</p
   <li><strong>Notifications</strong>: every category can be turned off individually.</li>
   <li><strong>Discoverability</strong>: you can make your handle unsearchable.</li>
   <li><strong>Nutrition and AI</strong>: both are optional. The rest of the app works without them.</li>
+  <li><strong>Apple Health</strong>: off unless you connect it. Disconnect in Settings → Apple Health, and
+      revoke access in the Health app → Sharing → Apps.</li>
 </ul>
 <p>Depending on where you live, you may have the right to access, correct, delete, or get a copy of your
 data, and to withdraw consent. Write to <a href="mailto:support@forgelegacy.app">support@forgelegacy.app</a>
