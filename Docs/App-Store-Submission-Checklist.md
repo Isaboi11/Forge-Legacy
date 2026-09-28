@@ -82,6 +82,10 @@ No lifetime plan. United States only at launch.
 - ✅ App Privacy labels — answer sheet v1.1 ready 09-26 (`Docs/App-Store-Privacy-Labels.md`, `6b157bba`: Nutrition, AI, purchases, search log) · ✅ entered in App Store Connect, all 13 types match the sheet (checked by Claude in Chrome 09-27) · ✅ Published 09-27
   · ✅ **Crash Data + Other Diagnostic Data added and re-published 09-27** (Yes · linked · App Functionality · not tracking; 15 types, checked by Claude in Chrome) — sheet v1.2, 09-27: the app's own error reporter (0176) collects them; v1.0 said No before it went live
 
+- ✅ Crash reporting — 09-27: the app's own reporter (0176) is live; read it at `/admin` → Errors. Sentry account made
+  (org `forge-legacy-llc`, project `forge-legacy`) but NOT installed — deferred to after launch (needs a new build
+  and a privacy-policy change: the policy promises no third-party crash reporting)
+
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
   route trim, Anthropic gets photos/video frames, missing providers, Terms say "no subscription"; Washington
@@ -120,6 +124,8 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
 - ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet
+- ✅ Meal plan: Same / A few / Mix per meal, share ingredients, only my recipes, Clear week — 09-27 (`0226` applied; web + build 9 OTA `01a0e496`)
+- ✅ Holt's dishes stay out of My Recipes until saved; delete a recipe — 09-27 (`0227` applied; web + build 9 OTA `01a0e4a3`)
 - ✅ Barcode camera + label scan built — 09-24/25, ship in build 9 (iPhone only; hidden on build 8 + web) · ✅ PO tested both on a phone — look good 09-26
 - 🔨 Photo food logging (Premium AI) — built 09-26 (`728de7fd`): the photo names the foods, the numbers come from
   food search; 1 credit (was 3; PO ran the SQL + verified 09-26), ~1¢/photo, photo not stored · ✅ 0223 applied + `meal-photo-read` deployed 09-26 ·
@@ -130,8 +136,8 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   `supabase/apply/pending-0216.sql` is written (one function; no app update needed) — run it on ship day (§6)
 
 ## 6. Ship day
-- ⬜ Open Nutrition to everyone: paste `supabase/apply/pending-0216.sql` (09-25). First clear §5's two
-  "must-do before opening" items (under-eating message, privacy policy nutrition section)
+- ⬜ Open Nutrition to everyone: paste `supabase/apply/pending-0216.sql` (09-25). §5's two must-dos are
+  both done (under-eating message ✅ 09-27, privacy policy nutrition section ✅ 09-26)
 - ⬜ forgelegacy.app: swap "Get TestFlight invite" for the App Store link (site went live 09-25 as the
   Clean v2 design; TestFlight emails land in `testflight_requests`)
 - ⬜ Phase F: default to Free + remove "free while testing" (4 files, see GO-LIVE)
