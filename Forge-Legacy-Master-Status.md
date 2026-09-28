@@ -85,7 +85,9 @@ reinstall, or a tester needs one of these.
 **When cutting build 9:** re-run `fingerprint:compare` afterwards, move the OTA lane to the new runtime,
 and keep build 8 fed until testers have reinstalled.
 
-**Build 10 queue (native, not started):**
+**Build 10 queue (native — 🔨 BUILDING since 09-28 on branch `feat/build10`, worktree `C:/Users/isaia/forge-build10-wt`):**
+
+> ⛔ Build 10's native deps + `app.json` (Sentry, HealthKit, expo-speech, audio mode, Live Activities, buildNumber 10, `android.package` → `app.forgelegacy`) live ONLY on `feat/build10` (`b83e43f1`). Do not add native deps to the main tree; JS work continues here as usual and gets merged into `feat/build10` before the cut. Course builder: domain done, UI + map service ON HOLD (PO 09-28).
 
 **Plans written 09-28** (not built; each ends with PO decisions): `Docs/Form-Check-Body-Pose-Build-Plan.md` · `Docs/Sentry-Build-Plan.md` (policy text in `site/privacy.html` §2 + `Docs/Legal/Privacy-Policy.md` §3 must change first) · `Docs/Live-Activities-Build-Plan.md` (new App ID `com.qest4.forgelegacy.liveactivity`; design owed).
 
