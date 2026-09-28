@@ -259,10 +259,21 @@ export function capFrameSizes(raw: unknown, frameCount: number): [number, number
   return out;
 }
 
-/** "Frame 3 of 10 (2.5 s in, 432 x 768 px):" — the label that goes before each still in the user turn. */
-export function frameLabel(index: number, total: number, timeMs?: number | null, size?: [number, number] | null): string {
+/**
+ * "Frame 3 of 10 (2.5 s in, 432 x 768 px):" — the label that goes before each still in the user turn.
+ * With body tracking, `tag` names the rep and moment the phone measured ("rep 1 bottom", plan §5.4), so
+ * Holt can pick the frame for a mark from what it IS rather than from what it looks like.
+ */
+export function frameLabel(
+  index: number,
+  total: number,
+  timeMs?: number | null,
+  size?: [number, number] | null,
+  tag?: string | null,
+): string {
   const parts: string[] = [];
   if (typeof timeMs === 'number' && Number.isFinite(timeMs)) parts.push(`${(timeMs / 1000).toFixed(1)} s in`);
+  if (tag) parts.push(tag);
   if (size) parts.push(`${size[0]} x ${size[1]} px`);
   return `Frame ${index + 1} of ${total}${parts.length ? ` (${parts.join(', ')})` : ''}:`;
 }
@@ -339,7 +350,45 @@ export interface FormMark {
   rep: number | null;
   /** What that frame shows, in a few words ("lockout, bar overhead"). Guarded; '' when absent. */
   shows: string;
+  /**
+   * The joint the fix is about, from {@link FORM_MARK_JOINTS}, when Holt named one. On a build with body
+   * tracking the app puts the dot ON that joint (`pose/pose-marks.ts`); otherwise x/y stand. Absent when
+   * not given — never a guess.
+   */
+  joint?: FormMarkJoint;
+  /**
+   * APP-ONLY, set after the read: a depth line's second height (the knee), 0–1 down. The function never
+   * produces it; `snapMarks` does, from the measured joints of that frame.
+   */
+  tick?: number;
 }
+
+/**
+ * The joints a mark may name. A fixed list for the reason the focus chips are one: a model's free text is
+ * not a channel into the app. `mid_wrist` is the bar. Held equal to `pose/joints.ts`'s resolver by a test.
+ */
+export const FORM_MARK_JOINTS = [
+  'head',
+  'neck',
+  'left_shoulder',
+  'right_shoulder',
+  'mid_shoulder',
+  'left_elbow',
+  'right_elbow',
+  'left_wrist',
+  'right_wrist',
+  'mid_wrist',
+  'left_hip',
+  'right_hip',
+  'mid_hip',
+  'left_knee',
+  'right_knee',
+  'mid_knee',
+  'left_ankle',
+  'right_ankle',
+  'mid_ankle',
+] as const;
+export type FormMarkJoint = (typeof FORM_MARK_JOINTS)[number];
 
 const VIEWS: readonly FormView[] = ['side', 'front', 'behind', 'diagonal', 'other'];
 const TRENDS: readonly FormTrend[] = ['better', 'same', 'new'];
@@ -377,8 +426,10 @@ export function cleanMarks(raw: unknown, fixCount: number, frameCount: number, s
     const rep = typeof r.rep === 'number' && r.rep >= 1 && r.rep <= 50 ? Math.round(r.rep) : null;
     const showsRaw = typeof r.shows === 'string' ? r.shows.replace(/\s+/g, ' ').trim().slice(0, 60) : '';
     const shows = showsRaw && !isBannedSentence(showsRaw) ? showsRaw : '';
+    // An unknown joint name is dropped like every other field; the mark itself stays.
+    const joint = (FORM_MARK_JOINTS as readonly unknown[]).includes(r.joint) ? (r.joint as FormMarkJoint) : null;
     seen.add(fix);
-    out.push({ fix, frame, kind, x, y, rep, shows });
+    out.push(joint ? { fix, frame, kind, x, y, rep, shows, joint } : { fix, frame, kind, x, y, rep, shows });
   }
   return out;
 }
@@ -404,13 +455,18 @@ function cleanDrill(raw: unknown): string {
 /**
  * Pain, injury, symptoms, and anything clinical.
  *
+ * ⚠ THE POSTURE-DIAGNOSIS WORDS (`valgus`, `varus`, `kyphosis`, `lordosis`, `scoliosis`) WERE ADDED WITH
+ * BODY TRACKING (09-28, plan §7). Measured knee and torso positions make a model likelier to reach for the
+ * clinical name; "knees move inward relative to the feet" is the movement and stays, "knee valgus" is a
+ * diagnosis and goes. Tested both ways beside this file.
+ *
  * ⚠ `pinch` IS NOT IN HERE, ON PURPOSE. *"Pinch your shoulder blades together"* is one of the most common
  * legitimate cues in lifting, and banning the word would delete good coaching to catch a case `nerve`,
  * `impinge` and `pain` already catch. Verified in both directions by the tests beside this file, which is
  * what `feedback_verify_guards_empirically` asks for.
  */
 const MEDICAL_SENTENCE =
-  /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
+  /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
 
 /**
  * Telling somebody to stop training, or to go and get looked at. A referral is not a technique note.
