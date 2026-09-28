@@ -16,7 +16,7 @@ import {
 import { fetchTemplates, type TemplateExercise } from '@/data/templates-live';
 import { getStarterTemplate } from '@/domain/workout/starter-templates';
 import { Avatar } from '@/components/forge/composites/Avatar';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -137,8 +137,7 @@ import { projectWatchState } from '@/domain/workout/watch-projection';
 import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
 import { activeTheme } from '@/constants/theme-choice';
 
-const AnimatedSvg = Animated.createAnimatedComponent(Svg);
-const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 /** Stable no-op, so the primer's `onChangeText` is not a fresh closure on every render. */
 const noop = () => {};
@@ -6145,6 +6144,7 @@ function AddSetButton({ onPress }: { onPress: () => void }) {
     </Pressable>
   );
 }
+
 /** All Exercises row height + gap. Fixed, because `useListReorder` steps by one pitch. */
 const OV_ROW = 62;
 const OV_GAP = 6;
@@ -6252,7 +6252,6 @@ function OverviewList({
     </View>
   );
 }
-
 
 function ExercisePeek({ ex }: { ex: SessionExercise }) {
   const done = ex.sets.filter((s) => s.done).length;
@@ -6474,32 +6473,74 @@ function OptionRow({ onPress, title, sub, icon, tint, danger, disabled }: { onPr
 }
 
 /**
- * The green fuse celebration — one-shot when a set is logged. Measures its row, then animates an SVG
- * border: a green stroke draws around the box while a brighter "head" segment races the perimeter (the
- * closest RN analogue of the design's CSS `offset-path` head), fading out at the end. JS-driven (stroke
- * props can't use the native driver) but it's a sub-second, one-off animation so that's fine.
+ * The green fuse celebration — one-shot when a set is logged (Active Workout .dc, "fuse-ignite").
+ *
+ * Two sparks light at the TOP-CENTRE of the row, race down both sides and meet at the bottom-centre,
+ * each drawing a green stroke behind it (820 ms, linear). The sparks shed embers as they run and go out
+ * as they meet; the drawn outline then holds and fades into the row's own resting green (`rowDone`) by
+ * 1500 ms, which is when the caller unmounts this.
+ *
+ * The design moves its sparks with CSS `offset-path`. RN has none, so each head is interpolated along a
+ * sampled copy of its path — straight runs are exact, the corner arcs are six chords, invisible at 10 px.
+ * JS-driven (stroke props can't use the native driver) — a one-off, sub-second animation.
  */
+const FUSE_TOTAL = 1500;
+const FUSE_DRAW = 820;
+const FUSE_RX = 10;
+/* Per spark: [ex, ey, size, loop phase]. The .dc's three embers per head, mirrored on the left. */
+const FUSE_EMBERS: [number, number, number, number][] = [[9, -6, 2.5, 0], [-4, 9, 2, 0.33], [7, 7, 2, 0.66]];
+
+/** One half of the outline, top-centre → bottom-centre, as an SVG path plus sampled points for the head. */
+function fuseHalf(w: number, h: number, side: 1 | -1) {
+  const y0 = 1.5, x1 = w - 1.5, y1 = h - 1.5, r = FUSE_RX, cx = w / 2;
+  const X = (x: number) => (side === 1 ? x : w - x);
+  const pts: [number, number][] = [[cx, y0], [x1 - r, y0]];
+  const arc = (ax: number, ay: number, from: number, to: number) => {
+    for (let k = 1; k <= 6; k++) {
+      const a = from + ((to - from) * k) / 6;
+      pts.push([ax + r * Math.cos(a), ay + r * Math.sin(a)]);
+    }
+  };
+  arc(x1 - r, y0 + r, -Math.PI / 2, 0);
+  pts.push([x1, y1 - r]);
+  arc(x1 - r, y1 - r, 0, Math.PI / 2);
+  pts.push([cx, y1]);
+  const mirrored = pts.map(([x, y]) => [X(x), y] as [number, number]);
+  const cum = [0];
+  for (let k = 1; k < mirrored.length; k++) cum.push(cum[k - 1] + Math.hypot(mirrored[k][0] - mirrored[k - 1][0], mirrored[k][1] - mirrored[k - 1][1]));
+  const len = cum[cum.length - 1];
+  const sweep = side === 1 ? 1 : 0;
+  const d = `M${cx} ${y0} H${X(x1 - r)} A${r} ${r} 0 0 ${sweep} ${X(x1)} ${y0 + r} V${y1 - r} A${r} ${r} 0 0 ${sweep} ${X(x1 - r)} ${y1} H${cx}`;
+  return { d, len, input: cum.map((c) => c / len), xs: mirrored.map((p) => p[0]), ys: mirrored.map((p) => p[1]) };
+}
+
 function FuseFlash() {
   const [d, setD] = useState<{ w: number; h: number } | null>(null);
-  const anim = useState(() => new Animated.Value(0))[0];
+  const t = useState(() => new Animated.Value(0))[0];
+  const ember = useState(() => new Animated.Value(0))[0];
   /*
    * START ON MEASURE, NOT ON MOUNT.
    *
-   * The SVG cannot be drawn until `onLayout` reports the row's size, so mounting kicked off a 1200 ms
+   * The SVG cannot be drawn until `onLayout` reports the row's size, so mounting kicked off the
    * animation over a subtree that rendered `null` for its first frames. The fuse then appeared
-   * part-drawn — a stripe materialising halfway round the box instead of starting from the corner.
+   * part-drawn — a stripe materialising halfway round the box instead of starting where it starts.
    * Gating on `d` costs nothing and makes the celebration begin where it looks like it begins.
    */
   useEffect(() => {
     if (!d) return;
-    Animated.timing(anim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.quad), useNativeDriver: false }).start();
-  }, [anim, d]);
-  const rx = 10;
-  const per = d ? 2 * (d.w + d.h) - 8 * rx + 2 * Math.PI * rx : 0;
-  const opacity = anim.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 1, 0] });
+    const loop = Animated.loop(Animated.timing(ember, { toValue: 1, duration: 360, easing: Easing.out(Easing.quad), useNativeDriver: false }));
+    loop.start();
+    Animated.timing(t, { toValue: 1, duration: FUSE_TOTAL, easing: Easing.linear, useNativeDriver: false }).start(() => loop.stop());
+    return () => loop.stop();
+  }, [t, ember, d]);
+  const drawEnd = FUSE_DRAW / FUSE_TOTAL;
+  const progress = t.interpolate({ inputRange: [0, drawEnd, 1], outputRange: [0, 1, 1] });
+  const outlineOpacity = t.interpolate({ inputRange: [0, 0.74, 1], outputRange: [1, 1, 0] });
+  const sparkOpacity = t.interpolate({ inputRange: [0, drawEnd * 0.82, drawEnd, 1], outputRange: [1, 1, 0, 0] });
+  const halves = d ? [fuseHalf(d.w, d.h, 1), fuseHalf(d.w, d.h, -1)] : [];
   return (
-    <View
-      style={styles.fuseWrap}
+    <Animated.View
+      style={[styles.fuseWrap, { opacity: outlineOpacity }]}
       pointerEvents="none"
       onLayout={(e) => {
         const { width, height } = e.nativeEvent.layout;
@@ -6507,12 +6548,53 @@ function FuseFlash() {
       }}
     >
       {d ? (
-        <AnimatedSvg width={d.w} height={d.h} style={{ opacity }}>
-          <AnimatedRect x={1.5} y={1.5} width={d.w - 3} height={d.h - 3} rx={rx} fill="none" stroke={flColor.greenMuted} strokeWidth={2} strokeDasharray={`${per}`} strokeDashoffset={anim.interpolate({ inputRange: [0, 1], outputRange: [per, 0] })} />
-          <AnimatedRect x={1.5} y={1.5} width={d.w - 3} height={d.h - 3} rx={rx} fill="none" stroke="#8FE6A6" strokeWidth={3} strokeLinecap="round" strokeDasharray={`${72} ${per}`} strokeDashoffset={anim.interpolate({ inputRange: [0, 1], outputRange: [0, -per] })} />
-        </AnimatedSvg>
+        <>
+          <Svg width={d.w} height={d.h} style={StyleSheet.absoluteFill}>
+            {halves.map((hf, i) => (
+              <AnimatedPath key={i} d={hf.d} fill="none" stroke={flColor.greenMuted} strokeWidth={2} strokeLinecap="round" strokeDasharray={`${hf.len}`} strokeDashoffset={progress.interpolate({ inputRange: [0, 1], outputRange: [hf.len, 0] })} />
+            ))}
+          </Svg>
+          {halves.map((hf, i) => (
+            <Animated.View
+              key={i}
+              style={[
+                styles.fuseHead,
+                {
+                  opacity: sparkOpacity,
+                  transform: [
+                    { translateX: progress.interpolate({ inputRange: hf.input, outputRange: hf.xs }) },
+                    { translateY: progress.interpolate({ inputRange: hf.input, outputRange: hf.ys }) },
+                  ],
+                },
+              ]}
+            >
+              <View style={styles.fuseSpark} />
+              {FUSE_EMBERS.map(([ex, ey, size, phase], k) => {
+                /* One shared loop, phase-shifted per ember: (v + phase) mod 1, written as a piecewise map. */
+                const v = phase === 0 ? ember : ember.interpolate({ inputRange: [0, 1 - phase, 1 - phase + 0.001, 1], outputRange: [phase, 1, 0, phase] });
+                return (
+                  <Animated.View
+                    key={k}
+                    style={[
+                      styles.fuseEmber,
+                      {
+                        width: size, height: size, borderRadius: size / 2, left: -size / 2, top: -size / 2,
+                        opacity: v.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] }),
+                        transform: [
+                          { translateX: v.interpolate({ inputRange: [0, 1], outputRange: [0, ex * (i === 0 ? 1 : -1)] }) },
+                          { translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, ey] }) },
+                          { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 0.2] }) },
+                        ],
+                      },
+                    ]}
+                  />
+                );
+              })}
+            </Animated.View>
+          ))}
+        </>
       ) : null}
-    </View>
+    </Animated.View>
   );
 }
 function WheelPicker({ options, value, unit, onChange }: { options: number[]; value: number; unit: string; onChange: (v: number) => void }) {
@@ -6743,6 +6825,9 @@ const styles = StyleSheet.create({
 
   // fuse flash (green light around the row)
   fuseWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 },
+  fuseHead: { position: 'absolute', top: 0, left: 0, width: 0, height: 0 },
+  fuseSpark: { position: 'absolute', left: -2.5, top: -2.5, width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#EAFBEC', boxShadow: '0 0 7px 2px rgba(90,158,104,0.95)' },
+  fuseEmber: { position: 'absolute', backgroundColor: '#CFF6D2' },
 
   // exercise-complete seal
   sealWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 44 },
