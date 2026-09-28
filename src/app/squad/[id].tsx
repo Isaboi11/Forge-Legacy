@@ -48,6 +48,7 @@ import {
   type SquadFeedPost,
   type SquadPostType,
 } from '@/data/squad-feed-live';
+import { buildWeekStory } from '@/domain/squad/week-story';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { milestoneAckLabel } from '@/domain/share/milestone-card';
@@ -1508,6 +1509,7 @@ function FeedCard({
   // the squad talking, not a person — and against a feed of hairline-separated rows the contrast is
   // now doing real work instead of competing with twenty other bordered boxes.
   if (post.type === 'weekly' && post.recap) {
+    const weeklyStory = post.recap.story ? buildWeekStory(post.recap, post.recap.story) : null;
     return (
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Open weekly summary" style={[styles.feedCard, styles.weeklyCard]}>
         <LinearGradient colors={['rgba(186, 134, 84,0.06)', 'transparent'] as const} locations={[0, 0.46] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -1516,11 +1518,15 @@ function FeedCard({
             <BannerGlyph />
           </View>
           <View style={styles.feedCardBody}>
-            <Text style={styles.weeklyTitle}>Weekly Summary</Text>
-            <Text style={styles.weeklyLine}>{recapSummaryLine(post.recap)}</Text>
+            <Text style={styles.weeklyTitle}>{weeklyStory ? 'Your week, together' : 'Weekly Summary'}</Text>
+            {/* With a story (0233), the card opens on Holt's headline — the first line of the story —
+                instead of a stat line (PO 2026-09-28: "right now it's just a list of things"). */}
+            <Text style={styles.weeklyLine}>
+              {weeklyStory ? `${weeklyStory.headline.lead}, ${weeklyStory.headline.em}` : recapSummaryLine(post.recap)}
+            </Text>
             <View style={styles.weeklyFoot}>
               <Text style={styles.weeklyTime}>{timeAgo(post.createdAt)}</Text>
-              <Text style={styles.weeklyMore}>View breakdown →</Text>
+              <Text style={styles.weeklyMore}>{weeklyStory ? 'Read the week →' : 'View breakdown →'}</Text>
             </View>
           </View>
         </View>

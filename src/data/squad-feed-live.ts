@@ -10,6 +10,7 @@ import { fetchCompletion } from '@/data/workout-complete-live';
 import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import type { TemplateExercise } from '@/data/templates-live';
 import { isMilestoneCard, type MilestoneCard } from '@/domain/share/milestone-card';
+import { parseStoryFacts, type StoryFacts } from '@/domain/squad/week-story';
 
 /**
  * Squad Feed data (Social · Part 1) — training-only threaded posts (`squad_posts`), flat comments
@@ -51,6 +52,12 @@ export interface WeeklyRecap {
   honors: WeeklyRecapHonor[];
   honorCount: number;
   goal: WeeklyRecapGoal | null;
+  /**
+   * The week as a story (0233, Squad-Architecture-Amendment-008) — the facts each shout-out is written
+   * from. Null on summaries generated before 0233, or when the story could not be built; the screen then
+   * shows the plain summary. The words are written by `buildWeekStory`, not stored.
+   */
+  story: StoryFacts | null;
 }
 
 interface WeeklyRecapRow {
@@ -63,6 +70,7 @@ interface WeeklyRecapRow {
   honors: WeeklyRecapHonor[] | null;
   honor_count: number | null;
   goal: WeeklyRecapGoal | null;
+  story?: unknown;
 }
 
 const toRecap = (r: WeeklyRecapRow | null): WeeklyRecap | null =>
@@ -77,8 +85,39 @@ const toRecap = (r: WeeklyRecapRow | null): WeeklyRecap | null =>
         honors: r.honors ?? [],
         honorCount: r.honor_count ?? 0,
         goal: r.goal ?? null,
+        story: parseStoryFacts(r.story),
       }
     : null;
+
+/** Who has been cheered on one weekly summary: per person, how many flames, and whether one is mine. */
+export async function fetchRecapCheers(postId: string): Promise<Record<string, { count: number; mine: boolean }>> {
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id ?? null;
+  const { data, error } = await supabase.from('squad_recap_cheers').select('to_id, from_id').eq('post_id', postId);
+  // Before 0233 the table does not exist: no flames yet, rather than a broken screen.
+  if (error || !data) return {};
+  const out: Record<string, { count: number; mine: boolean }> = {};
+  for (const r of data as { to_id: string; from_id: string }[]) {
+    const c = (out[r.to_id] ??= { count: 0, mine: false });
+    c.count += 1;
+    if (r.from_id === me) c.mine = true;
+  }
+  return out;
+}
+
+/** Cheer (or un-cheer) one person's shout-out. Returns false when it did not land. */
+export async function setRecapCheer(postId: string, toId: string, on: boolean): Promise<boolean> {
+  if (on) {
+    const { error } = await supabase.from('squad_recap_cheers').insert({ post_id: postId, to_id: toId });
+    // 23505: already cheered (a double tap) — the state the athlete wanted.
+    return !error || error.code === '23505';
+  }
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return false;
+  const { error } = await supabase.from('squad_recap_cheers').delete().eq('post_id', postId).eq('to_id', toId).eq('from_id', me);
+  return !error;
+}
 
 /**
  * One line, the way the design writes it: "27 sessions, 2 PRs, 1 Honor earned across the squad."

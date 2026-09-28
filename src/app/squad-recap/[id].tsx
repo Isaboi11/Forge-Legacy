@@ -9,6 +9,8 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { GOAL_UNITS, type SquadGoalMetric } from '@/data/squad-live';
 import { fetchSquadPost, type WeeklyRecap } from '@/data/squad-feed-live';
 import { useQuery } from '@/lib/useQuery';
+import { useAuth } from '@/lib/auth';
+import { WeekStoryView } from '@/components/squad/WeekStoryView';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
 /**
@@ -54,6 +56,7 @@ export default function SquadRecapScreen() {
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/squads'));
   const recap: WeeklyRecap | null = data?.post.recap ?? null;
+  const { session } = useAuth();
 
   if (loading && !data) {
     return (
@@ -75,6 +78,28 @@ export default function SquadRecapScreen() {
             <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
           </Pressable>
         </View>
+      </Shell>
+    );
+  }
+
+  /* The week as a story (0233, Squad-Architecture-Amendment-008). A summary from before 0233 — or one
+     whose story could not be built — keeps the plain breakdown below, unchanged. */
+  if (recap.story) {
+    return (
+      <Shell onBack={goBack} title="Your week, together">
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+          <Text style={styles.storyRange}>
+            {data?.squadName ? `${data.squadName} · ` : ''}
+            {weekRange(recap.weekStart, recap.weekEnd)}
+          </Text>
+          <WeekStoryView
+            postId={postId}
+            recap={recap}
+            facts={recap.story}
+            meId={session?.user.id ?? null}
+            onStartWorkout={() => router.push('/(tabs)/workouts')}
+          />
+        </ScrollView>
       </Shell>
     );
   }
@@ -176,11 +201,11 @@ export default function SquadRecapScreen() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Shell({ children, onBack }: { children: React.ReactNode; onBack: () => void }) {
+function Shell({ children, onBack, title = 'Weekly Summary' }: { children: React.ReactNode; onBack: () => void; title?: string }) {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Weekly Summary" onBack={onBack} />
+      <AppBar title={title} onBack={onBack} />
       {children}
     </View>
   );
@@ -269,6 +294,7 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12, color: flColor.gray600 },
   rowValue: { flexShrink: 0, fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.bronze300 },
 
+  storyRange: { marginBottom: 12, marginHorizontal: 2, fontSize: 12.5, letterSpacing: 0.4, color: flColor.bronzeInk },
   footer: { marginTop: 26, textAlign: 'center', fontSize: 11, letterSpacing: 0.6, color: flColor.charcoal500 },
 
   outlineBtn: { marginTop: 22, paddingHorizontal: 20, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder },
