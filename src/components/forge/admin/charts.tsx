@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
 
@@ -155,29 +156,36 @@ export function AdminLineChart({
   title?: string;
   caption?: string;
 }) {
+  /* The drawing is laid out at the container's REAL pixel width. A fixed 320-wide viewBox scaled to
+     "100%" letterboxed on the desktop CRM (Amendment 002): the height is fixed, so `meet` shrank the
+     whole plot to a 320 px island in the middle of a 700 px column. */
+  const [measured, setMeasured] = useState(0);
   if (!values.length) return <EmptyChart title={title} />;
 
-  const grid = gridLines(values, LINE_BOX);
-  const pts = chartPoints(values, LINE_BOX);
+  const wide = measured > 520;
+  const BOX: ChartBox = { ...LINE_BOX, w: Math.max(LINE_BOX.w, measured), h: wide ? 190 : LINE_BOX.h, padX: wide ? 34 : LINE_BOX.padX };
+  const fs = wide ? 10.5 : 8.5;
+  const grid = gridLines(values, BOX);
+  const pts = chartPoints(values, BOX);
   const ticks = tickIndices(values.length).map((i) => ({ i, x: pts[i]?.x ?? 0, label: shortDay(days[i]) }));
   const last = pts[pts.length - 1];
 
   return (
-    <View style={styles.chartBlock}>
+    <View style={styles.chartBlock} onLayout={(e) => setMeasured(Math.round(e.nativeEvent.layout.width))}>
       {title ? <Text style={styles.chartTitle}>{title}</Text> : null}
-      <Svg viewBox={`0 0 ${LINE_BOX.w} ${LINE_BOX.h}`} width="100%" height={148}>
+      <Svg viewBox={`0 0 ${BOX.w} ${BOX.h}`} width="100%" height={BOX.h}>
         {/* Solid hairlines, never dashed — a dashed gridline competes with the data line at this size. */}
         {grid.map((g) => (
-          <Line key={g.f} x1={LINE_BOX.padX - 8} y1={g.y} x2={LINE_BOX.w - LINE_BOX.padX + 8} y2={g.y} stroke={GRID_STROKE} strokeWidth={1} />
+          <Line key={g.f} x1={BOX.padX - 8} y1={g.y} x2={BOX.w - BOX.padX + 8} y2={g.y} stroke={GRID_STROKE} strokeWidth={1} />
         ))}
         {[grid[0], grid[2]].map((g) => (
-          <SvgText key={`v${g.f}`} x={LINE_BOX.padX - 10} y={g.y + 3} fill={flColor.gray600} fontSize={8.5} textAnchor="end">
+          <SvgText key={`v${g.f}`} x={BOX.padX - 10} y={g.y + 3} fill={flColor.gray600} fontSize={fs} textAnchor="end">
             {compactNumber(g.value)}
           </SvgText>
         ))}
-        <Path d={areaPath(values, LINE_BOX)} fill={AREA_FILL} />
+        <Path d={areaPath(values, BOX)} fill={AREA_FILL} />
         <Path
-          d={linePath(values, LINE_BOX)}
+          d={linePath(values, BOX)}
           fill="none"
           stroke={flColor.bronze400}
           strokeWidth={2.2}
@@ -188,7 +196,7 @@ export function AdminLineChart({
         {/* The endpoint only. A number on every point is unreadable at 320 wide and adds nothing. */}
         {last ? <Circle cx={last.x} cy={last.y} r={3.6} fill={flColor.bronze300} stroke={flColor.charcoal800} strokeWidth={1.4} /> : null}
         {ticks.map((t) => (
-          <SvgText key={t.i} x={t.x} y={LINE_BOX.h - LINE_BOX.padBot + 14} fill={flColor.gray600} fontSize={8.5} textAnchor="middle">
+          <SvgText key={t.i} x={t.x} y={BOX.h - BOX.padBot + 14} fill={flColor.gray600} fontSize={fs} textAnchor="middle">
             {t.label}
           </SvgText>
         ))}

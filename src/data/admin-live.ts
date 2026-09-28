@@ -39,6 +39,17 @@ const FROM_MIGRATION: Record<string, string> = {
   admin_client_errors: '0176',
   admin_client_error_detail: '0176',
   admin_client_error_set_status: '0176',
+  // 0236 — the Business CRM (Admin-Analytics-Amendment-002).
+  ...Object.fromEntries(
+    [
+      'admin_revenue', 'admin_tiers', 'admin_ai_usage', 'admin_waitlist', 'admin_appstore',
+      'admin_bugs', 'admin_bug_save', 'admin_bug_delete', 'admin_bug_track',
+      'admin_user_search', 'admin_user_card', 'admin_billing_list',
+      'admin_contacts', 'admin_contact_save', 'admin_contact_delete',
+      'admin_contact_activity', 'admin_activity_log', 'admin_activity_done',
+      'admin_documents', 'admin_document_save', 'admin_document_delete',
+    ].map((fn) => [fn, '0236']),
+  ),
 };
 
 function rpcError(e: unknown, fn: string): Error {
@@ -52,7 +63,8 @@ function rpcError(e: unknown, fn: string): Error {
   return new Error(err?.message ?? 'Unknown error');
 }
 
-async function callRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+/** Exported for `crm-live.ts` — the same two named errors, one implementation. */
+export async function callRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.rpc(fn, args);
   if (error) throw rpcError(error, fn);
   return data as T;
