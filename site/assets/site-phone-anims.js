@@ -53,9 +53,9 @@
       h('span', { style: { fontSize: cq(15), fontWeight: 600 } }, clk),
       h('span', { style: { width: cq(25), height: cq(12), borderRadius: cq(4), border: '1px solid rgba(237,230,218,0.6)', padding: '1px', display: 'flex' } }, h('span', { style: { width: '70%', background: INK, borderRadius: cq(2) } }))); };
     function frame(o, ...kids) {
-      const { t, L, fref, label, radius, bg } = o;
+      const { t, L, fref, label, radius, bg, ar } = o;
       const op = reduce() ? 1 : (t < 350 ? t / 350 : t > L - 600 ? cl((L - t) / 600) : 1);
-      return h('div', { ref: fref, role: 'img', 'aria-label': label, style: { containerType: 'inline-size', position: 'relative', width: '100%', aspectRatio: '1320/2868', borderRadius: radius == null ? 29 : radius, overflow: 'hidden', background: bg || BGD, fontFamily: 'var(--fl-font-sans)', color: INK } },
+      return h('div', { ref: fref, role: 'img', 'aria-label': label, style: { containerType: 'inline-size', position: 'relative', width: '100%', aspectRatio: ar || '1320/2868', borderRadius: radius == null ? 29 : radius, overflow: 'hidden', background: bg || BGD, fontFamily: 'var(--fl-font-sans)', color: INK } },
         h('div', { style: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', opacity: op } }, status(), ...kids));
     }
     const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
@@ -232,7 +232,8 @@
           h('div', { key: 'f', style: S({ flex: 'none', display: 'flex', gap: cq(10), padding: cq(12) + ' ' + cq(16) + ' ' + cq(30) }, rise(t, SE + 1200)) },
             saved ? btn2('✓  Saved', { color: B, borderColor: 'rgba(191,143,79,0.45)' }) : btn(['Save program', tapDot(t, A4)], { transform: pressT(t, A4) }))]);
       }
-      return frame({ t, L, fref: ref, radius: p.radius, label: 'Building a program: tap Build My Own, choose Upload pictures, add three photos of a plan, and Forge builds the program from them' }, body);
+      /* 9:16, not the full 1320:2868 — every scene here is short, and at full height each one left the lower third empty (PO 09-27). */
+      return frame({ t, L, fref: ref, radius: p.radius, ar: '9/16', label: 'Building a program: tap Build My Own, choose Upload pictures, add three photos of a plan, and Forge builds the program from them' }, body);
     }
 
     /* ── Nutrition targets ── */
