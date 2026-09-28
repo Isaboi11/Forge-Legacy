@@ -181,6 +181,12 @@ export const UNKNOWN: Gate = { outcome: 'unknown' };
  *
  * `read` is `null` when the query has never answered or its last run rejected — that is `unknown`
  * unless a run is in flight.
+ *
+ * ⚠ A REFRESH OF A GOOD ANSWER IS STILL `ready` (PO 2026-09-27, sandbox purchase: *"it keeps flashing
+ * black"*). `refetch()` sets `loading` again but keeps the last answer, and this used to read `loading`
+ * for the length of every refresh — so Subscription blanked to its spinner six times in the minute after
+ * a purchase (the settle re-reads) and on every return to the foreground, and every gate reading
+ * `ready` (the Nutrition tab, Premium AI) blinked off with it. Only a FIRST read for this athlete loads.
  */
 export type EntitlementReadStatus = 'loading' | 'ready' | 'unknown';
 
@@ -189,7 +195,7 @@ export function entitlementReadStatus<S>(
   read: { uid: string | null; snap: S | null } | null,
   uid: string | null,
 ): EntitlementReadStatus {
-  if (loading) return 'loading';
+  if (loading) return read && read.uid === uid && read.snap ? 'ready' : 'loading';
   if (!read) return 'unknown';
   if (read.uid !== uid) return 'loading';
   return read.snap ? 'ready' : 'unknown';

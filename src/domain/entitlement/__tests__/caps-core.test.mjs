@@ -253,4 +253,9 @@ test('QA F6: a read that genuinely failed is still unknown, so the gate still re
   assert.equal(entitlementReadStatus(false, { uid: 'athlete-1', snap: null }, 'athlete-1'), 'unknown');
   // A refetch in flight is loading again, whatever it held before.
   assert.equal(entitlementReadStatus(true, null, 'athlete-1'), 'loading');
+  // A refresh of a good answer stays ready — no blank Subscription screen, no blinking gates (PO 09-27).
+  assert.equal(entitlementReadStatus(true, { uid: 'athlete-1', snap: { tier: 'PREMIUM' } }, 'athlete-1'), 'ready');
+  // …but only for the SAME athlete, and only when that answer was good.
+  assert.equal(entitlementReadStatus(true, { uid: 'athlete-1', snap: { tier: 'PREMIUM' } }, 'athlete-2'), 'loading');
+  assert.equal(entitlementReadStatus(true, { uid: 'athlete-1', snap: null }, 'athlete-1'), 'loading');
 });
