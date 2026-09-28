@@ -21,7 +21,7 @@ const { db, ATHLETE } = await import('./harness/fake-supabase.mjs');
 const { store } = await import('./harness/stubs.mjs');
 const live = await import('../nutrition-live.ts');
 const { localToday, shiftDay, totals } = await import('../../domain/nutrition/day.ts');
-const { itemTotals, logKey, mondayOf, setForgeRecipes } = await import('../../domain/nutrition/meal-planner.ts');
+const { itemTotals, mondayOf, setForgeRecipes } = await import('../../domain/nutrition/meal-planner.ts');
 const { applyChecks, checklistByMeal, planRowsFor } = await import('../../domain/nutrition/plan-ahead.ts');
 const { STARTER_RECIPES } = await import('../../domain/nutrition/__tests__/fixtures/starter-recipes.ts');
 

@@ -444,6 +444,8 @@ export const ACK_LABEL: Record<AckKind, string> = {
 export interface SquadPostThread {
   post: SquadFeedPost;
   squadName: string;
+  /** Who may pin it (0230): the squad's owner. Null for a post with no squad (a friends-only post). */
+  squadOwnerId: string | null;
   comments: SquadPostComment[];
   /** Which acknowledgement I left. Meaningless unless `post.iReacted`; defaults to `respect`. */
   myKind: AckKind;
@@ -566,7 +568,7 @@ export async function fetchSquadPost(postId: string): Promise<SquadPostThread | 
     .maybeSingle();
   const myKind = ((mine as { kind?: string } | null)?.kind ?? 'respect') as AckKind;
 
-  return { post: toPost(row), squadName: row.squad_name ?? 'Squad', comments, myKind };
+  return { post: toPost(row), squadName: row.squad_name ?? 'Squad', squadOwnerId: row.squad_owner_id ?? null, comments, myKind };
 }
 
 export interface NewSquadPost {
@@ -892,6 +894,80 @@ export async function addSquadComment(postId: string, body: string): Promise<voi
  * Returns the stored title — trimmed and capped at 80 by the database, so the caller renders what was
  * actually kept rather than what was typed. Blank clears the name.
  */
+/* ── Pin and edit (0230, PO 2026-09-28 · Squad Amendment 007) ──────────────────────────────────────────── */
+
+/**
+ * Is 0230 there? Latched per session. Before it is pasted, Pin and Edit are not offered at all — a control that
+ * always fails is worse than none. `squad_feed` / `squad_post_one` are NOT widened for this (0186's reason — they
+ * are `returns table` and rebuilding them from an older body is how this schema has lost features); the two new
+ * columns are read with their own RLS-scoped selects instead.
+ */
+let pinEdit0230: boolean | null = null;
+const isMissing = (e: unknown) => {
+  const o = e as { code?: string; message?: string } | null;
+  return o?.code === '42703' || o?.code === 'PGRST204' || /column .* does not exist/i.test(o?.message ?? '');
+};
+
+/** A post's pin and edit marks, and whether this database has them at all. */
+export async function fetchPostMarks(postId: string): Promise<{ supported: boolean; pinnedAt: string | null; editedAt: string | null }> {
+  if (pinEdit0230 === false) return { supported: false, pinnedAt: null, editedAt: null };
+  const { data, error } = await supabase.from('squad_posts').select('pinned_at, edited_at').eq('id', postId).maybeSingle();
+  if (error) {
+    if (isMissing(error)) pinEdit0230 = false;
+    return { supported: pinEdit0230 !== false && !isMissing(error), pinnedAt: null, editedAt: null };
+  }
+  pinEdit0230 = true;
+  const r = (data ?? {}) as { pinned_at?: string | null; edited_at?: string | null };
+  return { supported: true, pinnedAt: r.pinned_at ?? null, editedAt: r.edited_at ?? null };
+}
+
+/**
+ * The squad's pinned posts, most recently pinned first — drawn above the feed (and left out of it), so a daily
+ * workout posted the night before is not buried under the morning's check-ins. Each is read through
+ * `squad_post_one`, the same row the feed draws, so a pinned card is the same card. Empty before 0230.
+ */
+export async function fetchPinnedSquadPosts(squadId: string): Promise<SquadFeedPost[]> {
+  if (pinEdit0230 === false) return [];
+  const { data, error } = await supabase
+    .from('squad_posts')
+    .select('id')
+    .eq('squad_id', squadId)
+    .not('pinned_at', 'is', null)
+    .order('pinned_at', { ascending: false })
+    .limit(3);
+  if (error) {
+    if (isMissing(error)) pinEdit0230 = false;
+    return [];
+  }
+  pinEdit0230 = true;
+  const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
+  const rows = await Promise.all(
+    ids.map(async (id) => {
+      const one = await supabase.rpc('squad_post_one', { p_post: id });
+      const r = ((one.data ?? []) as FeedRow[])[0];
+      return one.error || !r ? null : toPost(r);
+    }),
+  );
+  return rows.filter((p): p is SquadFeedPost => p != null);
+}
+
+/** Pin (true) or unpin (false). The squad owner only — the database says no to anyone else. Throws with its reason. */
+export async function pinSquadPost(postId: string, pin: boolean): Promise<boolean> {
+  const { data, error } = await supabase.rpc('pin_squad_post', { p_post_id: postId, p_pin: pin });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+/**
+ * Edit a post the athlete wrote: its words, and — on a posted workout — the workout (`layout`; null leaves it). A copy
+ * somebody already took is untouched (SQ-A5-D1.1). Returns when it was edited. Throws with the database's reason.
+ */
+export async function editSquadPost(postId: string, body: string, layout: PostedWorkoutCard | null = null): Promise<string> {
+  const { data, error } = await supabase.rpc('edit_squad_post', { p_post_id: postId, p_body: body, p_layout: layout });
+  if (error) throw new Error(error.message);
+  return String(data);
+}
+
 export async function renameSquadPost(postId: string, title: string): Promise<string | null> {
   const { data, error } = await supabase.rpc('rename_squad_post', { p_post_id: postId, p_title: title });
   if (error) throw error;

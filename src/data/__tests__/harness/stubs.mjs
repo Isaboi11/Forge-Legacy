@@ -19,3 +19,14 @@ export const currentAppSession = () => null;
 /* @/lib/diagnostics */
 export const reported = [];
 export const reportError = (e) => void reported.push(e);
+
+/* @/lib/storage-upload — the media path; nothing under test uploads. */
+export const MAX_CHECKIN_BYTES = 50 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+export const extensionFor = () => 'jpg';
+export const uploadToBucket = async () => {
+  throw new Error('no uploads in tests');
+};
+
+/* react-native — only what a data module might touch at import time. */
+export const Platform = { OS: 'ios', select: (o) => o.ios ?? o.default };

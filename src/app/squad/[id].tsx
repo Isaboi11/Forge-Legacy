@@ -28,6 +28,7 @@ import {
   detailFor,
   ensureWeeklyRecap,
   fetchSquadFeed,
+  fetchPinnedSquadPosts,
   fetchMyReactionKinds,
   setSquadReactionKind,
   ACK_KINDS,
@@ -249,14 +250,19 @@ export default function SquadDetailRoute() {
   const [mountedAt] = useState(() => Date.now());
   const [goalOpenedAt, setGoalOpenedAt] = useState<number | null>(null);
 
+  /* Pinned posts (0230, PO 2026-09-28): above the feed, most recently pinned first — so tomorrow's workout is not
+     buried under today's check-ins. Empty on a database without 0230. */
+  const { data: pinnedData, refetch: refetchPinned } = useQuery(() => fetchPinnedSquadPosts(squadId), [squadId]);
+
   useFocusEffect(
     useCallback(() => {
       refetch();
       refetchFeed();
+      refetchPinned();
       refetchCheckins();
       setReactMap({}); // let fresh server truth win each time the screen regains focus
       setKindMap({});
-    }, [refetch, refetchFeed, refetchCheckins]),
+    }, [refetch, refetchFeed, refetchPinned, refetchCheckins]),
   );
 
   /*
@@ -430,9 +436,11 @@ export default function SquadDetailRoute() {
   const windowOk = !(parsedStart && parsedEnd) || parsedEnd > parsedStart;
   const goalValid = Number(goalTargetText) >= 1 && windowOk;
   const windowError = windowOk ? null : 'The end date has to come after the start.';
-  const feedPosts = feedData ?? [];
+  const pinnedPosts = pinnedData ?? [];
+  /* A pinned post is drawn once, at the top — never again further down where it would read as a duplicate. */
+  const feedPosts = (feedData ?? []).filter((p) => !pinnedPosts.some((q) => q.id === p.id));
 
-  const canLoadMore = feedPosts.length === feedLimit;
+  const canLoadMore = (feedData ?? []).length === feedLimit;
   const checkinPeople = checkinsData?.members ?? [];
   const iHaveActive = checkinsData?.iHaveActive ?? false;
 
@@ -599,6 +607,53 @@ export default function SquadDetailRoute() {
     );
   };
 
+  /** One feed row — the same card for a pinned post and the feed, so the two cannot drift. */
+  const feedCard = (p: SquadFeedPost, i: number) => (
+    <FeedCard
+      key={p.id}
+      post={p}
+      units={units}
+      squadName={squad.name}
+      alt={i % 2 === 1}
+      reacted={reactMap[p.id]?.on ?? p.iReacted}
+      respect={reactMap[p.id]?.n ?? p.respectCount}
+      /* A shared workout opens THE SESSION, not a post about it — the destination
+         `Social-Architecture-Amendment-002` §3 names, and the one the Friends feed has
+         always used. Falls back to the post page when the row carries no workout id, which
+         is every recap on a database without 0117 and every other post type. */
+      onOpen={() =>
+        p.type === 'weekly'
+          ? router.push({ pathname: '/squad-recap/[id]', params: { id: p.id } })
+          : p.type === 'recap' && p.workoutId
+            ? router.push({ pathname: '/activity/[id]', params: { id: p.workoutId } })
+            : openPost(p.id)
+      }
+      onComments={() => openPost(p.id)}
+      /* The clip PLAYS. The card's one handler above sent a tap on the video to the workout
+         summary — what the PO reported — and the band now opens the same full-screen player a
+         pinned video uses.
+
+         ⚠ A PHOTO OPENS THE POST, NOT THE CARD'S DESTINATION. For a recap that destination is
+         Activity Detail, which has no photo slot (`chapter_photos` has no workout column), so the
+         PO tapped a picture and landed on a page without it. The post shows the photos, the
+         session and "See every set" together. */
+      onMedia={
+        p.media[0]?.kind === 'video'
+          ? () => router.push({ pathname: '/pin-video', params: { url: p.media[0].url } })
+          : p.media.length
+            ? () => openPost(p.id)
+            : undefined
+      }
+      squadPhotoUrl={squad.photoUrl}
+      onAuthor={p.authorId ? () => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId as string } }) : undefined}
+      onReact={() => onReactCard(p)}
+      ackKind={kindMap[p.id]}
+      onLongReact={() => setAckFor(p.id)}
+      takenPostId={slot?.source?.postId ?? null}
+      takingPostId={takingPostId}
+      onTake={() => askTake(p.id)}
+    />
+  );
   return (
     <View style={styles.root}>
       <DetailBg />
@@ -868,58 +923,24 @@ export default function SquadDetailRoute() {
             </Pressable>
           </View>
 
-          {feedPosts.length === 0 ? (
+          {pinnedPosts.length ? (
+            <View style={styles.pinnedList}>
+              {pinnedPosts.map((p, i) => (
+                <View key={`pin-${p.id}`}>
+                  <Text style={styles.pinnedLabel}>Pinned</Text>
+                  {feedCard(p, i)}
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {feedPosts.length === 0 && pinnedPosts.length === 0 ? (
             <View style={styles.feedEmpty}>
               <Text style={styles.feedEmptyText}>No posts yet. Check in, share a PR, or drop a note to get the squad talking.</Text>
             </View>
           ) : (
             <View style={styles.feedList}>
-              {feedPosts.map((p, i) => (
-                <FeedCard
-                  key={p.id}
-                  post={p}
-                  units={units}
-                  squadName={squad.name}
-                  alt={i % 2 === 1}
-                  reacted={reactMap[p.id]?.on ?? p.iReacted}
-                  respect={reactMap[p.id]?.n ?? p.respectCount}
-                  /* A shared workout opens THE SESSION, not a post about it — the destination
-                     `Social-Architecture-Amendment-002` §3 names, and the one the Friends feed has
-                     always used. Falls back to the post page when the row carries no workout id, which
-                     is every recap on a database without 0117 and every other post type. */
-                  onOpen={() =>
-                    p.type === 'weekly'
-                      ? router.push({ pathname: '/squad-recap/[id]', params: { id: p.id } })
-                      : p.type === 'recap' && p.workoutId
-                        ? router.push({ pathname: '/activity/[id]', params: { id: p.workoutId } })
-                        : openPost(p.id)
-                  }
-                  onComments={() => openPost(p.id)}
-                  /* The clip PLAYS. The card's one handler above sent a tap on the video to the workout
-                     summary — what the PO reported — and the band now opens the same full-screen player a
-                     pinned video uses.
-
-                     ⚠ A PHOTO OPENS THE POST, NOT THE CARD'S DESTINATION. For a recap that destination is
-                     Activity Detail, which has no photo slot (`chapter_photos` has no workout column), so the
-                     PO tapped a picture and landed on a page without it. The post shows the photos, the
-                     session and "See every set" together. */
-                  onMedia={
-                    p.media[0]?.kind === 'video'
-                      ? () => router.push({ pathname: '/pin-video', params: { url: p.media[0].url } })
-                      : p.media.length
-                        ? () => openPost(p.id)
-                        : undefined
-                  }
-                  squadPhotoUrl={squad.photoUrl}
-                  onAuthor={p.authorId ? () => router.push({ pathname: '/athlete/[id]', params: { id: p.authorId as string } }) : undefined}
-                  onReact={() => onReactCard(p)}
-                  ackKind={kindMap[p.id]}
-                  onLongReact={() => setAckFor(p.id)}
-                  takenPostId={slot?.source?.postId ?? null}
-                  takingPostId={takingPostId}
-                  onTake={() => askTake(p.id)}
-                />
-              ))}
+              {feedPosts.map((p, i) => feedCard(p, i))}
               {canLoadMore ? (
                 <Pressable onPress={() => setFeedLimit((n) => n + 5)} accessibilityRole="button" accessibilityLabel="Load more posts" style={styles.loadMore}>
                   <Text style={styles.loadMoreText}>Load More</Text>
@@ -1996,6 +2017,9 @@ const styles = StyleSheet.create({
   /* No gap. Posts are separated by the hairline each one carries at its foot — a gap on top of that
      would put a gutter between rows and the ledger would read as cards again. */
   feedList: { gap: 0 },
+  /* Pinned (0230): the same rows, above the feed, each with a quiet label — information, not a card around it. */
+  pinnedList: { gap: 0, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  pinnedLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk, paddingHorizontal: 20, paddingTop: 10 },
   weeklyCard: { borderColor: flColor.bronzeBorder },
   weeklyIcon: {
     width: 34,

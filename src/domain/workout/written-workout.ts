@@ -150,7 +150,9 @@ const ITEM = /(\d{1,3})\s*(?:reps?\s*)?(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\
 function labelOf(line: string): { n: string | null; letter: string | null; superset: boolean; rest: string } | null {
   let s = line.trim();
   let superset = false;
-  const ss = /^super\s*-?\s*set\b\s*/i.exec(s);
+  /* "super set b.", and the card's "super set" written DOWN the margin, which a transcription reads as "super a." on
+     one line and "set b." on the next (Season 11, Day 3). Only in front of a letter label. */
+  const ss = /^super\s*-?\s*set\b\s*/i.exec(s) ?? /^(?:super|set)\s+(?=[a-e]\s*[.)])/i.exec(s);
   if (ss) {
     superset = true;
     s = s.slice(ss[0].length);
@@ -246,6 +248,13 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
     take(/(\d{1,3}(?:\s*,\s*\d{1,3}){1,19})\s*(?:reps?)?/i);
   }
 
+  /* "5 reps each leg", "5 each arm", "per side" — said once, kept as the note; the count is per side. */
+  const side = /\b(?:each|per)\s+(leg|arm|side|hand)\b/i.exec(text);
+  if (side) {
+    ex.note = joinNote(ex.note, `Each ${side[1].toLowerCase()}`);
+    take(side[0]);
+  }
+
   /* "4 sets of 4 reps", "4x15 reps", "5 sets of 2-4 reps", "5 sets of 30 yds", "10 sets of 10 reps". */
   const sxr = /(\d{1,2})\s*(?:sets?\s*(?:of|x|×)?|x|×)\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?\s*(reps?|yds?|yards?|secs?|seconds?|s|mins?|minutes?)?\b/i.exec(text);
   if (sxr && !ex.repScheme) {
@@ -265,20 +274,43 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
     take(sxr[0]);
   }
 
-  /* "100 reps with 33% of your Bench Max" / "125 reps of Triceps" — a TOTAL to reach, in as many sets as it takes. */
-  const total = /(\d{2,4})\s*reps?\b/i.exec(text);
-  if (total && !ex.sets) {
-    ex.sets = 1;
-    ex.reps = null;
-    ex.note = joinNote(ex.note, `${total[1]} reps total, in as few sets as you can. Add a set each time you rack it.`);
-    take(total[0]);
+  /* "6 sets" with no count — a lift done for time or distance, or its own call; the sets are what was said. */
+  if (!ex.sets && !ex.repScheme) {
+    const bareSets = /\b(\d{1,2})\s*sets?\b(?!\s*(?:of|x|×))/i.exec(text);
+    if (bareSets && !/\d\s*reps?\b/i.test(text)) {
+      ex.sets = Number(bareSets[1]);
+      take(bareSets[0]);
+    }
   }
 
-  /* "33% of your Bench Max" — a percentage of ANOTHER lift's max. */
-  const of = /(\d{1,3}(?:\.\d+)?)\s*%\s*of\s*(?:your\s*)?(squat|bench|deadlift|dead\s*lift|press|overhead\s*press)\s*(?:max)?/i.exec(text);
+  /*
+   * A count with no set count: "2 reps @ 80%" is ONE set of two (Season 11 Day 7 — as many as fit in ten minutes,
+   * added as they go). Fifty or more is a TOTAL to reach ("100 reps with 33% of your Bench Max", "125 reps of
+   * Triceps"), in as many sets as it takes — no rep target, never a 100-rep set.
+   */
+  const count = !ex.sets && !ex.repScheme ? /(\d{1,4})\s*reps?\b/i.exec(text) : null;
+  if (count) {
+    const c = Number(count[1]);
+    ex.sets = 1;
+    if (c >= 50) {
+      ex.reps = null;
+      ex.note = joinNote(ex.note, `${c} reps total, in as few sets as you can. Add a set each time you rack it.`);
+    } else {
+      ex.reps = c;
+    }
+    take(count[0]);
+  }
+
+  /*
+   * "33% of your Bench Max", "45-50% of Back Squat max", "around 50-60% of your DEAD max", "40-45% of max" — a
+   * percentage of a max, maybe ANOTHER lift's. A range takes its LOW end: the gray weight is a starting point the
+   * athlete can go up from, and the author's words ("around 50-60%") stay in the note beside it.
+   */
+  const of = /(?:(?:@|\bat\b)\s*)?(\d{1,3}(?:\.\d+)?)(?:\s*[-–]\s*\d{1,3}(?:\.\d+)?)?\s*%\s*of\s*(?:your\s*)?(back\s*squat|front\s*squat|squat|bench(?:\s*press)?|dead\s*lift|deadlift|dead|overhead\s*press|press|max)\b\s*(?:max)?/i.exec(text);
   if (of) {
     ex.percent = Number(of[1]);
-    ex.percentOf = of[2].toLowerCase().replace(/\s+/g, '');
+    const whose = of[2].toLowerCase().replace(/\s+/g, '');
+    ex.percentOf = whose === 'max' ? null : whose;
     take(of[0]);
   }
 
@@ -343,8 +375,16 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     out.exercises.push(ex);
     cur = ex;
   };
+  /** The line after this one — a numbered line holding only a quoted title is a block's name when lettered lifts follow it. */
+  let nextLine = '';
+  /** "3. "Pumped in the Polo"" — the number (and name) the lettered lifts under it take. */
+  let blockTitle: { n: string; text: string } | null = null;
+  /** Bullets and asterisks are the page's, not the author's words. */
+  const unbullet = (l: string) => l.replace(/^[•·▪◦]\s*/, '').trim();
 
-  for (const line of lines) {
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    nextLine = lines[li + 1] ?? '';
     /* ── the title and the day ── */
     const dayM = /^day\s*:?\s*(\d{1,2})\b/i.exec(line);
     if (dayM) {
@@ -386,14 +426,49 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     }
 
     if (mode === 'after') {
-      after.push(line);
+      after.push(unbullet(line));
       continue;
     }
 
-    handleLift(line, false);
+    /*
+     * WARM-UP SETS WITH PERCENTAGES — "Hit some Back Squat warm up sets. 5reps @ 60%, 3reps @ 70%, 2reps @ 75%"
+     * (Season 11 Day 7). A real warm-up exercise, so its sets get gray weights too; the words stay in the notes.
+     */
+    if ((mode === 'warm' || mode === 'head') && [...line.matchAll(ITEM)].length >= 2) {
+      const before = line.slice(0, line.search(/\d/)).trim();
+      const said = [before, ...[...how].reverse()].map((l) => /(?:hit\s+some\s+)?([a-z][a-z\s]*?)\s+warm[\s-]?up\s+sets?/i.exec(l)?.[1]).find(Boolean);
+      const ex = blank('warmup');
+      applyRx(ex, line);
+      ex.name = tidyName(said ?? before ?? 'Warm-up sets');
+      if (ex.name) {
+        out.exercises.push(ex);
+        how.push(line);
+        continue;
+      }
+    }
+
+    handleLift(mode === 'warm' || mode === 'head' ? unbullet(line) : line, false);
   }
 
   function handleLift(line: string, cardioHead: boolean) {
+    /*
+     * "* Perform 2 sets of this Cluster." — the rungs above are ONE cluster; do it twice. The scheme is repeated whole,
+     * each rung's rest with it: 5@67% rest 30s, 5@67% rest 30s, 5@67% rest 2:30, and again (Season 11 Day 3).
+     */
+    const cluster = /(?:perform|do|repeat)\s+(\d{1,2})\s*(?:x|×|sets?|rounds?|times)?\s*(?:of\s+)?(?:this|the)\s+cluster/i.exec(line) ?? /repeat\s+(?:this|the)\s+cluster\s+(\d{1,2})\s*(?:x|×|times)/i.exec(line);
+    if (cluster && cur && (cur as WrittenExercise).repScheme) {
+      const ex = cur as WrittenExercise;
+      const times = Math.max(1, Number(cluster[1]));
+      const rep = <T,>(xs: T[] | null) => (xs ? Array.from({ length: times }, () => xs).flat() : null);
+      const n = ex.repScheme!.length;
+      ex.repScheme = rep(ex.repScheme);
+      ex.percentScheme = rep(ex.percentScheme);
+      ex.restScheme = rep(ex.restScheme ?? (ex.restSec != null ? Array.from({ length: n }, () => ex.restSec) : null));
+      ex.sets = ex.repScheme!.length;
+      ex.note = joinNote(ex.note, `The cluster, ${times} times through`);
+      return;
+    }
+
     /* "Planned Day off" under Cardio — a day off from cardio is not an exercise called that. */
     if (/\bday\s*off\b|\brest\s*day\b|\bnone\b/i.test(line) && !/\d/.test(line)) {
       after.unshift(`Cardio: ${tidySentence(line.toLowerCase())}`);
@@ -464,18 +539,33 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       return;
     }
 
+    /* A lift's name that wrapped onto the next line — "Cardio Seated/or Standing BB" / "overhead press" (Season 11
+       Day 2). Only while the lift has nothing else yet, and only a few plain words: a sentence is a note. */
+    if (cur && mode === 'lifts' && !(cur as WrittenExercise).sets && !(cur as WrittenExercise).repScheme && !(cur as WrittenExercise).percent && !/\d|[.!?:*]/.test(line) && line.split(/\s+/).length <= 4) {
+      (cur as WrittenExercise).name = tidyName(`${(cur as WrittenExercise).name} ${line}`);
+      return;
+    }
+
     /* Numbers that prescribe the lift above ("5 sets of 5 reps @ 75%" on its own line, the SeeSaw's pairs). */
     if (cur && /\d/.test(line)) {
       const probe = blank(section);
       const left = applyRx(probe, line);
       if (probe.sets || probe.percent != null || probe.restSec != null) {
         const ex = cur as WrittenExercise;
+        /* ⚠ NEVER OVER A PRESCRIPTION IT ALREADY HAS. A line under a lift carrying its own sets × reps that was not
+           recognised as a lift ("super a. … Pushdowns 6x20", before the reader knew that label) once rewrote the bench
+           clusters above it as 6 × 20. It is kept as the author's words instead. */
+        if (probe.sets && (ex.sets || ex.repScheme)) {
+          ex.note = joinNote(ex.note, tidySentence(line));
+          return;
+        }
         if (probe.sets) Object.assign(ex, { sets: probe.sets, reps: probe.reps, repsMax: probe.repsMax, repScheme: probe.repScheme, percentScheme: probe.percentScheme });
         if (probe.percent != null) Object.assign(ex, { percent: probe.percent, percentOf: probe.percentOf ?? ex.percentOf });
         if (probe.restSec != null) restFor(ex, probe.restSec);
         /* A SENTENCE that carries numbers ("Get 100 reps with 33% of your Bench Max.") is kept whole as the
-           author wrote it — the numbers are read out of it, but the words are not left as fragments. */
-        const wordy = (left.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !FILLER.test(w)).length >= 2;
+           author wrote it — the numbers are read out of it, but the words are not left as fragments. A percentage
+           line always is ("use around 50-60% of your DEAD max"): the range and the "around" are the author's. */
+        const wordy = probe.percent != null || (left.match(/[A-Za-z]{2,}/g) ?? []).filter((w) => !FILLER.test(w)).length >= 2;
         ex.note = joinNote(ex.note, wordy ? tidySentence(line) : (probe.note ?? ''));
         if (!ex.note) ex.note = null;
         return;
@@ -517,6 +607,12 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     let n = lab?.n ?? null;
     const letter = lab?.letter ?? null;
     const prev = cur as WrittenExercise | null;
+    /* The lettered lifts under a block's title line take its number: "3. "Pumped in the Polo"" → 3a, 3b. */
+    if (letter && !n && blockTitle) {
+      n = blockTitle.n;
+      ex.note = joinNote(ex.note, tidySentence(blockTitle.text));
+      blockTitle = null;
+    }
     /* "b." / "super set b." carries on the superset above; "3.a" or a fresh "a." after a heading starts one. */
     const continuing = !!prev && !newBlock && !n && ((!!letter && letter !== 'a') || (!letter && !!lab?.superset));
     /* A lift written with no number still gets the next one, so the preview reads 1, 2, 3a, 3b, 4 … 5a, 5b. */
@@ -538,8 +634,21 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     /* A phrase in quotes is the author's name for the set — "Ride the SeeSaw" — not part of the lift's name. */
     const quoted = /["“]([^"”]+)["”]/.exec(body);
     if (quoted && !/same\s+as\s+above/i.test(quoted[1])) {
-      ex.note = joinNote(ex.note, tidySentence(quoted[1]));
-      body = body.replace(quoted[0], ' ').replace(/\s+/g, ' ').trim();
+      const rest = body.replace(quoted[0], ' ').replace(/\s+/g, ' ').trim();
+      if (!rest) {
+        /* Nothing but a quoted phrase: a block's NAME when lettered lifts follow ("3. "Pumped in the Polo"" → 3a, 3b);
+           otherwise the lift's own name ("Cardio "Bodyweight Bulgarians"", its sets on the next line). */
+        const next = labelOf(nextLine);
+        if (next?.letter && !next.n) {
+          blockTitle = { n: n ?? String(Number(lastN ?? 0) + 1), text: quoted[1] };
+          if (n) lastN = n;
+          return;
+        }
+        body = quoted[1];
+      } else {
+        ex.note = joinNote(ex.note, tidySentence(quoted[1]));
+        body = rest;
+      }
     }
 
     /* "same as above" — the bench on Day 7 takes the squat's ramp. */
@@ -620,8 +729,13 @@ function tidySentence(s: string): string {
 /** The catalogue key of a max named in words — "bench" → the key its percentages resolve against. */
 export const MAX_LIFT_KEYS: Record<string, string> = {
   squat: 'barbell-back-squat',
+  backsquat: 'barbell-back-squat',
+  frontsquat: 'barbell-front-squat',
   bench: 'barbell-bench-press',
+  benchpress: 'barbell-bench-press',
   deadlift: 'barbell-deadlift',
+  /* "your DEAD max" — how Squatober writes it. */
+  dead: 'barbell-deadlift',
   press: 'barbell-overhead-press',
   overheadpress: 'barbell-overhead-press',
 };
@@ -663,6 +777,9 @@ const SHORTHAND: [RegExp, string][] = [
   [/\bpull\s*ups?\b/gi, 'Pull-Up'],
   [/\bbicep\s+curls?\b/gi, 'Biceps Curl'],
   [/\bone[\s-]arm\b/gi, 'Single-Arm'],
+  /* "Bodyweight Bulgarians" (Season 11) — the catalogue's plain Bulgarian split squat IS the bodyweight one. */
+  [/\bbodyweight\s+bulgarians?\b/gi, 'Bulgarian Split Squat'],
+  [/\bbulgarians\b/gi, 'Bulgarian Split Squat'],
 ];
 
 /** The words a coach puts in FRONT of a lift to say how to do it — "Slow Strict", "Heavy". A tempo, not a lift. */
@@ -690,6 +807,12 @@ export function nameCandidates(name: string): string[] {
     /* "Heavy Alternating DB Curls" → "Alternating Dumbbell Curl": the catalogue puts the grip word first. */
     const alt = /^(.*?)\b(alternating|incline|hammer|seated|standing)\s+(dumbbell|barbell|kettlebell)\s+(.+)$/i.exec(x);
     if (alt) add(`${alt[2]} ${alt[3]} ${alt[4].replace(/s\b/g, '')}`);
+    /* "Kettlebell Suitcase/waiter Carry" → "Kettlebell Suitcase Carry", then the other: the author's "either". */
+    const slash = /^(.*?)\b(\w+)\s*\/\s*(\w+)\s+(.+)$/.exec(x);
+    if (slash) {
+      add(`${slash[1]}${slash[2]} ${slash[4]}`);
+      add(`${slash[1]}${slash[3]} ${slash[4]}`);
+    }
   }
   return out;
 }
@@ -785,4 +908,94 @@ export function tsvToWrittenText(tsv: string): string {
     out.push([`${n}.`, name, rx, t, ...rest].filter(Boolean).join(' '));
   }
   return out.join('\n');
+}
+
+/* ── back to words — so a posted workout can be edited in the same box it was written in ────────────────── */
+
+/** Whose max, in the words this reader takes back ("45% of back squat max"). The inverse of `MAX_LIFT_KEYS`. */
+const MAX_WORDS: Record<string, string> = {
+  'barbell-back-squat': 'back squat',
+  'barbell-front-squat': 'front squat',
+  'barbell-bench-press': 'bench',
+  'barbell-deadlift': 'deadlift',
+  'barbell-overhead-press': 'overhead press',
+};
+
+const clockText = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+
+/**
+ * A posted workout → text this reader reads back to the SAME workout (PO 2026-09-28: "edit posts"). The poster edits
+ * words, never a form — the same box, the same live preview. `writtenToTemplate(readWrittenWorkout(text))` of what
+ * this returns equals the rows it was given; `roundTrips` checks exactly that before an edit is offered, so a post
+ * this cannot express faithfully is never silently changed by being opened and saved.
+ */
+export function rowsToWrittenText(w: { name: string; how?: string | null; after?: string | null; rows: readonly WrittenTemplateRow[] }): string {
+  const out: string[] = [`"${w.name}"`];
+  const itemCount = (l: string) => [...l.matchAll(ITEM)].length;
+  const howLines = (w.how ?? '').split('\n').filter((l) => l.trim() && itemCount(l) < 2);
+  if (howLines.length && !/^warm[\s-]?up\b/i.test(howLines[0])) out.push('Warm up:');
+  out.push(...howLines);
+
+  const rx = (r: WrittenTemplateRow): { line: string; note: string | null } => {
+    let note = r.coachNote ?? null;
+    const of = r.percentOf && MAX_WORDS[r.percentOf] ? ` of ${MAX_WORDS[r.percentOf]} max` : '';
+    if (r.percentScheme?.length) {
+      const reps = r.repScheme ?? r.percentScheme.map(() => r.targetReps);
+      return {
+        line: reps.map((x, i) => `${x} reps @ ${r.percentScheme![i]}%${r.restScheme?.[i] != null ? ` rest ${clockText(r.restScheme[i]!)}` : ''}`).join(', '),
+        note,
+      };
+    }
+    const pct = r.percentOfMax != null ? ` @ ${r.percentOfMax}%${of}` : '';
+    if (r.repScheme?.length) return { line: `${r.repScheme.join(',')} reps${pct}`, note };
+    /* No count (a carry for yards — its distance is already in the note, "30 yds each set" — or "100 reps total"):
+       just the sets, and the note exactly as it stands, so nothing in it is said twice or moves. */
+    const reps = r.targetReps ? ` of ${r.targetReps}${r.repsMax ? `-${r.repsMax}` : ''} reps` : '';
+    return { line: `${r.sets} ${r.sets === 1 ? 'set' : 'sets'}${reps}${pct}`, note };
+  };
+
+  for (const r of w.rows.filter((x) => x.section === 'warmup')) {
+    if (r.percentScheme?.length) out.push(`${r.name} warm up sets: ${rx(r).line}`);
+  }
+
+  let n = 0;
+  const main = w.rows.filter((x) => x.section !== 'warmup');
+  for (let i = 0; i < main.length; i++) {
+    const r = main[i];
+    const inGroup = !!r.groupId;
+    const first = !inGroup || main[i - 1]?.groupId !== r.groupId;
+    const last = !inGroup || main[i + 1]?.groupId !== r.groupId;
+    if (first) n += 1;
+    const letter = inGroup ? String.fromCharCode(97 + main.slice(0, i).filter((x) => x.groupId === r.groupId).length) : '';
+    const { line, note } = rx(r);
+    const head = !inGroup ? `${n}.` : first ? `${n}. ${letter}.` : `super set ${letter}.`;
+    out.push(`${head} ${r.name} ${line}`);
+    if (note) out.push(`* ${note}`);
+    /* One rest for the lift — or, in a superset, once after its last member: the round's rest. */
+    if (!r.restScheme?.length && r.restSec != null && (!inGroup || last)) out.push(`rest ${clockText(r.restSec)}${inGroup ? ' between each super set' : ''}`);
+  }
+  if (w.after) out.push(`Recovery: ${w.after}`);
+  return out.join('\n');
+}
+
+/**
+ * Would these rows come back exactly from their own text? Only then is "Edit the workout" offered — a posted workout
+ * that went up from a saved template may carry something the text cannot say, and opening and saving it must never
+ * quietly change it.
+ */
+export function roundTrips(w: { name: string; how?: string | null; after?: string | null; rows: readonly WrittenTemplateRow[] }, resolveKey: (name: string) => string | undefined): boolean {
+  const back = readWrittenWorkout(rowsToWrittenText(w));
+  const rows = writtenToTemplate(back, resolveKey);
+  /* ⚠ KEY ORDER IS NOT MEANING. A post comes back out of Postgres `jsonb`, which re-orders an object's keys (shortest
+     first), so a plain JSON.stringify would call every stored workout "changed" and never offer the edit. Keys are
+     sorted; values — every number, every note — must match exactly. */
+  const stable = (v: unknown): unknown =>
+    Array.isArray(v) ? v.map(stable) : v && typeof v === 'object' ? Object.fromEntries(Object.keys(v as object).sort().map((k) => [k, stable((v as Record<string, unknown>)[k])])) : v;
+  const norm = (r: WrittenTemplateRow) => JSON.stringify(stable({ ...r, groupId: r.groupId ? 'g' + r.groupId.replace(/\D/g, '') : null }));
+  return (
+    back.name === w.name &&
+    (back.after ?? null) === (w.after ?? null) &&
+    rows.length === w.rows.length &&
+    rows.every((r, i) => norm(r) === norm(w.rows[i] as WrittenTemplateRow))
+  );
 }

@@ -19,6 +19,7 @@ export interface PostedRow extends TemplatePrescription {
   groupKind?: 'superset' | 'circuit' | null;
   coachNote?: string | null;
   targetDurationSec?: number | null;
+  section?: 'warmup' | 'main' | 'cooldown';
 }
 
 export interface SetLine {
@@ -87,11 +88,13 @@ export function postedLines(rows: readonly PostedRow[], load?: LoadContext, maxN
     const inGroup = !!r.groupId;
     const startsGroup = inGroup && prev?.groupId !== r.groupId;
     const endsGroup = inGroup && next?.groupId !== r.groupId;
-    if (!inGroup || startsGroup) {
+    /* Warm-up sets ("5 @ 60%, 3 @ 70%, 2 @ 75%" before lift 1) are not lift 1 — the card's numbering starts after them. */
+    const warm = r.section === 'warmup';
+    if (!warm && (!inGroup || startsGroup)) {
       n += 1;
       letter = 0;
     }
-    const label = inGroup ? `${n}${String.fromCharCode(97 + letter++)}` : `${n}`;
+    const label = warm ? 'Warm-up' : inGroup ? `${n}${String.fromCharCode(97 + letter++)}` : `${n}`;
 
     const reps = repsOf(r);
     const count = reps.length;

@@ -1,7 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
@@ -14,7 +14,10 @@ import { readProgramPhoto } from '@/data/program-photo-live';
 import type { TemplateExercise } from '@/data/templates-live';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
-import { readWrittenWorkout, tsvToWrittenText, writtenToTemplate, MAX_LIFT_KEYS } from '@/domain/workout/written-workout';
+import { readWrittenWorkout, roundTrips, rowsToWrittenText, tsvToWrittenText, writtenToTemplate, MAX_LIFT_KEYS, type WrittenTemplateRow } from '@/domain/workout/written-workout';
+import { editSquadPost, fetchSquadPost, isPostedWorkout } from '@/data/squad-feed-live';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { putWrittenDraft } from '@/lib/written-workout-intent';
@@ -44,8 +47,28 @@ const resolveKey = (n: string) => resolveExerciseName(n)?.key;
 
 export default function WorkoutWriteScreen() {
   const router = useRouter();
-  const [text, setText] = useState('');
+  const { showToast } = useToast();
+  /*
+   * ══ EDIT MODE (0230, PO 2026-09-28: "edit posts") ══ `?edit=<post id>` opens a posted workout back in this box as
+   * words (`rowsToWrittenText`) — but only when those words read back to the IDENTICAL workout (`roundTrips`); a
+   * workout that went up from a saved template may hold something the words cannot say, and opening and saving it
+   * must never quietly change it. Save writes the post (`edit_squad_post`); copies already taken are untouched.
+   */
+  const { edit } = useLocalSearchParams<{ edit?: string }>();
+  const editId = typeof edit === 'string' && edit ? edit : null;
+  const editQ = useQuery(() => (editId ? fetchSquadPost(editId) : Promise.resolve(null)), [editId]);
+  const editPost = editQ.data?.post ?? null;
+  const editLayout = editPost && isPostedWorkout(editPost.layout) ? editPost.layout : null;
+  const editText = useMemo(() => {
+    if (!editLayout) return null;
+    const w = { name: editLayout.name, how: editLayout.how ?? null, after: editLayout.after ?? null, rows: editLayout.exercises as unknown as WrittenTemplateRow[] };
+    return roundTrips(w, resolveKey) ? rowsToWrittenText(w) : '';
+  }, [editLayout]);
+  const [typed, setText] = useState<string | null>(null);
+  /* Until they type, the box holds the post as words — derived, never copied into state by an effect. */
+  const text = typed ?? editText ?? '';
   const [name, setName] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reading = useRef(false);
@@ -93,8 +116,21 @@ export default function WorkoutWriteScreen() {
     }
   };
 
-  const use = () => {
-    if (!written || !rows.length) return;
+  const use = async () => {
+    if (!written || !rows.length || saving) return;
+    if (editId && editPost) {
+      setSaving(true);
+      try {
+        await editSquadPost(editId, editPost.body ?? '', { kind: 'posted-workout', name: title, exercises: rows, how: written.how, after: written.after });
+        showToast('Workout updated. Anyone who already took it keeps their copy.');
+        router.back();
+      } catch (e) {
+        showToast(errorMessage(e));
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     putWrittenDraft({ name: title, exercises: rows, how: written.how, after: written.after });
     router.back();
   };
@@ -102,10 +138,18 @@ export default function WorkoutWriteScreen() {
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.4)' }} />
-      <AppBar title="Write a workout" transparent onBack={() => router.back()} />
+      <AppBar title={editId ? 'Edit the workout' : 'Write a workout'} transparent onBack={() => router.back()} />
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
+        {editId && editText === '' ? (
+          /* Posted from a saved workout: something in it has no words here, so it is not reopened as words. */
+          <Text style={styles.warn}>
+            This workout was posted from a saved workout, so it can’t be edited as text. Delete the post and post it again to change it.
+          </Text>
+        ) : null}
         <Text style={styles.lede}>
-          Type it or paste it the way it’s written: numbers, percentages, supersets, rest. Your squad sees it with their own weights, from their own maxes.
+          {editId
+            ? 'Change it the way it’s written. Anyone who already took it keeps the copy they took.'
+            : 'Type it or paste it the way it’s written: numbers, percentages, supersets, rest. Your squad sees it with their own weights, from their own maxes.'}
         </Text>
 
         <View style={styles.actions}>
@@ -158,14 +202,17 @@ export default function WorkoutWriteScreen() {
             ) : null}
             {written.unread.length ? <Text style={styles.warn}>Couldn’t read: {written.unread.join(' · ')}</Text> : null}
           </>
+        ) : text.trim() && written?.how && !/\d+\s*(?:sets?|reps?|x)\b/i.test(text) ? (
+          /* Squatober's Days 4 & 5 — a walk, food, sleep. Nothing to run, so nothing is invented to fill it. */
+          <Text style={styles.warn}>No lifts in this one. It reads like a rest day, so post it to the squad as a note instead.</Text>
         ) : text.trim() ? (
           <Text style={styles.warn}>No exercises found yet. Number each one: “1. Back Squat 5 sets of 5 reps @ 75%”.</Text>
         ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button variant="primary" fullWidth disabled={!rows.length} onPress={use}>
-          Use this workout
+        <Button variant="primary" fullWidth disabled={!rows.length || saving || (!!editId && editText === '')} onPress={() => void use()}>
+          {editId ? (saving ? 'Saving…' : 'Save changes') : 'Use this workout'}
         </Button>
       </View>
     </View>

@@ -67,3 +67,24 @@ test('templates keep the prescription through their read whitelist', () => {
   assert.match(TEMPLATES, /\.\.\.prescriptionOf\(e\),/);
   assert.match(TEMPLATES, /export interface TemplateExercise extends TemplatePrescription/);
 });
+
+const WRITE = read('../workout-write.tsx');
+
+test('pinned posts sit above the feed, are drawn once, with the same card (0230)', () => {
+  assert.match(FEED, /const \{ data: pinnedData, refetch: refetchPinned \} = useQuery\(\(\) => fetchPinnedSquadPosts\(squadId\), \[squadId\]\);/);
+  assert.match(FEED, /\.filter\(\(p\) => !pinnedPosts\.some\(\(q\) => q\.id === p\.id\)\)/);
+  assert.match(FEED, /<Text style=\{styles\.pinnedLabel\}>Pinned<\/Text>\s*\{feedCard\(p, i\)\}/);
+  assert.match(FEED, /\{feedPosts\.map\(\(p, i\) => feedCard\(p, i\)\)\}/);
+});
+
+test('the owner pins; the author edits; nothing is offered before 0230', () => {
+  assert.match(POST, /const canPin = isOwner && !!marks\?\.supported;/);
+  assert.match(POST, /const canEdit = !!post && !!myId && post\.authorId === myId && !!marks\?\.supported;/);
+  assert.match(POST, /router\.push\(\{ pathname: '\/workout-write', params: \{ edit: post\.id \} \}\)/);
+  assert.match(POST, /marks\?\.editedAt \? ' · Edited' : ''/);
+});
+
+test('a posted workout reopens as words only when they read back identical, and saves through edit_squad_post', () => {
+  assert.match(WRITE, /return roundTrips\(w, resolveKey\) \? rowsToWrittenText\(w\) : '';/);
+  assert.match(WRITE, /await editSquadPost\(editId, editPost\.body \?\? '', \{ kind: 'posted-workout'/);
+});

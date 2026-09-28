@@ -21,7 +21,7 @@ import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { PostedWorkoutPanel } from '@/components/forge/PostedWorkoutPanel';
 import { cardioStats, partnersLine } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
-import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, isMilestoneCard, isPostedWorkout, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadPost, fetchPostMarks, isMilestoneCard, isPostedWorkout, pinSquadPost, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -95,6 +95,19 @@ export default function SquadPostRoute() {
   );
 
   const post = data?.post;
+  /*
+   * ══ PIN AND EDIT (0230, PO 2026-09-28 · Squad Amendment 007) ══
+   *
+   * The squad's OWNER pins (up to 3, above the feed) and may take any post down; the AUTHOR edits their own words —
+   * and a posted workout's workout, in the same box it was written in. Neither control appears before 0230 is there.
+   */
+  const [marksTick, setMarksTick] = useState(0);
+  const { data: marks } = useQuery(() => fetchPostMarks(postId), [postId, marksTick]);
+  const isOwner = !!myId && !!data?.squadOwnerId && data.squadOwnerId === myId;
+  const canPin = isOwner && !!marks?.supported;
+  const canEdit = !!post && !!myId && post.authorId === myId && !!marks?.supported;
+  const [editOpen, setEditOpen] = useState(false);
+  const [editBody, setEditBody] = useState('');
   /* Renaming only makes sense on a post whose art carries a name — a comparison or a capture. A recap is
      titled by the session it snapshotted, and a discussion is its own words. */
   const shaped = post ? asTransformationLayout(post.layout) : null;
@@ -120,6 +133,44 @@ export default function SquadPostRoute() {
          show a name the database did not keep. */
       setNameEdit(await renameSquadPost(post.id, renameDraft));
       setRenameOpen(false);
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const togglePin = async () => {
+    if (working || !post) return;
+    setWorking(true);
+    setMenuOpen(false);
+    try {
+      const on = await pinSquadPost(post.id, !marks?.pinnedAt);
+      setMarksTick((n) => n + 1);
+      showToast(on ? 'Pinned to the top of the squad.' : 'Unpinned.');
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const openEdit = () => {
+    primeKeyboard();
+    setMenuOpen(false);
+    setEditBody(post?.body ?? '');
+    setEditOpen(true);
+  };
+
+  const commitEdit = async () => {
+    if (working || !post) return;
+    setWorking(true);
+    try {
+      await editSquadPost(post.id, editBody);
+      setEditOpen(false);
+      setMarksTick((n) => n + 1);
+      refetch();
+      showToast('Post updated.');
     } catch (e) {
       showToast(errorMessage(e));
     } finally {
@@ -256,9 +307,9 @@ export default function SquadPostRoute() {
         title="Post"
         onBack={() => router.back()}
         actions={
-          mine ? (
-            /* Your own post gets the manage menu where a stranger's gets the flag — one slot, and the two
-               are mutually exclusive: you cannot report yourself and you cannot delete somebody else's. */
+          mine || canPin ? (
+            /* Your own post gets the manage menu where a stranger's gets the flag — one slot. The squad's OWNER
+               gets it on every post too (0230): pinning and taking a post down are moderation, and theirs. */
             <Pressable
               onPress={() => setMenuOpen(true)}
               accessibilityRole="button"
@@ -353,7 +404,30 @@ export default function SquadPostRoute() {
       <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} title="This post">
         {/* Naming is offered only where there is art to name. On a recap the title belongs to the
             session, and renaming the POST would put a second, competing name on the same thing. */}
-        {shaped ? (
+        {canPin ? (
+          <Pressable onPress={() => void togglePin()} accessibilityRole="button" style={styles.menuRow}>
+            <Text style={styles.menuText}>{marks?.pinnedAt ? 'Unpin from the top' : 'Pin to the top of the squad'}</Text>
+          </Pressable>
+        ) : null}
+        {canEdit ? (
+          <Pressable onPress={openEdit} accessibilityRole="button" style={styles.menuRow}>
+            <Text style={styles.menuText}>{post.type === 'workout' ? 'Edit the caption' : 'Edit this post'}</Text>
+          </Pressable>
+        ) : null}
+        {canEdit && isPostedWorkout(post.layout) ? (
+          /* The workout itself, in the box it was written in, with the live preview (`/workout-write`). */
+          <Pressable
+            onPress={() => {
+              setMenuOpen(false);
+              router.push({ pathname: '/workout-write', params: { edit: post.id } });
+            }}
+            accessibilityRole="button"
+            style={styles.menuRow}
+          >
+            <Text style={styles.menuText}>Edit the workout</Text>
+          </Pressable>
+        ) : null}
+        {shaped && mine ? (
           <Pressable onPress={openRename} accessibilityRole="button" style={styles.menuRow}>
             <Text style={styles.menuText}>{shapedTitle ? 'Rename this post' : 'Name this post'}</Text>
           </Pressable>
@@ -367,6 +441,30 @@ export default function SquadPostRoute() {
           style={styles.menuRow}
         >
           <Text style={[styles.menuText, styles.menuDanger]}>Delete this post</Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet open={editOpen} onClose={() => setEditOpen(false)} title={post.type === 'workout' ? 'Edit the caption' : 'Edit this post'}>
+        <TextInput
+          value={editBody}
+          onChangeText={setEditBody}
+          editable={!working}
+          autoFocus
+          multiline
+          maxLength={2000}
+          placeholder="Say it better"
+          placeholderTextColor={flColor.gray600}
+          accessibilityLabel="The post's words"
+          style={styles.editInput}
+        />
+        {/* A note is its words — emptied, it is a delete, which has its own door (the database says the same). */}
+        <Pressable
+          onPress={() => void commitEdit()}
+          disabled={working || ((post.type === 'discussion' || post.type === 'announcement') && !editBody.trim())}
+          accessibilityRole="button"
+          style={[styles.menuRow, styles.menuPrimary]}
+        >
+          <Text style={[styles.menuText, styles.menuPrimaryText]}>{working ? 'Saving…' : 'Save'}</Text>
         </Pressable>
       </BottomSheet>
 
@@ -393,8 +491,9 @@ export default function SquadPostRoute() {
           the row cascades — and there is no undo anywhere in this app. */}
       <BottomSheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this post?">
         <Text style={styles.confirmBody}>
-          It comes off the feed for everyone, along with its comments. Your photos stay in your own
-          archive — only the post goes.
+          {mine
+            ? 'It comes off the feed for everyone, along with its comments. Your photos stay in your own archive — only the post goes.'
+            : 'It comes off the squad feed for everyone, along with its comments. As the squad’s owner, this is yours to take down.'}
         </Text>
         <Pressable onPress={() => void commitDelete()} disabled={working} accessibilityRole="button" style={[styles.menuRow, styles.menuDangerRow]}>
           <Text style={[styles.menuText, styles.menuDanger]}>{working ? 'Deleting…' : 'Delete'}</Text>
@@ -428,7 +527,11 @@ export default function SquadPostRoute() {
                     </Text>
                     {post.authorIsOwner ? <OwnerBadge /> : null}
                   </View>
-                  <Text style={styles.time}>{timeAgo(post.createdAt)}</Text>
+                  <Text style={styles.time}>
+                    {timeAgo(post.createdAt)}
+                    {marks?.editedAt ? ' · Edited' : ''}
+                    {marks?.pinnedAt ? ' · Pinned' : ''}
+                  </Text>
                 </View>
               </Pressable>
             ) : (
@@ -438,7 +541,11 @@ export default function SquadPostRoute() {
                   <Text style={styles.author} numberOfLines={1}>
                     {data?.squadName ?? 'Your squad'}
                   </Text>
-                  <Text style={styles.time}>{timeAgo(post.createdAt)}</Text>
+                  <Text style={styles.time}>
+                    {timeAgo(post.createdAt)}
+                    {marks?.editedAt ? ' · Edited' : ''}
+                    {marks?.pinnedAt ? ' · Pinned' : ''}
+                  </Text>
                 </View>
               </View>
             )}

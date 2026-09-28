@@ -17,6 +17,8 @@ const FAKES = {
   '@/lib/app-session': STUBS,
   '@/lib/diagnostics': STUBS,
   '@react-native-async-storage/async-storage': STUBS,
+  '@/lib/storage-upload': STUBS,
+  'react-native': STUBS,
 };
 
 function fileFor(base) {
