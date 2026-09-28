@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { assembleSignals, distinctProgramCount, improvementDatesForType, pbDatesByRunningMax } from '../signals.ts';
+import { meetsFamilyPromotion } from '../rank.ts';
 
 test('pbDatesByRunningMax emits a date only when a new max is set', () => {
   const pts = [
@@ -113,4 +114,93 @@ test('distinctProgramCount collapses re-runs of a plan but never two different o
   assert.equal(distinctProgramCount([row('a', 'sf-i'), row('b', 'sf-i'), row('c', null)]), 2);
   // The `id:` prefix keeps the two keyspaces disjoint by construction, not by luck.
   assert.equal(distinctProgramCount([row('x', null), row('y', 'x')]), 2, 'a source named like an id is still distinct');
+});
+
+// ── Imported sessions (Apple Health, build 10) — R-D46, CAL Q7/Q11, Apple-Health-Build-Plan §9 ──
+
+const base = {
+  loadPRDates: [], programGraduations: 0, distinctProgramGraduations: 0, sealedChapters: 0, goalEvents: 0, primaryGoalsAchieved: 0,
+};
+const run = (date, imported, distance = 3) => ({ date, durationSec: 1800, state: 'saved', activityType: 'running', distance, imported });
+
+test('imported sessions fill their own bucket; a week with both counts once, as native', () => {
+  const s = assembleSignals({
+    ...base,
+    athleteType: 'endurance',
+    today: '2026-06-29',
+    sessions: [
+      run('2026-06-01', false), // week A native
+      run('2026-06-02', true), //  week A imported copy-ish → week stays native
+      run('2026-06-08', true), //  week B imported only
+      run('2026-06-10', true), //  week B imported only
+      run('2026-06-15', false), // week C native
+      { date: '2026-06-22', durationSec: 300, state: 'saved', activityType: 'running', distance: 0.5, imported: true }, // not meaningful
+    ],
+  });
+  assert.equal(s.nativeSessions, 2);
+  assert.equal(s.importedSessions, 3);
+  assert.equal(s.nativeActiveWeeks, 2);
+  assert.equal(s.importedActiveWeeks, 1);
+});
+
+test('absent `imported` means native — existing callers are unchanged', () => {
+  const s = assembleSignals({ ...base, athleteType: 'endurance', today: '2026-06-29', sessions: [{ date: '2026-06-01', durationSec: 1800, state: 'saved', activityType: 'running', distance: 3 }] });
+  assert.equal(s.nativeSessions, 1);
+  assert.equal(s.importedSessions, 0);
+  assert.equal(s.importedActiveWeeks, 0);
+});
+
+test('recent engagement and self-directed blocks come from native sessions only; journey starts at the earliest import', () => {
+  // Twelve straight weeks of 4 imported runs a week, ending today: would be a block and full recent engagement if native.
+  const sessions = [];
+  for (let w = 0; w < 12; w++) for (let d = 0; d < 4; d++) sessions.push(run(new Date(Date.UTC(2026, 6, 6) + (w * 7 + d) * 86_400_000).toISOString().slice(0, 10), true));
+  const s = assembleSignals({ ...base, athleteType: 'endurance', today: '2026-09-28', sessions });
+  assert.equal(s.recentActiveWeeks, 0);
+  assert.equal(s.selfDirectedBlocks, 0);
+  assert.equal(s.nativeActiveWeeks, 0);
+  assert.equal(s.importedActiveWeeks, 12);
+  assert.equal(s.journeyElapsedDays, 84); // 2026-07-06 → 2026-09-28 (RCM §5.6: imports extend longevity)
+});
+
+test('below prestige, imports count in full: a Garmin-only runner reaches Builder', () => {
+  const sessions = [];
+  for (let w = 0; w < 6; w++) for (const d of [0, 3]) sessions.push(run(new Date(Date.UTC(2026, 7, 3) + (w * 7 + d) * 86_400_000).toISOString().slice(0, 10), true));
+  const s = assembleSignals({ ...base, athleteType: 'endurance', today: '2026-09-28', sessions });
+  assert.equal(meetsFamilyPromotion('builder', s), true);
+});
+
+/**
+ * The prestige floor with a year of imports (device test §11.10): a big Apple Health history must not
+ * carry an athlete into Architect without 18 Forge-native active weeks — and once they have them, the
+ * imports DO count (at half) toward the rest.
+ */
+test('prestige: a year of imports cannot jump the native active-week floor', () => {
+  const TODAY = Date.UTC(2026, 8, 28); // a Monday
+  const build = (nativeWeeks) => {
+    const sessions = [];
+    const total = 50 + nativeWeeks;
+    let i = 0;
+    for (let w = 0; w < total; w++) {
+      const monday = TODAY - (total - w) * 7 * 86_400_000;
+      for (const d of [0, 2, 4]) {
+        sessions.push(run(new Date(monday + d * 86_400_000).toISOString().slice(0, 10), w < 50, 3 + i++ * 0.01));
+      }
+    }
+    return assembleSignals({
+      ...base, athleteType: 'endurance', today: '2026-09-28', sessions, programGraduations: 1, distinctProgramGraduations: 1, sealedChapters: 1, goalEvents: 1,
+    });
+  };
+
+  const short = build(17);
+  assert.equal(short.nativeActiveWeeks, 17);
+  assert.equal(short.importedActiveWeeks, 50);
+  assert.ok(short.nativeActiveWeeks + 0.5 * short.importedActiveWeeks >= 36, 'the cumulative row is met with half-credit imports…');
+  assert.equal(meetsFamilyPromotion('architect', short), false, '…but 17 native weeks is under the floor of 18');
+
+  const enough = build(18);
+  assert.equal(meetsFamilyPromotion('architect', enough), true);
+
+  // Only the 18 native weeks, without the imports behind them, is nowhere near — the imports do real (half) work.
+  const nativeOnly = { ...enough, importedActiveWeeks: 0, importedSessions: 0, journeyElapsedDays: 18 * 7 };
+  assert.equal(meetsFamilyPromotion('architect', nativeOnly), false);
 });

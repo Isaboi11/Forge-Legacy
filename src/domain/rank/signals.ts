@@ -44,6 +44,11 @@ export interface RawSession {
   state: string; // 'saved' | 'in_progress'
   activityType: string; // DB modality
   distance: number | null;
+  /**
+   * Brought in from outside Forge (Apple Health, `workouts.source <> 'forge'`). Absent = native, so every
+   * existing caller keeps meaning what it always meant.
+   */
+  imported?: boolean;
 }
 
 export interface RawRankInputs {
@@ -120,25 +125,43 @@ export const isMeaningfulRawSession = (s: RawSession): boolean =>
     activityType: MODALITY_TO_ACTIVITY[s.activityType.toLowerCase()] ?? 'OTHER',
   });
 
-/** Assemble the engine's `RankSignals` from raw activity. All sessions are native today (no import path). */
+/**
+ * Assemble the engine's `RankSignals` from raw activity, split native vs imported (R-D46, CAL Q7/Q11,
+ * Apple-Health-Build-Plan §9 · PO 09-28: "rank per the lock").
+ *
+ *   native + imported, full credit below prestige; imported at `IMPORT_PRESTIGE_CREDIT` at prestige — the
+ *     engine applies that, this only keeps the buckets apart.
+ *   recent engagement, self-directed blocks and the prestige native floor: NATIVE ONLY (RCM §10.6, §14.13).
+ *   journey length (the time gates): the earliest meaningful session, native OR imported — RCM §5.6
+ *     "import history extends longevity correctly"; the native floor is what stops it buying prestige.
+ *   improvement: unchanged — imported distances feed the endurance PB series like any other session. RCM
+ *     line 900 leaves "imported PBs vs native current improvement" as a deferred scoring question; this
+ *     keeps today's behaviour rather than inventing an answer.
+ */
 export function assembleSignals(raw: RawRankInputs): RankSignals {
   const meaningful = raw.sessions.filter(isMeaningfulRawSession);
-  /* Named `native` deliberately. Every session is native today (there is no import path), but blocks are
-   * derived from these dates and take NO import credit — so when the import pipeline lands, feeding
-   * imported dates in here would silently grant them 100%, violating R-D46 and RCM §14.13. The name is
-   * what makes that a visible decision rather than a silent regression. */
-  const nativeDates = meaningful.map((s) => s.date.slice(0, 10));
-  const earliest = nativeDates.length ? nativeDates.reduce((a, b) => (a < b ? a : b)) : raw.today.slice(0, 10);
+  /* Named `native` deliberately: blocks, recent engagement and the prestige floor are derived from these
+   * dates and take NO import credit — feeding imported dates in here would silently grant them 100%,
+   * violating R-D46 and RCM §14.13. Imported sessions go to their own bucket below. */
+  const native = meaningful.filter((s) => !s.imported);
+  const nativeDates = native.map((s) => s.date.slice(0, 10));
+  const importedDates = meaningful.filter((s) => s.imported).map((s) => s.date.slice(0, 10));
+  /* A week with both a native and an imported session is ONE native week, never one of each — otherwise a
+   * Forge run plus its Garmin copy that slipped dedup would count the week twice. */
+  const nativeActiveWeeks = countActiveWeeks(nativeDates);
+  const importedActiveWeeks = countActiveWeeks([...nativeDates, ...importedDates]) - nativeActiveWeeks;
+  const allDates = [...nativeDates, ...importedDates];
+  const earliest = allDates.length ? allDates.reduce((a, b) => (a < b ? a : b)) : raw.today.slice(0, 10);
   const journeyElapsedDays = Math.max(0, Math.round((Date.parse(`${raw.today.slice(0, 10)}T00:00:00Z`) - Date.parse(`${earliest}T00:00:00Z`)) / DAY_MS));
 
   return {
     athleteType: raw.athleteType,
     journeyElapsedDays,
-    nativeActiveWeeks: countActiveWeeks(nativeDates),
-    importedActiveWeeks: 0,
+    nativeActiveWeeks,
+    importedActiveWeeks,
     recentActiveWeeks: countRecentActiveWeeks(nativeDates, raw.today),
-    nativeSessions: meaningful.length,
-    importedSessions: 0,
+    nativeSessions: native.length,
+    importedSessions: meaningful.length - native.length,
     programGraduations: raw.programGraduations,
     distinctProgramGraduations: raw.distinctProgramGraduations,
     /* DERIVED, not fetched — `RawRankInputs` gains nothing for this, which is the proof that a block is a
