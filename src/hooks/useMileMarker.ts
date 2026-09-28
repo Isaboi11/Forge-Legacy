@@ -37,7 +37,7 @@ export function useMileMarker({
   elapsedSec: number;
   phase: RunPhase;
   units: UnitSystem;
-  /** A GPS run or walk. Off for rides (a marker every three minutes is noise), treadmills and machines. */
+  /** A GPS run, walk or ride (rides: PO 09-28). Off for treadmills and machines. */
   enabled: boolean;
   /** The on-screen line — "Mile 3 · 8:42". Keep it stable (useCallback); a new one each render is harmless but wasteful. */
   onMarker?: (label: string) => void;

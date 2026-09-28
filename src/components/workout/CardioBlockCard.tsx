@@ -300,8 +300,8 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
   /**
    * ══ THE MILE MARKER (build 10, PO 2026-09-28) ══
    *
-   * A chime, a buzz and the spoken split at every mile — km on metric — of a GPS run or walk, phone locked
-   * or not. Rides are left out: a marker every three minutes is noise, not a cue. The on-screen line is a
+   * A chime, a buzz and the spoken split at every mile — km on metric — of a GPS run, walk or ride, phone
+   * locked or not. Rides included by the PO 09-28 (the first build left them out as noise). The on-screen line is a
    * toast, which is also everything the web preview gets (it makes no sound — see `mile-voice.web.ts`).
    */
   const { showToast } = useToast();
@@ -311,7 +311,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
     elapsedSec: tracker.elapsedSec,
     phase: tracker.phase,
     units,
-    enabled: tracking && (trackerKind === 'run' || trackerKind === 'walk'),
+    enabled: tracking,
     onMarker,
   });
 

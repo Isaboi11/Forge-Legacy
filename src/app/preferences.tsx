@@ -297,7 +297,7 @@ export default function PreferencesScreen() {
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>Spoken splits</Text>
                 <Text style={styles.rowHint}>
-                  Each {prefs.units === 'metric' ? 'kilometer' : 'mile'} of a GPS run or walk, Forge says your split, even with the phone locked
+                  Each {prefs.units === 'metric' ? 'kilometer' : 'mile'} of a GPS run, walk or ride, Forge says your split, even with the phone locked
                 </Text>
                 <Text style={styles.nativeNote}>Applies on the mobile app.</Text>
               </View>

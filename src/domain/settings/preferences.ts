@@ -103,7 +103,7 @@ export interface AppPrefs {
    */
   autoPost: AutoPostPref;
   /**
-   * Spoken splits on a GPS run or walk — "Mile 3. 8 minutes 42 seconds." at each mile (km on metric).
+   * Spoken splits on a GPS run, walk or ride — "Mile 3. 8 minutes 42 seconds." at each mile (km on metric).
    * PO 2026-09-28: the mile marker is a chime + a buzz + the split, with the phone locked; this is the
    * switch for the VOICE. The chime follows Sound and the buzz follows Haptics, like every other cue.
    * ON by default and a stored blob without the key lands there too — the PO asked for it on every run.
