@@ -21,6 +21,8 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
   - ✅ `pending-0232.sql` applied 09-28 ("Fix it with AI" = 1 credit): workout_tidy 1 · tidies 0 ✓. ⚠ It showed **meal_photo = 1**, not the 3 that 0223 set — changed by hand at some point; ✅ PO 09-28: 1 credit is intentional
   - ✅ Edge Function `workout-tidy` deployed 09-28 (Verify JWT on; probe: OPTIONS 200, no-auth POST 401)
   - ✅ Published 09-28: web `index-825813ed…` + build 9 iOS `01a0e80d` (Squatober posts, pin/edit, Fix it with AI)
+  - ✅ `pending-0233.sql` applied 09-28 (weekly summary as a story): 4 of 4 recent summaries `has_story = true` (2 squads × 2 weeks, 4–7 members each), as predicted
+  - ✅ Published 09-28: web `index-30621b29…` + build 9 iOS `01a0e8a3` (squad story summary, 24 h pin, recipe barcode scan)
 
 ## Pricing (Monetization Amendment 007, locked 2026-09-23)
 | Who | Premium | Premium AI |
@@ -88,7 +90,7 @@ No lifetime plan. United States only at launch.
 
 - ✅ Crash reporting — 09-27: the app's own reporter (0176) is live; read it at `/admin` → Errors. Sentry account made
   (org `forge-legacy-llc`, project `forge-legacy`) but NOT installed — deferred to after launch (needs a new build
-  and a privacy-policy change: the policy promises no third-party crash reporting)
+  and a privacy-policy change: the policy promises no third-party crash reporting) · 09-27: queued for build 10
 
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m
