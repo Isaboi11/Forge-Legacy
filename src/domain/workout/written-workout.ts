@@ -141,6 +141,8 @@ const RAMP_LINE = /^\W*(\d{1,3})\s*reps?\s*(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+
 const PAIR = /(\d{1,3})\s*\/\s*(\d{1,3}(?:\.\d+)?)\s*%/g;
 
 /** "5@87% rest 20s" items in a comma list. */
+const MULTI = /(\d{1,3})\s*reps?\s*(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\s*%((?:\s*,\s*\d{1,3}(?:\.\d+)?\s*%)+)/i;
+
 const ITEM = /(\d{1,3})\s*(?:reps?\s*)?(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\s*%(?:\s*,?\s*rest\s*(\d{1,2}:\d{2}|[\d½.]+\s*(?:min(?:ute)?s?|sec(?:ond)?s?|s)))?/gi;
 
 /**
@@ -168,6 +170,7 @@ function labelOf(line: string): { n: string | null; letter: string | null; super
 
 /** Title Case for a shouted card — "BACK SQUAT" → "Back Squat", "DEADlift" → "Deadlift". Leaves "DB"/"KB"/"BB". */
 function tidyName(raw: string): string {
+  raw = raw.replace(/\bez\s*bar\b/gi, 'EZ Bar');
   const keep = new Set(['DB', 'KB', 'BB', 'EZ', 'RDL', 'RDLS', 'OHP', 'SSB']);
   return raw
     .replace(/["“”]/g, '')
@@ -217,11 +220,27 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
   const take = (re: RegExp | string) => {
     text = text.replace(re, ' ');
   };
+  /* "6 total sets of 30 yds" — a set count, not a tally ("total" is only a tally beside what the line already says). */
+  text = text.replace(/\b(\d{1,3})\s*total\s+sets\s+of\b/i, '$1 sets of');
   /* "5 total sets, 15 total reps" beside the lift — a tally, never a note. */
   take(/\b\d{1,3}\s*total\s+(?:sets|reps)\b\s*,?/gi);
 
+
+  /*
+   * ONE rep count at SEVERAL percentages — "7 reps @ 60%, 65%, 70%, 72%" (2024 Day 18), "3 reps @ 65%, 75%" (the Pressure
+   * Cooker's build-up sets): a set at each percentage, the same reps each time.
+   */
+  const multi = MULTI.exec(text);
+  if (multi) {
+    const pcts = [Number(multi[2]), ...(multi[3].match(/\d{1,3}(?:\.\d+)?/g) ?? []).map(Number)];
+    ex.repScheme = pcts.map(() => Number(multi[1]));
+    ex.percentScheme = pcts;
+    ex.sets = pcts.length;
+    take(MULTI);
+  }
+
   /* A ramp written inline: "5@65%, 4@75%, 3@80%" or with rests "5@87% rest 20s, 5@87% rest 20s, 3@90% rest 2:30". */
-  const items = [...text.matchAll(ITEM)];
+  const items = ex.percentScheme ? [] : [...text.matchAll(ITEM)];
   if (items.length >= 2) {
     ex.repScheme = items.map((m) => Number(m[1]));
     ex.percentScheme = items.map((m) => Number(m[2]));
@@ -322,6 +341,15 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
 
   /* On the LIFT's own line only: a bare "67%" (a table cell has no "@"). Never a range's end ("30-40%") and never
      "40% of Bodyweight" — those are the author talking, and belong in the note. */
+  /* "(70-75%)" on the lift's line — a range: the LOW end is the gray weight, the range stays in the note. */
+  if (bare && ex.percent == null && !ex.percentScheme) {
+    const rng = /\(?\s*(\d{1,3})\s*[-–]\s*(\d{1,3})\s*%\s*\)?(?!\s*of)/.exec(text);
+    if (rng) {
+      ex.percent = Number(rng[1]);
+      ex.note = joinNote(ex.note, `${rng[1]}-${rng[2]}%`);
+      take(rng[0]);
+    }
+  }
   if (bare && ex.percent == null && !ex.percentScheme) {
     const b = /(?<![-–\d])(\d{1,3}(?:\.\d+)?)\s*%(?!\s*of)/.exec(text);
     if (b) {
@@ -375,12 +403,14 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     out.exercises.push(ex);
     cur = ex;
   };
+  /** Lifts built from rungs, and how many rungs already have their rest — see the rest line. */
+  const rungsFilled = new Map<WrittenExercise, number>();
   /** The line after this one — a numbered line holding only a quoted title is a block's name when lettered lifts follow it. */
   let nextLine = '';
   /** "3. "Pumped in the Polo"" — the number (and name) the lettered lifts under it take. */
   let blockTitle: { n: string; text: string } | null = null;
   /** Bullets and asterisks are the page's, not the author's words. */
-  const unbullet = (l: string) => l.replace(/^[•·▪◦]\s*/, '').trim();
+  const unbullet = (l: string) => l.replace(/^[•·▪◦*]\s*/, '').trim();
 
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
@@ -404,6 +434,9 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       mode = 'warm';
       if (warm[1]) how.push(`Warm-up: ${warm[1]}`);
       else how.push('Warm-up:');
+      /* "Warm Up: … Hit some build up squat sets. 3 reps @ 65%, 75%" — the sets can be on the heading's own line. */
+      const ramp = warm[1] ? warmRamp(warm[1]) : null;
+      if (ramp) out.exercises.push(ramp);
       continue;
     }
     const rec = /^recovery\s*:?\s*(.*)$/i.exec(line);
@@ -434,20 +467,36 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
      * WARM-UP SETS WITH PERCENTAGES — "Hit some Back Squat warm up sets. 5reps @ 60%, 3reps @ 70%, 2reps @ 75%"
      * (Season 11 Day 7). A real warm-up exercise, so its sets get gray weights too; the words stay in the notes.
      */
-    if ((mode === 'warm' || mode === 'head') && [...line.matchAll(ITEM)].length >= 2) {
-      const before = line.slice(0, line.search(/\d/)).trim();
-      const said = [before, ...[...how].reverse()].map((l) => /(?:hit\s+some\s+)?([a-z][a-z\s]*?)\s+warm[\s-]?up\s+sets?/i.exec(l)?.[1]).find(Boolean);
-      const ex = blank('warmup');
-      applyRx(ex, line);
-      ex.name = tidyName(said ?? before ?? 'Warm-up sets');
-      if (ex.name) {
-        out.exercises.push(ex);
-        how.push(line);
+    const labelledWarm = /(?:warm|build)[\s-]?up\s+sets?\s*:?\s*$/i.test(line.slice(0, Math.max(0, line.search(/\d/))).trim());
+    if ((mode === 'warm' || mode === 'head' || labelledWarm) && !labelOf(line)) {
+      const ramp = warmRamp(line);
+      if (ramp) {
+        out.exercises.push(ramp);
+        /* A line that is only the sets' label ("Back Squat warm up sets: …") says nothing the sets do not. */
+        if (!/^[a-z\s]*(?:warm|build)[\s-]?up\s+sets?\s*:?$/i.test(line.slice(0, line.search(/\d/)).trim())) how.push(line);
         continue;
       }
     }
 
     handleLift(mode === 'warm' || mode === 'head' ? unbullet(line) : line, false);
+  }
+
+  /**
+   * Warm-up sets with percentages, as a warm-up exercise — so they get gray weights too. "5reps @ 60%, 3reps @ 70%,
+   * 2reps @ 75%" (a rung each) or "3 reps @ 65%, 75%" (one count, several percentages). The lift is named where the
+   * card names it: "Back Squat warm up sets" / "build up squat sets" — on this line or the warm-up above it.
+   */
+  function warmRamp(line: string): WrittenExercise | null {
+    if (!MULTI.test(line) && [...line.matchAll(ITEM)].length < 2) return null;
+    const before = line.slice(0, line.search(/\d/)).trim();
+    const named = (l: string) =>
+      /(?:hit\s+some\s+)?([a-z][a-z\s]*?)\s+(?:warm|build)[\s-]?up\s+sets?/i.exec(l)?.[1]?.replace(/^.*\bhit\s+some\s+/i, '') ??
+      /(?:warm|build)[\s-]?up\s+([a-z][a-z\s]*?)\s+sets?/i.exec(l)?.[1];
+    const said = [before, ...[...how].reverse()].map(named).find(Boolean);
+    const ex = blank('warmup');
+    applyRx(ex, line.slice(line.search(/\d/)));
+    ex.name = tidyName(said || 'Warm-up sets');
+    return ex.sets ? ex : null;
   }
 
   function handleLift(line: string, cardioHead: boolean) {
@@ -484,7 +533,7 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
 
     /* A tally ("5 total sets, 28 total reps") — says nothing new, except perhaps its rest. Before the rest check,
        so "5 total sets, 40 total reps, 2 min rest" does not leave its tally behind as a note. */
-    if (TALLY.test(line) && cur && !labelOf(line)) {
+    if (TALLY.test(line) && cur && !labelOf(line) && !/total\s+sets\s+of\b/i.test(line)) {
       const r = restOf(line);
       if (r != null) restFor(cur as WrittenExercise, r);
       return;
@@ -499,6 +548,20 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     /* A rest line: belongs to the lift (or superset) above it. */
     if (REST_ONLY.test(line) || (/\brest\b/i.test(line) && !labelOf(line) && cur)) {
       const r = restOf(line);
+      if (r != null && cur && rungsFilled.has(cur as WrittenExercise)) {
+        /* Under a staircase of rungs, a rest line is the rest for the rungs ABOVE IT since the last one — Day 16's
+           missions: 2½ min for one and two, 3 min for three. */
+        const ex = cur as WrittenExercise;
+        const from = rungsFilled.get(ex)!;
+        const n = ex.repScheme?.length ?? 0;
+        const rs = Array.from({ length: n }, (_, i) => ex.restScheme?.[i] ?? (i < from ? ex.restSec : null));
+        for (let i = from; i < n; i++) if (rs[i] == null) rs[i] = r;
+        rungsFilled.set(ex, n);
+        const same = rs.every((x) => x === rs[0]) && rs[0] != null;
+        ex.restSec = same ? rs[0] : null;
+        ex.restScheme = same ? null : rs;
+        return;
+      }
       if (r != null && cur) {
         const ex = cur as WrittenExercise;
         /* A rest under a superset is the superset's — it falls at the end of the round either way, so every
@@ -541,7 +604,7 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
 
     /* A lift's name that wrapped onto the next line — "Cardio Seated/or Standing BB" / "overhead press" (Season 11
        Day 2). Only while the lift has nothing else yet, and only a few plain words: a sentence is a note. */
-    if (cur && mode === 'lifts' && !(cur as WrittenExercise).sets && !(cur as WrittenExercise).repScheme && !(cur as WrittenExercise).percent && !/\d|[.!?:*]/.test(line) && line.split(/\s+/).length <= 4) {
+    if (cur && mode === 'lifts' && /^[a-z]/.test(line) && !(cur as WrittenExercise).sets && !(cur as WrittenExercise).repScheme && !(cur as WrittenExercise).percent && !/\d|[.!?:*]/.test(line) && line.split(/\s+/).length <= 4) {
       (cur as WrittenExercise).name = tidyName(`${(cur as WrittenExercise).name} ${line}`);
       return;
     }
@@ -572,6 +635,14 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       }
     }
 
+    /* "Record how many SETS you got here 9 335LBS" — the instruction is the squad's; the numbers after it are the
+       author's own day, scribbled on their card. The instruction stays, their score does not. */
+    if (cur && /record\s+how\s+many\s+(?:sets|reps|rounds)\s+you\s+got/i.test(line)) {
+      const what = /record\s+how\s+many\s+(sets|reps|rounds)/i.exec(line)![1].toLowerCase();
+      (cur as WrittenExercise).note = joinNote((cur as WrittenExercise).note, `Record how many ${what} you got`);
+      return;
+    }
+
     /* Anything else under a lift is the author talking about it — "Aim to get 30-40% of Bodyweight", "* No Bouncing". */
     if (cur) {
       (cur as WrittenExercise).note = joinNote((cur as WrittenExercise).note, tidySentence(line));
@@ -584,6 +655,7 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     const ramp = RAMP_LINE.exec(line);
     if (ramp && cur) {
       const ex = cur as WrittenExercise;
+      if (!rungsFilled.has(ex)) rungsFilled.set(ex, 0);
       const firstRung = !ex.percentScheme;
       ex.repScheme = [...(firstRung ? [] : (ex.repScheme ?? [])), Number(ramp[1])];
       ex.percentScheme = [...(firstRung ? [] : ex.percentScheme!), Number(ramp[2])];
@@ -651,10 +723,24 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       }
     }
 
-    /* "same as above" — the bench on Day 7 takes the squat's ramp. */
-    if (/same\s+as\s+above/i.test(body)) {
-      const prev = [...out.exercises].reverse().find((e) => e.repScheme || e.percentScheme || e.percent != null);
-      const { name } = splitName(body.replace(/["“”]?\s*same\s+as\s+above\s*["“”]?/i, ''));
+    /*
+     * "same as above" — the bench on Day 7 takes the squat's ramp. And "BENCH PRESS = same warm up and same pressure
+     * cooker as the squat" (2024 Days 21 & 23): the named lift's prescription, its words, and — when the warm-up is
+     * said — its build-up sets, as the bench's own warm-up (they go off the BENCH max, like everything else here).
+     */
+    const sameAs = /^(.*?)\s*[=:–-]?\s*(?:the\s+)?same\b(.*?)\bas\s+(?:the\s+)?([a-z][a-z ]*?)\s*[.!]*$/i.exec(body);
+    if (/same\s+as\s+above/i.test(body) || (sameAs && sameAs[1].trim() && !/^above$/i.test(sameAs[3]))) {
+      const ref = sameAs && !/same\s+as\s+above/i.test(body) ? sameAs[3].toLowerCase() : null;
+      const main = out.exercises.filter((e) => e.section !== 'warmup');
+      const prev = ref
+        ? main.find((e) => e.name.toLowerCase().includes(ref))
+        : [...out.exercises].reverse().find((e) => e.repScheme || e.percentScheme || e.percent != null);
+      const name = ref ? sameAs![1] : splitName(body.replace(/["“”]?\s*same\s+as\s+above\s*["“”]?/i, '')).name;
+      if (ref && prev && /warm/i.test(sameAs![2])) {
+        const w = out.exercises.find((e) => e.section === 'warmup' && (e.name === prev.name || prev.name.toLowerCase().includes(e.name.toLowerCase())));
+        if (w) out.exercises.push({ ...w, name: tidyName(name), repScheme: w.repScheme && [...w.repScheme], percentScheme: w.percentScheme && [...w.percentScheme] });
+      }
+      if (ref && prev) ex.note = prev.note;
       Object.assign(ex, {
         name: tidyName(name),
         sets: prev?.sets ?? 0,
@@ -704,6 +790,13 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
   for (const e of out.exercises) if (e.group) counts.set(e.group, (counts.get(e.group) ?? 0) + 1);
   for (const e of out.exercises) if (e.group && (counts.get(e.group) ?? 0) < 2) e.group = null;
 
+  /* "build up SQUAT sets" names the lift they build up to — the Back Squat below, not a bodyweight squat. */
+  for (const w of out.exercises) {
+    if (w.section !== 'warmup' || /\s/.test(w.name)) continue;
+    const to = out.exercises.find((e) => e.section !== 'warmup' && e.name.toLowerCase().split(/\s+/).includes(w.name.toLowerCase()));
+    if (to) w.name = to.name;
+  }
+
   /* A lift with no set count at all is one set — never an assumed three (the import's own rule, PO 09-27). */
   for (const e of out.exercises) if (!e.sets) e.sets = 1;
 
@@ -720,7 +813,11 @@ function tidyTitle(s: string): string {
 }
 
 function tidySentence(s: string): string {
-  const t = s.replace(/^[*•\-\s]+/, '').replace(/\s+/g, ' ').trim();
+  const t = s
+    .replace(/^[*•\-\s,;:]+/, '')
+    .replace(/^\((.*)\)\.?$/, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
 }
 
@@ -771,6 +868,8 @@ const SHORTHAND: [RegExp, string][] = [
   [/\bbb\b/gi, 'Barbell'],
   [/\brdl'?s?\b/gi, 'Romanian Deadlift'],
   [/\brear\s+lat(?:eral)?s?\b/gi, 'Rear Delt Fly'],
+  /* "DB Laterals" — lateral raises. After the rear-delt rule, so "Rear Laterals" is already a fly by here. */
+  [/\blaterals\b/gi, 'Lateral Raise'],
   [/\bskull\s*crushers?\b/gi, 'Skull Crusher'],
   [/\bfarmers?'?\s*(?:walks?|carry|carries)\b/gi, 'Farmer Carry'],
   [/\bchin\s*ups?\b/gi, 'Chin-Up'],
@@ -808,7 +907,7 @@ export function nameCandidates(name: string): string[] {
     const alt = /^(.*?)\b(alternating|incline|hammer|seated|standing)\s+(dumbbell|barbell|kettlebell)\s+(.+)$/i.exec(x);
     if (alt) add(`${alt[2]} ${alt[3]} ${alt[4].replace(/s\b/g, '')}`);
     /* "Kettlebell Suitcase/waiter Carry" → "Kettlebell Suitcase Carry", then the other: the author's "either". */
-    const slash = /^(.*?)\b(\w+)\s*\/\s*(\w+)\s+(.+)$/.exec(x);
+    const slash = /^(.*?)\b(\w+)\s*\/\s*([\w']+)\s+(.+)$/.exec(x);
     if (slash) {
       add(`${slash[1]}${slash[2]} ${slash[4]}`);
       add(`${slash[1]}${slash[3]} ${slash[4]}`);
@@ -932,7 +1031,10 @@ const clockText = (sec: number) => `${Math.floor(sec / 60)}:${String(Math.round(
 export function rowsToWrittenText(w: { name: string; how?: string | null; after?: string | null; rows: readonly WrittenTemplateRow[] }): string {
   const out: string[] = [`"${w.name}"`];
   const itemCount = (l: string) => [...l.matchAll(ITEM)].length;
-  const howLines = (w.how ?? '').split('\n').filter((l) => l.trim() && itemCount(l) < 2);
+  const howLines = (w.how ?? '')
+    .split('\n')
+    .map((l) => (itemCount(l) >= 2 || MULTI.test(l) ? l.slice(0, l.search(/\d+\s*reps?\b/i)).trim() : l))
+    .filter((l) => l.trim());
   if (howLines.length && !/^warm[\s-]?up\b/i.test(howLines[0])) out.push('Warm up:');
   out.push(...howLines);
 
@@ -954,13 +1056,17 @@ export function rowsToWrittenText(w: { name: string; how?: string | null; after?
     return { line: `${r.sets} ${r.sets === 1 ? 'set' : 'sets'}${reps}${pct}`, note };
   };
 
-  for (const r of w.rows.filter((x) => x.section === 'warmup')) {
-    if (r.percentScheme?.length) out.push(`${r.name} warm up sets: ${rx(r).line}`);
-  }
-
   let n = 0;
   const main = w.rows.filter((x) => x.section !== 'warmup');
+  /* Warm-up sets go back where they were — before the lift they build up to ("Bench Press warm up sets: …"). */
+  const warmBefore = new Map<number, WrittenTemplateRow[]>();
+  let mi = 0;
+  for (const r of w.rows) {
+    if (r.section === 'warmup') warmBefore.set(mi, [...(warmBefore.get(mi) ?? []), r]);
+    else mi += 1;
+  }
   for (let i = 0; i < main.length; i++) {
+    for (const wr of warmBefore.get(i) ?? []) if (wr.percentScheme?.length) out.push(`${wr.name} warm up sets: ${rx(wr).line}`);
     const r = main[i];
     const inGroup = !!r.groupId;
     const first = !inGroup || main[i - 1]?.groupId !== r.groupId;
