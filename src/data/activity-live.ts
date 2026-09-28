@@ -5,6 +5,7 @@ import { playlistFromRow, type WorkoutPlaylistLink } from '@/domain/workout/play
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { annotateRecords, recordLine, recordsByWorkout } from '@/domain/workout/records-core';
 import { fetchLoadRecordRows, fetchRecordsSetBy } from '@/data/records-live';
+import { importedFrom } from '@/domain/health/imported';
 
 /**
  * The athlete's real training log — every saved workout, newest first, shaped for Activity History (W-18).
@@ -76,6 +77,24 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
     }
   }
 
+  // Where an imported workout came from (0234) — best-effort in the same way, and only the imports are
+  // asked for. Newest first with the same limit, so every import in the list above is among them.
+  const importedById = new Map<string, string>();
+  {
+    const { data: sRows } = await supabase
+      .from('workouts')
+      .select('id, source, source_label')
+      .eq('athlete_id', user.id)
+      .eq('state', 'saved')
+      .neq('source', 'forge')
+      .order('started_at', { ascending: false })
+      .limit(limit);
+    for (const r of (sRows ?? []) as { id: string; source: string | null; source_label: string | null }[]) {
+      const from = importedFrom(r.source, r.source_label);
+      if (from) importedById.set(r.id, from);
+    }
+  }
+
   const chapterIds = [...new Set(rows.map((r) => r.chapter_id).filter((x): x is string => Boolean(x)))];
   const chapterName = new Map<string, string>();
   if (chapterIds.length) {
@@ -118,6 +137,7 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
       chapterName: w.chapter_id ? (chapterName.get(w.chapter_id) ?? null) : null,
       pr: prWorkouts.has(w.id),
       partners: partnersById.get(w.id) ?? [],
+      importedFrom: importedById.get(w.id) ?? null,
     };
   });
 }
@@ -168,7 +188,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
 
   // Everything below is decoration on a session that already loaded — a failure in any of it must not
   // take the detail screen down, so each piece degrades to absent.
-  const [chapterName, programName, partners, playlist, milestones, ordinal] = await Promise.all([
+  const [chapterName, programName, partners, playlist, milestones, ordinal, imported] = await Promise.all([
     w.chapter_id
       ? supabase.from('chapters').select('name').eq('id', w.chapter_id).maybeSingle().then((r) => r.data?.name ?? null)
       : Promise.resolve(null),
@@ -197,6 +217,13 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     // converted on screen with `fmt`.
     fetchRecordsSetBy(user.id, w.id, w.started_at).then((recs) => recs.map(recordLine)),
     countOrdinal(user.id, w.started_at, type === 'strength' ? 'strength' : null),
+    // Where it came from (0234) — its own query for the same reason as the playlist: a column PostgREST
+    // cannot find fails the whole select, and "Imported from …" is not worth the screen.
+    (async (): Promise<string | null> => {
+      const r = await supabase.from('workouts').select('source, source_label').eq('id', id).maybeSingle();
+      const row = r.data as { source: string | null; source_label: string | null } | null;
+      return importedFrom(row?.source, row?.source_label);
+    })(),
   ]);
 
   const exercises = [...(w.workout_exercises ?? [])]
@@ -248,6 +275,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
     ordinal,
     viewer: 'own',
     authorName: null,
+    importedFrom: imported,
   };
 }
 
@@ -382,6 +410,8 @@ async function fetchSharedActivityDetail(id: string): Promise<ActivityDetail | n
     ordinal: null,
     viewer: 'shared',
     authorName: r.author_name?.trim() || 'Athlete',
+    // Never on somebody else's session: nothing here is the viewer's to remove.
+    importedFrom: null,
   };
 }
 

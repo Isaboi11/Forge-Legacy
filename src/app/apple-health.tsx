@@ -29,6 +29,7 @@ import { addButtonLabel, foundSummary, historyHonorsLine, needsLookBadge, notImp
 import { duplicateReasonLine, FIRST_PULL_DAYS, lastCheckedLine } from '@/domain/health/sync-state';
 import { fmtDistanceIn } from '@/domain/workout/conditioning';
 import { useToast } from '@/hooks/useCeremony';
+import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
 
@@ -154,6 +155,8 @@ export default function AppleHealthScreen() {
       setEmptyNotice(null);
       if (removed == null) showToast('Disconnected. Some imported workouts couldn’t be removed — try again later.');
       else showToast(remove ? `Disconnected. Removed ${removed} imported workout${removed === 1 ? '' : 's'}.` : 'Disconnected');
+      // Removed workouts change what rank reads; the next tab re-evaluates at once, not in a minute.
+      if (remove) invalidateEarnedMoments();
       refetch();
     } finally {
       setBusy(null);

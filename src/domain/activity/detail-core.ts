@@ -111,6 +111,11 @@ export interface ActivityDetail {
   viewer: 'own' | 'shared';
   /** Who trained it — rendered only when `viewer` is `'shared'`, where it is the first thing to say. */
   authorName: string | null;
+  /**
+   * Where an imported workout came from ("Garmin Connect"); null when Forge recorded it (0234), and always
+   * null on a SHARED session. Non-null is what puts "Imported from …" and Remove from Forge on screen.
+   */
+  importedFrom: string | null;
 }
 
 const SECTION_LABEL: Record<DetailExercise['section'], string> = {

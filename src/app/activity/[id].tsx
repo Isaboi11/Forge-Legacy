@@ -7,6 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { Button } from '@/components/forge/composites/Button';
 import { EquipIcon } from '@/components/forge/EquipIcon';
@@ -15,6 +16,10 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchActivityDetail } from '@/data/activity-live';
+import { removeImportedWorkouts } from '@/data/apple-health-sync-live';
+import { importedFromLine, removeImportCopy } from '@/domain/health/imported';
+import { useToast } from '@/hooks/useCeremony';
+import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments';
 import {
   ordinalLine,
   programTag,
@@ -86,8 +91,14 @@ export default function ActivityDetailScreen() {
   const [savingName, setSavingName] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
+  /* REMOVE FROM FORGE — imports only (Apple-Health-Build-Plan §10 step 5). `data.importedFrom` is null on
+     every Forge-recorded and every shared session, so neither can reach this. */
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const { showToast } = useToast();
   const primeKeyboard = useKeyboardPrimer();
   const title = nameEdit !== undefined ? (nameEdit ?? 'Workout') : (data?.title ?? 'Workout');
+  const removeCopy = data?.importedFrom ? removeImportCopy(title, data.importedFrom) : null;
 
   const openRename = () => {
     /* ⚠ FIRST, AND SYNCHRONOUSLY — the sheet's field is inside a `<Modal>`, so it does not exist yet and
@@ -114,6 +125,29 @@ export default function ActivityDetailScreen() {
       setRenameError(errorMessage(e));
     } finally {
       setSavingName(false);
+    }
+  };
+
+  /*
+   * The ledger 'deleted' row goes in with the delete (0236), so the next Apple Health sync never brings it
+   * back. Rank, honors and goals are all read from `workouts`, so dropping the earned-moments gate is the
+   * whole refresh: every tab re-reads on focus, and the next one evaluates at once rather than in a minute.
+   */
+  const commitRemove = async () => {
+    if (removing) return;
+    setRemoving(true);
+    try {
+      const removed = await removeImportedWorkouts([id]);
+      if (removed == null) {
+        showToast('Couldn’t remove this workout. Try again in a moment.');
+        return;
+      }
+      setRemoveOpen(false);
+      invalidateEarnedMoments();
+      showToast('Removed from Forge');
+      router.back();
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -177,7 +211,19 @@ export default function ActivityDetailScreen() {
             onOpenProgram={(pid) => router.push({ pathname: '/program/[id]', params: { id: pid } })}
             onOpenExercise={(key) => router.push({ pathname: '/exercise/[id]', params: { id: key } })}
             onOpenSummary={() => router.push({ pathname: '/workout-complete', params: { id, review: '1' } })}
+            onRemove={() => setRemoveOpen(true)}
           />
+          {/* M-6 destructive confirm, mounted beside the Body that opens it (`overlay-branch.test.mjs`). */}
+          {removeCopy ? (
+            <ConfirmSheet
+              open={removeOpen}
+              onClose={() => setRemoveOpen(false)}
+              headline={removeCopy.headline}
+              body={removeCopy.body}
+              confirmLabel={removing ? 'Removing…' : removeCopy.confirm}
+              onConfirm={() => void commitRemove()}
+            />
+          ) : null}
           {/* Mounted beside the Body that opens it, never at the bottom of the file — see
               `overlay-branch.test.mjs` for the session that rule cost. */}
           <BottomSheet open={renameOpen} onClose={() => setRenameOpen(false)} title="Name this workout">
@@ -223,6 +269,7 @@ function Body({
   onOpenProgram,
   onOpenExercise,
   onOpenSummary,
+  onRemove,
 }: {
   detail: ActivityDetail;
   /** Passed in rather than read off `detail`, so a rename shows without waiting for a refetch. */
@@ -231,6 +278,8 @@ function Body({
   onOpenProgram: (programId: string) => void;
   onOpenExercise: (keyOrName: string) => void;
   onOpenSummary: () => void;
+  /** Opens the Remove from Forge confirm. Offered only when `detail.importedFrom` is set. */
+  onRemove: () => void;
 }) {
   const { rowUnit } = useUnits();
   const sections = sectionsOf(detail);
@@ -314,6 +363,9 @@ function Body({
       {/* Empty on a shared session — the ordinal counts the author's whole training life and the
           chapter is their own Legacy prose. Absent, not zeroed. */}
       {ordinal ? <Text style={styles.ordinal}>{ordinal}</Text> : null}
+      {/* Informational only (plan §10 step 5): an import is an owned record like any other, and this
+          just says which app or device recorded it. */}
+      {detail.importedFrom ? <Text style={styles.ordinal}>{importedFromLine(detail.importedFrom)}</Text> : null}
 
       <View style={styles.divider} />
 
@@ -527,6 +579,22 @@ function Body({
           <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
         </Pressable>
       )}
+
+      {/* REMOVE FROM FORGE — an imported workout only. A Forge-recorded session is a permanent Legacy
+          record and has no remove action anywhere; `importedFrom` is null for it (and on a shared view),
+          so the control is omitted rather than disabled. Quiet red text, the way Program Detail places its
+          own destructive action; the confirm sheet says what it does. */}
+      {detail.importedFrom ? (
+        <Pressable
+          onPress={onRemove}
+          accessibilityRole="button"
+          accessibilityLabel={`Remove from Forge. Imported from ${detail.importedFrom}`}
+          hitSlop={8}
+          style={({ pressed }) => [styles.removeBtn, pressed ? styles.summaryRowPressed : null]}
+        >
+          <Text style={styles.removeText}>Remove from Forge</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -723,6 +791,8 @@ const styles = StyleSheet.create({
   summaryText: { flex: 1, minWidth: 0, gap: 2 },
   summaryTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   summarySub: { fontSize: 11.5, color: flColor.gray400 },
+  removeBtn: { alignSelf: 'center', marginTop: 18, paddingVertical: 8, paddingHorizontal: 12 },
+  removeText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.2, color: flColor.redMuted },
   attrRow: {
     flexDirection: 'row',
     alignItems: 'center',

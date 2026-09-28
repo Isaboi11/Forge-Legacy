@@ -467,8 +467,8 @@ export async function setWriteBack(on: boolean): Promise<void> {
 
 /**
  * Stop syncing (§3.3 step 6). Keeping the imports is the default — they are owned records (DEDUP §1).
- * `removeImported` writes a ledger 'deleted' row for each FIRST, so none of them can ever come back, then
- * deletes them. Resolves how many were removed, or null when the removal failed part-way.
+ * `removeImported` removes every one of them through `removeImportedWorkouts`. Resolves how many were
+ * removed, or null when the removal failed part-way.
  */
 export async function disconnectAppleHealth(removeImported: boolean): Promise<number | null> {
   const uid = await currentUid();
@@ -477,31 +477,72 @@ export async function disconnectAppleHealth(removeImported: boolean): Promise<nu
   await savePrefs(uid, { ...prefs, connected: false, anchor: null, lastCheckedAt: null });
   if (!removeImported) return 0;
 
-  const { data, error } = await supabase.from('workouts').select('id, external_id').eq('athlete_id', uid).eq('source', IMPORT_SOURCE).limit(5000);
+  const { data, error } = await supabase.from('workouts').select('id').eq('athlete_id', uid).eq('source', IMPORT_SOURCE).limit(5000);
   if (error || !data) return null;
-  const rows = data as { id: string; external_id: string }[];
+  return removeImportedWorkouts((data as { id: string }[]).map((r) => r.id));
+}
+
+/**
+ * "Remove from Forge" (§10 step 5) — one imported workout from Activity Detail or History, or all of them
+ * on Disconnect. Resolves how many were removed, or null when the removal failed part-way.
+ *
+ * ══ 0236 DOES IT IN ONE STATEMENT ══
+ *
+ * `remove_external_workouts` deletes the rows, writes a ledger 'deleted' row for each (so a re-sync never
+ * re-imports them) and takes them back off the active chapter's stored `workout_count` — the counter
+ * `import_external_workouts` bumped. It only ever touches `source <> 'forge'` rows: a Forge-recorded
+ * workout cannot be removed through it, whatever id reaches here.
+ *
+ * ⚠ BEFORE 0236 IS PASTED, PostgREST answers PGRST202 and this falls back to the 0234-era two calls — the
+ * ledger row FIRST, so a failure between them can never let the workout come back, then the delete. That
+ * removal is correct except that the chapter count stays one high per workout until 0236 lands.
+ */
+export async function removeImportedWorkouts(ids: readonly string[]): Promise<number | null> {
+  const uid = await currentUid();
+  if (!uid) return null;
   let removed = 0;
-  for (let i = 0; i < rows.length; i += IN_CHUNK) {
-    const part = rows.slice(i, i + IN_CHUNK);
+  for (let i = 0; i < ids.length; i += IN_CHUNK) {
+    const part = ids.slice(i, i + IN_CHUNK);
     try {
-      const { error: le } = await supabase.from('external_activity_ledger').upsert(
-        part.map((r) => ({ athlete_id: uid, source: IMPORT_SOURCE, external_id: r.external_id, outcome: 'deleted', workout_id: r.id })),
-        { onConflict: 'athlete_id,source,external_id' },
-      );
-      if (le) return null;
-      const { error: de } = await supabase
-        .from('workouts')
-        .delete()
-        .eq('athlete_id', uid)
-        .eq('source', IMPORT_SOURCE)
-        .in('id', part.map((r) => r.id));
-      if (de) return null;
-      removed += part.length;
+      const { data, error } = await supabase.rpc('remove_external_workouts', { p_ids: part });
+      if (!error) {
+        removed += typeof data === 'number' ? data : 0;
+        continue;
+      }
+      if ((error as { code?: string }).code !== 'PGRST202') return null;
+      const n = await removeImportedLegacy(uid, part);
+      if (n == null) return null;
+      removed += n;
     } catch {
       return null;
     }
   }
   return removed;
+}
+
+/** The pre-0236 path: ledger 'deleted' rows, then the delete. Imported rows only. */
+async function removeImportedLegacy(uid: string, ids: readonly string[]): Promise<number | null> {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('id, external_id')
+    .eq('athlete_id', uid)
+    .eq('source', IMPORT_SOURCE)
+    .in('id', [...ids]);
+  if (error || !data) return null;
+  const rows = data as { id: string; external_id: string }[];
+  if (!rows.length) return 0;
+  const { error: le } = await supabase.from('external_activity_ledger').upsert(
+    rows.map((r) => ({ athlete_id: uid, source: IMPORT_SOURCE, external_id: r.external_id, outcome: 'deleted', workout_id: r.id })),
+    { onConflict: 'athlete_id,source,external_id' },
+  );
+  if (le) return null;
+  const { error: de } = await supabase
+    .from('workouts')
+    .delete()
+    .eq('athlete_id', uid)
+    .eq('source', IMPORT_SOURCE)
+    .in('id', rows.map((r) => r.id));
+  return de ? null : rows.length;
 }
 
 // ── write-back (§3.5) ────────────────────────────────────────────────────────

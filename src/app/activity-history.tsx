@@ -9,7 +9,12 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { themeGround, themeScrim } from '@/constants/theme-scrim';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { fetchActivityHistory } from '@/data/activity-live';
+import { removeImportedWorkouts } from '@/data/apple-health-sync-live';
+import { removeImportCopy } from '@/domain/health/imported';
+import { useToast } from '@/hooks/useCeremony';
+import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments';
 import {
   ACTIVITY_LABEL,
   ACTIVITY_ORDER,
@@ -65,6 +70,30 @@ export default function ActivityHistoryScreen() {
   /* Refetched on focus: "Log" below opens `/log-activity` over this screen, and the bout it records has
      to be in the list the moment it closes — a `[]` query would show it next time the screen mounts. */
   useFocusEffect(useCallback(() => refetch(), [refetch]));
+
+  /* REMOVE FROM FORGE, FROM THE LIST (Apple-Health-Build-Plan §10 step 5). An IMPORTED row answers a long
+     press with the same M-6 confirm Activity Detail uses; a Forge-recorded row has no long press at all. */
+  const { showToast } = useToast();
+  const [removeTarget, setRemoveTarget] = useState<ActivityRecord | null>(null);
+  const [removing, setRemoving] = useState(false);
+  const removeCopy = removeTarget?.importedFrom ? removeImportCopy(removeTarget.title, removeTarget.importedFrom) : null;
+  const commitRemove = async () => {
+    if (!removeTarget || removing) return;
+    setRemoving(true);
+    try {
+      const removed = await removeImportedWorkouts([removeTarget.id]);
+      if (removed == null) {
+        showToast('Couldn’t remove this workout. Try again in a moment.');
+        return;
+      }
+      setRemoveTarget(null);
+      invalidateEarnedMoments();
+      showToast('Removed from Forge');
+      refetch();
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   const records = data ?? [];
   const groups = groupByMonth(records, filter);
@@ -153,10 +182,20 @@ export default function ActivityHistoryScreen() {
             <SessionRow
               record={item}
               onPress={() => router.push({ pathname: '/activity/[id]', params: { id: item.id } })}
+              onRemove={item.importedFrom ? () => setRemoveTarget(item) : undefined}
             />
           )}
         />
       )}
+
+      <ConfirmSheet
+        open={removeCopy != null}
+        onClose={() => setRemoveTarget(null)}
+        headline={removeCopy?.headline ?? ''}
+        body={removeCopy?.body ?? ''}
+        confirmLabel={removing ? 'Removing…' : (removeCopy?.confirm ?? '')}
+        onConfirm={() => void commitRemove()}
+      />
     </View>
   );
 }
@@ -176,14 +215,23 @@ function Chip({ label, on, onPress, icon }: { label: string; on: boolean; onPres
   );
 }
 
-function SessionRow({ record, onPress }: { record: ActivityRecord; onPress: () => void }) {
+/** `onRemove` is passed for an IMPORTED row only; it is the long press and the screen-reader action. */
+function SessionRow({ record, onPress, onRemove }: { record: ActivityRecord; onPress: () => void; onRemove?: () => void }) {
   const { rowUnit } = useUnits();
   const stat = statLine(record, rowUnit);
   const partners = partnersLabel(record.partners);
-  const hasAttr = Boolean(record.chapterName) || partners.length > 0;
+  const hasAttr = Boolean(record.chapterName) || partners.length > 0 || Boolean(record.importedFrom);
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={rowA11y(record)} style={styles.row}>
+    <Pressable
+      onPress={onPress}
+      onLongPress={onRemove}
+      accessibilityRole="button"
+      accessibilityLabel={rowA11y(record)}
+      accessibilityActions={onRemove ? [{ name: 'remove', label: 'Remove from Forge' }] : undefined}
+      onAccessibilityAction={onRemove ? (e) => e.nativeEvent.actionName === 'remove' && onRemove() : undefined}
+      style={styles.row}
+    >
       <View style={styles.rowIcon}>
         <TypeIcon type={record.type} color={flColor.bronze400} />
       </View>
@@ -221,6 +269,12 @@ function SessionRow({ record, onPress }: { record: ActivityRecord; onPress: () =
                   {partners}
                 </Text>
               </View>
+            ) : null}
+            {/* The small mark (plan §10 step 5) — informational, in the chapter's own quiet grey. */}
+            {record.importedFrom ? (
+              <Text style={styles.chapter} numberOfLines={1}>
+                Imported · {record.importedFrom}
+              </Text>
             ) : null}
           </View>
         ) : null}

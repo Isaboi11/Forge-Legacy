@@ -32,6 +32,8 @@ export interface ActivityRecord {
   /** A personal record was set in this session. */
   pr: boolean;
   partners: string[];
+  /** Where an imported workout came from ("Garmin Connect"); null when Forge recorded it (0234). */
+  importedFrom: string | null;
 }
 
 export const ACTIVITY_ORDER: Modality[] = [
@@ -132,6 +134,7 @@ export function rowA11y(r: ActivityRecord): string {
   if (r.pr) parts.push('personal record');
   if (r.chapterName) parts.push(r.chapterName);
   if (r.partners.length) parts.push(partnersLabel(r.partners));
+  if (r.importedFrom) parts.push(`imported from ${r.importedFrom}`);
   return `${parts.join(', ')}. Double-tap for detail.`;
 }
 
