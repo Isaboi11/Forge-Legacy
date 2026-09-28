@@ -43,6 +43,8 @@ import { displayWeight, exactWeight, unitLabel, weightInExact, type UnitSystem }
 import { playRestDing, primeDing } from '@/lib/ding';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
 import { HoldTimer } from '@/components/workout/HoldTimer';
+import { IntervalRunner } from '@/components/workout/IntervalRunner';
+import { canRunIntervals } from '@/domain/workout/interval-plan';
 import { SetGoalPanel } from '@/components/workout/SetGoalPanel';
 import {
   EMPTY_RESULT,
@@ -504,6 +506,8 @@ export default function WorkoutScreen() {
   const barBottom = useBarBottom();
   const haptics = useHaptics();
   const soundOn = useSoundEnabled();
+  /* Start timer (PO 2026-09-27): a timed workout run full-screen — `IntervalRunner`. */
+  const [intervalsOpen, setIntervalsOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('loading');
   const [sheet, setSheet] = useState<SetSheet | null>(null);
   /**
@@ -1860,6 +1864,34 @@ export default function WorkoutScreen() {
     if (!session) return;
     completeSet(ei, si, patchSet(session, ei, si, (set) => ({ ...set, durationSec: heldSec })));
   };
+
+  /*
+   * ══ THE START TIMER RUN (`IntervalRunner`) ══
+   *
+   * A finished interval is a finished set — but NOT through `completeSet`: that one fires the rest overlay, the
+   * "Set logged" toast and the seal after every set, and here the runner is the rest timer and the screen. So a
+   * run marks the set done with the time it held, and nothing else; the list is where the athlete looks after.
+   */
+  const logIntervalSet = (ei: number, si: number, sec: number) =>
+    mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: true, durationSec: sec })));
+  /** Rounds past the sets a move has become more sets of the same clock ("Add set" does the same). */
+  const prepareIntervalRounds = (rounds: number) =>
+    mutate((s) => ({
+      ...s,
+      exercises: s.exercises.map((ex) => {
+        const first = ex.sets[0];
+        if (ex.kind === 'cardio' || !first || first.targetSec == null || ex.sets.length >= rounds) return ex;
+        const more = Array.from({ length: rounds - ex.sets.length }, (_, k) => ({
+          setIndex: ex.sets.length + k,
+          weight: null,
+          targetReps: 0,
+          targetSec: first.targetSec,
+          actualReps: null,
+          done: false,
+        }));
+        return { ...ex, sets: [...ex.sets, ...more] };
+      }),
+    }));
 
   const addSet = (ei: number) =>
     mutate((s) => {
@@ -3672,6 +3704,30 @@ export default function WorkoutScreen() {
         <ProgressBar value={setsDone} max={totalSets || 1} height={6} />
       </TourAnchor>
 
+      {/* START TIMER — a workout of timed moves runs itself, full screen (PO 2026-09-27). Only when two or more
+          moves are timed: a lone plank at the end of a lifting day keeps its own row timer. */}
+      {canRunIntervals(session.exercises) ? (
+        <Pressable
+          onPress={() => setIntervalsOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Start timer"
+          accessibilityHint="Runs your timed moves full screen: work, rest, next move"
+          style={({ pressed }) => [styles.intervalBar, pressed && styles.ctlPressed]}
+        >
+          <EngravedIcon name="play" size={16} color={flColor.onBronze} />
+          <Text style={styles.intervalBarText}>Start timer</Text>
+        </Pressable>
+      ) : null}
+      {intervalsOpen ? (
+        <IntervalRunner
+          exercises={session.exercises}
+          soundOn={soundOn}
+          onLogSet={logIntervalSet}
+          onPrepareRounds={prepareIntervalRounds}
+          onClose={() => setIntervalsOpen(false)}
+        />
+      ) : null}
+
       {/*
         ══ ALL EXERCISES — THE WAY TO THE WHOLE WORKOUT, AT THE TOP ══
 
@@ -5407,6 +5463,8 @@ function templateToSessionExercises(rows: readonly TemplateExercise[]): SessionE
             groupRounds: e.groupRounds ?? undefined,
           }
         : null),
+      // The rest after a timed move, for the Start timer run (PO 2026-09-27).
+      ...(e.restAfterSec != null ? { restAfterSec: e.restAfterSec } : null),
       /* A TIMED row (a strength row with a clock — "Plank 3 × 30s", a 40-on interval) starts as timed sets:
          the logger's clock, no reps asked for. It used to start as sets of 8 (PO 2026-09-27). */
       sets: Array.from({ length: Math.max(1, e.sets) }, (_, si) => ({
@@ -6292,6 +6350,18 @@ const styles = StyleSheet.create({
 
   // progress band
   band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  intervalBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    marginHorizontal: 18,
+    marginTop: 12,
+    borderRadius: flRadius.pill,
+    backgroundColor: flColor.bronze400,
+  },
+  intervalBarText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.4, color: flColor.onBronze },
   bandTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   doneLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
   doneAccent: { color: flColor.bronze400 },

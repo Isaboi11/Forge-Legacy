@@ -802,7 +802,7 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
             targetSec: e.targetDurationSec ?? null,
           }
         : e.targetDurationSec != null
-          ? { durationSec: e.targetDurationSec, reps: undefined }
+          ? { durationSec: e.targetDurationSec, reps: undefined, ...(e.restAfterSec != null ? { restAfterSec: e.restAfterSec } : null) }
           : null),
       ...(e.coachNote ? { coachNote: e.coachNote } : null),
       ...(e.groupId

@@ -108,3 +108,16 @@ test('a clock is found wherever the photo reader put it (PO’s second try, 2026
   const { sanitizeTranscript } = await import('../photo-transcript.ts');
   assert.equal(sanitizeTranscript('Exercise\tTime\nChest Fly\t0:40\nRest\t0:20').ok, true, 'an interval list is a program');
 });
+
+test('"Rest 0:20" after a timed move is that move’s rest — kept, not dropped (PO 2026-09-27)', () => {
+  const table = itemsOf('Exercise\tTime\nChest Fly\t0:40\nRest\t0:20\nT Push Up\t0:40\nRest\t0:20');
+  assert.deepEqual(table.map((i) => [i.name, i.durationSec, i.restSec ?? null]), [['Chest Fly', 40, 20], ['T Push Up', 40, 20]]);
+  const typed = itemsOf('Chest Fly 0:40\nRest 0:20\nRow 0:40');
+  assert.deepEqual(typed.map((i) => [i.name, i.restSec ?? null]), [['Chest Fly', 20], ['Row', null]]);
+  // after a LIFT a rest line is an instruction, as before — not attached
+  const r = parseProgramTable('Squat 5x5\nRest 90s\nPlank 30s');
+  assert.equal(r.weeks[0].days[0].items[0].restSec, undefined);
+  assert.deepEqual(r.skipped, ['Rest 90s']);
+  const day = toProgramStructure(parseProgramTable('Chest Fly 0:40\nRest 0:20\nRow 0:40').weeks, 'x', () => undefined).days[0];
+  assert.equal(day.main[0].restAfterSec, 20);
+});

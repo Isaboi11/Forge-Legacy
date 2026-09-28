@@ -53,6 +53,11 @@ export interface TemplateExercise {
   targetMi?: number | null;
   targetDurationSec?: number | null;
   /**
+   * The REST that follows this move in an interval workout — "Rest 0:20" on the row after it (PO 2026-09-27).
+   * Only a TIMED move carries one; the Start timer run plays it between moves. Absent = straight on.
+   */
+  restAfterSec?: number | null;
+  /**
    * The author's coaching cue — "4 seconds down, then push up". Mirrors `ProgramExercise.coachNote`.
    *
    * Distinct from the athlete's per-session note, which is a log entry and lives on the workout row.
@@ -107,6 +112,7 @@ const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   modality: e.modality === 'indoor' ? 'indoor' : e.modality === 'outdoor' ? 'outdoor' : undefined,
   targetMi: e.targetMi == null ? null : Number(e.targetMi),
   targetDurationSec: e.targetDurationSec == null ? null : Number(e.targetDurationSec),
+  restAfterSec: e.restAfterSec == null ? null : Number(e.restAfterSec),
   // ⚠ THIS IS A WHITELIST. A field absent from here is silently dropped on every read, however faithfully
   // the writer stored it — which is why the cue has to be named explicitly rather than spread through.
   coachNote: typeof e.coachNote === 'string' && e.coachNote.trim() ? e.coachNote.trim() : null,

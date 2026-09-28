@@ -89,6 +89,11 @@ export type ProgramExercise = {
    * with both is read as timed, because that is the stricter reading of what the author wrote.
    */
   durationSec?: number | null;
+  /**
+   * The REST that follows this move in an interval workout — "Rest 0:20" on the row after it (PO 2026-09-27).
+   * Only a TIMED move carries one; the Start timer run plays it between moves. Absent = straight on.
+   */
+  restAfterSec?: number | null;
   /** "(Optional) Stairmaster" — prescribed, but the athlete owes nothing by skipping it. */
   optional?: boolean;
   /**

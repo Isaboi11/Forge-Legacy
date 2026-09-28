@@ -36,6 +36,7 @@ export function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
       groupRounds: x.groupRounds ?? null,
       targetMi: x.targetMi ?? null,
       targetDurationSec: x.kind === 'cardio' ? (x.targetSec ?? null) : (x.durationSec ?? null),
+      restAfterSec: x.kind === 'cardio' ? null : (x.restAfterSec ?? null),
       coachNote: x.coachNote ?? null,
     }));
   return [...of(d.warmup, 'warmup'), ...of(d.main, 'main'), ...of(d.cooldown, 'cooldown')];

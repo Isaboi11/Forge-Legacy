@@ -39,6 +39,7 @@ import {
   extractScheme,
   firstNumber,
   timeCell,
+  timeIn,
   timeOfCell,
   hasQualifier,
   isAnnotation,
@@ -69,6 +70,8 @@ export interface ParsedItem {
    * the clock IS the prescription. Becomes `ProgramExercise.durationSec`, which the logger already times.
    */
   durationSec?: number;
+  /** "Rest 0:20" on the line after a TIMED move — the rest that follows it (PO 2026-09-27). */
+  restSec?: number;
   /**
    * ══ THE CARDIO FIELDS ══
    *
@@ -549,6 +552,12 @@ function parseFreeform(lines: string[]): ParseResult {
     // A rest day written as an entry is the absence of a session, and a rest instruction is not a lift.
     if (isRestEntry(row.line)) return;
     if (!row.hasScheme && isRestInstruction(row.line)) {
+      /* After a TIMED move, "Rest 0:20" is the interval's rest — kept on that move, not listed as unread. */
+      const gap = timeIn(row.line.replace(/^\s*rest\b/i, ''))?.sec;
+      if (b.last?.durationSec != null && gap != null) {
+        b.last.restSec = gap;
+        return;
+      }
       skipped.push(row.line);
       return;
     }
@@ -1435,7 +1444,12 @@ export function parseProgramTable(raw: string): ParseResult {
      * 3×10, which turned every rest day into a training day (stress test, 2026-09-21). Nothing is created;
      * the Day cell still moves on, so a blank-Day row below is not filed under the day before.
      */
-    if (isRestEntry(cleanExerciseName(rawName))) {
+    if (isRestEntry(cleanExerciseName(rawName)) || isRestInstruction(rawName)) {
+      /* "Rest | 0:20" straight after a TIMED move is that move's rest (an interval timer's list, PO 09-27). */
+      if (b.last?.durationSec != null) {
+        const gap = timeIn(rawName.replace(/^\s*rest\b/i, ''))?.sec ?? cells.map((c, i) => (i === at.exercise ? undefined : timeOfCell(c))).find((x) => x != null);
+        if (gap != null) b.last.restSec = gap;
+      }
       const restDay = at.day !== undefined ? (cells[at.day] ?? '').trim() : '';
       if (restDay) day = restDay;
       continue;
@@ -1681,6 +1695,7 @@ export function toProgramStructure(
       reps: i.reps,
       // A timed set carries its clock into the program (`ProgramExercise.durationSec`, which the logger times).
       ...(i.durationSec != null ? { durationSec: i.durationSec } : {}),
+      ...(i.restSec != null ? { restAfterSec: i.restSec } : {}),
       ...(i.note ? { coachNote: i.note } : {}),
     };
     return key ? { ...base, catalogKey: key } : base;

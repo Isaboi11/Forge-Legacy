@@ -125,6 +125,11 @@ export interface SessionExercise {
   prescribedName?: string | null;
   prescribedCatalogKey?: string | null;
   /**
+   * The REST that follows this move in an interval workout — "Rest 0:20" on the row after it (PO 2026-09-27).
+   * Only a TIMED move carries one; the Start timer run plays it between moves. Absent = straight on.
+   */
+  restAfterSec?: number | null;
+  /**
    * 'cardio' marks a run, walk or ride sitting anywhere in the session. Absent means 'strength', so
    * every session written before this reads correctly without migration.
    */
