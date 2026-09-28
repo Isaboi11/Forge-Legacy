@@ -54,7 +54,8 @@ test('the job is scheduled, and runs the close — not the read-only dry run', (
 });
 
 test('the act-as helper is unreachable from a client, and the inbox rows are reachable', () => {
-  assert.match(SQL, /revoke execute on function public\.squad_goal_act_as\(uuid\) from public;/);
+  // 09-27 (66fce5a0): PUBLIC alone left it callable — Supabase grants anon + authenticated directly.
+  assert.match(SQL, /revoke execute on function public\.squad_goal_act_as\(uuid\) from public, anon, authenticated;/);
   assert.match(SQL, /grant execute on function public\.squad_goal_notifications\(\) to authenticated;/);
   // Transaction-local, or a run could leak an owner's identity into whatever the connection does next.
   const actAs = strip(fnBody('squad_goal_act_as'));
