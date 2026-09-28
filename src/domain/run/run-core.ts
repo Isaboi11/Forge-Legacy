@@ -108,7 +108,7 @@ export const ACCURACY_FLOOR_M = 65;
 const M_PER_MI = 1609.344;
 
 /** No human moves faster than this on foot or a bike; above it the fix jumped, it didn't travel. */
-const MAX_MPH: Record<ActivityKind, number> = { run: 20, walk: 12, bike: 60 };
+export const MAX_MPH: Record<ActivityKind, number> = { run: 20, walk: 12, bike: 60 };
 
 /**
  * ══ ⚠ WHY THERE IS A FILTER HERE AT ALL, AND WHAT IT REPLACED ══
