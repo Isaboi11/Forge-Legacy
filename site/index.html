@@ -144,6 +144,25 @@
   /* ── Footer ── */
   footer a { color:var(--fl-bronze-600); }
 
+  /* ── Phones on a phone (PO 09-27): show the UI, not the device. Bigger frames, the hero's backing
+     card dropped, and a faded crop only where the lower screen stays empty for the whole animation —
+     most animations end on a bottom action (Finish, Continue, the chat input), so nothing else is cut. ── */
+  @media (max-width:600px) {
+    .ph-blob { display:none; }
+    .ph-hero { width:min(100%, 86vw, 400px) !important; }
+    .ph-one  { flex:0 1 min(82vw, 380px) !important; }
+    .ph-fig  { max-width:380px !important; }
+    .ph-pair > div:first-child { width:55% !important; }
+    .ph-pair > div:last-child  { width:64% !important; }
+    /* Home hero reel: the phone was 40% of a 5:6.5 scene (~140px). On a phone the scene becomes a frame
+       around a big phone that bleeds off the bottom edge — the home indicator is all it loses. */
+    .hd-stage { aspect-ratio:5/8.7 !important; }
+    .hd-phone { width:74% !important; top:auto !important; bottom:-12px; transform:translateX(-50%) !important; }
+    .ph-crop { overflow:hidden; aspect-ratio:var(--ar);
+      -webkit-mask-image:linear-gradient(to bottom, #000 calc(100% - 64px), transparent);
+              mask-image:linear-gradient(to bottom, #000 calc(100% - 64px), transparent); }
+  }
+
   @media (prefers-reduced-motion: reduce) { .btn, .tile { transition:none; } .btn:hover { transform:none; } }
 </style>
 
@@ -267,7 +286,7 @@
           </a>
           <a href="#legacy" class="tile">
             <span style="position:relative; display:block; height:250px; overflow:hidden; background:#F1EADB;">
-              <span style="position:absolute; top:26px; left:50%; transform:translateX(-50%); width:66%; border-radius:26px; padding:6px; background:#1A1714; box-shadow:0 24px 50px -20px rgba(70,58,42,0.5);"><img src="assets/landing/n/legacy-identity.webp" alt="" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:21px; display:block;"></span>
+              <span style="position:absolute; top:26px; left:50%; transform:translateX(-50%); width:66%; border-radius:26px; padding:6px; background:#1A1714; box-shadow:0 24px 50px -20px rgba(70,58,42,0.5);"><img src="assets/landing/n/legacy-identity.webp" alt="" loading="lazy" decoding="async" width="780" height="1695" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:21px; display:block;"></span>
             </span>
             <span style="display:flex; flex-direction:column; gap:6px; padding:18px 20px 20px;">
               <span style="font-size:17px; font-weight:600; color:#1F1B16;">Legacy</span>
@@ -300,15 +319,15 @@
             <div style="display:flex; margin-top:30px;"><a href="#join" data-join class="btn" style="width:310px; max-width:100%;">Request TestFlight access</a></div>
           </div>
           <div style="flex:1 1 360px; min-width:min(100%,300px); position:relative; display:flex; justify-content:center; padding:36px 0 12px;">
-            <div aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
-            <div style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><div data-anim="workout" data-r="31"><img src="assets/landing/n/active-workout-2x.webp" alt="Training screen" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div></div>
+            <div class="ph-blob" aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
+            <div class="ph-hero" style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><div data-anim="workout" data-r="31"><img src="assets/landing/n/active-workout-2x.webp" alt="Training screen" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div></div>
           </div>
         </div>
       </section>
 
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; overflow-x:clip; border-top:1px solid #EDE7DA;">
         <div style="max-width:760px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:clamp(36px,5vw,56px);">
-          <div style="position:relative; width:min(100%,460px); padding-top:40px;">
+          <div class="ph-pair" style="position:relative; width:min(100%,460px); padding-top:40px;">
             <div style="position:absolute; top:0; right:2%; transform:rotate(5deg); z-index:1; width:50%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-train-rest-timer.webp" alt="Rest timer" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div>
             <div style="position:relative; z-index:2; margin-left:4%; width:58%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/active-workout-2x.webp" alt="Built for the middle of a workout" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div>
           </div>
@@ -330,7 +349,7 @@
             <p style="margin:16px 0 0; font-size:17px; line-height:1.6; color:var(--fl-text-secondary); text-wrap:pretty; max-width:34em;">Paste it, upload the PDF, or snap a photo of the printout, and Forge turns it into a program you can run. No plan yet? Answer a few questions and Forge builds one with you.</p>
           </div>
           <div style="width:100%; display:flex; justify-content:center; align-items:flex-start; gap:clamp(10px,2.4vw,28px);">
-            <figure style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
+            <figure class="ph-fig" style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
               <div style="width:100%; border-radius:32px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="build" data-r="26"><img src="assets/landing/n/shot-build-program.webp" alt="Build a Program" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:26px; display:block;"></div></div>
               <figcaption style="font-size:14px; font-weight:600; color:var(--fl-text-secondary); text-align:center;">Build a Program</figcaption>
             </figure>
@@ -350,7 +369,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="startTrain" data-r="29"><img src="assets/landing/n/home-hero-clean.webp" alt="Open the app. Start training." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="startTrain" data-r="29"><img src="assets/landing/n/home-hero-clean.webp" alt="Open the app. Start training." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">Open the app. Start training.</h2>
@@ -361,7 +380,7 @@
 
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FFFFFF; overflow-x:clip; border-top:1px solid #EDE7DA;">
         <div style="max-width:760px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:clamp(36px,5vw,56px);">
-          <div style="position:relative; width:min(100%,460px); padding-top:40px;">
+          <div class="ph-pair" style="position:relative; width:min(100%,460px); padding-top:40px;">
             <div style="position:absolute; top:0; right:2%; transform:rotate(5deg); z-index:1; width:50%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-train-record.webp" alt="The Record" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div>
             <div style="position:relative; z-index:2; margin-left:4%; width:58%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="seal" data-r="28"><img src="assets/landing/n/shot-train-session-complete.webp" alt="Hold to seal it. Keep it for good." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div></div>
           </div>
@@ -378,7 +397,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row-reverse; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="programWeeks" data-r="29"><img src="assets/landing/n/shot-train-schedule.webp" alt="Run a program week by week" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="programWeeks" data-r="29"><img src="assets/landing/n/shot-train-schedule.webp" alt="Run a program week by week" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">Run a program week by week</h2>
@@ -401,7 +420,7 @@
                 </ul>
           </div>
           <div style="width:100%; display:flex; justify-content:center; align-items:flex-start; gap:clamp(10px,2.4vw,28px);">
-            <figure style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
+            <figure class="ph-fig" style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
               <div style="width:100%; border-radius:32px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="theme" data-r="26"><img src="assets/landing/n/raw-home.webp" alt="Forge and Alabaster" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:26px; display:block;"></div></div>
               <figcaption style="font-size:14px; font-weight:600; color:var(--fl-text-secondary); text-align:center;">Forge and Alabaster</figcaption>
             </figure>
@@ -432,8 +451,8 @@
             <div style="display:flex; margin-top:30px;"><a href="#join" data-join class="btn" style="width:310px; max-width:100%;">Request TestFlight access</a></div>
           </div>
           <div style="flex:1 1 360px; min-width:min(100%,300px); position:relative; display:flex; justify-content:center; padding:36px 0 12px;">
-            <div aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
-            <div style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><div data-anim="foodLog" data-r="31"><img src="assets/landing/n/nutrition-home-hq.webp" alt="Nutrition screen" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div></div>
+            <div class="ph-blob" aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
+            <div class="ph-hero" style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><div data-anim="foodLog" data-r="31"><img src="assets/landing/n/nutrition-home-hq.webp" alt="Nutrition screen" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div></div>
           </div>
         </div>
       </section>
@@ -441,7 +460,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="nutrition" data-r="29"><img src="assets/landing/n/lp-nutrition-targets.webp" alt="Targets built around your goal" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="nutrition" data-r="29"><img src="assets/landing/n/lp-nutrition-targets.webp" alt="Targets built around your goal" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">Targets built around your goal</h2>
@@ -456,7 +475,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FFFFFF; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row-reverse; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="labelScan" data-r="29"><img src="assets/landing/n/nutrition-home-hq.webp" alt="No barcode? Snap the label." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="labelScan" data-r="29"><img src="assets/landing/n/nutrition-home-hq.webp" alt="No barcode? Snap the label." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">No barcode? Snap the label.</h2>
@@ -491,8 +510,8 @@
             <div style="display:flex; margin-top:30px;"><a href="#join" data-join class="btn" style="width:310px; max-width:100%;">Request TestFlight access</a></div>
           </div>
           <div style="flex:1 1 360px; min-width:min(100%,300px); position:relative; display:flex; justify-content:center; padding:36px 0 12px;">
-            <div aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
-            <div style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><div data-anim="holtChat"><img src="assets/landing/n/shot-holt-program.webp" alt="Coach Holt" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div></div>
+            <div class="ph-blob" aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
+            <div class="ph-hero" style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><div data-anim="holtChat"><img src="assets/landing/n/shot-holt-program.webp" alt="Coach Holt" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div></div>
           </div>
         </div>
       </section>
@@ -500,7 +519,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="holtStart" data-r="29"><img src="assets/landing/n/shot-holt-start-clean.webp" alt="Ask it anything" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="holtStart" data-r="29"><img src="assets/landing/n/shot-holt-start-clean.webp" alt="Ask it anything" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">Ask it anything</h2>
@@ -514,7 +533,7 @@
 
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FFFFFF; overflow-x:clip; border-top:1px solid #EDE7DA;">
         <div style="max-width:760px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:clamp(36px,5vw,56px);">
-          <div style="position:relative; width:min(100%,460px); padding-top:40px;">
+          <div class="ph-pair" style="position:relative; width:min(100%,460px); padding-top:40px;">
             <div style="position:absolute; top:0; right:2%; transform:rotate(5deg); z-index:1; width:50%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/lp-coach-holt.webp" alt="Coach Holt" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div>
             <div style="position:relative; z-index:2; margin-left:4%; width:58%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="holtBuild" data-r="28"><img src="assets/landing/n/shot-holt-program-weeks.webp" alt="A plan that adjusts to you" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div></div>
           </div>
@@ -552,15 +571,15 @@
             <div style="display:flex; margin-top:30px;"><a href="#join" data-join class="btn" style="width:310px; max-width:100%;">Request TestFlight access</a></div>
           </div>
           <div style="flex:1 1 360px; min-width:min(100%,300px); position:relative; display:flex; justify-content:center; padding:36px 0 12px;">
-            <div aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
-            <div style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/legacy-identity.webp" alt="Legacy screen" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div>
+            <div class="ph-blob" aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
+            <div class="ph-hero" style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/legacy-identity.webp" alt="Legacy screen" loading="lazy" decoding="async" width="780" height="1695" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div>
           </div>
         </div>
       </section>
 
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; overflow-x:clip; border-top:1px solid #EDE7DA;">
         <div style="max-width:760px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:clamp(36px,5vw,56px);">
-          <div style="position:relative; width:min(100%,460px); padding-top:40px;">
+          <div class="ph-pair" style="position:relative; width:min(100%,460px); padding-top:40px;">
             <div style="position:absolute; top:0; right:2%; transform:rotate(5deg); z-index:1; width:50%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-legacy-chapter-honors.webp" alt="Inside a sealed chapter" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div>
             <div style="position:relative; z-index:2; margin-left:4%; width:58%; border-radius:34px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="chapter" data-r="28"><img src="assets/landing/n/shot-legacy-chapter.webp" alt="Name a season of your life" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:28px; display:block;"></div></div>
           </div>
@@ -578,7 +597,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FFFFFF; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="honor" data-r="29"><img src="assets/landing/n/shot-legacy-honors.webp" alt="Honors you earn. Never buy." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one ph-crop" style="--ar:1320/2466; flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="honor" data-r="29"><img src="assets/landing/n/shot-legacy-honors.webp" alt="Honors you earn. Never buy." loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">Honors you earn. Never buy.</h2>
@@ -609,8 +628,8 @@
                 </ul>
           </div>
           <div style="width:100%; display:flex; justify-content:center; align-items:flex-start; gap:clamp(10px,2.4vw,28px);">
-            <figure style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
-              <div style="width:100%; border-radius:32px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="rank" data-r="26"><img src="assets/landing/n/shot-legacy-rank.webp" alt="Rank" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:26px; display:block;"></div></div>
+            <figure class="ph-fig" style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
+              <div class="ph-crop" style="--ar:1320/2524; width:100%; border-radius:32px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><div data-anim="rank" data-r="26"><img src="assets/landing/n/shot-legacy-rank.webp" alt="Rank" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:26px; display:block;"></div></div>
               <figcaption style="font-size:14px; font-weight:600; color:var(--fl-text-secondary); text-align:center;">Rank</figcaption>
             </figure>
           </div>
@@ -620,7 +639,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FFFFFF; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row-reverse; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><img src="assets/landing/n/legacy-timeline-top.webp" alt="See how far you’ve come" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><img src="assets/landing/n/legacy-timeline-top.webp" alt="See how far you’ve come" loading="lazy" decoding="async" width="780" height="1695" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">See how far you’ve come</h2>
@@ -652,8 +671,8 @@
             <div style="display:flex; margin-top:30px;"><a href="#join" data-join class="btn" style="width:310px; max-width:100%;">Request TestFlight access</a></div>
           </div>
           <div style="flex:1 1 360px; min-width:min(100%,300px); position:relative; display:flex; justify-content:center; padding:36px 0 12px;">
-            <div aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
-            <div style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-squad-detail-v3.webp" alt="Squads screen" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div>
+            <div class="ph-blob" aria-hidden="true" style="position:absolute; left:10%; right:10%; top:18%; bottom:0; border-radius:48px; background:#F1EADB;"></div>
+            <div class="ph-hero" style="position:relative; width:min(62%,270px); border-radius:38px; padding:8px; background:#1A1714; box-shadow:0 40px 80px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-squad-detail-v3.webp" alt="Squads screen" loading="lazy" decoding="async" width="780" height="1695" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:31px; display:block;"></div>
           </div>
         </div>
       </section>
@@ -661,7 +680,7 @@
       <section style="padding:clamp(56px,7vw,96px) clamp(20px,4vw,40px); background:#FBF9F4; border-top:1px solid #EDE7DA;">
         <div style="max-width:1100px; margin:0 auto; display:flex; flex-wrap:wrap; flex-direction:row; align-items:center; gap:clamp(40px,6vw,96px);">
           <div style="flex:1 1 300px; display:flex; justify-content:center; align-items:flex-start; gap:16px;">
-            <div style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="squad" data-r="29"><img src="assets/landing/n/shot-squad-feed-v3.webp" alt="Every workout, seen by the people who matter" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
+            <div class="ph-one" style="flex:0 1 260px; min-width:0; border-radius:36px; padding:8px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.45);"><div data-anim="squad" data-r="29"><img src="assets/landing/n/shot-squad-feed-v3.webp" alt="Every workout, seen by the people who matter" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:29px; display:block;"></div></div>
           </div>
           <div style="flex:1 1 400px; min-width:min(100%,300px);">
             <h2 style="margin:0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(28px,3.2vw,40px); line-height:1.14; color:#1F1B16; text-wrap:balance;">Every workout, seen by the people who matter</h2>
@@ -685,11 +704,11 @@
                 </ul>
           </div>
           <div style="width:100%; display:flex; justify-content:center; align-items:flex-start; gap:clamp(10px,2.4vw,28px);">
-            <figure style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
+            <figure class="ph-fig" style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
               <div style="width:100%; border-radius:32px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-squad-create.webp" alt="Create Squad" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:26px; display:block;"></div>
               <figcaption style="font-size:14px; font-weight:600; color:var(--fl-text-secondary); text-align:center;">Create Squad</figcaption>
             </figure>
-            <figure style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
+            <figure class="ph-fig" style="flex:1 1 0; min-width:0; max-width:300px; margin:0; display:flex; flex-direction:column; align-items:center; gap:14px;">
               <div style="width:100%; border-radius:32px; padding:7px; background:#1A1714; box-shadow:0 36px 70px -28px rgba(70,58,42,0.5);"><img src="assets/landing/n/shot-squad-invite-v3.webp" alt="Invite to Squad" loading="lazy" decoding="async" width="660" height="1434" style="width:100%; height:auto; aspect-ratio:1320/2868; object-fit:cover; object-position:top; border-radius:26px; display:block;"></div>
               <figcaption style="font-size:14px; font-weight:600; color:var(--fl-text-secondary); text-align:center;">Invite to Squad</figcaption>
             </figure>
