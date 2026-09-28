@@ -9,6 +9,7 @@ import {
   ingredientName,
   ingredientPortion,
   ownFoodFrom,
+  ownFoodFromScan,
   pickGrams,
   qtyLabel,
   registerAll,
@@ -51,6 +52,16 @@ test('an own food becomes an ingredient: per 100 g kept, serving counted as "ser
 test('an own food with no calories or no serving weight cannot be an ingredient', () => {
   assert.equal(ownFoodFrom({ ...SALSA, kcal100: null }), null);
   assert.equal(ownFoodFrom({ ...SALSA, servings: [{ label: '1 piece', grams: null }] }), null);
+});
+
+test('a scanned barcode food: its labelled serving when it has a weight, else 100 g; never with no calories (PO 09-28)', () => {
+  assert.deepEqual(ownFoodFromScan(SALSA), ownFoodFrom(SALSA));
+  const off = { ...SALSA, key: 'off:0049000028911', servings: [{ label: '1 bar', grams: null }] };
+  const own = ownFoodFromScan(off);
+  assert.deepEqual(own.serving, { label: 'serving', g: 100 });
+  assert.equal(own.servingText, '100 g');
+  assert.equal(own.kcal100, 33.3);
+  assert.equal(ownFoodFromScan({ ...off, kcal100: null }), null, 'no calories: the label is the way in, never a guess');
 });
 
 test('own-food search matches every word across name and brand, and skips unusable foods', () => {

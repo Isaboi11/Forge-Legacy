@@ -145,6 +145,28 @@ export function ownFoodFrom(food: CatalogFood): OwnFood | null {
   };
 }
 
+/**
+ * A scanned barcode's food as a recipe ingredient (PO 2026-09-28). Its labelled serving when that has a weight;
+ * otherwise 100 g, because a product with per-100 g numbers (most of Open Food Facts) is still usable by
+ * weight. Null only when the calories are unknown — then the label is the way in, never a guess.
+ */
+export function ownFoodFromScan(food: CatalogFood): OwnFood | null {
+  const own = ownFoodFrom(food);
+  if (own) return own;
+  if (food.kcal100 == null) return null;
+  return {
+    id: food.key,
+    name: food.name,
+    brand: food.brand ?? null,
+    kcal100: food.kcal100,
+    protein100: food.protein100 ?? 0,
+    carb100: food.carb100 ?? 0,
+    fat100: food.fat100 ?? 0,
+    serving: { label: 'serving', g: 100 },
+    servingText: '100 g',
+  };
+}
+
 /** The athlete's own foods that match — every word, like `searchFoods`. */
 export function searchOwnFoods(foods: readonly CatalogFood[], q: string, n = 3): OwnFood[] {
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);

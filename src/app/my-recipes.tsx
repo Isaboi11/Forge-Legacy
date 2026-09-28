@@ -5,6 +5,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { BarcodeSheet } from '@/components/forge/BarcodeSheet';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
@@ -34,6 +35,7 @@ import {
   listMeta,
   missingLine,
   ownFoodFrom,
+  ownFoodFromScan,
   per100,
   pickGrams,
   planHint,
@@ -62,6 +64,7 @@ import { takeRecipeFood } from '@/lib/recipe-food-handoff';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import type { CatalogFood } from '@/domain/nutrition/serving';
 import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
@@ -114,7 +117,9 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  *    50-food list) AND the athlete's own foods (PO 2026-09-26). "Scan a label" opens Create Food with its
  *    scanner (`?for=recipe&scan=1`) — the read is checked on that form, saved to My Foods, and handed back
  *    here (`recipe-food-handoff`) straight into the amount sheet. "Add your own food" is the same without
- *    the camera (and the only road on web / builds without it). Own foods carry no allergen tags, so the
+ *    the camera (and the only road on web / builds without it). "Barcode" (PO 2026-09-28) is Log Food's own
+ *    scanner (`components/forge/BarcodeSheet`): a found food goes straight to its amount; a miss opens
+ *    Create Food for the recipe with the barcode and the label camera. Own foods carry no allergen tags, so the
  *    allergen block says Forge can't see into them rather than "None detected".
  */
 export default function MyRecipesScreen() {
@@ -166,6 +171,8 @@ export default function MyRecipesScreen() {
   const [importedFrom, setImportedFrom] = useState<'picture' | 'link' | 'text' | null>(null);
   /* "Paste a recipe" (PO 2026-09-27): a link or the recipe's text, read on the device (`recipe-paste.ts`). */
   const [pasteOpen, setPasteOpen] = useState(false);
+  /* An ingredient's barcode (PO 2026-09-28) — the same scanner as Log Food (`components/forge/BarcodeSheet`). */
+  const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [fromHolt] = useState(() => seed != null);
   const [scanBusy, setScanBusy] = useState(false);
@@ -206,6 +213,37 @@ export default function MyRecipesScreen() {
 
   const addOwnFood = (scan: boolean) =>
     router.push({ pathname: '/create-food', params: scan ? { for: 'recipe', scan: '1' } : { for: 'recipe' } });
+
+  /* A barcode that found its food goes straight to "how much goes into the whole recipe?" — nothing to save to
+     My Foods first; the ingredient carries its own numbers (`OwnFood`). */
+  const barcodeFound = (food: CatalogFood, digits: string) => {
+    setBarcodeOpen(false);
+    const own = ownFoodFromScan(food);
+    if (!own) {
+      barcodeMissed(digits, { name: food.name, brand: food.brand ?? null });
+      return;
+    }
+    setFoodQ('');
+    // iOS drops a sheet presented while another is still closing — the amount sheet waits for the barcode one.
+    void callerModalGone().then(() => setPick({ food: own, unit: 'portion', qty: 1, index: null }));
+  };
+
+  /* No match (or no numbers): Create Food for this recipe, carrying the barcode so the food can be shared
+     under it (Amendment 004), with the label camera already open where there is one. */
+  const barcodeMissed = (digits: string, empty: { name: string; brand: string | null } | null) => {
+    setBarcodeOpen(false);
+    showToast(canScanLabel ? 'Not found. Scan its label instead.' : 'Not found. Type in its label instead.');
+    router.push({
+      pathname: '/create-food',
+      params: {
+        for: 'recipe',
+        from: empty ? 'barcode-empty' : 'barcode',
+        gtin: digits,
+        ...(empty ? { name: empty.name, brand: empty.brand ?? '' } : {}),
+        ...(canScanLabel ? { scan: '1' } : {}),
+      },
+    });
+  };
 
   const clearImport = () => {
     setUnmatched([]);
@@ -660,10 +698,24 @@ export default function MyRecipesScreen() {
 
             {/* the athlete's own ingredient — a packaged food Forge's catalogue doesn't have */}
             <View style={styles.ownActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Scan a barcode"
+                style={({ pressed }) => [styles.ownBtn, pressed && styles.pressed]}
+                onPress={() => setBarcodeOpen(true)}
+              >
+                <EngravedIcon name="barcode-scan" size={18} />
+                <Text style={styles.ownBtnText}>Barcode</Text>
+              </Pressable>
               {canScanLabel ? (
-                <Pressable accessibilityRole="button" style={({ pressed }) => [styles.ownBtn, pressed && styles.pressed]} onPress={() => addOwnFood(true)}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Scan a label"
+                  style={({ pressed }) => [styles.ownBtn, pressed && styles.pressed]}
+                  onPress={() => addOwnFood(true)}
+                >
                   <EngravedIcon name="camera" size={18} />
-                  <Text style={styles.ownBtnText}>Scan a label</Text>
+                  <Text style={styles.ownBtnText}>Label</Text>
                 </Pressable>
               ) : null}
               <Pressable accessibilityRole="button" style={({ pressed }) => [styles.ownBtn, pressed && styles.pressed]} onPress={() => addOwnFood(false)}>
@@ -874,6 +926,8 @@ export default function MyRecipesScreen() {
           ))}
         </View>
       </BottomSheet>
+
+      <BarcodeSheet open={barcodeOpen} onClose={() => setBarcodeOpen(false)} onFound={barcodeFound} onNotFound={barcodeMissed} />
 
       {/* paste sheet */}
       <BottomSheet
@@ -1222,12 +1276,13 @@ const styles = StyleSheet.create({
   ownActions: { flexDirection: 'row', gap: 8, paddingTop: 10 },
   ownBtn: {
     flex: 1,
+    minWidth: 0,
     minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
+    gap: 6,
+    paddingHorizontal: 8,
     borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,

@@ -1,8 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ComponentType } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { requireOptionalNativeModule } from 'expo';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -11,6 +9,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
+import { BarcodeSheet } from '@/components/forge/BarcodeSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
@@ -36,7 +35,6 @@ import {
   fetchSavedMeals,
   fetchUserRecipes,
   logSavedMeal,
-  resolveBarcode,
   searchFoods,
   type RecentFood,
 } from '@/data/nutrition-live';
@@ -63,23 +61,13 @@ import { forgeOr } from '@/constants/theme-scrim';
  *
  * ⚠ **BARCODE IS SCANNED ON BUILD 9+, TYPED EVERYWHERE ELSE.** `expo-camera` is a native module, so the
  * viewfinder exists only in a binary built after it was added. `BarcodeCamera` is `require`d only when
- * `ExpoCamera` is present (see `ScanCamera` below); build 8 and the web preview keep the typed box, which
+ * `ExpoCamera` is present (`components/forge/BarcodeSheet`, shared with the recipe builder); build 8 and the web preview keep the typed box, which
  * stays under the camera on build 9 too for a code the camera cannot read. Both feed the same
  * `resolveBarcode` call and the same not-found → Create Food route (Nutrition Architecture §5, Phase 1).
  *
  * The camera button beside it opens **Log from Photo** (`meal-photo.tsx`, Premium AI) — shown only to an
  * athlete with Premium AI AND Nutrition access, and absent (not "Soon") for everyone else.
  */
-
-/**
- * The viewfinder, or `null` on a build without the camera module. Never a top-level import:
- * `expo-camera` throws on load when its native half is missing, which would crash this screen on build 8.
- */
-const ScanCamera: ComponentType<{ paused: boolean; onScan: (digits: string) => void }> | null =
-  Platform.OS !== 'web' && requireOptionalNativeModule('ExpoCamera')
-    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
-      (require('@/components/forge/BarcodeCamera') as typeof import('@/components/forge/BarcodeCamera')).BarcodeCamera
-    : null;
 
 type Filter = 'recent' | 'favorites' | 'mine' | 'meals' | 'recipes';
 
@@ -636,64 +624,6 @@ function MealPicker({ open, meal, onPick, onClose }: { open: boolean; meal: Meal
             <Text style={[styles.choiceText, slot === meal && styles.choiceTextOn]}>{MEAL_LABELS[slot]}</Text>
           </Pressable>
         ))}
-      </View>
-    </BottomSheet>
-  );
-}
-
-function BarcodeSheet({
-  open,
-  onClose,
-  onFound,
-  onNotFound,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onFound: (food: CatalogFood) => void;
-  onNotFound: (digits: string, empty: { name: string; brand: string | null } | null) => void;
-}) {
-  const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const find = useCallback(
-    async (raw: string) => {
-      const digits = raw.replace(/\D/g, '');
-      if (digits.length < 8) return;
-      setBusy(true);
-      const result = await resolveBarcode(digits);
-      setBusy(false);
-      setCode('');
-      if (result.kind === 'food') onFound(result.food);
-      else onNotFound(digits, result.kind === 'empty' ? { name: result.name, brand: result.brand } : null);
-    },
-    [onFound, onNotFound],
-  );
-  const look = useCallback(() => find(code), [code, find]);
-
-  return (
-    <BottomSheet open={open} onClose={onClose} title="Barcode">
-      <View style={styles.sheetBody}>
-        {/* Mounted only while the sheet is open, so the camera is off (and its one-read lock reset)
-            every time the sheet closes. */}
-        {ScanCamera && open ? <ScanCamera paused={busy} onScan={find} /> : null}
-        <Text style={styles.sheetNote}>
-          {ScanCamera
-            ? 'Hold the barcode a few inches away until it sharpens. Or type the number under it.'
-            : 'Type the number under the barcode.'}
-        </Text>
-        <TextInput returnKeyType="done"
-          value={code}
-          onChangeText={setCode}
-          keyboardType="number-pad"
-          placeholder="0 12345 67890 5"
-          placeholderTextColor={flColor.gray600}
-          style={styles.numberInput}
-          accessibilityLabel="Barcode number"
-          onSubmitEditing={look}
-        />
-        <Button variant="primary" fullWidth disabled={busy || code.replace(/\D/g, '').length < 8} onPress={look}>
-          {busy ? 'Looking…' : 'Find it'}
-        </Button>
       </View>
     </BottomSheet>
   );
