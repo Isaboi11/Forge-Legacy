@@ -21,6 +21,8 @@ import { useToast } from '@/hooks/useCeremony';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { putWrittenDraft } from '@/lib/written-workout-intent';
+import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
+import { whenToUseAi } from '@/domain/workout/workout-ai-gate';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 
 /**
@@ -28,9 +30,15 @@ import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
  * post the workout in the squad the night before."
  *
  * Type it, paste it, or read it from a photo — then see EXACTLY what the squad will see, live, before it is used.
- * The reader is code (`domain/workout/written-workout.ts`, §4.3 — no AI interpretation); a photo only fills the
- * box with its transcription, which the poster can fix like any typing. Nothing is posted from here: "Use this
- * workout" hands it back to the composer, where the caption and the Post button are.
+ * The reader is code (`domain/workout/written-workout.ts`); a photo only fills the box with its transcription,
+ * which the poster can fix like any typing. Nothing is posted from here: "Use this workout" hands it back to the
+ * composer, where the caption and the Post button are.
+ *
+ * ══ AI ONLY WHEN THE CODE CANNOT (Import Amendment 002, PO 2026-09-28: "use AI when needed") ══ `whenToUseAi`
+ * draws the line. When the reader could not read the card, "Fix it with AI" rewrites the card's words in the
+ * reader's layout; the reader still reads the numbers, `checkAiRewrite` throws away any rewrite with a number
+ * not on the card, and the box shows the rewrite marked "Tidied by AI" with Undo. A photo that the reader cannot
+ * read is tidied the same way without a second tap.
  */
 
 const EXAMPLE = `"For Those About to Squat"  Day 1
@@ -71,6 +79,8 @@ export default function WorkoutWriteScreen() {
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /* The poster's own words from before AI tidied them — Undo puts them back. Null = AI has not touched the box. */
+  const [beforeAi, setBeforeAi] = useState<string | null>(null);
   const reading = useRef(false);
 
   const written = useMemo(() => (text.trim() ? readWrittenWorkout(text) : null), [text]);
@@ -79,6 +89,44 @@ export default function WorkoutWriteScreen() {
   const checks = useMemo(() => (written ? checkBeforePosting(written, rows as unknown as WrittenTemplateRow[]) : []), [written, rows]);
   const maxNames = Object.fromEntries(Object.values(MAX_LIFT_KEYS).map((k) => [k, exerciseNameFor(k)]));
   const title = (name ?? written?.name ?? '').trim() || 'Workout';
+  /* Once AI has rewritten the box it is not offered again on its own rewrite: what is left is the poster's to check. */
+  const aiCall = useMemo(() => (beforeAi != null ? ({ kind: 'rules' } as const) : whenToUseAi(text, written, rows as unknown as WrittenTemplateRow[])), [beforeAi, text, written, rows]);
+
+  /** Rewrite `card` with AI and put it in the box, or say plainly why not. The poster's words are kept for Undo. */
+  const tidy = async (card: string) => {
+    setBusy('Tidying it up with AI…');
+    setError(null);
+    try {
+      const r = await tidyWrittenWorkout(card, resolveKey);
+      if (r.kind === 'ok') {
+        setBeforeAi(card);
+        setText(r.text);
+        setName(null);
+        return;
+      }
+      setError(
+        r.kind === 'no_consent'
+          ? AI_DECLINED_LINE
+          : r.kind === 'unfaithful'
+            ? 'AI changed a number on the card, so your words are kept as they are. Check the list below and fix those lines by hand.'
+            : r.kind === 'not_entitled'
+              ? 'Fixing a workout with AI is part of Premium AI. Fix the lines below by hand instead.'
+              : r.kind === 'out_of_credits'
+                ? 'You’re out of Premium AI credits for this month. Fix the lines below by hand instead.'
+                : r.kind === 'daily_limit'
+                  ? 'That’s a lot of AI fixes for one day. Fix the lines below by hand, or try again tomorrow.'
+                  : r.kind === 'not_a_workout'
+                    ? 'AI didn’t find a workout in that.'
+                    : r.kind === 'too_long'
+                      ? 'That’s too long to fix in one go. Post it as two workouts.'
+                      : r.kind === 'unreadable'
+                        ? 'AI couldn’t make sense of it either. Fix the lines below by hand.'
+                        : 'Couldn’t reach AI just now. Try again in a moment, or fix the lines below by hand.',
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const fromPhoto = async () => {
     if (reading.current) return;
@@ -110,7 +158,12 @@ export default function WorkoutWriteScreen() {
         return;
       }
       /* The transcription goes IN THE BOX — the poster reads it against the card and fixes anything before use. */
-      setText(tsvToWrittenText(r.tsv));
+      const words = tsvToWrittenText(r.tsv);
+      setText(words);
+      setBeforeAi(null);
+      /* A photo the code reader can't read is tidied straight away: the poster already chose AI by choosing a photo. */
+      const w = readWrittenWorkout(words);
+      if (whenToUseAi(words, w, writtenToTemplate(w, resolveKey)).kind === 'ai') await tidy(words);
     } finally {
       setBusy(null);
       reading.current = false;
@@ -159,7 +212,7 @@ export default function WorkoutWriteScreen() {
             <Text style={styles.photoText}>From a photo</Text>
           </Pressable>
           {text ? (
-            <Pressable onPress={() => { setText(''); setName(null); }} accessibilityRole="button" hitSlop={6}>
+            <Pressable onPress={() => { setText(''); setName(null); setBeforeAi(null); setError(null); }} accessibilityRole="button" hitSlop={6}>
               <Text style={styles.clear}>Clear</Text>
             </Pressable>
           ) : null}
@@ -171,6 +224,31 @@ export default function WorkoutWriteScreen() {
           </View>
         ) : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {beforeAi != null ? (
+          <View style={styles.aiBar}>
+            <Text style={styles.aiText}>Tidied by AI. Check every number against the card before you use it.</Text>
+            <Pressable
+              onPress={() => {
+                setText(beforeAi);
+                setBeforeAi(null);
+                setName(null);
+              }}
+              accessibilityRole="button"
+              hitSlop={6}
+            >
+              <Text style={styles.undo}>Undo</Text>
+            </Pressable>
+          </View>
+        ) : aiCall.kind === 'ai' && !busy ? (
+          <View style={styles.aiBar}>
+            <Text style={styles.aiText}>Part of this is written in a way the reader doesn’t know yet.</Text>
+            <Pressable onPress={() => void tidy(text)} accessibilityRole="button" style={({ pressed }) => [styles.aiBtn, pressed && styles.pressed]}>
+              <Text style={styles.aiBtnText}>Fix it with AI</Text>
+            </Pressable>
+          </View>
+        ) : aiCall.kind === 'too_long' ? (
+          <Text style={styles.warn}>That’s too long for AI to fix in one go. Fix the lines below by hand, or post it as two workouts.</Text>
+        ) : null}
 
         <TextInput
           value={text}
@@ -263,5 +341,10 @@ const styles = StyleSheet.create({
   checks: { gap: 4, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   checksHead: { fontSize: 11, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
   checkLine: { fontSize: 13, lineHeight: 19, color: flColor.cream100 },
+  aiBar: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
+  aiText: { flex: 1, fontSize: 13, lineHeight: 18, color: flColor.cream100 },
+  aiBtn: { height: 34, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal700, justifyContent: 'center' },
+  aiBtnText: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
+  undo: { fontSize: 13, fontWeight: '700', color: flColor.cream100 },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 28, backgroundColor: flColor.base },
 });

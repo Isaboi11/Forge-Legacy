@@ -88,3 +88,17 @@ test('a posted workout reopens as words only when they read back identical, and 
   assert.match(WRITE, /return roundTrips\(w, resolveKey\) \? rowsToWrittenText\(w\) : '';/);
   assert.match(WRITE, /await editSquadPost\(editId, editPost\.body \?\? '', \{ kind: 'posted-workout'/);
 });
+
+/* Import Amendment 002 (PO 2026-09-28: "use AI when needed"): AI is offered only where the gate says, a photo the
+   reader can't read is tidied without a second tap, and every rewrite can be undone back to the poster's words. */
+test('the write screen asks the gate before offering AI, auto-tidies an unreadable photo, and can undo', () => {
+  const WRITE = read('../workout-write.tsx');
+  assert.match(WRITE, /whenToUseAi\(text, written, rows/);
+  assert.match(WRITE, /aiCall\.kind === 'ai' && !busy \?[\s\S]*?Fix it with AI/);
+  assert.match(WRITE, /if \(whenToUseAi\(words, w, writtenToTemplate\(w, resolveKey\)\)\.kind === 'ai'\) await tidy\(words\);/);
+  assert.match(WRITE, /setText\(beforeAi\);/);
+  assert.match(WRITE, /Tidied by AI\. Check every number against the card/);
+  /* The rewrite is only ever put in the box by the client, which ran checkAiRewrite first. */
+  assert.equal((WRITE.match(/setText\(r\.text\)/g) ?? []).length, 1);
+  assert.match(read('../../data/workout-tidy-live.ts'), /const problems = checkAiRewrite\(card, d\.text, resolveKey\);\s*if \(problems\.length\) return \{ kind: 'unfaithful', problems \};/);
+});
