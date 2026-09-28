@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { FormLast, FormMark, FormRead, FormTrend, FormView } from '@/domain/coach/form-check';
+import type { PoseMeasured } from '@/domain/coach/pose/pose-measure';
 
 /**
  * FORM HISTORY — the record of Holt's form reads (`form_checks`, migration 0221) and the private
@@ -34,24 +35,38 @@ async function uid(): Promise<string | null> {
   }
 }
 
-/** Write the read that just came back. Returns its id, or null (not signed in, or 0221 not applied). */
+/**
+ * Write the read that just came back. Returns its id, or null (not signed in, or 0221 not applied).
+ *
+ * `measured` is body tracking's numbers (reps, depth, tempo — never joints, PO decision 3) into
+ * `form_checks.measured` (0235). ⚠ BEFORE 0235 IS PASTED THAT COLUMN DOES NOT EXIST, and PostgREST refuses
+ * the whole insert over it — so a refusal that names the column is retried without it. The read is never
+ * lost to a migration that has not landed yet.
+ */
 export async function insertFormCheck(args: {
   lift: string;
   exerciseKey?: string | null;
   read: FormRead;
+  measured?: PoseMeasured | null;
 }): Promise<string | null> {
-  try {
-    const { data, error } = await supabase
+  const row: Record<string, unknown> = {
+    lift: args.lift.slice(0, 60),
+    exercise_key: args.exerciseKey ?? null,
+    view: args.read.view,
+    rep_count: args.read.reps,
+    read: args.read,
+  };
+  const insert = async (withMeasured: boolean) =>
+    supabase
       .from('form_checks')
-      .insert({
-        lift: args.lift.slice(0, 60),
-        exercise_key: args.exerciseKey ?? null,
-        view: args.read.view,
-        rep_count: args.read.reps,
-        read: args.read,
-      })
+      .insert(withMeasured ? { ...row, measured: args.measured } : row)
       .select('id')
       .single();
+  try {
+    let { data, error } = await insert(!!args.measured);
+    if (error && args.measured && /measured/.test(`${error.message ?? ''} ${error.details ?? ''}`)) {
+      ({ data, error } = await insert(false));
+    }
     if (error || !data) return null;
     return (data as { id: string }).id;
   } catch {

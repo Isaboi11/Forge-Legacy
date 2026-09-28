@@ -47,12 +47,15 @@ import {
   trimWindow,
   viewLabel,
 } from '@/domain/coach/form-check-view';
+import { skeletonBones, snapMarks } from '@/domain/coach/pose/pose-marks';
+import { measuredForSave } from '@/domain/coach/pose/pose-measure';
 import { coachingContent } from '@/domain/exercise-coaching/query-service';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { matchesSearch, rankFor } from '@/domain/exercise-picker/search-core';
 import type { PickerItem } from '@/domain/exercise-picker/catalog-core';
 import {
   fetchFormQuote,
+  cancelFormTracking,
   filmstrip,
   formCheck,
   formCheckAvailable,
@@ -169,7 +172,14 @@ type ReadState = {
   times: number[];
   id: string | null;
   at: string;
+  /** The athlete's joints per frame (body tracking, build 10+) — the full-screen skeleton only. Never saved. */
+  stills: (number[] | null)[];
+  /** This build tracks bodies and could not lock on: the read says so in one small line (plan §8). */
+  poseOff: boolean;
 };
+
+/** Plan §8: the only thing the athlete is told when body tracking fell back. */
+const POSE_OFF_LINE = "Body tracking couldn't lock on, so this read is from the frames alone.";
 
 type Stage =
   | { step: 'start' }
@@ -270,6 +280,9 @@ export default function FormCheckScreen() {
       endMs,
       onFrame: (uri, ms) => setLanded((l) => [...l, { uri, ms }]),
       cancelled: () => cancelRef.current,
+      // Which signal body tracking watches: the catalogue's own movement pattern, else the name.
+      pattern: chosen.key ? (PICKER_DB.find((x) => x.key === chosen.key)?.pattern ?? null) : null,
+      lift: chosen.name,
     });
     if (cancelRef.current) return;
     if (got.frames.length === 0) {
@@ -281,7 +294,7 @@ export default function FormCheckScreen() {
     setStage({ step: 'watching', phase: 1, lift: chosen });
     const last = await lastSavedForm(formLiftKey(chosen.name, chosen.key));
     const known = chosen.key ? knownFromCoaching(coachingContent.getPublished(chosen.key)) : '';
-    const res = await formCheck({ lift: chosen.name, frames: got.frames, times: got.times, sizes: got.sizes, note, focus, known, last });
+    const res = await formCheck({ lift: chosen.name, frames: got.frames, times: got.times, sizes: got.sizes, note, focus, known, last, pose: got.pose?.facts });
     /* ⚠ A CANCEL DURING THE MODEL CALL ONLY STOPS THE SCREEN. The request is already out; if it comes back
        readable the function has spent the credit. The athlete asked to stop looking, not for a refund. */
     if (cancelRef.current) return;
@@ -290,11 +303,22 @@ export default function FormCheckScreen() {
       case 'ok': {
         // "Writing it up" is real work: the read is recorded so Useful / Save have a row to act on.
         setStage({ step: 'watching', phase: 2, lift: chosen });
-        const id = await insertFormCheck({ lift: chosen.name, exerciseKey: chosen.key, read: res.read });
+        // Holt's marks moved onto the real joints of the frames he named (body tracking; unchanged without it).
+        const read = got.pose ? { ...res.read, marks: snapMarks(res.read.marks, got.pose.stills, got.sizes) } : res.read;
+        const id = await insertFormCheck({ lift: chosen.name, exerciseKey: chosen.key, read, measured: measuredForSave(got.pose?.facts ?? null) });
         if (cancelRef.current) return;
         setStage({
           step: 'read',
-          r: { read: res.read, lift: chosen, uris: got.uris, times: got.times, id, at: shortDate(new Date().toISOString()) },
+          r: {
+            read,
+            lift: chosen,
+            uris: got.uris,
+            times: got.times,
+            id,
+            at: shortDate(new Date().toISOString()),
+            stills: got.pose?.stills ?? [],
+            poseOff: got.pose?.level === 'off',
+          },
         });
         return;
       }
@@ -365,6 +389,7 @@ export default function FormCheckScreen() {
           landed={landed}
           onCancel={() => {
             cancelRef.current = true;
+            cancelFormTracking();
             restart();
           }}
         />
@@ -879,6 +904,7 @@ function ReadStage({
         <View style={s.readHead}>
           <Text style={s.readLift}>{r.lift.name}</Text>
           {meta ? <Text style={s.readMeta}>{meta}</Text> : null}
+          {r.poseOff ? <Text style={s.readMeta}>{POSE_OFF_LINE}</Text> : null}
         </View>
 
         {viewLine ? <HoltSays text={viewLine} /> : null}
@@ -988,7 +1014,13 @@ function ReadStage({
               </Pressable>
             </View>
             <View style={s.fullFrame}>
-              <MarkedFrame uri={r.uris[full.at]} mark={full.at === full.mark.frame ? full.mark : null} fill contain />
+              <MarkedFrame
+                uri={r.uris[full.at]}
+                mark={full.at === full.mark.frame ? full.mark : null}
+                skeleton={skeletonBones(r.stills[full.at])}
+                fill
+                contain
+              />
               {r.uris.length > 1 ? (
                 <>
                   <Pressable

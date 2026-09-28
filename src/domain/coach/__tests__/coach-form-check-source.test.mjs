@@ -106,7 +106,7 @@ test('the system block is ONE cached constant with nothing interpolated into it'
 });
 
 test('the frames go in the user turn, in order, each labelled with its position', () => {
-  assert.match(SRC, /text: frameLabel\(i, frames\.length, times\?\.\[i\], sizes\?\.\[i\]\)/);
+  assert.match(SRC, /text: frameLabel\(i, frames\.length, times\?\.\[i\], sizes\?\.\[i\], poseFrameTag\(pose, i\)\)/);
   assert.match(SRC, /const sizes = capFrameSizes\(body\.sizes, frames\.length\);/);
   assert.match(SRC, /const times = capFrameTimes\(body\.times, frames\.length\);/);
   assert.match(SRC, /type: 'image', source: \{ type: 'base64', media_type: MEDIA_TYPE, data \}/);
@@ -189,7 +189,7 @@ test('the app sends when each frame was taken, and the copy says any angle', () 
   assert.match(LIVE, /times: req\.times\?\.slice\(0, capped\.length\)/);
   assert.match(LIVE, /from any angle/);
   assert.ok(!/film[^.\n]*from the side/i.test(SCREEN), 'the screen must not tell them to film from the side');
-  assert.match(SCREEN, /formCheck\(\{ lift: chosen\.name, frames: got\.frames, times: got\.times, sizes: got\.sizes, note, focus, known, last \}\)/);
+  assert.match(SCREEN, /formCheck\(\{ lift: chosen\.name, frames: got\.frames, times: got\.times, sizes: got\.sizes, note, focus, known, last, pose: got\.pose\?\.facts \}\)/);
   assert.match(LIVE, /sizes: req\.sizes\?\.slice\(0, capped\.length\)/);
 });
 
@@ -314,4 +314,48 @@ test("⛔ the guard uses the BROAD discomfort list, before the credit", () => {
   const guardAt = SRC.indexOf("mentionsDiscomfort(said)");
   const creditAt = SRC.indexOf(".rpc('coach_ai_spend_credits'");
   assert.ok(guardAt > 0 && creditAt > guardAt, "the guard must run before the credit is reserved");
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// Body tracking (build 10, `Docs/Form-Check-Body-Pose-Build-Plan.md`)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+test('the measured facts are narrowed by capPose and worded ONLY by poseFactLines — no client text reaches the prompt', () => {
+  assert.match(SRC, /import \{ capPose, poseFactLines, poseFrameTag \} from '\.\.\/\.\.\/\.\.\/src\/domain\/coach\/pose\/pose-facts\.ts';/);
+  assert.match(SRC, /const pose = capPose\(body\.pose, frames\.length\);/);
+  assert.match(SRC, /const measured = poseFactLines\(pose\);/);
+  // `body.pose` is read exactly once, by the narrowing.
+  assert.equal(SRC.match(/body\.pose/g).length, 1);
+  // The facts go in the USER turn, after the frames, never in the cached system block.
+  assert.ok(SRC.indexOf('const measured = poseFactLines(pose);') > SRC.indexOf("type: 'image'"));
+  assert.ok(!system().includes('${'), 'nothing is interpolated into SYSTEM');
+});
+
+test('the prompt says how to use measurements, and that they are movement only', () => {
+  const s = system();
+  for (const rule of [
+    'Measured on the athlete\'s phone with body tracking',
+    'never contradict a measurement',
+    'never as a table, a list of numbers or a recital of the block',
+    'never turn one into risk, injury, a diagnosis, a verdict, or a remark about the athlete\'s body',
+    '"joint": "<one joint name, or empty>"',
+    'Still give "x" and "y".',
+  ]) assert.ok(s.includes(rule), `missing from SYSTEM: ${rule}`);
+});
+
+test('the paste copy carries the fact templates, and the app-only pose engine stays out of it', () => {
+  const committed = read(DEPLOY_COPY);
+  assert.ok(committed.includes('function capPose'));
+  assert.ok(committed.includes('function poseFactLines'));
+  for (const name of ['analysePose', 'pickAthlete', 'findReps', 'snapMarks', 'poseFrameChoice']) {
+    assert.ok(!committed.includes(`function ${name}`), `${name} is app-only and must not be pasted`);
+  }
+});
+
+test('body tracking is OPTIONAL: requireOptionalNativeModule on iOS only, so build 9 and the web are unchanged', () => {
+  const POSE = read('src/lib/body-pose.ts');
+  assert.match(POSE, /Platform\.OS === 'ios' \? requireOptionalNativeModule<NativeBodyPose>\('ForgeBodyPose'\) : null/);
+  assert.match(POSE, /export function bodyPoseAvailable\(\): boolean \{\n\s*return native != null;/);
+  assert.match(LIVE, /const tracking = bodyPoseAvailable\(\);/);
+  assert.match(LIVE, /if \(!tracking\) return \{ \.\.\.base, pose: null \};/);
 });

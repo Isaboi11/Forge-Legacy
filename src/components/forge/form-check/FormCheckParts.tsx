@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Line, Path } from 'react-native-svg';
 
 import { HoltMark } from '@/components/forge/HoltMark';
 import { IS_PAPER, flColor, flFont, flGradient, flRadius, flShadow, type FlGradientStops } from '@/constants/foundation';
@@ -151,6 +151,11 @@ export function HoltSays({ text, under, label = true, size = 36 }: { text: strin
  * mapped through the drawn size and offset; the crop is then SLID so the mark stays in view (a knee at the
  * bottom of a portrait clip would otherwise be cut off by a 250-tall landscape box). `contain` letterboxes
  * instead, for the full-screen view (04b).
+ *
+ * Body tracking (build 10, `Docs/Form-Check-Body-Pose-Build-Plan.md` §6): a depth line whose mark carries
+ * `tick` gets a short second line at knee height, so the two heights the fix is about are both on the
+ * frame. `skeleton` draws the athlete's bones thin and low-contrast — PO decision 2 puts it on the
+ * FULL-SCREEN frame only; the mark is the coaching, and a skeleton on every card is noise.
  */
 export function MarkedFrame({
   uri,
@@ -159,6 +164,7 @@ export function MarkedFrame({
   tag,
   fill,
   contain,
+  skeleton,
 }: {
   uri: string | null;
   mark: FormMark | null;
@@ -166,6 +172,8 @@ export function MarkedFrame({
   tag?: string;
   fill?: boolean;
   contain?: boolean;
+  /** Bones as `[x1, y1, x2, y2]`, 0–1 of the image (`skeletonBones`). Drawn under the mark. */
+  skeleton?: [number, number, number, number][];
 }) {
   const [box, setBox] = useState({ w: 0, h: 0 });
   const [img, setImg] = useState({ w: 0, h: 0, uri: '' });
@@ -213,6 +221,23 @@ export function MarkedFrame({
     <View style={[s.frameBox, fill ? s.flex : { height }]} onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       <FrameFill />
       {sized && uri ? <Image source={{ uri }} style={{ position: 'absolute', left: ox, top: oy, width: dw, height: dh }} /> : null}
+      {sized && skeleton?.length ? (
+        <Svg pointerEvents="none" width={box.w} height={box.h} style={StyleSheet.absoluteFill}>
+          {skeleton.map(([x1, y1, x2, y2], i) => (
+            <Line
+              key={i}
+              x1={ox + x1 * dw}
+              y1={oy + y1 * dh}
+              x2={ox + x2 * dw}
+              y2={oy + y2 * dh}
+              stroke="#F0EDE8"
+              strokeOpacity={0.35}
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
+          ))}
+        </Svg>
+      ) : null}
       {sized && mark?.kind === 'dot' ? (
         <>
           <View pointerEvents="none" style={[s.ring, { left: px - ring / 2, top: py - ring / 2, width: ring, height: ring, borderRadius: ring / 2 }]} />
@@ -220,6 +245,9 @@ export function MarkedFrame({
         </>
       ) : null}
       {sized && mark?.kind === 'line' ? <View pointerEvents="none" style={[s.depth, { top: py, left: box.w * 0.06, right: box.w * 0.06 }]} /> : null}
+      {sized && mark?.kind === 'line' && typeof mark.tick === 'number' ? (
+        <View pointerEvents="none" style={[s.tick, { top: oy + mark.tick * dh, left: box.w * 0.06, width: box.w * 0.16 }]} />
+      ) : null}
       {tag && !fill ? (
         <>
           <Text style={s.frameTag}>{tag}</Text>
@@ -296,6 +324,7 @@ const s = StyleSheet.create({
   ring: { position: 'absolute', borderWidth: 2, borderColor: FC.brzHi },
   dot: { position: 'absolute', backgroundColor: FC.brzHi },
   depth: { position: 'absolute', borderTopWidth: 2, borderStyle: 'dashed', borderColor: FC.brzHi },
+  tick: { position: 'absolute', borderTopWidth: 2, borderColor: FC.brzHi, opacity: 0.7 },
   frameTag: { position: 'absolute', left: 10, bottom: 10, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, backgroundColor: 'rgba(10,10,10,0.6)', fontSize: 11.5, fontWeight: '600', color: '#F0EDE8', overflow: 'hidden' },
   expand: { position: 'absolute', right: 10, bottom: 10, width: 30, height: 30, borderRadius: 8, backgroundColor: 'rgba(10,10,10,0.6)', alignItems: 'center', justifyContent: 'center' },
 });

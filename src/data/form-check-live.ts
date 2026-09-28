@@ -8,11 +8,16 @@ import {
   FORM_CLIP_SECONDS,
   FORM_FRAME_COMPRESS,
   FORM_FRAME_MAX_EDGE,
+  FORM_FRAMES_MIN,
   FORM_LIFT_CHARS,
   FORM_NOTE_CHARS,
   type FormFocus,
   type FormLast,
 } from '@/domain/coach/form-check';
+import type { PoseFacts, PoseTag } from '@/domain/coach/pose/pose-facts';
+import { poseFrameChoice } from '@/domain/coach/pose/pose-frames';
+import { analysePose, measureFacts, measureReps, worstRep, type PoseAnalysis, type PoseLevel } from '@/domain/coach/pose/pose-measure';
+import { anchorAt, pickStillAthlete } from '@/domain/coach/pose/pose-track';
 import {
   formClipNotice,
   formFrameCount,
@@ -22,6 +27,7 @@ import {
   type FormCheckResult,
 } from '@/domain/coach/form-check-view';
 import { grabFrame, probeDurationMs, videoFramesAvailable } from '@/lib/video-frames';
+import { bodyPoseAvailable, cancelPose, detectPose, trackPose } from '@/lib/body-pose';
 
 /**
  * FORM CHECK — the device half.
@@ -34,7 +40,9 @@ import { grabFrame, probeDurationMs, videoFramesAvailable } from '@/lib/video-fr
  *   · `fetchFormQuote()`      — 01's "Uses 6 of your N AI credits this month".
  *   · `pickFormVideo(pick)`   — the clip, through the app's one camera-or-library path.
  *   · `filmstrip(...)`        — 02's scrubber thumbnails.
- *   · `framesFromVideo(...)`  — evenly spaced stills across the trimmed window; 03 shows them land.
+ *   · `framesFromVideo(...)`  — the stills across the trimmed window; 03 shows them land. On a build with
+ *                               body tracking (10+), the reps are found on the phone first and the stills
+ *                               are each rep's key moments (`Docs/Form-Check-Body-Pose-Build-Plan.md`).
  *   · `formCheck(...)`        — the read (04).
  *
  * Every rule about how many frames, which moments, how big and what is allowed back lives in
@@ -170,6 +178,23 @@ export interface FormFrames {
   uris: string[];
   /** `[width, height]` of each frame as sent, so Holt's marks can come back in pixels. */
   sizes: [number, number][];
+  /** Body tracking's part, or null on a build without it (build 9, the web) — then nothing changes. */
+  pose: FormPose | null;
+}
+
+/**
+ * What body tracking contributed to one read (plan §8). `level` is `off` when the module is there but
+ * could not help (ambiguous people, athlete not readable, too slow) — the read is then exactly today's.
+ */
+export interface FormPose {
+  level: PoseLevel;
+  /** The measured numbers sent with the read — `full` only. */
+  facts: PoseFacts | null;
+  /**
+   * The athlete's joints in each still (0–1), one per frame, for placing marks and the full-screen
+   * skeleton. ⛔ Never sent, never stored (PO decision 3).
+   */
+  stills: (number[] | null)[];
 }
 
 export interface FrameOptions {
@@ -181,10 +206,18 @@ export interface FrameOptions {
   onFrame?: (uri: string, timeMs: number) => void;
   /** Checked between stills; true stops the work (design 03's Cancel). */
   cancelled?: () => boolean;
+  /** The exercise's catalogue `movementPattern` and name: which signal body tracking watches. */
+  pattern?: string | null;
+  lift?: string | null;
 }
 
 /**
- * Evenly spaced stills across the trimmed window, in time order. `frames: []` when there is no usable read.
+ * The stills across the trimmed window, in time order. `frames: []` when there is no usable read.
+ *
+ * Evenly spaced, unless this build has body tracking and it found at least two clean reps: then the dense
+ * pass picks each rep's key moments (`poseFrameChoice`), the stills are pulled at exactly those times, and
+ * `detect()` runs on the very JPEGs that are sent, so the joints drawn are the joints of the image Holt
+ * and the athlete see. Any failure along that path is the `off` level — today's frames, same price.
  *
  * ⚠ SEQUENTIAL, NOT `Promise.all`. Each still decodes a video frame into a full-resolution bitmap; ten of
  * those in flight at once on a 4K clip is a lot of native memory for no wall-clock gain.
@@ -193,17 +226,40 @@ export interface FrameOptions {
  * here rather than sent.
  */
 export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Promise<FormFrames> {
-  const none: FormFrames = { frames: [], times: [], uris: [], sizes: [] };
+  const none: FormFrames = { frames: [], times: [], uris: [], sizes: [], pose: null };
   if (!formCheckAvailable() || !uri) return none;
   const dur = opts.durationMs && opts.durationMs > 0 ? opts.durationMs : FORM_CLIP_SECONDS * 1000;
   const { start, end } = trimWindow(dur, opts.startMs, opts.endMs);
   const count = formFrameCount(end - start);
 
+  // ── Body tracking, when this build has it ────────────────────────────────────
+  let wanted = frameTimestamps(dur, count, start, end);
+  let wantedTags: (PoseTag | null)[] = wanted.map(() => null);
+  let analysis: PoseAnalysis | null = null;
+  const tracking = bodyPoseAvailable();
+  if (tracking) {
+    const track = await trackPose(uri, start, end);
+    if (opts.cancelled?.()) return none;
+    analysis = analysePose(track, opts.pattern, opts.lift);
+    if (analysis.level === 'full') {
+      const choice = poseFrameChoice(analysis.reps, worstRep(measureReps(analysis)));
+      if (choice && choice.times.length >= FORM_FRAMES_MIN) {
+        wanted = choice.times;
+        wantedTags = choice.tags;
+      } else {
+        // Reps, but not enough distinct moments to send: coach from even frames, still snap the marks.
+        analysis = { ...analysis, level: 'marks' };
+      }
+    }
+  }
+
   const out: string[] = [];
   const at: number[] = [];
   const uris: string[] = [];
   const sizes: [number, number][] = [];
-  for (const timeMs of frameTimestamps(dur, count, start, end)) {
+  const tags: (PoseTag | null)[] = [];
+  for (let i = 0; i < wanted.length; i += 1) {
+    const timeMs = wanted[i];
     if (opts.cancelled?.()) return none;
     const f = await grabFrame(uri, timeMs, FORM_FRAME_MAX_EDGE, FORM_FRAME_COMPRESS, true);
     if (f?.base64) {
@@ -211,13 +267,29 @@ export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Pro
       at.push(timeMs);
       uris.push(f.uri);
       sizes.push([f.width, f.height]);
+      tags.push(wantedTags[i] ?? null);
       opts.onFrame?.(f.uri, timeMs);
     }
   }
   // The same narrowing the function runs on the way in. It keeps order and only ever cuts from the end,
   // so the times and URIs are cut to match.
   const frames = capFrames(out) ?? [];
-  return { frames, times: at.slice(0, frames.length), uris: uris.slice(0, frames.length), sizes: sizes.slice(0, frames.length) };
+  const kept = frames.length;
+  const base = { frames, times: at.slice(0, kept), uris: uris.slice(0, kept), sizes: sizes.slice(0, kept) };
+  if (!tracking) return { ...base, pose: null };
+  if (!analysis || analysis.level === 'off' || !kept) return { ...base, pose: { level: 'off', facts: null, stills: base.uris.map(() => null) } };
+
+  // The joints of the exact stills, the athlete picked in each by where the dense pass last saw them.
+  const detected = await detectPose(base.uris);
+  if (opts.cancelled?.()) return none;
+  const series = analysis.series;
+  const stills = base.uris.map((_, i) => pickStillAthlete(detected?.[i] ?? null, series ? anchorAt(series, base.times[i]) : null));
+  return { ...base, pose: { level: analysis.level, facts: measureFacts(analysis, tags.slice(0, kept)), stills } };
+}
+
+/** Stop body tracking mid-pass (design 03's Cancel). The frames loop stops on its own flag. */
+export function cancelFormTracking(): void {
+  cancelPose();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -235,6 +307,8 @@ export interface FormRequest {
   known?: string;
   /** The last saved read of this lift, for the trend. */
   last?: FormLast | null;
+  /** What body tracking measured (build 10+, `full` only). Numbers and fixed words; the function re-narrows it. */
+  pose?: PoseFacts | null;
 }
 
 /**
@@ -270,6 +344,7 @@ export async function formCheck(req: FormRequest): Promise<FormCheckResult | NoA
         focus: req.focus?.length ? req.focus : undefined,
         known: req.known || undefined,
         last: req.last ?? undefined,
+        pose: req.pose ?? undefined,
       },
     });
 
