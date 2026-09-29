@@ -66,7 +66,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { takeSwapRequest } from '@/lib/meal-plan-intent';
-import { estimateFor, groceryList, stateFor } from '@/domain/nutrition/grocery';
+import { budgetLine as budgetLineFor, estimateFor, groceryList, stateFor } from '@/domain/nutrition/grocery';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
@@ -117,6 +117,9 @@ function MealPlanScreen() {
   const [todayIso] = useState(() => localToday());
   const monday = mondayOf(todayIso);
   const dates = useMemo(() => weekDates(monday), [monday]);
+  /* QA N-09: the week opens on today, and today is marked — a plan made on Saturday is not read from Monday. */
+  const todayIdx = Math.max(0, dates.findIndex((x) => x.iso === todayIso));
+  const landed = useRef(false);
 
   const [reloads, setReloads] = useState(0);
   const [picked, setPicked] = useState<{ d: number; i?: number; slot?: PlanSlotName; mode: 'actions' | 'swap' | 'snack' | 'pick' } | null>(null);
@@ -184,7 +187,7 @@ function MealPlanScreen() {
   const [fill, setFill] = useState<
     { phase: 'writing' } | { phase: 'review'; picks: { slot: PlanSlotName; card: DishCard }[] } | { phase: 'saving' } | null
   >(null);
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(todayIdx);
   const [busy, setBusy] = useState(false);
   /* Clear week (PO 09-27): asked first, then saved BEFORE the screen shows it — a clear that failed to save
      would look done and refill on reopen. */
@@ -526,8 +529,7 @@ function MealPlanScreen() {
   if (week && prefs?.weeklyBudgetUsd) {
     const list = groceryList(week.days, prefs.household);
     const e = estimateFor(list, stateFor(null, list, ''));
-    budgetLine = `Estimated $${Math.round(e.dollars).toLocaleString('en-US')} of your $${prefs.weeklyBudgetUsd.toLocaleString('en-US')} budget`;
-    if (e.unpriced) budgetLine += ` · ${e.unpriced} ${e.unpriced === 1 ? 'item' : 'items'} not priced`;
+    budgetLine = budgetLineFor(e, prefs.weeklyBudgetUsd);
   }
 
   /* Locks + logged meals — everything a rebuild keeps (logged meals are frozen, Rules §3). */
@@ -613,12 +615,14 @@ function MealPlanScreen() {
                 <Pressable
                   key={dt.iso}
                   accessibilityRole="button"
-                  accessibilityLabel={`${dt.name} ${dt.label}`}
+                  accessibilityLabel={`${d === todayIdx ? 'Today, ' : ''}${dt.name} ${dt.label}`}
                   accessibilityState={{ selected: on }}
                   style={[styles.stripDay, on && styles.stripDayOn]}
                   onPress={() => jump(d)}
                 >
-                  <Text style={[styles.stripDow, on && styles.stripTextOn]}>{dt.short}</Text>
+                  <Text style={[styles.stripDow, d === todayIdx && styles.stripToday, on && styles.stripTextOn]} numberOfLines={1}>
+                    {d === todayIdx ? 'Today' : dt.short}
+                  </Text>
                   <Text style={[styles.stripNum, on && styles.stripTextOn]}>{dt.num}</Text>
                 </Pressable>
               );
@@ -638,12 +642,17 @@ function MealPlanScreen() {
                   style={[styles.dayCard, d === 0 && styles.dayCardFirst]}
                   onLayout={(e: LayoutChangeEvent) => {
                     dayY.current[d] = e.nativeEvent.layout.y;
+                    /* First layout of today's card: bring it up under the strip (once per visit). */
+                    if (d === todayIdx && todayIdx > 0 && !landed.current) {
+                      landed.current = true;
+                      requestAnimationFrame(() => jump(d));
+                    }
                   }}
                 >
                   <View style={styles.dayHead}>
                     <View style={styles.dayName}>
                       <Text style={styles.dayTitle}>{dates[d].name}</Text>
-                      <Text style={styles.dayDate}>{dates[d].label}</Text>
+                      <Text style={styles.dayDate}>{d === todayIdx ? `Today · ${dates[d].label}` : dates[d].label}</Text>
                     </View>
                     <Pressable
                       accessibilityRole="button"
@@ -1010,6 +1019,7 @@ const styles = StyleSheet.create({
   stripDow: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
   stripNum: { fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   stripTextOn: { color: flColor.bronze300 },
+  stripToday: { color: flColor.cream100, letterSpacing: 0 },
 
   dayCard: {
     marginTop: 14,

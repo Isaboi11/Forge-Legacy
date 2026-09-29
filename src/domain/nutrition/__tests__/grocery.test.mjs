@@ -7,6 +7,7 @@ import {
   buyAmount,
   estimateFor,
   estimateLine,
+  budgetLine,
   groceryList,
   markHave,
   planSignature,
@@ -125,8 +126,28 @@ test('the estimate sums only priced items still to buy, and counts the ones it c
   const sum = want.reduce((t, x) => t + (x.cost ?? 0), 0);
   assert.ok(Math.abs(e.dollars - sum) < 1e-9);
   assert.ok(e.dollars > 20 && e.dollars < 400, String(e.dollars));
-  assert.equal(estimateLine({ dollars: 84.4, unpriced: 3 }, null), '≈ $84 at average US prices · 3 items not priced');
-  assert.equal(estimateLine({ dollars: 84.4, unpriced: 0 }, 120), '≈ $84 at average US prices · budget $120');
+  assert.equal(e.priced, want.filter((x) => x.cost != null).length);
+  assert.equal(estimateLine({ dollars: 84.4, unpriced: 3, priced: 17 }, null), '≈ $84 at average US prices · 3 items not priced');
+  assert.equal(estimateLine({ dollars: 84.4, unpriced: 0, priced: 12 }, 120), '≈ $84 at average US prices · budget $120');
+});
+
+test('N-11: most items unpriced → the line counts what it priced and never sets the total against the budget', () => {
+  const thin = { dollars: 45.2, unpriced: 19, priced: 4 };
+  assert.equal(estimateLine(thin, 80), '4 of 23 items priced: ≈ $45');
+  assert.equal(budgetLine(thin, 80), '4 of 23 items priced: ≈ $45');
+  assert.doesNotMatch(budgetLine(thin, 80), /budget/);
+  /* at the edge (30%) the total still stands for the shop */
+  assert.equal(budgetLine({ dollars: 60, unpriced: 3, priced: 7 }, 80), 'Estimated $60 of your $80 budget · 3 items not priced');
+  assert.equal(budgetLine({ dollars: 60, unpriced: 0, priced: 7 }, 80), 'Estimated $60 of your $80 budget');
+});
+
+test('N-09: a list opened mid-week buys only for today onward', () => {
+  const all = cooksOf(week, 2);
+  const sat = groceryList(week, 2, 5);
+  assert.equal(sat.cooks, all.filter((c) => c.d >= 5).length);
+  assert.ok(sat.cooks < groceryList(week, 2).cooks);
+  for (const it of sat.items) for (const u of it.uses) assert.ok(u.day === 'Saturday' || u.day === 'Sunday', u.day);
+  assert.equal(groceryList(week, 2, 0).cooks, all.length);
 });
 
 test('share text lists what is left by aisle, skipping what is in the cart', () => {

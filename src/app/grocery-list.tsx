@@ -61,6 +61,8 @@ function GroceryListScreen() {
   const [todayIso] = useState(() => localToday());
   const monday = mondayOf(todayIso);
   const dates = useMemo(() => weekDates(monday), [monday]);
+  /* QA N-09: days that have gone are not shopped for — the list buys from today to Sunday. */
+  const todayIdx = Math.max(0, dates.findIndex((x) => x.iso === todayIso));
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
 
@@ -75,7 +77,7 @@ function GroceryListScreen() {
   const days = mineQ.settled ? (weekQ.data?.days ?? null) : null;
   const mine = mineQ.data;
 
-  const list = useMemo(() => (days && mine ? groceryList(days, household) : null), [days, household, mine]);
+  const list = useMemo(() => (days && mine ? groceryList(days, household, todayIdx) : null), [days, household, mine, todayIdx]);
   const sig = useMemo(() => (days ? planSignature(days, household) : ''), [days, household]);
   const base = useMemo(() => (list ? stateFor(savedQ.data ?? null, list, sig) : null), [list, sig, savedQ.data]);
 
@@ -130,7 +132,7 @@ function GroceryListScreen() {
           <Text style={styles.title}>Grocery list</Text>
           {list ? (
             <Text style={styles.lede}>
-              {`${range} · ${list.cooks} ${list.cooks === 1 ? 'cook' : 'cooks'} · for ${household} ${household === 1 ? 'person' : 'people'}`}
+              {`${todayIdx ? `Today to Sunday, ${dates[todayIdx].label} – ${dates[6].label}` : range} · ${list.cooks} ${list.cooks === 1 ? 'cook' : 'cooks'} · for ${household} ${household === 1 ? 'person' : 'people'}`}
             </Text>
           ) : null}
         </View>
