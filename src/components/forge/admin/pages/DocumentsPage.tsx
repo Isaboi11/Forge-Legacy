@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 
@@ -287,7 +288,7 @@ export function DocumentsPage(_props: PageProps) {
 
   const table = (
     /* The design's `overflow-x:auto`: on a phone the table scrolls sideways rather than crushing titles. */
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView horizontal keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} showsHorizontalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
       <View style={{ flex: 1, minWidth: 560 }}>
         <View style={{ flexDirection: 'row', gap: 14, paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: c.line }}>
           {['Title', ...head].map((h, i) => (

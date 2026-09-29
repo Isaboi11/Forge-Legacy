@@ -1,3 +1,4 @@
+import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 
@@ -352,6 +353,8 @@ export function BugsPage({ arg }: PageProps) {
            Severity, Status and Age off the right edge. */
         <ScrollView
           horizontal
+          keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+          automaticallyAdjustKeyboardInsets={false}
           showsHorizontalScrollIndicator={false}
           onLayout={(e) => setTableW(Math.round(e.nativeEvent.layout.width))}
         >
@@ -595,7 +598,7 @@ export function BugsPage({ arg }: PageProps) {
               {/* The report's own text, split on blank lines. QA items are written in markdown, so the
                   emphasis markers and backticks come off and "- " becomes a bullet — the words are kept
                   exactly, and stay selectable so they can be copied out. */}
-              <ScrollView style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }} nestedScrollEnabled>
+              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }} nestedScrollEnabled>
                 {(sel.detail ?? '')
                   .split(/\n\s*\n/)
                   .map((p) => readableMarkdown(p).trim())

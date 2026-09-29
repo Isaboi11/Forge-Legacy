@@ -110,7 +110,7 @@ function ShellBody({ onExit }: { onExit: () => void }) {
   if (wide) {
     return (
       <View style={{ flex: 1, flexDirection: 'row', backgroundColor: c.bg }}>
-        <ScrollView style={{ width: 236, flexGrow: 0, backgroundColor: c.side, borderRightWidth: 1, borderRightColor: c.line }} contentContainerStyle={{ paddingVertical: 28, paddingHorizontal: 16, gap: 26 }}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ width: 236, flexGrow: 0, backgroundColor: c.side, borderRightWidth: 1, borderRightColor: c.line }} contentContainerStyle={{ paddingVertical: 28, paddingHorizontal: 16, gap: 26 }}>
           <View style={{ gap: 4, paddingHorizontal: 10 }}>
             <Text style={{ fontFamily: DISPLAY, fontSize: 21, color: c.ink }}>Forge Legacy</Text>
             <Text onPress={onExit} accessibilityRole="link" style={{ fontSize: 12.5, color: c.ink3 }}>
@@ -174,7 +174,7 @@ function ShellBody({ onExit }: { onExit: () => void }) {
               ‹ Back to the app
             </Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 4, paddingHorizontal: 20, paddingBottom: 10 }}>
+          <ScrollView horizontal keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 4, paddingHorizontal: 20, paddingBottom: 10 }}>
             {NAV.flatMap((g) => g.items).map((i) => {
               const on = i.key === page;
               const n = badge[i.key];

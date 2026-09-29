@@ -24,6 +24,7 @@ import {
   useTwoTap,
   when,
 } from '@/components/forge/admin/crm-ui';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import type { PageProps } from '@/components/forge/admin/pages/types';
 import {
@@ -231,6 +232,7 @@ export function ContactsPage(props: PageProps) {
 
   // ── Activity composer (CHANGED vs the design: its kind chips had no text entry) ──
   const [composer, setComposer] = useState<{ id: string; kind: Activity['kind']; text: string; due: string } | null>(null);
+  const primeKeyboard = useKeyboardPrimer();
   const [logBusy, setLogBusy] = useState(false);
   const [logErr, setLogErr] = useState<string | null>(null);
   const log = async () => {
@@ -455,6 +457,9 @@ export function ContactsPage(props: PageProps) {
                   label={k.label}
                   on={comp?.kind === k.key}
                   onPress={() => {
+                    /* FIRST, and synchronously: the composer's field mounts one commit from now with
+                       `autoFocus`, outside this tap — on iOS Safari that focuses it with no keyboard. */
+                    primeKeyboard();
                     setComposer({ id: cur.id, kind: k.key, text: comp?.text ?? '', due: comp?.due ?? '' });
                     setLogErr(null);
                   }}
