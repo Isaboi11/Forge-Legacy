@@ -115,7 +115,7 @@ export default function CreateFoodScreen() {
   /* A scan that found this barcode with NO nutrition brings the record's name and brand along
      (`from=barcode-empty`, PO 2026-09-28), so only the label's numbers are left to type. */
   const [edited, setEdited] = useState<Fields | null>(() =>
-    params.from === 'barcode-empty' && typeof params.name === 'string' && params.name.trim()
+    (params.from === 'barcode-empty' || params.from === 'barcode-fix') && typeof params.name === 'string' && params.name.trim()
       ? { ...EMPTY, name: params.name.trim().slice(0, 60), brand: typeof params.brand === 'string' ? params.brand.trim().slice(0, 40) : '' }
       : null,
   );
@@ -336,11 +336,15 @@ export default function CreateFoodScreen() {
         </Text>
 
         {/* A1 / A2 — the shortcut into the form, and the one line of context after a barcode miss */}
-        {!editing && !scan && (params.from === 'barcode' || params.from === 'barcode-empty') ? (
+        {!editing && !scan && (params.from === 'barcode' || params.from === 'barcode-empty' || params.from === 'barcode-fix') ? (
           <View style={styles.missNote}>
-            <Text style={styles.missTitle}>{params.from === 'barcode-empty' ? 'Found it, but with no nutrition' : 'No barcode match'}</Text>
+            <Text style={styles.missTitle}>
+              {params.from === 'barcode-fix' ? 'Fix it from the label' : params.from === 'barcode-empty' ? 'Found it, but with no nutrition' : 'No barcode match'}
+            </Text>
             <Text style={styles.missText}>
-              {params.from === 'barcode-empty'
+              {params.from === 'barcode-fix'
+                ? 'Enter what the Nutrition Facts label says. Share it and the next scan uses your numbers.'
+                : params.from === 'barcode-empty'
                 ? 'Add the numbers from the label. Share it and everyone who scans it gets them.'
                 : canScan
                   ? 'You can still scan the Nutrition Facts label.'

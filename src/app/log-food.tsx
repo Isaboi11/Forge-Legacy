@@ -427,9 +427,10 @@ export default function LogFoodScreen() {
       <BarcodeSheet
         open={barcodeOpen}
         onClose={() => setBarcodeOpen(false)}
-        onFound={(food) => {
+        onFound={(food, digits) => {
           setBarcodeOpen(false);
-          router.push({ pathname: '/food-detail', params: { key: food.key, date: iso, meal } });
+          /* The barcode travels so Food Detail can offer "Doesn't match the label? Fix it" (PO 09-28). */
+          router.push({ pathname: '/food-detail', params: { key: food.key, date: iso, meal, gtin: digits } });
         }}
         onNotFound={(digits, empty) => {
           setBarcodeOpen(false);
