@@ -14,6 +14,7 @@ import { DocumentsPage } from '@/components/forge/admin/pages/DocumentsPage';
 import { ModerationPage } from '@/components/forge/admin/pages/ModerationPage';
 import { OverviewPage } from '@/components/forge/admin/pages/OverviewPage';
 import { RevenuePage } from '@/components/forge/admin/pages/RevenuePage';
+import { SurveysPage } from '@/components/forge/admin/pages/SurveysPage';
 import { UsagePage } from '@/components/forge/admin/pages/UsagePage';
 import { UsersPage } from '@/components/forge/admin/pages/UsersPage';
 import { isPageKey, NAV, RANGE_PAGES, type PageKey, type PageProps } from '@/components/forge/admin/pages/types';
@@ -187,6 +188,8 @@ function PageBody({ page, props }: { page: PageKey; props: PageProps }) {
       return <ModerationPage {...props} />;
     case 'contacts':
       return <ContactsPage {...props} />;
+    case 'surveys':
+      return <SurveysPage {...props} />;
     case 'documents':
       return <DocumentsPage {...props} />;
   }

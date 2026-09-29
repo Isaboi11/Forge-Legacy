@@ -87,6 +87,7 @@ const displayName = (ct: Contact) => ct.name || ct.email || 'Unnamed contact';
 function sourceLine(ct: Contact): string {
   if (ct.source === 'testflight_form') return 'Arrived from the website waitlist';
   if (ct.source === 'trainer_seat') return 'Arrived from trainer sign-up';
+  if (ct.source === 'survey') return 'Asked for early access in a survey';
   if (ct.athlete_handle) return `Linked to @${ct.athlete_handle}`;
   return 'Added by you';
 }

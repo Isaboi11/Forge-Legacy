@@ -10,6 +10,7 @@ import {
   type ContactStage,
   type DocCategory,
 } from '@/domain/admin/crm-core';
+import { formScript, type SurveyQuestion, type SurveyRow } from '@/domain/admin/survey-core';
 
 /**
  * The Business CRM's read and write path (migration 0238, Admin-Analytics-Amendment-002).
@@ -275,7 +276,7 @@ export interface Contact {
   notes: string | null;
   athlete_id: string | null;
   athlete_handle: string | null;
-  source: 'manual' | 'testflight_form' | 'trainer_seat';
+  source: 'manual' | 'testflight_form' | 'trainer_seat' | 'survey';
   next_follow_up: string | null;
   created_at: string;
   updated_at: string;
@@ -554,3 +555,41 @@ export async function runSentrySync(): Promise<SentrySyncResult> {
   }
   return data as SentrySyncResult;
 }
+
+// ── Surveys (0243, AA-D22) ──────────────────────────────────────────────────
+
+export interface SurveySummary {
+  id: string;
+  title: string;
+  form_url: string | null;
+  created_at: string;
+  last_intake_at: string | null;
+  responses: number;
+  emails: number;
+  last_response_at: string | null;
+}
+
+export interface SurveyDetail {
+  id: string;
+  title: string;
+  form_url: string | null;
+  /** What the form's script sends to prove which survey it is — goes into the setup script, nowhere else. */
+  intake_token: string;
+  questions: SurveyQuestion[];
+  last_intake_at: string | null;
+  created_at: string;
+  /** Answers the owner removed (kept, so "send everything again" can't bring them back). */
+  hidden: number;
+  rows: SurveyRow[];
+}
+
+export const fetchSurveys = () => callRpc<SurveySummary[]>('admin_surveys', {});
+export const fetchSurvey = (id: string) => callRpc<SurveyDetail>('admin_survey', { p_id: id });
+export const saveSurvey = (id: string | null, patch: Partial<Pick<SurveySummary, 'title' | 'form_url'>>) =>
+  callRpc<string>('admin_survey_save', { p_id: id, p_patch: patch });
+export const deleteSurvey = (id: string) => callRpc<void>('admin_survey_delete', { p_id: id });
+export const hideSurveyResponse = (id: string, hidden = true) => callRpc<void>('admin_survey_hide', { p_response: id, p_hidden: hidden });
+
+/** The Apps Script for a survey's Google Form, filled in with this app's own project and anon key. */
+export const surveyFormScript = (token: string) =>
+  formScript({ supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '', anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '', token });

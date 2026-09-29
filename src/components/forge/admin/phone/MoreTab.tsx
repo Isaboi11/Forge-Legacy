@@ -5,6 +5,7 @@ import { useCrm } from '@/components/forge/admin/crm-theme';
 import { when } from '@/components/forge/admin/crm-ui';
 import { usePhone, type MoreView } from '@/components/forge/admin/phone/context';
 import { FilePick } from '@/components/forge/admin/phone/FilePick';
+import { SurveysView } from '@/components/forge/admin/phone/SurveysView';
 import {
   BigBtn,
   BottomBar,
@@ -27,7 +28,7 @@ import {
   type PFig,
 } from '@/components/forge/admin/phone/kit';
 import { dashboardTz, fetchAdminCohorts, fetchAdminEvents, fetchAdminOverview } from '@/data/admin-live';
-import { deleteDocument, documentLink, fetchAppStore, fetchDocuments, runAscSync, saveDocument, uploadDocumentFiles, type Doc, type PickedFile } from '@/data/crm-live';
+import { deleteDocument, documentLink, fetchAppStore, fetchDocuments, fetchSurveys, runAscSync, saveDocument, uploadDocumentFiles, type Doc, type PickedFile } from '@/data/crm-live';
 import { fetchAdminReports, resolveReport, type AdminReport } from '@/data/moderation-live';
 import { deltaNote, int, RANGE_INFO } from '@/domain/admin/briefing';
 import { bytes, DOC_CATEGORIES, guessCategory, pctText, rate, titleFromFile, type DocCategory } from '@/domain/admin/crm-core';
@@ -39,8 +40,8 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * More — the phone CRM's fifth tab (`Forge CRM Phone.dc.html`, MORE + the Add-a-document and Upload sheets).
- * A root list (App Store · Usage · Moderation · Documents, Appearance, Back to the app) and four sub-views over
- * the same reads the desktop pages use (`AppStorePage`, `UsagePage`, `ModerationPage`, `DocumentsPage`).
+ * A root list (App Store · Usage · Moderation · Surveys · Documents, Appearance, Back to the app) and five sub-views over
+ * the same reads the desktop pages use (`AppStorePage`, `UsagePage`, `ModerationPage`, `SurveysPage`, `DocumentsPage`).
  */
 
 const OFFLINE_MSG = 'You’re offline, so saving is paused.';
@@ -48,7 +49,7 @@ const OFFLINE_TOAST = 'You’re offline. Saving is paused until you reconnect.';
 const SETUP_DOC = 'Docs/App-Store-Connect-Key-Setup.md';
 const MAX_BYTES = 50 * 1024 * 1024;
 
-const SUBT: Record<Exclude<MoreView, 'root'>, string> = { appstore: 'App Store', usage: 'Usage', moderation: 'Moderation', documents: 'Documents' };
+const SUBT: Record<Exclude<MoreView, 'root'>, string> = { appstore: 'App Store', usage: 'Usage', moderation: 'Moderation', surveys: 'Surveys', documents: 'Documents' };
 
 const shelfLabel = (k: DocCategory) => DOC_CATEGORIES.find((d) => d.key === k)?.label ?? k;
 const isLink = (d: Doc) => !!d.url && !d.storage_path;
@@ -92,7 +93,8 @@ function useMoreData() {
     return { r, at: Date.now() };
   }, [stamp]);
   const docs = useQuery(() => fetchDocuments(null, null), [stamp]);
-  return { appstore, reports, docs };
+  const surveys = useQuery(() => fetchSurveys(), [stamp]);
+  return { appstore, reports, docs, surveys };
 }
 
 // ── The tab ─────────────────────────────────────────────────────────────────
@@ -123,12 +125,16 @@ function MoreRoot({ data }: { data: MoreData }) {
   const waiting = data.reports.data?.r.counts.open ?? 0;
   const modSub = data.reports.data ? (waiting ? `${waiting} report${waiting > 1 ? 's' : ''} waiting` : 'Nothing waiting') : data.reports.error ? 'Couldn’t load' : '—';
   const nDocs = data.docs.data?.rows.length;
+  const sv = data.surveys.data;
+  const svN = sv ? sv.reduce((n, s) => n + s.responses, 0) : null;
+  const surveySub = svN != null ? (sv!.length ? `${svN} ${svN === 1 ? 'response' : 'responses'}` : 'No surveys yet') : data.surveys.error ? 'Couldn’t load' : '—';
   const docSub = nDocs != null ? `${nDocs} ${nDocs === 1 ? 'file' : 'files'}` : data.docs.error ? 'Couldn’t load' : '—';
 
   const rows: { key: Exclude<MoreView, 'root'>; label: string; sub: string; badge?: number }[] = [
     { key: 'appstore', label: 'App Store', sub: asSub },
     { key: 'usage', label: 'Usage', sub: 'Active athletes and retention' },
     { key: 'moderation', label: 'Moderation', sub: modSub, badge: waiting },
+    { key: 'surveys', label: 'Surveys', sub: surveySub },
     { key: 'documents', label: 'Documents', sub: docSub },
   ];
 
@@ -223,7 +229,7 @@ function MoreSub({ view, data }: { view: Exclude<MoreView, 'root'>; data: MoreDa
           {SUBT[view]}
         </Text>
         <OfflineLine />
-        {view === 'appstore' ? <AppStoreView data={data} /> : view === 'usage' ? <UsageView /> : view === 'moderation' ? <ModerationView data={data} /> : <DocumentsView data={data} />}
+        {view === 'appstore' ? <AppStoreView data={data} /> : view === 'usage' ? <UsageView /> : view === 'moderation' ? <ModerationView data={data} /> : view === 'surveys' ? <SurveysView surveys={data.surveys.data} error={data.surveys.error} onRetry={data.surveys.refetch} /> : <DocumentsView data={data} />}
       </PhoneScroll>
       {bar ? (
         <BottomBar>

@@ -4,7 +4,7 @@
 **Date:** 2026-09-28
 **Owner:** Product (PO decisions 2026-09-28)
 **Amends:** `Admin-Analytics-Architecture-v1.0.md` (AA-D2, AA-D7 context) and `Admin-Analytics-Amendment-001.md` (AA-D8 ceiling)
-**Implemented by:** migration `0238_business_crm.sql`, Edge Function `asc-sync`, `/admin` rebuilt as a sectioned CRM
+**Implemented by:** migrations `0238_business_crm.sql`, `0239_bug_sources.sql`, `0243_crm_surveys.sql`, Edge Function `asc-sync`, `/admin` rebuilt as a sectioned CRM
 
 ---
 
@@ -91,6 +91,8 @@ separately and are instead asserted never to contain a training key (`workouts`,
 `rank`, `streak`, `photo`, `weight`, `last_active`, `email` from auth).
 
 **AA-D21 — The bug board reads four sources, each through its own sync, and a report can be merged into an existing item (PO 09-29, updated design).** Supabase (the board, in-app reports and in-app crashes), Sentry (crash groups, via the `sentry-sync` Edge Function and secrets `SENTRY_API_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`), TestFlight (tester feedback, via `asc-sync`) and the App Store (low-rated reviews that name a problem, by a plain keyword rule shown on screen). Every report has one origin key; it sits on the board at most once, as an item's origin or merged into an item (`ops_bug_links`). Originals are never edited. TestFlight's tester email is not stored. Migration 0239.
+
+**AA-D22 — Surveys: answers from the owner's Google Forms, and early-access emails into Contacts (PO 09-29).** A Surveys page (Relationships group; More → Surveys on the phone) shows each survey's answers per question — tap an answer to redraw every question for only the people who gave it — plus written answers in full and a "Copy results" brief. Answers arrive on their own: an Apps Script inside the form (handed over by the page, filled in) calls `survey_intake(token, payload)` with the public anon key, the same path as the site's waitlist (0215). The token is per survey, 64 random hex characters, readable only through `admin_survey()`; a call without a known token writes nothing, and every field is rebuilt with hard caps (64 KB, 60 questions, 40 choices). Re-sending a response updates it; "Remove" hides a response (`hidden_at`) so a re-send can never bring it back. An answer to a question whose title says "email" becomes a Contact (`source = 'survey'`, kind Other, stage Lead, tags Survey · Early access), or tags the existing contact with that address — never a second one. Survey respondents are not app users; nothing here joins an athlete table. Migration 0243.
 
 **AA-D3 and AA-D7 are unchanged.** Nothing here may reach an athlete-facing surface, and admin is still
 granted by hand in the SQL editor — the CRM has no operator-management screen.

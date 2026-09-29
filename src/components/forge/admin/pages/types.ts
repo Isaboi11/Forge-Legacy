@@ -11,6 +11,7 @@ export type PageKey =
   | 'bugs'
   | 'moderation'
   | 'contacts'
+  | 'surveys'
   | 'documents';
 
 export interface PageProps {
@@ -19,7 +20,7 @@ export interface PageProps {
   days: number;
   /** The ONE dashboard clock (`dashboardTz()`), for every day bucket. */
   tz: string;
-  /** Cross-page links. `arg` is a user id (users), a contact id or kind (contacts), or 'reports'/'crashes' (bugs). */
+  /** Cross-page links. `arg` is a user id (users), a contact id or kind (contacts), a survey id (surveys), or 'reports'/'crashes' (bugs). */
   go: (page: PageKey, arg?: string) => void;
   arg?: string;
 }
@@ -47,6 +48,7 @@ export const NAV: { group: string; items: { key: PageKey; label: string }[] }[] 
     group: 'Relationships',
     items: [
       { key: 'contacts', label: 'Contacts' },
+      { key: 'surveys', label: 'Surveys' },
       { key: 'documents', label: 'Documents' },
     ],
   },

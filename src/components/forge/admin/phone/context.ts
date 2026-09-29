@@ -41,7 +41,7 @@ export interface BugFilter {
 
 export const DEFAULT_BUG_FILTER: BugFilter = { status: 'active', severity: null, source: null, area: null };
 
-export type MoreView = 'root' | 'appstore' | 'usage' | 'moderation' | 'documents';
+export type MoreView = 'root' | 'appstore' | 'usage' | 'moderation' | 'surveys' | 'documents';
 
 export interface PhoneCtx {
   tab: PhoneTab;
