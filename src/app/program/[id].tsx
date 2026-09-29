@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AskHoltSheet } from '@/components/forge/AskHoltSheet';
@@ -1164,10 +1164,188 @@ export default function ProgramDetailScreen() {
           </View>
         </TourAnchor>
 
+        {/* Everything else you can do with this program — moved here from the pinned footer (B5).
+            Still anchored as `program-actions`, so the tour step about End vs Delete scrolls to it. */}
+        <TourAnchor id="program-actions" style={styles.moreActions}>
+          {/* ── ADD TO PLANNED — only on a preview, because it is the only state without a row yet.
+                  "I want this next" and "I am doing this now" were the same button; this separates them.
+                  Once it is taken the button is gone and the header pill reads Planned. ── */}
+          {!program && previewDef ? (
+            <Button variant="secondary" fullWidth disabled={busy} onPress={() => void onAddToPlanned()} accessibilityLabel="Add this program to your planned list">
+              Add to Planned
+            </Button>
+          ) : null}
+          {/* ── EDIT IS NOW ALLOWED MID-PROGRAM (W-5 Amendment-001, 2026-08-20) ─────────────────────────
+                  W-5 Decisions 1 and 4 said NO for Active on every row, including rename. The PO overruled
+                  that: "you should be able to edit". What the amendment keeps is the half that was never a
+                  product preference.
+
+                  `program_sessions` rows are keyed by (week_index, day_index) and graduation is
+                  `completed >= program_total_sessions(structure)`, recomputed LIVE from the structure. So
+                  an unrestricted edit mid-run re-points records the athlete already earned AND moves the
+                  finish line: shrinking a live program makes the next save fire the graduation branch,
+                  writing a PROGRAM_GRADUATED timeline event and five honors that can never be revoked.
+                  There is no un-graduate path (Amendment-001 §1).
+
+                  So the edit is bounded rather than blocked — the "safe edit path" the old comment here
+                  said was owed: sessions already trained are frozen, and `totalSessions()` must come out
+                  the same. Enforced in the builder (`liveEditViolation`, `lockedCells`) and again in the
+                  database by `0174`, because the client is not what should be trusted with five permanent
+                  honors.
+
+                  Two things had to be fixed before it was safe to open the builder at all: `hydrateDraft`
+                  normalised through `clampDays`/`makeDays`, which TRUNCATE — a ragged program lost days on
+                  a round trip it never asked for — and `normalizeDraft` did the same on EVERY focus, so a
+                  trip to the exercise Picker would have done it mid-edit.
+
+                  Both buttons also require a real row. A catalogue preview has `program === null` (state
+                  falls back to 'future' at the top of this component), and both handlers read `program!.id`
+                  — so without this guard a preview pushed the builder with `id: undefined`. ── */}
+          {program ? (
+            <View style={styles.ctaRow}>
+              {/*
+                ── YOU CANNOT EDIT A FORGE PROGRAM, FOR THE SAME REASON YOU CANNOT DELETE ONE ──
+
+                What the athlete holds is a COPY of something Forge authored, and it keeps Forge's name at
+                the top of the screen. Editing it in place would let it drift — a session swapped here, a
+                week shortened there — while still presenting itself as the program we wrote and stand
+                behind. That is the provenance problem `project_third_party_program_provenance` describes
+                in the other direction: a plan must not carry an author's name over content they did not
+                author. "Tweak it a little" is not a category here either.
+
+                Duplicate is the honest route and it is already right there. The copy has no
+                `sourceDefinitionId`, so it is the athlete's, and they can change every session in it.
+
+                W-5 Decision 1 still governs the other axis: Edit is FUTURE-state only, never active.
+              */}
+              {(state === 'future' || state === 'active') && !isForgeProgram ? (
+                <View style={styles.ctaHalf}>
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program.id } })}
+                    accessibilityLabel="Edit program"
+                  >
+                    Edit
+                  </Button>
+                </View>
+              ) : null}
+              <View style={styles.ctaHalf}>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onPress={() => router.push({ pathname: '/program-builder', params: { o: 'dup', id: program.id } })}
+                  accessibilityLabel="Duplicate program"
+                >
+                  Duplicate
+                </Button>
+              </View>
+            </View>
+          ) : null}
+          {/* Said, not silently omitted — same courtesy the active case gets below. */}
+          {state === 'future' && isForgeProgram ? (
+            <Text style={styles.editNote}>
+              This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
+              change however you like.
+            </Text>
+          ) : null}
+          {/* What Edit will and will not let them do, said BEFORE they tap it rather than as a refusal
+              afterwards. The length sentence is the one that prevents a wasted edit. */}
+          {state === 'active' && !isForgeProgram ? (
+            <Text style={styles.editNote}>
+              You can change the sessions ahead of you — swap exercises, rename a day, adjust sets. Sessions
+              you&apos;ve already trained stay as you did them, and the program keeps its length so finishing
+              it still counts. Duplicate it instead to build a different length.
+            </Text>
+          ) : null}
+          {/* A Forge program is the other axis, and it does not move: provenance, not progress. */}
+          {state === 'active' && isForgeProgram ? (
+            <Text style={styles.editNote}>
+              This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
+              change however you like.
+            </Text>
+          ) : null}
+          {/* ── THE TWO KINDS OF SHARING, NAMED APART ──────────────────────────────────────────────────
+                  "Share Program" posts a card about the training. "Send to a Friend" hands over the plan
+                  itself. Sitting side by side with different verbs is deliberate: they are one word in
+                  every other app and two entirely different acts here — one is visible to a whole squad,
+                  the other puts a copy of your program in one person's library. ── */}
+          <View style={styles.ctaRow}>
+            <View style={styles.ctaHalf}>
+              <Button variant="secondary" fullWidth onPress={openShareCard} accessibilityLabel="Share a card about this program">
+                Share Card
+              </Button>
+            </View>
+            {/* ⚠ ONLY WITH A REAL ROW (QA F12, first logged as Launch Audit P0-29). `/send-program` reads
+                the `programs` row by id and sends a COPY of it; a catalogue preview has `program === null`
+                by design, so this read `program!.id` and threw on tap. Hidden rather than adopt-then-send:
+                sending must not quietly add the program to the sender's own Planned list, and a catalogue
+                program is already in every friend's Discover. Same rule as Edit/Duplicate above. */}
+            {program ? (
+              <View style={styles.ctaHalf}>
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onPress={() => router.push({ pathname: '/send-program', params: { id: program.id } })}
+                  accessibilityLabel="Send this program to a friend or squad"
+                >
+                  Send Program
+                </Button>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.secondaryRow}>
+            {state === 'active' ? (
+              <Pressable onPress={() => setSheet('end')} accessibilityRole="button" accessibilityLabel="End Program" style={styles.secondaryBtn}>
+                <Text style={styles.secondaryText}>End Program</Text>
+              </Pressable>
+            ) : null}
+            {/*
+              ── YOU CANNOT DELETE A FORGE PROGRAM, BECAUSE YOU DO NOT HAVE ONE ──
+
+              What the athlete holds is a COPY: `sourceDefinitionId` points at a definition that ships in
+              the app and stays in Discover whether they keep their copy or not. Calling that "Delete
+              Program" said the wrong thing twice — it implied the program itself was being destroyed, and
+              it made removing a plan feel like a decision that costs something. It is `Remove from
+              Planned`, which is what `viewForState` has returned for this state all along while the screen
+              hardcoded the other word.
+
+              A program the athlete AUTHORED is the other case, and it keeps `Delete Program`, because
+              deleting really is deleting: there is no catalogue entry behind it and no way back.
+
+              NEITHER appears on a sealed record. Amendment-001 §6: "Graduated and Ended Early programs are
+              permanent legacy records. They may never be deleted." The RLS policy refuses it too since
+              0104 — this hides an action that would otherwise fail rather than being the only thing
+              standing in the way. Workouts logged against a removed plan survive either way (0018 nulls
+              the link rather than cascading).
+
+              NOR on the ACTIVE program (QA 2026-09-26 F3). "Remove from Planned" on the program you are in
+              the middle of deleted it outright; End Program, beside it, is the way out of a running one.
+              So this only ever shows on a Planned row, which is the state its copy describes.
+            */}
+            {terminal || !program || state === 'active' ? null : (
+              <Pressable
+                onPress={() => setSheet('remove')}
+                accessibilityRole="button"
+                accessibilityLabel={isForgeProgram ? 'Remove from planned' : 'Delete program'}
+                style={styles.secondaryBtn}
+              >
+                <Text style={[styles.secondaryText, styles.deleteText]}>{isForgeProgram ? 'Remove from Planned' : 'Delete Program'}</Text>
+              </Pressable>
+            )}
+          </View>
+        </TourAnchor>
+
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
 
-      <TourAnchor id="program-actions" style={styles.cta}>
+      {/* ── ONLY THE MAIN BUTTON IS PINNED (QA 2026-09-26 B5) ──────────────────────────────────────
+              This footer used to pin Continue Training, Duplicate, a three-line explainer, Share Card,
+              Send Program, End Program and Remove from Planned — 43–60% of an iPhone, leaving the
+              program itself scrolling in a slot so small it looked frozen. Everything but the one thing
+              you came here to do now sits at the end of the page, after the schedule (W-3 §layout:
+              "CTAs are positioned in the scroll after the workout schedule"). ── */}
+      <View style={styles.cta}>
         {/* ── WHAT YOUR GYM CANNOT DO, SAID BEFORE YOU START ─────────────────────────────────────────
                 `environment` is a string ("Home — dumbbells and an adjustable bench") on a screen the
                 athlete may never scroll to, and the equipment table cannot see a bench at all: a
@@ -1187,174 +1365,7 @@ export default function ProgramDetailScreen() {
         <Button variant="primary" fullWidth disabled={busy} onPress={onPrimary} accessibilityLabel={view.cta}>
           {view.cta}
         </Button>
-        {/* ── ADD TO PLANNED — only on a preview, because it is the only state without a row yet.
-                "I want this next" and "I am doing this now" were the same button; this separates them.
-                Once it is taken the button is gone and the header pill reads Planned. ── */}
-        {!program && previewDef ? (
-          <Button variant="secondary" fullWidth disabled={busy} onPress={() => void onAddToPlanned()} accessibilityLabel="Add this program to your planned list">
-            Add to Planned
-          </Button>
-        ) : null}
-        {/* ── EDIT IS NOW ALLOWED MID-PROGRAM (W-5 Amendment-001, 2026-08-20) ─────────────────────────
-                W-5 Decisions 1 and 4 said NO for Active on every row, including rename. The PO overruled
-                that: "you should be able to edit". What the amendment keeps is the half that was never a
-                product preference.
-
-                `program_sessions` rows are keyed by (week_index, day_index) and graduation is
-                `completed >= program_total_sessions(structure)`, recomputed LIVE from the structure. So
-                an unrestricted edit mid-run re-points records the athlete already earned AND moves the
-                finish line: shrinking a live program makes the next save fire the graduation branch,
-                writing a PROGRAM_GRADUATED timeline event and five honors that can never be revoked.
-                There is no un-graduate path (Amendment-001 §1).
-
-                So the edit is bounded rather than blocked — the "safe edit path" the old comment here
-                said was owed: sessions already trained are frozen, and `totalSessions()` must come out
-                the same. Enforced in the builder (`liveEditViolation`, `lockedCells`) and again in the
-                database by `0174`, because the client is not what should be trusted with five permanent
-                honors.
-
-                Two things had to be fixed before it was safe to open the builder at all: `hydrateDraft`
-                normalised through `clampDays`/`makeDays`, which TRUNCATE — a ragged program lost days on
-                a round trip it never asked for — and `normalizeDraft` did the same on EVERY focus, so a
-                trip to the exercise Picker would have done it mid-edit.
-
-                Both buttons also require a real row. A catalogue preview has `program === null` (state
-                falls back to 'future' at the top of this component), and both handlers read `program!.id`
-                — so without this guard a preview pushed the builder with `id: undefined`. ── */}
-        {program ? (
-          <View style={styles.ctaRow}>
-            {/*
-              ── YOU CANNOT EDIT A FORGE PROGRAM, FOR THE SAME REASON YOU CANNOT DELETE ONE ──
-
-              What the athlete holds is a COPY of something Forge authored, and it keeps Forge's name at
-              the top of the screen. Editing it in place would let it drift — a session swapped here, a
-              week shortened there — while still presenting itself as the program we wrote and stand
-              behind. That is the provenance problem `project_third_party_program_provenance` describes
-              in the other direction: a plan must not carry an author's name over content they did not
-              author. "Tweak it a little" is not a category here either.
-
-              Duplicate is the honest route and it is already right there. The copy has no
-              `sourceDefinitionId`, so it is the athlete's, and they can change every session in it.
-
-              W-5 Decision 1 still governs the other axis: Edit is FUTURE-state only, never active.
-            */}
-            {(state === 'future' || state === 'active') && !isForgeProgram ? (
-              <View style={styles.ctaHalf}>
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onPress={() => router.push({ pathname: '/program-builder', params: { o: 'edit', id: program.id } })}
-                  accessibilityLabel="Edit program"
-                >
-                  Edit
-                </Button>
-              </View>
-            ) : null}
-            <View style={styles.ctaHalf}>
-              <Button
-                variant="secondary"
-                fullWidth
-                onPress={() => router.push({ pathname: '/program-builder', params: { o: 'dup', id: program.id } })}
-                accessibilityLabel="Duplicate program"
-              >
-                Duplicate
-              </Button>
-            </View>
-          </View>
-        ) : null}
-        {/* Said, not silently omitted — same courtesy the active case gets below. */}
-        {state === 'future' && isForgeProgram ? (
-          <Text style={styles.editNote}>
-            This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
-            change however you like.
-          </Text>
-        ) : null}
-        {/* What Edit will and will not let them do, said BEFORE they tap it rather than as a refusal
-            afterwards. The length sentence is the one that prevents a wasted edit. */}
-        {state === 'active' && !isForgeProgram ? (
-          <Text style={styles.editNote}>
-            You can change the sessions ahead of you — swap exercises, rename a day, adjust sets. Sessions
-            you&apos;ve already trained stay as you did them, and the program keeps its length so finishing
-            it still counts. Duplicate it instead to build a different length.
-          </Text>
-        ) : null}
-        {/* A Forge program is the other axis, and it does not move: provenance, not progress. */}
-        {state === 'active' && isForgeProgram ? (
-          <Text style={styles.editNote}>
-            This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
-            change however you like.
-          </Text>
-        ) : null}
-        {/* ── THE TWO KINDS OF SHARING, NAMED APART ──────────────────────────────────────────────────
-                "Share Program" posts a card about the training. "Send to a Friend" hands over the plan
-                itself. Sitting side by side with different verbs is deliberate: they are one word in
-                every other app and two entirely different acts here — one is visible to a whole squad,
-                the other puts a copy of your program in one person's library. ── */}
-        <View style={styles.ctaRow}>
-          <View style={styles.ctaHalf}>
-            <Button variant="secondary" fullWidth onPress={openShareCard} accessibilityLabel="Share a card about this program">
-              Share Card
-            </Button>
-          </View>
-          {/* ⚠ ONLY WITH A REAL ROW (QA F12, first logged as Launch Audit P0-29). `/send-program` reads
-              the `programs` row by id and sends a COPY of it; a catalogue preview has `program === null`
-              by design, so this read `program!.id` and threw on tap. Hidden rather than adopt-then-send:
-              sending must not quietly add the program to the sender's own Planned list, and a catalogue
-              program is already in every friend's Discover. Same rule as Edit/Duplicate above. */}
-          {program ? (
-            <View style={styles.ctaHalf}>
-              <Button
-                variant="secondary"
-                fullWidth
-                onPress={() => router.push({ pathname: '/send-program', params: { id: program.id } })}
-                accessibilityLabel="Send this program to a friend or squad"
-              >
-                Send Program
-              </Button>
-            </View>
-          ) : null}
-        </View>
-        <View style={styles.secondaryRow}>
-          {state === 'active' ? (
-            <Pressable onPress={() => setSheet('end')} accessibilityRole="button" accessibilityLabel="End Program" style={styles.secondaryBtn}>
-              <Text style={styles.secondaryText}>End Program</Text>
-            </Pressable>
-          ) : null}
-          {/*
-            ── YOU CANNOT DELETE A FORGE PROGRAM, BECAUSE YOU DO NOT HAVE ONE ──
-
-            What the athlete holds is a COPY: `sourceDefinitionId` points at a definition that ships in
-            the app and stays in Discover whether they keep their copy or not. Calling that "Delete
-            Program" said the wrong thing twice — it implied the program itself was being destroyed, and
-            it made removing a plan feel like a decision that costs something. It is `Remove from
-            Planned`, which is what `viewForState` has returned for this state all along while the screen
-            hardcoded the other word.
-
-            A program the athlete AUTHORED is the other case, and it keeps `Delete Program`, because
-            deleting really is deleting: there is no catalogue entry behind it and no way back.
-
-            NEITHER appears on a sealed record. Amendment-001 §6: "Graduated and Ended Early programs are
-            permanent legacy records. They may never be deleted." The RLS policy refuses it too since
-            0104 — this hides an action that would otherwise fail rather than being the only thing
-            standing in the way. Workouts logged against a removed plan survive either way (0018 nulls
-            the link rather than cascading).
-
-            NOR on the ACTIVE program (QA 2026-09-26 F3). "Remove from Planned" on the program you are in
-            the middle of deleted it outright; End Program, beside it, is the way out of a running one.
-            So this only ever shows on a Planned row, which is the state its copy describes.
-          */}
-          {terminal || !program || state === 'active' ? null : (
-            <Pressable
-              onPress={() => setSheet('remove')}
-              accessibilityRole="button"
-              accessibilityLabel={isForgeProgram ? 'Remove from planned' : 'Delete program'}
-              style={styles.secondaryBtn}
-            >
-              <Text style={[styles.secondaryText, styles.deleteText]}>{isForgeProgram ? 'Remove from Planned' : 'Delete Program'}</Text>
-            </Pressable>
-          )}
-        </View>
-      </TourAnchor>
+      </View>
 
       <ScreenTour screenKey="program-detail" />
 
@@ -1369,7 +1380,7 @@ export default function ProgramDetailScreen() {
       <BottomSheet
         open={swapping != null}
         onClose={() => setSwapping(null)}
-        title={swapping ? `Swap ${swapping.name} with…` : 'Swap'}
+        title={swapping ? `Move ${swapping.name} — trade places with…` : 'Move day'}
       >
         <View style={styles.swapList}>
           {(() => {
@@ -1392,7 +1403,7 @@ export default function ProgramDetailScreen() {
                 onPress={() => void doSwap(swapping.weekIndex, swapping.dayIndex, di)}
                 disabled={busy}
                 accessibilityRole="button"
-                accessibilityLabel={`Swap ${swapping.name} with ${dayLabel(d, di)}`}
+                accessibilityLabel={`Move ${swapping.name} to ${dayLabel(d, di)}, and ${dayLabel(d, di)} to its place`}
                 style={styles.swapRow}
               >
                 <View style={styles.swapNum}>
@@ -1441,7 +1452,7 @@ export default function ProgramDetailScreen() {
         onClose={() => setBlocked(null)}
         headline="Finish your workout first"
         body={`You have a workout open for this program. ${
-          blocked === 'swap' ? 'Swapping' : 'Reordering'
+          blocked === 'swap' ? 'Moving' : 'Reordering'
         } sessions while it is running would file it against the wrong day. Finish it or discard it, then come back.`}
         confirmLabel="Got it"
         tone="primary"
@@ -1605,8 +1616,98 @@ function WeekCard({
       ? `${week.completedCount} / ${week.days.length}`
       : `${week.days.length} ${week.days.length === 1 ? 'workout' : 'workouts'}`;
 
+  /*
+   * ONE ⋯ PER SESSION (QA 2026-09-26 B5). Every outstanding row used to carry four pills — Train this,
+   * Swap, Ask Holt, Skip — which on a four-day week is sixteen buttons before a single exercise name.
+   * They live in this sheet now. `skipped` rows get the one thing they can do: undo it.
+   */
+  const [menu, setMenu] = useState<{ di: number; name: string; skipped: boolean } | null>(null);
+  /**
+   * ⚠ iOS drops a second modal presented while this one is still animating out, so the chosen action
+   * runs on the sheet's `onDismiss` (iOS only) — with a timeout as the fallback for Android, and for an
+   * `onDismiss` that never comes. Web has no such limit and runs it at once.
+   */
+  const afterMenu = useRef<(() => void) | null>(null);
+  const pick = (fn: () => void) => {
+    setMenu(null);
+    if (Platform.OS === 'web') {
+      fn();
+      return;
+    }
+    let done = false;
+    const once = () => {
+      if (done) return;
+      done = true;
+      afterMenu.current = null;
+      fn();
+    };
+    afterMenu.current = once;
+    setTimeout(once, Platform.OS === 'ios' ? 900 : 400);
+  };
+
   return (
     <View style={[styles.weekCard, current && styles.weekCardCurrent]}>
+      <BottomSheet
+        open={menu != null}
+        onClose={() => setMenu(null)}
+        onDismiss={() => afterMenu.current?.()}
+        title={menu?.name ?? 'Session'}
+      >
+        <View style={styles.swapList}>
+          {menu && menu.skipped && onUnskipDay ? (
+            <Pressable
+              onPress={() => pick(() => onUnskipDay(menu.di))}
+              accessibilityRole="button"
+              accessibilityLabel={`Undo the skip on ${menu.name}`}
+              style={styles.swapRow}
+            >
+              <Text style={styles.swapName}>Undo skip</Text>
+            </Pressable>
+          ) : null}
+          {menu && !menu.skipped && onTrainDay ? (
+            <Pressable
+              onPress={() => pick(() => onTrainDay(menu.di, menu.name))}
+              accessibilityRole="button"
+              accessibilityLabel={`Train ${menu.name}`}
+              style={styles.swapRow}
+            >
+              <Text style={styles.swapName}>Train this</Text>
+            </Pressable>
+          ) : null}
+          {/* "Swap" here meant MOVE THE DAY — trade places with another session this week — while
+              "Swap" in the logger means swap an exercise. Same word, two acts; this one says what it does. */}
+          {menu && !menu.skipped && onSwapDay ? (
+            <Pressable
+              onPress={() => pick(() => onSwapDay(menu.di, menu.name))}
+              accessibilityRole="button"
+              accessibilityLabel={`Move ${menu.name} to another day this week`}
+              style={styles.swapRow}
+            >
+              <Text style={styles.swapName}>Move day</Text>
+            </Pressable>
+          ) : null}
+          {menu && !menu.skipped && onAskHolt ? (
+            <Pressable
+              onPress={() => pick(() => onAskHolt(menu.di, menu.name))}
+              accessibilityRole="button"
+              accessibilityLabel={`Ask Holt to change ${menu.name}`}
+              style={styles.swapRow}
+            >
+              <Text style={styles.swapName}>Ask Holt</Text>
+            </Pressable>
+          ) : null}
+          {menu && !menu.skipped && onSkipDay ? (
+            <Pressable
+              onPress={() => pick(() => onSkipDay(menu.di, menu.name))}
+              accessibilityRole="button"
+              accessibilityLabel={`Skip ${menu.name}`}
+              style={styles.swapRow}
+            >
+              <Text style={[styles.swapName, styles.menuSkip]}>Skip</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </BottomSheet>
       <Pressable
         onPress={onToggle}
         accessibilityRole="button"
@@ -1648,99 +1749,52 @@ function WeekCard({
             const dayOpen = openDay === key;
             return (
               <View key={key} style={styles.dayBlock}>
-                <Pressable
-                  onPress={() => onToggleDay(key)}
-                  accessibilityRole="button"
-                  accessibilityState={{ expanded: dayOpen }}
-                  accessibilityLabel={`${d.name}, ${d.meta}`}
-                  style={styles.dayHead}
-                >
-                  <View style={[styles.dayNum, d.completed && styles.dayNumDone]}>
-                    <Text style={[styles.dayNumText, d.completed && styles.dayNumTextDone]}>{d.num}</Text>
-                  </View>
-                  <View style={styles.dayText}>
-                    <Text style={styles.dayName} numberOfLines={1}>
-                      {d.name}
-                    </Text>
-                    <Text style={styles.dayMeta} numberOfLines={1}>
-                      {d.completed && d.date ? `${d.date} • ${d.meta}` : d.meta}
-                    </Text>
-                  </View>
-                  {/* SKIPPED is its own mark, never a tick. A skipped session carries you to the end of
-                      the program (PO decision) and the record still says you did not train it — the
-                      whole reason `state` exists rather than a boolean.
+                {/* Any OUTSTANDING session can be trained, moved, handed to Holt or passed over — not just
+                    the next one in line. A skipped one can be taken back (a skip is a decision, not a
+                    verdict; `unskip_program_session` refuses it once the program is sealed). All of it
+                    sits behind ONE ⋯ per row (B5) rather than four pills. */}
+                <View style={styles.dayHeadRow}>
+                  <Pressable
+                    onPress={() => onToggleDay(key)}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: dayOpen }}
+                    accessibilityLabel={`${d.name}, ${d.meta}`}
+                    style={styles.dayHead}
+                  >
+                    <View style={[styles.dayNum, d.completed && styles.dayNumDone]}>
+                      <Text style={[styles.dayNumText, d.completed && styles.dayNumTextDone]}>{d.num}</Text>
+                    </View>
+                    <View style={styles.dayText}>
+                      <Text style={styles.dayName} numberOfLines={1}>
+                        {d.name}
+                      </Text>
+                      <Text style={styles.dayMeta} numberOfLines={1}>
+                        {d.completed && d.date ? `${d.date} • ${d.meta}` : d.meta}
+                      </Text>
+                    </View>
+                    {/* SKIPPED is its own mark, never a tick. A skipped session carries you to the end of
+                        the program (PO decision) and the record still says you did not train it — the
+                        whole reason `state` exists rather than a boolean.
 
-                      ⚠ Read off the LOG ROW, not off a separate `states[di]` lookup. The two agree only
-                      while both are in the same index space, and `buildLog` now files by mark, so one
-                      source is one fewer thing that can drift. */}
-                  {d.skipped ? <Text style={styles.skippedChip}>Skipped</Text> : null}
-                  <Glyph name="chevron-down" color={flColor.gray600} flip={dayOpen} />
-                </Pressable>
-
-                {/* Any OUTSTANDING session can be trained or passed over, not just the next one in line
-                    — that is the swap. Offered only where there is something to act on: a day already
-                    trained or skipped shows its state above instead. */}
-                {onTrainDay && onSkipDay && !d.completed && !d.skipped && d.exercises.length > 0 ? (
-                  <View style={styles.dayActions}>
+                        ⚠ Read off the LOG ROW, not off a separate `states[di]` lookup. The two agree only
+                        while both are in the same index space, and `buildLog` now files by mark, so one
+                        source is one fewer thing that can drift. */}
+                    {d.skipped ? <Text style={styles.skippedChip}>Skipped</Text> : null}
+                    <Glyph name="chevron-down" color={flColor.gray600} flip={dayOpen} />
+                  </Pressable>
+                  {(onTrainDay && onSkipDay && !d.completed && !d.skipped && d.exercises.length > 0) ||
+                  (onUnskipDay && d.skipped) ? (
                     <Pressable
-                      onPress={() => onTrainDay(di, d.name)}
+                      onPress={() => setMenu({ di, name: d.name, skipped: d.skipped })}
                       accessibilityRole="button"
-                      accessibilityLabel={`Train ${d.name}`}
-                      style={styles.dayAction}
+                      accessibilityLabel={`More for ${d.name}`}
+                      hitSlop={4}
+                      style={styles.dayMore}
                     >
-                      <Text style={styles.dayActionText}>Train this</Text>
+                      <Glyph name="more" color={flColor.bronze300} />
                     </Pressable>
-                    {onSwapDay ? (
-                      <Pressable
-                        onPress={() => onSwapDay(di, d.name)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Swap ${d.name} with another workout this week`}
-                        style={styles.dayAction}
-                      >
-                        <Text style={styles.dayActionText}>Swap</Text>
-                      </Pressable>
-                    ) : null}
-                    {onAskHolt ? (
-                      <Pressable
-                        onPress={() => onAskHolt(di, d.name)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Ask Holt to change ${d.name}`}
-                        style={styles.dayAction}
-                      >
-                        <Text style={styles.dayActionHolt}>Ask Holt</Text>
-                      </Pressable>
-                    ) : null}
-                    <Pressable
-                      onPress={() => onSkipDay(di, d.name)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Skip ${d.name}`}
-                      style={styles.dayAction}
-                    >
-                      <Text style={styles.dayActionSkip}>Skip</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
-
-                {/* ── A SKIP IS A DECISION, NOT A VERDICT ───────────────────────────────────────────
-                    Skipping used to be a one-way door: one tap, no confirmation, and no way back. The
-                    session it passes over counts toward finishing the program, so a mis-tap does not
-                    merely mislabel a row — it moves the athlete a session closer to a graduation they
-                    did not train for.
-
-                    ⚠ Offered only while the program is ACTIVE. Once it is sealed the record is history
-                    (Amendment-001 §1), and `unskip_program_session` refuses it at the database too. */}
-                {onUnskipDay && d.skipped ? (
-                  <View style={styles.dayActions}>
-                    <Pressable
-                      onPress={() => onUnskipDay(di)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Undo the skip on ${d.name}`}
-                      style={styles.dayAction}
-                    >
-                      <Text style={styles.dayActionText}>Undo skip</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
+                  ) : null}
+                </View>
 
                 {dayOpen ? (
                   <View style={styles.exList}>
@@ -1898,7 +1952,7 @@ const styles = StyleSheet.create({
   weekReorderText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
 
   dayBlock: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
-  dayHead: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 15 },
+  dayHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 15 },
   dayNum: { width: 24, height: 24, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   dayNumDone: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   dayNumText: { fontSize: 11, fontWeight: '700', color: flColor.gray600 },
@@ -1925,6 +1979,7 @@ const styles = StyleSheet.create({
   gearGap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   // Why Edit is absent on an active program. Same quiet register as gearGap — an explanation, not a warning.
   editNote: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
+  moreActions: { marginTop: 26, gap: 8 },
   ctaRow: { flexDirection: 'row', gap: 8 },
   ctaHalf: { flex: 1 },
   secondaryRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: 2 },
@@ -1974,16 +2029,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginRight: 8,
   },
-  dayActions: { flexDirection: 'row', gap: 8, paddingLeft: 44, paddingBottom: 10 },
-  dayAction: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-  },
-  dayActionText: { fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
-  dayActionHolt: { fontSize: 12, fontWeight: '700', letterSpacing: 0.2, color: flColor.bronze300 },
-  dayActionSkip: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
+  dayHeadRow: { flexDirection: 'row', alignItems: 'center' },
+  dayMore: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 4 },
+  menuSkip: { color: flColor.gray400 },
   sheetActions: { flexDirection: 'row', gap: 10 },
 });
