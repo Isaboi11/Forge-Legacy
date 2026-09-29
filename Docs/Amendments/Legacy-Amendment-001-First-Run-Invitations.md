@@ -6,6 +6,8 @@
 **Amends:** `Legacy-Hub-Wireframe-Spec-L1` **§12.1** (empty-state philosophy) and **§17.1** (the
 brand-new-athlete state) · unaffected: §12.2's chapter branch, already superseded by **ONB-D14**
 **Implemented by:** `app/(tabs)/legacy.tsx`
+**⚠ Superseded in part by `Legacy-Amendment-002-Progressive-Reveal` (2026-09-29):** D2, D3 and D7 (the
+first-run screen's layout and copy) are replaced. D1, D4, D5 and D6 still stand.
 
 ---
 
