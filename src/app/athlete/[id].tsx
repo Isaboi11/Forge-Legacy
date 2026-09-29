@@ -296,6 +296,9 @@ export default function AthleteProfileScreen() {
             state={state}
             busy={busy}
             onPress={onFriendAction}
+            /* social2-07: a request you don't want is declined here, not only blocked. Same no-trace call as
+               withdrawing — a decline is indistinguishable from never having asked (0073). */
+            onDecline={() => run(removeFriendship(athleteId), 'none', 'Request declined')}
             onChallenge={() => router.push({ pathname: '/create-challenge', params: { athlete: athleteId } })}
             /* Same button, honest verb (0121). Someone who is training right now cannot usefully be
                invited to start a workout — they are in one. Asking to JOIN it is the thing that was
@@ -611,6 +614,7 @@ function Actions({
   state,
   busy,
   onPress,
+  onDecline,
   onChallenge,
   onTrainWith,
   live,
@@ -618,6 +622,7 @@ function Actions({
   state: FriendState;
   busy: boolean;
   onPress: () => void;
+  onDecline: () => void;
   onChallenge: () => void;
   onTrainWith: () => void;
   /** They are training RIGHT NOW, so the action is to join rather than to invite. */
@@ -655,6 +660,17 @@ function Actions({
             <LiveAction glyph={<SwordsGlyph />} label="Challenge" onPress={onChallenge} />
             <LiveAction glyph={<PeopleGlyph />} label={live ? 'Join Workout' : 'Train With'} onPress={onTrainWith} />
           </>
+        ) : action.kind === 'accept' ? (
+          <Pressable
+            onPress={onDecline}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="Decline request"
+            accessibilityState={{ busy }}
+            style={({ pressed }) => [styles.action, styles.actionQuiet, pressed || busy ? styles.actionPressed : null]}
+          >
+            <Text style={styles.actionLabel}>Decline</Text>
+          </Pressable>
         ) : (
           <InertAction glyph={<SwordsGlyph />} label="Challenge" />
         )}
