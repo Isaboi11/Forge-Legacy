@@ -37,7 +37,7 @@ import { plannedDays, totalSessions } from '../program/progress-core.ts';
 import { rawIndexOf } from '../program/schedule-edit.ts';
 
 import { fillSlot, isCompound, type CandidateContext, type CatalogExercise } from './candidates.ts';
-import { prescribeReps, roleFor, type PrescribeContext } from './prescribe.ts';
+import { isTimedExercise, prescribeReps, prescribeTimed, reshapeForUnit, roleFor, type PrescribeContext } from './prescribe.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // RESULT
@@ -188,8 +188,9 @@ export function swapExercise(
     // Only where the same movement is actually sitting in that slot. A later week whose plan already
     // differs is not the exercise the athlete was looking at, and changing it would be a surprise.
     if (!row || row.catalogKey !== source.catalogKey) continue;
+    // Same dose, new movement — and a new MEASURE when the unit changes (crunch ⇄ plank).
     sessionAt(plans, w, at.dayIndex)!.main[at.exerciseIndex] = {
-      ...row,
+      ...reshapeForUnit(row, isTimedExercise(replacement)),
       catalogKey: replacement.key,
       name: replacement.name,
     };
@@ -328,13 +329,18 @@ export function rebuildDay(
 
       // The day keeps its dose; only the movement changes. Role is re-derived from position because the
       // rebuilt exercise may be a compound where the old one was not.
-      const rx = prescribeReps(roleFor(i, isCompound(found.pattern)), {
-        ...prescribeCtx,
-        weekIndex: w,
-        isDeload: day.name.includes('[DELOAD]'),
-      });
+      const role = roleFor(i, isCompound(found.pattern));
+      const pc = { ...prescribeCtx, weekIndex: w, isDeload: day.name.includes('[DELOAD]') };
+      // A plank is held, not counted — the day keeps its sets, the measure follows the new movement.
+      if (isTimedExercise(found.exercise)) {
+        const t = prescribeTimed(role, pc);
+        const { reps: _r, repsMax: _m, repScheme: _s, ...rest } = row;
+        return { ...rest, catalogKey: found.exercise.key, name: found.exercise.name, sets: row.sets ?? t.sets, durationSec: t.durationSec };
+      }
+      const rx = prescribeReps(role, pc);
+      const { durationSec: _d, ...repRow } = row;
       return {
-        ...row,
+        ...repRow,
         catalogKey: found.exercise.key,
         name: found.exercise.name,
         sets: row.sets ?? rx.sets,

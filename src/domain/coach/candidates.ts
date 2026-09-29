@@ -54,6 +54,8 @@ export interface CatalogExercise {
   modality?: string;
   /** What else the catalogue calls it — read by `assemble`'s pin resolver, the Program Builder import's path. */
   aliases?: readonly string[];
+  /** `'time'` for a hold, carry or stretch — prescribed in seconds, never reps (`prescribe.ts` `prescribeTimed`). */
+  unit?: string;
 }
 
 /**

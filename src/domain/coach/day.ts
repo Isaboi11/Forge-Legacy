@@ -41,7 +41,7 @@ import {
   type CatalogExercise,
   type EquipmentGate,
 } from './candidates.ts';
-import { exerciseBudget, prescribeReps, roleFor } from './prescribe.ts';
+import { exerciseBudget, isTimedExercise, prescribeReps, prescribeTimed, roleFor } from './prescribe.ts';
 import { cueFor } from './rulebook/cues.ts';
 import { GOAL_CATEGORY } from './rulebook/volume.ts';
 import {
@@ -519,14 +519,15 @@ export function buildDayWorkout(
   chosen.sort((a, b) => Number(isCompound(b.pattern)) - Number(isCompound(a.pattern)));
 
   const main: ProgramExercise[] = chosen.map(({ ex, pattern }, i) => {
-    const rx = prescribeReps(roleFor(i, isCompound(pattern)), {
+    const pctx = {
       category,
       experience: req.experience,
       // A one-off workout has no week to be in. Index 0 puts every rep target at the bottom of its range,
       // which is the honest starting point for a session with no history behind it.
       weekIndex: 0,
       isDeload: false,
-    });
+    };
+    const rx = prescribeReps(roleFor(i, isCompound(pattern)), pctx);
     /*
      * ⚠ **A SINGLE DAY GOT NO COACHING CUE AT ALL**, while every program session did. Same tempo, same
      * technique, same field already rendered under THE PLAN SAYS — a one-off workout simply never went
@@ -534,6 +535,11 @@ export function buildDayWorkout(
      * was never asked, so both gaps closed on the same question.
      */
     const cue = req.goal ? cueFor({ pattern, goal: req.goal, experience: req.experience, isPrimary: i === 0, name: ex.name, equipId: ex.equipId }) : null;
+    // A plank is held, not counted — see `prescribeTimed`.
+    if (isTimedExercise(ex)) {
+      const t = prescribeTimed(roleFor(i, isCompound(pattern)), pctx);
+      return { catalogKey: ex.key, name: ex.name, sets: t.sets, durationSec: t.durationSec, ...(cue ? { coachNote: cue } : {}) };
+    }
     return {
       catalogKey: ex.key,
       name: ex.name,

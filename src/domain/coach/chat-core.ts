@@ -46,7 +46,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
 /* The canonical prescription renderer — the one Program Detail and the logger read. A second one here
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
-import type { ProgramStructure } from '@/data/programs-live';
+import type { ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -1748,7 +1748,7 @@ export function programCardFor(
 /** A single session, as the design lists it: name on the left, prescription on the right. */
 export function dayCardFor(
   c: Partial<CoachConstraints>,
-  day: { name: string; main: { name: string; sets?: number; reps?: number | null; per?: string | null; targetSec?: number | null; targetMi?: number | null }[] },
+  day: { name: string; main: { name: string; sets?: number; reps?: number | null; per?: string | null; targetSec?: number | null; targetMi?: number | null; durationSec?: number | null }[] },
 ): DayCard {
   const bits: string[] = ['SINGLE DAY'];
   if (c.sessionMinutes) bits.push(`${c.sessionMinutes} MIN`);
@@ -1763,9 +1763,11 @@ export function dayCardFor(
 }
 
 /** "4 × 8", "3 × 10 per side", "20 min", "6 mi" — whatever the row actually prescribes. */
-function prescriptionText(e: { sets?: number; reps?: number | null; per?: string | null; targetSec?: number | null; targetMi?: number | null }): string {
+function prescriptionText(e: { sets?: number; reps?: number | null; per?: string | null; targetSec?: number | null; targetMi?: number | null; durationSec?: number | null }): string {
   if (e.targetMi != null) return `${e.targetMi} mi`;
   if (e.targetSec != null) return `${Math.round(e.targetSec / 60)} min`;
+  // A hold reads "3 × 30s", in the same words Program Detail and the logger use.
+  if (e.durationSec != null) return schemeText(e as ProgramExercise);
   if (e.sets && e.reps) return `${e.sets} × ${e.reps}${e.per ? ` per ${e.per}` : ''}`;
   if (e.sets) return `${e.sets} sets`;
   return '';
