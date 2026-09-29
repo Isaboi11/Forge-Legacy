@@ -122,13 +122,11 @@ test('a limitation removes its patterns', () => {
   assert.ok(candidatesFor('Horizontal Push', POOL, c).length > 0, 'and leaves flat pressing, deliberately');
 });
 
-test('knees takes the landing, not the squat', () => {
+test('knees takes the landing AND the squat (PO 2026-09-29, holtai-04)', () => {
   const c = ctx({ limitations: ['knees'] });
   assert.deepEqual(candidatesFor('Power / Plyometric', POOL, c), []);
-  assert.ok(
-    candidatesFor('Squat / Knee Dominant', POOL, c).length > 0,
-    'excluding squats to protect knees would delete leg training to solve a problem it usually is not',
-  );
+  assert.deepEqual(candidatesFor('Squat / Knee Dominant', POOL, c), [], 'squats and lunges go with the knees');
+  assert.ok(candidatesFor('Squat / Knee Dominant', POOL, ctx()).length > 0, 'control: they are there without the flag');
 });
 
 test('a named exercise is left out without touching its pattern', () => {

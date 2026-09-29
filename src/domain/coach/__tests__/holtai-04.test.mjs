@@ -145,12 +145,64 @@ test('a single full-body day with dumbbells has a pull (the day builder is the o
   assert.ok(r.day.main.some((e) => isPull(e.catalogKey)));
 });
 
-test('knees: Holt says what the flag did, instead of promising the knees are out of it', () => {
-  const res = assemble(strength(), POOL, canDoExercise);
-  const squats = keysOf(res).some((k) => BY_KEY.get(k)?.pattern === 'Squat / Knee Dominant');
-  assert.equal((res.assembly.concerns ?? []).includes(CONCERN.kneesKeptSquats()), squats);
+// PO 2026-09-29 (holtai-04): `knees` removes squats and lunges too, in BOTH fill paths.
+const KNEE_PATTERN = 'Squat / Knee Dominant';
+const isKnee = (k) => BY_KEY.get(k)?.pattern === KNEE_PATTERN;
+
+test('knees: no squat or lunge in any program build, and no lower-body day left empty', () => {
+  const wrong = [];
+  let withKnee = 0;
+  for (const goal of ['strength', 'muscle', 'weight_loss', 'health', 'conditioning']) {
+    for (const [environment, ownedEquipment] of [['full_gym', []], ['home', ['dumbbells']], ['home', ['bands']], ['bodyweight', []]]) {
+      for (const daysPerWeek of [2, 3, 4, 5, 6]) {
+        for (const limitations of [['knees'], ['knees', 'lower_back']]) {
+          const base = strength({ goal, environment, ownedEquipment, daysPerWeek, limitations });
+          const res = assemble(base, POOL, canDoExercise);
+          if (!res.ok) continue;
+          const tag = `${goal}/${environment}/${ownedEquipment}/${daysPerWeek}/${limitations}`;
+          for (const w of res.assembly.structure.weekPlans) {
+            for (const d of w.days) {
+              for (const e of d.main) if (isKnee(e.catalogKey)) wrong.push(`${tag}: ${e.name} on ${d.name}`);
+              if (/leg|lower/i.test(d.name) && d.main.length === 0) wrong.push(`${tag}: ${d.name} is empty`);
+            }
+          }
+          if (!(res.assembly.concerns ?? []).includes(CONCERN.kneesLeftOut())) wrong.push(`${tag}: Holt never said what he left out`);
+          // Control: the same build without the knee flag does carry squat work somewhere in the sweep.
+          const ctl = assemble({ ...base, limitations: limitations.filter((l) => l !== 'knees') }, POOL, canDoExercise);
+          if (ctl.ok && keysOf(ctl).some(isKnee)) withKnee += 1;
+        }
+      }
+    }
+  }
+  assert.deepEqual(wrong, []);
+  assert.ok(withKnee > 50, `control: without "knees" squats should appear (${withKnee})`);
+});
+
+test('knees: the single-day builder obeys it too — splits AND body parts', () => {
+  const dayOf = (focus, limitations) =>
+    buildDayWorkout(
+      { focus, goal: 'strength', sessionMinutes: 60, experience: 'intermediate', environment: 'full_gym', ownedEquipment: [], limitations },
+      POOL,
+      canDoExercise,
+    ).day.main.map((e) => e.catalogKey);
+  for (const focus of [
+    { kind: 'split', split: 'full_body' },
+    { kind: 'split', split: 'legs' },
+    { kind: 'split', split: 'lower' },
+    { kind: 'body_parts', parts: ['legs'] },
+    { kind: 'body_parts', parts: ['glutes'] },
+  ]) {
+    const keys = dayOf(focus, ['knees']);
+    assert.deepEqual(keys.filter(isKnee), [], `${JSON.stringify(focus)} kept knee-dominant work`);
+    if (/legs|lower|glutes/.test(JSON.stringify(focus))) assert.ok(keys.length >= 2, `${JSON.stringify(focus)} left the legs day empty`);
+  }
+  // Control: without the flag, a legs day squats.
+  assert.ok(dayOf({ kind: 'body_parts', parts: ['legs'] }, []).some(isKnee), 'control: a legs day squats without "knees"');
+});
+
+test('no knee line without the knee flag', () => {
   const none = assemble(strength({ limitations: [] }), POOL, canDoExercise);
-  assert.ok(!(none.assembly.concerns ?? []).includes(CONCERN.kneesKeptSquats()), 'no knee line without the knee flag');
+  assert.ok(!(none.assembly.concerns ?? []).includes(CONCERN.kneesLeftOut()));
 });
 
 // ── 4. The words on each exercise ────────────────────────────────────────────────────────────────────
