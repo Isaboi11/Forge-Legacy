@@ -220,6 +220,7 @@ export async function fetchLegacyData(): Promise<LegacyData> {
   const honors = honorRowsTyped.map((h) => ({
     id: h.id,
     name: h.display_name,
+    slug: h.honor_type,
     // Same medallion the Hub draws. `category` is snapshotted on the row (0081); honors granted outside
     // the catalog (initiative) have none, so the code catalog resolves those by slug.
     glyph: h.category ? categoryGlyph(CATEGORY_ID[h.category] ?? 'training') : categoryGlyph(honorMeta(h.honor_type, h.display_name).category),

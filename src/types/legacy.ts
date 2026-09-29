@@ -87,6 +87,8 @@ export type Honor = {
    * Optional: a caller without it falls back to the generic trophy rather than a wrong category.
    */
   glyph?: HonorGlyphName
+  /** The honor's `honor_type`, so Legacy strikes the same medal the Honors Hub does. */
+  slug?: string
   /**
    * The chapter this honor was earned INSIDE (`honor_instances.chapter_id`), or null for a one-time
    * account honor. The same field the per-chapter tally counts (`countHonorsByChapter`), so a screen that

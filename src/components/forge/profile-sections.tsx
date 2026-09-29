@@ -297,7 +297,7 @@ export function HonorInsignia({ honor, onPress }: { honor: Honor; onPress?: () =
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${honor.name}, earned ${honor.dateEarned}`} style={s.honor}>
       <View style={s.honorBadge}>
-        <HonorMedallion glyph={honor.glyph ?? 'trophy'} size={64} />
+        <HonorMedallion glyph={honor.glyph ?? 'trophy'} slug={honor.slug} size={64} />
       </View>
       <Text style={s.honorLabel} numberOfLines={2}>
         {honor.name}
