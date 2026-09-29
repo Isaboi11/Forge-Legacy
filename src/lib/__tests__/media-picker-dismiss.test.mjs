@@ -150,7 +150,7 @@ test('the sheet reports its real dismissal, and the fallback exists for platform
  */
 test('a chosen asset is not handed back until the picker is gone', () => {
   const gone = src.indexOf('pickerGone()');
-  const settleAsset = src.indexOf('settle(asset)');
+  const settleAsset = src.indexOf('settle(out)');
   assert.ok(gone > 0, 'useMediaPicker no longer waits for the system picker to be dismissed');
   assert.ok(settleAsset > 0, 'the resolve moved — this guard needs updating with it');
   assert.ok(gone < settleAsset, 'the asset is handed back before the picker is known to be off screen');

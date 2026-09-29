@@ -17,6 +17,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
+import { PhotoViewer } from '@/components/forge/PhotoViewer';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { PostedWorkoutPanel } from '@/components/forge/PostedWorkoutPanel';
 import { cardioStats, foodLine, partnersLine } from '@/domain/share/recap-stats';
@@ -756,10 +757,22 @@ function PostBg() {
  * one tap away that this screen never had. This is the screen someone opens to LOOK at the photo.
  */
 function PostMedia({ media }: { media: SquadMedia[] }) {
+  /* Any photo opens the full-screen viewer at itself, and swipes through the rest (PO 09-28). */
+  const [viewerAt, setViewerAt] = useState<number | null>(null);
   if (!media.length) return null;
+  const photos = media.filter((m) => m.kind === 'image').map((m) => m.url);
   return (
     <>
-      {media.map((m, i) => (m.kind === 'image' ? <DetailPhoto key={`${m.url}-${i}`} uri={m.url} /> : <VideoBlock key={`${m.url}-${i}`} uri={m.url} />))}
+      {media.map((m, i) => {
+        if (m.kind !== 'image') return <VideoBlock key={`${m.url}-${i}`} uri={m.url} />;
+        const at = media.slice(0, i).filter((x) => x.kind === 'image').length;
+        return (
+          <Pressable key={`${m.url}-${i}`} onPress={() => setViewerAt(at)} accessibilityRole="button" accessibilityLabel={`Open photo ${at + 1} of ${photos.length}`}>
+            <DetailPhoto uri={m.url} />
+          </Pressable>
+        );
+      })}
+      <PhotoViewer urls={photos} index={viewerAt} onClose={() => setViewerAt(null)} />
     </>
   );
 }
