@@ -100,6 +100,7 @@ import { joinAsSuperset, supersetOffer } from '@/domain/workout/superset-offer';
 import { indexAfterMove, moveExercise } from '@/domain/workout/reorder-exercise';
 import { useListReorder } from '@/hooks/useListReorder';
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
+import { completionGap, completionGapMessage } from '@/domain/workout/set-complete-gate';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type IntensitySignalRow, type LastNote } from '@/domain/workout/save';
@@ -155,7 +156,7 @@ type Phase = 'loading' | 'resume' | 'active' | 'saving';
  */
 type SetSheet = { exIdx: number; setIdx: number; focus: 'weight' | 'reps' };
 
-const WEIGHT_OPTS = Array.from({ length: 101 }, (_, i) => i * 5); // 0–500 lb by 5 (free weights / machines)
+const WEIGHT_OPTS = Array.from({ length: 201 }, (_, i) => i * 5); // 0–1000 by 5 (free weights / machines; workout-06)
 const WEIGHT_OPTS_CABLE = Array.from({ length: 201 }, (_, i) => i * 2.5); // 0–500 lb by 2.5 (cable stacks)
 // 0–50. Was 0–30, which silently clamped a set of 40 air squats down to 30 and recorded a number the
 // athlete did not do — the same class of quiet falsehood as counting an unweighted set as no set at all.
@@ -174,6 +175,9 @@ const REST_KNOB_POS = {
   manual: { alignItems: 'flex-end' },
 } as const;
 const REPS_MAX = 999; // typed entry is not bounded by what fits on a wheel
+/* Typed weight is not bounded by the wheel either (workout-06). It was clamped to the wheel's 500 without a
+   word, so a 545 deadlift or a 900 leg press saved as 500. The ceiling is only a guard against a typo. */
+const WEIGHT_MAX = 2000;
 const DUR_MIN_OPTS = Array.from({ length: 11 }, (_, i) => i); // 0–10 min
 const DUR_SEC_OPTS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55 by 5
 
@@ -1990,6 +1994,31 @@ export default function WorkoutScreen() {
   };
 
   const uncompleteSet = (ei: number, si: number) => mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: false })));
+  /**
+   * The row's check. It completes the set with what `completeSet` would fill in — unless that would log
+   * 0 reps or a blank weight on a bar (workout-07), in which case it opens the entry on the missing
+   * field instead. Opened from the tap itself, so the keyboard primer still gets its gesture.
+   */
+  const tapComplete = (ei: number, si: number) => {
+    const ex = session?.exercises[ei];
+    const set = ex?.sets[si];
+    if (!ex || !set) return;
+    const ghost = ghostSet(ex, si, liftHistory?.get(liftId(ex)) ?? null, units);
+    const gap = completionGap(
+      {
+        weight: set.weight ?? ghost.weight,
+        actualReps: set.actualReps ?? (set.toFailure || set.targetSec != null ? null : ghost.reps ?? set.targetReps),
+        targetSec: set.targetSec,
+      },
+      equipmentForCatalogKey(ex.catalogKey),
+    );
+    if (gap) {
+      showToast(completionGapMessage(gap));
+      openSheet(ei, si, gap);
+      return;
+    }
+    completeSet(ei, si);
+  };
 
   /**
    * A hold finished — write what the clock watched, then complete the set through the normal path.
@@ -2261,8 +2290,18 @@ export default function WorkoutScreen() {
       setSheet(null);
       return;
     }
-    const weight = readDraft(draftW, set.weight, 500, false);
+    const weight = readDraft(draftW, set.weight, WEIGHT_MAX, false);
     const reps = readDraft(draftR, set.actualReps, REPS_MAX, true);
+    /* A set that would log 0 reps, or a blank weight on a bar, stays open with the field to fill
+       (workout-07). An already-done set is held to the same rule — editing it to 0 would un-log it
+       while it still shows green. Pre-filling a LATER set is only writing, and is not gated. */
+    const completes = set.done || si === session.exercises[ei].sets.findIndex((s) => !s.done);
+    const gap = !completes ? null : completionGap({ weight, actualReps: reps, targetSec: set.targetSec }, equipmentForCatalogKey(session.exercises[ei]?.catalogKey));
+    if (gap) {
+      showToast(completionGapMessage(gap));
+      if (gap !== sheet.focus) setSheet({ ...sheet, focus: gap });
+      return;
+    }
     const base = patchSet(session, ei, si, (s) => ({ ...s, weight, actualReps: reps }));
 
     const token = nextAnimationToken();
@@ -3555,7 +3594,7 @@ export default function WorkoutScreen() {
     pop,
     onEdit: openSheet,
     onFillWeight: fillWeight,
-    onComplete: completeSet,
+    onComplete: tapComplete,
     onUncomplete: uncompleteSet,
     onHold: logHold,
     onRemove: removeSet,
