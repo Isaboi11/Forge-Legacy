@@ -38,6 +38,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { Image } from 'expo-image';
+import { PhotoGrid, PhotoViewer } from '@/components/forge/PhotoViewer';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -95,6 +96,12 @@ export interface LedgerPostProps {
   playlist?: WorkoutPlaylistLink | null;
   caption: string | null;
   media?: LedgerMediaItem[];
+  /**
+   * How a set of photos is drawn (PO 09-28): `grid` is Facebook's collage whose tiles open a full-screen
+   * viewer; `swipe` (the default, and every post written before the choice) is Instagram's carousel in
+   * place. See `domain/squad/post-photos`.
+   */
+  mediaDisplay?: 'grid' | 'swipe';
   /**
    * A media band the caller draws itself, in place of the standard one — the before/after comparison
    * with its draggable divider, and the composed Progress Photo card.
@@ -224,6 +231,7 @@ export function LedgerPost({
   playlist = null,
   caption,
   media = [],
+  mediaDisplay = 'swipe',
   customMedia,
   attribution = null,
   bleed = 0,
@@ -244,6 +252,8 @@ export function LedgerPost({
   footer,
 }: LedgerPostProps) {
   const hasMedia = media.length > 0 || customMedia != null;
+  const grid = mediaDisplay === 'grid' && media.length > 1 && media.every((m) => m.kind === 'image');
+  const [viewerAt, setViewerAt] = useState<number | null>(null);
   const shownStats = stats.slice(0, 3);
   /*
    * ⚠ NOT A PROP AND NOT THE CALLER'S CALL — see the header. But the rule is "the image announces what
@@ -294,6 +304,11 @@ export function LedgerPost({
 
         {customMedia ? (
           <View style={[styles.customBand, { marginHorizontal: -bleed }]}>{customMedia}</View>
+        ) : grid ? (
+          /* Each tile opens the viewer at its photo — the card's own tap would open the post instead. */
+          <View style={[styles.band, { marginHorizontal: -bleed, aspectRatio: 4 / 5 }]}>
+            <PhotoGrid urls={media.map((m) => m.url)} onOpen={setViewerAt} />
+          </View>
         ) : hasMedia ? (
           onMedia ? (
             <Pressable onPress={onMedia} accessibilityRole="button" accessibilityLabel={media[0]?.kind === 'video' ? 'Play video' : 'Open media'}>
@@ -373,6 +388,7 @@ export function LedgerPost({
           {commentCount > 0 ? <Text style={styles.actionCount}>{commentCount}</Text> : null}
         </Pressable>
       </View>
+      {grid ? <PhotoViewer urls={media.map((m) => m.url)} index={viewerAt} onClose={() => setViewerAt(null)} /> : null}
     </View>
   );
 }

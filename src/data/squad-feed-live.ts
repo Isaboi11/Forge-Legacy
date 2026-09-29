@@ -137,6 +137,8 @@ export interface SquadMedia {
   kind: SquadMediaKind;
   /** Optional alignment (pan/zoom) for before/after transformation posts — fractions of the frame + scale. */
   transform?: { tx: number; ty: number; scale: number };
+  /** On the FIRST item of a set of photos: Facebook grid or Instagram swipe (PO 09-28). See `domain/squad/post-photos`. */
+  display?: 'grid' | 'swipe';
 }
 
 // ── Transformation share layout (templates) ──
