@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -43,6 +43,9 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { fetchAwaitingChapter, fetchHomeChapter } from '@/data/home-live';
+import { fetchStoredRank } from '@/data/rank-live';
+import { resolveRankBadge } from '@/domain/rank-artwork/badge-art';
+import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useProfile } from '@/lib/profile';
 import { EXPERIENCE_FOR } from '@/components/forge/compositions/ExperienceLevelCard';
@@ -345,6 +348,9 @@ export default function HomeScreen() {
     settled: awaitingSettled,
   } = useQuery(fetchAwaitingChapter, []);
   const { data: homeChapter, settled: chapterSettled } = useQuery(fetchHomeChapter, []);
+  // The rank line under the chapter (B8, QA 09-26) — the one row on Home that reaches Rank, Progress and
+  // Honors. The stored rank is a one-row read; no recompute happens here (Legacy focus owns that).
+  const { data: storedRank, refetch: refetchRank, settled: rankSettled } = useQuery(fetchStoredRank, []);
   // The athlete's saved programs — if any, Home reflects them instead of the empty first-program card.
   const { data: myPrograms, refetch: refetchPrograms, settled: programsSettled } = useQuery(fetchMyPrograms, []);
   // How far into the built program the athlete is, so Home previews the NEXT session rather than always
@@ -473,7 +479,8 @@ export default function HomeScreen() {
       refetchBuiltDone(); // a workout just finished → advance the card to the next session
       refetchPlanned(); // built one for later, or just trained the one that was waiting
       refetchTrainingNow(); // somebody may have started while you were on another tab
-    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow]),
+      refetchRank(); // a promotion is persisted on Legacy focus — the line must not lag behind it
+    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow, refetchRank]),
   );
 
   /*
@@ -975,6 +982,7 @@ export default function HomeScreen() {
     [
       awaitingSettled, // chapter block, Get Started, and which face the hero wears
       chapterSettled, // the chapter's number, name and week/day
+      rankSettled, // the rank line under the chapter
       programsSettled, // hero + Current Program tile
       marksSettled, // WHICH session of the program the hero offers
       plannedSettled, // the one-off built for later (0136)
@@ -1092,6 +1100,43 @@ export default function HomeScreen() {
             showRankMedallion={false}
           />
         </TourAnchor>
+
+        {/*
+          ══ THE RANK LINE — Rank, Progress and Honors had no door on Home (B8, QA 09-26) ══
+
+          One line, not a card: it is information you travel THROUGH, not something you act inside of
+          (feedback: cards are for acting inside). It sits with the chapter because both answer "where am
+          I", and the design's title block already carried the rank (the medallion, withdrawn only for
+          its art). Two targets on one line: the rank opens Progress (whose ladder links Rank Progression),
+          Honors opens Honors. Neutral text and a hairline — bronze stays with Today's Workout.
+        */}
+        {storedRank ? (
+          <View style={styles.rankLine}>
+            <Pressable
+              onPress={() => router.push('/progress-hub')}
+              accessibilityRole="button"
+              accessibilityLabel={`Your rank, ${rankName(storedRank.family, storedRank.subTier)}. Open your progress`}
+              style={({ pressed }) => [styles.rankLinePart, styles.rankLineMain, pressed ? styles.rankLinePressed : null]}
+            >
+              <RankLineBadge family={storedRank.family} level={storedRank.subTier} />
+              <Text style={styles.rankLineName} numberOfLines={1}>
+                {rankName(storedRank.family, storedRank.subTier)}
+              </Text>
+              <Text style={styles.rankLineLink}>Progress</Text>
+              <ChevronRightIcon size={12} color={flColor.gray600} />
+            </Pressable>
+            <View style={styles.rankLineRule} />
+            <Pressable
+              onPress={() => router.push('/honors')}
+              accessibilityRole="button"
+              accessibilityLabel="Open your honors"
+              style={({ pressed }) => [styles.rankLinePart, pressed ? styles.rankLinePressed : null]}
+            >
+              <Text style={styles.rankLineLink}>Honors</Text>
+              <ChevronRightIcon size={12} color={flColor.gray600} />
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.content}>
           {/*
@@ -1712,9 +1757,40 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: TAB_SCREEN_BOTTOM_GAP,
   },
+  rankLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 18,
+    marginTop: 4,
+    marginBottom: 6,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: flColor.charcoal700,
+  },
+  rankLinePart: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 4 },
+  rankLineMain: { flex: 1, minWidth: 0 },
+  rankLinePressed: { opacity: 0.7 },
+  rankLineRule: { width: 1, height: 18, marginHorizontal: 10, backgroundColor: flColor.charcoal700 },
+  rankLineBadge: { width: 16, height: 22 },
+  rankLineName: { flexShrink: 1, fontFamily: flFont.display, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
+  rankLineLink: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },
   content: {
     paddingHorizontal: 18,
     paddingTop: 8,
     gap: 20,
   },
 });
+
+/** "Foundation II" — the family capitalised, the sub-tier in the numerals every rank surface uses. */
+const RANK_ROMAN = ['', 'I', 'II', 'III', 'IV'] as const;
+function rankName(family: RankFamily, subTier: number): string {
+  return `${family.charAt(0).toUpperCase()}${family.slice(1)} ${RANK_ROMAN[subTier] ?? ''}`.trim();
+}
+
+/** The athlete's own badge art at line height; nothing when a family has no art (the name carries it). */
+function RankLineBadge({ family, level }: { family: RankFamily; level: number }) {
+  const { profile } = useProfile();
+  const art = resolveRankBadge({ family, level: Math.max(1, Math.min(4, level)) as RankLevel, sex: profile?.sex });
+  if (art == null) return null;
+  return <Image source={art} style={styles.rankLineBadge} resizeMode="contain" />;
+}

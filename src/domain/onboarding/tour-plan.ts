@@ -407,8 +407,8 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     },
     {
       key: 'wk-reference',
-      title: 'Reference',
-      body: 'The Exercise Library is every lift in the app, searchable and bookmarkable. Activity History answers “what did I actually lift on Tuesday” — and it’s where you log a run or swim you already finished.',
+      title: 'History & Exercises',
+      body: 'Activity History is every workout you’ve logged — it answers “what did I actually lift on Tuesday”, and it’s where you log a run or swim you already finished. The Exercise Library is every lift in the app, searchable and bookmarkable.',
       anchor: 'workouts-reference',
       pad: 8,
       radius: 18,

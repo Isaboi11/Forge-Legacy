@@ -75,6 +75,12 @@ export interface CompletionExercise {
   cardio: CompletionCardio | null;
   sets: number; // done-set count this workout
   isPR: boolean;
+  /**
+   * The record itself, "150 lb × 5" — null when this session set none on the lift (QA F9).
+   * Shown BESIDE the top set because the two differ by definition: a record is the heaviest load at
+   * 1–5 reps, the top set is the best set at any reps. "PR" next to "top 500 lb × 8" read as a 500 PR.
+   */
+  prSet: string | null;
   delta: ExerciseDelta | null; // vs this lift's previous session (null = no prior)
 }
 /**
@@ -543,6 +549,7 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
        */
       sets: completionSetCount(exSets.map((s) => ({ weight: s.weight, reps: s.reps, distance: s.distance, durationSec: s.duration_sec }))),
       isPR: prByExercise.has(ex.name),
+      prSet: ((pr) => (pr ? `${pr.weight} lb × ${pr.reps}` : null))(prByExercise.get(ex.name)),
       delta: bout ? null : deltaOf(now, priorTop.get(ex.name) ?? null),
     };
   });

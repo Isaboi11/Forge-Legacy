@@ -34,6 +34,26 @@ function fingerprint(base64: string): string {
   return `${base64.length}:${(h >>> 0).toString(36)}`;
 }
 
+/**
+ * When the call itself failed (no HTTP response), is Supabase reachable at all?
+ *
+ * ⚠ ON WEB A MISSING FUNCTION LOOKS LIKE NO CONNECTION (QA R2-F7). The gateway's 404 for an undeployed
+ * function carries no CORS headers, so the browser blocks it and `invoke` reports a network failure — and
+ * the athlete was told to check a connection that was fine. A `no-cors` GET resolves (opaquely) whenever
+ * the server answered at all and rejects only when nothing did, so it tells the two apart. On native the
+ * 404 arrives as a Response and never reaches this.
+ */
+async function serverAnswers(): Promise<boolean> {
+  const base = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  if (!base) return false;
+  try {
+    await fetch(`${base}/functions/v1/recipe-photo-read`, { method: 'GET', mode: 'no-cors' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Read one picked recipe image. ⚠ NEVER THROWS — it runs behind a button on a screen with unsaved work. */
 export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult | NoAiConsent> {
   const file = await readAsBase64(uri);
@@ -57,9 +77,9 @@ export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult | 
     let body: unknown = data;
     if (error) {
       const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
+      if (!(ctx instanceof Response)) return (await serverAnswers()) ? { kind: 'not_available' } : { kind: 'offline' };
       body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
+      if (!body) return ctx.status === 404 ? { kind: 'not_available' } : { kind: 'unavailable' };
     }
     if (!body) return { kind: 'offline' };
 

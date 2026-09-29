@@ -109,6 +109,25 @@ export const clampDays = (n: number) => clamp(Math.round(n), DAYS_MIN, DAYS_MAX)
 export const clampSets = (n: number) => clamp(Math.round(n), SETS_MIN, SETS_MAX);
 export const clampReps = (n: number) => clamp(Math.round(n), REPS_MIN, REPS_MAX);
 
+/**
+ * ══ A RANGE IS A PRESCRIPTION, NOT A TYPO FOR ITS FLOOR (QA holtai-04, 2026-09-26) ══
+ *
+ * Holt writes `4 × 3–5` as `reps: 3, repsMax: 5`, and the draft carries both. The Builder drew only
+ * `reps`, so the athlete reviewing the block read "3 reps" — a different set from the one the plan says.
+ * The range is shown as written, and the stepper moves the whole range rather than silently dropping it.
+ */
+export function repsText(x: { reps?: number | null; repsMax?: number | null }): string {
+  const lo = x.reps ?? 1;
+  return x.repsMax != null && x.repsMax > lo ? `${lo}–${x.repsMax}` : String(lo);
+}
+
+export function stepReps<T extends { reps?: number | null; repsMax?: number | null }>(x: T, dir: number): T {
+  const lo = clampReps((x.reps ?? 1) + dir);
+  if (x.repsMax == null || x.repsMax <= (x.reps ?? 1)) return { ...x, reps: lo };
+  const hi = clampReps(x.repsMax + dir);
+  return { ...x, reps: lo, repsMax: hi > lo ? hi : null };
+}
+
 /** Per-section defaults when the Picker hands an exercise back: Main 3×10, Warm-up 2×12, Cool-down 1×30. */
 export const defaultSets = (s: BuilderSection) => (s === 'main' ? 3 : s === 'warmup' ? 2 : 1);
 export const defaultReps = (s: BuilderSection) => (s === 'cooldown' ? 30 : s === 'warmup' ? 12 : 10);

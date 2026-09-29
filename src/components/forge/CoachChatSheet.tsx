@@ -125,6 +125,9 @@ import {
   refusalCardFor,
   volumeFor,
   weeksBetween,
+  answerArriving,
+  streamEnded,
+  streamInto,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -136,6 +139,8 @@ import {
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
+import { typedEquipment } from '@/domain/coach/typed-equipment';
+import { CONCERN } from '@/domain/coach/rulebook/hybrid';
 import { medicalRoute } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
@@ -833,6 +838,8 @@ export function CoachChatSheet({
             (k) => itemByKey(k)?.name ?? k,
           );
           say({ kind: 'holt', text: learnedSaid ? `${dayPreamble()} ${learnedSaid}` : dayPreamble() }, { kind: 'day', card: dayCard });
+          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block. */
+          if (c.limitations.includes('knees')) say({ kind: 'holt', text: CONCERN.kneesLeftOut() });
           return;
         }
 
@@ -1752,7 +1759,7 @@ export function CoachChatSheet({
    * wrote into the first one's turn, and both were cut off. The hold is `busy` OR a reply still arriving,
    * DERIVED from the thread (not a second piece of state), and the drain below waits for both.
    */
-  const streamingNow = thread.some((x) => x.kind === 'holt' && x.streaming === true);
+  const streamingNow = answerArriving(thread);
   const holding = busy != null || streamingNow;
   /* Names each coach-ask stream, so its words land in its own turn. Touched only in the ask handler. */
   const streamSeq = useRef(0);
@@ -2093,13 +2100,13 @@ export function CoachChatSheet({
           say({ kind: 'holt', text: acc, streaming: true, sid });
           return;
         }
-        setThread((t) => t.map((x) => (x.kind === 'holt' && x.sid === sid ? { ...x, text: acc } : x)));
+        setThread((t) => streamInto(t, sid, acc));
       },
       { allowWeb: opts.allowWeb, recipes },
     );
     setBusy(null);
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
-    setThread((t) => t.map((x) => (x.kind === 'holt' && x.sid === sid && x.streaming ? { ...x, streaming: undefined } : x)));
+    setThread((t) => streamEnded(t, sid));
     switch (r.kind) {
       case 'answer':
         if (!started && r.text) say({ kind: 'holt', text: r.text });
@@ -2263,7 +2270,9 @@ export function CoachChatSheet({
           (rest as Partial<ChatState>).excludeExercises = [...new Set([...(constraints.excludeExercises ?? []), ...avoidKeys])];
         }
         const focus = typeof said === 'string' ? focusFromText(said) ?? focusFromText(text) : null;
-        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}) };
+        /* QA holtai-04 — the model's patch has no equipment field, so "dumbbells only" arrived as a bare
+           `home` and built from an empty home gym. The kit named in their own sentence rides along. */
+        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}), ...(typedEquipment(text) ?? {}) };
         if (r.say) say({ kind: 'holt', text: r.say });
         if (mode) return void advance({ ...constraints, ...patch }, m);
         const opens: ChatMode = focus ? 'day' : 'program';
@@ -2335,12 +2344,21 @@ export function CoachChatSheet({
       return;
     }
 
+    /* QA holtai-04 — kit named outright ("dumbbells only", "just bands and a bench") is read here, free,
+       before any model. It answers the where/gear question on the table without a round trip. */
+    const gear = typedEquipment(text);
+    const onTable = mode ? nextQuestion(constraints, mode) : null;
+    if (gear && (onTable?.id === 'where' || onTable?.id === 'gear')) {
+      void advance({ ...constraints, ...gear }, mode ?? 'program');
+      return;
+    }
+
     const opener = fromOpener(text);
     /* The typed path only understands the two openers that START something. Typing "how do I…" is a
        question for the model, not for a string match — see TYPING_ENABLED. */
     if (opener?.kind === 'build') {
       setMode(opener.mode);
-      void advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
+      void advance({ ...athleteFacts(constraints), ...opener.patch, ...(gear ?? {}) }, opener.mode);
       return;
     }
 
@@ -2350,7 +2368,8 @@ export function CoachChatSheet({
     }
 
     const q = nextQuestion(constraints, mode ?? 'program');
-    const patch = q ? interpret(text, q) : null;
+    const said = q ? interpret(text, q) : null;
+    const patch = said || gear ? { ...(said ?? {}), ...(gear ?? {}) } : null;
     if (!patch) {
       /* He asks again rather than guessing. A coach who mishears and proceeds is worse than one who
          checks — and until the model lands, this is the honest edge of what he understands. */

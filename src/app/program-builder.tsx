@@ -82,7 +82,8 @@ import {
   activeDays,
   applyDaysPerWeek,
   applyWeeks,
-  clampReps,
+  repsText,
+  stepReps,
   clampSets,
   clampWeeks,
   clearProgramDraft,
@@ -837,7 +838,7 @@ function ProgramBuilderScreen() {
                   : x.kind !== 'cardio' && x.durationSec != null
                     ? { ...x, durationSec: bumpTimedSet(x.durationSec, dir) }
                     : x.kind !== 'cardio'
-                    ? { ...x, reps: clampReps((x.reps ?? 1) + dir) }
+                    ? stepReps(x, dir)
                     : x.activity === 'bike'
                       ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir, FIRST_TARGET[x.activity ?? 'bike'].spdMph) }
                       : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir, FIRST_TARGET[x.activity ?? 'run'].paceSec) },
@@ -2422,7 +2423,7 @@ function ExerciseCard({
     ? effortLabel({ ...item, activity, name: item.name, equip: item.equip ?? '', modality, targetMi: item.targetMi ?? null }, id, id)
     : timedLift
       ? durText(item.durationSec)
-      : String(item.reps ?? 1);
+      : repsText(item);
   const bUnit = cardio ? (speed ? (item.targetSpdMph == null ? 'speed' : 'mph') : item.targetPaceSec == null ? 'pace' : '/mi') : timedLift ? '' : 'reps';
   const tVal = item.targetSec == null ? 'Open' : fmtDuration(item.targetSec);
   const tOpen = item.targetSec == null;

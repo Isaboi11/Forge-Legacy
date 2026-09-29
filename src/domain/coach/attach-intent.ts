@@ -79,6 +79,8 @@ export function attachErrorLine(kind: AttachKind, error: string): string {
       return 'Recipes live in Nutrition, and that isn’t open on your account yet.';
     case 'unavailable':
       return 'Picture reading isn’t working right now. Try again in a bit.';
+    case 'not_available':
+      return 'Reading that kind of picture isn’t available right now.';
     default:
       return 'I couldn’t reach the reader. Check your connection and send it again.';
   }

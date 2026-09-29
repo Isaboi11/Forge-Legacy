@@ -15,6 +15,12 @@ import { buildExerciseDetail } from '@/domain/exercise-detail/view';
 import { exerciseDemoUrl, type AthleteSex } from '@/domain/exercise-detail/media';
 import { ExerciseDemo } from '@/components/forge/ExerciseDemo';
 import { useProfile } from '@/lib/profile';
+import { useQuery } from '@/lib/useQuery';
+import { useUnits } from '@/lib/settings';
+import { fetchLiftHistory, liftId } from '@/data/lift-history-live';
+import { summariseExerciseHistory, type ExerciseHistorySummary } from '@/domain/exercise-detail/history';
+import { setLoadLineLb } from '@/domain/workout/set-load';
+import type { UnitSystem } from '@/domain/settings/units';
 
 /**
  * W-22 Exercise Detail (`Forge Exercise Detail.dc.html`) — the read-only reference page for one
@@ -36,6 +42,10 @@ import { useProfile } from '@/lib/profile';
  * do it · cues · common mistakes · alternatives. The demo leads deliberately — you look at the movement
  * before you read about it, and every word under "How to do it" is describing the thing on screen.
  *
+ * YOUR HISTORY (W22-Amendment-001, PO 2026-09-29, B8) lifts §19's "never show history / personal bests"
+ * rule: the athlete's own heaviest set, their 1–5 rep record, and their last few sessions, read through
+ * `fetchLiftHistory` — the one lift-history read — so this page and the logger can never disagree.
+ *
  * DEFERRED vs the `.dc` (omitted, not faked):
  *  · Favourite button — the picker already owns bookmarking (long-press); a second, unpersisted toggle
  *    here would be a different answer to the same question.
@@ -51,6 +61,16 @@ export default function ExerciseDetailScreen() {
      this screen. Reading the shared profile costs nothing here — it is already loaded app-wide. */
   const { profile } = useProfile();
   const demoUrl = useMemo(() => exerciseDemoUrl(id, profile?.sex as AthleteSex | undefined), [id, profile?.sex]);
+  const { units } = useUnits();
+  /* Keyed by the catalogue id AND the name, so rows logged before catalog keys existed still count —
+     the identity rule `fetchLiftHistory` owns. `strict`: a failed read must not read as "never done". */
+  const liftName = detail?.name ?? null;
+  const history = useQuery(async () => {
+    if (!id || !liftName) return null;
+    const lift = { catalogKey: id, name: liftName };
+    const h = (await fetchLiftHistory([lift], { sessionLimit: HISTORY_LIMIT, strict: true })).get(liftId(lift));
+    return summariseExerciseHistory(h?.sessions ?? [], h?.best ?? null, { shown: HISTORY_SHOWN, limit: HISTORY_LIMIT });
+  }, [id, liftName]);
 
   if (!detail) {
     return (
@@ -101,6 +121,12 @@ export default function ExerciseDetailScreen() {
               </Text>
             </View>
           ))}
+        </View>
+
+        {/* your history — the athlete's own numbers on this lift (W22-Amendment-001) */}
+        <View style={styles.block}>
+          <SectionHeader label="Your history" />
+          <YourHistory summary={history.data} loading={history.loading} error={history.error} onRetry={history.refetch} units={units} />
         </View>
 
         {/* what it trains — real muscle data */}
@@ -251,6 +277,86 @@ export default function ExerciseDetailScreen() {
   );
 }
 
+/** Sessions read (bounds "heaviest") and sessions listed. */
+const HISTORY_LIMIT = 60;
+const HISTORY_SHOWN = 5;
+
+/** "Sep 24" this year, "Sep 24, 2025" before it. A bare date is read as LOCAL midnight, not UTC. */
+function sessionDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso.length <= 10 ? `${iso}T00:00:00` : iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString('en-US', sameYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/**
+ * No card: this is information, not something you act inside of. Two figures on the ground, then the
+ * sessions as hairline rows. Every state says what it is — loading, couldn't load, never done, or the numbers.
+ */
+function YourHistory({
+  summary,
+  loading,
+  error,
+  onRetry,
+  units,
+}: {
+  summary: ExerciseHistorySummary | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+  units: UnitSystem;
+}) {
+  if (error) {
+    return (
+      <View style={styles.histLineRow}>
+        <Text style={styles.histNote}>Couldn’t load your history.</Text>
+        <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel="Try loading your history again" style={styles.histRetry}>
+          <Text style={styles.histRetryText}>Try again</Text>
+        </Pressable>
+      </View>
+    );
+  }
+  if (loading || !summary) return <Text style={styles.histNote}>Loading your history…</Text>;
+  if (summary.empty) return <Text style={styles.histNote}>You haven’t logged this exercise yet.</Text>;
+
+  const h = summary.heaviest;
+  const heaviestLabel = h?.bodyweight ? 'Most reps · bodyweight' : 'Heaviest set';
+  return (
+    <View>
+      <View style={styles.histFigures}>
+        <View style={styles.histFigure}>
+          <Text style={styles.histLabel}>{heaviestLabel}</Text>
+          <Text style={styles.histValue}>{h ? setLoadLineLb(h.set.weight, h.set.reps, units) : '—'}</Text>
+          <Text style={styles.histSub}>
+            {h ? (summary.capped ? `${sessionDate(h.startedAt)} · last ${HISTORY_LIMIT} sessions` : sessionDate(h.startedAt)) : 'No load logged'}
+          </Text>
+        </View>
+        <View style={[styles.histFigure, styles.histFigureRuled]}>
+          <Text style={styles.histLabel}>PR (1–5 reps)</Text>
+          <Text style={styles.histValue}>{summary.pr ? setLoadLineLb(summary.pr.weight, summary.pr.reps, units) : '—'}</Text>
+          <Text style={styles.histSub}>{summary.pr ? sessionDate(summary.pr.achievedOn) || 'On file' : 'None yet'}</Text>
+        </View>
+      </View>
+
+      {summary.recent.length ? (
+        <View style={styles.histSessions}>
+          <Text style={styles.histLabel}>Recent sessions</Text>
+          {summary.recent.map((r) => (
+            <View key={r.startedAt} style={styles.histRow}>
+              <Text style={styles.histDate}>{sessionDate(r.startedAt)}</Text>
+              <Text style={styles.histTop} numberOfLines={1}>
+                {r.top ? setLoadLineLb(r.top.weight, r.top.reps, units) : '—'}
+                <Text style={styles.histSetCount}>{`  ·  ${r.setCount} ${r.setCount === 1 ? 'set' : 'sets'}`}</Text>
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 34 },
@@ -391,6 +497,22 @@ const styles = StyleSheet.create({
   },
   bestText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 0.7, textTransform: 'uppercase', color: flColor.bronze300 },
   altNote: { fontSize: 11.5, color: flColor.gray600 },
+
+  histNote: { flexShrink: 1, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  histLineRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10 },
+  histRetry: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  histRetryText: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.labelInk },
+  histFigures: { flexDirection: 'row', paddingVertical: 12, borderTopWidth: 1, borderBottomWidth: 1, borderColor: flColor.charcoal700 },
+  histFigure: { flex: 1, minWidth: 0, gap: 3 },
+  histFigureRuled: { paddingLeft: 14, borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
+  histLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.labelInk },
+  histValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
+  histSub: { fontSize: 11.5, color: flColor.gray600 },
+  histSessions: { marginTop: 16, gap: 2 },
+  histRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  histDate: { fontSize: 13, color: flColor.gray400 },
+  histTop: { flexShrink: 1, fontSize: 13.5, fontWeight: '600', color: flColor.cream100, textAlign: 'right' },
+  histSetCount: { fontSize: 12, fontWeight: '400', color: flColor.gray600 },
 
   pending: { marginTop: 26, fontSize: 12.5, lineHeight: 19, fontStyle: 'italic', color: flColor.gray600 },
 

@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 
 import {
   assembleEndurance,
+  CONTINUOUS_RUN_MI,
   counterOfferIn,
   enduranceRefusalFor,
   LONG_RUN_DISTANCE_CAP_MI,
@@ -97,7 +98,7 @@ test('with buildAnyway every race builds, inside every cap, for every athlete', 
             // The locked 10% rule, read as the existing endurance test reads it: against the highest week
             // already carried — and week 1 against where the athlete is (the curve's own 3 mi floor).
             let highest = Math.max(mi, 3);
-            let longest = Math.max(Math.max(mi, 3) * 0.4, 1.5);
+            let longest = Math.max(Math.max(mi, 3) * 0.4, CONTINUOUS_RUN_MI);
             for (const v of r.volume) {
               assert.ok(
                 v.mileage <= highest * (1 + WEEKLY_INCREASE_CAP) + 0.15,
@@ -129,8 +130,16 @@ test('with buildAnyway every race builds, inside every cap, for every athlete', 
               assert.equal(r.concern.altGoal, old.altGoal, tag);
               assert.ok(!r.concern.message.includes('!'), `${tag}: an exclamation mark in a concern`);
               assert.equal(counterOfferIn(r.concern.message), old.altGoal, `${tag}: the words and the suggestion disagree`);
-            } else {
-              assert.equal(r.concern, null, `${tag}: a concern with nothing to be concerned about`);
+            } else if (r.concern) {
+              // Nothing refused, but the long run falls well short of the race (QA F14) — said, and true.
+              assert.equal(r.concern.reason, 'short_long_run', `${tag}: a concern with nothing to be concerned about`);
+              const top = Math.max(...longRunsOf(r));
+              const wants = Math.min(RACE_SPEC[goal].raceMi, RACE_SPEC[goal].peakLongMi);
+              assert.ok(top < wants * 0.75, `${tag}: a shortfall concern over a ${top} mi long run`);
+              assert.equal(counterOfferIn(r.concern.message), r.concern.altGoal, `${tag}: the words and the suggestion disagree`);
+            } else if (goal !== 'triathlon' && canRun && longRunsOf(r).length) {
+              const wants = Math.min(RACE_SPEC[goal].raceMi, RACE_SPEC[goal].peakLongMi);
+              assert.ok(Math.max(...longRunsOf(r)) >= wants * 0.75, `${tag}: a long run far short of the race, said nothing`);
             }
           }
         }
@@ -233,4 +242,64 @@ test('⚠ QA F14 — a compressed race build climbs its long run at the spike ca
     const top = Math.max(...longRunsOf(r));
     if (r.concern && top < RACE_SPEC[goal].raceMi) assert.match(r.concern.message, /the long run tops out around/);
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QA F14 (round 2) — the long run is sensibly related to the race; run/walk says its real length; no lifting copy
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('⚠ QA F14 — an 8-week 5K from under 5 miles a week reaches race distance', () => {
+  for (const base of [0, 3]) {
+    const raceDate = new Date(Date.parse(TODAY) + 8 * 7 * 86400000).toISOString().slice(0, 10);
+    const r = build({ goal: 'run_5k', raceDate, currentWeeklyMi: base, buildAnyway: true }, true);
+    const top = Math.max(...longRunsOf(r));
+    assert.ok(top >= RACE_SPEC.run_5k.raceMi, `base ${base}: the longest run is ${top} mi for a 3.1 mi race`);
+    assert.equal(r.concern, null);
+  }
+});
+
+test('⚠ QA F14 — a race whose long run falls far short says so, before anything is started', () => {
+  // A half from 8 miles a week passes every door, and the spike cap still stops the long run near 7.
+  const r = build({ goal: 'run_half', weeks: 12, currentWeeklyMi: 8, buildAnyway: true }, true);
+  assert.equal(r.refusal, null);
+  assert.equal(r.concern.reason, 'short_long_run');
+  assert.match(r.concern.message, new RegExp(`tops out around ${Math.max(...longRunsOf(r))} miles`));
+  assert.equal(r.concern.altGoal, 'run_10k');
+  assert.equal(counterOfferIn(r.concern.message), 'run_10k');
+});
+
+test('⚠ QA F14 — a six-week marathon from no running says the calendar too, and suggests the 5K', () => {
+  const r = build({ goal: 'run_marathon', weeks: 6, currentWeeklyMi: 0, buildAnyway: true }, false);
+  assert.equal(r.concern.reason, 'cannot_run');
+  assert.match(r.concern.message, /usually takes about 16 weeks and you've got 6 weeks, so expect to walk a lot of it/);
+  assert.equal(r.concern.altGoal, 'run_5k');
+});
+
+test('⚠ QA F14 — a run/walk session is prescribed as its whole length, not one minute', () => {
+  const r = build({ goal: 'run_5k', weeks: 8, currentWeeklyMi: 0, buildAnyway: true }, false);
+  const rw = r.structure.weekPlans.flatMap((w) => w.days).filter((d) => d.name === 'Run / Walk');
+  assert.ok(rw.length > 0);
+  for (const d of rw) {
+    const row = d.main[0];
+    const m = row.coachNote.match(/Run (\d+)s, walk (\d+)s, (\d+) times through — about (\d+) minutes/);
+    assert.ok(m, row.coachNote);
+    const [, run, walk, reps, mins] = m.map(Number);
+    assert.equal(row.targetSec, reps * (run + walk), 'the row is the session, not one run interval');
+    assert.equal(Math.round(row.targetSec / 60), mins);
+    assert.ok(row.targetSec >= 10 * 60, `${row.targetSec}s`);
+    assert.equal(row.sets ?? 1, 1, 'a cardio row is logged as one bout');
+  }
+});
+
+test('⚠ QA F14 — a race plan is not described as a lifting block', async () => {
+  const { rationaleFor } = await import('../rulebook/rationale.ts');
+  for (const goal of RACES) {
+    for (const daysPerWeek of DAYS) {
+      const why = rationaleFor({ goal, daysPerWeek, sessionMinutes: 60, weeks: 12, splitStyle: 'ppl', deloadWeeks: [3, 7] });
+      assert.ok(why.length > 0, `${goal} ${daysPerWeek}d`);
+      assert.doesNotMatch(why, /muscle|gym|lift|compound|rep range|push, pull/i, `${goal} ${daysPerWeek}d: ${why}`);
+    }
+  }
+  // A lifting block keeps its own words.
+  assert.match(rationaleFor({ goal: 'muscle', daysPerWeek: 4, sessionMinutes: 60, weeks: 8, deloadWeeks: [] }), /muscle group/);
 });
