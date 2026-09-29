@@ -16,6 +16,7 @@ import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePlanNext } from '@/hooks/usePlanNext';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { itemByKey } from '@/domain/exercise-picker/data';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
@@ -98,6 +99,7 @@ export default function TemplateDetailScreen() {
   );
 
   const [moreOpen, setMoreOpen] = useState(false);
+  const { planNext, planSheet } = usePlanNext();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
   const primeKeyboard = useKeyboardPrimer();
@@ -308,6 +310,15 @@ export default function TemplateDetailScreen() {
                 <Text style={styles.secondaryText}>Edit</Text>
               </Pressable>
               <Pressable
+                onPress={() => void planNext(t)}
+                accessibilityRole="button"
+                accessibilityLabel="Plan this workout next, on Home"
+                style={({ pressed }) => [styles.secondaryBtn, pressed ? styles.pressed : null]}
+              >
+                <EngravedIcon name="calendar" size={15} color={flColor.gray400} />
+                <Text style={styles.secondaryText}>Plan next</Text>
+              </Pressable>
+              <Pressable
                 onPress={() => void doDuplicate()}
                 accessibilityRole="button"
                 accessibilityLabel="Duplicate this template"
@@ -330,6 +341,7 @@ export default function TemplateDetailScreen() {
       ) : null}
 
       {/* Delete lives behind the overflow deliberately — it should never be one tap from Start. */}
+      {planSheet}
       <BottomSheet open={moreOpen} onClose={() => setMoreOpen(false)}>
         {/* Renaming moved here when Edit became a real edit. It is still worth its own action — changing
             only the title should not mean opening a builder and saving a whole shape back. */}
