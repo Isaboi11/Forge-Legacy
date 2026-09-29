@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { flColor } from '@/constants/foundation';
 
-import { hasMetHolt } from '@/lib/coach-thread';
+import { hasClosedHoltIntro, hasMetHolt, rememberClosedHoltIntro } from '@/lib/coach-thread';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { clearProgramDraft, loadDraftTold, loadProgramDraft, setDraftTold } from '@/lib/program-draft';
 import { useCeremony } from '@/hooks/useCeremony';
@@ -163,6 +163,8 @@ export function CoachBubble() {
    * reads as "new" (see `hasMetHolt`) — a second introduction is a small cost, a missing one is not.
    */
   const [met, setMet] = useState<boolean | null>(null);
+  /* The X on the introduction, remembered across launches (PO 09-28 — see `rememberClosedHoltIntro`). */
+  const [introClosed, setIntroClosed] = useState<boolean | null>(null);
 
   /**
    * ══ THE EXPLORATION NUDGE — Holt inviting them into a corner of the app they have not opened ══
@@ -244,6 +246,9 @@ export function CoachBubble() {
     void hasMetHolt().then((v) => {
       if (alive) setMet(v);
     });
+    void hasClosedHoltIntro().then((v) => {
+      if (alive) setIntroClosed(v);
+    });
     return () => {
       alive = false;
     };
@@ -322,7 +327,7 @@ export function CoachBubble() {
    * and still opens him; the introduction simply waits until the first session is logged, when there is
    * something for a coach to build on. Unknown (`null`) reads as "not yet", so nothing flashes.
    */
-  const introducing = !kitchen && met === false && (sessions ?? 0) > 0;
+  const introducing = !kitchen && met === false && introClosed === false && (sessions ?? 0) > 0;
   /* Introduction, then the draft they already started, then an invitation. See `nudge` above. None of
      them in the kitchen (see `KITCHEN_SURFACE`). */
   const line = kitchen
@@ -397,6 +402,10 @@ export function CoachBubble() {
     return () => clearTimeout(t);
   }, [lineOnScreen, shownLine]);
   const closeLine = () => {
+    if (introducing) {
+      setIntroClosed(true);
+      void rememberClosedHoltIntro();
+    }
     if (!introducing && teaser) retireDraftLine();
     setClosedLine(line);
   };
