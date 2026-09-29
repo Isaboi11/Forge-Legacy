@@ -32,6 +32,7 @@ import { fetchGroceryState, fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserReci
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const HAVE_AT = -72;
 
@@ -53,7 +54,7 @@ const HAVE_AT = -72;
  *  · Swipe-left to "Have it" is kept; every swipe action is also a button in the item's sheet, so it is
  *    reachable without the gesture.
  */
-export default function GroceryListScreen() {
+function GroceryListScreen() {
   const router = useRouter();
   const { showToast } = useToast();
 
@@ -495,3 +496,12 @@ const styles = StyleSheet.create({
   sheetActions: { paddingTop: 18 },
   removeWrap: { alignSelf: 'center', paddingTop: 6 },
 });
+
+/** Premium since 0244 (PO decision "B", 2026-09-29) — Free athletes meet `NutritionPlannerGate` instead. */
+export default function GroceryListScreenRoute() {
+  return (
+    <NutritionPlannerGate what="The grocery list">
+      <GroceryListScreen />
+    </NutritionPlannerGate>
+  );
+}

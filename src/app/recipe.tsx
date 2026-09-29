@@ -31,6 +31,7 @@ import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { useUnits } from '@/lib/settings';
 import { logRecipeEaten } from '@/lib/log-recipe';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
 const SLOT_LABEL: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snack' };
@@ -53,7 +54,7 @@ const SLOT_LABEL: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lun
  * Swap hands back to Meal Plan and opens its swap sheet there (`lib/meal-plan-intent.ts`), exactly as
  * the `.dc`'s `goSwap` returns to the plan.
  */
-export default function RecipeScreen() {
+function RecipeScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const { units } = useUnits();
@@ -553,3 +554,12 @@ const styles = StyleSheet.create({
   sheetMeta: { marginTop: -8, marginBottom: 4, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
 });
+
+/** Premium since 0244 (PO decision "B", 2026-09-29) — Free athletes meet `NutritionPlannerGate` instead. */
+export default function RecipeScreenRoute() {
+  return (
+    <NutritionPlannerGate what="Editing recipes">
+      <RecipeScreen />
+    </NutritionPlannerGate>
+  );
+}
