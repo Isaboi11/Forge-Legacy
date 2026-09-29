@@ -790,9 +790,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal700,
   },
   dayPill: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.pill },
-  dayPillOn: { backgroundColor: flColor.bronzeTint },
+  dayPillOn: { backgroundColor: flColor.selectedFill },
   dayPillText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
-  dayPillTextOn: { color: flColor.bronze300 },
+  dayPillTextOn: { color: flColor.selectedInk },
   slotRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
     borderBottomColor: flColor.divider,
   },
   slotLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  slotLabelOn: { color: flColor.bronze300 },
+  slotLabelOn: { color: flColor.selectedInk },
   slotNote: { fontSize: 12.5, color: flColor.gray600 },
   slotCheckGap: { width: 16 },
 

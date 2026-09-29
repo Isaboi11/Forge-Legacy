@@ -255,6 +255,13 @@ export const flColor = {
    * Contrast in BOTH themes is a legibility requirement — the 1% exception to the two-theme rule.
    */
   divider: '#34343B',
+  /**
+   * The fill and the words of a SELECTED chip, segment or option (QA 09-26 visualA-11). Forge's words stay
+   * `bronze300` byte for byte; the fill is a firmer tint than `bronzeTint` (5%) so a chosen chip reads as
+   * chosen by more than its text colour — 1.25:1 against a charcoal800 card, with `accentBorder` on top.
+   */
+  selectedFill: 'rgba(181, 138, 97, 0.16)',
+  selectedInk: '#C99767',
 } as const;
 
 export const flText = {

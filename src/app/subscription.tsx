@@ -1099,7 +1099,7 @@ const styles = StyleSheet.create({
   aiRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 15 },
   aiText: { flex: 1 },
   aiSwitch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-  aiSwitchOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
+  aiSwitchOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
   aiSwitchOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
   aiKnob: { width: 18, height: 18, borderRadius: 9 },
   aiKnobOn: { backgroundColor: flColor.bronze300 },

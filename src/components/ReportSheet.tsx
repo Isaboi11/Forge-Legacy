@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  reasonOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  reasonOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   dot: {
     width: 18,
     height: 18,

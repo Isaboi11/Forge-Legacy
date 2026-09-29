@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: 'rgba(196,142,74,0.16)', borderColor: flColor.accentBorder },
   chipSealed: { backgroundColor: flColor.surfaceRecessed, borderColor: flColor.charcoal600 },
   chipText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
-  chipTextActive: { color: flColor.bronze300 },
+  chipTextActive: { color: flColor.selectedInk },
   chipTextSealed: { color: flColor.gray400 },
 
   meta: { gap: 9, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 18 },

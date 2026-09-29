@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
   pill: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: flRadius.pill },
   pillOn: { backgroundColor: flColor.bronzeDark },
   pillText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
-  pillTextOn: { color: flColor.bronze300 },
+  pillTextOn: { color: flColor.selectedInk },
 
   macroHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 2, paddingTop: 28, paddingBottom: 14 },
   sectionLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600 },
@@ -565,5 +565,5 @@ const styles = StyleSheet.create({
   choice: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.md, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
   choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
-  choiceTextOn: { color: flColor.bronze300 },
+  choiceTextOn: { color: flColor.selectedInk },
 });

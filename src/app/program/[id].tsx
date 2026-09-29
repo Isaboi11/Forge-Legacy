@@ -1844,9 +1844,9 @@ const styles = StyleSheet.create({
   flip: { transform: [{ rotate: '180deg' }] },
 
   pill: { paddingVertical: 5, paddingHorizontal: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  pillActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  pillActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   pillText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray400 },
-  pillTextActive: { color: flColor.bronze300 },
+  pillTextActive: { color: flColor.selectedInk },
 
   scroll: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 28 },
   title: { fontFamily: flFont.display, fontSize: 32, fontWeight: '700', letterSpacing: -0.3, lineHeight: 36, color: flColor.cream100, marginBottom: 8 },

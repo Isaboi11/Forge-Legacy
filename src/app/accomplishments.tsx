@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
 
   chapterList: { gap: 8 },
   chapterChip: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chapterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chapterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chapterChipLabel: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
   chapterChipLabelOn: { color: flColor.cream100 },
   chapterChipSub: { fontSize: 11, color: flColor.gray600, marginTop: 1 },

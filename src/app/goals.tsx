@@ -1064,9 +1064,9 @@ const styles = StyleSheet.create({
   customUnit: { marginTop: 10 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   // auto-tracking metric picker
   subChips: { marginTop: 10 },

@@ -586,9 +586,9 @@ const styles = StyleSheet.create({
   sectionLabelInline: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   sectionLabelFlex: { flex: 1, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
 
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  inkOn: { color: flColor.bronze300 },
+  inkOn: { color: flColor.selectedInk },
   inkOff: { color: flColor.gray600 },
 
   formatRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
   poseEmpty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   poseCheck: { position: 'absolute', top: 3, right: 3, width: 14, height: 14, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeSolid },
   poseCap: { fontSize: 8, fontWeight: '600', letterSpacing: 0.5, color: flColor.gray600, textAlign: 'center' },
-  poseCapOn: { color: flColor.bronze300 },
+  poseCapOn: { color: flColor.selectedInk },
 
   entryStrip: { gap: 7, paddingBottom: 2, paddingRight: 4 },
   entryPill: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1 },

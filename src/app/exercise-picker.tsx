@@ -1131,7 +1131,7 @@ const styles = StyleSheet.create({
   catRowCount: { fontSize: 12, fontWeight: '600', color: flColor.labelInk, fontVariant: ['tabular-nums'] },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  rowSel: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  rowSel: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   rowIcon: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, minWidth: 0, gap: 2 },
   rowNameLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -1231,9 +1231,9 @@ const styles = StyleSheet.create({
   filterGroupHint: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, marginTop: -5, marginBottom: 11 },
   filterChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   filterChip: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  filterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  filterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   filterChipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  filterChipTextOn: { color: flColor.bronze300 },
+  filterChipTextOn: { color: flColor.selectedInk },
   filterActions: { flexDirection: 'row', gap: 10 },
   filterApply: { flex: 1 },
 

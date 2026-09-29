@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  acceptOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  acceptOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   acceptPressed: { opacity: 0.85 },
   box: {
     width: 21,

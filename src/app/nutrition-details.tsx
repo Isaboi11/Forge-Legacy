@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
 
   dayLabels: { flexDirection: 'row', gap: 8, paddingTop: 10 },
   dayLabel: { flex: 1, textAlign: 'center', fontSize: 10.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
-  dayLabelOn: { color: flColor.bronze300 },
+  dayLabelOn: { color: flColor.selectedInk },
 
   cardFoot: {
     flexDirection: 'row',

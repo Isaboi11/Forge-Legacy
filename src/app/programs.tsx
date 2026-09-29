@@ -211,9 +211,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  statePillActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  statePillActive: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   statePillText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
-  statePillTextActive: { color: flColor.bronze300 },
+  statePillTextActive: { color: flColor.selectedInk },
   digest: {
     borderWidth: 1,
     borderColor: flColor.charcoal600,

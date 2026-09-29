@@ -1243,7 +1243,7 @@ const styles = StyleSheet.create({
   displayOpt: { flex: 1, gap: 2, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
   displayOptOn: { borderColor: flColor.accentBorder },
   displayLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  displayLabelOn: { color: flColor.bronze300 },
+  displayLabelOn: { color: flColor.selectedInk },
   displaySub: { fontSize: 11.5, color: flColor.gray600 },
   mediaRemove: { position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
 });

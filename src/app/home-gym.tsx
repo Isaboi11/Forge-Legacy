@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  cardOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  cardOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 },
   disc: {
     width: 34,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.bronzeSolid,
   },
   cardLabel: { fontSize: 13, fontWeight: '600', color: flColor.cream100, marginBottom: 2 },
-  cardLabelOn: { color: flColor.bronze300 },
+  cardLabelOn: { color: flColor.selectedInk },
   cardHint: { fontSize: 11, color: flColor.gray600 },
 
   note: {

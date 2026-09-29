@@ -1105,10 +1105,10 @@ const styles = StyleSheet.create({
 
   suggestRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   suggestChip: { paddingVertical: 8, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
-  suggestChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  suggestChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   suggestChipPressed: { opacity: 0.7 },
   suggestText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
-  suggestTextOn: { color: flColor.bronze300, fontWeight: '600' },
+  suggestTextOn: { color: flColor.selectedInk, fontWeight: '600' },
   chapterPreview: { gap: 6, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   chapterPreviewLabel: { fontFamily: flFont.sans, fontSize: 11, letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
   chapterPreviewName: { fontFamily: flFont.display, fontSize: 18, lineHeight: 24, color: flColor.cream100 },
@@ -1124,9 +1124,9 @@ const styles = StyleSheet.create({
   primaryTag: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.labelInk },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   gearChip: { paddingVertical: 9, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
-  gearChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  gearChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   gearChipText: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
-  gearChipTextOn: { color: flColor.bronze300, fontWeight: '600' },
+  gearChipTextOn: { color: flColor.selectedInk, fontWeight: '600' },
   /* A day count is one or two glyphs, so it gets a square-ish target rather than a pill that would be
      mostly padding. `minWidth` and not a fixed width: 2–6 are one digit today and the tile must not
      break if a two-digit option is ever added. */

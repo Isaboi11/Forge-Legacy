@@ -1051,7 +1051,7 @@ const styles = StyleSheet.create({
   engagement: { flexDirection: 'row', alignItems: 'center', gap: 22, marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   engItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   engText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  engTextOn: { color: flColor.bronze300 },
+  engTextOn: { color: flColor.selectedInk },
 
   comments: { paddingHorizontal: 18, paddingTop: 16, marginTop: 10, borderTopWidth: 8, borderTopColor: flColor.charcoal900 },
   commentsCount: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 14 },
@@ -1079,10 +1079,10 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  ackRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  ackRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   ackRowPressed: { opacity: 0.75 },
   ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  ackRowTextOn: { color: flColor.bronze300 },
+  ackRowTextOn: { color: flColor.selectedInk },
   ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   commentEdited: { fontSize: 11, fontStyle: 'italic', color: flColor.gray600 },

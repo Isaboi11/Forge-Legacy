@@ -819,16 +819,16 @@ const styles = StyleSheet.create({
     flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: flRadius.md,
     borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: 'transparent',
   },
-  leadChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  leadChipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   leadChipText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray600 },
-  leadChipTextOn: { color: flColor.bronze300 },
+  leadChipTextOn: { color: flColor.selectedInk },
 
   /* Same border language as the lead chips — this is another per-post choice, not a settings row. */
   mapRow: {
     flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 11, paddingHorizontal: 12,
     borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle,
   },
-  mapRowOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  mapRowOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   mapBox: {
     width: 20, height: 20, borderRadius: 5, borderWidth: 1.5,
     borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center',
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
   mapBoxOn: { borderColor: flColor.bronze300, backgroundColor: flColor.bronze300 },
   mapText: { flex: 1, minWidth: 0, gap: 2 },
   mapLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  mapLabelOn: { color: flColor.bronze300 },
+  mapLabelOn: { color: flColor.selectedInk },
   mapSub: { fontSize: 11.5, color: flColor.gray600 },
 
   tiles: { flexDirection: 'row', gap: 9 },
@@ -852,8 +852,8 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.surfaceRecessed,
   },
   tilePressed: { borderColor: flColor.accentBorder },
-  tileOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
-  tileLabelOn: { color: flColor.bronze300 },
+  tileOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
+  tileLabelOn: { color: flColor.selectedInk },
   tileOff: { opacity: 0.45 },
   tileLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
 

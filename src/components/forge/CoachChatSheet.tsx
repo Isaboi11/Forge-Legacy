@@ -4766,7 +4766,7 @@ const styles = StyleSheet.create({
   headerAction: { alignItems: 'center', gap: 5 },
   headerActionPad: { paddingLeft: 12 },
   headerActionLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
-  headerActionLabelOn: { color: flColor.bronze300 },
+  headerActionLabelOn: { color: flColor.selectedInk },
 
   /* §2's popover. Anchored under NEW CHAT rather than centred — it belongs to that button. */
   menuScrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 5 },
@@ -4949,7 +4949,7 @@ const styles = StyleSheet.create({
     backgroundColor: wash(0.032),
   },
   segText: { fontSize: 13, color: flColor.cream100 },
-  segTextOn: { fontWeight: '600', color: flColor.bronze300 },
+  segTextOn: { fontWeight: '600', color: flColor.selectedInk },
 
   // cards — a choice that needs a sentence.
   cardCol: { gap: 8 },

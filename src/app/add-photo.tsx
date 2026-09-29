@@ -498,9 +498,9 @@ const styles = StyleSheet.create({
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   input: { marginTop: 10, paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
 
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   inputMulti: { minHeight: 88, textAlignVertical: 'top' },
 
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  starRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  starRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   starBody: { flex: 1, minWidth: 0 },
   starTitle: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   starSub: { marginTop: 2, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },

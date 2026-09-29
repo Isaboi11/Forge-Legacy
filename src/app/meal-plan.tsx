@@ -1031,10 +1031,10 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  stripDayOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  stripDayOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   stripDow: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
   stripNum: { fontSize: 15, fontWeight: '600', color: flColor.gray400 },
-  stripTextOn: { color: flColor.bronze300 },
+  stripTextOn: { color: flColor.selectedInk },
   stripToday: { color: flColor.cream100, letterSpacing: 0 },
 
   dayCard: {
@@ -1151,9 +1151,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  spanChipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  spanChipOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   spanText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  spanTextOn: { color: flColor.bronze300 },
+  spanTextOn: { color: flColor.selectedInk },
   back: { alignSelf: 'center', marginTop: 6 },
 });
 

@@ -216,9 +216,9 @@ const styles = StyleSheet.create({
   // activity chips
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  chipLabelOn: { color: flColor.bronze300 },
+  chipLabelOn: { color: flColor.selectedInk },
 
   // duration
   durationRow: { flexDirection: 'row', gap: 12 },

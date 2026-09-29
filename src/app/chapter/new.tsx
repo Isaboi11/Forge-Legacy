@@ -294,9 +294,9 @@ const styles = StyleSheet.create({
   suggestLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600, marginTop: 26, marginBottom: 12 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 10, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
   ctaInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },

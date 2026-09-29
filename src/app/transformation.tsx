@@ -508,10 +508,10 @@ const styles = StyleSheet.create({
   knobOff: { left: 2, backgroundColor: flColor.charcoal500 },
   freqRow: { flexDirection: 'row', gap: 6, paddingVertical: 8, paddingHorizontal: 2 },
   freqSeg: { flex: 1, paddingVertical: 8, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'transparent', alignItems: 'center' },
-  freqSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  freqSegOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   freqSegOff: { backgroundColor: flColor.charcoal800 },
   freqSegText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.4, color: flColor.gray600 },
-  freqSegTextOn: { color: flColor.bronze300 },
+  freqSegTextOn: { color: flColor.selectedInk },
 
   chapterGroup: { marginBottom: 28 },
   chapterHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingHorizontal: 2, paddingBottom: 14 },

@@ -962,7 +962,7 @@ const styles = StyleSheet.create({
     color: flColor.gray600,
     width: 34,
   },
-  choiceLeadOn: { color: flColor.bronze300 },
+  choiceLeadOn: { color: flColor.selectedInk },
   choiceMain: { flex: 1, minWidth: 0 },
   choiceTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   choiceSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 3 },
