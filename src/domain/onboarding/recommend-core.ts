@@ -223,6 +223,31 @@ export function catalogServesLevel(experience: string | null | undefined, progra
 }
 
 /**
+ * WHETHER AN ALTERNATE IS SOMETHING THIS ATHLETE SHOULD BE SHOWN (firstuser-07, QA 09-26).
+ *
+ * The alternates beside a recommendation used to be the whole catalogue in file order, so a brand-new
+ * athlete's "For You" led with an Advanced 6-day block. This looks UPWARD, the mirror of
+ * `catalogServesLevel`: one tier of stretch is fine (the same allowance `STRETCH_CEILING` makes), two is
+ * not — and for a beginner the stretch tier is only offered at four days a week or fewer, because
+ * frequency is a harder ask than technique for someone new. A Beginner-tagged program always fits.
+ *
+ * Unknown experience reads as beginner (`expFor`), and an unreadable difficulty tag fits — a data
+ * problem must not empty the shelf.
+ */
+export function alternateFitsAthlete(
+  experience: string | null | undefined,
+  programDifficulty: string | null | undefined,
+  perWeek: number | null | undefined,
+): boolean {
+  const level = LEVEL_RANK[expFor(experience)];
+  const got = DIFFICULTY_RANK[(programDifficulty ?? '').trim()];
+  if (got == null) return true;
+  if (got > level + 1) return false;
+  if (level === 0 && got === 1 && (perWeek ?? 0) > 4) return false;
+  return true;
+}
+
+/**
  * MATCH A PROGRAM'S NAMED SUCCESSOR TO SOMETHING THAT ACTUALLY EXISTS.
  *
  * ⚠ SIX OF THE SEVEN NAMED SUCCESSORS DO NOT EXIST. Only *Strength Foundation II* is real; Bodyweight
