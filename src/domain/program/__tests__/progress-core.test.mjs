@@ -587,8 +587,10 @@ test('a planned program is queued, not something the athlete wrote', () => {
   const mine = [row('c', 'future', 'squat-ascent-intermediate'), row('d', 'future')];
   const s = shelvePrograms(mine);
 
-  assert.deepEqual(s.planned.map((p) => p.id), ['c', 'd'], 'both queued programs belong to Planned');
-  assert.deepEqual(s.built, [], 'a queued program is never listed as one you built');
+  assert.deepEqual(s.planned.map((p) => p.id), ['c'], 'a queued Forge program belongs to Planned');
+  // programs-13 (QA 09-26): a program the athlete built saves as `future` — it is theirs before it starts,
+  // and filing it under Planned left "Built & Imported" empty forever.
+  assert.deepEqual(s.built.map((p) => p.id), ['d'], 'a program you wrote is Built even before it starts');
 });
 
 test('a sealed Forge run keeps a home, and an authored one stays with your programs', () => {

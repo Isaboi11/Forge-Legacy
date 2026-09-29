@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,9 +42,12 @@ export default function ProgramsScreen() {
   useFocusEffect(useCallback(() => refetch(), [refetch]));
   const mine = useMemo(() => data ?? [], [data]);
   const { active, planned, built, past } = useMemo(() => shelvePrograms(mine), [mine]);
-  /** The design collapses Planned to a digest at 2+, so a queue never outweighs the program in flight. */
-  const [plannedExpanded, setPlannedExpanded] = useState(false);
-  const plannedCollapsed = planned.length >= 2 && !plannedExpanded;
+  /**
+   * The design collapses Planned to a digest at 2+, so a queue never outweighs the program in flight.
+   * ⚠ NO "VIEW ALL" (programs-13, QA 09-26): the digest already names and opens every row, so the two
+   * "View all" links it used to carry led to the same list in bigger rows.
+   */
+  const plannedCollapsed = planned.length >= 2;
 
   const open = (p: SavedProgram) => router.push({ pathname: '/program/[id]', params: { id: p.id } });
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/workouts'));
@@ -67,14 +70,10 @@ export default function ProgramsScreen() {
 
           {planned.length > 0 ? (
             <View>
-              <SectionHeader
-                label="Planned"
-                action={plannedCollapsed ? 'View all' : undefined}
-                onAction={() => setPlannedExpanded(true)}
-              />
+              <SectionHeader label="Planned" />
               <View style={styles.stackTight}>
                 {plannedCollapsed ? (
-                  <PlannedDigest programs={planned} onOpen={open} onExpand={() => setPlannedExpanded(true)} />
+                  <PlannedDigest programs={planned} onOpen={open} />
                 ) : (
                   planned.map((p) => <ProgramRow key={p.id} program={p} onPress={() => open(p)} />)
                 )}
@@ -153,7 +152,7 @@ function ProgramRow({ program, onPress }: { program: SavedProgram; onPress: () =
 }
 
 /** Planned, at 2+ — one card instead of a stack. Smaller, not shorter: it still names and opens each. */
-function PlannedDigest({ programs, onOpen, onExpand }: { programs: SavedProgram[]; onOpen: (p: SavedProgram) => void; onExpand: () => void }) {
+function PlannedDigest({ programs, onOpen }: { programs: SavedProgram[]; onOpen: (p: SavedProgram) => void }) {
   return (
     <View style={styles.digest}>
       <Text style={styles.digestCount}>
@@ -173,9 +172,6 @@ function PlannedDigest({ programs, onOpen, onExpand }: { programs: SavedProgram[
           <ChevronRightIcon size={16} color={flColor.gray600} />
         </Pressable>
       ))}
-      <Pressable onPress={onExpand} accessibilityRole="button" accessibilityLabel="View all planned programs" style={styles.digestAll}>
-        <Text style={styles.digestAllText}>View all</Text>
-      </Pressable>
     </View>
   );
 }
@@ -243,8 +239,6 @@ const styles = StyleSheet.create({
   },
   digestMark: { width: 5, height: 5, flexShrink: 0, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
   digestName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
-  digestAll: { paddingVertical: 12, alignItems: 'center', borderTopWidth: 1, borderTopColor: flColor.divider },
-  digestAllText: { fontSize: 12.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
   empty: { gap: 6, paddingVertical: 8 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { fontSize: 13.5, lineHeight: 19.5, color: flColor.gray400 },
