@@ -2,7 +2,7 @@ import { getProgramDefinitions } from '@/domain/training/programs';
 import type { ProgramDefinition } from '@/domain/training/schema';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { programCoverage, type GymCoverage } from '@/domain/home-gym/equipment';
-import { canRecommend, FALLBACK_ID, resolveRecommendationId, successorIdFor, type RecommendInput } from './recommend-core';
+import { alternateFitsAthlete, canRecommend, FALLBACK_ID, resolveRecommendationId, successorIdFor, type RecommendInput } from './recommend-core';
 
 /**
  * Program recommendation for the Home starting-point on-ramp. The goal × experience × equipment mechanism
@@ -133,7 +133,9 @@ export function recommendProgramOptions(input: RecommendInput, limit = 3): Progr
   const recommended = recommendProgram(input);
   const rest = getProgramDefinitions()
     .filter((d) => d.id !== recommended.id)
-    .map(toView);
+    .map(toView)
+    // Never an Advanced or a 6-day block beside a beginner's recommendation (firstuser-07).
+    .filter((v) => alternateFitsAthlete(input.experience, v.difficulty, v.perWeek));
 
   // With a Home Gym profile the alternates stop being catalog order and become "what you can actually
   // train", best-covered first. This is a real ordering, unlike the goal/experience map behind the

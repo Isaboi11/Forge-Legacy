@@ -9,6 +9,7 @@ import {
   accessFor,
   canRecommend,
   catalogServesLevel,
+  alternateFitsAthlete,
   successorIdFor,
   FALLBACK_ID,
   ADVANCED_ID,
@@ -363,4 +364,26 @@ test('⚠ how many of the named successors are real', () => {
   for (const id of ['strength-foundation-i-3day', 'strength-foundation-ii-4day', 'strength-builder-i-4day']) {
     assert.ok(real.some((d) => d.id === id), `${id} should now reach a real successor`);
   }
+});
+
+/**
+ * firstuser-07 (QA 09-26): "For You" offered a brand-new athlete Advanced and 6-day programs, because the
+ * alternates were the catalogue in file order. Judged on the REAL catalogue.
+ */
+test('⚠ alternates never put an Advanced or a 6-day block in front of a beginner', () => {
+  const defs = readdirSync(PROGRAM_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => JSON.parse(readFileSync(join(PROGRAM_DIR, f), 'utf8')));
+  for (const exp of ['beginner', null, undefined, '']) {
+    const shown = defs.filter((d) => alternateFitsAthlete(exp, d.difficulty, d.frequencyPerWeek));
+    assert.ok(shown.length >= 3, 'a beginner still has a shelf');
+    for (const d of shown) {
+      assert.notEqual(d.difficulty, 'Advanced', `${d.id} offered to a beginner`);
+      assert.ok((d.frequencyPerWeek ?? 0) < 6, `${d.id} is ${d.frequencyPerWeek} days a week`);
+    }
+  }
+  // An advanced athlete sees everything; an intermediate one sees one tier up.
+  assert.equal(defs.filter((d) => alternateFitsAthlete('advanced', d.difficulty, d.frequencyPerWeek)).length, defs.length);
+  assert.ok(defs.some((d) => d.difficulty === 'Advanced' && alternateFitsAthlete('intermediate', d.difficulty, d.frequencyPerWeek)));
+  assert.equal(alternateFitsAthlete('beginner', 'Mystery', 7), true, 'an unreadable tag never empties the shelf');
 });
