@@ -38,10 +38,12 @@ import type { Limitation } from '../constraints.ts';
  *    shoulder press fine at or below flat, and removing it as well leaves an upper day with almost
  *    nothing in it.
  *
- *  · **knees** → `Power / Plyometric` only. This is the one that will surprise a reviewer, so: loaded
- *    knee flexion — squats, presses, leg curls — is generally well tolerated and is often the thing that
- *    helps, whereas landing impact is what people mean when they say their knees hurt. Excluding
- *    `Squat / Knee Dominant` would delete leg training entirely to solve a problem it usually isn't.
+ *  · **knees** → `Power / Plyometric` AND `Squat / Knee Dominant` (PO 2026-09-29, holtai-04). It was
+ *    jumping only, on the argument that loaded knee flexion is usually tolerated. The PO overruled it on
+ *    legal caution: an athlete who tells Holt "knees" and then gets squats on two days of three has been
+ *    told he heard them and was not. Squats, lunges, split squats, step-ups, leg presses and extensions
+ *    all go; the leg slots relax to hinges, bridges/thrusts and hamstring work (`candidates.ts`
+ *    RELAXATION), so a lower-body day is never empty. Step-ups are NOT kept back — err to caution.
  *
  *  · **lower_back** → `Hinge / Hip Dominant`, `Carry`. Loaded hip hinging and axial loading are the two
  *    that put the most shear and compression through a lumbar spine. `Squat / Knee Dominant` is kept for
@@ -56,7 +58,7 @@ import type { Limitation } from '../constraints.ts';
  */
 export const LIMITATION_PATTERNS: Record<Limitation, readonly string[]> = {
   shoulders: ['Vertical Push', 'Shoulder Isolation'],
-  knees: ['Power / Plyometric'],
+  knees: ['Power / Plyometric', 'Squat / Knee Dominant'],
   lower_back: ['Hinge / Hip Dominant', 'Carry'],
   no_jumping: ['Power / Plyometric'],
   no_overhead: ['Vertical Push'],
@@ -266,7 +268,8 @@ const JUMPS_OUTSIDE_PLYO: readonly string[] = [
  */
 export const LIMITATION_EXCLUDE_KEYS: Record<Limitation, readonly string[]> = {
   shoulders: [...OVERHEAD_FINISH, ...ARMS_OVERHEAD],
-  knees: JUMPS_OUTSIDE_PLYO,
+  // The squat/lunge jumps are gone with `Squat / Knee Dominant` itself; listing them too would be dead weight.
+  knees: ['jump-rope', 'jump-rope-intervals', 'double-under', 'dumbbell-burpee-deadlift'],
   lower_back: [],
   no_jumping: JUMPS_OUTSIDE_PLYO,
   // Not the upright rows: this is a statement about where the load goes, not about the shoulder joint.

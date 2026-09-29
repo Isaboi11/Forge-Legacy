@@ -701,8 +701,8 @@ export function assemble(
  * · **No pulling at all.** A strength block of pushes and squats is lopsided, and it shipped silently. The
  *   matrix proves every build that CAN reach a row or pull does carry one (`holtai-04.test.mjs`), so this
  *   only ever fires when nothing the athlete owns can — and then Holt says so and names the fix.
- * · **Knees.** The flag removes jumping, not knee bending (Preflight Gates §1.1). If the block still holds
- *   squat-pattern work, he says so rather than letting "I'll keep your knees out of it" stand.
+ * · **Knees.** The flag removes squats, lunges and jumping (PO 2026-09-29, Preflight Gates §1.1). He says
+ *   what he left out and what the legs get instead, so "I'll keep your knees out of it" is a fact.
  */
 function coverageConcerns(
   c: CoachConstraints,
@@ -718,7 +718,7 @@ function coverageConcerns(
   if (lifting && patterns.size > 0 && !patterns.has('Horizontal Pull') && !patterns.has('Vertical Pull')) {
     out.push(CONCERN.noPulling());
   }
-  if (c.limitations.includes('knees') && patterns.has('Squat / Knee Dominant')) out.push(CONCERN.kneesKeptSquats());
+  if (lifting && c.limitations.includes('knees') && patterns.size > 0) out.push(CONCERN.kneesLeftOut());
   return out;
 }
 

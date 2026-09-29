@@ -27,7 +27,7 @@ safety outcome) is correct. Most individual calls hold up. The problems are stru
 | Limitation | Removes | Verdict |
 |---|---|---|
 | `shoulders` | Vertical Push, Shoulder Isolation | **Hold.** Keeping Horizontal Push is defensible and the justification is sound — most cranky shoulders press fine at or below flat, and removing it guts the upper day |
-| `knees` | Power / Plyometric, `run` | **Hold, with §1.2.** The file predicts this will surprise a reviewer and then makes the right argument: loading is generally tolerated and often helps; impact is what people mean. This matches current practice |
+| `knees` | Power / Plyometric, **Squat / Knee Dominant**, `run` | **Changed — PO 2026-09-29 (holtai-04).** Was *Hold, with §1.2* (jumping only, on the argument that loaded knee flexion is usually tolerated). The PO overruled it on legal caution: an athlete who says "knees" and then gets squats on two days of three has not been heard. Squats, lunges, split squats, step-ups, leg presses and extensions are now removed in both fill paths; the leg slots relax to hinges, bridges/thrusts and hamstring work, and Holt says what he left out |
 | `lower_back` | Hinge / Hip Dominant, Carry | **Disagree — see §1.3** |
 | `no_jumping` | Power / Plyometric, `run` | **Partly disagree — see §1.4** |
 | `no_overhead` | Vertical Push | **Hold.** Correctly distinguished from `shoulders`; the reasons given (low ceiling, healing rib, neck) are real |

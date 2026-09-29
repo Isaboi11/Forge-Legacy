@@ -140,6 +140,7 @@ import {
   type Turn,
 } from '@/domain/coach/chat-core';
 import { typedEquipment } from '@/domain/coach/typed-equipment';
+import { CONCERN } from '@/domain/coach/rulebook/hybrid';
 import { medicalRoute } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
@@ -837,6 +838,8 @@ export function CoachChatSheet({
             (k) => itemByKey(k)?.name ?? k,
           );
           say({ kind: 'holt', text: learnedSaid ? `${dayPreamble()} ${learnedSaid}` : dayPreamble() }, { kind: 'day', card: dayCard });
+          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block. */
+          if (c.limitations.includes('knees')) say({ kind: 'holt', text: CONCERN.kneesLeftOut() });
           return;
         }
 
