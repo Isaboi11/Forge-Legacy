@@ -53,9 +53,11 @@ import {
 } from './candidates.ts';
 import {
   exerciseBudget,
+  isTimedExercise,
   nameForWeek,
   prescribeHold,
   prescribeReps,
+  prescribeTimed,
   prescribeCardio,
   roleFor,
 } from './prescribe.ts';
@@ -440,6 +442,13 @@ function buildDay(
       const row = { catalogKey: exercise.key, name: exercise.name, sets: own ?? hold.sets, durationSec: hold.durationSec, ...(cue ? { coachNote: cue } : {}) };
       return { row, dose: 0 };
     }
+    // A pinned plank is still held, not counted — the pin fixes WHICH exercise, not how it is measured.
+    if (isTimedExercise(exercise)) {
+      const t = prescribeTimed(roleFor(index, isCompound(exercise.pattern)), pctx);
+      const dose = own ?? t.sets;
+      const row = { catalogKey: exercise.key, name: exercise.name, sets: dose, durationSec: t.durationSec, ...(cue ? { coachNote: cue } : {}) };
+      return { row, dose };
+    }
     const rx = prescribeReps(roleFor(index, isCompound(exercise.pattern)), pctx);
     const dose = own ?? rx.sets + focusBonus(exercise);
     const verbatimReps = isCount(pin.reps) && pin.reps >= 1 ? Math.round(pin.reps) : null;
@@ -544,6 +553,18 @@ function buildDay(
         name: found.exercise.name,
         sets: hold.sets,
         durationSec: hold.durationSec,
+        ...(cue ? { coachNote: cue } : {}),
+      });
+    } else if (isTimedExercise(found.exercise)) {
+      // A plank is held, not counted — see `prescribeTimed`. Its sets still count against the ceiling.
+      const t = prescribeTimed(role, pctx);
+      const dose = opts.maxSets != null ? Math.min(t.sets, opts.maxSets - sets - reservedSets) : t.sets;
+      sets += dose;
+      main.push({
+        catalogKey: found.exercise.key,
+        name: found.exercise.name,
+        sets: dose,
+        durationSec: t.durationSec,
         ...(cue ? { coachNote: cue } : {}),
       });
     } else {

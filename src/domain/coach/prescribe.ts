@@ -206,6 +206,48 @@ export function prescribeHold(ctx: PrescribeContext): { sets: number; durationSe
 }
 
 /**
+ * ══ A PLANK IS HELD, NOT COUNTED (PO 2026-09-29) ══
+ *
+ * The catalogue marks 82 exercises `unit: 'time'` — planks, hollow and L-sit holds, wall sits, hangs,
+ * carries, crawls, stretches — and every coach path used to ignore it and hand them a rep count from the
+ * slot's role, so Holt wrote "Plank 3 × 8". The flag belongs to the EXERCISE, not to the day's category,
+ * which is why the mobility-only hold branch never caught it: a plank on a strength day is pattern `Core`.
+ *
+ * Sets come from the same role table as a rep slot (the day's volume budget does not care how a set is
+ * measured); the hold length is the mobility table's, by experience. It is held flat across weeks —
+ * progression here is in reps, and a hold has none. A deload cuts sets, exactly as it does for reps.
+ */
+export const isTimedExercise = (ex: { unit?: string }): boolean => ex.unit === 'time';
+
+export function prescribeTimed(role: SlotRole, ctx: PrescribeContext): { sets: number; durationSec: number } {
+  const base = SET_COUNTS[ctx.category][role][ctx.experience];
+  return { sets: ctx.isDeload ? deloadSets(base) : base, durationSec: MOBILITY_HOLD_SEC[ctx.experience] };
+}
+
+/** Hold length for a swap, where the athlete's experience is not in hand — the catalogue's own default. */
+const SWAP_HOLD_SEC = 30;
+
+/**
+ * A row whose MOVEMENT is being replaced keeps its dose — but not its unit when the unit changes. Crunch
+ * 3 × 12 swapped for a plank must not become "Plank 3 × 12", and a plank swapped for a crunch must not
+ * keep asking for seconds. Sets always carry over; only the measure is reshaped.
+ */
+export function reshapeForUnit<T extends { sets?: number; reps?: number; repsMax?: number | null; durationSec?: number | null; repScheme?: unknown }>(
+  row: T,
+  toTimed: boolean,
+): T {
+  if (toTimed && row.durationSec == null) {
+    const { reps: _r, repsMax: _m, repScheme: _s, ...rest } = row;
+    return { ...rest, durationSec: SWAP_HOLD_SEC } as T;
+  }
+  if (!toTimed && row.durationSec != null) {
+    const { durationSec: _d, ...rest } = row;
+    return { ...rest, reps: 10, repsMax: 12 } as T;
+  }
+  return row;
+}
+
+/**
  * Which role a slot plays, from its position in the day and whether it is a compound.
  *
  * The first compound is the primary — the movement the session is actually about, and the one that gets

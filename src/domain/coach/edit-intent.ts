@@ -64,7 +64,7 @@ import {
   type EditScope,
 } from './edit-ops.ts';
 import type { EditIntent } from './interpret-narrow.ts';
-import { prescribeReps, roleFor, type PrescribeContext } from './prescribe.ts';
+import { isTimedExercise, prescribeReps, prescribeTimed, roleFor, type PrescribeContext } from './prescribe.ts';
 import { FOCUS_SPEC } from './rulebook/focus.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
 
@@ -1050,12 +1050,14 @@ function resolveAdd(
 
   const prescribe = prescribeFor(opts, ctx);
   const rowFor = (w: number, d: ProgramDay): ProgramExercise => {
-    const rx = prescribeReps(roleFor(d.main.length, isCompound(hit.pattern)), {
-      totalWeeks: weekCount(structure),
-      ...prescribe,
-      weekIndex: w,
-      isDeload: isDeloadDay(d),
-    });
+    const role = roleFor(d.main.length, isCompound(hit.pattern));
+    const pc = { totalWeeks: weekCount(structure), ...prescribe, weekIndex: w, isDeload: isDeloadDay(d) };
+    // A plank is held, not counted — see `prescribeTimed`. A rep count they asked for has nothing to mean here.
+    if (isTimedExercise(hit)) {
+      const t = prescribeTimed(role, pc);
+      return { catalogKey: hit.key, name: hit.name, sets: intent.sets != null ? clamp(intent.sets, 1, 8) : t.sets, durationSec: t.durationSec };
+    }
+    const rx = prescribeReps(role, pc);
     return {
       catalogKey: hit.key,
       name: hit.name,
@@ -1065,7 +1067,8 @@ function resolveAdd(
     };
   };
   const first = rowFor(at.weekIndex, day);
-  return structurePlan(at, 'add', `${place} — add ${hit.name}, ${first.sets} × ${repsText(first)}`, said, (scope) =>
+  const firstDose = first.durationSec != null ? `${first.durationSec}s` : repsText(first);
+  return structurePlan(at, 'add', `${place} — add ${hit.name}, ${first.sets} × ${firstDose}`, said, (scope) =>
     addExercise(structure, marks, at, rowFor, scope),
   );
 }
@@ -1259,7 +1262,12 @@ function resolveVolume(
   const chosen = pick;
   const prescribe = prescribeFor(opts, ctx);
   const rowFor = (wk: number, dd: ProgramDay): ProgramExercise => {
-    const rx = prescribeReps('accessory', { totalWeeks: weekCount(structure), ...prescribe, weekIndex: wk, isDeload: isDeloadDay(dd) });
+    const pc = { totalWeeks: weekCount(structure), ...prescribe, weekIndex: wk, isDeload: isDeloadDay(dd) };
+    if (isTimedExercise(chosen)) {
+      const t = prescribeTimed('accessory', pc);
+      return { catalogKey: chosen.key, name: chosen.name, sets: t.sets, durationSec: t.durationSec };
+    }
+    const rx = prescribeReps('accessory', pc);
     return { catalogKey: chosen.key, name: chosen.name, sets: rx.sets, reps: rx.reps, repsMax: rx.repsMax };
   };
   const row = rowFor(w, day);
