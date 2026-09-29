@@ -537,6 +537,12 @@ function MealPlanScreen() {
   /* Nothing planned anywhere means the book is empty, not that the setup is wrong. Forge ships no recipes
      since 2026-09-24, so say where recipes come from rather than "No lunch fits your setup" seven times. */
   const weekEmpty = !!week && week.days.every((day) => day.items.length === 0);
+  /* QA N-10: a small recipe book repeats meals and may have no snack at all. Say it ONCE at the top, and
+     don't print an empty Snack row on all seven days. */
+  const noSnackAnywhere =
+    !!week && !weekEmpty && !!prefs?.meals.includes('snacks') && week.days.every((day) => !day.items.some((it) => it.slot === 'snacks'));
+  const repeats = !!week && week.days.some((day) => day.items.some((it) => it.repeated));
+  const smallBook = !weekEmpty && !week?.cleared && (repeats || noSnackAnywhere);
 
   return (
     <View style={styles.screen}>
@@ -594,6 +600,15 @@ function MealPlanScreen() {
           ) : weekEmpty ? (
             <View style={styles.short}>
               <Text style={styles.shortText}>No recipes to plan from yet.</Text>
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { add: '1' } })}>
+                <Text style={styles.shortLink}>Add a recipe</Text>
+              </Pressable>
+            </View>
+          ) : smallBook ? (
+            <View style={styles.short}>
+              <Text style={styles.shortText}>
+                {`Your recipe book is small${repeats ? ', so some meals repeat' : ''}${noSnackAnywhere ? `${repeats ? ' and' : ','} no snack fits yet` : ''}.`}
+              </Text>
               <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { add: '1' } })}>
                 <Text style={styles.shortLink}>Add a recipe</Text>
               </Pressable>
@@ -698,7 +713,7 @@ function MealPlanScreen() {
                           : [`${r.minutes} min`, ...(feeds != null ? [`leftovers for ${dates[feeds].name} lunch`] : [])];
                     if (it.portion !== 1) metaParts.push(portionLabel(it.portion));
                     /* PO 2026-09-23 (open question 1): when the library runs out, repeat — and say so. */
-                    if (it.repeated) metaParts.push('Repeated · nothing else fits');
+                    if (it.repeated) metaParts.push('Repeated');
                     const meta = metaParts.join(' · ');
                     const kcal = itemTotals(it).kcal;
                     const logged = !!week.logged[logKey(d, it)];
@@ -750,6 +765,7 @@ function MealPlanScreen() {
                       recipe the hard filters refused (Rules §3). */}
                   {(prefs?.meals ?? [])
                     .filter((s) => !day.items.some((it) => it.slot === s && !it.extra))
+                    .filter((s) => !(s === 'snacks' && noSnackAnywhere))
                     .map((s) => (
                       <Pressable
                         key={`empty-${s}`}
