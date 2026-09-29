@@ -4783,7 +4783,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.elevated,
   },
   menuRow: { paddingHorizontal: 15, paddingVertical: 13 },
-  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   menuRowPressed: { backgroundColor: bronzeWash(0.06) },
   menuText: { fontSize: 14, color: flColor.cream100 },
 
@@ -4845,9 +4845,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 2,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
   },
-  homeRowLast: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
+  homeRowLast: { borderBottomWidth: 1, borderBottomColor: flColor.divider },
   homeRowPressed: { backgroundColor: bronzeWash(0.055) },
   homeGlyph: {
     width: 26,
@@ -5060,7 +5060,7 @@ const styles = StyleSheet.create({
   cardSubtitle: { fontSize: 12.5, color: flColor.gray400 },
   /* The rows band — a bronze marker in a fixed column, then what that week actually is. */
   markerList: {},
-  markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.divider },
   markerRowPressed: { backgroundColor: bronzeWash(0.06) },
   marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
   markerText: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.cream100 },
@@ -5076,7 +5076,7 @@ const styles = StyleSheet.create({
   dayDropRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
   dayDropMarker: { width: 14, fontSize: 10, fontWeight: '700', color: flColor.bronze600 },
   dayDropTitle: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.gray400 },
-  markerClosing: { paddingTop: 11, paddingBottom: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  markerClosing: { paddingTop: 11, paddingBottom: 13, borderTopWidth: 1, borderTopColor: flColor.divider },
   markerClosingText: { fontSize: 12.5, color: flColor.gray600 },
   /* Inside the card, under its own rule: the way into the full read, not a decision about it. */
   previewRow: {
@@ -5086,7 +5086,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 13,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: wash(0.02),
   },
   previewRowPressed: { backgroundColor: bronzeWash(0.06) },
@@ -5101,22 +5101,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   previewBack: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   previewTitle: { flex: 1, fontFamily: flFont.display, fontSize: 18, color: flColor.cream100 },
   previewScroll: { flex: 1 },
   previewInner: { padding: 18, gap: 16 },
   /* `paddingBottom` is applied at render from the safe-area inset — see `PlanPreview`. */
-  previewActions: { paddingHorizontal: 16, paddingTop: 12, gap: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
-  weekList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  previewActions: { paddingHorizontal: 16, paddingTop: 12, gap: 9, borderTopWidth: 1, borderTopColor: flColor.divider },
+  weekList: { borderTopWidth: 1, borderTopColor: flColor.divider },
   weekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   weekLabel: { fontSize: 13.5, color: flColor.cream100 },
   weekDetail: { fontSize: 13.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
@@ -5138,7 +5138,7 @@ const styles = StyleSheet.create({
   previewDayEmpty: { paddingVertical: 11, fontSize: 13.5, color: flColor.gray600 },
 
   /* ── day card ───────────────────────────────────────────────────────────────────────────────── */
-  dayList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  dayList: { borderTopWidth: 1, borderTopColor: flColor.divider },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -5146,7 +5146,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   dayName: { flex: 1, fontSize: 14.5, color: flColor.cream100 },
   // Tabular figures so the prescriptions line up in a column, and it never wraps (§11.2.4/11.2.6).
@@ -5314,7 +5314,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     /* `paddingBottom` applied at render from the safe-area inset. */
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal800,
   },
   composerBusy: { opacity: 0.55 },
@@ -5325,7 +5325,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal800,
   },
   attachThumb: { width: 56, height: 56, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.charcoal600 },

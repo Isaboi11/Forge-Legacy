@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 14, paddingHorizontal: 14 },
-  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600, marginTop: 2 },

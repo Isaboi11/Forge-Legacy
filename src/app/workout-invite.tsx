@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   howText: { flex: 1, fontSize: 12.5, lineHeight: 18.8, color: flColor.gray400 },
 
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
-  actions: { flexShrink: 0, gap: 10, paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  actions: { flexShrink: 0, gap: 10, paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
   missingTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },

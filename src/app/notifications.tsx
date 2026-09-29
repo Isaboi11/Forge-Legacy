@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
 
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 15 },
-  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.divider },
   iconTile: {
     width: 36,
     height: 36,

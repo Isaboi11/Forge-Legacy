@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   scroll: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 24 },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
@@ -424,22 +424,22 @@ const styles = StyleSheet.create({
   viewLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
   viewValue: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
 
-  reflSection: { marginTop: 22, paddingTop: 20, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  reflSection: { marginTop: 22, paddingTop: 20, borderTopWidth: 1, borderTopColor: flColor.divider },
   reflLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   reflText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17.5, lineHeight: 28, color: flColor.gray400 },
 
-  siblings: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 24, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  siblings: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 24, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.divider },
   sibBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 6 },
   sibText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
 
-  footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
+  footer: { flexDirection: 'row', gap: 10, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
   compareBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.card },
   compareText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.5, color: '#F7F5F1' },
   shareBtn: { width: 66, alignItems: 'center', justifyContent: 'center', paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
 
   actionList: { marginHorizontal: -6 },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 8 },
-  actionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  actionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   actionLabel: { fontSize: 15, color: flColor.cream100 },
   actionLabelDanger: { color: flColor.redMuted },
 

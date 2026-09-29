@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   durationUnit: { fontSize: 13, color: flColor.gray400 },
 
   // commit bar
-  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnOn: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },

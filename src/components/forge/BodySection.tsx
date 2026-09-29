@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   pillLabel: { fontFamily: flFont.sans, fontSize: 11.5, color: flColor.gray600 },
   pillValue: { fontFamily: flFont.sans, fontSize: 11.5, fontWeight: '600', color: flColor.cream100 },
 
-  photos: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  photos: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.divider },
   photosIcon: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800 },
   photosText: { flex: 1, minWidth: 0, gap: 1 },
   photosTitle: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.cream100 },

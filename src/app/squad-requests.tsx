@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   // overflow menu
   menu: { paddingBottom: 4 },
   menuRow: { paddingVertical: 15 },
-  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   menuLabel: { fontSize: 15, color: flColor.cream100 },
   menuLabelDanger: { color: flColor.redMuted },
 });

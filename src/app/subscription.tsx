@@ -1258,7 +1258,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.card,
     overflow: 'hidden',
   },
-  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.divider },
 
   benefitRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingHorizontal: 15, paddingVertical: 13 },
   benefitIcon: {
@@ -1338,7 +1338,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.base,
     gap: 7,
   },

@@ -1939,7 +1939,7 @@ const styles = StyleSheet.create({
   weekLabelCurrent: { color: flColor.bronze300 },
   weekMeta: { fontSize: 11.5, color: flColor.gray600 },
   weekMetaDone: { color: flColor.greenMuted },
-  weekBody: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  weekBody: { borderTopWidth: 1, borderTopColor: flColor.divider },
   weekReorder: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1947,11 +1947,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   weekReorderText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
 
-  dayBlock: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  dayBlock: { borderTopWidth: 1, borderTopColor: flColor.divider },
   dayHead: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 15 },
   dayNum: { width: 24, height: 24, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   dayNumDone: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
@@ -1962,7 +1962,7 @@ const styles = StyleSheet.create({
   dayMeta: { fontSize: 11.5, color: flColor.gray600 },
 
   exList: { paddingLeft: 51, paddingRight: 15, paddingBottom: 12 },
-  exRow: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  exRow: { paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.divider },
   blockLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 5 },
   exName: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100, marginBottom: 5 },
   setList: { gap: 3 },
@@ -1974,7 +1974,7 @@ const styles = StyleSheet.create({
 
   error: { marginTop: 16, fontSize: 13, color: flColor.redMuted },
 
-  cta: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 20, borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, gap: 8 },
+  cta: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 20, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900, gap: 8 },
   // Bronze, not red: needing to swap two movements is information, not an error.
   gearGap: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   // Why Edit is absent on an active program. Same quiet register as gearGap — an explanation, not a warning.

@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: flColor.gray600,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   rowCompact: { gap: 12, paddingVertical: 10 },
   rowIcon: {
     width: 34,

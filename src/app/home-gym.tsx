@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.base,
   },
   summary: { fontSize: 12, fontWeight: '600', color: flColor.gray400, textAlign: 'center' },

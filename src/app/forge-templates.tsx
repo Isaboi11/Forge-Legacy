@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 30 },
 
   // Sticky, so the filters stay reachable through eighty cards rather than scrolling away at the top.
-  filterWrap: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 9, backgroundColor: flColor.base, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  filterWrap: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 9, backgroundColor: flColor.base, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   filterLabel: { width: 44, flexShrink: 0, fontSize: 9.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   chips: { gap: 6, paddingRight: 12 },

@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   chipText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronze300 },
 
-  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
+  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
   ctaInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 },
   ctaText: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: '#F7F5F1' },
   tertiary: { alignItems: 'center', paddingVertical: 14, marginTop: 4 },

@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
   viewGoal: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   expected: { fontSize: 12, color: flColor.gray400 },
 
-  supRow: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  supRow: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.divider },
   supHead: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   supDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: flColor.bronze400 },
   supName: { flex: 1, fontSize: 14, fontWeight: '500', color: flColor.cream100 },
@@ -583,7 +583,7 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', color: flColor.bronze300 },
   statLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 0.4, textTransform: 'uppercase', color: flColor.gray400, marginTop: 2 },
 
-  outcomeRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  outcomeRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.divider },
   outcomeName: { flex: 1, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   outcomeUndone: { color: flColor.gray400 },
   outcomeDone: { fontSize: 12.5, fontWeight: '700', color: '#5FA271' },

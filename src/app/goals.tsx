@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
   markLinkText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   historyBlock: { marginTop: 30, gap: 2 },
-  historyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  historyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.divider },
   historyLine: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   historyDate: { fontSize: 12, color: flColor.gray600 },
 

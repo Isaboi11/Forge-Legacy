@@ -1824,7 +1824,7 @@ const styles = StyleSheet.create({
   goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   goalTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, color: flColor.cream100, marginBottom: 14 },
-  progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
+  progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.divider, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   progressFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
   progressCaption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400, marginTop: 9 },
 
@@ -1838,7 +1838,7 @@ const styles = StyleSheet.create({
   // options sheet
   optionsList: { marginHorizontal: -6 },
   optionRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 8 },
-  optionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  optionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   optionIcon: { flexShrink: 0 },
   optionLabel: { fontSize: 15, color: flColor.cream100 },
   optionLabelDanger: { color: flColor.redMuted },
@@ -2031,7 +2031,7 @@ const styles = StyleSheet.create({
      would put a gutter between rows and the ledger would read as cards again. */
   feedList: { gap: 0 },
   /* Pinned (0230): the same rows, above the feed, each with a quiet label — information, not a card around it. */
-  pinnedList: { gap: 0, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  pinnedList: { gap: 0, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   pinnedLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk, paddingHorizontal: 20, paddingTop: 10 },
   weeklyCard: { borderColor: flColor.bronzeBorder },
   weeklyIcon: {

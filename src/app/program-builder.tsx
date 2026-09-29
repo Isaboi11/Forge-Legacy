@@ -2652,7 +2652,7 @@ const styles = StyleSheet.create({
   addBtnGrow: { flex: 1, minWidth: 0 },
   addCardioBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, paddingHorizontal: 14, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
   addCardioText: { fontSize: 12.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },
-  modRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  modRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.divider },
   modBtn: { flex: 1, paddingVertical: 8, alignItems: 'center' },
   modBtnDiv: { borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   modBtnOn: { backgroundColor: flColor.bronzeTint },
@@ -2868,7 +2868,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SCREEN_GUTTER,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
   },
   checks: { gap: 7, marginBottom: 12 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -2880,7 +2880,7 @@ const styles = StyleSheet.create({
   dayHead: { marginBottom: 18, paddingHorizontal: 2 },
   daySummary: { marginTop: 9, fontSize: 12, color: flColor.bronzeInk },
   section: { marginBottom: 20 },
-  sectionRuled: { marginBottom: 22, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  sectionRuled: { marginBottom: 22, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.divider },
   sectionLast: { marginBottom: 8 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', gap: 9, paddingHorizontal: 2, paddingBottom: 10 },
   sectionLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
@@ -2903,7 +2903,7 @@ const styles = StyleSheet.create({
   pairHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, paddingVertical: 7, paddingHorizontal: 13, backgroundColor: flColor.bronzeTint, borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorderSubtle },
   pairHeadText: { flex: 1, fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronzeInk },
   pairBreak: { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400 },
-  pairLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pairLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 8, borderTopWidth: 1, borderTopColor: flColor.divider },
   pairLinkText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.5, color: flColor.bronzeInk },
   exTop: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 12, paddingHorizontal: 13 },
   exIcon: {
@@ -2929,7 +2929,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  exBottom: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  exBottom: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.divider },
   /* The cue sits under the meters as its own full-width row: it is a sentence, not a number, and
      squeezing it beside a stepper would truncate the one field whose whole value is the words in it. */
   /* The source sentence, under the name it produced. Small and quiet — it is evidence, not content. */
@@ -2942,7 +2942,7 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     paddingHorizontal: 12,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
   },
   exNotePressed: { backgroundColor: flColor.charcoal700 },
   exNoteText: { flex: 1, fontSize: 12, color: flColor.gray600 },

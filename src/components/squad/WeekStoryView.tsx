@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   fireOn: { borderColor: flColor.emberFlame, backgroundColor: 'rgba(224, 145, 63, 0.10)' },
   fireCount: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400, fontVariant: ['tabular-nums'] },
   fireCountOn: { color: flColor.emberFlame },
-  more: { gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  more: { gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.divider },
   days: { flexDirection: 'row', gap: 6 },
   day: { flex: 1, alignItems: 'center', gap: 4 },
   dayBar: { alignSelf: 'stretch', height: 6, borderRadius: 3, backgroundColor: flColor.charcoal700 },

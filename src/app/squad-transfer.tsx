@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
 
   factsCard: { marginTop: 20, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal700, borderRadius: flRadius.lg, paddingHorizontal: 15 },
   fact: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingVertical: 13 },
-  factDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  factDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   factIcon: { width: 30, height: 30, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   factText: { flex: 1, minWidth: 0, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   radioOn: { borderColor: flColor.bronze400, boxShadow: flShadow.glowSubtle },
   radioDot: { width: 11, height: 11, borderRadius: flRadius.round, backgroundColor: flColor.bronze300 },
 
-  commitBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(9,9,9,0.6)') },
+  commitBar: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(9,9,9,0.6)') },
   commit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitOn: { borderColor: flColor.accentBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.glowSubtle },
   commitOff: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },

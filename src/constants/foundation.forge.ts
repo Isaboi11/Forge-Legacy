@@ -246,7 +246,15 @@ export const flColor = {
   /** The drawn map grid under the placeholder trace — no tiles, no imagery. */
   cardioGrid: 'rgba(191,143,79,0.045)',
   /** An unfilled progress track — the groove `goalFill` runs along. */
-  progressTrack: 'rgba(255,255,255,0.06)',
+  progressTrack: 'rgba(255,255,255,0.13)',
+  /**
+   * A hairline rule or row divider, and the solid groove of a progress bar (QA 09-26 home-07).
+   * ⚠ A ROLE, NOT `charcoal700`. Dividers used to borrow the surface ramp — `charcoal700` measures 1.05–1.16:1
+   * on the grounds it separates, so every divider in the app was invisible. This measures 1.48–1.63:1 on
+   * base/charcoal900/charcoal800 (1.40 on a charcoal700 sheet): visible as a line, still quiet.
+   * Contrast in BOTH themes is a legibility requirement — the 1% exception to the two-theme rule.
+   */
+  divider: '#34343B',
 } as const;
 
 export const flText = {

@@ -1093,7 +1093,7 @@ const styles = StyleSheet.create({
   filterBadge: { position: 'absolute', top: 3, right: 2, minWidth: 15, height: 15, paddingHorizontal: 3, borderRadius: 999, backgroundColor: flColor.bronzeSolid, alignItems: 'center', justifyContent: 'center' },
   filterBadgeText: { fontSize: 9, fontWeight: '800', color: flColor.onBronze },
 
-  subHeader: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  subHeader: { paddingHorizontal: 18, paddingTop: 6, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   banner: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900 },
   bannerDiamond: { width: 9, height: 9, transform: [{ rotate: '45deg' }], borderWidth: 1, borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
   bannerText: { flex: 1, minWidth: 0, gap: 1 },
@@ -1167,7 +1167,7 @@ const styles = StyleSheet.create({
   createChipTextOn: { color: flColor.cream100 },
 
   /* `paddingBottom` from `useBarBottom` — see `lib/screen-insets`. */
-  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, gap: 12 },
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900, gap: 12 },
 
   /* The sentence that tells you multi-select exists, before you have found it. Quiet by instruction —
      it explains an option, it does not ask for anything. Sits above the search field. */

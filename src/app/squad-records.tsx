@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
 
   lineageCard: { overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   lineageRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 11 },
-  lineageRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  lineageRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   lineageBody: { flex: 1, minWidth: 0 },
   lineageName: { fontSize: 14, color: flColor.gray400 },
   lineageDate: { fontSize: 11, color: flColor.gray600 },

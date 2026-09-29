@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   pill: { maxWidth: '48%', paddingHorizontal: 9, paddingVertical: 4, borderRadius: flRadius.xs, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   pillText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray400 },
 
-  cardFoot: { flexDirection: 'row', alignItems: 'stretch', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  cardFoot: { flexDirection: 'row', alignItems: 'stretch', borderTopWidth: 1, borderTopColor: flColor.divider },
   footBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13 },
   footBtnStart: { flex: 1, borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
   footBtnPlan: { flex: 1, borderRightWidth: 1, borderRightColor: flColor.charcoal700 },

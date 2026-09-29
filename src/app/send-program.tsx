@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   sectionLabel: { marginBottom: 10, paddingHorizontal: 2, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingHorizontal: 13, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.divider },
   rowText: { flex: 1, minWidth: 0 },
   rowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowSub: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
@@ -283,5 +283,5 @@ const styles = StyleSheet.create({
   emptyBtn: { marginTop: 14, paddingHorizontal: 16, paddingVertical: 9, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   emptyBtnText: { fontSize: 12, fontWeight: '700', color: flColor.bronze300 },
 
-  cta: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  cta: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, borderTopWidth: 1, borderTopColor: flColor.divider },
 });

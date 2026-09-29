@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
   },
   engItem: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   engText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },

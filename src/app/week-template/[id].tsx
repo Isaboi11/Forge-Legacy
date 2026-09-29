@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   actions: {
     position: 'absolute', left: 0, right: 0, bottom: 0,
     paddingHorizontal: SCREEN_GUTTER, paddingTop: 12,
-    backgroundColor: flColor.base, borderTopWidth: 1, borderTopColor: flColor.charcoal700,
+    backgroundColor: flColor.base, borderTopWidth: 1, borderTopColor: flColor.divider,
     gap: 10,
   },
   actionRow: { flexDirection: 'row', gap: 10 },

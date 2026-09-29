@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: themeGround('#060708'), paddingHorizontal: 22, paddingTop: 84 },
   // `height` and `paddingTop` are overridden inline with the safe-area top inset — see the comment above
   // `insets`. These values are the zero-inset baseline (web, and phones with no notch).
-  header: { position: 'absolute', top: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  header: { position: 'absolute', top: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   headerBtn: { paddingVertical: 8, minWidth: 44 },
   cancel: { fontSize: 14, color: flColor.gray400 },
   done: { fontSize: 14, fontWeight: '700', color: flColor.bronze300, textAlign: 'right' },
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
 
   zoomRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 26 },
   track: { flex: 1, height: 34, justifyContent: 'center' },
-  trackFillWrap: { height: 4, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
+  trackFillWrap: { height: 4, borderRadius: 2, backgroundColor: flColor.divider, overflow: 'hidden' },
   trackFill: { height: 4, backgroundColor: flColor.bronze400 },
   thumb: { position: 'absolute', top: '50%', marginTop: -10, marginLeft: -10, width: 20, height: 20, borderRadius: 10, backgroundColor: flColor.bronze300, borderWidth: 2, borderColor: '#060708' },
   zoomGlyph: { alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
