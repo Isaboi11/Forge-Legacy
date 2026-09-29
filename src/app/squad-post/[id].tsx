@@ -17,7 +17,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { FlameIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
-import { PhotoViewer } from '@/components/forge/PhotoViewer';
+import { PhotoCarousel, PhotoViewer } from '@/components/forge/PhotoViewer';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { PostedWorkoutPanel } from '@/components/forge/PostedWorkoutPanel';
 import { cardioStats, foodLine, partnersLine } from '@/domain/share/recap-stats';
@@ -761,17 +761,23 @@ function PostMedia({ media }: { media: SquadMedia[] }) {
   const [viewerAt, setViewerAt] = useState<number | null>(null);
   if (!media.length) return null;
   const photos = media.filter((m) => m.kind === 'image').map((m) => m.url);
+  const videos = media.filter((m) => m.kind === 'video');
   return (
     <>
-      {media.map((m, i) => {
-        if (m.kind !== 'image') return <VideoBlock key={`${m.url}-${i}`} uri={m.url} />;
-        const at = media.slice(0, i).filter((x) => x.kind === 'image').length;
-        return (
-          <Pressable key={`${m.url}-${i}`} onPress={() => setViewerAt(at)} accessibilityRole="button" accessibilityLabel={`Open photo ${at + 1} of ${photos.length}`}>
-            <DetailPhoto uri={m.url} />
-          </Pressable>
-        );
-      })}
+      {/* ⚠ A SET SWIPES, IT DOES NOT STACK (PO 09-28: "just swipeable there and not posted in a long top to
+          bottom scroll"). One photo keeps its own shape, uncropped. */}
+      {photos.length > 1 ? (
+        <View style={styles.detailCarousel}>
+          <PhotoCarousel urls={photos} onOpen={setViewerAt} />
+        </View>
+      ) : photos.length === 1 ? (
+        <Pressable onPress={() => setViewerAt(0)} accessibilityRole="button" accessibilityLabel="Open photo">
+          <DetailPhoto uri={photos[0]} />
+        </Pressable>
+      ) : null}
+      {videos.map((m, i) => (
+        <VideoBlock key={`${m.url}-${i}`} uri={m.url} />
+      ))}
       <PhotoViewer urls={photos} index={viewerAt} onClose={() => setViewerAt(null)} />
     </>
   );
@@ -1017,6 +1023,7 @@ const styles = StyleSheet.create({
   achLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 2.5, color: flColor.bronzeInk },
 
   bodyText: { fontSize: 15.5, lineHeight: 24, color: flColor.cream100, marginTop: 13 },
+  detailCarousel: { width: '100%', aspectRatio: 4 / 5, borderRadius: flRadius.lg, marginTop: 14, overflow: 'hidden', backgroundColor: flColor.charcoal900 },
   detailImage: { width: '100%', borderRadius: flRadius.lg, marginTop: 14, backgroundColor: flColor.charcoal900 },
   detailVideo: { width: '100%', height: 240, borderRadius: flRadius.lg, marginTop: 14, backgroundColor: '#000' },
   sliderWrap: { marginTop: 14 },

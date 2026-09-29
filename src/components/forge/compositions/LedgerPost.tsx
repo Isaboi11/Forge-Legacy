@@ -38,7 +38,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
 import { Image } from 'expo-image';
-import { PhotoGrid, PhotoViewer } from '@/components/forge/PhotoViewer';
+import { PhotoCarousel, PhotoGrid, PhotoViewer } from '@/components/forge/PhotoViewer';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -252,7 +252,10 @@ export function LedgerPost({
   footer,
 }: LedgerPostProps) {
   const hasMedia = media.length > 0 || customMedia != null;
-  const grid = mediaDisplay === 'grid' && media.length > 1 && media.every((m) => m.kind === 'image');
+  /* A SET of photos is its own thing to handle: it swipes (or collages) in the feed, and a tap on a photo
+     opens the full-screen viewer at it — never the post (PO 09-28). One photo, or a clip, keeps `onMedia`. */
+  const photoSet = media.length > 1 && media.every((m) => m.kind === 'image');
+  const grid = photoSet && mediaDisplay === 'grid';
   const [viewerAt, setViewerAt] = useState<number | null>(null);
   const shownStats = stats.slice(0, 3);
   /*
@@ -308,6 +311,10 @@ export function LedgerPost({
           /* Each tile opens the viewer at its photo — the card's own tap would open the post instead. */
           <View style={[styles.band, { marginHorizontal: -bleed, aspectRatio: 4 / 5 }]}>
             <PhotoGrid urls={media.map((m) => m.url)} onOpen={setViewerAt} />
+          </View>
+        ) : photoSet ? (
+          <View style={[styles.band, { marginHorizontal: -bleed, aspectRatio: 4 / 5 }]}>
+            <PhotoCarousel urls={media.map((m) => m.url)} onOpen={setViewerAt} />
           </View>
         ) : hasMedia ? (
           onMedia ? (
@@ -388,7 +395,7 @@ export function LedgerPost({
           {commentCount > 0 ? <Text style={styles.actionCount}>{commentCount}</Text> : null}
         </Pressable>
       </View>
-      {grid ? <PhotoViewer urls={media.map((m) => m.url)} index={viewerAt} onClose={() => setViewerAt(null)} /> : null}
+      {photoSet ? <PhotoViewer urls={media.map((m) => m.url)} index={viewerAt} onClose={() => setViewerAt(null)} /> : null}
     </View>
   );
 }

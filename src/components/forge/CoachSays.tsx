@@ -68,9 +68,15 @@ export interface CoachSaysProps {
   style?: object;
   /** Kitchen Mode (on Nutrition) — the mark wears the chef's hat. */
   kitchen?: boolean;
+  /**
+   * One-tap answers under the line (0240, PO 09-29) — a squad-mate's message during a workout gets
+   * "👊 Got it · 🔥 Let's go · 🙏 Thanks". Omit it and none are drawn.
+   */
+  replies?: readonly { key: string; label: string }[];
+  onReply?: (key: string) => void;
 }
 
-export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style, kitchen = false }: CoachSaysProps) {
+export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style, kitchen = false, replies, onReply }: CoachSaysProps) {
   const said = line?.trim() || null;
 
   return (
@@ -114,6 +120,23 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
             <Text style={styles.text} numberOfLines={3}>
               {said}
             </Text>
+            {/* Children of the bubble's Pressable, like the X: the child wins the touch. */}
+            {replies?.length && onReply ? (
+              <View style={styles.replies}>
+                {replies.map((r) => (
+                  <Pressable
+                    key={r.key}
+                    onPress={() => onReply(r.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Reply ${r.label}`}
+                    hitSlop={4}
+                    style={({ pressed }) => [styles.reply, pressed && styles.replyPressed]}
+                  >
+                    <Text style={styles.replyText}>{r.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </LinearGradient>
           {/*
             ⚠ A SIBLING OF THE GRADIENT, NOT A CHILD OF THE TEXT COLUMN — absolutely placed so it sits
@@ -212,6 +235,17 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.round,
   },
   closePressed: { opacity: 0.55 },
+  replies: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  reply: {
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.accentBorder,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  replyPressed: { opacity: 0.6 },
+  replyText: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   mark: {
     width: BUBBLE_SIZE,
     height: BUBBLE_SIZE,

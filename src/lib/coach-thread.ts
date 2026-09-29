@@ -143,6 +143,31 @@ export async function clearThread(): Promise<void> {
   }
 }
 
+/**
+ * ══ THE X ON "I BUILD THE TRAINING" RETIRES IT (PO 2026-09-28) ══
+ * *"Every time I load the app coach holt says I build the training… I pressed x and it still just keeps
+ * coming back."* The X used to close it for the launch only. It now closes it for good — kept apart from
+ * `MET_KEY`, which also decides whether the chat plays his introduction; closing a floating line is not
+ * having met him. Cleared with `forgetMetHolt`, so the next athlete on the phone is still told who he is.
+ */
+const INTRO_CLOSED_KEY = 'fl_holt_intro_closed_v1';
+
+export async function hasClosedHoltIntro(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(INTRO_CLOSED_KEY)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export async function rememberClosedHoltIntro(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(INTRO_CLOSED_KEY, '1');
+  } catch {
+    // A flag that will not save is the line coming back once more, not a failure worth surfacing.
+  }
+}
+
 /** True once Holt has introduced himself on this device. */
 export async function hasMetHolt(): Promise<boolean> {
   try {
@@ -163,7 +188,7 @@ export async function hasMetHolt(): Promise<boolean> {
  */
 export async function forgetMetHolt(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(MET_KEY);
+    await AsyncStorage.multiRemove([MET_KEY, INTRO_CLOSED_KEY]);
   } catch {
     // A flag that will not clear is a re-shown introduction, not a broken sign-in.
   }
