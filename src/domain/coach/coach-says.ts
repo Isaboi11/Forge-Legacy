@@ -157,6 +157,19 @@ function spent(upTo: number | null | undefined, heaviest: number | null | undefi
  * Whitespace-only is nothing, not something — an author who opened the cue field and thought better of
  * it must not put an empty bubble on the athlete's screen for the whole exercise.
  */
+/**
+ * Holt silenced for this workout (PO, 2026-09-29) — his saved "Off", or "Quiet for this workout".
+ *
+ * Every line HOLT volunteers goes: the squad announcement, the mid-set nudge, the load advice and the
+ * technique cue. ⚠ THE TECHNIQUE CUE TOO, and that is the PO's explicit choice, made knowing that
+ * `reminders` keeps it on purpose (`rulebook/intensity.ts`). The squad-mate's `cheer` stays — it is a
+ * person writing, not Holt, and silencing Holt must not hide the squad.
+ */
+export function silenced(input: CoachLineInput, silent: boolean): CoachLineInput {
+  if (!silent) return input;
+  return { ...input, announce: null, live: null, liveUpTo: null, progression: null, progressionUpTo: null, planCue: null };
+}
+
 export function coachLine(input: CoachLineInput): CoachLine | null {
   const heaviest = input.heaviestThisSession;
   /*

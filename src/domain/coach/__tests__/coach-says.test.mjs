@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { coachLine } from '../coach-says.ts';
+import { coachLine, silenced } from '../coach-says.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 0217 — "YOUR SQUAD JUST GOT A NOTIFICATION" goes first, and only before the first set
@@ -230,4 +230,33 @@ test('once the arrival lines retire, a live nudge still gets through', () => {
     setsDoneThisExercise: 2,
   });
   assert.deepEqual(got, { text: 'Two more like that.', source: 'live' });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Holt OFF / quiet for this workout (PO 2026-09-29) — silent, technique cues included; the squad still speaks
+// ─────────────────────────────────────────────────────────────────────────────
+
+const everyLine = {
+  announce: 'Your squad just got a notification that you started Upper A.',
+  setsDoneThisSession: 0,
+  live: 'Go to 185 on the next set.',
+  liveUpTo: 185,
+  progression: 'Add 5 lb today.',
+  planCue: 'Feel it in your legs, not your back.',
+  setsDoneThisExercise: 0,
+};
+
+test('silenced: Holt volunteers nothing, not even the technique cue', () => {
+  assert.equal(coachLine(silenced(everyLine, true)), null);
+  assert.equal(coachLine(silenced({ planCue: 'Brace before you unrack.' }, true)), null);
+});
+
+test('silenced: a squad-mate\'s message still shows — it is a person, not Holt', () => {
+  const got = coachLine(silenced({ ...everyLine, cheer: 'Sam: Let’s go!' }, true));
+  assert.equal(got?.source, 'cheer');
+});
+
+test('not silenced: the input is untouched', () => {
+  assert.equal(silenced(everyLine, false), everyLine);
+  assert.ok(coachLine(silenced(everyLine, false)));
 });
