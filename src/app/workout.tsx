@@ -75,7 +75,7 @@ import { durText, supersetLabels } from '@/domain/program/prescription';
 import { coachLine } from '@/domain/coach/coach-says';
 import { squadAnnouncedLine } from '@/domain/coach/squad-announce';
 import { cheerLine, nextCheer, type Cheer } from '@/domain/coach/cheers';
-import { fetchUnseenCheers, markCheerSeen } from '@/data/cheers-live';
+import { CHEER_REPLIES, fetchUnseenCheers, markCheerSeen, replyToCheer, type CheerReply } from '@/data/cheers-live';
 import { profileFor } from '@/domain/coach/rulebook/intensity';
 import { intraSetSuggestion } from '@/domain/coach/intra-set';
 import { addSuggestions, swapSuggestions } from '@/domain/coach/session-suggest';
@@ -4754,6 +4754,15 @@ export default function WorkoutScreen() {
          */
         <CoachSays
           line={says?.text ?? null}
+          /* A squad-mate's message gets three one-tap answers (0240, PO 09-29). Answering closes it, like
+             the X, and the sender is told which one. */
+          replies={says?.source === 'cheer' && cheerNow ? CHEER_REPLIES : undefined}
+          onReply={(key) => {
+            if (!cheerNow) return;
+            const id = cheerNow.id;
+            setClosedCheers((s) => new Set(s).add(id));
+            void replyToCheer(id, key as CheerReply);
+          }}
           onDismiss={
             says
               ? () => {
