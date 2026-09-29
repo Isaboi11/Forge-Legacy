@@ -396,6 +396,18 @@ export default function WorkoutComplete() {
       else router.replace('/activity-history');
       return;
     }
+    /*
+     * ⚠ CLOSE BACK TO THE TABS THAT ARE ALREADY THERE, THEN GO TO LEGACY (PO 2026-09-29: a tester tapped
+     * "See your Legacy" and the app froze). `replace` swapped this full-screen modal for a SECOND `(tabs)`
+     * navigator — a native modal-to-card swap — while Legacy's focus fires the rank/honor checks whose
+     * ceremony is its own `Modal`, presented mid-transition. Dismissing unwinds the modal instead, the way
+     * every other full-screen modal here leaves. `replace` stays only for a cold start with nothing under it.
+     */
+    if (router.canDismiss()) {
+      router.dismissAll();
+      router.navigate('/(tabs)/legacy');
+      return;
+    }
     router.replace('/(tabs)/legacy');
   };
 
