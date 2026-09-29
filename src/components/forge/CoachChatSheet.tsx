@@ -136,6 +136,7 @@ import {
   type RefusalCard,
   type Turn,
 } from '@/domain/coach/chat-core';
+import { typedEquipment } from '@/domain/coach/typed-equipment';
 import { medicalRoute } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
@@ -2263,7 +2264,9 @@ export function CoachChatSheet({
           (rest as Partial<ChatState>).excludeExercises = [...new Set([...(constraints.excludeExercises ?? []), ...avoidKeys])];
         }
         const focus = typeof said === 'string' ? focusFromText(said) ?? focusFromText(text) : null;
-        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}) };
+        /* QA holtai-04 — the model's patch has no equipment field, so "dumbbells only" arrived as a bare
+           `home` and built from an empty home gym. The kit named in their own sentence rides along. */
+        const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}), ...(typedEquipment(text) ?? {}) };
         if (r.say) say({ kind: 'holt', text: r.say });
         if (mode) return void advance({ ...constraints, ...patch }, m);
         const opens: ChatMode = focus ? 'day' : 'program';
@@ -2335,12 +2338,21 @@ export function CoachChatSheet({
       return;
     }
 
+    /* QA holtai-04 — kit named outright ("dumbbells only", "just bands and a bench") is read here, free,
+       before any model. It answers the where/gear question on the table without a round trip. */
+    const gear = typedEquipment(text);
+    const onTable = mode ? nextQuestion(constraints, mode) : null;
+    if (gear && (onTable?.id === 'where' || onTable?.id === 'gear')) {
+      void advance({ ...constraints, ...gear }, mode ?? 'program');
+      return;
+    }
+
     const opener = fromOpener(text);
     /* The typed path only understands the two openers that START something. Typing "how do I…" is a
        question for the model, not for a string match — see TYPING_ENABLED. */
     if (opener?.kind === 'build') {
       setMode(opener.mode);
-      void advance({ ...athleteFacts(constraints), ...opener.patch }, opener.mode);
+      void advance({ ...athleteFacts(constraints), ...opener.patch, ...(gear ?? {}) }, opener.mode);
       return;
     }
 
@@ -2350,7 +2362,8 @@ export function CoachChatSheet({
     }
 
     const q = nextQuestion(constraints, mode ?? 'program');
-    const patch = q ? interpret(text, q) : null;
+    const said = q ? interpret(text, q) : null;
+    const patch = said || gear ? { ...(said ?? {}), ...(gear ?? {}) } : null;
     if (!patch) {
       /* He asks again rather than guessing. A coach who mishears and proceeds is worse than one who
          checks — and until the model lands, this is the honest edge of what he understands. */

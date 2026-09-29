@@ -326,6 +326,15 @@ export const CONCERN = {
   pinHeldEquipment: (name: string): string =>
     `${name} needs kit you haven't told me you have — if you've got it, say so and it goes in.`,
   pinHeldExcluded: (name: string): string => `You asked me to leave ${name} out, so it's not in — say if that's changed.`,
+  /* QA holtai-04 — "I'll keep your knees out of it", then squats on two days of three. `knees` removes
+     jumping and landing and nothing else (limitations.ts, held in Coach-AI-Preflight-Gates §1.1), so Holt
+     says exactly that and hands the athlete the swap — he never implies the knee-bending work is gone. */
+  kneesKeptSquats: (): string =>
+    "About your knees: I've taken out the jumping and landing. There's still squat and lunge work in here — if any of it bothers your knees, swap it out or tell me and I'll take it out.",
+  /* QA holtai-04 — a strength block with no pulling at all shipped without a word. When nothing the athlete
+     has can row or pull, the honest answer is to say so and name what fixes it. */
+  noPulling: (): string =>
+    "There's no pulling in this — nothing you've told me you have lets you row or pull up. A resistance band, a pair of dumbbells or a pull-up bar changes that; tell me if you've got one.",
   pinNoLiftDay: (name: string): string =>
     `There's no lifting day in that week for ${name} — give me one and it goes there.`,
   pinOverCeiling: (day: string): string =>

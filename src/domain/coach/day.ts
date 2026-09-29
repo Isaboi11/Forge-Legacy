@@ -533,7 +533,7 @@ export function buildDayWorkout(
      * through the code that attaches it. The cue needs the goal, which is the other thing this session
      * was never asked, so both gaps closed on the same question.
      */
-    const cue = req.goal ? cueFor({ pattern, goal: req.goal, experience: req.experience, isPrimary: i === 0 }) : null;
+    const cue = req.goal ? cueFor({ pattern, goal: req.goal, experience: req.experience, isPrimary: i === 0, name: ex.name, equipId: ex.equipId }) : null;
     return {
       catalogKey: ex.key,
       name: ex.name,
