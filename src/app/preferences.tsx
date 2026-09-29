@@ -58,6 +58,9 @@ const INTENSITY_COPY: Record<IntensityLevel, { label: string; hint: string }> = 
   drive: { label: 'Drive', hint: 'I’ll push on every lift and tell you straight.' },
 };
 
+/** Says plainly what Off costs — technique cues go too (PO, 2026-09-29). */
+const HOLT_OFF_HINT = 'Silent during workouts, technique cues included. Tap an exercise or ask me any time.';
+
 export default function PreferencesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -93,7 +96,11 @@ export default function PreferencesScreen() {
   const setUnits = (units: UnitSystem) => commit({ ...prefs, units });
   const setRowUnit = (rowUnit: RowUnit) => commit({ ...prefs, rowUnit });
   const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
-  const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity });
+  // Picking a level also turns Holt back on; picking Off leaves the level where it was, so coming back
+  // lands on the dial the athlete had (see `AppPrefs.holtInWorkout`).
+  const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity, holtInWorkout: 'on' });
+  const setHoltOff = () => commit({ ...prefs, holtInWorkout: 'off' });
+  const holtOff = prefs.holtInWorkout === 'off';
   const setHoltTips = (on: boolean) => commit({ ...prefs, holtTips: on ? 'on' : 'off' });
 
   /**
@@ -248,8 +255,22 @@ export default function PreferencesScreen() {
               </View>
             </View>
             <View style={styles.levels}>
-              {INTENSITY_LEVELS.map((level, i) => {
-                const on = prefs.coachIntensity === level;
+              {/* OFF, first — the quietest end of the same list. Stored as its own key, not a level. */}
+              <Pressable
+                onPress={setHoltOff}
+                accessibilityRole="button"
+                accessibilityState={{ selected: holtOff }}
+                accessibilityLabel={`Off — ${HOLT_OFF_HINT}`}
+                style={[styles.level, holtOff && styles.levelOn]}
+              >
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowLabel, holtOff && styles.levelLabelOn]}>Off</Text>
+                  <Text style={styles.rowHint}>{HOLT_OFF_HINT}</Text>
+                </View>
+                {holtOff ? <ForgeSymbol name="seal" size={17} color={flColor.bronze400} /> : null}
+              </Pressable>
+              {INTENSITY_LEVELS.map((level) => {
+                const on = !holtOff && prefs.coachIntensity === level;
                 const copy = INTENSITY_COPY[level];
                 return (
                   <Pressable
@@ -258,7 +279,7 @@ export default function PreferencesScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
                     accessibilityLabel={`${copy.label} — ${copy.hint}`}
-                    style={[styles.level, i > 0 && styles.rowBorder, on && styles.levelOn]}
+                    style={[styles.level, styles.rowBorder, on && styles.levelOn]}
                   >
                     <View style={styles.rowText}>
                       <Text style={[styles.rowLabel, on && styles.levelLabelOn]}>{copy.label}</Text>

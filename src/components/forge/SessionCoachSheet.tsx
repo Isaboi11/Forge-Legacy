@@ -101,6 +101,10 @@ export function SessionCoachSheet({
   onPick,
   intensity,
   onSetIntensity,
+  holtOff,
+  onSetHoltOff,
+  quietThisWorkout,
+  onQuietThisWorkout,
   proposal,
   onAcceptProposal,
   onDismissProposal,
@@ -151,6 +155,15 @@ export function SessionCoachSheet({
    */
   intensity: IntensityLevel;
   onSetIntensity: (level: IntensityLevel) => void;
+  /**
+   * Holt OFF during workouts (PO, 2026-09-29) — the saved setting, shown as the first chip of the dial.
+   * Stored apart from the level (`AppPrefs.holtInWorkout`), so a level chip turns him back on where he was.
+   */
+  holtOff: boolean;
+  onSetHoltOff: () => void;
+  /** Silent until this workout ends, without touching the saved setting. */
+  quietThisWorkout: boolean;
+  onQuietThisWorkout: (quiet: boolean) => void;
   /**
    * What the recent record suggests, or null — which is the common answer.
    *
@@ -551,16 +564,28 @@ export function SessionCoachSheet({
           <View style={styles.group}>
             <Text style={styles.groupLabel}>HOW HARD I PUSH</Text>
             <View style={styles.chipRow}>
+              {/* Off sits at the quiet end of the same scale. It means silent, technique cues included. */}
+              <Chip label="Off" icon={<EngravedIcon name="moon" size={13} />} on={holtOff} onPress={onSetHoltOff} />
               {INTENSITY_LEVELS.map((level) => (
                 <Chip
                   key={level}
                   label={INTENSITY_CHIP[level]}
                   icon={INTENSITY_ICON[level]}
-                  on={intensity === level}
+                  on={!holtOff && intensity === level}
                   onPress={() => onSetIntensity(level)}
                 />
               ))}
             </View>
+            {/* Just today. Hidden when he is already off — there is nothing left to quiet. Like the dial,
+                it does not close the sheet, so the athlete sees it take. */}
+            {!holtOff ? (
+              <Row
+                label={quietThisWorkout ? 'Talk to me again' : 'Quiet for this workout'}
+                sub={quietThisWorkout ? 'I’m silent until this workout ends' : 'Silent until this workout ends, cues included'}
+                last
+                onPress={() => onQuietThisWorkout(!quietThisWorkout)}
+              />
+            ) : null}
           </View>
         </ScrollView>
       </Animated.View>

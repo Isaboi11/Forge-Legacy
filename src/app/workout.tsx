@@ -37,7 +37,7 @@ import { useToast } from '@/hooks/useCeremony';
 /* Identity for the offline save queue — read from the CACHED session, so it is still there when the
    network is not. See `PendingSave.athleteId`. */
 import { useAuth } from '@/lib/auth';
-import { useAppPrefs, useCoachIntensity, useHaptics, useSoundEnabled, useUnits } from '@/lib/settings';
+import { useAppPrefs, useCoachIntensity, useHaptics, useHoltInWorkout, useSoundEnabled, useUnits } from '@/lib/settings';
 import { loadContextFor, type LiftMaxes, type LoadContext } from '@/domain/program/percent-max';
 import { hasPrescription, maxKeyOf, maxKeysNeeded, prescribedSets, withMaxes } from '@/domain/workout/template-prescription';
 import { fetchMyLiftMaxes } from '@/data/lift-maxes-live';
@@ -72,7 +72,7 @@ import {
   type AcceptedTraining,
 } from '@/domain/workout/partner-credit';
 import { durText, supersetLabels } from '@/domain/program/prescription';
-import { coachLine } from '@/domain/coach/coach-says';
+import { coachLine, silenced } from '@/domain/coach/coach-says';
 import { squadAnnouncedLine } from '@/domain/coach/squad-announce';
 import { cheerLine, nextCheer, type Cheer } from '@/domain/coach/cheers';
 import { CHEER_REPLIES, fetchUnseenCheers, markCheerSeen, replyToCheer, type CheerReply } from '@/data/cheers-live';
@@ -645,6 +645,16 @@ export default function WorkoutScreen() {
      rather than a second copy that could disagree with it. */
   const { prefs: appPrefs, loaded: prefsLoaded, refetch: refetchPrefs } = useAppPrefs();
   const coachProfile = useMemo(() => profileFor(coachIntensity, experience), [coachIntensity, experience]);
+  /*
+   * ══ HOLT OFF (PO, 2026-09-29) ══ Two ways to silence him: the saved setting (`holtInWorkout`, the
+   * "Off" at the top of the intensity list) and "Quiet for this workout" in his sheet, which lasts until
+   * this screen closes. Silent means no unprompted line at all — technique cues and the squad
+   * announcement included, the PO's explicit choice — and no intensity proposal. A squad-mate's message
+   * still shows: that is a person, not Holt. Tapping the coin still opens him; asking is never silenced.
+   */
+  const holtInWorkout = useHoltInWorkout();
+  const [quietThisWorkout, setQuietThisWorkout] = useState(false);
+  const holtSilent = holtInWorkout === 'off' || quietThisWorkout;
 
   /*
    * ══ THE ARTWORK ON THE ENTRY SCREEN — THE SAME RESOLVER HOME CALLS ══
@@ -2864,7 +2874,7 @@ export default function WorkoutScreen() {
           slot: announcement.startedAt,
         })
       : null;
-  const saysRaw = coachLine({
+  const saysRaw = coachLine(silenced({
     /* A squad-mate's message, verbatim — first, and it waits for the athlete to close it. */
     cheer: cheerNow ? cheerLine(cheerNow) : null,
     announce: announceText && !dismissedSays.has(announceText) ? announceText : null,
@@ -2885,7 +2895,7 @@ export default function WorkoutScreen() {
        all log with `weight` null or 0, and counting only weighted sets would leave their cue on screen
        for the whole exercise — which is the report, on the exercises where it is most obvious. */
     setsDoneThisExercise: ex.sets.filter((s) => s.done).length,
-  });
+  }, holtSilent));
   /*
    * ⚠ THE COACH SPEAKS POUNDS; THE SCREEN SPEAKS THE ATHLETE'S UNIT.
    *
@@ -4790,8 +4800,9 @@ export default function WorkoutScreen() {
                 () => setOwnedGear(null), // a failed read must not silence him
               );
             }
-            /* Read on OPEN. See `proposal` above for why this is not a mount-time fetch. */
-            void fetchIntensitySignals().then((signals) => {
+            /* Read on OPEN. See `proposal` above for why this is not a mount-time fetch. Never while Holt
+               is silenced: a question about his coaching style is still Holt talking. */
+            if (!holtSilent) void fetchIntensitySignals().then((signals) => {
               const next = proposeIntensity(signals, coachIntensity);
               setProposal(next);
               /*
@@ -4866,6 +4877,13 @@ export default function WorkoutScreen() {
             setProposal(null);
           }}
           intensity={coachIntensity}
+          holtOff={holtInWorkout === 'off'}
+          onSetHoltOff={() => {
+            if (!prefsLoaded) return; // same data-loss guard as the dial below
+            persistPref(() => saveAppPrefs({ ...appPrefs, holtInWorkout: 'off' }), { onOk: () => refetchPrefs() });
+          }}
+          quietThisWorkout={quietThisWorkout}
+          onQuietThisWorkout={setQuietThisWorkout}
           onSetIntensity={(level) => {
             /*
              * ⚠ GUARDED ON `prefsLoaded`, AND THIS IS NOT DEFENSIVE PROGRAMMING — IT IS A DATA-LOSS BUG.
@@ -4879,7 +4897,8 @@ export default function WorkoutScreen() {
              * A chip in a sheet opened two seconds into a workout is exactly the tap that lands first.
              */
             if (!prefsLoaded) return;
-            persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: level }), { onOk: () => refetchPrefs() });
+            // Picking a level turns Holt back on, the same as on /preferences.
+            persistPref(() => saveAppPrefs({ ...appPrefs, coachIntensity: level, holtInWorkout: 'on' }), { onOk: () => refetchPrefs() });
           }}
           weight={coachAnchor}
           reps={coachReps}

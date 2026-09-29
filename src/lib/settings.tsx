@@ -134,3 +134,8 @@ function noop(): void {}
 export function useCoachIntensity(): IntensityLevel {
   return useAppPrefs().prefs.coachIntensity;
 }
+
+/** Whether Holt may speak unprompted during a live workout. `off` is silent — see `AppPrefs.holtInWorkout`. */
+export function useHoltInWorkout(): 'on' | 'off' {
+  return useAppPrefs().prefs.holtInWorkout;
+}
