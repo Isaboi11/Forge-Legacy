@@ -132,6 +132,21 @@ export type LegacyData = {
   totalAccomplishmentCount: number
   honors: Honor[]
   totalHonorCount: number
+  /** Saved workouts, all time — what reveals Recent Activity and helps promote the timeline (L-A2). */
+  savedWorkoutCount: number
+  /** Every `timeline_events` row, not just the three previewed. */
+  timelineEventCount: number
+  /** The latest saved workouts, newest first — the Recent Activity rows. */
+  recentWorkouts: RecentWorkout[]
+}
+
+/** A saved workout as Legacy remembers it: "Completed Upper Body · Today · 45 min". */
+export type RecentWorkout = {
+  id: string
+  title: string
+  /** ISO — the screen formats the day, so "Today" is computed where "now" is. */
+  savedAt: string
+  durationSec: number | null
 }
 
 export type TimelineGroup =

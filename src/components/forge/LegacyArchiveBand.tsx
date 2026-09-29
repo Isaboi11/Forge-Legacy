@@ -67,7 +67,11 @@ import {
  * ADDED — per-tile empty states. The design draws three populated tiles and has no answer for an athlete
  * with no transformation entries, no photos or no competitions; a band of grey image slots would be worse
  * than the list it replaces. Each tile falls back independently to the recessed surface, keeps its
- * destination, and says what to do next. The row never collapses to two.
+ * destination, and says what to do next.
+ *
+ * AMENDED — `Legacy-Amendment-002` (progressive reveal). Legacy now passes `show`, and a tile with nothing
+ * in it is not drawn at all; the remaining tiles share the row's width. The per-tile empty states above
+ * stay for any caller that omits `show`, which draws all three exactly as before.
  */
 
 const PAD = 18;
@@ -101,11 +105,15 @@ export interface LegacyArchiveBandProps {
   onTransformation: () => void;
   onPhotos: () => void;
   onTrophies: () => void;
+  /** Which tiles to draw. Omitted = all three (the original band). */
+  show?: { transformation: boolean; photos: boolean; trophies: boolean };
 }
 
-export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTrophies }: LegacyArchiveBandProps) {
+export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTrophies, show }: LegacyArchiveBandProps) {
   const { width } = useWindowDimensions();
-  const tileW = Math.max(84, (width - 2 * PAD - 2 * GUTTER) / 3);
+  const vis = show ?? { transformation: true, photos: true, trophies: true };
+  const n = Math.max(1, Number(vis.transformation) + Number(vis.photos) + Number(vis.trophies));
+  const tileW = Math.max(84, (width - 2 * PAD - (n - 1) * GUTTER) / n);
 
   const t = archive?.transformation;
   const p = archive?.photos;
@@ -116,6 +124,7 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
 
   return (
     <View style={styles.band}>
+      {vis.transformation ? (
       <Tile
         testID="lg-transform"
         width={tileW}
@@ -136,7 +145,9 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
           <RecessedSurface id="xform" />
         )}
       </Tile>
+      ) : null}
 
+      {vis.photos ? (
       <Tile testID="lg-photos" width={tileW} label="Photos" count={p ? photosCount(p) : ''} media={!!p?.latest} onPress={onPhotos}>
         {p?.latest ? (
           <GradedImage uri={p.latest} width={tileW} height={TILE_H} grade={GRADE.photo} focalY={0.42} overscan={1.3} />
@@ -144,12 +155,15 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
           <RecessedSurface id="photos" />
         )}
       </Tile>
+      ) : null}
 
+      {vis.trophies ? (
       <Tile testID="lg-trophies" width={tileW} label="Trophy Case" count={tr ? trophyCount(tr) : ''} media={false} bronzeEdge onPress={onTrophies}>
         <RecessedSurface id="trophy" />
         {/* An empty trophy case does not display a crown. */}
         {tr && tr.entered > 0 ? <CrownEmblem tileWidth={tileW} /> : null}
       </Tile>
+      ) : null}
     </View>
   );
 }
@@ -273,7 +287,8 @@ function RecessedSurface({ id }: { id: string }) {
 
 /** Inset 14pt from the top, 96pt of window, the emblem laid in at 152% width so it crops at the edges. */
 function CrownEmblem({ tileWidth }: { tileWidth: number }) {
-  const artW = tileWidth * 1.52;
+  // Sized from a three-up tile at most: with fewer tiles the row widens, and the crown should stay an emblem.
+  const artW = Math.min(tileWidth, 116) * 1.52;
   const artH = artW / CROWN_ASPECT;
   return (
     <View style={styles.crownWindow} pointerEvents="none">

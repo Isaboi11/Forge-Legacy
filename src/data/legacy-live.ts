@@ -182,6 +182,8 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     { data: pinRows, error: pne },
     { data: honorRows, error: he },
     { data: goalRows },
+    { count: savedWorkoutCount },
+    { data: recentRows },
   ] = await Promise.all([
     supabase.from('profiles').select('rank_family, rank_level, standard').eq('id', uid).single(),
     supabase.from('chapters').select('*').eq('athlete_id', uid),
@@ -192,6 +194,18 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     supabase.from('honor_instances').select('id, honor_type, display_name, date_earned, category, chapter_id').eq('athlete_id', uid).order('date_earned', { ascending: false }),
     // Real primary goals (0025). NOT thrown on error — degrades to the fixture-free 'none' pre-migration.
     supabase.from('goals').select('chapter_id, name, target, unit, current, achieved_at, metric_dir, metric_start_value').eq('athlete_id', uid).eq('is_primary', true),
+    /* Progressive reveal (Legacy-Amendment-002). NOT thrown on error either: a failed count reads as
+       zero, which hides Recent Activity — the page falls back to its simpler form, never to a broken one.
+       `athlete_id` is filtered explicitly rather than left to RLS; squad-mates' shared workouts can be
+       readable, and they are not this athlete's record. */
+    supabase.from('workouts').select('id', { count: 'exact', head: true }).eq('athlete_id', uid).eq('state', 'saved'),
+    supabase
+      .from('workouts')
+      .select('id, workout_name, saved_at, started_at, duration_sec')
+      .eq('athlete_id', uid)
+      .eq('state', 'saved')
+      .order('saved_at', { ascending: false, nullsFirst: false })
+      .limit(2),
   ]);
   if (pe) throw pe;
   if (ce) throw ce;
@@ -281,5 +295,16 @@ export async function fetchLegacyData(): Promise<LegacyData> {
     totalPhotoCount: 0,
     accomplishments: [],
     totalAccomplishmentCount: 0,
+    savedWorkoutCount: savedWorkoutCount ?? 0,
+    timelineEventCount: timeline.length,
+    recentWorkouts: (
+      (recentRows ?? []) as { id: string; workout_name: string | null; saved_at: string | null; started_at: string; duration_sec: number | null }[]
+    ).map((w) => ({
+      id: w.id,
+      // The same fallback the activity history uses, so one workout has one name everywhere.
+      title: w.workout_name?.trim() || 'Workout',
+      savedAt: w.saved_at ?? w.started_at,
+      durationSec: w.duration_sec,
+    })),
   };
 }
