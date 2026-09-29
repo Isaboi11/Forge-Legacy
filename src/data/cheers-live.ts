@@ -76,3 +76,28 @@ export async function markCheerSeen(id: string): Promise<void> {
     // See above.
   }
 }
+
+/**
+ * The one-tap answers to a squad-mate's message (0240, PO 2026-09-29). Three, no custom text: a keyboard
+ * over the set table mid-set is the wrong moment, and three taps cover what people say back.
+ */
+export const CHEER_REPLIES = [
+  { key: 'got_it', label: '👊 Got it' },
+  { key: 'lets_go', label: '🔥 Let’s go' },
+  { key: 'thanks', label: '🙏 Thanks' },
+] as const;
+export type CheerReply = (typeof CHEER_REPLIES)[number]['key'];
+
+/**
+ * Answer it — which also closes it (the server stamps `seen_at` and `replied_at`, and pushes the sender).
+ * On a database without 0240 the column is unknown and the write fails; it then falls back to marking the
+ * message seen, so the bubble still closes and nothing is lost but the answer.
+ */
+export async function replyToCheer(id: string, reply: CheerReply): Promise<void> {
+  try {
+    const { error } = await supabase.from('workout_cheers').update({ reply }).eq('id', id);
+    if (error) await markCheerSeen(id);
+  } catch {
+    await markCheerSeen(id);
+  }
+}
