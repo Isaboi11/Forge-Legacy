@@ -122,13 +122,14 @@ Built and on build 8 for the PO + claudetest only (`0206` allowlist). Web previe
   privacy rewrite (nutrition, AI/Anthropic, all providers, route correction, Holt memory) `94010207`, new
   `/health-data` page, subscription terms (auto-renew, trial, Early Bird, refunds, Apple EULA) `f198ea07`.
   In-app legal summaries updated too: web `index-4e10f078…` + build 9 iOS `01a0df09-5476…` (lane `da09e79c`).
+  🔨 09-29 (QA F5): in-app Privacy + Terms sheets re-synced to the hosted 28 Sep / 26 Sep pages — Sentry, Apple Health, on-device form check, voice, purchases, shared barcode foods, Export My Data, and the pages' exact dates (the old sheets said Sep 2026); a test now fails if the in-app sheet drifts from `site/` (branch `fix/high-privacy`) · ⬜ merged + on web/OTA · ⬜ PO OK on the wording
   🔨 in-app consent for Washington (Nutrition + AI sharing) — built 09-26 `3414c39d` (all 7 AI functions gated client-side; Settings → Health Data & AI to withdraw) · ✅ 0224 applied 09-26 · ✅ LIVE: build 9 iOS `01a0df2f-a17b…` (lane `f2adcd4f`) + web `index-de14dc70…` · ✅ PO saw both prompts 09-27 · ⬜ server-side refusal in the AI functions (follow-up) · ✅ legal review signed off (PO 09-26)
 - ✅ Search failure message — 09-24: a failed source falls back to saved foods, and with no connection the
   app now says "Couldn't connect to food search" with Try again (Log Food + the meal editor). Not deployed yet
 - ✅ First-time welcome screen for the tab — built 09-24 (`eefe43dd`), on web; not yet seen by the PO
 - ⬜ "This looks wrong" report on a food
 - 🔨 Community foods (Amendment 004) — 09-25: a missed barcode becomes everyone's; `0219` applied, food-search redeployed, on build 9 OTA · ⬜ first share seen on a device
-- ✅ Scan a recipe from a screenshot into My Recipes — 09-25 (`487dc325`; `0220` applied, `recipe-photo-read` deployed, on web + build 9 OTA)
+- 🔨 Scan a recipe from a screenshot into My Recipes — 09-25 (`487dc325`; `0220` applied, on web + build 9 OTA) · ⚠ 09-29 correction: `recipe-photo-read` is NOT deployed (QA R2-F7: "Requested function was not found") — ⬜ PO: deploy it from `supabase/apply/deploy-recipe-photo-read.ts` (Verify JWT ON; uses the existing `ANTHROPIC_API_KEY`) · 🔨 09-29 the app now says "isn't available right now" instead of blaming the connection (`fix/high-privacy`)
 - ✅ Data export includes nutrition — 09-24: with food data, Export My Data gives one .zip (workouts.csv +
   food log, targets, my foods, my meals, my recipes, meal plans, grocery items you added); without, the same CSV. Not deployed yet
 - ⬜ Holt meal plans — Amendment 002 LOCKED 09-24 (`ce224fac`); not built yet

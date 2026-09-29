@@ -160,11 +160,15 @@ export type RecipePhotoResult = {
 } | {
     kind: 'unavailable';
 } | {
+    kind: 'not_available';
+} | {
     kind: 'offline';
 };
 export function recipePhotoResultFrom(body: unknown): RecipePhotoResult {
     if (!body || typeof body !== 'object')
         return { kind: 'unavailable' };
+    if (isFunctionMissing(body))
+        return { kind: 'not_available' };
     const d = body as {
         ok?: boolean;
         read?: unknown;
@@ -199,6 +203,18 @@ export function recipePhotoResultFrom(body: unknown): RecipePhotoResult {
             return { kind: 'unavailable' };
     }
 }
+export function isFunctionMissing(body: unknown): boolean {
+    if (!body || typeof body !== 'object')
+        return false;
+    const d = body as {
+        ok?: unknown;
+        code?: unknown;
+        message?: unknown;
+    };
+    if ('ok' in d)
+        return false;
+    return d.code === 'NOT_FOUND' || (typeof d.message === 'string' && /function was not found/i.test(d.message));
+}
 export function recipePhotoError(r: Exclude<RecipePhotoResult, {
     kind: 'ok';
 }>): string {
@@ -221,6 +237,8 @@ export function recipePhotoError(r: Exclude<RecipePhotoResult, {
             return 'That image type can’t be read. Take a screenshot of it and upload that instead.';
         case 'unavailable':
             return 'Recipe reading isn’t working right now. Try again in a bit, or enter it by hand.';
+        case 'not_available':
+            return 'Scanning a recipe isn’t available right now. You can still enter it by hand.';
         case 'offline':
         default:
             return 'Couldn’t reach Forge. Check your connection and try again.';

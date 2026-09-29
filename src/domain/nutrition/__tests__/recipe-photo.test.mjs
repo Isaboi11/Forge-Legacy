@@ -206,6 +206,18 @@ test('the copy: approximate totals, the toast, and every failure distinct from "
   assert.equal(recipePhotoResultFrom({ ok: false, reason: 'not_a_recipe' }).kind, 'not_a_recipe');
   assert.equal(recipePhotoResultFrom({ ok: false, reason: 'upstream_error' }).kind, 'unavailable');
   assert.equal(recipePhotoResultFrom({ ok: true, read: { isRecipe: true, ingredients: [] } }).kind, 'unreadable');
-  const words = new Set(['not_a_recipe', 'unreadable', 'unavailable', 'offline'].map((kind) => recipePhotoError({ kind })));
-  assert.equal(words.size, 4);
+  const words = new Set(['not_a_recipe', 'unreadable', 'unavailable', 'not_available', 'offline'].map((kind) => recipePhotoError({ kind })));
+  assert.equal(words.size, 5);
+});
+
+test('R2-F7: an undeployed function reads as "not available", never as the athlete’s connection', () => {
+  // The Supabase gateway's own 404 body when no function by that name is deployed.
+  const missing = { code: 'NOT_FOUND', message: 'Requested function was not found' };
+  assert.equal(recipePhotoResultFrom(missing).kind, 'not_available');
+  assert.equal(recipePhotoResultFrom({ message: 'Requested function was not found' }).kind, 'not_available');
+  // Our own failures keep their meaning — a body with `ok` is ours, whatever else it says.
+  assert.equal(recipePhotoResultFrom({ ok: false, reason: 'upstream_error', code: 'NOT_FOUND' }).kind, 'unavailable');
+  const line = recipePhotoError({ kind: 'not_available' });
+  assert.match(line, /isn’t available right now/);
+  assert.ok(!/connection|try again/i.test(line), 'nothing the athlete does fixes an undeployed function');
 });
