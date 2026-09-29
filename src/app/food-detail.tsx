@@ -66,6 +66,8 @@ export default function FoodDetailScreen() {
     entry?: string;
     amount?: string;
     grams?: string;
+    /** Present when this food was reached by scanning its barcode. */
+    gtin?: string;
   }>();
 
   const foodKey = typeof params.key === 'string' ? params.key : '';
@@ -356,6 +358,27 @@ export default function FoodDetailScreen() {
         ) : null}
 
         {food.attribution ? <Text style={styles.attribution}>{food.attribution}</Text> : null}
+        {/*
+          ══ A SCANNED FOOD THAT DOESN'T MATCH ITS LABEL CAN BE FIXED FOR EVERYONE (PO 2026-09-28) ══
+          USDA held an older label for the PO's rice (171 kcal/100 g against the pouch's ~181), and nothing
+          on this screen let them say so. A food shared under the barcode (Amendment 004) already wins the
+          next scan over the source's record (`pickBarcodeResult`), so the fix is Create Food with the
+          barcode, name and brand filled in — the label's numbers are the only thing left to type.
+        */}
+        {params.gtin && !editing && (food.source === 'usda' || food.source === 'off' || food.source === 'fs') ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push({
+                pathname: '/create-food',
+                params: { date: iso, meal, from: 'barcode-fix', gtin: String(params.gtin), name: food.name, brand: food.brand ?? '' },
+              })
+            }
+            style={styles.reportLink}
+          >
+            <Text style={styles.reportText}>Doesn’t match the label? Fix it</Text>
+          </Pressable>
+        ) : null}
         {/* Amendment 004 CF-D6 — no text asked for; it hides for this athlete at once, for everyone at 3 */}
         {food.source === 'community' ? (
           <Pressable
