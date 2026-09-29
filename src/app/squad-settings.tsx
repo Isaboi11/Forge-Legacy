@@ -37,6 +37,8 @@ import {
   type SquadPrivacy,
   type SquadTrainingAlerts,
 } from '@/data/squad-live';
+import { fetchVisibility, saveVisibility } from '@/data/settings-live';
+import type { AudienceId } from '@/domain/settings/visibility';
 import { SQUAD_CATEGORIES, fetchPendingRequestCount, fetchSquadDiscovery, updateSquadDiscovery, type SquadCategory } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
@@ -837,6 +839,29 @@ function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: bool
   const persist = usePersist();
   const { data } = useQuery(() => fetchSquadTrainingAlerts(squadId), [squadId]);
   const [edits, setEdits] = useState<Partial<SquadTrainingAlerts>>({});
+  /*
+   * ══ "ANNOUNCE MY WORKOUTS" — THE SENDER'S SWITCH, WHERE THE SENDER LOOKS (PO, 2026-09-29) ══
+   *
+   * The PO switched off "When someone starts" to stop their squad hearing about their workout, and the
+   * squad was told anyway: every switch in this card governs what YOU receive. The one that governs what
+   * is sent about you is `profiles.visibility.training` (Privacy → Live Workout Status), which the server
+   * checks on every path — push, bell, Live Now, Holt's line — via `vis_clears(…, 'squad')`. So this row
+   * IS that setting, not a second one that could disagree with it.
+   *
+   * On = the squad clears it (`everyone` or `squads`). Turning it on from `friends`/`private` picks
+   * `squads`; off is `private`, the setting's own off switch. It covers every squad, and says so.
+   */
+  const { data: vis } = useQuery(fetchVisibility, []);
+  const [trainingAud, setTrainingAud] = useState<AudienceId | null>(null);
+  const announceAud = trainingAud ?? vis?.training ?? null;
+  const announceOn = announceAud === 'everyone' || announceAud === 'squads';
+  const setAnnounce = (on: boolean) => {
+    if (!vis) return;
+    const before = trainingAud;
+    const next: AudienceId = on ? 'squads' : 'private';
+    setTrainingAud(next);
+    persist(() => saveVisibility({ ...vis, training: next }), { rollback: () => setTrainingAud(before) });
+  };
 
   if (!data) return null;
 
@@ -861,12 +886,21 @@ function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: bool
     <>
       <Text style={styles.sectionLabel}>Training Alerts</Text>
       <View style={styles.notifCard}>
+        <NotifRow
+          icon={<FlameGlyph />}
+          title="Announce my workouts"
+          sub={announceOn ? 'Your squads are told when you start training. Covers every squad you’re in.' : 'Your squads aren’t told when you train. Covers every squad you’re in.'}
+          on={announceOn}
+          dim={!vis}
+          onToggle={() => setAnnounce(!announceOn)}
+        />
         {isLeader ? (
           <NotifRow
             icon={<BellGlyph />}
             title="Announce Sessions"
             sub="Let this squad know when its members start and finish training."
             on={v.squadOn}
+            divided
             onToggle={() => setGate(!v.squadOn)}
           />
         ) : null}
@@ -875,15 +909,15 @@ function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: bool
           <>
             <NotifRow
               icon={<FlameGlyph />}
-              title="When someone starts"
+              title="Notify me when someone starts"
               sub="So you can ask to join while they’re still training."
               on={v.start}
-              divided={isLeader}
+              divided
               onToggle={() => setMine({ start: !v.start })}
             />
             <NotifRow
               icon={<TargetGlyph />}
-              title="When someone finishes"
+              title="Notify me when someone finishes"
               sub="A session logged in this squad."
               on={v.finish}
               divided
@@ -891,7 +925,7 @@ function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: bool
             />
           </>
         ) : (
-          <View style={[styles.notifRow, isLeader ? styles.notifRowDivided : null]}>
+          <View style={[styles.notifRow, styles.notifRowDivided]}>
             <Text style={styles.notifSub}>
               {isLeader ? 'Turn this on to choose which alerts you get.' : 'Your squad leader hasn’t turned these on.'}
             </Text>
@@ -901,7 +935,7 @@ function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: bool
       {/* The one gate on this feature that is nobody's setting on this screen, said out loud — otherwise
           it reads as a bug the first time somebody trains and nothing arrives. */}
       <Text style={styles.trainingAlertsFoot}>
-        Anyone who keeps their training private in Privacy settings is never announced, whatever is switched on here.
+        Anyone who turns off Announce my workouts is never announced, whatever else is switched on here. It’s the same setting as Live Workout Status in Privacy.
       </Text>
     </>
   );
