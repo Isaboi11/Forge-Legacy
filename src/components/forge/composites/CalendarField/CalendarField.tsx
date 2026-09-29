@@ -73,15 +73,33 @@ export interface CalendarFieldProps {
   hideLabel?: boolean;
   /** How the chosen date is spelled in the field — see `prettyDate`. */
   monthStyle?: 'short' | 'long';
+  /**
+   * Open on first render, on `value`'s month — for a field that is the whole content of a sheet the
+   * athlete opened to pick a day (Nutrition's calendar icon), so the grid is one tap, not two.
+   */
+  startOpen?: boolean;
+  /** `YYYY-MM-DD` to mark as today when `startOpen` draws the grid before any tap has read the clock. */
+  today?: string;
 }
 
-export function CalendarField({ label, value, onChange, placeholder = 'Choose a date', clearable = false, hideLabel = false, monthStyle = 'short' }: CalendarFieldProps) {
-  const [open, setOpen] = useState(false);
-  // The month on screen. Set when the grid opens, so nothing impure runs during render.
-  const [view, setView] = useState<{ y: number; m: number } | null>(null);
-  const [todayIso, setTodayIso] = useState<string | null>(null);
-
+export function CalendarField({
+  label,
+  value,
+  onChange,
+  placeholder = 'Choose a date',
+  clearable = false,
+  hideLabel = false,
+  monthStyle = 'short',
+  startOpen = false,
+  today,
+}: CalendarFieldProps) {
   const selected = parseYmd(value);
+  // `startOpen` opens on the value's month (pure — no clock read); otherwise the grid opens on a tap.
+  const initial = startOpen ? (selected ?? parseYmd(today ?? null)) : null;
+  const [open, setOpen] = useState(!!initial);
+  // The month on screen. Set when the grid opens, so nothing impure runs during render.
+  const [view, setView] = useState<{ y: number; m: number } | null>(initial ? { y: initial.y, m: initial.m } : null);
+  const [todayIso, setTodayIso] = useState<string | null>(today ?? null);
 
   const toggle = () => {
     if (!open) {

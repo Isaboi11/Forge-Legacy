@@ -9,6 +9,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
+import { CalendarField } from '@/components/forge/composites/CalendarField';
 import { NutritionCareLine, useCareLine } from '@/components/forge/NutritionCareLine';
 import { NutritionFirstRun } from '@/components/forge/NutritionFirstRun';
 import { Surface } from '@/components/forge/composites/Surface';
@@ -26,6 +27,7 @@ import {
   groupByMeal,
   isAhead,
   mealTitle,
+  PLAN_AHEAD_DAYS,
   ringDash,
   ringFraction,
   shiftDay,
@@ -130,6 +132,8 @@ export default function NutritionScreen() {
   const [iso, setIso] = useState(todayIso);
   const [reloads, setReloads] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
+  /* QA N-12: the calendar icon opens a month grid; it used to only jump back to today. */
+  const [pickOpen, setPickOpen] = useState(false);
   const canScanLabel = labelScanAvailable();
 
   /* The day and its Meal Plan week, read together (`fetchPlanDay`). */
@@ -327,7 +331,7 @@ export default function NutritionScreen() {
             accessibilityRole="button"
             accessibilityLabel="Pick a day"
             hitSlop={8}
-            onPress={() => setIso(todayIso)}
+            onPress={() => setPickOpen(true)}
             style={styles.barAction}
           >
             <EngravedIcon name="calendar" size={21} />
@@ -510,6 +514,42 @@ export default function NutritionScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* ── pick a day: a month grid, up to the plan-ahead limit ─────────────── */}
+      <BottomSheet open={pickOpen} onClose={() => setPickOpen(false)} title="Pick a day">
+        <View style={styles.pickBody}>
+          <CalendarField
+            key={pickOpen ? iso : 'closed'}
+            label="Day"
+            hideLabel
+            startOpen
+            today={todayIso}
+            value={iso}
+            onChange={(next) => {
+              if (!next) return;
+              const last = shiftDay(todayIso, PLAN_AHEAD_DAYS);
+              if (next > last) {
+                showToast(`You can plan up to ${PLAN_AHEAD_DAYS} days ahead`);
+                return;
+              }
+              setIso(next);
+              setPickOpen(false);
+            }}
+          />
+          {iso !== todayIso ? (
+            <Button
+              variant="secondary"
+              fullWidth
+              onPress={() => {
+                setIso(todayIso);
+                setPickOpen(false);
+              }}
+            >
+              Back to today
+            </Button>
+          ) : null}
+        </View>
+      </BottomSheet>
 
       {/* ── add: every way in, each named for what it is ─────────────────── */}
       <BottomSheet open={addOpen} onClose={() => setAddOpen(false)} title="Add">
@@ -796,6 +836,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingHorizontal: 20, paddingTop: 2 },
   barAction: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  pickBody: { gap: 14, paddingBottom: 8 },
 
   dayStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 18 },
   dayLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
