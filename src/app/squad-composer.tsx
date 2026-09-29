@@ -150,7 +150,7 @@ export default function SquadComposerRoute() {
   const postRef = useTourAnchor('composer-post');
   /* Up to twelve photos, or one video (PO 09-28) — `domain/squad/post-photos`. */
   const [media, setMedia] = useState<SquadMedia[]>([]);
-  const [display, setDisplay] = useState<PhotoDisplay>('grid');
+  const [display, setDisplay] = useState<PhotoDisplay>('swipe');
   const [uploading, setUploading] = useState(false);
   const [mediaPct, setMediaPct] = useState(0);
   const mediaAbortRef = useRef<AbortController | null>(null);
@@ -865,7 +865,7 @@ function PlusInCircle() {
  */
 function MediaAttach({
   media,
-  display = 'grid',
+  display = 'swipe',
   onDisplay,
   uploading,
   pct,
@@ -949,8 +949,8 @@ function MediaAttach({
         <View style={styles.displayRow}>
           {(
             [
-              { id: 'grid', label: 'Grid', sub: 'Tap a photo to open it' },
               { id: 'swipe', label: 'Swipe', sub: 'Swipe through in the feed' },
+              { id: 'grid', label: 'Grid', sub: 'A collage — tap to open' },
             ] as const
           ).map((o) => {
             const on = display === o.id;

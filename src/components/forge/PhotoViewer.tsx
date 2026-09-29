@@ -46,6 +46,53 @@ export function PhotoGrid({ urls, onOpen }: { urls: readonly string[]; onOpen: (
   );
 }
 
+/**
+ * Instagram's carousel: swipe in place, "i / n" in the corner, and a tap opens the viewer at that photo
+ * (PO 09-28: *"I should be able to swipe through the pictures without having to actually click on the
+ * post"*, and on the post itself *"just swipeable there and not … a long top to bottom scroll"*).
+ * Fills its parent; the parent sets the shape.
+ */
+export function PhotoCarousel({ urls, onOpen }: { urls: readonly string[]; onOpen: (index: number) => void }) {
+  const [w, setW] = useState(0);
+  const [idx, setIdx] = useState(0);
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (w > 0) setIdx(Math.round(e.nativeEvent.contentOffset.x / w));
+  };
+  return (
+    <View style={styles.fill} onLayout={(e) => setW(e.nativeEvent.layout.width)}>
+      <ScrollView
+        keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        automaticallyAdjustKeyboardInsets
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        style={styles.fill}
+      >
+        {urls.map((u, i) => (
+          <Pressable
+            key={`${u}-${i}`}
+            onPress={() => onOpen(i)}
+            accessibilityRole="button"
+            accessibilityLabel={`Open photo ${i + 1} of ${urls.length}`}
+            style={w > 0 ? { width: w, height: '100%' } : null}
+          >
+            <Image source={{ uri: u }} style={styles.fill} contentFit="cover" />
+          </Pressable>
+        ))}
+      </ScrollView>
+      {urls.length > 1 ? (
+        <View pointerEvents="none" style={styles.cornerCounter}>
+          <Text style={styles.counterText}>
+            {Math.min(urls.length, idx + 1)} / {urls.length}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function PhotoViewer({ urls, index, onClose }: { urls: readonly string[]; index: number | null; onClose: () => void }) {
   const open = index != null;
   return (
@@ -112,6 +159,16 @@ const styles = StyleSheet.create({
   more: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(6,7,9,0.55)' },
   moreText: { fontSize: 26, fontWeight: '600', color: flColor.onMedia },
 
+  fill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
+  cornerCounter: {
+    position: 'absolute',
+    right: 12,
+    bottom: 12,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: flRadius.pill,
+    backgroundColor: 'rgba(6,7,9,0.62)',
+  },
   viewer: { flex: 1, backgroundColor: '#000' },
   close: {
     position: 'absolute',
