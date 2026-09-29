@@ -790,7 +790,12 @@ export default function WorkoutScreen() {
    * It also cannot get stuck. Nothing persists it, so a line dismissed today is not silenced tomorrow,
    * and the coin never leaves the screen — closing the bubble hides a sentence, not the coach.
    */
-  const [dismissedSay, setDismissedSay] = useState<string | null>(null);
+  /*
+   * ⚠ EVERY LINE CLOSED THIS SESSION, NOT JUST THE LAST ONE (PO 2026-09-29). A single string ping-ponged:
+   * closing the squad announcement surfaced the exercise cue underneath, closing THAT replaced the one
+   * remembered text, and the announcement no longer matched it — so it came back, and round they went.
+   */
+  const [dismissedSays, setDismissedSays] = useState<ReadonlySet<string>>(() => new Set());
   /*
    * ══ A WORD FROM THE SQUAD (0231, PO 2026-09-28) ══
    *
@@ -2866,7 +2871,7 @@ export default function WorkoutScreen() {
    * speak over this one. Pinned to that start by `pickOnce`, so the wording holds across re-renders.
    *
    * Passed as null once the athlete has closed it — keyed on the TEXT, like every other line (see
-   * `dismissedSay`) — so `coachLine` falls straight through to the lines underneath on the same render.
+   * `dismissedSays`) — so `coachLine` falls straight through to the lines underneath on the same render.
    */
   const announceText =
     announcement && liveSession && announcement.startedAt === liveSession.startedAt
@@ -2880,7 +2885,7 @@ export default function WorkoutScreen() {
   const saysRaw = coachLine({
     /* A squad-mate's message, verbatim — first, and it waits for the athlete to close it. */
     cheer: cheerNow ? cheerLine(cheerNow) : null,
-    announce: announceText && announceText !== dismissedSay ? announceText : null,
+    announce: announceText && !dismissedSays.has(announceText) ? announceText : null,
     /* Retires at the first logged set of the SESSION — it is a start line, not an exercise line. */
     setsDoneThisSession: session.exercises.reduce((n, e) => n + e.sets.filter((s) => s.done).length, 0),
     /* Scoped to the exercise it was said about — a nudge about bench press has nothing to say once the
@@ -3011,14 +3016,14 @@ export default function WorkoutScreen() {
         text:
           saysRaw.source === 'plan'
             ? `${inUnits(saysRaw.text)} — that holds for every set.`
-            : /* No weights in it, and its text is what `dismissedSay` compares against — untouched. */
+            : /* No weights in it, and its text is what `dismissedSays` compares against — untouched. */
               saysRaw.source === 'announce' || saysRaw.source === 'cheer'
               ? saysRaw.text
               : inUnits(saysRaw.text),
       }
     : null;
-  /* Closed by the athlete, and only while he is still saying the same thing. See `dismissedSay`. */
-  const says = saysFull && saysFull.text === dismissedSay ? null : saysFull;
+  /* Closed by the athlete, and only while he is still saying the same thing. See `dismissedSays`. */
+  const says = saysFull && dismissedSays.has(saysFull.text) ? null : saysFull;
   /* The collapsed strip's `Prev`, indexed to the SAME set position last time — set 3 against last week's
      set 3, not against their best set of the day. `currentSetIdx` is -1 once every set is done, at which
      point there is no next set to compare and the strip says nothing. */
@@ -4776,7 +4781,10 @@ export default function WorkoutScreen() {
                     const id = cheerNow.id;
                     setClosedCheers((s) => new Set(s).add(id));
                     void markCheerSeen(id);
-                  } else setDismissedSay(says.text);
+                  } else {
+                    const text = says.text;
+                    setDismissedSays((cur) => new Set(cur).add(text));
+                  }
                 }
               : undefined
           }
