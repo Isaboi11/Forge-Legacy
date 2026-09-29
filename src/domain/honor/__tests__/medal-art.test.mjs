@@ -6,6 +6,13 @@ import { fileURLToPath } from 'node:url';
 
 import { hasMedal, medalSpec, medalSvg } from '../medal-art.ts';
 import { MEDALS } from '../medal-data.ts';
+import { SYMBOLS } from '../symbol-data.ts';
+
+test('⭐ every medal carries a Forge Honor Symbol at its centre (PO 09-29, "symbols inside medals")', () => {
+  for (const [slug, r] of Object.entries(MEDALS)) assert.ok(SYMBOLS[r[2]], `${slug}: mark ${r[2]} has no symbol`);
+  const art = Object.values(SYMBOLS).join('');
+  assert.ok(!/url\(#/.test(art), 'no gradient reference survives — the engine colours every pass');
+});
 
 /**
  * ══ WHY THIS FILE EXISTS ══
@@ -101,9 +108,11 @@ test('each instance gets its own gradient id (web: a shared DOM id can paint not
 });
 
 test('geometry matches the design engine (fixtures from forge-honor-art.js)', () => {
-  // First Workout Logged, clean face: the engine fits the count mark at translate(6.5,6.5) scale(2.13), stroke 1.46.
+  // First Workout Logged, clean face: the Honor Symbols barbell (09-29) fitted by the set's shared 20×20
+  // box into the engine's clean box — translate(11.6,11.6) scale(1.7), main stroke 2.5 on the medal grid.
   const clean = medalSvg('first_workout_logged', { face: 'clean' });
-  assert.ok(clean.includes('<g transform="translate(6.5,6.5) scale(2.13)" stroke-width="1.46">'));
+  assert.ok(clean.includes('<g transform="translate(11.6,11.6) scale(1.7)" stroke-width="1.47" stroke-linecap="round" stroke-linejoin="round">'));
+  assert.ok(!clean.includes('__FINE__'), 'the fine weight is resolved to a number');
   // Engraving passes: shadow nudged up 0.58, warm catch down 0.58.
   assert.ok(clean.includes('<g transform="translate(0,-0.58)" stroke="rgba(0,0,0,0.66)" opacity="0.85">'));
   assert.ok(clean.includes('<g transform="translate(0,0.58)" stroke="rgb(214,176,124)" opacity="0.62">'));
