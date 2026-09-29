@@ -239,7 +239,7 @@ export default function FriendsFeedScreen() {
           </TourAnchor>
 
           {feed.length === 0 ? (
-            <EmptyFeed onFind={() => router.push('/add-friend')} hasFriends={(lists?.friends.length ?? 0) > 0} />
+            <EmptyFeed onFind={() => router.push('/add-friend')} hasFriends={(lists?.friends.length ?? 0) > 0} pending={pendingRequests} />
           ) : (
             <>
               {feed.map((post, pi) => (
@@ -292,21 +292,28 @@ export default function FriendsFeedScreen() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function EmptyFeed({ onFind, hasFriends }: { onFind: () => void; hasFriends: boolean }) {
+function EmptyFeed({ onFind, hasFriends, pending }: { onFind: () => void; hasFriends: boolean; pending: number }) {
+  /* A WAITING REQUEST IS NOT "NO FRIENDS YET" (social2-07, QA 09-26). With no friends but a request in
+     the mailbox, the panel said nobody was there and pointed at Add — the request was one screen away
+     and never mentioned. It now says so, and the button opens the list where it can be answered. */
+  const waiting = !hasFriends && pending > 0;
+  const title = waiting ? (pending === 1 ? 'A friend request is waiting' : `${pending} friend requests are waiting`) : hasFriends ? 'Nothing shared yet' : 'No friends yet';
+  const body = waiting
+    ? 'Accept or decline it, and what your friends choose to share will appear here.'
+    : hasFriends
+      ? 'When you or a friend shares a moment, it appears here. Nothing posts automatically.'
+      : 'Add someone by their handle and what they choose to share will appear here.';
+  const cta = waiting ? (pending === 1 ? 'See Request' : 'See Requests') : hasFriends ? 'Add Another Friend' : 'Add a Friend';
   return (
     <View style={styles.empty}>
       <View style={styles.emptyCrest}>
         <FriendsGlyph size={26} />
       </View>
-      {/* Two situations, two answers — the design shows one panel for both. */}
-      <Text style={styles.emptyTitle}>{hasFriends ? 'Nothing shared yet' : 'No friends yet'}</Text>
-      <Text style={styles.emptyBody}>
-        {hasFriends
-          ? 'When you or a friend shares a moment, it appears here. Nothing posts automatically.'
-          : 'Add someone by their handle and what they choose to share will appear here.'}
-      </Text>
-      <Pressable onPress={onFind} accessibilityRole="button" accessibilityLabel="Add a friend" style={({ pressed }) => [styles.emptyBtn, pressed ? styles.pressed : null]}>
-        <Text style={styles.emptyBtnLabel}>{hasFriends ? 'Add Another Friend' : 'Add a Friend'}</Text>
+      {/* Three situations, three answers — the design shows one panel for all of them. */}
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptyBody}>{body}</Text>
+      <Pressable onPress={onFind} accessibilityRole="button" accessibilityLabel={cta} style={({ pressed }) => [styles.emptyBtn, pressed ? styles.pressed : null]}>
+        <Text style={styles.emptyBtnLabel}>{cta}</Text>
       </Pressable>
     </View>
   );

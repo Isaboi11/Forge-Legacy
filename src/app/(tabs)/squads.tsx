@@ -130,6 +130,11 @@ export default function SquadsScreen() {
         title="Squads"
         actions={
           <>
+            {/* Friends is one tap from the social tab (social-21, QA 09-26) — before this the only roads in
+                were a Home card and the post-workout share. */}
+            <Pressable onPress={() => router.push('/friends')} accessibilityRole="button" accessibilityLabel="Friends" style={styles.headerBtn} hitSlop={6}>
+              <EngravedIcon name="partners" size={24} color={engravedTint(flColor.bronze300)} />
+            </Pressable>
             <Pressable ref={discoverRef} onPress={openDiscover} accessibilityRole="button" accessibilityLabel="Discover squads" style={styles.headerBtn} hitSlop={6}>
               <SearchIcon />
             </Pressable>

@@ -228,6 +228,39 @@ export default function AddFriendScreen() {
     );
   };
 
+  /* DECLINE (social2-07, QA 09-26). Every screen offered only Accept, so the one way to be rid of a
+     request was to block the sender. Declining is the same erasure as withdrawing (0073's
+     `remove_friendship`) — no DECLINED row, nothing the sender can see. */
+  const decline = (f: { id: string; name: string }) => {
+    if (busy) return;
+    setBusy(true);
+    setOptimistic((o) => ({ ...o, [f.id]: 'none' }));
+    removeFriendship(f.id).then(
+      () => {
+        setBusy(false);
+        showToast('Request declined');
+        refetch();
+      },
+      (e: unknown) => {
+        setBusy(false);
+        setOptimistic((o) => ({ ...o, [f.id]: 'incoming' }));
+        showToast(errorMessage(e));
+      },
+    );
+  };
+
+  /* Accept + Decline, side by side — the same pair on a search result and on an incoming row. */
+  const answer = (f: { id: string; name: string }) => (
+    <View style={styles.rowBtns}>
+      <Pressable onPress={() => decline(f)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Decline ${f.name}`} style={({ pressed }) => [styles.rowBtn, pressed ? styles.pressed : null]}>
+        <Text style={styles.rowBtnLabel}>Decline</Text>
+      </Pressable>
+      <Pressable onPress={() => accept(f)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${f.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
+        <Text style={styles.rowBtnLabelArmed}>Accept</Text>
+      </Pressable>
+    </View>
+  );
+
   const status = statusFor({ raw, handleMode, searchable, checked, count: showing.length, searchError });
 
   return (
@@ -295,9 +328,7 @@ export default function AddFriendScreen() {
                     state === 'friends' ? (
                       <FriendsMark />
                     ) : state === 'incoming' ? (
-                      <Pressable onPress={() => accept(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${r.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
-                        <Text style={styles.rowBtnLabelArmed}>Accept</Text>
-                      </Pressable>
+                      answer(r)
                     ) : state === 'outgoing' ? (
                       <Pressable onPress={() => withdraw(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Withdraw request to ${r.name}`} style={({ pressed }) => [styles.rowBtn, pressed ? styles.pressed : null]}>
                         <Text style={styles.rowBtnLabel}>Withdraw</Text>
@@ -323,11 +354,7 @@ export default function AddFriendScreen() {
                 person={f}
                 index={i}
                 onOpen={() => router.push({ pathname: '/athlete/[id]', params: { id: f.id } })}
-                action={
-                  <Pressable onPress={() => accept(f)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${f.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
-                    <Text style={styles.rowBtnLabelArmed}>Accept</Text>
-                  </Pressable>
-                }
+                action={answer(f)}
               />
             ))}
           </Section>
@@ -542,6 +569,7 @@ const styles = StyleSheet.create({
   rowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowHandle: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
   rowSquad: { marginTop: 1, fontSize: 10.5, color: flColor.bronzeInk },
+  rowBtns: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowBtn: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
   rowBtnArmed: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   rowBtnLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
