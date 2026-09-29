@@ -186,6 +186,7 @@ export function BugsPage({ arg }: PageProps) {
   const [delErr, setDelErr] = useState<{ id: string; msg: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const { armed, tap } = useTwoTap();
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
 
   // ── New bug ──
   const [form, setForm] = useState<NewBug | null>(null);
@@ -285,6 +286,36 @@ export function BugsPage({ arg }: PageProps) {
     } catch {
       toast('Couldn’t copy. Your browser blocked the clipboard.');
     }
+  };
+
+  /* "Mark all N Fixed" (PO 09-29: marking a fixed batch one bug at a time was "a lot to click"). Closes
+     every item the filters show that isn't already closed, through the same `admin_bug_save` as one tap on
+     Fixed — four at a time, and a failure never stops the rest. Two taps, because it can't be undone in bulk. */
+  const toClose = shown.filter((b) => b.status === 'open' || b.status === 'in_progress');
+  const markAllFixed = async () => {
+    const list = toClose;
+    if (!list.length || bulk) return;
+    setBulk({ done: 0, total: list.length });
+    const ok: string[] = [];
+    let failed = 0;
+    for (let i = 0; i < list.length; i += 4) {
+      await Promise.all(
+        list.slice(i, i + 4).map((b) =>
+          saveBug(b.id, { status: 'fixed' })
+            .then(() => {
+              ok.push(b.id);
+            })
+            .catch(() => {
+              failed++;
+            }),
+        ),
+      );
+      setBulk({ done: Math.min(i + 4, list.length), total: list.length });
+    }
+    setPatches((p) => Object.fromEntries([...Object.entries(p), ...ok.map((id) => [id, { ...p[id], status: 'fixed' as BugStatus }])]));
+    setBulk(null);
+    board.refetch();
+    toast(failed ? `Marked ${ok.length} Fixed. ${failed} couldn’t be saved — check your connection and try again.` : `Marked ${ok.length} Fixed.`);
   };
 
   // ── Writes ──
@@ -544,6 +575,14 @@ export function BugsPage({ arg }: PageProps) {
             label={`Copy ${shown.length === 1 ? 'this bug' : `all ${shown.length}`} for Claude`}
             onPress={() => void copyForClaude(bugsBrief(shown, linksOf, filterLabel), shown.length === 1 ? '1 bug' : `${shown.length} bugs`)}
           />
+          {toClose.length || bulk ? (
+            <Btn
+              size="sm"
+              busy={!!bulk}
+              label={bulk ? `Marking ${bulk.done} of ${bulk.total}…` : armed === 'bulk-fixed' ? `Tap again to mark ${toClose.length} Fixed` : `Mark ${toClose.length === 1 ? 'this' : `all ${toClose.length}`} Fixed`}
+              onPress={() => tap('bulk-fixed', () => void markAllFixed())}
+            />
+          ) : null}
           <Text style={{ fontSize: 12.5, color: c.ink3 }}>Everything the filters are showing, most severe first.</Text>
         </Row>
       ) : null}
