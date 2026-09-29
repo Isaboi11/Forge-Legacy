@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import { IS_PAPER } from '@/constants/foundation';
 
 /**
  * WelcomeAtmosphere — the exact `Forge Onboarding.dc` "forged hall" behind the Welcome (Tier C).
@@ -29,22 +30,37 @@ export function WelcomeAtmosphere() {
 
   return (
     <View style={styles.root} pointerEvents="none">
-      {/* forged-hall arch — faint rounded-top silhouette, its inset shadow darkening the ceiling */}
-      <View style={styles.arch} />
+      {/*
+        ══ ALABASTER KEEPS ONLY THE WARM LIGHT (QA auth-06, 2026-09-26) ══
 
-      {/* pillar-edge shadows — the hall falls into dark at both sides */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0)']}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={styles.pillarLeft}
-      />
-      <LinearGradient
-        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.4)']}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={styles.pillarRight}
-      />
+        The arch's inset shadow, the two pillar shadows and the vignette are the hall FALLING INTO DARK —
+        black at 0.4–0.5 over a black slate. Over cream the same black read as muddy grey walls, the
+        pillars' 54 px boxes drew two vertical seams (~x 53 / 337 on a 390 phone), and the arch's box
+        edge cut a horizontal seam through the headline. Alabaster's own plate already carries its
+        light-from-above radial (ScreenBackground), so on paper those dark layers are simply not drawn;
+        the bronze glows below (focal, forge floor, ember) are warm light and read on both grounds.
+        Colour-only, one theme: Forge renders exactly what it did.
+      */}
+      {IS_PAPER ? null : (
+        <>
+          {/* forged-hall arch — faint rounded-top silhouette, its inset shadow darkening the ceiling */}
+          <View style={styles.arch} />
+
+          {/* pillar-edge shadows — the hall falls into dark at both sides */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0)']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.pillarLeft}
+          />
+          <LinearGradient
+            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.4)']}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.pillarRight}
+          />
+        </>
+      )}
 
       {/* focal light in the stone — top 6%, 540×540, radial circle at 50% 42% */}
       <View style={styles.focal}>
@@ -74,16 +90,18 @@ export function WelcomeAtmosphere() {
         </Svg>
       </View>
 
-      {/* vignette — inward, transparent→dark */}
-      <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
-        <Defs>
-          <RadialGradient id="wa-vignette" cx="50%" cy="42%" rx="80%" ry="68%">
-            <Stop offset="0.44" stopColor="rgb(4,6,8)" stopOpacity={0} />
-            <Stop offset="1" stopColor="rgb(4,6,8)" stopOpacity={0.5} />
-          </RadialGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill="url(#wa-vignette)" />
-      </Svg>
+      {/* vignette — inward, transparent→dark (Forge only — see the Alabaster note above) */}
+      {IS_PAPER ? null : (
+        <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
+          <Defs>
+            <RadialGradient id="wa-vignette" cx="50%" cy="42%" rx="80%" ry="68%">
+              <Stop offset="0.44" stopColor="rgb(4,6,8)" stopOpacity={0} />
+              <Stop offset="1" stopColor="rgb(4,6,8)" stopOpacity={0.5} />
+            </RadialGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#wa-vignette)" />
+        </Svg>
+      )}
 
       {/* ember — animated (flEmber 8s), top 20%, 280×340 behind the logo */}
       <Animated.View style={[styles.ember, emberStyle]}>
