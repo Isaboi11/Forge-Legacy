@@ -114,6 +114,12 @@ export const MIN_DAYS_BEGINNER = 3;
  */
 export const RUN_WALK_START = { runSec: 60, walkSec: 90, repeats: 8 } as const;
 
+/**
+ * What "can run continuously" means in miles: the twenty minutes the refusals ask for, about two miles.
+ * The floor under an unknown starting long run (`weeklyVolumePlan`) — QA F14.
+ */
+export const CONTINUOUS_RUN_MI = 2;
+
 /** EPS-D11 — triathlon time split. Leans to the bike: biggest race-day share, lowest impact cost. */
 export const TRI_SPLIT = { swim: 0.3, bike: 0.5, run: 0.2 } as const;
 
@@ -637,7 +643,9 @@ export function enduranceRefusalFor(goal: EnduranceGoal, opts: RefusalOpts): End
  * limitations. It lives here so the chat has one field to read, whatever the concern was.
  */
 export interface EnduranceConcern {
-  reason: EnduranceRefusal['reason'] | 'no_running';
+  /** `short_long_run` — nothing refused, but the long run the block can safely reach falls well short of
+   *  what the race asks (QA F14): said, never hidden, and the plan is still built. */
+  reason: EnduranceRefusal['reason'] | 'no_running' | 'short_long_run';
   message: string;
   altGoal: EnduranceGoal | null;
 }
@@ -699,11 +707,17 @@ export function enduranceConcernFor(
     const alt = refusal.altGoal ? RACE_SPEC[refusal.altGoal] : null;
     const five = RACE_SPEC.run_5k;
     switch (refusal.reason) {
-      case 'cannot_run':
+      case 'cannot_run': {
+        /* A short calendar on top of it is said too (QA F14): a six-week marathon from no running is a
+           different ask from a sixteen-week one, and "expect to walk parts of it" alone undersold it. */
+        const short = opts.weeksAvailable < spec.minWeeks
+          ? ` A ${spec.label} usually takes about ${spec.idealWeeks} weeks and ${weeksYouHave(opts.weeksAvailable)}, so expect to walk a lot of it.`
+          : ' Expect to walk parts of it.';
         body = alt
-          ? `Running continuously is usually the thing to build first, and the 5K is the race built for that. I've built the ${spec.label} as run/walk all the way to race day, so expect to walk parts of it. ${SUGGEST_PHRASE(alt.label)} fits where you are now.`
-          : `Running continuously is usually the thing to build first. I've built the ${spec.label} as run/walk all the way to race day, so expect to walk parts of it. If the date can move, give me ${five.minWeeks} weeks and a 5K builds properly first.`;
+          ? `Running continuously is usually the thing to build first, and the 5K is the race built for that. I've built the ${spec.label} as run/walk all the way to race day.${short} ${SUGGEST_PHRASE(alt.label)} fits where you are now.`
+          : `Running continuously is usually the thing to build first. I've built the ${spec.label} as run/walk all the way to race day.${short} If the date can move, give me ${five.minWeeks} weeks and a 5K builds properly first.`;
         break;
+      }
       case 'not_enough_time':
         body = alt
           ? `A ${spec.label} usually takes about ${spec.idealWeeks} weeks and ${weeksYouHave(opts.weeksAvailable)} — I've built it${shortfall}. ${SUGGEST_PHRASE(alt.label)} fits your calendar properly.`
@@ -726,8 +740,34 @@ export function enduranceConcernFor(
       message: `${lead[1]} — I've built it with running because you asked for a race. ${lead[2]}${body ? ` ${body}` : ''}`,
     };
   }
-  return refusal && body ? { reason: refusal.reason, altGoal: refusal.altGoal, message: body } : null;
+  if (refusal && body) return { reason: refusal.reason, altGoal: refusal.altGoal, message: body };
+
+  /*
+   * ⚠ NOTHING REFUSED IS NOT THE SAME AS NOTHING TO SAY (QA F14). The spike cap binds for everyone, so a
+   * block at the edge of a door (a 10K from 5 miles a week, a half from 8) can pass every refusal and
+   * still top its long run out far short of the race. Said with the real number, like every shortfall —
+   * "sensibly short" is three-quarters of what the race's own peak long run wants (the race itself for a
+   * 5K or 10K; the marathon's 20, not 26.2). Suggest, then build: the plan below it is unchanged.
+   */
+  if (runsLong && opts.topLongMi != null && spec.raceMi != null) {
+    const wants = Math.min(spec.raceMi, spec.peakLongMi ?? spec.raceMi);
+    if (opts.topLongMi < wants * SHORT_LONG_RUN_SHARE) {
+      const altGoal = buildableFrom(spec.fallback, opts);
+      const alt = altGoal ? RACE_SPEC[altGoal] : null;
+      return {
+        reason: 'short_long_run',
+        altGoal,
+        message: `I've built it from where you are, with the long run climbing only as fast as is safe — it tops out around ${saidMi(opts.topLongMi)} miles, so race day asks a lot more than anything in the plan. ${
+          alt ? `${SUGGEST_PHRASE(alt.label)} fits where you are now.` : 'If the date can move, more weeks let the long run get there.'
+        }`,
+      };
+    }
+  }
+  return null;
 }
+
+/** Below this share of what the race wants from its longest run, the shortfall is said (QA F14). */
+const SHORT_LONG_RUN_SHARE = 0.75;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE VOLUME CURVE
@@ -797,8 +837,13 @@ export function weeklyVolumePlan(opts: {
    * doing two miles at a time, not 1.8; someone on 40 is doing a 14-or-so at the weekend. 40% is the
    * honest read, and it matters because the spike cap compounds from this number: start it too low and
    * an eight-week 5K block peaks BELOW the race distance, which is what the first version did.
+   *
+   * ⚠ AND IT STILL DID, FROM THE FLOOR (QA F14, 2026-09-26). Under ~5 miles a week, 40% is under the old
+   * 1.5-mile floor, and 1.5 × 1.1⁵ is a 2.4-mile peak for a 3.1-mile race. The floor is now what "can run
+   * continuously" means everywhere in this file — twenty minutes, about two miles — so the ideal 8-week
+   * 5K reaches race distance. (A run/walk plan never prescribes this number; `composeRunWeek`.)
    */
-  let longSoFar = Math.max(opts.startLongMi ?? start * 0.4, 1.5);
+  let longSoFar = Math.max(opts.startLongMi ?? start * 0.4, CONTINUOUS_RUN_MI);
   // The ramp the build is climbing. ⚠ A DELOAD DIPS BELOW IT WITHOUT MOVING IT — the down week is
   // recovery, not a reset. Letting the deload become the new base is what made the first version
   // sawtooth between 20 and 24 miles for seventeen weeks and call the last one a peak.
@@ -1282,11 +1327,14 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
         name: 'Run / Walk',
         warmup: [cardio('walk', { targetSec: 300 }, 'Warm-Up Walk')],
         main: [
+          /* ⚠ ONE BOUT, THE WHOLE SESSION'S LENGTH (QA F14). A cardio row is logged as a single bout
+             (`build-session.ts`), so `sets: 6, targetSec: 60` read as "1 min" in the preview, the builder
+             and the logger while the note said six rounds. The rounds live in the note. */
           cardio(
             'run',
-            { sets: rwReps, targetSec: rwRunSec },
+            { targetSec: rwReps * (rwRunSec + RUN_WALK_START.walkSec) },
             'Run / Walk',
-            `Run ${rwRunSec}s, walk ${RUN_WALK_START.walkSec}s, ${rwReps} times through. The walk is part of the session, not a failure of it.`,
+            `Run ${rwRunSec}s, walk ${RUN_WALK_START.walkSec}s, ${rwReps} times through — about ${Math.round((rwReps * (rwRunSec + RUN_WALK_START.walkSec)) / 60)} minutes. The walk is part of the session, not a failure of it.`,
           ),
         ],
         cooldown: [cardio('walk', { targetSec: 300 }, 'Cool-Down Walk')],

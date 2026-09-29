@@ -17,7 +17,7 @@
  * Kept short on purpose. A wall of justification reads as defensiveness.
  */
 
-import type { Goal } from '../constraints.ts';
+import { isEnduranceGoal, type Goal } from '../constraints.ts';
 import { honoursSplitStyle, type SplitStyle } from './skeletons.ts';
 
 const FREQUENCY: Record<number, string> = {
@@ -38,6 +38,20 @@ const GOAL_EMPHASIS: Partial<Record<Goal, string>> = {
   conditioning: 'Movements first, then a cardio block you have earned rather than started with.',
   mobility: 'Held positions rather than reps. Short and frequent beats long and occasional here.',
 };
+
+/*
+ * ⚠ A RACE IS NOT A LIFTING BLOCK (QA F14). `FREQUENCY` talks about muscle groups and the gym, and every
+ * race card carried it — "train every major muscle group twice a week" above a list of runs. A race plan
+ * gets its own lines, worded so they stay true for a run/walk plan and a triathlon too.
+ */
+const RACE_FREQUENCY: Record<number, string> = {
+  2: 'Two sessions a week means each one counts, with full rest days between them.',
+  3: 'Three sessions a week, with a rest day between most of them — enough to build the engine without wearing it out.',
+  4: 'Four sessions a week lets most of them stay easy, which is where the aerobic base is built.',
+  5: 'Five sessions a week, most of them easy on purpose, so the hard ones land on fresh legs.',
+  6: 'Six sessions a week keeps each one manageable. The trade is that recovery is on you.',
+};
+const RACE_EMPHASIS = 'Everything builds toward race day, a little at a time, and the last weeks come down so you arrive fresh.';
 
 const SPLIT_NOTE: Partial<Record<SplitStyle, string>> = {
   full_body: 'Everything each session, so missing a day costs you less.',
@@ -60,6 +74,11 @@ export interface RationaleInput {
 /** Two or three sentences, in Holt's voice. */
 export function rationaleFor(input: RationaleInput): string {
   const parts: string[] = [];
+
+  if (isEnduranceGoal(input.goal)) {
+    parts.push(RACE_FREQUENCY[input.daysPerWeek] ?? '', RACE_EMPHASIS);
+    return parts.filter(Boolean).join(' ');
+  }
 
   if (input.restructuredBecause) parts.push(input.restructuredBecause);
   /* Only when the style actually shaped the week — a mobility block sets the style aside
