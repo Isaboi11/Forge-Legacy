@@ -68,6 +68,11 @@ const FUNCTIONS = [
   ['admin_user_search', { p_q: 'a', p_limit: 5 }],
   ['admin_billing_list', { p_filter: 'paying', p_limit: 5 }],
   ['admin_documents', { p_category: null, p_q: null }],
+  // 0239 — the Bugs page's four sources.
+  ['admin_bug_sources', {}],
+  ['admin_reports_inbox', { p_limit: 5 }],
+  ['admin_crashes', { p_days: 7 }],
+  ['admin_bug_links', {}],
 ];
 
 /**
@@ -94,6 +99,8 @@ const GUARDED_WRITES = [
   ['admin_activity_done', { p_id: '00000000-0000-0000-0000-000000000000', p_done: true }],
   ['admin_document_save', { p_id: null, p_patch: {} }],
   ['admin_document_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_report_track', { p_origin: 'feedback:-1', p_target: null }], // 0239
+  ['admin_report_dismiss', { p_origin: 'feedback:-1', p_dismiss: true }], // 0239
 ];
 
 /** Everything a non-admin must be refused, read or write. */

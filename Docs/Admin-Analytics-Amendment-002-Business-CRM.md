@@ -90,6 +90,8 @@ amendment (`admin_user_search`, `admin_user_card`, `admin_billing_list`, `admin_
 separately and are instead asserted never to contain a training key (`workouts`, `volume`, `sets`,
 `rank`, `streak`, `photo`, `weight`, `last_active`, `email` from auth).
 
+**AA-D21 — The bug board reads four sources, each through its own sync, and a report can be merged into an existing item (PO 09-29, updated design).** Supabase (the board, in-app reports and in-app crashes), Sentry (crash groups, via the `sentry-sync` Edge Function and secrets `SENTRY_API_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`), TestFlight (tester feedback, via `asc-sync`) and the App Store (low-rated reviews that name a problem, by a plain keyword rule shown on screen). Every report has one origin key; it sits on the board at most once, as an item's origin or merged into an item (`ops_bug_links`). Originals are never edited. TestFlight's tester email is not stored. Migration 0239.
+
 **AA-D3 and AA-D7 are unchanged.** Nothing here may reach an athlete-facing surface, and admin is still
 granted by hand in the SQL editor — the CRM has no operator-management screen.
 
