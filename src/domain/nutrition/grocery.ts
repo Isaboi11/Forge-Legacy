@@ -60,11 +60,16 @@ export function buyAmount(buy: BuyUnit, grams: number): string {
   return `${n} ${unit}`;
 }
 
-/** The week's list: every cook's ingredients × the servings it makes, summed per ingredient. */
-export function groceryList(days: PlanDay[], household: number): GroceryList {
+/**
+ * The week's list: every cook's ingredients × the servings it makes, summed per ingredient.
+ *
+ * `fromDay` (0 = Monday … 6 = Sunday) leaves out cooks on days that have already gone (QA N-09): a plan
+ * opened on Saturday buys for Saturday and Sunday, never for Monday's chicken.
+ */
+export function groceryList(days: PlanDay[], household: number, fromDay = 0): GroceryList {
   /* `n` + `label`: a saved meal's food with no weight on record is counted by the serving ("5 × 1 container"). */
   const acc = new Map<string, { grams: number; uses: GroceryUse[]; name: string; n: number; label: string | null }>();
-  const cooks = cooksOf(days, household);
+  const cooks = cooksOf(days, household).filter((c) => c.d >= fromDay);
   for (const c of cooks) {
     const view = recipeView(c.recipeId);
     if (!view) continue;
@@ -207,25 +212,54 @@ export interface Estimate {
   dollars: number;
   /** Items still to buy that have no public price — said out loud. */
   unpriced: number;
+  /** Items still to buy that DO have a price. */
+  priced: number;
 }
+
+/**
+ * Above this share of unpriced items, a dollar total is not an estimate of the shop (QA N-11: "$45 of your
+ * $80 budget" with 19 of 23 items unpriced read as under budget). The line then says how many it priced.
+ */
+export const UNPRICED_SHARE_MAX = 0.3;
+
+/** True when the total covers enough of the list to stand for the whole shop. */
+export const estimateCoversList = (e: Estimate): boolean => {
+  const n = e.priced + e.unpriced;
+  return n > 0 && e.unpriced / n <= UNPRICED_SHARE_MAX;
+};
 
 /** What the items still on the list cost at average US prices. Staples at home are not bought. */
 export function estimateFor(list: GroceryList, s: GroceryState): Estimate {
   let dollars = 0;
   let unpriced = 0;
+  let priced = 0;
   for (const x of list.items) {
     if (s.have[x.key] || s.removed[x.key]) continue;
     if (x.cost == null) unpriced++;
-    else dollars += x.cost;
+    else {
+      dollars += x.cost;
+      priced++;
+    }
   }
-  return { dollars, unpriced };
+  return { dollars, unpriced, priced };
 }
 
+const usd = (n: number): string => `$${Math.round(n).toLocaleString('en-US')}`;
+
+/** Grocery List's footer line. Too few prices → "4 of 23 items priced: ≈ $45", never beside the budget. */
 export function estimateLine(e: Estimate, budget: number | null): string {
-  const base = `≈ $${Math.round(e.dollars).toLocaleString('en-US')} at average US prices`;
-  const parts = [budget ? `${base} · budget $${budget.toLocaleString('en-US')}` : base];
+  if (!estimateCoversList(e)) return `${e.priced} of ${e.priced + e.unpriced} items priced: ≈ ${usd(e.dollars)}`;
+  const base = `≈ ${usd(e.dollars)} at average US prices`;
+  const parts = [budget ? `${base} · budget ${usd(budget)}` : base];
   if (e.unpriced) parts.push(`${e.unpriced} ${e.unpriced === 1 ? 'item' : 'items'} not priced`);
   return parts.join(' · ');
+}
+
+/** Meal Plan's budget line. Too few prices → the same honest count, no "of your $80 budget" (QA N-11). */
+export function budgetLine(e: Estimate, budget: number): string {
+  if (!estimateCoversList(e)) return `${e.priced} of ${e.priced + e.unpriced} items priced: ≈ ${usd(e.dollars)}`;
+  const line = `Estimated ${usd(e.dollars)} of your ${usd(budget)} budget`;
+  return e.unpriced ? `${line} · ${e.unpriced} ${e.unpriced === 1 ? 'item' : 'items'} not priced` : line;
 }
 
 /* ── share ──────────────────────────────────────────────────────────────── */
