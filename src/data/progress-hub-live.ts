@@ -42,7 +42,7 @@ export interface ProgressHubData {
   chapter: string | null;
   forgingSince: string; // year, e.g. "2024"
   lifetime: number;
-  pinned: string | null; // "Deadlift 495 lb × 3 · Personal Record" or null
+  pinned: string | null; // "Deadlift 495 lb × 3 · PR (1–5 reps)" or null
   metrics: MetricSeries[]; // all the athlete's tracked lifts, dated — sorted most-recent first
   consistency: ConsistencyStats;
   next: NextProgram | null;
@@ -184,7 +184,9 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
     if (!/dead\s*lift|squat|bench/i.test(r.row.exercise)) continue;
     if (r.weight > best) {
       best = r.weight;
-      pinned = `${r.row.exercise} ${Math.round(r.weight * 100) / 100} lb × ${r.reps} · Personal Record`;
+      // "PR (1–5 reps)", not "Personal Record" (QA F9): the strength cards below chart the top set at
+      // ANY reps, so a bare "record" of 150 above a 500 on the chart read as the app contradicting itself.
+      pinned = `${r.row.exercise} ${Math.round(r.weight * 100) / 100} lb × ${r.reps} · PR (1–5 reps)`;
     }
   }
 

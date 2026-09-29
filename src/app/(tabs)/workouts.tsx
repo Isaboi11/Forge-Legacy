@@ -476,16 +476,12 @@ export default function WorkoutsScreen() {
               </View>
             </View>
 
-            {/* REFERENCE — genuinely reference: platform surfaces, not personal artefacts. */}
+            {/* HISTORY & EXERCISES — was "Reference", which hid the athlete's own past workouts under a word
+                that means "look this up" (B8, QA 09-26). Past workouts lead: they are the athlete's own
+                record; the library is the lookup. The tour anchor id is unchanged. */}
             <TourAnchor id="workouts-reference">
-              <SectionHeader label="Reference" />
+              <SectionHeader label="History & Exercises" />
               <View style={styles.stackTight}>
-                <NavCard
-                  title="Exercise Library"
-                  sub="Browse exercises, muscle groups, and equipment."
-                  icon={<DumbbellIcon />}
-                  onPress={() => router.push('/exercise-library')}
-                />
                 {/* Stays here, deliberately. It answers "what did I lift Tuesday" — a training question at
                     set-level granularity. The Legacy Timeline answers "what has this amounted to". */}
                 <NavCard
@@ -493,6 +489,12 @@ export default function WorkoutsScreen() {
                   sub="Every session you’ve logged, month by month."
                   icon={<HistoryIcon />}
                   onPress={() => router.push('/activity-history')}
+                />
+                <NavCard
+                  title="Exercise Library"
+                  sub="Browse exercises, muscle groups, and equipment."
+                  icon={<DumbbellIcon />}
+                  onPress={() => router.push('/exercise-library')}
                 />
               </View>
             </TourAnchor>

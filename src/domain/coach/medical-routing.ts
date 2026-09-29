@@ -204,10 +204,12 @@ export function isCrashCut(text: string): boolean {
  * still gets a recipe, and "I'm sixteen, I want to get bigger and faster" is still a training request.
  */
 export const MINOR_AGE =
-  /\b((i'?m|i\s+am|im)\s+(only\s+|just\s+)?(1[0-7]|thirteen|fourteen|fifteen|sixteen|seventeen)\b(?!\s*(lbs?|pounds|kg|min|minutes|miles|reps|%|k\b|x\b|sets?|days?|weeks?|hours?))|(my|our|a|an|the)\s+(\w+\s+)?(son|daughter|kid|kids|child|children|boy|girl|teen|teenager|stepson|stepdaughter|nephew|niece|brother|sister)(\s+(is|who'?s|turned|just\s+turned)\s+|'s\s+|\s*,\s*)(only\s+|just\s+)?([4-9]|1[0-7])\b(?!\s*(lbs?|pounds|kg|min|minutes|months?|%))|\b([4-9]|1[0-7])[-\s]?(year|yr)s?[-\s]?olds?\b|\b([4-9]|1[0-7])\s?(yo|y\/o|y\.o\.)(?=\W|$)|\b(teen|teenager|middle\s+schooler|high\s+schooler|freshman\s+in\s+high\s+school))/i;
+  /\b((i'?m|i\s+am|im)\s+(only\s+|just\s+)?(1[0-7]|thirteen|fourteen|fifteen|sixteen|seventeen)\b(?!\s*(lbs?|pounds|kg|min|minutes|miles|reps|%|k\b|x\b|sets\b|set\s+of\b|days?|weeks?|hours?))|(my|our|a|an|the)\s+(\w+\s+)?(son|daughter|kid|kids|child|children|boy|girl|teen|teenager|stepson|stepdaughter|nephew|niece|brother|sister)(\s+(is|who'?s|turned|just\s+turned)\s+|'s\s+|\s*,\s*)(only\s+|just\s+)?([4-9]|1[0-7])\b(?!\s*(lbs?|pounds|kg|min|minutes|months?|%))|\b([4-9]|1[0-7])[-\s]?(year|yr)s?[-\s]?olds?\b|\b([4-9]|1[0-7])\s?(yo|y\/o|y\.o\.)(?=\W|$)|\b(teen|teenager|middle\s+schooler|high\s+schooler|freshman\s+in\s+high\s+school))/i;
 /* "my son is 14, set his calories" and "how many calories should a 16 year old eat" passed (QA R2-F6): the age
    was only ever "I'm 16". A teen, a child, "16yo", "my son is 14" now count. The TOPIC still has to be there —
-   "my son wants a snack idea" and "my 14 year old wants to help cook" are recipes. */
+   "my son wants a snack idea" and "my 14 year old wants to help cook" are recipes.
+   "im 16 set my macros" also passed (kitchen-05 review, 09-29): the `sets?` meant for "16 sets" swallowed the
+   verb "set". Only a plural "sets" or "set of" is a count now. */
 export const MINOR_TOPIC =
   /\b(cut(ting)?\b(?!\s+(up|into|the|it|them|this|that|in\s+half|board|a|an|my|some|back|out|off))|(cut|cutting)\s+(\w+\s+){0,2}(weight|lbs?|pounds|kg|fat)|(lose|losing|drop|dropping)\s+(\w+\s+){0,2}(weight|lbs?|pounds|kg|fat)|diet(ing)?\b|calorie\w*|cals?\b|kcals?\b|macros?|deficit|fasting|bulk(s|ing|ed)?\b|meal\s+plan\w*|lean\s+out|shred\w*|weight\s+(loss|gain)|gain\s+(\w+\s+){0,2}(weight|lbs?|pounds|kg)|how\s+much\s+(food\s+|protein\s+)?(should|does|do|can|must)\s+([\w'-]+\s+){1,4}(eat|have)\b)/i;
 /* "im 16 how do I bulk" and "im 16 give me a cutting meal plan" passed: bare "bulk", "cutting" and a meal plan

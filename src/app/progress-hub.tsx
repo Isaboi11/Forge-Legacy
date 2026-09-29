@@ -65,7 +65,7 @@ const LEVELS: readonly RankLevel[] = [1, 2, 3, 4];
 
 export default function ProgressHubScreen() {
   const router = useRouter();
-  // `fmt` is convertMeasure — the pinned PR is built server-side as "<lift> <n> lb · Personal Record"
+  // `fmt` is convertMeasure — the pinned PR is built server-side as "<lift> <n> lb × <r> · PR (1–5 reps)"
   // (`progress-hub-live.ts:183`, which cannot read a preference), so it is converted at the edge here.
   const { fmt } = useUnits();
   const tourScroller = useTourScroller();
@@ -80,6 +80,9 @@ export default function ProgressHubScreen() {
   /* The rung sheets' history — its own query so the screen never waits on the replay (`fetchRankHistory`). */
   const { data: history, loading: historyLoading } = useQuery(fetchRankHistory, []);
   const [openRung, setOpenRung] = useState<number | null>(null);
+  /* The ladder opens on two rungs — where you are and the next one (B8, QA 09-26). All 28 at once put
+     ~3,000px of ranks between the athlete and any of their own numbers. The whole road is one tap away. */
+  const [ladderOpen, setLadderOpen] = useState(false);
 
   if (loading || !data) {
     return (
@@ -102,6 +105,8 @@ export default function ProgressHubScreen() {
   };
   const openTarget = openRung != null ? rungAt(openRung) : null;
   const lastRung = LADDER.length * LEVELS.length - 1;
+  /** Collapsed: this rung and the next — or, at the very top, the one below it and this. */
+  const nearRungs = curRung < lastRung ? [curRung, curRung + 1] : [curRung - 1, curRung];
 
   // Which lifts show as cards: the saved selection, else the athlete's most-recent lifts (default).
   const metrics = data.metrics;
@@ -178,7 +183,23 @@ export default function ProgressHubScreen() {
             only way along it. Rank Progression already named every rank, so the seal hid nothing real.
           */}
           <View style={styles.journey}>
-            {LADDER.map((f, fi) => (
+            {!ladderOpen
+              ? nearRungs.map((i, k) => {
+                  const t = rungAt(i);
+                  return (
+                    <Rung
+                      key={i}
+                      def={LADDER[Math.floor(i / LEVELS.length)]}
+                      level={t.level}
+                      state={t.state}
+                      first={k === 0}
+                      last={k === nearRungs.length - 1}
+                      sex={sex}
+                      onPress={() => setOpenRung(i)}
+                    />
+                  );
+                })
+              : LADDER.map((f, fi) => (
               <Fragment key={f.key}>
                 {/* A breath between families, carrying the line through it — walked once this family's
                     first rung is. */}
@@ -204,6 +225,15 @@ export default function ProgressHubScreen() {
                 })}
               </Fragment>
             ))}
+            <Pressable
+              onPress={() => setLadderOpen((o) => !o)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: ladderOpen }}
+              accessibilityLabel={ladderOpen ? 'Show fewer ranks' : `See all ${lastRung + 1} ranks`}
+              style={({ pressed }) => [styles.ladderToggle, pressed ? { opacity: 0.7 } : null]}
+            >
+              <Text style={styles.ladderToggleText}>{ladderOpen ? 'Show fewer ranks' : `See all ${lastRung + 1} ranks`}</Text>
+            </Pressable>
             {/* WAS: "The path continues. What comes next is earned, not previewed."
                 That stance is reversed, deliberately. Hiding what a rank asks for does not make it feel
                 earned — it makes it feel arbitrary, and an athlete who cannot see the bar cannot aim at
@@ -565,6 +595,8 @@ const styles = StyleSheet.create({
   rungStmtCurrent: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 13, color: flColor.bronze300, lineHeight: 18 },
   hereChip: { paddingVertical: 3, paddingHorizontal: 9, borderRadius: flRadius.pill, backgroundColor: flColor.bronzeSolid },
   hereChipText: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.onBronze },
+  ladderToggle: { alignSelf: 'flex-start', marginLeft: 79, marginTop: 10, minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
+  ladderToggleText: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.labelInk },
   closer: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 8, paddingTop: 16, paddingBottom: 2 },
   closerIcon: { width: 70, alignItems: 'center' },
   closerText: { flex: 1, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },

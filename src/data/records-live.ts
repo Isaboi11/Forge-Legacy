@@ -20,13 +20,19 @@ import {
 
 export const RECORD_COLS = 'id, exercise, catalog_key, load_value, load_reps, achieved_on, created_at';
 
-/** Every load row for this athlete. Empty on any failure — a record read never takes a screen down. */
+/**
+ * Every load row for this athlete. Empty on any failure — a record read never takes a screen down.
+ *
+ * ⚠ `workout_id` ARRIVES WITH 0242, AND THIS MUST WORK BEFORE IT IS PASTED. Named in the select on a
+ * database without the column, PostgREST refuses the whole read — every record on every screen would
+ * vanish. So it asks with the column and, on any error, asks again without it: the rows then carry no
+ * `workout_id` and `recordsByWorkout` attributes all of them by their sets, as it did before 0242.
+ */
 export async function fetchLoadRecordRows(athleteId: string): Promise<RecordRow[]> {
-  const { data, error } = await supabase
-    .from('personal_records')
-    .select(RECORD_COLS)
-    .eq('athlete_id', athleteId)
-    .eq('measure_kind', 'load');
+  const read = (cols: string) =>
+    supabase.from('personal_records').select(cols).eq('athlete_id', athleteId).eq('measure_kind', 'load');
+  let { data, error } = await read(`${RECORD_COLS}, workout_id`);
+  if (error) ({ data, error } = await read(RECORD_COLS));
   if (error || !data) return [];
   return data as unknown as RecordRow[];
 }
@@ -66,8 +72,13 @@ export async function fetchRecordsSetBy(athleteId: string, workoutId: string, st
     const day = utcDay(startedAt);
     // A record dated `day` or the day after can belong to a session started on `day`.
     const next = utcDay(new Date(Date.parse(`${day}T00:00:00Z`) + 86_400_000).toISOString());
-    const relevant = annotated.filter((r) => r.isRecord && (r.row.achieved_on === day || r.row.achieved_on === next));
-    if (!relevant.length) return [];
+    // 0242: a row that names its workout is this session's exactly when it names THIS one. Only rows
+    // from before 0242 (no `workout_id`) go through the date window and the set-matching below.
+    const own = annotated.filter((r) => r.isRecord && r.row.workout_id === workoutId);
+    const relevant = annotated.filter(
+      (r) => r.isRecord && !r.row.workout_id && (r.row.achieved_on === day || r.row.achieved_on === next),
+    );
+    if (!relevant.length) return recordsByWorkout(own, []).get(workoutId) ?? [];
 
     const from = `${dayBefore(day)}T00:00:00Z`;
     const to = new Date(Date.parse(`${next}T00:00:00Z`) + 86_400_000).toISOString();
@@ -78,8 +89,8 @@ export async function fetchRecordsSetBy(athleteId: string, workoutId: string, st
       .eq('state', 'saved')
       .gte('started_at', from)
       .lt('started_at', to);
-    if (error || !data) return [];
-    const by = recordsByWorkout(relevant, (data as unknown as AttributionRow[]).map(toAttributionWorkout));
+    if (error || !data) return recordsByWorkout(own, []).get(workoutId) ?? [];
+    const by = recordsByWorkout([...own, ...relevant], (data as unknown as AttributionRow[]).map(toAttributionWorkout));
     return by.get(workoutId) ?? [];
   } catch {
     return [];

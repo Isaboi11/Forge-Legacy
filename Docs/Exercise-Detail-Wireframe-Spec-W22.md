@@ -2,6 +2,7 @@
 ## Wireframe Specification v1.0 | June 2026
 
 **Status:** LOCKED
+**Amended by:** [`W22-Amendment-001`](Amendments/W22-Amendment-001-Exercise-Detail-Shows-Your-History.md) — §19 history/PR/last-used rows lifted (PO 2026-09-29, B8)
 **Authority:** Exercise Domain Architecture v1.0 + Amendment 001 (LOCKED), ED-1–ED-6 (LOCKED), W-21 (LOCKED), Product DNA (LOCKED)
 **Implements:** Architecture § 4.1 (Education Content Fields), § 4.2 (Content Model), § 4.3 (Media Model), § 4.4 (W-22 Content Order — LOCKED), § 4.6 (Non-Behavior Clarification — LOCKED), § 2.6 (Alternatives Model)
 **Navigated from:** W-21 (grid, horizontal rows, search, collection detail, see all favorites), future: W-23, W-9
@@ -974,8 +975,8 @@ W-22 does not and will never:
 | Add an exercise to an active workout (that is W-23) |
 | Log a set or start a workout |
 | Create a workout template (that is W-24) |
-| Show the athlete's workout history for this exercise |
-| Show PR records, personal bests, or performance data |
+| ~~Show the athlete's workout history for this exercise~~ — **SUPERSEDED by W22-Amendment-001 (PO 2026-09-29, B8)** |
+| ~~Show PR records, personal bests, or performance data~~ — **SUPERSEDED by W22-Amendment-001 (PO 2026-09-29, B8)** |
 | Show how many times the athlete has done this exercise |
 | Show which chapter or program the athlete last used this exercise in |
 | Create timeline entries, workout records, chapter activity, honors, rank progress, accomplishments, or legacy events (Architecture Amendment 001 § 4.6, LOCKED) |
@@ -983,7 +984,7 @@ W-22 does not and will never:
 | Show social data (how many athletes have favorited this exercise, popularity rankings) |
 | Suggest this exercise based on training history or goals |
 | Compare the athlete's performance against others |
-| Show a "last used" date or recency indicator |
+| ~~Show a "last used" date or recency indicator~~ — **SUPERSEDED by W22-Amendment-001 (PO 2026-09-29, B8)** |
 | Animate GIFs on alternative cards (ED-5 — autoplay only in the W-22 hero of the current exercise) |
 | Show a "Trained X times" count or any aggregate usage data |
 | Display comments, reviews, or community ratings |
@@ -1105,7 +1106,7 @@ W-22 does not and will never:
 
 ### Non-Behaviors
 - [ ] No workout logging or exercise selection
-- [ ] No performance data, PRs, or history
+- [ ] ~~No performance data, PRs, or history~~ — SUPERSEDED: the "Your history" block per W22-Amendment-001
 - [ ] No timeline, chapter, honor, or rank events from W-22
 - [ ] No animated GIFs on alternative cards
 - [ ] No social/community data

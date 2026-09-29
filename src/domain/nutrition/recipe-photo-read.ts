@@ -204,12 +204,18 @@ export type RecipePhotoResult =
   | { kind: 'unsupported_format' }
   /** We reached the server and IT failed. Not the athlete's connection, not the photo. */
   | { kind: 'unavailable' }
+  /**
+   * We reached Supabase and the function is not there ("Requested function was not found" — QA R2-F7, when
+   * `recipe-photo-read` had never been deployed). Not the connection, and "try again in a bit" won't help.
+   */
+  | { kind: 'not_available' }
   /** The app failed. Never conflated with the two above. */
   | { kind: 'offline' };
 
 /** The function's JSON body — from a 200 or a non-2xx alike — as a result. The read is re-guarded here. */
 export function recipePhotoResultFrom(body: unknown): RecipePhotoResult {
   if (!body || typeof body !== 'object') return { kind: 'unavailable' };
+  if (isFunctionMissing(body)) return { kind: 'not_available' };
   const d = body as { ok?: boolean; read?: unknown; reason?: string; remaining?: number; allowance?: number };
 
   if (d.ok) {
@@ -239,6 +245,18 @@ export function recipePhotoResultFrom(body: unknown): RecipePhotoResult {
   }
 }
 
+/**
+ * The Supabase gateway's answer when no function by that name is deployed:
+ * `{"code":"NOT_FOUND","message":"Requested function was not found"}` (HTTP 404). Our own function never
+ * answers with that shape — its failures carry `ok: false` and a `reason`.
+ */
+export function isFunctionMissing(body: unknown): boolean {
+  if (!body || typeof body !== 'object') return false;
+  const d = body as { ok?: unknown; code?: unknown; message?: unknown };
+  if ('ok' in d) return false;
+  return d.code === 'NOT_FOUND' || (typeof d.message === 'string' && /function was not found/i.test(d.message));
+}
+
 /** Every failure, in words. An outage never reads as a verdict on the photo. */
 export function recipePhotoError(r: Exclude<RecipePhotoResult, { kind: 'ok' }>): string {
   switch (r.kind) {
@@ -260,6 +278,8 @@ export function recipePhotoError(r: Exclude<RecipePhotoResult, { kind: 'ok' }>):
       return 'That image type can’t be read. Take a screenshot of it and upload that instead.';
     case 'unavailable':
       return 'Recipe reading isn’t working right now. Try again in a bit, or enter it by hand.';
+    case 'not_available':
+      return 'Scanning a recipe isn’t available right now. You can still enter it by hand.';
     case 'offline':
     default:
       return 'Couldn’t reach Forge. Check your connection and try again.';

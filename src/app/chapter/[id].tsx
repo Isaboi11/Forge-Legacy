@@ -59,7 +59,9 @@ export default function ChapterDetailScreen() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `rename=1` arrives from Legacy's "Start Your First Chapter" (Legacy-Amendment-002): the chapter an
+  // athlete skipped naming in onboarding already exists, so starting it means naming it.
+  const { id, rename } = useLocalSearchParams<{ id: string; rename?: string }>();
   const { data, loading, refetch } = useQuery(() => fetchChapterDetail(String(id)), [id]);
   const { showToast } = useToast();
 
@@ -70,7 +72,10 @@ export default function ChapterDetailScreen() {
    * ordinal is a client convention with no column behind it and re-typing it would let a chapter
    * renumber itself.
    */
-  const [renameOpen, setRenameOpen] = useState(false);
+  /* Seeded from the param rather than opened by an effect: the sheet sits below the loading guard, so it
+     appears the moment the chapter does, and the draft starts empty so the field shows its placeholder
+     instead of the default name the athlete never chose. */
+  const [renameOpen, setRenameOpen] = useState(rename === '1');
   const [renameDraft, setRenameDraft] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);

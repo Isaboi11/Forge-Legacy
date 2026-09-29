@@ -29,8 +29,11 @@ import { PR_MAX_REPS } from './metrics.ts';
  *     saves after it) that contains a main-section set of that lift at exactly that weight, 1–5 reps.
  *     Of several, the same-day one, then the earliest — the first session to lift a weight is the one
  *     that broke the record; a later equal lift did not beat anything. See {@link recordsByWorkout}.
+ *   · Since 0242 (QA F9, 09-29) the server writes `workout_id` on every new record, and that is the
+ *     answer outright — no guessing. The set-matching above is the FALLBACK, for rows written before
+ *     0242 (and for every row until 0242 is pasted, when the column cannot be read at all).
  *
- * No migration: the sets are already the evidence. Pure, so `node --test` holds every rule here.
+ * Pure, so `node --test` holds every rule here.
  */
 
 /** A `personal_records` row, as the client reads it. Only load rows are records of a lift. */
@@ -42,6 +45,8 @@ export interface RecordRow {
   load_reps: number | null;
   achieved_on: string | null;
   created_at?: string | null;
+  /** The workout that set it (0242). Null/absent on rows written before 0242 — attribute those by sets. */
+  workout_id?: string | null;
 }
 
 /** A lift, as the logger and the reads carry it. */
@@ -182,7 +187,8 @@ export function dayBefore(day: string): string {
 /**
  * Which session set each RECORD (first marks excluded), keyed by workout id.
  *
- * A record none of `workouts` could have lifted is attributed to nothing — better no chip than one on
+ * A record carrying `workout_id` (0242) belongs to that workout, full stop. Only rows without one fall
+ * back to matching the sets, below. A record none of `workouts` could have lifted is attributed to nothing — better no chip than one on
  * the wrong session. Pass every saved session that could hold the record (its day and the day before);
  * a partial list can only lose chips, never misplace them onto a session without the lift.
  */
@@ -193,12 +199,41 @@ export function recordsByWorkout(
   const out = new Map<string, WorkoutRecord[]>();
   const days = workouts.map((w) => ({ w, day: utcDay(w.startedAt), t: Date.parse(w.startedAt) }));
 
+  const byId = new Map(workouts.map((w) => [w.id, w]));
+  const add = (workoutId: string, entry: WorkoutRecord) => {
+    const list = out.get(workoutId) ?? [];
+    // One record per lift per session — a session that broke it twice keeps the heavier.
+    const i = list.findIndex((x) =>
+      sameLiftEither({ catalogKey: x.catalogKey, name: x.exercise }, { catalogKey: entry.catalogKey, name: entry.exercise }),
+    );
+    if (i < 0) list.push(entry);
+    else if (entry.weight > list[i].weight) list[i] = entry;
+    out.set(workoutId, list);
+  };
+
   for (const rec of records) {
     if (!rec.isRecord) continue;
+    const recLift: LiftIdentity = { catalogKey: rec.row.catalog_key ?? null, name: rec.row.exercise };
+
+    /* 0242: the server said which workout. That is the answer — even when this list does not hold that
+       workout, and never the fallback's guess on top of it. The session's own name for the lift is used
+       when the session is here to ask. */
+    if (rec.row.workout_id) {
+      const ex = byId.get(rec.row.workout_id)?.exercises.find((e) => sameLiftEither({ catalogKey: e.catalogKey ?? null, name: e.name }, recLift));
+      add(rec.row.workout_id, {
+        exercise: ex?.name ?? rec.row.exercise,
+        catalogKey: ex?.catalogKey ?? rec.row.catalog_key ?? null,
+        weight: rec.weight,
+        reps: rec.reps,
+        achievedOn: rec.row.achieved_on,
+      });
+      continue;
+    }
+
+    // ── fallback: a row from before 0242 — the session whose own sets hold the record ──
     const day = rowDay(rec.row);
     if (!day) continue;
     const prev = dayBefore(day);
-    const recLift: LiftIdentity = { catalogKey: rec.row.catalog_key ?? null, name: rec.row.exercise };
 
     let pick: { w: AttributionWorkout; sameDay: boolean; t: number; ex: AttributionWorkout['exercises'][number] } | null = null;
     for (const { w, day: wd, t } of days) {
@@ -219,21 +254,13 @@ export function recordsByWorkout(
     }
     if (!pick) continue;
 
-    const entry: WorkoutRecord = {
+    add(pick.w.id, {
       exercise: pick.ex.name,
       catalogKey: pick.ex.catalogKey ?? null,
       weight: rec.weight,
       reps: rec.reps,
       achievedOn: rec.row.achieved_on,
-    };
-    const list = out.get(pick.w.id) ?? [];
-    // One record per lift per session — a session that broke it twice keeps the heavier.
-    const i = list.findIndex((x) =>
-      sameLiftEither({ catalogKey: x.catalogKey, name: x.exercise }, { catalogKey: entry.catalogKey, name: entry.exercise }),
-    );
-    if (i < 0) list.push(entry);
-    else if (entry.weight > list[i].weight) list[i] = entry;
-    out.set(pick.w.id, list);
+    });
   }
   return out;
 }

@@ -38,7 +38,8 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   terms: {
     host: 'forgelegacy.app/terms',
     title: 'Terms of Service',
-    updated: 'Last updated · Sep 2026',
+    /* The hosted page's own date, word for word (`site/terms.html` — the settings test pins it). */
+    updated: 'Last updated · 26 September 2026',
     body: [
       'Welcome to Forge Legacy. By creating an account and using the app you agree to train responsibly and to the terms set out below.',
       /*
@@ -61,7 +62,8 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   privacy: {
     host: 'forgelegacy.app/privacy',
     title: 'Privacy Policy',
-    updated: 'Last updated · Sep 2026',
+    /* The hosted page's own date, word for word (`site/privacy.html` — the settings test pins it). */
+    updated: 'Last updated · 28 September 2026',
     /*
      * ⚠ THIS LIST SAID "ONLY" AND WAS NOT EXHAUSTIVE, WHICH IS THE ONE THING A COLLECTION LIST MUST NOT
      *   DO. Flagged by the 2026-08-12 launch audit (§4-3): it named workouts, goals and squads, and
@@ -78,13 +80,18 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
      */
     body: [
       'We collect what the app needs to work: your workouts and records, the goals you set, the chapters you keep, the photos and video you add, and the squads you join.',
-      'Tracked runs, walks and rides read your precise location while the session is running. Your full route is saved and is visible to you only; a map appears on a post only when you choose to add it to that post.',
-      'If you use Nutrition, your food log, targets, allergies and preferences are visible to you only. Food searches send only the words or barcode you entered to the food databases.',
-      'If your plan includes the AI features, what a feature needs — your question, the relevant training or nutrition details, and any photo you chose — is sent to our AI provider, Anthropic. Never your name or email.',
+      'Tracked runs, walks and rides read your precise location while the session is running. Your full route is saved and is visible to you only; a map appears on a post only when you choose to add it to that post. A route usually starts and ends at your door, so think about that before you add a map to a post.',
+      'If you use Nutrition, your food log, targets, allergies and preferences are visible to you only. Food searches send only the words or barcode you entered to the food databases. If you create a food from a barcode Forge doesn’t know, a “Share with Forge” box, ticked unless you untick it, adds that product to a shared list — only the product, never anything that identifies you.',
+      'If your plan includes the AI features, what a feature needs — your question, the relevant training or nutrition details, and any photo or video frames you chose — is sent to our AI provider, Anthropic. Never your name or email. We keep short summaries of your conversations with Coach Holt so he can remember what you talked about; they are visible to you only and are deleted with your account.',
+      'For a form check on iPhone, your phone first works out where your joints are in each frame. Those joint positions never leave your phone and are never stored; only a few numbers worked out from them, such as reps, depth and speed, are sent with the frames you chose.',
+      'If you talk to Coach Holt with the microphone, your phone’s own speech recognition turns your voice into text. We never receive or store the recording, only the text.',
+      'On iPhone, if you connect Apple Health, Forge reads your workouts from it: the type, when it started and ended, its distance, and which app or device recorded it. We do not read heart rate, calories, routes, sleep, or any other Health data. Data from Apple Health is never used for advertising or marketing, never sold, and never sent to Sentry.',
       'We record limited usage events — which features get opened — so we know what to build next. They are never sold, never given to advertisers, and never used to track you across other apps.',
+      'When the app hits an error it sends us a report, and error, crash and performance reports also go to Sentry, a crash-reporting service. Reports never contain your training figures, your photos, your location, or text you wrote — except that an error message can occasionally quote a value you entered. They are kept for 90 days.',
+      'If you buy a subscription, Apple handles the payment. We receive a record of your plan and its status, never your card or payment details.',
       'You control what others see. Visibility is set per-section, and nothing you mark private is shared beyond you.',
-      'We never sell your data. You can delete your account, and everything in it, from Account Settings — it is immediate and permanent.',
-      'If you send us feedback or a bug report, we keep what you wrote along with the screen you were on, so we can reproduce it and reply. It is the one place we store words you wrote yourself, and it goes when your account goes.',
+      'We never sell your data. You can download it from Account Settings → Export My Data, and delete your account, and everything in it, from Account Settings — it is immediate and permanent.',
+      'If you send us feedback or a bug report, we keep what you wrote along with the screen you were on, so we can reproduce it and reply. It is read only by us and is deleted with your account.',
       'The full policy is at forgelegacy.app/privacy. Questions? support@forgelegacy.app',
     ],
   },

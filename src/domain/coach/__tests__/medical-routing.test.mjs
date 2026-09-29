@@ -419,6 +419,15 @@ test('R2-F6: the minors rule is unchanged in shape — an age AND a cut, diet or
     assert.equal(medicalRoute(s), 'care', s);
 });
 
+test('kitchen-05: an adult asking for macros is never stopped; a minor asking the same is', () => {
+  // Nutrition Amendment 005: the app sets an adult's targets. The dietitian line is for conditions and minors.
+  for (const s of ['set my macros', 'what should my macros be', 'can you set my macros for a cut', "I'm 30, set my macros",
+    'give me my calorie target', 'how much protein should I eat', 'im 16 sets of squats then what should I eat for dinner'])
+    assert.equal(medicalRoute(s), 'clear', s);
+  for (const s of ['im 16 set my macros', "I'm 16 set my calories for a cut"])
+    assert.equal(medicalRoute(s), 'care', s);
+});
+
 test('R2-F6: a typo fix never turns "last" or "past" into a fast', () => {
   for (const s of ['will this chili last for 3 days in the fridge', 'the chili will last 3 days', 'leftovers from the past 3 days, what can I make'])
     assert.equal(medicalRoute(s), 'clear', s);

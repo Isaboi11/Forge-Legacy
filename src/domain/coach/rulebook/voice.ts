@@ -72,6 +72,7 @@ export type VoiceKey =
   | 'ask_days_run'
   | 'ask_days_week'
   | 'ask_where'
+  | 'ask_gear'
   | 'ask_time'
   | 'ask_experience'
   | 'ask_limits'
@@ -388,6 +389,17 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'What kind of space are we working with?',
     "Tell me about the setup. I'll build to it.",
     'Where will you be training most of the time?',
+  ],
+  /* QA holtai-04: "home" with nothing on file used to build bodyweight without asking. */
+  ask_gear: [
+    "What's in your home gym? Tap what you've got, or just tell me.",
+    "What have you got at home to lift with?",
+    "I don't know what's in your home gym yet. What are we working with?",
+    "Tell me what kit you've got at home and I'll build to it.",
+    "What's at home — dumbbells, kettlebells, bands, a bar?",
+    "Before I build: what equipment is at home?",
+    "What do you have to train with at home?",
+    "Home it is. What's in there?",
   ],
   ask_time: [
     'How long have you got for a session?',

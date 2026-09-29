@@ -110,6 +110,20 @@ export interface AppPrefs {
    * No migration: one more key in the `app_prefs` blob. See `domain/run/mile-marker.ts`.
    */
   runVoice: boolean;
+  /**
+   * Holt during a live workout — `on` or `off` (PO, 2026-09-29: "should people be able to completely
+   * silence Holt during live workouts?" — yes).
+   *
+   * ⚠ A SEPARATE KEY, NOT A FIFTH INTENSITY LEVEL. Three things would break if `off` sat below `reminders`
+   * on the dial: `proposeIntensity` auto-applies a step DOWN, so Holt would switch himself off; the
+   * server's morning briefing reads `coachIntensity` in SQL (0159) and would need a migration; and turning
+   * him back on would forget the level the athlete had. Stored apart, `off` silences the workout and
+   * turning it back on returns the dial exactly where it was.
+   *
+   * ⚠ OFF MEANS OFF, INCLUDING TECHNIQUE CUES — the PO's explicit choice, knowing `reminders` keeps them
+   * on purpose. The picker says so. A squad-mate's message still shows: it is a person, not Holt.
+   */
+  holtInWorkout: 'on' | 'off';
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -125,6 +139,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   careLineUntil: null,
   autoPost: AUTO_POST_DEFAULT,
   runVoice: true,
+  holtInWorkout: 'on',
 };
 
 export type HoltTips = 'ask' | 'on' | 'off';
@@ -168,6 +183,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     if (typeof r.careLineUntil === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.careLineUntil)) out.careLineUntil = r.careLineUntil;
     out.autoPost = sanitizeAutoPost(r.autoPost);
     if (typeof r.runVoice === 'boolean') out.runVoice = r.runVoice;
+    if (r.holtInWorkout === 'on' || r.holtInWorkout === 'off') out.holtInWorkout = r.holtInWorkout;
   }
   return out;
 }

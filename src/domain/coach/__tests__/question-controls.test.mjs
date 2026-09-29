@@ -119,7 +119,7 @@ test('⚠ a question with no entry still renders — absent means chips, not not
 
 test('the table names only questions that exist', () => {
   // A stale key here is a shape nobody ever sees and a rename nobody noticed.
-  const real = new Set([...askedIn('program'), ...askedIn('day'), ...askedIn('program', { pickingRace: true })].map((q) => q.id));
+  const real = new Set([...askedIn('program'), ...askedIn('day'), ...askedIn('program', { pickingRace: true }), ...askedIn('program', { environment: 'home' })].map((q) => q.id));
   // race_base/race_when only appear on an endurance goal; assert them from the walk that reaches them.
   for (const id of Object.keys(CONTROL_FOR)) {
     assert.ok(real.has(id) || ['race_when', 'race_base'].includes(id), `CONTROL_FOR names "${id}", which no walk reaches`);

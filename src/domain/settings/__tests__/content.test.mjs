@@ -58,6 +58,25 @@ test('the in-app privacy summary names location, media and analytics', () => {
   assert.ok(!/\bonly what\b/.test(text), '"only what the app needs" is the phrasing that made this wrong');
 });
 
+/**
+ * F5 (QA 09-26): the in-app policy said "Aug 2026", promised a 200 m route trim the PO vetoed
+ * (Route-Sharing-Amendment-001), and said nothing the hosted policy had since added. The in-app sheet is
+ * shown at the moment of sign-up consent, so it must carry the hosted page's date and substance.
+ */
+test('F5: the in-app legal sheets carry the hosted pages’ dates and substance', async () => {
+  const { readFileSync } = await import('node:fs');
+  const site = (f) => readFileSync(new URL(`../../../../site/${f}`, import.meta.url), 'utf8');
+  const dateOf = (html) => html.match(/Last updated (\d{1,2} \w+ \d{4})/)[1];
+  assert.equal(LEGAL.privacy.updated, `Last updated · ${dateOf(site('privacy.html'))}`);
+  assert.equal(LEGAL.terms.updated, `Last updated · ${dateOf(site('terms.html'))}`);
+
+  const text = LEGAL.privacy.body.join(' ');
+  assert.ok(!/\b200\s?m|\btrim/i.test(text), 'the 200 m route trim was vetoed; full routes are saved');
+  assert.match(text, /full route is saved/);
+  for (const must of [/Nutrition/, /Anthropic/, /Apple Health/, /Sentry/, /joint positions never leave your phone/, /Export My Data/])
+    assert.match(text, must, `the hosted policy says it, so the in-app summary must: ${must}`);
+});
+
 test('the sign-out confirm warns about losing device access, not about losing data', () => {
   assert.match(SIGN_OUT_CONFIRM.message, /sign back in/i);
   assert.ok(!/delete|lose|erase/i.test(SIGN_OUT_CONFIRM.message), 'signing out destroys nothing — do not imply it does');

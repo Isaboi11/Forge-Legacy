@@ -1,4 +1,6 @@
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
+--
+-- ⛔ SUPERSEDED 2026-09-28 by 0237 (Nutrition for PREMIUM accounts, PO). Do NOT paste this file.
 -- PENDING — 0216: open Nutrition to every signed-in athlete
 --
 -- ⛔ HELD UNTIL APP STORE APPROVAL (PO 2026-09-25: "wait"). Do NOT paste before ship day — see

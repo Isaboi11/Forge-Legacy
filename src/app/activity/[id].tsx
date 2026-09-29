@@ -353,8 +353,9 @@ function Body({
       {detail.milestones.map((m) => (
         <View key={m} style={styles.milestone}>
           <EngravedIcon name="trophy" size={13} />
-          {/* Stored pounds ("… · 150 lb × 5"), said in the athlete's own units. */}
-          <Text style={styles.milestoneText}>{fmt(m)}</Text>
+          {/* Stored pounds ("… · 150 lb × 5"), said in the athlete's own units. Labelled as the 1–5 rep
+              record (QA F9) — the sets listed below can hold a heavier set at more reps. */}
+          <Text style={styles.milestoneText}>{`PR (1–5 reps) · ${fmt(m)}`}</Text>
         </View>
       ))}
 

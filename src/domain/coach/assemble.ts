@@ -411,7 +411,7 @@ function buildDay(
   const focusBonus = (ex: CatalogExercise): number =>
     !opts.isDeload && ex.primaryMuscleIds.some((m) => focus.muscles.has(m)) ? FOCUS_EXTRA_SETS : 0;
   const cueOf = (ex: CatalogExercise) =>
-    cueFor({ pattern: ex.pattern, goal: opts.goal, experience: opts.experience.lifting, isPrimary: main.length === 0 });
+    cueFor({ pattern: ex.pattern, goal: opts.goal, experience: opts.experience.lifting, isPrimary: main.length === 0, name: ex.name, equipId: ex.equipId });
 
   /*
    * ══ 1. THE ATHLETE'S OWN EXERCISES ARE PLACED FIRST (CA-D3) ══
@@ -431,7 +431,7 @@ function buildDay(
    */
   const slots = [...skeleton.slots];
   const pinRow = (pin: PinnedExercise, exercise: CatalogExercise, index: number): { row: ProgramExercise; dose: number } => {
-    const cue = cueFor({ pattern: exercise.pattern, goal: opts.goal, experience: opts.experience.lifting, isPrimary: index === 0 });
+    const cue = cueFor({ pattern: exercise.pattern, goal: opts.goal, experience: opts.experience.lifting, isPrimary: index === 0, name: exercise.name, equipId: exercise.equipId });
     const pctx = pctxFor();
     const verbatimSets = isCount(pin.sets) && pin.sets >= 1 ? Math.round(pin.sets) : null;
     const own = verbatimSets != null ? (opts.isDeload ? deloadSets(verbatimSets) : verbatimSets) : null;
@@ -677,6 +677,7 @@ export function assemble(
   };
 
   concerns.push(...pinCeilingConcerns(plan, weekPlans[0].days.map((day, lift) => ({ day, lift }))));
+  concerns.push(...coverageConcerns(c, weekPlans, pool));
 
   return {
     ok: true,
@@ -692,6 +693,33 @@ export function assemble(
       concerns: [...new Set(concerns)],
     },
   };
+}
+
+/**
+ * What the finished block leaves out that the athlete would reasonably assume is in (QA holtai-04).
+ *
+ * · **No pulling at all.** A strength block of pushes and squats is lopsided, and it shipped silently. The
+ *   matrix proves every build that CAN reach a row or pull does carry one (`holtai-04.test.mjs`), so this
+ *   only ever fires when nothing the athlete owns can — and then Holt says so and names the fix.
+ * · **Knees.** The flag removes squats, lunges and jumping (PO 2026-09-29, Preflight Gates §1.1). He says
+ *   what he left out and what the legs get instead, so "I'll keep your knees out of it" is a fact.
+ */
+function coverageConcerns(
+  c: CoachConstraints,
+  weekPlans: readonly { days: readonly ProgramDay[] }[],
+  pool: readonly CatalogExercise[],
+): string[] {
+  const patternOf = new Map(pool.map((e) => [e.key, e.pattern]));
+  const patterns = new Set(
+    weekPlans.flatMap((w) => w.days.flatMap((d) => d.main.map((e) => patternOf.get(e.catalogKey ?? '') ?? ''))),
+  );
+  const out: string[] = [];
+  const lifting = c.goal !== 'mobility' && !isEnduranceGoal(c.goal);
+  if (lifting && patterns.size > 0 && !patterns.has('Horizontal Pull') && !patterns.has('Vertical Pull')) {
+    out.push(CONCERN.noPulling());
+  }
+  if (lifting && c.limitations.includes('knees') && patterns.size > 0) out.push(CONCERN.kneesLeftOut());
+  return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -58,6 +58,21 @@ const FUNCTIONS = [
   ['admin_feedback', { p_limit: 10, p_status: null }], // 0167
   ['admin_client_errors', { p_days: 7, p_limit: 10, p_status: null }], // 0176
   ['admin_client_error_detail', { p_fingerprint: 'deadbeef', p_limit: 5 }], // 0176
+  // 0238 — the Business CRM (Admin-Analytics-Amendment-002).
+  ['admin_revenue', { p_days: 30, p_tz: TZ, p_include_sandbox: false }],
+  ['admin_tiers', {}],
+  ['admin_ai_usage', { p_days: 30, p_tz: TZ }],
+  ['admin_waitlist', { p_days: 30, p_tz: TZ }],
+  ['admin_appstore', { p_days: 30 }],
+  ['admin_bugs', { p_status: null, p_severity: null, p_q: null, p_limit: 5 }],
+  ['admin_user_search', { p_q: 'a', p_limit: 5 }],
+  ['admin_billing_list', { p_filter: 'paying', p_limit: 5 }],
+  ['admin_documents', { p_category: null, p_q: null }],
+  // 0239 — the Bugs page's four sources.
+  ['admin_bug_sources', {}],
+  ['admin_reports_inbox', { p_limit: 5 }],
+  ['admin_crashes', { p_days: 7 }],
+  ['admin_bug_links', {}],
 ];
 
 /**
@@ -69,6 +84,23 @@ const FUNCTIONS = [
 const GUARDED_WRITES = [
   ['admin_feedback_set_status', { p_id: -1, p_status: 'READ' }], // 0167
   ['admin_client_error_set_status', { p_fingerprint: 'deadbeef', p_status: 'ACKED', p_note: null }], // 0176
+  // 0238. `admin_contacts` is here, not in FUNCTIONS, because listing contacts first syncs testers and
+  // trainers into the table — a write, however idempotent. `admin_user_card` needs a real id; the admin
+  // section checks it against a search hit instead.
+  ['admin_bug_save', { p_id: null, p_patch: {} }],
+  ['admin_bug_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_bug_track', { p_kind: 'feedback', p_ref: '-1' }],
+  ['admin_user_card', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_contacts', { p_kind: null, p_q: null }],
+  ['admin_contact_save', { p_id: null, p_patch: {} }],
+  ['admin_contact_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_contact_activity', { p_contact: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_activity_log', { p_contact: '00000000-0000-0000-0000-000000000000', p_kind: 'note', p_body: 'x', p_due: null }],
+  ['admin_activity_done', { p_id: '00000000-0000-0000-0000-000000000000', p_done: true }],
+  ['admin_document_save', { p_id: null, p_patch: {} }],
+  ['admin_document_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_report_track', { p_origin: 'feedback:-1', p_target: null }], // 0239
+  ['admin_report_dismiss', { p_origin: 'feedback:-1', p_dismiss: true }], // 0239
 ];
 
 /** Everything a non-admin must be refused, read or write. */
@@ -207,6 +239,34 @@ if (!process.env.SB_ADMIN_EMAIL || !process.env.SB_ADMIN_PASS) {
     //   `admin_overview` and `admin_retention_cohorts` carry, and why they are the two checked here.
     const blob = JSON.stringify([ov, co]);
     check(!/"handle"|"athlete_id"|"user_id"/.test(blob), 'no per-athlete identity leaks into a payload (AA-D2)');
+
+    // AA-D20, half one: the 0238 AGGREGATES are held to the same rule.
+    const agg = await Promise.all(
+      ['admin_revenue', 'admin_tiers', 'admin_ai_usage', 'admin_waitlist', 'admin_appstore'].map(async (fn) => {
+        const args = FUNCTIONS.find(([f]) => f === fn)?.[1] ?? {};
+        return (await sb.rpc(fn, args)).data;
+      }),
+    );
+    check(!/"handle"|"athlete_id"|"user_id"/.test(JSON.stringify(agg)), '0238 aggregates carry no per-athlete identity (AA-D20)');
+
+    // AA-D20, half two: the person-level card may name someone, but its KEYS may never include a
+    // training, social, presence, photo, health or auth-email field (AA-D13). Keys, not values — an AI
+    // action is legitimately called `meal_photo`, and a feedback row may say "squad".
+    const { data: hits } = await sb.rpc('admin_user_search', { p_q: 'a', p_limit: 1 });
+    if (Array.isArray(hits) && hits[0]?.id) {
+      const { data: card, error: cardErr } = await sb.rpc('admin_user_card', { p_id: hits[0].id });
+      check(!cardErr && card?.account && card?.billing, 'admin_user_card returns account + billing');
+      const keys = [];
+      const walk = (v) => {
+        if (Array.isArray(v)) v.forEach(walk);
+        else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) (keys.push(k), walk(x));
+      };
+      walk(card);
+      const banned = keys.filter((k) =>
+        /workout|volume|^sets?$|rank|streak|photo|weight|last_active|email|squad|friend|route|nutrition|health|honor|goal/i.test(k),
+      );
+      check(banned.length === 0, `user card keys stay inside the AA-D12 ceiling${banned.length ? ` — found ${banned.join(', ')}` : ''}`);
+    }
   }
 
   await sb.auth.signOut();

@@ -5,7 +5,8 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
-import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
+import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -14,7 +15,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ChevronRightIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { Image } from 'expo-image';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { forgeOr } from '@/constants/theme-scrim';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { ensurePinPoster } from '@/data/pin-poster';
 import { useProfile } from '@/lib/profile';
@@ -30,18 +31,21 @@ import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
 import { formatAccDate } from '@/domain/legacy/accomplishments';
 import { pinDestination } from '@/domain/legacy/pins';
+import { activityDayLabel, legacyReveal, recentLegacyEvents } from '@/domain/legacy/reveal';
+import { fetchLegacyTimeline, type TimelineKind } from '@/data/legacy-timeline-live';
+import { splitChapterName } from '@/domain/legacy/chapter-name';
+import { fmtDuration } from '@/domain/activity/history-core';
 import { MediaThumb } from '@/components/forge/MediaThumb';
 import { useQuery } from '@/lib/useQuery';
-import type { Pin, PinKind } from '@/types/legacy';
+import type { Chapter, Pin, PinKind } from '@/types/legacy';
 import {
   AccomplishmentCard,
   CompactChapterRow,
-  CurrentChapter,
   FeaturedMomentCard,
+  goalValue,
   HonorInsignia,
   MyStandard,
   SealedChapterCard,
-  TimelineRow,
 } from '@/components/forge/profile-sections';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -60,9 +64,28 @@ const PIN_GLYPH: Record<PinKind, SymbolName> = {
   memory: 'spark',
 };
 
+/** The Recent Legacy row's medallion, by timeline kind. */
+const EVENT_SYMBOL: Record<TimelineKind, SymbolName> = {
+  'chapter-open': 'book',
+  'chapter-seal': 'seal',
+  rank: 'rankUp',
+  honor: 'medal',
+  goal: 'target',
+  pr: 'dumbbell',
+  'program-grad': 'banner',
+  accomplishment: 'trophy',
+  photo: 'eye',
+  reflection: 'spark',
+  memory: 'spark',
+};
+
 /**
  * Legacy tab root — L-1 Legacy Hub.
  * Source of truth: the design handoff "Forge Legacy.dc.html" (new foundation system).
+ *
+ * ⚠ PROGRESSIVE REVEAL (`Legacy-Amendment-002`, 2026-09-29): the sections below appear only once they
+ * hold something — `legacyReveal` in `domain/legacy/reveal.ts` decides each one. The mature hub
+ * described here is what an established athlete sees; a new one sees their chapter and one easy start.
  *
  * Rebuilt on the foundation tokens + committed composites to match Home/Workouts
  * (the pre-existing `components/legacy/*` are old `legacy-theme` and now bannered
@@ -105,11 +128,19 @@ export default function LegacyScreen() {
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
-  const { data: accData, refetch: refetchAcc } = useQuery(fetchAccomplishments, []);
-  // The archive band loads alongside rather than inside `fetchLegacyData` — it feeds three tiles near
-  // the bottom of a long scroll and must not delay the hero. Each tile shows its recessed surface
-  // until this resolves, which is the same surface its empty state uses, so nothing rearranges.
-  const { data: archive, refetch: refetchArchive } = useQuery(fetchLegacyArchive, []);
+  const { data: accData, settled: accSettled, refetch: refetchAcc } = useQuery(fetchAccomplishments, []);
+  // The archive band loads alongside rather than inside `fetchLegacyData`, in parallel. Since
+  // Legacy-Amendment-002 the first paint waits for it (see `reveal` below): which sections exist depends
+  // on its counts, so deciding without it would draw one page and then rearrange into another.
+  const { data: archive, settled: archiveSettled, refetch: refetchArchive } = useQuery(fetchLegacyArchive, []);
+  // Recent Legacy reads the L-2 timeline's own events, so the two can never disagree about what mattered
+  // (PR de-duplication and the first-mark-is-a-baseline rule both live in that one read).
+  const { data: timelineData, settled: timelineSettled, refetch: refetchTimeline } = useQuery(fetchLegacyTimeline, []);
+  const meaningfulEvents = useMemo(
+    () => recentLegacyEvents(timelineData?.chapters.flatMap((c) => c.events) ?? [], Number.MAX_SAFE_INTEGER),
+    [timelineData],
+  );
+  const recentEvents = meaningfulEvents.slice(0, 3);
   const liveAccomplishments = useMemo(
     () =>
       (accData ?? []).map((a) => ({
@@ -126,26 +157,37 @@ export default function LegacyScreen() {
     [accData],
   );
   /*
-   * ── WHAT THIS ATHLETE STILL OWES THE RECORD — `Legacy-Amendment-001` LEG-A1-D5 ──
+   * ── WHAT RENDERS — `Legacy-Amendment-002` (progressive reveal) ──
    *
-   * ⚠ THREE SEPARATE FACTS, NOT ONE "IS NEW" FLAG, and that is the decision rather than a convenience.
-   * Each invitation retires the moment its own thing exists, so somebody who adds a photo keeps the
-   * other two and loses only the one they satisfied. A single flag would make the set all-or-nothing
-   * and would re-appear in full the day somebody deleted their last photo.
+   * Every section decision is `legacyReveal`'s, over counts, with a test beside it. This screen draws the
+   * answer and reasons about nothing.
    *
-   * ⚠ `archive` RESOLVES LATE, AND `null` MUST NOT READ AS ZERO. It loads beside the hero rather than
-   * inside `fetchLegacyData`, so while it is in flight `archive?.photos.count` is undefined — which
-   * `?? 1` deliberately treats as "has photos" so the invitation never flashes in and out on somebody
-   * who has fifty. The optimistic direction is the honest one here: a missing invitation costs a tap,
-   * a flashing one costs trust.
+   * ⚠ THE PAGE WAITS FOR ALL THREE READS ON FIRST LOAD, and that is what makes the reveal honest. The
+   * archive and accomplishments load beside the hero; deciding before they land would draw the brand-new
+   * page for one frame on somebody with fifty photos, then rearrange. `settled` is true on error too, so
+   * a failed side read degrades to the simpler page rather than an endless spinner. The per-invitation
+   * retirement of LEG-A1-D5 survives inside `addRow`: each tile leaves on its own.
    */
-  const needsPhoto = (archive?.photos.count ?? 1) === 0;
-  const needsAccomplishment = liveAccomplishments.length === 0;
-  /* ⚠ `data` IS STILL NULLABLE HERE — these are derived above the loading guard, because hooks below
-     it would be conditional. `!data` must read as "not yet known", never as "empty": an unguarded
-     `!data.standard` would make every athlete look quote-less for one frame. */
-  const needsQuote = data != null && !data.standard?.trim();
-  const firstRun = needsPhoto && needsAccomplishment && needsQuote;
+  const reveal = useMemo(
+    () =>
+      data && archiveSettled && accSettled && timelineSettled
+        ? legacyReveal({
+            activeChapterName: data.activeChapter?.name ?? null,
+            sealedChapterCount: data.sealedChapters.length,
+            savedWorkoutCount: data.savedWorkoutCount,
+            // The timeline's meaningful events; a failed timeline read falls back to the stored-event count.
+            timelineEventCount: timelineData ? meaningfulEvents.length : data.timelineEventCount,
+            photoCount: archive?.photos.count ?? 0,
+            transformationCount: archive?.transformation.count ?? 0,
+            trophiesEntered: archive?.trophies.entered ?? 0,
+            accomplishmentCount: liveAccomplishments.length,
+            honorCount: data.honors.length,
+            pinCount: data.pinned.length,
+            hasQuote: !!data.standard?.trim(),
+          })
+        : null,
+    [data, archive, archiveSettled, accSettled, timelineSettled, timelineData, meaningfulEvents.length, liveAccomplishments.length],
+  );
 
   const [pinManager, setPinManager] = useState(false);
   const [stdOpen, setStdOpen] = useState(false);
@@ -229,7 +271,8 @@ export default function LegacyScreen() {
       // entry, or finishing a competition — and walking back to Legacy showed the band exactly as it was
       // when the tab first loaded: an empty Photos tile next to a gallery that now had photos in it.
       refetchArchive();
-    }, [refetch, refetchArchive, syncBodyGoals]),
+      refetchTimeline();
+    }, [refetch, refetchArchive, refetchTimeline, syncBodyGoals]),
   );
 
   // (The honor-celebrated acknowledgement moved to CeremonyProvider — it has to sit with the single
@@ -237,7 +280,7 @@ export default function LegacyScreen() {
 
   // First load only: wait for the live Legacy read + the shared profile, with a retryable error. Once
   // data is in hand it stays rendered through any background refetch.
-  if (!data || !profile) {
+  if (!data || !profile || !reveal) {
     return (
       <LegacyShell scrollY={scrollY} avatarName={profile?.name ?? ''} avatarSrc={profile?.avatarUrl ?? undefined}>
         {error ? <LegacyError onRetry={refetch} /> : <ActivityIndicator color={flColor.bronze400} />}
@@ -247,6 +290,7 @@ export default function LegacyScreen() {
 
   const chapter = data.activeChapter;
   const [recentSeal, ...olderSeals] = data.sealedChapters;
+  const hasEndures = reveal.transformationTile || reveal.photosTile || reveal.trophyTile || reveal.accomplishments || reveal.honors;
 
   return (
     <View style={styles.root}>
@@ -278,7 +322,6 @@ export default function LegacyScreen() {
               {profile.name}
             </Text>
             <RankLabel label={data.rankName} sub={data.rankSubTier} />
-            <Text style={styles.identitySub}>Forging a permanent record, one chapter at a time.</Text>
           </View>
           {/* `flexShrink: 0` — this wrapper is the actual flex child of the row, and without it the
               badge is what gives way when the name column (flex: 1) and the 90pt portrait have taken
@@ -294,78 +337,59 @@ export default function LegacyScreen() {
         </Animated.View>
 
         {/*
-          ── FIRST RUN — `Legacy-Amendment-001` LEG-A1-D2 ──
+          ── PROGRESSIVE REVEAL — `Legacy-Amendment-002` ──
 
-          Three invitations, and the one line that says what this tab IS. "Legacy" is the app's least
-          self-explanatory noun, and with the tour retired this screen is the only place it gets
-          defined without someone reading a tooltip.
+          The page grows with the record. A brand-new athlete sees their chapter and one easy way to add
+          to it; a section arrives the day there is something in it. Nothing below draws an empty shelf,
+          a locked card or a "coming soon" — a section with nothing to show is simply not rendered.
+          `reveal` (domain/legacy/reveal.ts) makes every one of those calls.
 
-          ⚠ THIS OVERRULES L-1 §12.1's *"Not replaced with a prompt. Absent."* — knowingly, and the
-          amendment argues the distinction rather than waving it away. A PLACEHOLDER shows the shape of
-          content that is not there and says *you are missing something*; an INVITATION is a live
-          control that performs a real action. Nothing below draws a grey card where a photo will go.
-
-          ⚠ WHY `firstRun` AND NOT `awaiting`. Home's flag is about the first WORKOUT; this is about
-          the first ENTRY, which is a different fact — somebody can log a month of training and still
-          have written nothing here. Each invitation also retires on its own (LEG-A1-D5), so this
-          header is simply the state where all three are still owed.
-
-          ⚠ NO COUNTER, NO "1 OF 3", NO METER. `ONB-D22` binds here in full: three invitations under a
-          progress indicator is a completion meter whatever it is labelled.
+          ⚠ NO COUNTER, NO "1 OF 3", NO METER. `ONB-D22` still binds: the start module is three
+          invitations of unequal weight, not a checklist.
         */}
-        {firstRun ? (
-          <View style={styles.sectionPad}>
-            <Text style={styles.firstRunEyebrow}>Your Legacy</Text>
-            <Text style={styles.firstRunTitle}>Start Building{'\n'}Your Legacy.</Text>
-            <Text style={styles.firstRunBody}>
-              This is your profile, and the record it keeps. Capture the moments, milestones and progress
-              that make you, you.
-            </Text>
+
+        {/* ── THE CHAPTER — the focus of the page ── */}
+        {reveal.chapter === 'hero' && chapter ? (
+          <View style={styles.sectionPadTight}>
+            <Text style={styles.eyebrow}>Your Current Chapter</Text>
+            <ChapterHero
+              chapter={chapter}
+              dayCount={data.dayCount}
+              onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })}
+            />
           </View>
-        ) : null}
-
-        {needsPhoto ? (
-          <Invitation
-            title="Add Your First Progress Photo"
-            body="See how far you’ll come."
-            onPress={() => router.push('/photos')}
-          />
-        ) : null}
-        {needsAccomplishment ? (
-          <Invitation
-            title="Add an Accomplishment"
-            body="Big or small, it counts — and it doesn’t have to have happened in Forge."
-            onPress={() => router.push('/accomplishments')}
-          />
-        ) : null}
-
-        {/* My Standard — the creed; tap opens the L-12 editor sheet.
-            ⚠ ON FIRST RUN IT IS AN INVITATION LIKE THE OTHER TWO, so the three read as one set rather
-            than two prompts and a component. `MyStandard` keeps its own empty state for every other
-            day — this only changes which of the two is drawn. */}
-        {needsQuote ? (
-          <Invitation title="Add a Quote" body="The words that keep you going." onPress={() => setStdOpen(true)} />
-        ) : (
-          <TourAnchor id="legacy-standard">
-            <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
-          </TourAnchor>
-        )}
-
-        {/* What I'm Building — current chapter + primary goal */}
-        {chapter ? (
-          <CurrentChapter chapter={chapter} dayCount={data.dayCount} onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })} />
+        ) : reveal.chapter === 'start-first' ? (
+          <View style={styles.sectionPadTight}>
+            {reveal.intro ? (
+              <>
+                <Text style={styles.eyebrow}>Your Legacy</Text>
+                <Text style={styles.introTitle}>Your Legacy{'\n'}starts here.</Text>
+                <Text style={styles.introBody}>
+                  Forge keeps the record as you train, achieve, and grow through every chapter of your journey.
+                </Text>
+              </>
+            ) : null}
+            {/* A skipped Chapter I already exists and holds the workouts, so starting it NAMES it — a
+                second chapter would be refused by `chapters_one_active_per_athlete` anyway. */}
+            <PrimaryInvite
+              symbol="book"
+              title="Start Your First Chapter"
+              body="Define what you’re working toward."
+              onPress={() =>
+                reveal.chapterStartsByRename && chapter
+                  ? router.push({ pathname: '/chapter/[id]', params: { id: chapter.id, rename: '1' } })
+                  : router.push('/chapter/new')
+              }
+            />
+          </View>
         ) : (
           /*
            * ⚠ NO ACTIVE CHAPTER USED TO RENDER NOTHING AT ALL, AND THAT IS HOW A DEAD END HIDES.
            *
-           * This was `{chapter ? <CurrentChapter/> : null}`. Sealing a chapter left this section — and
-           * the timeline block below it, which carries the same guard — simply absent, so the Legacy hub
-           * quietly lost its spine and offered no way to get it back. L-5 §2 names this exact card
-           * ("L-1 Legacy Hub · Start a Chapter · Invitation card, no active chapter"); it was specified
-           * in June and never built, which is why sealing was a one-way door.
-           *
-           * An absent value renders nothing, so nothing looks broken. That is the standing lesson of this
-           * codebase, and it cost the PO a confused evening.
+           * Sealing a chapter left this section simply absent, so the Legacy hub quietly lost its spine
+           * and offered no way to get it back. L-5 §2 names this exact card ("L-1 Legacy Hub · Start a
+           * Chapter · Invitation card, no active chapter"). An absent value renders nothing, so nothing
+           * looks broken — the standing lesson of this codebase.
            */
           <View style={styles.sectionPad}>
             <View style={styles.inviteCard}>
@@ -381,32 +405,45 @@ export default function LegacyScreen() {
           </View>
         )}
 
-        {/* ── PINNED LEGACY · My Museum (real pins + L-13 pin manager) ── */}
-        <TourAnchor id="legacy-pinned" style={styles.section}>
-          <View style={styles.sectionHeaderPad}>
-            <SectionHeader label="Pinned Legacy" action="Edit" onAction={() => setPinManager(true)} />
-          </View>
-          <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
-            {data.pinned.map((pin) => (
-              <PinnedCard
-                key={pin.id}
-                pin={pin}
-                onPress={() => openPin(pin)}
-              />
-            ))}
-            <Pressable
-              onPress={() => setPinManager(true)}
-              accessibilityRole="button"
-              accessibilityLabel="Pin an item to your Legacy"
-              style={styles.pinTile}
-            >
-              <View style={styles.pinPlus}>
-                <PlusIcon color={flColor.bronze400} />
+        {/* ── START BUILDING — a brand-new athlete with a chapter. One recommended action, two optional. ── */}
+        {reveal.startBuilding ? (
+          <View style={styles.sectionPad}>
+            <View style={styles.startModule}>
+              <Text style={styles.eyebrow}>Start Building Your Legacy</Text>
+              <Text style={styles.moduleSub}>Add the first piece to bring your journey to life.</Text>
+              <PrimaryInvite icon="camera" title="Add a Progress Photo" body="Capture where you’re starting." onPress={() => router.push('/transformation-add')} />
+              <View style={styles.smallRow}>
+                <SmallInvite icon="trophy" title="Add an Accomplishment" body="Something you’re already proud of." onPress={() => router.push('/accomplishments')} />
+                <SmallInvite icon="quote" title="Add a Quote" body="Words to carry with you." onPress={() => setStdOpen(true)} />
               </View>
-              <Text style={styles.pinText}>Pin an item</Text>
-            </Pressable>
-          </ScrollView>
-        </TourAnchor>
+            </View>
+          </View>
+        ) : null}
+
+        {/* ── PINNED LEGACY · My Museum — once curating is a real choice ── */}
+        {reveal.pinned ? (
+          <TourAnchor id="legacy-pinned" style={styles.section}>
+            <View style={styles.sectionHeaderPad}>
+              <SectionHeader label="Pinned Legacy" action="Edit" onAction={() => setPinManager(true)} />
+            </View>
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+              {data.pinned.map((pin) => (
+                <PinnedCard key={pin.id} pin={pin} onPress={() => openPin(pin)} />
+              ))}
+              <Pressable
+                onPress={() => setPinManager(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Pin an item to your Legacy"
+                style={styles.pinTile}
+              >
+                <View style={styles.pinPlus}>
+                  <PlusIcon color={flColor.bronze400} />
+                </View>
+                <Text style={styles.pinText}>Pin an item</Text>
+              </Pressable>
+            </ScrollView>
+          </TourAnchor>
+        ) : null}
 
         {/* ── FEATURED LEGACY MOMENT ── */}
         {data.featuredMoment ? (
@@ -419,6 +456,120 @@ export default function LegacyScreen() {
           </TourAnchor>
         ) : null}
 
+        {/* My Standard — the creed, once written; tap opens the L-12 editor sheet. Before it exists it is
+            invited from the start module or the Add row, never drawn empty. */}
+        {reveal.quote ? (
+          <TourAnchor id="legacy-standard">
+            <MyStandard standard={data.standard} onEdit={() => setStdOpen(true)} />
+          </TourAnchor>
+        ) : null}
+
+        {/* ── WHAT ENDURES — what you did that mattered, then the archives. Order follows the PO's
+             hierarchy (09-29): chapter → pinned memories → accomplishments/honors → transformation → history. */}
+        {hasEndures ? (
+          <View style={styles.enduresStack}>
+            {/* Accomplishments — once one exists. Before that the door to L-12 is the Accomplishment
+                invitation (start module or Add row), so the section is never the only way in. */}
+            {reveal.accomplishments ? (
+              <TourAnchor id={collectionsAnchor === 'accomplishments' ? 'legacy-collections' : undefined}>
+                <View style={styles.sectionHeaderPad}>
+                  <SectionHeader label="Accomplishments" action="View all" onAction={() => router.push('/accomplishments')} />
+                </View>
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
+                  {/* A card opens ITS OWN accomplishment; "View all" above is the door to the list. */}
+                  {liveAccomplishments.map((a) => (
+                    <AccomplishmentCard
+                      key={a.id}
+                      item={a}
+                      onPress={() => router.push({ pathname: '/accomplishments', params: { id: a.id } })}
+                    />
+                  ))}
+                </ScrollView>
+              </TourAnchor>
+            ) : null}
+
+            {/* Honors — earned only, never invited (LEG-A1-D4). */}
+            {reveal.honors ? (
+              <TourAnchor id={collectionsAnchor === 'honors' ? 'legacy-collections' : undefined}>
+                <View style={styles.sectionHeaderPad}>
+                  <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
+                </View>
+                {/* The six most recent only — the Hub is where the full set lives. */}
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
+                  {data.honors.slice(0, 6).map((h) => (
+                    <HonorInsignia key={h.id} honor={h} onPress={() => router.push('/honors')} />
+                  ))}
+                </ScrollView>
+              </TourAnchor>
+            ) : null}
+            {reveal.transformationTile || reveal.photosTile || reveal.trophyTile ? (
+              <View>
+                <View style={styles.sectionHeaderPad}>
+                  <SectionHeader label="What Endures" />
+                </View>
+                <TourAnchor id="legacy-endures">
+                  <LegacyArchiveBand
+                    archive={archive}
+                    show={{ transformation: reveal.transformationTile, photos: reveal.photosTile, trophies: reveal.trophyTile }}
+                    onTransformation={() => router.push('/transformation')}
+                    onPhotos={() => router.push('/photos')}
+                    onTrophies={() => router.push('/trophy-case')}
+                  />
+                </TourAnchor>
+              </View>
+            ) : null}
+
+          </View>
+        ) : null}
+
+        {/*
+          ── RECENT LEGACY — what mattered, not what was done ──
+
+          Workouts record what you did; Legacy records what mattered (PO, 2026-09-29). The rows are the
+          timeline's own meaningful events: honors, real PRs (records-core's definition, never a first
+          baseline), goals, rank-ups, photos, accomplishments, seals. The latest workout stands in ONLY
+          until the first of those exists, so the first session still proves Forge remembered it.
+        */}
+        {reveal.recentLegacy ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHeaderPad}>
+              {reveal.recentLegacy === 'events' ? (
+                <SectionHeader
+                  label="Recent Legacy"
+                  action={reveal.timeline ? 'Timeline' : undefined}
+                  onAction={reveal.timeline ? () => router.push('/legacy-timeline') : undefined}
+                />
+              ) : (
+                <SectionHeader label="Recent Legacy" action="View all" onAction={() => router.push('/activity-history')} />
+              )}
+            </View>
+            <View style={styles.activityList}>
+              {reveal.recentLegacy === 'events'
+                ? recentEvents.map((e) => {
+                    const r = e.route;
+                    return (
+                      <LegacyRow
+                        key={e.id}
+                        symbol={EVENT_SYMBOL[e.kind]}
+                        title={e.title}
+                        meta={[activityDayLabel(e.at), e.sub].filter(Boolean).join(' · ')}
+                        onPress={r ? () => router.push({ pathname: r.pathname, params: r.params } as Parameters<typeof router.push>[0]) : undefined}
+                      />
+                    );
+                  })
+                : data.recentWorkouts.slice(0, 1).map((w) => (
+                    <LegacyRow
+                      key={w.id}
+                      symbol="dumbbell"
+                      title={`Completed ${w.title}`}
+                      meta={[activityDayLabel(w.savedAt), w.durationSec ? fmtDuration(w.durationSec) : null].filter(Boolean).join(' · ')}
+                      onPress={() => router.push({ pathname: '/activity/[id]', params: { id: w.id } })}
+                    />
+                  ))}
+            </View>
+          </View>
+        ) : null}
+
         {/* ── MY STORY · sealed chapters ── */}
         {recentSeal ? (
           <TourAnchor id="legacy-story" style={[styles.sectionPad, styles.storyStack]}>
@@ -429,138 +580,42 @@ export default function LegacyScreen() {
           </TourAnchor>
         ) : null}
 
-        {/* ── TIMELINE ── its own section, not nested under sealed chapters.
-             It used to live inside the block above, so the route to L-2 only existed once you had SEALED
-             a chapter — and then only if `timeline_events` had rows. Both gates were wrong. The timeline
-             is most worth reading WHILE a chapter is being lived, and the screen derives its opening and
-             every PR from columns that exist from the first workout, so it has content long before the
-             first seal. The preview still waits for something stored to preview; the way in does not. */}
-        {chapter ? (
+        {/* ── ADD TO YOUR LEGACY — compact; each tile retires on its own (LEG-A1-D5) ── */}
+        {reveal.addRow ? (
           <View style={styles.sectionPad}>
-            <View style={styles.timelineBlock}>
-              {data.timelineEntries.length > 0 ? (
-                <>
-                  <Text style={styles.overlineTight}>Recent</Text>
-                  <View>
-                    {data.timelineEntries.map((it) => (
-                      <TimelineRow key={it.id} entry={it} />
-                    ))}
-                  </View>
-                </>
+            {reveal.intro ? (
+              <View style={styles.orRule}>
+                <View style={styles.orLine} />
+                <Text style={styles.orText}>or</Text>
+                <View style={styles.orLine} />
+              </View>
+            ) : null}
+            <View style={styles.addPanel}>
+              <Text style={styles.eyebrow}>Add to Your Legacy</Text>
+              {reveal.chapter !== 'hero' ? (
+                <Text style={styles.moduleSub}>You don’t need a chapter to start. Add a piece anytime.</Text>
               ) : null}
-              <Pressable
-                onPress={() => router.push('/legacy-timeline')}
-                accessibilityRole="button"
-                accessibilityLabel="View full timeline"
-                style={styles.viewTimeline}
-              >
-                <Text style={styles.viewTimelineText}>View Full Timeline</Text>
-                <ChevronRightIcon size={15} color={forgeOr(flColor.bronze400, flColor.gray600)} />
-              </Pressable>
+              <View style={styles.addRow}>
+                {reveal.addRow.photo ? <CompactInvite icon="camera" label="Progress Photo" onPress={() => router.push('/transformation-add')} /> : null}
+                {reveal.addRow.accomplishment ? <CompactInvite icon="trophy" label="Accomplishment" onPress={() => router.push('/accomplishments')} /> : null}
+                {reveal.addRow.quote ? <CompactInvite icon="quote" label="Quote" onPress={() => setStdOpen(true)} /> : null}
+              </View>
             </View>
           </View>
         ) : null}
 
-        {/* ── WHAT ENDURES ── */}
-        <View style={styles.enduresStack}>
-          <View>
-            <View style={styles.sectionHeaderPad}>
-              <SectionHeader label="What Endures" />
+        {/* Closing inscription — only once there is a record to close. An early page is simply finished;
+            whitespace is the ending, not a line of decoration under three cards. */}
+        {reveal.inscription ? (
+          <View style={styles.closing}>
+            <View style={styles.closingRule}>
+              <View style={styles.closingLine} />
+              <View style={styles.closingDiamond} />
+              <View style={styles.closingLine} />
             </View>
-            <TourAnchor id="legacy-endures">
-              <LegacyArchiveBand
-                archive={archive}
-                onTransformation={() => router.push('/transformation')}
-                onPhotos={() => router.push('/photos')}
-                onTrophies={() => router.push('/trophy-case')}
-              />
-            </TourAnchor>
+            <Text style={styles.closingText}>Memories can be added. History cannot be rewritten.</Text>
           </View>
-
-          {/*
-            ── ACCOMPLISHMENTS — live (0023), and the section NO LONGER HIDES WHEN EMPTY ──
-
-            It used to, and that closed the only door to L-12. Every route into `/accomplishments` —
-            the "View all" action, a card tap, and a pinned-item tap — sat INSIDE this conditional, so
-            an athlete with zero accomplishments had no way to reach the screen where you add one. You
-            needed an accomplishment to add an accomplishment. Reported by the PO looking for where to
-            put a deadlift he hit months ago, which is exactly the case this feature exists for: an
-            accomplishment takes any date, and most of an athlete's best work predates the app.
-
-            The empty state is a real invitation rather than a placeholder card, so nothing here draws
-            a thing that isn't there.
-
-            HONORS BELOW STAYS HIDDEN WHEN EMPTY, deliberately — the two are not symmetrical. An honor
-            is EARNED and cannot be authored, so an empty honors section offers nothing to do; it would
-            be a list of things you haven't done, which is the same reasoning that keeps the honor
-            catalogue screen unbuilt.
-          */}
-          <TourAnchor id={collectionsAnchor === 'accomplishments' ? 'legacy-collections' : undefined}>
-            <View style={styles.sectionHeaderPad}>
-              <SectionHeader
-                label="Accomplishments"
-                action={liveAccomplishments.length > 0 ? 'View all' : 'Add'}
-                onAction={() => router.push('/accomplishments')}
-              />
-            </View>
-            {liveAccomplishments.length > 0 ? (
-              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stripPad}>
-                {/* A card opens ITS OWN accomplishment. It used to push the bare route, which landed on
-                    the full list and left the athlete to find again the thing they had just tapped.
-                    "View all" above is the door to the list, and it keeps that job. */}
-                {liveAccomplishments.map((a) => (
-                  <AccomplishmentCard
-                    key={a.id}
-                    item={a}
-                    onPress={() => router.push({ pathname: '/accomplishments', params: { id: a.id } })}
-                  />
-                ))}
-              </ScrollView>
-            ) : (
-              <View style={styles.sectionHeaderPad}>
-                <Pressable
-                  onPress={() => router.push('/accomplishments')}
-                  accessibilityRole="button"
-                  accessibilityLabel="Add an accomplishment"
-                  style={({ pressed }) => [styles.accEmpty, pressed ? styles.accEmptyPressed : null]}
-                >
-                  <Text style={styles.accEmptyTitle}>Add what you’ve already done</Text>
-                  <Text style={styles.accEmptyBody}>
-                    A lift, a race, a milestone — it doesn’t have to have happened in Forge. Give it the date it
-                    really happened and it takes its place on your Legacy.
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-          </TourAnchor>
-
-          {/* Honors — reserved from the workout card, legitimate here; art is pending-asset */}
-          {data.honors.length > 0 ? (
-            <TourAnchor id={collectionsAnchor === 'honors' ? 'legacy-collections' : undefined}>
-              <View style={styles.sectionHeaderPad}>
-                <SectionHeader label="Honors" action="View all" onAction={() => router.push('/honors')} />
-              </View>
-              {/* The six most recent only. `legacy-live` returns every honor newest-first (and
-                  `totalHonorCount` still counts them all) — an unbounded strip turns into a very long
-                  swipe the moment the catalog starts landing, and the Hub is where the full set lives. */}
-              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.honorStripPad}>
-                {data.honors.slice(0, 6).map((h) => (
-                  <HonorInsignia key={h.id} honor={h} onPress={() => router.push('/honors')} />
-                ))}
-              </ScrollView>
-            </TourAnchor>
-          ) : null}
-        </View>
-
-        {/* Closing inscription */}
-        <View style={styles.closing}>
-          <View style={styles.closingRule}>
-            <View style={styles.closingLine} />
-            <View style={styles.closingDiamond} />
-            <View style={styles.closingLine} />
-          </View>
-          <Text style={styles.closingText}>Memories can be added. History cannot be rewritten.</Text>
-        </View>
+        ) : null}
       </Animated.ScrollView>
 
       <ScreenTour screenKey="legacy" restingBottom={108} />
@@ -707,7 +762,7 @@ function SealPortrait({ name, src }: { name: string; src?: string | null }) {
   return (
     <View style={styles.portraitWrap}>
       {/* decorative rank-seal ring framing the portrait (faint geometric, not a fabricated badge) */}
-      <Svg width={90} height={90} viewBox="0 0 90 90" style={StyleSheet.absoluteFill}>
+      <Svg width={60} height={60} viewBox="0 0 90 90" style={StyleSheet.absoluteFill}>
         <Circle cx={45} cy={45} r={43} stroke={flColor.bronze400} strokeWidth={1} opacity={0.16} fill="none" />
         <Circle cx={45} cy={45} r={37} stroke={flColor.bronze400} strokeWidth={1} opacity={0.1} fill="none" />
         <Rect x={31} y={31} width={28} height={28} stroke={flColor.bronze400} strokeWidth={1} opacity={0.12} fill="none" transform="rotate(45 45 45)" />
@@ -754,7 +809,7 @@ function ProgressBadge({ rankFamily, rankLevel, sex, onPress }: { rankFamily?: R
         {badge != null ? (
           <Image source={badge} style={styles.badgeArt} contentFit="contain" />
         ) : rankFamily ? (
-          <RankSeal family={rankFamily} level={level} size={68} />
+          <RankSeal family={rankFamily} level={level} size={42} />
         ) : (
           <Svg width={38} height={52} viewBox="0 0 38 52">
             <Path d="M4 6 L34 6 L34 30 Q34 44 19 50 Q4 44 4 30 Z" stroke={flColor.bronze400} strokeWidth={1.2} opacity={0.4} fill="none" />
@@ -793,74 +848,333 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
   );
 }
 /**
- * One first-run invitation — `Legacy-Amendment-001` LEG-A1-D2.
+ * The current chapter as the page's hero — `Legacy-Amendment-002`.
  *
- * ⚠ A CARD, AND THAT IS THE CORRECT CONTAINER HERE. The house rule is that cards are for things you
- * act INSIDE of and plain information gets a section label instead — which is exactly why the
- * "what will be written" list drafted earlier was wrong. Every one of these is a control: it is
- * pressable, it opens the real surface that creates the thing, and it disappears once that thing
- * exists. Nothing on it is a preview of absent content.
+ * Real data only: the ordinal and title split from the stored name, the day and workout tally, and the
+ * primary goal when one exists. ⚠ THE BAR IS DRAWN ONLY FOR A QUANTIFIABLE GOAL — that is the one case
+ * with real progress behind it. A chapter with no goal gets no bar and no percentage.
+ *
+ * The mountain plate sits on the card's right and fades into the card surface through `themeScrim`, so
+ * Alabaster gets its own paper plate and cream fade rather than a dark rectangle.
  */
-function Invitation({ title, body, onPress }: { title: string; body: string; onPress: () => void }) {
+function ChapterHero({ chapter, dayCount, onOpen }: { chapter: Chapter; dayCount: number; onOpen: () => void }) {
+  const { prefix, title } = splitChapterName(chapter.name);
+  const goal = chapter.goal;
+  const value = goalValue(goal);
+  const meta = [
+    `Day ${dayCount}`,
+    `${chapter.workoutCount} ${chapter.workoutCount === 1 ? 'workout' : 'workouts'}`,
+    chapter.honorCount > 0 ? `${chapter.honorCount} ${chapter.honorCount === 1 ? 'honor' : 'honors'}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
   return (
-    <View style={styles.sectionPad}>
-      <Pressable
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel={`${title}. ${body}`}
-        style={({ pressed }) => [styles.invite, pressed ? styles.invitePressed : null]}
-      >
-        <View style={styles.inviteText}>
-          <Text style={styles.inviteHeading}>{title}</Text>
-          <Text style={styles.inviteSub}>{body}</Text>
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`${chapter.name}. ${meta}. View chapter.`}
+      style={({ pressed }) => [styles.heroCard, pressed ? styles.cardPressed : null]}
+    >
+      <Image source={SCREEN_BG.legacyMountains} style={styles.heroArt} contentFit="cover" contentPosition="right" accessible={false} />
+      <LinearGradient
+        pointerEvents="none"
+        colors={[themeScrim('rgba(12,11,9,0.96)'), themeScrim('rgba(12,11,9,0.72)'), themeScrim('rgba(12,11,9,0.18)')]}
+        locations={[0, 0.5, 1]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.heroTop}>
+        <Text style={styles.heroOrdinal}>{prefix}</Text>
+        <View style={styles.heroPill}>
+          <Text style={styles.heroPillText}>View Chapter</Text>
+          <ChevronRightIcon size={10} color={forgeOr(flColor.bronze300, flColor.bronzeInk)} />
         </View>
-        <Text style={styles.inviteChevron}>›</Text>
-      </Pressable>
+      </View>
+      <Text style={styles.heroTitle} numberOfLines={2}>
+        {title}
+      </Text>
+      <Text style={styles.heroMeta}>{meta}</Text>
+      {goal.kind !== 'none' ? (
+        <View style={styles.heroGoal}>
+          <Text style={styles.heroGoalText}>
+            {goal.name}
+            {value ? <Text style={styles.heroGoalValue}>{`  ${value}`}</Text> : null}
+          </Text>
+          {goal.kind === 'quantifiable' ? (
+            <ProgressBar value={goal.progress} max={100} height={6} label={`${goal.progress}% to goal`} />
+          ) : null}
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+/**
+ * The strongest invitation on the screen — the recommended next step. A card because it is a control
+ * (the house rule: cards are for acting inside of), bronze because it is the one thing being recommended.
+ */
+function PrimaryInvite({
+  icon,
+  symbol,
+  title,
+  body,
+  onPress,
+}: {
+  icon?: EngravedName;
+  symbol?: SymbolName;
+  title: string;
+  body: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${body}`}
+      style={({ pressed }) => [styles.primaryInvite, pressed ? styles.cardPressed : null]}
+    >
+      <View style={styles.primaryIcon}>
+        {symbol ? (
+          <ForgeSymbol name={symbol} size={24} color={flColor.bronze300} strokeWidth={1.6} />
+        ) : icon ? (
+          <EngravedIcon name={icon} size={24} color={flColor.bronze300} />
+        ) : null}
+      </View>
+      <View style={styles.inviteText}>
+        <Text style={styles.primaryTitle}>{title}</Text>
+        <Text style={styles.inviteSub}>{body}</Text>
+      </View>
+      <ChevronRightIcon size={16} color={forgeOr(flColor.bronze400, flColor.bronzeInk)} />
+    </Pressable>
+  );
+}
+
+/** One of the two optional pieces beside the recommended one — quieter by design, never a checklist row. */
+function SmallInvite({ icon, title, body, onPress }: { icon: EngravedName; title: string; body: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${body}`}
+      style={({ pressed }) => [styles.smallInvite, pressed ? styles.cardPressed : null]}
+    >
+      <EngravedIcon name={icon} size={20} color={flColor.bronze400} />
+      <Text style={styles.smallTitle}>{title}</Text>
+      <Text style={styles.inviteSub}>{body}</Text>
+    </Pressable>
+  );
+}
+
+/** A compact "Add to your Legacy" tile — icon over a one-word label. Each retires on its own. */
+function CompactInvite({ icon, label, onPress }: { icon: EngravedName; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Add ${label.toLowerCase()}`}
+      style={({ pressed }) => [styles.compactInvite, pressed ? styles.cardPressed : null]}
+    >
+      <EngravedIcon name={icon} size={22} color={flColor.bronze400} />
+      <Text style={styles.compactLabel} numberOfLines={2}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+/**
+ * One Recent Legacy row: an engraved medallion, what happened, and when. A row whose record has no
+ * screen of its own (a PR) is not pressable and carries no chevron, so nothing promises a tap it can't keep.
+ */
+function LegacyRow({ symbol, title, meta, onPress }: { symbol: SymbolName; title: string; meta: string; onPress?: () => void }) {
+  const body = (
+    <>
+      <View style={styles.activityIcon}>
+        <ForgeSymbol name={symbol} size={19} color={flColor.bronze300} strokeWidth={1.6} />
+      </View>
+      <View style={styles.inviteText}>
+        <Text style={styles.activityTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        {meta ? <Text style={styles.inviteSub}>{meta}</Text> : null}
+      </View>
+      {onPress ? <ChevronRightIcon size={14} color={forgeOr(flColor.bronze400, flColor.gray600)} /> : null}
+    </>
+  );
+  return onPress ? (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${meta}`}
+      style={({ pressed }) => [styles.activityRow, pressed ? styles.cardPressed : null]}
+    >
+      {body}
+    </Pressable>
+  ) : (
+    <View style={styles.activityRow} accessible accessibilityLabel={`${title}. ${meta}`}>
+      {body}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // ── First run (Legacy-Amendment-001) ───────────────────────────────────────
-  firstRunEyebrow: {
+  // ── Progressive reveal (Legacy-Amendment-002) ─────────────────────────────
+  sectionPadTight: { marginTop: 26, paddingHorizontal: 24 },
+  eyebrow: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: 2,
     textTransform: 'uppercase',
     color: flColor.labelInk,
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  firstRunTitle: {
+  introTitle: {
     fontFamily: flFont.display,
-    fontSize: 34,
+    fontSize: 36,
     fontWeight: '600',
-    lineHeight: 38,
+    lineHeight: 40,
     letterSpacing: -0.4,
     color: flColor.cream100,
   },
-  firstRunBody: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: flColor.gray400,
-    marginTop: 12,
-    maxWidth: 300,
-  },
-  invite: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 15,
-    borderRadius: flRadius.md,
-    backgroundColor: flColor.charcoal800,
+  introBody: { fontSize: 14, lineHeight: 21, color: flColor.gray400, marginTop: 12, marginBottom: 22, maxWidth: 310 },
+  cardPressed: { opacity: 0.8 },
+
+  // chapter hero
+  heroCard: {
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: 180,
+    padding: 20,
+    borderRadius: flRadius.xl,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
-    marginTop: 10,
+    backgroundColor: flColor.surfaceRecessed,
+    boxShadow: flShadow.card,
   },
-  invitePressed: { backgroundColor: flColor.charcoal700 },
+  heroArt: { position: 'absolute', top: 0, bottom: 0, right: 0, width: '78%', opacity: 0.9 },
+  heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  heroOrdinal: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.gray400 },
+  heroPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: flRadius.pill,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: themeScrim('rgba(8,11,14,0.55)'),
+  },
+  heroPillText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: forgeOr<string>(flColor.bronze300, flColor.bronzeInk) },
+  heroTitle: {
+    fontFamily: flFont.display,
+    fontSize: 32,
+    fontWeight: '600',
+    lineHeight: 36,
+    letterSpacing: -0.4,
+    color: flColor.cream100,
+    marginTop: 12,
+    maxWidth: '82%',
+  },
+  heroMeta: { fontSize: 13, fontWeight: '500', color: flColor.gray400, marginTop: 12 },
+  heroGoal: { marginTop: 14, gap: 10, maxWidth: '88%' },
+  heroGoalText: { fontSize: 14, lineHeight: 20, color: flColor.cream100 },
+  heroGoalValue: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
+
+  // start module + invitations
+  startModule: {
+    padding: 16,
+    borderRadius: flRadius.xl,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: themeScrim('rgba(8,11,14,0.55)'),
+  },
+  moduleSub: { fontSize: 13, lineHeight: 19, color: flColor.gray400, marginTop: -4, marginBottom: 14 },
+  primaryInvite: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorder,
+    backgroundColor: flColor.bronzeTint,
+    boxShadow: flShadow.glowSubtle,
+  },
+  primaryIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: flRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: themeScrim('rgba(8,11,14,0.45)'),
+  },
+  primaryTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   inviteText: { flex: 1, minWidth: 0 },
-  inviteHeading: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   inviteSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 3 },
-  inviteChevron: { fontSize: 18, color: flColor.bronzeInk },
+  smallRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  smallInvite: {
+    flex: 1,
+    gap: 6,
+    padding: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  smallTitle: { fontSize: 14, fontWeight: '600', color: flColor.cream100, marginTop: 4 },
+
+  // "or" + the compact add row
+  orRule: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: -18, marginBottom: 22, paddingHorizontal: 30 },
+  orLine: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
+  orText: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
+  addPanel: {
+    padding: 16,
+    borderRadius: flRadius.xl,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: themeScrim('rgba(8,11,14,0.45)'),
+  },
+  addRow: { flexDirection: 'row', gap: 10 },
+  compactInvite: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  compactLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center', color: flColor.cream100 },
+
+  // recent activity
+  activityList: { gap: 10, paddingHorizontal: 24, paddingTop: 8 },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 14,
+    borderRadius: flRadius.lg,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.charcoal800,
+  },
+  activityIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: flRadius.round,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  activityTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
 
   root: { flex: 1 },
   scroll: { paddingBottom: TAB_SCREEN_BOTTOM_GAP },
@@ -877,13 +1191,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingTop: 8,
     paddingBottom: 2,
   },
-  portraitWrap: { width: 90, height: 90, alignItems: 'center', justifyContent: 'center' },
+  portraitWrap: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
   portrait: {
-    width: 72,
-    height: 72,
+    width: 48,
+    height: 48,
     borderRadius: flRadius.round,
     borderWidth: 1.5,
     borderColor: flColor.bronzeBorder,
@@ -896,19 +1210,18 @@ const styles = StyleSheet.create({
   portraitImage: { width: '100%', height: '100%' },
   portraitInitials: {
     fontFamily: flFont.display,
-    fontSize: 24,
+    fontSize: 17,
     fontWeight: '600',
     color: flColor.bronze300,
   },
-  identityText: { flex: 1, minWidth: 0, gap: 7 },
+  identityText: { flex: 1, minWidth: 0, gap: 5 },
   athleteName: {
     fontFamily: flFont.display,
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
     color: flColor.cream100,
   },
-  identitySub: { fontSize: 11.5, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400 },
   rankMarker: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   rankDiamond: { width: 6, height: 6, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
   rankText: {
@@ -927,11 +1240,11 @@ const styles = StyleSheet.create({
    * there — and the name already carries `numberOfLines={1}`. A minimum keeps the badge's alignment
    * with the portrait for athletes whose rank art is narrower.
    */
-  progressBadge: { minWidth: 76, alignItems: 'center', gap: 6 },
+  progressBadge: { minWidth: 68, alignItems: 'center', gap: 4 },
   /* The row's real flex child. See the note at the `TourAnchor` and the one inside `ProgressBadge`. */
   badgeAnchor: { flexShrink: 0 },
-  badgeShield: { width: 66, height: 92, alignItems: 'center', justifyContent: 'center' },
-  badgeArt: { width: 66, height: 92 },
+  badgeShield: { width: 40, height: 56, alignItems: 'center', justifyContent: 'center' },
+  badgeArt: { width: 40, height: 56 },
   progressPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -966,12 +1279,6 @@ const styles = StyleSheet.create({
   inviteBtn: { marginTop: 20, paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint, alignItems: 'center' },
   inviteBtnText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
   stripPad: { gap: 12, paddingHorizontal: 24, paddingTop: 8 },
-  // The empty Accomplishments invitation — dashed, so it reads as a slot to fill rather than a card
-  // that already holds something.
-  accEmpty: { padding: 16, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
-  accEmptyPressed: { opacity: 0.75 },
-  accEmptyTitle: { fontFamily: flFont.display, fontSize: 15.5, fontWeight: '600', color: flColor.bronze300 },
-  accEmptyBody: { marginTop: 6, fontSize: 12.5, lineHeight: 18.5, color: flColor.gray600 },
   honorStripPad: { gap: 18, paddingHorizontal: 24, paddingTop: 10 },
   overline: {
     fontSize: 10,
@@ -981,15 +1288,6 @@ const styles = StyleSheet.create({
     color: flColor.gray600,
     paddingBottom: 12,
     paddingHorizontal: 2,
-  },
-  overlineTight: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 1.8,
-    textTransform: 'uppercase',
-    color: flColor.gray600,
-    paddingHorizontal: 2,
-    paddingBottom: 4,
   },
 
   // pinned
@@ -1081,9 +1379,6 @@ const styles = StyleSheet.create({
 
   // my story
   storyStack: { gap: 12 },
-  timelineBlock: { paddingTop: 16 },
-  viewTimeline: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 12, paddingHorizontal: 6 },
-  viewTimelineText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   // what endures
   enduresStack: { marginTop: 46, gap: 26 },

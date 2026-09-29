@@ -261,7 +261,18 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     autoPost: { friends: false, squadIds: [], asked: false },
     // PO, 2026-09-28: spoken mile splits on every run — ON, and absence means on.
     runVoice: true,
+    // Holt talks during workouts unless the athlete turns him off. Absence (every stored blob) = on.
+    holtInWorkout: 'on',
   });
+});
+
+test('holtInWorkout: only on/off survive, and absence is on', () => {
+  assert.equal(sanitizePrefs({ holtInWorkout: 'off' }).holtInWorkout, 'off');
+  assert.equal(sanitizePrefs({ holtInWorkout: 'on' }).holtInWorkout, 'on');
+  assert.equal(sanitizePrefs({ holtInWorkout: 'mute' }).holtInWorkout, 'on');
+  assert.equal(sanitizePrefs({}).holtInWorkout, 'on');
+  // Off is its own key, never a level: the dial keeps its place while Holt is off.
+  assert.equal(sanitizePrefs({ holtInWorkout: 'off', coachIntensity: 'push' }).coachIntensity, 'push');
 });
 
 test('exactly the toggles with a real consumer today are marked live', () => {
@@ -280,7 +291,7 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false }, runVoice: true });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false }, runVoice: true, holtInWorkout: 'on' });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
 });

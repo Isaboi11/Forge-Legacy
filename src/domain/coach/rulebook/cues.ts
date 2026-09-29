@@ -75,6 +75,54 @@ export interface CueInput {
   experience: Experience;
   /** True for the day's opening lift. It carries the intent; accessories carry technique only. */
   isPrimary: boolean;
+  /**
+   * The exercise itself — its catalogue name and `equipmentId`. Optional so a caller that only knows the
+   * pattern still gets the pattern's line, but every builder passes it (QA holtai-04, 2026-09-26).
+   */
+  name?: string;
+  equipId?: string;
+}
+
+/**
+ * ══ THE PATTERN'S LINE IS WRONG FOR HALF THE PATTERN (QA holtai-04) ══
+ *
+ * A pattern is a family, and one sentence cannot coach all of it. A push-up was told *"Shoulder blades
+ * pinned to the bench"*, a glute bridge *"Hips back, bar close"*, a walking lunge *"chest stays proud out
+ * of the hole"* — each the right cue for the family's barbell member, read out to an athlete doing
+ * something else. So a variant is matched on the exercise's own name first, and the pattern's line is
+ * only the fallback. First match wins; order is specific → general.
+ */
+const VARIANTS: readonly (readonly [pattern: string, name: RegExp, line: string])[] = [
+  ['Horizontal Push', /\b(fly|flye|crossover|pec deck)\b/i, 'Soft bend in the elbows, fixed the whole way. Open wide, then hug it back together — chest, not arms.'],
+  ['Horizontal Push', /\bdips?\b/i, 'Shoulders down, away from the ears. Lower under control, then press back up without shrugging.'],
+  ['Horizontal Push', /push-?ups?\b/i, 'Body in one straight line from head to heels. Hands under the shoulders, elbows tucked to about 45°, not flared.'],
+  ['Horizontal Push', /floor press/i, 'Shoulder blades pinned to the floor. Elbows tucked to about 45°, and let the upper arm touch down softly.'],
+  ['Horizontal Push', /bench|guillotine|larsen|spoto|board press|pin press/i, 'Shoulder blades pinned to the bench. Elbows tucked to about 45°, not flared.'],
+  ['Horizontal Push', /./, 'Shoulder blades set back and down. Elbows tucked to about 45°, not flared.'],
+  ['Hinge / Hip Dominant', /bridge|thrust|frog/i, 'Drive through the heels and squeeze the glutes at the top. Ribs down — the lower back should not arch to finish it.'],
+  ['Hinge / Hip Dominant', /swing/i, 'Hike it back, then snap the hips through. The arms only guide the weight — the hips send it.'],
+  ['Hinge / Hip Dominant', /curl|glute ham/i, 'Keep the hips still and control the way back. The hamstrings do the work, not a swing or a bend at the waist.'],
+  ['Hinge / Hip Dominant', /extension|superman/i, 'Move from the hips, not the low back. Stop at a straight line — no arching past it.'],
+  ['Hinge / Hip Dominant', /barbell|axle|trap|hex|smith/i, 'Hips back, bar close, spine flat. The stretch belongs in the hamstrings — never the low back.'],
+  ['Hinge / Hip Dominant', /./, 'Hips back, weight close to the legs, spine flat. The stretch belongs in the hamstrings — never the low back.'],
+  ['Squat / Knee Dominant', /lunge|split squat|step-?up|step-?down/i, 'Long enough stride to stay balanced. Front knee tracks over the toes, torso tall, drive through the whole front foot.'],
+  ['Squat / Knee Dominant', /leg press|leg extension|hack|pendulum|v-squat|belt squat|machine/i, 'Knees track over the toes through the whole range. Control the bottom — no bouncing out of it.'],
+];
+
+/**
+ * ⚠ **"BE VIOLENT OUT OF THE BOTTOM" IS A BARBELL SENTENCE.** Said over a bodyweight squat it is noise at
+ * best — there is nothing to be violent against at three reps — so unloaded work under a strength goal is
+ * told what makes it hard instead: control, then intent.
+ */
+const UNLOADED = new Set(['bodyweight', 'resistance_band', 'suspension_trainer']);
+const UNLOADED_STRENGTH_INTENT =
+  'Own every rep: steady on the way down, then drive up with intent. Stop the set while the form is still clean.';
+
+function techniqueFor(input: CueInput): string | null {
+  if (input.name) {
+    for (const [pattern, re, line] of VARIANTS) if (pattern === input.pattern && re.test(input.name)) return line;
+  }
+  return TECHNIQUE[input.pattern] ?? null;
 }
 
 /**
@@ -85,8 +133,9 @@ export interface CueInput {
  * set trains the athlete to ignore him.
  */
 export function cueFor(input: CueInput): string | null {
-  const technique = TECHNIQUE[input.pattern] ?? null;
-  const intent = INTENT[input.goal] ?? null;
+  const technique = techniqueFor(input);
+  const intent =
+    input.goal === 'strength' && input.equipId && UNLOADED.has(input.equipId) ? UNLOADED_STRENGTH_INTENT : (INTENT[input.goal] ?? null);
 
   // The opening lift is where the block's intent belongs: it is the set that carries the session.
   if (input.isPrimary && intent) {

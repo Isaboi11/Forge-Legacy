@@ -326,6 +326,14 @@ export const CONCERN = {
   pinHeldEquipment: (name: string): string =>
     `${name} needs kit you haven't told me you have — if you've got it, say so and it goes in.`,
   pinHeldExcluded: (name: string): string => `You asked me to leave ${name} out, so it's not in — say if that's changed.`,
+  /* QA holtai-04 → PO 2026-09-29: `knees` now removes squats and lunges as well as jumping. Holt says what
+     he LEFT OUT and what took its place — never "squats are still in". */
+  kneesLeftOut: (): string =>
+    "About your knees: I've left out squats, lunges, step-ups, leg presses and anything with jumping or landing. Your leg work is hip hinges, glute bridges and hamstring work instead.",
+  /* QA holtai-04 — a strength block with no pulling at all shipped without a word. When nothing the athlete
+     has can row or pull, the honest answer is to say so and name what fixes it. */
+  noPulling: (): string =>
+    "There's no pulling in this — nothing you've told me you have lets you row or pull up. A resistance band, a pair of dumbbells or a pull-up bar changes that; tell me if you've got one.",
   pinNoLiftDay: (name: string): string =>
     `There's no lifting day in that week for ${name} — give me one and it goes there.`,
   pinOverCeiling: (day: string): string =>
