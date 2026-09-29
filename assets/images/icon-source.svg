@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024"><defs>
+<linearGradient id="br" x1="0" y1="206" x2="0" y2="818" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#8A6033"></stop><stop offset=".45" stop-color="#BE8B4C"></stop><stop offset=".82" stop-color="#E2AE68"></stop><stop offset="1" stop-color="#F4CC8A"></stop></linearGradient>
+<radialGradient id="bg" cx="512" cy="930" r="820" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3C2513"></stop><stop offset=".42" stop-color="#19110B"></stop><stop offset="1" stop-color="#070605"></stop></radialGradient>
+<filter id="stone" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="4" seed="5"></feTurbulence><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 .92  0 0 0 0 .82  0 0 0 .45 -.2"></feColorMatrix></filter>
+<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="46"></feGaussianBlur></filter>
+<filter id="slot" x="-20%" y="-20%" width="140%" height="140%">
+ <feMorphology in="SourceAlpha" operator="dilate" radius="4" result="d"></feMorphology><feFlood flood-color="#050404"></feFlood><feComposite in2="d" operator="in" result="s"></feComposite>
+ <feGaussianBlur in="s" stdDeviation="3" result="sb0"></feGaussianBlur><feComponentTransfer in="sb0" result="sb"><feFuncA type="linear" slope=".8"></feFuncA></feComponentTransfer>
+ <feOffset in="d" dy="-3" result="d2"></feOffset><feComposite in="d" in2="d2" operator="out" result="lip"></feComposite><feFlood flood-color="#9A7A58" flood-opacity=".3"></feFlood><feComposite in2="lip" operator="in" result="lipc"></feComposite>
+ <feMerge><feMergeNode in="sb"></feMergeNode><feMergeNode in="lipc"></feMergeNode></feMerge></filter>
+<filter id="forged" x="-10%" y="-10%" width="120%" height="120%">
+ <feTurbulence type="fractalNoise" baseFrequency="0.022" numOctaves="2" seed="9" result="bump"></feTurbulence>
+ <feDiffuseLighting in="bump" surfaceScale="3" diffuseConstant="1" lighting-color="#fff" result="diff"><feDistantLight azimuth="270" elevation="58"></feDistantLight></feDiffuseLighting>
+ <feComposite in="diff" in2="SourceAlpha" operator="in" result="diffm"></feComposite>
+ <feBlend in="diffm" in2="SourceGraphic" mode="multiply" result="lit"></feBlend>
+ <feSpecularLighting in="bump" surfaceScale="3" specularConstant=".4" specularExponent="22" lighting-color="#FFE2B0" result="spec"><feDistantLight azimuth="270" elevation="48"></feDistantLight></feSpecularLighting>
+ <feComposite in="spec" in2="SourceAlpha" operator="in" result="specm"></feComposite>
+ <feComposite in="lit" in2="specm" operator="arithmetic" k2="1.02" k3=".28" result="metal"></feComposite>
+ <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="3" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .5 0" result="ng"></feColorMatrix><feComposite in="ng" in2="SourceAlpha" operator="in" result="grain"></feComposite>
+ <feBlend in="grain" in2="metal" mode="overlay" result="g"></feBlend>
+ <feOffset in="SourceAlpha" dy="5" result="o"></feOffset><feComposite in="SourceAlpha" in2="o" operator="out" result="te"></feComposite><feFlood flood-color="#FFE7BD" flood-opacity=".85"></feFlood><feComposite in2="te" operator="in" result="hi"></feComposite>
+ <feOffset in="SourceAlpha" dy="-4" result="o2"></feOffset><feComposite in="SourceAlpha" in2="o2" operator="out" result="be"></feComposite><feFlood flood-color="#2A1608" flood-opacity=".8"></feFlood><feComposite in2="be" operator="in" result="lo"></feComposite>
+ <feMerge><feMergeNode in="g"></feMergeNode><feMergeNode in="hi"></feMergeNode><feMergeNode in="lo"></feMergeNode></feMerge></filter>
+<linearGradient id="fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="1"></stop><stop offset=".55" stop-color="#fff" stop-opacity="0"></stop></linearGradient><mask id="topm"><rect width="1024" height="1024" fill="url(#fade)"></rect></mask></defs>
+<rect width="1024" height="1024" fill="url(#bg)"></rect>
+<rect width="1024" height="1024" filter="url(#stone)" opacity=".22" mask="url(#topm)"></rect><ellipse cx="512" cy="820" rx="250" ry="90" fill="#D8964A" opacity=".42" filter="url(#glow)"></ellipse>
+<g transform="translate(512 520) scale(.88) translate(-512 -512)"><g filter="url(#slot)"><path d="M314 450 L414 350 L414 818 L314 818 Z" fill="#000"></path><path d="M462 206 H562 V818 H462 Z" fill="#000"></path><path d="M610 350 L710 450 L710 818 L610 818 Z" fill="#000"></path></g><g filter="url(#forged)"><path d="M314 450 L414 350 L414 818 L314 818 Z" fill="url(#br)"></path><path d="M462 206 H562 V818 H462 Z" fill="url(#br)"></path><path d="M610 350 L710 450 L710 818 L610 818 Z" fill="url(#br)"></path></g></g>
+</svg>
