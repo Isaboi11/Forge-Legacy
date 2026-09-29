@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   card: { overflow: 'hidden', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 14, paddingVertical: 13 },
-  rowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowUnread: { backgroundColor: flColor.bronzeTint },
   rowPressed: { backgroundColor: flColor.charcoal700 },
 

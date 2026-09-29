@@ -6703,7 +6703,7 @@ const styles = StyleSheet.create({
   peek: { flex: 1, paddingHorizontal: SCREEN_GUTTER, paddingTop: 18, gap: 10, opacity: 0.55 },
   peekName: { fontSize: 21, fontWeight: '600', color: flColor.cream100 },
   peekSub: { fontSize: 12.5, color: flColor.gray400 },
-  peekRule: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 4 },
+  peekRule: { height: 1, backgroundColor: flColor.divider, marginTop: 4 },
   /**
    * ⚠ `paddingBottom` CLEARS THE COACH COIN, WHICH FLOATS OVER THIS SCROLL (W9-A13). PO: the coin sat
    * on top of the last set row's delete icon.
@@ -6763,7 +6763,7 @@ const styles = StyleSheet.create({
      here, because the height that clears this screen's action bar is this screen's business. */
 
   // progress band
-  band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   intervalBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -6874,7 +6874,7 @@ const styles = StyleSheet.create({
   sealStats: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   sealStatText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
   sealDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
-  sealNext: { marginTop: 5, paddingTop: 12, width: '100%', textAlign: 'center', borderTopWidth: 1, borderTopColor: flColor.charcoal600, fontSize: 10, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
+  sealNext: { marginTop: 5, paddingTop: 12, width: '100%', textAlign: 'center', borderTopWidth: 1, borderTopColor: flColor.divider, fontSize: 10, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
   sealNextName: { color: flColor.bronze400 },
 
   // PR prompt
@@ -7038,7 +7038,7 @@ const styles = StyleSheet.create({
      three unlike facts sit on one baseline. `1 / 1 / 1.25` because the note column carries prose and the
      other two carry a figure each; the note column simply is not rendered when there is no note, and the
      remaining two then split the card. */
-  plinth: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  plinth: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.surfaceRecessed },
   /**
    * ⚠ **THE THREE CELLS ARE 0.85 / 0.85 / 1.3 AND EACH HAS ITS OWN PADDING (W9-A12).** A10 and A11 gave
    * every column the same 10pt sides and let flex do the rest; the spec pads them individually so the
@@ -7164,7 +7164,7 @@ const styles = StyleSheet.create({
   /* Pending rows are separated by a hairline rather than by space — the row already carries a
      transparent 1pt border all round, so colouring the top edge costs no layout. Never on a done or
      current row: those draw their own full border and a rule would double it. */
-  rowRuled: { borderTopColor: flColor.charcoal600 },
+  rowRuled: { borderTopColor: flColor.divider },
   rowDone: { borderColor: 'rgba(90,158,104,0.35)', backgroundColor: 'rgba(90,158,104,0.06)' },
   rowCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   /* The six cells, left to right. `flexGrow: 0, flexShrink: 0` on every one: `space-between` may only
@@ -7314,7 +7314,7 @@ const styles = StyleSheet.create({
    */
   bottom: {
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal800,
     boxShadow: '0 -10px 22px rgba(0, 0, 0, 0.30)',
   },
@@ -7532,7 +7532,7 @@ const styles = StyleSheet.create({
   statBlock: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal800, gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
-  ceremonySection: { width: '100%', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 9 },
+  ceremonySection: { width: '100%', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.divider, gap: 9 },
   ceremonySectionLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
   recordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   recordText: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
@@ -7543,7 +7543,7 @@ const styles = StyleSheet.create({
   partnerChipName: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   tagBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder },
   tagBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
-  ceremonyFooter: { padding: 18, gap: 4, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  ceremonyFooter: { padding: 18, gap: 4, borderTopWidth: 1, borderTopColor: flColor.divider },
 
   // partner sheet (W-20)
   partnerSheet: { maxHeight: '82%', paddingTop: 8 },

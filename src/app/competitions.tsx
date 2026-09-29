@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
   oppText: { flexShrink: 1, fontSize: 12.5, color: flColor.gray400 },
   scopePill: { flexShrink: 0, paddingHorizontal: 9, paddingVertical: 3, borderRadius: flRadius.pill, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   scopePillText: { fontSize: 10, fontWeight: '600', color: flColor.bronze300 },
-  barTrack: { marginTop: 14, height: 8, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700 },
+  barTrack: { marginTop: 14, height: 8, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.divider },
   barFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden', boxShadow: flShadow.glowSubtle },
   activeFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 },
   standing: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
   // history
   historyCard: { marginHorizontal: 22, overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 14, paddingVertical: 13 },
-  historyRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  historyRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   champDisc: { position: 'relative', overflow: 'hidden', width: 36, height: 36, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.glowSubtle },
   placeDisc: {
     width: 36,

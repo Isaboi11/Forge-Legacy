@@ -808,7 +808,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   segTrack: {
     flexDirection: 'row',

@@ -725,7 +725,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   mark: {
     width: 34,
@@ -846,7 +846,7 @@ const styles = StyleSheet.create({
     minHeight: 56,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   rowInset: { paddingLeft: 14 },
   rowLast: { borderBottomWidth: 0 },

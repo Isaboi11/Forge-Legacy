@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
   // goal
   goalKicker: { marginBottom: 7, fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
   goalTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', lineHeight: 23, color: flColor.cream100 },
-  goalTrack: { marginTop: 14, height: 10, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
+  goalTrack: { marginTop: 14, height: 10, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.divider, boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   goalFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden', boxShadow: flShadow.glowSubtle },
   goalCount: { marginTop: 9, fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400 },
 
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   membersCount: { fontSize: 11.5, color: flColor.gray600 },
   membersCard: { overflow: 'hidden', backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card },
   memberRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 14, paddingVertical: 12 },
-  memberRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  memberRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   memberBody: { flex: 1, minWidth: 0, gap: 2 },
   memberName: { fontSize: 14.5, color: flColor.cream100 },
   memberMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -597,7 +597,7 @@ const styles = StyleSheet.create({
   memberActive: { color: '#8FB295' },
   ownerPill: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 4, borderRadius: flRadius.pill, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   ownerPillText: { fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.bronze300 },
-  membersFooter: { paddingHorizontal: 14, paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, alignItems: 'center' },
+  membersFooter: { paddingHorizontal: 14, paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.divider, alignItems: 'center' },
   membersFooterText: { fontSize: 12, color: flColor.gray600 },
 
   // privacy note
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
   noteText: { flex: 1, minWidth: 0, fontSize: 12.5, lineHeight: 18.75, color: flColor.gray400 },
 
   // commit bar
-  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, boxShadow: '0 -10px 26px rgba(0,0,0,0.4)' },
+  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider, boxShadow: '0 -10px 26px rgba(0,0,0,0.4)' },
   commitBtn: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnFilled: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnDone: { borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },

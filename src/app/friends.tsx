@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
   badge: { position: 'absolute', top: 4, right: 3, minWidth: 15, paddingHorizontal: 3, alignItems: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal900, backgroundColor: flColor.bronzeSolid },
   badgeText: { fontSize: 8.5, fontWeight: '700', color: flColor.onBronze },
 
-  composerBar: { height: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  composerBar: { height: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   composerText: { flex: 1, minWidth: 0, fontSize: 15, color: flColor.gray600 },
   composerPlus: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder },
 

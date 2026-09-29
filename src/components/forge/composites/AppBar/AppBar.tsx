@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   opaque: {
     backgroundColor: flColor.surfaceNav,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   transparent: {
     backgroundColor: 'transparent',

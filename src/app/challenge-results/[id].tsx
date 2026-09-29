@@ -611,14 +611,14 @@ const styles = StyleSheet.create({
 
   // summary
   summaryCard: { marginTop: 26, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden', boxShadow: flShadow.card },
-  summaryHead: { paddingHorizontal: 16, paddingTop: 13, paddingBottom: 11, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  summaryHead: { paddingHorizontal: 16, paddingTop: 13, paddingBottom: 11, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', backgroundColor: flColor.charcoal700, gap: 1 },
   summaryTile: { flexBasis: '49.7%', flexGrow: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, backgroundColor: flColor.charcoal800 },
   summaryIcon: { flexShrink: 0 },
   summaryText: { flex: 1, minWidth: 0 },
   summaryValue: { fontFamily: flFont.display, fontSize: 28, fontWeight: '700', letterSpacing: -0.8, color: flColor.cream100 },
   summaryLabel: { marginTop: 5, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray600 },
-  summaryFoot: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  summaryFoot: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.divider },
   summaryFootText: { flex: 1, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
 
   // standings

@@ -342,7 +342,7 @@ function TypeGlyph({ type, size = 15 }: { type: ChallengeType; size?: number }) 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.93 },
-  header: { flexShrink: 0, position: 'relative', borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  header: { flexShrink: 0, position: 'relative', borderBottomWidth: 1, borderBottomColor: flColor.divider },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
   identity: { paddingHorizontal: 22, paddingTop: 2, paddingBottom: 18 },
   squadName: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.3, color: flColor.cream100 },

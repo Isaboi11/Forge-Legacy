@@ -1461,7 +1461,7 @@ const styles = StyleSheet.create({
    */
   card: { flexGrow: 0, flexShrink: 0, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.cardioCard, overflow: 'hidden', boxShadow: flShadow.card },
 
-  band: { height: BAND_H, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, position: 'relative', justifyContent: 'center' },
+  band: { height: BAND_H, borderBottomWidth: 1, borderBottomColor: flColor.divider, position: 'relative', justifyContent: 'center' },
   bandOutdoor: { backgroundColor: flColor.cardioBandOutdoor },
   bandIndoor: { backgroundColor: flColor.cardioBandIndoor },
   belt: { position: 'absolute', top: -28, left: 0, right: 0, bottom: -28 },
@@ -1491,7 +1491,7 @@ const styles = StyleSheet.create({
   segText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   segTextOn: { color: flColor.bronze300 },
 
-  strip: { flexDirection: 'row', paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  strip: { flexDirection: 'row', paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.divider, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   stripCell: { flex: 1, minWidth: 0, gap: 3, paddingHorizontal: 12, borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },
   stripCellFirst: { paddingLeft: 0, borderLeftWidth: 0 },
   stripLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 1.2, color: flColor.gray600 },

@@ -859,7 +859,7 @@ const styles = StyleSheet.create({
 
   outside: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
   outRow: { height: 50, flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15 },
-  outRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  outRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   outRowPressed: { backgroundColor: flColor.charcoal900 },
   outRowLabel: { flex: 1, fontSize: 14, color: flColor.cream100 },
 

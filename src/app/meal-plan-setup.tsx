@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal900,
   },
   ctaNote: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray400 },

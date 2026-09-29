@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   lift: { paddingVertical: 12, paddingHorizontal: 14, gap: 4 },
-  liftDivider: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  liftDivider: { borderTopWidth: 1, borderTopColor: flColor.divider },
   /* A superset's later members sit tucked under the first — one block, the way the card draws it. */
   liftInGroup: { borderTopWidth: 0, paddingTop: 2, marginLeft: 14, borderLeftWidth: 2, borderLeftColor: flColor.charcoal600 },
   superset: { fontSize: 12, fontWeight: '600', color: flColor.gray400, marginBottom: 4 },

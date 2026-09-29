@@ -1069,7 +1069,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.surfaceNav,
   },
   quiet: { textAlign: 'center', fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk, paddingVertical: 4 },

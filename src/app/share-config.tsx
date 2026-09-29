@@ -679,13 +679,13 @@ const styles = StyleSheet.create({
   lineBronze: { marginTop: 12, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   lineBody: { marginTop: 9, fontFamily: flFont.display, fontStyle: 'italic', fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   lineMuted: { marginTop: 5, fontSize: 11, color: flColor.gray600 },
-  cardFooter: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, alignSelf: 'stretch', alignItems: 'center' },
+  cardFooter: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.divider, alignSelf: 'stretch', alignItems: 'center' },
   athlete: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
 
   sectionLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 24, marginBottom: 10, marginLeft: 2 },
   detailCard: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, overflow: 'hidden' },
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 15 },
-  detailRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  detailRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   detailLabel: { fontSize: 14, color: flColor.cream100 },
   switch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
   switchOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
   outsideIcon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   outsideLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
 
-  footer: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  footer: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 18, borderTopWidth: 1, borderTopColor: flColor.divider },
   cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), boxShadow: flShadow.card },
   ctaText: { fontSize: 15, fontWeight: '700', letterSpacing: 0.4, color: '#F7F5F1' },
 

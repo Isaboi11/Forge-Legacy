@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   copy: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, marginBottom: 8 },
   list: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
-  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowPressed: { backgroundColor: flColor.charcoal900 },
   rowOff: { opacity: 0.45 },
   radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },

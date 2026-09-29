@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     overflow: 'hidden',
-    backgroundColor: flColor.charcoal600,
+    backgroundColor: flColor.divider,
     boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)',
   },
   fill: {

@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
   goalLineDim: { color: flColor.gray400 },
   ctx: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray600, marginTop: 12 },
 
-  form: { marginTop: 22, paddingTop: 22, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  form: { marginTop: 22, paddingTop: 22, borderTopWidth: 1, borderTopColor: flColor.divider },
   prompt: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100, marginBottom: 16 },
   well: { paddingVertical: 18, borderTopWidth: 1, borderBottomWidth: 1, borderColor: HAIRLINE },
   wellFocus: { borderColor: flColor.bronze400 },
@@ -403,9 +403,9 @@ const styles = StyleSheet.create({
   lockedCard: { marginTop: 24, padding: 22, borderRadius: flRadius.xl, borderWidth: 1, borderColor: HAIRLINE, backgroundColor: flColor.surfaceRecessed },
   lockedLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 14 },
   lockedText: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 17.5, lineHeight: 29, color: flColor.gray400 },
-  lockedMeta: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  lockedMeta: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 18, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
 
-  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
+  footer: { paddingHorizontal: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(6,7,8,0.6)') },
   permanence: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: flColor.gray600, textAlign: 'center', marginBottom: 11 },
   tertiary: { alignItems: 'center', paddingVertical: 10, marginTop: 6 },
   tertiaryText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },

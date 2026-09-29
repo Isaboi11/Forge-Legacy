@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.85 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
-  pinned: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  pinned: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   lede: { marginTop: 2, marginBottom: 14, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   countBadgeText: { fontSize: 9.5, fontWeight: '700', color: flColor.bronze300 },
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, paddingVertical: 10, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, paddingVertical: 10, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.divider },
   rowMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11 },
   rowText: { flex: 1, minWidth: 0 },
   rowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },

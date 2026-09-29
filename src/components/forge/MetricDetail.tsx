@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
 
   section: { marginTop: 28 },
   sectionLabel: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
-  mRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  mRow: { flexDirection: 'row', alignItems: 'center', gap: 11, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.divider },
   mName: { flex: 1, fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   mDate: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
   rRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, paddingHorizontal: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal900, marginBottom: 8 },

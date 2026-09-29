@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
   headerName: { marginTop: 9, fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   headerMeta: { fontSize: 10, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
-  divider: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 15 },
+  divider: { height: 1, backgroundColor: flColor.divider, marginTop: 15 },
 
   // sections
   sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
   // identity card
   identityCard: { position: 'relative', backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, paddingRight: 38, boxShadow: flShadow.card, overflow: 'hidden' },
   idField: { paddingHorizontal: 15, paddingVertical: 13, gap: 2 },
-  idFieldDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  idFieldDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   idLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   idValue: { fontSize: 14, lineHeight: 20, color: flColor.cream100 },
   idValueMuted: { color: flColor.gray600 },
@@ -1061,7 +1061,7 @@ const styles = StyleSheet.create({
   requestBadgeText: { fontSize: 12, fontWeight: '700', color: flColor.onBronze },
 
   // discovery (0050) — joining + category
-  joinBlock: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  joinBlock: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.divider },
   capHint: { marginTop: 10, fontSize: 11, lineHeight: 16, color: flColor.gray600 },
   catRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   catChip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, overflow: 'hidden' },
@@ -1096,7 +1096,7 @@ const styles = StyleSheet.create({
 
   infoCard: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, overflow: 'hidden' },
   infoField: { paddingHorizontal: 15, paddingVertical: 13, gap: 3 },
-  infoFieldDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  infoFieldDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   infoLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   infoValue: { fontSize: 14, lineHeight: 20, color: flColor.cream100 },
   infoProgress: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk, marginTop: 2 },
@@ -1109,7 +1109,7 @@ const styles = StyleSheet.create({
 
   notifCard: { backgroundColor: flColor.charcoal900, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, overflow: 'hidden' },
   notifRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15, paddingVertical: 14 },
-  notifRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  notifRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   notifRowDim: { opacity: 0.4 },
   // The privacy line under the Training Alerts card (0153) — a caption, not a row.
   trainingAlertsFoot: { marginTop: 8, marginHorizontal: 4, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },

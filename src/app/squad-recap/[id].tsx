@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
   goalTarget: { marginTop: 4, fontSize: 11.5, color: flColor.gray600 },
 
   row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 14, paddingVertical: 13 },
-  rowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowIcon: {
     width: 32,
     height: 32,

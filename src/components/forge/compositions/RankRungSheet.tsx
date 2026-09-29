@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   figureN: { fontFamily: flFont.display, fontSize: 22, lineHeight: 26, fontWeight: '600', color: flColor.cream100 },
   figureLabel: { fontSize: 11.5, color: flColor.gray400 },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: 11, paddingVertical: 10 },
-  rowRule: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  rowRule: { borderTopWidth: 1, borderTopColor: flColor.divider },
   mark: {
     marginTop: 2,
     width: 17,

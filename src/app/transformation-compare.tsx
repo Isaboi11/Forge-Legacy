@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   emptyBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   scroll: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34 },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
 
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
 
   pickerScroll: { maxHeight: 340 },
   pickerRow: { paddingVertical: 14, paddingHorizontal: 4 },
-  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   pickerName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   pickerSub: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
 });

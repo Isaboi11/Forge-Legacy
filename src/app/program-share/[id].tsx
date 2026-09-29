@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   exName: { flex: 1, minWidth: 0, fontSize: 13, color: flColor.cream100 },
   exScheme: { fontSize: 12, fontWeight: '600', color: flColor.gray400, fontVariant: ['tabular-nums'] },
 
-  cta: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 26, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  cta: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 26, borderTopWidth: 1, borderTopColor: flColor.divider },
   ctaNote: { marginTop: 9, fontSize: 11, textAlign: 'center', color: flColor.gray600 },
   declineBtn: { marginTop: 12, alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12 },
   declineText: { fontSize: 12, color: flColor.gray600 },

@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
 
   addList: { marginTop: -4 },
   addRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingHorizontal: 2 },
-  addDivider: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  addDivider: { borderBottomWidth: 1, borderBottomColor: flColor.divider },
   addPressed: { backgroundColor: flColor.hoverWash },
   addIcon: { width: 36, alignItems: 'center' },
   addText: { flex: 1, gap: 3 },
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
   mealKcalQuiet: { color: flColor.gray600 },
 
   /* Plan ahead (0228). The bronze fill is earned by a tick; food still waiting reads quieter. */
-  checkList: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 2 },
+  checkList: { marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: flColor.divider, gap: 2 },
   checkHead: { fontSize: 10, fontWeight: '600', letterSpacing: 1.5, textTransform: 'uppercase', color: flColor.labelInk, paddingBottom: 4 },
   checkRow: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 12, borderRadius: flRadius.sm },
   checkRowPressed: { backgroundColor: flColor.hoverWash },

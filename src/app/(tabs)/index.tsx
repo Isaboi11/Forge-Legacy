@@ -1621,7 +1621,7 @@ const styles = StyleSheet.create({
   },
   startSection: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   startSectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.labelInk },
-  startSectionRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
+  startSectionRule: { flex: 1, height: 1, backgroundColor: flColor.divider },
   /* Tightened from 12 — the stack read as a web form at its old height. The lead card carries the
      hierarchy now, so the gaps no longer have to do it. */
   pathBlock: { gap: 10 },
@@ -1732,7 +1732,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.float,
   },
   menuName: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400, paddingHorizontal: 14, paddingTop: 8, paddingBottom: 6 },
-  menuDivider: { height: 1, backgroundColor: flColor.charcoal600, marginHorizontal: 6 },
+  menuDivider: { height: 1, backgroundColor: flColor.divider, marginHorizontal: 6 },
   menuItem: { paddingVertical: 12, paddingHorizontal: 14 },
   menuItemText: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.cream100 },
 
@@ -1770,7 +1770,7 @@ const styles = StyleSheet.create({
   rankLinePart: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 4 },
   rankLineMain: { flex: 1, minWidth: 0 },
   rankLinePressed: { opacity: 0.7 },
-  rankLineRule: { width: 1, height: 18, marginHorizontal: 10, backgroundColor: flColor.charcoal700 },
+  rankLineRule: { width: 1, height: 18, marginHorizontal: 10, backgroundColor: flColor.divider },
   rankLineBadge: { width: 16, height: 22 },
   rankLineName: { flexShrink: 1, fontFamily: flFont.display, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   rankLineLink: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray400 },

@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.88 },
 
-  header: { flexShrink: 0, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, paddingBottom: 4, zIndex: 6 },
+  header: { flexShrink: 0, borderBottomWidth: 1, borderBottomColor: flColor.divider, paddingBottom: 4, zIndex: 6 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
 
   identity: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 22, paddingTop: 2, paddingBottom: 13 },
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
   /* Label · engraved rule · value — the rule fills whatever the two ends leave. */
   sublineRow: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 22, paddingBottom: 15 },
   sublineLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.7, textTransform: 'uppercase', color: flColor.labelInk },
-  sublineRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal700 },
+  sublineRule: { flex: 1, height: 1, backgroundColor: flColor.divider },
   sublineValue: { fontSize: 10.5, color: flColor.gray600 },
 
   tally: { flexDirection: 'row', marginHorizontal: 22, marginBottom: 16, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },

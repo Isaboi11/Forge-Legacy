@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
 
   actionList: { marginHorizontal: -6 },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 8 },
-  actionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  actionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   actionIcon: { flexShrink: 0 },
   actionLabel: { fontSize: 15, color: flColor.cream100 },
   actionLabelDanger: { color: flColor.redMuted },

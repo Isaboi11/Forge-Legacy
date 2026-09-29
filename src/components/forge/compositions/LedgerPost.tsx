@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
    * over-corrects, and stronger labels pull against the quieting asked for everywhere else. If it still
    * reads flat with a rule you can see and room to breathe, that is the moment to add more — not before.
    */
-  post: { paddingTop: 26, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
+  post: { paddingTop: 26, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   postAlt: { backgroundColor: 'rgba(255,255,255,0.012)' },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: LEDGER_GUTTER },
