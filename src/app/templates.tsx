@@ -17,6 +17,7 @@ import { ReorderTemplatesSheet } from '@/components/forge/ReorderTemplatesSheet'
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchWeekTemplates, weekSummary } from '@/data/week-templates-live';
 import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
+import { usePlanNext } from '@/hooks/usePlanNext';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useProfile } from '@/lib/profile';
 import { useToast } from '@/hooks/useCeremony';
@@ -71,6 +72,7 @@ export default function TemplatesScreen() {
      dependency array is evaluated during render, which is a crash rather than a stale read. */
   const { data: weekData, refetch: refetchWeeks } = useQuery(fetchWeekTemplates, []);
   const [confirmDelete, setConfirmDelete] = useState<WorkoutTemplate | null>(null);
+  const { planNext, planSheet } = usePlanNext();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
@@ -389,6 +391,16 @@ export default function TemplatesScreen() {
                     <PlayGlyph />
                     <Text style={styles.footStartText}>Start</Text>
                   </Pressable>
+                  {/* Onto Home's hero for later — see `usePlanNext`. */}
+                  <Pressable
+                    onPress={() => void planNext(t)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Plan ${t.name} next, on Home`}
+                    style={({ pressed }) => [styles.footBtn, styles.footBtnPlan, pressed ? styles.pressed : null]}
+                  >
+                    <EngravedIcon name="calendar" size={13} color={engravedTint(flColor.bronze300)} />
+                    <Text style={styles.footStartText}>Plan next</Text>
+                  </Pressable>
                   <Pressable
                     onPress={() => setConfirmDelete(t)}
                     accessibilityRole="button"
@@ -433,6 +445,7 @@ export default function TemplatesScreen() {
         onConfirm={() => confirmDelete && void remove(confirmDelete)}
         onClose={() => setConfirmDelete(null)}
       />
+      {planSheet}
     </View>
   );
 }
@@ -521,6 +534,7 @@ const styles = StyleSheet.create({
   cardFoot: { flexDirection: 'row', alignItems: 'stretch', borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
   footBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13 },
   footBtnStart: { flex: 1, borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
+  footBtnPlan: { flex: 1, borderRightWidth: 1, borderRightColor: flColor.charcoal700 },
   footBtnQuiet: { width: 96 },
   footStartText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
   footQuietText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
