@@ -35,6 +35,11 @@ test('"100 g" becomes the grams pill rather than a second gram unit', () => {
   assert.deepEqual(unitChoices(onlyPer100).map((u) => u.label), ['grams']);
 });
 
+test('⭐ a serving with no weight is never a pill — it could only say 0 cal (PO 09-28, the scanned rice)', () => {
+  const rice = { ...oats, servings: [{ label: 'about 2/3 cup', grams: null }, { label: '100 g', grams: 100 }] };
+  assert.deepEqual(unitChoices(rice).map((u) => u.label), ['grams']);
+});
+
 test('the step depends on the unit', () => {
   const [cup, grams] = unitChoices(oats);
   assert.equal(stepFor(grams), 10);
