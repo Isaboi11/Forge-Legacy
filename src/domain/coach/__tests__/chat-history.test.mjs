@@ -139,9 +139,11 @@ test('the Edge Functions guard every history turn, and the paste bundles carry i
 test('each coach-ask stream writes and closes ONLY its own turn, and the queue waits for the stream', () => {
   const sheet = read('src/components/forge/CoachChatSheet.tsx');
   assert.match(sheet, /say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\)/);
-  assert.match(sheet, /x\.kind === 'holt' && x\.sid === sid \? \{ \.\.\.x, text: acc \}/);
-  assert.match(sheet, /x\.kind === 'holt' && x\.sid === sid && x\.streaming \? \{ \.\.\.x, streaming: undefined \}/);
+  // The per-sid writes live in chat-core (`streamInto` / `streamEnded`) — run with fake streams in stream-turns.test.mjs.
+  assert.match(sheet, /setThread\(\(t\) => streamInto\(t, sid, acc\)\)/);
+  assert.match(sheet, /setThread\(\(t\) => streamEnded\(t, sid\)\)/);
   assert.doesNotMatch(sheet, /const last = t\[i\];\s*return last\?\.kind === 'holt' && last\.streaming/);
+  assert.match(sheet, /const streamingNow = answerArriving\(thread\);/);
   assert.match(sheet, /const holding = busy != null \|\| streamingNow;/);
   assert.match(sheet, /if \(holding\) \{\s*queued\.current\.push\(text\);/);
   assert.match(sheet, /if \(holding \|\| queued\.current\.length === 0\) return;/);

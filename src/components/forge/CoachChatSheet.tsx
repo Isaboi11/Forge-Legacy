@@ -125,6 +125,9 @@ import {
   refusalCardFor,
   volumeFor,
   weeksBetween,
+  answerArriving,
+  streamEnded,
+  streamInto,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -1752,7 +1755,7 @@ export function CoachChatSheet({
    * wrote into the first one's turn, and both were cut off. The hold is `busy` OR a reply still arriving,
    * DERIVED from the thread (not a second piece of state), and the drain below waits for both.
    */
-  const streamingNow = thread.some((x) => x.kind === 'holt' && x.streaming === true);
+  const streamingNow = answerArriving(thread);
   const holding = busy != null || streamingNow;
   /* Names each coach-ask stream, so its words land in its own turn. Touched only in the ask handler. */
   const streamSeq = useRef(0);
@@ -2093,13 +2096,13 @@ export function CoachChatSheet({
           say({ kind: 'holt', text: acc, streaming: true, sid });
           return;
         }
-        setThread((t) => t.map((x) => (x.kind === 'holt' && x.sid === sid ? { ...x, text: acc } : x)));
+        setThread((t) => streamInto(t, sid, acc));
       },
       { allowWeb: opts.allowWeb, recipes },
     );
     setBusy(null);
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
-    setThread((t) => t.map((x) => (x.kind === 'holt' && x.sid === sid && x.streaming ? { ...x, streaming: undefined } : x)));
+    setThread((t) => streamEnded(t, sid));
     switch (r.kind) {
       case 'answer':
         if (!started && r.text) say({ kind: 'holt', text: r.text });
