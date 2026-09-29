@@ -48,7 +48,7 @@ test('⚠ a new request starts from the athlete, not from the last request', () 
   // The tapped opener names the request first (so "Replace it" can carry it on — QA R2-F8); the typed one inline.
   assert.match(sheet, /const request: ChatState = \{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch \};/);
   assert.match(sheet, /advance\(request, opener\.mode\)/);
-  assert.equal((sheet.match(/advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch \}, opener\.mode\)/g) ?? []).length, 1);
+  assert.equal((sheet.match(/advance\(\{ \.\.\.athleteFacts\(constraints\), \.\.\.opener\.patch(, \.\.\.\(gear \?\? \{\}\))? \}, opener\.mode\)/g) ?? []).length, 1);
   assert.match(sheet, /advance\(athleteFacts\(constraints\), 'pick'\)/);
   assert.doesNotMatch(sheet, /advance\(\{ \.\.\.constraints, \.\.\.opener\.patch \}/);
 });

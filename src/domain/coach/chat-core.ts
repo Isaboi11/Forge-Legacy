@@ -278,6 +278,7 @@ export type QuestionId =
   | 'race_base'
   | 'days'
   | 'where'
+  | 'gear'
   | 'time'
   | 'experience'
   | 'limits';
@@ -315,6 +316,7 @@ export const CONTROL_FOR: Partial<Record<QuestionId, QuestionControl>> = {
   race_base: 'cards',
   // Places and kit.
   where: 'grid',
+  gear: 'grid',
   /* ⚠ THE ONLY QUESTION YOU MAY ANSWER MORE THAN ONCE. Every other one advances on the tap; this one
      collects and waits, because "chest and triceps and a bit of conditioning" is one answer. */
   day_focus: 'multi',
@@ -365,6 +367,33 @@ const chip = (label: string, patch: Partial<CoachConstraints>): Chip => ({ label
  * The filter is here, in the CHAT, rather than in the rulebook, for exactly that reason.
  */
 const NOT_OFFERED: readonly Goal[] = ['conditioning'];
+
+/**
+ * ══ "MY HOME GYM" WITH NOTHING ON FILE IS A QUESTION, NOT BODYWEIGHT (QA holtai-04, 2026-09-26) ══
+ *
+ * `home` resolves to exactly what the Home Gym profile holds (`equipmentForEnvironment`). With no profile,
+ * or an empty one, that is nothing — so "dumbbells only at home" became a block of push-ups and squats with
+ * no dumbbell and no row in it, and Holt never asked. He asks now. Answering "Nothing" moves them to
+ * bodyweight, so the question cannot come back round.
+ */
+export function needsGear(c: ChatState): boolean {
+  return c.environment === 'home' && !(c.ownedEquipment && c.ownedEquipment.length > 0);
+}
+
+function gearQuestion(): Question {
+  return {
+    id: 'gear',
+    ask: pick('ask_gear'),
+    chips: [
+      chip('Dumbbells', { ownedEquipment: ['dumbbells'] }),
+      chip('Dumbbells + bench', { ownedEquipment: ['dumbbells', 'bench'] }),
+      chip('Kettlebells', { ownedEquipment: ['kettlebells'] }),
+      chip('Resistance bands', { ownedEquipment: ['bands'] }),
+      chip('Barbell + rack', { ownedEquipment: ['barbell', 'plates', 'rack', 'bench'] }),
+      chip('Nothing — bodyweight', { environment: 'bodyweight' }),
+    ],
+  };
+}
 
 const offerable = (g: Goal): boolean => AUTHORED_GOALS.includes(g) && !NOT_OFFERED.includes(g);
 
@@ -660,6 +689,8 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
+  if (!endurance && needsGear(c)) return gearQuestion();
+
   if (!endurance && c.sessionMinutes == null) {
     return {
       id: 'time',
@@ -863,6 +894,7 @@ function nextDayQuestion(c: ChatState): Question | null {
       ],
     };
   }
+  if (needsGear(c)) return gearQuestion();
   if (c.experience == null) {
     return {
       id: 'experience',
