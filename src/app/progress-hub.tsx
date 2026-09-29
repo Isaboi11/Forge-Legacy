@@ -65,7 +65,7 @@ const LEVELS: readonly RankLevel[] = [1, 2, 3, 4];
 
 export default function ProgressHubScreen() {
   const router = useRouter();
-  // `fmt` is convertMeasure — the pinned PR is built server-side as "<lift> <n> lb · Personal Record"
+  // `fmt` is convertMeasure — the pinned PR is built server-side as "<lift> <n> lb × <r> · PR (1–5 reps)"
   // (`progress-hub-live.ts:183`, which cannot read a preference), so it is converted at the edge here.
   const { fmt } = useUnits();
   const tourScroller = useTourScroller();
