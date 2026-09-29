@@ -1,4 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
+import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 
@@ -50,6 +51,7 @@ import {
   type CrashGroup,
   type InboxReport,
 } from '@/data/crm-live';
+import { bugBrief, bugsBrief } from '@/domain/admin/bug-brief';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
 import { bugsNote } from '@/domain/admin/notes/bugs';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -261,6 +263,26 @@ export function BugsPage({ arg }: PageProps) {
     if (!mine.length) return null;
     const bySrc = BUG_SOURCES.map((s) => [s, mine.filter((l) => l.source === s).length] as const).filter(([, n]) => n > 0);
     return `Also reported in ${bySrc.map(([s, n]) => `${s} · ${plural(n, 'report', 'reports')}`).join(', ')}. Merged into one item.`;
+  };
+
+  /* "Copy for Claude" (PO 09-29): the board lives in the database, which a coding session can't read, so
+     the button carries the whole item — or every item the filters are showing — as a brief to paste. */
+  const linksOf = (b: Bug) => (links.data ?? []).filter((l) => l.bug_id === b.id);
+  const filterLabel = [
+    STATUS_CHIPS.find((s) => s.key === status)?.label,
+    sev ? SEV_LABEL[sev] : 'any severity',
+    src,
+    qn ? `search “${query.trim()}”` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const copyForClaude = async (text: string, what: string) => {
+    try {
+      await Clipboard.setStringAsync(text);
+      toast(`Copied ${what}. Paste it into Claude.`);
+    } catch {
+      toast('Couldn’t copy. Your browser blocked the clipboard.');
+    }
   };
 
   // ── Writes ──
@@ -481,6 +503,16 @@ export function BugsPage({ arg }: PageProps) {
           <Chip key={s} size="sm" label={s} count={board.data ? all.filter((b) => originSource(b.origin) === s).length : null} on={src === s} onPress={() => setSrc(s)} />
         ))}
       </Row>
+      {board.data && shown.length ? (
+        <Row gap={12}>
+          <Btn
+            size="sm"
+            label={`Copy ${shown.length === 1 ? 'this bug' : `all ${shown.length}`} for Claude`}
+            onPress={() => void copyForClaude(bugsBrief(shown, linksOf, filterLabel), shown.length === 1 ? '1 bug' : `${shown.length} bugs`)}
+          />
+          <Text style={{ fontSize: 12.5, color: c.ink3 }}>Everything the filters are showing, most severe first.</Text>
+        </Row>
+      ) : null}
       {board.loading && !board.data ? (
         <Skeleton />
       ) : board.error ? (
@@ -765,6 +797,9 @@ export function BugsPage({ arg }: PageProps) {
                 {sel.title}
               </Text>
               {selAlso ? <Text style={{ fontSize: 13, color: c.ink2 }}>{selAlso}</Text> : null}
+              <Row>
+                <Btn size="sm" label="Copy for Claude" onPress={() => void copyForClaude(bugBrief(sel, linksOf(sel)), sel.ref ?? 'the bug')} />
+              </Row>
               <View style={{ gap: 8 }}>
                 <Text style={{ fontSize: 12, color: c.ink3 }}>Severity</Text>
                 <Row gap={6}>

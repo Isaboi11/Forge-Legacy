@@ -1,4 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
+import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -45,6 +46,7 @@ import {
   type CrashGroup,
   type InboxReport,
 } from '@/data/crm-live';
+import { bugBrief, bugsBrief } from '@/domain/admin/bug-brief';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
@@ -171,17 +173,29 @@ function useStatusColor() {
 const trackToast = (r: { ref: string; merged: boolean; existing: boolean }) =>
   r.existing ? `Already on the board as ${r.ref}` : r.merged ? `Merged into ${r.ref}` : `${r.ref} added to the board`;
 
+/* "Copy for Claude" (PO 09-29): the board lives in the database, which a coding session can't read, so the
+   brief carries the whole item — or every item the filters show — to paste into Claude. */
+async function copyForClaude(text: string, what: string, toast: (m: string) => void) {
+  try {
+    await Clipboard.setStringAsync(text);
+    toast(`Copied ${what}. Paste it into Claude.`);
+  } catch {
+    toast('Couldn’t copy. Your browser blocked the clipboard.');
+  }
+}
+
 // ── The tab ────────────────────────────────────────────────────────────────
 
 export function BugsTab() {
   const { c } = useCrm();
-  const { bugFilter, setBugFilter, bugSeg, setBugSeg, openSheet, open, stamp } = usePhone();
+  const { bugFilter, setBugFilter, bugSeg, setBugSeg, openSheet, open, stamp, toast } = usePhone();
   const statusColor = useStatusColor();
 
   const board = useBoard();
   const inbox = useInbox();
   const crashes = useCrashes();
   const sources = useQuery(() => fetchBugSources(), [stamp]);
+  const links = useQuery(() => fetchBugLinks(), [stamp]);
 
   const all = board.data?.rows ?? [];
   const shown = applyFilter(all, bugFilter);
@@ -265,6 +279,21 @@ export function BugsTab() {
           ) : (
             <>
               <Muted style={{ marginTop: 12 }}>{summary}</Muted>
+              {shown.length ? (
+                <Text
+                  onPress={() =>
+                    void copyForClaude(
+                      bugsBrief(shown, (b) => (links.data ?? []).filter((l) => l.bug_id === b.id), summary),
+                      shown.length === 1 ? '1 bug' : `${shown.length} bugs`,
+                      toast,
+                    )
+                  }
+                  accessibilityRole="button"
+                  style={{ marginTop: 8, paddingVertical: 6, fontSize: 15, fontWeight: '600', color: c.brz }}
+                >
+                  {shown.length === 1 ? 'Copy this bug for Claude' : `Copy all ${shown.length} for Claude`}
+                </Text>
+              ) : null}
               {shown.map((b) => {
                 const d = days(b.created_at, at);
                 return (
@@ -411,7 +440,7 @@ function StatusBtn({ label, on, disabled, onPress }: { label: string; on: boolea
 
 export function BugOverlay({ id, backLabel }: { id: string; backLabel: string }) {
   const { c } = useCrm();
-  const { back, offline, refresh, stamp } = usePhone();
+  const { back, offline, refresh, stamp, toast } = usePhone();
   const insets = useSafeAreaInsets();
   const board = useBoard();
   const links = useQuery(() => fetchBugLinks(), [stamp]);
@@ -534,6 +563,13 @@ export function BugOverlay({ id, backLabel }: { id: string; backLabel: string })
         </View>
         {isNew ? <Text style={{ marginTop: 14, fontSize: 14, lineHeight: 20.3, color: c.brz }}>Now on the board as {bug.ref ?? 'a new item'}. Set a severity with ⋯ at the top.</Text> : null}
         {also ? <Text style={{ marginTop: 14, fontSize: 14, lineHeight: 20.3, color: c.ink2 }}>{also}</Text> : null}
+        <Text
+          onPress={() => void copyForClaude(bugBrief(bug, mine), bug.ref ?? 'the bug', toast)}
+          accessibilityRole="button"
+          style={{ marginTop: 14, alignSelf: 'flex-start', paddingVertical: 6, fontSize: 15, fontWeight: '600', color: c.brz }}
+        >
+          Copy for Claude
+        </Text>
         <View style={{ marginTop: 18, gap: 12 }}>
           {paras.length ? (
             paras.map((p, i) => (
