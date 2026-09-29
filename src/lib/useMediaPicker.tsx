@@ -104,9 +104,11 @@ export interface MediaPickConfig {
   cameraType?: ImagePicker.CameraType; // camera-only (e.g. front for a selfie check-in)
   directCamera?: boolean; // skip the chooser and open the camera straight away (library is not offered)
   directLibrary?: boolean; // skip the chooser and open the library — for a screen that IS the camera (Scan label's Photos)
+  /** `pickMany` only: how many the LIBRARY may return (the camera always takes one). A squad post's photos, PO 09-28. */
+  limit?: number;
 }
 
-type Resolver = (asset: ImagePicker.ImagePickerAsset | null) => void;
+type Resolver = (assets: ImagePicker.ImagePickerAsset[]) => void;
 
 /**
  * Whether this platform can actually reach a camera. Native always can. On the web it comes down to
@@ -329,10 +331,10 @@ export function useMediaPicker() {
   const [busy, setBusy] = useState<{ label: string; progress: number } | null>(null);
   const resolverRef = useRef<Resolver | null>(null);
 
-  const settle = useCallback((asset: ImagePicker.ImagePickerAsset | null) => {
+  const settle = useCallback((assets: ImagePicker.ImagePickerAsset[]) => {
     const r = resolverRef.current;
     resolverRef.current = null;
-    if (r) r(asset);
+    if (r) r(assets);
   }, []);
 
   /**
@@ -412,6 +414,8 @@ export function useMediaPicker() {
         videoMaxDuration: config.videoMaxDuration && config.videoMaxDuration > 0 ? Math.min(config.videoMaxDuration, MAX_VIDEO_SECONDS) : MAX_VIDEO_SECONDS,
         videoQuality: ImagePicker.UIImagePickerControllerQualityType.IFrame1280x720, // iOS-only; 720p is plenty for a form check
       };
+      const limit = source === 'library' && config.limit && config.limit > 1 ? config.limit : 1;
+      if (limit > 1) Object.assign(opts, { allowsMultipleSelection: true, selectionLimit: limit, orderedSelection: true });
       try {
         // Native only. On web the "camera" IS a file input with `capture` set, this call is a stub that
         // always resolves granted, and awaiting it spends the tap that has to open the input.
@@ -419,41 +423,46 @@ export function useMediaPicker() {
           const perm = await ImagePicker.requestCameraPermissionsAsync();
           if (!perm.granted) {
             showToast('Camera access is needed to capture here.');
-            settle(null);
+            settle([]);
             return;
           }
         }
         const res = source === 'camera' ? await ImagePicker.launchCameraAsync({ ...opts, cameraType: config.cameraType }) : await ImagePicker.launchImageLibraryAsync(opts);
-        const picked = res.canceled ? null : res.assets?.[0] ?? null;
+        const picked = res.canceled ? [] : (res.assets ?? []).slice(0, limit);
         // Together, not one after the other: the resize is the only real work here, so on any photo big
         // enough to need resizing the dismissal wait costs nothing at all.
-        const [asset] = await Promise.all([picked ? downscalePhoto(picked) : null, pickerGone()]);
+        const [assets] = await Promise.all([Promise.all(picked.map(downscalePhoto)), pickerGone()]);
         /*
          * VIDEO IS SHRUNK AFTER THE PICKER IS GONE, not alongside it — the opposite of the photo above,
          * and deliberately so. A resize is milliseconds and hides inside the dismissal; a transcode is
          * seconds, and running it while the picker is still sliding away would leave the athlete looking
          * at a half-dismissed sheet with nothing happening. The overlay below needs the screen to itself.
          */
-        if (asset?.type === 'video') {
+        const out: ImagePicker.ImagePickerAsset[] = [];
+        for (const asset of assets) {
+          if (asset.type !== 'video') {
+            out.push(asset);
+            continue;
+          }
           setBusy({ label: 'Compressing video…', progress: 0 });
-          const out = await shrinkVideo(asset, (p) => setBusy({ label: 'Compressing video…', progress: p }));
+          out.push(await shrinkVideo(asset, (p) => setBusy({ label: 'Compressing video…', progress: p })));
           setBusy(null);
-          settle(out);
-          return;
         }
-        settle(asset);
+        settle(out);
       } catch {
+        setBusy(null);
         showToast(source === 'camera' ? 'Couldn’t open your camera.' : 'Couldn’t open your library.');
-        settle(null);
+        settle([]);
       }
     },
     [settle, showToast, sheetGone, pickerGone],
   );
 
-  const pick = useCallback(
+  /** Up to `config.limit` from the library, one from the camera; `[]` when cancelled. */
+  const pickMany = useCallback(
     (config: MediaPickConfig) =>
-      new Promise<ImagePicker.ImagePickerAsset | null>((resolve) => {
-        settle(null); // resolve any abandoned request as cancelled so the resolver has a single owner
+      new Promise<ImagePicker.ImagePickerAsset[]>((resolve) => {
+        settle([]); // resolve any abandoned request as cancelled so the resolver has a single owner
         resolverRef.current = resolve;
         // No camera to offer (desktop web) — the library IS the whole choice, so don't draw a chooser
         // with one usable row on it.
@@ -475,9 +484,15 @@ export function useMediaPicker() {
     [launch, settle],
   );
 
+  /** One asset, or `null` if cancelled/denied — every caller that wants a single photo or clip. */
+  const pick = useCallback(
+    (config: MediaPickConfig) => pickMany({ ...config, limit: 1 }).then((assets) => assets[0] ?? null),
+    [pickMany],
+  );
+
   const close = useCallback(() => {
     setOpen(false);
-    settle(null);
+    settle([]);
   }, [settle]);
 
   const mediaPickerSheet = (
@@ -506,7 +521,7 @@ export function useMediaPicker() {
     </>
   );
 
-  return { pick, mediaPickerSheet };
+  return { pick, pickMany, mediaPickerSheet };
 }
 
 /**

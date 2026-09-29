@@ -35,6 +35,7 @@ import {
 } from '@/data/friends-feed-live';
 import { isMilestoneCard, milestoneAckLabel } from '@/domain/share/milestone-card';
 import { recapNoteLines } from '@/domain/share/recap-stats';
+import { displayOf } from '@/domain/squad/post-photos';
 import { fetchFriendLists } from '@/data/friends-live';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -396,6 +397,7 @@ function FeedLedgerPost({
        * `customMedia` draws with a draggable divider, and passing them here too would render both.
        */
       media={shape === 'photo' || shape === 'gallery' || shape === 'video' || shape === 'recap' ? post.media.map((m) => ({ url: m.url, kind: m.kind })) : []}
+      mediaDisplay={displayOf(post.media)}
       /* The before/after comparison keeps its draggable divider — the art is the exception, the rules
          around it are not: it still suppresses the marker, the title and the stats. The milestone band
          is the same bargain. */

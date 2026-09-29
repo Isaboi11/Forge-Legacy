@@ -87,10 +87,12 @@ No lifetime plan. United States only at launch.
 - ✅ Regulated medical device declaration → **No**, saved 09-27 (banner gone)
 - ✅ App Privacy labels — answer sheet v1.1 ready 09-26 (`Docs/App-Store-Privacy-Labels.md`, `6b157bba`: Nutrition, AI, purchases, search log) · ✅ entered in App Store Connect, all 13 types match the sheet (checked by Claude in Chrome 09-27) · ✅ Published 09-27
   · ✅ **Crash Data + Other Diagnostic Data added and re-published 09-27** (Yes · linked · App Functionality · not tracking; 15 types, checked by Claude in Chrome) — sheet v1.2, 09-27: the app's own error reporter (0176) collects them; v1.0 said No before it went live
+  · ✅ **Performance Data added and published 09-28** (Linked · App Functionality · not tracking; 16 types, by Claude in Chrome) — sheet v1.3, for Sentry tracing in build 10
 
 - ✅ Crash reporting — 09-27: the app's own reporter (0176) is live; read it at `/admin` → Errors. Sentry account made
   (org `forge-legacy-llc`, project `forge-legacy`) but NOT installed — deferred to after launch (needs a new build
-  and a privacy-policy change: the policy promises no third-party crash reporting) · 09-27: queued for build 10
+  and a privacy-policy change: the policy promises no third-party crash reporting) · 09-27: queued for build 10 ·
+  ✅ 09-28: Sentry is IN build 10 (EAS `f6b72b0c`), DSN + token in EAS, policy updated and live on forgelegacy.app
 
 ## 4. Legal
 - 🔨 Mock review done 09-25 (`Docs/Legal/Mock-Legal-Review-2026-09-25.md`): policy + Terms FAIL as is — false 200 m

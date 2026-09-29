@@ -47,6 +47,7 @@ import { clearWrittenDraft, peekWrittenDraft } from '@/lib/written-workout-inten
 import { postedTally } from '@/domain/workout/posted-workout-lines';
 import { UploadError } from '@/lib/storage-upload';
 import { useMediaPicker } from '@/lib/useMediaPicker';
+import { MAX_POST_PHOTOS, addPicked, withDisplay, type PhotoDisplay } from '@/domain/squad/post-photos';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -128,7 +129,7 @@ export default function SquadComposerRoute() {
   }>();
   const router = useRouter();
   const { showToast } = useToast();
-  const { pick: pickMediaSource, mediaPickerSheet } = useMediaPicker();
+  const { pickMany: pickMediaSources, mediaPickerSheet } = useMediaPicker();
   const isOwner = owner === '1';
   const squadName = name ? String(name) : '';
 
@@ -147,7 +148,9 @@ export default function SquadComposerRoute() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const postRef = useTourAnchor('composer-post');
-  const [media, setMedia] = useState<SquadMedia | null>(null);
+  /* Up to twelve photos, or one video (PO 09-28) — `domain/squad/post-photos`. */
+  const [media, setMedia] = useState<SquadMedia[]>([]);
+  const [display, setDisplay] = useState<PhotoDisplay>('grid');
   const [uploading, setUploading] = useState(false);
   const [mediaPct, setMediaPct] = useState(0);
   const mediaAbortRef = useRef<AbortController | null>(null);
@@ -215,7 +218,7 @@ export default function SquadComposerRoute() {
     const body = form.body.trim();
     switch (type) {
       case 'formcheck':
-        return !!media; // a form check needs a clip
+        return media.length > 0; // a form check needs a clip
       case 'recap':
         return !!recap; // a recap needs a real workout
       case 'pr':
@@ -242,7 +245,7 @@ export default function SquadComposerRoute() {
     }
     setType(t);
     setForm(EMPTY);
-    setMedia(null);
+    setMedia([]);
     setRecap(null);
     if (t === 'recap') {
       setRecentWorkouts(null);
@@ -299,7 +302,7 @@ export default function SquadComposerRoute() {
   const backToPick = () => {
     setType(null);
     setForm(EMPTY);
-    setMedia(null);
+    setMedia([]);
     setRecap(null);
   };
 
@@ -332,28 +335,48 @@ export default function SquadComposerRoute() {
       mediaAbortRef.current?.abort();
       return;
     }
-    const asset = await pickMediaSource({ kind: videoOnly ? 'videos' : 'both', title: videoOnly ? 'Add a video' : 'Add a photo or video', quality: 0.7 });
-    if (!asset?.uri) return;
-    const kind: SquadMediaKind = asset.type === 'video' ? 'video' : 'image';
+    const room = MAX_POST_PHOTOS - media.length;
+    const assets = await pickMediaSources({
+      kind: videoOnly ? 'videos' : media.length ? 'images' : 'both',
+      title: videoOnly ? 'Add a video' : media.length ? 'Add more photos' : 'Add photos or a video',
+      quality: 0.7,
+      limit: videoOnly ? 1 : room,
+    });
+    const picked = assets
+      .filter((a) => !!a.uri)
+      .map((a) => ({ uri: a.uri, mimeType: a.mimeType, kind: (a.type === 'video' ? 'video' : 'image') as SquadMediaKind }));
+    if (!picked.length) return;
+    const { keep, droppedVideo, overCap } = addPicked(media, picked);
+    if (droppedVideo) showToast('A post can have one video, or up to 12 photos.');
+    else if (overCap) showToast(`Up to ${MAX_POST_PHOTOS} photos on a post.`);
+    if (!keep.length) return;
     const controller = new AbortController();
     mediaAbortRef.current = controller;
     setMediaPct(0);
     setUploading(true);
+    let done = 0;
     try {
+      /* One at a time, each added the moment it lands — a cancel or a failure keeps what already went up. */
+      for (const asset of keep) {
+        if (controller.signal.aborted) throw new UploadError('cancelled');
+        const kind = asset.kind;
       /*
        * ⚠ TWO UPLOAD PATHS, because the object path encodes who may read it (0075). A squad post's media
        * is keyed by squad; a friends post's is keyed by the uploader, since there is no squad to scope
        * it to. `BOTH` takes the friends path — the row is written by `createFriendPost`, and media that
        * lived under a squad prefix would be scoped to a squad the post is only half addressed to.
        */
-      const url = needsSquad && audience === 'SQUAD'
-        ? await uploadPostMedia(squadId, asset.uri, kind, {
-            contentType: asset.mimeType,
-            onProgress: setMediaPct,
-            signal: controller.signal,
-          })
-        : await uploadFeedMedia(asset.uri, kind);
-      setMedia({ url, kind });
+        const url = needsSquad && audience === 'SQUAD'
+          ? await uploadPostMedia(squadId, asset.uri, kind, {
+              contentType: asset.mimeType,
+              onProgress: (p) => setMediaPct((done + p) / keep.length),
+              signal: controller.signal,
+            })
+          : await uploadFeedMedia(asset.uri, kind);
+        done += 1;
+        setMediaPct(done / keep.length);
+        setMedia((cur) => [...cur, { url, kind }]);
+      }
     } catch (e) {
       if (e instanceof UploadError && e.kind === 'cancelled') showToast('Upload cancelled.');
       else showToast(errorMessage(e));
@@ -414,7 +437,7 @@ export default function SquadComposerRoute() {
         prValue: form.prValue,
         prExercise: form.prExercise,
         prLabel: form.prLabel,
-        media: type === 'transformation' ? xformMedia : media ? [media] : [],
+        media: type === 'transformation' ? xformMedia : withDisplay(media, display),
         workoutId: recap?.workoutId ?? null,
         workoutSummary: recap?.summary ?? null,
         layout,
@@ -429,9 +452,7 @@ export default function SquadComposerRoute() {
      */
     const friendsMedia = type === 'transformation'
       ? mediaFromPick(xform).map((m, i) => ({ url: m.url, kind: 'image' as const, slot: i === 0 ? ('before' as const) : ('after' as const) }))
-      : media
-        ? [{ url: media.url, kind: media.kind }]
-        : [];
+      : withDisplay(media.map((m) => ({ url: m.url, kind: m.kind })), display);
 
     createFriendPost({
       body: form.body,
@@ -626,7 +647,7 @@ export default function SquadComposerRoute() {
           )
         ) : type === 'formcheck' ? (
           <>
-            <MediaAttach media={media} uploading={uploading} pct={mediaPct} videoOnly onPick={() => pickMedia(true)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} uploading={uploading} pct={mediaPct} videoOnly onPick={() => pickMedia(true)} onRemove={() => setMedia([])} />
             <Area label="What should the squad look at? (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="e.g. Does my hip rise look early?" rows={3} />
           </>
         ) : type === 'recap' ? (
@@ -706,7 +727,7 @@ export default function SquadComposerRoute() {
                 <Text style={styles.previewTag}>{(form.prLabel.trim() || 'Squad PR').toUpperCase()}</Text>
               </View>
             </View>
-            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
           </>
         ) : type === 'workout' ? (
           chosenTemplate ? (
@@ -783,12 +804,12 @@ export default function SquadComposerRoute() {
         ) : type === 'discussion' ? (
           <>
             <Area label="Note to the squad" value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />
-            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
           </>
         ) : (
           <>
             <Area label="Announcement" value={form.body} onChange={(v) => set('body', v)} placeholder="Pins to the top of the squad feed…" rows={4} />
-            <MediaAttach media={media} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={() => setMedia(null)} />
+            <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
             <View style={styles.gateNote}>
               <ShieldIcon />
               <Text style={styles.gateNoteText}>You’re posting a squad announcement as the owner — every member sees it at the top of the feed.</Text>
@@ -837,46 +858,118 @@ function PlusInCircle() {
   return <EngravedIcon name="plus" size={20} color={flColor.bronze300} />;
 }
 
-function MediaAttach({ media, uploading, pct, onPick, onRemove, videoOnly = false }: { media: SquadMedia | null; uploading: boolean; pct: number; onPick: () => void; onRemove: () => void; videoOnly?: boolean }) {
-  if (uploading) {
-    const percent = Math.round(pct * 100);
-    return (
-      // Pressable, not a dead box: `onPick` aborts while an upload is running, which is the only way
-      // out of a stalled attachment now that it blocks the Post button.
-      <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel={`Cancel upload, ${percent} percent done`} style={styles.mediaBox}>
-        <ActivityIndicator color={flColor.bronze400} />
-        <Text style={styles.mediaHint}>Uploading… {percent}%</Text>
-        <View style={styles.mediaProgressTrack}>
-          <View style={[styles.mediaProgressFill, { width: `${percent}%` }]} />
-        </View>
-        <Text style={styles.mediaHint}>Tap to cancel</Text>
-      </Pressable>
-    );
-  }
-  if (media) {
+/**
+ * Up to twelve photos, or one video (PO 09-28). With two or more photos the author picks how the feed draws
+ * them — the same choice Progress Photo Post offers: a Facebook grid whose tiles open a full-screen viewer,
+ * or an Instagram swipe in place.
+ */
+function MediaAttach({
+  media,
+  display = 'grid',
+  onDisplay,
+  uploading,
+  pct,
+  onPick,
+  onRemove,
+  videoOnly = false,
+}: {
+  media: SquadMedia[];
+  display?: PhotoDisplay;
+  onDisplay?: (d: PhotoDisplay) => void;
+  uploading: boolean;
+  pct: number;
+  onPick: () => void;
+  onRemove: (index: number) => void;
+  videoOnly?: boolean;
+}) {
+  const percent = Math.round(pct * 100);
+  const progress = uploading ? (
+    // Pressable, not a dead box: `onPick` aborts while an upload is running, which is the only way
+    // out of a stalled attachment now that it blocks the Post button.
+    <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel={`Cancel upload, ${percent} percent done`} style={styles.mediaBox}>
+      <ActivityIndicator color={flColor.bronze400} />
+      <Text style={styles.mediaHint}>Uploading… {percent}%</Text>
+      <View style={styles.mediaProgressTrack}>
+        <View style={[styles.mediaProgressFill, { width: `${percent}%` }]} />
+      </View>
+      <Text style={styles.mediaHint}>Tap to cancel</Text>
+    </Pressable>
+  ) : null;
+
+  const video = media.find((m) => m.kind === 'video');
+  if (video) {
     return (
       <View style={styles.mediaPreviewWrap}>
-        {media.kind === 'image' ? (
-          <Image source={{ uri: media.url }} style={styles.mediaPreview} contentFit="cover" />
-        ) : (
-          <View style={styles.videoPreview}>
-            <View style={styles.playDisc}>
-              <PlayIcon />
-            </View>
-            <Text style={styles.videoPreviewText}>Video attached</Text>
+        <View style={styles.videoPreview}>
+          <View style={styles.playDisc}>
+            <PlayIcon />
           </View>
-        )}
-        <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel="Remove attachment" style={styles.mediaRemove} hitSlop={8}>
+          <Text style={styles.videoPreviewText}>Video attached</Text>
+        </View>
+        <Pressable onPress={() => onRemove(0)} accessibilityRole="button" accessibilityLabel="Remove video" style={styles.mediaRemove} hitSlop={8}>
           <CloseIcon />
         </Pressable>
       </View>
     );
   }
+
+  if (!media.length) {
+    return (
+      progress ?? (
+        <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel={videoOnly ? 'Add a video' : 'Add photos or a video'} style={styles.mediaAddBtn}>
+          {videoOnly ? <VideoIcon /> : <MediaIcon />}
+          <Text style={styles.mediaAddText}>{videoOnly ? 'Add a video' : 'Add photos or a video'}</Text>
+        </Pressable>
+      )
+    );
+  }
+
   return (
-    <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel={videoOnly ? 'Add a video' : 'Add a photo or video'} style={styles.mediaAddBtn}>
-      {videoOnly ? <VideoIcon /> : <MediaIcon />}
-      <Text style={styles.mediaAddText}>{videoOnly ? 'Add a video' : 'Add a photo or video'}</Text>
-    </Pressable>
+    <View style={styles.photoSet}>
+      <View style={styles.thumbGrid}>
+        {media.map((m, i) => (
+          <View key={`${m.url}-${i}`} style={styles.thumb}>
+            <Image source={{ uri: m.url }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Pressable onPress={() => onRemove(i)} accessibilityRole="button" accessibilityLabel={`Remove photo ${i + 1}`} style={styles.thumbRemove} hitSlop={6}>
+              <CloseIcon />
+            </Pressable>
+          </View>
+        ))}
+        {!uploading && media.length < MAX_POST_PHOTOS ? (
+          <Pressable onPress={onPick} accessibilityRole="button" accessibilityLabel="Add more photos" style={[styles.thumb, styles.thumbAdd]}>
+            <PlusInCircle />
+          </Pressable>
+        ) : null}
+      </View>
+      <Text style={styles.photoCount}>
+        {media.length} of {MAX_POST_PHOTOS} photos
+      </Text>
+      {progress}
+      {media.length > 1 && onDisplay ? (
+        <View style={styles.displayRow}>
+          {(
+            [
+              { id: 'grid', label: 'Grid', sub: 'Tap a photo to open it' },
+              { id: 'swipe', label: 'Swipe', sub: 'Swipe through in the feed' },
+            ] as const
+          ).map((o) => {
+            const on = display === o.id;
+            return (
+              <Pressable
+                key={o.id}
+                onPress={() => onDisplay(o.id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: on }}
+                style={[styles.displayOpt, on && styles.displayOptOn]}
+              >
+                <Text style={[styles.displayLabel, on && styles.displayLabelOn]}>{o.label}</Text>
+                <Text style={styles.displaySub}>{o.sub}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -1140,5 +1233,17 @@ const styles = StyleSheet.create({
   videoPreview: { height: 140, backgroundColor: forgeOr('#171009', flColor.surfaceRecessed), alignItems: 'center', justifyContent: 'center', gap: 10 },
   playDisc: { width: 44, height: 44, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: forgeOr<string>('rgba(0,0,0,0.45)', flColor.bronzeTint), borderWidth: 1, borderColor: flColor.bronzeBorder },
   videoPreviewText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  photoSet: { gap: 10 },
+  thumbGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  thumb: { width: '23.5%', aspectRatio: 1, borderRadius: flRadius.sm, overflow: 'hidden', backgroundColor: flColor.charcoal900 },
+  thumbAdd: { alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed },
+  thumbRemove: { position: 'absolute', top: 4, right: 4, width: 24, height: 24, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
+  photoCount: { fontSize: 12, color: flColor.gray400 },
+  displayRow: { flexDirection: 'row', gap: 8 },
+  displayOpt: { flex: 1, gap: 2, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
+  displayOptOn: { borderColor: flColor.accentBorder },
+  displayLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
+  displayLabelOn: { color: flColor.bronze300 },
+  displaySub: { fontSize: 11.5, color: flColor.gray600 },
   mediaRemove: { position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)' },
 });

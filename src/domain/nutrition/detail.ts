@@ -31,6 +31,10 @@ export function unitChoices(food: CatalogFood): UnitChoice[] {
     if (isGramUnit(s)) continue;
     // "100 g" is a per-100 statement, not a unit someone eats in; it becomes the gram pill below.
     if (/^100\s*(g|ml)\b/i.test(s.label)) continue;
+    /* ⚠ A serving with no weight cannot be multiplied, so it can only ever say 0 (PO 09-28: a scanned
+       rice opened on "about 2/3 cup · 0 cal" — USDA's unit was "GRM", which food-search did not read).
+       Without it the food opens on grams, which is always true. */
+    if (s.grams == null) continue;
     out.push({ label: s.label, serving: s });
   }
   out.push({ label: 'grams', serving: { label: 'g', grams: 1 } });

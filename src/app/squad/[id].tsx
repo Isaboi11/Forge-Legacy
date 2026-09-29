@@ -53,6 +53,7 @@ import { ProgressPostCard } from '@/components/forge/ProgressPostCard';
 import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { milestoneAckLabel } from '@/domain/share/milestone-card';
 import { recapNoteLines } from '@/domain/share/recap-stats';
+import { displayOf } from '@/domain/squad/post-photos';
 import { earlyLabel, goalDraft, parseGoalEditMode, type GoalEditMode, type GoalPhase } from '@/domain/squad/goal-state';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
@@ -1610,6 +1611,7 @@ function FeedCard({
          stand-ins it exists to suppress. */
       caption={post.type === 'discussion' || summary ? post.body : detail || null}
       media={media}
+      mediaDisplay={displayOf(post.media)}
       customMedia={
         milestone ? (
           <MilestoneBand card={milestone} postId={post.id} />

@@ -39,6 +39,8 @@ export interface PostMedia {
   kind: 'image' | 'video';
   /** Progress posts carry two images; `slot` says which side of the divider each belongs on. */
   slot?: 'before' | 'after';
+  /** On the FIRST item of a set of photos: Facebook grid or Instagram swipe (PO 09-28). */
+  display?: 'grid' | 'swipe';
 }
 
 export interface Reactor {
@@ -142,7 +144,8 @@ function asMedia(raw: unknown): PostMedia[] {
       if (!url) return null;
       const kind = o.kind === 'video' ? 'video' : 'image';
       const slot = o.slot === 'before' || o.slot === 'after' ? (o.slot as 'before' | 'after') : undefined;
-      return { url, kind, slot } as PostMedia;
+      const display = o.display === 'grid' || o.display === 'swipe' ? (o.display as 'grid' | 'swipe') : undefined;
+      return { url, kind, slot, ...(display ? { display } : null) } as PostMedia;
     })
     .filter((m): m is PostMedia => m !== null);
 }

@@ -150,8 +150,15 @@ function fdcFood(hit: Record<string, any>): Food {
   // Branded foods report per 100 g already; `servingSize` is the label serving on top of that.
   const servings: Serving[] = [{ label: '100 g', grams: 100 }];
   const size = num(hit.servingSize);
-  if (size && (hit.servingSizeUnit === 'g' || hit.servingSizeUnit === 'ml')) {
-    const label = hit.householdServingFullText || `${size} ${hit.servingSizeUnit}`;
+  // ⚠ Newer Branded records say "GRM" / "MLT", older ones "g" / "ml" (PO 09-28: a rice whose 140 GRM
+  // serving was kept as "about 2/3 cup" with no weight, so it read 0 cal).
+  const unit = /^(g|gm|grm|gram|grams)$/i.test(String(hit.servingSizeUnit ?? ''))
+    ? 'g'
+    : /^(ml|mlt)$/i.test(String(hit.servingSizeUnit ?? ''))
+      ? 'ml'
+      : null;
+  if (size && unit) {
+    const label = hit.householdServingFullText || `${size} ${unit}`;
     servings.unshift({ label: String(label), grams: size });
   } else if (hit.householdServingFullText) {
     servings.unshift({ label: String(hit.householdServingFullText), grams: null });
