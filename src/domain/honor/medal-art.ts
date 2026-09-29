@@ -26,6 +26,7 @@
  */
 
 import { CORONA, FILL, FIT, FRAMES, FRAME_OF, MARKS, MEDALS, type MedalTier } from './medal-data.ts';
+import { FINE, SYMBOLS } from './symbol-data.ts';
 
 export type MedalFace = 'clean' | 'struck';
 
@@ -106,7 +107,7 @@ export function medalSpec(slug: string, face: MedalFace = 'clean'): Spec | null 
   return {
     face,
     frame: FRAME_OF[cat] ?? 'rope',
-    mark: MARKS[mark] ? mark : null,
+    mark: SYMBOLS[mark] || MARKS[mark] ? mark : null,
     ex: ex || '',
     tier: TIERS[tier] ? tier : 2,
   };
@@ -122,8 +123,38 @@ function frameLayer(spec: Spec): string {
   return `<g stroke-width="${GEOM.frameStroke}" opacity="${TIERS[spec.tier].frame}">${FRAMES[spec.frame]}</g>`;
 }
 
+/*
+ * ══ THE FORGE HONOR SYMBOLS (PO 2026-09-29) — "symbols inside medals" ══
+ * The figure at the centre is now the Honor Symbols delivery (`symbol-data.ts`), not the engine's mark;
+ * frames, exergue and corona are the engine's, untouched. The symbols are an icon SET drawn on one 24×24
+ * grid with a 2-unit margin, so every one is fitted by that same box — optical weight stays even across
+ * the set, which a per-figure bounding box would undo. Two weights, as drawn: main, and fine at the
+ * design's .7/1.35 of it. Round caps and joins, as drawn — the engine's square caps would chip them.
+ */
+const SYMBOL_BOX = [2, 2, 20, 20] as const;
+const SYMBOL_STROKE = { clean: 2.5, struck: 2.3 };
+const SYMBOL_FINE_RATIO = 0.7 / 1.35;
+
+function symbolLayer(spec: Spec, art: string): string {
+  let box: readonly number[];
+  if (spec.face === 'clean') box = GEOM.cleanBox;
+  else {
+    const mb = GEOM.markBox[spec.frame] ?? GEOM.markBox.rope;
+    box = spec.ex ? mb.ex : mb.noEx;
+  }
+  const b = SYMBOL_BOX;
+  const s = Math.min(box[0] / b[2], box[1] / b[3], GEOM.mark.maxScale);
+  const tx = n(32 - s * (b[0] + b[2] / 2));
+  const ty = n(box[2] - s * (b[1] + b[3] / 2));
+  const main = SYMBOL_STROKE[spec.face] / s;
+  const body = art.split(FINE).join(String(n(main * SYMBOL_FINE_RATIO)));
+  return `<g transform="translate(${tx},${ty}) scale(${n(s)})" stroke-width="${n(main)}" stroke-linecap="round" stroke-linejoin="round">${body}</g>`;
+}
+
 function markLayer(spec: Spec): string {
   if (!spec.mark) return '';
+  const art = SYMBOLS[spec.mark];
+  if (art) return symbolLayer(spec, art);
   let box: readonly number[];
   let stroke = GEOM.mark.stroke;
   if (spec.face === 'clean') {

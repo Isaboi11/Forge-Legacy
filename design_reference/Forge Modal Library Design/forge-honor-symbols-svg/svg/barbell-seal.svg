@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none" stroke-linecap="round" stroke-linejoin="round"><defs>
+<linearGradient id="sg160" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="46"><stop offset="0" stop-color="#F3D9AE"/><stop offset=".45" stop-color="#C99767"/><stop offset="1" stop-color="#6E4F32"/></linearGradient>
+<radialGradient id="sf160" cx="50%" cy="38%" r="65%"><stop offset="0" stop-color="#2E271F"/><stop offset="1" stop-color="#110F0C"/></radialGradient></defs>
+<polygon points="24.00,2.00 43.05,13.00 43.05,35.00 24.00,46.00 4.95,35.00 4.95,13.00" fill="url(#sf160)" stroke="url(#sg160)" stroke-width="1.3"/>
+<polygon points="24.00,4.60 40.80,14.30 40.80,33.70 24.00,43.40 7.20,33.70 7.20,14.30" stroke="url(#sg160)" stroke-width=".5" opacity=".55"/>
+<path d="M22.6 4.6L24 3.2l1.4 1.4L24 6z" fill="url(#sg160)" stroke="none"/>
+<g transform="translate(13 13.2) scale(.917)"><g stroke="url(#sg160)" stroke-width="1.45"><path d="M1.6 12h2.2M8.8 12h6.4M20.2 12h2.2"/><rect x="6.4" y="5.2" width="2.4" height="13.6" rx=".8"/><rect x="15.2" y="5.2" width="2.4" height="13.6" rx=".8"/><rect x="3.8" y="8" width="2" height="8" rx=".7"/><rect x="18.2" y="8" width="2" height="8" rx=".7"/></g><g stroke="url(#sg160)" stroke-width=".75" opacity=".85"><path d="M11 11v2M12 11v2M13 11v2M7.6 7.2v9.6M16.4 7.2v9.6"/></g></g></svg>
