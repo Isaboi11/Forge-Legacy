@@ -109,8 +109,8 @@ test('⚠ the streamed reply is ONE growing turn, cleared of `streaming` when it
   const ask = sheet.slice(sheet.indexOf('const askAloud = async'), sheet.indexOf('const understand = async'));
   // By stream id (`sid`), never "the last streaming turn" — two answers in flight wrote into each other (QA R2-F5).
   assert.match(ask, /say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\)/);
-  assert.match(ask, /x\.kind === 'holt' && x\.sid === sid \? \{ \.\.\.x, text: acc \} : x/);
-  assert.match(ask, /x\.kind === 'holt' && x\.sid === sid && x\.streaming \? \{ \.\.\.x, streaming: undefined \}/);
+  assert.match(ask, /setThread\(\(t\) => streamInto\(t, sid, acc\)\)/);
+  assert.match(ask, /setThread\(\(t\) => streamEnded\(t, sid\)\)/);
   for (const route of ['answer', 'crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'offline'])
     assert.match(ask, new RegExp(`case '${route}':`), route);
 });

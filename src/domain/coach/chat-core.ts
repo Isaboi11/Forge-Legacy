@@ -83,6 +83,18 @@ export type Turn =
    *  false under 18 (NUT-D5 — recipes yes, calorie steering no). */
   | { kind: 'dishes'; dishes: DishCard[]; numbers: boolean };
 
+/*
+ * ══ AN ANSWER STILL ARRIVING (QA R2-F5) ══ — the three thread operations a coach-ask stream makes, kept
+ * pure so two interleaved fake streams can be run against them in a test. Each stream touches ONLY the
+ * turn its `sid` names; and Holt is still answering while any turn is streaming, which is what holds the
+ * next message in the queue after the typing dots have gone.
+ */
+export const streamInto = (t: readonly Turn[], sid: number, text: string): Turn[] =>
+  t.map((x) => (x.kind === 'holt' && x.sid === sid ? { ...x, text } : x));
+export const streamEnded = (t: readonly Turn[], sid: number): Turn[] =>
+  t.map((x) => (x.kind === 'holt' && x.sid === sid && x.streaming ? { ...x, streaming: undefined } : x));
+export const answerArriving = (t: readonly Turn[]): boolean => t.some((x) => x.kind === 'holt' && x.streaming === true);
+
 /** Everything on the program card, all of it out of the engine. */
 export interface ProgramCard {
   kicker: string;
