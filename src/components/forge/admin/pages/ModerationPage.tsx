@@ -1,182 +1,196 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Text, View } from 'react-native';
 
-import { StatLine } from '@/components/forge/admin/charts';
-import { Block, Btn, Columns, Empty, ListRow, PageHead, QueryGate, RowMeta, RowTitle, Tag, when } from '@/components/forge/admin/crm-ui';
+import { Btn, DeleteBtn, ErrorLine, PageHeader, SectionLabel, Skeleton, useTwoTap, useToast } from '@/components/forge/admin/crm-ui';
+import { useCrm } from '@/components/forge/admin/crm-theme';
 import type { PageProps } from '@/components/forge/admin/pages/types';
-import { flColor } from '@/constants/foundation';
 import {
   deleteCommunityFood,
   fetchAdminCommunityFoods,
   fetchAdminReports,
   resolveReport,
   restoreCommunityFood,
+  type AdminReport,
 } from '@/data/moderation-live';
+import { daysSince, moderationNote, moderationSummary, waitingTag } from '@/domain/admin/notes/moderation';
+import { REPORT_REASON_LABEL, isReportReason } from '@/domain/moderation/moderation-core';
 import { useQuery } from '@/lib/useQuery';
 
 /**
- * Moderation — the two to-do queues that answer for what athletes put in front of each other: reported
- * content and people (0171) and shared foods (0219, Nutrition Amendment 004). Moved whole from the old
- * operator dashboard by Admin-Analytics-Amendment-002.
+ * Moderation (Forge CRM.dc.html, the MODERATION section) — the two to-do queues that answer for what
+ * athletes put in front of each other: reported content and people (0171) and shared foods (0219,
+ * Nutrition Amendment 004).
  *
- * Neither is range-scoped, and that is the page's one rule: an open report is not less open because
- * the range chips say 7D, and a hidden food is a to-do like a report.
+ * Neither is range-scoped: an open report is not less open because the range says 7D.
+ *
+ * ⚠ This queue is an App Store obligation (Guideline 1.2 requires reporting AND timely responses), which
+ * is why each row carries how long it has waited and the summary carries the oldest.
  */
+
+const TARGET: Record<string, string> = { post: 'Squad post', comment: 'Comment', checkin: 'Check-in', squad: 'Squad' };
+
+function reportTitle(r: AdminReport): string {
+  const who = r.targetHandle ? `@${r.targetHandle}` : null;
+  if (r.targetKind === 'athlete') return `Profile: ${who ?? `id ${r.targetId.slice(0, 8)}`}`;
+  const kind = TARGET[r.targetKind] ?? r.targetKind;
+  return who ? `${kind} by ${who}` : `${kind} · id ${r.targetId.slice(0, 8)}`;
+}
+
+const reasonText = (reason: string) => (isReportReason(reason) ? REPORT_REASON_LABEL[reason] : reason.replace(/_/g, ' '));
+
 export function ModerationPage(_props: PageProps) {
-  /* Reports (0171). Deliberately NOT range-scoped, because an open report is not less open because the
-     chips say 7D. */
-  const reports = useQuery(() => fetchAdminReports(50, null), []);
-  /* Shared foods (0219, Amendment 004). Not range-scoped: a hidden food is a to-do, like a report. */
-  const sharedFoods = useQuery(() => fetchAdminCommunityFoods(false), []);
+  const { c } = useCrm();
+  const toast = useToast();
+  const { armed, tap } = useTwoTap();
+
+  // Both reads return null on failure rather than throwing; turn that into an error the page can show.
+  // `at` = when it was read, so "days waiting" is judged against that, not a render-time clock.
+  const reports = useQuery(async () => {
+    const r = await fetchAdminReports(50, null);
+    if (!r) throw new Error('Couldn’t load reports. Check that migration 0171 is applied.');
+    return { r, at: Date.now() };
+  }, []);
+  const foods = useQuery(async () => {
+    const f = await fetchAdminCommunityFoods(true);
+    if (!f) throw new Error('Couldn’t load shared foods. Check that migration 0219 is applied.');
+    return f.filter((x) => x.hidden);
+  }, []);
+
+  // Rows closed on this visit stay in the list showing their result, as the design does.
+  const [closedHere, setClosedHere] = useState<Record<string, true>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [rowErr, setRowErr] = useState<Record<string, string>>({});
 
   const resolve = async (id: string, status: 'actioned' | 'dismissed') => {
+    setBusy(`${id}:${status}`);
+    setRowErr(({ [id]: _drop, ...rest }) => rest);
     try {
       await resolveReport(id, status);
+      setClosedHere((m) => ({ ...m, [id]: true }));
       reports.refetch();
     } catch {
-      /* The row stays open and visibly unresolved, which is the safe failure: a report that silently
-         disappears from the queue is worse than one that refuses to close. */
+      // The row stays open and says so: a report that silently leaves the queue is the worse failure.
+      setRowErr((m) => ({ ...m, [id]: 'Couldn’t save. It’s still open. Check your connection and tap again.' }));
+    } finally {
+      setBusy(null);
     }
   };
 
   const moderateFood = async (key: string, action: 'restore' | 'delete') => {
+    setBusy(`${key}:${action}`);
+    setRowErr(({ [key]: _drop, ...rest }) => rest);
     try {
       await (action === 'restore' ? restoreCommunityFood(key) : deleteCommunityFood(key));
-      sharedFoods.refetch();
+      toast(action === 'restore' ? 'Restored' : 'Deleted');
+      foods.refetch();
     } catch {
-      /* The row keeps its state, visibly. A food that silently vanishes from the queue is the worse failure. */
+      setRowErr((m) => ({ ...m, [key]: `Couldn’t save. It’s still hidden. Check your connection and tap again.` }));
+    } finally {
+      setBusy(null);
     }
   };
 
-  const rc = reports.data?.counts;
-  const foods = sharedFoods.data ?? [];
-  const flagged = foods.filter((f) => f.hidden || f.reports > 0);
+  const data = reports.data;
+  const counts = data?.r.counts;
+  const oldestOpenDays = counts ? daysSince(counts.oldestOpenAt, data.at) : null;
+  const rows = (data?.r.rows ?? []).filter((r) => r.status === 'open' || closedHere[r.id]);
+  const hidden = foods.data ?? [];
+
+  const note =
+    counts && foods.data
+      ? moderationNote({ open: counts.open, actioned: counts.actioned, dismissed: counts.dismissed, oldestOpenDays, hiddenFoods: hidden.length })
+      : null;
+
+  const rowBase = { flexDirection: 'row', alignItems: 'center', gap: 20, borderBottomWidth: 1, borderBottomColor: c.line } as const;
 
   return (
-    <View style={{ gap: 28 }}>
-      <PageHead
-        title="Moderation"
-        lede="Reported content and people, and shared foods the community flagged. Both are to-do lists — not range-scoped."
-      />
+    <View>
+      <PageHeader title="Moderation" purpose="Reported posts, profiles and foods waiting on you. Apple expects a timely answer." note={note} />
 
-      <Columns>
-        {/* ── Reports (0171) ───────────────────────────────────────────── */}
-        <Block
-          label="Reports"
-          hint="Reported content and people. ⚠ This queue is an App Store obligation, not a nice-to-have — Guideline 1.2 requires reporting AND timely responses, and an unread queue fails the second half while passing the first."
-        >
-          <QueryGate state={reports}>
-            {reports.data && rc ? (
-              <>
-                <StatLine label="Open" value={rc.open} />
-                <StatLine label="Actioned" value={rc.actioned} />
-                <StatLine label="Dismissed" value={rc.dismissed} />
-                {/*
-                  * ⚠ THE LINE THAT ACTUALLY MEASURES "TIMELY". `Open: 0` and `Open: 3, oldest three weeks
-                  * ago` are the difference between a queue being worked and a queue being ignored, and the
-                  * count alone cannot tell them apart. Null is "nothing has ever been reported" — a
-                  * different fact from "nothing is open", which a bare 0 collapses.
-                  */}
-                <StatLine
-                  label="Oldest still open"
-                  value={
-                    rc.oldestOpenAt
-                      ? when(rc.oldestOpenAt, true)
-                      : rc.open === 0 && rc.actioned === 0 && rc.dismissed === 0
-                        ? 'nothing has ever been reported'
-                        : 'nothing open'
-                  }
-                />
-                {reports.data.rows.length === 0 ? null : (
-                  <View style={styles.list}>
-                    {reports.data.rows.map((r) => (
-                      <ListRow key={r.id}>
-                        <View style={styles.head}>
-                          <Tag label={`${r.reason} · ${r.targetKind}`} tone={r.status === 'open' ? 'high' : 'muted'} />
-                          <Text style={styles.who} numberOfLines={1}>
-                            {r.targetHandle ? `@${r.targetHandle}` : r.targetId.slice(0, 8)}
-                          </Text>
-                          <Text style={styles.when}>{when(r.createdAt, true)}</Text>
-                        </View>
-                        {/* Full text, never truncated — a report read halfway is a report misread. */}
-                        {r.note ? (
-                          <Text style={styles.body} selectable>
-                            {r.note}
-                          </Text>
-                        ) : null}
-                        <RowMeta>
-                          {[r.status, r.reporterHandle ? `from @${r.reporterHandle}` : null, r.resolution]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </RowMeta>
-                        {r.status === 'open' ? (
-                          <View style={styles.actions}>
-                            <Btn small label="Actioned" onPress={() => void resolve(r.id, 'actioned')} />
-                            <Btn small label="Dismiss" onPress={() => void resolve(r.id, 'dismissed')} />
-                          </View>
-                        ) : null}
-                      </ListRow>
-                    ))}
+      <View style={{ gap: 48 }}>
+        {/* ── Reports waiting (0171) ── */}
+        <View>
+          <SectionLabel
+            label="Reports waiting"
+            right={counts ? <Text style={{ fontSize: 13, color: c.ink3, fontVariant: ['tabular-nums'] }}>{moderationSummary({ ...counts, oldestOpenDays })}</Text> : null}
+          />
+          {reports.error ? (
+            <ErrorLine onRetry={reports.refetch}>{reports.error}</ErrorLine>
+          ) : !data ? (
+            <Skeleton />
+          ) : rows.length === 0 ? (
+            <Text style={{ paddingVertical: 18, fontSize: 15, color: c.ink2, borderBottomWidth: 1, borderBottomColor: c.line }}>
+              No reports waiting. When someone reports a post, profile or food it shows up here.
+            </Text>
+          ) : (
+            rows.map((r) => {
+              const open = r.status === 'open';
+              const tag = waitingTag(daysSince(r.createdAt, data.at));
+              return (
+                <View key={r.id} style={[rowBase, { paddingVertical: 16 }]}>
+                  <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 10 }}>
+                      <Text style={{ fontSize: 15, fontWeight: '500', color: c.ink }}>{reportTitle(r)}</Text>
+                      {open ? (
+                        <Text style={{ fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: tag.late ? c.warn : c.ink3 }}>{tag.text}</Text>
+                      ) : null}
+                    </View>
+                    {/* Full text, never truncated: a report read halfway is a report misread. */}
+                    <Text selectable style={{ fontSize: 13.5, lineHeight: 20, color: c.ink2 }}>
+                      {r.note ? `“${r.note}”` : reasonText(r.reason)}
+                    </Text>
+                    <Text style={{ fontSize: 12.5, color: c.ink3 }}>
+                      Reported by {r.reporterHandle ? `@${r.reporterHandle}` : 'an athlete'} · {reasonText(r.reason).toLowerCase()}
+                    </Text>
+                    {rowErr[r.id] ? <Text style={{ fontSize: 13, color: c.crit }}>{rowErr[r.id]}</Text> : null}
                   </View>
-                )}
-              </>
-            ) : reports.data === null && !reports.loading ? (
-              <Empty>Reports could not be read — check 0171 is applied.</Empty>
-            ) : null}
-          </QueryGate>
-        </Block>
+                  {open ? (
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <Btn size="sm" kind="primary" label="Actioned" busy={busy === `${r.id}:actioned`} disabled={!!busy} onPress={() => void resolve(r.id, 'actioned')} />
+                      <Btn size="sm" label="Dismiss" busy={busy === `${r.id}:dismissed`} disabled={!!busy} onPress={() => void resolve(r.id, 'dismissed')} />
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 13, color: c.ink3 }}>
+                      {r.status === 'actioned' ? `Actioned${r.resolution ? ` · ${r.resolution}` : ''}` : 'Dismissed'}
+                    </Text>
+                  )}
+                </View>
+              );
+            })
+          )}
+        </View>
 
-        {/* ── Shared foods (0219, Amendment 004) ───────────────────────── */}
-        <Block
-          label="Shared foods"
-          hint="Foods athletes shared after a barcode missed. Three reports hide one; restore it if the numbers are right, delete it if they are not."
-        >
-          <QueryGate state={sharedFoods}>
-            {sharedFoods.data ? (
-              <>
-                <StatLine label="Shared" value={foods.length} />
-                <StatLine label="Hidden by reports" value={foods.filter((f) => f.hidden).length} />
-                <StatLine label="Confirmed by 2+" value={foods.filter((f) => f.confirmations >= 2).length} />
-                {flagged.length === 0 ? (
-                  <Empty>Nothing flagged.</Empty>
-                ) : (
-                  <View style={styles.list}>
-                    {flagged.map((f) => (
-                      <ListRow key={f.key}>
-                        <View style={styles.head}>
-                          <Tag
-                            label={f.hidden ? 'hidden' : `${f.reports} report${f.reports === 1 ? '' : 's'}`}
-                            tone={f.hidden ? 'critical' : 'muted'}
-                          />
-                          <Text style={styles.when}>{when(f.updatedAt, true)}</Text>
-                        </View>
-                        <RowTitle>{[f.name, f.brand].filter(Boolean).join(' · ')}</RowTitle>
-                        <RowMeta>
-                          {`${f.gtin} · per 100 g: ${f.kcal100} kcal · P ${f.protein100} · C ${f.carb100} · F ${f.fat100} · ${f.submissions} submitted`}
-                        </RowMeta>
-                        <View style={styles.actions}>
-                          <Btn small label="Restore" onPress={() => void moderateFood(f.key, 'restore')} />
-                          <Btn small kind="danger" label="Delete" onPress={() => void moderateFood(f.key, 'delete')} />
-                        </View>
-                      </ListRow>
-                    ))}
-                  </View>
-                )}
-              </>
-            ) : !sharedFoods.loading ? (
-              <Empty>Shared foods could not be read — check 0219 is applied.</Empty>
-            ) : null}
-          </QueryGate>
-        </Block>
-      </Columns>
+        {/* ── Shared foods hidden by reports (0219, Amendment 004) ── */}
+        <View>
+          <SectionLabel label="Shared foods hidden by reports" />
+          <Text style={{ marginTop: 12, marginBottom: 4, fontSize: 13, color: c.ink3 }}>
+            Foods athletes added after a barcode missed. Hidden from everyone until you restore them.
+          </Text>
+          {foods.error ? (
+            <ErrorLine onRetry={foods.refetch}>{foods.error}</ErrorLine>
+          ) : !foods.data ? (
+            <Skeleton />
+          ) : hidden.length === 0 ? (
+            <Text style={{ paddingVertical: 18, fontSize: 15, color: c.ink2, borderBottomWidth: 1, borderBottomColor: c.line }}>No shared foods are hidden.</Text>
+          ) : (
+            hidden.map((f) => (
+              <View key={f.key} style={[rowBase, { paddingVertical: 14 }]}>
+                <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '500', color: c.ink }}>{f.brand ? `${f.name}, ${f.brand}` : f.name}</Text>
+                  <Text style={{ fontSize: 12.5, color: c.ink3 }}>
+                    {`${f.reports} ${f.reports === 1 ? 'report' : 'reports'} · ${f.submissions} ${f.submissions === 1 ? 'submission' : 'submissions'} · per 100 g: ${f.kcal100} kcal · P ${f.protein100} · C ${f.carb100} · F ${f.fat100} · barcode ${f.gtin}`}
+                  </Text>
+                  {rowErr[f.key] ? <Text style={{ fontSize: 13, color: c.crit }}>{rowErr[f.key]}</Text> : null}
+                </View>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Btn size="sm" label="Restore" busy={busy === `${f.key}:restore`} disabled={!!busy} onPress={() => void moderateFood(f.key, 'restore')} />
+                  <DeleteBtn armed={armed === f.key} busy={busy === `${f.key}:delete`} onPress={() => tap(f.key, () => void moderateFood(f.key, 'delete'))} />
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  list: { marginTop: 6 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  who: { flex: 1, minWidth: 0, fontSize: 11.5, color: flColor.gray600 },
-  when: { flexShrink: 0, marginLeft: 'auto', fontSize: 11.5, color: flColor.gray400 },
-  body: { fontSize: 13, lineHeight: 19, color: flColor.cream100 },
-  actions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-});

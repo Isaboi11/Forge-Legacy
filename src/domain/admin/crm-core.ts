@@ -1,5 +1,5 @@
 /**
- * The Business CRM's arithmetic and wording (Admin-Analytics-Amendment-002, migration 0236).
+ * The Business CRM's arithmetic and wording (Admin-Analytics-Amendment-002, migration 0238).
  *
  * Pure and dependency-free — no `@/` imports, because `node --test` runs this file directly with type
  * stripping and a runtime alias would not resolve. Everything the CRM screens compute lives here so it

@@ -2,7 +2,7 @@
  * Forge Legacy — `asc-sync`: the ONLY way App Store Connect data reaches our database (AA-D17).
  *
  * The Creator Dashboard's App Store panel calls this with "Sync now". It pulls three things and writes
- * them into tables that are RLS-on with ZERO policies (read only through `admin_appstore`, 0236):
+ * them into tables that are RLS-on with ZERO policies (read only through `admin_appstore`, 0238):
  *
  *   1. Daily SALES summary reports (downloads / redownloads / updates / in-app purchases / USD proceeds)
  *      → `asc_daily`, one row per (day, metric, dim). dim '' = the day's total, otherwise a country code

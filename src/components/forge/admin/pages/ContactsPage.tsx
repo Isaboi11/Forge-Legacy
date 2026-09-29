@@ -1,27 +1,30 @@
 import { useState } from 'react';
-import { Linking, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { flColor } from '@/constants/foundation';
+import { DateInput } from '@/components/forge/admin/DateInput';
 import {
-  Block,
   Btn,
   Chip,
-  Chips,
-  Columns,
-  Empty,
-  ErrorText,
+  DeleteBtn,
+  DISPLAY,
+  ErrorLine,
   Field,
-  ListRow,
-  Note,
-  PageHead,
+  FieldGrid,
+  FormPanel,
+  HoverRow,
+  Input,
+  LinkText,
+  Opt,
+  PageHeader,
   Panel,
-  QueryGate,
-  RowMeta,
-  RowTitle,
-  Tag,
-  useWide,
+  Row,
+  Skeleton,
+  useLayout,
+  useToast,
+  useTwoTap,
   when,
 } from '@/components/forge/admin/crm-ui';
+import { useCrm } from '@/components/forge/admin/crm-theme';
 import type { PageProps } from '@/components/forge/admin/pages/types';
 import {
   deleteContact,
@@ -34,419 +37,645 @@ import {
   type Contact,
   type ContactPatch,
 } from '@/data/crm-live';
-import {
-  CONTACT_KINDS,
-  CONTACT_STAGES,
-  followUpLabel,
-  parseTags,
-  todayKey,
-  type ContactKind,
-  type ContactStage,
-} from '@/domain/admin/crm-core';
+import { CONTACT_STAGES, followUpLabel, todayKey, type ContactKind, type ContactStage } from '@/domain/admin/crm-core';
+import { contactsNote } from '@/domain/admin/notes/contacts';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
- * Contacts (Admin-Analytics-Amendment-002, AA-D15). Operator records about people the business deals
- * with — testers from the website form and trainer seats sync in automatically; everything else is
- * added by hand. AA-D13 still applies to what is TYPED here: notes never copy training data.
+ * Contacts (Forge CRM.dc.html, the CONTACTS section; AA-D15).
+ *
+ * The list is read once (every kind) and filtered here: the chips' counts come from the RPC's `counts`,
+ * and "Follow-ups due" is a date filter the RPC has no parameter for. Testers (website waitlist) and
+ * trainers (trainer seats) are synced into the table by `admin_contacts` itself, so they appear on their
+ * own; deleting one of those only marks it inactive, or the next read would bring it straight back.
  */
 
-type Filter = 'all' | 'due' | ContactKind;
+type Filter = 'all' | ContactKind | 'due';
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const KIND_KEYS: ContactKind[] = ['business', 'tester', 'trainer', 'user', 'other'];
+const isKind = (v: string | undefined): v is ContactKind => !!v && (KIND_KEYS as string[]).includes(v);
 
-const ACTIVITY_KINDS: { key: Activity['kind']; label: string }[] = [
+const CHIPS: { key: Filter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'business', label: 'Business' },
+  { key: 'tester', label: 'Testers' },
+  { key: 'trainer', label: 'Trainers' },
+  { key: 'user', label: 'App users' },
+  { key: 'other', label: 'Other' },
+  { key: 'due', label: 'Follow-ups due' },
+];
+
+/** One contact's type, singular (the row's caps line, the panel's Type field, the form's options). */
+const KIND_ONE: Record<ContactKind, string> = { business: 'Business', tester: 'Tester', trainer: 'Trainer', user: 'App user', other: 'Other' };
+
+const STAGE_LABEL = Object.fromEntries(CONTACT_STAGES.map((s) => [s.key, s.label])) as Record<ContactStage, string>;
+
+const LOG_KINDS: { key: Activity['kind']; label: string }[] = [
   { key: 'note', label: 'Note' },
   { key: 'call', label: 'Call' },
   { key: 'email', label: 'Email' },
   { key: 'meeting', label: 'Meeting' },
   { key: 'task', label: 'Task' },
 ];
+const LOG_LABEL = Object.fromEntries(LOG_KINDS.map((k) => [k.key, k.label])) as Record<Activity['kind'], string>;
 
-const SOURCE_LINE: Record<Contact['source'], string> = {
-  testflight_form: 'From the website TestFlight form',
-  trainer_seat: 'From the trainer seat register',
-  manual: 'Added by hand',
-};
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-function stageLabel(k: ContactStage): string {
-  return CONTACT_STAGES.find((x) => x.key === k)?.label ?? k;
-}
-function kindLabel(k: ContactKind): string {
-  return CONTACT_KINDS.find((x) => x.key === k)?.label ?? k;
+const displayName = (ct: Contact) => ct.name || ct.email || 'Unnamed contact';
+
+function sourceLine(ct: Contact): string {
+  if (ct.source === 'testflight_form') return 'Arrived from the website waitlist';
+  if (ct.source === 'trainer_seat') return 'Arrived from trainer sign-up';
+  if (ct.athlete_handle) return `Linked to @${ct.athlete_handle}`;
+  return 'Added by you';
 }
 
-/** Two-tap confirm: the first tap arms for ~4 s, the second acts. */
-function useTwoTap(): [boolean, () => void, () => void] {
-  const [armed, setArmed] = useState(false);
-  const arm = () => {
-    setArmed(true);
-    setTimeout(() => setArmed(false), 4000);
-  };
-  return [armed, arm, () => setArmed(false)];
+const metaLine = (ct: Contact) => [ct.company, ct.role].filter(Boolean).join(' · ') || sourceLine(ct);
+
+/** "Follow up — 2 days overdue" / "Follow up today" / "Follow up Oct 3"; warn = due today or earlier. */
+function followLine(ct: Contact, today: string): { text: string; warn: boolean } | null {
+  const f = followUpLabel(ct.next_follow_up, today);
+  if (!f || !ct.next_follow_up) return null;
+  if (f.overdue) return { text: f.text.charAt(0).toUpperCase() + f.text.slice(1), warn: true };
+  return { text: `Follow up ${when(ct.next_follow_up)}`, warn: false };
 }
+
+// Same rule as the RPC's `follow_up_due` count (next_follow_up <= current_date), so the chip and its list agree.
+const isDue = (ct: Contact, today: string) => !!today && !!ct.next_follow_up && ct.next_follow_up <= today;
+
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+
+/** yyyy-mm-dd shifted by whole days (UTC arithmetic on a date key, so no DST drift). */
+function shiftDay(key: string, days: number): string {
+  const t = Date.parse(`${key}T00:00:00Z`);
+  if (Number.isNaN(t)) return key;
+  return new Date(t + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+interface FormValues {
+  name: string;
+  email: string;
+  company: string;
+  role: string;
+  phone: string;
+  follow: string;
+  kind: ContactKind;
+  stage: ContactStage;
+}
+const EMPTY_FORM: FormValues = { name: '', email: '', company: '', role: '', phone: '', follow: '', kind: 'business', stage: 'lead' };
+
+const SAVE_FAILED = 'Couldn’t save. Check your connection and tap again.';
 
 export function ContactsPage(props: PageProps) {
-  const wide = useWide();
-  const today = todayKey();
+  const { c } = useCrm();
+  const { lg } = useLayout();
+  const toast = useToast();
+  const twoTap = useTwoTap();
 
-  const argKind = CONTACT_KINDS.some((k) => k.key === props.arg) ? (props.arg as ContactKind) : null;
-  const argId = props.arg && UUID.test(props.arg) ? props.arg : null;
+  // `today` is read with the list, so "is it due" is judged against one clock, never a render-time one.
+  const list = useQuery(async () => ({ l: await fetchContacts(null, null), today: todayKey() }), []);
+  const rows: Contact[] = list.data?.l.rows ?? [];
+  const counts = list.data?.l.counts ?? null;
+  const today = list.data?.today ?? '';
 
-  const [pickedFilter, setPickedFilter] = useState<Filter | undefined>(undefined);
-  const filter: Filter = pickedFilter ?? argKind ?? 'all';
-  // undefined = nothing picked yet (so a contact id passed by `go` opens); 'new' = the blank editor.
+  // A kind passed by `go` opens that chip; anything else is a contact id and opens that contact.
+  const argKind = isKind(props.arg) ? props.arg : null;
+  const argId = props.arg && !argKind ? props.arg : null;
+  const [filterPick, setFilterPick] = useState<Filter | null>(null);
+  const filter: Filter = filterPick ?? argKind ?? 'all';
+  const shown = rows.filter((r) => (filter === 'all' ? true : filter === 'due' ? isDue(r, today) : r.kind === filter));
+
+  // undefined = nothing picked yet (so a `go` id wins); null = the top row of the current list.
   const [picked, setPicked] = useState<string | null | undefined>(undefined);
-  const selected = picked !== undefined ? picked : argId;
+  const selectedId = (picked === undefined ? argId : picked) ?? shown[0]?.id ?? null;
+  const ct = rows.find((r) => r.id === selectedId) ?? null;
+  // Under 1180 the panel replaces the list once someone is opened ("‹ Back" returns).
+  const [openPick, setOpenPick] = useState<boolean | null>(null);
+  const open = openPick ?? !!argId;
 
-  const [text, setText] = useState('');
-  const [q, setQ] = useState('');
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const onSearch = (v: string) => {
-    setText(v);
-    if (timer) clearTimeout(timer);
-    setTimer(setTimeout(() => setQ(v.trim()), 300));
+  const activity = useQuery(async () => (selectedId ? { id: selectedId, rows: await fetchActivity(selectedId) } : null), [selectedId]);
+
+  // ── New contact form ──
+  const [form, setForm] = useState<FormValues | null>(null);
+  const [formErr, setFormErr] = useState<string | null>(null);
+  const [formBusy, setFormBusy] = useState(false);
+  const setF = (k: keyof FormValues, v: string) => {
+    setForm((f) => (f ? { ...f, [k]: v } : f));
+    setFormErr(null);
   };
 
-  const serverKind = filter === 'all' || filter === 'due' ? null : filter;
-  const list = useQuery(() => fetchContacts(serverKind, q || null), [serverKind, q]);
-  const counts = list.data?.counts;
-  const allRows = list.data?.rows ?? [];
-  const rows = filter === 'due' ? allRows.filter((r) => followUpLabel(r.next_follow_up, today)?.overdue) : allRows;
-  const current = selected && selected !== 'new' ? (allRows.find((r) => r.id === selected) ?? null) : null;
+  const saveForm = async () => {
+    if (!form || formBusy) return;
+    const name = form.name.trim();
+    const email = form.email.trim();
+    if (!name) return setFormErr('Add a name.');
+    if (email && !EMAIL_RE.test(email)) return setFormErr('That email doesn’t look right.');
+    const patch: ContactPatch = { kind: form.kind, stage: form.stage, name };
+    if (email) patch.email = email;
+    if (form.company.trim()) patch.company = form.company.trim();
+    if (form.role.trim()) patch.role = form.role.trim();
+    if (form.phone.trim()) patch.phone = form.phone.trim();
+    if (form.follow) patch.next_follow_up = form.follow;
+    setFormBusy(true);
+    try {
+      const id = await saveContact(null, patch);
+      toast(`${name} added to contacts`);
+      setForm(null);
+      setFilterPick('all');
+      setPicked(id);
+      setOpenPick(true);
+      list.refetch();
+    } catch (e) {
+      setFormErr(SAVE_FAILED);
+      if (__DEV__) console.warn('contact save failed', errorMessage(e));
+    } finally {
+      setFormBusy(false);
+    }
+  };
 
-  const listView = (
-    <Block label="People" right={<Btn label="New contact" kind="primary" small onPress={() => setPicked('new')} />}>
-      <Chips>
-        <Chip label="All" count={counts?.total ?? null} on={filter === 'all'} onPress={() => setPickedFilter('all')} />
-        {CONTACT_KINDS.map((k) => (
-          <Chip key={k.key} label={k.label} count={counts?.[k.key] ?? null} on={filter === k.key} onPress={() => setPickedFilter(k.key)} />
-        ))}
-        <Chip label="Follow-ups due" count={counts?.follow_up_due ?? null} on={filter === 'due'} onPress={() => setPickedFilter('due')} />
-      </Chips>
-      <Field value={text} onChangeText={onSearch} placeholder="Name, email, company, @handle or tag" autoCapitalize="none" autoCorrect={false} />
-      <QueryGate state={list}>
-        {rows.length === 0 ? (
-          <Empty>{filter === 'due' ? 'No follow-ups due.' : q ? 'Nobody matches that.' : 'No contacts here yet.'}</Empty>
-        ) : (
-          rows.map((c) => {
-            const fu = followUpLabel(c.next_follow_up, today);
-            const meta = [c.company, c.role, c.athlete_handle ? `@${c.athlete_handle}` : null].filter(Boolean).join(' · ');
-            return (
-              <ListRow key={c.id} onPress={() => setPicked(c.id)} selected={selected === c.id} label={`Open ${c.name ?? c.email ?? 'contact'}`}>
-                <RowTitle dim={!c.name && !c.email}>{c.name ?? c.email ?? 'Unnamed'}</RowTitle>
-                {meta ? <RowMeta>{meta}</RowMeta> : null}
-                {fu ? <RowMeta tone={fu.overdue ? 'warn' : undefined}>{fu.text}</RowMeta> : null}
-                <Chips>
-                  <Tag label={stageLabel(c.stage)} tone={c.stage === 'inactive' ? 'muted' : undefined} />
-                  <Tag label={kindLabel(c.kind)} tone="muted" />
-                  {c.open_tasks > 0 ? <Tag label={`${c.open_tasks} open ${c.open_tasks === 1 ? 'task' : 'tasks'}`} tone="high" /> : null}
-                </Chips>
-              </ListRow>
-            );
-          })
-        )}
-      </QueryGate>
-    </Block>
+  // ── Stage (the 5-segment bar) ──
+  const [stageOver, setStageOver] = useState<Record<string, ContactStage>>({});
+  const [stageSave, setStageSave] = useState<{ id: string; state: 'saving' | 'error'; msg: string } | null>(null);
+  const setStage = async (cur: Contact, key: ContactStage) => {
+    const prev = stageOver[cur.id] ?? cur.stage;
+    if (prev === key || (stageSave?.id === cur.id && stageSave.state === 'saving')) return;
+    setStageOver((o) => ({ ...o, [cur.id]: key }));
+    setStageSave({ id: cur.id, state: 'saving', msg: STAGE_LABEL[key] });
+    try {
+      await saveContact(cur.id, { stage: key });
+      setStageSave(null);
+      list.refetch();
+    } catch (e) {
+      setStageOver((o) => ({ ...o, [cur.id]: prev }));
+      setStageSave({ id: cur.id, state: 'error', msg: `Couldn’t save. It’s still “${STAGE_LABEL[prev]}”. Check your connection and tap again.` });
+      if (__DEV__) console.warn('stage save failed', errorMessage(e));
+    }
+  };
+
+  // ── Notes (save on blur, only if changed) ──
+  const [draft, setDraft] = useState<{ id: string; text: string } | null>(null);
+  const [noteSave, setNoteSave] = useState<{ id: string; state: 'saving' | 'error' } | null>(null);
+  const saveNotes = async (cur: Contact) => {
+    if (!draft || draft.id !== cur.id || draft.text === (cur.notes ?? '')) return;
+    setNoteSave({ id: cur.id, state: 'saving' });
+    try {
+      await saveContact(cur.id, { notes: draft.text });
+      setNoteSave(null);
+      toast('Saved');
+      list.refetch();
+    } catch (e) {
+      setNoteSave({ id: cur.id, state: 'error' });
+      if (__DEV__) console.warn('notes save failed', errorMessage(e));
+    }
+  };
+
+  // ── Activity composer (CHANGED vs the design: its kind chips had no text entry) ──
+  const [composer, setComposer] = useState<{ id: string; kind: Activity['kind']; text: string; due: string } | null>(null);
+  const [logBusy, setLogBusy] = useState(false);
+  const [logErr, setLogErr] = useState<string | null>(null);
+  const log = async () => {
+    if (!composer || logBusy) return;
+    const body = composer.text.trim();
+    if (!body) return setLogErr('Write a line first.');
+    setLogBusy(true);
+    setLogErr(null);
+    try {
+      await logActivity(composer.id, composer.kind, body, composer.kind === 'task' && composer.due ? composer.due : null);
+      setComposer(null);
+      activity.refetch();
+      list.refetch();
+    } catch (e) {
+      setLogErr(SAVE_FAILED);
+      if (__DEV__) console.warn('activity log failed', errorMessage(e));
+    } finally {
+      setLogBusy(false);
+    }
+  };
+
+  const [doneOver, setDoneOver] = useState<Record<string, boolean>>({});
+  const [doneErr, setDoneErr] = useState<string | null>(null);
+  const toggleDone = async (a: Activity, done: boolean) => {
+    setDoneOver((o) => ({ ...o, [a.id]: !done }));
+    setDoneErr(null);
+    try {
+      await setActivityDone(a.id, !done);
+      activity.refetch();
+      list.refetch();
+    } catch (e) {
+      setDoneOver((o) => ({ ...o, [a.id]: done }));
+      setDoneErr('Couldn’t save that task. Check your connection and tap again.');
+      if (__DEV__) console.warn('task toggle failed', errorMessage(e));
+    }
+  };
+
+  // ── Delete / mark inactive ──
+  const [delBusy, setDelBusy] = useState(false);
+  const [delErr, setDelErr] = useState<string | null>(null);
+  const remove = async (cur: Contact) => {
+    setDelBusy(true);
+    setDelErr(null);
+    try {
+      await deleteContact(cur.id);
+      // admin_contact_delete only marks synced rows inactive (they would re-sync); manual rows really go.
+      if (cur.source === 'manual') {
+        toast(`${displayName(cur)} deleted`);
+        setPicked(null);
+        setOpenPick(false);
+      } else {
+        toast(`${displayName(cur)} marked inactive`);
+        setStageOver((o) => ({ ...o, [cur.id]: 'inactive' }));
+      }
+      list.refetch();
+    } catch (e) {
+      setDelErr(SAVE_FAILED);
+      if (__DEV__) console.warn('contact delete failed', errorMessage(e));
+    } finally {
+      setDelBusy(false);
+    }
+  };
+
+  const pick = (id: string) => {
+    setPicked(id);
+    setOpenPick(true);
+    setDelErr(null);
+    setLogErr(null);
+    setDoneErr(null);
+  };
+
+  // ── Note under the title ──
+  const note = list.data
+    ? contactsNote({
+        total: counts?.total ?? rows.length,
+        due: rows
+          .filter((r) => isDue(r, today))
+          .sort((a, b) => ((a.next_follow_up ?? '') < (b.next_follow_up ?? '') ? -1 : 1))
+          .map((r) => ({ name: displayName(r), daysOver: daysBetween(r.next_follow_up as string, today) })),
+        openTasks: rows.reduce((s, r) => s + (Number(r.open_tasks) || 0), 0),
+        newTesters7d: rows.filter((r) => r.source === 'testflight_form' && r.created_at.slice(0, 10) > shiftDay(today, -7)).length,
+      })
+    : null;
+
+  const chipCount = (k: Filter): number | null => {
+    if (!counts) return null;
+    if (k === 'all') return counts.total;
+    if (k === 'due') return counts.follow_up_due;
+    return counts[k];
+  };
+
+  // ── List ──
+  const listPane = (
+    <View style={{ minWidth: 0, flex: lg ? 1 : undefined, borderTopWidth: 1, borderTopColor: c.line }}>
+      {list.error ? (
+        <View style={{ paddingBottom: 14 }}>
+          <ErrorLine onRetry={list.refetch}>{`Couldn’t load contacts. ${list.error}`}</ErrorLine>
+        </View>
+      ) : list.loading && !list.data ? (
+        <Skeleton />
+      ) : shown.length === 0 ? (
+        <Text style={{ paddingVertical: 18, fontSize: 14.5, lineHeight: 22.5, color: c.ink2 }}>
+          {filter === 'due' ? 'No follow-ups are due.' : filter === 'all' ? 'No contacts yet.' : 'Nobody of this type yet.'}
+        </Text>
+      ) : (
+        shown.map((r) => {
+          const f = followLine(r, today);
+          return (
+            <HoverRow key={r.id} onPress={() => pick(r.id)} selected={lg && r.id === selectedId} label={displayName(r)} bleed={12} style={{ marginHorizontal: 0, paddingVertical: 14 }}>
+              <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '500', color: c.ink }}>
+                  {displayName(r)}
+                </Text>
+                <Text numberOfLines={1} style={{ fontSize: 13, color: c.ink3 }}>
+                  {metaLine(r)}
+                </Text>
+                {f ? <Text style={{ fontSize: 12.5, fontWeight: '600', color: f.warn ? c.warn : c.ink3 }}>{f.text}</Text> : null}
+              </View>
+              <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                <Text style={{ fontSize: 13.5, color: c.ink2 }}>{STAGE_LABEL[stageOver[r.id] ?? r.stage]}</Text>
+                <Text style={{ fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: c.ink3 }}>{KIND_ONE[r.kind]}</Text>
+              </View>
+            </HoverRow>
+          );
+        })
+      )}
+    </View>
   );
 
-  const detail =
-    selected === 'new' || current ? (
-      <View style={{ gap: 12 }}>
-        {!wide ? (
+  // ── Panel ──
+  const renderPanel = (cur: Contact) => {
+    const stage = stageOver[cur.id] ?? cur.stage;
+    const si = CONTACT_STAGES.findIndex((s) => s.key === stage);
+    const f = followLine(cur, today);
+    const fields: { k: string; v: string; warn?: boolean }[] = [
+      { k: 'Email', v: cur.email || '—' },
+      { k: 'Phone', v: cur.phone || '—' },
+      { k: 'Type', v: KIND_ONE[cur.kind] },
+      { k: 'Tags', v: cur.tags?.length ? cur.tags.join(', ') : '—' },
+      { k: 'Next follow-up', v: f ? f.text : 'None set', warn: !!f?.warn },
+      { k: 'Source', v: sourceLine(cur) },
+    ];
+    const notesValue = draft?.id === cur.id ? draft.text : (cur.notes ?? '');
+    const acts = activity.data && activity.data.id === cur.id ? activity.data.rows : null;
+    const comp = composer?.id === cur.id ? composer : null;
+    const ss = stageSave?.id === cur.id ? stageSave : null;
+    const ns = noteSave?.id === cur.id ? noteSave : null;
+
+    return (
+      <>
+        {!lg ? (
           <View style={{ alignSelf: 'flex-start' }}>
-            <Btn label="‹ Back" small onPress={() => setPicked(null)} />
+            <Btn label="‹ Back" size="sm" onPress={() => setOpenPick(false)} />
           </View>
         ) : null}
-        <ContactEditor
-          key={current?.id ?? 'new'}
-          contact={current}
-          defaultKind={serverKind ?? 'business'}
-          go={props.go}
-          onSaved={(id) => {
-            setPicked(id);
-            list.refetch();
-          }}
-          onDeleted={(gone) => {
-            if (gone) setPicked(null);
-            list.refetch();
-          }}
-        />
-      </View>
-    ) : null;
+        <View style={{ gap: 4 }}>
+          <Text style={{ fontFamily: DISPLAY, fontSize: 26, fontWeight: '600', color: c.ink }}>{displayName(cur)}</Text>
+          <Text style={{ fontSize: 13.5, color: c.ink3 }}>{metaLine(cur)}</Text>
+        </View>
+
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontSize: 12, color: c.ink3 }}>Stage</Text>
+          <View style={{ flexDirection: 'row', gap: 4 }}>
+            {CONTACT_STAGES.map((s, i) => {
+              const bar = i <= si && stage !== 'inactive' ? c.brz : s.key === 'inactive' && stage === 'inactive' ? c.ink3 : c.track;
+              const on = s.key === stage;
+              return (
+                <Pressable key={s.key} onPress={() => void setStage(cur, s.key)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ flex: 1, minWidth: 0, gap: 6 }}>
+                  <View style={{ height: 4, borderRadius: 2, backgroundColor: bar }} />
+                  <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: on ? '600' : '400', color: on ? c.ink : c.ink3 }}>
+                    {s.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {ss ? <Text style={{ fontSize: 12.5, color: ss.state === 'error' ? c.crit : c.ink3 }}>{ss.state === 'saving' ? `Saving “${ss.msg}”…` : ss.msg}</Text> : null}
+        </View>
+
+        <View>
+          {fields.map((r) => (
+            <View key={r.k} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 16, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.line }}>
+              <Text style={{ fontSize: 13.5, color: c.ink2 }}>{r.k}</Text>
+              <Text style={{ fontSize: 13.5, fontWeight: '500', color: r.warn ? c.warn : c.ink, textAlign: 'right', flexShrink: 1 }}>{r.v}</Text>
+            </View>
+          ))}
+          {cur.athlete_id ? (
+            <View style={{ paddingTop: 10 }}>
+              <LinkText label="Open user" onPress={() => props.go('users', cur.athlete_id as string)} />
+            </View>
+          ) : null}
+        </View>
+
+        <View style={{ gap: 6 }}>
+          <Text style={{ fontSize: 12, color: c.ink3 }}>Notes</Text>
+          <Input
+            multiline
+            value={notesValue}
+            onChangeText={(t) => {
+              setDraft({ id: cur.id, text: t });
+              if (ns?.state === 'error') setNoteSave(null);
+            }}
+            onBlur={() => void saveNotes(cur)}
+            placeholder="Add notes"
+            style={{ minHeight: 70 }}
+          />
+          {ns ? (
+            <Text style={{ fontSize: 12, color: ns.state === 'error' ? c.crit : c.ink3 }}>
+              {ns.state === 'saving' ? 'Saving…' : 'Couldn’t save your notes. Check your connection, then click out of the box again.'}
+            </Text>
+          ) : null}
+          <Text style={{ fontSize: 12, color: c.ink3 }}>Don’t copy training data from the app into notes.</Text>
+        </View>
+
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+            <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: c.ink3 }}>Activity</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {LOG_KINDS.map((k) => (
+                <LogChip
+                  key={k.key}
+                  label={k.label}
+                  on={comp?.kind === k.key}
+                  onPress={() => {
+                    setComposer({ id: cur.id, kind: k.key, text: comp?.text ?? '', due: comp?.due ?? '' });
+                    setLogErr(null);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+          {comp ? (
+            <View style={{ gap: 8 }}>
+              <Input
+                value={comp.text}
+                onChangeText={(t) => {
+                  setComposer({ ...comp, text: t });
+                  setLogErr(null);
+                }}
+                onSubmitEditing={() => void log()}
+                placeholder={comp.kind === 'task' ? 'What needs doing' : `${LOG_LABEL[comp.kind]}: what happened`}
+                autoFocus
+              />
+              {comp.kind === 'task' ? <DateInput value={comp.due} onChange={(v) => setComposer({ ...comp, due: v })} accessibilityLabel="Due date" /> : null}
+              <Row gap={8}>
+                <Btn label="Log" kind="primary" size="sm" busy={logBusy} onPress={() => void log()} />
+                <Btn
+                  label="Cancel"
+                  size="sm"
+                  onPress={() => {
+                    setComposer(null);
+                    setLogErr(null);
+                  }}
+                />
+                {logErr ? <Text style={{ fontSize: 13, color: c.crit }}>{logErr}</Text> : null}
+              </Row>
+            </View>
+          ) : null}
+          {doneErr ? <Text style={{ fontSize: 13, color: c.crit }}>{doneErr}</Text> : null}
+          {activity.error && !acts ? (
+            <ErrorLine onRetry={activity.refetch}>{`Couldn’t load activity. ${activity.error}`}</ErrorLine>
+          ) : !acts ? (
+            <Skeleton />
+          ) : acts.length === 0 ? (
+            <ActivityItem mark="round" text="Nothing logged yet." meta="Log a note, call, email, meeting or task above." />
+          ) : (
+            acts.map((a) => {
+              const isTask = a.kind === 'task';
+              const done = isTask && (doneOver[a.id] ?? !!a.done_at);
+              const meta = isTask && a.due_on ? `Task · due ${when(a.due_on)}` : `${LOG_LABEL[a.kind]} · ${when(a.created_at)}`;
+              return <ActivityItem key={a.id} mark={isTask ? 'square' : 'round'} done={done} text={a.body} meta={meta} onToggle={isTask ? () => void toggleDone(a, done) : undefined} />;
+            })
+          )}
+        </View>
+
+        <View style={{ gap: 8, paddingTop: 4 }}>
+          <View style={{ alignSelf: 'flex-start' }}>
+            <DeleteBtn armed={twoTap.armed === cur.id} busy={delBusy} label={cur.source === 'manual' ? 'Delete' : 'Mark inactive'} onPress={() => twoTap.tap(cur.id, () => void remove(cur))} />
+          </View>
+          {delErr ? <Text style={{ fontSize: 13, color: c.crit }}>{delErr}</Text> : null}
+        </View>
+      </>
+    );
+  };
+
+  const panel = (
+    <Panel sticky pad={26} gap={20} style={lg ? { width: 460, flexShrink: 0 } : undefined}>
+      {ct ? (
+        renderPanel(ct)
+      ) : list.loading && !list.data ? (
+        <Skeleton />
+      ) : (
+        <Text style={{ fontSize: 14.5, color: c.ink2 }}>Pick someone on the list to see where things stand.</Text>
+      )}
+    </Panel>
+  );
+
+  const narrowPanel = !lg && open && !!ct;
 
   return (
-    <View style={{ gap: 28 }}>
-      <PageHead title="Contacts" lede="Testers, trainers, partners and anyone else the business deals with — with follow-ups and a timeline." />
-      {wide ? (
-        <Columns ratio={[1.1, 1]}>
-          {listView}
-          {detail ?? <Empty>Pick a contact, or start a new one.</Empty>}
-        </Columns>
+    <View>
+      <PageHeader
+        title="Contacts"
+        purpose="Who you’re working with, where things stand, and who you owe."
+        note={note}
+        actions={[
+          {
+            label: 'New contact',
+            onPress: () => {
+              setForm({ ...EMPTY_FORM });
+              setFormErr(null);
+            },
+          },
+        ]}
+      />
+
+      {form ? (
+        <FormPanel title="New contact" saveLabel="Save contact" onSave={() => void saveForm()} onCancel={() => setForm(null)} busy={formBusy} error={formErr}>
+          <FieldGrid>
+            <Field label="Name">
+              <Input value={form.name} onChangeText={(v) => setF('name', v)} placeholder="Person or organisation" />
+            </Field>
+            <Field label="Email">
+              <Input value={form.email} onChangeText={(v) => setF('email', v)} placeholder="name@company.com" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+            </Field>
+            <Field label="Company">
+              <Input value={form.company} onChangeText={(v) => setF('company', v)} placeholder="Optional" />
+            </Field>
+            <Field label="Role">
+              <Input value={form.role} onChangeText={(v) => setF('role', v)} placeholder="Optional" />
+            </Field>
+            <Field label="Phone">
+              <Input value={form.phone} onChangeText={(v) => setF('phone', v)} placeholder="Optional" keyboardType="phone-pad" />
+            </Field>
+            <Field label="Next follow-up">
+              <DateInput value={form.follow} onChange={(v) => setF('follow', v)} accessibilityLabel="Next follow-up" />
+            </Field>
+          </FieldGrid>
+          <View style={{ gap: 6 }}>
+            <Text style={{ fontSize: 12.5, color: c.ink2 }}>Type</Text>
+            <Row gap={6}>
+              {KIND_KEYS.map((k) => (
+                <Opt key={k} label={KIND_ONE[k]} on={form.kind === k} onPress={() => setF('kind', k)} />
+              ))}
+            </Row>
+          </View>
+          <View style={{ gap: 6 }}>
+            <Text style={{ fontSize: 12.5, color: c.ink2 }}>Stage</Text>
+            <Row gap={6}>
+              {CONTACT_STAGES.map((s) => (
+                <Opt key={s.key} label={s.label} on={form.stage === s.key} onPress={() => setF('stage', s.key)} />
+              ))}
+            </Row>
+          </View>
+        </FormPanel>
+      ) : null}
+
+      {!narrowPanel ? (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 18 }}>
+          {CHIPS.map((ch) => (
+            <Chip
+              key={ch.key}
+              label={ch.label}
+              count={chipCount(ch.key)}
+              on={filter === ch.key}
+              onPress={() => {
+                setFilterPick(ch.key);
+                setPicked(null);
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      {lg ? (
+        <View style={{ flexDirection: 'row', gap: 36, alignItems: 'flex-start' }}>
+          {listPane}
+          <View style={{ alignSelf: 'flex-start' }}>{panel}</View>
+        </View>
+      ) : narrowPanel ? (
+        panel
       ) : (
-        (detail ?? listView)
+        listPane
       )}
     </View>
   );
 }
 
-// ── The editor ─────────────────────────────────────────────────────────────
-
-interface Draft {
-  name: string;
-  email: string;
-  phone: string;
-  company: string;
-  role: string;
-  next_follow_up: string;
-  tags: string;
-  notes: string;
-  kind: ContactKind;
-  stage: ContactStage;
-}
-
-function draftOf(c: Contact | null, defaultKind: ContactKind): Draft {
-  return {
-    name: c?.name ?? '',
-    email: c?.email ?? '',
-    phone: c?.phone ?? '',
-    company: c?.company ?? '',
-    role: c?.role ?? '',
-    next_follow_up: c?.next_follow_up ?? '',
-    tags: (c?.tags ?? []).join(', '),
-    notes: c?.notes ?? '',
-    kind: c?.kind ?? defaultKind,
-    stage: c?.stage ?? 'lead',
-  };
-}
-
-function ContactEditor({
-  contact,
-  defaultKind,
-  go,
-  onSaved,
-  onDeleted,
-}: {
-  contact: Contact | null;
-  defaultKind: ContactKind;
-  go: PageProps['go'];
-  onSaved: (id: string) => void;
-  onDeleted: (gone: boolean) => void;
-}) {
-  const [base, setBase] = useState(() => draftOf(contact, defaultKind));
-  const [d, setD] = useState<Draft>(base);
-  const [busy, setBusy] = useState<'save' | 'delete' | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [armed, arm, disarm] = useTwoTap();
-
-  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
-
-  const patch: ContactPatch = {};
-  const textKeys = ['name', 'email', 'phone', 'company', 'role', 'notes'] as const;
-  for (const k of textKeys) if (d[k] !== base[k]) patch[k] = d[k];
-  if (d.kind !== base.kind) patch.kind = d.kind;
-  if (d.stage !== base.stage) patch.stage = d.stage;
-  if (d.next_follow_up.trim() !== base.next_follow_up) patch.next_follow_up = d.next_follow_up.trim() || null;
-  if (parseTags(d.tags).join(',') !== parseTags(base.tags).join(',')) patch.tags = parseTags(d.tags);
-  const dirty = Object.keys(patch).length > 0;
-  const badDate = d.next_follow_up.trim() !== '' && !DATE.test(d.next_follow_up.trim());
-
-  const save = async () => {
-    if (badDate) {
-      setErr('Follow-up date must be yyyy-mm-dd.');
-      return;
-    }
-    setBusy('save');
-    setErr(null);
-    try {
-      const body: ContactPatch = contact ? patch : { ...patch, kind: d.kind, stage: d.stage };
-      const id = await saveContact(contact?.id ?? null, body);
-      const saved = { ...d, next_follow_up: d.next_follow_up.trim(), tags: parseTags(d.tags).join(', ') };
-      setBase(saved);
-      setD(saved);
-      setBusy(null);
-      onSaved(id);
-    } catch (e) {
-      setErr(errorMessage(e));
-      setBusy(null);
-    }
-  };
-
-  const remove = async () => {
-    if (!contact) return;
-    if (!armed) {
-      arm();
-      return;
-    }
-    disarm();
-    setBusy('delete');
-    setErr(null);
-    try {
-      await deleteContact(contact.id);
-      if (contact.source !== 'manual') {
-        setBase((b) => ({ ...b, stage: 'inactive' }));
-        setD((p) => ({ ...p, stage: 'inactive' }));
-      }
-      setBusy(null);
-      // A synced row is marked inactive, not deleted — it stays on screen.
-      onDeleted(contact.source === 'manual');
-    } catch (e) {
-      setErr(errorMessage(e));
-      setBusy(null);
-    }
-  };
-
-  const synced = contact != null && contact.source !== 'manual';
-  const email = contact?.email;
-  const athleteId = contact?.athlete_id;
-
+function LogChip({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) {
+  const { c } = useCrm();
   return (
-    <View style={{ gap: 24 }}>
-      <Panel>
-        <Text style={{ color: flColor.gray400, fontSize: 12 }}>
-          {contact ? SOURCE_LINE[contact.source] : 'New contact'}
-          {contact ? ` · added ${when(contact.created_at)}` : ''}
-        </Text>
-        <Field label="Name" value={d.name} onChangeText={(v) => set('name', v)} />
-        <Field label="Email" value={d.email} onChangeText={(v) => set('email', v)} autoCapitalize="none" keyboardType="email-address" />
-        <Field label="Phone" value={d.phone} onChangeText={(v) => set('phone', v)} keyboardType="phone-pad" />
-        <Field label="Company" value={d.company} onChangeText={(v) => set('company', v)} />
-        <Field label="Role" value={d.role} onChangeText={(v) => set('role', v)} />
-        <Field
-          label="Next follow-up"
-          value={d.next_follow_up}
-          onChangeText={(v) => set('next_follow_up', v)}
-          placeholder="yyyy-mm-dd"
-          autoCapitalize="none"
-        />
-        <Field label="Tags" value={d.tags} onChangeText={(v) => set('tags', v)} placeholder="comma, separated" autoCapitalize="none" />
-        <Field label="Notes" value={d.notes} onChangeText={(v) => set('notes', v)} multiline />
-        <Note>Don&apos;t copy training data from the app into notes (AA-D15).</Note>
-
-        <Text style={{ color: flColor.gray600, fontSize: 10.5, letterSpacing: 0.6 }}>KIND</Text>
-        <Chips>
-          {CONTACT_KINDS.map((k) => (
-            <Chip key={k.key} label={k.label} on={d.kind === k.key} onPress={() => set('kind', k.key)} />
-          ))}
-        </Chips>
-        <Text style={{ color: flColor.gray600, fontSize: 10.5, letterSpacing: 0.6 }}>STAGE</Text>
-        <Chips>
-          {CONTACT_STAGES.map((k) => (
-            <Chip key={k.key} label={k.label} on={d.stage === k.key} onPress={() => set('stage', k.key)} />
-          ))}
-        </Chips>
-
-        {err ? <ErrorText>{err}</ErrorText> : null}
-        <Chips>
-          <Btn
-            label={contact ? 'Save' : 'Create contact'}
-            onPress={() => void save()}
-            busy={busy === 'save'}
-            disabled={(contact != null && !dirty) || busy === 'delete'}
-          />
-          {email ? <Btn label="Email" onPress={() => void Linking.openURL(`mailto:${email}`)} /> : null}
-          {athleteId ? <Btn label="Open user" onPress={() => go('users', athleteId)} /> : null}
-          {contact ? (
-            <Btn
-              label={armed ? (synced ? 'Confirm mark inactive' : 'Confirm delete') : synced ? 'Mark inactive' : 'Delete'}
-              kind="danger"
-              onPress={() => void remove()}
-              busy={busy === 'delete'}
-              disabled={busy === 'save' || (synced && contact.stage === 'inactive')}
-            />
-          ) : null}
-        </Chips>
-        {synced ? <Note>Synced contacts are marked inactive rather than deleted, so they don&apos;t sync back.</Note> : null}
-      </Panel>
-
-      {contact ? <ActivityBlock contactId={contact.id} onChanged={() => onDeleted(false)} /> : null}
-    </View>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!on }}
+      style={({ hovered }: { pressed: boolean; hovered?: boolean }) => ({
+        height: 26,
+        paddingHorizontal: 9,
+        borderRadius: 7,
+        borderWidth: 1,
+        borderColor: on ? c.brzBd : c.line,
+        backgroundColor: on ? c.brzTint : hovered ? c.hover : 'transparent',
+        justifyContent: 'center',
+      })}
+    >
+      <Text style={{ fontSize: 12, fontWeight: '500', color: on ? c.brz : c.ink2 }}>{label}</Text>
+    </Pressable>
   );
 }
 
-// ── Activity ───────────────────────────────────────────────────────────────
-
-function ActivityBlock({ contactId, onChanged }: { contactId: string; onChanged: () => void }) {
-  const acts = useQuery(() => fetchActivity(contactId), [contactId]);
-  const [kind, setKind] = useState<Activity['kind']>('note');
-  const [body, setBody] = useState('');
-  const [due, setDue] = useState('');
-  const [busy, setBusy] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-
-  const log = async () => {
-    const dueOn = kind === 'task' && due.trim() ? due.trim() : null;
-    if (dueOn && !DATE.test(dueOn)) {
-      setErr('Due date must be yyyy-mm-dd.');
-      return;
-    }
-    setBusy('log');
-    setErr(null);
-    try {
-      await logActivity(contactId, kind, body.trim(), dueOn);
-      setBody('');
-      setDue('');
-      setBusy(null);
-      acts.refetch();
-      onChanged();
-    } catch (e) {
-      setErr(errorMessage(e));
-      setBusy(null);
-    }
-  };
-
-  const toggle = async (a: Activity) => {
-    setBusy(a.id);
-    setErr(null);
-    try {
-      await setActivityDone(a.id, !a.done_at);
-      setBusy(null);
-      acts.refetch();
-      onChanged();
-    } catch (e) {
-      setErr(errorMessage(e));
-      setBusy(null);
-    }
-  };
-
+/** One timeline entry: a round mark for a note/call/email/meeting, a checkbox for a task. */
+function ActivityItem({ mark, done, text, meta, onToggle }: { mark: 'round' | 'square'; done?: boolean; text: string; meta: string; onToggle?: () => void }) {
+  const { c } = useCrm();
+  const box = (
+    <View
+      style={{
+        width: 16,
+        height: 16,
+        marginTop: 2,
+        borderRadius: mark === 'square' ? 4 : 8,
+        borderWidth: 1.5,
+        borderColor: mark === 'square' ? (done ? c.brz : c.fieldBd) : c.line,
+        backgroundColor: done ? c.brz : 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {done ? <Text style={{ fontSize: 11, lineHeight: 12, color: c.btnInk }}>✓</Text> : null}
+    </View>
+  );
   return (
-    <Block label="Activity">
-      <Panel>
-        <Chips>
-          {ACTIVITY_KINDS.map((k) => (
-            <Chip key={k.key} label={k.label} on={kind === k.key} onPress={() => setKind(k.key)} />
-          ))}
-        </Chips>
-        <Field value={body} onChangeText={setBody} placeholder="What happened?" multiline />
-        {kind === 'task' ? <Field label="Due" value={due} onChangeText={setDue} placeholder="yyyy-mm-dd" autoCapitalize="none" /> : null}
-        <View style={{ alignSelf: 'flex-start' }}>
-          <Btn label="Log" onPress={() => void log()} busy={busy === 'log'} disabled={!body.trim()} />
-        </View>
-      </Panel>
-      {err ? <ErrorText>{err}</ErrorText> : null}
-      <QueryGate state={acts}>
-        {(acts.data ?? []).length === 0 ? (
-          <Empty>Nothing logged yet.</Empty>
+    <View style={{ flexDirection: 'row', gap: 10, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.line }}>
+      <View style={{ width: 20 }}>
+        {onToggle ? (
+          <Pressable onPress={onToggle} accessibilityRole="checkbox" accessibilityState={{ checked: !!done }} accessibilityLabel={text} hitSlop={8}>
+            {box}
+          </Pressable>
         ) : (
-          (acts.data ?? []).map((a) => (
-            <ListRow key={a.id}>
-              <Chips>
-                <Tag label={a.kind} tone="muted" />
-                {a.kind === 'task' ? (
-                  <Chip label={a.done_at ? 'Done' : 'Mark done'} on={!!a.done_at} onPress={() => void toggle(a)} />
-                ) : null}
-              </Chips>
-              <RowTitle>{a.body}</RowTitle>
-              <RowMeta>
-                {when(a.created_at, true)}
-                {a.kind === 'task' && a.due_on ? ` · due ${when(a.due_on)}` : ''}
-                {busy === a.id ? ' · saving…' : ''}
-              </RowMeta>
-            </ListRow>
-          ))
+          box
         )}
-      </QueryGate>
-    </Block>
+      </View>
+      <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+        <Text style={{ fontSize: 13.5, color: c.ink, textDecorationLine: done ? 'line-through' : 'none' }}>{text}</Text>
+        <Text style={{ fontSize: 12, color: c.ink3 }}>{meta}</Text>
+      </View>
+    </View>
   );
 }

@@ -1,57 +1,27 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Text, View } from 'react-native';
 
-import { flColor, flFont, flText } from '@/constants/foundation';
-import { AdminBarChart } from '@/components/forge/admin/charts';
-import {
-  Block,
-  Btn,
-  Chip,
-  Chips,
-  Columns,
-  Empty,
-  ErrorText,
-  Field,
-  KV,
-  Kpis,
-  ListRow,
-  Note,
-  PageHead,
-  Panel,
-  QueryGate,
-  RowMeta,
-  RowTitle,
-  Tag,
-  useWide,
-  when,
-} from '@/components/forge/admin/crm-ui';
+import { Btn, Chip, DISPLAY, ErrorLine, HeroFigures, HoverRow, Input, PageHeader, Panel, Skeleton, useLayout, useToast, when, type Figure } from '@/components/forge/admin/crm-ui';
+import { useCrm } from '@/components/forge/admin/crm-theme';
 import type { PageProps } from '@/components/forge/admin/pages/types';
-import { fetchRecentSignups } from '@/data/admin-live';
-import {
-  fetchBillingList,
-  fetchTiers,
-  fetchUserCard,
-  saveContact,
-  searchUsers,
-  type BillingFilter,
-  type BillingRow,
-  type UserCard,
-  type UserHit,
-} from '@/data/crm-live';
+import { fetchBillingList, fetchTiers, fetchUserCard, saveContact, searchUsers, type BillingFilter, type BillingRow, type UserCard } from '@/data/crm-live';
+import { int } from '@/domain/admin/briefing';
 import { actionLabel, money, productLabel, storeEventLabel } from '@/domain/admin/crm-core';
+import { planStatus, planWithoutProduct, usersNote, type PlanStatus } from '@/domain/admin/notes/users';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
- * Users & plans (Admin-Analytics-Amendment-002, AA-D12).
+ * Users & plans (Forge CRM.dc.html, the USERS section; Admin-Analytics-Amendment-002, AA-D12).
  *
  * ══ ⚠ THE PRIVACY CEILING ══
  *
- * The user card draws ONLY what `admin_user_card` returns — account, billing, AI metering, support and
+ * The card draws ONLY what `admin_user_card` returns — account, billing, AI metering, support and
  * business. AA-D13: training, photos, nutrition, health and activity stay dark, and no successor RPC or
  * screen may add them. A new section here is a new decision against a locked one.
  */
 
-const BILLING_FILTERS: { key: BillingFilter; label: string }[] = [
+const CHIPS: { key: BillingFilter; label: string }[] = [
+  { key: 'all', label: 'Newest' },
   { key: 'paying', label: 'Paying' },
   { key: 'trial', label: 'Trials' },
   { key: 'premium_ai', label: 'Premium AI' },
@@ -62,383 +32,276 @@ const BILLING_FILTERS: { key: BillingFilter; label: string }[] = [
   { key: 'free', label: 'Free' },
 ];
 
-/** One row shape for search hits and billing-list rows. */
-interface PersonRow {
-  id: string;
-  name: string | null;
-  handle: string | null;
-  created_at: string;
-  tier: 'FREE' | 'PREMIUM';
-  premium_ai: boolean;
-  paying: boolean;
-  product: string | null;
-}
+/** 'Athlete' is the profile default, not a name (the card's `named` uses the same rule). */
+const named = (n: string | null) => (n && n !== 'Athlete' ? n : null);
 
-function fromHit(h: UserHit): PersonRow {
-  return { ...h, product: null };
-}
-
-function fromBilling(b: BillingRow, filter: BillingFilter): PersonRow {
-  return {
-    id: b.id,
-    name: b.name,
-    handle: b.handle,
-    created_at: b.created_at,
-    tier: b.tier,
-    premium_ai: b.premium_ai,
-    paying: filter === 'paying',
-    product: b.product,
-  };
+function planText(r: BillingRow): string {
+  return r.product ? productLabel(r.product) : planWithoutProduct(r);
 }
 
 export function UsersPage(props: PageProps) {
-  const wide = useWide();
-  const tiers = useQuery(fetchTiers, []);
-  const signups = useQuery(() => fetchRecentSignups(60), []);
+  const { c } = useCrm();
+  const { lg } = useLayout();
+  const toast = useToast();
 
+  const tiers = useQuery(fetchTiers, []);
+  const [filter, setFilter] = useState<BillingFilter>('all');
   const [text, setText] = useState('');
   const [q, setQ] = useState('');
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [filter, setFilter] = useState<BillingFilter | null>(null);
-  // undefined = the operator has not picked anyone yet, so a user id passed by `go` opens directly.
-  const [picked, setPicked] = useState<string | null | undefined>(undefined);
-  const selected = picked !== undefined ? picked : (props.arg ?? null);
-
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
   const onSearch = (v: string) => {
     setText(v);
-    if (timer) clearTimeout(timer);
-    setTimer(setTimeout(() => setQ(v.trim()), 300));
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setQ(v.trim()), 300);
   };
 
-  const hits = useQuery(() => (q ? searchUsers(q) : Promise.resolve([] as UserHit[])), [q]);
-  const billing = useQuery(
-    () => (filter ? fetchBillingList(filter) : Promise.resolve([] as BillingRow[])),
-    [filter],
-  );
+  const list = useQuery<BillingRow[]>(() => (q ? searchUsers(q) : fetchBillingList(filter)), [q, filter]);
+  const rows: BillingRow[] = list.data ?? [];
+
+  // undefined = nothing picked yet, so a user id passed by `go` opens first; null = "the top row" (after a chip).
+  const [picked, setPicked] = useState<string | null | undefined>(undefined);
+  const selectedId = (picked === undefined ? props.arg : picked) ?? rows[0]?.id ?? null;
+  // `at` = when it was read: "is this subscription still live" is judged against that, not a render-time clock.
+  const card = useQuery(async () => (selectedId ? { u: await fetchUserCard(selectedId), at: Date.now() } : null), [selectedId]);
+
+  const [adding, setAdding] = useState(false);
+  const [addErr, setAddErr] = useState<string | null>(null);
 
   const t = tiers.data;
-  const kinds = t?.by_kind ?? [];
+  const hero: Figure = t ? { label: 'Athletes', value: int(t.athletes_total), note: `${int(t.new_30d)} new in 30 days` } : { label: 'Athletes', value: '—', note: tiers.error ? 'Couldn’t load' : undefined };
+  const fig = (label: string, v: number | undefined, note?: string): Figure => ({ label, value: v == null ? '—' : int(v), note });
+  const figures: Figure[] = [
+    fig('Free', t?.free),
+    // `premium` excludes Premium AI (admin_tiers), so it says so rather than reading as everyone on Premium.
+    fig('Premium', t?.premium, t ? 'Not counting Premium AI' : undefined),
+    fig('Premium AI', t?.premium_ai, t && t.ai_without_premium > 0 ? `Plus ${int(t.ai_without_premium)} on Free` : undefined),
+    fig('Founder seats', t?.founder_seats),
+    fig('Comped testers', t?.comped_testers),
+  ];
+  const note = t ? usersNote({ athletes: t.athletes_total, new30: t.new_30d, paying: t.lists.paying, trials: t.lists.trial, lapsed: t.lists.lapsed }) : null;
 
-  const rows: PersonRow[] | null = q
-    ? hits.data
-      ? hits.data.map(fromHit)
-      : null
-    : filter && billing.data
-      ? billing.data.map((b) => fromBilling(b, filter))
-      : null;
-  const listState = q ? hits : billing;
+  const total = q ? null : (t?.lists[filter] ?? null);
+  const showing = q
+    ? `${rows.length} ${rows.length === 1 ? 'match' : 'matches'} for “${q}”`
+    : `Showing ${int(rows.length)}${total != null && total > rows.length ? ` of ${int(total)}` : ''} · ${filter === 'all' ? 'newest first' : 'latest change first'}`;
 
-  const list = (
-    <Block label="Find a user" hint="Search by handle, name or id — or pick a billing list.">
-      <Field value={text} onChangeText={onSearch} placeholder="Handle, name or id" autoCapitalize="none" autoCorrect={false} />
-      <Chips>
-        {BILLING_FILTERS.map((f) => (
-          <Chip
-            key={f.key}
-            label={f.label}
-            on={filter === f.key}
-            onPress={() => {
-              setFilter(filter === f.key ? null : f.key);
-              setText('');
-              setQ('');
-            }}
-          />
-        ))}
-      </Chips>
-      {!q && !filter ? (
-        <Empty>Type a name or pick a list.</Empty>
-      ) : (
-        <QueryGate state={listState}>
-          {rows && rows.length === 0 ? (
-            <Empty>{q ? 'Nobody matches that.' : 'Nobody on this list.'}</Empty>
-          ) : (
-            (rows ?? []).map((r) => (
-              <ListRow
-                key={r.id}
-                onPress={() => setPicked(r.id)}
-                selected={selected === r.id}
-                label={`Open ${r.name ?? r.handle ?? 'user'}`}
-              >
-                <RowTitle dim={!r.name}>{r.name ?? 'Not named yet'}</RowTitle>
-                <RowMeta>
-                  {r.handle ? `@${r.handle} · ` : ''}joined {when(r.created_at)}
-                </RowMeta>
-                <Chips>
-                  <Tag label={r.tier} tone={r.tier === 'PREMIUM' ? 'ok' : 'muted'} />
-                  {r.premium_ai ? <Tag label="AI" /> : null}
-                  {r.paying ? <Tag label="Paying" /> : null}
-                  {r.product ? <Tag label={productLabel(r.product)} tone="muted" /> : null}
-                </Chips>
-              </ListRow>
-            ))
-          )}
-        </QueryGate>
-      )}
-    </Block>
-  );
+  const statusColor = (s: PlanStatus) => (s === 'Paying' ? c.good : s === 'Trial' ? c.warn : s === 'Lapsed' ? c.crit : c.ink3);
 
-  const card = selected ? (
-    <View style={{ gap: 12 }}>
-      {!wide ? (
-        <View style={{ alignSelf: 'flex-start' }}>
-          <Btn label="‹ Back" small onPress={() => setPicked(null)} />
-        </View>
-      ) : null}
-      <UserCardPanel key={selected} id={selected} go={props.go} />
-    </View>
-  ) : null;
-
-  return (
-    <View style={{ gap: 28 }}>
-      <PageHead title="Users & plans" lede="Who is on which plan, and one person's account, billing, AI and support history." />
-
-      <QueryGate state={tiers}>
-        {t ? (
-          <View style={{ gap: 8 }}>
-            <Kpis
-              items={[
-                { label: 'Athletes', value: String(t.athletes_total) },
-                { label: 'Free', value: String(t.free) },
-                { label: 'Premium', value: String(t.premium) },
-                {
-                  label: 'Premium AI',
-                  value: String(t.premium_ai),
-                  sub: t.ai_without_premium ? `${t.ai_without_premium} without Premium` : undefined,
-                },
-                { label: 'Founder seats', value: String(t.founder_seats) },
-                { label: 'Comped testers', value: String(t.comped_testers) },
-              ]}
-            />
-            {t.default_tier === 'PREMIUM' ? <Note>New accounts start on Premium — the testing default (0189).</Note> : null}
-          </View>
-        ) : null}
-      </QueryGate>
-
-      <Block label="Premium by kind" hint="How each Premium account got there.">
-        <QueryGate state={tiers}>
-          <AdminBarChart rows={kinds.map((k) => ({ label: k.kind || 'unknown', value: k.n }))} />
-        </QueryGate>
-      </Block>
-
-      {wide ? (
-        <Columns ratio={[1.1, 1]}>
-          {list}
-          {card ?? <Empty>Pick someone to see their card.</Empty>}
-        </Columns>
-      ) : (
-        (card ?? list)
-      )}
-
-      {/*
-        ── Newest athletes (0137) ─────────────────────────────────────
-        ⚠ THE ONE SECTION THAT LISTS ANYBODY UNPROMPTED, and it is an amendment rather than a slip —
-        `Admin-Analytics-Amendment-001` AA-D8. A count answers "how many", which is the wrong shape of
-        answer while invitations are going out to named people one at a time.
-
-        ⚠ ACCOUNT EXISTENCE ONLY. No workout count, no streak, no rank, no last-active time may join
-        this list; AA-D2's performance prohibitions are unamended (AA-D9). If a column is ever added
-        here, it is a new decision against a locked one.
-      */}
-      <Block
-        label="Newest athletes"
-        hint="Who has an account, newest first. “Not named yet” means they created an account but haven’t finished the Account step — the profile is still the placeholder."
-      >
-        <QueryGate state={signups}>
-          {(signups.data ?? []).length === 0 ? (
-            <Empty>No accounts yet.</Empty>
-          ) : (
-            (signups.data ?? []).map((a) => (
-              <ListRow key={a.id} onPress={() => setPicked(a.id)} selected={selected === a.id} label={`Open ${a.named ? a.name : 'account'}`}>
-                <RowTitle dim={!a.named}>{a.named ? a.name : 'Not named yet'}</RowTitle>
-                <RowMeta>
-                  {a.handle ? `@${a.handle} · ` : ''}joined {when(a.createdAt)}
-                </RowMeta>
-              </ListRow>
-            ))
-          )}
-        </QueryGate>
-      </Block>
-    </View>
-  );
-}
-
-// ── The user card (AA-D12 ceiling) ─────────────────────────────────────────
-
-function Sub({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <View style={s.sub}>
-      <Text style={s.subLabel}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
-function UserCardPanel({ id, go }: { id: string; go: PageProps['go'] }) {
-  const card = useQuery(() => fetchUserCard(id), [id]);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const addContact = async (c: UserCard) => {
-    setBusy(true);
-    setErr(null);
+  const addContact = async (u: UserCard) => {
+    setAdding(true);
+    setAddErr(null);
     try {
-      const newId = await saveContact(null, {
-        kind: c.business.trainer ? 'trainer' : 'user',
-        ...(c.account.name ? { name: c.account.name } : {}),
-        athlete_id: c.account.id,
-      });
-      go('contacts', newId);
+      const id = await saveContact(null, { kind: 'user', name: u.account.name ?? u.account.handle ?? '', athlete_id: u.account.id, stage: 'active' });
+      toast('Added to contacts');
+      props.go('contacts', id);
     } catch (e) {
-      setErr(errorMessage(e));
-      setBusy(false);
+      setAddErr('Couldn’t save. Check your connection and tap again.');
+      if (__DEV__) console.warn('add contact failed', errorMessage(e));
+    } finally {
+      setAdding(false);
     }
   };
 
-  return (
-    <Panel>
-      <QueryGate state={card}>
-        {card.data ? <CardBody c={card.data} busy={busy} err={err} onAdd={addContact} go={go} /> : null}
-      </QueryGate>
+  const errLine = (msg: string, retry: () => void) => (
+    <View style={{ paddingBottom: 14 }}>
+      <ErrorLine onRetry={retry}>{msg}</ErrorLine>
+    </View>
+  );
+
+  const listPane = (
+    <View style={{ gap: 14, minWidth: 0, flex: lg ? 1 : undefined }}>
+      <Input
+        value={text}
+        onChangeText={onSearch}
+        placeholder="Search by handle, name or id"
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={{ height: 42, paddingHorizontal: 14, fontSize: 14.5 }}
+      />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {CHIPS.map((ch) => (
+          <Chip
+            key={ch.key}
+            label={ch.label}
+            count={t ? int(t.lists[ch.key] ?? 0) : null}
+            on={!q && filter === ch.key}
+            onPress={() => {
+              setFilter(ch.key);
+              setText('');
+              setQ('');
+              setPicked(null);
+            }}
+          />
+        ))}
+      </View>
+      {list.data ? <Text style={{ fontSize: 12.5, color: c.ink3, paddingTop: 4 }}>{showing}</Text> : null}
+      <View style={{ borderTopWidth: 1, borderTopColor: c.line }}>
+        {list.error ? (
+          errLine(`Couldn’t load this list. ${list.error}`, list.refetch)
+        ) : list.loading && !list.data ? (
+          <Skeleton />
+        ) : rows.length === 0 ? (
+          <Text style={{ paddingVertical: 18, fontSize: 14.5, lineHeight: 22.5, color: c.ink2 }}>
+            {q ? 'Nobody matches that handle, name or id.' : 'Nobody on this list yet.'}
+          </Text>
+        ) : (
+          rows.map((r) => {
+            const st = planStatus(r);
+            return (
+              <HoverRow
+                key={r.id}
+                onPress={() => {
+                  setPicked(r.id);
+                  setAddErr(null);
+                }}
+                selected={r.id === selectedId}
+                label={r.name ?? r.handle ?? r.id}
+                bleed={12}
+                style={{ marginHorizontal: 0, paddingVertical: 13 }}
+              >
+                <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 15, fontWeight: '500', color: named(r.name) ? c.ink : c.ink3 }}>
+                    {named(r.name) ?? 'Not named yet'}
+                  </Text>
+                  <Text numberOfLines={1} style={{ fontSize: 13, color: c.ink3 }}>
+                    {r.handle ? `@${r.handle}` : 'No handle'} · joined {when(r.created_at)}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end', gap: 3 }}>
+                  <Text style={{ fontSize: 13.5, color: c.ink2 }}>{planText(r)}</Text>
+                  <Text style={{ fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: statusColor(st) }}>{st}</Text>
+                </View>
+              </HoverRow>
+            );
+          })
+        )}
+      </View>
+    </View>
+  );
+
+  // A card from the previous pick stays in `data` until the new one lands; never show it under a new name.
+  const u = card.data && card.data.u.account.id === selectedId ? card.data.u : null;
+  const readAt = card.data?.at ?? 0;
+  const cardPane = (
+    <Panel sticky pad={26} gap={22} style={lg ? { width: 440, flexShrink: 0 } : undefined}>
+      {!selectedId ? (
+        <Text style={{ fontSize: 14.5, color: c.ink2 }}>Pick someone on the list to see their account.</Text>
+      ) : card.error ? (
+        errLine(`Couldn’t load this account. ${card.error}`, card.refetch)
+      ) : !u ? (
+        <Skeleton />
+      ) : (
+        <>
+          <View style={{ gap: 4 }}>
+            <Text style={{ fontFamily: DISPLAY, fontSize: 26, fontWeight: '600', color: u.account.named && u.account.name ? c.ink : c.ink3 }}>
+              {u.account.named && u.account.name ? u.account.name : 'Not named yet'}
+            </Text>
+            <Text style={{ fontSize: 13.5, color: c.ink3 }}>
+              {u.account.handle ? `@${u.account.handle}` : 'No handle'} · id {u.account.id.slice(0, 8)} · joined {when(u.account.created_at)}
+            </Text>
+          </View>
+          {cardSections(u, readAt).map((s) => (
+            <View key={s.label}>
+              <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: c.ink3, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: c.line }}>
+                {s.label}
+              </Text>
+              {s.rows.map((r, i) => (
+                <View key={`${r.k}${i}`} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 16, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: c.line }}>
+                  <Text style={{ fontSize: 13.5, color: c.ink2, flexShrink: 1 }}>{r.k}</Text>
+                  <Text style={{ fontSize: 13.5, fontWeight: '500', color: c.ink, textAlign: 'right', fontVariant: ['tabular-nums'] }}>{r.v}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+          <View style={{ gap: 8 }}>
+            <Btn
+              full
+              label={u.business.contact_id ? 'Open contact' : 'Add to contacts'}
+              busy={adding}
+              onPress={() => (u.business.contact_id ? props.go('contacts', u.business.contact_id) : void addContact(u))}
+            />
+            {addErr ? <Text style={{ fontSize: 13.5, color: c.crit }}>{addErr}</Text> : null}
+          </View>
+          <Text style={{ fontSize: 12.5, lineHeight: 19.4, color: c.ink3 }}>Training, photos, nutrition, health and activity are never shown here.</Text>
+        </>
+      )}
     </Panel>
   );
-}
-
-function CardBody({
-  c,
-  busy,
-  err,
-  onAdd,
-  go,
-}: {
-  c: UserCard;
-  busy: boolean;
-  err: string | null;
-  onAdd: (c: UserCard) => void;
-  go: PageProps['go'];
-}) {
-  const b = c.billing;
-  const period = c.ai.periods[0] ?? null;
-  const contactId = c.business.contact_id;
 
   return (
-    <View style={{ gap: 16 }}>
-      <View style={{ gap: 3 }}>
-        <Text style={[s.name, !c.account.named && s.nameDim]} selectable>
-          {c.account.named && c.account.name ? c.account.name : 'Not named yet'}
-        </Text>
-        <Text style={s.meta} selectable>
-          {c.account.handle ? `@${c.account.handle} · ` : ''}joined {when(c.account.created_at)}
-        </Text>
+    <View>
+      <PageHeader title="Users & plans" purpose="Who is on which plan, and one person’s account, billing, AI and support history." note={note} />
+      <HeroFigures hero={hero} figures={figures} />
+      <View style={{ flexDirection: lg ? 'row' : 'column', gap: lg ? 36 : 24, alignItems: 'flex-start' }}>
+        {listPane}
+        <View style={{ alignSelf: lg ? 'flex-start' : 'stretch' }}>{cardPane}</View>
       </View>
-
-      <Chips>
-        {contactId ? (
-          <Btn label="Open contact" onPress={() => go('contacts', contactId)} />
-        ) : (
-          <Btn label="Add to contacts" onPress={() => onAdd(c)} busy={busy} />
-        )}
-      </Chips>
-      {err ? <ErrorText>{err}</ErrorText> : null}
-
-      <Sub label="Billing">
-        <KV k="Plan" v={b.tier} />
-        <KV k="Kind" v={b.premium_kind ?? '—'} />
-        <KV k="Until" v={b.premium_until ? when(b.premium_until) : '—'} />
-        <KV k="Premium AI" v={b.premium_ai ? `Yes${b.premium_ai_until ? ` · until ${when(b.premium_ai_until)}` : ''}` : 'No'} />
-        <KV k="Founder seat" v={b.founder_seat != null ? `#${b.founder_seat}` : '—'} />
-        <KV k="Comped tester" v={b.comped_tester ? 'Yes' : 'No'} />
-        <KV k="Lifetime paid (production)" v={money(b.paid_total)} />
-      </Sub>
-
-      <Sub label="Subscriptions">
-        {b.subscriptions.length === 0 ? (
-          <Empty>No subscriptions.</Empty>
-        ) : (
-          b.subscriptions.map((sub) => (
-            <ListRow key={`${sub.product_id}-${sub.environment}`}>
-              <RowTitle>{productLabel(sub.product_id)}</RowTitle>
-              <RowMeta>
-                {[sub.period_type, sub.expires_at ? `expires ${when(sub.expires_at)}` : null].filter(Boolean).join(' · ') || '—'}
-              </RowMeta>
-              <Tag label={sub.environment === 'SANDBOX' ? 'SANDBOX' : 'PRODUCTION'} tone={sub.environment === 'SANDBOX' ? 'muted' : 'ok'} />
-            </ListRow>
-          ))
-        )}
-      </Sub>
-
-      <Sub label="Purchase history">
-        {b.events.length === 0 ? (
-          <Empty>No store events.</Empty>
-        ) : (
-          b.events.map((e, i) => (
-            <ListRow key={`${e.received_at}-${i}`}>
-              <RowTitle>
-                {storeEventLabel(e.type)} · {productLabel(e.product)}
-              </RowTitle>
-              <RowMeta>
-                {money(e.price)} · {when(e.received_at, true)}
-              </RowMeta>
-              {e.environment ? <Tag label={e.environment} tone={e.environment === 'SANDBOX' ? 'muted' : 'ok'} /> : null}
-            </ListRow>
-          ))
-        )}
-      </Sub>
-
-      <Sub label="AI">
-        <KV k="This period" v={period ? `${period.spent} of ${period.allowance} credits · ${period.period}` : '—'} />
-        {c.ai.by_action.map((a) => (
-          <KV key={a.action} k={actionLabel(a.action)} v={`${a.calls} calls · ${a.credits} credits · ${money(a.cost_usd)}`} />
-        ))}
-        <KV k="All-time cost" v={money(c.ai.cost_all)} />
-      </Sub>
-
-      <Sub label="Support">
-        {c.support.feedback.length === 0 ? (
-          <Empty>No feedback.</Empty>
-        ) : (
-          c.support.feedback.map((f) => (
-            <ListRow key={f.id}>
-              <RowTitle>{f.body}</RowTitle>
-              <RowMeta>
-                {f.kind} · {f.status} · {when(f.created_at)}
-              </RowMeta>
-            </ListRow>
-          ))
-        )}
-        <KV
-          k="Crash reports"
-          v={`${c.support.errors} ${c.support.errors === 1 ? 'report' : 'reports'} across ${c.support.error_bugs} ${
-            c.support.error_bugs === 1 ? 'bug' : 'bugs'
-          }`}
-        />
-      </Sub>
-
-      <Sub label="Business">
-        <KV
-          k="Trainer seat"
-          v={c.business.trainer ? `${c.business.trainer.status} · cap ${c.business.trainer.seat_cap}` : 'None'}
-        />
-        {c.business.trainer ? <KV k="Active clients" v={String(c.business.trainer_clients)} /> : null}
-      </Sub>
-
-      <Note>Training, photos, nutrition, health and activity are never shown here (AA-D13).</Note>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  name: { color: flText.primary, fontFamily: flFont.display, fontSize: 22, letterSpacing: 0.2 },
-  nameDim: { color: flColor.gray600, fontStyle: 'italic' },
-  meta: { color: flColor.gray400, fontSize: 12.5 },
-  sub: { gap: 4 },
-  subLabel: {
-    color: flText.bronzeLabel,
-    fontSize: 10.5,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    paddingBottom: 5,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: flColor.charcoal700,
-  },
-});
+// ── The card's sections — only what admin_user_card returns ─────────────────
+
+interface KV {
+  k: string;
+  v: string;
+}
+
+function cardSections(u: UserCard, now: number): { label: string; rows: KV[] }[] {
+  const b = u.billing;
+  const live = b.subscriptions.find((s) => s.expires_at && new Date(s.expires_at).getTime() > now) ?? null;
+  const paidEnds = b.subscriptions.filter((s) => s.ever_paid && s.expires_at).map((s) => s.expires_at as string).sort();
+  const lastPaid = paidEnds[paidEnds.length - 1] ?? null;
+
+  const plan = live
+    ? `${productLabel(live.product_id)}${live.period_type === 'TRIAL' ? ' · trial' : ''}${live.environment === 'SANDBOX' ? ' · test' : ''}`
+    : planWithoutProduct({ tier: b.tier, premium_kind: b.premium_kind, premium_ai: b.premium_ai, founder_seat: b.founder_seat, comped: b.comped_tester, product: null, period_type: null, last_paid_until: null });
+  const renew: KV = live
+    ? { k: live.period_type === 'TRIAL' ? 'Trial ends' : 'Renews', v: when(live.expires_at) }
+    : lastPaid
+      ? { k: 'Ended', v: when(lastPaid) }
+      : b.premium_until
+        ? { k: 'Until', v: when(b.premium_until) }
+        : { k: 'Renews', v: '—' };
+
+  const billing: KV[] = [
+    { k: 'Plan', v: plan },
+    renew,
+    { k: 'Premium AI', v: b.premium_ai ? (b.premium_ai_until ? `Yes · until ${when(b.premium_ai_until)}` : 'Yes') : 'No' },
+    { k: 'Founder seat', v: b.founder_seat != null ? `Yes · seat ${b.founder_seat}` : 'No' },
+    // Production purchases only (admin_user_card): TestFlight buys never count as money paid.
+    { k: 'Lifetime paid', v: money(b.paid_total, { cents: true }) },
+  ];
+
+  const purchases: KV[] = b.events.length
+    ? b.events.slice(0, 6).map((e) => ({
+        k: `${when(e.received_at)} · ${storeEventLabel(e.type)}${e.product ? `, ${productLabel(e.product)}` : ''}${e.environment === 'SANDBOX' ? ' · test' : ''}`,
+        v: e.price != null ? money(e.price, { cents: true }) : '—',
+      }))
+    : [{ k: 'No purchases', v: '—' }];
+
+  const top = u.ai.last30_by_action.slice(0, 2);
+  const ai: KV[] = [
+    { k: 'Credits used', v: int(u.ai.last30.credits) },
+    { k: 'Cost', v: money(u.ai.last30.cost) },
+    ...(top.length ? [{ k: top.map((x) => actionLabel(x.action)).join(' · '), v: top.map((x) => money(x.cost_usd)).join(' · ') }] : []),
+  ];
+
+  const support: KV[] = [
+    { k: 'Bug reports sent', v: int(u.support.feedback.filter((f) => f.kind === 'BUG').length) },
+    { k: 'Crashes', v: int(u.support.errors) },
+  ];
+
+  return [
+    { label: 'Billing', rows: billing },
+    { label: 'Purchases', rows: purchases },
+    { label: 'AI · last 30 days', rows: ai },
+    { label: 'Support', rows: support },
+  ];
+}

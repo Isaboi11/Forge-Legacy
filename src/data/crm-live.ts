@@ -12,7 +12,7 @@ import {
 } from '@/domain/admin/crm-core';
 
 /**
- * The Business CRM's read and write path (migration 0236, Admin-Analytics-Amendment-002).
+ * The Business CRM's read and write path (migration 0238, Admin-Analytics-Amendment-002).
  *
  * Same boundary rules as `admin-live.ts`, and the same `callRpc`: authorization is NOT here — every
  * `admin_*` function opens with `admin_guard()` and raises 42501 for anyone else. The shapes below are
@@ -34,6 +34,8 @@ export interface Revenue {
   mrr: number;
   paying: { total: number; premium_ai: number; premium: number; annual: number; monthly: number };
   trials_active: number;
+  trials_ending_7d: number;
+  refunds_count: number;
   trial_starts: number;
   trial_conversions: number;
   new_paid: number;
@@ -43,6 +45,9 @@ export interface Revenue {
   athletes_total: number;
   ever_paid: number;
   sandbox_events: number;
+  /** Test BUYS in the sandbox — what the "test data only" state reports. */
+  sandbox_purchases: number;
+  production_events: number;
   last_event_at: string | null;
 }
 
@@ -57,6 +62,9 @@ export interface Tiers {
   founder_seats: number;
   comped_testers: number;
   on_default: number;
+  new_30d: number;
+  /** One count per Users-page list, by the same rules as admin_billing_list. */
+  lists: Record<BillingFilter, number>;
 }
 
 export interface AiUsage {
@@ -66,6 +74,8 @@ export interface AiUsage {
   cost_usd: number;
   cost_prev: number;
   cost_all: number;
+  first_at: string | null;
+  calls_prev: number;
   athletes: number;
   uncharged: number;
   tokens: { input: number; output: number; cache_read: number; cache_write: number };
@@ -141,6 +151,8 @@ export interface Bug {
   source: 'qa' | 'manual';
   report: string | null;
   ref: string | null;
+  /** 'feedback:<id>' / 'error:<fingerprint>' when it came from "Track this". */
+  origin: string | null;
   title: string;
   severity: BugSeverity;
   area: string | null;
@@ -181,19 +193,13 @@ export const saveBug = (id: string | null, patch: Partial<Pick<Bug, 'title' | 's
   callRpc<string>('admin_bug_save', { p_id: id, p_patch: patch });
 export const deleteBug = (id: string) => callRpc<void>('admin_bug_delete', { p_id: id });
 /** "Track this" — copies a feedback row or a crash group onto the board. Idempotent. */
-export const trackBug = (kind: 'feedback' | 'error', ref: string) => callRpc<string>('admin_bug_track', { p_kind: kind, p_ref: ref });
+export const trackBug = (kind: 'feedback' | 'error', ref: string) =>
+  callRpc<{ id: string; ref: string }>('admin_bug_track', { p_kind: kind, p_ref: ref });
 
 // ── People (AA-D12) ─────────────────────────────────────────────────────────
 
-export interface UserHit {
-  id: string;
-  name: string | null;
-  handle: string | null;
-  created_at: string;
-  tier: 'FREE' | 'PREMIUM';
-  premium_ai: boolean;
-  paying: boolean;
-}
+/** A search hit has the same shape as a billing-list row, so both draw with one row component. */
+export type UserHit = BillingRow & { exact: boolean };
 
 /** The ceiling of what the operator may see about one athlete (AA-D12). Nothing about training. */
 export interface UserCard {
@@ -214,6 +220,8 @@ export interface UserCard {
     periods: { period: string; spent: number; allowance: number }[];
     by_action: { action: string; calls: number; credits: number; cost_usd: number }[];
     cost_all: number;
+    last30: { credits: number; cost: number; calls: number };
+    last30_by_action: { action: string; calls: number; cost_usd: number }[];
   };
   support: {
     feedback: { id: number; kind: string; body: string; screen: string | null; status: string; created_at: string }[];
@@ -234,6 +242,7 @@ export interface BillingRow {
   created_at: string;
   tier: 'FREE' | 'PREMIUM';
   premium_kind: string | null;
+  premium_until: string | null;
   premium_ai: boolean;
   founder_seat: number | null;
   comped: boolean;
@@ -241,9 +250,11 @@ export interface BillingRow {
   period_type: string | null;
   expires_at: string | null;
   since: string | null;
+  /** When their last PAID subscription ran out — "Ended Sep 21" on a lapsed row. */
+  last_paid_until: string | null;
 }
 
-export type BillingFilter = 'paying' | 'trial' | 'premium_ai' | 'founder' | 'comped' | 'grant' | 'lapsed' | 'free';
+export type BillingFilter = 'all' | 'paying' | 'trial' | 'premium_ai' | 'founder' | 'comped' | 'grant' | 'lapsed' | 'free';
 
 export const searchUsers = (q: string) => callRpc<UserHit[]>('admin_user_search', { p_q: q, p_limit: 25 });
 export const fetchUserCard = (id: string) => callRpc<UserCard>('admin_user_card', { p_id: id });
@@ -394,6 +405,50 @@ export async function pickAndUploadDocuments(category: DocCategory | 'auto'): Pr
       out.uploaded++;
     } catch (e) {
       out.failed.push({ name: asset.name, reason: e instanceof Error ? e.message : 'upload failed' });
+    }
+  }
+  return out;
+}
+
+/** A file the operator chose (web `<input type=file>` / drop, or the native picker), not yet uploaded. */
+export interface PickedFile {
+  name: string;
+  size: number;
+  type: string;
+  blob: Blob;
+}
+
+export type UploadFile = PickedFile & { shelf: DocCategory };
+
+/**
+ * Upload files the page already holds (the design's queue: each file has its own shelf) to the private
+ * bucket and record each one. One result per file, in order, so the queue can keep the failures on screen
+ * with their reason instead of a single "some failed". Sequential on purpose: a 50 MB file and nine small
+ * ones in parallel would all stall on one connection, and the order of the results must match the queue.
+ */
+export async function uploadDocumentFiles(files: UploadFile[]): Promise<{ name: string; ok: boolean; reason?: string }[]> {
+  const out: { name: string; ok: boolean; reason?: string }[] = [];
+  for (const f of files) {
+    try {
+      const rand = Math.random().toString(36).slice(2, 10);
+      const path = storagePathFor(f.shelf, f.name, new Date(), rand);
+      const mime = f.type || f.blob.type || 'application/octet-stream';
+      const { error } = await supabase.storage.from(DOCS_BUCKET).upload(path, f.blob, { contentType: mime, upsert: false });
+      if (error) throw new Error(error.message);
+      try {
+        await callRpc<string>('admin_document_save', {
+          p_id: null,
+          p_patch: { title: titleFromFile(f.name), category: f.shelf, storage_path: path, mime, size_bytes: f.size },
+        });
+      } catch (e) {
+        // No row means nothing points at the file — take it back out so the bucket holds no orphans.
+        await supabase.storage.from(DOCS_BUCKET).remove([path]);
+        throw e;
+      }
+      out.push({ name: f.name, ok: true });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : (e as { message?: unknown } | null)?.message;
+      out.push({ name: f.name, ok: false, reason: typeof msg === 'string' && msg ? msg : 'upload failed' });
     }
   }
   return out;

@@ -58,7 +58,7 @@ const FUNCTIONS = [
   ['admin_feedback', { p_limit: 10, p_status: null }], // 0167
   ['admin_client_errors', { p_days: 7, p_limit: 10, p_status: null }], // 0176
   ['admin_client_error_detail', { p_fingerprint: 'deadbeef', p_limit: 5 }], // 0176
-  // 0236 — the Business CRM (Admin-Analytics-Amendment-002).
+  // 0238 — the Business CRM (Admin-Analytics-Amendment-002).
   ['admin_revenue', { p_days: 30, p_tz: TZ, p_include_sandbox: false }],
   ['admin_tiers', {}],
   ['admin_ai_usage', { p_days: 30, p_tz: TZ }],
@@ -79,7 +79,7 @@ const FUNCTIONS = [
 const GUARDED_WRITES = [
   ['admin_feedback_set_status', { p_id: -1, p_status: 'READ' }], // 0167
   ['admin_client_error_set_status', { p_fingerprint: 'deadbeef', p_status: 'ACKED', p_note: null }], // 0176
-  // 0236. `admin_contacts` is here, not in FUNCTIONS, because listing contacts first syncs testers and
+  // 0238. `admin_contacts` is here, not in FUNCTIONS, because listing contacts first syncs testers and
   // trainers into the table — a write, however idempotent. `admin_user_card` needs a real id; the admin
   // section checks it against a search hit instead.
   ['admin_bug_save', { p_id: null, p_patch: {} }],
@@ -233,14 +233,14 @@ if (!process.env.SB_ADMIN_EMAIL || !process.env.SB_ADMIN_PASS) {
     const blob = JSON.stringify([ov, co]);
     check(!/"handle"|"athlete_id"|"user_id"/.test(blob), 'no per-athlete identity leaks into a payload (AA-D2)');
 
-    // AA-D20, half one: the 0236 AGGREGATES are held to the same rule.
+    // AA-D20, half one: the 0238 AGGREGATES are held to the same rule.
     const agg = await Promise.all(
       ['admin_revenue', 'admin_tiers', 'admin_ai_usage', 'admin_waitlist', 'admin_appstore'].map(async (fn) => {
         const args = FUNCTIONS.find(([f]) => f === fn)?.[1] ?? {};
         return (await sb.rpc(fn, args)).data;
       }),
     );
-    check(!/"handle"|"athlete_id"|"user_id"/.test(JSON.stringify(agg)), '0236 aggregates carry no per-athlete identity (AA-D20)');
+    check(!/"handle"|"athlete_id"|"user_id"/.test(JSON.stringify(agg)), '0238 aggregates carry no per-athlete identity (AA-D20)');
 
     // AA-D20, half two: the person-level card may name someone, but its KEYS may never include a
     // training, social, presence, photo, health or auth-email field (AA-D13). Keys, not values — an AI

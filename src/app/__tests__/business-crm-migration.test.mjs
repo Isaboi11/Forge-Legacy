@@ -1,14 +1,14 @@
 // node --test src/app/__tests__/business-crm-migration.test.mjs
 //
-// Static guards on migration 0236 (the Business CRM, Admin-Analytics-Amendment-002). The PGlite run that
+// Static guards on migration 0238 (the Business CRM, Admin-Analytics-Amendment-002). The PGlite run that
 // executed the bundle end to end lives outside the repo; these are the cheap, permanent tripwires on the
 // decisions that make the CRM safe to have at all.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const MIGRATION = readFileSync(new URL('../../../supabase/migrations/0236_business_crm.sql', import.meta.url), 'utf8');
-const BUNDLE = readFileSync(new URL('../../../supabase/apply/pending-0236.sql', import.meta.url), 'utf8');
+const MIGRATION = readFileSync(new URL('../../../supabase/migrations/0238_business_crm.sql', import.meta.url), 'utf8');
+const BUNDLE = readFileSync(new URL('../../../supabase/apply/pending-0238.sql', import.meta.url), 'utf8');
 const LIVE = readFileSync(new URL('../../data/admin-live.ts', import.meta.url), 'utf8');
 const ROUNDTRIP = readFileSync(new URL('../../../supabase/seed/admin-roundtrip.mjs', import.meta.url), 'utf8');
 
@@ -65,7 +65,7 @@ test('AI usage is metered, never read: no function selects a prompt, reply or me
   assert.doesNotMatch(MIGRATION, /coach_(messages|memory|threads)|holt_memory|\bprompt\b|\breply\b/i);
 });
 
-test('the client names 0236 when a function is missing, and the roundtrip lists every function', () => {
+test('the client names 0238 when a function is missing, and the roundtrip lists every function', () => {
   for (const name of ADMIN) {
     assert.match(LIVE, new RegExp(`'${name}'`), `admin-live.ts FROM_MIGRATION lacks ${name}`);
     assert.match(ROUNDTRIP, new RegExp(`\\['${name}'`), `admin-roundtrip.mjs lacks ${name}`);

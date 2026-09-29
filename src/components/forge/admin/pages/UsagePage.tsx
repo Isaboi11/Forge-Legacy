@@ -1,9 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { AdminBarChart, AdminFunnelBars, AdminLineChart, BucketBars, CohortGrid, StatLine } from '@/components/forge/admin/charts';
-import { Block, Columns, Empty, Kpis, PageHead, QueryGate, deltaSub, type KpiProps } from '@/components/forge/admin/crm-ui';
+import { Bars, Block, BlockGrid, Chart, Cohort, FootNote, Full, HeroFigures, PageHeader, Rows, qState, when, type Figure } from '@/components/forge/admin/crm-ui';
 import type { PageProps } from '@/components/forge/admin/pages/types';
-import { flColor, flFont, flText } from '@/constants/foundation';
 import {
   fetchAdminAdoption,
   fetchAdminCohorts,
@@ -14,426 +12,276 @@ import {
   fetchAdminOverview,
   fetchAdminSocial,
 } from '@/data/admin-live';
-import { groupedNumber, pctOf } from '@/domain/admin/chart-core';
-import { column, rangeLabel } from '@/domain/admin/series';
+import { RANGE_INFO, int, lastLabel } from '@/domain/admin/briefing';
+import { pctText, rate } from '@/domain/admin/crm-core';
+import { usageNote } from '@/domain/admin/notes/usage';
 import { useQuery } from '@/lib/useQuery';
 
 /**
- * Usage — the product half of the old operator dashboard (migrations 0129–0133), moved here whole by
- * Admin-Analytics-Amendment-002.
+ * Usage — what athletes use and whether they come back (Forge CRM.dc.html, `pageData('usage')`).
  *
  * Governed by `Docs/Admin-Analytics-Architecture-v1.0.md`. Everything on this page is a POPULATION
- * AGGREGATE — AA-D2 forbids per-athlete drill-down, and that constraint is what keeps this surface
- * outside the Performance Firewall rather than in breach of it. No athlete is named anywhere here;
- * the named rows live on Users & plans (account + billing only, AA-D12), never beside training data.
+ * AGGREGATE — AA-D2 forbids per-athlete drill-down, and that is what keeps this surface outside the
+ * Performance Firewall. Nobody is named here; named rows live on Users & plans (account + billing only).
  *
- * ══ EIGHT QUERIES, NOT ONE ══
- *
- * One `useQuery` per section, so the cohort grid — the slowest of them by far — never holds up the
- * headline tiles. Each refetches independently when the range changes.
+ * One `useQuery` per source, so the cohort grid — the slowest by far — never holds up the figures.
  *
  * ══ TWO DEFINITIONS OF "ACTIVE" LIVE ON THIS PAGE AT ONCE ══
  *
- * Phase 1's sections (0130) count an athlete active when they SAVED A WORKOUT — that is all the
- * database could see before events existed, and every one of those payloads carries
- * `active_def: 'saved_workout'`. "What people open" (0133) counts an APP OPEN, from `athlete_activity`.
- * The two numbers are different on purpose and both are labelled, because silently mixing them would
- * make the same word mean two things in one scroll.
+ * The figures, the chart, How often, Onboarding and Retention (0130) count an athlete active when they
+ * SAVED A WORKOUT. "What people open" (0133) counts an APP OPEN, from `athlete_activity`. They differ on
+ * purpose; both are labelled, and the footnote says so, because the same word meaning two things in one
+ * scroll invites comparing numbers that were never comparable.
  *
  * ══ AND WHAT IT STILL CANNOT TELL YOU ══
  *
  * Event data covers only athletes who left "Help improve Forge" on, and only from the release that
- * introduced it — there is no history before that. The section states its own coverage rather than
- * letting a partial sample read as the population.
+ * introduced it. The Coverage figure states that share rather than letting a sample read as everyone.
  */
+
+const EMPTY = 'No workouts saved yet. This fills in once athletes start training.';
+
 export function UsagePage({ range, days, tz }: PageProps) {
   const overview = useQuery(() => fetchAdminOverview(days, tz), [days, tz]);
   const growth = useQuery(() => fetchAdminGrowth(days, tz), [days, tz]);
-  const cohorts = useQuery(() => fetchAdminCohorts(12, tz), [tz]);
+  // Six signup weeks (this one and the five before it) → the design's Week 0…5 grid.
+  const cohorts = useQuery(() => fetchAdminCohorts(5, tz), [tz]);
   const engagement = useQuery(() => fetchAdminEngagement(days, tz), [days, tz]);
   const adoption = useQuery(() => fetchAdminAdoption(days, tz), [days, tz]);
-  const content = useQuery(() => fetchAdminContent(days, 12, tz), [days, tz]);
+  const content = useQuery(() => fetchAdminContent(days, 5, tz), [days, tz]);
   const social = useQuery(() => fetchAdminSocial(days, tz), [days, tz]);
-  const events = useQuery(() => fetchAdminEvents(days, 15, tz), [days, tz]);
+  const events = useQuery(() => fetchAdminEvents(days, 6, tz), [days, tz]);
 
   const o = overview.data;
   const g = growth.data;
   const e = engagement.data;
   const a = adoption.data;
-  const c = content.data;
+  const ct = content.data;
   const s = social.data;
   const ev = events.data;
 
-  const growthDays = (g?.series ?? []).map((r) => r.d);
-  const engDays = (e?.series ?? []).map((r) => r.d);
-  const note = rangeLabel(range);
+  const info = RANGE_INFO[range];
+  const inWin = range === '1Y' ? 'the last year' : info.label; // "Saved in 30 days" / "Saved in the last year"
+  const last = lastLabel(range).replace(/^l/, 'L'); // "Last 30 days"
+  // Nothing has ever been saved: every section says so once, instead of drawing zeros.
+  const none = o != null && o.tiles.workoutsAllTime === 0;
+  const empty = (msg: string | null) => (none ? EMPTY : msg);
 
-  /* A tile with a prior-period figure carries the ▲/▼ line; the all-time ones do not pretend to one. */
-  const kpi = (label: string, value: number, prev?: number, suffix = ''): KpiProps => ({
-    label,
-    value: `${groupedNumber(value)}${suffix}`,
-    ...(prev == null ? {} : (deltaSub(value, prev, note) ?? {})),
-  });
+  // ── Figures ──
+  const dash = (label: string, note?: string): Figure => ({ label, value: '—', note: none ? 'No data yet' : note });
+  const hero: Figure =
+    o && !none ? { label: 'Active athletes', value: int(o.tiles.active), note: `Saved a workout in ${inWin}` } : dash('Active athletes', overview.error ? 'Couldn’t load' : undefined);
+  const coverage = ev ? rate(ev.reportingAthletes, ev.athletesTotal) : null;
+  const figures: Figure[] = [
+    o && !none ? { label: 'New signups', value: int(o.tiles.signups), note: last } : dash('New signups'),
+    o && !none ? { label: 'Workouts', value: int(o.tiles.workouts), note: `Saved in ${inWin}` } : dash('Workouts'),
+    // From the growth funnel, not the overview's `activated`: that one counts ANYONE whose first-ever
+    // workout fell in the window, so it could exceed the signups it sits beside.
+    g && !none ? { label: 'First workouts', value: int(g.funnel.firstWorkout), note: `Of ${int(g.funnel.signedUp)} new signups` } : dash('First workouts'),
+    // The overview only returns an all-time total, so this figure is all-time and says so.
+    o && !none ? { label: 'Hours logged', value: int(o.tiles.hoursAllTime), note: 'All time' } : dash('Hours logged'),
+    ev && coverage != null && !none
+      ? { label: 'Coverage', value: pctText(Math.round(coverage)), note: `${int(ev.reportingAthletes)} of ${int(ev.athletesTotal)} left measurement on` }
+      : dash('Coverage'),
+  ];
+
+  const note = o
+    ? usageNote({
+        windowLabel: info.label,
+        priorLabel: info.prior,
+        active: o.tiles.active,
+        activePrev: o.tiles.activePrev,
+        signups: g?.funnel.signedUp ?? o.tiles.signups,
+        firstWorkouts: g?.funnel.firstWorkout ?? 0,
+        workouts: o.tiles.workouts,
+        workoutsAllTime: o.tiles.workoutsAllTime,
+      })
+    : null;
+
+  // ── Active athletes per day ──
+  // 1Y plots weeks. Summing daily actives would count athlete-DAYS, so a week's point is that week's
+  // weekly-active count (the `wau` on its last day) — distinct athletes, like every other point.
+  const series = e?.series ?? [];
+  const weekly = range === '1Y';
+  let chartV: number[] = series.map((r) => r.dau ?? 0);
+  let chartD: string[] = series.map((r) => r.d);
+  if (weekly) {
+    const v: number[] = [];
+    const d: string[] = [];
+    for (let end = series.length - 1; end >= 0; end -= 7) {
+      v.unshift(series[end].wau ?? 0);
+      d.unshift(series[Math.max(0, end - 6)].d);
+    }
+    chartV = v;
+    chartD = d;
+  }
+
+  // ── Retention ──
+  const HEAD = ['Week 0', '1', '2', '3', '4', '5'];
+  const cohortRows = [...(cohorts.data?.cohorts ?? [])].reverse().map((co) => ({
+    label: `${when(co.week)} · ${co.size}`,
+    // Past `maxK` the week has not happened yet: blank, never 0%.
+    cells: HEAD.map((_, k) => (k > co.maxK ? null : (co.cells.find((x) => x.k === k)?.pct ?? 0))),
+  }));
+
+  // ── How often ──
+  const tail = series[series.length - 1];
+  const dauAvg = series.length ? series.reduce((n, r) => n + (r.dau ?? 0), 0) / series.length : 0;
+
+  // ── Feature adoption ── (Logged a workout is 100% of active by definition, so it is left out.)
+  const feats = a
+    ? a.features
+        .filter((f) => f.key !== 'workout' && f.inWindow > 0)
+        .sort((x, y) => y.inWindow - x.inWindow)
+        .slice(0, 5)
+        .map((f) => ({ f, p: rate(f.inWindow, a.activeAthletes) }))
+    : [];
+  const over100 = feats.some((x) => (x.p ?? 0) > 100);
+
+  // ── Programs ──
+  const drop = a?.programs.dropoffByWeek.reduce<{ week: number; programs: number } | null>((m, d) => (!m || d.programs > m.programs ? d : m), null) ?? null;
+
+  // ── Social ──
+  const pushEver = a?.features.find((f) => f.key === 'push')?.ever;
+  const pushPct = a && pushEver != null ? rate(pushEver, a.totalAthletes) : null;
 
   return (
-    <View style={{ gap: 28 }}>
-      <PageHead
-        title="Usage"
-        lede="How athletes use Forge — population aggregates only. Nobody is named on this page."
-      />
+    <View>
+      <PageHeader title="Usage" purpose="What athletes use and whether they come back. Totals across everyone, never one person." note={note} />
+      <HeroFigures hero={hero} figures={figures} />
 
-      {/* ── Overview ─────────────────────────────────────────────────── */}
-      <QueryGate state={overview}>
-        {o ? (
-          <View style={styles.overview}>
-            <Kpis
+      <BlockGrid>
+        <Full full>
+          <Block
+            label="Active athletes per day"
+            sub={weekly ? 'Active = saved a workout that week.' : 'Active = saved a workout that day.'}
+            skeleton="chart"
+            state={qState(engagement, empty(series.length ? null : 'No days in this range yet.'))}
+          >
+            <Chart values={chartV} days={chartD} fmt={int} weekly={weekly} />
+          </Block>
+        </Full>
+        <Full full>
+          <Block
+            label="Retention by signup week"
+            sub="Share of each week’s signups who saved a workout in each later week. A blank cell has not happened yet."
+            state={qState(cohorts, empty(cohortRows.length ? null : 'No signups in the last six weeks.'))}
+          >
+            <Cohort head={HEAD} rows={cohortRows} />
+          </Block>
+        </Full>
+
+        <Block label="Onboarding" sub={`${last} of signups.`} state={qState(growth, empty(g && g.funnel.signedUp === 0 ? `No signups in the ${lastLabel(range)}.` : null))}>
+          {g ? (
+            <Bars
               items={[
-                kpi('Athletes', o.tiles.athletesTotal),
-                kpi('Active', o.tiles.active, o.tiles.activePrev),
-                kpi('New signups', o.tiles.signups, o.tiles.signupsPrev),
-                kpi('Workouts', o.tiles.workouts, o.tiles.workoutsPrev),
-                kpi('First workout', o.tiles.activated, o.tiles.activatedPrev),
-                kpi('Hours logged', o.tiles.hoursAllTime, undefined, 'h'),
+                { label: 'Signed up', value: g.funnel.signedUp },
+                { label: 'Finished onboarding', value: g.funnel.onboarded },
+                { label: 'First workout', value: g.funnel.firstWorkout },
+                // Its own denominator: someone who signed up yesterday cannot have had a week two yet.
+                { label: 'Trained in week 2', value: g.funnel.week2Return, note: `of ${int(g.funnel.week2Eligible)} old enough` },
               ]}
             />
-            <Text style={styles.footnote}>
-              {o.tiles.onboardedTotal} of {o.tiles.athletesTotal} athletes finished onboarding
-              {o.tiles.athletesTotal > 0 ? ` · ${pctOf(o.tiles.onboardedTotal, o.tiles.athletesTotal)}%` : ''} ·{' '}
-              {o.tiles.workoutsAllTime} workouts all time · median {o.tiles.medianWorkoutsPerActive} per active athlete
-            </Text>
-          </View>
-        ) : null}
-      </QueryGate>
-
-      <Columns>
-        {/* ── Growth ───────────────────────────────────────────────────── */}
-        <Block label="Growth">
-          <QueryGate state={growth}>
-            {g ? (
-              <>
-                <AdminLineChart values={column(g.series, 'signups')} days={growthDays} title="Signups per day" />
-                <AdminLineChart values={column(g.series, 'cumulative')} days={growthDays} title="Total athletes" />
-              </>
-            ) : null}
-          </QueryGate>
-        </Block>
-
-        {/* ── Funnel ───────────────────────────────────────────────────── */}
-        <Block
-          label="Onboarding funnel"
-          hint={`Everyone who signed up in the last ${days} days. The week-2 row counts only athletes old enough to have had a week two.`}
-        >
-          <QueryGate state={growth}>
-            {g ? (
-              <AdminFunnelBars
-                stages={[
-                  { label: 'Signed up', value: g.funnel.signedUp },
-                  { label: 'Finished onboarding', value: g.funnel.onboarded },
-                  { label: 'Logged a workout', value: g.funnel.firstWorkout },
-                  { label: 'Logged a second', value: g.funnel.secondWorkout },
-                  {
-                    label: 'Came back in week 2',
-                    value: g.funnel.week2Return,
-                    denominator: g.funnel.week2Eligible,
-                    ofLabel: `of ${g.funnel.week2Eligible} old enough to count`,
-                  },
-                ]}
-              />
-            ) : null}
-          </QueryGate>
-        </Block>
-      </Columns>
-
-      {/* ── Retention ────────────────────────────────────────────────── */}
-      <Block
-        label="Retention by signup week"
-        hint="Share of each week's cohort who trained again N weeks later. Blank means that week hasn't happened yet — not zero. The rightmost column of the newest row is always partial."
-      >
-        <QueryGate state={cohorts}>
-          {cohorts.data ? <CohortGrid cohorts={cohorts.data.cohorts} weeks={cohorts.data.weeks} /> : null}
-        </QueryGate>
-      </Block>
-
-      <Columns>
-        {/* ── Engagement ───────────────────────────────────────────────── */}
-        <Block label="Engagement">
-          <QueryGate state={engagement}>
-            {e ? (
-              <>
-                {/* Three small multiples, never three lines on one plot — the palette cannot carry a
-                    categorical series, and a dual axis would be worse. */}
-                <AdminLineChart values={column(e.series, 'dau')} days={engDays} title="Daily active" />
-                <AdminLineChart values={column(e.series, 'wau')} days={engDays} title="Weekly active" />
-                <AdminLineChart values={column(e.series, 'mau')} days={engDays} title="Monthly active" />
-                <StatLine label="Median days between sessions" value={e.medianDaysBetween} />
-                <Text style={styles.subhead}>Days since last workout</Text>
-                <BucketBars buckets={e.churnRisk} />
-              </>
-            ) : null}
-          </QueryGate>
-        </Block>
-
-        {/* ── Feature adoption ─────────────────────────────────────────── */}
-        <Block
-          label="What gets used"
-          hint={a ? `Athletes who have ever used each feature, of ${a.totalAthletes} total.` : undefined}
-        >
-          <QueryGate state={adoption}>
-            {a ? (
-              <AdminBarChart
-                max={a.totalAthletes}
-                rows={[...a.features]
-                  .sort((x, y) => y.ever - x.ever)
-                  .map((f) => ({
-                    label: f.label,
-                    value: f.ever,
-                    note: `· ${pctOf(f.ever, a.totalAthletes) ?? 0}%`,
-                  }))}
-              />
-            ) : null}
-          </QueryGate>
-        </Block>
-      </Columns>
-
-      {/* ── What people open and tap (Phase 2, 0131–0133) ────────────── */}
-      <Block
-        label="What people open"
-        hint={
-          ev
-            ? `${ev.reportingAthletes} of ${ev.athletesTotal} athletes are reporting${ev.optedOut > 0 ? ` · ${ev.optedOut} opted out` : ''}. Counts below describe only those athletes.`
-            : undefined
-        }
-      >
-        <QueryGate state={events}>
-          {ev ? (
-            ev.totalEvents === 0 ? (
-              // A real state worth naming rather than drawing as flat zero: the tables exist, the app
-              // just has not reported yet. "Nothing here" and "nobody uses this" are different claims.
-              <Empty>
-                No usage recorded yet in this window. Events start arriving once the update is installed and the
-                app is opened — a fresh install reports from its first launch.
-              </Empty>
-            ) : (
-              <>
-                <Kpis
-                  items={[
-                    kpi('Opened today', ev.presence.dau),
-                    kpi('Opened this week', ev.presence.wau),
-                    kpi('Opened this month', ev.presence.mau),
-                    kpi('Median session', ev.sessions.medianSec, undefined, 's'),
-                  ]}
-                />
-
-                <Columns>
-                  <View style={styles.col}>
-                    <Text style={styles.subhead}>Screens, by how many athletes opened them</Text>
-                    <AdminBarChart
-                      rows={ev.screens.map((sc) => ({
-                        label: sc.screen,
-                        value: sc.athletes,
-                        note: `· ${sc.views} views`,
-                      }))}
-                    />
-                  </View>
-
-                  <View style={styles.col}>
-                    {ev.actions.length ? (
-                      <>
-                        <Text style={styles.subhead}>Actions taken</Text>
-                        <AdminBarChart
-                          rows={ev.actions.map((ac) => ({
-                            label: ac.kind.replace(/_/g, ' '),
-                            value: ac.athletes,
-                            note: `· ${ac.events} times`,
-                          }))}
-                        />
-                      </>
-                    ) : null}
-
-                    <Text style={styles.subhead}>Sessions</Text>
-                    <StatLine label="Sessions recorded" value={ev.sessions.count} />
-                    <StatLine label="Median length" value={`${ev.sessions.medianSec}s`} />
-                    {/* The p90 is the load-bearing one: a median of 40s with a p90 of 12 minutes is a
-                        product with a short check-in AND a long session, which one number would hide. */}
-                    <StatLine label="90th percentile length" value={`${ev.sessions.p90Sec}s`} />
-                    <StatLine label="Median screens per session" value={ev.sessions.medianScreensPerSession} />
-
-                    {ev.byPlatform.length ? (
-                      <>
-                        <Text style={styles.subhead}>Where they are</Text>
-                        <AdminBarChart
-                          rows={ev.byPlatform.map((p) => ({ label: p.key, value: p.athletes, note: `· ${p.events} events` }))}
-                        />
-                      </>
-                    ) : null}
-                  </View>
-                </Columns>
-              </>
-            )
           ) : null}
-        </QueryGate>
-      </Block>
-
-      <Columns>
-        {/* ── Programs ─────────────────────────────────────────────────── */}
-        <Block
-          label="Programs"
-          hint="Drop-off counts programs untouched for 3 weeks that are still open — not everyone currently mid-week, and not ones already graduated, finished or ended early."
-        >
-          <QueryGate state={adoption}>
-            {a ? (
-              <>
-                <StatLine
-                  label="Session adherence"
-                  value={a.programs.adherencePct == null ? 'no sessions yet' : `${a.programs.adherencePct}%`}
-                />
-                <StatLine label="Sessions completed" value={a.programs.sessionsCompleted} />
-                <StatLine label="Sessions skipped" value={a.programs.sessionsSkipped} />
-                {/* Two completion states, never summed. 'graduated' earns rank credit and Programs
-                    Graduated honors; 'finished' is the same achievement on a program under four designed
-                    weeks, which D-RCM-30 rules earns neither. Labelled so the difference is legible
-                    without the doc — "Weeks completed" was the old label here and counted programs. */}
-                <StatLine label="Graduated" value={a.programs.graduated} />
-                <StatLine label="Finished (under 4 weeks)" value={a.programs.finished} />
-                <StatLine label="Ended early" value={a.programs.endedEarly} />
-                <StatLine label="Currently active" value={a.programs.active} />
-                {a.programs.dropoffByWeek.length ? (
-                  <>
-                    <Text style={styles.subhead}>Where stalled programs stopped</Text>
-                    <AdminBarChart
-                      rows={a.programs.dropoffByWeek.map((d) => ({ label: `Week ${d.week}`, value: d.programs }))}
-                    />
-                  </>
-                ) : null}
-              </>
-            ) : null}
-          </QueryGate>
+        </Block>
+        <Block label="How often" sub="Active = saved a workout." state={qState(engagement, empty(null))}>
+          {e ? (
+            <Rows
+              items={[
+                { label: 'Daily active (avg)', value: int(dauAvg) },
+                { label: 'Weekly active', value: int(tail?.wau ?? 0) },
+                { label: 'Monthly active', value: int(tail?.mau ?? 0) },
+                // The engagement read returns the median GAP between sessions, not days since the last one.
+                { label: 'Median days between workouts', value: int(e.medianDaysBetween) },
+              ]}
+            />
+          ) : null}
         </Block>
 
-        {/* ── Content ──────────────────────────────────────────────────── */}
+        <Block
+          label="What people open"
+          sub="Counts app opens, not workouts. Not comparable with the active numbers above."
+          foot={ev ? `From the ${int(ev.reportingAthletes)} of ${int(ev.athletesTotal)} athletes who left measurement on.` : null}
+          state={qState(
+            events,
+            ev && (ev.totalEvents === 0 || ev.screens.length === 0)
+              ? 'No app opens recorded in this range yet. They start arriving once athletes open the update that measures them.'
+              : null,
+          )}
+        >
+          {ev ? <Bars items={ev.screens.map((sc) => ({ label: sc.screen, value: sc.views, note: `· ${int(sc.athletes)} athletes` }))} /> : null}
+        </Block>
+        <Block
+          label="Feature adoption"
+          sub={`Share of active athletes who used it in the ${lastLabel(range)}.`}
+          foot={over100 ? 'A feature can be used without saving a workout, so a share can pass 100%.' : null}
+          state={qState(
+            adoption,
+            empty(
+              a && a.activeAthletes === 0
+                ? 'Nobody saved a workout in this range, so there is nothing to divide by.'
+                : a && feats.length === 0
+                  ? 'No feature was used in this range.'
+                  : null,
+            ),
+          )}
+        >
+          <Bars items={feats.map(({ f, p }) => ({ label: f.label, value: p ?? 0, display: pctText(p == null ? null : Math.round(p)) }))} />
+        </Block>
+
+        <Block label="Programs" foot="All time, not just this range. Drop-off counts programs untouched for 3 weeks that were never finished." state={qState(adoption, empty(null))}>
+          {a ? (
+            <Rows
+              items={[
+                { label: 'Programs running', value: int(a.programs.active) },
+                {
+                  label: 'Sessions done as planned',
+                  value: pctText(a.programs.adherencePct),
+                  note: `${int(a.programs.sessionsCompleted)} done · ${int(a.programs.sessionsSkipped)} skipped`,
+                },
+                { label: 'Most common drop-off', value: drop ? `Week ${drop.week}` : '—', note: drop ? `${int(drop.programs)} programs stalled there` : null },
+              ]}
+            />
+          ) : null}
+        </Block>
         <Block
           label="Most-trained exercises"
-          hint="Ranked by how many different athletes logged it — not by raw set count, which one person can dominate."
+          sub="Ranked by how many athletes logged it, not by sets, which one person can dominate."
+          state={qState(content, empty(ct && ct.exercises.length === 0 ? 'No exercises logged in this range.' : null))}
         >
-          <QueryGate state={content}>
-            {c ? (
-              <>
-                <AdminBarChart
-                  rows={c.exercises.map((x) => ({
-                    label: x.isCustom ? `${x.label} (custom)` : x.label,
-                    value: x.athletes,
-                    note: `· ${x.workouts} workouts`,
-                  }))}
-                />
-                <Text style={styles.subhead}>Session type</Text>
-                <AdminBarChart
-                  rows={c.activityMix.map((m) => ({ label: m.key, value: m.workouts, note: `· ${m.athletes} athletes` }))}
-                />
-                <Text style={styles.subhead}>Where sessions come from</Text>
-                <AdminBarChart
-                  rows={[
-                    { label: 'From a program', value: c.sessionSource.program },
-                    { label: 'From a template', value: c.sessionSource.template },
-                    { label: 'Freestyle', value: c.sessionSource.freestyle },
-                  ]}
-                />
-                {c.topHonors.length ? (
-                  <>
-                    <Text style={styles.subhead}>Honors earned</Text>
-                    <AdminBarChart
-                      rows={c.topHonors.map((h) => ({ label: h.label, value: h.athletes, note: `· ${h.awards} awards` }))}
-                    />
-                  </>
-                ) : null}
-              </>
-            ) : null}
-          </QueryGate>
-        </Block>
-      </Columns>
-
-      {/* ── Social ───────────────────────────────────────────────────── */}
-      <Block label="Social" hint="A squad counts as active if somebody posted or checked in.">
-        <QueryGate state={social}>
-          {s ? (
-            <Columns>
-              <View style={styles.col}>
-                <StatLine label="Squads" value={s.squads.total} />
-                <StatLine label="Active squads" value={s.squads.active} />
-                <StatLine label="Median squad size" value={s.squads.medianSize} />
-                <StatLine label="Posts" value={s.squads.posts} />
-                <StatLine label="Check-ins" value={s.squads.checkins} />
-                <StatLine label="Join requests" value={s.squads.joinRequests} />
-                <Text style={styles.subhead}>Squad size</Text>
-                <BucketBars buckets={s.squads.sizeHistogram} />
-              </View>
-
-              <View style={styles.col}>
-                <Text style={styles.subhead}>Friends</Text>
-                <StatLine label="Accepted friendships" value={s.friends.acceptedTotal} />
-                <StatLine label="Pending requests" value={s.friends.pending} />
-                <StatLine label="Median friends per athlete" value={s.friends.medianFriends} />
-
-                <Text style={styles.subhead}>Challenges</Text>
-                <StatLine label="Created" value={s.challenges.created} />
-                <StatLine label="Live now" value={s.challenges.live} />
-                <StatLine label="Completed" value={s.challenges.completed} />
-                <StatLine label="Cancelled" value={s.challenges.cancelled} />
-                <StatLine label="Median participants" value={s.challenges.medianParticipants} />
-
-                <Text style={styles.subhead}>Push</Text>
-                <StatLine label="Sent" value={s.push.sent} />
-                <StatLine label="Failed" value={s.push.failed} />
-                <StatLine label="Devices registered" value={s.push.devices.reduce((n, d) => n + d.n, 0)} />
-              </View>
-            </Columns>
+          {ct ? (
+            <Bars
+              items={ct.exercises.map((x) => ({
+                label: x.isCustom ? `${x.label} (custom)` : x.label,
+                value: x.athletes,
+                note: `athletes · ${int(x.workouts)} workouts`,
+              }))}
+            />
           ) : null}
-        </QueryGate>
-      </Block>
+        </Block>
 
-      {/* The honesty footer. Two definitions of "active" are on this page at once and a reader who
-          does not know that will compare two numbers that were never comparable. */}
-      <View style={styles.footer}>
-        <Text style={styles.disclaimer}>
-          Everything above “What people open” counts an athlete as{' '}
-          <Text style={styles.disclaimerStrong}>active when they saved a workout</Text> — so somebody who opens Forge
-          daily and logs nothing reads as inactive there. “What people open” counts an{' '}
-          <Text style={styles.disclaimerStrong}>app open</Text> instead. The two are deliberately different.
-        </Text>
-        <Text style={styles.disclaimer}>
-          Usage data starts from the release that introduced it — there is no history before that — and covers only
-          athletes who left “Help improve Forge” on in Settings › Privacy. It never includes anything an athlete
-          wrote or lifted, no photos and no location. All figures are bucketed in {tz}.
-        </Text>
-        {/* ⚠ THIS PARAGRAPH HAS BEEN CORRECTED TWICE, IN PLACE. It first said "no athlete is named on this
-            screen"; "Newest athletes" (AA-D8/AA-D9) made that false and it narrowed to one exception. The
-            CRM (Amendment 002, AA-D12) moved every named row to Users & plans, so the claim worth making is
-            now about THAT page's ceiling. A footer that silently drops a promise is worse than one that
-            never made it. */}
-        <Text style={styles.disclaimer}>
-          Aggregates only, by design. People are named in exactly one place —{' '}
-          <Text style={styles.disclaimerStrong}>Users &amp; plans</Text> — and only with their account and billing
-          record (AA-D12): <Text style={styles.disclaimerStrong}>never training data</Text> — no workouts, no streak,
-          no rank, no last-active time. Every figure on this page is a population aggregate, and nothing in the CRM —
-          named or not — may be shown inside the app (Admin-Analytics-Architecture AA-D2 / AA-D3, amended by AA-D8
-          and AA-D12).
-        </Text>
-      </View>
+        <Block label="Social" state={qState(social)}>
+          {s ? (
+            <Rows
+              items={[
+                { label: 'Squads', value: int(s.squads.total) },
+                { label: 'Friend connections', value: int(s.friends.acceptedTotal) },
+                { label: 'Challenges running', value: int(s.challenges.live) },
+                // Athletes with an enabled push token, of everyone. Devices are not people; this counts people.
+                { label: 'Push opt-in', value: pctText(pushPct == null ? null : Math.round(pushPct)) },
+              ]}
+            />
+          ) : null}
+        </Block>
+      </BlockGrid>
+
+      {/* The honesty footer: two definitions of "active" are on this page, and coverage is partial. */}
+      <FootNote>
+        Everything except “What people open” counts an athlete as active when they saved a workout, so someone who
+        opens Forge daily and logs nothing reads as inactive there. “What people open” counts app opens instead, and
+        only from athletes who left “Help improve Forge” on, from the release that introduced it. Aggregates only:
+        nobody is named on this page. Days are bucketed in {tz}.
+      </FootNote>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  overview: { gap: 10 },
-  footnote: { color: flColor.gray600, fontSize: 11, lineHeight: 16 },
-  col: { gap: 8 },
-  subhead: {
-    color: flText.tertiary,
-    fontSize: 10.5,
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginTop: 8,
-  },
-  footer: { gap: 8 },
-  disclaimer: { color: flColor.gray600, fontSize: 10.5, lineHeight: 16 },
-  disclaimerStrong: { color: flText.secondary, fontFamily: flFont.displayMedium },
-});

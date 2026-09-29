@@ -39,7 +39,7 @@ const FROM_MIGRATION: Record<string, string> = {
   admin_client_errors: '0176',
   admin_client_error_detail: '0176',
   admin_client_error_set_status: '0176',
-  // 0236 — the Business CRM (Admin-Analytics-Amendment-002).
+  // 0238 — the Business CRM (Admin-Analytics-Amendment-002).
   ...Object.fromEntries(
     [
       'admin_revenue', 'admin_tiers', 'admin_ai_usage', 'admin_waitlist', 'admin_appstore',
@@ -48,7 +48,7 @@ const FROM_MIGRATION: Record<string, string> = {
       'admin_contacts', 'admin_contact_save', 'admin_contact_delete',
       'admin_contact_activity', 'admin_activity_log', 'admin_activity_done',
       'admin_documents', 'admin_document_save', 'admin_document_delete',
-    ].map((fn) => [fn, '0236']),
+    ].map((fn) => [fn, '0238']),
   ),
 };
 

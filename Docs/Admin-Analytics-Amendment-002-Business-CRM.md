@@ -4,7 +4,7 @@
 **Date:** 2026-09-28
 **Owner:** Product (PO decisions 2026-09-28)
 **Amends:** `Admin-Analytics-Architecture-v1.0.md` (AA-D2, AA-D7 context) and `Admin-Analytics-Amendment-001.md` (AA-D8 ceiling)
-**Implemented by:** migration `0236_business_crm.sql`, Edge Function `asc-sync`, `/admin` rebuilt as a sectioned CRM
+**Implemented by:** migration `0238_business_crm.sql`, Edge Function `asc-sync`, `/admin` rebuilt as a sectioned CRM
 
 ---
 

@@ -1,11 +1,10 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { AppBar } from '@/components/forge/composites/AppBar';
-import { RangeControl } from '@/components/forge/admin/charts';
-import { useWide } from '@/components/forge/admin/crm-ui';
+import { CrmThemeProvider, useCrm, type CrmMode } from '@/components/forge/admin/crm-theme';
+import { DISPLAY, ToastProvider, useLayout } from '@/components/forge/admin/crm-ui';
 import { AiPage } from '@/components/forge/admin/pages/AiPage';
 import { AppStorePage } from '@/components/forge/admin/pages/AppStorePage';
 import { BugsPage } from '@/components/forge/admin/pages/BugsPage';
@@ -16,158 +15,192 @@ import { OverviewPage } from '@/components/forge/admin/pages/OverviewPage';
 import { RevenuePage } from '@/components/forge/admin/pages/RevenuePage';
 import { UsagePage } from '@/components/forge/admin/pages/UsagePage';
 import { UsersPage } from '@/components/forge/admin/pages/UsersPage';
-import { isPageKey, NAV, type PageKey, type PageProps } from '@/components/forge/admin/pages/types';
-import { flColor, flFont, flRadius, flText } from '@/constants/foundation';
+import { isPageKey, NAV, RANGE_PAGES, type PageKey, type PageProps } from '@/components/forge/admin/pages/types';
 import { dashboardTz } from '@/data/admin-live';
 import { fetchBugCounts } from '@/data/crm-live';
-import { RANGES, rangeToDays, type RangeKey } from '@/domain/admin/series';
+import { fetchAdminReports } from '@/data/moderation-live';
+import { RANGE_INFO, type RangeKey } from '@/domain/admin/briefing';
 import { useQuery } from '@/lib/useQuery';
 
 /**
- * The Business CRM shell (Admin-Analytics-Amendment-002).
+ * The Business CRM shell, built to `Forge CRM.dc.html` (Admin-Analytics-Amendment-002).
  *
- * The Creator Dashboard used to be one fifteen-section scroll. It is now ten pages under four headings,
- * because the questions an owner asks come in kinds — "how is the money", "what is broken", "who do I
- * need to call back" — and a scroll answers none of them without passing through all the others.
+ * Wide (≥ 900): a 236 px sidebar — brand, "‹ Back to the app", four headed groups, badges on Bugs
+ * (critical + high still open) and Moderation (reports waiting). Narrow: the brand row and a scrolling row
+ * of page pills. Both: a top bar with the breadcrumb, the Dark / Light switch and, on the pages that use
+ * it, the 7D / 30D / 90D / 1Y range; then a content column up to 1240 px.
  *
- * ══ TWO LAYOUTS, ONE COMPONENT TREE ══
- *
- * Wide (the web dashboard, ≥ 900 px): a fixed sidebar and a centred content column. Phone: the app bar,
- * a horizontal strip of page chips, and the same pages stacked. The pages decide their own columns with
- * `Columns`/`useWide`; the shell only decides where the navigation goes.
- *
- * ══ THE PAGE IS IN THE URL ══
- *
- * `/admin?p=bugs&a=<id>`. A refresh, a bookmark or a link pasted to yourself lands on the same page —
- * which matters most on the web, the surface this is actually used on.
- *
- * The gate is not here: `admin.tsx` checks `isAppAdmin()` before rendering this, and every RPC behind
- * every page raises 42501 for a non-admin regardless (AA-D5).
+ * The page is in the URL (`/admin?p=bugs&a=reports`), so a refresh or a bookmark lands in the same place.
+ * The gate is not here: `admin.tsx` checks `isAppAdmin()`, and every RPC behind every page raises 42501
+ * for a non-admin regardless (AA-D5).
  */
 export function CrmShell({ onExit }: { onExit: () => void }) {
+  return (
+    <CrmThemeProvider>
+      <ToastProvider>
+        <ShellBody onExit={onExit} />
+      </ToastProvider>
+    </CrmThemeProvider>
+  );
+}
+
+function ShellBody({ onExit }: { onExit: () => void }) {
   const router = useRouter();
-  const wide = useWide();
+  const { c, mode, setMode } = useCrm();
+  const { wide, lg } = useLayout();
   const params = useLocalSearchParams<{ p?: string; a?: string }>();
   const page: PageKey = isPageKey(params.p) ? params.p : 'overview';
   const arg = typeof params.a === 'string' && params.a ? params.a : undefined;
 
-  const [range, setRange] = useState<RangeKey>('30d');
-  const days = rangeToDays(range);
+  const [range, setRange] = useState<RangeKey>('30D');
+  const days = RANGE_INFO[range].days;
   const tz = dashboardTz();
 
-  // Badges. Re-read when the page changes, so fixing a bug and navigating away updates the count.
+  // Badges re-read when the page changes, so fixing a bug and moving on updates the count.
   const bugCounts = useQuery(() => fetchBugCounts(), [page]);
+  const reports = useQuery(() => fetchAdminReports(1, 'open'), [page]);
   const badge: Partial<Record<PageKey, number>> = {
     bugs: bugCounts.data ? bugCounts.data.active_critical + bugCounts.data.active_high : undefined,
+    moderation: reports.data?.counts.open || undefined,
   };
 
   const go = (p: PageKey, a?: string) => router.setParams({ p, a: a ?? '' });
-  const ranged = NAV.flatMap((g) => g.items).find((i) => i.key === page)?.ranged ?? false;
-  const title = NAV.flatMap((g) => g.items).find((i) => i.key === page)?.label ?? 'Overview';
-
+  const group = NAV.find((g) => g.items.some((i) => i.key === page))?.group ?? 'Business';
+  const label = NAV.flatMap((g) => g.items).find((i) => i.key === page)?.label ?? 'Overview';
   const props: PageProps = { range, days, tz, go, arg };
-  const body = renderPage(page, props);
 
-  const rangeControl = ranged ? (
-    <RangeControl options={RANGES.map((r) => ({ key: r.key, label: r.label }))} value={range} onChange={setRange} />
-  ) : null;
+  const seg = (on: boolean) => ({ color: on ? c.ink : c.ink3, bg: on ? c.hover : 'transparent' });
+  const topBar = (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, minHeight: 36 }}>
+      <Text style={{ fontSize: 13, color: c.ink3 }}>
+        {group} · <Text style={{ color: c.ink2 }}>{label}</Text>
+      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <View accessibilityRole="radiogroup" accessibilityLabel="Appearance" style={{ flexDirection: 'row', gap: 2, padding: 3, borderRadius: 10, borderWidth: 1, borderColor: c.line }}>
+          {(
+            [
+              ['forge', 'Dark'],
+              ['alabaster', 'Light'],
+            ] as [CrmMode, string][]
+          ).map(([k, l]) => (
+            <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: mode === k }} onPress={() => setMode(k)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, backgroundColor: seg(mode === k).bg }}>
+              <Text style={{ fontSize: 12.5, fontWeight: '600', color: seg(mode === k).color }}>{l}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {RANGE_PAGES.includes(page) ? (
+          <View accessibilityRole="radiogroup" accessibilityLabel="Date range" style={{ flexDirection: 'row', gap: 2, padding: 3, borderRadius: 10, borderWidth: 1, borderColor: c.line }}>
+            {(['7D', '30D', '90D', '1Y'] as RangeKey[]).map((k) => (
+              <Pressable key={k} accessibilityRole="radio" accessibilityState={{ checked: range === k }} onPress={() => setRange(k)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: 7, backgroundColor: seg(range === k).bg }}>
+                <Text style={{ fontSize: 12.5, fontWeight: '600', color: seg(range === k).color }}>{k}</Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+      </View>
+    </View>
+  );
+
+  const body = (
+    <View style={{ width: '100%', maxWidth: 1240, alignSelf: 'center' }}>
+      <PageBody page={page} props={props} />
+    </View>
+  );
 
   if (wide) {
     return (
-      <View style={styles.wideRoot}>
-        <View style={styles.sidebar}>
-          <Pressable onPress={onExit} accessibilityRole="link" accessibilityLabel="Back to the app" style={styles.brand}>
-            <Text style={styles.brandName}>Forge Legacy</Text>
-            <Text style={styles.brandSub}>‹ Back to the app</Text>
-          </Pressable>
-          <ScrollView contentContainerStyle={styles.navScroll} showsVerticalScrollIndicator={false}>
-            {NAV.map((g) => (
-              <View key={g.group} style={styles.navGroup}>
-                <Text style={styles.navGroupLabel}>{g.group}</Text>
-                {g.items.map((i) => {
-                  const on = i.key === page;
-                  const n = badge[i.key];
-                  return (
-                    <Pressable
-                      key={i.key}
-                      onPress={() => go(i.key)}
-                      accessibilityRole="link"
-                      accessibilityState={{ selected: on }}
-                      style={({ hovered }: { pressed: boolean; hovered?: boolean }) => [
-                        styles.navItem,
-                        hovered && !on && styles.navItemHover,
-                        on && styles.navItemOn,
-                      ]}
-                    >
-                      <Text style={[styles.navText, on && styles.navTextOn]}>{i.label}</Text>
-                      {n ? <Text style={styles.navBadge}>{n}</Text> : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
+      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: c.bg }}>
+        <ScrollView style={{ width: 236, flexGrow: 0, backgroundColor: c.side, borderRightWidth: 1, borderRightColor: c.line }} contentContainerStyle={{ paddingVertical: 28, paddingHorizontal: 16, gap: 26 }}>
+          <View style={{ gap: 4, paddingHorizontal: 10 }}>
+            <Text style={{ fontFamily: DISPLAY, fontSize: 21, color: c.ink }}>Forge Legacy</Text>
+            <Text onPress={onExit} accessibilityRole="link" style={{ fontSize: 12.5, color: c.ink3 }}>
+              ‹ Back to the app
+            </Text>
+          </View>
+          {NAV.map((g) => (
+            <View key={g.group} accessibilityRole="menu" style={{ gap: 2 }}>
+              <Text style={{ fontSize: 10.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: c.ink3, paddingHorizontal: 10, paddingBottom: 6 }}>{g.group}</Text>
+              {g.items.map((i) => {
+                const on = i.key === page;
+                const n = badge[i.key];
+                return (
+                  <Pressable
+                    key={i.key}
+                    onPress={() => go(i.key)}
+                    accessibilityRole="link"
+                    accessibilityState={{ selected: on }}
+                    style={({ hovered }: { pressed: boolean; hovered?: boolean }) => ({
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      height: 34,
+                      paddingHorizontal: 10,
+                      borderRadius: 8,
+                      backgroundColor: on ? c.brzTint : hovered ? c.hover : 'transparent',
+                    })}
+                  >
+                    <Text style={{ fontSize: 14, color: on ? c.brz : c.ink2, fontWeight: on ? '600' : '400' }}>{i.label}</Text>
+                    {n ? (
+                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: c.critTint }}>
+                        <Text style={{ fontSize: 11.5, fontWeight: '600', color: c.crit, fontVariant: ['tabular-nums'] }}>{n}</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
+        </ScrollView>
         <ScrollView
-          style={styles.main}
-          contentContainerStyle={styles.mainBody}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingTop: lg ? 28 : 24, paddingHorizontal: lg ? 56 : 32, paddingBottom: lg ? 72 : 64 }}
           keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           automaticallyAdjustKeyboardInsets
         >
-          <View style={styles.column}>
-            <View style={styles.topBar}>
-              <Text style={styles.crumb}>
-                {NAV.find((g) => g.items.some((i) => i.key === page))?.group} · {title}
-              </Text>
-              {rangeControl}
-            </View>
-            {body}
-          </View>
+          {topBar}
+          {body}
         </ScrollView>
       </View>
     );
   }
 
   return (
-    <View style={styles.phoneRoot}>
-      <AppBar title="Creator Dashboard" onBack={onExit} />
-      <View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabStrip}>
-          {NAV.flatMap((g) => g.items).map((i) => {
-            const on = i.key === page;
-            const n = badge[i.key];
-            return (
-              <Pressable
-                key={i.key}
-                onPress={() => go(i.key)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                style={[styles.tab, on && styles.tabOn]}
-              >
-                <Text style={[styles.tabText, on && styles.tabTextOn]}>
-                  {i.label}
-                  {n ? <Text style={styles.tabBadge}> {n}</Text> : null}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-      <ScrollView
-        contentContainerStyle={styles.phoneBody}
-        keyboardDismissMode={KEYBOARD_DISMISS_MODE}
-        automaticallyAdjustKeyboardInsets
-        showsVerticalScrollIndicator={false}
-      >
-        {rangeControl ? <View style={styles.phoneRange}>{rangeControl}</View> : null}
+    <View style={{ flex: 1, backgroundColor: c.bg }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: 48 }} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets>
+        <View style={{ gap: 10, marginHorizontal: -20, marginBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: c.line }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <Text style={{ fontFamily: DISPLAY, fontSize: 20, color: c.ink }}>Forge Legacy</Text>
+            <Text onPress={onExit} accessibilityRole="link" style={{ fontSize: 12.5, color: c.ink3 }}>
+              ‹ Back to the app
+            </Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 4, paddingHorizontal: 20, paddingBottom: 10 }}>
+            {NAV.flatMap((g) => g.items).map((i) => {
+              const on = i.key === page;
+              const n = badge[i.key];
+              return (
+                <Pressable
+                  key={i.key}
+                  onPress={() => go(i.key)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: on }}
+                  style={{ flexDirection: 'row', gap: 6, alignItems: 'center', height: 34, paddingHorizontal: 12, borderRadius: 17, backgroundColor: on ? c.brzTint : 'transparent' }}
+                >
+                  <Text style={{ fontSize: 14, color: on ? c.brz : c.ink2, fontWeight: on ? '600' : '400' }}>{i.label}</Text>
+                  {n ? <Text style={{ fontSize: 11, fontWeight: '600', color: c.crit }}>{n}</Text> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+        {topBar}
         {body}
       </ScrollView>
     </View>
   );
 }
 
-function renderPage(page: PageKey, props: PageProps) {
+function PageBody({ page, props }: { page: PageKey; props: PageProps }) {
   switch (page) {
     case 'overview':
       return <OverviewPage {...props} />;
@@ -191,83 +224,3 @@ function renderPage(page: PageKey, props: PageProps) {
       return <DocumentsPage {...props} />;
   }
 }
-
-const SIDEBAR_W = 236;
-
-const styles = StyleSheet.create({
-  wideRoot: { flex: 1, flexDirection: 'row', backgroundColor: flColor.base },
-  sidebar: {
-    width: SIDEBAR_W,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: flColor.charcoal700,
-    backgroundColor: flColor.charcoal900,
-    paddingTop: 22,
-  },
-  brand: { paddingHorizontal: 22, paddingBottom: 18, gap: 3 },
-  brandName: { color: flText.primary, fontFamily: flFont.display, fontSize: 19, letterSpacing: 0.3 },
-  brandSub: { color: flColor.gray600, fontSize: 11.5 },
-  navScroll: { paddingHorizontal: 12, paddingBottom: 28, gap: 18 },
-  navGroup: { gap: 2 },
-  navGroupLabel: {
-    color: flColor.gray600,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 1.3,
-    textTransform: 'uppercase',
-    paddingHorizontal: 10,
-    paddingBottom: 6,
-  },
-  navItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: flRadius.sm,
-  },
-  navItemHover: { backgroundColor: flColor.hoverWash },
-  navItemOn: { backgroundColor: flColor.bronzeTint },
-  navText: { color: flColor.gray400, fontSize: 13.5 },
-  navTextOn: { color: flColor.bronzeInk, fontWeight: '600' },
-  navBadge: {
-    minWidth: 20,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: flRadius.pill,
-    overflow: 'hidden',
-    textAlign: 'center',
-    color: flColor.redMuted,
-    backgroundColor: flColor.dangerBg,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-
-  main: { flex: 1 },
-  mainBody: { paddingHorizontal: 36, paddingBottom: 72 },
-  column: { width: '100%', maxWidth: 1180, alignSelf: 'center', gap: 22 },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
-    paddingTop: 20,
-    minHeight: 52,
-  },
-  crumb: { color: flColor.gray600, fontSize: 12, letterSpacing: 0.4 },
-
-  phoneRoot: { flex: 1, backgroundColor: flColor.base },
-  tabStrip: { paddingHorizontal: 16, paddingVertical: 8, gap: 6 },
-  tab: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: flRadius.pill,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-  },
-  tabOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
-  tabText: { color: flColor.gray400, fontSize: 12.5, fontWeight: '600' },
-  tabTextOn: { color: flColor.bronzeInk },
-  tabBadge: { color: flColor.redMuted },
-  phoneBody: { paddingHorizontal: 16, paddingBottom: 56, gap: 22 },
-  phoneRange: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 4 },
-});

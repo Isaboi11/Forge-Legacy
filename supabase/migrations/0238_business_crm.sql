@@ -1,5 +1,5 @@
 -- ═════════════════════════════════════════════════════════════════════════════════════════════════════
--- 0236 — THE BUSINESS CRM
+-- 0238 — THE BUSINESS CRM
 --
 -- Governed by `Docs/Admin-Analytics-Amendment-002-Business-CRM.md` (AA-D12…AA-D20, PO 2026-09-28).
 -- Turns the Creator Dashboard into the operator's CRM: revenue, tiers, AI spend, conversion and churn,
@@ -36,7 +36,7 @@
 --   negative for a refund, null when unknown. Summing it is the revenue. Sandbox (TestFlight / App
 --   Review) events are excluded unless p_include_sandbox — they are free and would inflate everything.
 --
--- Safe to run twice. Pasted as a whole via `supabase/apply/pending-0236.sql`.
+-- Safe to run twice. Pasted as a whole via `supabase/apply/pending-0238.sql`.
 -- ═════════════════════════════════════════════════════════════════════════════════════════════════════
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -46,10 +46,14 @@
 create table if not exists public.ops_bugs (
   id          uuid primary key default gen_random_uuid(),
   -- 'qa' = imported from a QA report; 'manual' = filed by the operator (including "Track this" copies
-  -- of a feedback row or a crash group, which keep a back-reference in `ref`).
+  -- of a feedback row or a crash group, which keep a back-reference in `origin`).
   source      text not null default 'manual' check (source in ('qa', 'manual')),
   report      text,
+  -- The board's own short name: the report's id for QA items (F1, R2-F3…), B1, B2… for the operator's.
   ref         text,
+  -- "Track this" back-reference: 'feedback:<id>' or 'error:<fingerprint>'. Unique, so tracking twice
+  -- returns the same bug.
+  origin      text,
   title       text not null check (length(btrim(title)) between 1 and 300),
   severity    text not null default 'medium' check (severity in ('critical', 'high', 'medium', 'low')),
   area        text,
@@ -69,6 +73,22 @@ begin
     alter table public.ops_bugs add constraint ops_bugs_source_report_ref_key unique (source, report, ref);
   end if;
 end $$;
+
+create unique index if not exists ops_bugs_origin_idx on public.ops_bugs (origin) where origin is not null;
+
+/* The next B-number for a bug the operator files. Max, not count: deleting B2 must never hand B2 out
+   again to a different bug. */
+create or replace function public.ops_next_bug_ref()
+returns text
+language sql
+volatile
+set search_path = public, pg_temp
+as $$
+  select 'B' || (coalesce(max(nullif(substring(b.ref from '^B([0-9]+)$'), '')::int), 0) + 1)
+    from public.ops_bugs b
+   where b.source = 'manual';
+$$;
+revoke all on function public.ops_next_bug_ref() from public;
 
 alter table public.ops_bugs enable row level security;
 
@@ -175,13 +195,13 @@ create table if not exists public.asc_sync_log (
 );
 alter table public.asc_sync_log enable row level security;
 
-comment on table public.ops_bugs      is 'Operator bug board (0236, AA-D19). RLS on, no policies.';
-comment on table public.crm_contacts  is 'Operator CRM contacts (0236, AA-D15). RLS on, no policies.';
-comment on table public.crm_activity  is 'Operator CRM notes/tasks per contact (0236). RLS on, no policies.';
-comment on table public.ops_documents is 'Business document metadata; files in private bucket ops-docs (0236, AA-D16). RLS on, no policies.';
-comment on table public.asc_daily     is 'App Store Connect daily sales units, written by asc-sync (0236, AA-D17). RLS on, no policies.';
-comment on table public.asc_reviews   is 'App Store customer reviews, written by asc-sync (0236, AA-D17). RLS on, no policies.';
-comment on table public.asc_sync_log  is 'One row per asc-sync run, with the public rating at that moment (0236). RLS on, no policies.';
+comment on table public.ops_bugs      is 'Operator bug board (0238, AA-D19). RLS on, no policies.';
+comment on table public.crm_contacts  is 'Operator CRM contacts (0238, AA-D15). RLS on, no policies.';
+comment on table public.crm_activity  is 'Operator CRM notes/tasks per contact (0238). RLS on, no policies.';
+comment on table public.ops_documents is 'Business document metadata; files in private bucket ops-docs (0238, AA-D16). RLS on, no policies.';
+comment on table public.asc_daily     is 'App Store Connect daily sales units, written by asc-sync (0238, AA-D17). RLS on, no policies.';
+comment on table public.asc_reviews   is 'App Store customer reviews, written by asc-sync (0238, AA-D17). RLS on, no policies.';
+comment on table public.asc_sync_log  is 'One row per asc-sync run, with the public rating at that moment (0238). RLS on, no policies.';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
 -- 2. THE PRIVATE DOCUMENTS BUCKET (AA-D16)
@@ -346,6 +366,9 @@ begin
        'annual',     (select count(*) from paying where product_id like '%annual%'),
        'monthly',    (select count(*) from paying where product_id not like '%annual%')),
     'trials_active',     (select count(distinct athlete_id) from live where period_type = 'TRIAL'),
+    'trials_ending_7d',  (select count(distinct athlete_id) from live
+                           where period_type = 'TRIAL' and expires_at < now() + interval '7 days'),
+    'refunds_count',     (select count(*) from ev where received_at >= v_since and price < 0),
     'trial_starts',      (select count(*) from ev where event_type = 'INITIAL_PURCHASE' and period_type = 'TRIAL' and received_at >= v_since),
     'trial_conversions', (select count(*) from ev where trial_conv and received_at >= v_since),
     'new_paid',          (select count(distinct athlete_id) from ev
@@ -360,6 +383,12 @@ begin
     'athletes_total',    (select count(*) from public.profiles),
     'ever_paid',         (select count(distinct athlete_id) from public.store_subscriptions where ever_paid),
     'sandbox_events',    (select count(*) from public.store_events where payload ->> 'environment' = 'SANDBOX'),
+    -- "Test data only": test BUYS (not every sandbox event — a trial start or an expiry is not a purchase).
+    'sandbox_purchases', (select count(*) from public.store_events
+                           where payload ->> 'environment' = 'SANDBOX'
+                             and event_type in ('INITIAL_PURCHASE', 'RENEWAL', 'NON_RENEWING_PURCHASE')),
+    'production_events', (select count(*) from public.store_events
+                           where coalesce(payload ->> 'environment', 'PRODUCTION') = 'PRODUCTION'),
     'last_event_at',     (select max(received_at) from public.store_events)
   ) into v_out;
 
@@ -368,7 +397,7 @@ end;
 $$;
 
 comment on function public.admin_revenue(int, text, boolean) is
-  'Gross USD revenue from RevenueCat price, MRR, paying/trial counts, trial conversion, churn, paywall conversion (0236, AA-D18). Sandbox excluded unless asked. Aggregates only. Gated by admin_guard().';
+  'Gross USD revenue from RevenueCat price, MRR, paying/trial counts, trial conversion, churn, paywall conversion (0238, AA-D18). Sandbox excluded unless asked. Aggregates only. Gated by admin_guard().';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
 -- 5. TIERS
@@ -411,7 +440,25 @@ begin
                     from a where tier = 'PREMIUM' group by 1) x), '[]'::jsonb),
     'founder_seats',  (select count(*) from a where founder_seat is not null),
     'comped_testers', (select count(*) from a where comped),
-    'on_default',     (select count(*) from a where not has_row)
+    'on_default',     (select count(*) from a where not has_row),
+    'new_30d',        (select count(*) from public.profiles p where p.created_at > now() - interval '30 days'),
+    -- One count per Users-page list, computed by the SAME rules as admin_billing_list so a chip's number
+    -- always equals the rows it opens.
+    'lists', jsonb_build_object(
+       'all',        (select count(*) from a),
+       'paying',     (select count(distinct s.athlete_id) from public.store_subscriptions s
+                       where s.expires_at > now() and s.period_type in ('NORMAL', 'INTRO', 'PREPAID')),
+       'trial',      (select count(distinct s.athlete_id) from public.store_subscriptions s
+                       where s.expires_at > now() and s.period_type = 'TRIAL'),
+       'premium_ai', (select count(*) from a where ai),
+       'founder',    (select count(*) from a where founder_seat is not null),
+       'comped',     (select count(*) from a where comped),
+       'grant',      (select count(*) from a where premium_kind = 'GRANT'),
+       'lapsed',     (select count(distinct s.athlete_id) from public.store_subscriptions s
+                       where s.ever_paid
+                         and not exists (select 1 from public.store_subscriptions x
+                                          where x.athlete_id = s.athlete_id and x.expires_at > now())),
+       'free',       (select count(*) from a where tier = 'FREE'))
   ) into v_out;
 
   return v_out;
@@ -419,7 +466,7 @@ end;
 $$;
 
 comment on function public.admin_tiers() is
-  'Athletes per effective tier (athlete_tier), Premium AI, premium_kind mix, founders and comped testers (0236). Aggregates only. Gated by admin_guard().';
+  'Athletes per effective tier (athlete_tier), Premium AI, premium_kind mix, founders and comped testers (0238). Aggregates only. Gated by admin_guard().';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
 -- 6. AI USAGE (AA-D14 — metered, never read)
@@ -455,6 +502,8 @@ begin
     'cost_prev',  coalesce((select round(sum(cost_usd), 4) from public.coach_ai_spend
                             where occurred_at >= v_prev and occurred_at < v_since), 0),
     'cost_all',   coalesce((select round(sum(cost_usd), 2) from public.coach_ai_spend), 0),
+    'first_at',   (select min(occurred_at) from public.coach_ai_spend),
+    'calls_prev', (select count(*) from public.coach_ai_spend where occurred_at >= v_prev and occurred_at < v_since),
     'athletes',   (select count(*) from per),
     'uncharged',  (select count(*) from s where uncharged),
     'tokens', jsonb_build_object(
@@ -489,7 +538,7 @@ end;
 $$;
 
 comment on function public.admin_ai_usage(int, text) is
-  'AI calls, credits, tokens and USD cost by day/action/model, and the spread per athlete (0236, AA-D14). Never content. Gated by admin_guard().';
+  'AI calls, credits, tokens and USD cost by day/action/model, and the spread per athlete (0238, AA-D14). Never content. Gated by admin_guard().';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
 -- 7. WAITLIST (the landing site's TestFlight form, 0215)
@@ -605,7 +654,7 @@ begin
                         case b.severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end,
                         b.created_at desc)
                       from (
-                        select id, source, report, ref, title, severity, area, round, detail, status, note,
+                        select id, source, report, ref, origin, title, severity, area, round, detail, status, note,
                                created_at, updated_at, closed_at
                           from public.ops_bugs
                          where (v_status is null
@@ -659,7 +708,7 @@ begin
   if v_id is null then
     insert into public.ops_bugs (source, ref, title, severity, area, detail, status, note)
     values ('manual',
-            nullif(v_p ->> 'ref', ''),
+            coalesce(nullif(v_p ->> 'ref', ''), public.ops_next_bug_ref()),
             coalesce(nullif(btrim(v_p ->> 'title'), ''), 'Untitled bug'),
             coalesce(nullif(v_p ->> 'severity', ''), 'medium'),
             nullif(btrim(v_p ->> 'area'), ''),
@@ -710,25 +759,27 @@ end;
 $$;
 
 /* "Track this" — copy a feedback row or a crash group onto the board. The original is read, never
-   written (AA-D19). Running it twice returns the same bug. */
+   written (AA-D19). Running it twice returns the same bug. Returns {id, ref} so the screen can say
+   "On the board as B3". */
 create or replace function public.admin_bug_track(p_kind text, p_ref text)
-returns uuid
+returns jsonb
 language plpgsql
 security definer
 set search_path = public, pg_temp
 as $$
 declare
-  v_ref   text := p_kind || ':' || p_ref;
-  v_id    uuid;
-  v_title text;
-  v_body  text;
-  v_area  text;
+  v_origin text := p_kind || ':' || p_ref;
+  v_id     uuid;
+  v_bref   text;
+  v_title  text;
+  v_body   text;
+  v_area   text;
 begin
   perform public.admin_guard();
 
-  select id into v_id from public.ops_bugs where source = 'manual' and ref = v_ref;
+  select id, ref into v_id, v_bref from public.ops_bugs where origin = v_origin;
   if v_id is not null then
-    return v_id;
+    return jsonb_build_object('id', v_id, 'ref', v_bref);
   end if;
 
   if p_kind = 'feedback' then
@@ -750,10 +801,10 @@ begin
     raise exception '% % not found', p_kind, p_ref using errcode = 'P0002';
   end if;
 
-  insert into public.ops_bugs (source, ref, title, severity, area, detail)
-  values ('manual', v_ref, v_title, 'medium', v_area, v_body)
-  returning id into v_id;
-  return v_id;
+  insert into public.ops_bugs (source, ref, origin, title, severity, area, detail)
+  values ('manual', public.ops_next_bug_ref(), v_origin, v_title, 'medium', v_area, v_body)
+  returning id, ref into v_id, v_bref;
+  return jsonb_build_object('id', v_id, 'ref', v_bref);
 end;
 $$;
 
@@ -779,15 +830,26 @@ begin
   end if;
 
   return coalesce((select jsonb_agg(to_jsonb(r) order by r.exact desc, r.created_at desc) from (
+    -- Same row shape as admin_billing_list, so the screen draws a search hit and a list row alike.
     select p.id, p.name, p.handle, p.created_at,
            (p.handle ilike ltrim(v_q, '@')) as exact,
            public.athlete_tier(p.id) as tier,
+           e.premium_kind,
+           e.premium_until,
            coalesce(e.coach_ai, false) and (e.coach_ai_until is null or e.coach_ai_until > now()) as premium_ai,
-           exists (select 1 from public.store_subscriptions s
-                    where s.athlete_id = p.id and s.expires_at > now()
-                      and s.period_type in ('NORMAL', 'INTRO', 'PREPAID')) as paying
+           e.founder_seat,
+           coalesce(e.comped_tester, false) as comped,
+           s.product_id as product,
+           s.period_type,
+           s.expires_at,
+           s.updated_at as since,
+           (select max(z.expires_at) from public.store_subscriptions z where z.athlete_id = p.id and z.ever_paid) as last_paid_until
       from public.profiles p
       left join public.athlete_entitlement e on e.athlete_id = p.id
+      left join lateral (
+        select * from public.store_subscriptions x
+         where x.athlete_id = p.id and x.expires_at > now()
+         order by x.expires_at desc limit 1) s on true
      where p.handle ilike ltrim(v_q, '@') || '%'
         or p.name ilike '%' || v_q || '%'
         or p.id::text = v_q
@@ -845,7 +907,18 @@ begin
        'by_action', coalesce((select jsonb_agg(to_jsonb(x) order by x.cost_usd desc) from (
                      select action, count(*) as calls, sum(credits) as credits, round(sum(cost_usd), 4) as cost_usd
                        from public.coach_ai_spend where athlete_id = p.id group by action) x), '[]'::jsonb),
-       'cost_all', coalesce((select round(sum(cost_usd), 4) from public.coach_ai_spend where athlete_id = p.id), 0)),
+       'cost_all', coalesce((select round(sum(cost_usd), 4) from public.coach_ai_spend where athlete_id = p.id), 0),
+       'last30', (select jsonb_build_object(
+                     'credits', coalesce(sum(credits), 0),
+                     'cost', coalesce(round(sum(cost_usd), 4), 0),
+                     'calls', count(*))
+                    from public.coach_ai_spend
+                   where athlete_id = p.id and occurred_at > now() - interval '30 days'),
+       'last30_by_action', coalesce((select jsonb_agg(to_jsonb(x) order by x.cost_usd desc) from (
+                     select action, count(*) as calls, round(sum(cost_usd), 4) as cost_usd
+                       from public.coach_ai_spend
+                      where athlete_id = p.id and occurred_at > now() - interval '30 days'
+                      group by action) x), '[]'::jsonb)),
     'support', jsonb_build_object(
        'feedback', coalesce((select jsonb_agg(to_jsonb(f) order by f.created_at desc) from (
                      select id, kind, body, screen, status, created_at from public.feedback
@@ -869,7 +942,7 @@ end;
 $$;
 
 comment on function public.admin_user_card(uuid) is
-  'One athlete''s account, billing, AI metering, support and business record — and nothing else (0236, AA-D12/AA-D13). Gated by admin_guard().';
+  'One athlete''s account, billing, AI metering, support and business record — and nothing else (0238, AA-D12/AA-D13). Gated by admin_guard().';
 
 /* A billing list: who is on what. Handle, name and plan only — a roster of the customer relationship,
    never of training (AA-D9 narrowing, AA-D12). */
@@ -886,17 +959,22 @@ declare
 begin
   perform public.admin_guard();
 
-  return coalesce((select jsonb_agg(to_jsonb(r) order by r.since desc nulls last) from (
+  -- 'all' is the newest-first roster (AA-D8's list, with plan). Every other list is newest-change first.
+  return coalesce((select jsonb_agg(to_jsonb(r) order by
+                     case when v_f = 'all' then r.created_at end desc,
+                     r.since desc nulls last, r.created_at desc) from (
     select p.id, p.name, p.handle, p.created_at,
            public.athlete_tier(p.id) as tier,
            e.premium_kind,
+           e.premium_until,
            coalesce(e.coach_ai, false) and (e.coach_ai_until is null or e.coach_ai_until > now()) as premium_ai,
            e.founder_seat,
            coalesce(e.comped_tester, false) as comped,
            s.product_id as product,
            s.period_type,
            s.expires_at,
-           s.updated_at as since
+           s.updated_at as since,
+           (select max(z.expires_at) from public.store_subscriptions z where z.athlete_id = p.id and z.ever_paid) as last_paid_until
       from public.profiles p
       left join public.athlete_entitlement e on e.athlete_id = p.id
       left join lateral (
@@ -904,6 +982,7 @@ begin
          where x.athlete_id = p.id and x.expires_at > now()
          order by x.expires_at desc limit 1) s on true
      where case v_f
+             when 'all'        then true
              when 'paying'     then s.period_type in ('NORMAL', 'INTRO', 'PREPAID')
              when 'trial'      then s.period_type = 'TRIAL'
              when 'premium_ai' then coalesce(e.coach_ai, false) and (e.coach_ai_until is null or e.coach_ai_until > now())
