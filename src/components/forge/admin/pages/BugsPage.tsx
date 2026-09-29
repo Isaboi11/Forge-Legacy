@@ -218,13 +218,15 @@ export function BugsPage({ arg }: PageProps) {
   // ── Derived ──
   const all: Bug[] = (board.data?.rows ?? []).map((b) => (patches[b.id] ? { ...b, ...patches[b.id] } : b));
   const qn = query.trim().toLowerCase();
-  const shown = all.filter(
-    (b) =>
-      matchStatus(b.status, status) &&
-      (!sev || b.severity === sev) &&
-      (!src || originSource(b.origin) === src) &&
-      (!qn || `${b.title} ${b.ref ?? ''} ${b.area ?? ''} ${b.detail ?? ''}`.toLowerCase().includes(qn)),
-  );
+  /* Faceted: each filter row counts what its chips WOULD show given the other rows (PO 09-29 — "Critical"
+     under "Active" showed an empty list with no hint that all three were already fixed). */
+  const passes = (b: Bug, skip?: 'status' | 'sev' | 'src') =>
+    (skip === 'status' || matchStatus(b.status, status)) &&
+    (skip === 'sev' || !sev || b.severity === sev) &&
+    (skip === 'src' || !src || originSource(b.origin) === src) &&
+    (!qn || `${b.title} ${b.ref ?? ''} ${b.area ?? ''} ${b.detail ?? ''}`.toLowerCase().includes(qn));
+  const shown = all.filter((b) => passes(b));
+  const facetCount = (skip: 'status' | 'sev' | 'src', f: (b: Bug) => boolean) => (board.data ? all.filter((b) => passes(b, skip) && f(b)).length : null);
   const sel = (selId ? all.find((b) => b.id === selId) : null) ?? shown[0] ?? null;
 
   const reportRows: InboxReport[] = (inbox.data ?? []).map((r) => {
@@ -485,24 +487,56 @@ export function BugsPage({ arg }: PageProps) {
     </View>
   );
 
+  /* An empty list says WHY and offers the one tap that fills it — loosen the filter that's hiding them. */
+  const { emptyWhy, emptyFix } = ((): { emptyWhy: string; emptyFix: { label: string; run: () => void } | null } => {
+    const kind = `${sev ? `${SEV_LABEL[sev].toLowerCase()} ` : ''}bugs${src ? ` from ${src}` : ''}`;
+    const byStatus = status === 'all' ? [] : all.filter((b) => passes(b, 'status'));
+    if (byStatus.length) {
+      const n = byStatus.length;
+      const allFixed = byStatus.every((b) => b.status === 'fixed');
+      const where = status === 'active' ? (allFixed ? 'already fixed' : 'fixed or closed') : 'in other statuses';
+      const word = STATUS_CHIPS.find((s) => s.key === status)?.label.toLowerCase() ?? '';
+      return { emptyWhy: `No ${word} ${kind}. ${n === 1 ? 'The 1 is' : `All ${n} are`} ${where}.`, emptyFix: { label: 'Show them', run: () => setStatus('all') } };
+    }
+    if (src && all.some((b) => passes(b, 'src'))) return { emptyWhy: `No ${kind}.`, emptyFix: { label: 'Show every source', run: () => setSrc(null) } };
+    if (sev && all.some((b) => passes(b, 'sev'))) return { emptyWhy: `No ${kind}.`, emptyFix: { label: 'Show every severity', run: () => setSev(null) } };
+    if (qn) return { emptyWhy: `Nothing matches “${query.trim()}”.`, emptyFix: { label: 'Clear the search', run: () => setQuery('') } };
+    return {
+      emptyWhy: 'No bugs match these filters.',
+      emptyFix: {
+        label: 'Clear filters',
+        run: () => {
+          setStatus('all');
+          setSev(null);
+          setSrc(null);
+          setQuery('');
+        },
+      },
+    };
+  })();
+
   const tracker = (
     <>
       <Input value={query} onChangeText={setQuery} placeholder="Search bugs" style={{ height: 38, paddingHorizontal: 14 }} accessibilityLabel="Search bugs" />
-      <Row gap={8}>
-        {STATUS_CHIPS.map((s) => (
-          <Chip key={s.key} size="sm" label={s.label} count={board.data ? all.filter((b) => matchStatus(b.status, s.key)).length : null} on={status === s.key} onPress={() => setStatus(s.key)} />
-        ))}
-        <View style={{ width: 1, height: 18, backgroundColor: c.line, marginHorizontal: 4 }} />
-        <Chip size="sm" label="Any severity" on={sev == null} onPress={() => setSev(null)} />
-        {SEVERITIES.map((s) => (
-          <Chip key={s} size="sm" label={SEV_LABEL[s]} on={sev === s} onPress={() => setSev(s)} />
-        ))}
-        <View style={{ width: 1, height: 18, backgroundColor: c.line, marginHorizontal: 4 }} />
-        <Chip size="sm" label="Any source" on={src == null} onPress={() => setSrc(null)} />
-        {BUG_SOURCES.map((s) => (
-          <Chip key={s} size="sm" label={s} count={board.data ? all.filter((b) => originSource(b.origin) === s).length : null} on={src === s} onPress={() => setSrc(s)} />
-        ))}
-      </Row>
+      <View style={{ gap: 10 }}>
+        <FacetRow label="Status">
+          {STATUS_CHIPS.map((s) => (
+            <Chip key={s.key} size="sm" label={s.label} count={facetCount('status', (b) => matchStatus(b.status, s.key))} on={status === s.key} onPress={() => setStatus(s.key)} />
+          ))}
+        </FacetRow>
+        <FacetRow label="Severity">
+          <Chip size="sm" label="Any" count={facetCount('sev', () => true)} on={sev == null} onPress={() => setSev(null)} />
+          {SEVERITIES.map((s) => (
+            <Chip key={s} size="sm" label={SEV_LABEL[s]} count={facetCount('sev', (b) => b.severity === s)} on={sev === s} onPress={() => setSev(s)} />
+          ))}
+        </FacetRow>
+        <FacetRow label="Source">
+          <Chip size="sm" label="Any" count={facetCount('src', () => true)} on={src == null} onPress={() => setSrc(null)} />
+          {BUG_SOURCES.map((s) => (
+            <Chip key={s} size="sm" label={s} count={facetCount('src', (b) => originSource(b.origin) === s)} on={src === s} onPress={() => setSrc(s)} />
+          ))}
+        </FacetRow>
+      </View>
       {board.data && shown.length ? (
         <Row gap={12}>
           <Btn
@@ -575,8 +609,14 @@ export function BugsPage({ arg }: PageProps) {
               </HoverRow>
             ))}
             {shown.length === 0 ? (
-              <Text style={{ paddingVertical: 18, paddingHorizontal: 12, fontSize: 14.5, color: c.ink2, borderBottomWidth: 1, borderBottomColor: c.line }}>
-                {all.length === 0 ? 'The board is empty. File a bug, or track a user report or crash.' : 'No bugs match these filters. Try “All” or clear the search.'}
+              <Text style={{ paddingVertical: 18, paddingHorizontal: 12, fontSize: 14.5, lineHeight: 22, color: c.ink2, borderBottomWidth: 1, borderBottomColor: c.line }}>
+                {all.length === 0 ? 'The board is empty. File a bug, or track a user report or crash.' : emptyWhy}
+                {emptyFix ? (
+                  <Text onPress={emptyFix.run} accessibilityRole="button" style={{ fontWeight: '600', color: c.brz }}>
+                    {' '}
+                    {emptyFix.label}
+                  </Text>
+                ) : null}
               </Text>
             ) : null}
             <Text style={[{ fontSize: 12.5, color: c.ink3, padding: 12 }, TABULAR]}>
@@ -862,6 +902,19 @@ export function BugsPage({ arg }: PageProps) {
           ) : null}
         </View>
       </View>
+    </View>
+  );
+}
+
+/** One labelled row of filter chips: "Status  [Active 307] [Open 307] …". */
+function FacetRow({ label, children }: { label: string; children: React.ReactNode }) {
+  const { c } = useCrm();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+      <Text style={{ width: 64, paddingTop: 6, fontSize: 12, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: c.ink3 }}>{label}</Text>
+      <Row gap={8} style={{ flex: 1, minWidth: 0 }}>
+        {children}
+      </Row>
     </View>
   );
 }
