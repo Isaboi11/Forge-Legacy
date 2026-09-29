@@ -507,10 +507,10 @@ const styles = StyleSheet.create({
   chipRail: { marginTop: 14 },
   chipRailContent: { gap: 8, paddingHorizontal: 22, paddingBottom: 6 },
   chip: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1 },
-  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  chipOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   chipOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
   chipLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  chipLabelOn: { color: flColor.bronze300 },
+  chipLabelOn: { color: flColor.selectedInk },
 
   // sections
   sectionLabel: { marginTop: 24, marginBottom: 12, marginHorizontal: 22, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },

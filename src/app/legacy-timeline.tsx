@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   chapterBody: { flex: 1, minWidth: 0, gap: 4 },
   chapterName: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   chapterMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  chapterStatusActive: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.bronze300 },
+  chapterStatusActive: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.selectedInk },
   chapterStatusSealed: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   chapterRange: { flex: 1, minWidth: 0, fontSize: 11, color: flColor.gray600 },
   liveDot: { width: 6, height: 6, borderRadius: flRadius.round, backgroundColor: flColor.greenMuted, boxShadow: '0 0 6px rgba(90, 158, 104, 0.6)' },

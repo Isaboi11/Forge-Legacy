@@ -1129,9 +1129,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  chipOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   listTop: { marginTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   listRow: {

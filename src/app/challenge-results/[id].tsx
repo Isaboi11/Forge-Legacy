@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
   standNameRow: { flexDirection: 'row', alignItems: 'center', gap: 7, minWidth: 0 },
   standName: { flexShrink: 1, fontSize: 15, fontWeight: '500', color: flColor.cream100 },
   standNameStrong: { fontWeight: '700' },
-  standNameSelf: { color: flColor.bronze300 },
+  standNameSelf: { color: flColor.selectedInk },
   standSub: { fontSize: 11.5, color: flColor.gray600 },
   youPill: { flexShrink: 0, paddingHorizontal: 7, paddingVertical: 2, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   youPillText: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.bronze300 },

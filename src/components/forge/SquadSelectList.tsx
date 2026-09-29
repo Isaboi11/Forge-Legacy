@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   rowPressed: { backgroundColor: flColor.charcoal900 },
 
   box: { width: 21, height: 21, borderRadius: 6, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  boxOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  boxOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   boxOff: { borderColor: flColor.charcoal500, backgroundColor: 'transparent' },
 
   rowText: { flex: 1, minWidth: 0 },

@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   sheetList: { gap: 6 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 11, paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.surfaceRecessed },
   sheetRowLeader: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
-  sheetRowSelf: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  sheetRowSelf: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   sheetRank: { width: 20, flexShrink: 0, alignItems: 'center' },
   sheetRankNum: { fontFamily: flFont.display, fontSize: 14, fontWeight: '700', color: flColor.gray600 },
   sheetName: { flex: 1, minWidth: 0, fontSize: 13, fontWeight: '500', color: flColor.cream100 },

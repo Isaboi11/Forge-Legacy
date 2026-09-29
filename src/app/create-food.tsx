@@ -912,5 +912,5 @@ const styles = StyleSheet.create({
     borderBottomColor: flColor.divider,
   },
   sheetLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  sheetLabelOn: { color: flColor.bronze300 },
+  sheetLabelOn: { color: flColor.selectedInk },
 });

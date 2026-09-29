@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   crestCaption: { marginTop: 11, fontSize: 11, lineHeight: 16, color: flColor.gray600 },
 
   // category chips (same chip as the Discover Squads filter row)

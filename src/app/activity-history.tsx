@@ -307,9 +307,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: 'transparent',
   },
-  chipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  chipTextOn: { color: flColor.bronze300, fontWeight: '700' },
+  chipTextOn: { color: flColor.selectedInk, fontWeight: '700' },
 
   listPad: { paddingBottom: 22 },
   monthHeader: { backgroundColor: themeGround('#060708'), paddingTop: 40, paddingBottom: 14, paddingHorizontal: 24 },

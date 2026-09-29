@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
   goalButton: { flex: 1, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   goalButtonOn: { backgroundColor: 'rgba(191,143,79,0.08)', borderColor: flColor.accentBorder },
   goalText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  goalTextOn: { color: flColor.bronze300 },
+  goalTextOn: { color: flColor.selectedInk },
 
   paceRow: {
     flexDirection: 'row',
@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   sheetRowText: { flex: 1, minWidth: 0, gap: 2 },
   sheetRowLabel: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  sheetRowLabelOn: { color: flColor.bronze300 },
+  sheetRowLabelOn: { color: flColor.selectedInk },
   sheetRowSub: { fontSize: 12, color: flColor.gray600 },
 
   methodRow: { gap: 4, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },

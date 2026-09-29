@@ -394,10 +394,10 @@ const styles = StyleSheet.create({
   /* The same segmented shape Compare uses for Side by side / Slider, so the two read as one control. */
   layoutToggle: { flexDirection: 'row', gap: 8, marginTop: 22 },
   layoutSeg: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1 },
-  layoutSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  layoutSegOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   layoutSegOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
   layoutSegText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  layoutSegTextOn: { color: flColor.bronze300 },
+  layoutSegTextOn: { color: flColor.selectedInk },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 14 },
   /* Two columns. `flexBasis` rather than a measured width — the screen's gutter is the only thing that
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
   thumb: { width: 60, height: 76, borderRadius: flRadius.md, overflow: 'hidden', borderWidth: 1.5, backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center' },
   thumbImage: { width: '100%', height: '100%' },
   thumbLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray600 },
-  thumbLabelOn: { color: flColor.bronze300 },
+  thumbLabelOn: { color: flColor.selectedInk },
   noMedia: { width: '100%', height: 172, borderRadius: flRadius.xl, borderWidth: 1, borderColor: flColor.charcoal500, borderStyle: 'dashed', backgroundColor: flColor.surfaceRecessed, alignItems: 'center', justifyContent: 'center', gap: 10 },
   noMediaText: { fontSize: 12.5, color: flColor.gray600 },
 

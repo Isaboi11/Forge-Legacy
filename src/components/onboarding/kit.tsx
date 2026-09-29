@@ -164,7 +164,7 @@ const s = StyleSheet.create({
   },
   tileFill: { flex: 1, justifyContent: 'center', paddingVertical: 18 },
   tileTextFill: { flex: 0, alignItems: 'center' },
-  tileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  tileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   mark: { fontFamily: flFont.display, fontSize: 15, color: flColor.gray600, width: 22, textAlign: 'center' },
   markOn: { color: flColor.bronzeInk },
   tileText: { flex: 1, minWidth: 0, gap: 2 },

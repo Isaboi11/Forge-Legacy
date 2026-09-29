@@ -6826,7 +6826,7 @@ const styles = StyleSheet.create({
      Position is `alignItems` on the track — the same mechanism the two-state version used, extended by
      one value, rather than absolute offsets that would need re-measuring at every text scale. */
   restToggle: { width: 42, height: 20, borderRadius: 999, borderWidth: 1, padding: 2, justifyContent: 'center' },
-  restToggleOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  restToggleOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.bronzeBorder },
   restToggleOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600 },
   restStart: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: flColor.bronzeBorder, alignItems: 'center', justifyContent: 'center', paddingLeft: 1 },
   restKnob: { width: 14, height: 14, borderRadius: 7 },
@@ -6875,7 +6875,7 @@ const styles = StyleSheet.create({
   restSkipText: { fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   /* Bronze ONLY while pinned — it is the one state that is a standing choice rather than a one-off tap,
      and it needs to say so from across a gym floor. Unpinned it is the same grey as Skip beside it. */
-  restStayOn: { color: flColor.bronze300 },
+  restStayOn: { color: flColor.selectedInk },
 
   // fuse flash (green light around the row)
   fuseWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 },
@@ -7134,7 +7134,7 @@ const styles = StyleSheet.create({
   blockName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   blockMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
   amrapBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 8, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900 },
-  amrapBtnOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  amrapBtnOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   amrapBtnText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300, fontVariant: ['tabular-nums'] },
   amrapBtnTextOn: { color: flColor.cream100 },
 
@@ -7481,9 +7481,9 @@ const styles = StyleSheet.create({
   fieldValue: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, minHeight: 42 },
   fieldValueEmpty: { color: flColor.gray600 },
   bwChip: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
-  bwChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  bwChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.selectedFill },
   bwChipText: { fontSize: 12, fontWeight: '700', letterSpacing: 1, color: flColor.gray400 },
-  bwChipTextOn: { color: flColor.bronze300 },
+  bwChipTextOn: { color: flColor.selectedInk },
   bwChipSub: { flex: 1, fontSize: 11.5, color: flColor.gray600 },
 
   // duration dual wheel
@@ -7576,7 +7576,7 @@ const styles = StyleSheet.create({
   partnerEmpty: { paddingHorizontal: 4, paddingVertical: 18, fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray600 },
   partnerGroupLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
   prow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'transparent', marginBottom: 8 },
-  prowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  prowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.selectedFill },
   pText: { flex: 1, minWidth: 0, gap: 1 },
   pName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   pSub: { fontSize: 12, color: flColor.gray600 },

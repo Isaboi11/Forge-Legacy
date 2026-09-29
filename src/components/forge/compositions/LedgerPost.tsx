@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingHorizontal: LEDGER_GUTTER - 8 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 8 },
   actionLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  actionLabelOn: { color: flColor.bronze300 },
+  actionLabelOn: { color: flColor.selectedInk },
   actionCount: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
 
   end: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, paddingTop: 26, paddingBottom: 34 },

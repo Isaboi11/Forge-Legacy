@@ -383,9 +383,9 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     alignItems: 'center',
   },
-  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   segText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  segTextOn: { color: flColor.bronze300 },
+  segTextOn: { color: flColor.selectedInk },
 
   preview: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: flColor.divider },
   previewLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
   level: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13 },
   /* The selected level is marked by a bronze tint and a check, never by dimming the others — every
      level is available to everybody (see INTENSITY_COPY). */
-  levelOn: { backgroundColor: flColor.bronzeTint },
-  levelLabelOn: { color: flColor.bronze300 },
+  levelOn: { backgroundColor: flColor.selectedFill },
+  levelLabelOn: { color: flColor.selectedInk },
   rowText: { flex: 1 },
 });

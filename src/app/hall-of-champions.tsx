@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   podiumCopper: { borderColor: 'rgba(176,124,78,0.6)' },
   podiumPlaceText: { fontSize: 8, fontWeight: '700' },
   podiumName: { flexShrink: 1, fontSize: 11, color: flColor.gray400 },
-  podiumNameSelf: { color: flColor.bronze300, fontWeight: '700' },
+  podiumNameSelf: { color: flColor.selectedInk, fontWeight: '700' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 4 },
   emptyCrest: { width: 76, height: 76, marginBottom: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },

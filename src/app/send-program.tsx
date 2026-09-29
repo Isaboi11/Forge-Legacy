@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   rowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowSub: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
   check: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center', justifyContent: 'center' },
-  checkOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  checkOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
 
   loading: { paddingVertical: 30, alignItems: 'center' },
   empty: { marginTop: 26, paddingVertical: 26, paddingHorizontal: 18, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal600, alignItems: 'center' },

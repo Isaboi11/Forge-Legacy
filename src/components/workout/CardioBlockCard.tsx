@@ -1543,9 +1543,9 @@ const styles = StyleSheet.create({
 
   segment: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: flRadius.lg, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: flColor.charcoal600 },
   seg: { flex: 1, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: flRadius.md },
-  segOn: { backgroundColor: flColor.bronzeTint },
+  segOn: { backgroundColor: flColor.selectedFill },
   segText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  segTextOn: { color: flColor.bronze300 },
+  segTextOn: { color: flColor.selectedInk },
 
   strip: { flexDirection: 'row', paddingVertical: 12, borderTopWidth: 1, borderTopColor: flColor.divider, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   stripCell: { flex: 1, minWidth: 0, gap: 3, paddingHorizontal: 12, borderLeftWidth: 1, borderLeftColor: flColor.charcoal700 },

@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipPressed: { opacity: 0.82 },
   chipText: { fontSize: 13.5, fontWeight: '500', color: flColor.cream100 },
 });

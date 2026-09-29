@@ -678,9 +678,9 @@ const styles = StyleSheet.create({
 
   picker: { flexDirection: 'row', gap: 2, padding: 4, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
   pickerItem: { alignItems: 'center', gap: 2, paddingHorizontal: 8, paddingVertical: 5, borderRadius: flRadius.pill },
-  pickerItemOn: { backgroundColor: flColor.bronzeTint },
+  pickerItemOn: { backgroundColor: flColor.selectedFill },
   pickerLabel: { fontSize: 8.5, fontWeight: '600', color: flColor.gray600 },
-  pickerLabelOn: { color: flColor.bronze300 },
+  pickerLabelOn: { color: flColor.selectedInk },
 
   note: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
 
@@ -696,9 +696,9 @@ const styles = StyleSheet.create({
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   commentInput: { flex: 1, minWidth: 0, height: 42, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
   sendBtn: { paddingHorizontal: 15, paddingVertical: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  sendBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  sendBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   sendLabel: { fontSize: 12.5, fontWeight: '700', color: flColor.gray600 },
-  sendLabelOn: { color: flColor.bronze300 },
+  sendLabelOn: { color: flColor.selectedInk },
 
   empty: { marginTop: 30, alignItems: 'center', gap: 5, paddingHorizontal: 22 },
   emptyCrest: { width: 72, height: 72, marginBottom: 12, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },

@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  filterBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   filterBadge: {
     position: 'absolute',
     top: 4,
@@ -710,9 +710,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.charcoal600,
   },
-  filterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  filterChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   filterChipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  filterChipTextOn: { color: flColor.bronze300 },
+  filterChipTextOn: { color: flColor.selectedInk },
   sheetActions: { flexDirection: 'row', gap: 10 },
   applyWrap: { flex: 1 },
 });

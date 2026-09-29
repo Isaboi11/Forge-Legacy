@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   choice: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
   choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  choiceTextOn: { color: flColor.bronze300 },
+  choiceTextOn: { color: flColor.selectedInk },
   qtyRow: { gap: 6 },
   numberInput: {
     fontSize: 16,

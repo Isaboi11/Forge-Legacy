@@ -584,9 +584,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  tabOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  tabOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   tabText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  tabTextOn: { color: flColor.bronze300 },
+  tabTextOn: { color: flColor.selectedInk },
 
   searchWrap: { paddingTop: 12 },
   listTop: { marginTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },

@@ -259,9 +259,9 @@ const styles = StyleSheet.create({
 
   days: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
   day: { flexBasis: '14.2857%', height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.sm },
-  daySelected: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.accentBorder },
+  daySelected: { backgroundColor: flColor.selectedFill, borderWidth: 1, borderColor: flColor.accentBorder },
   dayText: { fontSize: 13.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
-  dayTextSelected: { color: flColor.bronze300, fontWeight: '700' },
+  dayTextSelected: { color: flColor.selectedInk, fontWeight: '700' },
   dayTextToday: { color: flColor.cream100, fontWeight: '700' },
 
   clearRow: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 },
