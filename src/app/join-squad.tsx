@@ -81,7 +81,8 @@ export default function JoinSquadRoute() {
         } else if (res.reason === 'commitment_required') {
           showToast('Accept the squad’s commitment to join.');
         } else {
-          showToast('That code didn’t match a squad. Check it and try again.');
+          // An owner can replace the code, so an old link is a real way to land here (social-14).
+          showToast('That code didn’t match a squad. It may have been replaced — ask for a new invite.');
         }
       },
       (e: unknown) => {
