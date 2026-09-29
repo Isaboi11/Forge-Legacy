@@ -111,8 +111,17 @@ Deno.serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
   });
-  const { data: mayUseNutrition, error: gateError } = await supabase.rpc('has_nutrition_access');
-  if (gateError || mayUseNutrition !== true) return json({ ok: false, reason: 'no_nutrition' }, 403);
+  /*
+   * 0244: importing a recipe is BUILDING one, which is Premium (the planner gate) — logging stays free. This
+   * function spends no AI credit, so nothing else stands between a Free athlete and the import. On a database
+   * that has not had 0244 pasted the planner gate does not exist yet, and `has_nutrition_access` is still
+   * 0237's Premium rule there, so it stands in.
+   */
+  let gate = await supabase.rpc('has_nutrition_planner');
+  if (gate.error && ['PGRST202', '42883'].includes((gate.error as { code?: string }).code ?? '')) {
+    gate = await supabase.rpc('has_nutrition_access');
+  }
+  if (gate.error || gate.data !== true) return json({ ok: false, reason: 'no_nutrition' }, 403);
 
   const page = await fetchPage(target.url);
   if (!page.ok) return json({ ok: false, reason: page.reason });

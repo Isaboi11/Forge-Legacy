@@ -35,6 +35,7 @@ import { fetchMealPlanPrefs, fetchNutritionProfile, fetchTargetsOn, saveMealPlan
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 /**
  * Meal Plan Setup — built to `Meal Plan Setup.dc.html` (Claude Design b029488a), wired to
@@ -53,7 +54,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * back into setup; reopened from "Edit setup", it simply returns. Every answer comes back as it was left
  * (`draftFrom`).
  */
-export default function MealPlanSetupScreen() {
+function MealPlanSetupScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const scrollRef = useRef<ScrollView>(null);
@@ -593,3 +594,12 @@ const styles = StyleSheet.create({
   },
   ctaNote: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray400 },
 });
+
+/** Premium since 0244 (PO decision "B", 2026-09-29) — Free athletes meet `NutritionPlannerGate` instead. */
+export default function MealPlanSetupScreenRoute() {
+  return (
+    <NutritionPlannerGate what="The meal planner">
+      <MealPlanSetupScreen />
+    </NutritionPlannerGate>
+  );
+}

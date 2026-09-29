@@ -200,6 +200,18 @@ export function useNutritionAccess(): boolean {
   return status === 'ready' && snapshot?.nutrition === true;
 }
 
+/**
+ * The PREMIUM part of Nutrition (0244, PO decision "B" 2026-09-29): the meal planner, the grocery list and
+ * creating recipes. Logging, foods, barcode and targets are free — that is `useNutritionAccess`.
+ *
+ * Fails closed like its sibling: loading and unknown read as no, so a Free athlete never lands on a planner
+ * whose every write RLS refuses. The server gate is `has_nutrition_planner()`; this only decides what to show.
+ */
+export function useNutritionPlanner(): boolean {
+  const { snapshot, status } = useEntitlementState();
+  return status === 'ready' && snapshot?.nutritionPlanner === true;
+}
+
 // ── feature display ──────────────────────────────────────────────────────────
 
 /** Features gated by tier rather than by a count. Named so the seam stays greppable. */

@@ -38,6 +38,11 @@ export interface EntitlementSnapshot {
    * Nutrition Phase 1 is unfinished, so only the PO and `claudetest` may reach it.
    */
   nutrition: boolean;
+  /**
+   * 0244 — the PREMIUM part of Nutrition: the meal planner, the grocery list, creating recipes. Logging,
+   * foods, barcode and targets are free on every plan (`nutrition` above, open to everyone since 0244).
+   */
+  nutritionPlanner: boolean;
   /** 1–100 while seats remain. Null for a grant — the OG testers occupy none (MA3-D25). */
   founderSeat: number | null;
   caps: Caps;
@@ -114,6 +119,11 @@ export async function fetchEntitlement(): Promise<EntitlementSnapshot | null> {
      * than rendering screens whose every query the server now refuses. Fail-closed by construction.
      */
     nutrition: d.nutrition === true,
+    /*
+     * 0244. A database that has not had 0244 pasted sends no `nutritionPlanner` key — and there `nutrition`
+     * IS the Premium rule (0237), so it stands in. Present, it must be literally `true` (fail-closed).
+     */
+    nutritionPlanner: d.nutritionPlanner === undefined ? d.nutrition === true : d.nutritionPlanner === true,
     founderSeat: d.founderSeat == null ? null : num(d.founderSeat),
     caps: capsFrom(rawCaps),
     usage: {

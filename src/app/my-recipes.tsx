@@ -71,6 +71,7 @@ import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
@@ -122,7 +123,7 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  *    Create Food for the recipe with the barcode and the label camera. Own foods carry no allergen tags, so the
  *    allergen block says Forge can't see into them rather than "None detected".
  */
-export default function MyRecipesScreen() {
+function MyRecipesScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string; add?: string }>();
@@ -1399,3 +1400,12 @@ const styles = StyleSheet.create({
   pickFootText: { fontSize: 13, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   pickCal: { fontWeight: '600', color: flColor.cream100 },
 });
+
+/** Premium since 0244 (PO decision "B", 2026-09-29) — Free athletes meet `NutritionPlannerGate` instead. */
+export default function MyRecipesScreenRoute() {
+  return (
+    <NutritionPlannerGate what="Building recipes">
+      <MyRecipesScreen />
+    </NutritionPlannerGate>
+  );
+}

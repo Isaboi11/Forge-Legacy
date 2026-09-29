@@ -77,6 +77,7 @@ import { dishCards, type DishCard } from '@/domain/nutrition/kitchen-cards';
 import { kitchenError, rotationLeanToday } from '@/domain/nutrition/kitchen-dishes';
 import { allergenLine, dayHasEmptySlot, emptySlots, fillAsk, fillAvoid, formForPlan, plannable } from '@/domain/nutrition/holt-fill';
 import { recipeFrom } from '@/domain/nutrition/user-recipes';
+import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
 
@@ -105,7 +106,7 @@ const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
  *  · Open recipe goes to Recipe (`Recipe.dc.html`), whose Swap comes back here and opens this sheet;
  *    Grocery list goes to `Grocery List.dc.html`.
  */
-export default function MealPlanScreen() {
+function MealPlanScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const scrollRef = useRef<ScrollView>(null);
@@ -1129,3 +1130,12 @@ const styles = StyleSheet.create({
   spanTextOn: { color: flColor.bronze300 },
   back: { alignSelf: 'center', marginTop: 6 },
 });
+
+/** Premium since 0244 (PO decision "B", 2026-09-29) — Free athletes meet `NutritionPlannerGate` instead. */
+export default function MealPlanScreenRoute() {
+  return (
+    <NutritionPlannerGate what="The meal planner">
+      <MealPlanScreen />
+    </NutritionPlannerGate>
+  );
+}

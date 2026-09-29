@@ -260,7 +260,8 @@ test('the function: CORS first, the nutrition gate before any fetch, redirects r
     return i;
   };
   assert.ok(at("req.method === 'OPTIONS'") < at('await req.json()'));
-  assert.ok(at(".rpc('has_nutrition_access')") < at('await fetchPage(target.url)'));
+  // 0244: building a recipe is Premium — the planner gate, before any fetch.
+  assert.ok(at(".rpc('has_nutrition_planner')") < at('await fetchPage(target.url)'));
   assert.match(SRC, /redirect: 'manual'/);
   assert.match(SRC, /const t = linkTarget\(new URL\(next, url\)\.toString\(\)\);/);
   assert.match(SRC, /signal: AbortSignal\.timeout\(FETCH_MS\)/);

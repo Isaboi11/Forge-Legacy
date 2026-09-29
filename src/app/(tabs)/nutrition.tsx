@@ -48,7 +48,7 @@ import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
 import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/consent';
 import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
-import { useEntitlementState, useNutritionAccess, useTier } from '@/lib/entitlement';
+import { useEntitlementState, useNutritionAccess, useNutritionPlanner } from '@/lib/entitlement';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { useProfile } from '@/lib/profile';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
@@ -93,12 +93,13 @@ const MACRO_RING = { box: 94, r: 40, stroke: 9 } as const;
 export default function NutritionScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const tier = useTier();
   const { profile } = useProfile();
   /* 0206 — the preview allowlist. The TAB is hidden for everyone else, but `/nutrition` is still a real
      route, so a typed URL or a stale deep link lands here. Read alongside `status` so the two accounts
      that DO have access never see the refusal flash while entitlement is still loading. */
   const mayUseNutrition = useNutritionAccess();
+  /* 0244: the meal planner, grocery list and building recipes are Premium; logging stays free. */
+  const planner = useNutritionPlanner();
   const { status: entitlementStatus } = useEntitlementState();
   useEarnedMoments();
 
@@ -461,13 +462,13 @@ export default function NutritionScreen() {
                   /* Premium (MA6 §4). A Free athlete is told what the button is, not refused: the tag
                      says PREMIUM and the tap opens the plan screen. Premium lands on the week (0211),
                      which hands to Meal Plan Setup (0210) until the setup is saved. */
-                  if (tier !== 'PREMIUM') { router.push('/subscription'); return; }
+                  if (!planner) { router.push('/subscription'); return; }
                   router.push('/meal-plan');
                 }}
               >
                 Meal Plan
               </Button>
-              {tier !== 'PREMIUM' ? (
+              {!planner ? (
                 <View style={styles.premiumTag} pointerEvents="none">
                   <Text style={styles.premiumTagText}>Premium</Text>
                 </View>
@@ -518,8 +519,8 @@ export default function NutritionScreen() {
           <AddRow
             icon="book"
             title="Recipe"
-            sub="Type it in, or add a picture of one."
-            onPress={() => addGo({ pathname: '/my-recipes', params: { add: '1' } })}
+            sub={planner ? 'Type it in, or add a picture of one.' : 'Premium — build your own recipes.'}
+            onPress={() => (planner ? addGo({ pathname: '/my-recipes', params: { add: '1' } }) : addGo('/subscription'))}
           />
           <AddRow
             icon="list-plus"

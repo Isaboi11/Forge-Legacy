@@ -449,8 +449,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
     });
-    const { data: mayUseNutrition, error: gateError } = await supabase.rpc('has_nutrition_access');
-    if (gateError || mayUseNutrition !== true)
+    let gate = await supabase.rpc('has_nutrition_planner');
+    if (gate.error && ['PGRST202', '42883'].includes((gate.error as {
+        code?: string;
+    }).code ?? '')) {
+        gate = await supabase.rpc('has_nutrition_access');
+    }
+    if (gate.error || gate.data !== true)
         return json({ ok: false, reason: 'no_nutrition' }, 403);
     const page = await fetchPage(target.url);
     if (!page.ok)
