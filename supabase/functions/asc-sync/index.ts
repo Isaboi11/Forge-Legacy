@@ -10,9 +10,12 @@
  *   2. Customer reviews → `asc_reviews`.
  *   3. The PUBLIC iTunes rating (no key needed) → stamped on this run's `asc_sync_log` row, because Apple
  *      keeps no rating history for us.
+ *   4. TestFlight feedback (screenshot + crash submissions testers send from the TestFlight app) →
+ *      `asc_feedback` (0239, AA-D21). The tester's email and name are NEVER stored (AA-D13): the mapping
+ *      copies an allowlist of fields, so anything Apple adds later is dropped by default.
  *
- * Every run writes exactly one `asc_sync_log` row. The three stages fail independently: a broken key
- * must not stop the public rating, and a key without review access must not stop the sales pull.
+ * Every run writes exactly one `asc_sync_log` row. The stages fail independently: a broken key must not
+ * stop the public rating, and a key without review or feedback access must not stop the sales pull.
  *
  * ══ ⚠ DEPLOY WITH "VERIFY JWT" ON ══
  *
@@ -208,6 +211,48 @@ function daysBetween(a, b) {
   return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
 }
 
+/**
+ * One TestFlight feedback submission (screenshot or crash) → an `asc_feedback` row. An ALLOWLIST: the
+ * tester's `email`, name and anything else not named here never survive (AA-D13).
+ *
+ * ⚠ Attribute names are mapped defensively. Apple's betaFeedbackScreenshotSubmissions /
+ * betaFeedbackCrashSubmissions (API 4.0, 2025) document `comment`, `createdDate`, `deviceModel`,
+ * `osVersion`, `appPlatform` and `buildBundleFileName`; the build number is not an attribute — it is the
+ * `build` relationship, read from `included` (builds.version) when Apple returns it. Alternative names
+ * are tried in case a later version renames them; a missing field is simply null.
+ * @param {Record<string, any>} item a JSON:API resource from `data`
+ * @param {'screenshot'|'crash'} kind
+ * @param {Array<Record<string, any>>} [included]
+ */
+function mapFeedback(item, kind, included) {
+  const a = (item && item.attributes) || {};
+  const pick = (...keys) => {
+    for (const k of keys) {
+      const v = a[k];
+      if (typeof v === 'string' && v.trim() !== '') return v.trim();
+      if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+    }
+    return null;
+  };
+  let build = null;
+  const buildId = item?.relationships?.build?.data?.id;
+  if (buildId && Array.isArray(included)) {
+    const b = included.find((x) => x && x.type === 'builds' && x.id === buildId);
+    const v = b?.attributes?.version;
+    if (typeof v === 'string' && v.trim() !== '') build = v.trim();
+  }
+  return {
+    id: String(item?.id ?? ''),
+    kind,
+    comment: pick('comment'),
+    device_model: pick('deviceModel', 'deviceFamily'),
+    os_version: pick('osVersion'),
+    app_platform: pick('appPlatform', 'devicePlatform', 'platform'),
+    build_version: build ?? pick('buildVersion', 'buildNumber', 'appVersion', 'buildBundleFileName'),
+    created_at: pick('createdDate', 'timestamp'),
+  };
+}
+
 // ── PURE CORE END ──
 
 /** Turn the .p8 PEM (real or literal "\n" newlines) into PKCS8 bytes. */
@@ -347,6 +392,41 @@ async function syncReviews(admin: Admin, token: string): Promise<number> {
   return rows.length;
 }
 
+/**
+ * Stage 4 — TestFlight feedback (newest 100 of each kind). Asks for the `build` relationship so the build
+ * number comes along; if Apple refuses the include/sort parameters (400), retries with `limit` only.
+ */
+async function syncFeedback(admin: Admin, token: string): Promise<number> {
+  const kinds: Array<['screenshot' | 'crash', string]> = [
+    ['screenshot', 'betaFeedbackScreenshotSubmissions'],
+    ['crash', 'betaFeedbackCrashSubmissions'],
+  ];
+  let total = 0;
+  for (const [kind, path] of kinds) {
+    const base = `${ASC_API}/v1/apps/${ASC_APP_ID}/${path}`;
+    const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json' };
+    let res = await fetch(`${base}?limit=100&sort=-createdDate&include=build&fields[builds]=version`, { headers });
+    if (res.status === 400) {
+      await res.body?.cancel();
+      res = await fetch(`${base}?limit=100`, { headers });
+    }
+    if (res.status === 403) {
+      await res.body?.cancel();
+      throw new Error('403 key role lacks access (TestFlight feedback)');
+    }
+    if (!res.ok) throw new Error(`${kind}: ${await appleError(res)}`);
+    const body = await res.json();
+    const rows = (body?.data ?? [])
+      .map((r: Record<string, unknown>) => ({ ...mapFeedback(r, kind, body?.included), synced_at: new Date().toISOString() }))
+      .filter((r: { id: string }) => r.id);
+    if (rows.length === 0) continue;
+    const { error } = await admin.from('asc_feedback').upsert(rows, { onConflict: 'id' });
+    if (error) throw new Error('database write failed');
+    total += rows.length;
+  }
+  return total;
+}
+
 /** Stage 3 — the public App Store rating. No key needed; empty before public release. */
 async function fetchRating(): Promise<{ avg: number | null; count: number | null }> {
   const res = await fetch(`https://itunes.apple.com/lookup?id=${ASC_APP_ID}&country=us`);
@@ -395,6 +475,7 @@ Deno.serve(async (req) => {
   let daysFetched = 0;
   let downloads = 0;
   let reviews = 0;
+  let feedback = 0;
 
   // Each stage is independent: one failing never skips the others.
   const ratingStage = fetchRating().then((r) => { rating = r; }).catch((e) => { errors.push(`rating: ${short(e)}`); });
@@ -414,6 +495,9 @@ Deno.serve(async (req) => {
         syncReviews(admin, token)
           .then((n) => { reviews = n; })
           .catch((e) => { errors.push(`reviews: ${short(e)}`); }),
+        syncFeedback(admin, token)
+          .then((n) => { feedback = n; })
+          .catch((e) => { errors.push(`feedback: ${short(e)}`); }),
       ]);
     }
   }
@@ -424,7 +508,7 @@ Deno.serve(async (req) => {
     ? `not configured: missing ${missing.join(', ')}${errors.length ? ` · ${errors.join(' · ')}` : ''}`
     : errors.length
       ? `failed: ${errors.join(' · ')}`
-      : `days ${daysFetched} · downloads ${downloads} · reviews ${reviews}`;
+      : `days ${daysFetched} · downloads ${downloads} · reviews ${reviews} · feedback ${feedback}`;
 
   const { error: logErr } = await admin.from('asc_sync_log').insert({
     ok,
@@ -441,5 +525,5 @@ Deno.serve(async (req) => {
   if (!configured) {
     return json({ ok: false, configured: false, missing, rating, errors });
   }
-  return json({ ok, configured, days_fetched: daysFetched, downloads, reviews, rating, errors });
+  return json({ ok, configured, days_fetched: daysFetched, downloads, reviews, feedback, rating, errors });
 });

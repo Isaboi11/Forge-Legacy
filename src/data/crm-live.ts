@@ -418,7 +418,8 @@ export interface PickedFile {
   blob: Blob;
 }
 
-export type UploadFile = PickedFile & { shelf: DocCategory };
+/** `title` overrides the one made from the file name (the phone's Upload sheet lets the owner retitle). */
+export type UploadFile = PickedFile & { shelf: DocCategory; title?: string };
 
 /**
  * Upload files the page already holds (the design's queue: each file has its own shelf) to the private
@@ -438,7 +439,7 @@ export async function uploadDocumentFiles(files: UploadFile[]): Promise<{ name: 
       try {
         await callRpc<string>('admin_document_save', {
           p_id: null,
-          p_patch: { title: titleFromFile(f.name), category: f.shelf, storage_path: path, mime, size_bytes: f.size },
+          p_patch: { title: f.title?.trim() || titleFromFile(f.name), category: f.shelf, storage_path: path, mime, size_bytes: f.size },
         });
       } catch (e) {
         // No row means nothing points at the file — take it back out so the bucket holds no orphans.
@@ -452,4 +453,104 @@ export async function uploadDocumentFiles(files: UploadFile[]): Promise<{ name: 
     }
   }
   return out;
+}
+
+// ── Bug sources (0239, AA-D21) ──────────────────────────────────────────────
+
+export type BugSourceName = 'Supabase' | 'Sentry' | 'TestFlight' | 'App Store';
+export const BUG_SOURCES: BugSourceName[] = ['Supabase', 'Sentry', 'TestFlight', 'App Store'];
+
+/** Which source an origin belongs to — the same rule as `ops_origin_source()` in SQL. */
+export function originSource(origin: string | null | undefined): BugSourceName {
+  const k = (origin ?? '').split(':')[0];
+  return k === 'sentry' ? 'Sentry' : k === 'testflight' ? 'TestFlight' : k === 'review' ? 'App Store' : 'Supabase';
+}
+
+export interface BugSource {
+  name: BugSourceName;
+  feeds: string;
+  /** Supabase is read live; the others are as fresh as their last sync. */
+  live: boolean;
+  synced_at: string | null;
+  ok: boolean | null;
+  message: string | null;
+  /** Items on the board from this source. */
+  items: number;
+  /** Reports this source holds (in-app bug reports, Sentry issues, TestFlight submissions, bug reviews). */
+  reports: number;
+}
+
+export interface InboxReport {
+  origin: string;
+  source: BugSourceName;
+  /** 'In-app' | 'TestFlight' | 'TestFlight crash' | 'Review' */
+  channel: string;
+  body: string;
+  created_at: string | null;
+  handle: string | null;
+  version: string | null;
+  platform: string | null;
+  device: string | null;
+  rating: number | null;
+  screen: string | null;
+  country: string | null;
+  bug_ref: string | null;
+  state: 'new' | 'tracked' | 'dismissed';
+}
+
+export interface CrashGroup {
+  origin: string;
+  source: 'Sentry' | 'Supabase';
+  title: string;
+  detail: string | null;
+  events: number;
+  people: number;
+  first_seen: string | null;
+  last_seen: string | null;
+  status: string | null;
+  version: string | null;
+  environment: string | null;
+  /** Sentry: the latest event's breadcrumbs. In-app crashes: empty — read their trail from admin_client_error_detail. */
+  trail: { label?: string; kind?: string }[];
+  stack: string | null;
+  permalink: string | null;
+  short_id: string | null;
+  is_new: boolean;
+  bug_ref: string | null;
+}
+
+export interface BugLink {
+  bug_id: string;
+  origin: string;
+  source: BugSourceName;
+  created_at: string;
+}
+
+export const fetchBugSources = () => callRpc<BugSource[]>('admin_bug_sources', {});
+export const fetchReportsInbox = (limit = 200) => callRpc<InboxReport[]>('admin_reports_inbox', { p_limit: limit });
+export const fetchCrashes = (days = 30) => callRpc<CrashGroup[]>('admin_crashes', { p_days: days });
+export const fetchBugLinks = () => callRpc<BugLink[]>('admin_bug_links', {});
+/** Track a report from any source. `target` merges it into that item instead of making a new one. */
+export const trackReport = (origin: string, target: string | null = null) =>
+  callRpc<{ id: string; ref: string; merged: boolean; existing: boolean }>('admin_report_track', { p_origin: origin, p_target: target });
+export const dismissReport = (origin: string, dismiss = true) => callRpc<void>('admin_report_dismiss', { p_origin: origin, p_dismiss: dismiss });
+
+export interface SentrySyncResult {
+  ok: boolean;
+  configured: boolean;
+  missing?: string[];
+  issues?: number;
+  errors?: string[];
+}
+
+/** Runs the `sentry-sync` Edge Function (AA-D21). Same not-deployed sentence as the App Store sync. */
+export async function runSentrySync(): Promise<SentrySyncResult> {
+  const { data, error } = await supabase.functions.invoke('sentry-sync', { body: {} });
+  if (error) {
+    const status = (error as { context?: { status?: number } }).context?.status;
+    if (status === 404) throw new Error('The sentry-sync function is not deployed yet — see Docs/Sentry-Setup.md.');
+    if (status === 403) throw new Error('Not authorized.');
+    throw new Error(error.message || 'Sentry sync failed.');
+  }
+  return data as SentrySyncResult;
 }

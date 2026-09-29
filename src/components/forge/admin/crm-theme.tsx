@@ -38,6 +38,8 @@ export interface CrmPalette {
   brzBd: string;
   good: string;
   crit: string;
+  /** Critical as TEXT (the phone design fills badges with `crit` and writes with `critInk`). */
+  critInk: string;
   critTint: string;
   warn: string;
   warnTint: string;
@@ -51,7 +53,7 @@ export const PALETTES: Record<CrmMode, CrmPalette> = {
     panel: '#131517', panelBd: 'rgba(239,233,223,0.07)', field: '#0F1113', fieldBd: 'rgba(239,233,223,0.14)',
     btn: ['#A47744', '#7F5B33'], btnBd: 'rgba(205,160,99,0.55)', btnInk: '#FBF1E2',
     brz: '#C9975A', brzTint: 'rgba(191,143,79,0.13)', brzBd: 'rgba(201,151,90,0.5)',
-    good: '#8DBB97', crit: '#DE8878', critTint: 'rgba(210,122,108,0.14)', warn: '#D6A866', warnTint: 'rgba(214,168,102,0.12)',
+    good: '#8DBB97', crit: '#DE8878', critInk: '#DE8878', critTint: 'rgba(210,122,108,0.14)', warn: '#D6A866', warnTint: 'rgba(214,168,102,0.12)',
     scheme: 'dark',
   },
   alabaster: {
@@ -60,39 +62,59 @@ export const PALETTES: Record<CrmMode, CrmPalette> = {
     panel: '#FFFDFA', panelBd: '#E1DAD0', field: '#FFFFFF', fieldBd: '#D6CEC2',
     btn: ['#BA8654', '#BA8654'], btnBd: '#A67644', btnInk: '#17110A',
     brz: '#9A6934', brzTint: 'rgba(166,118,68,0.13)', brzBd: 'rgba(154,105,52,0.5)',
-    good: '#3C7549', crit: '#A6473A', critTint: 'rgba(166,71,58,0.10)', warn: '#8A5C2C', warnTint: 'rgba(166,118,68,0.12)',
+    good: '#3C7549', crit: '#A6473A', critInk: '#A6473A', critTint: 'rgba(166,71,58,0.10)', warn: '#8A5C2C', warnTint: 'rgba(166,118,68,0.12)',
     scheme: 'light',
   },
 };
 
+/**
+ * The phone design's small differences (`Forge CRM Phone.dc.html` THEMES): a firmer hover and track for
+ * touch, and a deeper badge red (`crit`) with the desktop red kept for text (`critInk`).
+ */
+export const PHONE_PALETTES: Record<CrmMode, CrmPalette> = {
+  forge: { ...PALETTES.forge, hover: 'rgba(239,233,223,0.06)', track: 'rgba(239,233,223,0.09)', crit: '#C8604F', critInk: '#DE8878' },
+  alabaster: { ...PALETTES.alabaster, hover: 'rgba(60,45,25,0.06)' },
+};
+
+/** 'app' follows the theme set in Forge Legacy (the phone's "Match app"). */
+export type CrmPref = CrmMode | 'app';
+
 const STORE_KEY = 'fl_crm_mode_v1';
 
-function initialMode(): CrmMode {
+const APP_MODE: CrmMode = IS_PAPER ? 'alabaster' : 'forge';
+
+function initialPref(): CrmPref {
   try {
     const v = typeof localStorage !== 'undefined' ? localStorage.getItem(STORE_KEY) : null;
-    if (v === 'forge' || v === 'alabaster') return v;
+    if (v === 'forge' || v === 'alabaster' || v === 'app') return v;
   } catch {
     /* private window / native — fall through to the app's own theme */
   }
-  return IS_PAPER ? 'alabaster' : 'forge';
+  return 'app';
 }
 
 interface Ctx {
   c: CrmPalette;
+  /** The palette in use. */
   mode: CrmMode;
-  setMode: (m: CrmMode) => void;
+  /** What the owner chose: Dark, Light, or (phone) Match app. */
+  pref: CrmPref;
+  setMode: (m: CrmPref) => void;
 }
 
-const CrmThemeContext = createContext<Ctx>({ c: PALETTES.forge, mode: 'forge', setMode: () => {} });
+const CrmThemeContext = createContext<Ctx>({ c: PALETTES.forge, mode: 'forge', pref: 'app', setMode: () => {} });
 
-export function CrmThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<CrmMode>(initialMode);
+/** `phone` swaps in the phone design's palette variant; the preference is shared with the desktop. */
+export function CrmThemeProvider({ children, phone }: { children: React.ReactNode; phone?: boolean }) {
+  const [pref, setPref] = useState<CrmPref>(initialPref);
+  const mode: CrmMode = pref === 'app' ? APP_MODE : pref;
   const value = useMemo<Ctx>(
     () => ({
-      c: PALETTES[mode],
+      c: (phone ? PHONE_PALETTES : PALETTES)[mode],
       mode,
+      pref,
       setMode: (m) => {
-        setModeState(m);
+        setPref(m);
         try {
           if (typeof localStorage !== 'undefined') localStorage.setItem(STORE_KEY, m);
         } catch {
@@ -100,7 +122,7 @@ export function CrmThemeProvider({ children }: { children: React.ReactNode }) {
         }
       },
     }),
-    [mode],
+    [mode, pref, phone],
   );
   return <CrmThemeContext.Provider value={value}>{children}</CrmThemeContext.Provider>;
 }

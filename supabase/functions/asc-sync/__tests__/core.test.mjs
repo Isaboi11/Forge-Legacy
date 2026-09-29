@@ -16,7 +16,7 @@ const b = src.indexOf(END);
 assert.ok(a > 0 && b > a, 'PURE CORE markers missing from index.ts');
 const block = src.slice(a + START.length, b);
 const core = new Function(
-  `${block}\nreturn { METRICS, parseTsv, productTypeMetric, aggregateDay, zeroDay, base64url, lastDays, daysBetween };`,
+  `${block}\nreturn { METRICS, parseTsv, productTypeMetric, aggregateDay, zeroDay, base64url, lastDays, daysBetween, mapFeedback };`,
 )();
 
 const APP = '6798436104';
@@ -106,4 +106,45 @@ test('lastDays excludes today, oldest first; daysBetween', () => {
   const d = core.lastDays(new Date(Date.UTC(2026, 2, 2, 15)), 3);
   assert.deepEqual(d, ['2026-02-27', '2026-02-28', '2026-03-01']);
   assert.equal(core.daysBetween('2026-02-27', '2026-03-02'), 3);
+});
+
+test('mapFeedback: screenshot submission → asc_feedback row, build number from `included`', () => {
+  const item = {
+    type: 'betaFeedbackScreenshotSubmissions',
+    id: 'fb-1',
+    attributes: {
+      createdDate: '2026-09-28T12:00:00Z', comment: '  The timer froze on rest  ', deviceModel: 'iPhone16,2',
+      osVersion: '26.0', appPlatform: 'IOS', buildBundleFileName: 'ForgeLegacy.ipa', locale: 'en-US',
+    },
+    relationships: { build: { data: { type: 'builds', id: 'b-9' } } },
+  };
+  const included = [{ type: 'builds', id: 'b-9', attributes: { version: '9' } }];
+  assert.deepEqual(core.mapFeedback(item, 'screenshot', included), {
+    id: 'fb-1', kind: 'screenshot', comment: 'The timer froze on rest', device_model: 'iPhone16,2',
+    os_version: '26.0', app_platform: 'IOS', build_version: '9', created_at: '2026-09-28T12:00:00Z',
+  });
+  // No `included`: falls back to an attribute; nothing at all → null, never undefined.
+  const bare = core.mapFeedback({ id: 'fb-2', attributes: {} }, 'crash');
+  assert.deepEqual(bare, {
+    id: 'fb-2', kind: 'crash', comment: null, device_model: null, os_version: null,
+    app_platform: null, build_version: null, created_at: null,
+  });
+});
+
+test('mapFeedback NEVER keeps the tester email or name (AA-D13)', () => {
+  const item = {
+    id: 'fb-3',
+    attributes: {
+      email: 'tester@example.com', testerName: 'Jane Tester', firstName: 'Jane', lastName: 'Tester',
+      comment: 'crashed on save', deviceModel: 'iPhone15,3',
+    },
+    relationships: { tester: { data: { type: 'betaTesters', id: 't-1' } } },
+  };
+  const included = [{ type: 'betaTesters', id: 't-1', attributes: { email: 'tester@example.com', firstName: 'Jane' } }];
+  const row = core.mapFeedback(item, 'crash', included);
+  const dump = JSON.stringify(row);
+  assert.ok(!dump.includes('example.com'), dump);
+  assert.ok(!dump.includes('Jane'), dump);
+  assert.deepEqual(Object.keys(row).sort(),
+    ['app_platform', 'build_version', 'comment', 'created_at', 'device_model', 'id', 'kind', 'os_version']);
 });

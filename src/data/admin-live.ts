@@ -50,6 +50,8 @@ const FROM_MIGRATION: Record<string, string> = {
       'admin_documents', 'admin_document_save', 'admin_document_delete',
     ].map((fn) => [fn, '0238']),
   ),
+  // 0239 — the Bugs page's four sources.
+  ...Object.fromEntries(['admin_bug_sources', 'admin_reports_inbox', 'admin_report_dismiss', 'admin_crashes', 'admin_report_track', 'admin_bug_links'].map((fn) => [fn, '0239'])),
 };
 
 function rpcError(e: unknown, fn: string): Error {

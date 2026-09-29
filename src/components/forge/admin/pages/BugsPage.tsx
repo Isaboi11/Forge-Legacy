@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import {
@@ -16,6 +16,7 @@ import {
   HeroFigures,
   HoverRow,
   Input,
+  LinkText,
   Opt,
   PageHeader,
   Panel,
@@ -28,28 +29,49 @@ import {
   type Figure,
 } from '@/components/forge/admin/crm-ui';
 import type { PageProps } from '@/components/forge/admin/pages/types';
-import { fetchAdminErrorDetail, fetchAdminErrors, fetchAdminFeedback, setErrorStatus, type ErrorGroup } from '@/data/admin-live';
-import { deleteBug, fetchBugs, saveBug, trackBug, type Bug } from '@/data/crm-live';
+import { fetchAdminErrorDetail, setErrorStatus } from '@/data/admin-live';
+import {
+  BUG_SOURCES,
+  deleteBug,
+  dismissReport,
+  fetchBugLinks,
+  fetchBugs,
+  fetchBugSources,
+  fetchCrashes,
+  fetchReportsInbox,
+  originSource,
+  runSentrySync,
+  saveBug,
+  trackReport,
+  type Bug,
+  type BugLink,
+  type BugSource,
+  type BugSourceName,
+  type CrashGroup,
+  type InboxReport,
+} from '@/data/crm-live';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
 import { bugsNote } from '@/domain/admin/notes/bugs';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
- * Bugs — the one bug board (Admin-Analytics-Amendment-002, AA-D19), built to `Forge CRM.dc.html`.
+ * Bugs — the one bug board (Admin-Analytics-Amendment-002, AA-D19 + AA-D21), built to `Forge CRM.v2.dc.html`.
  *
- * ══ ONE BOARD, THREE SOURCES, ORIGINALS UNTOUCHED ══
+ * ══ ONE BOARD, FOUR SOURCES, ORIGINALS UNTOUCHED ══
  *
- * `ops_bugs` holds the QA-report items and the bugs filed here by hand. User bug reports (feedback, 0167)
- * and crash groups (client errors, 0176) stay in their own tables and keep their own tabs — "Track this"
- * COPIES one onto the board with a back-reference (`origin`) and never edits or deletes the original.
+ * `ops_bugs` holds the QA-report items, the bugs filed here by hand, and reports tracked from any source.
+ * The reports themselves stay where they live — in-app reports (feedback, 0167), TestFlight feedback and
+ * App Store reviews (0239 inbox), Sentry issues and in-app crashes (0239 crashes). "Track this" COPIES one
+ * onto the board with a back-reference (`origin`); "Add to B3" merges it into an existing item
+ * (`ops_bug_links`). Neither ever edits or deletes the original.
  *
  * ══ THE WHOLE BOARD IS FETCHED ONCE ══
  *
  * `admin_bugs` is called unfiltered (ceiling 1000 rows; the board is ~300) and every chip, the search and
  * the chip counts work on those rows. That keeps a saved row on screen when a filter would drop it (marking
- * a bug Fixed under "Active" must not yank the detail away mid-edit), lets "Tracked" be read straight off
- * the rows' `origin`, and makes the chip counts and the list agree by construction. The figures above
- * the tabs come from `counts`, which the SQL computes over the whole table.
+ * a bug Fixed under "Active" must not yank the detail away mid-edit), lets the Source column be read
+ * straight off the rows' `origin`, and makes the chip counts and the list agree by construction. The
+ * figures above the tabs come from `counts`, which the SQL computes over the whole table.
  */
 
 type Tab = 'tracker' | 'reports' | 'crashes';
@@ -64,21 +86,46 @@ const STATUS_CHIPS: { key: StatusFilter; label: string }[] = [
 const SEV_LABEL: Record<BugSeverity, string> = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
 const statusLabel = (s: BugStatus) => BUG_STATUSES.find((x) => x.key === s)?.label ?? s;
 
-/* The crash list's window. The SAME 14 days `admin_bugs.errors_new` counts over, so the "Crash groups"
-   figure, the tab count and the rows tagged New always agree. */
-const CRASH_DAYS = 14;
+/* The crash list's window. `admin_crashes` flags a group New when it first appeared in the last 7 days;
+   the tab count and the "Crash groups" figure both count those flags, so they always agree. */
+const CRASH_DAYS = 30;
 
 const MONO = Platform.select({ web: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', ios: 'Menlo', default: 'monospace' });
 const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
+const TABLE_MIN = 710;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 const matchStatus = (s: BugStatus, f: StatusFilter) => f === 'all' || (f === 'active' ? s === 'open' || s === 'in_progress' : s === f);
 
-function sourceLabel(b: Bug): string {
-  if (b.source === 'qa') return b.round != null ? `QA round ${b.round}` : 'QA report';
-  if (b.origin?.startsWith('feedback:')) return 'From a user report';
-  if (b.origin?.startsWith('error:')) return 'From a crash';
-  return 'Filed by you';
+/** "2 min ago", "3 hr ago", "4 days ago" — the source cards' sync line. */
+function ago(iso: string, now: number): string {
+  const m = Math.max(0, Math.floor((now - new Date(iso).getTime()) / 60_000));
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m} min ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  return plural(Math.floor(h / 24), 'day ago', 'days ago');
+}
+
+/** The report's title: its first non-empty line. */
+const firstLine = (s: string) => s.split('\n').find((l) => l.trim())?.trim() ?? s;
+
+/** Where a report came from, as the row's bold lead: "Supabase · in-app", "TestFlight crash", "App Store". */
+function reportFrom(r: InboxReport): string {
+  if (r.source === 'Supabase') return 'Supabase · in-app';
+  if (r.source === 'TestFlight') return r.channel || 'TestFlight';
+  return 'App Store';
+}
+
+/** Who and on what — only what the inbox returns. App Store nicknames aren't Forge handles, so no "@". */
+function reportMeta(r: InboxReport): string {
+  const parts: (string | null)[] =
+    r.source === 'Supabase'
+      ? [r.handle ? `@${r.handle}` : null, when(r.created_at), r.version ? `v${r.version}` : null, r.platform]
+      : r.source === 'TestFlight'
+        ? [when(r.created_at), r.version ? `build ${r.version}` : null, r.device]
+        : [r.handle, when(r.created_at), r.rating != null ? `${r.rating}★ review` : null, r.country];
+  return parts.filter(Boolean).join(' · ');
 }
 
 interface SaveState {
@@ -107,20 +154,24 @@ export function BugsPage({ arg }: PageProps) {
   const { lg } = useLayout();
   const toast = useToast();
   // One clock per mount: ages and "the oldest critical" are read against it (no Date.now() in render).
-  const [now] = useState(() => Date.now());
+  // A Sentry sync moves it forward so its own "Synced just now" never reads as the future.
+  const [now, setNow] = useState(() => Date.now());
 
   const argTab: Tab | null = arg === 'reports' || arg === 'crashes' ? arg : null;
   const [pickedTab, setPickedTab] = useState<Tab | null>(null);
   const tab: Tab = pickedTab ?? argTab ?? 'tracker';
 
   const board = useQuery(() => fetchBugs(null, null, null), []);
+  const sources = useQuery(() => fetchBugSources(), []);
+  const links = useQuery(() => fetchBugLinks(), []);
   /* Not range-scoped: an unanswered bug report from six weeks ago is not less unanswered. */
-  const reports = useQuery(() => fetchAdminFeedback(100, null), []);
-  const crashes = useQuery(() => fetchAdminErrors(CRASH_DAYS, 50, null), []);
+  const inbox = useQuery(() => fetchReportsInbox(200), []);
+  const crashes = useQuery(() => fetchCrashes(CRASH_DAYS), []);
 
   // ── Tracker state ──
   const [status, setStatus] = useState<StatusFilter>('active');
   const [sev, setSev] = useState<BugSeverity | null>(null);
+  const [src, setSrc] = useState<BugSourceName | null>(null);
   const [query, setQuery] = useState('');
   const [tableW, setTableW] = useState(0);
   const [selId, setSelId] = useState<string | null>(null);
@@ -139,17 +190,25 @@ export function BugsPage({ arg }: PageProps) {
   const [formErr, setFormErr] = useState<string | null>(null);
   const [formBusy, setFormBusy] = useState(false);
 
-  // ── Track this ──
-  const [tracking, setTracking] = useState<string | null>(null);
-  const [trackErr, setTrackErr] = useState<{ key: string; msg: string } | null>(null);
-  /* origin → ref for rows tracked this visit, so the button reads "Tracked" before the refetch lands. */
+  // ── Track / merge / dismiss ──
+  /* `${origin}|new`, `${origin}|merge` or `${origin}|dismiss` while that write is in flight. */
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [actErr, setActErr] = useState<{ origin: string; msg: string } | null>(null);
+  /* origin → ref for reports tracked this visit, and dismiss flips, so a row reads right before the
+     refetch lands. Written only after the write resolves. */
   const [trackedNow, setTrackedNow] = useState<Record<string, string>>({});
+  const [dismissedNow, setDismissedNow] = useState<Record<string, boolean>>({});
+
+  // ── Sentry sync ──
+  const [syncing, setSyncing] = useState(false);
+  const [sentrySetup, setSentrySetup] = useState(false);
 
   // ── Crashes ──
   const [crashSel, setCrashSel] = useState<string | null>(null);
-  const crashRows = crashes.data?.rows ?? [];
-  const crash = crashRows.find((g) => g.fingerprint === crashSel) ?? crashRows[0] ?? null;
-  const crashFp = crash?.fingerprint ?? '';
+  const crashRows = crashes.data ?? [];
+  const crash = crashRows.find((g) => g.origin === crashSel) ?? crashRows[0] ?? null;
+  /* In-app crashes carry no trail in `admin_crashes`; their breadcrumbs come from the 0176 detail call. */
+  const crashFp = crash?.source === 'Supabase' ? crash.origin.slice('error:'.length) : '';
   const detail = useQuery(() => (crashFp ? fetchAdminErrorDetail(crashFp, 1) : Promise.resolve([])), [crashFp]);
   const [triaging, setTriaging] = useState<string | null>(null);
   const [triageErr, setTriageErr] = useState<string | null>(null);
@@ -161,16 +220,21 @@ export function BugsPage({ arg }: PageProps) {
     (b) =>
       matchStatus(b.status, status) &&
       (!sev || b.severity === sev) &&
+      (!src || originSource(b.origin) === src) &&
       (!qn || `${b.title} ${b.ref ?? ''} ${b.area ?? ''} ${b.detail ?? ''}`.toLowerCase().includes(qn)),
   );
   const sel = (selId ? all.find((b) => b.id === selId) : null) ?? shown[0] ?? null;
-  const originRef = (origin: string) => trackedNow[origin] ?? all.find((b) => b.origin === origin)?.ref ?? null;
+
+  const reportRows: InboxReport[] = (inbox.data ?? []).map((r) => {
+    const ref = trackedNow[r.origin] ?? r.bug_ref;
+    if (ref) return { ...r, bug_ref: ref, state: 'tracked' };
+    const d = dismissedNow[r.origin];
+    return d == null ? r : { ...r, state: d ? 'dismissed' : 'new' };
+  });
+  const reportsNew = inbox.data ? reportRows.filter((r) => r.state === 'new').length : null;
+  const crashNew = crashes.data ? crashRows.filter((g) => g.is_new).length : null;
 
   const cnt = board.data?.counts;
-  const reportRows = (reports.data?.rows ?? []).filter((f) => f.kind === 'BUG');
-  const crashNew = board.data?.errors_new ?? 0;
-  const reportsNew = board.data?.feedback_new ?? 0;
-
   const oldestCritical = all
     .filter((b) => b.severity === 'critical' && matchStatus(b.status, 'active'))
     .reduce<number | null>((m, b) => {
@@ -186,10 +250,18 @@ export function BugsPage({ arg }: PageProps) {
         active: cnt.open + cnt.in_progress,
         oldestCriticalDays: oldestCritical,
         fixed7d: cnt.fixed_7d,
-        reportsNew,
-        crashesNew: crashNew,
+        reportsNew: reportsNew ?? 0,
+        crashesNew: crashNew ?? 0,
       })
     : null;
+
+  /* "Also reported in TestFlight · 2 reports, App Store · 1 report" — merged reports grouped by source. */
+  const alsoLine = (b: Bug): string | null => {
+    const mine = (links.data ?? []).filter((l: BugLink) => l.bug_id === b.id);
+    if (!mine.length) return null;
+    const bySrc = BUG_SOURCES.map((s) => [s, mine.filter((l) => l.source === s).length] as const).filter(([, n]) => n > 0);
+    return `Also reported in ${bySrc.map(([s, n]) => `${s} · ${plural(n, 'report', 'reports')}`).join(', ')}. Merged into one item.`;
+  };
 
   // ── Writes ──
   const pick = (b: Bug) => {
@@ -237,6 +309,9 @@ export function BugsPage({ arg }: PageProps) {
       await deleteBug(b.id);
       setSelId(null);
       board.refetch();
+      links.refetch();
+      inbox.refetch();
+      crashes.refetch();
     } catch (e) {
       setDelErr({ id: b.id, msg: `Couldn’t delete it. ${errorMessage(e)}` });
     } finally {
@@ -266,6 +341,7 @@ export function BugsPage({ arg }: PageProps) {
       setForm(null);
       setStatus('active');
       setSev(null);
+      setSrc(null);
       setQuery('');
       setPickedTab('tracker');
       setSelId(id);
@@ -279,19 +355,55 @@ export function BugsPage({ arg }: PageProps) {
     }
   };
 
-  const track = async (kind: 'feedback' | 'error', ref: string) => {
-    const key = `${kind}:${ref}`;
-    setTracking(key);
-    setTrackErr(null);
+  /* Track a report from any source; `target` merges it into that board item instead. */
+  const track = async (origin: string, target: Bug | null) => {
+    setBusyKey(`${origin}|${target ? 'merge' : 'new'}`);
+    setActErr(null);
     try {
-      const r = await trackBug(kind, ref);
-      setTrackedNow((t) => ({ ...t, [key]: r.ref }));
+      const r = await trackReport(origin, target?.id ?? null);
+      setTrackedNow((t) => ({ ...t, [origin]: r.ref }));
       board.refetch();
-      toast(`${r.ref} added to the board`);
+      links.refetch();
+      inbox.refetch();
+      crashes.refetch();
+      sources.refetch();
+      toast(r.existing ? `Already on the board as ${r.ref}` : r.merged ? `Merged into ${r.ref}` : `${r.ref} added to the board`);
     } catch (e) {
-      setTrackErr({ key, msg: `Couldn’t add it to the board. ${errorMessage(e)}` });
+      setActErr({ origin, msg: `Couldn’t add it to the board. ${errorMessage(e)}` });
     } finally {
-      setTracking(null);
+      setBusyKey(null);
+    }
+  };
+
+  const dismiss = async (origin: string, on: boolean) => {
+    setBusyKey(`${origin}|dismiss`);
+    setActErr(null);
+    try {
+      await dismissReport(origin, on);
+      setDismissedNow((d) => ({ ...d, [origin]: on }));
+      inbox.refetch();
+    } catch (e) {
+      setActErr({ origin, msg: `Couldn’t save. ${errorMessage(e)}` });
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const syncSentry = async () => {
+    setSyncing(true);
+    try {
+      const r = await runSentrySync();
+      setNow(Date.now());
+      sources.refetch();
+      crashes.refetch();
+      setSentrySetup(!r.configured);
+      if (!r.configured) toast('Sentry isn’t set up yet');
+      else if (r.ok) toast(`Sentry synced · ${plural(r.issues ?? 0, 'issue', 'issues')}`);
+      else toast(`Sentry sync failed${r.errors?.length ? ` — ${r.errors[0]}` : ''}`);
+    } catch (e) {
+      toast(errorMessage(e));
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -319,14 +431,37 @@ export function BugsPage({ arg }: PageProps) {
           { label: 'High', value: String(cnt.active_high), note: 'Active' },
           { label: 'Open', value: String(cnt.open), note: `Of ${cnt.total} items` },
           { label: 'Fixed', value: String(cnt.fixed_7d), note: 'Last 7 days', tone: cnt.fixed_7d > 0 ? 'good' : null },
-          { label: 'User reports', value: String(reportsNew), note: 'New, not triaged' },
-          { label: 'Crash groups', value: String(crashNew), note: `New in ${CRASH_DAYS} days` },
+          { label: 'User reports', value: reportsNew == null ? '—' : String(reportsNew), note: 'New, not triaged' },
+          { label: 'Crash groups', value: crashNew == null ? '—' : String(crashNew), note: 'New in 7 days' },
         ],
       }
     : null;
 
   const sevColor = (s: BugSeverity) => (s === 'critical' ? c.crit : s === 'high' ? c.warn : c.ink3);
   const cell = (w: number, extra?: TextStyle): TextStyle => ({ width: w, flexShrink: 0, ...extra });
+
+  const sourceByName = (n: BugSourceName) => (sources.data ?? []).find((s) => s.name === n) ?? null;
+  /* TestFlight and App Store both arrive through the App Store Connect sync: never run means no key yet. */
+  const neverSynced = (n: BugSourceName) => {
+    const s = sourceByName(n);
+    return !!sources.data && (!s || (!s.live && !s.synced_at));
+  };
+
+  const sourceCards = (
+    <View style={{ marginBottom: 24 }}>
+      {sources.loading && !sources.data ? (
+        <Skeleton />
+      ) : sources.error ? (
+        <ErrorLine onRetry={sources.refetch}>Couldn’t load the sources. {sources.error}</ErrorLine>
+      ) : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 1, borderRadius: 12, overflow: 'hidden', backgroundColor: c.line, borderWidth: 1, borderColor: c.line }}>
+          {(sources.data ?? []).map((s) => (
+            <SourceCard key={s.name} s={s} now={now} syncing={syncing} setupNeeded={s.name === 'Sentry' && sentrySetup} onSync={s.name === 'Sentry' ? () => void syncSentry() : null} />
+          ))}
+        </View>
+      )}
+    </View>
+  );
 
   const tracker = (
     <>
@@ -340,17 +475,22 @@ export function BugsPage({ arg }: PageProps) {
         {SEVERITIES.map((s) => (
           <Chip key={s} size="sm" label={SEV_LABEL[s]} on={sev === s} onPress={() => setSev(s)} />
         ))}
+        <View style={{ width: 1, height: 18, backgroundColor: c.line, marginHorizontal: 4 }} />
+        <Chip size="sm" label="Any source" on={src == null} onPress={() => setSrc(null)} />
+        {BUG_SOURCES.map((s) => (
+          <Chip key={s} size="sm" label={s} count={board.data ? all.filter((b) => originSource(b.origin) === s).length : null} on={src === s} onPress={() => setSrc(s)} />
+        ))}
       </Row>
       {board.loading && !board.data ? (
         <Skeleton />
       ) : board.error ? (
         <ErrorLine onRetry={board.refetch}>Couldn’t load the board. {board.error}</ErrorLine>
       ) : (
-        /* The design's `overflow-x:auto` + 620 px minimum: under that the table scrolls sideways rather
+        /* The design's `overflow-x:auto` + 710 px minimum: under that the table scrolls sideways rather
            than squeezing the Bug column to nothing. */
-        /* ⚠ The table's width is PINNED to the measured pane (min 620). Inside a horizontal ScrollView a
-           flex:1 column is unbounded, so the one-line Bug title grew to its full length and pushed Area,
-           Severity, Status and Age off the right edge. */
+        /* ⚠ The table's width is PINNED to the measured pane (min 710). Inside a horizontal ScrollView a
+           flex:1 column is unbounded, so the one-line Bug title grew to its full length and pushed Source,
+           Area, Severity, Status and Age off the right edge. */
         <ScrollView
           horizontal
           keyboardDismissMode={KEYBOARD_DISMISS_MODE}
@@ -358,12 +498,13 @@ export function BugsPage({ arg }: PageProps) {
           showsHorizontalScrollIndicator={false}
           onLayout={(e) => setTableW(Math.round(e.nativeEvent.layout.width))}
         >
-          <View style={{ width: Math.max(620, tableW) }}>
+          <View style={{ width: Math.max(TABLE_MIN, tableW) }}>
             <View style={{ flexDirection: 'row', gap: 12, paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: c.line }}>
               {(
                 [
                   ['Ref', 52],
                   ['Bug', 0],
+                  ['Source', 88],
                   ['Area', 96],
                   ['Severity', 76],
                   ['Status', 92],
@@ -387,6 +528,9 @@ export function BugsPage({ arg }: PageProps) {
                 <Text style={[cell(52, { fontSize: 13.5, color: c.ink3 }), TABULAR]}>{b.ref ?? '—'}</Text>
                 <Text numberOfLines={1} style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: c.ink }}>
                   {b.title}
+                </Text>
+                <Text numberOfLines={1} style={cell(88, { fontSize: 13.5, color: c.ink2 })}>
+                  {originSource(b.origin)}
                 </Text>
                 <Text numberOfLines={1} style={cell(96, { fontSize: 13.5, color: c.ink3 })}>
                   {b.area ?? '—'}
@@ -412,40 +556,77 @@ export function BugsPage({ arg }: PageProps) {
     </>
   );
 
+  /* The honest zeros under the inbox: a source with nothing in it says why. */
+  const inboxGaps: string[] = inbox.data
+    ? (['Supabase', 'TestFlight', 'App Store'] as const)
+        .filter((s) => !reportRows.some((r) => r.source === s))
+        .map((s) =>
+          s === 'Supabase'
+            ? 'Nothing from the app’s own “Report a problem” yet.'
+            : neverSynced(s)
+              ? `Nothing from ${s} yet — it fills in after the App Store key is added.`
+              : s === 'TestFlight'
+                ? 'Nothing from TestFlight yet.'
+                : 'No App Store review has mentioned a bug yet.',
+        )
+    : [];
+
   const reportsView = (
     <View style={{ borderTopWidth: 1, borderTopColor: c.line }}>
-      {reports.loading && !reports.data ? (
+      {inbox.loading && !inbox.data ? (
         <Skeleton />
-      ) : reports.error ? (
-        <ErrorLine onRetry={reports.refetch}>Couldn’t load user reports. {reports.error}</ErrorLine>
-      ) : reportRows.length === 0 ? (
-        <Text style={{ paddingVertical: 18, paddingHorizontal: 12, fontSize: 14.5, lineHeight: 22, color: c.ink2 }}>
-          {/* The honest zero: "nobody has written" and "the report screen isn't reachable" both look like 0. */}
-          {reports.data?.newestAt ? 'No bug reports from athletes. Other feedback is still arriving.' : 'No reports have ever arrived. When an athlete sends one from the app it shows up here.'}
-        </Text>
+      ) : inbox.error ? (
+        <ErrorLine onRetry={inbox.refetch}>Couldn’t load user reports. {inbox.error}</ErrorLine>
       ) : (
-        reportRows.map((f) => {
-          const origin = `feedback:${f.id}`;
-          const onBoard = originRef(origin);
-          const first = f.body.split('\n').find((l) => l.trim())?.trim() ?? f.body;
-          const who = f.athleteHandle ? `@${f.athleteHandle}` : f.athleteName;
-          return (
-            <View key={f.id} style={{ paddingVertical: 14, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: c.line, gap: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
-                  <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: '500', color: c.ink }}>
-                    {first}
-                  </Text>
-                  <Text style={{ fontSize: 13, color: c.ink3 }}>
-                    {[who, when(f.createdAt), f.appVersion ? `v${f.appVersion}` : null, f.platform].filter(Boolean).join(' · ')}
-                  </Text>
+        <>
+          {reportRows.map((r) => {
+            const dim = r.state === 'dismissed';
+            const busy = busyKey?.startsWith(`${r.origin}|`) ? busyKey.slice(r.origin.length + 1) : null;
+            return (
+              <View key={r.origin} style={{ paddingVertical: 14, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: c.line, gap: 6, opacity: dim ? 0.55 : 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                  <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
+                    <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: '500', color: c.ink }}>
+                      {firstLine(r.body)}
+                    </Text>
+                    <Text style={{ fontSize: 13, color: c.ink3 }}>
+                      <Text style={{ color: c.ink2, fontWeight: '500' }}>{reportFrom(r)}</Text>
+                      {reportMeta(r) ? ` · ${reportMeta(r)}` : ''}
+                    </Text>
+                  </View>
+                  {r.state === 'tracked' ? (
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: c.ink3 }}>On the board as {r.bug_ref}</Text>
+                  ) : r.state === 'dismissed' ? (
+                    <Text style={{ fontSize: 13, color: c.ink3 }}>
+                      Dismissed ·{' '}
+                      <Text onPress={busy ? undefined : () => void dismiss(r.origin, false)} accessibilityRole="button" style={{ fontWeight: '600', color: c.ink }}>
+                        {busy === 'dismiss' ? 'Undoing…' : 'Undo'}
+                      </Text>
+                    </Text>
+                  ) : (
+                    <Row gap={8}>
+                      {/* Merge (CHANGED vs the design, which shows merged results but no control): files this
+                          report under the bug open on the right instead of making a new item. */}
+                      {sel?.ref ? <Btn size="sm" label={`Add to ${sel.ref}`} busy={busy === 'merge'} disabled={!!busy && busy !== 'merge'} onPress={() => void track(r.origin, sel)} /> : null}
+                      <Btn size="sm" label="Dismiss" busy={busy === 'dismiss'} disabled={!!busy && busy !== 'dismiss'} onPress={() => void dismiss(r.origin, true)} />
+                      <Btn size="sm" label="Track this" busy={busy === 'new'} disabled={!!busy && busy !== 'new'} onPress={() => void track(r.origin, null)} />
+                    </Row>
+                  )}
                 </View>
-                <Btn size="sm" label={onBoard ? 'Tracked' : 'Track this'} disabled={!!onBoard} busy={tracking === origin} onPress={() => void track('feedback', String(f.id))} />
+                {actErr?.origin === r.origin ? <Text style={{ fontSize: 13, color: c.crit }}>{actErr.msg}</Text> : null}
               </View>
-              {trackErr?.key === origin ? <Text style={{ fontSize: 13, color: c.crit }}>{trackErr.msg}</Text> : null}
+            );
+          })}
+          {inboxGaps.length ? (
+            <View style={{ paddingVertical: 14, paddingHorizontal: 12, gap: 4 }}>
+              {inboxGaps.map((g) => (
+                <Text key={g} style={{ fontSize: 13, lineHeight: 20, color: c.ink3 }}>
+                  {g}
+                </Text>
+              ))}
             </View>
-          );
-        })
+          ) : null}
+        </>
       )}
     </View>
   );
@@ -458,33 +639,36 @@ export function BugsPage({ arg }: PageProps) {
         <ErrorLine onRetry={crashes.refetch}>Couldn’t load crashes. {crashes.error}</ErrorLine>
       ) : crashRows.length === 0 ? (
         <Text style={{ paddingVertical: 18, paddingHorizontal: 12, fontSize: 14.5, lineHeight: 22, color: c.ink2 }}>
-          {/* ⚠ Zero crashes is the goal AND what a broken reporter looks like; `everAny` tells them apart. */}
-          {crashes.data?.everAny
-            ? `No crashes in the last ${CRASH_DAYS} days. The last one arrived ${when(crashes.data.everAny)}.`
-            : 'No crash has ever been reported. If the app has been in use, check that crash reporting (0176) is applied and deployed.'}
+          {/* ⚠ Zero crashes is the goal AND what an unconnected Sentry looks like; say which. */}
+          {`No crashes in the last ${CRASH_DAYS} days.`}
+          {neverSynced('Sentry') ? ' Sentry hasn’t synced yet, so only the app’s own crash reports are counted.' : ''}
         </Text>
       ) : (
         crashRows.map((g) => (
-          <HoverRow key={g.fingerprint} bleed={0} selected={crash?.fingerprint === g.fingerprint} onPress={() => setCrashSel(g.fingerprint)} label={g.message || g.name} style={{ paddingVertical: 14, paddingHorizontal: 12 }}>
+          <HoverRow key={g.origin} bleed={0} selected={crash?.origin === g.origin} onPress={() => setCrashSel(g.origin)} label={g.title} style={{ paddingVertical: 14, paddingHorizontal: 12 }}>
             <View style={{ flex: 1, minWidth: 0, gap: 3 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
                 <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 15, fontWeight: '500', color: c.ink }}>
-                  {g.message || g.name}
+                  {g.title}
                 </Text>
-                {g.status === 'NEW' ? <Text style={{ fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: c.warn }}>New</Text> : null}
+                {g.is_new ? <Text style={{ fontSize: 10.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: c.warn }}>New</Text> : null}
               </View>
               <Text style={{ fontSize: 13, color: c.ink3 }}>
-                {[plural(g.athletes, 'athlete', 'athletes'), `last seen ${when(g.lastSeen, true)}`, g.appVersion ? `v${g.appVersion}` : null].filter(Boolean).join(' · ')}
+                {[g.source === 'Sentry' ? 'Sentry' : 'In-app', plural(g.people, 'athlete', 'athletes'), g.last_seen ? `last seen ${when(g.last_seen, true)}` : null, g.version]
+                  .filter(Boolean)
+                  .join(' · ')}
               </Text>
             </View>
-            {/* Occurrences on the right; athletes lead the meta line because 12 crashes across 12 people
+            {/* Events on the right; athletes lead the meta line because 12 crashes across 12 people
                 outranks 200 from one tester. */}
-            <Text style={[{ fontSize: 15, fontWeight: '600', color: c.ink }, TABULAR]}>{g.occurrences}</Text>
+            <Text style={[{ fontSize: 15, fontWeight: '600', color: c.ink }, TABULAR]}>{g.events}</Text>
           </HoverRow>
         ))
       )}
     </View>
   );
+
+  const selAlso = sel ? alsoLine(sel) : null;
 
   return (
     <View>
@@ -542,11 +726,13 @@ export function BugsPage({ arg }: PageProps) {
         </View>
       )}
 
+      {sourceCards}
+
       <Tabs
         tabs={[
           { key: 'tracker', label: 'Tracker', count: cnt ? String(cnt.total) : '' },
-          { key: 'reports', label: 'User reports', count: board.data ? `${reportsNew} new` : '' },
-          { key: 'crashes', label: 'Crashes', count: board.data ? `${crashNew} new` : '' },
+          { key: 'reports', label: 'User reports', count: reportsNew == null ? '' : `${reportsNew} new` },
+          { key: 'crashes', label: 'Crashes', count: crashNew == null ? '' : `${crashNew} new` },
         ]}
         on={tab}
         onPick={(k) => setPickedTab(k as Tab)}
@@ -561,21 +747,24 @@ export function BugsPage({ arg }: PageProps) {
               <CrashPanel
                 crash={crash}
                 detail={detail}
-                onBoard={originRef(`error:${crash.fingerprint}`)}
-                tracking={tracking === `error:${crash.fingerprint}`}
-                trackErr={trackErr?.key === `error:${crash.fingerprint}` ? trackErr.msg : null}
-                onTrack={() => void track('error', crash.fingerprint)}
+                onBoard={trackedNow[crash.origin] ?? crash.bug_ref}
+                tracking={busyKey === `${crash.origin}|new`}
+                trackErr={actErr?.origin === crash.origin ? actErr.msg : null}
+                onTrack={() => void track(crash.origin, null)}
                 triaging={triaging}
                 triageErr={triageErr}
-                onTriage={(st) => void triage(crash.fingerprint, st)}
+                onTriage={(st) => void triage(crashFp, st)}
               />
             ) : null
           ) : sel ? (
             <Panel gap={18}>
-              <Text style={{ fontSize: 12.5, color: c.ink3 }}>{[sel.ref, sourceLabel(sel), sel.area].filter(Boolean).join(' · ')}</Text>
+              <Text style={{ fontSize: 12.5, color: c.ink3 }}>
+                {[sel.ref, `${originSource(sel.origin)}${sel.source === 'manual' && !sel.origin ? ' · filed by you' : ''}`, sel.area].filter(Boolean).join(' · ')}
+              </Text>
               <Text selectable style={{ fontFamily: DISPLAY, fontSize: 22, lineHeight: 28.6, color: c.ink }}>
                 {sel.title}
               </Text>
+              {selAlso ? <Text style={{ fontSize: 13, color: c.ink2 }}>{selAlso}</Text> : null}
               <View style={{ gap: 8 }}>
                 <Text style={{ fontSize: 12, color: c.ink3 }}>Severity</Text>
                 <Row gap={6}>
@@ -632,12 +821,39 @@ export function BugsPage({ arg }: PageProps) {
                   {delErr?.id === sel.id ? <Text style={{ fontSize: 13, color: c.crit }}>{delErr.msg}</Text> : null}
                 </View>
               ) : (
-                <Text style={{ fontSize: 12.5, color: c.ink3 }}>QA items can be closed but not deleted.</Text>
+                <Text style={{ fontSize: 12.5, color: c.ink3 }}>Synced items can be closed here but not deleted.</Text>
               )}
             </Panel>
           ) : null}
         </View>
       </View>
+    </View>
+  );
+}
+
+// ── Source cards (Supabase / Sentry / TestFlight / App Store) ─────────────
+
+function SourceCard({ s, now, syncing, setupNeeded, onSync }: { s: BugSource; now: number; syncing: boolean; setupNeeded: boolean; onSync: (() => void) | null }) {
+  const { c } = useCrm();
+  const failed = s.ok === false;
+  const line = s.live
+    ? 'Live'
+    : failed
+      ? `Last sync failed${s.message ? ` — ${s.message}` : ''}`
+      : !s.synced_at
+        ? `Not connected${s.message ? ` — ${s.message}` : ''}`
+        : `Synced ${ago(s.synced_at, now)}`;
+  return (
+    <View style={{ flexGrow: 1, flexBasis: 140, minWidth: 140, gap: 3, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: c.panel }}>
+      <Text style={{ fontSize: 14, fontWeight: '600', color: c.ink }}>{s.name}</Text>
+      <Text style={{ fontSize: 12.5, color: c.ink2 }}>{s.feeds}</Text>
+      <Text style={{ fontSize: 12, color: failed ? c.crit : c.ink3 }}>{line}</Text>
+      {setupNeeded ? <Text style={{ fontSize: 12, color: c.ink3 }}>Set up Sentry (Docs/Sentry-Setup.md)</Text> : null}
+      {onSync ? (
+        <View style={{ flexDirection: 'row', marginTop: 6 }}>
+          <Btn size="sm" label="Sync now" busy={syncing} onPress={onSync} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -658,7 +874,7 @@ function Tabs({ tabs, on, onPick }: { tabs: { key: string; label: string; count:
             accessibilityState={{ selected: active }}
             style={{ paddingBottom: 12, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: active ? c.brz : 'transparent' }}
           >
-            <Text style={{ fontSize: 14.5, fontWeight: active ? '600' : '500', color: active ? c.ink : c.ink3 }}>
+            <Text numberOfLines={1} style={{ fontSize: 14.5, fontWeight: active ? '600' : '500', color: active ? c.ink : c.ink3 }}>
               {t.label} <Text style={[{ fontWeight: '400', color: c.ink3 }, TABULAR]}>{t.count}</Text>
             </Text>
           </Pressable>
@@ -681,7 +897,7 @@ function CrashPanel({
   triageErr,
   onTriage,
 }: {
-  crash: ErrorGroup;
+  crash: CrashGroup;
   detail: { data: Awaited<ReturnType<typeof fetchAdminErrorDetail>> | null; loading: boolean; error: string | null; refetch: () => void };
   onBoard: string | null;
   tracking: boolean;
@@ -692,38 +908,44 @@ function CrashPanel({
   onTriage: (status: string) => void;
 }) {
   const { c } = useCrm();
-  const occ = detail.data?.[0] ?? null;
-  const crumbs = occ?.breadcrumbs ?? [];
-  const stack = (occ?.stack ?? occ?.componentStack ?? '').trim();
+  const inApp = crash.source === 'Supabase';
+  const occ = inApp ? (detail.data?.[0] ?? null) : null;
+  /* Sentry groups bring their latest event's trail; in-app groups read it from the 0176 detail call. */
+  const trail: string[] = inApp
+    ? (occ?.breadcrumbs ?? []).map((cr) => `${cr.label}${cr.detail ? ` ${cr.detail}` : ''}${cr.n && cr.n > 1 ? ` ×${cr.n}` : ''}`)
+    : (crash.trail ?? []).map((t) => t.label ?? t.kind ?? '').filter(Boolean);
+  const stack = (inApp ? (occ?.stack ?? occ?.componentStack ?? '') : (crash.stack ?? '')).trim();
+  const permalink = crash.permalink;
   return (
     <Panel gap={18}>
       <Text style={{ fontSize: 12.5, color: c.ink3 }}>
-        Crash group · {plural(crash.occurrences, 'report', 'reports')} · {plural(crash.athletes, 'athlete', 'athletes')}
+        {inApp ? 'In-app crash' : 'Sentry crash group'} · {plural(crash.events, 'event', 'events')} · {plural(crash.people, 'athlete', 'athletes')}
       </Text>
       <Text selectable style={{ fontFamily: DISPLAY, fontSize: 22, lineHeight: 28.6, color: c.ink }}>
-        {crash.message || crash.name}
+        {crash.title}
       </Text>
       <View>
         <Text style={{ fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: c.ink3, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: c.line }}>
           What they did before it broke
         </Text>
-        {detail.loading && !detail.data ? (
+        {inApp && detail.loading && !detail.data ? (
           <Skeleton />
-        ) : detail.error ? (
+        ) : inApp && detail.error ? (
           <ErrorLine onRetry={detail.refetch}>Couldn’t load the trail. {detail.error}</ErrorLine>
-        ) : crumbs.length === 0 ? (
-          /* Route shapes and action names only are ever sent (breadcrumb-core.ts). An empty trail means
-             the athlete has product-usage measurement off: the fault is kept, the trail is dropped. */
-          <Text style={{ paddingVertical: 10, fontSize: 13.5, lineHeight: 20, color: c.ink3 }}>No trail with this report — the athlete has usage measurement turned off.</Text>
+        ) : trail.length === 0 ? (
+          /* Route shapes and action names only are ever sent (breadcrumb-core.ts, sentry-scrub.ts). An
+             empty trail means the athlete has product-usage measurement off, or Sentry sent none. */
+          <Text style={{ paddingVertical: 10, fontSize: 13.5, lineHeight: 20, color: c.ink3 }}>
+            {inApp ? 'No trail with this report — the athlete has usage measurement turned off.' : 'No trail came with this crash’s latest event.'}
+          </Text>
         ) : (
-          crumbs.map((cr, i) => {
-            const last = i === crumbs.length - 1;
-            const text = `${cr.label}${cr.detail ? ` ${cr.detail}` : ''}${cr.n && cr.n > 1 ? ` ×${cr.n}` : ''}${last ? ' · crashed here' : ''}`;
+          trail.map((t, i) => {
+            const last = i === trail.length - 1;
             return (
               <View key={i} style={{ flexDirection: 'row', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: c.line }}>
                 <Text style={[{ width: 22, fontSize: 13.5, color: c.ink3 }, TABULAR]}>{i + 1}</Text>
                 <Text selectable style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: last ? c.crit : c.ink }}>
-                  {text}
+                  {last ? `${t} · crashed here` : t}
                 </Text>
               </View>
             );
@@ -737,25 +959,29 @@ function CrashPanel({
           </Text>
         </View>
       ) : null}
+      {permalink ? <LinkText label="View in Sentry" onPress={() => void Linking.openURL(permalink)} /> : null}
       <Btn kind="primary" full label={onBoard ? `On the board as ${onBoard}` : 'Track this'} disabled={!!onBoard} busy={tracking} onPress={onTrack} />
       {trackErr ? <Text style={{ fontSize: 13, color: c.crit }}>{trackErr}</Text> : null}
-      {/* Kept from the old page (not in the design): without it nothing clears a crash's "New" tag. It
-          writes the crash group's own triage status, never the board. */}
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 12, color: c.ink3 }}>Crash status</Text>
-        <Row gap={6}>
-          {(
-            [
-              ['ACKED', 'Seen'],
-              ['FIXED', 'Fixed'],
-              ['IGNORED', 'Ignored'],
-            ] as const
-          ).map(([k, l]) => (
-            <Opt key={k} label={triaging === k ? `${l}…` : l} on={crash.status === k} onPress={() => (crash.status === k || triaging ? undefined : onTriage(k))} />
-          ))}
-        </Row>
-        {triageErr ? <Text style={{ fontSize: 12, color: c.crit }}>{triageErr}</Text> : null}
-      </View>
+      {/* Kept from the old page (not in the design), in-app groups only: without it nothing clears an
+          in-app crash's status. It writes the crash group's own triage status, never the board. Sentry
+          groups are triaged in Sentry. */}
+      {inApp ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontSize: 12, color: c.ink3 }}>Crash status</Text>
+          <Row gap={6}>
+            {(
+              [
+                ['ACKED', 'Seen'],
+                ['FIXED', 'Fixed'],
+                ['IGNORED', 'Ignored'],
+              ] as const
+            ).map(([k, l]) => (
+              <Opt key={k} label={triaging === k ? `${l}…` : l} on={crash.status === k} onPress={() => (crash.status === k || triaging ? undefined : onTriage(k))} />
+            ))}
+          </Row>
+          {triageErr ? <Text style={{ fontSize: 12, color: c.crit }}>{triageErr}</Text> : null}
+        </View>
+      ) : null}
     </Panel>
   );
 }

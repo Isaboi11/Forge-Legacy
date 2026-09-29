@@ -1,11 +1,11 @@
 # App Store Connect key setup (for the Creator Dashboard's App Store panel)
 
-This connects the Creator Dashboard to Apple's download numbers and reviews. Allow about 15 minutes.
+This connects the Creator Dashboard to Apple's download numbers, reviews and TestFlight feedback. Allow about 15 minutes.
 You only do it once. The key is stored in Supabase's secrets and nowhere else (AA-D17).
 
 ## Which role to give the key
 
-A team API key gets **one** role. The dashboard needs two kinds of data:
+A team API key gets **one** role. The dashboard needs three kinds of data:
 
 * **Sales reports** (downloads, proceeds). These work with the **Sales**, **Finance** or **Admin** role.
 * **Customer reviews.** These certainly work with **Admin**. Apple's documentation suggests
@@ -15,6 +15,13 @@ A team API key gets **one** role. The dashboard needs two kinds of data:
 downloads. Reviews may then show as "403 key role lacks access" after a sync, and everything else keeps
 working. If you want reviews too, the one role certain to cover both is **Admin**. That gives the key wide
 power over the account, so it is your call.
+
+**TestFlight feedback** (the screenshots and crash reports testers send from the TestFlight app, shown
+on the CRM's Bugs page) now comes through the same key and the same Sync now. No new secret is needed.
+⚠ Not confirmed which roles can read it. **Admin** is expected to work. Apple's documentation for these
+endpoints suggests **App Manager** and **Developer** also work, but that has not been tested here, and a
+**Sales**-only key very likely cannot. If the role is too narrow, the sync says "403 key role lacks access
+(TestFlight feedback)" and everything else keeps working. The tester's email is never stored.
 
 ⚠ Not confirmed: whether **App Manager** alone can read sales reports. If you try it, press Sync now
 (step 6). The result names any part that was refused, so a wrong role does no harm. You can revoke that
@@ -43,7 +50,7 @@ key and make another.
    `supabase/functions/asc-sync/index.ts`, then deploy. Under the function's **Details**, leave
    **Verify JWT** switched **ON**.
 6. **Test it.** Open the Creator Dashboard (`/admin`) → **App Store** → **Sync now**.
-   * A green result such as "days 14 · downloads 37 · reviews 3" means it is working.
+   * A green result such as "days 14 · downloads 37 · reviews 3 · feedback 5" means it is working.
    * "not configured: missing …" lists the secrets from step 4 that are still missing.
    * "401 key rejected" means the Key ID, Issuer ID or `.p8` file is wrong. Check step 4.
    * "403 key role lacks access" means the role is too narrow for that part (see the top of this page).

@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { CrmThemeProvider, useCrm, type CrmMode } from '@/components/forge/admin/crm-theme';
 import { DISPLAY, ToastProvider, useLayout } from '@/components/forge/admin/crm-ui';
+import { PhoneShell } from '@/components/forge/admin/phone/PhoneShell';
 import { AiPage } from '@/components/forge/admin/pages/AiPage';
 import { AppStorePage } from '@/components/forge/admin/pages/AppStorePage';
 import { BugsPage } from '@/components/forge/admin/pages/BugsPage';
@@ -35,6 +36,9 @@ import { useQuery } from '@/lib/useQuery';
  * for a non-admin regardless (AA-D5).
  */
 export function CrmShell({ onExit }: { onExit: () => void }) {
+  const { wide } = useLayout();
+  // Under 900 px the owner is on a phone: the phone design's own app (five tabs), not a squeezed desktop.
+  if (!wide) return <PhoneShell onExit={onExit} />;
   return (
     <CrmThemeProvider>
       <ToastProvider>
@@ -47,7 +51,7 @@ export function CrmShell({ onExit }: { onExit: () => void }) {
 function ShellBody({ onExit }: { onExit: () => void }) {
   const router = useRouter();
   const { c, mode, setMode } = useCrm();
-  const { wide, lg } = useLayout();
+  const { lg } = useLayout();
   const params = useLocalSearchParams<{ p?: string; a?: string }>();
   const page: PageKey = isPageKey(params.p) ? params.p : 'overview';
   const arg = typeof params.a === 'string' && params.a ? params.a : undefined;
@@ -107,92 +111,55 @@ function ShellBody({ onExit }: { onExit: () => void }) {
     </View>
   );
 
-  if (wide) {
-    return (
-      <View style={{ flex: 1, flexDirection: 'row', backgroundColor: c.bg }}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ width: 236, flexGrow: 0, backgroundColor: c.side, borderRightWidth: 1, borderRightColor: c.line }} contentContainerStyle={{ paddingVertical: 28, paddingHorizontal: 16, gap: 26 }}>
-          <View style={{ gap: 4, paddingHorizontal: 10 }}>
-            <Text style={{ fontFamily: DISPLAY, fontSize: 21, color: c.ink }}>Forge Legacy</Text>
-            <Text onPress={onExit} accessibilityRole="link" style={{ fontSize: 12.5, color: c.ink3 }}>
-              ‹ Back to the app
-            </Text>
-          </View>
-          {NAV.map((g) => (
-            <View key={g.group} accessibilityRole="menu" style={{ gap: 2 }}>
-              <Text style={{ fontSize: 10.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: c.ink3, paddingHorizontal: 10, paddingBottom: 6 }}>{g.group}</Text>
-              {g.items.map((i) => {
-                const on = i.key === page;
-                const n = badge[i.key];
-                return (
-                  <Pressable
-                    key={i.key}
-                    onPress={() => go(i.key)}
-                    accessibilityRole="link"
-                    accessibilityState={{ selected: on }}
-                    style={({ hovered }: { pressed: boolean; hovered?: boolean }) => ({
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      height: 34,
-                      paddingHorizontal: 10,
-                      borderRadius: 8,
-                      backgroundColor: on ? c.brzTint : hovered ? c.hover : 'transparent',
-                    })}
-                  >
-                    <Text style={{ fontSize: 14, color: on ? c.brz : c.ink2, fontWeight: on ? '600' : '400' }}>{i.label}</Text>
-                    {n ? (
-                      <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: c.critTint }}>
-                        <Text style={{ fontSize: 11.5, fontWeight: '600', color: c.crit, fontVariant: ['tabular-nums'] }}>{n}</Text>
-                      </View>
-                    ) : null}
-                  </Pressable>
-                );
-              })}
-            </View>
-          ))}
-        </ScrollView>
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: lg ? 28 : 24, paddingHorizontal: lg ? 56 : 32, paddingBottom: lg ? 72 : 64 }}
-          keyboardDismissMode={KEYBOARD_DISMISS_MODE}
-          automaticallyAdjustKeyboardInsets
-        >
-          {topBar}
-          {body}
-        </ScrollView>
-      </View>
-    );
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: 48 }} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets>
-        <View style={{ gap: 10, marginHorizontal: -20, marginBottom: 16, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: c.line }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <Text style={{ fontFamily: DISPLAY, fontSize: 20, color: c.ink }}>Forge Legacy</Text>
-            <Text onPress={onExit} accessibilityRole="link" style={{ fontSize: 12.5, color: c.ink3 }}>
-              ‹ Back to the app
-            </Text>
-          </View>
-          <ScrollView horizontal keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ gap: 4, paddingHorizontal: 20, paddingBottom: 10 }}>
-            {NAV.flatMap((g) => g.items).map((i) => {
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: c.bg }}>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ width: 236, flexGrow: 0, backgroundColor: c.side, borderRightWidth: 1, borderRightColor: c.line }} contentContainerStyle={{ paddingVertical: 28, paddingHorizontal: 16, gap: 26 }}>
+        <View style={{ gap: 4, paddingHorizontal: 10 }}>
+          <Text style={{ fontFamily: DISPLAY, fontSize: 21, color: c.ink }}>Forge Legacy</Text>
+          <Text onPress={onExit} accessibilityRole="link" style={{ fontSize: 12.5, color: c.ink3 }}>
+            ‹ Back to the app
+          </Text>
+        </View>
+        {NAV.map((g) => (
+          <View key={g.group} accessibilityRole="menu" style={{ gap: 2 }}>
+            <Text style={{ fontSize: 10.5, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: c.ink3, paddingHorizontal: 10, paddingBottom: 6 }}>{g.group}</Text>
+            {g.items.map((i) => {
               const on = i.key === page;
               const n = badge[i.key];
               return (
                 <Pressable
                   key={i.key}
                   onPress={() => go(i.key)}
-                  accessibilityRole="tab"
+                  accessibilityRole="link"
                   accessibilityState={{ selected: on }}
-                  style={{ flexDirection: 'row', gap: 6, alignItems: 'center', height: 34, paddingHorizontal: 12, borderRadius: 17, backgroundColor: on ? c.brzTint : 'transparent' }}
+                  style={({ hovered }: { pressed: boolean; hovered?: boolean }) => ({
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    height: 34,
+                    paddingHorizontal: 10,
+                    borderRadius: 8,
+                    backgroundColor: on ? c.brzTint : hovered ? c.hover : 'transparent',
+                  })}
                 >
                   <Text style={{ fontSize: 14, color: on ? c.brz : c.ink2, fontWeight: on ? '600' : '400' }}>{i.label}</Text>
-                  {n ? <Text style={{ fontSize: 11, fontWeight: '600', color: c.crit }}>{n}</Text> : null}
+                  {n ? (
+                    <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, backgroundColor: c.critTint }}>
+                      <Text style={{ fontSize: 11.5, fontWeight: '600', color: c.crit, fontVariant: ['tabular-nums'] }}>{n}</Text>
+                    </View>
+                  ) : null}
                 </Pressable>
               );
             })}
-          </ScrollView>
-        </View>
+          </View>
+        ))}
+      </ScrollView>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingTop: lg ? 28 : 24, paddingHorizontal: lg ? 56 : 32, paddingBottom: lg ? 72 : 64 }}
+        keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        automaticallyAdjustKeyboardInsets
+      >
         {topBar}
         {body}
       </ScrollView>
