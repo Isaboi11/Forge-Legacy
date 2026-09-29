@@ -123,6 +123,37 @@ test('recordsByWorkout — matches the lift by name when the session row has no 
   assert.deepEqual([...recordsByWorkout(annotateRecords([baseline, record]), ws).keys()], ['w']);
 });
 
+test('recordsByWorkout — 0242: a row naming its workout goes to THAT workout, not the one whose sets match', () => {
+  // Two sessions both lifted 150×5 the same day; the server says the LATER one set the record (e.g. the
+  // earlier was deleted and re-logged). The set-matching guess would pick the earlier — the id wins.
+  const ws = [
+    { id: 'early', startedAt: '2026-09-26T09:00:00+00:00', exercises: [bench([s(150, 5)])] },
+    { id: 'late', startedAt: '2026-09-26T18:00:00+00:00', exercises: [bench([s(150, 5)], { name: 'Bench Press' })] },
+  ];
+  const tagged = row(150, 5, '2026-09-26', '2026-09-26T18:30:00Z', { workout_id: 'late' });
+  const by = recordsByWorkout(annotateRecords([baseline, tagged]), ws);
+  assert.deepEqual([...by.keys()], ['late']);
+  // The session's own name for the lift, when the session is in the list.
+  assert.equal(by.get('late')[0].exercise, 'Bench Press');
+});
+
+test("recordsByWorkout — 0242: attributed even when that workout is not in the list, under the row's own name", () => {
+  const tagged = row(150, 5, '2026-09-26', '2026-09-26T15:10:00Z', { workout_id: 'elsewhere' });
+  const by = recordsByWorkout(annotateRecords([baseline, tagged]), workouts);
+  assert.deepEqual([...by.keys()], ['elsewhere']);
+  assert.deepEqual(by.get('elsewhere'), [{ exercise: 'Barbell Bench Press', catalogKey: BENCH, weight: 150, reps: 5, achievedOn: '2026-09-26' }]);
+});
+
+test('recordsByWorkout — 0242: a first mark with a workout id is still a baseline, not a record', () => {
+  const first = row(150, 5, '2026-09-26', '2026-09-26T15:10:00Z', { workout_id: 'heavy' });
+  assert.equal(recordsByWorkout(annotateRecords([first]), workouts).size, 0);
+});
+
+test('recordsByWorkout — rows from before 0242 (no workout id) still take the set-matching path', () => {
+  const by = recordsByWorkout(annotateRecords([baseline, { ...record, workout_id: null }]), workouts);
+  assert.deepEqual([...by.keys()], ['heavy']);
+});
+
 test('utcDay / dayBefore', () => {
   assert.equal(utcDay('2026-09-26T23:30:00-05:00'), '2026-09-27');
   assert.equal(dayBefore('2026-03-01'), '2026-02-28');

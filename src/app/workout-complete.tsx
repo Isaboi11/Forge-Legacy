@@ -1259,6 +1259,9 @@ export default function WorkoutComplete() {
                     </View>
                     <Text style={styles.recTop}>
                       {`${ex.sets} set${ex.sets === 1 ? '' : 's'}${ex.topSet ? ` · top ${fmt(ex.topSet)}` : ''}`}
+                      {/* QA F9: the record, labelled for what it is, so a PR badge beside "top 500 lb × 8"
+                          cannot be read as a 500 PR when the record was 150 × 5. */}
+                      {ex.prSet ? ` · PR (1–5 reps) ${fmt(ex.prSet)}` : ''}
                     </Text>
                   </View>
                   {ex.delta ? <Text style={[styles.recDelta, ex.delta.kind === 'hold' ? styles.deltaFlat : styles.deltaUp]}>{deltaLabel(ex.delta, units)}</Text> : null}
