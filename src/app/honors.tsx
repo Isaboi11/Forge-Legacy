@@ -210,7 +210,7 @@ function HonorTile({
       accessibilityLabel={`${honor.name}${date ? `, earned ${fmtDate(date)}` : ''}`}
       style={[styles.tile, { width: size + 16 }]}
     >
-      <HonorMedallion glyph={honor.glyph} size={size} />
+      <HonorMedallion glyph={honor.glyph} slug={honor.slug} size={size} />
       <Text style={styles.tileName} numberOfLines={2}>
         {honor.name}
       </Text>
@@ -231,7 +231,8 @@ function HonorDetailSheet({ honor, onClose, onShare }: { honor: HubHonor; onClos
           <View style={styles.sheetHandle} />
         </View>
         <View style={styles.sheetHead}>
-          <HonorMedallion glyph={honor.glyph} size={96} />
+          {/* One medal, shown large: the spec's STRUCK face — frame, mark, threshold and tier. */}
+          <HonorMedallion glyph={honor.glyph} slug={honor.slug} face="struck" size={96} />
           <Text style={styles.sheetEyebrow}>{honor.categoryName}</Text>
           <Text style={styles.sheetName}>{honor.name}</Text>
           {honor.date ? <Text style={styles.sheetDate}>Earned {fmtDate(honor.date)}</Text> : null}
