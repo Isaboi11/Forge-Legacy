@@ -143,6 +143,8 @@ export function CoachBubble() {
   const [draftRoute, setDraftRoute] = useState<{ o?: string; id?: string }>({});
   /** The draft sheet — open with the name it was opened about, closed at `null`. */
   const [draftSheet, setDraftSheet] = useState<string | null>(null);
+  /* Discard asks once before it throws the draft away (QA holt-13: it had no confirm). */
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   /*
    * ══ AN INTRODUCTION IS THE ONE GENERIC LINE THAT EARNS ITS PLACE ══
@@ -285,6 +287,7 @@ export function CoachBubble() {
     /* ⚠ THE DRAFT LINE OPENS THE DRAFT, not the generic chat — see `draftRoute`. */
     if (shownLine && !introducing && teaser && draftName) {
       retireDraftLine();
+      setConfirmDiscard(false);
       setDraftSheet(draftName);
       return;
     }
@@ -307,7 +310,16 @@ export function CoachBubble() {
     router.push({ pathname: '/program-builder', params: draftRoute });
   };
 
+  /* QA holt-13 / holtai-16: the draft sheet stood between the athlete and Holt — "Not now" just closed
+     it. This is the way through to him from the same sheet. */
+  const talkToHolt = () => {
+    setDraftSheet(null);
+    setMet(true);
+    openSheet();
+  };
+
   const discardDraft = () => {
+    setConfirmDiscard(false);
     setDraftSheet(null);
     setDraftName(null);
     void clearProgramDraft().then(() => setDraftTold(null));
@@ -477,20 +489,36 @@ export function CoachBubble() {
 
       {/* The draft he mentioned — open it, or let it go. Swiping away keeps it (the builder still has it). */}
       <BottomSheet open={draftSheet !== null} onClose={() => setDraftSheet(null)} title="Coach Holt">
-        <Text style={styles.nudgeLine}>
-          {draftSheet} is still in the builder. Pick up where you left off, or discard it for good.
-        </Text>
-        <View style={styles.nudgeActions}>
-          <Button variant="primary" fullWidth onPress={openDraft} accessibilityLabel="Open the program">
-            Open it
-          </Button>
-          <Button variant="destructive" fullWidth onPress={discardDraft} accessibilityLabel="Discard the program">
-            Discard
-          </Button>
-          <Button variant="text" fullWidth onPress={() => setDraftSheet(null)} accessibilityLabel="Not now">
-            Not now
-          </Button>
-        </View>
+        {confirmDiscard ? (
+          <>
+            <Text style={styles.nudgeLine}>Discard {draftSheet} for good? This can't be undone.</Text>
+            <View style={styles.nudgeActions}>
+              <Button variant="destructive" fullWidth onPress={discardDraft} accessibilityLabel="Yes, discard it">
+                Yes, discard it
+              </Button>
+              <Button variant="text" fullWidth onPress={() => setConfirmDiscard(false)} accessibilityLabel="Keep it">
+                Keep it
+              </Button>
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.nudgeLine}>
+              {draftSheet} is still in the builder. Pick up where you left off, or discard it for good.
+            </Text>
+            <View style={styles.nudgeActions}>
+              <Button variant="primary" fullWidth onPress={openDraft} accessibilityLabel="Open the program">
+                Open it
+              </Button>
+              <Button variant="destructive" fullWidth onPress={() => setConfirmDiscard(true)} accessibilityLabel="Discard the program">
+                Discard
+              </Button>
+              <Button variant="text" fullWidth onPress={talkToHolt} accessibilityLabel="Talk to Holt instead">
+                Talk to Holt instead
+              </Button>
+            </View>
+          </>
+        )}
       </BottomSheet>
 
       {/* Placement is the caller’s: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The

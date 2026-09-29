@@ -188,7 +188,7 @@ import {
 } from '@/domain/coach/edit-chat';
 import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardAnchoredScroll, useKeyboardLift } from '@/lib/useKeyboardLift';
 import { useReducedMotion } from '@/lib/useReducedMotion';
-import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
+import { draftFromStructure, saveProgramDraft, setDraftTold } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
@@ -865,7 +865,11 @@ export function CoachChatSheet({
         }
 
         const structure = res.assembly.structure;
-        await saveProgramDraft(draftFromStructure(structure));
+        const chatDraft = draftFromStructure(structure);
+        await saveProgramDraft(chatDraft);
+        /* QA holt-13 / holtai-16: a plan he just showed in chat is not news — mark it told, so the bubble
+           never turns it into "still sitting in the builder". A draft left in the builder itself still is. */
+        await setDraftTold(chatDraft.name || null);
         /* A week and a block are the same object from the engine and two different things to save — one
            goes to `week_templates`, the other to the Program Builder's draft. The size answer is what
            tells them apart, and `structure.weeks` is the engine's own word for it rather than the
