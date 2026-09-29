@@ -52,7 +52,7 @@ export interface LiftRef {
 export type LiftBest = LiftMark;
 
 export interface LiftHistory {
-  /** Past sessions of this lift, newest first, at most two. Empty = never done it. */
+  /** Past sessions of this lift, newest first, at most two (or `sessionLimit`). Empty = never done it. */
   sessions: HistorySession[];
   /** Null = no record on file. NEVER coerce to zero — see the warning on {@link fetchLiftHistory}. */
   best: LiftBest | null;
@@ -95,18 +95,38 @@ const matches = sameLift;
  * Fails SILENT, like every history read on this path. A history we cannot reach is not an error worth
  * surfacing between two sets — the screen simply shows what it showed before anyone had a history.
  */
-export async function fetchLiftHistory(lifts: readonly LiftRef[]): Promise<Map<string, LiftHistory>> {
+export async function fetchLiftHistory(
+  lifts: readonly LiftRef[],
+  opts: {
+    /**
+     * How many past sessions per lift. Two is what the logger and the coach read (see "TWO SESSIONS, NOT
+     * TWENTY" above) and stays the default. Exercise Detail's "Your history" (W22-Amendment-001) asks for
+     * more, for ONE lift, where nobody is standing under a bar waiting. Capped by the 60-workout read.
+     */
+    sessionLimit?: number;
+    /**
+     * THROW instead of failing silent. Between two sets an unreachable history is not worth a word; on
+     * Exercise Detail, where the history IS the section, an empty answer would read "you have never done
+     * this" — a false statement about the athlete's own training. That page asks to be told.
+     */
+    strict?: boolean;
+  } = {},
+): Promise<Map<string, LiftHistory>> {
+  const { sessionLimit = 2, strict = false } = opts;
   const out = new Map<string, LiftHistory>();
   if (lifts.length === 0) return out;
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return out;
+  if (!user) {
+    if (strict) throw new Error('Not signed in');
+    return out;
+  }
 
   const [sessions, bests] = await Promise.all([
-    fetchSessions(user.id, lifts, identityFilter(lifts, 'name')),
-    fetchBests(user.id, lifts, identityFilter(lifts, 'exercise')),
+    fetchSessions(user.id, lifts, identityFilter(lifts, 'name'), sessionLimit, strict),
+    fetchBests(user.id, lifts, identityFilter(lifts, 'exercise'), strict),
   ]);
 
   for (const lift of lifts) {
@@ -122,6 +142,8 @@ async function fetchSessions(
   athleteId: string,
   lifts: readonly LiftRef[],
   filter: string,
+  sessionLimit: number,
+  strict: boolean,
 ): Promise<Map<string, HistorySession[]>> {
   const out = new Map<string, HistorySession[]>();
 
@@ -139,6 +161,7 @@ async function fetchSessions(
     // this bounds the round trip rather than how far back the answer reaches.
     .order('started_at', { ascending: false })
     .limit(60);
+  if (error && strict) throw new Error(error.message);
   if (error || !data) return out;
 
   type Row = {
@@ -158,7 +181,7 @@ async function fetchSessions(
     for (const lift of lifts) {
       const id = liftId(lift);
       const list = out.get(id) ?? [];
-      if (list.length >= 2) continue; // two is what the caller reads; more is weight on the wire
+      if (list.length >= sessionLimit) continue; // what the caller reads; more is weight on the wire
 
       /* ONE ENTRY PER LIFT PER WORKOUT, AND IT IS THE MAIN-SECTION ONE.
          A lift can appear twice in a session — the same movement as a warm-up and then as the work. Taking
@@ -186,6 +209,7 @@ async function fetchBests(
   athleteId: string,
   lifts: readonly LiftRef[],
   filter: string,
+  strict: boolean,
 ): Promise<Map<string, LiftBest>> {
   const out = new Map<string, LiftBest>();
 
@@ -196,6 +220,7 @@ async function fetchBests(
     .eq('measure_kind', 'load')
     .lte('load_reps', PR_MAX_REPS)
     .or(filter);
+  if (error && strict) throw new Error(error.message);
   if (error || !data) return out;
 
   for (const lift of lifts) {
