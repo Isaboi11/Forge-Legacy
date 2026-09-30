@@ -46,7 +46,14 @@
  * unmatched name is survivable; a confidently wrong one is invisible and permanent.
  */
 
-import { matchExercise, tokenize, type CatalogEntry, type MatchResult } from '../program/exercise-match.ts';
+import {
+  matchExercise,
+  repairSpelling,
+  tokenize,
+  vocabularyOf,
+  type CatalogEntry,
+  type MatchResult,
+} from '../program/exercise-match.ts';
 
 /**
  * A different name for exactly this lift. Nothing is being chosen on the athlete's behalf.
@@ -110,8 +117,8 @@ export const EXERCISE_SYNONYMS: Record<string, string> = {
   deads: 'barbell-deadlift',
   'conventional deadlift': 'barbell-deadlift',
   chins: 'chin-up',
-  pullups: 'pull-up',
-  pushups: 'push-up',
+  // "pullups" / "pushups" left this list 2026-09-30: the matcher reads a plural shorthand itself now
+  // (`tokenize`), and an alias the matcher already answers is what the test below forbids.
   'press ups': 'push-up',
   'barbell curl': 'barbell-biceps-curl',
   'dumbbell curl': 'dumbbell-biceps-curl',
@@ -243,4 +250,34 @@ export function resolveAgainstCatalog(written: string, catalog: readonly Catalog
   // An alias points at an id; the athlete is shown the catalogue's own name for it, never the alias.
   const entry = catalog.find((x) => x.key === alias.key);
   return entry ? { key: entry.key, name: entry.name, byPreference: alias.byPreference } : null;
+}
+
+/** Every word a written name may be a slip OF — the catalogue's own, and the ones the aliases answer to. */
+export function writtenVocabulary(catalog: readonly CatalogEntry[]): Set<string> {
+  const out = vocabularyOf(catalog);
+  for (const alias of [...Object.keys(EXERCISE_SYNONYMS), ...Object.keys(EXERCISE_CONVENTIONS)]) {
+    for (const w of tokenize(alias)) out.add(w);
+  }
+  return out;
+}
+
+/**
+ * A name somebody PASTED — the resolver above, and when it answers nothing, once more with the spelling
+ * slips put right ("Tricep Pushdwon", QA library-17 2026-09-26).
+ *
+ * ⚠ IMPORT ONLY, which is why it is not folded into `resolveAgainstCatalog`: Holt and the builders ask that
+ * function what a name IS, and a repaired name is a guess. Here the athlete is shown the guess in the
+ * preview before anything is created, it is flagged (`byPreference`, `repaired`), and what they wrote is
+ * kept as the row's note.
+ */
+export function resolveWrittenName(
+  written: string,
+  catalog: readonly CatalogEntry[],
+  vocabulary: ReadonlySet<string> = writtenVocabulary(catalog),
+): MatchResult | null {
+  const exact = resolveAgainstCatalog(written, catalog);
+  if (exact) return exact;
+  const repaired = repairSpelling(written, vocabulary);
+  const hit = repaired ? resolveAgainstCatalog(repaired, catalog) : null;
+  return hit ? { ...hit, byPreference: true, repaired: true } : null;
 }
