@@ -3,19 +3,20 @@
  *
  * ══ WHY ══
  *
- * "Confide / nce", "Competitio / ns", "Alternatin / g Dumbbell Bench Press", "Intermediat / e" — four
- * reports of one thing (home-06 · firstuser-08 · social2-20 · holtai-17, QA 09-26): a heading in a fixed
- * size, in a column narrower than its longest word. Every text engine cuts the word at that point rather
- * than draw outside the box, so there is no style to delete; the type has to be the thing that gives.
- * The rule and its reasoning are in `lib/fit-text-core.ts`.
+ * "Confide / nce", "Competitio / ns" on Home (home-06, firstuser-08, QA 09-26): a heading in a fixed size,
+ * in a column narrower than its longest word. Every text engine cuts the word at that point rather than
+ * draw outside the box — react-native-web's `overflow-wrap: break-word`, iOS's own line breaker — so there
+ * is no style to delete; the type has to be the thing that gives.
  *
- * ══ HOW ══
+ * ══ ONE RULE ══
  *
- * Two measurements, both real — no per-font character-width guess to go stale when a face changes:
+ * The size comes from `fitWordSize` (`domain/text/fit-word.ts`), the same rule that sizes Holt's stat grid
+ * (holtai-17) and the workout hero (social2-20). Those two know their box and guess the font's width per
+ * character; this component can't know its box and must not guess its font — Home's titles are Playfair
+ * at 30–34pt, some tracked, some uppercase — so it MEASURES both and hands the rule a measured `em`:
  *   · the width this text was actually laid out in (its own `onLayout`), and
  *   · the width of its longest word at the DESIGNED size, from an invisible one-word ruler.
- * If the word is wider than the column the font, its line height and its tracking scale down together
- * until it fits, down to `minScale`. If it already fits — nearly always — nothing changes at all.
+ * If the word fits — nearly always — nothing changes at all.
  *
  * ══ USING IT ══
  *
@@ -26,6 +27,10 @@
  * ⚠ THE FIRST FRAME IS THE DESIGNED SIZE. The shrink lands one layout pass later, so use it for headings
  * and big values, not for a list of two hundred rows.
  *
+ * ⚠ ONCE SHRUNK, ITS OWN WIDTH ONLY COUNTS IF IT GREW. In a row, a text's width is its content's width;
+ * after a shrink that is narrower than the room it has, and reading it as "the room" would shrink it again,
+ * and again, down to the floor. At the designed size its width IS the room (an over-long word fills it).
+ *
  * ⚠ THE RULER IS A SIBLING, absolutely positioned inside a zero-size clip, so it takes no space, adds no
  * `gap`, and cannot widen a scroll view. It copies only the FONT properties of `style` — never `flex`,
  * margins or width, which would measure the layout instead of the word.
@@ -34,7 +39,7 @@
 import React, { useState } from 'react'
 import { StyleSheet, Text, View, type LayoutChangeEvent, type TextProps, type TextStyle } from 'react-native'
 
-import { fitFontScale, longestWord, widthChanged } from '@/lib/fit-text-core'
+import { fitWordSize, longestWord, measuredEm } from '@/domain/text/fit-word'
 
 export interface FitTextProps extends Omit<TextProps, 'children'> {
   children: string
@@ -45,21 +50,28 @@ export interface FitTextProps extends Omit<TextProps, 'children'> {
 /** React Native's own default, for a style that sets no size. */
 const DEFAULT_FONT_SIZE = 14
 
+/** Layout widths are rounded and glyph advances are not: sub-pixel jitter is not a new width. */
+const moved = (prev: number, next: number) => Math.abs(prev - next) > 1
+
 export function FitText({ children, style, minScale = 0.7, onLayout, ...rest }: FitTextProps) {
   const [available, setAvailable] = useState(0)
   const [ruled, setRuled] = useState<{ word: string; width: number } | null>(null)
 
   const word = longestWord(children)
   const flat: TextStyle = StyleSheet.flatten(style) ?? {}
+  const base = typeof flat.fontSize === 'number' ? flat.fontSize : DEFAULT_FONT_SIZE
   // A measurement of some OTHER word is not a measurement of this one.
   const wordWidth = ruled != null && ruled.word === word ? ruled.width : 0
-  const scale = fitFontScale(available, wordWidth, minScale)
+  const em = measuredEm(word, wordWidth, base)
+  // A pixel of slack: a word sized to exactly the column can still measure a fraction over it and break.
+  const size =
+    em > 0 && available > 0 && wordWidth > available ? fitWordSize(children, available - 1, base, base * minScale, em) : base
+  const scale = size / base
 
-  const base = typeof flat.fontSize === 'number' ? flat.fontSize : DEFAULT_FONT_SIZE
   const fitted: TextStyle | null =
     scale < 1
       ? {
-          fontSize: base * scale,
+          fontSize: size,
           ...(typeof flat.lineHeight === 'number' ? { lineHeight: flat.lineHeight * scale } : null),
           ...(typeof flat.letterSpacing === 'number' ? { letterSpacing: flat.letterSpacing * scale } : null),
         }
@@ -68,12 +80,12 @@ export function FitText({ children, style, minScale = 0.7, onLayout, ...rest }: 
   const onTextLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width
     // 0 is a hidden tab, not a column: keeping the last real width stops the title re-growing behind it.
-    if (w > 0 && widthChanged(available, w)) setAvailable(w)
+    if (w > 0 && moved(available, w) && (fitted == null || w > available)) setAvailable(w)
     onLayout?.(e)
   }
   const onRulerLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width
-    if (w > 0 && (ruled == null || ruled.word !== word || widthChanged(ruled.width, w))) setRuled({ word, width: w })
+    if (w > 0 && (ruled == null || ruled.word !== word || moved(ruled.width, w))) setRuled({ word, width: w })
   }
 
   return (
