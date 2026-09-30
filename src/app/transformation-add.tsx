@@ -103,6 +103,9 @@ export default function TransformationAddRoute() {
      dates ("September 8, 2026"), or the untouched legacy string when there is no picked day. */
   const dateLabel = dateIso ? prettyDate(dateIso, 'long') ?? '' : legacyLabel;
   const chapterName = isEdit ? existing?.chapterName ?? 'this chapter' : activeChapter?.name ?? 'your active chapter';
+  /* A progress set belongs to its chapter, so it can't be dated before the chapter began — or after today
+     (QA legacy-20). */
+  const chapterStart = isEdit ? existing?.chapterStart ?? null : activeChapter?.startDate ?? null;
   const poseFilled = Object.keys(photos).length;
   /*
    * ⚠ IN EDIT MODE, `ready` IS A PRECONDITION OF SAVING — not a rendering detail.
@@ -251,6 +254,8 @@ export default function TransformationAddRoute() {
           hideLabel
           monthStyle="long"
           value={dateIso}
+          minDate={chapterStart}
+          maxDate="today"
           onChange={(v) => {
             setDateIso(v);
             setLegacyLabel('');

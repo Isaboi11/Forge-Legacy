@@ -46,6 +46,22 @@ export function featuredAccomplishments(list: readonly Accomplishment[]): Accomp
   return sortAccomplishments(list.filter((a) => a.featured)).slice(0, FEATURED_MAX);
 }
 
+/**
+ * The Legacy strip's order: the athlete's featured ones first, then the rest — each half in the order it
+ * came in (QA legacy-19: featured items were scattered through the strip). A stable sort, so nothing
+ * else about the order moves.
+ */
+export function legacyStripOrder<T extends { featured: boolean }>(list: readonly T[]): T[] {
+  return [...list].sort((a, b) => Number(b.featured) - Number(a.featured));
+}
+
+/**
+ * The date an accomplishment shows — the day the athlete GAVE it, or nothing. Never the day the row was
+ * written: that is when it was typed, not when it happened, and "Sep 26, 2026" on a 2019 PR is false
+ * (QA legacy-19).
+ */
+export const accDisplayDate = (a: Pick<Accomplishment, 'date'>): string => formatAccDate(a.date);
+
 export const featuredCount = (list: readonly Accomplishment[]): number => list.filter((a) => a.featured).length;
 
 /**
@@ -67,12 +83,17 @@ export interface AccomplishmentForm {
   note: string | null;
 }
 
-/** A form is submittable once it has a non-empty, in-range name — nothing else is required. */
-export function validateForm(form: { name: string; note?: string | null }): { ok: boolean; reason?: string } {
+/**
+ * A form is submittable once it has a non-empty, in-range name — nothing else is required. When `today`
+ * (`YYYY-MM-DD`) is given, a date after it is refused: an accomplishment is something that HAPPENED
+ * (QA legacy-18).
+ */
+export function validateForm(form: { name: string; note?: string | null; date?: string | null }, today?: string | null): { ok: boolean; reason?: string } {
   const name = form.name.trim();
   if (!name) return { ok: false, reason: 'Give it a name.' };
   if (name.length > NAME_MAX) return { ok: false, reason: `Keep the name under ${NAME_MAX} characters.` };
   if ((form.note ?? '').length > NOTE_MAX) return { ok: false, reason: `Keep the note under ${NOTE_MAX} characters.` };
+  if (today && form.date && form.date.slice(0, 10) > today.slice(0, 10)) return { ok: false, reason: 'Pick a day that has already happened.' };
   return { ok: true };
 }
 
