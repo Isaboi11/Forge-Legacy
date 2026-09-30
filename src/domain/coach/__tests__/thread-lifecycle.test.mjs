@@ -13,7 +13,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { threadSurvives, mayPersist, clearsOnUnmount, allowWrites, stopWrites } from '../thread-lifecycle.ts';
+import { threadSurvives, mayPersist, clearsOnUnmount, allowWrites, stopWrites, readThreadPlace } from '../thread-lifecycle.ts';
+import { nextQuestion } from '../chat-core.ts';
 
 /**
  * `coach-thread.ts`, minus AsyncStorage — the same three functions, with the same gate calls in the same
@@ -116,4 +117,29 @@ test('opening him again reopens the gate a close had shut', () => {
   const second = sheet(store); // a fresh mount calls loadThread, which reopens writes
   second.say(['me: and again']);
   assert.deepEqual(store.read(), ['me: and again'], 'the next conversation saves normally');
+});
+
+/* ── QA holt-08: a refresh restores the build, not only the words ─────────────────────────────── */
+
+test('a stored place round-trips: the day build and its answers come back as they were', () => {
+  const place = { mode: 'day', constraints: { dayFocus: { kind: 'split', split: 'legs' }, goal: 'muscle', limitations: ['knees'] } };
+  assert.deepEqual(readThreadPlace(JSON.stringify(place)), place);
+});
+
+test('after a refresh, the chips under the goal question answer it instead of asking it again', () => {
+  // "What should I train?" → Legs → Build it → refresh → "Build muscle"
+  const before = { mode: 'day', constraints: { dayFocus: { kind: 'split', split: 'legs' } } };
+  const restored = readThreadPlace(JSON.stringify(before));
+  const answered = { ...restored.constraints, goal: 'muscle' };
+  assert.notEqual(nextQuestion(answered, restored.mode ?? 'program')?.id, 'goal', 'the goal is answered, so he moves on');
+  assert.equal(nextQuestion(answered, restored.mode ?? 'program')?.id, 'time', 'the day build carries on to its next question');
+  // What the sheet did before: no mode (so a program build) and no answers — the loop the QA saw.
+  assert.equal(nextQuestion({}, 'program')?.id, 'goal', 'control: a lost place asks the goal again');
+});
+
+test('an unreadable or foreign place is ignored rather than trusted', () => {
+  assert.equal(readThreadPlace(null), null);
+  assert.equal(readThreadPlace(''), null);
+  assert.equal(readThreadPlace('{not json'), null);
+  assert.deepEqual(readThreadPlace(JSON.stringify({ mode: 'race', constraints: [1] })), { mode: null, constraints: {} });
 });

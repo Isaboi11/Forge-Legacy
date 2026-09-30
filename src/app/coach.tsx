@@ -35,6 +35,7 @@ import {
 } from '@/domain/coach/constraints';
 import { intakeSteps, type StepId } from '@/domain/coach/intake-steps';
 import { progressionFor } from '@/domain/coach/progression';
+import { limitationsLeftOut } from '@/domain/coach/rulebook/hybrid';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import {
   AUTHORED_GOALS,
@@ -388,7 +389,8 @@ export default function CoachScreen() {
           })),
           /* Two kinds of honesty in one list: what he COULDN'T build, and what he built because of
              something this athlete taught him. Both are the coach showing his working. */
-          notes: [...droppedLine(notes), ...stretchedLine(notes), ...learnedLine(learned, structure)],
+          /* …and what a body-part answer took out (QA holt-02) — the chat says it; this screen did not. */
+          notes: [...droppedLine(notes), ...stretchedLine(notes), ...learnedLine(learned, structure), ...limitationsLeftOut(limitations)],
           apply: async () => {
             await saveProgramDraft(draftFromStructure(structure));
             router.replace('/program-builder');
@@ -452,10 +454,10 @@ export default function CoachScreen() {
               }),
             },
           ],
-          notes:
-            res.missing.length > 0
-              ? [`Nothing you've got trains ${res.missing.join(' or ')} — left it out.`]
-              : [],
+          notes: [
+            ...(res.missing.length > 0 ? [`Nothing you've got trains ${res.missing.join(' or ')} — left it out.`] : []),
+            ...limitationsLeftOut(limitations),
+          ],
           apply: async () => {
             await saveWorkoutDraft({
               name: res.day.name,
@@ -662,8 +664,8 @@ function Intro({ onDone }: { onDone: () => void }) {
           or just what you&apos;re doing today.
         </Text>
         <Text style={styles.introBody}>
-          I build around the gear you&apos;ve actually got, the time you&apos;ve actually got, and whatever
-          your shoulder is complaining about this week. Nobody gets a plan off a shelf.
+          I build around the gear you&apos;ve actually got, the time you&apos;ve actually got, and the
+          movements you&apos;d rather leave out. Nobody gets a plan off a shelf.
         </Text>
         <Text style={styles.introBody}>
           And I pay attention. When you&apos;ve earned more weight on the bar, I&apos;ll be the one to tell

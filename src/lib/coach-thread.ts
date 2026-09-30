@@ -5,7 +5,7 @@ import type { Turn } from '@/domain/coach/chat-core';
    this one is a runtime import, and `node --test` cannot resolve the alias — `intro.test.mjs` reaches
    this file through the chat core and died with ERR_MODULE_NOT_FOUND the moment this was written as
    `@/domain/...`. Every runtime cross-import in `src/domain` is written this way for the same reason. */
-import { allowWrites, mayPersist, stopWrites } from '../domain/coach/thread-lifecycle.ts';
+import { allowWrites, mayPersist, readThreadPlace, stopWrites, type ThreadPlace } from '../domain/coach/thread-lifecycle.ts';
 import { withoutPartialReplies } from '../domain/coach/chat-core.ts';
 
 /**
@@ -34,6 +34,8 @@ const KEY = 'forge_coach_thread_v1';
  * the introduction at them would be the app forgetting a conversation they remember having.
  */
 const MET_KEY = 'forge_coach_met_v1';
+/** The mode and the answers so far, beside the words (QA holt-08) — see `ThreadPlace`. */
+const PLACE_KEY = 'forge_coach_thread_place_v1';
 const MAX_TURNS = 100;
 
 /** The conversation as last saved — what `endThread` hands to whoever remembers it. */
@@ -78,7 +80,7 @@ export async function loadThread(): Promise<Turn[] | null> {
   }
 }
 
-export async function saveThread(turns: Turn[]): Promise<void> {
+export async function saveThread(turns: Turn[], place?: ThreadPlace): Promise<void> {
   try {
     /* ⚠ A CLEARED CONVERSATION STAYS CLEARED. `clearThread` closes this gate, so a `say()` that resolves
        after the athlete closed him cannot write the thread back — which is what made "closing him"
@@ -99,8 +101,21 @@ export async function saveThread(turns: Turn[]): Promise<void> {
       .map((t) => (t.kind === 'holt' ? { ...t, live: false, streaming: undefined, sid: undefined } : t));
     current = settled;
     await AsyncStorage.setItem(KEY, JSON.stringify(settled));
+    if (place) await AsyncStorage.setItem(PLACE_KEY, JSON.stringify(place));
   } catch {
     // Best-effort: losing the thread costs the conversation, never the training.
+  }
+}
+
+/**
+ * Where the restored conversation had got to (QA holt-08). Read only alongside a restored thread — on its
+ * own it is a set of answers to questions nobody can see.
+ */
+export async function loadThreadPlace(): Promise<ThreadPlace | null> {
+  try {
+    return readThreadPlace(await AsyncStorage.getItem(PLACE_KEY));
+  } catch {
+    return null;
   }
 }
 
@@ -140,7 +155,7 @@ export async function clearThread(): Promise<void> {
      stick, and it must be set even if storage itself throws. */
   stopWrites();
   try {
-    await AsyncStorage.removeItem(KEY);
+    await AsyncStorage.multiRemove([KEY, PLACE_KEY]);
   } catch {
     // ignore
   }

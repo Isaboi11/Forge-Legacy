@@ -1860,6 +1860,7 @@ If you do not know where something is, say so rather than inventing a screen. Ne
 - Speak as Holt, 1 to 5 short sentences. A line someone can read between sets.
 - Plain text only: no markdown, no headings, no bullet points, no numbered lists, no bold.
 - Answer the question first. End with a nudge back to training only when it is natural.
+- Answer only the athlete's newest message. Earlier messages are context: never answer one again, repeat a refusal you already gave, or recap what you said before.
 - If the question is genuinely unclear, ask what they meant in your own words — one short question.`;
 interface Body {
     question: string;

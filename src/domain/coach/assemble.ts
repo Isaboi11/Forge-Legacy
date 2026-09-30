@@ -108,6 +108,7 @@ import {
   ATHLETE_SIZED_RUN_HAS_WARMUP,
   COMPARE_MIN_PER_MI,
   CONCERN,
+  limitationsLeftOut,
   DEFAULT_CARDIO_MIN,
   DEFAULT_RUN_MIN,
   DELOAD_RUN_MULTIPLIER,
@@ -739,7 +740,8 @@ function coverageConcerns(
   if (lifting && patterns.size > 0 && !patterns.has('Horizontal Pull') && !patterns.has('Vertical Pull')) {
     out.push(CONCERN.noPulling());
   }
-  if (lifting && c.limitations.includes('knees') && patterns.size > 0) out.push(CONCERN.kneesLeftOut());
+  /* QA holt-02: shoulders and lower back say what they took out too, as knees does. */
+  if (lifting && patterns.size > 0) out.push(...limitationsLeftOut(c.limitations));
   return out;
 }
 

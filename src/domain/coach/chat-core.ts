@@ -55,6 +55,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
 import { shiftYmd, todayYmd } from '../dates/local-date.ts';
+import { MEDICAL_CONTEXT } from './medical-routing.ts';
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
@@ -249,6 +250,11 @@ export interface Chip {
   typedEdit?: 'answer' | 'this_week' | 'rest_of_block' | 'apply' | 'cancel' | 'undo';
   /** Which change an Undo chip takes back — an older Undo never undoes a newer change (holtai-08). */
   undoOf?: number;
+  /**
+   * Train the running program's next session — the id of that program (QA holt-19). The logger resolves
+   * which session from live state, so a chip restored after a reload still opens the right one.
+   */
+  trainsProgram?: string;
   /**
    * "Find one online" — Holt found nothing in the recipe book and offered to look (Coach-AI-Amendment-002).
    * Carries what to look for. Tapping it is the athlete's consent: only that ask carries web search.
@@ -1377,6 +1383,33 @@ export function fromOpener(label: string): OpenerAction | null {
   }
 }
 
+/** The chip that passes over the program's session for a day built today (QA holt-19). */
+export const SOMETHING_ELSE_TODAY = 'Something else today';
+
+/**
+ * "What should I train today?" asked by somebody with a program running (QA holt-19).
+ *
+ * ⚠ THE PROGRAM'S NEXT SESSION IS THE ANSWER, AND HE USED TO IGNORE IT. The door went straight to "what
+ * are we training?" and built a fresh day beside a block that already said what today was. He names it
+ * first and offers it; building something else stays one tap away, because the athlete may know better
+ * why today is different.
+ */
+export function programSessionOffer(programId: string, programName: string, sessionName: string): Turn[] {
+  return [
+    { kind: 'holt', text: `Next on ${programName} is ${sessionName}. Train that, or something different today?` },
+    {
+      kind: 'chips',
+      chips: [
+        { label: `Train ${sessionName}`, patch: {}, trainsProgram: programId },
+        { label: SOMETHING_ELSE_TODAY, patch: {} },
+      ],
+    },
+  ];
+}
+
+/** The chip on the one-active-program question that builds a single week instead (QA holt-19). */
+export const JUST_A_WEEK = 'Just a week instead';
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WHEN THERE IS NOT ENOUGH TO BUILD A SESSION OUT OF
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -2174,6 +2207,28 @@ export const MEDICAL_STOP =
   "That's a physio's job, not mine. Get it looked at — I'll still be here after.";
 
 /*
+ * ⛔ NOT THE PHYSIO LINE FOR A PREGNANCY, A CONDITION, OR SOMEBODY ALREADY CLEARED (QA holtai-10). "That's a
+ * physio's job… Get it looked at" went to "I'm pregnant" and to "my doctor cleared me" — the wrong person, and
+ * telling somebody who has just been checked to go and get checked. A factual correction of WHO, in the
+ * physio line's own shape; nothing here is advice.
+ *
+ * ⚠ DRAFT COPY, AWAITING PO AND LEGAL SIGN-OFF, like every stop line here.
+ */
+/** A clinician's word reported — "my doctor said", "my OB cleared me". Pregnancy, conditions and medication
+    are `MEDICAL_CONTEXT`'s, the router's own list. */
+const CLINICIAN_SAID =
+  /\b(doctor|dr\.?|surgeon|gp|ob|ob-?gyn|midwife|cardiologist|specialist)\s+(said|says|told|cleared|signed|gave|okayed|ok'?d)\b/i;
+
+/** Should the stop name the athlete's doctor rather than a physio? */
+export function isClinicianStop(text: string): boolean {
+  const t = (text ?? '').replace(/[‘’ʼ]/g, "'");
+  return MEDICAL_CONTEXT.test(t) || CLINICIAN_SAID.test(t);
+}
+
+export const CLINICIAN_STOP =
+  "That one's your doctor's call, not a coach's. They know things about you that I can't see. I'll still be here after.";
+
+/*
  * ⛔ THREE STOPS THAT ARE NOT A PHYSIO REFERRAL (stress test 2026-09-21). "That's a physio's job" was the
  * only stop copy, and it went to "I want to hurt myself" and to chest pain mid-set. Routed by
  * `medicalRoute()` — 'crisis', 'urgent', 'care' — in code, before any model.
@@ -2190,6 +2245,21 @@ export const URGENT_STOP =
 export const CARE_KICKER = 'NOT THIS ONE';
 export const CARE_STOP =
   "I can't build around that one safely. A doctor or a registered dietitian is the right person for it, and I'd want them in your corner. When you're ready, I'll build you training that makes you stronger.";
+
+/**
+ * What the crisis and emergency cards let you DO (QA holtai-11): "Call or text 988" and "Call 911" were plain
+ * text on a phone. Each number is the one its line already names — the buttons add no advice and no number.
+ * Every other stop has nothing to call, so it gets nothing.
+ */
+export interface StopCall {
+  label: string;
+  url: string;
+}
+export function stopCalls(kicker: string | undefined): StopCall[] {
+  if (kicker === CRISIS_KICKER) return [{ label: 'Call 988', url: 'tel:988' }, { label: 'Text 988', url: 'sms:988' }];
+  if (kicker === URGENT_KICKER) return [{ label: 'Call 911', url: 'tel:911' }];
+  return [];
+}
 
 /**
  * ⛔ THE CHAT IS UNLIMITED. PO decision, 2026-08-09.

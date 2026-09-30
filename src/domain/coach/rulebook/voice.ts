@@ -429,17 +429,19 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'Tell me where you are with training. I meet you there.',
     "What's your background? It helps me pitch the first weeks right.",
   ],
+  /* QA holtai-19 / holt-02: he asks what to LEAVE OUT — a preference he can act on. "Anything hurting?" and
+     "Any injuries, old or new?" invited the injury talk the medical stop then has to refuse (PO 09-22). */
   ask_limits: [
     'Anything I should train around?',
-    "Anything giving you trouble? I'll work around it rather than through it.",
-    'Any injuries or areas to avoid?',
-    'Anything I need to know about? Better I hear it now than program into it.',
-    'Anything hurting, or anything you want left out?',
-    "Any injuries, old or new? I'd rather know.",
+    "Any movements you'd rather skip? I'll build without them.",
+    'Anything you want left out?',
+    "Anything you don't want in this? Better I hear it now than program it in.",
+    "Anything you'd rather not do? Tap it and it stays out.",
+    'Any movements or kit you want me to leave out?',
     'Anything you want me to steer clear of?',
-    'Any body parts that need looking after?',
-    'Anything that flares up I should build around?',
-    "Last one: anything to work around? I'll keep you healthy first.",
+    'Anything you want me to build around?',
+    'Anything to leave out before I build?',
+    'Last one: anything you want left out?',
   ],
 
   // ── the handover ─────────────────────────────────────────────────────────────────────────────────

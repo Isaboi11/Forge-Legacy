@@ -133,3 +133,8 @@ test('CA-D2 notes and the training summary reach the model ONLY through the user
   // And the paste copy carries it too.
   assert.ok(read(DEPLOY_COPY).includes('What you know about this athlete:'));
 });
+
+test('QA holtai-12 — Holt answers only the newest message, and the deploy bundle carries the rule', () => {
+  at("- Answer only the athlete's newest message. Earlier messages are context: never answer one again, repeat a refusal you already gave, or recap what you said before.");
+  assert.match(read('supabase/apply/deploy-coach-ask.ts'), /Answer only the athlete's newest message/, 'deploy-coach-ask.ts is stale — regenerate it');
+});

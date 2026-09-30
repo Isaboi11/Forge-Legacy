@@ -199,6 +199,27 @@ export function swapExercise(
   return commit(structure, plans);
 }
 
+/** Past this many reps a set is endurance work — no loaded lift is normally given it (QA holtai-09). */
+export const LOADED_REPS_CEILING = 30;
+
+/**
+ * What a swap carried across that the new movement is never normally given — said, not silently kept.
+ *
+ * ⚠ QA holtai-09: "Push-ups 5×100" became "Dumbbell Bench Press 5×100" without a word. `swapExercise`
+ * keeps the dose on purpose (`EX-002-D5`: the athlete replaces the movement, not the prescription), so
+ * the dose is NOT changed here. What changes is that Holt names it and offers the fix: a bodyweight-sized
+ * rep count landing on a loaded lift is the one carry-over nobody means. Null when nothing is out of line.
+ * A clause ("keeps the 5×100 from Push-Up, …"), so the typed confirm and the tapped reply can each frame it.
+ */
+export function carriedDoseNote(row: ProgramExercise, replacement: CatalogExercise): string | null {
+  if (replacement.equipId === 'bodyweight' || isTimedExercise(replacement)) return null;
+  const top = Math.max(row.reps ?? 0, row.repsMax ?? 0);
+  if (top <= LOADED_REPS_CEILING) return null;
+  const reps = row.repsMax ? `${row.reps ?? '?'}–${row.repsMax}` : `${row.reps ?? '?'}`;
+  const dose = row.sets ? `${row.sets}×${reps}` : `${reps} reps`;
+  return `keeps the ${dose} from ${row.name}, far more reps than ${replacement.name} is normally given`;
+}
+
 /**
  * Change what a strength slot asks for. The movement stays.
  *

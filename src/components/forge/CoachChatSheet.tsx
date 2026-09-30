@@ -27,6 +27,7 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
 import { bronzeWash, wash } from '@/constants/washes';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
+import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -89,6 +90,8 @@ import {
   writtenDayCardFor,
   INTRO,
   MEDICAL_STOP,
+  CLINICIAN_STOP,
+  isClinicianStop,
   CRISIS_KICKER,
   CRISIS_STOP,
   URGENT_KICKER,
@@ -141,6 +144,9 @@ import {
   streamEnded,
   streamInto,
   cutOffReply,
+  programSessionOffer,
+  isOneWeek,
+  JUST_A_WEEK,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -154,8 +160,8 @@ import {
   type Turn,
 } from '@/domain/coach/chat-core';
 import { typedEquipment } from '@/domain/coach/typed-equipment';
-import { CONCERN } from '@/domain/coach/rulebook/hybrid';
-import { medicalRoute } from '@/domain/coach/medical-routing';
+import { limitationsLeftOut } from '@/domain/coach/rulebook/hybrid';
+import { MINOR_AGE, medicalRoute } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped, summaryHistory } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
@@ -176,7 +182,7 @@ import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/dom
 import { authoredLine, authorFacts, validateAuthored, type ValidatedPlan } from '@/domain/coach/author-validate';
 import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
 import { endsOnRace, firstWeeksOf, RACE_WEEK_LINE, raceWeekShape, spliceLiftDays, stopsShortLine } from '@/domain/coach/author-race';
-import { endThread, hasMetHolt, loadThread, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
+import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
@@ -191,9 +197,9 @@ import {
   type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
-import type { SessionMark } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
-import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
+import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
 import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
@@ -647,9 +653,10 @@ export function CoachChatSheet({
     if (profileLoading || greeted.current) return undefined;
     greeted.current = true;
     void (async () => {
-      const [met, stored, remembered, rememberedRoom, athlete] = await Promise.all([
+      const [met, stored, place, remembered, rememberedRoom, athlete] = await Promise.all([
         hasMetHolt(),
         loadThread(),
+        loadThreadPlace(),
         loadExperience(),
         loadRoom(),
         /*
@@ -685,6 +692,13 @@ export function CoachChatSheet({
         return; // the intro effect is already running; leave it alone
       }
       setIntroStep(intro.length + 1);
+      /* QA holt-08: a restored conversation comes back in the build it was in, with the answers given so
+         far — so the chips under his last question answer THAT question instead of starting a program
+         build that asks the goal again. Only with a restored thread; alone it answers nothing visible. */
+      if (stored && place) {
+        setMode(place.mode);
+        setConstraints((c) => ({ ...c, ...place.constraints }));
+      }
       /* He greets you on arrival — unless a question of his is still on the table, which is what a stored
          thread ending in chips means. The greeting and Home he last opened with come out first, so a
          reopen greets ONCE rather than stacking another hello and another set of doors (kitchen-14). */
@@ -713,8 +727,9 @@ export function CoachChatSheet({
    * gate as it deletes, so the two can never drift apart. See `domain/coach/thread-lifecycle.ts`.
    */
   useEffect(() => {
-    void saveThread(thread);
-  }, [thread]);
+    /* With where it had got to, so a refresh restores the build as well as the words (QA holt-08). */
+    void saveThread(thread, { mode, constraints });
+  }, [thread, mode, constraints]);
 
   /**
    * ⚠ **AND CLOSING IS NOT ONLY THE X.** `collapse` covers the three deliberate closes — the X, the
@@ -1028,8 +1043,9 @@ export function CoachChatSheet({
              was built, and an assumed room is said out loud — both so nothing he did is silent. */
           const heard = [askedLine(r.asked), roomLine, learnedSaid];
           say({ kind: 'holt', text: [holt.fellBack ?? dayPreamble(), ...heard].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard });
-          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block. */
-          if (c.limitations.includes('knees')) say({ kind: 'holt', text: CONCERN.kneesLeftOut() });
+          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block —
+             and shoulders and lower back the same way (QA holt-02). */
+          for (const line of limitationsLeftOut(c.limitations)) say({ kind: 'holt', text: line });
           return;
         }
 
@@ -1212,8 +1228,11 @@ export function CoachChatSheet({
   /** Long enough for a slow connection, short enough that it never reads as a hang. */
   const ACTIVE_LOOKUP_TIMEOUT_MS = 4000;
 
-  const guardActiveProgram = useCallback(async (): Promise<boolean> => {
+  const guardActiveProgram = useCallback(async (request?: ChatState): Promise<boolean> => {
     if (askedAboutReplacing.current) return true;
+    /* QA holt-19: a single week is saved as a week, not started as a program — it ends nothing, so a
+       running block is no reason to refuse it. Starting it later asks by name, as any Start does. */
+    if (request && isOneWeek(request)) return true;
     /*
      * ⚠ **A SILENT AWAIT IS A STALL, WHICH IS WHAT THIS LOOKED LIKE.** The athlete taps "Build me a
      * program", their own line appears, and then nothing happens at all while this round-trip runs —
@@ -1241,12 +1260,37 @@ export function CoachChatSheet({
         kind: 'chips',
         chips: [
           { label: 'Replace it', patch: {} },
+          /* QA holt-19: "A program or a week" — the week needs no replacing; it carries this request on. */
+          { label: JUST_A_WEEK, patch: { weeks: 1 } },
           /* Where "Change the one I have" leads — the running program's own page, not the Workouts tab (holtai-06). */
           { label: 'Change the one I have', patch: {}, goTo: `/program/${active.id}` },
         ],
       },
     );
     return false;
+  }, [say]);
+
+  /**
+   * QA holt-19 — "What should I train today?" with a program running names the program's next session
+   * and offers it, before building anything. True when he asked; false (build the day as before) when
+   * there is no program, it is finished, or the lookup failed or ran long — never a reason to refuse.
+   */
+  const offerProgramSession = useCallback(async (): Promise<boolean> => {
+    setBusy('thinking');
+    const found = await Promise.race([
+      (async () => {
+        const active = await fetchActiveProgram().catch(() => null);
+        if (!active) return null;
+        const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+        const next = nextOpenSlot(active.structure, marks);
+        return next?.day ? { active, name: dayLabel(next.day, next.dayIndex) } : null;
+      })(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    setBusy(null);
+    if (!found) return false;
+    say(...programSessionOffer(found.active.id, found.active.name, found.name));
+    return true;
   }, [say]);
 
   const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
@@ -1544,9 +1588,12 @@ export function CoachChatSheet({
       lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
       const row = edit.day?.main[edit.rowIndex];
       const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
+      /* QA holtai-09: a bodyweight dose carried onto a loaded lift is said, with where to change it. */
+      const dose = replacement && row ? carriedDoseNote(row, replacement) : null;
+      const doseLine = dose ? ` It ${dose} — change the reps on the program if that's not what you meant.` : '';
       setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
       say(
-        { kind: 'holt', text: `${what} ${pick('edit_done')}` },
+        { kind: 'holt', text: `${what}${doseLine} ${pick('edit_done')}` },
         {
           kind: 'chips',
           chips: [
@@ -1831,6 +1878,19 @@ export function CoachChatSheet({
       return;
     }
 
+    /* QA holt-19: train the running program's next session — the same launch its Train button writes. */
+    if (chip.trainsProgram) {
+      const programId = chip.trainsProgram;
+      say({ kind: 'me', text: chip.label });
+      void writeWorkoutLaunch({ programId })
+        .then(() => {
+          handOff();
+          router.push('/workout');
+        })
+        .catch((e) => say({ kind: 'error', text: "I couldn't open that.", sub: errorText(e), action: 'Try again in a moment.' }));
+      return;
+    }
+
     /*
      * Declining the import — he acknowledges, records the choice, and gets out of the way.
      *
@@ -1898,7 +1958,7 @@ export function CoachChatSheet({
         const request: ChatState = { ...constraints, ...chip.patch };
         /* Saved before the active-program question, so "Replace it" carries this request on (QA R2-F8). */
         setConstraints(request);
-        if (!(await guardActiveProgram())) return;
+        if (!(await guardActiveProgram(request))) return;
         await advance(request, 'program');
       })();
       return;
@@ -2015,7 +2075,8 @@ export function CoachChatSheet({
            one (QA R2-F8). */
         const request: ChatState = { ...athleteFacts(constraints), ...opener.patch };
         setConstraints(request);
-        if (opener.mode === 'program' && !(await guardActiveProgram())) return;
+        if (opener.mode === 'program' && !(await guardActiveProgram(request))) return;
+        if (opener.mode === 'day' && (await offerProgramSession())) return;
         await advance(request, opener.mode);
       })();
       return;
@@ -2291,10 +2352,22 @@ export function CoachChatSheet({
    * ⛔ EVERY STOP GOES THROUGH `stopOn` — the card is shown AND the athlete's line that caused it is marked
    * `stopped` in the same update, so `askHistory` never sends it to a model again (QA R2-F1).
    */
+  /** What the kitchen was last asked, and what it has shown — see HOLT'S KITCHEN below. */
+  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
   const stopOn = (said: string, card: Turn) => setThread((t) => [...markStopped(t, said), ...stamped([card])]);
-  const medicalStop = (text: string) =>
-    stopOn(text, { kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
-  const careStop = (text: string) => stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+  /* QA holtai-10: pregnancy, a condition or a doctor's clearance names their doctor — never "get it looked at". */
+  const medicalStopText = (text: string) =>
+    medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : isClinicianStop(text) ? CLINICIAN_STOP : MEDICAL_STOP;
+  const medicalStop = (text: string) => stopOn(text, { kind: 'stop', text: medicalStopText(text) });
+  const careStop = (text: string) => {
+    stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+    /* QA holtai-10: an under-18 food question in the kitchen keeps its recipe door — recipes are theirs to
+       have (NUT-D5 stops the numbers, not the cooking). The stopped ask is dropped so the door cannot resend it. */
+    if (kitchen && MINOR_AGE.test(text)) {
+      kitchenAsk.current.ask = '';
+      say({ kind: 'chips', chips: [{ label: 'Show me what I can cook', patch: {}, kitchen: 'go' }] });
+    }
+  };
   const crisisStop = (text: string) => stopOn(text, { kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
   const urgentStop = (text: string) => stopOn(text, { kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
   useEffect(() => {
@@ -2308,7 +2381,7 @@ export function CoachChatSheet({
    * protein / Different style ask again with everything already on screen excluded (§2). Dishes shown are
    * remembered for 30 days (`kitchen_suggestions`) and sent back as "already suggested".
    */
-  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
+  /* `kitchenAsk` is declared above the stops, which clear it (holtai-10). */
   const runKitchen = async (ask: string, nudge: KitchenNudge | null) => {
     const k = kitchenAsk.current;
     if (!nudge) k.ask = ask;
@@ -2672,7 +2745,7 @@ export function CoachChatSheet({
            block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
            to be in state first, or a fully typed build comes back as "What's the goal?". */
         setConstraints(request);
-        if (opens === 'program' && !(await guardActiveProgram())) return;
+        if (opens === 'program' && !(await guardActiveProgram(request))) return;
         return void advance(request, opens);
       }
     }
@@ -4170,6 +4243,8 @@ function TurnView({
         <View style={styles.stop}>
           <Text style={styles.stopKicker}>{turn.kicker ?? STOP_KICKER}</Text>
           <Text style={styles.stopText}>{turn.text}</Text>
+          {/* QA holtai-11: the crisis and emergency lines can be acted on, not only read. */}
+          <StopCalls kicker={turn.kicker} />
         </View>
       );
 
