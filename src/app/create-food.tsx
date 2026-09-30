@@ -525,6 +525,7 @@ export default function CreateFoodScreen() {
           <Pressable
             accessibilityRole="checkbox"
             accessibilityState={{ checked: shareIt }}
+            aria-checked={shareIt}
             onPress={() => setShareIt((v) => !v)}
             style={styles.shareRow}
           >

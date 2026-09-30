@@ -280,6 +280,7 @@ function MealPlanSetupScreen() {
                         key={m.key}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: on }}
+                        aria-checked={on}
                         style={[styles.choice, styles.mealChoice, on && styles.choiceOn]}
                         onPress={() => set({ meals: toggleMeal(d.meals, m.key) })}
                       >
@@ -311,6 +312,7 @@ function MealPlanSetupScreen() {
                                   key={r.key}
                                   accessibilityRole="radio"
                                   accessibilityState={{ checked: on }}
+                                  aria-checked={on}
                                   style={[styles.tab, on && styles.tabOn]}
                                   onPress={() => set({ routine: { ...d.routine, [m.key]: r.key } })}
                                 >
@@ -352,6 +354,7 @@ function MealPlanSetupScreen() {
                         key={t.label}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: on }}
+                        aria-checked={on}
                         style={[styles.tab, on && styles.tabOn]}
                         onPress={() => set({ cookMinutes: t.key })}
                       >
@@ -434,6 +437,7 @@ function Choice({ label, on, role, onPress }: { label: string; on: boolean; role
     <Pressable
       accessibilityRole={role}
       accessibilityState={{ checked: on }}
+      aria-checked={on}
       style={[styles.choice, on && styles.choiceOn]}
       onPress={onPress}
     >
@@ -447,6 +451,7 @@ function Toggle({ label, on, onPress }: { label: string; on: boolean; onPress: (
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
+      aria-checked={on}
       style={[styles.choice, styles.mealChoice, styles.toggle, on && styles.choiceOn]}
       onPress={onPress}
     >

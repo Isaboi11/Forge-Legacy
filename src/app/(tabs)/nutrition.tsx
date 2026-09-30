@@ -789,6 +789,8 @@ function CheckRow({ row, disabled, onPress }: { row: ChecklistRow; disabled: boo
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: row.checked, disabled }}
+      /* react-native-web 0.21 ignores accessibilityState — the web needs the aria prop (QA 09-26 kitchen-22). */
+      aria-checked={row.checked}
       accessibilityLabel={`${row.name}, ${row.kcal} calories`}
       onPress={onPress}
       style={({ pressed }) => [styles.checkRow, pressed && styles.checkRowPressed]}
