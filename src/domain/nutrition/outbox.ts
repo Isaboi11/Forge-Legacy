@@ -34,6 +34,8 @@ export interface EntryPatch {
   protein: number;
   carb: number;
   fat: number;
+  /** Only when a Quick Add is renamed; absent (never `undefined`) on a portion edit, so the row's name stays. */
+  name?: string;
 }
 
 export type OutboxOp =
