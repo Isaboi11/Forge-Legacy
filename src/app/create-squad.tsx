@@ -346,7 +346,9 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', paddingTop: 6 },
   heroTitle: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', letterSpacing: -0.3, lineHeight: 30, textAlign: 'center', color: flColor.cream100, maxWidth: 300 },
   heroTitleSmall: { fontSize: 21, lineHeight: 24 },
-  heroTitleMuted: { color: flColor.charcoal500 },
+  /* The placeholder title. `charcoal500` is a hairline colour — on Forge's plate it was all but invisible
+     (social-07, QA 09-26). `gray600` is the tertiary-text role in both themes: muted, and legible. */
+  heroTitleMuted: { color: flColor.gray600 },
   heroSupport: { marginTop: 9, fontSize: 12, lineHeight: 18, textAlign: 'center', color: flColor.gray600, maxWidth: 262 },
   heroCrest: {
     marginTop: 18,

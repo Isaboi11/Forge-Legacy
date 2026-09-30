@@ -269,7 +269,11 @@ export default function CreateChallengeScreen() {
           <View style={styles.hero}>
             <View style={[styles.seal, editing && styles.sealSmall]}>
               <LinearGradient colors={forgeOr<readonly [string, string]>(['#40301f', '#17130f'], [flColor.iconContainerBg, flColor.surfaceRecessed])} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
-              <SwordsGlyph size={editing ? 24 : 28} color={flColor.bronze300} />
+              {/* ⚠ IN A VIEW, OR THE DISC IS EMPTY ON WEB (social-07, QA 09-26). A bare <svg> is not a positioned
+                  element there, so the absolutely-positioned gradient above painted over it. */}
+              <View>
+                <SwordsGlyph size={editing ? 24 : 28} color={flColor.bronze300} />
+              </View>
             </View>
             <Text style={[styles.heroTitle, editing && styles.heroTitleSmall, !trimmedName && styles.heroTitleMuted]} numberOfLines={3}>
               {trimmedName || 'Name Your Challenge'}
@@ -666,7 +670,9 @@ export default function CreateChallengeScreen() {
             {canCreate ? (
               <View style={[styles.commitBtn, styles.commitBtnOn]}>
                 <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={StyleSheet.absoluteFill} />
-                <SwordsGlyph size={17} color="#F7F5F1" />
+                <View>
+                  <SwordsGlyph size={17} color="#F7F5F1" />
+                </View>
                 <Text style={styles.commitLabel}>{busy ? 'Creating…' : 'Create Challenge'}</Text>
               </View>
             ) : (
@@ -772,7 +778,9 @@ const styles = StyleSheet.create({
   sealSmall: { width: 54, height: 54 },
   heroTitle: { marginTop: 13, maxWidth: 320, fontFamily: flFont.display, fontSize: 27, fontWeight: '600', letterSpacing: -0.3, lineHeight: 32, textAlign: 'center', color: flColor.cream100 },
   heroTitleSmall: { fontSize: 22, lineHeight: 26 },
-  heroTitleMuted: { color: flColor.charcoal500 },
+  /* The placeholder title. `charcoal500` is a hairline colour — on Forge's plate it was all but invisible
+     (social-07, QA 09-26). `gray600` is the tertiary-text role in both themes: muted, and legible. */
+  heroTitleMuted: { color: flColor.gray600 },
   heroIntro: { marginTop: 8, fontSize: 12.5, color: flColor.gray600 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 12 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
