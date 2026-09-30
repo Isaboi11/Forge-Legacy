@@ -154,7 +154,9 @@ export default function ProgramShareScreen() {
 
         {taken ? (
           <View style={styles.takenBanner}>
-            <Text style={styles.takenText}>You’ve already taken this one. It’s in your programs.</Text>
+            {/* Not "It's in your programs" (social2-26, QA 09-26): taking it once doesn't mean it's still there — it
+                may have been removed since. */}
+            <Text style={styles.takenText}>You’ve already taken this one.</Text>
           </View>
         ) : null}
 

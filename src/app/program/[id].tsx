@@ -858,7 +858,11 @@ export default function ProgramDetailScreen() {
       } else if (kind === 'remove' && state !== 'active') {
         // Never the running program — End Program is that path (QA 2026-09-26 F3).
         await deleteProgram(program!.id);
-        router.back();
+        /* Off the removed program even with no screen behind it (social2-26, QA 09-26): a program taken from
+           a share arrives by `replace`, and on the web a reload leaves no history — `back()` did nothing and
+           the page stayed on a program that no longer existed. */
+        if (router.canGoBack()) router.back();
+        else router.replace('/(tabs)/workouts');
       }
     } catch (e) {
       setError(errorMessage(e));

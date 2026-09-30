@@ -229,6 +229,9 @@ function Row({
       onPress={onPress}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
+      /* `aria-checked` is what the WEB reads (social2-26, QA 09-26): react-native-web 0.21 ignores
+         `accessibilityState`, so a ticked row was announced exactly like an unticked one. */
+      aria-checked={on}
       accessibilityLabel={name}
       style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
     >
