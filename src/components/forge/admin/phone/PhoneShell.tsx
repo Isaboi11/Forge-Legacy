@@ -21,6 +21,7 @@ import { BugFilterSheet, BugOverlay, BugsTab, CrashOverlay, NewBugSheet, ReportO
 import { MoneyTab, UserFilterSheet, UserOverlay } from '@/components/forge/admin/phone/MoneyTab';
 import { DocConfirmSheet, DocPickSheet, MoreTab } from '@/components/forge/admin/phone/MoreTab';
 import { ContactEditOverlay, ContactOverlay, LogSheet, PeopleTab } from '@/components/forge/admin/phone/PeopleTab';
+import { NewIdeaSheet, SocialVideoOverlay } from '@/components/forge/admin/phone/SocialViews';
 import { TodayTab } from '@/components/forge/admin/phone/TodayTab';
 import { fetchBugCounts, fetchContacts } from '@/data/crm-live';
 import { fetchAdminReports } from '@/data/moderation-live';
@@ -222,6 +223,8 @@ function PhoneBody({ onExit }: { onExit: () => void }) {
               <ContactOverlay id={top.id} backLabel={backLabel} />
             ) : top.kind === 'contactEdit' ? (
               <ContactEditOverlay id={top.id} backLabel={backLabel} />
+            ) : top.kind === 'video' ? (
+              <SocialVideoOverlay id={top.id} backLabel={backLabel} />
             ) : (
               <UserOverlay id={top.id} backLabel={backLabel} />
             )}
@@ -234,7 +237,9 @@ function PhoneBody({ onExit }: { onExit: () => void }) {
             <Pressable accessibilityLabel="Close" onPress={() => setSheet(null)} style={[fill, { backgroundColor: 'rgba(0,0,0,0.5)' }]} />
             <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, maxHeight: '86%', borderTopLeftRadius: 20, borderTopRightRadius: 20, backgroundColor: c.panel, borderTopWidth: 1, borderColor: c.panelBd }}>
               <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets>
-                {sheet.kind === 'bugFilter' ? (
+                {sheet.kind === 'newIdea' ? (
+                  <NewIdeaSheet />
+                ) : sheet.kind === 'bugFilter' ? (
                   <BugFilterSheet />
                 ) : sheet.kind === 'userFilter' ? (
                   <UserFilterSheet />

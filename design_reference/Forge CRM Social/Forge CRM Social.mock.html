@@ -1,0 +1,852 @@
+<title>Forge CRM Social</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&display=swap">
+<style>
+/* Layout: the existing Business CRM shell (236px sidebar, top bar, 1240px column). Information sits on the
+   ground under a small uppercase label and a hairline; only the detail panel and editors get a surface.
+   Bronze marks what is selected and the one primary action per view. Palettes are crm-theme.tsx, unchanged. */
+:root{
+  --bg:#FAF8F4;--side:#F3EFE8;--ink:#1E1B17;--ink2:#4E4943;--ink3:#6A645B;--line:#E4DDD2;--hover:rgba(60,45,25,.035);
+  --tip:#FFFDFA;--track:#ECE6DC;--panel:#FFFDFA;--panelBd:#E1DAD0;--field:#FFFFFF;--fieldBd:#D6CEC2;
+  --btn1:#BA8654;--btn2:#BA8654;--btnBd:#A67644;--btnInk:#17110A;--brz:#9A6934;--brzTint:rgba(166,118,68,.13);--brzBd:rgba(154,105,52,.5);
+  --good:#3C7549;--crit:#A6473A;--critTint:rgba(166,71,58,.10);--warn:#8A5C2C;--warnTint:rgba(166,118,68,.12);
+  --area:.16;--stage:#E9E3D9;--badgeInk:#FFFFFF;
+  --display:'Playfair Display',Georgia,'Times New Roman',serif;
+  --body:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0C0E10;--side:#090B0C;--ink:#EFE9DF;--ink2:#BDB6AB;--ink3:#8C867D;--line:rgba(239,233,223,.08);--hover:rgba(239,233,223,.035);
+  --tip:#1A1C1F;--track:rgba(239,233,223,.07);--panel:#131517;--panelBd:rgba(239,233,223,.07);--field:#0F1113;--fieldBd:rgba(239,233,223,.14);
+  --btn1:#A47744;--btn2:#7F5B33;--btnBd:rgba(205,160,99,.55);--btnInk:#FBF1E2;--brz:#C9975A;--brzTint:rgba(191,143,79,.13);--brzBd:rgba(201,151,90,.5);
+  --good:#8DBB97;--crit:#DE8878;--critTint:rgba(210,122,108,.14);--warn:#D6A866;--warnTint:rgba(214,168,102,.12);
+  --area:.22;--stage:#050607;--badgeInk:#0C0E10;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C0E10;--side:#090B0C;--ink:#EFE9DF;--ink2:#BDB6AB;--ink3:#8C867D;--line:rgba(239,233,223,.08);--hover:rgba(239,233,223,.035);
+  --tip:#1A1C1F;--track:rgba(239,233,223,.07);--panel:#131517;--panelBd:rgba(239,233,223,.07);--field:#0F1113;--fieldBd:rgba(239,233,223,.14);
+  --btn1:#A47744;--btn2:#7F5B33;--btnBd:rgba(205,160,99,.55);--btnInk:#FBF1E2;--brz:#C9975A;--brzTint:rgba(191,143,79,.13);--brzBd:rgba(201,151,90,.5);
+  --good:#8DBB97;--crit:#DE8878;--critTint:rgba(210,122,108,.14);--warn:#D6A866;--warnTint:rgba(214,168,102,.12);
+  --area:.22;--stage:#050607;--badgeInk:#0C0E10;color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;overflow:hidden}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer;text-align:left}
+:focus-visible{outline:2px solid var(--brz);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums lining-nums}
+.serif{font-family:var(--display)}
+
+/* ── Desktop shell ── */
+.shell{display:flex;height:100%}
+.side{width:236px;flex:none;background:var(--side);border-right:1px solid var(--line);overflow-y:auto;padding:28px 16px;display:flex;flex-direction:column;gap:26px}
+.brand{padding:0 10px;display:flex;flex-direction:column;gap:4px}
+.brand b{font-family:var(--display);font-weight:600;font-size:21px}
+.brand span{font-size:12.5px;color:var(--ink3)}
+.grp{display:flex;flex-direction:column;gap:2px}
+.grp h6{margin:0;padding:0 10px 6px;font-size:10.5px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3)}
+.nav{height:34px;padding:0 10px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--ink2);width:100%}
+.nav:hover{background:var(--hover)}
+.nav.on{background:var(--brzTint);color:var(--brz);font-weight:600}
+.nav.old{color:var(--ink3)}
+.nav i{font-style:normal;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--critTint);color:var(--crit)}
+.mocknote{margin-top:auto;padding:0 10px;font-size:12px;line-height:1.5;color:var(--ink3)}
+.main{flex:1;min-width:0;overflow-y:auto;padding:28px 56px 72px}
+.wrap{max-width:1240px;margin:0 auto}
+.topbar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;min-height:36px}
+.crumb{font-size:13px;color:var(--ink3)}.crumb b{font-weight:400;color:var(--ink2)}
+.segs{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.seg{display:flex;gap:2px;padding:3px;border-radius:10px;border:1px solid var(--line)}
+.seg button{padding:5px 12px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--ink3)}
+.seg button.on{background:var(--hover);color:var(--ink)}
+.ph{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px 32px;padding:24px 0 28px}
+.ph h1{margin:0;font-family:var(--display);font-weight:600;font-size:36px;line-height:41px;letter-spacing:-.3px;text-wrap:balance}
+.ph p{margin:8px 0 0;max-width:760px;font-size:16px;line-height:25.6px;color:var(--ink2)}
+.btn{height:40px;padding:0 16px;border-radius:10px;border:1px solid var(--fieldBd);font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.btn.sm{height:34px;padding:0 14px;border-radius:9px;font-size:13px}
+.btn.pri{background:linear-gradient(var(--btn1),var(--btn2));border-color:var(--btnBd);color:var(--btnInk);padding:0 18px}
+.btn.del{border-color:var(--line);color:var(--crit)}
+.btn.del.armed{background:var(--crit);border-color:var(--crit);color:var(--badgeInk)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{height:30px;padding:0 12px;border-radius:15px;border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--ink2);display:inline-flex;align-items:center;gap:6px}
+.chip:hover{background:var(--hover)}
+.chip.on{border-color:var(--brzBd);background:var(--brzTint);color:var(--brz)}
+.chip small{font-size:13px;color:var(--ink3)}
+.opt{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink2)}
+.opt.on{border-color:var(--brzBd);background:var(--brzTint);color:var(--brz)}
+.opt.on.good{color:var(--good)}.opt.on.crit{color:var(--crit)}.opt.on.warn{color:var(--warn)}
+.banner{margin-bottom:24px;padding:12px 16px;border-radius:10px;background:var(--warnTint);font-size:14px;line-height:21.7px;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+.ulink{font-size:13.5px;font-weight:600;border-bottom:1px solid var(--fieldBd)}
+.sl{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.sl span{font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3)}
+.sl a,.sl button{font-size:13px;font-weight:500;color:var(--ink2)}
+.sub{margin:12px 0 0;font-size:13px;line-height:19px;color:var(--ink3)}
+.foot{margin:14px 0 0;font-size:12.5px;line-height:19.4px;color:var(--ink3)}
+.footnote{margin:48px 0 0;max-width:760px;font-size:12.5px;line-height:20px;color:var(--ink3)}
+.hero{display:flex;gap:56px;padding-bottom:44px;align-items:flex-start}
+.hero>.h1{flex:1;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.hero .lab{font-size:13px;color:var(--ink2)}
+.hero .big{font-family:var(--display);font-weight:500;font-size:56px;line-height:59px}
+.hero .hn{font-size:13.5px;font-weight:500;color:var(--ink3)}
+.good{color:var(--good)!important}.bad{color:var(--crit)!important}.warnc{color:var(--warn)!important}
+.figs{flex:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:36px}
+.fig{padding:16px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:3px;min-width:0}
+.fig b{font-family:var(--display);font-weight:500;font-size:24px;line-height:29px}
+.fig small{font-size:12.5px;color:var(--ink3)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:48px 56px;align-items:start}
+.grid>.full{grid-column:1/-1}
+.blk{min-width:0}
+.rows>div{display:flex;gap:16px;align-items:baseline;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
+.rows .l{display:flex;flex-direction:column;gap:2px;min-width:0}
+.rows .l span{font-size:14px;color:var(--ink2)}
+.rows .l small{font-size:12.5px;color:var(--ink3)}
+.rows b{font-size:15px;font-weight:600;text-align:right;white-space:nowrap}
+.rows b.dim{color:var(--ink3);font-weight:500}
+.bars{display:flex;flex-direction:column;gap:16px;padding-top:18px}
+.bar .t{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:7px}
+.bar .t span{font-size:14px;min-width:0}
+.bar .t em{font-style:normal;font-size:13px;color:var(--ink3);white-space:nowrap}
+.bar .t em b{font-size:14px;font-weight:600;color:var(--ink)}
+.track{height:6px;border-radius:3px;background:var(--track);display:flex;overflow:hidden}
+.track i{display:block;height:6px;background:var(--brz)}
+.track i.soft{opacity:.38}
+.tscroll{overflow-x:auto}
+.tbl{min-width:680px}
+.tr{display:grid;gap:16px;align-items:center;padding:0 10px;margin:0 -10px;border-bottom:1px solid var(--line);width:calc(100% + 20px)}
+.tr.h{padding-top:12px;padding-bottom:8px;font-size:12px;color:var(--ink3)}
+.tr.h button{font-size:12px;color:var(--ink3);text-align:right}
+.tr.h button.on{color:var(--ink);font-weight:600}
+.tr.r{padding-top:13px;padding-bottom:13px}
+button.tr.r:hover{background:var(--hover)}
+.tr.sel{background:var(--brzTint)}
+.tr .ti{min-width:0;display:flex;flex-direction:column;gap:2px}
+.tr .ti span{font-size:14px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .ti small{font-size:12.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr .n{text-align:right;font-size:14px}
+.tr .m{font-size:13px;color:var(--ink2)}
+.chart{position:relative;margin-top:20px}
+.chart svg{display:block;overflow:visible}
+.chart .gl{position:absolute;left:0;font-size:11px;color:var(--ink3)}
+.chart .tipw{position:absolute;top:-6px;width:0;display:flex;justify-content:center;pointer-events:none}
+.chart .tip{display:flex;gap:8px;padding:6px 10px;border-radius:8px;background:var(--tip);border:1px solid var(--line);white-space:nowrap;font-size:12.5px}
+.chart .tip span{color:var(--ink3)}.chart .tip b{font-weight:600}
+.cdates{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;color:var(--ink3)}
+.panel{padding:24px;border-radius:14px;background:var(--panel);border:1px solid var(--panelBd);display:flex;flex-direction:column;gap:18px}
+.panel h2{margin:0;font-family:var(--display);font-weight:600;font-size:22px;line-height:1.25;text-wrap:balance}
+.panel h4,#phone h4{margin:0;font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:var(--ink3)}
+.field{display:flex;flex-direction:column;gap:6px;flex:1 1 0;min-width:0}
+.field label{font-size:12.5px;color:var(--ink2)}
+.in{height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--fieldBd);background:var(--field);font-size:14px;width:100%;outline:none}
+textarea.in{height:auto;min-height:72px;padding:10px 12px;line-height:21px;resize:vertical}
+.in:focus{border-color:var(--brzBd)}
+.frow{display:flex;gap:16px 24px;flex-wrap:wrap}
+.two{display:flex;gap:40px;align-items:flex-start}
+.two>.list{flex:1;min-width:0}
+.two>.det{width:420px;flex:none;position:sticky;top:0}
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;margin:20px 0 32px}
+.pipe button{padding:14px 16px 13px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:2px;position:relative}
+.pipe button:hover{background:var(--hover)}
+.pipe button.on{background:var(--brzTint);border-top-color:var(--brzBd)}
+.pipe button b{font-family:var(--display);font-weight:500;font-size:26px;line-height:30px}
+.pipe button span{font-size:13px;color:var(--ink2)}
+.pipe button.on span{color:var(--brz);font-weight:600}
+.pipe button:not(:last-child)::after{content:"›";position:absolute;right:6px;top:18px;color:var(--ink3);font-size:16px}
+.capture{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.capture .in{flex:1;min-width:200px}
+.grouph{margin-top:28px}
+.grouph:first-child{margin-top:0}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font-size:12px;font-weight:600;background:var(--brzTint);color:var(--brz);white-space:nowrap}
+.tag.good{background:transparent;border:1px solid var(--line);color:var(--good)}
+.tag.crit{background:var(--critTint);color:var(--crit)}
+.tag.warn{background:var(--warnTint);color:var(--warn)}
+.tag.muted{background:var(--track);color:var(--ink2)}
+.code{display:inline-block;min-width:24px;text-align:center;font-size:10.5px;font-weight:700;letter-spacing:.4px;padding:1px 4px;border-radius:4px;border:1px solid var(--fieldBd);color:var(--ink2)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) 76px;border-top:1px solid var(--line);margin-top:20px}
+.cal .dow{padding:10px 8px 8px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--ink3);border-bottom:1px solid var(--line)}
+.cal .day{min-height:104px;padding:8px 6px 10px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:5px;min-width:0}
+.cal .day .dn{font-size:12px;color:var(--ink3);padding:0 2px}
+.cal .day.today .dn{color:var(--brz);font-weight:700}
+.cal .day.past{background:var(--hover)}
+.cal .wk{padding:8px 0 8px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink3);display:flex;flex-direction:column;gap:2px}
+.cal .wk b{font-size:14px;font-weight:600;color:var(--ink)}
+.calit{display:flex;gap:6px;align-items:baseline;padding:4px 5px;border-radius:6px;font-size:12.5px;line-height:16px;color:var(--ink);width:100%;min-width:0}
+.calit:hover{background:var(--hover)}
+.calit.sel{background:var(--brzTint)}
+.calit span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.calit.done{color:var(--ink3)}
+.post{padding:14px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.post .hd{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:14px}
+.post .hd b{font-weight:600}.post .hd span{font-size:13px;color:var(--ink3)}
+.lnk{display:flex;gap:10px;align-items:center;font-size:12.5px;color:var(--ink2)}
+.lnk code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;padding:4px 8px;border-radius:6px;background:var(--field);border:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.mini{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px}
+.mini div{display:flex;flex-direction:column}
+.mini b{font-size:15px;font-weight:600}
+.mini small{font-size:11.5px;color:var(--ink3)}
+.item{padding:15px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:5px}
+.item .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.item .top b{font-size:15px;font-weight:600;min-width:0}
+.item p{margin:0;font-size:14px;line-height:21.7px;color:var(--ink2)}
+.item small{font-size:12.5px;color:var(--ink3)}
+button.item{width:calc(100% + 20px);padding-left:10px;padding-right:10px;margin:0 -10px}
+button.item:hover{background:var(--hover)}
+.rule{padding:14px 0;border-bottom:1px solid var(--line);font-family:var(--display);font-weight:500;font-size:18px;line-height:26px}
+.toast{position:fixed;left:0;right:0;bottom:28px;display:flex;justify-content:center;pointer-events:none;z-index:60}
+.toast div{padding:12px 18px;border-radius:12px;background:var(--tip);border:1px solid var(--panelBd);box-shadow:0 12px 32px rgba(0,0,0,.25);font-size:14px;max-width:calc(100% - 32px)}
+
+@media (max-width:1179px){
+  .main{padding:24px 32px 64px}
+  .hero{flex-direction:column;gap:36px}.hero>.h1,.figs{align-self:stretch;flex:none}.figs{column-gap:24px}
+  .grid{gap:48px 36px}
+  .two{flex-direction:column-reverse;gap:28px}.two>.det{width:auto;position:static;align-self:stretch}
+}
+
+/* ── Phone CRM ── */
+#stage{display:none;height:100%}
+#phone{position:relative;height:100%;background:var(--bg);overflow:hidden}
+body.pv .shell{display:none}
+body.pv #stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--stage);padding:16px}
+body.pv #phone{width:390px;max-width:100%;height:min(800px,calc(100% - 60px));border-radius:30px;border:1px solid var(--fieldBd)}
+#backdesk{display:none}
+body.pv #backdesk{display:inline-flex}
+@media (max-width:899px){
+  .shell{display:none}
+  #stage,body.pv #stage{display:block;padding:0;background:var(--bg)}
+  #phone,body.pv #phone{width:auto;height:100%;border-radius:0;border:0}
+  #backdesk,body.pv #backdesk{display:none}
+  .toast{bottom:150px}
+}
+.pfill{position:absolute;left:0;right:0;top:0;bottom:0}
+.pscroll{position:absolute;left:0;right:0;top:0;bottom:83px;overflow-y:auto;padding:14px 16px 40px}
+.pscroll.ov{bottom:74px;background:var(--bg)}
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:83px;padding-bottom:10px;display:flex;background:var(--side);border-top:1px solid var(--line);z-index:4}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--ink3);position:relative}
+.tabbar button.on{color:var(--brz)}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.tabbar i{position:absolute;top:8px;left:50%;margin-left:6px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--crit);color:var(--badgeInk);font-style:normal;font-size:11px;display:flex;align-items:center;justify-content:center}
+.pback{font-size:15px;color:var(--ink2);min-height:36px;display:inline-flex;align-items:center}
+.ptitle{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+.ptitle h1{margin:0;font-family:var(--display);font-weight:500;font-size:30px}
+.psh{display:flex;justify-content:space-between;align-items:baseline;margin:26px 0 0;font-size:12px;font-weight:600;letter-spacing:.96px;text-transform:uppercase;color:var(--ink3)}
+.psh button{font-size:13px;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink2)}
+.pmuted{font-size:13px;line-height:19px;color:var(--ink3);margin:8px 0 0}
+.rseg{display:flex;gap:2px}
+.rseg button{min-width:44px;height:36px;padding:0 8px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink3);text-align:center}
+.rseg button.on{background:var(--brzTint);color:var(--brz)}
+.pchips{display:flex;gap:8px;overflow-x:auto;margin:14px -16px 0;padding:0 16px 2px;scrollbar-width:none}
+.pchip{height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);font-size:14px;color:var(--ink2);white-space:nowrap;flex:none}
+.pchip.on{border-color:var(--brzBd);background:var(--brzTint);color:var(--brz)}
+.pchip small{font-size:14px;opacity:.7}
+.pseg{display:flex;padding:3px;border-radius:11px;background:var(--panel);border:1px solid var(--panelBd);margin-top:14px}
+.pseg button{flex:1;height:38px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink3);text-align:center}
+.pseg button.on{background:var(--brzTint);color:var(--brz)}
+.bigbtn{height:50px;border-radius:12px;border:1px solid var(--fieldBd);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;width:100%}
+.bigbtn.pri{background:linear-gradient(var(--btn1),var(--btn2));border-color:var(--btnBd);color:var(--btnInk)}
+.prow{display:flex;align-items:center;gap:12px;min-height:60px;padding:11px 0;border-bottom:1px solid var(--line);width:100%}
+.prow .l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.prow .l b{font-size:16px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .l b.wrap2{white-space:normal}
+.prow .l small{font-size:13px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .r{font-size:15px;font-weight:600;white-space:nowrap}
+.prow .chev{color:var(--ink3);font-size:18px}
+.pfigs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin-top:6px}
+.pfigs div{padding:14px 0;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
+.pfigs span{font-size:13px;color:var(--ink2)}
+.pfigs b{font-family:var(--display);font-weight:500;font-size:26px;line-height:31px}
+.pfigs small{font-size:12px;color:var(--ink3)}
+.pfigs .wide{grid-column:1/-1}.pfigs .wide b{font-size:40px;line-height:46px}
+.kv{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:13px 0;border-bottom:1px solid var(--line)}
+.kv .l{display:flex;flex-direction:column;gap:2px;min-width:0}
+.kv .l span{font-size:15px;color:var(--ink2)}.kv .l small{font-size:12.5px;color:var(--ink3)}
+.kv b{font-size:16px;font-weight:600;white-space:nowrap}
+.bbar{position:absolute;left:0;right:0;bottom:0;height:74px;padding:12px 16px;background:var(--side);border-top:1px solid var(--line);display:flex;gap:10px;z-index:12}
+.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:30}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:31;max-height:86%;overflow-y:auto;border-radius:20px 20px 0 0;background:var(--panel);border-top:1px solid var(--panelBd);padding:18px 16px 22px;display:flex;flex-direction:column;gap:16px}
+.sheet h3{margin:0;font-family:var(--display);font-weight:500;font-size:22px}
+.pin{height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--fieldBd);background:var(--field);font-size:16px;width:100%;outline:none}
+.ptoast{position:absolute;left:16px;right:16px;bottom:100px;z-index:50;padding:14px 16px;border-radius:12px;background:var(--tip);border:1px solid var(--panelBd);font-size:15px;line-height:21px}
+@media (prefers-reduced-motion:no-preference){.nav,.chip,.calit,.pipe button,button.item{transition:background-color .12s}}
+</style>
+
+<div class="shell">
+  <nav class="side" id="side" aria-label="CRM pages"></nav>
+  <main class="main"><div class="wrap" id="desk"></div></main>
+</div>
+<div id="stage">
+  <div id="phone"></div>
+  <button class="btn sm" id="backdesk" data-a="pv" data-v="0">‹ Back to desktop</button>
+</div>
+<div class="toast" id="toast" hidden><div></div></div>
+
+<script>
+(function(){
+'use strict';
+// ── Example data. Every number on this page is an example. ─────────────────────────────────────────
+var TODAY = new Date(2026, 8, 30, 12);
+var MS = 86400000;
+function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function addDays(n){ return new Date(TODAY.getTime()+n*MS); }
+function D(s){ var p=s.split('-'); return new Date(+p[0], +p[1]-1, +p[2], 12); }
+function ago(s){ return Math.round((TODAY-D(s))/MS); }
+function dl(s){ return D(s).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function dlw(s){ return D(s).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+function int(n){ return Math.round(n).toLocaleString('en-US'); }
+function usd(n){ return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pc(n,d){ return d>0 ? (n/d*100).toFixed(n/d<0.1?1:0)+'%' : '—'; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+var P = [{k:'tt',n:'TikTok',s:'TT',slug:'tiktok'},{k:'ig',n:'Instagram',s:'IG',slug:'instagram'}];
+var KS = P.map(function(p){return p.k;});
+function pp(k){ return P.filter(function(p){return p.k===k;})[0]; }
+function pn(k){ return pp(k).n; }
+function ps(k){ return pp(k).s; }
+function keys(plat){ return plat==='all'?KS:[plat]; }
+var ACC = {
+  tt:{h:'@forgelegacy',on:true,at:'2 hours ago',gives:'Followers, and each video’s views, likes, comments and shares. Watched is typed by hand, because TikTok does not share it on this kind of connection.'},
+  ig:{h:'@forgelegacy',on:true,at:'2 hours ago',gives:'Followers, profile visits, and each reel’s views, watched, likes, comments, shares and saves.'}
+};
+var STAGES = [['idea','Ideas','Idea'],['scripted','Scripted','Scripted'],['filmed','Filmed','Filmed'],['scheduled','Scheduled','Scheduled'],['posted','Posted','Posted']];
+function stName(k){ return STAGES.filter(function(s){return s[0]===k;})[0][2]; }
+var TOPICS=['Holt','Transformation','Founder story','Feature demo'];
+var HOOKS=['Result first','Before and after','Confession','Question','Story','Show it','Curiosity'];
+var FORMATS=['Screen recording','Talking head'];
+var GOALS={tt:{week:4,target:5000},ig:{week:3,target:3000}};
+
+// n = [views, watched % (null = not known), likes, comments, shares, saves (null = not shared)]
+var V = [
+ {id:'v1',t:'Your AI coach just rewrote my week',topic:'Holt',hook:'Result first',fmt:'Screen recording',len:28,st:'posted',
+  line:'This is my week after one sentence to Holt.',notes:'Open on the finished week. Then show the sentence I typed. End on the Monday session.',
+  lesson:{tried:'Opened on the finished plan and explained after.',got:'61% average watched, the best of the month, and the most shares.',v:'keep'},
+  po:[{p:'tt',d:'2026-09-22',n:[48200,61,3900,212,640,null]},{p:'ig',d:'2026-09-23',n:[12400,54,980,61,170,410]}]},
+ {id:'v2',t:'Day 1 vs Day 90: the chapter I almost quit',topic:'Transformation',hook:'Before and after',fmt:'Talking head',len:41,st:'posted',
+  line:'Day one. Day ninety. Same garage.',notes:'No voice for the first three seconds. Show the sealed chapter at the end.',
+  lesson:{tried:'Three silent seconds of before and after, then the story.',got:'Lots of saves, few shares. People kept it and did not pass it on.',v:'retest'},
+  po:[{p:'tt',d:'2026-09-15',n:[31800,48,2600,140,210,null]},{p:'ig',d:'2026-09-15',n:[22100,52,2100,95,300,1500]}]},
+ {id:'v3',t:'I built a fitness app because every tracker forgets you',topic:'Founder story',hook:'Confession',fmt:'Talking head',len:52,st:'posted',
+  line:'I have logged four years of workouts and I cannot show you one of them.',notes:'Too long. The point lands at second 20.',
+  lesson:{tried:'A 52-second founder story with a slow open.',got:'Most viewers left before the point. 22% average watched.',v:'kill'},
+  po:[{p:'tt',d:'2026-09-09',n:[6900,22,310,40,18,null]}]},
+ {id:'v4',t:'Squads: train with three friends, one streak',topic:'Feature demo',hook:'Question',fmt:'Screen recording',len:24,st:'posted',
+  line:'Who is the gym friend that always quits?',notes:'Show the squad streak breaking, then one check-in saving it.',
+  lesson:{tried:'Opened with a question people answer by tagging a friend.',got:'Shares ran at three times the usual rate.',v:'keep'},
+  po:[{p:'ig',d:'2026-09-18',n:[15600,57,1300,180,620,340]},{p:'tt',d:'2026-09-18',n:[19400,55,1500,160,510,null]}]},
+ {id:'v5',t:'Holt told me to rest. I did not listen.',topic:'Holt',hook:'Story',fmt:'Talking head',len:35,st:'posted',
+  line:'My coach said take the day. I took the bar instead.',notes:'',
+  lesson:{tried:'A story with the payoff held to the end.',got:'Instagram held up. TikTok views were half the usual.',v:'retest'},
+  po:[{p:'tt',d:'2026-09-26',n:[9800,null,720,66,80,null]},{p:'ig',d:'2026-09-26',n:[5200,47,400,30,52,120]}]},
+ {id:'v19',t:'5 a.m. garage session',topic:'',hook:'',fmt:'',len:17,st:'posted',imp:'tt',line:'',notes:'',lesson:null,
+  po:[{p:'tt',d:'2026-09-29',n:[2600,null,190,9,14,null]}]},
+ {id:'v6',t:'Take a picture of your meal, get the macros',topic:'Feature demo',hook:'Show it',fmt:'Screen recording',len:19,st:'posted',
+  line:'One photo. Protein, carbs, fat.',notes:'Posted two days ago. Numbers are early.',lesson:null,
+  po:[{p:'tt',d:'2026-09-28',n:[4100,null,350,22,61,null]}]},
+ {id:'v7',t:'What an honor medal actually takes',topic:'Feature demo',hook:'Curiosity',fmt:'Screen recording',len:30,st:'posted',
+  line:'This medal took me eleven weeks.',notes:'',
+  lesson:{tried:'Led with the medal art and no person on screen.',got:'Low watch time. Nobody knew what they were looking at.',v:'kill'},
+  po:[{p:'ig',d:'2026-09-12',n:[3400,33,210,14,12,60]}]},
+ {id:'v8',t:'Why I seal every chapter',topic:'Founder story',hook:'Result first',fmt:'Talking head',len:26,st:'posted',
+  line:'This is twelve weeks, closed and kept.',notes:'',
+  lesson:{tried:'A founder story cut to 26 seconds, result first.',got:'Half of it watched on average, on a founder story.',v:'keep'},
+  po:[{p:'tt',d:'2026-09-04',n:[14200,50,1100,90,190,null]}]},
+ {id:'v9',t:'Three things Holt changed in my squat week',topic:'Holt',hook:'Result first',fmt:'Screen recording',len:30,st:'scheduled',
+  line:'Holt moved three things. My squat went up.',notes:'Record the before and after plan side by side.',lesson:null,
+  po:[{p:'tt',d:'2026-10-01'},{p:'ig',d:'2026-10-01'}]},
+ {id:'v10',t:'Paste any workout and it becomes a plan',topic:'Feature demo',hook:'Show it',fmt:'Screen recording',len:22,st:'scheduled',
+  line:'Copy a workout from anywhere. Paste. Done.',notes:'',lesson:null,
+  po:[{p:'tt',d:'2026-10-02'},{p:'ig',d:'2026-10-03'}]},
+ {id:'v11',t:'Squatober day one with the squad',topic:'Transformation',hook:'Question',fmt:'Talking head',len:30,st:'scheduled',
+  line:'Could you squat every day in October?',notes:'Film the squad feed after everyone checks in.',lesson:null,
+  po:[{p:'ig',d:'2026-10-05'},{p:'tt',d:'2026-10-05'}]},
+ {id:'v12',t:'My grocery list builds itself',topic:'Feature demo',hook:'Show it',fmt:'Screen recording',len:20,st:'filmed',line:'I planned seven dinners. The list wrote itself.',notes:'Needs captions.',lesson:null,pl:['tt','ig'],po:[]},
+ {id:'v13',t:'The week I missed every workout',topic:'Founder story',hook:'Confession',fmt:'Talking head',len:30,st:'scripted',line:'Zero workouts last week. Here is what the app did.',notes:'Keep it under 30 seconds this time.',lesson:null,pl:['tt'],po:[]},
+ {id:'v14',t:'Holt watches my deadlift',topic:'Holt',hook:'Show it',fmt:'Screen recording',len:25,st:'scripted',line:'I filmed one set. This is what Holt said.',notes:'',lesson:null,pl:['tt','ig'],po:[]},
+ {id:'v15',t:'Apple Watch logging in ten seconds',topic:'Feature demo',hook:'Show it',fmt:'Screen recording',len:15,st:'idea',line:'',notes:'',lesson:null,pl:['tt'],po:[]},
+ {id:'v16',t:'A year of training in one scroll',topic:'Transformation',hook:'Result first',fmt:'Screen recording',len:20,st:'idea',line:'',notes:'Legacy page tour.',lesson:null,pl:[],po:[]},
+ {id:'v17',t:'Rank explained in twenty seconds',topic:'Feature demo',hook:'Question',fmt:'Talking head',len:20,st:'idea',line:'',notes:'',lesson:null,pl:[],po:[]},
+ {id:'v18',t:'Why this app has no followers',topic:'Founder story',hook:'Confession',fmt:'Talking head',len:25,st:'idea',line:'',notes:'',lesson:null,pl:['ig'],po:[]}
+];
+var EARLIER = { // before the last 30 days: [posts, views, watched %, likes, shares]
+  tt:{d90:[22,186000,46,15200,2100],d365:[48,274000,41,21000,2900]},
+  ig:{d90:[15,92000,45,8100,1300],d365:[30,120000,40,9900,1500]}
+};
+// One link per platform, last 30 days: clicks (ours), downloads + paid (Apple's campaign counts), web signups + paid (ours)
+var LINKS={tt:{clicks:905,dl:212,web:31,paidA:7,paidW:2,rev:214.93},ig:{clicks:447,dl:96,web:14,paidA:3,paidW:1,rev:74.96}};
+var RF={'7D':0.24,'30D':1,'90D':2.7,'1Y':6.4};
+var INCOME=[{p:'tt',what:'Creator Rewards, September',amt:46.20},{p:'ig',what:'Protein brand story, Sep 20',amt:150}];
+var QUESTIONS=[
+ {id:'q1',q:'Is it free?',p:'tt',n:14,made:false},
+ {id:'q2',q:'Does it work with an Apple Watch?',p:'ig',n:9,made:false},
+ {id:'q3',q:'Can my friends see my weight?',p:'tt',n:6,made:false},
+ {id:'q4',q:'Does Holt work for running?',p:'ig',n:4,made:false}
+];
+var RULES=['Open on the result. Explain after.','Say the app’s name out loud in the first five seconds.','One link and one ask. Never two.','Under 30 seconds unless the first three earn more.','No body claim we cannot back up.'];
+var RIVALS=[
+ {who:'Hevy',what:'Workout recap card that people repost',why:'The viewer’s own numbers are the content. It needs no script.',when:'Sep 24'},
+ {who:'Boostcamp',what:'A coach explains one program in 30 seconds',why:'Borrowed authority and one clear next step.',when:'Sep 17'}
+];
+var ASSETS=[['ZIP','Holt screen recordings, September','38 MB'],['PDF','Brand kit: logos and bronze palette','2.1 MB'],['DOCX','Caption templates','84 KB'],['MP4','B-roll: garage gym, morning','46 MB'],['Link','Hashtag sets','Google Doc']];
+
+// Follower history, generated once so the chart and the figures agree.
+function mkSeries(now, mean, seed){
+  var s=seed, a=new Array(731), i;
+  function r(){ s=(s*1664525+1013904223)%4294967296; return s/4294967296; }
+  a[730]=now;
+  for(i=730;i>0;i--){ var age=730-i, ramp=Math.pow(Math.max(0,1-age/420),2); var g=Math.round(mean*ramp*(0.35+1.3*r())+(r()>0.95?mean*ramp*3:0)); a[i-1]=Math.max(0,a[i]-g); }
+  return a;
+}
+var FOL={tt:mkSeries(3420,21,7),ig:mkSeries(1890,11.5,19)};
+function folAt(plat,back){ return keys(plat).reduce(function(t,k){return t+FOL[k][730-back];},0); }
+
+// ── State ───────────────────────────────────────────────────────────────────────────────────────────
+var S={page:'social',plat:'all',range:'30D',view:'pipe',stage:null,sel:null,sort:'views',ww:'topic',wm:'shares',armed:false,
+       ph:{view:'root',ov:null,sheet:false,seg:'pipe'}};
+var DAYS={'7D':7,'30D':30,'90D':90,'1Y':365};
+var RLABEL={'7D':'7 days','30D':'30 days','90D':'90 days','1Y':'year'};
+function byId(id){ return V.filter(function(v){return v.id===id;})[0]; }
+function plats(v){ return v.po.length?v.po.map(function(o){return o.p;}):(v.pl||[]); }
+function inPlat(v){ return S.plat==='all'||plats(v).indexOf(S.plat)>=0||(!plats(v).length&&v.st==='idea'); }
+function vDate(v){ var o=v.po.filter(function(o){return S.plat==='all'||o.p===S.plat;}); if(!o.length) o=v.po; return o.length?o.map(function(x){return x.d;}).sort()[0]:null; }
+
+function postings(days){
+  var out=[]; V.forEach(function(v){ v.po.forEach(function(o){ if(o.n && ago(o.d)<=days && ago(o.d)>=0 && (S.plat==='all'||o.p===S.plat)) out.push({v:v,o:o}); }); }); return out;
+}
+function sumOf(list){
+  var t={posts:list.length,views:0,w:0,wv:0,likes:0,comments:0,shares:0,saves:null};
+  list.forEach(function(x){ var n=x.o.n; t.views+=n[0]; if(n[1]!=null){ t.w+=n[0]*n[1]; t.wv+=n[0]; } t.likes+=n[2]; t.comments+=n[3]; t.shares+=n[4]; if(n[5]!=null) t.saves=(t.saves||0)+n[5]; });
+  return t;
+}
+function watched(t){ return t.wv?Math.round(t.w/t.wv)+'%':'—'; }
+function totals(){
+  var days=DAYS[S.range], t=sumOf(postings(Math.min(days,30)));
+  keys(S.plat).forEach(function(k){ ['d90','d365'].forEach(function(b){ if((b==='d90'&&days>=90)||(b==='d365'&&days>=365)){ var e=EARLIER[k][b]; t.posts+=e[0]; t.views+=e[1]; t.w+=e[1]*e[2]; t.wv+=e[1]; t.likes+=e[3]; t.shares+=e[4]; } }); });
+  return t;
+}
+function links(plat){
+  var f=RF[S.range], t={clicks:0,dl:0,web:0,paidA:0,paidW:0,rev:0};
+  keys(plat).forEach(function(k){ var L=LINKS[k]; t.clicks+=Math.round(L.clicks*f); t.dl+=Math.round(L.dl*f); t.web+=Math.round(L.web*f); t.paidA+=Math.round(L.paidA*f); t.paidW+=Math.round(L.paidW*f); t.rev+=L.rev*f; });
+  return t;
+}
+function weekStart(d){ var x=new Date(d); var wd=(x.getDay()+6)%7; return new Date(x.getTime()-wd*MS); }
+function weekCount(ws, plat){
+  var a=iso(ws), b=iso(new Date(ws.getTime()+6*MS)), posted=0, sched=0;
+  V.forEach(function(v){ v.po.forEach(function(o){ if(o.d>=a&&o.d<=b&&(plat==='all'||o.p===plat)){ if(o.n) posted++; else sched++; } }); });
+  return {posted:posted,sched:sched,target:keys(plat).reduce(function(t,k){return t+GOALS[k].week;},0)};
+}
+
+// ── Small pieces ────────────────────────────────────────────────────────────────────────────────────
+function sl(label,right){ return '<div class="sl"><span>'+label+'</span>'+(right||'')+'</div>'; }
+function platChips(cls){ cls=cls||'chip'; var h='<button class="'+cls+(S.plat==='all'?' on':'')+'" data-a="plat" data-v="all">All</button>';
+  P.forEach(function(p){ h+='<button class="'+cls+(S.plat===p.k?' on':'')+'" data-a="plat" data-v="'+p.k+'">'+p.n+'</button>'; }); return h; }
+function tags(v){ if(!v.topic) return 'Imported from '+pn(v.imp)+' · needs tags'; return esc(v.topic)+' · '+esc(v.hook)+(v.len?' · '+v.len+'s':''); }
+function platList(v){ var a=plats(v); return a.length?a.map(pn).join(', '):'No platform yet'; }
+function verdictTag(k){ return k==='keep'?'<span class="tag good">Keep</span>':k==='kill'?'<span class="tag crit">Kill</span>':'<span class="tag warn">Retest</span>'; }
+function offList(){ return P.filter(function(p){ return !ACC[p.k].on&&(S.plat==='all'||S.plat===p.k); }); }
+function syncLine(){ var on=P.filter(function(p){return ACC[p.k].on;}); if(!on.length) return 'No account is connected.';
+  return on.map(function(p){return p.n;}).join(' and ')+' synced '+ACC[on[0].k].at+'.'; }
+function banner(phone){ var off=offList(); if(!off.length) return '';
+  return off.map(function(p){ return phone?'<p class="pmuted warnc" style="margin-top:14px">'+p.n+' is not connected, so its numbers have stopped updating.</p>'
+    :'<div class="banner"><span>'+p.n+' is not connected, so its numbers have stopped updating.</span><button class="ulink" data-a="acct" data-v="'+p.k+'">Connect '+p.n+'</button></div>'; }).join(''); }
+
+// ── Numbers ─────────────────────────────────────────────────────────────────────────────────────────
+function socialFigures(){
+  var days=DAYS[S.range], t=totals();
+  var gained=folAt(S.plat,0)-folAt(S.plat,days), prev=folAt(S.plat,days)-folAt(S.plat,Math.min(730,days*2));
+  var note=S.range==='1Y'?'Now '+int(folAt(S.plat,0))+' followers':(prev>0?(gained>=prev?'▲ ':'▼ ')+Math.abs(Math.round((gained-prev)/prev*100))+'% vs the '+RLABEL[S.range]+' before':'');
+  return {t:t,gained:gained,note:note,tone:prev>0&&S.range!=='1Y'?(gained>=prev?'good':'bad'):''};
+}
+function topRows(){
+  var list=postings(30), rows=[];
+  if(S.plat==='all'){ var by={}; list.forEach(function(x){ (by[x.v.id]=by[x.v.id]||[]).push(x); });
+    Object.keys(by).forEach(function(id){ rows.push({v:byId(id),d:by[id].map(function(x){return x.o.d;}).sort()[0],s:sumOf(by[id]),where:by[id].map(function(x){return pn(x.o.p);}).join(', ')}); });
+  } else list.forEach(function(x){ rows.push({v:x.v,d:x.o.d,s:sumOf([x]),where:pn(x.o.p)}); });
+  var key=S.sort; rows.sort(function(a,b){ var f=function(r){ return key==='views'?r.s.views:key==='watch'?(r.s.wv?r.s.w/r.s.wv:-1):r.s.shares/r.s.views; }; return f(b)-f(a); });
+  return rows;
+}
+function incomeRows(){ return INCOME.filter(function(i){return S.plat==='all'||i.p===S.plat;}); }
+function watchNote(){ return S.plat==='ig'?'synced from Instagram':S.plat==='tt'?'typed by you, per video':'Instagram synced, TikTok typed'; }
+
+function pageSocial(){
+  var f=socialFigures(), t=f.t, L=links(S.plat), h='';
+  h+='<div class="ph"><div><h1>Numbers</h1><p>What your posts did in the last '+RLABEL[S.range]+', and what they brought into the app. '+syncLine()+'</p></div>'+
+     '<button class="btn pri" data-a="sync">Sync now</button></div>';
+  h+='<div class="chips" style="margin-bottom:28px">'+platChips()+'</div>'+banner(false);
+  h+='<div class="hero"><div class="h1"><span class="lab">Followers gained</span><span class="big num">+'+int(f.gained)+'</span>'+(f.note?'<span class="hn '+f.tone+'">'+f.note+'</span>':'')+'</div><div class="figs">'+
+     fig('Views',int(t.views),t.posts+' posts')+
+     fig('Average watched',watched(t),watchNote())+
+     fig('Shares per 1,000 views',t.views?(t.shares/t.views*1000).toFixed(1):'—','the rate that travels')+
+     fig('Link clicks',int(L.clicks),'from the link in your bio')+
+     fig('App Store downloads',int(L.dl),'Apple’s count, per platform')+
+     fig('App revenue from social',usd(L.rev),'gross, before Apple’s cut')+'</div></div>';
+  h+='<div class="grid">';
+  h+='<div class="blk full">'+sl('Followers'+(S.plat==='all'?', both platforms':', '+pn(S.plat)))+'<div class="chart" data-chart="fol" data-h="200"></div></div>';
+  var cols0='minmax(0,1fr) repeat(6,minmax(0,.9fr)) minmax(0,1.1fr)';
+  h+='<div class="blk full">'+sl('By platform')+'<div class="tscroll"><div class="tbl">'+
+     '<div class="tr h" style="grid-template-columns:'+cols0+'"><span>Platform</span><span class="n">Followers</span><span class="n">Gained</span><span class="n">Posts</span><span class="n">Views</span><span class="n">Watched</span><span class="n">Link clicks</span><span class="n">Last synced</span></div>';
+  var keep=S.plat;
+  P.forEach(function(p){ S.plat=p.k; var pt=totals(), d=DAYS[S.range], a=ACC[p.k];
+    h+='<button class="tr r'+(keep===p.k?' sel':'')+'" data-a="plat" data-v="'+p.k+'" style="grid-template-columns:'+cols0+'"><span class="ti"><span>'+p.n+'</span><small>'+a.h+'</small></span>'+
+       '<span class="n num">'+int(folAt(p.k,0))+'</span><span class="n num">+'+int(folAt(p.k,0)-folAt(p.k,d))+'</span><span class="n num">'+pt.posts+'</span><span class="n num">'+int(pt.views)+'</span><span class="n num">'+watched(pt)+'</span><span class="n num">'+int(links(p.k).clicks)+'</span>'+
+       '<span class="n m '+(a.on?'':'warnc')+'">'+(a.on?a.at:'Not connected')+'</span></button>'; });
+  S.plat=keep;
+  h+='</div></div></div>';
+  var rows=topRows(), cols='minmax(0,1fr) 70px 86px 78px 78px 96px 70px';
+  h+='<div class="blk full">'+sl('Top videos, last 30 days','<button data-a="go" data-v="content">All content ›</button>');
+  if(!rows.length) h+='<p style="padding:18px 0;font-size:14.5px;color:var(--ink2)">Nothing posted on '+pn(S.plat)+' in the last 30 days.</p>';
+  else { h+='<div class="tscroll"><div class="tbl"><div class="tr h" style="grid-template-columns:'+cols+'"><span>Video</span><span class="n">Posted</span>'+
+       sortBtn('views','Views')+sortBtn('watch','Watched')+'<span class="n">Likes</span>'+sortBtn('shares','Shares / 1k')+'<span class="n">Saves</span></div>';
+    rows.slice(0,6).forEach(function(r){ h+='<button class="tr r" data-a="open" data-v="'+r.v.id+'" style="grid-template-columns:'+cols+'"><span class="ti"><span>'+esc(r.v.t)+'</span><small>'+tags(r.v)+(r.v.topic?' · '+r.where:'')+'</small></span>'+
+       '<span class="n m">'+dl(r.d)+'</span><span class="n num">'+int(r.s.views)+'</span><span class="n num">'+watched(r.s)+'</span><span class="n num">'+int(r.s.likes)+'</span><span class="n num">'+(r.s.shares/r.s.views*1000).toFixed(1)+'</span><span class="n num">'+(r.s.saves==null?'—':int(r.s.saves))+'</span></button>'; });
+    h+='</div></div>'; }
+  h+='</div>';
+  h+='<div class="blk">'+sl('From a post to a paying athlete')+'<p class="sub">Through your '+(S.plat==='all'?'two platform links':pn(S.plat)+' link')+', last '+RLABEL[S.range]+'.</p><div class="rows">'+
+     row('Views','',int(t.views))+row('Link clicks',pc(L.clicks,t.views)+' of views',int(L.clicks))+
+     row('App Store downloads','Apple’s count. '+pc(L.dl,L.clicks)+' of clicks.',int(L.dl))+
+     row('Web signups','Signed up on the site through the link.',int(L.web))+
+     row('Paid',L.paidA+' through the App Store, '+L.paidW+' on the web.',int(L.paidA+L.paidW))+'</div>'+
+     '<p class="foot">Counts only. The CRM never lists who came from a link. Apple leaves out any count under 5 and runs a day behind.</p></div>';
+  h+='<div class="blk">'+sl('Your links')+'<p class="sub">One per platform. Put each in that platform’s bio. It counts the click, then sends iPhones to the App Store and everyone else to the site.</p>';
+  P.forEach(function(p){ if(S.plat!=='all'&&S.plat!==p.k) return; var u='forgelegacy.app/go/'+p.slug;
+    h+='<div class="post" style="border-top:0;border-bottom:1px solid var(--line)"><div class="hd"><b>'+p.n+'</b><span class="num">'+int(links(p.k).clicks)+' clicks</span></div><div class="lnk"><code>'+u+'</code><button class="ulink" data-a="copy" data-v="'+u+'">Copy link</button></div></div>'; });
+  h+='</div>';
+  var inc=incomeRows(), incT=inc.reduce(function(a,i){return a+i.amt;},0);
+  h+='<div class="blk">'+sl('Revenue')+'<div class="rows">'+
+     row('App revenue from social','Subscriptions that came through your links. Gross, before Apple’s cut.',usd(L.rev))+
+     row('Platform income','Payouts and brand deals, typed by hand.',inc.length?usd(incT):'<b class="dim">—</b>',!inc.length);
+  inc.forEach(function(i){ h+=row(pn(i.p),i.what,usd(i.amt)); });
+  h+='</div><p class="foot">Two different kinds of money, shown side by side and never added.</p></div>';
+  h+='<div class="blk">'+sl('This week’s goals','<span style="font-size:13px;letter-spacing:0;text-transform:none;font-weight:400">'+dl(iso(weekStart(TODAY)))+' to '+dl(iso(new Date(weekStart(TODAY).getTime()+6*MS)))+'</span>')+'<div class="bars">';
+  P.forEach(function(p){ if(S.plat!=='all'&&S.plat!==p.k) return; var w=weekCount(weekStart(TODAY),p.k), g=GOALS[p.k];
+    h+='<div class="bar"><div class="t"><span>'+p.n+' posts</span><em class="num"><b>'+w.posted+' posted · '+w.sched+' scheduled</b> of '+w.target+'</em></div><div class="track"><i style="width:'+Math.min(100,w.posted/w.target*100)+'%"></i><i class="soft" style="width:'+Math.min(100-w.posted/w.target*100,w.sched/w.target*100)+'%"></i></div></div>';
+    h+='<div class="bar"><div class="t"><span>'+p.n+' followers</span><em class="num"><b>'+int(folAt(p.k,0))+'</b> of '+int(g.target)+' by Dec 31</em></div><div class="track"><i style="width:'+Math.min(100,folAt(p.k,0)/g.target*100)+'%"></i></div></div>'; });
+  h+='</div></div>';
+  h+='<div class="blk full">'+sl('Connected accounts')+'<div class="rows">';
+  P.forEach(function(p){ var a=ACC[p.k];
+    h+='<div style="align-items:center"><div class="l"><span style="color:var(--ink);font-weight:600">'+p.n+(a.on?' · '+a.h:'')+'</span><small style="max-width:720px;line-height:19px">'+(a.on?'Synced '+a.at+'. '+a.gives:'Not connected. Nothing is coming in.')+'</small></div>'+
+       '<button class="btn sm" data-a="acct" data-v="'+p.k+'">'+(a.on?'Disconnect':'Connect '+p.n)+'</button></div>'; });
+  h+='</div></div>';
+  h+='</div>';
+  h+='<p class="footnote">Numbers come in once a day on their own, and whenever you press Sync now. Instagram can run up to two days behind. The follower chart starts the day an account is connected. Each platform’s sign-in is kept on the server and is never shown in the CRM.</p>';
+  return h;
+}
+function fig(l,v,n){ return '<div class="fig"><span class="lab" style="font-size:13px;color:var(--ink2)">'+l+'</span><b class="num">'+v+'</b><small>'+n+'</small></div>'; }
+function row(l,n,v,raw){ return '<div><div class="l"><span>'+l+'</span>'+(n?'<small>'+n+'</small>':'')+'</div>'+(raw?v:'<b class="num">'+v+'</b>')+'</div>'; }
+function sortBtn(k,l){ return '<button class="n'+(S.sort===k?' on':'')+'" data-a="sort" data-v="'+k+'">'+l+(S.sort===k?' ↓':'')+'</button>'; }
+
+// ── Content ─────────────────────────────────────────────────────────────────────────────────────────
+function stageCount(k){ return V.filter(function(v){return v.st===k&&inPlat(v);}).length; }
+function listRow(v,phone){
+  var d=vDate(v), right='';
+  if(v.st==='posted'){ var s=sumOf(v.po.filter(function(o){return o.n&&(S.plat==='all'||o.p===S.plat);}).map(function(o){return {v:v,o:o};})); right=int(s.views)+' views'; }
+  else if(v.st==='scheduled') right=dl(d);
+  if(phone) return '<button class="prow" data-a="pov" data-v="'+v.id+'"><span class="l"><b>'+esc(v.t)+'</b><small>'+tags(v)+(v.topic?' · '+platList(v):'')+'</small></span><span class="r num">'+right+'</span></button>';
+  return '<button class="tr r'+(S.sel===v.id?' sel':'')+'" data-a="sel" data-v="'+v.id+'" style="grid-template-columns:minmax(0,1fr) 150px 110px"><span class="ti"><span>'+esc(v.t)+'</span><small class="'+(v.topic?'':'warnc')+'">'+tags(v)+'</small></span><span class="m">'+platList(v)+'</span><span class="n num">'+right+'</span></button>';
+}
+function pipeList(phone){
+  var h='', order=S.stage?[S.stage]:['scheduled','filmed','scripted','idea','posted'];
+  order.forEach(function(k){ var vs=V.filter(function(v){return v.st===k&&inPlat(v);});
+    if(k==='posted') vs.sort(function(a,b){return vDate(b)<vDate(a)?-1:1;}); if(k==='scheduled') vs.sort(function(a,b){return vDate(a)<vDate(b)?-1:1;});
+    if(!vs.length&&!S.stage) return;
+    var lab=STAGES.filter(function(s){return s[0]===k;})[0][1];
+    var more=(!S.stage&&k==='posted'&&vs.length>4);
+    h+=phone?'<div class="psh"><span>'+lab+' · '+vs.length+'</span>'+(more?'<button data-a="stage" data-v="posted">See all ›</button>':'')+'</div>'
+            :'<div class="grouph">'+sl(lab+' · '+vs.length,more?'<button data-a="stage" data-v="posted">See all posted ›</button>':'')+'</div>';
+    if(!vs.length) h+='<p style="padding:18px 0;font-size:14.5px;color:var(--ink2)">Nothing at this stage'+(S.plat!=='all'?' for '+pn(S.plat):'')+'.</p>';
+    (more?vs.slice(0,4):vs).forEach(function(v){ h+=listRow(v,phone); }); });
+  return h;
+}
+function calendar(){
+  var start=new Date(weekStart(TODAY).getTime()-14*MS), h='<div class="cal">', w, d;
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(function(x){ h+='<div class="dow">'+x+'</div>'; }); h+='<div class="dow" style="padding-left:12px">Week</div>';
+  for(w=0;w<5;w++){ var ws=new Date(start.getTime()+w*7*MS);
+    for(d=0;d<7;d++){ var day=new Date(ws.getTime()+d*MS), k=iso(day), isT=k===iso(TODAY), past=k<iso(TODAY);
+      h+='<div class="day'+(isT?' today':'')+(past?' past':'')+'"><span class="dn num">'+(day.getDate()===1||(w===0&&d===0)?dl(k):day.getDate())+(isT?' · today':'')+'</span>';
+      V.forEach(function(v){ v.po.forEach(function(o){ if(o.d===k&&(S.plat==='all'||o.p===S.plat)) h+='<button class="calit'+(o.n?' done':'')+(S.sel===v.id?' sel':'')+'" data-a="sel" data-v="'+v.id+'" title="'+esc(v.t)+' · '+pn(o.p)+'"><span class="code">'+ps(o.p)+'</span><span>'+(o.n?'✓ ':'')+esc(v.t)+'</span></button>'; }); });
+      h+='</div>'; }
+    var c=weekCount(ws,S.plat), n=c.posted+c.sched, over=iso(new Date(ws.getTime()+6*MS))<iso(TODAY);
+    h+='<div class="wk"><b class="num">'+n+' of '+c.target+'</b><span class="'+(over&&n<c.target?'bad':'')+'">'+(over?(n<c.target?'missed':'met'):(n>=c.target?'planned':(c.target-n)+' to plan'))+'</span></div>'; }
+  h+='</div><p class="foot"><span class="code">TT</span> TikTok &nbsp; <span class="code">IG</span> Instagram &nbsp;·&nbsp; ✓ posted &nbsp;·&nbsp; the week column counts posts against your weekly goal.</p>';
+  return h;
+}
+function nextAct(v){ return {idea:'Mark scripted',scripted:'Mark filmed',filmed:'Schedule it',scheduled:'Mark posted',posted:v.topic?'Save':'Save tags'}[v.st]; }
+function sel(id,label,list,val){ return '<div class="field"><label for="'+id+'">'+label+'</label><select class="in" id="'+id+'">'+(val?'':'<option value="" selected>Choose</option>')+list.map(function(x){return '<option'+(x===val?' selected':'')+'>'+esc(x)+'</option>';}).join('')+'</select></div>'; }
+function detail(v,phone){
+  var h='';
+  h+=phone?'':'<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><h2>'+esc(v.t)+'</h2><button data-a="sel" data-v="" aria-label="Close" style="font-size:20px;color:var(--ink3);line-height:1">×</button></div>';
+  if(!v.topic) h+='<div class="banner" style="margin:0">This video was posted without a plan, so it came in from '+pn(v.imp)+' on its own. Give it tags and it counts in the Playbook.</div>';
+  h+='<div><h4 style="margin-bottom:8px">Stage</h4><div class="chips" style="gap:6px">'+STAGES.map(function(s){return '<button class="opt'+(v.st===s[0]?' on':'')+'" data-a="setst" data-v="'+s[0]+'">'+s[2]+'</button>';}).join('')+'</div></div>';
+  h+='<div class="frow">'+sel('d-topic','Topic',TOPICS,v.topic)+sel('d-hook','Hook',HOOKS,v.hook)+'</div>';
+  h+='<div class="frow">'+sel('d-fmt','Format',FORMATS,v.fmt)+'<div class="field"><label for="d-len">Length, seconds</label><input class="in num" id="d-len" inputmode="numeric" value="'+v.len+'"></div></div>';
+  h+='<div class="field"><label for="d-line">First line</label><input class="in" id="d-line" value="'+esc(v.line)+'" placeholder="The sentence they hear first"></div>';
+  h+='<div class="field"><label for="d-notes">Script notes</label><textarea class="in" id="d-notes" placeholder="Shots, beats, what to cut">'+esc(v.notes)+'</textarea></div>';
+  h+='<div><h4 style="margin-bottom:10px">Where it goes</h4>';
+  if(!v.po.length) h+='<p style="margin:0 0 10px;font-size:14px;color:var(--ink2)">'+(plats(v).length?'Planned for '+platList(v)+'. No date yet.':'No platform chosen yet.')+'</p>';
+  v.po.forEach(function(o){ var a=ACC[o.p];
+    h+='<div class="post"><div class="hd"><b>'+pn(o.p)+'</b><span>'+(o.n?'Posted '+dlw(o.d):'Scheduled for '+dlw(o.d))+'</span></div>';
+    if(o.n){ var n=o.n; h+='<div class="mini num" style="grid-template-columns:repeat(3,minmax(0,1fr))">'+mini(int(n[0]),'views')+mini(n[1]==null?'—':n[1]+'%',o.p==='tt'?'watched, typed':'watched')+mini(int(n[2]),'likes')+mini(int(n[3]),'comments')+mini(int(n[4]),'shares')+mini(n[5]==null?'—':int(n[5]),'saves')+'</div>'+
+       '<div style="font-size:12.5px;line-height:19px;color:var(--ink3)">'+(a.on?'Synced '+a.at+'.':'Not syncing. '+pn(o.p)+' is disconnected.')+(o.p==='tt'?' TikTok does not share watch time or saves. <button class="ulink" style="font-size:12.5px" data-a="mock">'+(n[1]==null?'Type watched':'Change watched')+'</button>':'')+'</div>'; }
+    else h+='<div style="font-size:12.5px;line-height:19px;color:var(--ink3)">When it goes up, its numbers come in on their own and attach here.</div>';
+    h+='</div>'; });
+  h+='<button class="btn sm" data-a="mock" style="margin-top:4px">Add a platform</button></div>';
+  if(v.st==='posted'){ var L=v.lesson||{tried:'',got:'',v:''};
+    h+='<div style="display:flex;flex-direction:column;gap:12px"><h4>Lesson</h4>'+
+       '<div class="field"><label for="d-tried">What I tried</label><input class="in" id="d-tried" value="'+esc(L.tried)+'" placeholder="One sentence"></div>'+
+       '<div class="field"><label for="d-got">What happened</label><input class="in" id="d-got" value="'+esc(L.got)+'" placeholder="One sentence"></div>'+
+       '<div class="chips" style="gap:6px"><button class="opt'+(L.v==='keep'?' on good':'')+'" data-a="verdict" data-v="keep">Keep</button><button class="opt'+(L.v==='retest'?' on warn':'')+'" data-a="verdict" data-v="retest">Retest</button><button class="opt'+(L.v==='kill'?' on crit':'')+'" data-a="verdict" data-v="kill">Kill</button></div></div>'; }
+  if(!phone) h+='<div class="chips" style="gap:10px;padding-top:4px"><button class="btn pri" data-a="next">'+nextAct(v)+'</button><button class="btn del'+(S.armed?' armed':'')+'" data-a="del">'+(S.armed?'Confirm delete':'Delete')+'</button></div>';
+  return h;
+}
+function mini(v,l){ return '<div><b>'+v+'</b><small>'+l+'</small></div>'; }
+
+function pageContent(){
+  var h='<div class="ph"><div><h1>Content</h1><p>Every video, from the idea to what it did. One record each.</p></div>'+
+        '<div class="seg" role="radiogroup" aria-label="View"><button class="'+(S.view==='pipe'?'on':'')+'" data-a="view" data-v="pipe">Pipeline</button><button class="'+(S.view==='cal'?'on':'')+'" data-a="view" data-v="cal">Calendar</button></div></div>';
+  h+='<div class="capture"><input class="in" id="idea-in" placeholder="Write down an idea before it goes" aria-label="New idea"><button class="btn pri" data-a="addidea">Add idea</button></div>';
+  h+='<div class="chips" style="margin-top:20px">'+platChips()+'</div>';
+  var v=S.sel?byId(S.sel):null, left='';
+  if(S.view==='pipe'){
+    left+='<div class="pipe">'+STAGES.map(function(s){return '<button class="'+(S.stage===s[0]?'on':'')+'" data-a="stage" data-v="'+s[0]+'"><b class="num">'+stageCount(s[0])+'</b><span>'+s[1]+'</span></button>';}).join('')+'</div>';
+    left+=pipeList(false);
+  } else left+=calendar();
+  h+='<div class="two"><div class="list">'+left+'</div>'+(v?'<div class="det"><div class="panel">'+detail(v,false)+'</div></div>':'')+'</div>';
+  return h;
+}
+
+// ── Playbook ────────────────────────────────────────────────────────────────────────────────────────
+var WM={shares:'Shares per 1,000 views',watch:'Watched',views:'Views per video'};
+function working(dim){
+  var key={topic:'topic',hook:'hook',format:'fmt',length:'len'}[dim], by={};
+  V.forEach(function(v){ if(v.st!=='posted'||!v.topic) return; var k=dim==='length'?(v.len<20?'Under 20 seconds':v.len<=35?'20 to 35 seconds':'Over 35 seconds'):v[key];
+    var b=by[k]=by[k]||{n:0,list:[]}; b.n++; v.po.forEach(function(o){ if(o.n) b.list.push({v:v,o:o}); }); });
+  var rows=Object.keys(by).map(function(k){ var s=sumOf(by[k].list), val=S.wm==='shares'?s.shares/s.views*1000:S.wm==='watch'?(s.wv?s.w/s.wv:0):s.views/by[k].n;
+    return {k:k,n:by[k].n,val:val,txt:S.wm==='shares'?val.toFixed(1)+' per 1,000':S.wm==='watch'?(s.wv?Math.round(val)+'% watched':'—'):int(val)+' views'}; });
+  rows.sort(function(a,b){return b.val-a.val;}); var max=Math.max.apply(null,rows.map(function(r){return r.val;}))||1;
+  rows.forEach(function(r){ r.w=S.wm==='watch'?r.val:r.val/max*100; }); return rows;
+}
+function workingBars(dim,phone){
+  return '<div class="bars">'+working(dim).map(function(r){ return '<div class="bar"><div class="t"><span'+(phone?' style="font-size:15px"':'')+'>'+esc(r.k)+'</span><em class="num"><b>'+r.txt+'</b> · '+r.n+(r.n===1?' video':' videos')+'</em></div><div class="track"><i style="width:'+r.w+'%"></i></div></div>'; }).join('')+'</div>';
+}
+function measureChips(cls){ return Object.keys(WM).map(function(k){return '<button class="'+cls+(S.wm===k?' on':'')+'" '+(cls==='chip'?'style="height:28px" ':'')+'data-a="wm" data-v="'+k+'">'+WM[k]+'</button>';}).join(''); }
+function lessons(){ return V.filter(function(v){return v.lesson&&v.lesson.v;}).sort(function(a,b){return vDate(b)<vDate(a)?-1:1;}); }
+function pagePlaybook(){
+  var h='<div class="ph"><div><h1>Playbook</h1><p>What the numbers say is working, and what you have decided to do about it.</p></div><button class="btn pri" data-a="mock">Add a rule</button></div>';
+  h+='<div class="grid">';
+  h+='<div class="blk full">'+sl('What is working','<div class="chips" style="gap:6px">'+['topic','hook','format','length'].map(function(d){return '<button class="chip'+(S.ww===d?' on':'')+'" style="height:28px" data-a="ww" data-v="'+d+'">By '+d+'</button>';}).join('')+'</div>')+
+     '<div class="chips" style="gap:6px;margin-top:14px"><span style="font-size:13px;color:var(--ink3);margin-right:4px">Measured by</span>'+measureChips('chip')+'</div>'+workingBars(S.ww,false)+
+     '<p class="foot">Computed from the tags on each video. The count on the right is how many videos stand behind each line. '+(S.wm==='watch'?'Watched uses Instagram’s synced figure and the TikTok figures you typed.':'This measure syncs from both platforms.')+'</p></div>';
+  h+='<div class="blk">'+sl('Experiments');
+  lessons().forEach(function(v){ h+='<button class="item" data-a="open" data-v="'+v.id+'"><span class="top"><b>'+esc(v.lesson.tried)+'</b>'+verdictTag(v.lesson.v)+'</span><p>'+esc(v.lesson.got)+'</p><small>'+esc(v.t)+' · '+dl(vDate(v))+'</small></button>'; });
+  h+='</div>';
+  h+='<div class="blk">'+sl('Rules');
+  RULES.forEach(function(r){ h+='<div class="rule">'+esc(r)+'</div>'; });
+  h+='<p class="foot">Your own words. Written when a lesson has held up more than once.</p></div>';
+  h+='<div class="blk">'+sl('What people keep asking','<button data-a="mock">Add a question ›</button>');
+  QUESTIONS.forEach(function(q){ h+='<div class="item"><div class="top"><b>“'+esc(q.q)+'”</b><span class="num" style="font-size:13px;color:var(--ink3);white-space:nowrap">asked '+q.n+' times</span></div><small>Mostly on '+pn(q.p)+' · '+(q.made?'<span class="good">Added to Ideas</span>':'<button class="ulink" style="font-size:12.5px" data-a="qidea" data-v="'+q.id+'">Make it a video</button>')+'</small></div>'; });
+  h+='<p class="foot">Typed by hand from comments and messages. Nothing is read automatically.</p></div>';
+  h+='<div class="blk">'+sl('Worth studying','<button data-a="mock">Add a note ›</button>');
+  RIVALS.forEach(function(r){ h+='<div class="item"><div class="top"><b>'+esc(r.who)+': '+esc(r.what)+'</b></div><p>'+esc(r.why)+'</p><small>Noted '+r.when+'</small></div>'; });
+  h+='</div>';
+  h+='<div class="blk full">'+sl('Assets','<button data-a="mock">Open Documents ›</button>')+'<div class="rows">';
+  ASSETS.forEach(function(a){ h+='<div><div class="l" style="flex-direction:row;gap:12px;align-items:baseline"><span class="code" style="min-width:44px">'+a[0]+'</span><span style="color:var(--ink)">'+esc(a[1])+'</span></div><b class="dim num">'+a[2]+'</b></div>'; });
+  h+='</div><p class="foot">This is the Marketing shelf of Documents. Same files, shown here so they are beside the work.</p></div>';
+  h+='</div>';
+  return h;
+}
+
+// ── Desktop shell ───────────────────────────────────────────────────────────────────────────────────
+var NAV=[['Business',[['','Overview'],['','Revenue'],['','Users & plans'],['','AI usage'],['','App Store']]],['Product',[['','Usage']]],
+         ['Social',[['social','Numbers'],['content','Content'],['playbook','Playbook']]],
+         ['Operations',[['','Bugs',28],['','Moderation',2]]],['Relationships',[['','Contacts'],['','Surveys'],['','Documents']]]];
+function renderSide(){
+  var h='<div class="brand"><b>Forge Legacy</b><span>‹ Back to the app</span></div>';
+  NAV.forEach(function(g){ h+='<div class="grp"><h6>'+g[0]+'</h6>'; g[1].forEach(function(i){
+    h+=i[0]?'<button class="nav'+(S.page===i[0]?' on':'')+'" data-a="go" data-v="'+i[0]+'">'+i[1]+'</button>'
+           :'<button class="nav old" data-a="old">'+i[1]+(i[2]?'<i class="num">'+i[2]+'</i>':'')+'</button>'; }); h+='</div>'; });
+  h+='<p class="mocknote">Design mock. Every number is an example and nothing is saved.</p>';
+  document.getElementById('side').innerHTML=h;
+}
+function isDark(){ var t=document.documentElement.getAttribute('data-theme'); return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches; }
+function renderDesk(){
+  var label={social:'Numbers',content:'Content',playbook:'Playbook'}[S.page], dk=isDark();
+  var h='<div class="topbar"><div class="crumb">Social · <b>'+label+'</b></div><div class="segs">'+
+    '<div class="seg" role="radiogroup" aria-label="Preview"><button class="on" data-a="pv" data-v="0">Desktop</button><button data-a="pv" data-v="1">Phone</button></div>'+
+    '<div class="seg" role="radiogroup" aria-label="Appearance"><button class="'+(dk?'on':'')+'" data-a="theme" data-v="dark">Dark</button><button class="'+(dk?'':'on')+'" data-a="theme" data-v="light">Light</button></div>'+
+    (S.page==='social'?'<div class="seg" role="radiogroup" aria-label="Date range">'+['7D','30D','90D','1Y'].map(function(r){return '<button class="'+(S.range===r?'on':'')+'" data-a="range" data-v="'+r+'">'+r+'</button>';}).join('')+'</div>':'')+
+    '</div></div>';
+  h+=S.page==='social'?pageSocial():S.page==='content'?pageContent():pagePlaybook();
+  document.getElementById('desk').innerHTML=h;
+}
+
+// ── Phone ───────────────────────────────────────────────────────────────────────────────────────────
+var ICON={today:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+  money:'<path d="M4 18l5-6 4 3 7-8"/><path d="M15 7h5v5"/>',bugs:'<rect x="8" y="6" width="8" height="13" rx="4"/><path d="M12 10v9M8 11H4.5M16 11h3.5M8 15H4.5M16 15h3.5M9.5 6 8 3.5M14.5 6 16 3.5"/>',
+  people:'<circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.3 3-5 6-5s5.4 1.7 6 5M15.5 5.2a3 3 0 0 1 0 5.6M17.5 14.3c1.8.7 3 2.3 3.4 4.7"/>',
+  more:'<circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/>'};
+function stageCountAll(k){ return V.filter(function(v){return v.st===k;}).length; }
+function prow(k,l,s){ return '<button class="prow" data-a="pview" data-v="'+k+'"><span class="l"><b>'+l+'</b><small>'+s+'</small></span><span class="chev">›</span></button>'; }
+function kv(l,n,v){ return '<div class="kv"><div class="l"><span>'+l+'</span>'+(n?'<small>'+n+'</small>':'')+'</div><b class="num">'+v+'</b></div>'; }
+function pRoot(){
+  var f30=folAt('all',0)-folAt('all',30);
+  var h='<div class="ptitle"><h1>More</h1></div><button class="bigbtn pri" data-a="psheet" style="margin-top:10px">New idea</button>';
+  h+='<div class="psh"><span>Social</span></div>';
+  h+=prow('social','Numbers','+'+int(f30)+' followers in 30 days')+prow('content','Content',stageCountAll('scheduled')+' scheduled · '+stageCountAll('idea')+' ideas')+prow('playbook','Playbook',lessons().length+' lessons · '+QUESTIONS.length+' questions');
+  h+='<div class="psh"><span>Already in the CRM</span></div>';
+  [['App Store','4.8 rating · 212 ratings'],['Usage','Active athletes and retention'],['Moderation','2 reports waiting'],['Surveys','41 responses'],['Documents','23 files']].forEach(function(r){ h+='<button class="prow" data-a="old"><span class="l"><b style="color:var(--ink2)">'+r[0]+'</b><small>'+r[1]+'</small></span><span class="chev">›</span></button>'; });
+  h+='<p class="pmuted" style="margin-top:20px">Design mock. Every number is an example and nothing is saved.</p>';
+  return h;
+}
+function pSocial(){
+  var f=socialFigures(), t=f.t, L=links(S.plat);
+  var h='<button class="pback" data-a="pview" data-v="root">‹ More</button><div class="ptitle"><h1>Numbers</h1><div class="rseg">'+['7D','30D','90D','1Y'].map(function(r){return '<button class="'+(S.range===r?'on':'')+'" data-a="range" data-v="'+r+'">'+r+'</button>';}).join('')+'</div></div>';
+  h+='<div class="pchips">'+platChips('pchip')+'</div>'+banner(true);
+  h+='<div class="pfigs"><div class="wide"><span>Followers gained</span><b class="num">+'+int(f.gained)+'</b>'+(f.note?'<small class="'+f.tone+'">'+f.note+'</small>':'')+'</div>'+
+     '<div><span>Views</span><b class="num">'+int(t.views)+'</b><small>'+t.posts+' posts</small></div><div><span>Average watched</span><b class="num">'+watched(t)+'</b><small>'+watchNote()+'</small></div>'+
+     '<div><span>App Store downloads</span><b class="num">'+int(L.dl)+'</b><small>Apple’s count</small></div><div><span>App revenue</span><b class="num">'+usd(L.rev)+'</b><small>gross, before Apple’s cut</small></div></div>';
+  h+='<div class="psh"><span>Followers</span></div><div class="chart" data-chart="fol" data-h="150"></div>';
+  h+='<div class="psh"><span>Top videos, last 30 days</span></div>';
+  var rows=topRows(); if(!rows.length) h+='<p class="pmuted">Nothing posted here in the last 30 days.</p>';
+  rows.slice(0,5).forEach(function(r){ h+='<button class="prow" data-a="pov" data-v="'+r.v.id+'"><span class="l"><b>'+esc(r.v.t)+'</b><small>'+watched(r.s)+' watched · '+(r.s.shares/r.s.views*1000).toFixed(1)+' shares per 1,000 · '+r.where+'</small></span><span class="r num">'+int(r.s.views)+'</span></button>'; });
+  h+='<div class="psh"><span>From a post to a paying athlete</span></div>'+kv('Link clicks',pc(L.clicks,t.views)+' of views',int(L.clicks))+kv('App Store downloads','Apple’s count',int(L.dl))+kv('Web signups','Through the link',int(L.web))+kv('Paid',L.paidA+' App Store, '+L.paidW+' web',int(L.paidA+L.paidW));
+  h+='<p class="pmuted">One link per platform, in its bio. Counts only.</p>';
+  var inc=incomeRows(), incT=inc.reduce(function(a,i){return a+i.amt;},0);
+  h+='<div class="psh"><span>Revenue</span></div>'+kv('App revenue from social','Gross, before Apple’s cut',usd(L.rev))+kv('Platform income','Typed by hand',inc.length?usd(incT):'—');
+  h+='<div class="psh"><span>This week</span></div>';
+  P.forEach(function(p){ if(S.plat!=='all'&&S.plat!==p.k) return; var w=weekCount(weekStart(TODAY),p.k); h+=kv(p.n,w.posted+' posted · '+w.sched+' scheduled',(w.posted+w.sched)+' of '+w.target); });
+  h+='<div class="psh"><span>Connected accounts</span><button data-a="sync">Sync now</button></div>';
+  P.forEach(function(p){ var a=ACC[p.k]; h+='<div class="prow"><span class="l"><b>'+p.n+'</b><small>'+(a.on?a.h+' · synced '+a.at:'Not connected')+'</small></span><button class="btn sm" data-a="acct" data-v="'+p.k+'">'+(a.on?'Disconnect':'Connect')+'</button></div>'; });
+  return h;
+}
+function pContent(){
+  var h='<button class="pback" data-a="pview" data-v="root">‹ More</button><div class="ptitle"><h1>Content</h1><button class="btn sm" data-a="psheet">New idea</button></div>';
+  h+='<div class="pseg"><button class="'+(S.ph.seg==='pipe'?'on':'')+'" data-a="pseg" data-v="pipe">Pipeline</button><button class="'+(S.ph.seg==='cal'?'on':'')+'" data-a="pseg" data-v="cal">Calendar</button></div>';
+  h+='<div class="pchips">'+platChips('pchip')+'</div>';
+  if(S.ph.seg==='pipe'){
+    h+='<div class="pchips"><button class="pchip'+(!S.stage?' on':'')+'" data-a="stage" data-v="">All</button>'+STAGES.map(function(s){return '<button class="pchip'+(S.stage===s[0]?' on':'')+'" data-a="stage" data-v="'+s[0]+'">'+s[1]+' <small>'+stageCount(s[0])+'</small></button>';}).join('')+'</div>';
+    h+=pipeList(true);
+  } else {
+    var ws0=weekStart(TODAY), w, d;
+    for(w=-1;w<3;w++){ var ws=new Date(ws0.getTime()+w*7*MS), c=weekCount(ws,S.plat), n=c.posted+c.sched, over=w<0;
+      h+='<div class="psh"><span>'+(w===0?'This week':w===-1?'Last week':'Week of '+dl(iso(ws)))+'</span><span class="num '+(over&&n<c.target?'bad':'')+'" style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px">'+n+' of '+c.target+(over?(n<c.target?' · missed':' · met'):'')+'</span></div>';
+      var any=false;
+      for(d=0;d<7;d++){ var k=iso(new Date(ws.getTime()+d*MS));
+        V.forEach(function(v){ v.po.forEach(function(o){ if(o.d===k&&(S.plat==='all'||o.p===S.plat)){ any=true; h+='<button class="prow" data-a="pov" data-v="'+v.id+'"><span class="l"><b>'+esc(v.t)+'</b><small>'+dlw(k)+(k===iso(TODAY)?' · today':'')+' · '+pn(o.p)+'</small></span><span class="r" style="font-weight:500;font-size:13px;color:var(--ink3)">'+(o.n?'✓ posted':'scheduled')+'</span></button>'; } }); }); }
+      if(!any) h+='<p class="pmuted" style="padding:10px 0">Nothing planned.</p>'; }
+  }
+  return h;
+}
+function pPlaybook(){
+  var h='<button class="pback" data-a="pview" data-v="root">‹ More</button><div class="ptitle"><h1>Playbook</h1></div>';
+  h+='<div class="psh"><span>What is working</span></div><div class="pchips">'+['topic','hook','format','length'].map(function(d){return '<button class="pchip'+(S.ww===d?' on':'')+'" data-a="ww" data-v="'+d+'">By '+d+'</button>';}).join('')+'</div>';
+  h+='<div class="pchips">'+measureChips('pchip')+'</div>'+workingBars(S.ww,true);
+  h+='<div class="psh"><span>Experiments</span></div>';
+  lessons().forEach(function(v){ h+='<button class="prow" data-a="pov" data-v="'+v.id+'" style="align-items:flex-start"><span class="l"><b class="wrap2">'+esc(v.lesson.tried)+'</b><small style="white-space:normal">'+esc(v.lesson.got)+'</small></span>'+verdictTag(v.lesson.v)+'</button>'; });
+  h+='<div class="psh"><span>Rules</span></div>';
+  RULES.forEach(function(r){ h+='<div class="rule" style="font-size:17px;line-height:24px">'+esc(r)+'</div>'; });
+  h+='<div class="psh"><span>What people keep asking</span></div>';
+  QUESTIONS.forEach(function(q){ h+='<div class="prow"><span class="l"><b class="wrap2">“'+esc(q.q)+'”</b><small>Asked '+q.n+' times · '+pn(q.p)+'</small></span>'+(q.made?'<span class="tag good">In Ideas</span>':'<button class="btn sm" data-a="qidea" data-v="'+q.id+'">Make a video</button>')+'</div>'; });
+  h+='<div class="psh"><span>Worth studying</span></div>';
+  RIVALS.forEach(function(r){ h+='<div class="prow" style="align-items:flex-start"><span class="l"><b class="wrap2">'+esc(r.who)+': '+esc(r.what)+'</b><small style="white-space:normal">'+esc(r.why)+'</small></span></div>'; });
+  return h;
+}
+function renderPhone(){
+  var ph=S.ph, body=ph.view==='root'?pRoot():ph.view==='social'?pSocial():ph.view==='content'?pContent():pPlaybook();
+  var h='<div class="pscroll" id="pscroll">'+body+'</div>';
+  h+='<div class="tabbar" role="tablist">'+[['today','Today',2],['money','Money'],['bugs','Bugs',28],['people','People',1],['more','More']].map(function(t){
+    return '<button role="tab" class="'+(t[0]==='more'?'on':'')+'" data-a="'+(t[0]==='more'?'pview':'old')+'" data-v="root"><svg viewBox="0 0 24 24">'+ICON[t[0]]+'</svg>'+t[1]+(t[2]?'<i class="num">'+t[2]+'</i>':'')+'</button>'; }).join('')+'</div>';
+  if(ph.ov){ var v=byId(ph.ov);
+    h+='<div class="pfill" style="z-index:10;background:var(--bg)"><div class="pscroll ov"><button class="pback" data-a="pov" data-v="">‹ '+(ph.view==='social'?'Numbers':ph.view==='playbook'?'Playbook':'Content')+'</button>'+
+       '<div class="ptitle" style="align-items:flex-start;margin-bottom:14px"><h1 style="font-size:24px;line-height:30px">'+esc(v.t)+'</h1></div><div style="display:flex;flex-direction:column;gap:18px">'+detail(v,true)+'</div></div>'+
+       '<div class="bbar"><button class="bigbtn pri" data-a="next" style="flex:1">'+nextAct(v)+'</button></div></div>'; }
+  if(ph.sheet) h+='<div class="sheetbg" data-a="psheet"></div><div class="sheet"><h3>New idea</h3><input class="pin" id="p-idea" placeholder="What is the video?" aria-label="Idea"><div class="chips">'+P.map(function(p){return '<button class="pchip" data-a="mock">'+p.n+'</button>';}).join('')+'</div><button class="bigbtn pri" data-a="paddidea">Save idea</button></div>';
+  document.getElementById('phone').innerHTML=h;
+}
+
+// ── Chart (the CRM's one-series line: bronze, fading area, three gridlines, hover reading) ────────
+function niceMax(v){ if(!(v>0)) return 1; var p=Math.pow(10,Math.floor(Math.log10(v))); return Math.ceil(v/p*2)/2*p; }
+function series(){ var days=DAYS[S.range], step=S.range==='1Y'?7:1, vals=[], ds=[], b;
+  for(b=days-(days%step);b>=0;b-=step){ vals.push(folAt(S.plat,b)); ds.push(iso(addDays(-b))); } return {vals:vals,days:ds,weekly:step===7}; }
+function drawChart(el){
+  var w=el.clientWidth; if(!w) return;
+  var CH=+el.getAttribute('data-h'), TOP=14, s=series(), n=s.vals.length, lo=Math.min.apply(null,s.vals), hi=Math.max.apply(null,s.vals);
+  var base=Math.floor(lo*0.97/50)*50, max=base+niceMax((hi-base)*1.08);
+  var pts=s.vals.map(function(v,i){ return {x:n>1?i/(n-1)*w:w/2,y:TOP+(1-(v-base)/(max-base))*(CH-TOP)}; });
+  function cy(y){ return Math.min(CH,Math.max(TOP,y)); }
+  var d='M'+pts[0].x+','+pts[0].y, i;
+  for(i=0;i<pts.length-1;i++){ var p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    d+=' C'+(p1.x+(p2.x-p0.x)/6)+','+cy(p1.y+(p2.y-p0.y)/6)+' '+(p2.x-(p3.x-p1.x)/6)+','+cy(p2.y-(p3.y-p1.y)/6)+' '+p2.x+','+p2.y; }
+  var grid=[base,(base+max)/2,max].map(function(v){ return {v:v,y:TOP+(1-(v-base)/(max-base))*(CH-TOP)}; });
+  var gid='g'+Math.random().toString(36).slice(2), last=pts[pts.length-1], L=n-1, ticks=[0,Math.round(L/3),Math.round(2*L/3),L];
+  var h='<svg width="'+w+'" height="'+(CH+4)+'" viewBox="0 0 '+w+' '+(CH+4)+'" role="img" aria-label="Followers over time"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--brz);stop-opacity:var(--area)"/><stop offset="1" style="stop-color:var(--brz);stop-opacity:0"/></linearGradient></defs>'+
+    grid.map(function(g){return '<line x1="0" x2="'+w+'" y1="'+g.y+'" y2="'+g.y+'" style="stroke:var(--line)" stroke-width="1"/>';}).join('')+
+    '<path d="'+d+' L'+w+','+CH+' L0,'+CH+' Z" fill="url(#'+gid+')"/><path d="'+d+'" fill="none" style="stroke:var(--brz)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<g class="hv" style="display:none"><line y1="8" y2="'+CH+'" style="stroke:var(--ink3)" stroke-width="1" stroke-dasharray="2 4"/><circle r="5" style="fill:var(--bg);stroke:var(--brz)" stroke-width="2"/></g>'+
+    '<circle cx="'+last.x+'" cy="'+last.y+'" r="4" style="fill:var(--brz)"/></svg>'+
+    grid.map(function(g){return '<span class="gl num" style="top:'+(g.y-17)+'px">'+int(g.v)+'</span>';}).join('')+
+    '<div class="tipw" style="display:none"><div class="tip"><span></span><b class="num"></b></div></div>';
+  el.innerHTML=h;
+  var dates=el.nextElementSibling; if(!dates||!dates.classList.contains('cdates')){ dates=document.createElement('div'); dates.className='cdates'; el.parentNode.insertBefore(dates,el.nextSibling); }
+  dates.innerHTML=ticks.map(function(i){return '<span>'+dl(s.days[i])+'</span>';}).join('');
+  var hv=el.querySelector('.hv'), tw=el.querySelector('.tipw');
+  function move(e){ var r=el.getBoundingClientRect(), i=Math.max(0,Math.min(L,Math.round((e.clientX-r.left)/r.width*L))), p=pts[i];
+    hv.style.display=''; hv.querySelector('line').setAttribute('x1',p.x); hv.querySelector('line').setAttribute('x2',p.x); hv.querySelector('circle').setAttribute('cx',p.x); hv.querySelector('circle').setAttribute('cy',p.y);
+    tw.style.display='flex'; tw.style.left=Math.max(80,Math.min(w-80,p.x))+'px'; tw.querySelector('span').textContent=(s.weekly?'Week of ':'')+dl(s.days[i]); tw.querySelector('b').textContent=int(s.vals[i])+' followers'; }
+  el.onpointermove=move; el.onpointerdown=move; el.onpointerleave=function(){ hv.style.display='none'; tw.style.display='none'; };
+}
+var RO=window.ResizeObserver?new ResizeObserver(function(es){ es.forEach(function(e){ var el=e.target; if(el.clientWidth&&el.clientWidth!==el._w){ el._w=el.clientWidth; drawChart(el); } }); }):null;
+function drawCharts(){ Array.prototype.forEach.call(document.querySelectorAll('[data-chart]'),function(el){ el._w=el.clientWidth; drawChart(el); if(RO) RO.observe(el); }); }
+
+// ── Actions ─────────────────────────────────────────────────────────────────────────────────────────
+var toastT;
+function phoneMode(){ return innerWidth<900||document.body.classList.contains('pv'); }
+function toast(m){ clearTimeout(toastT); var ph=document.getElementById('phone'), old=ph.querySelector('.ptoast'); if(old) old.remove();
+  if(phoneMode()){ var t=document.createElement('div'); t.className='ptoast'; t.setAttribute('role','alert'); t.textContent=m; ph.appendChild(t); toastT=setTimeout(function(){t.remove();},3200); }
+  else { var el=document.getElementById('toast'); el.firstElementChild.textContent=m; el.hidden=false; toastT=setTimeout(function(){el.hidden=true;},3200); } }
+function current(){ return byId(phoneMode()?S.ph.ov:S.sel); }
+function addIdea(title){ var id='n'+Date.now(); V.unshift({id:id,t:title,topic:TOPICS[3],hook:HOOKS[5],fmt:FORMATS[0],len:20,st:'idea',line:'',notes:'',lesson:null,pl:S.plat==='all'?[]:[S.plat],po:[]}); return id; }
+function render(keepScroll){ var m=document.querySelector('.main'), st=m.scrollTop, ps=document.getElementById('pscroll'), pst=ps?ps.scrollTop:0;
+  renderSide(); renderDesk(); renderPhone(); drawCharts();
+  if(keepScroll){ m.scrollTop=st; var p2=document.getElementById('pscroll'); if(p2) p2.scrollTop=pst; } else { m.scrollTop=0; } }
+
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-a]'); if(!b) return; var a=b.getAttribute('data-a'), v=b.getAttribute('data-v'), keep=true, cur, msg=null;
+  if(a!=='del') S.armed=false;
+  switch(a){
+    case 'go': S.page=v; S.sel=null; keep=false; break;
+    case 'old': toast('That page already exists in the CRM. This mock covers Social only.'); return;
+    case 'mock': toast('This opens a short form in the real build.'); return;
+    case 'plat': S.plat=S.plat===v&&b.classList.contains('tr')?'all':v; break;
+    case 'range': S.range=v; break;
+    case 'sort': S.sort=v; break;
+    case 'sync': KS.forEach(function(k){ if(ACC[k].on) ACC[k].at='just now'; }); msg=offList().length?'Synced what is connected.':'Synced just now.'; break;
+    case 'acct': if(ACC[v].on){ ACC[v].on=false; msg=pn(v)+' disconnected. Its numbers stay, and stop updating.'; } else { ACC[v].on=true; ACC[v].at='just now'; msg='In the real build this opens '+pn(v)+'’s own sign-in. Connected.'; } break;
+    case 'theme': document.documentElement.setAttribute('data-theme',v); break;
+    case 'pv': document.body.classList.toggle('pv',v==='1'); break;
+    case 'view': S.view=v; break;
+    case 'stage': S.stage=(S.stage===v||!v)?null:v; break;
+    case 'sel': S.sel=v||null; break;
+    case 'open': if(phoneMode()) S.ph.ov=v; else { S.page='content'; S.view='pipe'; S.stage=null; S.sel=v; keep=false; } break;
+    case 'ww': S.ww=v; break;
+    case 'wm': S.wm=v; break;
+    case 'setst': cur=current(); if(cur){ cur.st=v; msg='Moved to '+stName(v)+'.'; } break;
+    case 'next': cur=current(); if(!cur) return; if(cur.st==='posted'){ toast('Saved.'); return; }
+      cur.st=STAGES[STAGES.map(function(s){return s[0];}).indexOf(cur.st)+1][0]; msg='Moved to '+stName(cur.st)+'.'; break;
+    case 'verdict': cur=current(); if(cur){ cur.lesson=cur.lesson||{tried:'',got:''}; cur.lesson.v=v; } break;
+    case 'del': if(!S.armed){ S.armed=true; setTimeout(function(){ if(S.armed){ S.armed=false; render(true); } },3000); } else { V.splice(V.indexOf(byId(S.sel)),1); S.sel=null; S.armed=false; msg='Deleted.'; } break;
+    case 'copy': (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(function(){toast('Link copied.');},function(){toast(v);}); return;
+    case 'addidea': var inp=document.getElementById('idea-in'), t=inp.value.trim(); if(!t){ inp.focus(); toast('Type the idea first.'); return; } S.sel=addIdea(t); S.view='pipe'; S.stage=null; msg='Idea added.'; break;
+    case 'qidea': var q=QUESTIONS.filter(function(x){return x.id===v;})[0]; q.made=true; addIdea('Answer: “'+q.q+'”'); msg='Added to Ideas.'; break;
+    case 'pview': S.ph.view=v; S.ph.ov=null; S.ph.sheet=false; keep=false; break;
+    case 'pseg': S.ph.seg=v; break;
+    case 'pov': S.ph.ov=v||null; break;
+    case 'psheet': S.ph.sheet=!S.ph.sheet; break;
+    case 'paddidea': var pi=document.getElementById('p-idea'), pt=pi.value.trim(); if(!pt){ pi.focus(); return; } addIdea(pt); S.ph.sheet=false; S.ph.view='content'; S.ph.seg='pipe'; S.stage='idea'; msg='Idea added.'; break;
+  }
+  render(keep);
+  if(a==='pview'){ var ps=document.getElementById('pscroll'); if(ps) ps.scrollTop=0; }
+  if(msg) toast(msg);
+});
+document.addEventListener('keydown',function(e){ if(e.key==='Enter'&&e.target.id==='idea-in'){ document.querySelector('[data-a="addidea"]').click(); } if(e.key==='Enter'&&e.target.id==='p-idea'){ document.querySelector('[data-a="paddidea"]').click(); } });
+document.addEventListener('change',function(e){ var v=current(); if(!v) return; var m={'d-topic':'topic','d-hook':'hook','d-fmt':'fmt'}[e.target.id];
+  if(m){ v[m]=e.target.value; render(true); } else if(e.target.id==='d-len'){ v.len=+e.target.value||v.len; } else if(e.target.id==='d-line'){ v.line=e.target.value; } else if(e.target.id==='d-notes'){ v.notes=e.target.value; }
+  else if(e.target.id==='d-tried'||e.target.id==='d-got'){ v.lesson=v.lesson||{v:''}; v.lesson[e.target.id==='d-tried'?'tried':'got']=e.target.value; } });
+var h0=(location.hash||'').slice(1); if(h0==='content'||h0==='playbook') S.page=h0;
+render(false);
+})();
+</script>

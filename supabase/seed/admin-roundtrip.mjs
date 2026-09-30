@@ -73,6 +73,7 @@ const FUNCTIONS = [
   ['admin_reports_inbox', { p_limit: 5 }],
   ['admin_crashes', { p_days: 7 }],
   ['admin_bug_links', {}],
+  ['admin_social_media', { p_tz: TZ }], // 0247 — the CRM's Social section (AA-D23–D33)
 ];
 
 /**
@@ -101,6 +102,21 @@ const GUARDED_WRITES = [
   ['admin_document_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
   ['admin_report_track', { p_origin: 'feedback:-1', p_target: null }], // 0239
   ['admin_report_dismiss', { p_origin: 'feedback:-1', p_dismiss: true }], // 0239
+  // 0247 — the CRM's Social section. Every write, with arguments that change nothing if one ever got through.
+  ['admin_social_video_save', { p_id: '00000000-0000-0000-0000-000000000000', p_patch: {} }],
+  ['admin_social_video_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_social_posting_save', { p_id: '00000000-0000-0000-0000-000000000000', p_patch: {} }],
+  ['admin_social_posting_delete', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_social_posting_attach', { p_id: '00000000-0000-0000-0000-000000000000', p_video: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_social_posting_unlink', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_social_tag_save', { p_kind: 'topic', p_old: 'no-such-tag', p_new: 'no-such-tag' }],
+  ['admin_social_tag_delete', { p_kind: 'topic', p_label: 'no-such-tag' }],
+  ['admin_social_goal_save', { p_platform: 'nowhere', p_posts_per_week: 0, p_follower_target: null, p_target_date: null }],
+  ['admin_social_followers_save', { p_platform: 'nowhere', p_day: '2000-01-01', p_followers: 0 }],
+  ['admin_social_item_save', { p_kind: 'nothing', p_id: null, p_patch: {} }],
+  ['admin_social_item_delete', { p_kind: 'rule', p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_social_question_to_video', { p_id: '00000000-0000-0000-0000-000000000000' }],
+  ['admin_social_disconnect', { p_platform: 'nowhere' }],
 ];
 
 /** Everything a non-admin must be refused, read or write. */
@@ -242,12 +258,16 @@ if (!process.env.SB_ADMIN_EMAIL || !process.env.SB_ADMIN_PASS) {
 
     // AA-D20, half one: the 0238 AGGREGATES are held to the same rule.
     const agg = await Promise.all(
-      ['admin_revenue', 'admin_tiers', 'admin_ai_usage', 'admin_waitlist', 'admin_appstore'].map(async (fn) => {
+      ['admin_revenue', 'admin_tiers', 'admin_ai_usage', 'admin_waitlist', 'admin_appstore', 'admin_social_media'].map(async (fn) => {
         const args = FUNCTIONS.find(([f]) => f === fn)?.[1] ?? {};
         return (await sb.rpc(fn, args)).data;
       }),
     );
     check(!/"handle"|"athlete_id"|"user_id"/.test(JSON.stringify(agg)), '0238 aggregates carry no per-athlete identity (AA-D20)');
+
+    // 0247 (AA-D26): the Social read knows whether an account is connected, never its sign-in.
+    const { data: social } = await sb.rpc('admin_social_media', { p_tz: TZ });
+    check(!/"(access_token|refresh_token|cron_secret|token_expires_at)"/.test(JSON.stringify(social)), 'admin_social_media carries no token and no cron secret (AA-D26)');
 
     // AA-D20, half two: the person-level card may name someone, but its KEYS may never include a
     // training, social, presence, photo, health or auth-email field (AA-D13). Keys, not values — an AI

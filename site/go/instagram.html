@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Forge Legacy</title>
+<!--
+  forgelegacy.app/go/instagram: the link in the Instagram bio (migration 0247, AA-D27).
+
+  It adds one to a counter for (instagram, today) and sends the visitor on. Nothing about the visitor is
+  recorded: `social_link_hit()` takes the platform name and can do nothing else. It uses the same public
+  key as the early-access form.
+
+  Where it sends them: the home page, carrying ?src=instagram, which the early-access form then records as its
+  source. Once the app is on the App Store, set `appStoreUrl` in assets/site-config.js and an iPhone goes
+  straight to the App Store with Apple's campaign token for Instagram (ct=instagram).
+-->
+<noscript><meta http-equiv="refresh" content="0;url=/?src=instagram"></noscript>
+<script src="/assets/site-config.js"></script>
+<script>
+(function () {
+  var P = 'instagram';
+  var c = window.FL_SITE || {};
+  var to = '/?src=' + P;
+  if (c.appStoreUrl && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    to = c.appStoreUrl + (c.appStoreUrl.indexOf('?') < 0 ? '?' : '&') + 'ct=' + P + '&mt=8';
+  }
+  try { sessionStorage.setItem('fl_src', P); } catch (e) { /* private mode */ }
+  var gone = false;
+  var go = function () { if (!gone) { gone = true; location.replace(to); } };
+  if (c.supabaseUrl && c.anonKey && window.fetch) {
+    // keepalive lets the count finish even though the page is leaving; the timer means a slow count never holds anyone.
+    fetch(c.supabaseUrl + '/rest/v1/rpc/social_link_hit', {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'Content-Type': 'application/json', apikey: c.anonKey, Authorization: 'Bearer ' + c.anonKey },
+      body: JSON.stringify({ p_platform: P })
+    }).then(go, go);
+    setTimeout(go, 1200);
+  } else {
+    go();
+  }
+})();
+</script>
+</head>
+<body>
+<p><a href="/?src=instagram">Continue to Forge Legacy</a></p>
+</body>
+</html>

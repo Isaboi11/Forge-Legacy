@@ -8,6 +8,9 @@ export type PageKey =
   | 'ai'
   | 'appstore'
   | 'usage'
+  | 'social'
+  | 'content'
+  | 'playbook'
   | 'bugs'
   | 'moderation'
   | 'contacts'
@@ -20,7 +23,8 @@ export interface PageProps {
   days: number;
   /** The ONE dashboard clock (`dashboardTz()`), for every day bucket. */
   tz: string;
-  /** Cross-page links. `arg` is a user id (users), a contact id or kind (contacts), a survey id (surveys), or 'reports'/'crashes' (bugs). */
+  /** Cross-page links. `arg` is a user id (users), a contact id or kind (contacts), a survey id (surveys), 'reports'/'crashes' (bugs),
+      a video id (content), or 'connected-<platform>' / 'failed-<platform>' when a platform's sign-in sends the owner back (social). */
   go: (page: PageKey, arg?: string) => void;
   arg?: string;
 }
@@ -37,6 +41,15 @@ export const NAV: { group: string; items: { key: PageKey; label: string }[] }[] 
     ],
   },
   { group: 'Product', items: [{ key: 'usage', label: 'Usage' }] },
+  // The owner's TikTok and Instagram (0247, AA-D25). "Marketing" is kept for a future ads section.
+  {
+    group: 'Social',
+    items: [
+      { key: 'social', label: 'Numbers' },
+      { key: 'content', label: 'Content' },
+      { key: 'playbook', label: 'Playbook' },
+    ],
+  },
   {
     group: 'Operations',
     items: [
@@ -55,7 +68,7 @@ export const NAV: { group: string; items: { key: PageKey; label: string }[] }[] 
 ];
 
 /** Pages that show the 7D / 30D / 90D / 1Y control (the design's RANGE_PAGES). */
-export const RANGE_PAGES: PageKey[] = ['overview', 'revenue', 'ai', 'appstore', 'usage'];
+export const RANGE_PAGES: PageKey[] = ['overview', 'revenue', 'ai', 'appstore', 'usage', 'social'];
 
 export const PAGE_KEYS: PageKey[] = NAV.flatMap((g) => g.items.map((i) => i.key));
 
