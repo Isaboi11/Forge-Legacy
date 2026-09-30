@@ -1277,7 +1277,7 @@ export function rowsToWrittenText(w: { name: string; how?: string | null; after?
     if (r.percentScheme?.length) {
       const reps = r.repScheme ?? r.percentScheme.map(() => r.targetReps);
       return {
-        line: reps.map((x, i) => `${x} reps @ ${r.percentScheme![i]}%${r.restScheme?.[i] != null ? ` rest ${clockText(r.restScheme[i]!)}` : ''}`).join(', '),
+        line: reps.map((x, i) => `${x} ${x === 1 ? 'rep' : 'reps'} @ ${r.percentScheme![i]}%${r.restScheme?.[i] != null ? ` rest ${clockText(r.restScheme[i]!)}` : ''}`).join(', '),
         note,
       };
     }

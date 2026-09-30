@@ -10,8 +10,8 @@
  *
  * Pure, relative imports: tested under `node --test` (`written-import.test.mjs`).
  */
-import type { ImportRx, ParsedItem, ParsedWeek } from './import-parse.ts';
-import type { WrittenTemplateRow, WrittenWorkout } from '../workout/written-workout.ts';
+import type { ImportRx, ParsedDay, ParsedItem, ParsedWeek } from './import-parse.ts';
+import { readWrittenWorkout, rowsToWrittenText, writtenToTemplate, type WrittenTemplateRow, type WrittenWorkout } from '../workout/written-workout.ts';
 
 /**
  * "20 seconds each set" (the reader's words) or "20 seconds" (the AI layout's note, on both live runs) — a hold, which
@@ -64,7 +64,78 @@ export function writtenToWeeks(w: WrittenWorkout, rows: readonly WrittenTemplate
   return { weeks: items.length ? [{ index: 1, days: [{ name, letter: 'A', items }] }] : [], skipped };
 }
 
-const WEEKDAY = /^(?:mon|tues?|wed(?:nes)?|thu(?:rs?)?|fri|sat(?:ur)?|sun)(?:day)?\b/i;
+/* ── EDIT AS WORDS (PO 2026-09-30: "there should be a way to edit after the AI gives it to me") ───────────────────
+ *
+ * The preview's steppers re-count a row; they cannot change one rung of a ramp, a percentage or a rest. So a day can
+ * be opened as WORDS — the same layout the squad screen's box holds — edited freely, and read back by the code
+ * reader. No AI: what the athlete types is read as typed. The words are made from the preview AS IT STANDS (not from
+ * the photo's first read), so a rename or a removed row is never undone by opening the editor.
+ */
+
+/** The preview's day → the reader's words. Null when a row holds something the words cannot say. */
+export function dayToWords(day: ParsedDay): string | null {
+  if (day.items.some((it) => it.kind === 'cardio' || it.section === 'cooldown' || (it.section === 'warmup' && !it.rx?.percentScheme?.length))) return null;
+  const rows: WrittenTemplateRow[] = day.items.map((it) => {
+    const rx = it.rx ?? {};
+    const hold = it.durationSec ? `${it.durationSec % 60 === 0 && it.durationSec >= 60 ? `${it.durationSec / 60} min` : `${it.durationSec} seconds`} each set` : null;
+    return {
+      catalogKey: rx.catalogKey ?? null,
+      name: it.name,
+      sets: rx.repScheme?.length || it.sets,
+      targetReps: it.durationSec ? 0 : it.reps,
+      section: it.section === 'warmup' ? 'warmup' : 'main',
+      groupId: rx.groupId ?? null,
+      groupName: null,
+      groupKind: rx.groupId ? 'superset' : null,
+      groupRounds: null,
+      coachNote: [hold, it.note ?? null].filter(Boolean).join(' · ') || null,
+      ...(rx.repScheme?.length ? { repScheme: rx.repScheme } : null),
+      ...(rx.repsMax != null ? { repsMax: rx.repsMax } : null),
+      ...(rx.percentOfMax != null ? { percentOfMax: rx.percentOfMax } : null),
+      ...(rx.percentScheme?.length ? { percentScheme: rx.percentScheme } : null),
+      ...(rx.restSec != null ? { restSec: rx.restSec } : null),
+      ...(rx.restScheme?.length ? { restScheme: rx.restScheme } : null),
+    };
+  });
+  return rowsToWrittenText({ name: day.name, rows });
+}
+
+/** The athlete's words → a day for the preview, or null when no lift could be read from them. */
+export function wordsToDay(text: string, resolveKey: (name: string) => string | undefined, letter = 'A'): ParsedDay | null {
+  const w = readWrittenWorkout(text);
+  const day = writtenToWeeks(w, writtenToTemplate(w, resolveKey)).weeks[0]?.days[0];
+  return day && day.items.length ? { ...day, letter } : null;
+}
+
+/**
+ * Only offered when the words read back to the SAME day — the same lifts, sets, reps, clocks, ramps, percentages,
+ * rests and supersets. A day the words would quietly change (a sheet's cardio block, a cool-down) keeps its
+ * steppers and nothing else, the rule `roundTrips` keeps for a posted workout.
+ */
+export function canEditAsWords(day: ParsedDay, resolveKey: (name: string) => string | undefined): boolean {
+  const words = dayToWords(day);
+  if (!words) return false;
+  const back = wordsToDay(words, resolveKey, day.letter);
+  if (!back || back.items.length !== day.items.length) return false;
+  const key = (it: ParsedItem) =>
+    JSON.stringify([
+      it.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+      it.rx?.repScheme?.length || it.sets,
+      it.durationSec ? 0 : it.reps,
+      it.durationSec ?? null,
+      it.rx?.repScheme ?? null,
+      it.rx?.repsMax ?? null,
+      it.rx?.percentOfMax ?? null,
+      it.rx?.percentScheme ?? null,
+      it.rx?.restSec ?? null,
+      it.rx?.restScheme ?? null,
+      !!it.rx?.groupId,
+      it.section ?? null,
+    ]);
+  return back.items.every((it, i) => key(it) === key(day.items[i]));
+}
+
+const WEEKDAY =/^(?:mon|tues?|wed(?:nes)?|thu(?:rs?)?|fri|sat(?:ur)?|sun)(?:day)?\b/i;
 
 /**
  * Is this photo a PROGRAM SHEET — several days or weeks — rather than one workout? Only then does the table reader
