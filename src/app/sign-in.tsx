@@ -241,11 +241,17 @@ export default function AuthFlow() {
               <View style={styles.brandText}>
                 <Text style={styles.eyebrow}>Forge Legacy</Text>
                 <Text style={styles.brand}>Build your story.{'\n'}Forge your legacy.</Text>
+                {/* PO 09-30: a first-time visitor could not tell what the app IS from the welcome — the
+                    line says it plainly, and the button says what it does ("Begin Chapter I" only reads
+                    once you know what a chapter is). */}
+                <Text style={styles.brandSub}>
+                  Log your lifts, train with an AI coach,{'\n'}and share progress with your squad.
+                </Text>
               </View>
             </View>
             <View style={styles.welcomeActions}>
-              <Button variant="primary" fullWidth onPress={() => go('create')} accessibilityLabel="Begin Chapter I — create a new account">
-                Begin Chapter I
+              <Button variant="primary" fullWidth onPress={() => go('create')} accessibilityLabel="Get started — create a new account">
+                Get Started
               </Button>
               <Pressable onPress={() => go('signin')} accessibilityRole="button" accessibilityLabel="Sign in — I already have an account" style={styles.signinLink}>
                 <Text style={styles.signinText}>
@@ -462,6 +468,7 @@ const styles = StyleSheet.create({
   brandText: { alignItems: 'center', gap: 26 },
   eyebrow: { fontSize: 11.5, fontWeight: '600', letterSpacing: 5, textTransform: 'uppercase', color: flColor.gray400, textAlign: 'center' },
   brand: { fontFamily: flFont.display, fontSize: 40, fontWeight: '600', lineHeight: 43, letterSpacing: -0.5, color: flColor.cream100, textAlign: 'center' },
+  brandSub: { marginTop: -12, fontFamily: flFont.sans, fontSize: 15, lineHeight: 21, color: flColor.gray400, textAlign: 'center' },
   welcomeActions: { alignSelf: 'stretch', gap: 16 },
   signinLink: { alignItems: 'center', paddingVertical: 6 },
   /* auth-07: on Alabaster `bronze300` read at ~2.4:1 and `gray600` at ~3.2:1 on cream. Links take
