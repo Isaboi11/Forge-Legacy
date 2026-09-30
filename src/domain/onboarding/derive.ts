@@ -139,13 +139,21 @@ export function firstNameOf(name: string): string {
   return name.trim().split(/\s+/)[0] ?? '';
 }
 
-/** Up to two initials, uppercased — the avatar fallback. */
+/**
+ * Up to two initials, uppercased — the avatar fallback, and THE ONE RULE for it (settings-06, QA 09-26).
+ *
+ * First word + LAST word ("Marcus Vale Ridge" → MR); a single name gives its first two letters
+ * ("Cher" → CH). That is the design's CLA-C05 glyph rule, which every `<Avatar>` already drew.
+ *
+ * ⚠ There were four of these and they disagreed: this one took the first two WORDS and gave a single
+ * name one letter, the Avatar glyph did the above, and Legacy's portrait and the squad check-in disc
+ * each had a private third. So one athlete was "S" on Settings and "SA" on Home. Every surface now calls
+ * this — `initials()` in `AvatarGlyph` is a re-export — and nothing DRAWS the stored `profiles.initials`
+ * column any more, because rows written under the old rule would keep disagreeing with the name.
+ */
 export function initialsOf(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

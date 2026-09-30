@@ -21,7 +21,18 @@ import { supabase } from './supabase';
 export async function uploadAvatar(uid: string, uri: string): Promise<string> {
   const res = await fetch(uri);
   const bytes = await res.arrayBuffer();
-  const ext = (uri.split('.').pop() ?? 'jpg').toLowerCase().split('?')[0];
+  /* The name's extension when it IS one, else the bytes' own type (settings-08). A web crop is a `blob:`
+     URL — `blob:https://forgelegacy.expo.app/<uuid>` — whose last "extension" was `app/<uuid>`, so every
+     web upload went to a NEW nested object instead of replacing `avatar.jpg`, and Remove could not list it. */
+  const named = (uri.split('.').pop() ?? '').toLowerCase().split('?')[0];
+  const typed = (res.headers.get('content-type') ?? '').toLowerCase();
+  const ext = ['jpg', 'jpeg', 'png', 'webp'].includes(named)
+    ? named
+    : typed.includes('png')
+      ? 'png'
+      : typed.includes('webp')
+        ? 'webp'
+        : 'jpg';
   const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
   const path = `${uid}/avatar.${ext}`;
   const { error } = await supabase.storage.from('avatars').upload(path, bytes, { contentType, upsert: true });

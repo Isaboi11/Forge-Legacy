@@ -165,6 +165,57 @@ export async function updateSelfProfile(edits: ProfileEdits): Promise<void> {
   }
 }
 
+/**
+ * Remove the athlete's profile photo — the bytes AND the column (settings-08, QA 09-26).
+ *
+ * A photo could be replaced and never taken down: `updateSelfProfile` deliberately omits `avatar_url`
+ * when nothing was picked, so there was no path that wrote null. An athlete who no longer wanted their
+ * face on the squad feed had to upload a picture of something else.
+ *
+ * ⚠ BYTES FIRST, THEN THE COLUMN — the same order `deleteMyAccount` uses, and for the same reason. The
+ * bucket is public, so "removed" has to mean the file is gone, not merely unlinked. And it makes a retry
+ * coherent: if the delete lands and the row write fails, the athlete still sees a photo slot with Remove
+ * beside it, and removing an object that is already gone is a no-op success.
+ *
+ * No migration: `avatars_owner_delete` (0004) already lets `<uid>/…` be deleted by its owner, and
+ * `profiles_self` (0001) already lets the row be written. The extension varies (`avatar.jpg` / `.png` /
+ * `.webp`, see `uploadAvatar`), so the folder is listed rather than a path guessed.
+ */
+export async function removeSelfAvatar(): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('not signed in');
+
+  const { data: files, error: listError } = await supabase.storage.from('avatars').list(user.id, { limit: 100 });
+  if (listError) throw listError;
+  // `id` is null on a folder entry, and removing a folder's name deletes nothing.
+  const paths = new Set(
+    (files ?? []).filter((f) => f.id != null && f.name.startsWith('avatar.')).map((f) => `${user.id}/${f.name}`),
+  );
+  // Plus whatever object the stored URL points at. Web uploads once took their "extension" from a `blob:`
+  // URL and landed at `<uid>/avatar.app/<uuid>`, nested where the listing above cannot see it — the column
+  // is the one reliable record of which file is on show.
+  const { data: row } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle();
+  const stored = typeof row?.avatar_url === 'string' ? row.avatar_url : '';
+  const marker = '/object/public/avatars/';
+  const at = stored.indexOf(marker);
+  if (at >= 0) {
+    const objectPath = decodeURIComponent(stored.slice(at + marker.length).split('?')[0]);
+    if (objectPath.startsWith(`${user.id}/`)) paths.add(objectPath);
+  }
+  if (paths.size) {
+    const { error: removeError } = await supabase.storage.from('avatars').remove([...paths]);
+    if (removeError) throw removeError;
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: null, updated_at: new Date().toISOString() })
+    .eq('id', user.id);
+  if (error) throw error;
+}
+
 /** Derive an '@'-handle from a name — byte-identical to the fixture's stranger fallback. */
 function handleFromName(name: string): string {
   return '@' + name.toLowerCase().replace(/[^a-z0-9]+/g, '');

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { Field, SelectTile } from '@/components/onboarding/kit';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -17,6 +18,7 @@ import {
   fetchAccountIdentity,
   HandleTakenError,
   normalizeHandle,
+  removeSelfAvatar,
   updateSelfProfile,
   type AccountIdentity,
 } from '@/domain/profile/live';
@@ -98,6 +100,10 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   /** The picked-but-not-yet-positioned image. Non-null while the crop editor is up. */
   const [cropping, setCropping] = useState<string | null>(null);
+  /** The photo on the profile RIGHT NOW. Its own state because Remove takes it down at once, without Save. */
+  const [storedPhoto, setStoredPhoto] = useState<string | null>(initial.avatarUrl);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [uStatus, setUStatus] = useState<UStatus>('unchanged');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,6 +172,29 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
     />
   ) : null;
 
+  /**
+   * Take the photo down (settings-08). Its own confirmed action rather than one more field behind Save:
+   * it deletes a file, which Save cannot undo, and an athlete who wants their face off the feed should
+   * not also have to pass the name and handle checks to get it.
+   */
+  const onRemovePhoto = async () => {
+    setConfirmRemove(false);
+    if (removing) return;
+    setRemoving(true);
+    setError(null);
+    try {
+      await removeSelfAvatar();
+      setStoredPhoto(null);
+      // The AppBar avatars and the Legacy portrait read the shared profile — same reason as `onSave`.
+      refetchProfile();
+      showToast('Profile photo removed');
+    } catch {
+      setError('Couldn’t remove your photo. Check your connection and try again.');
+    } finally {
+      setRemoving(false);
+    }
+  };
+
   const onSave = async () => {
     if (!canSave) return;
     setSaving(true);
@@ -215,11 +244,20 @@ ${msg}`)) onDone();
       >
         <View style={styles.avatarRow}>
           <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel="Change profile photo">
-            <Avatar src={photoUri ?? initial.avatarUrl ?? undefined} name={name || '  '} size="profile" ring />
+            <Avatar src={photoUri ?? storedPhoto ?? undefined} name={name || '  '} size="profile" ring />
           </Pressable>
-          <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel="Change photo">
-            <Text style={styles.changePhoto}>{photoUri ? 'Positioned — save to apply' : 'Change photo'}</Text>
-          </Pressable>
+          <View style={styles.photoActions}>
+            <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel={storedPhoto || photoUri ? 'Change photo' : 'Add photo'}>
+              <Text style={styles.changePhoto}>{photoUri ? 'Positioned — save to apply' : storedPhoto ? 'Change photo' : 'Add photo'}</Text>
+            </Pressable>
+            {/* Only for a photo that is actually ON the profile. A picked-but-unsaved one is dropped by
+                leaving without saving; offering Remove there would delete the old photo instead. */}
+            {storedPhoto && !photoUri ? (
+              <Pressable onPress={() => setConfirmRemove(true)} disabled={removing} accessibilityRole="button" accessibilityLabel="Remove photo">
+                <Text style={styles.removePhoto}>{removing ? 'Removing…' : 'Remove photo'}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
         <Field
@@ -286,6 +324,14 @@ ${msg}`)) onDone();
         </Text>
       </ScrollView>
       {mediaPickerSheet}
+      <ConfirmSheet
+        open={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        headline="Remove your photo?"
+        body="Your initials show in its place — on your profile, in your squads and beside your posts. You can add a photo again whenever you like."
+        confirmLabel="Remove Photo"
+        onConfirm={() => void onRemovePhoto()}
+      />
     </>
   );
 }
@@ -320,7 +366,9 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 24, paddingTop: 8, gap: 22 },
 
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
+  photoActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', columnGap: 22, rowGap: 8 },
   changePhoto: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
+  removePhoto: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   group: { gap: 8 },
   groupLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },

@@ -25,6 +25,7 @@ import Svg, { Circle, Rect } from 'react-native-svg'
 import { StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont } from '@/constants/foundation'
 import { RankSeal } from '@/components/forge/RankSeal'
+import { FitText } from '@/components/forge/FitText'
 
 export interface ChapterTitleBlockProps {
   chapterNumber: string
@@ -91,7 +92,8 @@ export function ChapterTitleBlock({ chapterNumber, chapterName, weekDay, princip
       {showRankMedallion ? <RankMedallion family={rankFamily} level={rankLevel} /> : null}
       <View style={styles.content}>
         <Text style={styles.chapterNumber}>{chapterNumber}</Text>
-        <Text style={styles.chapterName}>{chapterName}</Text>
+        {/* The largest type on Home, and the athlete's own words: a long single word must shrink, not split. */}
+        <FitText style={styles.chapterName}>{chapterName}</FitText>
         <DiamondDivider />
         {meaning ? <Text style={styles.meaning}>{meaning}</Text> : null}
         <Text style={styles.weekDay}>{weekDay}</Text>

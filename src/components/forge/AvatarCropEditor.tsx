@@ -185,13 +185,36 @@ export function AvatarCropEditor({ uri, onDone, onClose }: AvatarCropEditorProps
               contentFit="cover"
               pointerEvents="none"
             />
-            {/* The mask is four bars plus a ring rather than a real circular cut-out: RN has no
-                mask-image, and this reads identically while staying one View tree. */}
+            {/*
+              The dimming is the SAME circle as the guide (settings-07, QA 09-26).
+
+              It was four straight bars, 7% deep, on each edge — a dimmed SQUARE frame under a round
+              guide. So the bars darkened four slices of what was inside the circle (and would be in the
+              avatar), and left the four corners outside it (which would not) at full brightness: the
+              preview said the opposite of the hint above it at every edge.
+
+              RN has no mask-image, so the cut-out is a border: a transparent disc exactly the frame's
+              size, wearing a border thick enough to reach the frame's corners. Its inner edge is the
+              circle; the frame's own `overflow: hidden` trims the rest. Drawn once the frame has been
+              measured — a `%` border does not exist.
+            */}
+            {frame > 0 ? (
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.shade,
+                  {
+                    top: -frame * SHADE_REACH,
+                    left: -frame * SHADE_REACH,
+                    width: frame * (1 + 2 * SHADE_REACH),
+                    height: frame * (1 + 2 * SHADE_REACH),
+                    borderRadius: frame * (0.5 + SHADE_REACH),
+                    borderWidth: frame * SHADE_REACH,
+                  },
+                ]}
+              />
+            ) : null}
             <View style={styles.ring} pointerEvents="none" />
-            <View style={[styles.shade, styles.shadeTop]} pointerEvents="none" />
-            <View style={[styles.shade, styles.shadeBottom]} pointerEvents="none" />
-            <View style={[styles.shade, styles.shadeLeft]} pointerEvents="none" />
-            <View style={[styles.shade, styles.shadeRight]} pointerEvents="none" />
           </View>
         </View>
 
@@ -247,6 +270,11 @@ function ZoomGlyph({ small }: { small?: boolean }) {
 }
 
 const SHADE = 'rgba(6,7,8,0.72)';
+/**
+ * How far the dim border reaches past the frame, as a fraction of its side. The frame's corner is
+ * 0.707 of a side from the centre and the circle's edge is 0.5, so anything over 0.207 covers it.
+ */
+const SHADE_REACH = 0.25;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: themeGround('#060708'), paddingHorizontal: 22, paddingTop: 84 },
@@ -264,11 +292,8 @@ const styles = StyleSheet.create({
   img: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' },
   // The circle itself: a full-bleed ring whose border radius makes the visible aperture.
   ring: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: 9999, borderWidth: 2, borderColor: flColor.bronzeBorder, zIndex: 2 },
-  shade: { position: 'absolute', backgroundColor: SHADE },
-  shadeTop: { top: 0, left: 0, right: 0, height: '7%' },
-  shadeBottom: { bottom: 0, left: 0, right: 0, height: '7%' },
-  shadeLeft: { top: 0, bottom: 0, left: 0, width: '7%' },
-  shadeRight: { top: 0, bottom: 0, right: 0, width: '7%' },
+  // The circular cut-out: a transparent disc with a thick dim border. Sized inline from the measured frame.
+  shade: { position: 'absolute', borderColor: SHADE, backgroundColor: 'transparent' },
 
   error: { fontSize: 12.5, color: flColor.redMuted, textAlign: 'center', marginTop: 14 },
 

@@ -97,7 +97,11 @@ export const NOTIF_SECTIONS: NotifSection[] = [
   {
     key: 'squad',
     label: 'Squad Activity',
-    blurb: 'The pulse of your squads. On by default while we’re testing — silence anything you don’t want.',
+    /* Says nothing about the DEFAULT on purpose (firstuser-11, QA 09-26). It read "On by default while
+       we’re testing", which is a sentence about us, not about the athlete — and it would have shipped to
+       the App Store. Whether 0202's testing override stays on at launch is the PO's call (see above);
+       this line is true either way, so it does not have to be rewritten when that is decided. */
+    blurb: 'The pulse of your squads. Choose which of these reach you.',
     toggles: [
       /* 0202, and ON. THE ASK: this is the key every squad post rides, an owner's announcement included. */
       { key: 'squad_feed', label: 'Squad Posts & Activity', desc: 'New posts and workouts in your squads', def: true, icon: 'squad' },
