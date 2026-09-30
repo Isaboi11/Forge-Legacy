@@ -23,6 +23,10 @@ import {
 } from '@/data/holt-notes-live';
 import { deleteChatSummary, fetchChatSummaries, type ChatSummary } from '@/data/holt-chats-live';
 import { useToast } from '@/hooks/useCeremony';
+import { useCoachDoor } from '@/hooks/useCoachDoor';
+import { TYPING_ENABLED } from '@/domain/coach/chat-core';
+import { countOf } from '@/domain/text/plural';
+import { usePremiumAi } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -58,6 +62,16 @@ export default function HoltMemoryRoute() {
   const [confirm, setConfirm] = useState<HoltNote | null>(null);
   const [busy, setBusy] = useState(false);
   const primeKeyboard = useKeyboardPrimer();
+  /* QA holt-29: notes and chat summaries are only ever written from TYPED conversations, and typing to Holt
+     is Premium AI. Without it this page can never fill, so it must not promise that it will. */
+  const premiumAi = usePremiumAi();
+  const canType = TYPING_ENABLED || premiumAi;
+  const { openCoach } = useCoachDoor();
+  /* settings-26: the empty page's next step. The sheet lives on the tab screens, so Holt opens over Home. */
+  const talkToHolt = () => {
+    openCoach();
+    router.navigate('/');
+  };
 
   /* ⚠ PRIME FIRST, SYNCHRONOUSLY — the edit field mounts one commit after this tap, and on iOS Safari
      its `autoFocus` would then focus with no keyboard. See `KeyboardPrimer`. */
@@ -136,9 +150,15 @@ export default function HoltMemoryRoute() {
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Nothing yet.</Text>
             <Text style={styles.emptyText}>
-              When you tell Holt something worth keeping — a lift you hate, the days you can train, a knee that
-              doesn’t like deep squats — it shows up here.
+              {canType
+                ? 'When you type something worth keeping to Holt — a lift you hate, the days you can train — it shows up here.'
+                : 'Holt keeps notes from what you type to him, and typing to Holt comes with Premium AI. When you tap through with him, he works from your answers each time instead.'}
             </Text>
+            <View style={styles.emptyAction}>
+              <Button variant="secondary" size="md" onPress={talkToHolt} accessibilityLabel="Talk to Holt">
+                Talk to Holt
+              </Button>
+            </View>
           </View>
         ) : (
           <>
@@ -203,7 +223,11 @@ export default function HoltMemoryRoute() {
         {pastChats.length > 0 ? (
           <>
             <Text style={styles.count}>Recent conversations</Text>
-            <Text style={styles.lead}>A short note from each of your last {pastChats.length === 1 ? 'chat' : `${pastChats.length} chats`}, so Holt can pick up where you left off.</Text>
+            <Text style={styles.lead}>
+              {/* holtai-14: "each of your last chat" — one chat is just "your last chat". */}
+              {pastChats.length === 1 ? 'A short note from your last chat' : `A short note from each of your last ${countOf(pastChats.length, 'chat')}`}, so
+              Holt can pick up where you left off.
+            </Text>
             <View style={styles.list}>
               {pastChats.map((c) => (
                 <View key={c.id} style={styles.row}>
@@ -270,6 +294,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   emptyText: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  emptyAction: { marginTop: 10, alignItems: 'flex-start' },
   count: {
     fontSize: 10.5,
     fontWeight: '700',

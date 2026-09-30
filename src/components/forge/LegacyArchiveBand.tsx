@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
+import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { useReduceMotion } from '@/lib/settings';
@@ -142,7 +143,7 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
         ) : t?.newest ? (
           <GradedImage uri={t.newest} width={tileW} height={TILE_H} grade={GRADE.after} focalY={0.18} overscan={1.6} />
         ) : (
-          <RecessedSurface id="xform" />
+          <RecessedSurface id="xform" glyph="transformation" />
         )}
       </Tile>
       ) : null}
@@ -152,14 +153,14 @@ export function LegacyArchiveBand({ archive, onTransformation, onPhotos, onTroph
         {p?.latest ? (
           <GradedImage uri={p.latest} width={tileW} height={TILE_H} grade={GRADE.photo} focalY={0.42} overscan={1.3} />
         ) : (
-          <RecessedSurface id="photos" />
+          <RecessedSurface id="photos" glyph="image" />
         )}
       </Tile>
       ) : null}
 
       {vis.trophies ? (
       <Tile testID="lg-trophies" width={tileW} label="Trophy Case" count={tr ? trophyCount(tr) : ''} media={false} bronzeEdge onPress={onTrophies}>
-        <RecessedSurface id="trophy" />
+        <RecessedSurface id="trophy" glyph={tr && tr.entered > 0 ? undefined : 'trophy'} />
         {/* An empty trophy case does not display a crown. */}
         {tr && tr.entered > 0 ? <CrownEmblem tileWidth={tileW} /> : null}
       </Tile>
@@ -267,8 +268,11 @@ function GradedImage({
  * viewBox is a 0–100 square stretched to the tile (`preserveAspectRatio="none"`), so user units read as
  * percentages; `scale(1, 0.75)` turns the 120%-wide circle into the design's 120% × 90% ellipse, and the
  * centre is pre-divided by that scale so it still lands at 8% down.
+ *
+ * `glyph`: an EMPTY tile's engraved mark (QA 09-26 legacy-27). A bare lit plate read as an image that had
+ * failed to load; the mark says the tile is waiting for something, and what.
  */
-function RecessedSurface({ id }: { id: string }) {
+function RecessedSurface({ id, glyph }: { id: string; glyph?: EngravedName }) {
   const gid = `fl-archive-glow-${id}`;
   return (
     <View style={[StyleSheet.absoluteFill, styles.recessed]} pointerEvents="none">
@@ -281,6 +285,11 @@ function RecessedSurface({ id }: { id: string }) {
         </Defs>
         <Rect x={0} y={0} width={100} height={100} fill={`url(#${gid})`} />
       </Svg>
+      {glyph ? (
+        <View style={styles.emptyGlyph}>
+          <EngravedIcon name={glyph} size={30} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -323,6 +332,8 @@ const styles = StyleSheet.create({
 
   window: { overflow: 'hidden' },
   recessed: { backgroundColor: RECESSED_BASE },
+  // Centred in the part of the tile above the label block, faint enough to read as a mark, not a button.
+  emptyGlyph: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 44, alignItems: 'center', justifyContent: 'center', opacity: 0.7 },
   crownWindow: { position: 'absolute', left: 0, right: 0, top: 14, height: 96, overflow: 'hidden', opacity: 0.95 },
 
   labelBlock: { position: 'absolute', left: 9, right: 9, bottom: 9, gap: 3 },

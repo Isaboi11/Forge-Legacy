@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { todayYmd } from '@/domain/dates/local-date';
+import { countOf } from '@/domain/text/plural';
 import {
+  chapterSpan,
   chapterWeeks,
   headlinePr,
   mergeAlbum,
@@ -386,7 +388,11 @@ export interface PhotoDay {
   date: string;
   photos: ChapterPhoto[];
   event: string | null;
-  /** A day the record can vouch for — chapter opened or sealed, or a PR. Drives the larger cover. */
+  /**
+   * A day the record can vouch for — chapter opened or sealed, or a PR — or one the athlete marked as a
+   * highlight. Drives the larger cover and the star. "Mark as a highlight" was saved (`is_starred`) and
+   * drawn nowhere, so the toggle had no visible effect (QA 09-26 legacy-25).
+   */
   major: boolean;
 }
 
@@ -420,7 +426,7 @@ export function groupByMonth(photos: ChapterPhoto[]): PhotoMonth[] {
     label: monthLabel(mKey),
     days: [...byMonth.get(mKey)!.entries()].map(([date, dayPhotos]) => {
       const event = dayPhotos.find((p) => p.event)?.event ?? null;
-      return { date, photos: dayPhotos, event, major: !!event };
+      return { date, photos: dayPhotos, event, major: !!event || dayPhotos.some((p) => p.isStarred) };
     }),
   }));
 }
@@ -475,7 +481,12 @@ export function photoCountLabel(n: number): string {
 }
 
 export function weeksLabel(n: number): string {
-  return `${n} ${n === 1 ? 'week' : 'weeks'}`;
+  return countOf(n, 'week');
+}
+
+/** "3 days" for a chapter under a week old, "5 weeks" after — never "1 week" for a one-day chapter (legacy-24). */
+export function albumSpan(a: { startDate: string; endDate: string | null; weeks: number }): { value: number; unit: 'day' | 'week' } {
+  return chapterSpan(a.startDate, a.endDate, todayLocal(), a.weeks);
 }
 
 /** Active vs sealed — the chapter's own state, which the album card wears as a chip. */

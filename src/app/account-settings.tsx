@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
-import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { DocSheet } from '@/components/forge/DocSheet';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -43,6 +43,8 @@ import { hasNutrition, nutritionCsvFiles, toZipEntries } from '@/domain/settings
 import { zipStore } from '@/domain/settings/zip';
 import { saveTextFile } from '@/lib/save-file';
 import { useTour } from '@/hooks/useTour';
+import { useCoachDoor } from '@/hooks/useCoachDoor';
+import { countOf } from '@/domain/text/plural';
 import { TOUR_RETIRED } from '@/lib/screen-prompts';
 
 /**
@@ -182,15 +184,22 @@ export default function AccountSettingsScreen() {
       refetchMe();
     }, [refetchMe]),
   );
-  const { data: homeGym } = useQuery(fetchHomeGym, []);
+  const { data: homeGym, loading: homeGymLoading } = useQuery(fetchHomeGym, []);
   /* The operator row (0129). `isAppAdmin()` fails closed and never throws, so `data` is true only for
      a confirmed admin — while it loads, and on any error, the row simply is not there. */
   const { data: isAdmin } = useQuery(isAppAdmin, []);
 
   const [sheet, setSheet] = useState<LegalKey | 'about' | 'appleHealth' | null>(null);
 
-  const gymSummary =
-    homeGym == null ? undefined : homeGym.length === 0 ? 'Bodyweight only' : `${homeGym.length} item${homeGym.length === 1 ? '' : 's'}`;
+  /* Never set up reads "Set up", so the row names its next step instead of showing a bare chevron
+     (QA 09-26 settings-26). Still loading says nothing rather than guess. */
+  const gymSummary = homeGymLoading
+    ? undefined
+    : homeGym == null
+      ? 'Set up'
+      : homeGym.length === 0
+        ? 'Bodyweight only'
+        : countOf(homeGym.length, 'item');
 
   // Rows only exist once their screens do — all three are built now.
   const sections = settingsSections({
@@ -200,6 +209,7 @@ export default function AccountSettingsScreen() {
     hasPreferences: true,
     hasHoltMemory: true,
     hasHealthConsent: true,
+    hasHoltHelp: true,
     /* Apple-Health-Build-Plan §3.2: no build has the HealthKit module yet, and the web never will, so the
        row says when it arrives. Build 10 passes 'connected' / 'off' from `appleHealthAvailable()`. */
     appleHealth: 'not-here',
@@ -225,6 +235,42 @@ export default function AccountSettingsScreen() {
   };
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
+
+  /* Holt lives on the tab screens (`CoachBubble`'s allow-list), so the help row opens him and goes Home,
+     the way Form Check's "Ask Holt about this" does. */
+  const { openCoach } = useCoachDoor();
+  const openHoltHelp = () => {
+    openCoach('help');
+    router.dismissTo('/');
+  };
+
+  const renderSection = (sec: (typeof sections)[number]) => (
+    <View key={sec.key}>
+      <Text style={styles.sectionLabel}>{sec.label}</Text>
+      <View style={styles.card}>
+        {sec.rows.map((row, i) => (
+          <Pressable
+            key={row.key}
+            onPress={() => {
+              if (row.action.type === 'route') return router.push(row.action.path as never);
+              if (row.action.type === 'deleteAccount') return setDeleteOpen(true);
+              if (row.action.type === 'holtHelp') return openHoltHelp();
+              return setSheet(row.action.key);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={row.label}
+            style={[styles.row, i > 0 && styles.rowBorder]}
+          >
+            <Text style={[styles.rowLabel, row.destructive && styles.rowLabelDanger]}>{row.label}</Text>
+            <View style={styles.rowRight}>
+              {row.value ? <Text style={styles.rowValue}>{row.value}</Text> : null}
+              <EngravedIcon name="chevron-right" size={15} color={row.destructive ? flColor.redMuted : flColor.gray600} />
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
 
   const doc = sheet === 'about' ? null : sheet === 'appleHealth' ? APPLE_HEALTH_NOT_HERE : sheet ? LEGAL[sheet] : null;
 
@@ -292,33 +338,8 @@ export default function AccountSettingsScreen() {
             </>
           )}
 
-          {/* the category map */}
-          {sections.map((sec) => (
-            <View key={sec.key}>
-              <Text style={styles.sectionLabel}>{sec.label}</Text>
-              <View style={styles.card}>
-                {sec.rows.map((row, i) => (
-                  <Pressable
-                    key={row.key}
-                    onPress={() => {
-                      if (row.action.type === 'route') return router.push(row.action.path as never);
-                      if (row.action.type === 'deleteAccount') return setDeleteOpen(true);
-                      return setSheet(row.action.key);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={row.label}
-                    style={[styles.row, i > 0 && styles.rowBorder]}
-                  >
-                    <Text style={[styles.rowLabel, row.destructive && styles.rowLabelDanger]}>{row.label}</Text>
-                    <View style={styles.rowRight}>
-                      {row.value ? <Text style={styles.rowValue}>{row.value}</Text> : null}
-                      <EngravedIcon name="chevron-right" size={15} color={row.destructive ? flColor.redMuted : flColor.gray600} />
-                    </View>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-          ))}
+          {/* the category map — every section but the delete ceremony, which sits alone at the foot */}
+          {sections.filter((sec) => sec.key !== 'danger').map(renderSection)}
 
           {/*
             EXPORT MY DATA (P-9 §2, §4) — a locked row that had never been built.
@@ -350,6 +371,10 @@ export default function AccountSettingsScreen() {
             <Text style={styles.signOutText}>Sign Out</Text>
           </Pressable>
 
+          {/* Delete Account LAST, under its own heading and below the quiet actions (QA 09-26 settings-28):
+              Export and Sign Out used to sit directly under it, one slip from the irreversible row. */}
+          {sections.filter((sec) => sec.key === 'danger').map(renderSection)}
+
           {/* footer */}
           <View style={styles.footer}>
             <View style={styles.legalRow}>
@@ -367,17 +392,13 @@ export default function AccountSettingsScreen() {
       )}
 
       {/* legal / about / Apple Health-not-here — an in-app content sheet, not a browser. Nothing is fetched. */}
-      <BottomSheet open={sheet !== null} onClose={() => setSheet(null)} title={sheet === 'about' ? 'About' : doc?.host ?? ''}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sheetTitle}>{sheet === 'about' ? 'Forge Legacy' : doc?.title ?? ''}</Text>
-          <Text style={styles.sheetUpdated}>{sheet === 'about' ? version : doc?.updated ?? ''}</Text>
-          {(sheet === 'about' ? ABOUT_BODY : (doc?.body ?? [])).map((p) => (
-            <Text key={p} style={styles.sheetPara}>
-              {p}
-            </Text>
-          ))}
-        </ScrollView>
-      </BottomSheet>
+      <DocSheet
+        open={sheet !== null}
+        onClose={() => setSheet(null)}
+        title={sheet === 'about' ? 'Forge Legacy' : doc?.title ?? ''}
+        updated={sheet === 'about' ? version : doc?.updated}
+        body={sheet === 'about' ? ABOUT_BODY : (doc?.body ?? [])}
+      />
 
       {/* Delete account — typed confirmation, matching the squad-delete ceremony (App Store 5.1.1(v)). */}
       <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={closeDelete}>
@@ -490,17 +511,4 @@ const styles = StyleSheet.create({
   legalLink: { fontSize: 12, color: flColor.bronzeInk },
   dot: { fontSize: 12, color: flColor.gray600 },
   version: { fontSize: 11, color: flColor.gray600 },
-
-  sheetScroll: { maxHeight: 460 },
-  sheetBody: { paddingHorizontal: 4, paddingBottom: 20 },
-  sheetTitle: { fontFamily: flFont.display, fontSize: 24, fontWeight: '600', color: flColor.cream100, marginBottom: 6 },
-  sheetUpdated: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    color: flColor.gray600,
-    marginBottom: 18,
-  },
-  sheetPara: { fontSize: 13.5, lineHeight: 22, color: flColor.gray400, marginBottom: 14 },
 });

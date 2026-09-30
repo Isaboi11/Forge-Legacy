@@ -20,6 +20,7 @@ import { useTour } from '@/hooks/useTour';
 import { claimEarnedHonors, fetchHonorsHub, type HubHonor } from '@/data/honors-live';
 import { HonorMedallion } from '@/components/honor/HonorMedallion';
 import { HonorGlyph } from '@/components/honor/HonorGlyph';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * L-10 Honors Hub + L-11 Honor Detail Sheet — built to `Forge Honors Hub.dc.html` (Design b029488a).
@@ -109,17 +110,8 @@ export default function HonorsScreen() {
     <View style={styles.root}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
 
-      <AppBar
-        onBack={() => router.back()}
-        title={
-          <View>
-            <Text style={styles.barTitle}>Honors</Text>
-            <Text style={styles.barSub}>
-              {total} {total === 1 ? 'Honor' : 'Honors'}
-            </Text>
-          </View>
-        }
-      />
+      {/* The bar's own title + subtitle (QA 09-26 legacy-28) rather than a hand-built node without the mark. */}
+      <AppBar onBack={() => router.back()} title="Honors" subtitle={hub ? countOf(total, 'Honor') : undefined} />
 
       {!hub ? (
         <View style={styles.status}>
@@ -301,8 +293,6 @@ function EmptyHonors() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  barTitle: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', letterSpacing: 0.2, color: flColor.cream100 },
-  barSub: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray600, marginTop: 1 },
 
   status: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 40 },
   statusText: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15, textAlign: 'center' },

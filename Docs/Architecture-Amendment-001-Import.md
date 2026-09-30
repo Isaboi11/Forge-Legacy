@@ -200,7 +200,7 @@ All imported programs and chapters are fully owned by the importing athlete. Imp
 **Import First, Automate Later:**
 The MVP focuses on reliable parsing of structured formats. No AI interpretation. No inference. What the file contains is what the athlete reviews.
 
-> **Amended 2026-09-28 for written workouts only** — `Docs/Amendments/Import-Architecture-Amendment-002-AI-When-Needed.md`: AI may rewrite a squad workout card's words into the reader's layout when the code reader cannot read it; the code still reads every number, and a rewrite with any number not on the card is thrown away. Program import is unchanged.
+> **Amended 2026-09-28 for written workouts only** — `Docs/Amendments/Import-Architecture-Amendment-002-AI-When-Needed.md`: AI may rewrite a squad workout card's words into the reader's layout when the code reader cannot read it; the code still reads every number, and a rewrite with any number not on the card is thrown away. Program import is unchanged. **Amended again 2026-09-30:** a PHOTO in any import door (Build a Program / Template, Home, the builders’ sheet, Holt) now goes through the same card reader and AI check; typed and pasted text does not. See that amendment’s “What stays locked”.
 
 **Athlete Intent Is Explicit:**
 Chapter Name and Primary Goal are always athlete-entered. The import system never guesses what a chapter is about.

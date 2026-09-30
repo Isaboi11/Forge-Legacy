@@ -630,6 +630,14 @@ export default function SubscriptionScreen() {
                     <AiBenefits />
                   </>
                 ) : null}
+                {/* A Premium AI athlete is paying for the AI — the page named none of it, only Premium's list
+                    (QA 09-26 holtai-20). The same `AI_BENEFITS` the plan picker sells, nothing new. */}
+                {coachAi ? (
+                  <>
+                    <SectionLabel>What Premium AI adds</SectionLabel>
+                    <AiBenefits />
+                  </>
+                ) : null}
                 {/* No comparison table and no usage review in Premium (§3.4) — nothing left to compare. */}
                 <SectionLabel>What Premium unlocks</SectionLabel>
                 <BenefitList benefits={benefits} />

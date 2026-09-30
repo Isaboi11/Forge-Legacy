@@ -77,6 +77,20 @@ export function csvCell(v: unknown): string {
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+/**
+ * `2026-09-04 18:05` — the athlete's own clock, not UTC (QA 09-26 settings-28).
+ *
+ * The file used to carry the stored `2026-09-05T00:05:00.000Z`: an evening workout filed under the next
+ * day, in a format a spreadsheet will not read as a date. Year-month-day with a 24-hour time sorts as
+ * text AND opens as a date in every spreadsheet. A value that is not a timestamp passes through as-is.
+ */
+export function localStamp(iso: string): string {
+  const d = new Date(iso);
+  if (!iso || Number.isNaN(d.getTime())) return iso;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 export const CSV_HEADERS = [
   'Date',
   'Workout',
@@ -102,7 +116,7 @@ export const CSV_HEADERS = [
 export function toCsv(workouts: ExportWorkout[]): string {
   const lines: string[] = [CSV_HEADERS.join(',')];
   for (const w of workouts) {
-    const head = [w.startedAt, w.name ?? '', w.activityType ?? ''];
+    const head = [localStamp(w.startedAt), w.name ?? '', w.activityType ?? ''];
     if (w.exercises.length === 0) {
       lines.push(
         [...head, '', '', '', '', '', w.durationSec ?? '', w.distance ?? '', w.distanceUnit ?? '', w.notes ?? '']
