@@ -64,7 +64,7 @@ test('⚠ a race the athlete asked for is built, and the concern is said once wi
 test('⚠ QA R2-F8 — a request interrupted by the active-program question is kept for "Replace it"', () => {
   // Each build path that can stop at `guardActiveProgram` puts the request in state FIRST, because the
   // "Replace it" chip continues from `constraints` — a typed build used to come back as "What's the goal?".
-  const guarded = [...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(\)/g)];
+  const guarded = [...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(request\)/g)]; // the request rides along since QA holt-19
   assert.equal(guarded.length, 3, 'typed sentence, tapped opener, shelf-to-build');
   for (const m of guarded) assert.match(m[1], /setConstraints\(request\);/);
   assert.match(sheet, /if \(chip\.label === 'Replace it'\) \{\s*say\(\{ kind: 'me', text: chip\.label \}\);\s*void advance\(constraints, mode \?\? 'program'(, '[^']*')?\);/);

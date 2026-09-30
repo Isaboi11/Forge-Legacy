@@ -249,6 +249,11 @@ export interface Chip {
   /** Which change an Undo chip takes back — an older Undo never undoes a newer change (holtai-08). */
   undoOf?: number;
   /**
+   * Train the running program's next session — the id of that program (QA holt-19). The logger resolves
+   * which session from live state, so a chip restored after a reload still opens the right one.
+   */
+  trainsProgram?: string;
+  /**
    * "Find one online" — Holt found nothing in the recipe book and offered to look (Coach-AI-Amendment-002).
    * Carries what to look for. Tapping it is the athlete's consent: only that ask carries web search.
    */
@@ -1375,6 +1380,33 @@ export function fromOpener(label: string): OpenerAction | null {
       return null;
   }
 }
+
+/** The chip that passes over the program's session for a day built today (QA holt-19). */
+export const SOMETHING_ELSE_TODAY = 'Something else today';
+
+/**
+ * "What should I train today?" asked by somebody with a program running (QA holt-19).
+ *
+ * ⚠ THE PROGRAM'S NEXT SESSION IS THE ANSWER, AND HE USED TO IGNORE IT. The door went straight to "what
+ * are we training?" and built a fresh day beside a block that already said what today was. He names it
+ * first and offers it; building something else stays one tap away, because the athlete may know better
+ * why today is different.
+ */
+export function programSessionOffer(programId: string, programName: string, sessionName: string): Turn[] {
+  return [
+    { kind: 'holt', text: `Next on ${programName} is ${sessionName}. Train that, or something different today?` },
+    {
+      kind: 'chips',
+      chips: [
+        { label: `Train ${sessionName}`, patch: {}, trainsProgram: programId },
+        { label: SOMETHING_ELSE_TODAY, patch: {} },
+      ],
+    },
+  ];
+}
+
+/** The chip on the one-active-program question that builds a single week instead (QA holt-19). */
+export const JUST_A_WEEK = 'Just a week instead';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WHEN THERE IS NOT ENOUGH TO BUILD A SESSION OUT OF

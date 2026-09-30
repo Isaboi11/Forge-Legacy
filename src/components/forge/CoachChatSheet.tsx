@@ -141,6 +141,9 @@ import {
   streamEnded,
   streamInto,
   cutOffReply,
+  programSessionOffer,
+  isOneWeek,
+  JUST_A_WEEK,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -191,7 +194,7 @@ import {
   type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
-import type { SessionMark } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
@@ -1222,8 +1225,11 @@ export function CoachChatSheet({
   /** Long enough for a slow connection, short enough that it never reads as a hang. */
   const ACTIVE_LOOKUP_TIMEOUT_MS = 4000;
 
-  const guardActiveProgram = useCallback(async (): Promise<boolean> => {
+  const guardActiveProgram = useCallback(async (request?: ChatState): Promise<boolean> => {
     if (askedAboutReplacing.current) return true;
+    /* QA holt-19: a single week is saved as a week, not started as a program — it ends nothing, so a
+       running block is no reason to refuse it. Starting it later asks by name, as any Start does. */
+    if (request && isOneWeek(request)) return true;
     /*
      * ⚠ **A SILENT AWAIT IS A STALL, WHICH IS WHAT THIS LOOKED LIKE.** The athlete taps "Build me a
      * program", their own line appears, and then nothing happens at all while this round-trip runs —
@@ -1251,12 +1257,37 @@ export function CoachChatSheet({
         kind: 'chips',
         chips: [
           { label: 'Replace it', patch: {} },
+          /* QA holt-19: "A program or a week" — the week needs no replacing; it carries this request on. */
+          { label: JUST_A_WEEK, patch: { weeks: 1 } },
           /* Where "Change the one I have" leads — the running program's own page, not the Workouts tab (holtai-06). */
           { label: 'Change the one I have', patch: {}, goTo: `/program/${active.id}` },
         ],
       },
     );
     return false;
+  }, [say]);
+
+  /**
+   * QA holt-19 — "What should I train today?" with a program running names the program's next session
+   * and offers it, before building anything. True when he asked; false (build the day as before) when
+   * there is no program, it is finished, or the lookup failed or ran long — never a reason to refuse.
+   */
+  const offerProgramSession = useCallback(async (): Promise<boolean> => {
+    setBusy('thinking');
+    const found = await Promise.race([
+      (async () => {
+        const active = await fetchActiveProgram().catch(() => null);
+        if (!active) return null;
+        const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+        const next = nextOpenSlot(active.structure, marks);
+        return next?.day ? { active, name: dayLabel(next.day, next.dayIndex) } : null;
+      })(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    setBusy(null);
+    if (!found) return false;
+    say(...programSessionOffer(found.active.id, found.active.name, found.name));
+    return true;
   }, [say]);
 
   const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
@@ -1841,6 +1872,19 @@ export function CoachChatSheet({
       return;
     }
 
+    /* QA holt-19: train the running program's next session — the same launch its Train button writes. */
+    if (chip.trainsProgram) {
+      const programId = chip.trainsProgram;
+      say({ kind: 'me', text: chip.label });
+      void writeWorkoutLaunch({ programId })
+        .then(() => {
+          handOff();
+          router.push('/workout');
+        })
+        .catch((e) => say({ kind: 'error', text: "I couldn't open that.", sub: errorText(e), action: 'Try again in a moment.' }));
+      return;
+    }
+
     /*
      * Declining the import — he acknowledges, records the choice, and gets out of the way.
      *
@@ -1908,7 +1952,7 @@ export function CoachChatSheet({
         const request: ChatState = { ...constraints, ...chip.patch };
         /* Saved before the active-program question, so "Replace it" carries this request on (QA R2-F8). */
         setConstraints(request);
-        if (!(await guardActiveProgram())) return;
+        if (!(await guardActiveProgram(request))) return;
         await advance(request, 'program');
       })();
       return;
@@ -2025,7 +2069,8 @@ export function CoachChatSheet({
            one (QA R2-F8). */
         const request: ChatState = { ...athleteFacts(constraints), ...opener.patch };
         setConstraints(request);
-        if (opener.mode === 'program' && !(await guardActiveProgram())) return;
+        if (opener.mode === 'program' && !(await guardActiveProgram(request))) return;
+        if (opener.mode === 'day' && (await offerProgramSession())) return;
         await advance(request, opener.mode);
       })();
       return;
@@ -2682,7 +2727,7 @@ export function CoachChatSheet({
            block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
            to be in state first, or a fully typed build comes back as "What's the goal?". */
         setConstraints(request);
-        if (opens === 'program' && !(await guardActiveProgram())) return;
+        if (opens === 'program' && !(await guardActiveProgram(request))) return;
         return void advance(request, opens);
       }
     }
