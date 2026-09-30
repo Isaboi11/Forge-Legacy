@@ -17,7 +17,7 @@ import {
   type BugPlain,
   type BugScope,
 } from "@/data/crm-live";
-import { errorMessage } from "@/lib/useQuery";
+import { rawErrorMessage as errorMessage } from "@/lib/useQuery";
 
 /* Written this session, and calls in flight — shared by both views, so opening a bug on the phone and the
    desktop at once (or re-opening it before the board refetches) never pays for a second summary. */

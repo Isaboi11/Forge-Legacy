@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -118,7 +119,9 @@ import { pluralWord } from '@/domain/text/plural';
 
 const SCROLL_RANGE = 220;
 
-export default function AthleteProfileScreen() {
+export default guardRoute(AthleteProfileScreen, hasId, { title: 'This profile isn’t available.' });
+
+function AthleteProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const athleteId = String(id ?? '').trim();
   const router = useRouter();
@@ -169,11 +172,7 @@ export default function AthleteProfileScreen() {
   if (error || !data) {
     return (
       <Shell onBack={goBack}>
-        <Text style={styles.missingTitle}>{error ? 'Couldn’t load this profile.' : 'This profile isn’t available.'}</Text>
-        {error ? <Text style={styles.missingBody}>{error}</Text> : null}
-        <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-          <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-        </Pressable>
+        <NotFoundBody title={error ? 'Couldn’t load this profile.' : 'This profile isn’t available.'} reason={error ?? 'It may be private, or it no longer exists.'} onRetry={error ? refetch : undefined} onBack={goBack} />
       </Shell>
     );
   }

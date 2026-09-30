@@ -6,6 +6,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -60,6 +61,7 @@ import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchPlannedWorkout, takePostedWorkout } from '@/data/planned-workout-live';
@@ -146,7 +148,9 @@ const shortDay = (iso: string): string => {
 const closedOn = (iso: string | null): string => (iso ? ` · closed ${shortDay(iso)}` : '');
 const capitalise = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
-export default function SquadDetailRoute() {
+export default guardRoute(SquadDetailRoute, hasId, { title: 'This squad isn’t available.' });
+
+function SquadDetailRoute() {
   const { id, editGoal } = useLocalSearchParams<{ id: string; editGoal?: string }>();
   const router = useRouter();
   const tourScroller = useTourScroller();
@@ -200,7 +204,7 @@ export default function SquadDetailRoute() {
       await refetchSlot();
       showToast(`${name} is on your home screen.`);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Couldn’t take that workout.');
+      showToast(plainError(e, 'Couldn’t take that workout.'));
     } finally {
       setTakingPostId(null);
     }
@@ -328,14 +332,14 @@ export default function SquadDetailRoute() {
         <DetailBg />
         <AppBar title="" onBack={() => router.back()} />
         <View style={styles.center}>
-          {/* S-3 §7.3 (LOCKED): a removed member who follows a deep link sees a NEUTRAL "This squad is no
-              longer available." It also said "It may have been deleted" — a guess, and a wrong one for the
-              removed member (social2-11, QA 09-26). A squad that WAS deleted now says so in the inbox (0251). */}
-          <Text style={styles.missingTitle}>{error ? 'This squad isn’t available.' : 'This squad is no longer available.'}</Text>
-          {error ? <Text style={styles.missingBody}>Couldn’t load it — check your connection.</Text> : null}
-          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back to squads" style={styles.backBtn}>
-            <Text style={styles.backText}>Back to Squads</Text>
-          </Pressable>
+          {/* S-3 §7.3 (LOCKED): a removed member who follows a deep link sees a NEUTRAL "This squad is no longer
+              available." — never "It may have been deleted", a guess and a wrong one for them (social2-11). A squad
+              that WAS deleted says so in the inbox (0251). The shared not-found body gives Back/Home and Try again (B4). */}
+          <NotFoundBody
+            title={error ? 'Couldn’t load this squad.' : 'This squad is no longer available.'}
+            reason={error ?? null}
+            onRetry={error ? refetch : undefined}
+          />
         </View>
       </View>
     );
@@ -415,7 +419,7 @@ export default function SquadDetailRoute() {
                       },
                       (e: unknown) => {
                         setRemoving(false);
-                        showToast(e instanceof Error ? e.message : 'Couldn’t remove the member.');
+                        showToast(plainError(e, 'Couldn’t remove the member.'));
                       },
                     );
                   }}
@@ -513,7 +517,7 @@ export default function SquadDetailRoute() {
       },
       (e: unknown) => {
         setSavingGoal(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t save the goal.');
+        showToast(plainError(e, 'Couldn’t save the goal.'));
       },
     );
   };
@@ -571,7 +575,7 @@ export default function SquadDetailRoute() {
     } catch (e: unknown) {
       // `UploadError.message` is already a sentence with the real numbers in it — don't paraphrase it.
       if (e instanceof UploadError && e.kind === 'cancelled') showToast('Check-in cancelled.');
-      else showToast(e instanceof Error ? e.message : 'Couldn’t post your check-in.');
+      else showToast(plainError(e, 'Couldn’t post your check-in.'));
     } finally {
       checkinAbortRef.current = null;
       setUploadingCheckin(false);

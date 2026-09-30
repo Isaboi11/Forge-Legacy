@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody } from '@/components/forge/NotFound';
 
 import { AskHoltSheet } from '@/components/forge/AskHoltSheet';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -242,7 +243,9 @@ export default function ProgramDetailScreen() {
           })
           .catch(() => {});
 
-        if (previewDef) {
+        // Neither a catalogue slug nor an id the database could hold (`/program/abc`): a broken link,
+        // not a query — it used to be sent to a uuid column and the reply printed (QA 09-26 B4).
+        if (previewDef || !UUID.test(id)) {
           // Nothing else to read. A preview is otherwise derived entirely from shipped content.
           setLoading(false);
           return;
@@ -332,8 +335,7 @@ export default function ProgramDetailScreen() {
         <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.3)' }} />
         <AppBar title="Program" onBack={() => router.back()} />
         <View style={styles.center}>
-          <Text style={styles.emptyTitle}>Program not found</Text>
-          <Text style={styles.emptyBody}>{error ?? 'It may have been deleted.'}</Text>
+          <NotFoundBody title={error ? 'Couldn’t load this program.' : 'Program not found'} reason={error ?? 'It may have been deleted, or the link is wrong.'} />
         </View>
       </View>
     );

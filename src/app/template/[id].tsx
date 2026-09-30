@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -93,7 +94,9 @@ function Chevron({ size = 15 }: { size?: number }) {
   return <EngravedIcon name="chevron-right" size={size} color={flColor.gray600} />;
 }
 
-export default function TemplateDetailScreen() {
+export default guardRoute(TemplateDetailScreen, hasId, { title: 'Template not found' });
+
+function TemplateDetailScreen() {
   const barBottom = useBarBottom();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -242,19 +245,11 @@ export default function TemplateDetailScreen() {
         </View>
       ) : error ? (
         <View style={styles.status}>
-          <Text style={styles.statusText}>Couldn&apos;t load this template.</Text>
-          <Text style={styles.statusDetail}>{errorMessage(error)}</Text>
-          <Pressable onPress={refetch} accessibilityRole="button" accessibilityLabel="Try again" style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnText}>Try again</Text>
-          </Pressable>
+          <NotFoundBody title="Couldn’t load this template." reason={error} onRetry={refetch} onBack={goBack} />
         </View>
       ) : notFound ? (
         <View style={styles.status}>
-          <Text style={styles.notFoundTitle}>Template not found</Text>
-          <Text style={styles.statusDetail}>It may have been deleted.</Text>
-          <Pressable onPress={() => router.replace('/templates')} accessibilityRole="button" accessibilityLabel="Back to Templates" style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnText}>Back to Templates</Text>
-          </Pressable>
+          <NotFoundBody title="Template not found" reason="It may have been deleted." onBack={() => router.replace('/templates')} />
         </View>
       ) : t ? (
         <>

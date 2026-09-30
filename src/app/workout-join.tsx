@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { guardRoute } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -17,6 +18,7 @@ import { CHEER_MAX, fetchSentCheers, sendCheer } from '@/data/cheers-live';
 import { cleanCheer, sentCheerStatus, type SentCheer } from '@/domain/coach/cheers';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage } from '@/lib/useQuery';
+import { isUuid } from '@/lib/plain-error';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 
 /**
@@ -54,7 +56,13 @@ const SENT_POLL_MS = 5000;
 /** When to stop implying an answer is imminent and say what is actually happening. */
 const PATIENCE_MS = 90_000;
 
-export default function WorkoutJoinScreen() {
+// Opened with neither `?athlete=` nor `?id=` there is nobody to ask — it drew "Join They?" (QA 09-26 B4).
+export default guardRoute(WorkoutJoinScreen, (p) => isUuid(p.athlete) || isUuid(p.id), {
+  title: 'There’s no workout to join.',
+  reason: 'Open a friend who’s training now and ask from there.',
+});
+
+function WorkoutJoinScreen() {
   const router = useRouter();
   const { athlete, id } = useLocalSearchParams<{ athlete?: string; id?: string }>();
   const { showToast } = useToast();

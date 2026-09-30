@@ -51,6 +51,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { consumeMealHint } from '@/lib/meal-hint';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { isDayKey } from '@/lib/plain-error';
 
 /**
  * Meal Detail — built to `Meal Detail.dc.html`, wired to the real diary (0205).
@@ -85,7 +86,8 @@ export default function MealDetailScreen() {
   /* Minted once per mount, like Nutrition Home: a session that crosses midnight keeps showing the day
      the athlete opened, rather than silently re-labelling it. */
   const [todayIso] = useState(() => localToday());
-  const iso = typeof params.date === 'string' && params.date ? params.date : todayIso;
+  /* `?date=garbage` used to reach the query as a date and leave a blank screen with no app bar (N-38). */
+  const iso = isDayKey(params.date) ? params.date : todayIso;
   const meal: MealSlot = (MEAL_SLOTS as readonly string[]).includes(String(params.meal))
     ? (params.meal as MealSlot)
     : 'breakfast';

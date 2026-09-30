@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -40,14 +41,16 @@ import { countOf } from '@/domain/text/plural';
  * auto-starting would end whatever the athlete is currently running (`start_program` is exclusive).
  */
 
-export default function ProgramShareScreen() {
+export default guardRoute(ProgramShareScreen, hasId, { title: 'This shared program isn’t available.', reason: 'The link may be wrong, or the program was withdrawn.' });
+
+function ProgramShareScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
   const [openDay, setOpenDay] = useState<string | null>(null);
 
-  const { data, loading, error } = useQuery(() => fetchProgramShare(String(id)), [id]);
+  const { data, loading, error, refetch } = useQuery(() => fetchProgramShare(String(id)), [id]);
 
   const guard = usePremiumGate();
 
@@ -110,8 +113,7 @@ export default function ProgramShareScreen() {
         <ScreenBackground image={SCREEN_BG.slate2} base="#050505" />
         <AppBar title="Program" onBack={goBack} />
         <View style={styles.center}>
-          <Text style={styles.emptyTitle}>This program isn’t being shared any more.</Text>
-          <Text style={styles.emptyBody}>{error ?? 'It may have been withdrawn.'}</Text>
+          <NotFoundBody title={error ? 'Couldn’t load this program.' : 'This program isn’t being shared any more.'} reason={error ?? 'It may have been withdrawn.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       </View>
     );

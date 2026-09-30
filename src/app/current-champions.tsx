@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -75,7 +76,9 @@ const TYPE_ICON: Record<ChallengeType, EngravedName> = {
   GAIN_DISTANCE: 'trend-up',
 };
 
-export default function CurrentChampionsScreen() {
+export default guardRoute(CurrentChampionsScreen, hasId, { title: 'This squad isn’t available.' });
+
+function CurrentChampionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const squadId = String(id ?? '');
   const router = useRouter();
@@ -110,11 +113,7 @@ export default function CurrentChampionsScreen() {
         </View>
       ) : error || !data ? (
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>{error ? 'Couldn’t load champions.' : 'This squad isn’t available.'}</Text>
-          {error ? <Text style={styles.missingBody}>{error}</Text> : null}
-          <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-          </Pressable>
+          <NotFoundBody title={error ? 'Couldn’t load champions.' : 'This squad isn’t available.'} reason={error ?? 'It may be private, or it no longer exists.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       ) : (
         <Body champions={data} onOpen={openTitle} />

@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { guardRoute } from '@/components/forge/NotFound';
 
 import { flColor, flFont } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -10,7 +11,14 @@ import { forgeOr } from '@/constants/theme-scrim';
  * Fullscreen player for a video Pinned moment (the 485 deadlift). Opened from the Legacy pinned strip
  * with the clip's public URL; autoplays + loops with native controls. A full-screen modal over the app.
  */
-export default function PinVideoScreen() {
+// Opened with no clip it was a black page reading "Video unavailable." (QA 09-26 B4) — now the shared
+// not-found state, with a way out, and the player is never built for nothing.
+export default guardRoute(PinVideoScreen, (p) => typeof p.url === 'string' && p.url.length > 0, {
+  title: 'This video isn’t available.',
+  reason: 'Open it from the moment pinned on your Legacy.',
+});
+
+function PinVideoScreen() {
   const { url } = useLocalSearchParams<{ url?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();

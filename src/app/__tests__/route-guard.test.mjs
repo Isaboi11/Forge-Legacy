@@ -25,6 +25,8 @@ const LAYOUT = join(APP_DIR, '_layout.tsx');
 const ALLOWED_OUTSIDE = new Map([
   ['sign-in', 'declared under the `auth` guard — it IS the signed-out destination'],
   ['onboarding', 'declared under the `onboarding` guard'],
+  ['+not-found', 'the page for a URL that matches nothing; it must answer a signed-out visitor too, and reads no data'],
+  ['_sitemap', 'replaces the route list expo-router injects with the not-found page (QA 09-26 B2); reads no data'],
 ]);
 
 /*
@@ -85,4 +87,12 @@ test('a dev-only screen is inside the guard AND still defends itself with __DEV_
 
 test('the tab group itself is guarded', () => {
   assert.ok(declared.has('(tabs)'), 'the (tabs) group must be declared inside the app guard');
+});
+
+test('the public route list is closed and an unmatched URL gets our own page', () => {
+  const notFound = readFileSync(join(APP_DIR, '+not-found.tsx'), 'utf8');
+  assert.match(notFound, /NotFoundScreen/, '+not-found must render the shared NotFound state');
+  assert.doesNotMatch(notFound.replace(/\/\*[\s\S]*?\*\//g, ''), /sitemap/i, 'no link to the route list');
+  const sitemap = readFileSync(join(APP_DIR, '_sitemap.tsx'), 'utf8');
+  assert.match(sitemap, /export \{ default \} from '\.\/\+not-found'/, '_sitemap.tsx must replace the injected sitemap with the not-found page');
 });

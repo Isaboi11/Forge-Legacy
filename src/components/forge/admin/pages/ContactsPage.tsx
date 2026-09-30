@@ -40,7 +40,7 @@ import {
 } from '@/data/crm-live';
 import { CONTACT_STAGES, followUpLabel, todayKey, type ContactKind, type ContactStage } from '@/domain/admin/crm-core';
 import { contactsNote } from '@/domain/admin/notes/contacts';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Contacts (Forge CRM.dc.html, the CONTACTS section; AA-D15).

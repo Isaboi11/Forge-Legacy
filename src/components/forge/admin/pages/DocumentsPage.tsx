@@ -28,7 +28,7 @@ import { UploadDrop } from '@/components/forge/admin/UploadDrop';
 import { deleteDocument, documentLink, fetchDocuments, saveDocument, uploadDocumentFiles, type Doc, type PickedFile } from '@/data/crm-live';
 import { bytes, DOC_CATEGORIES, guessCategory, parseTags, type DocCategory } from '@/domain/admin/crm-core';
 import { documentsNote } from '@/domain/admin/notes/documents';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Documents (Admin-Analytics-Amendment-002, AA-D16), built to `Forge CRM.dc.html`.

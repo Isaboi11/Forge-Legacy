@@ -42,6 +42,7 @@ import { fetchVisibility, saveVisibility } from '@/data/settings-live';
 import type { AudienceId } from '@/domain/settings/visibility';
 import { SQUAD_CATEGORIES, fetchPendingRequestCount, fetchSquadDiscovery, updateSquadDiscovery, type SquadCategory } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
@@ -212,7 +213,7 @@ export default function SquadSettingsScreen() {
       },
       (e: unknown) => {
         setSavingEdit(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t save changes.');
+        showToast(plainError(e, 'Couldn’t save changes.'));
       },
     );
   };
@@ -274,7 +275,7 @@ export default function SquadSettingsScreen() {
       () => router.replace('/(tabs)/squads'),
       (e: unknown) => {
         setDeleting(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t delete the squad.');
+        showToast(plainError(e, 'Couldn’t delete the squad.'));
       },
     );
   };

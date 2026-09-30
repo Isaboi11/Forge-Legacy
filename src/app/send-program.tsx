@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -45,7 +46,9 @@ import { sessionsPerWeek } from '@/domain/program/progress-core';
 
 type Recipients = { friends: FriendSummary[]; squads: SquadSummary[] };
 
-export default function SendProgramScreen() {
+export default guardRoute(SendProgramScreen, hasId, { title: 'There’s no program to send.', reason: 'Open one of your programs and choose Send from there.' });
+
+function SendProgramScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();

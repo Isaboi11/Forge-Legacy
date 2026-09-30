@@ -55,7 +55,7 @@ import {
 import { bugBrief, bugsBrief } from '@/domain/admin/bug-brief';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
 import { bugsNote } from '@/domain/admin/notes/bugs';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Bugs — the one bug board (Admin-Analytics-Amendment-002, AA-D19 + AA-D21), built to `Forge CRM.v2.dc.html`.
