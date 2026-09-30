@@ -2,7 +2,6 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
@@ -11,7 +10,6 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
 import { savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
@@ -458,7 +456,11 @@ export default function WorkoutBuilderScreen() {
         })}
       </ScrollView>
 
-      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
+      {/* A SOLID BAR IN THE FLOW, not a see-through gradient floating over the list (library-08). It was
+          absolutely placed over the scroller with a 35%-82% scrim, so the Cool-down rows showed through
+          the buttons and on a short phone "Add cool-down" sat underneath them. The same ground and rule
+          the Exercise Picker's and the Program Builder's footers stand on. */}
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth disabled={!canSave || saving} onPress={() => void save(true)} accessibilityLabel="Save and start this workout">
           {saving ? 'Saving…' : 'Save & Start'}
         </Button>
@@ -472,7 +474,7 @@ export default function WorkoutBuilderScreen() {
           <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>Save for later</Text>
         </Pressable>
         {!canSave ? <Text style={styles.gate}>Add at least one Main exercise to save.</Text> : null}
-      </LinearGradient>
+      </View>
 
       {/* Same rows and the same `newCardioBlock` seed as the Program Builder, so a run authored here and
           a run authored there are the same thing. Targets are set on the card afterwards, because either
@@ -813,7 +815,7 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: 18, paddingBottom: 190 },
+  scroll: { paddingHorizontal: 18, paddingBottom: 28 },
 
   head: { paddingTop: 6, paddingBottom: 16, gap: 7 },
   fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
@@ -915,7 +917,7 @@ const styles = StyleSheet.create({
 
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. It was a hand-picked 26,
      which was generous on a home-button phone and still under the home indicator on a modern one. */
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: SCREEN_GUTTER, paddingTop: 16, gap: 8 },
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900 },
   laterBtn: { alignItems: 'center', paddingVertical: 8 },
   laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   laterTextOff: { color: flColor.gray600 },
