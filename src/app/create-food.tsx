@@ -39,7 +39,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable, takeLabelScan } from '@/lib/label-scan';
 import { leaveRecipeFood } from '@/lib/recipe-food-handoff';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -96,6 +96,7 @@ export default function CreateFoodScreen() {
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string; for?: string; scan?: string; name?: string; brand?: string }>();
   const { width } = useWindowDimensions();
+  const barBottom = useBarBottom();
 
   const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
   const editId = params.mode === 'edit' && typeof params.food === 'string' && params.food ? params.food : null;
@@ -543,15 +544,15 @@ export default function CreateFoodScreen() {
         ) : null}
       </ScrollView>
 
-      {/* commit */}
-      <View style={styles.footer}>
-        {validity.reason ? <Text style={styles.blocker}>{validity.reason}</Text> : null}
-        {!editing && !forRecipe ? (
-          <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
-            <Text style={styles.mealLineLabel}>Adding to</Text>
-            <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-            <Chevron />
-          </Pressable>
+      {/* commit — ONE pinned button (QA N-13): what blocks or questions it sits directly above it, and the two
+          quiet choices share one row beneath, so the bar stays short enough for the form on a 568-pt screen. */}
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
+        {validity.reason ? (
+          <Text style={styles.blocker}>{validity.reason}</Text>
+        ) : calories.warn && calories.helper ? (
+          <Text style={[styles.blocker, styles.calWarn]} accessibilityLiveRegion="polite">
+            {calories.helper}
+          </Text>
         ) : null}
         <Button variant="primary" fullWidth disabled={!validity.ok || saving} onPress={() => save(!editing && !forRecipe)}>
           {editing
@@ -563,9 +564,16 @@ export default function CreateFoodScreen() {
                 : 'Create food'}
         </Button>
         {!editing && !forRecipe ? (
-          <Pressable accessibilityRole="button" disabled={!validity.ok || saving} onPress={() => save(false)}>
-            <Text style={[styles.saveOnly, (!validity.ok || saving) && styles.saveOnlyOff]}>Create without logging</Text>
-          </Pressable>
+          <View style={styles.footerChoices}>
+            <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
+              <Text style={styles.mealLineLabel}>Adding to</Text>
+              <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+              <Chevron />
+            </Pressable>
+            <Pressable accessibilityRole="button" style={styles.saveOnlyTap} disabled={!validity.ok || saving} onPress={() => save(false)}>
+              <Text style={[styles.saveOnly, (!validity.ok || saving) && styles.saveOnlyOff]}>Create without logging</Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
 
@@ -877,8 +885,8 @@ const styles = StyleSheet.create({
   moreNote: { width: '100%', paddingTop: 6, paddingHorizontal: 2, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
 
   footer: {
-    gap: 10,
-    paddingTop: 14,
+    gap: 8,
+    paddingTop: 12,
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
@@ -886,10 +894,12 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   blocker: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center' },
-  mealLine: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
+  footerChoices: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  mealLine: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
   mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
-  saveOnly: { alignSelf: 'center', paddingVertical: 6, fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'center' },
+  saveOnlyTap: { flexShrink: 1, minWidth: 0 },
+  saveOnly: { paddingVertical: 4, paddingHorizontal: 2, fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'right' },
   saveOnlyOff: { opacity: 0.4 },
 
   sheetBody: { paddingBottom: 8 },

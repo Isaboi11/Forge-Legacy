@@ -159,14 +159,17 @@ const regular = {
     title: { marginTop: 16, marginBottom: 10, fontSize: 34, lineHeight: 37, letterSpacing: -0.4 },
     lede: { marginBottom: 20, fontSize: 15.5, lineHeight: 23 },
     sectionLabel: { paddingBottom: 14 },
-    actions: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 14 },
+    /* 76 under the pinned pair: Holt's coin floats in that band (52 + 18 above the tab bar), and at 14 it sat
+       on the arrow of "Set it up →" (QA N-14 / kitchen-16). */
+    actions: { paddingHorizontal: 24, paddingTop: 12, paddingBottom: 76 },
   }),
 };
 
 const small = {
   ringSize: 44,
   ...StyleSheet.create({
-    content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 16 },
+    /* The actions end the scroll here, so the scroll end clears Holt's coin instead (see `regular.actions`). */
+    content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 76 },
     mark: { paddingTop: 10 },
     title: { marginTop: 14, marginBottom: 8, fontSize: 29, lineHeight: 32, letterSpacing: -0.3 },
     lede: { marginBottom: 18, fontSize: 14.5, lineHeight: 21 },

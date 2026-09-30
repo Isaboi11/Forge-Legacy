@@ -45,7 +45,7 @@ import { fetchNutritionProfile, fetchTargetHistory, saveNutritionProfile, saveTa
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
 import { useUnits } from '@/lib/settings';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
@@ -179,6 +179,10 @@ export default function NutritionTargetsScreen() {
   const same = sameAsCurrent(proposed, current);
   const note = saveNote({ blocked, same, replacesToday: currentFrom === todayIso });
   const canSave = !!proposed && !same && !saving;
+  /* QA N-13: macros that disagree with the calorie target are said ABOVE the button, where the bar can't hide
+     them — the line under the three fields is below the fold on a short screen. */
+  const macroWarn = mode === 'manual' && !blocked && macroLine.off ? macroLine.text : null;
+  const barBottom = useBarBottom();
 
   const profileComplete = !blocker;
   /* The notice's words. `rec` is already recomputed from the LATEST weigh-in above, so when it exists
@@ -585,11 +589,16 @@ export default function NutritionTargetsScreen() {
       </ScrollView>
 
       {/* commit */}
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
+        {macroWarn ? (
+          <Text style={styles.footerWarn} accessibilityLiveRegion="polite">
+            {macroWarn}
+          </Text>
+        ) : null}
         <Button variant="primary" fullWidth disabled={!canSave} onPress={save}>
           Use these targets
         </Button>
-        <Text style={styles.saveNote}>{note}</Text>
+        {macroWarn && !same ? null : <Text style={styles.saveNote}>{note}</Text>}
       </View>
 
       <BottomSheet open={sheet === 'pace'} onClose={() => setSheet(null)} title="Pace">
@@ -901,8 +910,8 @@ const styles = StyleSheet.create({
   historyEmpty: { paddingHorizontal: 2, fontSize: 13, lineHeight: 20, color: flColor.gray600 },
 
   footer: {
-    gap: 10,
-    paddingTop: 14,
+    gap: 8,
+    paddingTop: 12,
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
@@ -910,6 +919,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   saveNote: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  footerWarn: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray400 },
 
   sheetBody: { paddingBottom: 12 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },

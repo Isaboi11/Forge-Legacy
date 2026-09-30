@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -92,10 +93,41 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 const RING = { box: 228, r: 97, stroke: 17 } as const;
 const MACRO_RING = { box: 94, r: 40, stroke: 9 } as const;
 
+/*
+ * How big the rings may be on THIS screen (QA N-14). At full size the tab needs 537 pt above Log Food's lower
+ * edge (day strip 66, calorie ring 238, macro row 179, the button 52, 2 of padding), and on a short screen that
+ * put the tab's main button half behind the tab bar with Holt's coin over its right end. The rings give the
+ * room back: both scale by one factor until Log Food sits clear of the coin's band (its 52 + the 18 it floats
+ * above the tab bar + 6 of air), never below 0.62 — under that the numbers inside stop being readable.
+ *
+ * `compact` also takes 22 pt out of the gaps. `captionOut` moves the "of 2,200 · 300 left" line under the ring
+ * (21 pt) once the ring is too small to hold it without the words crossing the stroke.
+ */
+const RINGS_FULL = 537;
+const RINGS_COMPACT_FIXED = 193;
+const COIN_BAND = 76;
+const CAPTION_OUT = 21;
+function ringFit(viewport: number): { scale: number; compact: boolean; captionOut: boolean } {
+  const room = viewport - COIN_BAND;
+  if (room >= RINGS_FULL) return { scale: 1, compact: false, captionOut: false };
+  const boxes = RING.box + MACRO_RING.box;
+  const inside = (room - RINGS_COMPACT_FIXED) / boxes;
+  if (inside >= 0.75) return { scale: Math.min(1, inside), compact: true, captionOut: false };
+  return { scale: Math.max(0.62, Math.min(0.75, (room - RINGS_COMPACT_FIXED - CAPTION_OUT) / boxes)), compact: true, captionOut: true };
+}
+
 export default function NutritionScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const { profile } = useProfile();
+  /* The scroll area's real height once it has laid out; until then, the window less the two bars (the app
+     bar is 56 + the top inset, the tab bar 80 + the bottom one). */
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const fit = ringFit(viewportHeight ?? windowHeight - insets.top - insets.bottom - 136);
+  const ringBox = Math.round(RING.box * fit.scale);
+  const macroBox = Math.round(MACRO_RING.box * fit.scale);
   /* 0206 — the preview allowlist. The TAB is hidden for everyone else, but `/nutrition` is still a real
      route, so a typed URL or a stale deep link lands here. Read alongside `status` so the two accounts
      that DO have access never see the refusal flash while entitlement is still loading. */
@@ -317,6 +349,17 @@ export default function NutritionScreen() {
     );
   }
 
+  /* Inside the ring, or under it when the ring is too small to hold it (`ringFit`). */
+  const heroCaption = targets ? (
+    <Text style={styles.heroCaption}>{calorieCaption(eaten.kcal, targets.kcal, 'eaten')}</Text>
+  ) : (
+    /* No target yet: the ring still counts what was eaten. Setting one is an invitation, not a
+       wall — nothing here is blocked without it. */
+    <Pressable accessibilityRole="button" onPress={() => router.push('/nutrition-targets')}>
+      <Text style={styles.heroSetTarget}>Set a daily target</Text>
+    </Pressable>
+  );
+
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
@@ -343,9 +386,10 @@ export default function NutritionScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: TAB_SCREEN_BOTTOM_GAP }]}
         showsVerticalScrollIndicator={false}
+        onLayout={(e) => setViewportHeight(Math.round(e.nativeEvent.layout.height))}
       >
         {/* ── day strip ─────────────────────────────────────────────────── */}
-        <View style={styles.dayStrip}>
+        <View style={[styles.dayStrip, fit.compact && styles.dayStripCompact]}>
           <View style={styles.dayLeft}>
             <Pressable
               accessibilityRole="button"
@@ -396,42 +440,44 @@ export default function NutritionScreen() {
           onPress={() => router.push('/nutrition-targets')}
           style={styles.heroWrap}
         >
-          <View style={styles.heroGlow} pointerEvents="none" />
-          <Svg width={RING.box} height={RING.box} viewBox={`0 0 ${RING.box} ${RING.box}`}>
-            <Circle cx={RING.box / 2} cy={RING.box / 2} r={RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={RING.stroke} />
-            {targets ? (
-              <Circle
-                cx={RING.box / 2}
-                cy={RING.box / 2}
-                r={RING.r}
-                fill="none"
-                stroke={flColor.bronze400}
-                strokeWidth={RING.stroke}
-                strokeLinecap="round"
-                strokeDasharray={ringDash(ringFraction(eaten.kcal, targets.kcal), RING.r)}
-                transform={`rotate(-90 ${RING.box / 2} ${RING.box / 2})`}
-              />
-            ) : null}
-          </Svg>
+          <View
+            style={[styles.heroGlow, fit.scale < 1 && { width: 250 * fit.scale, height: 250 * fit.scale }]}
+            pointerEvents="none"
+          />
+          <View style={{ width: ringBox, height: ringBox }}>
+            <Svg width={ringBox} height={ringBox} viewBox={`0 0 ${RING.box} ${RING.box}`}>
+              <Circle cx={RING.box / 2} cy={RING.box / 2} r={RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={RING.stroke} />
+              {targets ? (
+                <Circle
+                  cx={RING.box / 2}
+                  cy={RING.box / 2}
+                  r={RING.r}
+                  fill="none"
+                  stroke={flColor.bronze400}
+                  strokeWidth={RING.stroke}
+                  strokeLinecap="round"
+                  strokeDasharray={ringDash(ringFraction(eaten.kcal, targets.kcal), RING.r)}
+                  transform={`rotate(-90 ${RING.box / 2} ${RING.box / 2})`}
+                />
+              ) : null}
+            </Svg>
 
-          {/* ⚠ `box-none`, NOT `none`. This wrapper sits over the ring so touches fall through to it,
-              but `none` excludes the view AND ITS CHILDREN — which made "Set a daily target" below
-              completely untappable, on the one screen a brand-new athlete starts from. `box-none` lets
-              the children stay interactive while the wrapper itself still passes touches through. */}
-          <View style={styles.heroCentre} pointerEvents="box-none">
-            <EngravedIcon name="flame" size={22} color={flColor.emberFlame} />
-            <Text style={styles.heroValue}>{headline.value}</Text>
-            <Text style={styles.heroLabel}>{headline.label}</Text>
-            {targets ? (
-              <Text style={styles.heroCaption}>{calorieCaption(eaten.kcal, targets.kcal, 'eaten')}</Text>
-            ) : (
-              /* No target yet: the ring still counts what was eaten. Setting one is an invitation, not a
-                 wall — nothing here is blocked without it. */
-              <Pressable accessibilityRole="button" onPress={() => router.push('/nutrition-targets')}>
-                <Text style={styles.heroSetTarget}>Set a daily target</Text>
-              </Pressable>
-            )}
+            {/* ⚠ `box-none`, NOT `none`. This wrapper sits over the ring so touches fall through to it,
+                but `none` excludes the view AND ITS CHILDREN — which made "Set a daily target" below
+                completely untappable, on the one screen a brand-new athlete starts from. `box-none` lets
+                the children stay interactive while the wrapper itself still passes touches through. */}
+            <View style={[styles.heroCentre, fit.compact && styles.heroCentreCompact]} pointerEvents="box-none">
+              <EngravedIcon name="flame" size={fit.scale < 0.8 ? 16 : 22} color={flColor.emberFlame} />
+              <Text
+                style={[styles.heroValue, fit.scale < 1 && { fontSize: Math.round(52 * fit.scale), lineHeight: Math.round(54 * fit.scale) }]}
+              >
+                {headline.value}
+              </Text>
+              <Text style={styles.heroLabel}>{headline.label}</Text>
+              {fit.captionOut ? null : heroCaption}
+            </View>
           </View>
+          {fit.captionOut ? <View style={styles.heroCaptionOut}>{heroCaption}</View> : null}
         </Pressable>
 
         {/* ── macro rings ───────────────────────────────────────────────── */}
@@ -439,11 +485,11 @@ export default function NutritionScreen() {
           accessibilityRole="button"
           accessibilityLabel="Edit macro targets"
           onPress={() => router.push('/nutrition-targets')}
-          style={styles.macroRow}
+          style={[styles.macroRow, fit.compact && styles.macroRowCompact]}
         >
-          <MacroRing label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.macroProtein} />
-          <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.macroCarb} />
-          <MacroRing label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.macroFat} />
+          <MacroRing box={macroBox} label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.macroProtein} />
+          <MacroRing box={macroBox} label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.macroCarb} />
+          <MacroRing box={macroBox} label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.macroFat} />
         </Pressable>
 
         {/* ── actions ───────────────────────────────────────────────────── */}
@@ -645,12 +691,14 @@ function AddRow({
   );
 }
 
-function MacroRing({ label, value, target, color }: { label: string; value: number; target: number | null; color: string }) {
+function MacroRing({ box, label, value, target, color }: { box: number; label: string; value: number; target: number | null; color: string }) {
   const c = MACRO_RING.box / 2;
+  /* `box` is the drawn size (QA N-14); the geometry stays in MACRO_RING's units and the viewBox scales it. */
+  const small = box < MACRO_RING.box * 0.85;
   return (
     <View style={styles.macro}>
-      <View style={styles.macroRingWrap}>
-        <Svg width={MACRO_RING.box} height={MACRO_RING.box} viewBox={`0 0 ${MACRO_RING.box} ${MACRO_RING.box}`}>
+      <View style={{ width: box, height: box }}>
+        <Svg width={box} height={box} viewBox={`0 0 ${MACRO_RING.box} ${MACRO_RING.box}`}>
           <Circle cx={c} cy={c} r={MACRO_RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={MACRO_RING.stroke} />
           {target ? (
             <Circle
@@ -667,9 +715,9 @@ function MacroRing({ label, value, target, color }: { label: string; value: numb
           ) : null}
         </Svg>
         <View style={styles.macroValueWrap} pointerEvents="none">
-          <Text style={styles.macroValue}>
+          <Text style={[styles.macroValue, small && styles.macroValueSmall]}>
             {Math.round(value)}
-            <Text style={styles.macroUnit}>g</Text>
+            <Text style={[styles.macroUnit, small && styles.macroUnitSmall]}>g</Text>
           </Text>
         </View>
       </View>
@@ -839,6 +887,7 @@ const styles = StyleSheet.create({
   pickBody: { gap: 14, paddingBottom: 8 },
 
   dayStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 18 },
+  dayStripCompact: { paddingBottom: 10 },
   dayLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dayArrow: { width: 44, height: 44, marginHorizontal: -7, alignItems: 'center', justifyContent: 'center' },
   dayName: { fontFamily: flFont.display, fontSize: 23, color: flColor.cream100, letterSpacing: -0.2, lineHeight: 26 },
@@ -856,17 +905,21 @@ const styles = StyleSheet.create({
     boxShadow: '0 0 90px 40px rgba(186,134,84,0.10)',
   },
   heroCentre: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  heroCentreCompact: { gap: 2 },
   heroValue: { fontFamily: flFont.display, fontSize: 52, color: flColor.cream100, letterSpacing: -1, lineHeight: 54 },
   heroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   heroCaption: { fontSize: 13, color: flColor.gray400 },
+  heroCaptionOut: { paddingTop: 4 },
   heroSetTarget: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   macroRow: { flexDirection: 'row', gap: 8, paddingTop: 16, paddingBottom: 22 },
+  macroRowCompact: { paddingTop: 10, paddingBottom: 14 },
   macro: { flex: 1, alignItems: 'center', gap: 9 },
-  macroRingWrap: { width: MACRO_RING.box, height: MACRO_RING.box },
   macroValueWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   macroValue: { fontSize: 19, fontWeight: '700', color: flColor.cream100, letterSpacing: -0.3 },
+  macroValueSmall: { fontSize: 15 },
   macroUnit: { fontSize: 11.5, fontWeight: '600' },
+  macroUnitSmall: { fontSize: 10 },
   macroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray400 },
   macroTarget: { fontSize: 11.5, color: flColor.gray600 },
 

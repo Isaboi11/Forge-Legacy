@@ -67,7 +67,7 @@ import {
 import { useToast } from '@/hooks/useCeremony';
 import { takeSwapRequest } from '@/lib/meal-plan-intent';
 import { budgetLine as budgetLineFor, estimateFor, groceryList, stateFor } from '@/domain/nutrition/grocery';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { ensureConsent } from '@/lib/consent';
@@ -108,6 +108,7 @@ const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
  */
 function MealPlanScreen() {
   const router = useRouter();
+  const barBottom = useBarBottom();
   const { showToast } = useToast();
   const scrollRef = useRef<ScrollView>(null);
   const dayY = useRef<number[]>([]);
@@ -607,7 +608,7 @@ function MealPlanScreen() {
           ) : smallBook ? (
             <View style={styles.short}>
               <Text style={styles.shortText}>
-                {`Your recipe book is small${repeats ? ', so some meals repeat' : ''}${noSnackAnywhere ? `${repeats ? ' and' : ','} no snack fits yet` : ''}.`}
+                {`Only a few recipes to plan from${repeats ? ', so some meals repeat' : ''}${noSnackAnywhere ? `${repeats ? ' and' : ','} no snack fits yet` : ''}.`}
               </Text>
               <Pressable accessibilityRole="button" hitSlop={6} onPress={() => router.push({ pathname: '/my-recipes', params: { add: '1' } })}>
                 <Text style={styles.shortLink}>Add a recipe</Text>
@@ -808,7 +809,7 @@ function MealPlanScreen() {
       </ScrollView>
 
       {week ? (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: barBottom }]}>
           {budgetLine ? <Text style={styles.budgetLine}>{budgetLine}</Text> : null}
           <Button variant="primary" fullWidth onPress={() => router.push('/grocery-list')}>
             Grocery list

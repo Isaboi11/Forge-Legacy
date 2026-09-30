@@ -45,7 +45,8 @@ import { useToast } from '@/hooks/useCeremony';
 import { localToday, mealForHour } from '@/domain/nutrition/day';
 import { filterList, recipeRowMeta, savedRecipes, totalsOf, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import { logRecipeEaten } from '@/lib/log-recipe';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { useEntitlementState, useNutritionPlanner } from '@/lib/entitlement';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
@@ -77,8 +78,15 @@ type Editor = { id: string | null; name: string; items: MealItem[]; loading: boo
  */
 export default function MyFoodsScreen() {
   const router = useRouter();
+  const barBottom = useBarBottom();
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ tab?: string; newMeal?: string }>();
+  /* QA N-35: a Free athlete reads and logs their recipes here, and BUILDING one is Premium (0244). The button
+     says so before the tap, as the tab's Add sheet does. Only once the plan is known — never a flash of
+     "Premium" at a Premium athlete while entitlement loads. */
+  const planner = useNutritionPlanner();
+  const { status: entitlementStatus } = useEntitlementState();
+  const recipesArePremium = entitlementStatus === 'ready' && !planner;
 
   const [reloads, setReloads] = useState(0);
   useFocusEffect(useCallback(() => setReloads((n) => n + 1), []));
@@ -324,7 +332,7 @@ export default function MyFoodsScreen() {
               </View>
             ) : null}
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: barBottom }]}>
             <Button
               variant="primary"
               fullWidth
@@ -332,11 +340,13 @@ export default function MyFoodsScreen() {
                 onFoods
                   ? router.push('/create-food')
                   : onRecipes
-                    ? router.push({ pathname: '/my-recipes', params: { new: '1' } })
+                    ? recipesArePremium
+                      ? router.push('/subscription')
+                      : router.push({ pathname: '/my-recipes', params: { new: '1' } })
                     : setEditor({ id: null, name: '', items: [], loading: false })
               }
             >
-              {onFoods ? 'Create food' : onRecipes ? 'Create recipe' : 'Create meal'}
+              {onFoods ? 'Create food' : onRecipes ? (recipesArePremium ? 'Create recipe · Premium' : 'Create recipe') : 'Create meal'}
             </Button>
           </View>
         </>
@@ -460,7 +470,7 @@ export default function MyFoodsScreen() {
               </Pressable>
             ) : null}
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: barBottom }]}>
             {missing ? <Text style={styles.missing}>{missing}</Text> : null}
             <Button variant="primary" fullWidth disabled={!!missing || editor.loading || busy} onPress={saveMeal}>
               {editor.id ? 'Save changes' : 'Save meal'}
