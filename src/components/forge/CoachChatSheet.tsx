@@ -2039,7 +2039,9 @@ export function CoachChatSheet({
         ? "I've got a program already"
         : intent === 'recommend'
           ? 'Which one should I pick?'
-          : 'Build me something';
+          : intent === 'help'
+            ? 'How do I…?'
+            : 'Build me something';
     const id = setTimeout(() => tapChipRef.current({ label, patch: {} }), 240);
     return () => clearTimeout(id);
   }, [intent, introStep, intro.length]);
