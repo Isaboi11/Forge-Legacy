@@ -61,7 +61,7 @@ export function PostedWorkoutView({
         {lines.map((l, i) => (
           <View
             key={`${l.label}-${i}`}
-            style={[styles.lift, i > 0 && styles.liftDivider, /d[a-e]$/.test(l.label) ? styles.liftGroup : null, /d[b-e]$/.test(l.label) ? styles.liftInGroup : null]}
+            style={[styles.lift, i > 0 && styles.liftDivider, /\d[a-e]$/.test(l.label) ? styles.liftGroup : null, /\d[b-e]$/.test(l.label) ? styles.liftInGroup : null]}
           >
             {l.superset ? <Text style={styles.superset}>{l.superset}</Text> : null}
             <View style={styles.liftHead}>
