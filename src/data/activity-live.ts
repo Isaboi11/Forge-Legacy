@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ActivityRecord, Modality } from '@/domain/activity/history-core';
+import { cardioKindsIn, type ActivityRecord, type Modality } from '@/domain/activity/history-core';
 import type { ActivityDetail } from '@/domain/activity/detail-core';
 import { playlistFromRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
@@ -118,6 +118,8 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
       chapterName: w.chapter_id ? (chapterName.get(w.chapter_id) ?? null) : null,
       pr: prWorkouts.has(w.id),
       partners: partnersById.get(w.id) ?? [],
+      // A row inside a lifting day answers the Row chip too (workout-10).
+      contains: cardioKindsIn(exercises.map((e) => e.catalog_key)),
     };
   });
 }
@@ -155,7 +157,9 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
       // and nothing else and rendered as a blank line under its own name.
       // `floors` (0151) is the stair climber's own measurement — omitted here and a stair bout reads back
       // in history as a bare duration, which is the state this column exists to end.
-      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps, duration_sec, floors, route, climb_m))',
+      // `distance`, `distance_unit` (0096) — a bout's own ground. Left out, a 2000 m row inside a lifting
+      // day read back as "10m": ten minutes, in the hold's spelling, with the distance nowhere (workout-10).
+      'id, workout_name, activity_type, started_at, duration_sec, distance, distance_unit, chapter_id, program_id, notes, workout_exercises(name, section, position, catalog_key, notes, workout_sets(set_index, weight, weight_unit, reps, duration_sec, distance, distance_unit, floors, route, climb_m))',
     )
     .eq('id', id)
     .eq('athlete_id', user.id)
@@ -212,7 +216,7 @@ export async function fetchActivityDetail(id: string): Promise<ActivityDetail | 
       equip: ex.catalog_key ? equipmentForCatalogKey(ex.catalog_key) : null,
       sets: [...(ex.workout_sets ?? [])]
         .sort((a, b) => a.set_index - b.set_index)
-        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps, durationSec: s.duration_sec, floors: s.floors ?? null })),
+        .map((s) => ({ setIndex: s.set_index, weight: s.weight, weightUnit: s.weight_unit, reps: s.reps, durationSec: s.duration_sec, floors: s.floors ?? null, distance: s.distance ?? null, distanceUnit: s.distance_unit ?? null })),
     }));
 
   // Already this session's own — `fetchRecordsSetBy` attributes by the sets, so nothing to filter.
@@ -416,7 +420,7 @@ type DetailRow = {
         position: number;
         catalog_key: string | null;
         notes: string | null;
-        workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null; duration_sec: number | null; floors?: number | null; route?: string | null; climb_m?: number | null }[] | null;
+        workout_sets: { set_index: number; weight: number | null; weight_unit: string | null; reps: number | null; duration_sec: number | null; distance?: number | null; distance_unit?: string | null; floors?: number | null; route?: string | null; climb_m?: number | null }[] | null;
       }[]
     | null;
 };

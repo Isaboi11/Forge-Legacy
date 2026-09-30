@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  boutLine,
   ordinalLine,
   pacePer,
   programTag,
@@ -148,4 +149,24 @@ test('a rowing session’s Distance tile reads in metres by default', () => {
   assert.equal(row.find((t) => t.label === 'Distance')?.value, '2000 m');
   const miles = statTiles(detail({ type: 'rowing', distance: 1.5, distanceUnit: 'mi', durationSec: 480 }), 'road');
   assert.equal(miles.find((t) => t.label === 'Distance')?.value, '1.5 mi');
+});
+
+// ── a cardio bout inside a session (workout-10) ─────────────────────────────
+
+test('a row inside a lifting day reads as metres and a clock, never as "10m"', () => {
+  const row = { setIndex: 0, weight: null, weightUnit: null, reps: null, durationSec: 600, distance: 2000 / 1609.344, distanceUnit: 'mi' };
+  assert.equal(setLine(row), '10m', 'the hold spelling this used to be given');
+  assert.equal(boutLine(row, 'cardio:row'), '2000 m · 10:00');
+  assert.equal(boutLine(row, 'cardio:row', { rowUnit: 'road' }), '1.24 mi · 10:00', 'the athlete who chose miles');
+  assert.equal(boutLine({ ...row, distance: null }, 'cardio:row'), '10:00', 'no distance stored: the clock, still not "10m"');
+});
+
+test('a run, a swim and a stair bout each read in their own measure', () => {
+  const bout = (over) => ({ setIndex: 0, weight: null, weightUnit: null, reps: null, durationSec: 1450, distance: null, distanceUnit: null, ...over });
+  assert.equal(boutLine(bout({ distance: 3.1, distanceUnit: 'mi' }), 'cardio:run'), '3.1 mi · 24:10');
+  assert.equal(boutLine(bout({ distance: 3.1, distanceUnit: 'mi' }), 'cardio:run', { metric: true }), '4.99 km · 24:10');
+  assert.equal(boutLine(bout({ distance: 1200 / 1760, distanceUnit: 'mi' }), 'cardio:swim'), '1200 yd · 24:10');
+  assert.equal(boutLine(bout({ floors: 48 }), 'cardio:stair'), '48 floors · 24:10');
+  assert.equal(boutLine(bout({}), 'barbell-bench-press'), '', 'not a bout: the caller keeps setLine');
+  assert.equal(boutLine(bout({}), null), '');
 });
