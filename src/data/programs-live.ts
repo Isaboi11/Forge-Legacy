@@ -94,6 +94,14 @@ export type ProgramExercise = {
    * Only a TIMED move carries one; the Start timer run plays it between moves. Absent = straight on.
    */
   restAfterSec?: number | null;
+  /**
+   * The rest BETWEEN SETS of a lift, as the author wrote it — "2 min rest between each set" (PO 2026-09-30: a
+   * photographed Squatober card imported into Build a Program). `restScheme` when it differs set to set. Not
+   * `restAfterSec`, which is the interval runner's rest between MOVES. `sessionSetsFor` puts it on each set, and
+   * the logger starts the rest timer on it by itself — the same rule a posted workout's rest follows.
+   */
+  restSec?: number | null;
+  restScheme?: (number | null)[];
   /** "(Optional) Stairmaster" — prescribed, but the athlete owes nothing by skipping it. */
   optional?: boolean;
   /**
