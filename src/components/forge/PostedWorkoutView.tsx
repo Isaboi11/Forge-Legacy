@@ -59,7 +59,10 @@ export function PostedWorkoutView({
 
       <View style={styles.list}>
         {lines.map((l, i) => (
-          <View key={`${l.label}-${i}`} style={[styles.lift, i > 0 && styles.liftDivider, l.label.endsWith('b') || /[c-e]$/.test(l.label) ? styles.liftInGroup : null]}>
+          <View
+            key={`${l.label}-${i}`}
+            style={[styles.lift, i > 0 && styles.liftDivider, /d[a-e]$/.test(l.label) ? styles.liftGroup : null, /d[b-e]$/.test(l.label) ? styles.liftInGroup : null]}
+          >
             {l.superset ? <Text style={styles.superset}>{l.superset}</Text> : null}
             <View style={styles.liftHead}>
               <Text style={styles.liftLabel}>{l.label}</Text>
@@ -135,9 +138,11 @@ const styles = StyleSheet.create({
   },
   lift: { paddingVertical: 12, paddingHorizontal: 14, gap: 4 },
   liftDivider: { borderTopWidth: 1, borderTopColor: flColor.divider },
-  /* A superset's later members sit tucked under the first — one block, the way the card draws it. */
-  liftInGroup: { borderTopWidth: 0, paddingTop: 2, marginLeft: 14, borderLeftWidth: 2, borderLeftColor: flColor.charcoal600 },
-  superset: { fontSize: 12, fontWeight: '600', color: flColor.gray400, marginBottom: 4 },
+  /* A SUPERSET IS ONE BLOCK (PO 2026-09-30: "it's not obvious that those three are super setted"): a bronze rule
+     down every member, the later ones tucked under the first, and the line saying how it runs as its header. */
+  liftGroup: { borderLeftWidth: 2, borderLeftColor: flColor.bronze400, marginLeft: 10 },
+  liftInGroup: { borderTopWidth: 0, paddingTop: 2 },
+  superset: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 4 },
   liftHead: { flexDirection: 'row', alignItems: 'baseline', gap: 10 },
   liftLabel: { minWidth: 22, fontFamily: flFont.display, fontSize: 15, color: flColor.gray400 },
   liftNameWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },

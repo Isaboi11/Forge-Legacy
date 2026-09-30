@@ -83,6 +83,13 @@ export default function WorkoutWriteScreen() {
   /* The poster's own words from before AI tidied them — Undo puts them back. Null = AI has not touched the box. */
   const [beforeAi, setBeforeAi] = useState<string | null>(null);
   const reading = useRef(false);
+  /* "Edit" beside the preview (PO 2026-09-30: "it doesn't look like I can edit") takes you back up to the box. */
+  const scrollRef = useRef<ScrollView>(null);
+  const boxRef = useRef<TextInput>(null);
+  const editWords = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    setTimeout(() => boxRef.current?.focus(), 250);
+  };
 
   const written = useMemo(() => (text.trim() ? readWrittenWorkout(text) : null), [text]);
   const rows = useMemo<TemplateExercise[]>(() => (written ? (writtenToTemplate(written, resolveKey) as TemplateExercise[]) : []), [written]);
@@ -222,7 +229,7 @@ export default function WorkoutWriteScreen() {
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.4)' }} />
       <AppBar title={editId ? 'Edit the workout' : 'Write a workout'} transparent onBack={() => router.back()} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
         {editId && editText === '' ? (
           /* Posted from a saved workout: something in it has no words here, so it is not reopened as words. */
           <Text style={styles.warn}>
@@ -280,6 +287,7 @@ export default function WorkoutWriteScreen() {
         ) : null}
 
         <TextInput
+          ref={boxRef}
           value={text}
           onChangeText={setText}
           multiline
@@ -291,10 +299,22 @@ export default function WorkoutWriteScreen() {
           style={styles.box}
           accessibilityLabel="The workout, as written"
         />
+        {text.trim() ? (
+          /* The box IS the editor, and a superset is two words away — said, since neither is obvious. */
+          <Text style={styles.editHint}>
+            Change anything in the box and the preview below updates. To superset lifts, write the first as “4. a. Dips …” and the next ones as “super set b. …”, “super set c. …”.
+          </Text>
+        ) : null}
 
         {written && rows.length ? (
           <>
-            <Text style={styles.section}>What your squad will see</Text>
+            <View style={styles.sectionRow}>
+              <Text style={styles.section}>What your squad will see</Text>
+              <Pressable onPress={editWords} accessibilityRole="button" accessibilityLabel="Edit the workout" hitSlop={8} style={({ pressed }) => [styles.editBtn, pressed && styles.pressed]}>
+                <EngravedIcon name="edit" size={13} color={flColor.bronze300} />
+                <Text style={styles.editBtnText}>Edit</Text>
+              </Pressable>
+            </View>
             <TextInput returnKeyType="done"
               value={name ?? written.name}
               onChangeText={setName}
@@ -364,7 +384,11 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: flColor.cream100,
   },
-  section: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 6 },
+  section: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  editBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  editHint: { fontSize: 12, lineHeight: 17, color: flColor.gray400, marginTop: -6 },
   name: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   warn: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   checks: { gap: 4, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
