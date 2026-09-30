@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -12,7 +12,8 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchWorkoutInvite, requestToJoinWorkout, type WorkoutInvite } from '@/data/train-together-live';
 import { fetchTrainingNow } from '@/data/presence-live';
-import { CHEER_MAX, sendCheer } from '@/data/cheers-live';
+import { CHEER_MAX, fetchSentCheers, sendCheer } from '@/data/cheers-live';
+import { cleanCheer, sentCheerStatus, type SentCheer } from '@/domain/coach/cheers';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -46,6 +47,8 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
 
 /** How often to check for an answer. Short, because someone is standing in a gym looking at it. */
 const POLL_MS = 3000;
+/** How often to re-read whether a sent message was seen or answered. */
+const SENT_POLL_MS = 5000;
 
 /** When to stop implying an answer is imminent and say what is actually happening. */
 const PATIENCE_MS = 90_000;
@@ -65,7 +68,8 @@ export default function WorkoutJoinScreen() {
   /** The message for Holt to pass on (0231) — separate from the join note, which goes to the host's ask. */
   const [cheer, setCheer] = useState('');
   const [cheerSending, setCheerSending] = useState(false);
-  const [cheerSent, setCheerSent] = useState(false);
+  /* What I have sent them today, newest first, each with whether it was seen or answered. */
+  const [sent, setSent] = useState<SentCheer[]>([]);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -176,13 +180,41 @@ export default function WorkoutJoinScreen() {
   /* A message is personal — "Let's go Jordan!", not "Let's go Jordan Reyes!". */
   const first = host?.name?.trim().split(/\s+/)[0] || 'them';
 
+  /*
+   * ══ A SEND THAT SAYS IT SENT (PO 2026-09-30) ══
+   *
+   * *"I sent a message … but don't know if he got it. There was no feedback after I sent the message."*
+   * There was — one word, "Sent.", prepended to the grey hint under the box, which on a phone sits
+   * behind the keyboard the send leaves open. So the box emptied and nothing else visibly happened.
+   *
+   * Now: the keyboard drops, a toast says it went, and the message itself stays on the screen with its
+   * state — Sent → "{Name} saw it" → "{Name} replied 🔥 Let's go" — re-read every few seconds, and
+   * still there if they come back to this screen later.
+   */
+  useEffect(() => {
+    if (!hostId) return;
+    let live = true;
+    const tick = () => void fetchSentCheers(hostId).then((c) => live && c && setSent(c));
+    tick();
+    const timer = setInterval(tick, SENT_POLL_MS);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [hostId]);
+
   const sendMessage = async () => {
-    if (cheerSending || !hostId || !cheer.trim()) return;
+    const text = cleanCheer(cheer);
+    if (cheerSending || !hostId || !text) return;
     setCheerSending(true);
     try {
-      await sendCheer(hostId, cheer);
+      await sendCheer(hostId, text);
+      Keyboard.dismiss();
       setCheer('');
-      setCheerSent(true);
+      /* Drawn at once from what was just sent; the read below swaps in the real row. */
+      setSent((s) => [{ id: `local-${Date.now()}`, body: text, createdAt: new Date().toISOString(), seenAt: null, replyLabel: null }, ...s].slice(0, 3));
+      showToast(`Message sent. Coach Holt will tell ${first}.`);
+      void fetchSentCheers(hostId).then((c) => c && setSent(c));
     } catch (e) {
       showToast(errorMessage(e));
     } finally {
@@ -251,10 +283,7 @@ export default function WorkoutJoinScreen() {
               <View style={styles.cheerRow}>
                 <TextInput
                   value={cheer}
-                  onChangeText={(t) => {
-                    setCheer(t);
-                    if (cheerSent) setCheerSent(false);
-                  }}
+                  onChangeText={setCheer}
                   placeholder={`Let’s go ${first}!`}
                   placeholderTextColor={flColor.gray600}
                   style={[styles.noteInput, styles.cheerInput]}
@@ -274,9 +303,24 @@ export default function WorkoutJoinScreen() {
                   <EngravedIcon name="send" size={18} color={flColor.onBronze} />
                 </Pressable>
               </View>
-              <Text style={styles.cheerHint}>
-                {cheerSent ? `Sent. Coach Holt will tell ${first} during the workout.` : `Coach Holt will tell ${first} during the workout.`}
-              </Text>
+              {sent.length === 0 ? (
+                <Text style={styles.cheerHint}>Coach Holt will tell {first} during the workout.</Text>
+              ) : (
+                <View style={styles.sentList}>
+                  {sent.map((c) => {
+                    const status = sentCheerStatus(c, host?.name ? first : null);
+                    return (
+                      <View key={c.id} style={styles.sentRow} accessibilityRole="text" accessibilityLabel={`${c.body}. ${status.text}`}>
+                        <EngravedIcon name="check" size={15} color={status.done ? flColor.bronze300 : flColor.gray600} />
+                        <View style={styles.sentBody}>
+                          <Text style={styles.sentText}>“{c.body}”</Text>
+                          <Text style={[styles.sentStatus, status.done && styles.sentStatusDone]}>{status.text}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
 
             <Text style={styles.orJoin}>Or train with them</Text>
@@ -365,6 +409,12 @@ const styles = StyleSheet.create({
   cheerSendOff: { opacity: 0.4 },
   cheerSendPressed: { opacity: 0.8 },
   cheerHint: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  sentList: { gap: 10, marginTop: 4 },
+  sentRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  sentBody: { flex: 1, minWidth: 0 },
+  sentText: { fontSize: 13.5, lineHeight: 19, color: flColor.cream100 },
+  sentStatus: { marginTop: 1, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
+  sentStatusDone: { color: flColor.bronze300 },
   orJoin: { alignSelf: 'flex-start', marginTop: 28, fontSize: 11, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   cardAfterCheer: { marginTop: 10 },
 
