@@ -34,16 +34,37 @@ test('schemeText: an ordinary set reads as reps', () => {
   assert.equal(schemeText({ sets: 3, targetReps: 8, section: 'main' }), '3 × 8');
 });
 
-test('schemeText: a long cool-down hold reads as seconds', () => {
-  assert.equal(schemeText({ sets: 2, targetReps: 30, section: 'cooldown' }), '2 × 30s');
-  assert.equal(schemeText({ sets: 1, targetReps: 60, section: 'cooldown' }), '1 × 60s');
-});
-
-test('schemeText: a genuine 20-rep cool-down set stays reps — the design mislabelled it as seconds', () => {
+test('⭐ schemeText: a rep count is never re-read as seconds — the builder and the logger both say reps (library-10)', () => {
+  // This was '2 × 30s': a guess the preview made and nothing else agreed with.
+  assert.equal(schemeText({ sets: 2, targetReps: 30, section: 'cooldown' }), '2 × 30');
+  assert.equal(schemeText({ sets: 1, targetReps: 60, section: 'cooldown' }), '1 × 60');
   assert.equal(schemeText({ sets: 2, targetReps: 20, section: 'cooldown' }), '2 × 20');
 });
 
-test('schemeText: 30 reps in the MAIN block is still reps — only cool-down infers time', () => {
+test('⭐ schemeText: a cool-down HOLD says seconds because it carries a clock, not because of its section', () => {
+  assert.equal(schemeText({ sets: 1, targetReps: 0, targetDurationSec: 30, section: 'cooldown', kind: 'strength' }), '1 × 30s');
+});
+
+test('⭐ schemeText: a cardio block states its targets, never "1 × 0" (library-03)', () => {
+  const run = { sets: 1, targetReps: 0, kind: 'cardio', catalogKey: 'cardio:run' };
+  assert.equal(schemeText({ ...run }), 'Open');
+  assert.equal(schemeText({ ...run, targetMi: 3 }), '3.0 mi');
+  assert.equal(schemeText({ ...run, targetDurationSec: 1800 }), '30 min');
+  assert.equal(schemeText({ ...run, targetMi: 3, targetDurationSec: 1800 }), '3.0 mi · 30 min');
+  assert.equal(schemeText({ ...run, targetMi: 0, targetDurationSec: 0 }), 'Open');
+});
+
+test('schemeText: a cardio distance is written in the unit its activity is read in', () => {
+  const swim = { sets: 1, targetReps: 0, kind: 'cardio', catalogKey: 'cardio:swim', targetMi: 1000 / 1760 };
+  assert.equal(schemeText(swim), '1000 yd');
+  assert.equal(schemeText({ sets: 1, targetReps: 0, kind: 'cardio', catalogKey: 'cardio:run', targetMi: 3.1 }, { metric: true }), '5.0 km');
+  // A stair climber counts floors, not distance — a stray distance is not printed as one.
+  assert.equal(schemeText({ sets: 1, targetReps: 0, kind: 'cardio', catalogKey: 'cardio:stair', targetMi: 1, targetDurationSec: 1200 }), '20 min');
+  // An unreadable key is a run, the same default the builder and the logger take.
+  assert.equal(schemeText({ sets: 1, targetReps: 0, kind: 'cardio', catalogKey: null, targetMi: 2 }), '2.0 mi');
+});
+
+test('schemeText: 30 reps in the MAIN block is reps, as it always was', () => {
   assert.equal(schemeText({ sets: 2, targetReps: 30, section: 'main' }), '2 × 30');
 });
 

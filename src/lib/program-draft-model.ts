@@ -4,6 +4,7 @@ import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
 // directly, where the alias does not resolve — the type-only imports above survive only because they are
 // stripped before anything tries. The same rule `domain/program/prescription` states about its own.
 import { activityFromKey, newCardioBlock } from '../domain/workout/conditioning.ts';
+import { DEFAULT_HOLD_SEC } from '../domain/exercise-picker/catalog-core.ts';
 import { supersetLabelAt } from '../domain/program/prescription.ts';
 import { totalSessions } from '../domain/program/progress-core.ts';
 
@@ -128,9 +129,17 @@ export function stepReps<T extends { reps?: number | null; repsMax?: number | nu
   return { ...x, reps: lo, repsMax: hi > lo ? hi : null };
 }
 
-/** Per-section defaults when the Picker hands an exercise back: Main 3×10, Warm-up 2×12, Cool-down 1×30. */
+/**
+ * Per-section defaults when the Picker hands an exercise back: Main 3×10, Warm-up 2×12, Cool-down 1×10.
+ *
+ * ⚠ THE COOL-DOWN'S WAS 30, AND IT MEANT SECONDS. The design's cool-down is a stretch held for half a
+ * minute, and with no way to say "seconds" the number went into `reps` — so the builder read "30 reps",
+ * the saved template guessed "30s", and the logger asked for thirty of them (library-10). A movement the
+ * catalogue measures by the clock now arrives as a TIMED row (`toDayRow`), which is where the thirty
+ * went; what is left here is a rep count, for the cool-down moves that really are counted.
+ */
 export const defaultSets = (s: BuilderSection) => (s === 'main' ? 3 : s === 'warmup' ? 2 : 1);
-export const defaultReps = (s: BuilderSection) => (s === 'cooldown' ? 30 : s === 'warmup' ? 12 : 10);
+export const defaultReps = (s: BuilderSection) => (s === 'warmup' ? 12 : 10);
 
 let idSeq = 0;
 /** Stable-enough local id for a draft exercise row (React keys + move/remove targeting). */
@@ -333,7 +342,17 @@ export function applyDaysPerWeek(d: ProgramDraft, n: number): ProgramDraft {
  * simply never called it. A conditioning key becomes the block the builder's own cardio sheet would have
  * made (`newCardioBlock`), so both doors produce the identical row.
  */
-function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): ProgramExercise {
+/**
+ * ══ …AND A HOLD IS NOT TEN REPS ══
+ *
+ * A plank, a hang, a stretch: the catalogue marks them `unit: 'time'` and the Picker says so on the pick.
+ * Such a row arrives TIMED — `durationSec`, no reps — so the builder draws its clock, the saved template
+ * reads "1 × 30s" and the logger runs a hold timer, all from the one field. It used to arrive as reps in
+ * every section, and in the cool-down as "30 reps".
+ *
+ * Exported because the Workout Builder drains the same inbox and must build the identical row.
+ */
+export function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): ProgramExercise {
   const activity = activityFromKey(it.catalogKey ?? '');
   if (activity) {
     return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio', ...newCardioBlock(activity) };
@@ -346,7 +365,7 @@ function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): P
     muscles: it.muscles ?? [],
     type: it.type ?? '',
     sets: defaultSets(section),
-    reps: defaultReps(section),
+    ...(it.unit === 'time' ? { durationSec: DEFAULT_HOLD_SEC } : { reps: defaultReps(section) }),
   };
 }
 

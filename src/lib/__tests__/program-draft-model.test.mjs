@@ -220,7 +220,7 @@ test('a normal lift is untouched by the cardio branch', () => {
   assert.equal(row.name, 'Back Squat');
 });
 
-test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×30', () => {
+test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×10', () => {
   const mk = (section) =>
     absorbBuilderInbox(newDraft(), {
       vary: false,
@@ -230,7 +230,28 @@ test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×
       items: [{ name: 'X', equip: 'Bodyweight', muscles: [], type: '' }],
     }).days[0][section][0];
   assert.deepEqual([mk('warmup').sets, mk('warmup').reps], [2, 12]);
-  assert.deepEqual([mk('cooldown').sets, mk('cooldown').reps], [1, 30]);
+  // Was 1×30 — thirty SECONDS written into `reps`, which the logger then asked for as thirty reps.
+  assert.deepEqual([mk('cooldown').sets, mk('cooldown').reps], [1, 10]);
+});
+
+test('⭐ a HOLD picked into a builder arrives timed — seconds, never reps (library-10)', () => {
+  const mk = (section, unit) =>
+    absorbBuilderInbox(newDraft(), {
+      vary: false,
+      week: 0,
+      day: 0,
+      section,
+      items: [{ catalogKey: 'couch-stretch', name: 'Couch Stretch', equip: 'Bodyweight', muscles: [], type: 'Mobility', unit }],
+    }).days[0][section][0];
+  const stretch = mk('cooldown', 'time');
+  assert.equal(stretch.durationSec, 30);
+  assert.equal(stretch.reps, undefined, 'a hold has no rep count to show as "30 reps"');
+  assert.equal(stretch.sets, 1);
+  const plank = mk('main', 'time');
+  assert.deepEqual([plank.sets, plank.durationSec, plank.reps], [3, 30, undefined]);
+  // A counted move, and a pick from a build that sent no unit, stay sets × reps.
+  assert.deepEqual([mk('main', 'reps').reps, mk('main', 'reps').durationSec], [10, undefined]);
+  assert.deepEqual([mk('main', undefined).reps, mk('main', undefined).durationSec], [10, undefined]);
 });
 
 test('absorbBuilderInbox appends rather than replacing, and assigns distinct ids', () => {

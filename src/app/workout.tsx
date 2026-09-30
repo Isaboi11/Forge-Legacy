@@ -1242,6 +1242,7 @@ export default function WorkoutScreen() {
               // Attributes the saved workout back to the template (0095) — what makes its "Times used"
               // and session history real, and what makes them count only sessions actually finished.
               templateId: t.id,
+              templateRows: t.exercises.length,
               templated: true,
               exercises: templateToSessionExercises(t.exercises, prescribed.load),
             });
@@ -3690,7 +3691,7 @@ export default function WorkoutScreen() {
       setSwapAsk({ at: exIdx, pick: null });
       return;
     }
-    router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: ex.name, targetIdx: String(exIdx) } });
+    router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: ex.name, targetIdx: String(exIdx), ...templateRowParams(session, ex) } });
   };
   const skipExercise = () => {
     setOptionsOpen(false);
@@ -5411,7 +5412,7 @@ export default function WorkoutScreen() {
             mutate((s) => ({ ...s, exercises: s.exercises.map((e, i) => (i === ask.at ? swapExercise(e, picked) : e)) }));
             showToast(`Swapped to ${ask.pick.name}`);
           } else {
-            router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: session.exercises[ask.at]?.name ?? '', targetIdx: String(ask.at) } });
+            router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: session.exercises[ask.at]?.name ?? '', targetIdx: String(ask.at), ...templateRowParams(session, session.exercises[ask.at]) } });
           }
         }}
       />
@@ -5916,6 +5917,24 @@ function pickedToExercise(p: PickedExercise, position: number, section: SessionE
       actualReps: null,
       done: false,
     })),
+  };
+}
+/**
+ * The saved-template row a swap would change, as picker params — what lets "This & future workouts"
+ * write to the template (library-02, Exercise-002 §7.3). Nothing unless the session came from a template
+ * AND this exercise is one of its rows: an exercise added mid-session sits at or past `templateRows`, and
+ * a cardio slot is left to the session (a template row cannot be swapped lift ⇄ run in one tap).
+ *
+ * The row is identified by what the TEMPLATE prescribed — the first swap's `prescribed*` — so swapping
+ * twice still points at the row the template holds, and the data layer refuses if it no longer does.
+ */
+function templateRowParams(s: ActiveSession, ex: SessionExercise | undefined): Record<string, string> {
+  if (!s.templateId || !ex || ex.kind === 'cardio' || s.templateRows == null || !(ex.position < s.templateRows)) return {};
+  return {
+    template: s.templateId,
+    row: String(ex.position),
+    rowKey: (ex.prescribedName ? ex.prescribedCatalogKey : ex.catalogKey) ?? '',
+    rowName: ex.prescribedName ?? ex.name,
   };
 }
 /** A swap keeps the slot's set structure (count × target) but is a different movement — clear the logged work. */

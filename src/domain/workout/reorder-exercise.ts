@@ -53,6 +53,53 @@ export function moveExercise(exercises: readonly SessionExercise[], from: number
 }
 
 /**
+ * ══ ONE TAP ON AN UP / DOWN ARROW, IN EITHER BUILDER ══
+ *
+ * Both builders swapped the row with its neighbour and nothing else (library-01, QA 09-26). A block is
+ * found by ADJACENCY, so a swap across a block's edge left two members apart with the same `groupId` —
+ * the header vanished, "A1 / A2" vanished, and the save wrote two one-member groups. A lift stepping
+ * INTO a superset did the same from the other side.
+ *
+ * The list this returns is always legal, and an arrow NEVER breaks a pairing — "Break" is its own
+ * button, and an arrow that also un-pairs would be doing two things on one tap:
+ *
+ *   · **Inside its own block** — the two members trade places. A1 ⇄ A2 is an ordinary reorder.
+ *   · **At the edge of its block, stepping out** — the WHOLE block steps past whatever is next to it.
+ *   · **A lone row next to a block** — it steps past the whole block, never into the middle of it.
+ *
+ * Generic over the row because a program day, a workout template and a live session all group the
+ * same way (`groupId`, adjacency) and only that field is read.
+ */
+export function stepExercise<T extends { groupId?: string | null }>(list: readonly T[], index: number, dir: -1 | 1): T[] {
+  const n = list.length;
+  const j = index + dir;
+  if (index < 0 || index >= n || j < 0 || j >= n) return list.slice();
+
+  /** The run of adjacent rows sharing `i`'s group — a lone row is a run of one. `[start, end)`. */
+  const runAt = (i: number): [number, number] => {
+    const gid = list[i].groupId;
+    if (!gid) return [i, i + 1];
+    let a = i;
+    while (a > 0 && list[a - 1].groupId === gid) a -= 1;
+    let b = i;
+    while (b < n - 1 && list[b + 1].groupId === gid) b += 1;
+    return [a, b + 1];
+  };
+
+  const [a, b] = runAt(index);
+  if (j >= a && j < b) {
+    const next = list.slice();
+    [next[index], next[j]] = [next[j], next[index]];
+    return next;
+  }
+  // `j` is the row just outside this unit, so its run is the neighbouring unit — the two trade sides.
+  const [c, d] = runAt(j);
+  return dir === 1
+    ? [...list.slice(0, a), ...list.slice(c, d), ...list.slice(a, b), ...list.slice(d)]
+    : [...list.slice(0, c), ...list.slice(a, b), ...list.slice(c, d), ...list.slice(b)];
+}
+
+/**
  * Where the athlete stands after a move: on the SAME exercise they were on, wherever it went. Matched by
  * `position` (unique per session — see `nextPosition`), never by index, because every index between the
  * two ends of the move has shifted.

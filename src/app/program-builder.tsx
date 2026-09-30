@@ -71,6 +71,7 @@ import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '@/domain/rank/thresholds';
 import { fetchWeekTemplate, fetchWeekTemplates, saveWeekTemplate, weekSummary } from '@/data/week-templates-live';
 import { defaultAudiences, filterStarters, starterMeta } from '@/domain/workout/starter-templates';
 import { groupLabel } from '@/domain/workout/session-label';
+import { stepExercise } from '@/domain/workout/reorder-exercise';
 import { useProfile } from '@/lib/profile';
 import type { Sex } from '@/domain/profile/schema';
 import { ScreenTour } from '@/components/tour/ScreenTour';
@@ -787,15 +788,9 @@ function ProgramBuilderScreen() {
           // than fork, rounds from the longest member — live in the tested draft model, not in a handler.
           onPair={(section, i) => patchSection(draft.openDay!, section, (list) => pairWithNext(list, i))}
           onUnpair={(section, i) => patchSection(draft.openDay!, section, (list) => unpairAt(list, i))}
-          onMove={(section, i, dir) =>
-            patchSection(draft.openDay!, section, (list) => {
-              const j = i + dir;
-              if (j < 0 || j >= list.length) return list;
-              const next = [...list];
-              [next[i], next[j]] = [next[j], next[i]];
-              return next;
-            })
-          }
+          // The same tested step the Workout Builder's arrows take — a bare swap split a superset
+          // across its edge and saved the split (library-01).
+          onMove={(section, i, dir) => patchSection(draft.openDay!, section, (list) => stepExercise(list, i, dir))}
           onAddCardio={(section) => setCardioSheet(section)}
           onUseTemplate={() => setTemplateSheet(true)}
           onModality={(section, i, m) =>
@@ -2533,7 +2528,8 @@ function ExerciseCard({
 
   // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed. Time is cardio-only.
   const aVal = cardio ? (item.targetMi == null ? 'Open' : fmtDistanceIn(item.targetMi, distUnit)) : String(item.sets ?? 1);
-  const aUnit = cardio ? (item.targetMi == null ? '' : distUnit) : 'sets';
+  // An OPEN target still names itself — two bare "Open"s side by side said nothing (library-03).
+  const aUnit = cardio ? (item.targetMi == null ? 'distance' : distUnit) : 'sets';
   // A TIMED lift ("Plank 3 × 30s", an interval) shows its clock in the reps slot — it has no reps (PO 2026-09-27).
   const timedLift = !cardio && item.durationSec != null;
   const bVal = cardio
@@ -2684,6 +2680,7 @@ function ExerciseCard({
             >
               <Text style={styles.exMeterText}>
                 <Text style={[styles.exMeterValue, tOpen ? styles.exMeterOpen : null, styles.exMeterTypeable]}>{tVal}</Text>
+                {tOpen ? ' time' : ''}
               </Text>
             </Pressable>
             <RoundStep label={`Longer time for ${item.name}`} sign="+" onPress={() => onSlotTime(1)} />

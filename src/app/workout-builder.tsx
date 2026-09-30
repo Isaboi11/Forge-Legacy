@@ -2,7 +2,6 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
@@ -11,7 +10,6 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
 import { savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
@@ -39,17 +37,17 @@ import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/pr
 import { resolveImportedName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { bumpTimedSet, durText, estimatedSessionMinutes } from '@/domain/program/prescription';
+import { stepExercise } from '@/domain/workout/reorder-exercise';
 import { prescriptionOfRow, toTemplateExercises } from '@/lib/workout-template-rows';
 import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   clampReps,
   clampSets,
-  defaultReps,
-  defaultSets,
   newExerciseId,
   pairWithNext,
   pairingAt,
+  toDayRow,
   unpairAt,
 } from '@/lib/program-draft';
 import {
@@ -162,27 +160,10 @@ export default function WorkoutBuilderScreen() {
             ...d,
             [inbox.section]: [
               ...d[inbox.section],
-              /* A conditioning key becomes a cardio BLOCK, not three sets of eight. The Picker's
-                 "Running & Cardio" section hands back `cardio:<activity>` and this mapped it like any
-                 other row — producing exactly the "Interval Run" trap the catalogue cleanup removed,
-                 one door over. Same reader (`activityFromKey`) and same block (`newCardioBlock`) as
-                 this screen's own Add-a-cardio-block sheet, so both doors agree. */
-              ...inbox.items.map((it) => {
-                const activity = activityFromKey(it.catalogKey ?? '');
-                if (activity) {
-                  return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio' as const, ...newCardioBlock(activity) };
-                }
-                return {
-                  id: newExerciseId(),
-                  catalogKey: it.catalogKey,
-                  name: it.name,
-                  equip: it.equip,
-                  muscles: it.muscles ?? [],
-                  type: it.type ?? '',
-                  sets: defaultSets(inbox.section),
-                  reps: defaultReps(inbox.section),
-                };
-              }),
+              /* The SAME row the Program Builder makes from the same pick (`toDayRow`): a conditioning
+                 key becomes a cardio block, a hold becomes a timed row, everything else sets × reps.
+                 This screen carried its own copy of that mapping, and the copy had no timed branch. */
+              ...inbox.items.map((it) => toDayRow(it, inbox.section)),
             ],
           };
         }
@@ -410,8 +391,10 @@ export default function WorkoutBuilderScreen() {
                   first={i === 0}
                   last={i === items.length - 1}
                   pairing={pairingAt(items, i)}
-                  onUp={() => patch(sec.key, (l) => swap(l, i, i - 1))}
-                  onDown={() => patch(sec.key, (l) => swap(l, i, i + 1))}
+                  /* The arrows go through the ONE tested step both builders share: a superset is found
+                     by adjacency, so a bare swap across its edge split it and the split was saved. */
+                  onUp={() => patch(sec.key, (l) => stepExercise(l, i, -1))}
+                  onDown={() => patch(sec.key, (l) => stepExercise(l, i, 1))}
                   onRemove={() => patch(sec.key, (l) => l.filter((_, k) => k !== i))}
                   onSets={(dir) =>
                     patch(sec.key, (l) =>
@@ -477,7 +460,11 @@ export default function WorkoutBuilderScreen() {
         })}
       </ScrollView>
 
-      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
+      {/* A SOLID BAR IN THE FLOW, not a see-through gradient floating over the list (library-08). It was
+          absolutely placed over the scroller with a 35%-82% scrim, so the Cool-down rows showed through
+          the buttons and on a short phone "Add cool-down" sat underneath them. The same ground and rule
+          the Exercise Picker's and the Program Builder's footers stand on. */}
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth disabled={!canSave || saving} onPress={() => void save(true)} accessibilityLabel="Save and start this workout">
           {saving ? 'Saving…' : 'Save & Start'}
         </Button>
@@ -492,7 +479,7 @@ export default function WorkoutBuilderScreen() {
           <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>{editing ? 'Save changes' : 'Save for later'}</Text>
         </Pressable>
         {!canSave ? <Text style={styles.gate}>Add at least one Main exercise to save.</Text> : null}
-      </LinearGradient>
+      </View>
 
       {/* Same rows and the same `newCardioBlock` seed as the Program Builder, so a run authored here and
           a run authored there are the same thing. Targets are set on the card afterwards, because either
@@ -687,9 +674,11 @@ function Row({
        * stepping a number nothing will ever render.
        */}
       <View style={styles.steppers}>
+        {/* An OPEN target still says WHICH target it is. Both steppers read a bare "Open" with nothing
+            under it, so a new cardio block was two identical unlabelled controls (library-03). */}
         {cardio ? (
           <Stepper
-            label={item.targetMi == null ? '' : 'mi'}
+            label={item.targetMi == null ? 'distance' : 'mi'}
             value={distanceLabel(item.targetMi ?? null, (m) => m)}
             onDown={() => onSets(-1)}
             onUp={() => onSets(1)}
@@ -702,7 +691,7 @@ function Row({
             the Program Builder offers, so a day built here and a day built there mean the same thing. */}
         {cardio ? (
           <Stepper
-            label={item.targetSec == null ? '' : 'time'}
+            label="time"
             value={item.targetSec == null ? 'Open' : fmtDuration(item.targetSec)}
             onDown={() => onTime(-1)}
             onUp={() => onTime(1)}
@@ -797,13 +786,6 @@ function Glyph({ name, color, size = 17 }: { name: EngravedName; color: string; 
 
 // ── plumbing ────────────────────────────────────────────────────────────────
 
-const swap = (l: ProgramExercise[], i: number, j: number): ProgramExercise[] => {
-  if (j < 0 || j >= l.length) return l;
-  const next = [...l];
-  [next[i], next[j]] = [next[j], next[i]];
-  return next;
-};
-
 /** An existing template → an editable draft. Re-ids every row so React keys are stable and local. */
 function hydrate(name: string, exercises: TemplateExercise[], editId: string): WorkoutDraft {
   const d = emptyWorkoutDraft();
@@ -859,7 +841,7 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: 18, paddingBottom: 190 },
+  scroll: { paddingHorizontal: 18, paddingBottom: 28 },
 
   head: { paddingTop: 6, paddingBottom: 16, gap: 7 },
   fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
@@ -961,7 +943,7 @@ const styles = StyleSheet.create({
 
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. It was a hand-picked 26,
      which was generous on a home-button phone and still under the home indicator on a modern one. */
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: SCREEN_GUTTER, paddingTop: 16, gap: 8 },
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900 },
   laterBtn: { alignItems: 'center', paddingVertical: 8 },
   laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   laterTextOff: { color: flColor.gray600 },
