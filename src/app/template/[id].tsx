@@ -21,6 +21,7 @@ import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { itemByKey } from '@/domain/exercise-picker/data';
 import { activityFromKey, deriveEquip, resolveModality } from '@/domain/workout/conditioning';
 import { useUnits } from '@/lib/settings';
+import { groupMarks } from '@/domain/workout/template-groups';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
@@ -228,7 +229,11 @@ export default function TemplateDetailScreen() {
             {/* structure */}
             <View style={styles.block}>
               <SectionHeader label="Structure" />
-              {templateSections(t).map((sec) => (
+              {templateSections(t).map((sec) => {
+                /* The blocks and the tags, per section — the same letters the builder drew when this
+                   was authored and the logger will show when it is trained (library-11). */
+                const marks = groupMarks(sec.items);
+                return (
                 <View key={sec.key} style={styles.secBlock}>
                   <View style={styles.secHead}>
                     {/* Bronze marks the block that matters; warm-up and cool-down recede. */}
@@ -238,11 +243,17 @@ export default function TemplateDetailScreen() {
                   </View>
                   <View style={styles.exList}>
                     {sec.items.map((e, i) => (
-                      <ExerciseRow key={`${e.catalogKey ?? e.name}-${i}`} ex={e} />
+                      <View key={`${e.catalogKey ?? e.name}-${i}`} style={styles.exGroup}>
+                        {/* A label, not a card: it says what the rows under it ARE. */}
+                        {marks[i].head ? <Text style={styles.groupHead}>{marks[i].head}</Text> : null}
+                        <ExerciseRow ex={e} tag={marks[i].tag} />
+                        <CoachCue note={e.coachNote} />
+                      </View>
                     ))}
                   </View>
                 </View>
-              ))}
+                );
+              })}
             </View>
 
             {/* session history */}
@@ -419,7 +430,7 @@ export default function TemplateDetailScreen() {
 }
 
 /** One lift: engraved icon disc · name over equipment · scheme in mono · chevron only when it opens. */
-function ExerciseRow({ ex }: { ex: TemplateExercise }) {
+function ExerciseRow({ ex, tag }: { ex: TemplateExercise; tag: string | null }) {
   const router = useRouter();
   const { units, rowUnit } = useUnits();
   const rec = ex.catalogKey ? itemByKey(ex.catalogKey) : undefined;
@@ -444,6 +455,7 @@ function ExerciseRow({ ex }: { ex: TemplateExercise }) {
       </View>
       <View style={styles.exText}>
         <Text style={styles.exName} numberOfLines={1}>
+          {tag ? `${tag}  ` : ''}
           {ex.name}
         </Text>
         <Text style={styles.exEquip} numberOfLines={1}>
@@ -453,6 +465,25 @@ function ExerciseRow({ ex }: { ex: TemplateExercise }) {
       <Text style={styles.exScheme}>{schemeText(ex, { metric: units === 'metric', rowUnit })}</Text>
       {open ? <Chevron /> : null}
     </Pressable>
+  );
+}
+
+/**
+ * The author's cue, under the row it belongs to — "4 seconds down, then push up".
+ *
+ * Written in the builder and shown in the logger, and absent from the one screen that describes the
+ * template (library-11). Outside the row's press target on purpose: the row opens the exercise, and a
+ * sentence you are reading should not navigate when your thumb rests on it. Italic, as the builder and
+ * the logger show it.
+ */
+function CoachCue({ note }: { note: string | null | undefined }) {
+  const text = note?.trim();
+  if (!text) return null;
+  return (
+    <View style={styles.cue} accessible accessibilityLabel={`Coaching note: ${text}`}>
+      <EngravedIcon name="document" size={12} color={flColor.gray600} />
+      <Text style={styles.cueText}>{text}</Text>
+    </View>
   );
 }
 
@@ -485,6 +516,10 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   secCount: { fontSize: 10, fontWeight: '600', color: flColor.gray600 },
   exList: { gap: 8 },
+  exGroup: { gap: 6 },
+  groupHead: { marginTop: 4, paddingHorizontal: 2, fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.labelInk },
+  cue: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, paddingHorizontal: 14, paddingBottom: 2 },
+  cueText: { flex: 1, fontSize: 12, lineHeight: 17, fontStyle: 'italic', color: flColor.gray400 },
 
   exRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   exRowPressed: { borderColor: flColor.accentBorderSubtle },
