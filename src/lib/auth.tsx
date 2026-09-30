@@ -153,7 +153,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // the session is gone the queued rows have nobody to belong to and are dropped. Awaited but
     // best-effort: `stopAnalytics` cannot throw, so it can never block signing out.
     await stopAnalytics();
-    await supabase.auth.signOut();
+    /*
+     * ⚠ `scope: 'local'` — THIS DEVICE ONLY (QA 09-26 auth-12).
+     *
+     * supabase-js defaults to `global`, which revokes every refresh token the account holds: signing out
+     * of the web preview also signed the athlete out of their phone and the watch bridge. The confirm
+     * says "sign back in … on this device", and Account-Auth-Architecture defines Sign Out at the
+     * single-device level. Onboarding's exit and Delete Account come through here too — after a delete
+     * the account's other sessions die with it on the server.
+     */
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   return (

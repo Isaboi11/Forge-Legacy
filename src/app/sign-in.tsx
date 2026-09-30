@@ -1,5 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/forge/composites/Button';
@@ -11,8 +12,18 @@ import { WelcomeLogo } from '@/components/onboarding/WelcomeLogo';
 import { Field, Heading } from '@/components/onboarding/kit';
 import { LEGAL, type LegalKey } from '@/domain/settings/content';
 import { useAuth } from '@/lib/auth';
+import { getEmailDraft, setEmailDraft } from '@/lib/auth-draft';
+import {
+  canSubmitAuth,
+  emailValid,
+  friendlyAuthError,
+  parseAuthStep,
+  PASSWORD_MIN,
+  signInBlocker,
+  type AuthStep,
+} from '@/domain/auth/auth-form';
 import { flColor, flFont } from '@/constants/foundation';
-import { themeGround } from '@/constants/theme-scrim';
+import { forgeOr, themeGround } from '@/constants/theme-scrim';
 import { track } from '@/lib/analytics';
 import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
@@ -29,13 +40,24 @@ import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
  * was written for was never built. Forgetting a password meant creating a second account, which abandons
  * the record the whole product exists to keep permanent. This is that screen.
  */
-type Step = 'welcome' | 'create' | 'signin' | 'forgot' | 'sent' | 'reset';
-const emailValid = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
-const PASSWORD_MIN = 8;
+type Step = AuthStep;
 
 export default function AuthFlow() {
   const { signIn, signUp, resetPassword, updatePassword, recovering } = useAuth();
-  const [chosenStep, setStep] = useState<Step>('welcome');
+  const router = useRouter();
+  /*
+   * ⚠ THE STEP LIVES IN THE URL (`/sign-in?step=signin`), NOT IN STATE (QA 09-26 auth-13).
+   *
+   * It was `useState`, so every step shared one URL: browser Back left the app instead of going back a
+   * step, and a refresh dropped the athlete on Welcome. On web each step is now pushed as its own
+   * history entry; on native (no browser Back) the param is swapped in place, so the phone behaves
+   * exactly as it did. The typed email rides between steps in `auth-draft`.
+   */
+  const params = useLocalSearchParams<{ step?: string }>();
+  const [email, setEmailState] = useState(getEmailDraft);
+  const urlStep = parseAuthStep(params.step);
+  // `sent` names the address it went to; refreshed with no address to name, it is the form again.
+  const chosenStep: Step = urlStep === 'sent' && !email.trim() ? 'forgot' : urlStep;
   /*
    * ⚠ DERIVED, NOT AN EFFECT THAT SYNCS ONE STATE INTO ANOTHER.
    *
@@ -50,23 +72,55 @@ export default function AuthFlow() {
    * the app on the session they already hold — they never type the new password a second time.
    */
   const step: Step = recovering ? 'reset' : chosenStep;
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPasswordState] = useState('');
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   /** Terms / Privacy, read in-app at the moment consent is given rather than only after it. */
   const [legal, setLegal] = useState<LegalKey | null>(null);
 
-  const go = (next: Step) => {
+  // An error answers the last attempt. Once they start retyping it no longer describes the form (auth-05).
+  const setEmail = (v: string) => {
+    setErr(null);
+    setEmailState(v);
+    setEmailDraft(v);
+  };
+  const setPassword = (v: string) => {
+    setErr(null);
+    setPasswordState(v);
+  };
+
+  /**
+   * Move to another step. `forward` adds a history entry on web (so browser Back returns here); `back`
+   * pops one when there is one to pop, and otherwise replaces — a refreshed page has no history, and
+   * its Back link must still go somewhere.
+   */
+  const go = (next: Step, mode: 'forward' | 'back' | 'replace' = 'forward') => {
     setErr(null);
     // A revealed password must not survive the trip to another step — leaving it visible is a
     // shoulder-surfing hazard on a screen somebody else may be handed.
     setReveal(false);
-    setStep(next);
+    const href = { pathname: '/sign-in' as const, params: next === 'welcome' ? {} : { step: next } };
+    if (Platform.OS !== 'web') {
+      router.setParams({ step: next });
+      return;
+    }
+    if (mode === 'back' && router.canGoBack()) router.back();
+    else if (mode === 'forward') router.push(href);
+    else router.replace(href);
   };
 
   const submit = async (kind: 'create' | 'signin') => {
+    // Enter reaches here without the button, so the button's rule is asked again (auth-03).
+    if (busy) return;
+    if (kind === 'signin') {
+      const missing = signInBlocker(email, password);
+      if (missing) {
+        setErr(missing);
+        return;
+      }
+    }
+    if (!canSubmitAuth(kind, email, password)) return;
     setBusy(true);
     setErr(null);
     /*
@@ -91,7 +145,12 @@ export default function AuthFlow() {
     /* `auth_result`, not `auth_succeeded` — an event named for the happy path that also fires on failure
        is a trap for whoever queries it in six months. The name states the fact; `success` carries it. */
     track('auth_result', { method: 'email', source: kind, success: !error });
-    if (error) setErr(error);
+    if (error) {
+      setErr(friendlyAuthError(error));
+      return;
+    }
+    // In, so the address has done its job — the next person on this browser tab starts blank.
+    setEmailDraft('');
     // success → session flips → boot router takes over (no manual navigation)
   };
 
@@ -105,12 +164,19 @@ export default function AuthFlow() {
    * is a console line for us.
    */
   const sendReset = async () => {
+    // Enter on the email field lands here without the button's check — "bad" used to get "On its way"
+    // (auth-04). Say what is wrong instead of pretending something was sent.
+    if (busy) return;
+    if (!canSubmitAuth('forgot', email, password)) {
+      setErr(email.trim() ? 'That email address doesn’t look right yet.' : 'Enter the address you signed up with.');
+      return;
+    }
     setBusy(true);
     setErr(null);
     const { error } = await resetPassword(email.trim());
     if (error) console.warn('[auth] password reset send failed', error);
     setBusy(false);
-    setStep('sent');
+    go('sent');
   };
 
   /**
@@ -118,18 +184,20 @@ export default function AuthFlow() {
    * the boot router — there is no navigation here for the same reason the sign-in path has none.
    */
   const saveNewPassword = async () => {
+    // Enter used to send a 6-character password here too, below the 8-character rule (auth-03).
+    if (busy || !canSubmitAuth('reset', email, password)) return;
     setBusy(true);
     setErr(null);
     const { error } = await updatePassword(password);
     setBusy(false);
     if (error) {
-      setErr(error);
+      setErr(friendlyAuthError(error));
       return;
     }
-    // Nothing sensitive should outlive the step that needed it.
-    setPassword('');
+    // Nothing sensitive should outlive the step that needed it. No navigation: success clears
+    // `recovering` and the boot router takes them into the app on the session they already hold.
+    setPasswordState('');
     setReveal(false);
-    setStep('signin');
   };
 
   /**
@@ -190,7 +258,7 @@ export default function AuthFlow() {
                 will let them set a password, so an escape here strands them exactly where they started. */}
             {step === 'reset' ? null : (
               <Pressable
-                onPress={() => go(step === 'forgot' || step === 'sent' ? 'signin' : 'welcome')}
+                onPress={() => go(step === 'forgot' || step === 'sent' ? 'signin' : 'welcome', 'back')}
                 accessibilityRole="button"
                 accessibilityLabel="Back"
                 hitSlop={10}
@@ -211,10 +279,10 @@ export default function AuthFlow() {
                 <Text style={styles.quiet}>
                   Nothing arrived? Check spam, then try again — and make sure it&apos;s the address you signed up with.
                 </Text>
-                <Button variant="primary" fullWidth onPress={() => go('signin')} accessibilityLabel="Back to sign in">
+                <Button variant="primary" fullWidth onPress={() => go('signin', 'replace')} accessibilityLabel="Back to sign in">
                   Back to Sign In
                 </Button>
-                <Pressable onPress={() => go('forgot')} accessibilityRole="button" accessibilityLabel="Send the email again" style={styles.centerLink}>
+                <Pressable onPress={() => go('forgot', 'back')} accessibilityRole="button" accessibilityLabel="Send the email again" style={styles.centerLink}>
                   <Text style={styles.centerLinkText}>Send it again</Text>
                 </Pressable>
               </>
@@ -266,7 +334,7 @@ export default function AuthFlow() {
                         value={password}
                         onChangeText={setPassword}
                         onSubmitEditing={() =>
-                          step === 'reset' ? void saveNewPassword() : submit(step === 'create' ? 'create' : 'signin')
+                          step === 'reset' ? void saveNewPassword() : void submit(step === 'create' ? 'create' : 'signin')
                         }
                       />
                       {/* A typo in a field you cannot read costs the account on create, and a locked-out
@@ -294,8 +362,8 @@ export default function AuthFlow() {
                     <Button
                       variant="primary"
                       fullWidth
-                      disabled={busy || !emailValid(email) || password.length < PASSWORD_MIN}
-                      onPress={() => submit('create')}
+                      disabled={busy || !canSubmitAuth('create', email, password)}
+                      onPress={() => void submit('create')}
                       accessibilityLabel="Continue"
                     >
                       {busy ? 'Creating…' : 'Continue'}
@@ -330,7 +398,7 @@ export default function AuthFlow() {
                   <Button
                     variant="primary"
                     fullWidth
-                    disabled={busy || !emailValid(email)}
+                    disabled={busy || !canSubmitAuth('forgot', email, password)}
                     onPress={() => void sendReset()}
                     accessibilityLabel="Email me a reset link"
                   >
@@ -340,7 +408,7 @@ export default function AuthFlow() {
                   <Button
                     variant="primary"
                     fullWidth
-                    disabled={busy || password.length < PASSWORD_MIN}
+                    disabled={busy || !canSubmitAuth('reset', email, password)}
                     onPress={() => void saveNewPassword()}
                     accessibilityLabel="Save my new password"
                   >
@@ -348,7 +416,7 @@ export default function AuthFlow() {
                   </Button>
                 ) : (
                   <>
-                    <Button variant="primary" fullWidth disabled={busy} onPress={() => submit('signin')} accessibilityLabel="Sign in">
+                    <Button variant="primary" fullWidth disabled={busy} onPress={() => void submit('signin')} accessibilityLabel="Sign in">
                       {busy ? 'Signing in…' : 'Sign In'}
                     </Button>
                     <Pressable
@@ -395,8 +463,10 @@ const styles = StyleSheet.create({
   brand: { fontFamily: flFont.display, fontSize: 40, fontWeight: '600', lineHeight: 43, letterSpacing: -0.5, color: flColor.cream100, textAlign: 'center' },
   welcomeActions: { alignSelf: 'stretch', gap: 16 },
   signinLink: { alignItems: 'center', paddingVertical: 6 },
-  signinText: { fontFamily: flFont.sans, fontSize: 13.5, color: flColor.gray600 },
-  signinAccent: { color: flColor.bronze300, fontWeight: '600' },
+  /* auth-07: on Alabaster `bronze300` read at ~2.4:1 and `gray600` at ~3.2:1 on cream. Links take
+     `bronzeInk` (the Alabaster link role) and helper text `gray400` there; Forge keeps its colours. */
+  signinText: { fontFamily: flFont.sans, fontSize: 13.5, color: forgeOr(flColor.gray600, flColor.gray400) },
+  signinAccent: { color: forgeOr(flColor.bronze300, flColor.bronzeInk), fontWeight: '600' },
 
   form: { paddingHorizontal: 30, paddingTop: 64, paddingBottom: 40, gap: 22 },
   backLink: { alignSelf: 'flex-start' },
@@ -406,16 +476,16 @@ const styles = StyleSheet.create({
   // Amber-neutral rather than red: an unfinished password is not an error, it is a field still being
   // filled in, and colouring it as a failure would scold somebody who is doing nothing wrong.
   blocker: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
-  legal: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.gray600, textAlign: 'center' },
-  legalLink: { color: flColor.bronze300, fontWeight: '600', textDecorationLine: 'underline' },
+  legal: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: forgeOr(flColor.gray600, flColor.gray400), textAlign: 'center' },
+  legalLink: { color: forgeOr(flColor.bronze300, flColor.bronzeInk), fontWeight: '600', textDecorationLine: 'underline' },
 
   // Sits over the field's right edge, level with the input row beneath the label.
   reveal: { position: 'absolute', right: 12, top: 30, paddingVertical: 6, paddingHorizontal: 6 },
-  revealText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  revealText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: forgeOr(flColor.bronze300, flColor.bronzeInk) },
 
   centerLink: { alignItems: 'center', paddingVertical: 8 },
-  centerLinkText: { fontFamily: flFont.sans, fontSize: 13.5, color: flColor.bronze300, fontWeight: '600' },
-  quiet: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 20, color: flColor.gray600 },
+  centerLinkText: { fontFamily: flFont.sans, fontSize: 13.5, color: forgeOr(flColor.bronze300, flColor.bronzeInk), fontWeight: '600' },
+  quiet: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 20, color: forgeOr(flColor.gray600, flColor.gray400) },
 
   sheetScroll: { maxHeight: 460 },
   sheetBody: { paddingHorizontal: 22, paddingBottom: 30, gap: 13 },
