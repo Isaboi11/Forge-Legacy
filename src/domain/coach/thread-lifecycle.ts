@@ -32,6 +32,8 @@
  * ⚠ PURE, AND RELATIVE `.ts` IMPORTS ONLY — `node --test` cannot resolve `@/`.
  */
 
+import type { ChatMode, ChatState } from './chat-core.ts';
+
 /**
  * How the sheet went away.
  *
@@ -109,4 +111,38 @@ export function mayPersist(): boolean {
  */
 export function clearsOnUnmount(exit: Exit | null): boolean {
   return !threadSurvives(exit ?? 'interrupted');
+}
+
+/* ── where the conversation had got to ─────────────────────────────────────────────────────────── */
+
+/**
+ * The half of a conversation that is not words: which build it is (a program, a day, a pick) and the
+ * answers given so far. Stored beside the thread and restored with it.
+ *
+ * ⚠ QA holt-08: A REFRESH RESTORED THE WORDS AND LOST THE PLACE. The thread came back ending in the
+ * question on the table, but the sheet came back with no mode and no answers — so tapping "Build muscle"
+ * under "What are we chasing today?" ran a PROGRAM build (the default mode) that had forgotten the day it
+ * was asked for, and he asked the goal again. Restoring both is what makes the chips under the last
+ * question answer that question.
+ */
+export interface ThreadPlace {
+  mode: ChatMode | null;
+  constraints: ChatState;
+}
+
+const MODES: readonly ChatMode[] = ['program', 'day', 'pick'];
+
+/** The stored place, or null for anything unreadable — a place we cannot trust is a question asked again. */
+export function readThreadPlace(raw: string | null | undefined): ThreadPlace | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { mode?: unknown; constraints?: unknown };
+    if (!parsed || typeof parsed !== 'object') return null;
+    const mode = MODES.includes(parsed.mode as ChatMode) ? (parsed.mode as ChatMode) : null;
+    const c = parsed.constraints;
+    const constraints = c && typeof c === 'object' && !Array.isArray(c) ? (c as ChatState) : {};
+    return { mode, constraints };
+  } catch {
+    return null;
+  }
 }

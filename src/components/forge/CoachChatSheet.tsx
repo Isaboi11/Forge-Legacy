@@ -176,7 +176,7 @@ import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/dom
 import { authoredLine, authorFacts, validateAuthored, type ValidatedPlan } from '@/domain/coach/author-validate';
 import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
 import { endsOnRace, firstWeeksOf, RACE_WEEK_LINE, raceWeekShape, spliceLiftDays, stopsShortLine } from '@/domain/coach/author-race';
-import { endThread, hasMetHolt, loadThread, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
+import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
@@ -647,9 +647,10 @@ export function CoachChatSheet({
     if (profileLoading || greeted.current) return undefined;
     greeted.current = true;
     void (async () => {
-      const [met, stored, remembered, rememberedRoom, athlete] = await Promise.all([
+      const [met, stored, place, remembered, rememberedRoom, athlete] = await Promise.all([
         hasMetHolt(),
         loadThread(),
+        loadThreadPlace(),
         loadExperience(),
         loadRoom(),
         /*
@@ -685,6 +686,13 @@ export function CoachChatSheet({
         return; // the intro effect is already running; leave it alone
       }
       setIntroStep(intro.length + 1);
+      /* QA holt-08: a restored conversation comes back in the build it was in, with the answers given so
+         far — so the chips under his last question answer THAT question instead of starting a program
+         build that asks the goal again. Only with a restored thread; alone it answers nothing visible. */
+      if (stored && place) {
+        setMode(place.mode);
+        setConstraints((c) => ({ ...c, ...place.constraints }));
+      }
       /* He greets you on arrival — unless a question of his is still on the table, which is what a stored
          thread ending in chips means. The greeting and Home he last opened with come out first, so a
          reopen greets ONCE rather than stacking another hello and another set of doors (kitchen-14). */
@@ -713,8 +721,9 @@ export function CoachChatSheet({
    * gate as it deletes, so the two can never drift apart. See `domain/coach/thread-lifecycle.ts`.
    */
   useEffect(() => {
-    void saveThread(thread);
-  }, [thread]);
+    /* With where it had got to, so a refresh restores the build as well as the words (QA holt-08). */
+    void saveThread(thread, { mode, constraints });
+  }, [thread, mode, constraints]);
 
   /**
    * ⚠ **AND CLOSING IS NOT ONLY THE X.** `collapse` covers the three deliberate closes — the X, the
