@@ -85,7 +85,9 @@ export default function InboxScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Notifications" onBack={goBack} />
+      {/* "Inbox", not "Notifications": Settings → Notifications is the push switches, and two screens with one
+          name sent people to the wrong one (QA 09-26 B11). The Settings title is P-5's locked one. */}
+      <AppBar title="Inbox" onBack={goBack} />
 
       {loading && !data ? (
         <View style={styles.center}>

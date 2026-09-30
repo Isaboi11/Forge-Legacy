@@ -72,17 +72,17 @@ export const VISIBILITY_SECTIONS: VisibilitySection[] = [
   { key: 'chapter', label: 'Current Chapter & Goal', desc: 'The chapter you’re training through now, and its goal.', def: 'everyone', icon: 'book' },
   { key: 'history', label: 'Chapter History', desc: 'Sealed chapters from your past.', def: 'everyone', icon: 'seal' },
   { key: 'timeline', label: 'Timeline', desc: 'The running log of milestones and events.', def: 'squads', icon: 'banner' },
-  { key: 'transformation', label: 'Transformation', desc: 'Physique and progress footage.', def: 'friends', icon: 'spark' },
+  { key: 'transformation', label: 'Transformation', desc: 'Physique and progress footage.', def: 'friends', icon: 'transformation' },
   { key: 'photos', label: 'Photos', desc: 'Your full photo archive.', def: 'friends', icon: 'medal' },
   { key: 'accomplishments', label: 'Accomplishments', desc: 'Records and milestones you’ve preserved.', def: 'everyone', icon: 'trophy' },
   { key: 'stats', label: 'Training Stats', desc: 'Volume, streaks and totals.', def: 'squads', icon: 'dumbbell' },
-  { key: 'training', label: 'Live Workout Status', desc: 'That you’re training right now, while you are.', def: 'squads', icon: 'spark' },
+  { key: 'training', label: 'Live Workout Status', desc: 'That you’re training right now, while you are.', def: 'squads', icon: 'live' },
   /*
    * ⚠ DEFAULT PRIVATE — AN OPT-IN, NOT AN INHERITANCE (0181). `training` promises only the fact; this
    * is the plan and the log, with numbers, and CC-D2 / WSR-D6 forbid those on any surface the athlete
    * did not choose. `private` is the off switch, exactly as it is for `training`.
    */
-  { key: 'live_session', label: 'Live Workout Detail', desc: 'What you’ve logged and what’s planned, while you train. Off until you turn it on.', def: 'private', icon: 'dumbbell' },
+  { key: 'live_session', label: 'Live Workout Detail', desc: 'What you’ve logged and what’s planned, while you train. Only you, unless you choose to share it.', def: 'private', icon: 'list' },
 ];
 
 export type VisibilityMap = Record<VisibilityKey, AudienceId>;
