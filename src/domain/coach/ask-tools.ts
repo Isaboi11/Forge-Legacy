@@ -184,7 +184,7 @@ export const ASK_TOOLS: AskToolDef[] = [
   {
     name: 'get_recipes',
     description:
-      "Search the app's recipe book and the athlete's own saved recipes. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
+      "Search Forge's recipes and the athlete's own saved recipes (their My Recipes screen); each result says which it is. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
     input_schema: {
       type: 'object',
       properties: {
@@ -1019,9 +1019,14 @@ export function narrowRecipes(v: unknown): RecipeCard[] {
   return out;
 }
 
-/** get_recipes' text: the best matches, the athlete's own first on a tie. */
+/**
+ * get_recipes' text: the best matches, the athlete's own first on a tie.
+ *
+ * kitchen-18 (QA 09-26): the whole book reached him as "their recipe book", so with My Recipes empty he offered
+ * Forge's recipes as the athlete's own. Each line now says whose it is, in the screen's words.
+ */
 export function formatRecipes(cards: readonly RecipeCard[], q: { query?: string | null; meal?: string | null; maxMinutes?: number | null; minProtein?: number | null }): string {
-  if (cards.length === 0) return 'The recipe book is empty (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.';
+  if (cards.length === 0) return "There are no recipes: their My Recipes is empty and Forge has none that reach them (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.";
   const words = liftTokens(q.query ?? '').filter((w) => w.length > 2);
   const scored = cards
     .filter((c) => !q.meal || q.meal === 'any' || c.meals.includes(q.meal))
@@ -1036,12 +1041,12 @@ export function formatRecipes(cards: readonly RecipeCard[], q: { query?: string 
     .filter((x) => words.length === 0 || x.hits > 0)
     .sort((a, b) => b.hits - a.hits || Number(b.c.mine) - Number(a.c.mine) || b.c.protein - a.c.protein);
   if (scored.length === 0) {
-    return `Nothing in their recipe book matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
+    return `Nothing in Forge's recipes or their My Recipes matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
   }
-  const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} in the recipe book (numbers are the app's, per serving):`];
+  const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} among Forge's recipes and their My Recipes (numbers are the app's, per serving):`];
   for (const { c } of scored.slice(0, 6)) {
     lines.push(
-      `${c.name}${c.mine ? ' (their own recipe)' : ''} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
+      `${c.name}${c.mine ? ' (their own recipe, in My Recipes)' : " (one of Forge's recipes, not theirs)"} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
         c.meals.join('/') || 'any meal'
       }${c.allergens.length ? `; contains ${c.allergens.join(', ')}` : ''}. Main ingredients: ${c.ingredients.slice(0, 6).join(', ')}.`,
     );

@@ -1542,7 +1542,9 @@ export const KITCHEN_CARDS: readonly KitchenTile[] = [
   {
     tag: 'MAKE',
     title: 'What can I make?',
-    sub: "Tell me what you've got. I'll start from your recipe book.",
+    /* kitchen-18: "your recipe book" was Forge's built-in list to Holt and My Recipes to the athlete. He
+       searches both (`holtRecipeCardsLive`), so the door names both, by the names the app uses. */
+    sub: "Tell me what you've got. I'll start from My Recipes and Forge's.",
     ask: 'What can I make with ',
     /* Without typing (no Premium AI) the same question is answered by the book itself. */
     goTo: '/my-recipes',
@@ -1565,7 +1567,7 @@ export const KITCHEN_ROWS: readonly KitchenRow[] = [
 
 /** What he says when "What can I make?" opens the composer. */
 export const KITCHEN_MAKE_LINE =
-  "Tell me what's in the kitchen, or what you're in the mood for. I'll check your recipe book first.";
+  "Tell me what's in the kitchen, or what you're in the mood for. I'll check My Recipes and Forge's recipes first.";
 
 /**
  * Is this the turn Coach Home is drawn in place of?

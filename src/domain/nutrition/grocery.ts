@@ -206,6 +206,20 @@ export function markHave(s: GroceryState, key: string): GroceryState {
   return { ...s, have: { ...s.have, [key]: true }, checked };
 }
 
+/**
+ * What is IN the kitchen, by name — what Holt is told the athlete has (`kitchenPantryLive`): the plan's items
+ * marked "have it" or ticked into the cart, and the athlete's own additions ONCE TICKED.
+ *
+ * QA kitchen-12: every extra went to Holt as food on hand the moment it was typed, so something still to buy
+ * ("paper towels", "oat milk") was offered back as an ingredient. An extra has no "have it" — it is on the list
+ * because it is wanted — so the tick is the only thing that says it came home. `list` is null when there is no
+ * readable plan; the extras are still the athlete's.
+ */
+export function onHandNames(list: GroceryList | null, s: Pick<GroceryState, 'checked' | 'have' | 'removed' | 'extras'>): string[] {
+  const planned = list ? list.items.filter((i) => !s.removed[i.key] && (s.have[i.key] || s.checked[i.key])).map((i) => i.name) : [];
+  return [...planned, ...s.extras.filter((x) => s.checked[x.key]).map((x) => x.name)];
+}
+
 /* ── the estimate ───────────────────────────────────────────────────────── */
 
 export interface Estimate {

@@ -10,6 +10,7 @@ import {
   budgetLine,
   groceryList,
   markHave,
+  onHandNames,
   planSignature,
   shareText,
   stateFor,
@@ -115,6 +116,26 @@ test('"have it" takes an item off the list and out of the cart', () => {
   s = markHave(s, key);
   assert.ok(s.have[key] && !s.checked[key]);
   assert.ok(!activeItems(list, s).some((x) => x.key === key));
+});
+
+test('kitchen-12: what Holt is told is on hand — "have it", the cart, and only the extras that were ticked', () => {
+  const list = groceryList(week, 2);
+  const s0 = stateFor(null, list, 'sig');
+  const bought = list.items.find((i) => !i.staple);
+  const gone = list.items.find((i) => i.staple);
+  let s = addExtra(list, s0, 'paper towels').state;
+  s = addExtra(list, s, 'oat milk').state;
+  const [towels, milk] = s.extras;
+  /* The plan's item goes in the cart; the staple is removed from the list; oat milk is ticked, the towels are not. */
+  s = { ...s, checked: { [bought.key]: true, [milk.key]: true }, removed: { [gone.key]: true } };
+  const names = onHandNames(list, s);
+  assert.ok(names.includes(bought.name), 'an item in the cart is on hand');
+  assert.ok(!names.includes(gone.name), 'a removed item is not');
+  assert.ok(names.includes(milk.name), 'a ticked extra is on hand');
+  assert.ok(!names.includes(towels.name), 'an extra still to buy is NOT food they already have');
+  /* No readable plan: the ticked extras are still theirs, the unticked still are not. */
+  assert.deepEqual(onHandNames(null, { checked: { [milk.key]: true }, have: {}, removed: {}, extras: s.extras }), [milk.name]);
+  assert.deepEqual(onHandNames(null, { checked: {}, have: {}, removed: {}, extras: s.extras }), []);
 });
 
 test('the estimate sums only priced items still to buy, and counts the ones it cannot price', () => {
