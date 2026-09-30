@@ -689,7 +689,20 @@ export async function addSquadPost(input: NewSquadPost): Promise<string> {
           : null,
   };
   const { data, error } = await supabase.from('squad_posts').insert(row).select('id').single();
-  if (error) throw error;
+  if (error) {
+    /*
+     * 42501 is the insert policy saying no, and it reached the composer as "new row violates row-level
+     * security policy for table "squad_posts"" (social2-11, QA 09-26). Two reasons exist: an announcement
+     * from a non-owner, or an author who is no longer in the squad. The second is worded neutrally — S-3
+     * §7.3 (LOCKED): a removal is never announced to the removed member, the squad "simply disappears".
+     */
+    if ((error as { code?: string }).code === '42501') {
+      throw new Error(
+        input.type === 'announcement' ? 'Only the squad owner can post announcements.' : 'This squad is no longer available — the post wasn’t sent.',
+      );
+    }
+    throw error;
+  }
   return (data as { id: string }).id;
 }
 
