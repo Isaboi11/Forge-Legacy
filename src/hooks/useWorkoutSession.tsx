@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
-import { setTrainingStatus } from '@/data/presence-live'
+import { sendTrainingHeartbeat, setTrainingStatus, TRAINING_HEARTBEAT_MS } from '@/data/presence-live'
 import type { TrainingAnnouncement } from '@/domain/coach/squad-announce'
 import { clearLiveSession } from '@/data/live-session-live'
 import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments'
@@ -37,6 +37,13 @@ export type WorkoutSessionContextValue = {
    * is over and the next one is genuinely news.
    */
   leaveWorkout: () => void
+  /**
+   * The athlete renamed the workout they are in (QA 09-26 social2-21). Live Now and their profile kept
+   * the name the session STARTED with, because presence was only ever written at the start. Re-asserting
+   * inside a live session keeps the stamp and the announcement (0187/0202) and replaces the label — the
+   * squad is not told again. A no-op with no session, or when the name has not changed.
+   */
+  renameWorkout: (workoutName: string) => void
   /**
    * The server's word that THIS session's start notified the squad (0217) — or null.
    *
@@ -163,6 +170,46 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
     [clearStaleTimer, endSession, profile?.sex],
   )
 
+  const renameWorkout = useCallback(
+    (workoutName: string) => {
+      if (!session || !workoutName || session.workoutName === workoutName) return
+      setSession({ ...session, workoutName })
+      void setTrainingStatus(true, workoutName)
+    },
+    [session],
+  )
+
+  /*
+   * THE HEARTBEAT (0251, QA 09-26 social2-13). While a session is open the app phones home every two
+   * minutes; when it stops — the app closed or reloaded mid-workout — the server ends the presence ten
+   * minutes later instead of leaving a ghost "Training now" for four hours.
+   *
+   * ⚠ `false` MEANS THE SERVER TOOK THEM OFF WHILE THE SESSION IS STILL OPEN HERE: a phone locked through
+   * a long cardio block, a laptop that slept. Re-asserting restores the SAME stamp (0202 holds the
+   * announcement across a sweep exactly as it does across a leave), so they reappear at the time they
+   * really started and nobody is notified twice.
+   *
+   * The first beat waits a few seconds so it lands after `startWorkout`'s own presence write rather than
+   * racing it. Before 0251 is pasted the call answers PGRST202 once and the timer goes quiet.
+   */
+  useEffect(() => {
+    if (!session) return
+    const name = session.workoutName
+    let alive = true
+    const beat = () => {
+      void sendTrainingHeartbeat().then((live) => {
+        if (alive && live === false) void setTrainingStatus(true, name)
+      })
+    }
+    const first = setTimeout(beat, 4000)
+    const every = setInterval(beat, TRAINING_HEARTBEAT_MS)
+    return () => {
+      alive = false
+      clearTimeout(first)
+      clearInterval(every)
+    }
+  }, [session])
+
   useEffect(() => clearStaleTimer, [clearStaleTimer])
 
   return (
@@ -177,6 +224,7 @@ export function WorkoutSessionProvider({ children }: { children: React.ReactNode
         finishWorkout: endSession,
         abandonWorkout: endSession,
         leaveWorkout: leaveSession,
+        renameWorkout,
         announcement,
       }}
     >

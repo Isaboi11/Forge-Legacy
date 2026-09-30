@@ -438,7 +438,7 @@ export default function WorkoutScreen() {
       refetchMemories();
     }, [refetchMemories]),
   );
-  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout, leaveWorkout, announcement } = useWorkoutSession();
+  const { session: liveSession, startWorkout, finishWorkout, abandonWorkout, leaveWorkout, renameWorkout, announcement } = useWorkoutSession();
   /**
    * ⚠ THIS SESSION IS OVER AND MUST NOT BE RE-ANNOUNCED. Latched by the three ways out below.
    *
@@ -993,6 +993,24 @@ export default function WorkoutScreen() {
       alive = false;
     };
   }, [session?.workoutName, liveSession, startWorkout]);
+
+  /*
+   * ── social2-21 (QA 09-26) · A RENAME FOLLOWS THE ATHLETE ONTO LIVE NOW ── [social2 lane]
+   * Presence carried the name the session started with; renaming here (or a cardio block renaming itself)
+   * never reached it. `renameWorkout` re-asserts with the new label and tells nobody again. Deferred by a
+   * microtask for the same lint reason as the effect above.
+   */
+  useEffect(() => {
+    const name = session?.workoutName;
+    if (!name || !liveSession || liveSession.workoutName === name || endedRef.current) return;
+    let alive = true;
+    void Promise.resolve().then(() => {
+      if (alive) renameWorkout(name);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [session?.workoutName, liveSession, renameWorkout]);
 
   /*
    * ══ YOUR MAXES — ASKED AT THE START, CHANGEABLE ANY TIME (PO 2026-09-27, Squatober) ══
