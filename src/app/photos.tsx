@@ -169,12 +169,10 @@ export default function PhotosScreen() {
     <View style={styles.root}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacy} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
 
+      {/* A plain string title: the shared bar's own style (QA 09-26 legacy-28 — this was a tracked uppercase
+          label, one of four header styles across the Legacy screens). */}
       <AppBar
-        title={
-          <Text style={styles.barTitle} numberOfLines={1}>
-            {title}
-          </Text>
-        }
+        title={title}
         onBack={goBack}
         actions={
           albumId && album ? (
@@ -750,7 +748,6 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   pressed: { opacity: 0.88 },
 
-  barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.6, textTransform: 'uppercase', color: flColor.cream100 },
   barBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
   scroll: { paddingHorizontal: H_PAD, paddingTop: 22, paddingBottom: 36 },
