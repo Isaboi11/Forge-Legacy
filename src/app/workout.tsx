@@ -107,6 +107,7 @@ import { completionGap, completionGapMessage } from '@/domain/workout/set-comple
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type IntensitySignalRow, type LastNote } from '@/domain/workout/save';
+import { rememberPlanRemainder } from '@/data/continue-workout-live';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import { queueSave } from '@/data/pending-save-live';
 import { saveAppPrefs, fetchVisibility } from '@/data/settings-live';
@@ -2403,6 +2404,9 @@ export default function WorkoutScreen() {
            everyone today and correct the moment somebody chooses Kgs. */
         ? (await continueWorkout(session.continuingWorkoutId, session, units), session.continuingWorkoutId)
         : (await saveWorkout(session, partnerNames, signals, units)).workoutId;
+      /* What was planned and not done, set aside for "Continue this workout" before the session that holds
+         it is cleared — the server never had it (workout-05). */
+      await rememberPlanRemainder(workoutId, session);
       await clearSession();
       /* One more session in the book — the tutorial's phases are counted in workouts, and this is the
          only place a workout becomes one. A no-op until the count has been seeded from the server, so it

@@ -192,3 +192,43 @@ test('the client window and the server window agree', () => {
   assert.equal(CONTINUE_WINDOW_MIN, 60);
   assert.match(sql, new RegExp(`${CONTINUE_WINDOW_MIN} minutes`), 'two windows that disagree is a button that lies');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTINUING INTO THE SAME LIFT, WITH THE PLAN STILL IN IT (workout-05, 0253)
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { planRemainder, withPlanRemainder } from '../plan-remainder.ts';
+
+test('a set added to a lift that was already saved names that lift’s row; a new lift does not', () => {
+  const s = session([
+    { name: 'Back Squat', catalogKey: 'barbell-back-squat', section: 'main', position: 0, savedPosition: 0, sets: [set(0, 225, 5, { saved: true }), set(1, 225, 5)] },
+    { name: 'Dumbbell Curl', catalogKey: 'dumbbell-curl', section: 'main', position: 1, sets: [set(0, 30, 10)] },
+  ]);
+  const rows = buildAppendExercises(s);
+  assert.equal(rows[0].into_position, 0, 'the squat joins the squat');
+  assert.equal('into_position' in rows[1], false, 'an exercise added after reopening is a new row');
+  assert.equal('into_position' in buildSaveExercises(s)[0], false, 'a first save never names a row');
+});
+
+test('the planned sets that were not done come back on Continue, and the done ones are not doubled', () => {
+  const finished = session([
+    { name: 'Back Squat', section: 'main', position: 0, sets: [set(0, 225, 5), set(1, 225, 5), { setIndex: 2, weight: 225, targetReps: 5, actualReps: null, done: false }] },
+    { name: 'Row', kind: 'cardio', activity: 'row', section: 'main', position: 1, boutOpen: true, sets: [{ setIndex: 0, weight: null, targetReps: 0, actualReps: null, done: false }] },
+    { name: 'Bench', section: 'main', position: 2, sets: [set(0, 185, 5)] },
+  ]);
+  const rem = JSON.parse(JSON.stringify(planRemainder(finished))); // it travels through storage
+  assert.deepEqual(rem.map((r) => [r.position, r.sets.length, !!r.whole]), [[0, 1, false], [1, 1, true]]);
+  assert.equal(rem[1].whole.boutOpen, undefined, 'a bout that never ran is not reopened as running');
+
+  // What the server hands back: the logged sets, marked saved; no row at all for the row machine.
+  const reopened = session([
+    { name: 'Back Squat', section: 'main', position: 0, savedPosition: 0, sets: [set(0, 225, 5, { saved: true }), set(1, 225, 5, { saved: true })] },
+    { name: 'Bench', section: 'main', position: 2, savedPosition: 2, sets: [set(0, 185, 5, { saved: true })] },
+  ]);
+  const back = withPlanRemainder(reopened, rem);
+  assert.deepEqual(back.exercises.map((e) => e.name), ['Back Squat', 'Row', 'Bench']);
+  assert.deepEqual(back.exercises[0].sets.map((x) => [x.setIndex, x.done, !!x.saved]), [[0, true, true], [1, true, true], [2, false, false]]);
+  assert.equal(back.exercises[1].savedPosition, undefined, 'the row machine was never saved: it appends as its own row');
+  assert.deepEqual(buildAppendExercises(back), [], 'reopening alone writes nothing');
+  assert.equal(withPlanRemainder(reopened, []), reopened);
+});

@@ -1,5 +1,32 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
+import { planRemainder, withPlanRemainder, type RemainderExercise } from '@/domain/workout/plan-remainder';
+
+/**
+ * The unfinished half of the LAST finished session on this device — see `plan-remainder.ts` (workout-05).
+ * One entry, overwritten by every Finish: only the workout still inside its hour can be continued, and it
+ * is always the most recent one this device finished.
+ */
+const REMAINDER_KEY = 'forge.finishedPlan.v1';
+
+export async function rememberPlanRemainder(workoutId: string, session: ActiveSession): Promise<void> {
+  try {
+    await AsyncStorage.setItem(REMAINDER_KEY, JSON.stringify({ workoutId, remainder: planRemainder(session) }));
+  } catch {
+    /* best-effort: without it, Continue brings back what was logged, as it always did */
+  }
+}
+
+async function readPlanRemainder(workoutId: string): Promise<RemainderExercise[]> {
+  try {
+    const raw = await AsyncStorage.getItem(REMAINDER_KEY);
+    const saved = raw ? (JSON.parse(raw) as { workoutId?: string; remainder?: RemainderExercise[] }) : null;
+    return saved?.workoutId === workoutId && Array.isArray(saved.remainder) ? saved.remainder : [];
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Reopen a finished workout as a live session.
@@ -105,11 +132,15 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
         ...(ex.group_name ? { groupName: ex.group_name } : {}),
         ...(ex.group_kind ? { groupKind: ex.group_kind as SessionExercise['groupKind'] } : {}),
         ...(ex.group_rounds != null ? { groupRounds: ex.group_rounds } : {}),
+        // The row this lift already has — Finish sends it back so new sets join it (0253, workout-05).
+        savedPosition: ex.position,
         sets,
       } as SessionExercise;
     });
 
-  return {
+  /* …and the sets that were planned and not done, which the server never had (workout-05). */
+  const remainder = await readPlanRemainder(row.id);
+  return withPlanRemainder({
     workoutName: row.workout_name ?? 'Workout',
     activityType: row.activity_type ?? 'strength',
     startedAt: row.started_at,
@@ -118,5 +149,5 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
     ...(row.program_id ? { programId: row.program_id } : {}),
     ...(row.template_id ? { templateId: row.template_id } : {}),
     continuingWorkoutId: row.id,
-  } as ActiveSession;
+  } as ActiveSession, remainder);
 }
