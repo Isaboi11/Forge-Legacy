@@ -43,11 +43,10 @@ import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/
 import {
   clampReps,
   clampSets,
-  defaultReps,
-  defaultSets,
   newExerciseId,
   pairWithNext,
   pairingAt,
+  toDayRow,
   unpairAt,
 } from '@/lib/program-draft';
 import {
@@ -156,27 +155,10 @@ export default function WorkoutBuilderScreen() {
             ...d,
             [inbox.section]: [
               ...d[inbox.section],
-              /* A conditioning key becomes a cardio BLOCK, not three sets of eight. The Picker's
-                 "Running & Cardio" section hands back `cardio:<activity>` and this mapped it like any
-                 other row — producing exactly the "Interval Run" trap the catalogue cleanup removed,
-                 one door over. Same reader (`activityFromKey`) and same block (`newCardioBlock`) as
-                 this screen's own Add-a-cardio-block sheet, so both doors agree. */
-              ...inbox.items.map((it) => {
-                const activity = activityFromKey(it.catalogKey ?? '');
-                if (activity) {
-                  return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio' as const, ...newCardioBlock(activity) };
-                }
-                return {
-                  id: newExerciseId(),
-                  catalogKey: it.catalogKey,
-                  name: it.name,
-                  equip: it.equip,
-                  muscles: it.muscles ?? [],
-                  type: it.type ?? '',
-                  sets: defaultSets(inbox.section),
-                  reps: defaultReps(inbox.section),
-                };
-              }),
+              /* The SAME row the Program Builder makes from the same pick (`toDayRow`): a conditioning
+                 key becomes a cardio block, a hold becomes a timed row, everything else sets × reps.
+                 This screen carried its own copy of that mapping, and the copy had no timed branch. */
+              ...inbox.items.map((it) => toDayRow(it, inbox.section)),
             ],
           };
         }
@@ -663,9 +645,11 @@ function Row({
        * stepping a number nothing will ever render.
        */}
       <View style={styles.steppers}>
+        {/* An OPEN target still says WHICH target it is. Both steppers read a bare "Open" with nothing
+            under it, so a new cardio block was two identical unlabelled controls (library-03). */}
         {cardio ? (
           <Stepper
-            label={item.targetMi == null ? '' : 'mi'}
+            label={item.targetMi == null ? 'distance' : 'mi'}
             value={distanceLabel(item.targetMi ?? null, (m) => m)}
             onDown={() => onSets(-1)}
             onUp={() => onSets(1)}
@@ -678,7 +662,7 @@ function Row({
             the Program Builder offers, so a day built here and a day built there mean the same thing. */}
         {cardio ? (
           <Stepper
-            label={item.targetSec == null ? '' : 'time'}
+            label="time"
             value={item.targetSec == null ? 'Open' : fmtDuration(item.targetSec)}
             onDown={() => onTime(-1)}
             onUp={() => onTime(1)}

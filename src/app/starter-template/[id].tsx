@@ -163,7 +163,7 @@ export default function StarterTemplateScreen() {
                       </Text>
                     </View>
                     <Text style={styles.exScheme}>
-                      {isCardio ? (ex.targetMi != null ? `${ex.targetMi} mi` : 'Open') : schemeText(ex)}
+                      {schemeText(ex)}
                     </Text>
                     {rec ? <Chevron /> : null}
                   </Pressable>

@@ -2411,7 +2411,8 @@ function ExerciseCard({
 
   // Slot A: sets for a lift, distance for a block. Slot B: reps, or pace/speed. Time is cardio-only.
   const aVal = cardio ? (item.targetMi == null ? 'Open' : fmtDistanceIn(item.targetMi, distUnit)) : String(item.sets ?? 1);
-  const aUnit = cardio ? (item.targetMi == null ? '' : distUnit) : 'sets';
+  // An OPEN target still names itself — two bare "Open"s side by side said nothing (library-03).
+  const aUnit = cardio ? (item.targetMi == null ? 'distance' : distUnit) : 'sets';
   // A TIMED lift ("Plank 3 × 30s", an interval) shows its clock in the reps slot — it has no reps (PO 2026-09-27).
   const timedLift = !cardio && item.durationSec != null;
   const bVal = cardio
@@ -2555,6 +2556,7 @@ function ExerciseCard({
             >
               <Text style={styles.exMeterText}>
                 <Text style={[styles.exMeterValue, tOpen ? styles.exMeterOpen : null, styles.exMeterTypeable]}>{tVal}</Text>
+                {tOpen ? ' time' : ''}
               </Text>
             </Pressable>
             <RoundStep label={`Longer time for ${item.name}`} sign="+" onPress={() => onSlotTime(1)} />

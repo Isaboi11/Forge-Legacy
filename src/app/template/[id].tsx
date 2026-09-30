@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/useCeremony';
 import { usePlanNext } from '@/hooks/usePlanNext';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { itemByKey } from '@/domain/exercise-picker/data';
+import { activityFromKey, deriveEquip, resolveModality } from '@/domain/workout/conditioning';
+import { useUnits } from '@/lib/settings';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
@@ -419,7 +421,12 @@ export default function TemplateDetailScreen() {
 /** One lift: engraved icon disc · name over equipment · scheme in mono · chevron only when it opens. */
 function ExerciseRow({ ex }: { ex: TemplateExercise }) {
   const router = useRouter();
+  const { units, rowUnit } = useUnits();
   const rec = ex.catalogKey ? itemByKey(ex.catalogKey) : undefined;
+  /* A cardio block is not in the exercise catalogue, so the lookup above finds nothing — and "nothing"
+     used to print as "Custom · 1 × 0" (library-03). It names its own ground, the same word the builder's
+     card shows, and `schemeText` states its distance and clock. */
+  const activity = ex.kind === 'cardio' ? (activityFromKey(ex.catalogKey) ?? 'run') : null;
   // A custom exercise has no catalog record and correctly stays inert — no chevron, no press.
   const open = rec ? () => router.push({ pathname: '/exercise/[id]', params: { id: rec.key } }) : undefined;
 
@@ -432,17 +439,18 @@ function ExerciseRow({ ex }: { ex: TemplateExercise }) {
       style={({ pressed }) => [styles.exRow, open && pressed ? styles.exRowPressed : null]}
     >
       <View style={styles.exIcon}>
-        <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipGlyph cls={rec?.equipClass ?? 'Bodyweight'} />} />
+        {/* Only a catalogue row has a poster — a cardio or custom key can only ever 404. */}
+        <ExercisePoster exerciseId={rec ? ex.catalogKey : null} radius={18} fallback={<EquipGlyph cls={rec?.equipClass ?? 'Bodyweight'} />} />
       </View>
       <View style={styles.exText}>
         <Text style={styles.exName} numberOfLines={1}>
           {ex.name}
         </Text>
         <Text style={styles.exEquip} numberOfLines={1}>
-          {rec?.equip ?? 'Custom'}
+          {activity ? deriveEquip(activity, resolveModality(activity, ex.modality)) : (rec?.equip ?? 'Custom')}
         </Text>
       </View>
-      <Text style={styles.exScheme}>{schemeText(ex)}</Text>
+      <Text style={styles.exScheme}>{schemeText(ex, { metric: units === 'metric', rowUnit })}</Text>
       {open ? <Chevron /> : null}
     </Pressable>
   );

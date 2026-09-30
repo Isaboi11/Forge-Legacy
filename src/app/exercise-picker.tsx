@@ -487,7 +487,10 @@ export default function ExercisePickerScreen() {
           week: Number(params.week ?? 0) || 0,
           day: Number(params.day ?? 0) || 0,
           section: (params.section as BuilderSection | undefined) ?? 'main',
-          items: items.map(toPicked),
+          /* `unit` rides along for EVERY row here, not only a custom one: a builder is authoring a
+             prescription, and a hold has to arrive as seconds rather than as reps (`toDayRow`). The
+             draft model cannot ask the catalogue itself — it has to stay loadable under `node --test`. */
+          items: items.map((x) => ({ ...toPicked(x), unit: x.unit })),
         });
       } else {
         void writeExerciseInbox({
