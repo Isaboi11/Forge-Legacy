@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { plainError } from './plain-error.ts';
+
 interface QueryState<T> {
   data: T | null;
   loading: boolean;
@@ -18,11 +20,21 @@ interface QueryState<T> {
  * an event-time callback. `empty` is left to the caller (it's data-shape-specific).
  */
 /**
- * Readable text for anything thrown. Supabase/PostgREST reject with a PLAIN OBJECT
- * (`{ message, details, hint, code }`), not an `Error` — so the old `String(e)` fallback rendered every
- * database failure as a useless "[object Object]", hiding the one piece of information worth having.
+ * The sentence to SHOW for anything thrown — every toast and every screen's `error` string comes through
+ * here, so this is the one place a database message could reach the athlete, and it no longer can
+ * (QA 09-26 B4: `invalid input syntax for type uuid: "abc" (22P02)` was on screen). The mapping lives in
+ * `lib/plain-error`, where `node --test` holds it.
  */
 export function errorMessage(e: unknown): string {
+  return plainError(e);
+}
+
+/**
+ * The thrown thing AS IT CAME, for the operator's dashboard and for logs — never for an athlete's screen.
+ * Supabase/PostgREST reject with a PLAIN OBJECT (`{ message, details, hint, code }`), not an `Error` — so
+ * a `String(e)` fallback renders every database failure as a useless "[object Object]".
+ */
+export function rawErrorMessage(e: unknown): string {
   if (e instanceof Error) return e.message;
   if (e && typeof e === 'object') {
     const o = e as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown };

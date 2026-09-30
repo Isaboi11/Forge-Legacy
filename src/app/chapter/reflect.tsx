@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -44,7 +45,9 @@ const PROMPTS = [
 
 type ReflectPath = 'sealing' | 'post';
 
-export default function ChapterReflectionScreen() {
+export default guardRoute(ChapterReflectionScreen, hasId, { title: 'Chapter not found', reason: 'Open a chapter from your Legacy to write its reflection.' });
+
+function ChapterReflectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string; path?: string }>();
@@ -158,7 +161,7 @@ export default function ChapterReflectionScreen() {
       {!isPost && data?.isActive ? <Redirect href={{ pathname: '/chapter/[id]', params: { id } }} /> : null}
 
       {loading || !data || !header ? (
-        <View style={styles.center}>{loading ? <ActivityIndicator color={flColor.bronze400} /> : <Text style={styles.err}>Chapter not found.</Text>}</View>
+        loading ? <View style={styles.center}><ActivityIndicator color={flColor.bronze400} /></View> : <NotFoundBody title="Chapter not found" reason="It may have been removed." />
       ) : (
         <>
           <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 32 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">

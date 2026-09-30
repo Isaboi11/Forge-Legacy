@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -44,7 +45,9 @@ import { themeGround, themeScrim } from '@/constants/theme-scrim';
  * C-1. Squad Detail simply doesn't offer this row until there is history to show.
  */
 
-export default function HallOfChampionsScreen() {
+export default guardRoute(HallOfChampionsScreen, hasId, { title: 'This squad isn’t available.' });
+
+function HallOfChampionsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const squadId = String(id ?? '');
   const router = useRouter();
@@ -81,11 +84,7 @@ export default function HallOfChampionsScreen() {
         </View>
       ) : error || !data ? (
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>{error ? 'Couldn’t load the hall.' : 'This squad isn’t available.'}</Text>
-          {error ? <Text style={styles.missingBody}>{error}</Text> : null}
-          <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-          </Pressable>
+          <NotFoundBody title={error ? 'Couldn’t load the hall.' : 'This squad isn’t available.'} reason={error ?? 'It may be private, or it no longer exists.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       ) : (
         <Body hall={data} onOpen={(entryId) => router.push({ pathname: '/challenge-results/[id]', params: { id: entryId } })} />

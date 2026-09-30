@@ -93,6 +93,7 @@ import { usePremiumAi } from '@/lib/entitlement';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { saveProgramDraft } from '@/lib/program-draft';
 import { useQuery } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 import { useToast } from '@/hooks/useCeremony';
 
 /**
@@ -307,7 +308,7 @@ function Guided() {
       }
       router.replace(`/program/${id}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Couldn’t save that program. Try again.');
+      setError(plainError(e, 'Couldn’t save that program. Try again.'));
     } finally {
       setSaving(false);
     }
@@ -329,7 +330,7 @@ function Guided() {
         copy = switchProgramCopy(current.name, progressFromMarks(current.structure, marks), effName);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Couldn’t save that program. Try again.');
+      setError(plainError(e, 'Couldn’t save that program. Try again.'));
       setSaving(false);
       return;
     }

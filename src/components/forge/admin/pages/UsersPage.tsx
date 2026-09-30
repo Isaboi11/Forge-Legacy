@@ -8,7 +8,7 @@ import { fetchBillingList, fetchTiers, fetchUserCard, saveContact, searchUsers, 
 import { int } from '@/domain/admin/briefing';
 import { actionLabel, money, productLabel, storeEventLabel } from '@/domain/admin/crm-core';
 import { planStatus, planWithoutProduct, usersNote, type PlanStatus } from '@/domain/admin/notes/users';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Users & plans (Forge CRM.dc.html, the USERS section; Admin-Analytics-Amendment-002, AA-D12).

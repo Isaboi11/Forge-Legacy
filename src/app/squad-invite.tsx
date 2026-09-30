@@ -4,6 +4,7 @@ import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, Sty
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import Svg, { Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -70,7 +71,9 @@ const joinLink = (code: string): string => `${APP_ORIGIN}/join-squad?code=${enco
  */
 const appLink = (code: string): string => `forgelegacy://join-squad?code=${encodeURIComponent(code)}`;
 
-export default function SquadInviteRoute() {
+export default guardRoute(SquadInviteRoute, hasId, { title: 'This squad isn’t available.' });
+
+function SquadInviteRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const squadId = String(id ?? '');
@@ -224,8 +227,7 @@ export default function SquadInviteRoute() {
         <InviteBg />
         <AppBar title="Invite to Squad" onBack={() => router.back()} />
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>This squad isn’t available.</Text>
-          <Text style={styles.missingBody}>{error ? 'Couldn’t load it — check your connection.' : 'It may have been deleted.'}</Text>
+          <NotFoundBody title={error ? 'Couldn’t load this squad.' : 'This squad isn’t available.'} reason={error ?? 'It may have been deleted.'} onRetry={error ? refetch : undefined} />
         </View>
       </View>
     );

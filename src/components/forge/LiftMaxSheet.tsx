@@ -1,4 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
+import { plainError } from '@/lib/plain-error';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -153,7 +154,7 @@ export function LiftMaxSheet({
         onSaved(merged);
         onClose();
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Could not save that.'))
+      .catch((e: unknown) => setError(plainError(e, 'Could not save that.')))
       .finally(() => setBusy(false));
   };
 

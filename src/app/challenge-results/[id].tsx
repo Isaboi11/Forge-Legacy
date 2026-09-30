@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -84,7 +85,9 @@ const TOTAL_LABEL: Record<ChallengeType, string> = {
   GAIN_DISTANCE: 'Miles gained',
 };
 
-export default function ChallengeResultsScreen() {
+export default guardRoute(ChallengeResultsScreen, hasId, { title: 'These results aren’t available.' });
+
+function ChallengeResultsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challengeId = String(id ?? '');
   const router = useRouter();
@@ -106,11 +109,7 @@ export default function ChallengeResultsScreen() {
     return (
       <Shell onBack={goBack}>
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>{error ? 'Couldn’t load these results.' : 'This season hasn’t closed yet.'}</Text>
-          {error ? <Text style={styles.missingBody}>{error}</Text> : null}
-          <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-          </Pressable>
+          <NotFoundBody title={error ? 'Couldn’t load these results.' : 'These results aren’t available.'} reason={error ?? 'The season may not have closed yet.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       </Shell>
     );

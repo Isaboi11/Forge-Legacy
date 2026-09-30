@@ -49,7 +49,7 @@ import {
 } from '@/data/crm-live';
 import { bugBrief, bugsBrief } from '@/domain/admin/bug-brief';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Bugs on the phone (`Forge CRM Phone.dc.html`, BUGS + the bug / report / crash overlays + the Filter and

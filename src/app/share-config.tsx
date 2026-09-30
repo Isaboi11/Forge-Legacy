@@ -146,7 +146,8 @@ export default function ShareConfigRoute() {
   const drag = useSheetDrag({ onClose: () => router.back() });
 
 
-  const missing = isCompare ? allPairs.length === 0 : !!data && !entry;
+  // No id at all is known to be missing at once — waiting on the entries left an empty sheet (QA 09-26 B4).
+  const missing = isCompare ? allPairs.length === 0 : !params.id || (!!data && !entry);
   if (missing) {
     return (
       <View style={styles.root}>
@@ -155,6 +156,10 @@ export default function ShareConfigRoute() {
           <Handle pan={drag.panHandlers} />
           <View style={styles.missingWrap}>
             <Text style={styles.missingText}>This isn’t available to share.</Text>
+            {/* The sheet had no close of its own (QA 09-26 B4) — the scrim was the only way out. */}
+            <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Close" style={styles.missingClose}>
+              <Text style={styles.missingCloseText}>Close</Text>
+            </Pressable>
           </View>
         </Animated.View>
       </View>
@@ -646,6 +651,8 @@ const styles = StyleSheet.create({
   bodyContent: { paddingHorizontal: 20, paddingBottom: 20 },
   missingWrap: { padding: 40, alignItems: 'center' },
   missingText: { fontSize: 14, color: flColor.gray400, textAlign: 'center' },
+  missingClose: { marginTop: 18, paddingHorizontal: 22, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal500, backgroundColor: flColor.charcoal700 },
+  missingCloseText: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
 
   // layout picker
   sectionLabelFirst: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 4, marginBottom: 10, marginLeft: 2 },

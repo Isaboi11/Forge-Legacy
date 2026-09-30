@@ -15,6 +15,7 @@ import { hasPrescription, maxKeyOf, maxKeysNeeded } from '@/domain/workout/templ
 import { useToast } from '@/hooks/useCeremony';
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 
 /**
  * A squad's posted workout, opened (PO 2026-09-27): the whole day with the READER's own weights, then Take it.
@@ -48,7 +49,7 @@ export function PostedWorkoutPanel({ card, postId }: { card: PostedWorkoutCard; 
       slotQ.refetch();
       showToast(`${name} is on your home screen. Start it when you're ready.`);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Couldn’t take that workout.');
+      showToast(plainError(e, 'Couldn’t take that workout.'));
     } finally {
       setBusy(false);
     }

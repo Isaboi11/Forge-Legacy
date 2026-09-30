@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -93,7 +94,9 @@ function quoteFor(id: string): string {
  * memory (need the honor service / set-history). Primary path = Seal → hold → Legacy; the note lives on
  * the secondary "See the details → Reflect" branch, so most workouts intentionally carry no reflection.
  */
-export default function WorkoutComplete() {
+export default guardRoute(WorkoutComplete, hasId, { title: 'There’s no workout to show.', reason: 'Open a session from your activity history to see its summary.' });
+
+function WorkoutComplete() {
   const { id, review: reviewParam } = useLocalSearchParams<{ id?: string; review?: string }>();
   /*
    * ══ REVIEW: THE SAME SUMMARY, RE-OPENED FROM HISTORY ══
@@ -728,7 +731,7 @@ export default function WorkoutComplete() {
   if (loading || !data) {
     return (
       <Shell>
-        <View style={styles.center}>{error ? <Text style={styles.err}>Couldn’t load your summary.</Text> : <ActivityIndicator color={flColor.bronze400} />}</View>
+        {error ? <NotFoundBody title="Couldn’t load your summary." reason={error} /> : <View style={styles.center}><ActivityIndicator color={flColor.bronze400} /></View>}
       </Shell>
     );
   }

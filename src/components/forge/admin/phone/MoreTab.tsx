@@ -38,7 +38,7 @@ import { ascState } from '@/domain/admin/notes/appstore';
 import { daysSince, waitingTag } from '@/domain/admin/notes/moderation';
 import { REPORT_REASON_LABEL, isReportReason } from '@/domain/moderation/moderation-core';
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * More — the phone CRM's fifth tab (`Forge CRM Phone.dc.html`, MORE + the Add-a-document and Upload sheets).
