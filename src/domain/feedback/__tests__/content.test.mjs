@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 
 import {
   BODY_MAX,
+  BODY_MIN,
   FEEDBACK_COPY,
   FEEDBACK_KINDS,
   canSendFeedback,
+  feedbackAttachNote,
   feedbackProblem,
   feedbackProblemMessage,
   feedbackSendError,
@@ -68,12 +70,28 @@ test('the cap is applied to the TRIMMED body, exactly as the database applies it
   assert.equal(feedbackProblem(draft({ body: `   ${exact}   ` })), null, 'trimmed, not raw, length');
 });
 
+test('⚠ "hi" is not feedback (settings-12)', () => {
+  // The form took two letters and answered "Thank you — that reached us." A person then has to open,
+  // read and close that row on the Bugs board. The floor turns away a greeting, not a terse report.
+  for (const body of ['hi', 'ok', 'test', '  hello  ', 'x'.repeat(BODY_MIN - 1)]) {
+    assert.equal(feedbackProblem(draft({ body })), 'too_short', JSON.stringify(body));
+    assert.ok(!canSendFeedback(draft({ body })));
+  }
+  for (const body of ['app crashed', 'love the PRs', 'x'.repeat(BODY_MIN), `  ${'x'.repeat(BODY_MIN)}  `]) {
+    assert.equal(feedbackProblem(draft({ body })), null, JSON.stringify(body));
+  }
+  // Still stricter than nothing and looser than the cap: the database's own floor is 1 and stays the rule.
+  assert.ok(BODY_MIN > 1 && BODY_MIN < BODY_MAX);
+  // Whitespace keeps its own, more useful sentence.
+  assert.equal(feedbackProblem(draft({ body: '   ' })), 'empty');
+});
+
 test('the first problem is reported, not all of them', () => {
   assert.equal(feedbackProblem({ kind: null, body: '', contactOk: true }), 'no_kind');
 });
 
 test('every problem has a sentence, and no problem has none', () => {
-  for (const p of ['no_kind', 'empty', 'too_long']) {
+  for (const p of ['no_kind', 'empty', 'too_short', 'too_long']) {
     const msg = feedbackProblemMessage(p);
     assert.ok(msg && msg.length > 0, `${p} needs a message`);
   }
@@ -111,10 +129,19 @@ test('an unknown failure still offers a way through', () => {
 test('⚠ the screen states what it attaches, at the point of collection', () => {
   // site/privacy.html §2 discloses that screen, app version and platform ride along. A disclosure only
   // a policy-reader ever sees is worse than one sentence where the data is actually collected.
-  const note = FEEDBACK_COPY.attachNote.toLowerCase();
-  assert.match(note, /screen/);
-  assert.match(note, /version/);
-  assert.ok(/device|platform/.test(note), 'the device/platform attachment is named');
+  for (const note of [FEEDBACK_COPY.attachNote, FEEDBACK_COPY.attachNoteWithScreen].map((n) => n.toLowerCase())) {
+    assert.match(note, /version/);
+    assert.ok(/device|platform/.test(note), 'the device/platform attachment is named');
+  }
+});
+
+test('⚠ the screen is only named when a screen is actually attached (settings-12)', () => {
+  // The Settings row is the one way in and carries no `?from=`, so `screen` was null on every row ever
+  // filed — while the form told every athlete "We attach the screen you were on".
+  for (const none of [undefined, null, '', '   ']) {
+    assert.doesNotMatch(feedbackAttachNote(none), /screen/i, JSON.stringify(none));
+  }
+  assert.match(feedbackAttachNote('/workout'), /screen you were on/);
 });
 
 test('the email fallback is present and correct everywhere it appears', () => {

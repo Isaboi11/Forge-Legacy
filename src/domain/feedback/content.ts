@@ -38,6 +38,18 @@ export const FEEDBACK_KINDS: readonly {
 /** Mirrors 0167's `length(btrim(body)) between 1 and 2000`. */
 export const BODY_MAX = 2000;
 
+/**
+ * The shortest message worth a person's time (settings-12, QA 09-26).
+ *
+ * The form took "hi" and said *"Thank you — that reached us."* — and it had: a two-letter row on the CRM
+ * Bugs board that somebody has to open, read and close. Ten characters is about two short words ("app
+ * crashed", "love the PRs"), so it turns away a greeting without turning away a terse report.
+ *
+ * ⚠ STRICTER THAN THE DATABASE ON PURPOSE. 0167 allows 1; this is the courtesy half described in the
+ * header, and the column stays the rule. Nothing server-side changes and no migration is needed.
+ */
+export const BODY_MIN = 10;
+
 export const FEEDBACK_COPY = {
   title: 'Send Feedback',
   intro:
@@ -50,7 +62,15 @@ export const FEEDBACK_COPY = {
    *   discloses that the screen, app version and platform ride along. A disclosure only somebody who
    *   reads the policy ever sees is a worse disclosure than one sentence at the point of collection.
    */
-  attachNote:
+  attachNote: 'We attach your app version and your device type, so we can reproduce the problem.',
+  /*
+   * ⚠ ONLY WHEN IT IS TRUE (settings-12). This sentence used to be the only one, and the screen was never
+   *   attached: the one way in is the Settings row, which carries no `?from=`, so `screen` was null on
+   *   every row ever filed. A disclosure that names something we do not collect is as wrong as one that
+   *   omits something we do. A screen that links here WITH its route gets this line; everything else
+   *   gets `attachNote`. `feedbackAttachNote` picks.
+   */
+  attachNoteWithScreen:
     'We attach the screen you were on, your app version and your device type, so we can reproduce the problem.',
   send: 'Send',
   sending: 'Sending…',
@@ -64,7 +84,7 @@ export type FeedbackDraft = {
   contactOk: boolean;
 };
 
-export type FeedbackProblem = 'no_kind' | 'empty' | 'too_long';
+export type FeedbackProblem = 'no_kind' | 'empty' | 'too_short' | 'too_long';
 
 /**
  * What is wrong with this draft, or null if it can be sent.
@@ -76,6 +96,7 @@ export function feedbackProblem(draft: FeedbackDraft): FeedbackProblem | null {
   if (draft.kind == null) return 'no_kind';
   const trimmed = draft.body.trim();
   if (trimmed.length === 0) return 'empty';
+  if (trimmed.length < BODY_MIN) return 'too_short';
   if (trimmed.length > BODY_MAX) return 'too_long';
   return null;
 }
@@ -91,11 +112,18 @@ export function feedbackProblemMessage(problem: FeedbackProblem | null): string 
       return 'Pick what kind of message this is.';
     case 'empty':
       return 'Add a message so we know what to look at.';
+    case 'too_short':
+      return 'Add a little more — a sentence about what happened is enough for us to act on.';
     case 'too_long':
       return `That’s longer than ${BODY_MAX} characters. Trim it a little, or email us instead.`;
     default:
       return null;
   }
+}
+
+/** Which disclosure line is true for this send: the screen is named only when one is actually attached. */
+export function feedbackAttachNote(screen: string | null | undefined): string {
+  return screen && screen.trim() ? FEEDBACK_COPY.attachNoteWithScreen : FEEDBACK_COPY.attachNote;
 }
 
 /**
