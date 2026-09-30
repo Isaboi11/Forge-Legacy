@@ -6,7 +6,9 @@ import {
   AUTO_POST_WINDOW_MS,
   autoPostFromPost,
   autoPostLabel,
+  autoPostCaption,
   autoPostOn,
+  autoPostStanding,
   autoPostTargets,
   postedFor,
   postedLine,
@@ -14,6 +16,7 @@ import {
   pruneAutoPost,
   sanitizeAutoPost,
   shouldOfferAutoPost,
+  parsePendingAutoPost,
   withinAutoPostWindow,
 } from '../auto-post.ts';
 import { shareState } from '../fanout.ts';
@@ -147,4 +150,43 @@ test('only a just-finished workout auto-posts — not a reload hours later', () 
   assert.equal(withinAutoPostWindow(new Date(now - AUTO_POST_WINDOW_MS - 1000).toISOString(), now), false);
   assert.equal(withinAutoPostWindow(null, now), false);
   assert.equal(withinAutoPostWindow('garbage', now), false);
+});
+
+// ── PO 2026-09-30: "it auto posted before I could attach the playlist and my comment" ──
+
+test('the caption is the athlete’s own sealed note, trimmed — or nothing', () => {
+  assert.equal(autoPostCaption('  Felt strong today.  '), 'Felt strong today.');
+  assert.equal(autoPostCaption(null), '');
+  assert.equal(autoPostCaption('   '), '');
+});
+
+test('leaving posts only when auto-post is on, the session is just-finished, and nothing is posted yet', () => {
+  const on = pref({ friends: true, squadIds: ['cut'] });
+  assert.equal(autoPostStanding(on, ['cut'], [], true), true);
+  assert.equal(autoPostStanding(on, ['cut'], [], false), false, 'review / outside the window');
+  assert.equal(autoPostStanding(AUTO_POST_DEFAULT, ['cut'], [], true), false, 'off');
+});
+
+test('⚠ a session already posted by hand stands auto-post down entirely', () => {
+  const on = pref({ friends: true, squadIds: ['cut'] });
+  // Posted to the squad only. Friends is still "missing" — and must NOT be added on the way out,
+  // behind a button that by then says "See your Legacy".
+  assert.equal(autoPostStanding(on, ['cut'], [{ audience: 'SQUAD', squadId: 'cut' }], true), false);
+});
+
+test('a pref naming only squads since left is not standing; an unloaded squad list trusts the pref', () => {
+  const p = pref({ squadIds: ['gone'] });
+  assert.equal(autoPostStanding(p, ['cut'], [], true), false);
+  assert.equal(autoPostStanding(p, null, [], true), true, 'the write path prunes for real before sending');
+});
+
+test('⚠ the closed-app marker is honoured inside the window and ignored after it, or when malformed', () => {
+  const now = Date.parse('2026-09-30T18:00:00Z');
+  const raw = (savedAt) => JSON.stringify({ workoutId: 'w1', savedAt });
+  assert.deepEqual(parsePendingAutoPost(raw('2026-09-30T17:30:00Z'), now), { workoutId: 'w1', savedAt: '2026-09-30T17:30:00Z' });
+  assert.equal(parsePendingAutoPost(raw('2026-09-29T09:00:00Z'), now), null, 'a marker found a day later must not publish out of nowhere');
+  assert.equal(parsePendingAutoPost(null, now), null);
+  assert.equal(parsePendingAutoPost('not json', now), null);
+  assert.equal(parsePendingAutoPost(JSON.stringify({ savedAt: '2026-09-30T17:30:00Z' }), now), null);
+  assert.equal(now - Date.parse('2026-09-30T17:30:00Z') < AUTO_POST_WINDOW_MS, true);
 });

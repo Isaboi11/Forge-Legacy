@@ -824,12 +824,13 @@ export async function workoutHasRoute(workoutId: string): Promise<boolean> {
 }
 
 /** Build a recap snapshot for a completed workout (reuses the W-17 completion read). Null if it's gone. */
-export async function buildWorkoutRecap(workoutId: string): Promise<{ workoutName: string; summary: WorkoutSummary } | null> {
+export async function buildWorkoutRecap(workoutId: string): Promise<{ workoutName: string; summary: WorkoutSummary; reflection: string | null } | null> {
   try {
     /* In parallel, and the route question is allowed to lose: `workoutHasRoute` resolves false rather
        than rejecting, so a recap never fails to build because the map could not be asked about. */
     const [c, hasRoute] = await Promise.all([fetchCompletion(workoutId), workoutHasRoute(workoutId)]);
-    return { workoutName: c.workoutName, summary: recapSummaryFrom({ ...c, hasRoute }) };
+    /* `reflection` rides along for auto-post, whose caption is the note the athlete sealed. */
+    return { workoutName: c.workoutName, summary: recapSummaryFrom({ ...c, hasRoute }), reflection: c.reflection };
   } catch {
     return null;
   }
