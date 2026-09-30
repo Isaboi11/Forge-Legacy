@@ -51,16 +51,14 @@ export function TabBarButton({ label, renderIcon, emphasized = false, isFocused 
    * seeing the bar with Nutrition selected. The label still follows focus, so the tile marks the
    * signature destination without ever claiming to be the current one.
    *
-   * ══ …BUT IT IS ONLY LIT WHILE IT IS THE OPEN TAB (QA home-04, 2026-09-26) ══
+   * ══ QA home-04 (09-26) dimmed it to an outline off-tab; the PO REVERSED that (2026-09-29) ══
    *
-   * A lit bronze tile IS the app's "selected" language (chips, rows, CTAs), so a tile lit on every tab
-   * made two tabs look active at once — nine QA lanes read it that way. The tile's SHAPE stays on every
-   * tab (the signature slot never disappears); its LIGHT — bronze fill, glow, bronze edge, lit glyph —
-   * belongs to the open tab only. Unfocused it is a quiet outlined tile with the same grey glyph as its
-   * neighbours, so exactly one tab in the bar ever reads as selected.
+   * QA read a tile lit on every tab as "two tabs selected", so 674fa9c8 lit it only on Legacy. On build 11
+   * the PO saw the bare outline and read it as a lost update: the gold tile is the signature, and it stays
+   * lit everywhere. Focus is still carried by the label colour/weight. Do not re-dim it without the PO.
    */
   const emph = emphasized
-  const lit = emph && active
+  const lit = emph
   const color = active ? flColor.bronze400 : flColor.gray600
   const showBadge = badge > 0
 
@@ -85,8 +83,6 @@ export function TabBarButton({ label, renderIcon, emphasized = false, isFocused 
                 the book vanished into its tile, so the glyph takes the same ink as every bronze button. */}
             {renderIcon(forgeOr(flColor.bronze300, flColor.onBronze))}
           </LinearGradient>
-        ) : emph ? (
-          <View style={[styles.iconWrap, styles.iconWrapEmphasized, styles.iconWrapResting]}>{renderIcon(color)}</View>
         ) : (
           <View style={styles.iconWrap}>{renderIcon(color)}</View>
         )}
@@ -158,10 +154,6 @@ const styles = StyleSheet.create({
     borderRadius: flRadius.md,
     borderWidth: 1,
     borderColor: flColor.accentBorder,
-  },
-  /* The tile when Legacy is NOT the open tab: the plain card edge, no fill, no glow (see the note above). */
-  iconWrapResting: {
-    borderColor: flColor.bronzeBorderSubtle,
   },
   label: {
     fontSize: 10.5,
