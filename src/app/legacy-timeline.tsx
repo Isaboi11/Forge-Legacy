@@ -79,7 +79,9 @@ const RAIL_X = 15;
 const MARKER = 31;
 const GAP = 14;
 /** The halo that punches the rail. One value, used by every marker. */
-const HALO = '0 0 0 4px rgba(8,11,14,0.7)';
+/* Through `themeScrim`: the halo is the page's own ground punched around each marker, so on Alabaster it
+   is cream. As a fixed near-black it drew a heavy charcoal ring round every node (QA legacy-16). */
+const HALO = `0 0 0 4px ${themeScrim('rgba(8,11,14,0.7)')}`;
 
 export default function LegacyTimelineScreen() {
   const router = useRouter();
