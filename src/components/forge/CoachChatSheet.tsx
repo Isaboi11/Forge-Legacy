@@ -41,6 +41,7 @@ import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { summarizeChat } from '@/data/holt-chats-live';
+import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
 import { kitchenLeftLive, kitchenPantryLive } from '@/data/holt-kitchen-live';
 import { askKitchenLive, kitchenRulesLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
@@ -4549,14 +4550,7 @@ function PlanPreview({
 
         {program ? (
           <>
-            <View style={styles.statGrid}>
-              {program.stats.map((st) => (
-                <View key={st.label} style={styles.stat}>
-                  <Text style={styles.statValue}>{st.value}</Text>
-                  <Text style={styles.statLabel}>{st.label}</Text>
-                </View>
-              ))}
-            </View>
+            <HoltStatGrid stats={program.stats} />
             <Text style={styles.reasoning}>{program.reasoning}</Text>
             <View style={styles.weekList}>
               {program.weeks.map((w, i) => (
@@ -4721,14 +4715,8 @@ function ProgramCardView({
         </View>
 
         <View style={styles.artifactBody}>
-          <View style={styles.statGrid}>
-            {card.stats.map((st) => (
-              <View key={st.label} style={styles.stat}>
-                <Text style={styles.statValue}>{st.value}</Text>
-                <Text style={styles.statLabel}>{st.label}</Text>
-              </View>
-            ))}
-          </View>
+          {/* holtai-17: a one-word value is sized to fit its cell — never "Intermediat / e". */}
+          <HoltStatGrid stats={card.stats} />
 
           {card.ribbon.length > 1 ? <VolumeRibbon weeks={card.ribbon} caption={card.ribbonCaption} /> : null}
 
@@ -5664,11 +5652,6 @@ const styles = StyleSheet.create({
   },
   draftBannerText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   cardTitle: { fontFamily: flFont.display, fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: 0.4, color: flColor.cream100 },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 10 },
-  // Three across, so six stats form two clean rows and a dropped cell reflows rather than leaving a hole.
-  stat: { width: '31%', gap: 3 },
-  statValue: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100 },
-  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.labelInk },
   ribbonWrap: { gap: 7 },
   ribbon: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 46 },
   bar: { flex: 1, borderRadius: 1, backgroundColor: flColor.bronze600 },
