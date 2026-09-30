@@ -15,6 +15,8 @@ export interface GoalWeek {
   value: number;
 }
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
 /** Weeks the pace looks back over. Four is long enough to survive one quiet week, short enough to be recent. */
 export const PACE_WEEKS = 4;
 
@@ -24,9 +26,15 @@ export const PACE_WEEKS = 4;
  * Excludes the CURRENT week, which is always partial — including it drags the average down every Monday
  * and would have the projection slip a week further out each time somebody opened the screen.
  * Null when there is no completed week to measure.
+ *
+ * `startedAt` limits it to weeks the GOAL was running in (social2-04, QA 09-26). The series reaches back
+ * eight weeks whatever the goal's age, so a goal set this week read "Recent Pace 0 / wk" beside "5 / 3" —
+ * the zero was the weeks before the goal existed. A goal with no completed week of its own has no pace.
  */
-export function recentPace(weeks: readonly GoalWeek[]): number | null {
-  const completed = weeks.slice(0, -1);
+export function recentPace(weeks: readonly GoalWeek[], startedAt?: string | null): number | null {
+  const started = startedAt ? Date.parse(startedAt) : NaN;
+  const inGoal = Number.isFinite(started) ? weeks.filter((w) => Date.parse(w.weekStart) + WEEK_MS > started) : weeks;
+  const completed = inGoal.slice(0, -1);
   if (completed.length === 0) return null;
   const window = completed.slice(-PACE_WEEKS);
   const total = window.reduce((n, w) => n + w.value, 0);

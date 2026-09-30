@@ -21,6 +21,19 @@ test('pace excludes the CURRENT week, which is always partial', () => {
   assert.equal(recentPace(weeks), 20);
 });
 
+test('pace counts only the weeks the goal was running in (social2-04)', () => {
+  // Set on the current week: the completed weeks before it belong to no goal, so there is no pace yet —
+  // not "0 / wk" beside a goal that already has work on it.
+  const weeks = [wk(0, 0), wk(1, 0), wk(2, 0), wk(3, 5)];
+  assert.equal(recentPace(weeks, wk(3, 0).weekStart), null);
+  // Started mid-week two: weeks two and three count, week one does not.
+  const started = new Date(Date.parse(wk(1, 0).weekStart) + 3 * 86400000).toISOString();
+  assert.equal(recentPace([wk(0, 40), wk(1, 10), wk(2, 20), wk(3, 1)], started), 15);
+  // No start given (or unreadable): every week, as before.
+  assert.equal(recentPace([wk(0, 40), wk(1, 10), wk(2, 20), wk(3, 1)]), (40 + 10 + 20) / 3);
+  assert.equal(recentPace([wk(0, 40), wk(1, 10), wk(2, 20), wk(3, 1)], 'not a date'), (40 + 10 + 20) / 3);
+});
+
 test('pace looks back a bounded window, not over all time', () => {
   // A squad that has sped up should read as fast NOW. Averaging in a slow month would understate them.
   const weeks = [wk(0, 2), wk(1, 2), wk(2, 20), wk(3, 20), wk(4, 20), wk(5, 20), wk(6, 0)];
