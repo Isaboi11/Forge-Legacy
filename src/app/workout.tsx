@@ -594,6 +594,9 @@ export default function WorkoutScreen() {
    * between the ask and the answer and delete something the sheet was not describing.
    */
   const [removeAsk, setRemoveAsk] = useState<number | null>(null);
+  /* A swap that would clear logged sets asks first (workout-08). `pick` is Holt's one-tap swap; null
+     `pick` is the Picker. */
+  const [swapAsk, setSwapAsk] = useState<{ at: number; pick: { key: string; name: string } | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [heroPref, setHeroPref] = useState<Record<number, 'expanded' | 'collapsed'>>({});
   const [autoCollapsed, setAutoCollapsed] = useState<Record<number, boolean>>({});
@@ -3028,6 +3031,10 @@ export default function WorkoutScreen() {
       type: item.cat,
     };
     if (mode === 'swap') {
+      if (!swapAsk && session?.exercises[exIdx]?.sets.some((st) => st.done)) {
+        setSwapAsk({ at: exIdx, pick: { key, name } });
+        return;
+      }
       mutate((s) => ({ ...s, exercises: s.exercises.map((e, i) => (i === exIdx ? swapExercise(e, picked) : e)) }));
       showToast(`Swapped to ${name}`);
       return;
@@ -3648,6 +3655,10 @@ export default function WorkoutScreen() {
   const openSwap = () => {
     setOptionsOpen(false);
     if (blockedByBout()) return;
+    if (ex.sets.some((st) => st.done)) {
+      setSwapAsk({ at: exIdx, pick: null });
+      return;
+    }
     router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: ex.name, targetIdx: String(exIdx) } });
   };
   const skipExercise = () => {
@@ -5328,6 +5339,35 @@ export default function WorkoutScreen() {
         }}
       />
 
+      {/* SWAP AN EXERCISE THAT HAS LOGGED WORK IN IT (workout-08). A swap starts the slot's sets over, and
+          it used to do that without a word. Same shape and same mounting reason as the remove ask above. */}
+      <ConfirmSheet
+        open={swapAsk != null}
+        onClose={() => setSwapAsk(null)}
+        headline={`Swap ${swapAsk != null ? session.exercises[swapAsk.at]?.name ?? 'this exercise' : 'this exercise'}?`}
+        body={(() => {
+          const target = swapAsk != null ? session.exercises[swapAsk.at] : null;
+          const logged = target ? target.sets.filter((s) => s.done).length : 0;
+          return `You’ve logged ${logged} ${logged === 1 ? 'set' : 'sets'} on it. Swapping starts its sets over — the ones you logged won’t be saved. To keep them, use “Move past this” and add the new exercise instead.`;
+        })()}
+        confirmLabel="Swap it"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          const ask = swapAsk;
+          setSwapAsk(null);
+          if (!ask) return;
+          if (ask.pick) {
+            const item = itemByKey(ask.pick.key);
+            if (!item) return;
+            const picked: PickedExercise = { catalogKey: item.key, name: item.name, equip: item.equip, muscles: item.muscles, type: item.cat };
+            mutate((s) => ({ ...s, exercises: s.exercises.map((e, i) => (i === ask.at ? swapExercise(e, picked) : e)) }));
+            showToast(`Swapped to ${ask.pick.name}`);
+          } else {
+            router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: session.exercises[ask.at]?.name ?? '', targetIdx: String(ask.at) } });
+          }
+        }}
+      />
+
       {/* rest-duration picker — minutes : seconds dual wheel */}
       {durationPicker ? (
         <View style={styles.pickerWrap}>
@@ -5860,6 +5900,9 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
      */
     prescribedName: ex.prescribedName ?? ex.name,
     prescribedCatalogKey: ex.prescribedName ? ex.prescribedCatalogKey : (ex.catalogKey ?? null),
+    /* The athlete's note was about the lift they are leaving ("shoulder felt off" on the bench), not the
+       one they picked (workout-08). The author's `coachNote` is the slot's prescription and stays. */
+    note: null,
     sets: ex.sets.map((st) => ({ ...st, weight: null, actualReps: null, done: false })),
   };
 }
