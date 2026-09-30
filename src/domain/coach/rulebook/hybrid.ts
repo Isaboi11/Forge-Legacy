@@ -334,6 +334,12 @@ export const CONCERN = {
      he LEFT OUT and what took its place — never "squats are still in". */
   kneesLeftOut: (): string =>
     "About your knees: I've left out squats, lunges, step-ups, leg presses and anything with jumping or landing. Your leg work is hip hinges, glute bridges and hamstring work instead.",
+  /* QA holt-02: the other two body-part answers say what they took out too. Each list is what
+     `rulebook/limitations.ts` removes today (patterns + keys), and nothing here is advice. */
+  shouldersLeftOut: (): string =>
+    "About your shoulders: I've left out overhead pressing, lateral and front raises, upright rows, shrugs and anything that finishes overhead. Chest pressing and rows are untouched.",
+  lowerBackLeftOut: (): string =>
+    "About your lower back: I've left out deadlifts, good mornings, swings, back extensions and loaded carries. Glute bridges, hip thrusts and leg curls are untouched.",
   /* QA holtai-04 — a strength block with no pulling at all shipped without a word. When nothing the athlete
      has can row or pull, the honest answer is to say so and name what fixes it. */
   noPulling: (): string =>
@@ -348,3 +354,16 @@ export const CONCERN = {
   hybridNotRace: (): string =>
     "This is a run-and-lift week, not a race build — if there's a race, give me the date and I'll build to it.",
 } as const;
+
+/**
+ * What each body-part limitation took out, in Holt's words (QA holt-02) — one line per answer, in the order
+ * given. The four "No …" answers name their own rule on the chip, so they add nothing here.
+ */
+export function limitationsLeftOut(limitations: readonly Limitation[]): string[] {
+  const line: Partial<Record<Limitation, () => string>> = {
+    knees: CONCERN.kneesLeftOut,
+    shoulders: CONCERN.shouldersLeftOut,
+    lower_back: CONCERN.lowerBackLeftOut,
+  };
+  return [...new Set(limitations)].flatMap((l) => (line[l] ? [line[l]!()] : []));
+}

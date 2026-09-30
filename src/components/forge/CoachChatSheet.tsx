@@ -152,7 +152,7 @@ import {
   type Turn,
 } from '@/domain/coach/chat-core';
 import { typedEquipment } from '@/domain/coach/typed-equipment';
-import { CONCERN } from '@/domain/coach/rulebook/hybrid';
+import { limitationsLeftOut } from '@/domain/coach/rulebook/hybrid';
 import { medicalRoute } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
@@ -1009,8 +1009,9 @@ export function CoachChatSheet({
              was built, and an assumed room is said out loud — both so nothing he did is silent. */
           const heard = [askedLine(r.asked), roomLine, learnedSaid];
           say({ kind: 'holt', text: [holt.fellBack ?? dayPreamble(), ...heard].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard });
-          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block. */
-          if (c.limitations.includes('knees')) say({ kind: 'holt', text: CONCERN.kneesLeftOut() });
+          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block —
+             and shoulders and lower back the same way (QA holt-02). */
+          for (const line of limitationsLeftOut(c.limitations)) say({ kind: 'holt', text: line });
           return;
         }
 

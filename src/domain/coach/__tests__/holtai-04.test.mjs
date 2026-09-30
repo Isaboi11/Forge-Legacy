@@ -24,7 +24,7 @@ import { buildDayWorkout } from '../day.ts';
 import { nextQuestion, needsGear } from '../chat-core.ts';
 import { typedEquipment } from '../typed-equipment.ts';
 import { cueFor } from '../rulebook/cues.ts';
-import { CONCERN } from '../rulebook/hybrid.ts';
+import { CONCERN, limitationsLeftOut } from '../rulebook/hybrid.ts';
 import { repsText, stepReps } from '../../../lib/program-draft-model.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -203,6 +203,52 @@ test('knees: the single-day builder obeys it too — splits AND body parts', () 
 test('no knee line without the knee flag', () => {
   const none = assemble(strength({ limitations: [] }), POOL, canDoExercise);
   assert.ok(!(none.assembly.concerns ?? []).includes(CONCERN.kneesLeftOut()));
+});
+
+/*
+ * QA holt-02 — shoulders and lower back say what they took out, as knees does. Each sentence is checked
+ * against what was BUILT: nothing it names as left out may be in the program, and the no-flag control must
+ * carry those movements, or the check proves nothing.
+ */
+const NAMED_OUT = {
+  shoulders: /overhead|(lateral|front) raise|upright row|shrug|jerk|snatch|shoulder press|arnold|push press/i,
+  lower_back: /deadlift|good morning|swing|back extension|carry/i,
+};
+const LINE = { shoulders: CONCERN.shouldersLeftOut, lower_back: CONCERN.lowerBackLeftOut };
+
+for (const flag of ['shoulders', 'lower_back']) {
+  test(`${flag}: Holt says what he left out, and none of it is in the program`, () => {
+    const wrong = [];
+    let inControl = 0;
+    for (const goal of ['strength', 'muscle', 'weight_loss', 'health']) {
+      for (const [environment, ownedEquipment] of [['full_gym', []], ['home', ['dumbbells', 'bench']], ['home', ['kettlebells']]]) {
+        // Both levels: a beginner is never handed a deadlift, so only the intermediate control can show one.
+        for (const [daysPerWeek, level] of [[3, 'beginner'], [4, 'intermediate'], [5, 'intermediate']]) {
+          const base = strength({ goal, environment, ownedEquipment, daysPerWeek, limitations: [flag], experience: { lifting: level, running: level } });
+          const res = assemble(base, POOL, canDoExercise);
+          if (!res.ok) continue;
+          const tag = `${goal}/${environment}/${ownedEquipment}/${daysPerWeek}/${level}`;
+          if (!(res.assembly.concerns ?? []).includes(LINE[flag]())) wrong.push(`${tag}: Holt never said what he left out`);
+          for (const k of keysOf(res)) {
+            const name = BY_KEY.get(k)?.name ?? k;
+            if (NAMED_OUT[flag].test(name)) wrong.push(`${tag}: ${name} is in a ${flag} program`);
+          }
+          const ctl = assemble({ ...base, limitations: [] }, POOL, canDoExercise);
+          if (ctl.ok && keysOf(ctl).some((k) => NAMED_OUT[flag].test(BY_KEY.get(k)?.name ?? ''))) inControl += 1;
+          if (ctl.ok && (ctl.assembly.concerns ?? []).includes(LINE[flag]())) wrong.push(`${tag}: the line was said with no flag`);
+        }
+      }
+    }
+    assert.deepEqual(wrong, []);
+    assert.ok(inControl > 15, `control: without "${flag}" those movements should appear (${inControl})`);
+  });
+}
+
+test('limitationsLeftOut: one line per body-part answer, none for the "No …" answers', () => {
+  assert.deepEqual(limitationsLeftOut([]), []);
+  assert.deepEqual(limitationsLeftOut(['no_jumping', 'no_barbell', 'no_running', 'no_overhead']), []);
+  assert.deepEqual(limitationsLeftOut(['knees', 'shoulders', 'knees']), [CONCERN.kneesLeftOut(), CONCERN.shouldersLeftOut()]);
+  assert.deepEqual(limitationsLeftOut(['lower_back']), [CONCERN.lowerBackLeftOut()]);
 });
 
 // ── 4. The words on each exercise ────────────────────────────────────────────────────────────────────
