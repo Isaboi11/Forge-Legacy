@@ -621,8 +621,11 @@ export default function SubscriptionScreen() {
                   seat={snapshot?.founderSeat ?? null}
                   coachAi={coachAi}
                 />
-                {/* The one thing left to offer a Premium athlete: the AI step, from their own group only. */}
-                {tiers.length > 0 ? (
+                {/* The one thing left to offer a Premium athlete: the AI step, from their own group only.
+                    ⚠ SHOWN EVEN WITH NO PLANS TO READ (QA holt-16): "See Premium AI" from Form Check landed
+                    here, and with no store (the web) or a failed read the section vanished — no AI plan, no
+                    price, no reason. The picker's own empty state now says why, under what AI adds. */}
+                {!coachAi ? (
                   <>
                     <SectionLabel>Add Holt AI</SectionLabel>
                     <Text style={styles.sectionLead}>{TIER_DISCLOSURE[activeTier ?? 'premium_ai']}</Text>
@@ -647,7 +650,8 @@ export default function SubscriptionScreen() {
                     Manage Subscription
                   </Button>
                 </View>
-                {!canBuy && shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
+                {/* Without the AI section above, which carries its own notice under its button. */}
+                {coachAi && !canBuy && shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
               </>
             ) : (
               <>
