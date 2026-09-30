@@ -66,6 +66,7 @@ import { fetchProgram, fetchProgramSessions, resolveSharedSessionSlot } from '@/
 import { nextOpenSlot } from '@/domain/program/progress-core';
 import {
   creditsInWindow,
+  droppedSharedPartners,
   mergePartnerCredits,
   resolvePartnerNames,
   PARTNER_CREDIT_WINDOW_MS,
@@ -1036,6 +1037,23 @@ export default function WorkoutScreen() {
         // Held, not consumed: whichever way they answer, `startPending` re-reads it.
         return;
       }
+      /*
+       * ⚠ AN EMPTY SHARED SESSION IS NOT NOTHING (social2-14, QA 09-26).
+       *
+       * `hasLoggedWork` is false for a Train Together session nobody has logged a set in yet, so opening
+       * the logger used to rebuild over it silently — the partner was left alone in a session this side
+       * had dropped. With no new launch, it simply comes back. With one, the new session starts, and the
+       * partners of the dropped one are marked declined so the 12-hour credit window can't name them on a
+       * workout they weren't part of ("Trained with Sandbox" on an unrelated session).
+       */
+      const emptyShared = !hasWork && !!saved && (saved.partnerIds?.length ?? 0) > 0 && saved.exercises.length > 0;
+      if (emptyShared && !wantsSomething) {
+        setSession(saved);
+        setPhase('active');
+        return;
+      }
+      const droppedPartners = droppedSharedPartners(saved, hasWork, launch?.partnerId);
+      if (droppedPartners.length) showToast('Your empty shared workout was closed');
       let fresh: ActiveSession | null = null;
 
       /* Invited (0092): whoever asked is pre-tagged, so accepting credits both athletes through the
@@ -1104,6 +1122,9 @@ export default function WorkoutScreen() {
           applyCredits({
             ...s,
             partnerIds: launchPartners ?? s.partnerIds,
+            ...(droppedPartners.length
+              ? { partnerIdsDeclined: [...new Set([...(s.partnerIdsDeclined ?? []), ...droppedPartners])] }
+              : null),
             exerciseIndex: Math.min(Math.max(0, launchStart), Math.max(0, s.exercises.length - 1)),
           }),
         );
@@ -5422,12 +5443,23 @@ export default function WorkoutScreen() {
               />
               {/* §13.2 — an empty session cannot be saved. The footer button this replaced carried no
                   such guard, so "End Workout" on a session with nothing logged ran the whole save. */}
+              {/* social2-14: with nothing logged, End and Finish were both disabled, so an empty session —
+                  a shared one especially — had no way out but starting another over it. It can be left
+                  instead: nothing is saved because there is nothing to save. */}
               <OptionRow
-                onPress={endFromOptions}
+                onPress={
+                  hasLoggedSet(session)
+                    ? endFromOptions
+                    : async () => {
+                        setOptionsOpen(false);
+                        await clearSession();
+                        discardSession();
+                        router.replace('/(tabs)');
+                      }
+                }
                 danger
-                disabled={!hasLoggedSet(session)}
-                title="End workout"
-                sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Log at least one set to save'}
+                title={hasLoggedSet(session) ? 'End workout' : 'Discard workout'}
+                sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Nothing logged yet — leave without saving'}
                 icon="stop"
               />
             </ScrollView>

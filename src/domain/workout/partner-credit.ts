@@ -131,3 +131,24 @@ export function resolvePartnerNames(
   for (const p of roster) if (p.name.trim()) byId.set(p.id, p.name.trim());
   return ids.map((id) => byId.get(id)).filter((n): n is string => Boolean(n));
 }
+
+/**
+ * The partners of an EMPTY shared session that a new launch is about to replace (social2-14).
+ *
+ * `hasLoggedWork` is false for a Train Together session nobody has logged a set in yet, so a new start
+ * replaces it without asking. The accepted invite behind it is still inside the credit window, though, so
+ * without this the unrelated workout that replaced it was saved "Trained with" the person left behind.
+ * These ids go into the new session's `partnerIdsDeclined` — the list `mergePartnerCredits` already
+ * honours — except anyone the new launch itself names as the partner.
+ *
+ * Empty for a session with logged work (that one goes through the resume prompt), with no partners, or
+ * with no exercises (a bare freestyle shell).
+ */
+export function droppedSharedPartners(
+  saved: { partnerIds?: readonly string[]; exercises: readonly unknown[] } | null | undefined,
+  hasWork: boolean,
+  launchPartnerId?: string | null,
+): string[] {
+  if (hasWork || !saved || saved.exercises.length === 0) return [];
+  return (saved.partnerIds ?? []).filter((id) => id !== launchPartnerId);
+}
