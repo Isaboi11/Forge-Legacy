@@ -1,10 +1,11 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, SectionList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { ChipScroller } from '@/components/forge/ChipScroller';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -96,8 +97,10 @@ export default function ActivityHistoryScreen() {
       />
 
       {/* type filter — All + every modality the app can actually log, single-select */}
+      {/* Seven types do not fit a phone: the strip now shows that it scrolls (visualA-12) — it hid Swim,
+          Row, Mobility and Other behind the right edge with nothing to say they were there. */}
       <View style={styles.chipStrip}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <ChipScroller ground={STRIP_GROUND} contentContainerStyle={styles.chips}>
           <Chip label="All" on={filter === 'all'} onPress={() => setFilter('all')} />
           {ACTIVITY_ORDER.map((t) => (
             <Chip
@@ -108,7 +111,7 @@ export default function ActivityHistoryScreen() {
               icon={<TypeIcon type={t} size={13} color={filter === t ? flColor.bronze300 : flColor.gray600} />}
             />
           ))}
-        </ScrollView>
+        </ChipScroller>
       </View>
 
       {!settled ? (
@@ -234,14 +237,17 @@ function SessionRow({ record, onPress }: { record: ActivityRecord; onPress: () =
   );
 }
 
+/** The filter strip's ground — also where its scroll hint fades to. */
+const STRIP_GROUND = themeScrim('rgba(7,8,8,0.92)');
+
 const styles = StyleSheet.create({
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 6 },
   logBtnText: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
 
-  chipStrip: { borderBottomWidth: 1, borderBottomColor: flColor.divider, backgroundColor: themeScrim('rgba(7,8,8,0.92)') },
-  chips: { flexDirection: 'row', gap: 7, paddingHorizontal: 16, paddingBottom: 13 },
+  chipStrip: { paddingBottom: 13, borderBottomWidth: 1, borderBottomColor: flColor.divider, backgroundColor: STRIP_GROUND },
+  chips: { flexDirection: 'row', gap: 7, paddingHorizontal: 16 },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
