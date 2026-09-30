@@ -52,8 +52,9 @@ import {
 } from './rulebook/limitations.ts';
 import { skeletonFor } from './rulebook/skeletons.ts';
 import { preferenceRank } from './rulebook/preferences.ts';
+import { EMPHASIS, EMPHASIS_SHARE, type EmphasisId } from './rulebook/emphasis.ts';
 import type { LearnedPreferences } from './learned-preference.ts';
-import type { RecentWork } from './recent-work.ts';
+import { leastRecent, type RecentWork } from './recent-work.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
 import { fillSlot, promoteLeastRecent } from './candidates.ts';
 
@@ -154,7 +155,29 @@ export type DayFocus =
        * is a legitimate request: a conditioning-only session.
        */
       cardio?: boolean;
+      /**
+       * How many movements a part gets, when the athlete said — "two triceps and the rest chest" is
+       * `{ triceps: 2 }`. A part with no entry shares what is left, exactly as it always has.
+       *
+       * ⚠ EXACT, NOT A CEILING. The rotation alone gave that ask three of each (PO, 2026-09-30). See
+       * `selectAsAsked`.
+       */
+      counts?: Partial<Record<BodyPart, number>>;
+      /** A region to lead a part with — "upper chest". See `rulebook/emphasis.ts`. */
+      emphasis?: readonly EmphasisId[];
     };
+
+/**
+ * What became of the things the athlete asked for by name, read off the session that was built.
+ *
+ * Holt says these back (`askedLine` in `chat-core.ts`), and he says them from HERE rather than from the
+ * request, so he can never claim an upper-chest day that an empty room could not supply.
+ */
+export interface AskedResult {
+  /** `got` of the part's `of` movements are the emphasised ones. `got: 0` is reported, not hidden. */
+  emphasis: { id: EmphasisId; got: number; of: number }[];
+  counts: { part: BodyPart; asked: number; got: number }[];
+}
 
 export interface DayRequest {
   focus: DayFocus;
@@ -198,6 +221,8 @@ export interface DayResult {
    * disagrees with the level they told us they were.
    */
   stretched: boolean;
+  /** Present only when the focus carried `counts` or `emphasis` — what the session did about each. */
+  asked?: AskedResult;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -261,6 +286,105 @@ function selectForFocus(
   roundRobin(preferred, budget, out);
   if (out.length < budget) roundRobin(marginal, budget, out);
   return out;
+}
+
+/**
+ * The same selection, when the athlete said how the session should be divided or what should lead it.
+ *
+ * ══ THE BUG ══
+ *
+ * PO, 2026-09-30, by voice: *"I really want to develop my upper chest and I'm usually trying to do about
+ * two tricep workouts and then the rest as a chest workout."* He got three flat presses and three triceps
+ * movements. Neither half of the sentence had anywhere to go: the rotation splits a two-pattern day
+ * evenly whatever was said, and the catalogue has one `chest`.
+ *
+ * ══ TWO STEPS, AND THE ORDER MATTERS ══
+ *
+ *  1. **Counts.** A counted part is filled on its own, to its number. Everything left goes to the parts
+ *     nobody counted, through `selectForFocus` exactly as before — so "the rest as chest" is the old
+ *     selection with a bigger budget, not a second algorithm.
+ *  2. **Emphasis.** Within the part it belongs to, the named region's movements take `EMPHASIS_SHARE` of
+ *     the slots and the first of them leads. It runs second because it needs to know how many slots the
+ *     part ended up with.
+ *
+ * ⚠ IT ONLY RUNS WHEN SOMETHING WAS ASKED. A focus with neither field never reaches this function, so
+ * every day built before it existed builds byte-identically.
+ *
+ * ⚠ THE QUEUES ARE COPIED. `roundRobin` consumes its lists with `shift()`, and this calls it once per
+ * group over the same candidates.
+ */
+function selectAsAsked(
+  ordered: Map<string, CatalogExercise[]>,
+  budget: number,
+  focus: Extract<DayFocus, { kind: 'body_parts' }>,
+  recent: RecentWork | undefined,
+): { picked: CatalogExercise[]; asked: AskedResult } {
+  /* The first part asked for that the movement trains. Chest before triceps, so a dip is chest work and
+     does not spend one of the two triceps slots. */
+  const ownerOf = (ex: CatalogExercise): BodyPart | null =>
+    focus.parts.find((p) => ex.primaryMuscleIds.some((m) => BODY_PART_MUSCLES[p].includes(m))) ?? null;
+
+  const sliceFor = (keep: (owner: BodyPart | null) => boolean): Map<string, CatalogExercise[]> => {
+    const out = new Map<string, CatalogExercise[]>();
+    for (const [pattern, list] of ordered) out.set(pattern, list.filter((ex) => keep(ownerOf(ex))));
+    return out;
+  };
+
+  let counted = focus.parts
+    .map((part) => ({ part, asked: Math.floor(focus.counts?.[part] ?? 0) }))
+    .filter((c) => c.asked >= 1);
+  /* Every part counted, and the counts add up to less than a session: "one chest exercise" is not a
+     workout, and honouring it would hand `whyThin` a day it then refuses for the wrong reason. The
+     numbers are dropped and the day is built the usual way. */
+  const everyPartCounted = counted.length === focus.parts.length && focus.cardio !== true;
+  if (everyPartCounted && counted.reduce((n, c) => n + c.asked, 0) < MIN_DAY_MOVEMENTS) counted = [];
+
+  let left = budget;
+  const fixed: CatalogExercise[] = [];
+  for (const c of counted) {
+    const got = selectForFocus(sliceFor((o) => o === c.part), Math.min(c.asked, left));
+    left -= got.length;
+    fixed.push(...got);
+  }
+  const isCounted = (o: BodyPart | null) => o != null && counted.some((c) => c.part === o);
+  // The uncounted parts lead the list: they are "the rest", which is the body of the session.
+  const picked = [...selectForFocus(sliceFor((o) => !isCounted(o)), left), ...fixed];
+
+  const emphasis: AskedResult['emphasis'] = [];
+  for (const id of focus.emphasis ?? []) {
+    const spec = EMPHASIS[id];
+    if (!focus.parts.includes(spec.part)) continue;
+    const slots = picked.map((ex, i) => (ownerOf(ex) === spec.part ? i : -1)).filter((i) => i >= 0);
+    if (slots.length === 0) continue;
+
+    // Everything reachable for the region, in the rulebook's order — already filtered for kit, level and
+    // limitations, because it is read out of the same candidate lists the rest of the day came from.
+    const pool = [...ordered.values()].flat();
+    let named = spec.keys.map((k) => pool.find((ex) => ex.key === k)).filter((ex): ex is CatalogExercise => ex != null);
+    /* Variety, the way `promoteLeastRecent` does it: only the HEAD moves, and only among the top three
+       the rulebook names. Without it the same incline opens every upper-chest day forever. */
+    const fresh = leastRecent(named.slice(0, 3), (ex) => ex.key, recent);
+    if (fresh && fresh !== named[0]) named = [fresh, ...named.filter((ex) => ex !== fresh)];
+
+    const lead = named.slice(0, Math.max(1, Math.ceil(slots.length * EMPHASIS_SHARE)));
+    const standard = slots.map((i) => picked[i]).filter((ex) => !lead.includes(ex)).slice(0, slots.length - lead.length);
+    /* The first emphasised movement opens the part, the standard work follows it, and the rest of the
+       emphasis closes — incline press, flat press, incline dumbbell, fly. Emphasis first-to-last would
+       put a cable fly ahead of the flat press. */
+    const next = lead.length ? [lead[0], ...standard, ...lead.slice(1)] : standard;
+    slots.forEach((i, n) => {
+      if (next[n]) picked[i] = next[n];
+    });
+    emphasis.push({ id, got: lead.length, of: slots.length });
+  }
+
+  return {
+    picked,
+    asked: {
+      emphasis,
+      counts: counted.map((c) => ({ ...c, got: picked.filter((ex) => ownerOf(ex) === c.part).length })),
+    },
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -365,6 +489,7 @@ export function buildDayWorkout(
   const missing: string[] = [];
   const chosen: { ex: CatalogExercise; pattern: string }[] = [];
   let stretched = false;
+  let asked: AskedResult | undefined;
 
   if (req.focus.kind === 'split') {
     // A split IS a pattern list, so this is the program engine's own fill path, unchanged.
@@ -505,7 +630,15 @@ export function buildDayWorkout(
     const finisher = wantsFinisher ? (ordered.get(CARDIO_PATTERN) ?? [])[0] : undefined;
     if (wantsFinisher) ordered.delete(CARDIO_PATTERN);
 
-    for (const ex of selectForFocus(ordered, finisher ? budget - 1 : budget)) chosen.push({ ex, pattern: ex.pattern });
+    const room = finisher ? budget - 1 : budget;
+    const saidHow = focus.emphasis?.length || Object.keys(focus.counts ?? {}).length;
+    if (saidHow) {
+      const as = selectAsAsked(ordered, room, focus, ctx.recent);
+      asked = as.asked;
+      for (const ex of as.picked) chosen.push({ ex, pattern: ex.pattern });
+    } else {
+      for (const ex of selectForFocus(ordered, room)) chosen.push({ ex, pattern: ex.pattern });
+    }
     if (finisher) chosen.push({ ex: finisher, pattern: finisher.pattern });
 
     for (const p of req.focus.parts) {
@@ -570,7 +703,7 @@ export function buildDayWorkout(
         }
       : req.focus;
 
-  return { day: { letter: 'A', name: titleFor(named), warmup: [], main, cooldown: [] }, missing, stretched };
+  return { day: { letter: 'A', name: titleFor(named), warmup: [], main, cooldown: [] }, missing, stretched, ...(asked ? { asked } : {}) };
 }
 
 /** A split maps onto the goal whose skeletons already express it. */

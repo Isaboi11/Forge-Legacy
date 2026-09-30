@@ -42,3 +42,24 @@ so cost and speed come out of the same run as accuracy.
 Add lines, never rewrite them: the value is that the same sentences are asked again after every change. A
 new line needs the same shape as its neighbours (`id`, `text`, and the expectation fields for that file).
 When a gap is closed, leave the line and let the score move.
+
+## Holt writes it — the author corpus
+
+`corpus-author.mjs` is 126 asks for a workout or a program (96 single days, 30 weeks), each with what the
+athlete said they wanted turned into checks a script can run: counts, regions, named lifts, tools, order,
+supersets, warm-ups, rep ranges, cardio, limitations. `author-live.mjs` sends each through the real model with
+`coach-author`'s own prompt, then through the device's validation, and scores what would reach the card.
+
+```
+node --experimental-strip-types scripts/holt-corpus/author-live.mjs --cap 2.5          # everything, about $1.45
+node --experimental-strip-types scripts/holt-corpus/author-live.mjs --tag region --cap 0.5
+node --experimental-strip-types scripts/holt-corpus/author-live.mjs --only po-upper-chest
+```
+
+`marathon-e2e.mjs` takes ONE sentence through every stage (what he understood, what he asks, the race block,
+the lifting he writes) and prints the program — about 3¢. `--race-in 16` answers the race-date question.
+
+It calls the API directly with `ANTHROPIC_API_KEY` from `.env.local` (no credits, no database), and `--cap` is a
+hard dollar ceiling on the measured spend. 2026-09-30: run 1 scored 80/94, the final run 121/126 —
+`Docs/Coach-Holt-Author-Live-Test-2026-09-30.md`. A check only ever encodes something the athlete SAID; what a
+coach would merely prefer is read by a person in the `.jsonl`.

@@ -299,6 +299,19 @@ export interface CoachConstraints {
    */
   liftDays?: number | null;
   /**
+   * The athlete SAID how the week divides — "I want to run twice a week and lift 3 times a week".
+   *
+   * ⚠ THEN IT IS THEIR SPLIT, AND THE RULEBOOK DOES NOT RE-CUT IT (CA-D12; PO, 2026-09-30). Without this a
+   * marathon block takes four running days whatever was asked (`MIN_RACE_RUN_DAYS`) and trims the lifting to
+   * fit the mileage — so "2 runs, 3 lifts" came back as 4 runs and 1 lift. With it, the running gets the
+   * days they gave it (never fewer than `MIN_ENDURANCE_DAYS`, which is what a running week needs to exist at
+   * all) and Holt says ONCE that it is light for the distance. The volume curve, the long run, the taper
+   * and race week are still the race rulebook's arithmetic.
+   *
+   * Set by the chat when the split was typed or spoken. Never by a tap — the wizard has no such answer.
+   */
+  splitAsSaid?: boolean;
+  /**
    * What the lifting in a race build is FOR. Defaults to `strength`: somebody who says "and I want to keep
    * lifting" alongside a race is protecting the strength they have, and the corpus asks for it in those
    * words — *"marathons and bench 3 plates"*. A different answer ("build muscle", "just keep moving") is

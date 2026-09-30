@@ -25,7 +25,7 @@ import { clearPendingReferral } from './pending-referral-store';
    drags anything into this file's graph. That matters here: `first-run` is reached during auth init,
    upstream of the router, which is the same reason the invite store is imported above rather than the
    module that wraps it. */
-import { forgetExperience } from './coach-memory';
+import { forgetExperience, forgetRoom } from './coach-memory';
 import { clearThread, forgetMetHolt } from './coach-thread';
 /* Its own doc says "used on account switch, beside the other first-run flags" and it had NO CALLERS —
    see the note beside it in the wipe below. Relative, like every other import here. */
@@ -108,6 +108,8 @@ export async function resetFirstRunFlags(): Promise<void> {
      * The level is the one that matters most, because it silently shapes every program he builds.
      */
     forgetExperience(),
+    // Where they train, for the same reason: the next athlete on this phone trains somewhere else.
+    forgetRoom(),
     forgetMetHolt(),
     clearThread(),
     /*
