@@ -361,7 +361,14 @@ export function LedgerPost({
 
       {playlist ? <PlaylistRow link={playlist} onPress={onPlaylist} /> : null}
 
-      {caption ? <Text style={[styles.caption, hasMedia ? styles.captionUnderMedia : null]}>{caption}</Text> : null}
+      {/* ⚠ THE WORDS OPEN THE POST TOO (social-03, QA 09-26). The caption sits outside the Pressable above, so
+          a text-only Discussion post — which is nothing BUT its caption — had no tap target except the small
+          comment icon. Inert where the caller gives no destination. */}
+      {caption ? (
+        <Text onPress={onOpen} suppressHighlighting style={[styles.caption, hasMedia ? styles.captionUnderMedia : null]}>
+          {caption}
+        </Text>
+      ) : null}
 
       {footer ? <View style={styles.footer}>{footer}</View> : null}
 
