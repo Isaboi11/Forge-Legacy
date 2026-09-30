@@ -192,6 +192,20 @@ export interface SessionExercise {
   /** What was actually covered, once it was. Written at log time; see `CardioResult`. */
   cardio?: CardioResult;
   /**
+   * A bout on this block has STARTED and is not logged yet (workout-13, QA 09-26). Cardio only, and on
+   * the exercise rather than the screen so it rides autosave: an outdoor walk under way has no completed
+   * set, so `hasLoggedWork` read the session as empty and a reload rebuilt over it. Never written to the
+   * database — `buildSaveExercises` names its columns.
+   */
+  boutOpen?: boolean;
+  /**
+   * The position this exercise was SAVED at, on a finished workout reopened by "Continue this workout"
+   * (workout-05, 0253). Set only by `fetchWorkoutAsSession`, and sent back as `into_position` so a set
+   * added to a lift that was already there lands under that lift's row, not under a second copy of it.
+   * Absent on everything added after reopening — those are new rows.
+   */
+  savedPosition?: number;
+  /**
    * ══ CIRCUIT MEMBERSHIP ══
    *
    * Carried through from the program so the logger can draw a warm-up circuit, a finisher or an AMRAP as

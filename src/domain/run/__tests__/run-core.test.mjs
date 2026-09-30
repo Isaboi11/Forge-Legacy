@@ -631,3 +631,8 @@ test('signalNote: an unmeasured run is never described as broken', () => {
     assert.doesNotMatch(n, /error|failed|can.t track|unable/i, `"${n}" reads as a failure`);
   }
 });
+
+test('signalNote: a paused walk is a walk, not a run (workout-21)', () => {
+  assert.match(signalNote(true, false, 5, 'tracking', 'walk'), /the walk does not/);
+  assert.match(signalNote(true, false, 5), /the run does not/, 'the default is unchanged');
+});

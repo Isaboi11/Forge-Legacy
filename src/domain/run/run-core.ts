@@ -515,11 +515,13 @@ export function signalNote(
   weak: boolean,
   accuracyM: number | null,
   gps: GpsReport = 'tracking',
+  /** What the athlete is doing — "the walk does not", never "the run" on a walk (workout-21). */
+  bout: string = 'run',
 ): string {
   /* Named differently because it BEHAVES differently: this one ends by itself. An athlete who reads
      plain "Paused" stands there waiting to press something that is not going to matter. */
   if (paused === 'auto') return 'Auto-paused · it starts again when you do';
-  if (paused) return 'Paused · the ground still moves, the run does not';
+  if (paused) return `Paused · the ground still moves, the ${bout} does not`;
   // The run is under way and nothing will measure it. Say what that means for the number, not what
   // went wrong with a radio.
   if (gps === 'denied') return 'Timing only · add the distance when you finish';

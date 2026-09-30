@@ -4653,7 +4653,14 @@ export default function WorkoutScreen() {
                   units={units}
                   onSetModality={setCardioModality}
                   onSave={saveCardioLog}
-                  onLiveChange={(live) => setLiveBoutIdx(live ? exIdx : null)}
+                  onLiveChange={(live) => {
+                    setLiveBoutIdx(live ? exIdx : null);
+                    /* On the session too, so autosave knows a bout is under way (workout-13) — see `boutOpen`. */
+                    mutate((s) => ({
+                      ...s,
+                      exercises: s.exercises.map((e, i) => (i === exIdx ? { ...e, boutOpen: live || undefined } : e.boutOpen ? { ...e, boutOpen: undefined } : e)),
+                    }));
+                  }}
                 />
               ) : (
               <SetTable exercise={ex} ei={exIdx} liftHist={liftHist} showHint={setsDone === 0} {...setTableShared} />

@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 
 import { ACCURACY_FLOOR_M, acceptFix, totalMiles, type ActivityKind, type Fix, type TrackPoint } from '@/domain/run/run-core';
 import { clearBackgroundFixes, drainBackgroundFixes, startBackgroundFixes, stopBackgroundFixes } from '@/domain/run/background-task';
 import { AUTO_PAUSE_WINDOW_SEC, autoResumeStep, probeAt, shouldAutoPause, type AutoResumeProbe } from '@/domain/run/auto-pause';
+import { restoreRun, runSnapshot } from '@/domain/run/run-snapshot';
+
+/** How often a bout under way is written to disk between changes of state — see `run-snapshot.ts`. */
+const SNAPSHOT_EVERY_MS = 5_000;
 
 /**
  * How long the device may go quiet before "the track stopped growing" stops meaning "the athlete stopped".
@@ -93,6 +98,12 @@ export interface RunTracker {
   pause: () => void;
   resume: () => void;
   /**
+   * Ask for the position stream again, mid-bout (workout-21, QA 09-26). A walk that began with no signal
+   * — indoors, a refused browser prompt the athlete has since allowed — used to stay "timing only" to
+   * the end, with nothing on the card to try again.
+   */
+  retryGps: () => void;
+  /**
    * The run is paused because the app decided it was, not because the athlete did.
    *
    * The card reads this to say "Auto-paused" rather than "Paused" — the athlete needs to know the clock
@@ -114,7 +125,17 @@ export interface RunTracker {
   stop: () => Promise<TrackPoint[]>;
 }
 
-export function useRunTracker(kind: ActivityKind): RunTracker {
+export function useRunTracker(
+  kind: ActivityKind,
+  /**
+   * Where this bout is kept on disk while it is under way, or null to keep it in memory only. See
+   * `run-snapshot.ts` (workout-13). The card scopes it like the treadmill clock, so the session-end
+   * sweep (`clearCardioTimers`) removes it with the rest.
+   */
+  persistKey: string | null = null,
+  /** Told once a bout has been brought back from disk, so the screen can lock to it as it does on Start. */
+  onRestored?: () => void,
+): RunTracker {
   const [phase, setPhase] = useState<RunPhase>('idle');
   const [gps, setGps] = useState<GpsState>('off');
   const [track, setTrack] = useState<TrackPoint[]>([]);
@@ -128,6 +149,11 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
    * they chose, "Auto-paused" the app chose, and the second one starts again on its own.
    */
   const [autoPaused, setAutoPaused] = useState(false);
+  /**
+   * The moving second at which the CURRENT search for a signal began — 0 for a bout's first, later for a
+   * retry. `gpsStalled` measures its patience from here, or a retry 40 minutes in would be "stalled" at once.
+   */
+  const [acquireFrom, setAcquireFrom] = useState(0);
 
   const sub = useRef<Location.LocationSubscription | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -199,6 +225,30 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setTrack(next);
   }, []);
 
+  /*
+   * ══ ON DISK WHILE UNDER WAY (workout-13) ══
+   *
+   * The key is held in a ref so writing never depends on render: every writer below is an event. A bout
+   * is "under way" exactly while its clock interval exists — `start`/restore create it, `stop` clears it —
+   * and `running` says which of live or paused to write.
+   */
+  const keyRef = useRef<string | null>(persistKey);
+  useEffect(() => {
+    keyRef.current = persistKey;
+  }, [persistKey]);
+  const lastSaved = useRef(0);
+  const saveNow = useCallback(() => {
+    const key = keyRef.current;
+    if (!key || !timer.current) return;
+    lastSaved.current = Date.now();
+    const snap = runSnapshot(running.current ? 'live' : 'paused', elapsedRef.current, trackRef.current, lastSaved.current);
+    void AsyncStorage.setItem(key, JSON.stringify(snap)).catch(() => {});
+  }, []);
+  const forget = useCallback(() => {
+    const key = keyRef.current;
+    if (key) void AsyncStorage.removeItem(key).catch(() => {});
+  }, []);
+
   const clearAll = useCallback(() => {
     sub.current?.remove();
     sub.current = null;
@@ -208,8 +258,15 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
   }, []);
 
   // One teardown for unmount. A subscription that outlives the screen keeps the GPS radio warm and
-  // quietly drains the battery of someone who thinks they stopped.
-  useEffect(() => clearAll, [clearAll]);
+  // quietly drains the battery of someone who thinks they stopped. A bout still under way is written
+  // first, so leaving the screen and coming back to it picks the walk up where it was (workout-13).
+  useEffect(
+    () => () => {
+      saveNow();
+      clearAll();
+    },
+    [clearAll, saveNow],
+  );
 
   const onFix = useCallback((loc: Location.LocationObject) => {
     setAccuracyM(loc.coords.accuracy ?? null);
@@ -253,6 +310,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
         void clearBackgroundFixes();
         setPhase('live');
         setAutoPaused(false);
+        saveNow();
       }
       return; // paused: the ground still moves, the run does not
     }
@@ -290,7 +348,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       return acceptFix(prev, fix, kind).track;
     })());
     // `kind` cannot change mid-session, so closing over it is safe.
-  }, [kind, commit]);
+  }, [kind, commit, saveNow]);
 
   /**
    * Attach the position stream. Separate from `start` because it must not be able to prevent one.
@@ -327,34 +385,13 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
   }, [onFix]);
 
   /**
-   * Begin the run. Synchronous and unconditional — this is the athlete saying they have started, and
-   * nothing about the state of a radio makes that untrue.
+   * The clock, for a bout begun OR brought back from disk — one interval, one set of rules.
+   *
+   * Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
+   * report 26 minutes.
    */
-  const start = useCallback(() => {
-    running.current = true;
-    reanchor.current = false;
-    stopped.current = false;
-    /*
-     * ⚠ A SECOND BOUT USED TO CONTINUE THE FIRST ONE'S NUMBERS.
-     *
-     * Neither the track nor the clock was reset here, and `stop()` leaves both standing so the finished
-     * run can still be read off the card. Ending a run and then pressing Start again — which the card
-     * offers the moment the log form is cancelled — resumed the old track: `acceptFix` measured the
-     * first new fix from where the last run finished, and the mileage carried straight over.
-     */
-    commit([]);
-    setElapsedSec(0);
-    setAccuracyM(null);
-    setPhase('live');
-    setGps('acquiring');
-    /* A fresh bout owns none of the last one's pause state — see `commit([])` above, same reason. */
-    setAutoPaused(false);
-    autoProbe.current = null;
-    elapsedRef.current = 0;
-    lastFixAt.current = Date.now();
-    speeds.current = [];
-    // Wall-time-driven rather than a counter, so a throttled background tab can't make a 40-minute run
-    // report 26 minutes.
+  const startClock = useCallback(() => {
+    if (timer.current) clearInterval(timer.current);
     let lastTick = Date.now();
     timer.current = setInterval(() => {
       const now = Date.now();
@@ -363,6 +400,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       if (!running.current) return;
       elapsedRef.current += delta;
       setElapsedSec((s) => s + delta);
+      if (now - lastSaved.current >= SNAPSHOT_EVERY_MS) saveNow();
       /*
        * ══ THE AUTO-PAUSE DECISION, ONCE A SECOND ══
        *
@@ -388,9 +426,42 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
           autoProbe.current = probeAt(last.lat, last.lon);
           setPhase('paused');
           setAutoPaused(true);
+          saveNow();
         }
       }
     }, 1000);
+  }, [saveNow]);
+
+  /**
+   * Begin the run. Synchronous and unconditional — this is the athlete saying they have started, and
+   * nothing about the state of a radio makes that untrue.
+   */
+  const start = useCallback(() => {
+    running.current = true;
+    reanchor.current = false;
+    stopped.current = false;
+    /*
+     * ⚠ A SECOND BOUT USED TO CONTINUE THE FIRST ONE'S NUMBERS.
+     *
+     * Neither the track nor the clock was reset here, and `stop()` leaves both standing so the finished
+     * run can still be read off the card. Ending a run and then pressing Start again — which the card
+     * offers the moment the log form is cancelled — resumed the old track: `acceptFix` measured the
+     * first new fix from where the last run finished, and the mileage carried straight over.
+     */
+    commit([]);
+    setElapsedSec(0);
+    setAccuracyM(null);
+    setPhase('live');
+    setGps('acquiring');
+    setAcquireFrom(0);
+    /* A fresh bout owns none of the last one's pause state — see `commit([])` above, same reason. */
+    setAutoPaused(false);
+    autoProbe.current = null;
+    elapsedRef.current = 0;
+    lastFixAt.current = Date.now();
+    speeds.current = [];
+    startClock();
+    saveNow();
     /*
      * ══ ⚠ THE ORDER OF THESE THREE IS THE FEATURE, NOT A TIDY-UP ══
      *
@@ -416,7 +487,74 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       await attachGps();
       await startBackgroundFixes();
     })();
-  }, [attachGps, commit]);
+  }, [attachGps, commit, startClock, saveNow]);
+
+  /*
+   * ══ BRINGING A BOUT BACK FROM DISK (workout-13) ══
+   *
+   * The same state `start` builds, from the snapshot instead of from zero — and the one difference in the
+   * GPS order is deliberate: the background buffer is DRAINED into the restored track rather than cleared,
+   * because on a device whose app was reclaimed mid-walk those fixes are this walk. Skipped if the
+   * athlete has already started something in the meantime (`timer.current`).
+   */
+  const onRestoredRef = useRef(onRestored);
+  useEffect(() => {
+    onRestoredRef.current = onRestored;
+  }, [onRestored]);
+  useEffect(() => {
+    if (!persistKey) return;
+    let alive = true;
+    void AsyncStorage.getItem(persistKey)
+      .then((raw) => {
+        if (!alive || timer.current) return;
+        const snap = restoreRun(raw, Date.now());
+        if (!snap) return;
+        running.current = snap.phase === 'live';
+        reanchor.current = true; // the first fix measures from where the athlete IS, not from the gap
+        stopped.current = false;
+        autoProbe.current = null;
+        commit(snap.track);
+        elapsedRef.current = snap.elapsedSec;
+        setElapsedSec(snap.elapsedSec);
+        setAcquireFrom(snap.elapsedSec);
+        setPhase(snap.phase);
+        setGps('acquiring');
+        setAutoPaused(false);
+        lastFixAt.current = Date.now();
+        speeds.current = [];
+        startClock();
+        saveNow();
+        onRestoredRef.current?.();
+        void (async () => {
+          await attachGps();
+          if (running.current) {
+            const fixes = await drainBackgroundFixes();
+            if (fixes.length) commit(applyFixes(trackRef.current, fixes, kind));
+          } else {
+            await clearBackgroundFixes();
+          }
+          await startBackgroundFixes();
+        })();
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [persistKey, kind, commit, startClock, saveNow, attachGps]);
+
+  /* See `RunTracker.retryGps`. A fresh subscription and a fresh patience window; the run is untouched. */
+  const retryGps = useCallback(() => {
+    if (!timer.current) return;
+    sub.current?.remove();
+    sub.current = null;
+    lastFixAt.current = Date.now();
+    setAcquireFrom(elapsedRef.current);
+    setGps('acquiring');
+    void (async () => {
+      await attachGps();
+      await startBackgroundFixes();
+    })();
+  }, [attachGps]);
 
   /**
    * ⚠ BOTH OF THESE CLEAR `autoProbe`, AND THAT IS THE MANUAL-OVERRIDE RULE.
@@ -430,7 +568,8 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     autoProbe.current = null;
     setPhase('paused');
     setAutoPaused(false);
-  }, []);
+    saveNow();
+  }, [saveNow]);
 
   const resume = useCallback(() => {
     running.current = true;
@@ -441,7 +580,8 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     void clearBackgroundFixes();
     setPhase('live');
     setAutoPaused(false);
-  }, []);
+    saveNow();
+  }, [saveNow]);
 
   const stop = useCallback(async (): Promise<TrackPoint[]> => {
     /* Pressing End twice, or a caller ending a bout that `openLog` also ends, must not re-drain: the
@@ -450,6 +590,8 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     if (stopped.current) return trackRef.current;
     stopped.current = true;
     clearAll();
+    forget(); // the bout is over; nothing is left to bring back
+
     /* ⚠ DRAIN BEFORE STOPPING, and apply what comes back. Ending a run that was backgrounded to its last
        foreground fix would throw away the miles the athlete actually cared most about measuring.
 
@@ -461,7 +603,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     setPhase('idle');
     setGps('off');
     return finished;
-  }, [clearAll, kind, commit]);
+  }, [clearAll, kind, commit, forget]);
 
   /**
    * ══ COMING BACK ══
@@ -497,6 +639,8 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
           setPhase('live');
           setAutoPaused(false);
         }
+        /* The OS may reclaim a backgrounded app without another word — write the bout while we can. */
+        saveNow();
         return;
       }
       if (!running.current) return;
@@ -505,14 +649,14 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
       });
     });
     return () => sub.remove();
-  }, [kind, commit]);
+  }, [kind, commit, saveNow]);
 
   // Everything below is DERIVED. "Acquiring" becomes "tracking" the moment a fix is good enough to have
   // entered the track, and patience runs out on its own — both are functions of state already held, and
   // a synchronous setState in an effect body is exactly what the strict react-compiler lint forbids.
   const live = phase === 'live' || phase === 'paused';
   const settled = track.length > 0;
-  const gpsStalled = live && gps === 'acquiring' && !settled && elapsedSec >= GPS_PATIENCE_SEC;
+  const gpsStalled = live && gps === 'acquiring' && !settled && elapsedSec - acquireFrom >= GPS_PATIENCE_SEC;
   const effectiveGps: GpsState =
     gps === 'acquiring' && settled ? 'tracking' : gpsStalled ? 'unavailable' : gps;
 
@@ -529,6 +673,7 @@ export function useRunTracker(kind: ActivityKind): RunTracker {
     pause,
     resume,
     stop,
+    retryGps,
     /** Paused by the app, not by the athlete — the card says so, and it will start again on its own. */
     autoPaused,
   };

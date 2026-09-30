@@ -1817,7 +1817,7 @@ function CardioRecordRow({ name, cardio, units }: { name: string; cardio: Comple
   }
 
   const where =
-    cardio.modality === 'indoor' ? 'On the belt' : cardio.modality === 'outdoor' ? 'Outdoors' : null;
+    cardio.modality === 'indoor' ? (cardio.onBelt === false ? 'Indoors' : 'On the belt') : cardio.modality === 'outdoor' ? 'Outdoors' : null;
 
   return (
     <View style={styles.cardioRow}>
