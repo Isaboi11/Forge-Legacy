@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  achievedDate,
   bodyTargetProblem,
   bodyTargetSummary,
   directionLabels,
   goalSections,
+  goalStatusLine,
   historyDate,
   isQuantifiable,
   meetsTarget,
@@ -250,4 +252,32 @@ test('a stored direction that disagrees with the numbers cannot make the bar lie
 test('an accumulate goal with no baseline keeps the original ratio behaviour', () => {
   assert.equal(progressPct({ target: 400, current: 100, achievedAt: null }), 25);
   assert.equal(progressPct({ target: 400, current: 500, achievedAt: null }), 100);
+});
+
+// ── what a goal card SAYS (QA legacy-14) ──────────────────────────────────────
+//
+// The cards drew a bar and kept the numbers in an accessibility label, so "5 / 10 sessions" was never on
+// screen; and a goal the athlete marked achieved at 5 of 10 went on showing half a bar.
+
+test('a counting goal states its numbers and its percentage', () => {
+  assert.equal(goalStatusLine({ target: 10, current: 5, unit: 'sessions', achievedAt: null }), '5 / 10 sessions · 50%');
+  assert.equal(goalStatusLine({ target: 10, current: 5, unit: null, achievedAt: null }), '5 / 10 · 50%', 'no unit, no stray space');
+  assert.equal(goalStatusLine({ target: 185, current: 192, unit: 'lb', achievedAt: null, metricDir: 'down', metricStartValue: 195 }), '192 lb → 185 lb · 30%');
+});
+
+test('a narrative goal says In progress and nothing about weeks', () => {
+  assert.equal(goalStatusLine({ target: null, current: 0, unit: null, achievedAt: null }), 'In progress');
+});
+
+test('an achieved goal says Achieved and the day, never a part-filled number', () => {
+  // Marked achieved at 5 of 10: the achievement replaces the bar and the percentage (G-1 §12.5).
+  assert.equal(goalStatusLine({ target: 10, current: 5, unit: 'sessions', achievedAt: '2026-09-26T12:00:00' }), 'Achieved Sep 26, 2026');
+  assert.equal(goalStatusLine({ target: null, current: 0, unit: null, achievedAt: '2026-09-26T12:00:00' }), 'Achieved Sep 26, 2026');
+});
+
+test('the achieved day is the local calendar day, and an unreadable stamp is blank', () => {
+  assert.equal(achievedDate('2026-06-03T12:00:00'), 'Jun 3, 2026');
+  assert.equal(achievedDate('2026-06-03'), 'Jun 3, 2026', 'a bare date is that calendar day, not UTC midnight');
+  assert.equal(achievedDate(null), '');
+  assert.equal(achievedDate('nope'), '');
 });

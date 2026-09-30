@@ -357,6 +357,7 @@ export default function LegacyScreen() {
               chapter={chapter}
               dayCount={data.dayCount}
               onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })}
+              onGoal={() => router.push('/goals')}
             />
           </View>
         ) : reveal.chapter === 'start-first' ? (
@@ -858,7 +859,7 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
  * The mountain plate sits on the card's right and fades into the card surface through `themeScrim`, so
  * Alabaster gets its own paper plate and cream fade rather than a dark rectangle.
  */
-function ChapterHero({ chapter, dayCount, onOpen }: { chapter: Chapter; dayCount: number; onOpen: () => void }) {
+function ChapterHero({ chapter, dayCount, onOpen, onGoal }: { chapter: Chapter; dayCount: number; onOpen: () => void; onGoal: () => void }) {
   const { prefix, title } = splitChapterName(chapter.name);
   const goal = chapter.goal;
   const value = goalValue(goal);
@@ -897,15 +898,24 @@ function ChapterHero({ chapter, dayCount, onOpen }: { chapter: Chapter; dayCount
       </Text>
       <Text style={styles.heroMeta}>{meta}</Text>
       {goal.kind !== 'none' ? (
-        <View style={styles.heroGoal}>
+        /* Its own press target: the card opens the chapter, the goal opens Goals (QA legacy-11 — there was
+           no way to Goals from this tab). An achieved goal says so instead of drawing the bar it was
+           called done at (legacy-14). */
+        <Pressable
+          onPress={onGoal}
+          accessibilityRole="button"
+          accessibilityLabel={`${goal.name}${goal.achieved ? ', achieved' : value ? `, ${value}` : ''}. View goals.`}
+          hitSlop={6}
+          style={({ pressed }) => [styles.heroGoal, pressed ? styles.cardPressed : null]}
+        >
           <Text style={styles.heroGoalText}>
             {goal.name}
-            {value ? <Text style={styles.heroGoalValue}>{`  ${value}`}</Text> : null}
+            {goal.achieved ? <Text style={styles.heroGoalValue}>{'  Achieved'}</Text> : value ? <Text style={styles.heroGoalValue}>{`  ${value}`}</Text> : null}
           </Text>
-          {goal.kind === 'quantifiable' ? (
+          {goal.kind === 'quantifiable' && !goal.achieved ? (
             <ProgressBar value={goal.progress} max={100} height={6} label={`${goal.progress}% to goal`} />
           ) : null}
-        </View>
+        </Pressable>
       ) : null}
     </Pressable>
   );
