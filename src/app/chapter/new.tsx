@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,11 +11,12 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
-import { createChapter } from '@/data/chapter-detail-live';
-import { saveGoal } from '@/data/goals-live';
+import { CHAPTER_ALREADY_OPEN, createChapter } from '@/data/chapter-detail-live';
+import { fetchActiveChapterGoals, saveGoal } from '@/data/goals-live';
 import { CHAPTER_SUGGESTIONS, CHAPTER_TITLE_MAX, isValidChapterTitle, sanitizeChapterTitle } from '@/domain/legacy/chapter-name';
 import { usePersist } from '@/hooks/usePersist';
 import { useToast } from '@/hooks/useCeremony';
+import { useQuery } from '@/lib/useQuery';
 
 /**
  * L-5 · Chapter Creation — `Docs/L-5-Chapter-Creation-Spec.md` (LOCKED, June 2026).
@@ -60,6 +61,27 @@ export default function NewChapterScreen() {
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  /*
+   * ── ARRIVING HERE WITH A CHAPTER ALREADY OPEN (QA legacy-09) ──
+   *
+   * Every entry point hides itself while a chapter is open (§3), but a link, a stale screen or a second
+   * device still lands here. The athlete then named a chapter, wrote a goal, pressed Begin — and only
+   * then was refused, with "check your connection", which was not the reason.
+   *
+   * §3 says this screen draws no guard state of its own, so it does not: it says why in one line and
+   * hands over to the chapter that is open, before anything is typed. A failed check changes nothing —
+   * the database's one-open-chapter index still refuses at Begin, and that refusal is now worded too.
+   */
+  const { data: open } = useQuery(fetchActiveChapterGoals, []);
+  const openChapterId = open?.chapterId ?? null;
+  const handedOver = useRef(false);
+  useEffect(() => {
+    if (!openChapterId || handedOver.current) return;
+    handedOver.current = true;
+    showToast(CHAPTER_ALREADY_OPEN);
+    router.replace({ pathname: '/chapter/[id]', params: { id: openChapterId } });
+  }, [openChapterId, router, showToast]);
+
   const nameOk = isValidChapterTitle(title);
   const hasGoalText = goalName.trim().length > 0;
 
@@ -82,7 +104,13 @@ export default function NewChapterScreen() {
     setBusy(true);
     persist(
       async () => {
-        const chapter = await createChapter(title);
+        /* A chapter opened elsewhere since this screen loaded: a state, not a fault. It resolves — with
+           nothing created — so `persist` does not put its connection message on it. */
+        const chapter = await createChapter(title).catch((e: unknown) => {
+          if (e instanceof Error && e.message === CHAPTER_ALREADY_OPEN) return null;
+          throw e;
+        });
+        if (!chapter) return null;
         if (!skipGoal && hasGoalText) {
           /*
            * ⚠ A FAILED GOAL MUST NOT UNDO A CREATED CHAPTER (§13.2). Caught here rather than allowed to
@@ -112,7 +140,7 @@ export default function NewChapterScreen() {
           setBusy(false);
           // §2: every entry point resolves to the Legacy hub on success, whatever it was launched from.
           router.replace('/(tabs)/legacy');
-          showToast(`${chapter.name} has begun.`);
+          showToast(chapter ? `${chapter.name} has begun.` : CHAPTER_ALREADY_OPEN);
         },
         rollback: () => setBusy(false),
         message: 'Couldn’t start the chapter — check your connection and try again.',

@@ -161,6 +161,13 @@ export async function fetchChapterDetail(chapterId: string): Promise<ChapterDeta
  *   same count; the index refuses the loser with `23505`, which is translated below into the sentence a
  *   person should read. Checking first and inserting second would be the bug this avoids.
  */
+/**
+ * What `createChapter` throws when a chapter is already open. Exported so the screen can tell this
+ * refusal — a state the athlete can act on — from a failed request, and say the right one of the two
+ * (QA legacy-09: it was reported as "check your connection").
+ */
+export const CHAPTER_ALREADY_OPEN = 'You already have an open chapter. Seal it before beginning the next one.';
+
 export async function createChapter(title: string): Promise<{ id: string; name: string }> {
   const {
     data: { user },
@@ -198,7 +205,7 @@ export async function createChapter(title: string): Promise<{ id: string; name: 
     // 23505 is `chapters_one_active_per_athlete` — another chapter is still open. That is a state, not a
     // fault, and the athlete needs to be told which action to take rather than shown a constraint name.
     if ((error as { code?: string }).code === '23505') {
-      throw new Error('You already have an open chapter. Seal it before beginning the next one.');
+      throw new Error(CHAPTER_ALREADY_OPEN);
     }
     throw error;
   }
