@@ -19,6 +19,7 @@ import {
   FORM_FRAMES_DEFAULT,
   FORM_FRAMES_MAX,
   FORM_FRAMES_MIN,
+  FORM_FRAMES_PER_SECOND,
   sanitizeFormRead,
   type FormRead,
   type FormView,
@@ -112,13 +113,13 @@ export function trimWindow(durationMs: number, startMs?: number | null, endMs?: 
 }
 
 /**
- * How many stills to read from a window: about one a second, never fewer than six (a short trim is
- * usually ONE rep the athlete cares about, so it is read densely) and never more than
+ * How many stills to read from a window: {@link FORM_FRAMES_PER_SECOND} a second, never fewer than eight
+ * (a short trim is usually ONE rep the athlete cares about, so it is read densely) and never more than
  * {@link FORM_FRAMES_MAX}.
  */
 export function formFrameCount(windowMs: number): number {
   const secs = Number.isFinite(windowMs) && windowMs > 0 ? windowMs / 1000 : FORM_CLIP_SECONDS;
-  return Math.min(FORM_FRAMES_MAX, Math.max(6, Math.ceil(secs)));
+  return Math.min(FORM_FRAMES_MAX, Math.max(8, Math.ceil(secs * FORM_FRAMES_PER_SECOND)));
 }
 
 /** Is the clip longer than the window we read? (What {@link formClipNotice} answers in words.) */

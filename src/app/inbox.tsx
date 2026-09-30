@@ -373,7 +373,7 @@ function subFor(n: ForgeNotification): string {
       return 'Open your post';
     // The only sub-line in this list that is an offer rather than a description of where the tap goes.
     case 'squad_training_started':
-      return 'Ask to join them';
+      return 'Send a message or ask to join';
     case 'squad_training_finished':
       return 'See what they did';
     case 'squad_goal_met':
@@ -422,7 +422,7 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
     case 'post_reaction':
       return `${actor} reacted to your post, ${when} ago. Open your post.`;
     case 'squad_training_started':
-      return `${actor} is training in ${n.squadName}, started ${when} ago. Ask to join them.`;
+      return `${actor} is training in ${n.squadName}, started ${when} ago. Send them a message or ask to join.`;
     case 'squad_training_finished':
       return `${actor} finished a workout in ${n.squadName}, ${when} ago. See what they did.`;
     case 'squad_goal_met':
