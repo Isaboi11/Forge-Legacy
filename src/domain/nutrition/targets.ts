@@ -103,10 +103,18 @@ export function ageFrom(birthYear: number | null, todayIso: string): number | nu
   return age >= 0 && age < 130 ? age : null;
 }
 
-export const isUnderAge = (age: number | null): boolean => age != null && age < ADULT_AGE;
+/**
+ * ⛔ THE YEAR SOMEONE TURNS 18 IS STILL UNDER 18 (QA N-18). `age` is `ageFrom`'s — this year minus the birth
+ * year — and Forge holds no birth DATE, so for the whole of that year it cannot tell a 17-year-old whose birthday
+ * is in December from an 18-year-old whose birthday was in January. NUT-D5 recommends nothing under 18, so the
+ * doubt is resolved toward the younger reading: the gate opens once they are 18 whatever their birthday, which
+ * is the January after. A year of waiting for an adult costs a manual entry; a formula for a minor is the thing
+ * the rule exists to prevent.
+ */
+export const isUnderAge = (age: number | null): boolean => age != null && age <= ADULT_AGE;
 
-/** The year this athlete turns 18 — what the gate card counts down to. */
-export const adultYear = (birthYear: number | null): number | null => (birthYear ? birthYear + ADULT_AGE : null);
+/** The first year this athlete is 18 on every day of it — what the gate card counts down to. */
+export const adultYear = (birthYear: number | null): number | null => (birthYear ? birthYear + ADULT_AGE + 1 : null);
 
 /* ── why we cannot calculate ──────────────────────────────────────────────── */
 

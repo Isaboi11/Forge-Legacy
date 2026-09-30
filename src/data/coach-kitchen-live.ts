@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import { fetchMealPlanPrefs, fetchNutritionProfile } from '@/data/nutrition-live';
+import { localToday } from '@/domain/nutrition/day';
+import { ageFrom, isUnderAge } from '@/domain/nutrition/targets';
 import {
   KITCHEN_MEMORY_DAYS,
   kitchenResultFrom,
@@ -63,7 +65,7 @@ export async function rememberKitchenDishesLive(dishes: readonly KitchenDish[]):
 /** What the athlete avoids and whether they are under 18 — from Meal Plan Setup and the nutrition profile. */
 export async function kitchenRulesLive(): Promise<{ allergens: string[]; diet: string | null; minor: boolean }> {
   const [prefs, profile] = await Promise.all([fetchMealPlanPrefs().catch(() => null), fetchNutritionProfile().catch(() => null)]);
-  const year = profile?.birthYear ?? null;
-  const minor = year != null && new Date().getFullYear() - year < 18;
+  /* The same door as Targets and Meal Plan (`isUnderAge`): the year someone turns 18 still reads as under 18. */
+  const minor = isUnderAge(ageFrom(profile?.birthYear ?? null, localToday()));
   return { allergens: (prefs?.allergens ?? []) as string[], diet: (prefs?.diet as string | undefined) ?? null, minor };
 }

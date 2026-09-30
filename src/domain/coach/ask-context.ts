@@ -31,7 +31,7 @@ import { ALIAS_INDEX, aliasKey, resolveAgainstCatalog } from '../exercise-picker
 import { ABBREVIATIONS, tokenize, type CatalogEntry } from '../program/exercise-match.ts';
 import { rationaleFor, type RationaleInput } from './rulebook/rationale.ts';
 import { isTrainingQuestion } from './training-summary.ts';
-import { isNutritionQuestion } from '../nutrition/holt-summary.ts';
+import { isNutritionQuestion, withoutLoggingGaps } from '../nutrition/holt-summary.ts';
 import { ASK_NOTES_MAX, type AskContext, type AskTurn } from './ask-wire.ts';
 
 export type { AskContext, AskTurn } from './ask-wire.ts';
@@ -359,7 +359,13 @@ export function buildAskContext(input: AskContextInput, sources: AskSources): As
   const notes = (input.notes ?? []).map((n) => (typeof n === 'string' ? n.trim() : '')).filter(Boolean);
   if (notes.length) ctx.notes = notes.slice(0, ASK_NOTES_MAX);
   if (input.training && input.training.trim() && isTrainingQuestion(question)) ctx.training = input.training.trim();
-  if (input.nutrition && input.nutrition.trim() && (input.kitchen || isNutritionQuestion(question))) ctx.nutrition = input.nutrition.trim();
+  if (input.nutrition && input.nutrition.trim() && (input.kitchen || isNutritionQuestion(question))) {
+    /* kitchen-10: unlogged days are said with the FIRST question of a conversation and not again, so he does not
+       raise them on every answer. Anything already said in this conversation counts as "not the first". */
+    const first = !(input.history ?? []).some((t) => t && typeof t.text === 'string' && t.text.trim());
+    const line = first ? input.nutrition.trim() : withoutLoggingGaps(input.nutrition);
+    if (line) ctx.nutrition = line;
+  }
 
   return ctx;
 }

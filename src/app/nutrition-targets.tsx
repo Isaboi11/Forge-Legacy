@@ -45,7 +45,7 @@ import { fetchNutritionProfile, fetchTargetHistory, saveNutritionProfile, saveTa
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
 import { useUnits } from '@/lib/settings';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
@@ -192,6 +192,10 @@ export default function NutritionTargetsScreen() {
   const same = sameAsCurrent(proposed, current);
   const note = saveNote({ blocked, same, replacesToday: currentFrom === todayIso });
   const canSave = !!proposed && !same && !saving;
+  /* QA N-13: macros that disagree with the calorie target are said ABOVE the button, where the bar can't hide
+     them — the line under the three fields is below the fold on a short screen. */
+  const macroWarn = mode === 'manual' && !blocked && macroLine.off ? macroLine.text : null;
+  const barBottom = useBarBottom();
 
   const profileComplete = !blocker;
   /* The notice's words. `rec` is already recomputed from the LATEST weigh-in above, so when it exists
@@ -605,13 +609,20 @@ export default function NutritionTargetsScreen() {
       {/* commit — not on a gate (under 18, no sex, no weigh-in): there is no target to use, and a greyed
           USE THESE TARGETS only repeated the card's own message (QA 09-26 N-42). */}
       {mode === 'recommended' && blocker && blocker.kind !== 'incomplete' ? null : (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: barBottom }]}>
+          {macroWarn ? (
+            <Text style={styles.footerWarn} accessibilityLiveRegion="polite">
+              {macroWarn}
+            </Text>
+          ) : null}
           <Button variant="primary" fullWidth disabled={!canSave} onPress={save}>
             {asking && canSave ? `Yes, use ${grouped(manKcal ?? 0)}` : 'Use these targets'}
           </Button>
-          <Text style={styles.saveNote}>
-            {asking && canSave ? `${grouped(manKcal ?? 0)} cal a day is a very high target. Tap again if it’s right.` : note}
-          </Text>
+          {asking && canSave ? (
+            <Text style={styles.saveNote}>{`${grouped(manKcal ?? 0)} cal a day is a very high target. Tap again if it’s right.`}</Text>
+          ) : macroWarn && !same ? null : (
+            <Text style={styles.saveNote}>{note}</Text>
+          )}
         </View>
       )}
 
@@ -961,8 +972,8 @@ const styles = StyleSheet.create({
   historyEmpty: { paddingHorizontal: 2, fontSize: 13, lineHeight: 20, color: flColor.gray600 },
 
   footer: {
-    gap: 10,
-    paddingTop: 14,
+    gap: 8,
+    paddingTop: 12,
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
@@ -970,6 +981,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   saveNote: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  footerWarn: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray400 },
 
   sheetBody: { paddingBottom: 12 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },

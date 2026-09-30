@@ -27,7 +27,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { requestSwap } from '@/lib/meal-plan-intent';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { useUnits } from '@/lib/settings';
 import { logRecipeEaten } from '@/lib/log-recipe';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -56,6 +56,7 @@ const SLOT_LABEL: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lun
  */
 function RecipeScreen() {
   const router = useRouter();
+  const barBottom = useBarBottom();
   const { showToast } = useToast();
   const { units } = useUnits();
   const params = useLocalSearchParams<{ id?: string; d?: string; i?: string; from?: string }>();
@@ -361,7 +362,7 @@ function RecipeScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         {ctx ? (
           <View style={styles.footerLinks}>
             <Pressable

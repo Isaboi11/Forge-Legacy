@@ -39,7 +39,7 @@ import {
 import { useToast } from '@/hooks/useCeremony';
 import { filterList, recipeRowMeta, savedRecipes, type UserRecipe } from '@/domain/nutrition/user-recipes';
 import { logRecipeEaten } from '@/lib/log-recipe';
-import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { useEntitlementState, useNutritionAccess, useNutritionPlanner, usePremiumAi } from '@/lib/entitlement';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -112,6 +112,10 @@ export default function LogFoodScreen() {
   const premiumAi = usePremiumAi();
   const nutritionAccess = useNutritionAccess();
   const photoOn = premiumAi && nutritionAccess;
+  /* QA N-35: logging a recipe is free; building or editing one is Premium (0244), and the door says so. */
+  const planner = useNutritionPlanner();
+  const { status: entitlementStatus } = useEntitlementState();
+  const recipesArePremium = entitlementStatus === 'ready' && !planner;
   const [quickOpen, setQuickOpen] = useState(false);
 
   /* Create Food is a SCREEN now (`Create Food.dc.html`), not the six-field sheet this file used to
@@ -413,8 +417,8 @@ export default function LogFoodScreen() {
 
         {/* The door to My Foods & Meals — where these two lists are edited, deleted and (meals) built. */}
         {!isSearching && filter === 'recipes' ? (
-          <Pressable accessibilityRole="button" style={styles.more} onPress={() => router.push('/my-recipes')}>
-            <Text style={styles.footerAction}>Edit or add recipes</Text>
+          <Pressable accessibilityRole="button" style={styles.more} onPress={() => router.push(recipesArePremium ? '/subscription' : '/my-recipes')}>
+            <Text style={styles.footerAction}>{recipesArePremium ? 'Build recipes with Premium' : 'Edit or add recipes'}</Text>
           </Pressable>
         ) : null}
         {!isSearching && (filter === 'mine' || filter === 'meals') ? (

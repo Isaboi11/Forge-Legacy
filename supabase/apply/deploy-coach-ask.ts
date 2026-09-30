@@ -514,7 +514,7 @@ export const ASK_TOOLS: AskToolDef[] = [
     },
     {
         name: 'get_recipes',
-        description: "Search the app's recipe book and the athlete's own saved recipes. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
+        description: "Search Forge's recipes and the athlete's own saved recipes (their My Recipes screen); each result says which it is. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
         input_schema: {
             type: 'object',
             properties: {
@@ -1289,7 +1289,7 @@ export function formatRecipes(cards: readonly RecipeCard[], q: {
     minProtein?: number | null;
 }): string {
     if (cards.length === 0)
-        return 'The recipe book is empty (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.';
+        return "There are no recipes: their My Recipes is empty and Forge has none that reach them (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.";
     const words = liftTokens(q.query ?? '').filter((w) => w.length > 2);
     const scored = cards
         .filter((c) => !q.meal || q.meal === 'any' || c.meals.includes(q.meal))
@@ -1303,11 +1303,11 @@ export function formatRecipes(cards: readonly RecipeCard[], q: {
         .filter((x) => words.length === 0 || x.hits > 0)
         .sort((a, b) => b.hits - a.hits || Number(b.c.mine) - Number(a.c.mine) || b.c.protein - a.c.protein);
     if (scored.length === 0) {
-        return `Nothing in their recipe book matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
+        return `Nothing in Forge's recipes or their My Recipes matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
     }
-    const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} in the recipe book (numbers are the app's, per serving):`];
+    const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} among Forge's recipes and their My Recipes (numbers are the app's, per serving):`];
     for (const { c } of scored.slice(0, 6)) {
-        lines.push(`${c.name}${c.mine ? ' (their own recipe)' : ''} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${c.meals.join('/') || 'any meal'}${c.allergens.length ? `; contains ${c.allergens.join(', ')}` : ''}. Main ingredients: ${c.ingredients.slice(0, 6).join(', ')}.`);
+        lines.push(`${c.name}${c.mine ? ' (their own recipe, in My Recipes)' : " (one of Forge's recipes, not theirs)"} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${c.meals.join('/') || 'any meal'}${c.allergens.length ? `; contains ${c.allergens.join(', ')}` : ''}. Main ingredients: ${c.ingredients.slice(0, 6).join(', ')}.`);
     }
     return lines.join('\n');
 }
@@ -1822,7 +1822,7 @@ get_past_chats returns short summaries of your last conversations with this athl
 
 # Recipes and meal ideas
 
-- For any recipe or "what should I make or eat" question, search their recipe book with get_recipes first and suggest from what comes back. Its calories and macros are the app's own numbers; you may quote those.
+- For any recipe or "what should I make or eat" question, search the recipes with get_recipes first and suggest from what comes back. Its calories and macros are the app's own numbers; you may quote those.
 - If nothing fits, call offer_online_recipe_search and say in one line that you can look online. Never search online on your own.
 - When a message says the athlete tapped to search online, you have web search. Find one or two real recipes that fit. Describe each in your own words — what it is, the main ingredients, roughly how long it takes — name the site and give the link. Never copy a recipe's text, and never give calories or macros for an online recipe: say that if they add it to My Recipes, the app works out the numbers from its own food data. Skip anything that is not a recipe, and anything about supplements or diets for a medical condition.
 - Recipes and food stay general eating: you still never prescribe a diet, a calorie target or a supplement amount.
@@ -1830,6 +1830,8 @@ get_past_chats returns short summaries of your last conversations with this athl
 - When the reference material gives "Left today", quote those numbers as they are. Never add or subtract calories or protein yourself.
 - Don't repeat a recipe you already suggested in this conversation unless they ask for it again. When the book has nothing new that fits, suggest one simple dish from the ingredients they named or have on hand, in your own words and with no numbers, and offer to look online.
 - Don't comment on how much they have eaten unless they asked about it.
+- Their food log is only as good as the days in it. From fewer than three logged days, never give an average and never call their protein, calories or anything else light, low or high: say what that day shows and that it is too few days to read. Mention days they did not log at most once in a conversation, and never as a reason to hold back an answer.
+- get_recipes returns two kinds of recipe and says which each is: their own, saved on the My Recipes screen, and Forge's. Call theirs "My Recipes" or "your recipe" and Forge's "one of Forge's recipes". Never call a Forge recipe theirs, and never say "your recipe book".
 
 # In the kitchen (the reference material says it was opened from the Nutrition tab)
 

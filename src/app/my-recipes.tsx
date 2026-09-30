@@ -69,7 +69,7 @@ import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { useToast } from '@/hooks/useCeremony';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
@@ -125,6 +125,7 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  */
 function MyRecipesScreen() {
   const router = useRouter();
+  const barBottom = useBarBottom();
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string; add?: string }>();
   /* A dish Holt wrote ("See the recipe", Kitchen Scope §1.4) arrives as `?draft=1` with the read stashed —
@@ -483,14 +484,14 @@ function MyRecipesScreen() {
             ) : listQ.settled ? (
               <View style={styles.empty}>
                 <Text style={styles.emptyTitle}>Add meals you already eat</Text>
+                {/* kitchen-18: this named a "starter set" that was removed on 2026-09-24. */}
                 <Text style={styles.emptyBody}>
-                  The planner can use them in your week. Quick meals and vegan dishes help most, because those are where the
-                  starter set is thinnest.
+                  {`${scanOn ? 'Type one in, paste a link, or add a picture of one.' : 'Type one in, or paste a link.'} Once it’s saved you can log it in a tap, and the meal planner can use it in your week.`}
                 </Text>
               </View>
             ) : null}
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: barBottom }]}>
             <Button variant="primary" fullWidth disabled={scanBusy} onPress={() => setAddSheet(true)}>
               Add recipe
             </Button>
@@ -879,7 +880,7 @@ function MyRecipesScreen() {
               </View>
             </Pressable>
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: barBottom }]}>
             {missing ? <Text style={styles.missing}>{missing}</Text> : null}
             <Button variant="primary" fullWidth disabled={!!missing || saving} onPress={save}>
               Save recipe

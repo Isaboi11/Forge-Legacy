@@ -2,7 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Animated, PanResponder, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { Redirect, useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -31,7 +31,7 @@ import { AISLES } from '@/domain/nutrition/grocery-data';
 import { mondayOf, portionLabel, weekDates, weekRange } from '@/domain/nutrition/meal-planner';
 import { fetchGroceryState, fetchMealPlanPrefs, fetchMealPlanWeek, fetchUserRecipes, saveGroceryState } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
@@ -61,6 +61,7 @@ const CAN_SHARE =
  */
 function GroceryListScreen() {
   const router = useRouter();
+  const barBottom = useBarBottom();
   const { showToast } = useToast();
 
   const [todayIso] = useState(() => localToday());
@@ -94,8 +95,31 @@ function GroceryListScreen() {
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [haveOpen, setHaveOpen] = useState(false);
 
-  /* No week yet: the list is built from the plan, so the plan comes first. */
-  if (loaded && !days) return <Redirect href="/meal-plan" />;
+  /* No week yet. The list is built from the plan and its marks are stored on the week's row, so there is nothing
+     to show — but a door that says "Grocery list" opens the grocery list and says why it is empty. It used to
+     redirect into plan setup unasked, which made Holt's Grocery door a third way into the same setup
+     (QA kitchen-12). */
+  if (loaded && !days) {
+    return (
+      <View style={styles.screen}>
+        <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
+        <AppBar title="" transparent onBack={() => router.back()} />
+        <View style={styles.noPlan}>
+          <View style={styles.identity}>
+            <Text style={styles.eyebrow}>Nutrition</Text>
+            <Text style={styles.title}>Grocery list</Text>
+            <Text style={styles.lede}>
+              Your list is built from your meal plan: what each meal needs, added up for the week. Plan the week and it
+              fills in here.
+            </Text>
+          </View>
+          <Button variant="primary" fullWidth onPress={() => router.push('/meal-plan')}>
+            Plan my week
+          </Button>
+        </View>
+      </View>
+    );
+  }
 
   const update = (next: GroceryState) => {
     if (base) setLocal({ base, s: next });
@@ -245,7 +269,7 @@ function GroceryListScreen() {
       </ScrollView>
 
       {state ? (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: barBottom }]}>
           <View style={styles.footerText}>
             <Text style={styles.countLine} accessibilityLiveRegion="polite">
               {`${active.length - inCart.length} left · ${inCart.length} in cart`}
@@ -408,6 +432,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 32 },
 
   identity: { gap: 6, paddingHorizontal: 2, paddingTop: 2, paddingBottom: 6 },
+  noPlan: { paddingHorizontal: 20, gap: 22 },
   eyebrow: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   title: { fontFamily: flFont.display, fontSize: 30, lineHeight: 34, letterSpacing: -0.3, color: flColor.cream100 },
   lede: { marginTop: 4, fontSize: 14, lineHeight: 21, color: flColor.gray400 },

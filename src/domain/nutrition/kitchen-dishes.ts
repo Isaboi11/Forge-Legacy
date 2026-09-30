@@ -432,11 +432,11 @@ export function kitchenError(r: Exclude<KitchenResult, { kind: 'ok' } | { kind: 
     case 'none':
       return "I couldn't put together anything I'd stand behind from that. Tell me a bit more of what you've got.";
     case 'daily_limit':
-      return "That's a lot of ideas for one day. Your recipe book is still there — try again tomorrow.";
+      return "That's a lot of ideas for one day. My Recipes is still there — try again tomorrow.";
     case 'out_of_credits':
-      return "You're out of Premium AI credits for this month. Your recipe book still works.";
+      return "You're out of Premium AI credits for this month. My Recipes still works.";
     case 'not_entitled':
-      return 'Coming up with dishes is part of Premium AI. Your recipe book still works.';
+      return 'Coming up with dishes is part of Premium AI. My Recipes still works.';
     case 'no_nutrition':
       return "Nutrition isn't turned on for your account yet.";
     case 'unavailable':
