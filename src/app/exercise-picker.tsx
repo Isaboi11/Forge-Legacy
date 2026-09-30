@@ -31,6 +31,7 @@ import {
 import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
 import { useToast } from '@/hooks/useCeremony';
 import { countOf } from '@/domain/text/plural';
+import { isCardioKey } from '@/domain/workout/conditioning';
 import { usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
@@ -552,7 +553,7 @@ export default function ExercisePickerScreen() {
         <View style={styles.rowIcon}>
           {/* No poster for an athlete's own exercise: the media bucket is keyed by CATALOGUE id, so a
               `custom:` key can only ever 404 — asking is a request that is guaranteed to fail. */}
-          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={x.equipId} />} />
+          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={isCardioKey(x.key) ? 'cardio' : x.equipId} />} />
         </View>
         <View style={styles.rowText}>
           <View style={styles.rowNameLine}>
