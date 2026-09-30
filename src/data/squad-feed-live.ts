@@ -11,6 +11,7 @@ import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import type { TemplateExercise } from '@/data/templates-live';
 import { isMilestoneCard, type MilestoneCard } from '@/domain/share/milestone-card';
 import { parseStoryFacts, type StoryFacts } from '@/domain/squad/week-story';
+import { timeAgoAt } from '@/domain/text/time-ago';
 
 /**
  * Squad Feed data (Social · Part 1) — training-only threaded posts (`squad_posts`), flat comments
@@ -1186,23 +1187,12 @@ export async function deleteSquadComment(commentId: string): Promise<void> {
   if (!data || data.length === 0) throw new Error('That comment could not be deleted. It may already be gone.');
 }
 
-/** Compact relative time: "Just now" · "12m" · "3h" · "2d" · "5w" · then a short date. */
+/**
+ * Compact relative time: "Just now" · "12m" · "3h" · "2d" · "5w" · then a short date. The one formatter
+ * both feeds use — see `domain/text/time-ago.ts` for why (social-24: "Just now" beside "0m").
+ */
 export function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return '';
-  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
-  if (s < 45) return 'Just now';
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d`;
-  const w = Math.floor(d / 7);
-  if (w < 5) return `${w}w`;
-  // Pinned to en-US like every other date in the app — the device locale would print "6 Aug" on a phone
-  // set to anything but the US, in a feed where every neighbouring date reads "Aug 6".
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return timeAgoAt(iso, Date.now());
 }
 
 /** The one-line "who + verb" lead for a feed card (discussion has none — the body IS the line). */

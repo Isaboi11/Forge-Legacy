@@ -36,6 +36,8 @@ import {
 import { useQuery } from '@/lib/useQuery';
 import { usePersist } from '@/hooks/usePersist';
 import { forgeOr } from '@/constants/theme-scrim';
+import { countOf } from '@/domain/text/plural';
+import { isCardioKey } from '@/domain/workout/conditioning';
 
 /**
  * W-21 Exercise Library (`Forge Exercise Library.dc.html`) — browse, search and filter the whole
@@ -174,7 +176,7 @@ export default function ExerciseLibraryScreen() {
     return (
       <Pressable onPress={() => openEx(x.key)} accessibilityRole="button" accessibilityLabel={x.name} style={styles.row}>
         <View style={styles.rowIcon}>
-          <ExercisePoster exerciseId={x.key} radius={20} fallback={<EquipIcon equip={x.equipId} size={19} />} />
+          <ExercisePoster exerciseId={x.key} radius={20} fallback={<EquipIcon equip={isCardioKey(x.key) ? 'cardio' : x.equipId} size={19} />} />
         </View>
         <View style={styles.rowText}>
           <Text style={styles.rowName} numberOfLines={1}>
@@ -192,7 +194,8 @@ export default function ExerciseLibraryScreen() {
           hitSlop={8}
           style={styles.starBtn}
         >
-          <EngravedIcon name="star" size={17} color={fav ? undefined : flColor.charcoal500} />
+          {/* Unselected stays quiet but visible — charcoal500 on Forge's card was near-invisible (QA 09-26 library-25). */}
+          <EngravedIcon name="star" size={17} color={fav ? undefined : forgeOr(flColor.gray600, flColor.charcoal500)} />
         </Pressable>
       </Pressable>
     );
@@ -377,11 +380,11 @@ export default function ExerciseLibraryScreen() {
                   key={c.key}
                   onPress={() => setView({ type: 'category', id: c.key })}
                   accessibilityRole="button"
-                  accessibilityLabel={`${c.label}, ${c.count} exercises`}
+                  accessibilityLabel={`${c.label}, ${countOf(c.count, 'exercise')}`}
                   style={styles.card}
                 >
                   <Text style={styles.cardName}>{c.label}</Text>
-                  <Text style={styles.cardCount}>{c.count} exercises</Text>
+                  <Text style={styles.cardCount}>{countOf(c.count, 'exercise')}</Text>
                 </Pressable>
               ))}
             </View>
@@ -479,7 +482,7 @@ export default function ExerciseLibraryScreen() {
                 }}
                 accessibilityLabel="Apply filters"
               >
-                {`Show ${liveCount(PICKER_DB, draft, homeGym)} exercises`}
+                {`Show ${countOf(liveCount(PICKER_DB, draft, homeGym), 'exercise')}`}
               </Button>
             </View>
           </View>

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBar } from '@/components/forge/composites/AppBar';
 
 import {
   addTransformationEntry,
@@ -363,17 +363,10 @@ export default function TransformationAddRoute() {
 /* ⚠ NO SAFE-AREA INSET — see the note on `transformation-compare`'s TopBar. All three Transformation
    screens hand-roll this bar and all three put it under the Dynamic Island, which on Compare left the
    athlete with no way out at all. Same fix, same numbers as the shared `AppBar`. */
+/* legacy-28 (QA 09-26): the shared `AppBar` — one header style across the Legacy screens, and it already
+   pays the safe-area inset this bar used to hand-roll. */
 function TopBar({ title, onClose }: { title: string; onClose: () => void }) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
-      <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.topBtn} hitSlop={6}>
-        <EngravedIcon name="close" size={22} color={flColor.gray400} />
-      </Pressable>
-      <Text style={styles.topTitle}>{title}</Text>
-      <View style={styles.topBtn} />
-    </View>
-  );
+  return <AppBar title={title} onClose={onClose} />;
 }
 
 function PoseSlot({ url, uploading, onPick, onRemove }: { url?: string; uploading: boolean; onPick: () => void; onRemove: () => void }) {
@@ -449,9 +442,6 @@ const styles = StyleSheet.create({
   loadErrorBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 26, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid) },
   loadErrorBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
-  topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
 
   tiedRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   tiedText: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },

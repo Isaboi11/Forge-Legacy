@@ -645,6 +645,9 @@ export default function SquadPostRoute() {
               A ceremony share draws the identical band the two feeds draw, at full width: the post detail
               showing a rank ascension as bare text while the feed showed the seal is exactly the one-post,
               two-answers split the transformation layout was fixed for. */}
+          {/* A posted workout's own picture (PO 09-30: the coach's card, photographed) leads, above the workout. */}
+          {isPostedWorkout(post.layout) ? <PostMedia media={post.media} /> : null}
+
           {isPostedWorkout(post.layout) ? (
             /* A squad's posted workout (0192): the whole day, with THIS reader's weights, and Take it (PO 09-27). */
             <PostedWorkoutPanel card={post.layout} postId={post.id} />

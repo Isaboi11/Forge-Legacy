@@ -30,17 +30,25 @@ import Svg, { Path } from 'react-native-svg';
 
 import { flColor, flRadius } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
+import { EquipIcon } from '@/components/forge/EquipIcon';
 
-/** The design's barbell mark, 168px at 0.11 opacity — what fills the frame before the clip loads. */
-function BarbellWatermark() {
-  return (
-    <Svg width={168} height={168} viewBox="0 0 24 24" fill="none" stroke={flColor.bronze400} strokeWidth={0.9} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" />
-    </Svg>
-  );
+/* The stage. Forge keeps the design's near-black. Alabaster's clips are a SEPARATE render graded for the
+   cream ground (media.ts / deliver_alabaster.py: "neither works on the other's ground"), so on paper the
+   stage is the card surface — the black slab on a cream page was QA 09-26 library-18 / visualA-24. */
+const STAGE = forgeOr<readonly [string, string]>(['#16181C', '#0A0B0D'], [flColor.charcoal800, flColor.charcoal700]);
+const SCRIM = forgeOr<readonly [string, string]>(['rgba(6,9,12,0)', 'rgba(6,9,12,0.82)'], ['rgba(249,246,239,0)', 'rgba(249,246,239,0.9)']);
+const CHIP_FILL = forgeOr('rgba(6,9,12,0.55)', 'rgba(249,246,239,0.85)');
+
+/**
+ * With no clip (or a 404) the frame shrinks to a short band holding THIS exercise's equipment glyph —
+ * not a 290px dark card with a faint barbell that was wrong for every bodyweight/band/cardio move
+ * (QA 09-26 library-18).
+ */
+function EmptyMark({ equip }: { equip?: string }) {
+  return <EquipIcon equip={equip} size={44} color={forgeOr(flColor.bronze400, flColor.gray400)} />;
 }
 
-export function ExerciseDemo({ url, caption = 'Side view · Full ROM · Normal tempo' }: { url: string | null; caption?: string }) {
+export function ExerciseDemo({ url, equip, caption = 'Side view · Full ROM · Normal tempo' }: { url: string | null; equip?: string; caption?: string }) {
   // The component instance, not `ImageRef` — `startAnimating`/`stopAnimating` live on the former.
   const ref = useRef<Image | null>(null);
   const [paused, setPaused] = useState(false);
@@ -62,14 +70,14 @@ export function ExerciseDemo({ url, caption = 'Side view · Full ROM · Normal t
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.frame}>
+      <View style={[styles.frame, !showing && styles.frameEmpty]}>
         {/* z0 — the radial the design draws, approximated by a vertical two-stop (RN has no radial). */}
-        <LinearGradient colors={['#16181C', '#0A0B0D'] as const} locations={[0, 0.8] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={STAGE} locations={[0, 0.8] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
         {/* The clip is transparent, so the watermark can't sit permanently behind it — it would show
             THROUGH the figure. It fills the frame only until a clip is up (or when one 404s). */}
         {!url || failed ? (
           <View style={styles.watermark} pointerEvents="none">
-            <BarbellWatermark />
+            <EmptyMark equip={equip} />
           </View>
         ) : null}
 
@@ -89,7 +97,7 @@ export function ExerciseDemo({ url, caption = 'Side view · Full ROM · Normal t
           <>
             {/* z2 — bottom scrim, so the caption sits on something */}
             <LinearGradient
-              colors={['rgba(6,9,12,0)', 'rgba(6,9,12,0.82)'] as const}
+              colors={SCRIM}
               locations={[0.48, 1] as const}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
@@ -132,8 +140,8 @@ export function ExerciseDemo({ url, caption = 'Side view · Full ROM · Normal t
   );
 }
 
-/** Muted ink on the demo stage, which is dark in both themes: Forge's gray400, a fixed muted cream on Alabaster. */
-const STAGE_MUTED = forgeOr<string>(flColor.gray400, 'rgba(247,245,241,0.72)');
+/** Muted ink on the demo stage: Forge's gray400 on near-black; Alabaster's secondary ink on its cream stage. */
+const STAGE_MUTED = flColor.gray400;
 
 const styles = StyleSheet.create({
   wrap: { paddingTop: 6 },
@@ -146,7 +154,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: flColor.charcoal600,
   },
-  watermark: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', opacity: 0.11 },
+  /* No clip: a short band, not a 290px empty card. */
+  frameEmpty: { height: 120 },
+  watermark: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', opacity: 0.45 },
   badge: {
     position: 'absolute',
     top: 12,
@@ -157,7 +167,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: flRadius.pill,
-    backgroundColor: 'rgba(6,9,12,0.55)',
+    backgroundColor: CHIP_FILL,
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
   },
@@ -168,7 +178,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: 'rgba(6,9,12,0.55)',
+    backgroundColor: CHIP_FILL,
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,
     alignItems: 'center',

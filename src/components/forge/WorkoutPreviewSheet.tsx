@@ -211,7 +211,8 @@ const styles = StyleSheet.create({
     borderBottomColor: flColor.charcoal500,
   },
   rowName: { flex: 1, fontSize: 15, color: flColor.cream100 },
-  rowScheme: { fontFamily: flFont.display, fontSize: 14, fontWeight: '600', color: flColor.bronze300 },
+  // Lining figures: Playfair's oldstyle ones set "10" as a small "io" (QA 09-26 home-15/23).
+  rowScheme: { fontFamily: flFont.display, fontSize: 14, fontWeight: '600', color: flColor.bronze300, fontVariant: ['lining-nums'] },
   block: {
     borderWidth: 1,
     borderColor: flColor.bronzeBorder,

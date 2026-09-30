@@ -22,6 +22,7 @@ import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { putWrittenDraft } from '@/lib/written-workout-intent';
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
+import { readWorkoutCard } from '@/data/workout-card-read-live';
 import { whenToUseAi } from '@/domain/workout/workout-ai-gate';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 
@@ -37,8 +38,8 @@ import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
  * ══ AI ONLY WHEN THE CODE CANNOT (Import Amendment 002, PO 2026-09-28: "use AI when needed") ══ `whenToUseAi`
  * draws the line. When the reader could not read the card, "Fix it with AI" rewrites the card's words in the
  * reader's layout; the reader still reads the numbers, `checkAiRewrite` throws away any rewrite with a number
- * not on the card, and the box shows the rewrite marked "Tidied by AI" with Undo. A photo that the reader cannot
- * read is tidied the same way without a second tap.
+ * not on the card, and the box shows the rewrite marked "Tidied by AI" with Undo. A photo is tidied the same way
+ * every time, without a second tap (amended 2026-09-30).
  */
 
 const EXAMPLE = `"For Those About to Squat"  Day 1
@@ -82,6 +83,13 @@ export default function WorkoutWriteScreen() {
   /* The poster's own words from before AI tidied them — Undo puts them back. Null = AI has not touched the box. */
   const [beforeAi, setBeforeAi] = useState<string | null>(null);
   const reading = useRef(false);
+  /* "Edit" beside the preview (PO 2026-09-30: "it doesn't look like I can edit") takes you back up to the box. */
+  const scrollRef = useRef<ScrollView>(null);
+  const boxRef = useRef<TextInput>(null);
+  const editWords = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    setTimeout(() => boxRef.current?.focus(), 250);
+  };
 
   const written = useMemo(() => (text.trim() ? readWrittenWorkout(text) : null), [text]);
   const rows = useMemo<TemplateExercise[]>(() => (written ? (writtenToTemplate(written, resolveKey) as TemplateExercise[]) : []), [written]);
@@ -92,18 +100,28 @@ export default function WorkoutWriteScreen() {
   /* Once AI has rewritten the box it is not offered again on its own rewrite: what is left is the poster's to check. */
   const aiCall = useMemo(() => (beforeAi != null ? ({ kind: 'rules' } as const) : whenToUseAi(text, written, rows as unknown as WrittenTemplateRow[])), [beforeAi, text, written, rows]);
 
-  /** Rewrite `card` with AI and put it in the box, or say plainly why not. The poster's words are kept for Undo. */
-  const tidy = async (card: string) => {
+  /**
+   * Rewrite `card` with AI and put it in the box, or say plainly why not. The poster's words are kept for Undo.
+   * `quiet` is the pass every photo gets even when the code reader found nothing wrong: if AI can't improve on that
+   * reading, the reading stands and nothing is said — there is no problem to report.
+   */
+  const tidy = async (card: string, quiet = false) => {
     setBusy('Tidying it up with AI…');
     setError(null);
     try {
       const r = await tidyWrittenWorkout(card, resolveKey);
       if (r.kind === 'ok') {
+        if (quiet) {
+          /* Over a reading with nothing wrong in it, AI's layout is taken only if it too reads with nothing wrong. */
+          const w = readWrittenWorkout(r.text);
+          if (whenToUseAi(r.text, w, writtenToTemplate(w, resolveKey)).kind !== 'rules') return;
+        }
         setBeforeAi(card);
         setText(r.text);
         setName(null);
         return;
       }
+      if (quiet) return;
       setError(
         r.kind === 'no_consent'
           ? AI_DECLINED_LINE
@@ -140,7 +158,17 @@ export default function WorkoutWriteScreen() {
       }
       if (!picked.length) return;
       setBusy('Reading your photo…');
-      const r = await readProgramPhoto(picked[0]);
+      /*
+       * THE WHOLE CARD, LINE BY LINE (`workout-card-read`, PO 2026-09-30: "yes I want the title") — its name, the
+       * warm-up, every rest, the margin's "super set all 3". The table read below has no row for a title and puts
+       * the rest wherever it lands that day. It stays as the fallback for the one case the card read has no answer:
+       * the function not deployed yet (a 404 on the phone; on the web the preflight fails and it reads as offline),
+       * or down. A refusal — not a workout, no credits — is an answer, and is not asked twice.
+       */
+      const card = await readWorkoutCard(picked[0]);
+      let r: Awaited<ReturnType<typeof readProgramPhoto>> | { kind: 'ok'; text: string };
+      if (card.kind === 'not_deployed' || card.kind === 'offline' || card.kind === 'unavailable') r = await readProgramPhoto(picked[0]);
+      else r = card;
       if (r.kind === 'no_consent') {
         setError(AI_DECLINED_LINE);
         return;
@@ -158,12 +186,20 @@ export default function WorkoutWriteScreen() {
         return;
       }
       /* The transcription goes IN THE BOX — the poster reads it against the card and fixes anything before use. */
-      const words = tsvToWrittenText(r.tsv);
+      const words = 'text' in r ? r.text : tsvToWrittenText(r.tsv);
       setText(words);
       setBeforeAi(null);
-      /* A photo the code reader can't read is tidied straight away: the poster already chose AI by choosing a photo. */
+      /*
+       * EVERY photo gets the AI pass (Import Amendment 002, amended PO 2026-09-30: "I thought we were having ai read it
+       * to make sure it gets it right"). The poster already chose AI by choosing a photo, and a handwritten card's
+       * transcription is not a layout the code reader can be trusted on alone: Season 12 Day 1 read "clean" as one
+       * squat set where the card has nine. The code still reads every number, and `checkAiRewrite` still throws away
+       * a rewrite with a number that is not on the card. Typed and pasted workouts are unchanged: rules first.
+       */
       const w = readWrittenWorkout(words);
-      if (whenToUseAi(words, w, writtenToTemplate(w, resolveKey)).kind === 'ai') await tidy(words);
+      const call = whenToUseAi(words, w, writtenToTemplate(w, resolveKey));
+      if (call.kind === 'ai') await tidy(words);
+      else if (call.kind === 'rules') await tidy(words, true);
     } finally {
       setBusy(null);
       reading.current = false;
@@ -193,7 +229,7 @@ export default function WorkoutWriteScreen() {
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.4)' }} />
       <AppBar title={editId ? 'Edit the workout' : 'Write a workout'} transparent onBack={() => router.back()} />
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
         {editId && editText === '' ? (
           /* Posted from a saved workout: something in it has no words here, so it is not reopened as words. */
           <Text style={styles.warn}>
@@ -251,6 +287,7 @@ export default function WorkoutWriteScreen() {
         ) : null}
 
         <TextInput
+          ref={boxRef}
           value={text}
           onChangeText={setText}
           multiline
@@ -262,10 +299,22 @@ export default function WorkoutWriteScreen() {
           style={styles.box}
           accessibilityLabel="The workout, as written"
         />
+        {text.trim() ? (
+          /* The box IS the editor, and a superset is two words away — said, since neither is obvious. */
+          <Text style={styles.editHint}>
+            Change anything in the box and the preview below updates. To superset lifts, write the first as “4. a. Dips …” and the next ones as “super set b. …”, “super set c. …”.
+          </Text>
+        ) : null}
 
         {written && rows.length ? (
           <>
-            <Text style={styles.section}>What your squad will see</Text>
+            <View style={styles.sectionRow}>
+              <Text style={styles.section}>What your squad will see</Text>
+              <Pressable onPress={editWords} accessibilityRole="button" accessibilityLabel="Edit the workout" hitSlop={8} style={({ pressed }) => [styles.editBtn, pressed && styles.pressed]}>
+                <EngravedIcon name="edit" size={13} color={flColor.bronze300} />
+                <Text style={styles.editBtnText}>Edit</Text>
+              </Pressable>
+            </View>
             <TextInput returnKeyType="done"
               value={name ?? written.name}
               onChangeText={setName}
@@ -335,7 +384,11 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: flColor.cream100,
   },
-  section: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 6 },
+  section: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  editBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 5, paddingHorizontal: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  editBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze300 },
+  editHint: { fontSize: 12, lineHeight: 17, color: flColor.gray400, marginTop: -6 },
   name: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   warn: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   checks: { gap: 4, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },

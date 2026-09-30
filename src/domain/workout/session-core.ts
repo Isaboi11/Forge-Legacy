@@ -86,6 +86,9 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
       ...(t === 'F' ? { toFailure: true } : null),
       ...(ex.durationSec != null ? { targetSec: ex.durationSec } : null),
       ...(target != null ? { targetWeight: target } : null),
+      /* The rest the program prescribes after this set — "2 min rest between each set" off an imported card (PO
+         2026-09-30). The logger starts the timer on it by itself, as it does for a posted workout. */
+      ...((ex.restScheme?.[setIndex] ?? ex.restSec) != null ? { restSec: (ex.restScheme?.[setIndex] ?? ex.restSec) as number } : null),
       actualReps: null,
       done: false,
     };

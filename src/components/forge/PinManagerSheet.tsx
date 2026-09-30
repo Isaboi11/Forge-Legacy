@@ -10,7 +10,8 @@ import { flColor, flRadius } from '@/constants/foundation';
 import { fetchPinManager, pinCandidate, unpin } from '@/data/legacy-pins-live';
 import { canPinMore, pinCountLabel, pinFor, type PinCandidate, type PinRef } from '@/domain/legacy/pins';
 import type { PinKind } from '@/types/legacy';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
+import { useToast } from '@/hooks/useCeremony';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -37,6 +38,7 @@ const CATEGORY_ORDER: { kind: PinKind; label: string }[] = [
 
 export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (changed: boolean) => void }) {
   const { data, loading, refetch } = useQuery(fetchPinManager, [open]); // re-read each time it opens
+  const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
   const [changed, setChanged] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<PinKind>>(() => new Set());
@@ -61,11 +63,15 @@ export function PinManagerSheet({ open, onClose }: { open: boolean; onClose: (ch
     if (!existing && full) return; // capped — the row is disabled, but guard anyway
     setBusy(true);
     const action = existing ? unpin(existing.id) : pinCandidate(c);
-    void action.then(() => {
-      setChanged(true);
-      refetch();
-      setBusy(false);
-    });
+    /* `busy` is released on failure too. It was only cleared in `then`, so one failed request left every
+       row disabled for as long as the sheet stayed open, with nothing said (QA 09-26 legacy-31). */
+    void action
+      .then(() => {
+        setChanged(true);
+        refetch();
+      })
+      .catch((e: unknown) => showToast(`Couldn’t ${existing ? 'unpin' : 'pin'} that — ${errorMessage(e)}`))
+      .finally(() => setBusy(false));
   };
 
   return (

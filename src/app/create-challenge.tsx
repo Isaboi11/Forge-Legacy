@@ -18,6 +18,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * Create Challenge (C-2) — built to `Forge Create Challenge.dc.html`.
@@ -97,10 +98,10 @@ const SCORE_TEXT: Record<ChallengeType, string> = {
   MOST_PRS: 'Every PR recorded in the window counts as one.',
   MOST_VARIETY: 'Distinct exercises logged. Rewards curiosity rather than output — the strongest athlete rarely wins this one.',
   EARLY_BIRD: 'Any session started before 7am, in the timezone you create this in. No strength component — just who gets up.',
-  GAIN_VOLUME: 'Volume during the challenge minus volume over the same length of time before it.',
-  GAIN_REPS: 'Reps during the challenge minus reps before it. Weight is ignored throughout.',
-  GAIN_MAX_LIFT: 'Your best lift during the challenge, minus your best before it. Whoever adds the most weight wins — not whoever lifts the most.',
-  GAIN_DISTANCE: 'Distance during the challenge minus distance over the same length of time before it.',
+  GAIN_VOLUME: 'Volume during the competition minus volume over the same length of time before it.',
+  GAIN_REPS: 'Reps during the competition minus reps before it. Weight is ignored throughout.',
+  GAIN_MAX_LIFT: 'Your best lift during the competition, minus your best before it. Whoever adds the most weight wins — not whoever lifts the most.',
+  GAIN_DISTANCE: 'Distance during the competition minus distance over the same length of time before it.',
 };
 
 const measureFor = (t: ChallengeType): Measure => MEASURES.find((m) => m.total === t || m.gain === t) ?? MEASURES[0];
@@ -161,7 +162,9 @@ export default function CreateChallengeScreen() {
 
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
-  const [metric, setMetric] = useState<ChallengeType>('MOST_WORKOUTS');
+  /* Starts on the measure the picker marks Recommended (social-32, QA 09-26) — it opened on Workouts while
+     the sheet badged Days Trained, so the default quietly disagreed with the advice beside it. */
+  const [metric, setMetric] = useState<ChallengeType>('MOST_DAYS');
   // The narrowing (0061): an exercise for lift metrics, an activity for session metrics. Null = all.
   const [metricKey, setMetricKey] = useState<string | null>(null);
   const [preset, setPreset] = useState<number | 'custom'>(28);
@@ -261,7 +264,11 @@ export default function CreateChallengeScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
-      <AppBar title="Create Challenge" onBack={() => router.back()} />
+      {/* ONE WORD FOR ONE THING (B9 / social-17, QA 09-26). Every other screen — the hub, the button that
+          opens this one, the page it creates — says "Competition"; this screen alone said "Challenge". The
+          C-series specs keep "Challenge" as the SYSTEM's name (C-1…C-7, `challenges`), which is unchanged;
+          only the words the athlete reads were aligned. */}
+      <AppBar title="Create Competition" onBack={() => router.back()} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -276,7 +283,7 @@ export default function CreateChallengeScreen() {
               </View>
             </View>
             <Text style={[styles.heroTitle, editing && styles.heroTitleSmall, !trimmedName && styles.heroTitleMuted]} numberOfLines={3}>
-              {trimmedName || 'Name Your Challenge'}
+              {trimmedName || 'Name Your Competition'}
             </Text>
             {!trimmedName ? <Text style={styles.heroIntro}>{friendsMode ? 'Set the terms. They opt in.' : 'Set the terms. Your squad opts in.'}</Text> : null}
 
@@ -287,12 +294,12 @@ export default function CreateChallengeScreen() {
                 </View>
                 <View style={styles.pill}>
                   <ClockGlyph size={11} color={flColor.bronze400} />
-                  <Text style={styles.pillText}>{durationDays} days</Text>
+                  <Text style={styles.pillText}>{countOf(durationDays, 'day')}</Text>
                 </View>
                 {squad ? (
                   <View style={styles.pill}>
                     <PeopleGlyph size={11} color={flColor.bronze400} />
-                    <Text style={styles.pillText}>{squad.name}</Text>
+                    <Text style={[styles.pillText, styles.pillTextShrink]} numberOfLines={1}>{squad.name}</Text>
                   </View>
                 ) : null}
               </View>
@@ -358,7 +365,7 @@ export default function CreateChallengeScreen() {
             <View style={styles.field}>
               <View style={styles.fieldHead}>
                 <View style={styles.fieldLabelRow}>
-                  <Text style={styles.fieldLabel}>Challenge Name</Text>
+                  <Text style={styles.fieldLabel}>Competition Name</Text>
                   {nameOk ? <CheckGlyph size={12} color="#6E8E74" /> : <Text style={styles.reqMark}>∗</Text>}
                 </View>
                 <Text style={[styles.count, name.length >= NAME_MAX - 4 && styles.countNear]}>
@@ -379,7 +386,7 @@ export default function CreateChallengeScreen() {
 
             <View style={styles.field}>
               <View style={styles.fieldHead}>
-                <Text style={styles.fieldLabel}>Challenge Message</Text>
+                <Text style={styles.fieldLabel}>Competition Message</Text>
                 <Text style={[styles.count, message.length >= MESSAGE_MAX - 8 && styles.countNear]}>
                   {message.length}/{MESSAGE_MAX}
                 </Text>
@@ -465,7 +472,7 @@ export default function CreateChallengeScreen() {
             <View style={styles.runLine}>
               <CalendarGlyph />
               <Text style={styles.runText}>
-                Runs {durationDays} days · starts {startLabel} · ends {fmtDate(end)}
+                Runs {countOf(durationDays, 'day')} · starts {startLabel} · ends {fmtDate(end)}
               </Text>
             </View>
           </View>
@@ -486,7 +493,7 @@ export default function CreateChallengeScreen() {
                       accessibilityLabel={k === 'squad' ? 'Compete with your squad' : 'Compete with specific friends'}
                       style={({ pressed }) => [styles.scopeTab, on ? styles.scopeTabOn : null, pressed ? styles.friendRowPressed : null]}
                     >
-                      <Text style={[styles.scopeTabText, on ? styles.scopeTabTextOn : null]}>
+                      <Text style={[styles.scopeTabText, on ? styles.scopeTabTextOn : null]} numberOfLines={1}>
                         {k === 'squad' ? (squad?.name ?? 'My Squad') : 'Friends'}
                       </Text>
                     </Pressable>
@@ -504,6 +511,11 @@ export default function CreateChallengeScreen() {
                   <View style={styles.scopeBody}>
                     <Text style={styles.scopeName}>No friends yet</Text>
                     <Text style={styles.scopeSub}>Add someone by handle first, then you can compete against them.</Text>
+                    {/* The way out of the dead end (social-19, QA 09-26): the sentence said what to do and
+                        offered nothing to do it with. */}
+                    <Pressable onPress={() => router.push('/add-friend')} accessibilityRole="button" accessibilityLabel="Add a friend" hitSlop={6} style={({ pressed }) => [styles.addFriendBtn, pressed ? styles.friendRowPressed : null]}>
+                      <Text style={styles.addFriendText}>Add a Friend</Text>
+                    </Pressable>
                   </View>
                 </View>
               ) : (
@@ -516,6 +528,7 @@ export default function CreateChallengeScreen() {
                         onPress={() => toggleFriend(f.id)}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: on }}
+                        aria-checked={on}
                         accessibilityLabel={f.name}
                         style={({ pressed }) => [styles.friendRow, on ? styles.friendRowOn : null, pressed ? styles.friendRowPressed : null]}
                       >
@@ -548,7 +561,7 @@ export default function CreateChallengeScreen() {
             <Text style={styles.optInHint}>
               {friendsMode
                 ? 'They get a notification and opt in themselves — being named isn’t being entered.'
-                : 'No one is entered until they opt in — a challenge nobody joins simply never starts.'}
+                : 'No one is entered until they opt in — a competition nobody joins simply never starts.'}
             </Text>
           </View>
 
@@ -558,11 +571,11 @@ export default function CreateChallengeScreen() {
             <View style={styles.eyebrowRow}>
               <View style={styles.eyebrowRule} />
               <SwordsGlyph size={11} color={flColor.bronze400} />
-              <Text style={styles.eyebrow}>THE CHALLENGE</Text>
+              <Text style={styles.eyebrow}>THE COMPETITION</Text>
               <View style={styles.eyebrowRule} />
             </View>
             <Text style={[styles.reviewName, !trimmedName && styles.reviewNameMuted]} numberOfLines={2}>
-              {trimmedName || 'Untitled Challenge'}
+              {trimmedName || 'Untitled Competition'}
             </Text>
             <Text style={styles.reviewTagline}>
               {scopedLabel}   ·   {fmtDate(start)} – {fmtDate(end)}   ·   {friendsMode ? 'Friends' : (squad?.name ?? 'Squad')}
@@ -622,8 +635,8 @@ export default function CreateChallengeScreen() {
 
             <Text style={styles.modeHint}>
               {mode === 'gain'
-                ? 'Scores the change, not the total — measured against the same length of time before the challenge.'
-                : 'Scores the total over the challenge window.'}
+                ? 'Scores the change, not the total — measured against the same length of time before the competition.'
+                : 'Scores the total over the competition window.'}
             </Text>
 
             <View style={styles.measureList}>
@@ -666,19 +679,19 @@ export default function CreateChallengeScreen() {
 
         {/* ── Commit ── */}
         <LinearGradient colors={[themeScrim('rgba(9,9,9,0.4)'), themeScrim('rgba(9,9,9,0.72)')]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={[styles.commitBar, { paddingBottom: 16 + insets.bottom }]}>
-          <Pressable onPress={onCreate} disabled={!canCreate} accessibilityRole="button" accessibilityState={{ disabled: !canCreate }} accessibilityLabel="Create challenge">
+          <Pressable onPress={onCreate} disabled={!canCreate} accessibilityRole="button" accessibilityState={{ disabled: !canCreate }} accessibilityLabel="Create competition">
             {canCreate ? (
               <View style={[styles.commitBtn, styles.commitBtnOn]}>
                 <LinearGradient colors={flGradient.bronzeFill.colors} locations={flGradient.bronzeFill.locations} start={flGradient.bronzeFill.start} end={flGradient.bronzeFill.end} style={StyleSheet.absoluteFill} />
                 <View>
                   <SwordsGlyph size={17} color="#F7F5F1" />
                 </View>
-                <Text style={styles.commitLabel}>{busy ? 'Creating…' : 'Create Challenge'}</Text>
+                <Text style={styles.commitLabel}>{busy ? 'Creating…' : 'Create Competition'}</Text>
               </View>
             ) : (
               <View style={[styles.commitBtn, styles.commitBtnOff]}>
                 <SwordsGlyph size={17} color={flColor.gray600} />
-                <Text style={styles.commitLabelOff}>{busy ? 'Creating…' : 'Create Challenge'}</Text>
+                <Text style={styles.commitLabelOff}>{busy ? 'Creating…' : 'Create Competition'}</Text>
               </View>
             )}
           </Pressable>
@@ -747,7 +760,7 @@ function TickGlyph() {
 
 const styles = StyleSheet.create({
   scopeToggle: { flexDirection: 'row', gap: 6, marginBottom: 12, padding: 4, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed },
-  scopeTab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: flRadius.sm },
+  scopeTab: { flex: 1, minWidth: 0, alignItems: 'center', paddingVertical: 8, paddingHorizontal: 8, borderRadius: flRadius.sm },
   scopeTabOn: { backgroundColor: flColor.selectedFill, borderWidth: 1, borderColor: flColor.accentBorder },
   scopeTabText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
   scopeTabTextOn: { color: flColor.selectedInk },
@@ -783,10 +796,11 @@ const styles = StyleSheet.create({
   heroTitleMuted: { color: flColor.gray600 },
   heroIntro: { marginTop: 8, fontSize: 12.5, color: flColor.gray600 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 12 },
-  pill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
+  pill: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 11, paddingVertical: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.charcoal600 },
   pillBronze: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorderSubtle },
   pillText: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
   pillTextBronze: { color: flColor.bronze300 },
+  pillTextShrink: { flexShrink: 1 },
 
   // sections
   sectionLabel: { marginTop: 26, marginBottom: 12, marginLeft: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
@@ -899,6 +913,8 @@ const styles = StyleSheet.create({
   scopeBody: { flex: 1, minWidth: 0, gap: 3 },
   scopeName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   scopeSub: { fontSize: 11.5, color: flColor.gray600 },
+  addFriendBtn: { alignSelf: 'flex-start', marginTop: 10, paddingVertical: 7, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.accentBorder },
+  addFriendText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   optInHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
 
   // review

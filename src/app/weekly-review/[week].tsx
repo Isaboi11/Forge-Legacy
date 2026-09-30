@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -14,12 +14,16 @@ import { fmtDuration } from '@/data/squad-feed-live';
 import { formatWeekRange, weekHero } from '@/domain/coach/rulebook/review';
 import { displayWeight } from '@/domain/settings/units';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
-import { useEntitlement, useNutritionAccess } from '@/lib/entitlement';
+import { useEntitlement, useEntitlementState, useNutritionAccess } from '@/lib/entitlement';
+import { fetchNudgeHistory, fetchNudgeSignals, markNudge } from '@/data/nudge-live';
+import { reviewOffer } from '@/domain/coach/nudges';
+import { capAllows } from '@/domain/entitlement/caps-core';
+import { track } from '@/lib/analytics';
 import { grouped, shiftDay } from '@/domain/nutrition/day';
 import { buildWeek, macroSummaries, summarise, weekGapLine } from '@/domain/nutrition/week';
 import { fetchRangeTotals, fetchTargetHistory } from '@/data/nutrition-live';
 import { useQuery } from '@/lib/useQuery';
-import { useUnits } from '@/lib/settings';
+import { useAppPrefs, useUnits } from '@/lib/settings';
 import { SCREEN_GUTTER } from '@/lib/screen-insets';
 
 /**
@@ -111,6 +115,32 @@ export default function WeeklyReviewScreen() {
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
   const d = review?.data;
+
+  /*
+   * ══ THE CLOSING OFFER (MA9-D3) ══
+   *
+   * The week has just been read back, and an athlete with no program is going session to session. That
+   * is the one moment "want me to plan the next one?" answers something. It is the SAME question Holt's
+   * coin asks (`plan` / `program`), so `reviewOffer` holds it to the same answers — and to the same rule
+   * that it never leads to the upgrade screen: on Free it shows only while the included Holt program is
+   * still unused. "Tips from Holt" off turns it off too.
+   *
+   * ⚠ NOT A COMPARISON AND NOT A GRADE, which §6 of the brief bars. It says nothing about the week.
+   */
+  const { snapshot: plan } = useEntitlementState();
+  const { prefs } = useAppPrefs();
+  const canBuildProgram = !plan || (capAllows(plan.usage.programs, plan.caps.programs) && capAllows(plan.usage.holtPrograms, plan.caps.holt_programs));
+  const offer = useQuery(async () => {
+    const [signals, history] = await Promise.all([fetchNudgeSignals(), fetchNudgeHistory()]);
+    return signals ? reviewOffer({ ...signals, canBuildProgram }, history, Date.now()) : false;
+  }, [canBuildProgram]);
+  const showOffer = offer.data === true && prefs.holtTips !== 'off';
+  const takeOffer = () => {
+    // Accepting here is accepting the coin's ask too: it never asks again.
+    void markNudge('program', 'used');
+    track('nudge_accepted', { id: 'review' });
+    router.push('/coach');
+  };
   /* Facts from the diary for the same week. Null unless there is food to report. */
   const nutrition = useWeekNutrition(review?.weekStart, review?.weekEnd);
   const volume = d ? displayWeight(d.volume_lb, units) : null;
@@ -281,6 +311,17 @@ export default function WeeklyReviewScreen() {
               ))}
             </Section>
           ) : null}
+
+          {/* One line and one way to say yes. No card: it is not something to act inside of, and no
+              "Not now": leaving the page is the no, and it costs the athlete nothing. */}
+          {showOffer ? (
+            <View style={styles.offer}>
+              <Text style={styles.offerText}>Want me to plan next week for you?</Text>
+              <Pressable onPress={takeOffer} accessibilityRole="link" accessibilityLabel="Build my plan with Holt" hitSlop={10} style={styles.offerLink}>
+                <Text style={styles.offerLinkText}>Build my plan ›</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </ScrollView>
       )}
     </View>
@@ -399,4 +440,10 @@ const styles = StyleSheet.create({
   },
   rowLeft: { flex: 1, fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   rowRight: { flexShrink: 0, fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.bronze300 },
+
+  /* Holt's sans, the same as his note at the top: it is him asking, quietly, at the end of the read. */
+  offer: { marginTop: 30, paddingTop: 18, borderTopWidth: 1, borderTopColor: flColor.divider, gap: 4 },
+  offerText: { fontSize: 14, lineHeight: 21, color: flColor.gray400 },
+  offerLink: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  offerLinkText: { fontSize: 14.5, fontWeight: '600', color: flColor.bronzeInk },
 });

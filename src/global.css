@@ -13,6 +13,10 @@
 }
 
 /*
+ * ⚠ THIS FILE ONLY WORKS BECAUSE `src/app/_layout.tsx` IMPORTS IT. For months its one importer was the
+ * Expo starter's `constants/theme.ts`, which nothing in the app loads — so none of the rules below ever
+ * reached a browser, and every field showed the browser's own white/black ring (QA 09-26 library-24).
+ *
  * THE FOCUS RING IS BRONZE, AND ONLY FOR THE KEYBOARD.
  *
  * Nothing in this app ever set a focus colour — grep finds no `outline*`, no `underlineColorAndroid`,
@@ -32,4 +36,24 @@
 :focus-visible {
   outline: 2px solid var(--fl-focus-ring);
   outline-offset: 2px;
+}
+
+/*
+ * ⚠ A TEXT FIELD MATCHES `:focus-visible` EVEN WHEN IT WAS CLICKED (QA 09-26 library-24, auth-18).
+ *
+ * Browsers treat any focused field that takes typing as "keyboard focus", so the rule above would draw
+ * a ring around every field an athlete taps — and around the INNER `<input>`, which is square, not the
+ * rounded box our components draw around it. Every field in the app already says it is live (a bronze
+ * edge, the caret), so a field gets no ring at all. Buttons, chips and rows keep the keyboard ring.
+ */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: none;
+}
+
+/* Selected text is the app's bronze, not the operating system's blue (QA 09-26 library-24: the set sheet). */
+::selection {
+  background-color: rgba(186, 134, 84, 0.35);
 }

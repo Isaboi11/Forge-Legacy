@@ -272,8 +272,7 @@ export default function AddFriendScreen() {
               run to any length, and an Add field that disappears as you read them is the field you came for.
               Same pattern as Competition History's header. ── */}
       <View style={styles.pinned}>
-        <Text style={styles.lede}>Search by name, or type @ and their handle.</Text>
-
+        {/* The how-to line lives once, under the field (social-26, QA 09-26) — it was printed here AND there. */}
         {/* The @ prefix lights when the field is in handle-only mode — the same affordance, now saying
             which of the two searches is running rather than whether a button is armed. */}
         <TourAnchor id="addfriend-search" style={[styles.inputRow, searchable ? styles.inputRowArmed : null]}>
@@ -536,9 +535,8 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.85 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
-  pinned: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  pinned: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
-  lede: { marginTop: 2, marginBottom: 14, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 14, paddingRight: 6, height: 52, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   inputRowArmed: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
