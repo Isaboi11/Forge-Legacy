@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -858,7 +858,7 @@ export default function WorkoutComplete() {
               <Stat n={vol(data.volume)} label="Volume" />
             </View>
             {data.hero ? <Hero hero={data.hero} /> : null}
-            <Pressable style={styles.holdBtn} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
+            <Pressable style={[styles.holdBtn, noCallout]} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
               <AnimatedGradient
               colors={flGradient.bronzeMetallic.colors}
               locations={flGradient.bronzeMetallic.locations}
@@ -866,7 +866,7 @@ export default function WorkoutComplete() {
               end={flGradient.bronzeMetallic.end}
               style={[styles.holdFill, { width: fillW }]}
             />
-              <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
+              <Text selectable={false} style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
             <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
               <Text style={styles.textLinkText}>View details</Text>
@@ -952,7 +952,7 @@ export default function WorkoutComplete() {
                 offering it again would be theatre over a settled fact, so a reviewed session opens on
                 the capture stage instead of on a ceremony with its ceremony taken out. */}
             <Pressable
-              style={[styles.holdBtn, styles.holdBtnInSection]}
+              style={[styles.holdBtn, styles.holdBtnInSection, noCallout]}
               onPressIn={startHold}
               onPressOut={cancelHold}
               accessibilityRole="button"
@@ -965,7 +965,7 @@ export default function WorkoutComplete() {
                 end={flGradient.bronzeMetallic.end}
                 style={[styles.holdFill, { width: fillW }]}
               />
-              <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
+              <Text selectable={false} style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
             <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
               <Text style={styles.textLinkText}>View details</Text>
@@ -1745,6 +1745,9 @@ function CardioRecordRow({ name, cardio, units }: { name: string; cardio: Comple
   );
 }
 
+/** iOS Safari's long-press callout (Copy / Look Up) — web-only, untyped in RN. See `holdBtn`. */
+const noCallout = Platform.OS === 'web' ? ({ WebkitTouchCallout: 'none' } as unknown as ViewStyle) : null;
+
 const styles = StyleSheet.create({
   nameInput: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
   nameHint: { marginTop: 8, fontSize: 12, color: flColor.gray600 },
@@ -1855,7 +1858,11 @@ const styles = StyleSheet.create({
   prLine: { fontFamily: flFont.display, fontSize: 18, color: flColor.bronzeInk },
   quote: { flex: 1, fontFamily: flFont.display, fontSize: 16, fontStyle: 'italic', lineHeight: 22, color: flColor.bronze300, textAlign: 'left' },
 
-  holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset },
+  holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset, userSelect: 'none' },
+  /* ⚠ `userSelect` + `WebkitTouchCallout` are load-bearing on web (PO 09-29, Racine): the hold is 900ms and
+     iOS Safari turns a ~500ms press on text into a text selection, which cancels the touch — the words
+     highlight, `onPressOut` fires, and the fill drains back to zero. Only when the thumb lands ON the
+     label, hence "sometimes". Native text isn't selectable, so the installed app never did this. */
   holdFill: { position: 'absolute', left: 0, top: 0, bottom: 0 },
   holdBtnInSection: { marginTop: 0 },
   /* 32→14: the seal belongs TO the sentence above it, not to a separate footer region. */
@@ -1863,7 +1870,7 @@ const styles = StyleSheet.create({
   upNext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 15 },
   upNextDiamond: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
   upNextText: { fontSize: 12, color: flColor.gray600 },
-  holdText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
+  holdText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300, userSelect: 'none' },
   holdTextDark: { color: flColor.onBronze },
   // alignSelf, not just textAlign: the Pressable would otherwise stretch to the column's full width and
   // sit its label on the left edge, off-axis from the medallion and the Hold-to-Seal button above it.

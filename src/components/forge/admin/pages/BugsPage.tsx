@@ -3,6 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 
+import { BugPlainView } from '@/components/forge/admin/BugPlain';
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import {
   age,
@@ -879,6 +880,23 @@ export function BugsPage({ arg }: PageProps) {
               <Row>
                 <Btn size="sm" label="Copy for Claude" onPress={() => void copyForClaude(bugBrief(sel, linksOf(sel)), sel.ref ?? 'the bug')} />
               </Row>
+              {/* The report's own text, split on blank lines. QA items are written in markdown, so the
+                  emphasis markers and backticks come off and "- " becomes a bullet — the words are kept
+                  exactly, and stay selectable so they can be copied out. */}
+              <BugPlainView bug={sel}>
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }} nestedScrollEnabled>
+                  {(sel.detail ?? '')
+                    .split(/\n\s*\n/)
+                    .map((p) => readableMarkdown(p).trim())
+                    .filter(Boolean)
+                    .map((p, i) => (
+                      <Text key={i} selectable style={{ fontSize: 14, lineHeight: 22.4, color: c.ink2 }}>
+                        {p}
+                      </Text>
+                    ))}
+                  {!sel.detail?.trim() ? <Text style={{ fontSize: 14, lineHeight: 22.4, color: c.ink3 }}>No description.</Text> : null}
+                </ScrollView>
+              </BugPlainView>
               <View style={{ gap: 8 }}>
                 <Text style={{ fontSize: 12, color: c.ink3 }}>Severity</Text>
                 <Row gap={6}>
@@ -898,21 +916,6 @@ export function BugsPage({ arg }: PageProps) {
                   {save?.id !== sel.id ? 'Changes save as you tap' : save.state === 'saving' ? `Saving “${save.msg}”…` : save.state === 'error' ? save.msg : 'Saved'}
                 </Text>
               </View>
-              {/* The report's own text, split on blank lines. QA items are written in markdown, so the
-                  emphasis markers and backticks come off and "- " becomes a bullet — the words are kept
-                  exactly, and stay selectable so they can be copied out. */}
-              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }} nestedScrollEnabled>
-                {(sel.detail ?? '')
-                  .split(/\n\s*\n/)
-                  .map((p) => readableMarkdown(p).trim())
-                  .filter(Boolean)
-                  .map((p, i) => (
-                    <Text key={i} selectable style={{ fontSize: 14, lineHeight: 22.4, color: c.ink2 }}>
-                      {p}
-                    </Text>
-                  ))}
-                {!sel.detail?.trim() ? <Text style={{ fontSize: 14, lineHeight: 22.4, color: c.ink3 }}>No description.</Text> : null}
-              </ScrollView>
               <View style={{ gap: 6 }}>
                 <Input
                   multiline

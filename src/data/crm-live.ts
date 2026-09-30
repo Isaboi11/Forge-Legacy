@@ -164,6 +164,40 @@ export interface Bug {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
+  /** 0245: the plain-English summary (`bug-plain`). Null until the bug is first opened after 0245. */
+  plain?: BugPlain | null;
+  /** 0245: the title or detail changed after the summary was written — it is rewritten on open. */
+  plain_stale?: boolean;
+}
+
+export type BugScope = 'everyone' | 'some' | 'one' | 'unknown';
+
+export interface BugPlain {
+  what: string;
+  why: string;
+  fix: string;
+  scope: BugScope;
+  who: string;
+  at?: string;
+}
+
+/**
+ * Runs the `bug-plain` Edge Function (0245): Claude writes the summary and it is saved on the row. About two
+ * cents a bug, once. A missing function or 0245 not applied throws a sentence the panel shows in place of
+ * the summary — the report underneath is always there.
+ */
+export async function writeBugPlain(id: string): Promise<BugPlain> {
+  const { data, error } = await supabase.functions.invoke('bug-plain', { body: { id } });
+  if (error) {
+    const status = (error as { context?: { status?: number } }).context?.status;
+    if (status === 404) throw new Error('The bug-plain function is not deployed yet.');
+    if (status === 403) throw new Error('Not authorized.');
+    if (status === 503) throw new Error('The AI key is not set on the server.');
+    throw new Error(error.message || 'Couldn’t write the summary.');
+  }
+  const r = data as { ok: boolean; reason?: string; plain?: BugPlain };
+  if (!r?.ok || !r.plain) throw new Error(r?.reason === 'context_failed' ? 'Migration 0245 isn’t applied yet.' : 'Couldn’t write the summary.');
+  return r.plain;
 }
 
 export interface BugBoard {

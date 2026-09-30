@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import { when } from '@/components/forge/admin/crm-ui';
+import { BugPlainView } from '@/components/forge/admin/BugPlain';
 import { Select } from '@/components/forge/admin/Select';
 import { DEFAULT_BUG_FILTER, usePhone, type BugFilter } from '@/components/forge/admin/phone/context';
 import {
@@ -603,7 +604,9 @@ export function BugOverlay({ id, backLabel }: { id: string; backLabel: string })
         >
           Copy for Claude
         </Text>
-        <View style={{ marginTop: 18, gap: 12 }}>
+        <View style={{ marginTop: 18 }}>
+          <BugPlainView bug={bug} offline={offline} phone>
+            <View style={{ gap: 12 }}>
           {paras.length ? (
             paras.map((p, i) => (
               <Text key={i} selectable style={{ fontSize: 16, lineHeight: 24.8, color: c.ink2 }}>
@@ -613,6 +616,8 @@ export function BugOverlay({ id, backLabel }: { id: string; backLabel: string })
           ) : (
             <Text style={{ fontSize: 16, lineHeight: 24.8, color: c.ink3 }}>No description yet.</Text>
           )}
+            </View>
+          </BugPlainView>
         </View>
         <Text style={{ marginTop: 26, fontSize: 12, fontWeight: '600', letterSpacing: 0.96, textTransform: 'uppercase', color: c.ink3 }}>Note</Text>
         <PInput
