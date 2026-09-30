@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
  */
 
 const { readWrittenWorkout, writtenToTemplate, tsvToWrittenText } = await import('../../workout/written-workout.ts');
-const { isMultiDaySheet, writtenToWeeks } = await import('../written-import.ts');
+const { canEditAsWords, dayToWords, isMultiDaySheet, wordsToDay, writtenToWeeks } = await import('../written-import.ts');
 const { parseProgramTable, toProgramStructure, unmatchedNames } = await import('../import-parse.ts');
 const { sanitizeTranscript } = await import('../photo-transcript.ts');
 const { draftFromImport } = await import('../../../lib/program-import-draft.ts');
@@ -93,6 +93,24 @@ for (const [label, text] of [
     assert.equal(sets[0].restSec ?? draftSquat.restScheme?.[0], 120);
   });
 }
+
+test('edit after the AI: every live read of the card opens as words and reads back to the same day', () => {
+  for (const text of [S12.S12_DAY1_CARD_TIDY_1, S12.S12_DAY1_CARD_TIDY_2, S12.S12_DAY1_TABLE_TIDY_1, S12.S12_DAY1_TABLE_TIDY_2, S12.S12_DAY1_TABLE_B_TIDY]) {
+    const day = weeksOf(text).weeks[0].days[0];
+    assert.equal(canEditAsWords(day, resolveKey), true, text.slice(0, 40));
+  }
+  /* A change typed into the words reaches the day — one rung of the bench ramp, here. */
+  const day = weeksOf(S12.S12_DAY1_CARD_TIDY_2).weeks[0].days[0];
+  const words = dayToWords(day);
+  assert.match(words, /1 rep @ 82%/, 'one rep reads "rep"');
+  const edited = wordsToDay(words.replace('3 reps @ 70%', '3 reps @ 72%'), resolveKey, 'A');
+  assert.deepEqual(edited.items.find((i) => /bench/i.test(i.name)).rx.percentScheme, [72, 75, 80, 80, 80]);
+  assert.ok(edited.items.filter((i) => i.rx?.groupId).length === 3, 'the superset survives an edit');
+  /* A plain pasted day opens too; a day with a cardio block (which the words cannot say) does not. */
+  assert.equal(canEditAsWords(parseProgramTable('Push A\nBench Press 4x8\nDips 3x12').weeks[0].days[0], resolveKey), true);
+  assert.equal(canEditAsWords({ name: 'Mon', letter: 'A', items: [{ name: 'Easy run', sets: 1, reps: 0, setsAssumed: false, repsAssumed: false, kind: 'cardio', activity: 'run', targetSec: 1800 }] }, resolveKey), false);
+  assert.equal(wordsToDay('just some words', resolveKey), null);
+});
 
 test('Build a Template: the draft and the saved template rows keep the ramp, the % and the rest', () => {
   const { weeks } = weeksOf(S12.S12_DAY1_CARD_TIDY_2);
