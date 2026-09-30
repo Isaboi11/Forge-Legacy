@@ -37,10 +37,12 @@
 
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { BottomSheet } from '../../composites/BottomSheet'
 import { Button } from '../../composites/Button'
 import { Toast } from '../../composites/Toast'
+import { ToggleTrack } from '../../SettingsToggle'
+import { shareOrCopy } from '@/lib/share-or-copy'
 import { ShareCard } from '../ShareCard'
 import { flColor, flRadius } from '@/constants/foundation'
 import { addSquadPost } from '@/data/squad-feed-live'
@@ -176,12 +178,12 @@ export function ShareSheet({ open, onClose, content, milestone = null }: ShareSh
       setPosting(false)
     }
   }
+  /* A browser without Web Share (desktop Chrome/Firefox) made "Share…" do nothing at all; it now copies
+     the text and says so (QA 09-26 settings-13). */
   const onSystemShare = async () => {
-    try {
-      await Share.share({ message: snippet })
-    } catch {
-      // user dismissed the OS sheet — no-op
-    }
+    const r = await shareOrCopy(snippet)
+    if (r === 'copied') flash('Copied — paste it wherever you want to share it.')
+    else if (r === 'failed') flash('Couldn’t share or copy that here.')
   }
 
   return (
@@ -303,11 +305,17 @@ export function ShareSheet({ open, onClose, content, milestone = null }: ShareSh
 
 function ToggleRow({ label, on, first, onToggle }: { label: string; on: boolean; first?: boolean; onToggle: () => void }) {
   return (
-    <Pressable onPress={onToggle} accessibilityRole="switch" accessibilityState={{ checked: on }} style={[styles.row, first ? null : styles.rowDivider]}>
+    <Pressable
+      onPress={onToggle}
+      accessibilityRole="switch"
+      aria-checked={on}
+      accessibilityState={{ checked: on }}
+      accessibilityLabel={label}
+      style={[styles.row, first ? null : styles.rowDivider]}
+    >
       <Text style={styles.rowLabel}>{label}</Text>
-      <View style={[styles.track, on ? styles.trackOn : styles.trackOff]}>
-        <View style={[styles.knob, on ? styles.knobOn : styles.knobOff]} />
-      </View>
+      {/* The settings switch's own drawing — this sheet drew a third toggle with a cream knob (settings-24). */}
+      <ToggleTrack value={on} />
     </Pressable>
   )
 }
@@ -341,12 +349,6 @@ const styles = StyleSheet.create({
   },
   rowDivider: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowLabel: { flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },
-  track: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 3 },
-  trackOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
-  trackOff: { backgroundColor: flColor.divider, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
-  knob: { width: 18, height: 18, borderRadius: 9 },
-  knobOn: { backgroundColor: flColor.bronze300 },
-  knobOff: { backgroundColor: flColor.charcoal500 },
   destRow: { flexDirection: 'row', gap: 9 },
   dest: {
     flex: 1,

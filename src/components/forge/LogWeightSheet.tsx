@@ -23,6 +23,8 @@ const WELL_INSET = 'inset 0 2px 6px rgba(0,0,0,0.45)';
 export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolean; onClose: () => void; onSaved: () => void; units: UnitSystem }) {
   const metric = units === 'metric';
   const unitLabel = metric ? 'kg' : 'lb';
+  /* The example is in the athlete's unit — "e.g. 199" under a kg label read as a 199 kg person (home-17). */
+  const weightExample = metric ? 'e.g. 90' : 'e.g. 199';
   const [weight, setWeight] = useState('');
   const [showMeasures, setShowMeasures] = useState(false);
   const [waist, setWaist] = useState('');
@@ -95,7 +97,7 @@ export function LogWeightSheet({ open, onClose, onSaved, units }: { open: boolea
         {/* No "no goal weight, no pressure" line here any more — PO, 2026-08-28: *"take off the goal part
             cause some people it is a goal."* A bodyweight goal is a real goal kind, and this weigh-in is
             what moves it (`useBodyGoalSync`). The sheet says nothing about how the athlete should feel. */}
-        {field(`Bodyweight (${unitLabel})`, weight, setWeight, 'e.g. 199', 'w')}
+        {field(`Bodyweight (${unitLabel})`, weight, setWeight, weightExample, 'w')}
 
         {!showMeasures ? (
           <Pressable onPress={() => setShowMeasures(true)} accessibilityRole="button" accessibilityLabel="Add measurements" style={styles.addMeasures}>
