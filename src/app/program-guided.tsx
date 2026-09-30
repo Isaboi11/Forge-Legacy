@@ -94,6 +94,8 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { saveProgramDraft } from '@/lib/program-draft';
 import { useQuery } from '@/lib/useQuery';
 import { plainError } from '@/lib/plain-error';
+import { countOf, pluralWord } from '@/domain/text/plural';
+import { nameNearLimit, PROGRAM_NAME_MAX } from '@/domain/text/name-limits';
 import { useToast } from '@/hooks/useCeremony';
 
 /**
@@ -447,7 +449,7 @@ function Guided() {
               <Choice
                 key={w}
                 lead={String(w)}
-                title={`${w} weeks`}
+                title={countOf(w, 'week')}
                 sub={
                   w === 4
                     ? 'A short block, to see if you like it'
@@ -472,7 +474,7 @@ function Guided() {
                 onPress={() => setWeeks(clampWeeks(effWeeks - 1))}
               />
               <Text style={styles.stepperText}>
-                <Text style={styles.stepperValue}>{effWeeks}</Text> {effWeeks === 1 ? 'week' : 'weeks'}
+                <Text style={styles.stepperValue}>{effWeeks}</Text> {pluralWord(effWeeks, 'week')}
               </Text>
               <StepBtn
                 label="One week more"
@@ -483,7 +485,7 @@ function Guided() {
             </View>
             {days != null ? (
               <Text style={styles.hint}>
-                {effWeeks * days} {effWeeks * days === 1 ? 'workout' : 'workouts'} in total
+                {countOf(effWeeks * days, 'workout')} in total
               </Text>
             ) : null}
           </Question>
@@ -554,16 +556,22 @@ function Guided() {
         ) : null}
 
         {step === 'name' ? (
-          <Question title="Give it a name" help={`You'll see this at the top of Home for the next ${effWeeks} weeks.`}>
+          <Question title="Give it a name" help={`You'll see this at the top of Home for the next ${countOf(effWeeks, 'week')}.`}>
             <TextInput returnKeyType="done"
               value={effName}
               onChangeText={setName}
-              maxLength={40}
+              maxLength={PROGRAM_NAME_MAX}
               placeholder={structure?.name ?? 'My program'}
               placeholderTextColor={flColor.gray600}
               accessibilityLabel="Program name"
               style={styles.nameField}
             />
+            {/* Never a silent cut (QA 09-26 library-23): the count shows as the name nears its cap. */}
+            {nameNearLimit(effName.length, PROGRAM_NAME_MAX) ? (
+              <Text style={styles.summary}>
+                {effName.length}/{PROGRAM_NAME_MAX}
+              </Text>
+            ) : null}
           </Question>
         ) : null}
 
@@ -580,7 +588,7 @@ function Guided() {
               <>
                 <Text style={styles.summary}>
                   {structure.weeks * structure.daysPerWeek} sessions · {structure.daysPerWeek} a week ·{' '}
-                  {structure.weeks} weeks
+                  {countOf(structure.weeks, 'week')}
                 </Text>
                 {week1.map((d) => (
                   <View key={d.letter} style={styles.dayCard}>

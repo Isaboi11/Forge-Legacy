@@ -33,6 +33,8 @@ import {
   describe as describeRow,
   replacementsFor,
   rowsFor,
+  slotKeysElsewhere,
+  swapTerms,
   valuesFor,
   SCOPE_CHOICES,
 } from '../edit-chat.ts';
@@ -236,4 +238,44 @@ test('a row describes what it currently asks for, so the athlete knows what they
   assert.match(describeRow({ name: 'Back Squat', sets: 4, reps: 8 }), /4 × 8/);
   assert.match(describeRow({ name: 'Long Run', kind: 'cardio', targetMi: 12 }), /12 mi/);
   assert.match(describeRow({ name: 'Ride', kind: 'cardio', targetSec: 2700 }), /45 min/);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QA holt-24 — a swap inside a beginner gym program
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('holt-24: a beginner gym program is never offered bodyweight tricks or an Advanced movement', () => {
+  /* The QA case: Strength Foundation I (Beginner, Commercial Gym), an athlete Holt knew as advanced and with
+     no Home Gym profile. The sheet used `ownedEquipment ?? []` — bodyweight only — and the athlete's level,
+     so Split Squat was offered Pistol, Shrimp and Sissy Squat and Jump Squat. */
+  const terms = swapTerms({ athleteLevel: 'advanced', programLevel: 'Beginner', programEnvironment: 'Commercial Gym', owned: null });
+  assert.equal(terms.experience, 'beginner', 'the swap outranked the program it is inside');
+  const gymCtx = contextFrom({ owned: terms.owned, canDo: canDoExercise, experience: terms.experience, limitations: [], limitationPatterns, excludeExercises: [] });
+  const split = POOL.find((e) => e.key === 'split-squat');
+  const offered = replacementsFor({ name: split.name, catalogKey: split.key }, POOL, gymCtx);
+  assert.equal(offered.length, 5);
+  for (const o of offered) {
+    assert.notEqual(o.replacement.difficulty, 'Advanced', `${o.label} offered to a beginner block`);
+    assert.ok(!/pistol|shrimp|sissy|jump/i.test(o.label), `${o.label} offered to a beginner block`);
+  }
+  // A program Holt wrote has no rung of its own: the athlete's level stands, and the remembered room is used.
+  assert.equal(swapTerms({ athleteLevel: 'advanced', owned: null }).experience, 'advanced');
+  assert.deepEqual(swapTerms({ athleteLevel: null, rememberedRoom: 'bodyweight', owned: ['dumbbells'] }).owned, []);
+});
+
+test('holt-24: after a "just this week" swap the original is offered back first', () => {
+  const structure = program();
+  const s = editableSessions(structure, [], 1)[0];
+  const i = s.day.main.findIndex((e) => e.kind !== 'cardio');
+  const original = s.day.main[i];
+  const other = replacementsFor(original, POOL, ctx)[0].replacement;
+  const at = { ...s.at, exerciseIndex: i };
+  const res = swapExercise(structure, [], at, other, 'this_week');
+  assert.ok(res.ok);
+  const back = slotKeysElsewhere(res.structure, at);
+  assert.equal(back[0], original.catalogKey, 'the other weeks still hold the original');
+  const offered = replacementsFor({ name: other.name, catalogKey: other.key }, POOL, ctx, 5, back);
+  assert.equal(offered[0].replacement.key, original.catalogKey, 'the original was not offered back');
+  // Nothing to offer back when every week matches.
+  assert.deepEqual(slotKeysElsewhere(structure, at), []);
 });

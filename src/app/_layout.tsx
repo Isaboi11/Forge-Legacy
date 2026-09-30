@@ -19,6 +19,13 @@ import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-c
  */
 import '@/domain/run/background-task';
 
+/*
+ * The web stylesheet — the bronze keyboard focus ring, no ring on tapped fields, bronze text selection.
+ * Its only importer used to be the Expo starter's `constants/theme.ts`, which no screen loads, so it
+ * never reached the browser (QA 09-26 library-24). A CSS import is a no-op on iOS/Android.
+ */
+import '@/global.css';
+
 import { startDiagnostics } from '@/lib/diagnostics';
 import { installErrorSink } from '@/data/errors-live';
 
@@ -468,6 +475,10 @@ function RootNavigator() {
             additionally redirects on a failed `isAppAdmin()` so a curious athlete gets Home rather than
             seven error states. See Docs/Admin-Analytics-Architecture-v1.0.md §4. */}
         <Stack.Screen name="admin" />
+        {/* Dev harnesses. Inside the guard so a signed-out visitor meets sign-in, not a blank grey page
+            (QA 09-26 auth-15); each still redirects home on `!__DEV__` for a signed-in one. */}
+        <Stack.Screen name="ceremony-harness" />
+        <Stack.Screen name="button-library-preview" />
       </Stack.Protected>
       <Stack.Protected guard={route === 'onboarding'}>
         <Stack.Screen name="onboarding" />

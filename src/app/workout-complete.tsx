@@ -693,7 +693,10 @@ function WorkoutComplete() {
   /* The sheet seeds its field from what is already stored, so re-opening a sealed note shows it back
      rather than an empty box that looks like the note was lost. */
   const openNote = () => {
-    setNote(reflection);
+    /* The two notes know about each other (QA 09-26 workout-28): with no reflection sealed yet, the sheet starts
+       from the training note already written under "How did it go?", so nothing is typed twice. Sealing writes
+       the reflection only — the training note stays exactly as it was. */
+    setNote(reflection || sessNote.trim());
     setSheet('note');
   };
   /*
@@ -1439,6 +1442,8 @@ function WorkoutComplete() {
             <Text style={styles.sessNoteHint}>
               {sessNoteSaved ? 'Saved — you’ll see this in your history.' : 'For the next time you train this.'}
             </Text>
+            {/* …and this box knows about the sealed one, so the two never read as the same question twice. */}
+            {reflection ? <Text style={styles.sessNoteHint}>Your note for future you: “{reflection}”</Text> : null}
           </View>
 
           <View style={styles.longGameWrap}>

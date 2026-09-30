@@ -59,6 +59,16 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
      */
     if (ex.per) out.per = ex.per;
     if (ex.durationSec != null) out.durationSec = ex.durationSec;
+    /*
+     * A hold authored as a count of SECONDS — `reps: 30, unit: 'seconds'` with no `durationSec` (Front
+     * Plank, Side Plank, Planks: 18 prescriptions across four programs). The unit was dropped here, so it
+     * adopted as thirty REPS and the preview read "2 × 30" (QA 09-26 home-23). It is the same statement
+     * as the 113 holds authored with `durationSec` and `reps: 0`, so it becomes exactly that.
+     */
+    else if (ex.unit === 'seconds' && typeof ex.reps === 'number' && ex.reps > 0) {
+      out.durationSec = ex.reps;
+      out.reps = 0;
+    }
     if (ex.optional) out.optional = true;
     /*
      * The author's coaching cue. The same crossing every field above had to be taught, and the same
@@ -133,10 +143,13 @@ function workoutToDay(
    */
   const warmup: ProgramExercise[] = w.warmup.map((item) => {
     const reps = /^(\d+)\s*reps?$/i.exec((item.detail ?? '').trim());
+    // "20 seconds" is a hold, and reads as one with its unit (QA 09-26 home-23) rather than a blank row.
+    const secs = reps ? null : /^(\d+)\s*(?:seconds?|secs?|s)$/i.exec((item.detail ?? '').trim());
     return {
       name: item.name || item.text,
       catalogKey: resolveKey?.(item.name || item.text),
       ...(reps ? { sets: 1, reps: Number(reps[1]) } : {}),
+      ...(secs ? { sets: 1, reps: 0, durationSec: Number(secs[1]) } : {}),
     };
   });
 

@@ -38,14 +38,24 @@ const CLIENT = read('../../data/program-photo-live.ts');
 // 1. THE BUTTON EXISTS AND IS WIRED
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
+/* Since 2026-09-30 every import door reads a photo through ONE reader, `readImportPhoto` — the whole-card read and,
+   for one workout, the AI layout that `checkAiRewrite` guards (PO: "that should be going through AI as well so we
+   know it works"; Import Amendment 002, amended). The table reader below is still its fallback and a multi-day
+   sheet's reader, so its own guards stay. */
 test('the sheet imports the photo reader', () => {
-  assert.match(SHEET, /import \{ readProgramPhoto \} from '@\/data\/program-photo-live'/);
+  assert.match(SHEET, /import \{ readImportPhoto \} from '@\/data\/import-photo-read'/);
   assert.match(SHEET, /import \{ pickImageFromLibrary \} from '@\/lib\/useMediaPicker'/);
+  assert.match(read('../../data/import-photo-read.ts'), /const r = await readProgramPhoto\(uri\);/);
 });
 
 test('the sheet actually calls it — an import alone renders no button', () => {
-  assert.match(SHEET, /await readProgramPhoto\(uri\)/);
+  assert.match(SHEET, /await readImportPhoto\(uri, /);
   assert.match(SHEET, /await pickImageFromLibrary\(\)/);
+});
+
+test('every photo door uses the one reader: Build a Program / Template, and Holt’s chat', () => {
+  assert.match(read('../program-import.tsx'), /await readImportPhoto\(uri, /);
+  assert.match(read('../../components/forge/CoachChatSheet.tsx'), /await readImportPhoto\(uri, /);
 });
 
 test('a control invokes the handler', () => {
@@ -53,10 +63,14 @@ test('a control invokes the handler', () => {
   assert.match(SHEET, /onPress=\{\(\) => void onPickPhoto\(\)\}/);
 });
 
-test('⚠ the transcript is fed to the SAME parser a paste goes through', () => {
-  // This is the line that keeps the feature inside the locked import principle (§4.3, "No AI
-  // interpretation"). If the photo path ever grows its own parse, this fails and it should.
-  assert.match(SHEET, /setPasteText\(r\.tsv\);\s*\n\s*runParse\(r\.tsv\);/);
+test('⚠ the read lands in the box AND the preview — the words stay where the athlete can check them', () => {
+  // §4.3 is amended for photos (Import Amendment 002, 2026-09-30): AI may lay a card out, never set a number.
+  // What must hold is that the words it was read from are shown, and that the preview is the checked read.
+  assert.match(SHEET, /setPasteText\(r\.text\);/);
+  assert.match(SHEET, /setChecks\(r\.checks\);/);
+  assert.match(read('../../data/import-photo-read.ts'), /const tidy = await tidyWrittenWorkout\(text, resolveKey\);/);
+  // AI's layout is only ever used through the client that ran `checkAiRewrite` first.
+  assert.match(read('../../data/workout-tidy-live.ts'), /const problems = checkAiRewrite\(card, d\.text, resolveKey\);/);
 });
 
 test('every failure kind the client can return is handled by the sheet', () => {

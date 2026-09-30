@@ -5,15 +5,18 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { readProgramPhoto } from '@/data/program-photo-live';
+import { readImportPhoto } from '@/data/import-photo-read';
 import { catalogForMatching, resolveExerciseName } from '@/domain/exercise-picker/data';
 import { suggestExercises } from '@/domain/program/exercise-match';
-import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/import-parse';
+import { parseProgramTable, summarize, type ParsedDay, type ParsedItem, type ParsedWeek } from '@/domain/program/import-parse';
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
 import { pickTextFile } from '@/lib/pick-text-file';
 import { REPS_MAX, SETS_MAX } from '@/lib/program-draft-model';
 import { MAX_TIMED_SET_SEC } from '@/domain/program/import-scheme';
 import { importLimitNotes } from '@/lib/program-import-draft';
+import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
+import { canEditAsWords, dayToWords, wordsToDay } from '@/domain/program/written-import';
+import { clock } from '@/domain/workout/posted-workout-lines';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
@@ -150,6 +153,8 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
   const [scopeNote, setScopeNote] = useState<string | null>(null);
   /** Lines the parse did not take as training — listed in the preview. */
   const [skipped, setSkipped] = useState<string[]>([]);
+  /** What a photo read asks the athlete to look at before creating (`readImportPhoto`). */
+  const [checks, setChecks] = useState<string[]>([]);
 
   /*
    * A photo read that was in flight when the sheet closed must not land in a sheet that has since been
@@ -166,6 +171,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setPreview(null);
     setScopeNote(null);
     setSkipped([]);
+    setChecks([]);
     setPhotoBusy(false);
     onClose();
   };
@@ -183,6 +189,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setPreview(fit.weeks);
     setScopeNote(fit.note);
     setSkipped(r.skipped ?? []);
+    setChecks([]);
   };
 
   const onPickFile = async () => {
@@ -216,15 +223,26 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setImportError(null);
     setPhotoBusy(true);
     try {
-      const r = await readProgramPhoto(uri);
+      /* The card reader and the AI check, the same as every other door (PO 2026-09-30) — `readImportPhoto`. */
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
       if (mine !== gen.current) return; // The sheet closed while we were reading.
       // ⚠ THREE FAILURES THAT FEEL IDENTICAL AND ARE NOT. Brief §6: an outage must be visibly different
       // from a verdict. "We couldn't read that" when the request never left the building tells somebody
       // their program is unreadable, and they will go and retake a photograph that was always fine.
       switch (r.kind) {
-        case 'ok':
-          setPasteText(r.tsv);
-          runParse(r.tsv);
+        case 'ok': {
+          /* The words go in the box, where they can be read against the photo; the preview is the checked read. */
+          setPasteText(r.text);
+          const fit = fitToScope(r.weeks, scope);
+          setImportError(null);
+          setPreview(fit.weeks);
+          setScopeNote(fit.note);
+          setSkipped(r.skipped);
+          setChecks(r.checks);
+          break;
+        }
+        case 'unparsed':
+          setImportError(r.error);
           break;
         case 'not_a_program':
           setImportError('That doesn’t look like a training program. Try a photo of the table itself.');
@@ -310,22 +328,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
               : scope === 'week'
                 ? 'One week at a time — a longer paste keeps its first week.'
                 : 'One day at a time — Week and Day aren’t needed, and a longer paste keeps its first day.'}
-            {'\n\n'}
-            Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
-            write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
-            rides, runs and swims out of it. Check what we read before you {scope === 'program' ? 'create it' : 'use it'}.
-            {'\n\n'}
-            Bought a program as a <Text style={styles.impHintStrong}>PDF</Text>? Upload it below — we read
-            the text out of it into the box, where you can fix anything before previewing. A scanned PDF has
-            no text to read.
-            {PHOTO_IMPORT_ENABLED ? (
-              <>
-              {'\n\n'}
-              Only have a <Text style={styles.impHintStrong}>screenshot</Text>? Read it in below — we type
-              the table out for you and it lands in the box above, where you can fix anything we misread
-              before previewing it.
-              </>
-            ) : null}
           </Text>
           <TextInput
             value={pasteText}
@@ -387,9 +389,25 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
               </Text>
             </Pressable>
           ) : null}
+          {/* The rest of the help sits UNDER the box and its buttons (QA 09-26 library-21): three paragraphs
+              above it pushed the paste box below the fold on a phone. */}
+          <Text style={styles.impNote}>
+            One row per <Text style={styles.impHintStrong}>day</Text> works too — write the session out
+            (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the rides, runs and swims out of it.
+            {'\n\n'}
+            A <Text style={styles.impHintStrong}>PDF</Text>&rsquo;s text lands in the box, where you can fix anything
+            before previewing. A scanned PDF has no text to read.
+            {PHOTO_IMPORT_ENABLED ? (
+              <>
+                {' '}Only have a <Text style={styles.impHintStrong}>screenshot</Text>? It&rsquo;s typed out into the box the same way.
+              </>
+            ) : null}
+            {'\n\n'}
+            Check what we read before you {scope === 'program' ? 'create it' : 'use it'}.
+          </Text>
         </View>
       ) : (
-        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} />
+        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} />
       )}
     </BottomSheet>
   );
@@ -408,6 +426,7 @@ export function ImportPreview({
   scope,
   scopeNote,
   skipped,
+  checks,
 }: {
   weeks: ParsedWeek[];
   onChange: (weeks: ParsedWeek[]) => void;
@@ -415,15 +434,43 @@ export function ImportPreview({
   scopeNote: string | null;
   /** Lines the reader did not take as training (`ParseResult.skipped`), listed so nothing vanishes unseen. */
   skipped?: readonly string[];
+  /** A photo read's "check this before you create it" — a number AI couldn't check, a set count off the card's tally. */
+  checks?: readonly string[];
 }) {
   /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
   const resolveName = (n: string) => resolveExerciseName(n);
+  const resolveKey = (n: string) => resolveExerciseName(n)?.key;
+
+  /** The day open as words ("Edit"), and what was typed. Null = no day is being edited. */
+  const [editing, setEditing] = useState<{ wi: number; di: number; text: string; error: string | null } | null>(null);
+  /** Read the typed words back into the day — code only, no AI. Nothing read = say so, keep the box open. */
+  const saveEdit = (day: ParsedDay) => {
+    if (!editing) return;
+    const next = wordsToDay(editing.text, resolveKey, day.letter);
+    if (!next) {
+      setEditing({ ...editing, error: 'No lifts could be read from that. Number each one: “1. Back Squat 5 sets of 5 reps @ 75%”.' });
+      return;
+    }
+    const { wi, di } = editing;
+    onChange(preview.map((w, a) => (a !== wi ? w : { ...w, days: w.days.map((d, b) => (b !== di ? d : next)) })));
+    setEditing(null);
+  };
   /*
    * WHAT WILL NOT FIT, while it can still be changed — a seventh day, a 53rd week, "5x100". Recomputed
    * from the preview itself, so a − tap that brings 100 reps down to 60 takes the warning away with it.
    * A day template has its own ceilings and keeps its own messages.
    */
   const limitNotes = scope === 'day' ? [] : importLimitNotes(preview, { isWeek: scope === 'week' });
+
+  /* WHICH MARKS THIS PREVIEW ACTUALLY SHOWS (QA 09-26 holtai-23): the note explains → and ≈ only when a row
+     carries one, and promises grey text only when some row has it — never a legend for marks that aren't there. */
+  const marks = { matched: false, guessed: false, source: false };
+  for (const w of preview) for (const d of w.days) for (const it of d.items) {
+    if (it.note && it.note !== it.name) marks.source = true;
+    if (it.kind === 'cardio') continue;
+    const hit = resolveName(it.name);
+    if (hit && hit.name.toLowerCase() !== it.name.trim().toLowerCase()) marks[hit.byPreference ? 'guessed' : 'matched'] = true;
+  }
 
   /**
    * Adjust a parsed set/rep count — or a timed set's clock, 5 s a tap — before creating. The design's − / + on
@@ -448,6 +495,9 @@ export function ImportPreview({
                             ? { ...it, durationSec: Math.max(5, Math.min(MAX_TIMED_SET_SEC, (it.durationSec ?? 0) + delta)) }
                             : {
                               ...it,
+                              /* Re-counted by hand: a card's per-set ramp can't survive a changed count, so the row
+                                 becomes plain sets × reps (`withoutScheme`); one % and one rest for all sets stay. */
+                              ...(it.rx ? { rx: withoutScheme(it.rx) } : null),
                               // The builder's own ceilings — a stepper that climbs past them offers a
                               // number the program would silently cut on Create.
                               [field]: Math.max(1, Math.min(field === 'sets' ? SETS_MAX : REPS_MAX, it[field] + delta)),
@@ -475,7 +525,7 @@ export function ImportPreview({
         ...w,
         days: w.days.map((d) => ({
           ...d,
-          items: d.items.map((i) => (i.name === written ? { ...i, name: to, note: i.note ?? written } : i)),
+          items: d.items.map((i) => (i.name === written ? { ...i, name: to, note: i.note ?? written, ...(i.rx ? { rx: withoutKey(i.rx) } : null) } : i)),
         })),
       })),
     );
@@ -512,7 +562,7 @@ export function ImportPreview({
    */
   const removeItem = (wi: number, di: number, ii: number) => editItem(wi, di, ii, null);
   const renameItem = (wi: number, di: number, ii: number, name: string) =>
-    editItem(wi, di, ii, (it) => ({ ...it, name, note: it.note ?? it.name }));
+    editItem(wi, di, ii, (it) => ({ ...it, name, note: it.note ?? it.name, ...(it.rx ? { rx: withoutKey(it.rx) } : null) }));
 
   /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
   const addPreviewWeek = () => {
@@ -545,14 +595,28 @@ export function ImportPreview({
               {skipped.length > 6 ? <Text style={styles.impSkippedLine}>+{skipped.length - 6} more</Text> : null}
             </View>
           ) : null}
+          {checks?.length ? (
+            <View style={styles.impSkipped} accessibilityRole="summary">
+              <Text style={styles.impSkippedHead}>Check {checks.length === 1 ? 'this' : 'these'} before you {scope === 'program' ? 'create it' : 'use it'}</Text>
+              {checks.map((c) => (
+                <Text key={c} style={styles.impCheckLine}>
+                  · {c}
+                </Text>
+              ))}
+            </View>
+          ) : null}
           <View style={styles.impSummary}>
             <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
             <Text style={styles.impSummaryText}>{summarize(preview, scope === 'day' ? 'workout' : 'program')}</Text>
           </View>
           <Text style={styles.impNote}>
-            Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
-            as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
-            rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
+            Tap Edit to change anything as text — a rep, a percentage, a rest. Or tap − / + to fix sets × reps, edit a name, or remove a row with ✕.
+            {marks.matched ? ' → shows the library exercise a name became.' : ''}
+            {marks.guessed ? ' ≈ means the name didn’t say which kind, so we picked the usual one — change it in the builder if it’s wrong.' : ''}
+            {marks.source
+              ? ' Grey text is the sentence we read it from — it is kept as a coaching note, so anything we couldn’t turn into a number still reaches you.'
+              : ''}{' '}
+            You can rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
           </Text>
 
           {preview.map((w, wi) => (
@@ -565,13 +629,77 @@ export function ImportPreview({
               ) : null}
               {w.days.map((d, di) => (
                 <View key={`${w.index}-${d.letter}`} style={styles.impDayCard}>
-                  <Text style={styles.impDayName}>{d.name}</Text>
+                  <View style={styles.impDayHead}>
+                    <Text style={styles.impDayName} numberOfLines={1}>
+                      {d.name}
+                    </Text>
+                    {/* EDIT AFTER THE AI (PO 2026-09-30): the whole day as words — every rung, %, rest and superset —
+                        read back by the code reader, no AI. Offered only where the words say exactly this day. */}
+                    {editing?.wi === wi && editing.di === di ? null : canEditAsWords(d, resolveKey) ? (
+                      <Pressable
+                        onPress={() => setEditing({ wi, di, text: dayToWords(d) ?? '', error: null })}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Edit ${d.name} as text`}
+                        hitSlop={8}
+                        style={({ pressed }) => [styles.impEditBtn, pressed ? styles.impPressed : null]}
+                      >
+                        <EngravedIcon name="edit" size={13} color={flColor.bronze300} />
+                        <Text style={styles.impEditText}>Edit</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                  {editing?.wi === wi && editing.di === di ? (
+                    <View style={styles.impEditBox}>
+                      <Text style={styles.impEditHint}>
+                        Change anything — reps, percentages, rest, names. One lift per numbered line; “super set b.” joins the lift above. Done reads it again.
+                      </Text>
+                      <TextInput
+                        value={editing.text}
+                        onChangeText={(v) => setEditing({ ...editing, text: v, error: null })}
+                        multiline
+                        autoCorrect={false}
+                        autoCapitalize="sentences"
+                        textAlignVertical="top"
+                        accessibilityLabel={`${d.name}, as text`}
+                        scrollEnabled={false}
+                        /* Tall enough for the whole day — a box that scrolls inside a scrolling sheet hid the superset. */
+                        style={[styles.impEditInput, { height: editBoxHeight(editing.text) }]}
+                      />
+                      {editing.error ? <Text style={styles.impError}>{editing.error}</Text> : null}
+                      <View style={styles.impEditActions}>
+                        <View style={styles.impBackBtn}>
+                          <Button variant="secondary" fullWidth onPress={() => setEditing(null)}>
+                            Cancel
+                          </Button>
+                        </View>
+                        <View style={styles.impCreateBtn}>
+                          <Button variant="primary" fullWidth onPress={() => saveEdit(d)}>
+                            Done
+                          </Button>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
                   <View style={styles.impItems}>
-                    {d.items.map((it, ii) => (
-                      <View key={`${it.name}-${ii}`} style={styles.impItemRow}>
+                    {d.items.map((it, ii) => {
+                      const g = groupAt(d.items, ii);
+                      return (
+                      <View
+                        key={`${it.name}-${ii}`}
+                        style={g ? [styles.impGroupMember, g.first ? styles.impGroupFirst : styles.impGroupNext, g.last ? styles.impGroupLast : null] : null}
+                      >
+                      {/* A SUPERSET SAYS SO (PO 2026-09-30: "it's not obvious that those three are super setted"): one
+                          outlined block, a header naming how it runs, and a/b/c on each member. */}
+                      {g?.first ? (
+                        <Text style={styles.impGroupHead}>
+                          Superset · {g.count} back to back{g.rest ? `, then rest ${g.rest}` : ''}
+                        </Text>
+                      ) : null}
+                      <View style={styles.impItemRow}>
                         <View style={styles.impItemText}>
                           <View style={styles.impNameRow}>
                             {it.section ? <Text style={styles.impSectionTag}>{it.section === 'warmup' ? 'WARM-UP' : 'COOL-DOWN'}</Text> : null}
+                            {g ? <Text style={styles.impGroupLetter}>{g.letter}</Text> : null}
                             <TextInput returnKeyType="done"
                               value={it.name}
                               onChangeText={(v) => renameItem(wi, di, ii, v)}
@@ -589,6 +717,12 @@ export function ImportPreview({
                             kept as a coaching note rather than dropped. Without this line, a confident
                             wrong reading looks exactly like a right one.
                           */}
+                          {/* A card's ramp, percentages, rest and superset — what the steppers can't show (PO 09-30). */}
+                          {it.rx && prescriptionLine({ ...it.rx, sets: it.sets, reps: it.reps }) ? (
+                            <Text style={styles.impItemRx} numberOfLines={2}>
+                              {prescriptionLine({ ...it.rx, sets: it.sets, reps: it.reps, ...(g ? { restSec: null, restScheme: undefined } : null) })}
+                            </Text>
+                          ) : null}
                           {it.note && it.note !== it.name ? (
                             <Text style={styles.impItemSource} numberOfLines={2}>
                               {it.note}
@@ -677,8 +811,11 @@ export function ImportPreview({
                           <EngravedIcon name="close" size={11} color={flColor.gray600} />
                         </Pressable>
                       </View>
-                    ))}
+                      </View>
+                      );
+                    })}
                   </View>
+                  )}
                 </View>
               ))}
             </View>
@@ -698,6 +835,35 @@ export function ImportPreview({
           ) : null}
         </View>
   );
+}
+
+/**
+ * Where a row sits in a superset: its letter, whether it opens or closes the block, how many are in it, and the round's
+ * rest (said once, on the block's header — not on every member).
+ */
+function groupAt(items: readonly ParsedItem[], i: number): { letter: string; first: boolean; last: boolean; count: number; rest: string | null } | null {
+  const id = items[i]?.rx?.groupId;
+  if (!id) return null;
+  let a = i;
+  while (a > 0 && items[a - 1].rx?.groupId === id) a -= 1;
+  let b = i;
+  while (b < items.length - 1 && items[b + 1].rx?.groupId === id) b += 1;
+  if (a === b) return null;
+  const last = items[b].rx;
+  const sec = last?.restSec ?? last?.restScheme?.find((x) => x != null) ?? null;
+  return { letter: String.fromCharCode(97 + i - a), first: i === a, last: i === b, count: b - a + 1, rest: sec != null ? clock(sec) : null };
+}
+
+/** Every line of the day in view: about 40 characters to a wrapped line at phone width, 19 px a line. */
+function editBoxHeight(text: string): number {
+  const lines = text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 40)), 0);
+  return Math.max(220, lines * 19 + 28);
+}
+
+/** A renamed row is looked up again by its new name: the card's own match no longer applies to it. */
+function withoutKey<T extends { catalogKey?: string }>(rx: T): T {
+  const { catalogKey: _k, ...rest } = rx;
+  return rest as T;
 }
 
 /** "0:40", "1:30" — a timed set's clock as a timer shows it. */
@@ -766,17 +932,35 @@ const styles = StyleSheet.create({
   impWeekRule: { flex: 1, height: 1, backgroundColor: flColor.divider },
 
   impDayCard: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
-  impDayName: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  impDayHead: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  impDayName: { flex: 1, fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100 },
+  impEditBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 4, paddingHorizontal: 10, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  impEditText: { fontFamily: flFont.sans, fontSize: 12, fontWeight: '600', color: flColor.bronze300 },
+  impEditBox: { gap: 10, padding: 12 },
+  impEditHint: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.gray400 },
+  impEditInput: { minHeight: 220, padding: 10, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, color: flColor.cream100, fontSize: 12.5, lineHeight: 19 },
+  impEditActions: { flexDirection: 'row', gap: 10 },
+  /* A superset is ONE block: a bronze rule down its left, a header that says how it runs, a/b/c on each member. */
+  impGroupMember: { borderLeftWidth: 2, borderLeftColor: flColor.bronze400, paddingLeft: 10, marginLeft: -2, gap: 4 },
+  impGroupFirst: { paddingTop: 2 },
+  impGroupNext: { marginTop: -6, paddingTop: 6 },
+  impGroupLast: { paddingBottom: 2 },
+  impGroupHead: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.labelInk },
+  impGroupLetter: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', color: flColor.bronze300, minWidth: 12 },
   impItems: { gap: 6, paddingVertical: 10, paddingHorizontal: 12 },
   impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  impItemText: { flex: 1, gap: 1 },
+  /* `minWidth: 0` lets the name column SHRINK: a web input's intrinsic width otherwise pushed a long name under
+     the − / + steppers (QA 09-26 library-21). */
+  impItemText: { flex: 1, minWidth: 0, gap: 1 },
   impItemName: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
   impNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   /* An input rather than text, because a misread name is the one thing the steppers could never fix. */
-  impItemNameInput: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
+  impItemNameInput: { flex: 1, minWidth: 0, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
   impRemove: { width: 20, height: 20, marginLeft: 2, alignItems: 'center', justifyContent: 'center' },
   impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.labelInk },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
+  impItemRx: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 15, color: flColor.cream100 },
+  impCheckLine: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.cream100 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronzeInk },
   impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
   impGuesses: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 4 },

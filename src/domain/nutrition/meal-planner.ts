@@ -146,6 +146,8 @@ export interface RecipeView {
   ingredients: RecipeViewIngredient[];
   /** The athlete wrote it (My Recipes). */
   mine: boolean;
+  /** Servings the method is written for — `RecipeSource.stepsServe`, or a recipe of your own's yield (N-32). */
+  stepsServe?: number | null;
 }
 
 const starterView = (src: RecipeSource): RecipeView => ({
@@ -156,6 +158,7 @@ const starterView = (src: RecipeSource): RecipeView => ({
   steps: src.steps,
   ingredients: src.ingredients.map(([key, g]) => ({ key, name: INGREDIENTS[key].name, g, us: INGREDIENTS[key].us })),
   mine: false,
+  stepsServe: src.stepsServe ?? null,
 });
 
 /**

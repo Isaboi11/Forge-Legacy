@@ -17,6 +17,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * A program someone sent you (migration 0110) — read it before you take it.
@@ -140,7 +141,7 @@ function ProgramShareScreen() {
 
         <Text style={styles.title}>{data.name}</Text>
         <Text style={styles.meta}>
-          {structure.weeks} weeks • {structure.daysPerWeek} {structure.daysPerWeek === 1 ? 'day' : 'days'} / week
+          {countOf(structure.weeks, 'week')} • {countOf(structure.daysPerWeek, 'day')} / week
           {structure.vary ? ' • per-week plan' : ''}
         </Text>
 
@@ -156,7 +157,9 @@ function ProgramShareScreen() {
 
         {taken ? (
           <View style={styles.takenBanner}>
-            <Text style={styles.takenText}>You’ve already taken this one. It’s in your programs.</Text>
+            {/* Not "It's in your programs" (social2-26, QA 09-26): taking it once doesn't mean it's still there — it
+                may have been removed since. */}
+            <Text style={styles.takenText}>You’ve already taken this one.</Text>
           </View>
         ) : null}
 

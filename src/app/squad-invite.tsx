@@ -251,6 +251,14 @@ function SquadInviteRoute() {
 
   const metaLine = `${squad.privacy === 'public' ? 'Public' : 'Private'} · ${squad.memberCount === 1 ? '1 member' : `${squad.memberCount} members`}`;
   const noCode = !code; // 0040 not applied yet
+  /*
+   * FOUR BUTTONS, ONE CLIPBOARD (social-15, QA 09-26). On a web browser without a share sheet, Share and
+   * Message both fell back to copying the same invitation, beside Copy Code and Copy link. There, Share says
+   * what it does ("Copy Invite") and Message — which has no text app to open on the web — is not offered, so
+   * each remaining control copies something different: the invitation, the code, the link.
+   */
+  const isWeb = Platform.OS === 'web';
+  const webShareSheet = isWeb && typeof navigator !== 'undefined' && typeof (navigator as { share?: unknown }).share === 'function';
 
   return (
     <View style={styles.root}>
@@ -300,8 +308,8 @@ function SquadInviteRoute() {
         {/* 2 · SHARE INVITE */}
         <Text style={styles.sectionLabel}>Share Invite</Text>
         <View style={styles.tileGrid}>
-          <ShareTile primary label="Share" icon={<ShareGlyph />} onPress={onShare} disabled={noCode} />
-          <ShareTile label="Message" icon={<MessageGlyph />} onPress={onMessage} disabled={noCode} />
+          <ShareTile primary label={isWeb && !webShareSheet ? 'Copy Invite' : 'Share'} icon={<ShareGlyph />} onPress={onShare} disabled={noCode} />
+          {isWeb ? null : <ShareTile label="Message" icon={<MessageGlyph />} onPress={onMessage} disabled={noCode} />}
           <ShareTile label="QR Code" icon={<QrGlyph />} onPress={() => setQrOpen(true)} disabled={noCode} />
         </View>
 
@@ -325,7 +333,8 @@ function SquadInviteRoute() {
         {/* footer */}
         <View style={styles.footer}>
           <Text style={styles.footerBrand}>Forge Legacy</Text>
-          <Text style={styles.footerNote}>Anyone with the code can join this squad.</Text>
+          {/* Legible, and true (social-26, social2-25): a code or link joins at once — there's no approval on it. */}
+          <Text style={styles.footerNote}>Anyone with this code or link joins the squad straight away.</Text>
         </View>
       </ScrollView>
 
@@ -540,7 +549,7 @@ const styles = StyleSheet.create({
   // footer
   footer: { marginTop: 30, alignItems: 'center', gap: 3 },
   footerBrand: { fontFamily: flFont.display, fontSize: 11, fontWeight: '600', letterSpacing: 2, textTransform: 'uppercase', color: flColor.charcoal500 },
-  footerNote: { fontSize: 10, letterSpacing: 0.8, color: flColor.charcoal500 },
+  footerNote: { fontSize: 12, lineHeight: 17, letterSpacing: 0.2, color: flColor.gray400, textAlign: 'center' },
 
   // qr sheet
   qrBody: { alignItems: 'center', gap: 16, paddingBottom: 6 },

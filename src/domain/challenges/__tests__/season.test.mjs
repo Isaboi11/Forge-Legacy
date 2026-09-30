@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { DAY_SEGMENT_MAX, seasonClock } from '../season.ts';
+import { DAY_SEGMENT_MAX, daysLeftAt, daysLeftLabel, seasonClock } from '../season.ts';
 
 /**
  * THE SEASON CLOCK — the picture of a competition, which was the actual defect.
@@ -169,4 +169,23 @@ test('the clock never runs past the end of the season', () => {
   assert.equal(s.currentUnit, s.totalUnits, 'a long-overdue season must not report segment 45 of 3');
   assert.equal(s.dayIndex, s.totalDays);
   assert.equal(s.daysRemaining, 0);
+});
+
+/* ══ ONE DAYS-LEFT COUNT (B9 / social-17, QA 09-26) ══ */
+
+test('the hub and squad card count days left exactly as this page does', () => {
+  // A week-long run: the list said "7 days left" beside the page's "6 days remaining" on day one.
+  const start = '2026-09-26T06:00:00+00:00';
+  const end = '2026-10-03T06:00:00+00:00';
+  for (const iso of ['2026-09-26T07:00:00Z', '2026-09-28T23:30:00Z', '2026-10-02T12:00:00Z', '2026-10-03T05:59:00Z']) {
+    const now = at(iso);
+    assert.equal(daysLeftAt(end, now), seasonClock(start, end, 'ACTIVE', now).daysRemaining, `disagreed at ${iso}`);
+  }
+  assert.equal(daysLeftAt(end, at('2026-09-26T07:00:00Z')), 6);
+});
+
+test('the words: final day, then singular, then plural (N-22: "1 DAYS LEFT")', () => {
+  assert.equal(daysLeftLabel(0), 'Final day');
+  assert.equal(daysLeftLabel(1), '1 day left');
+  assert.equal(daysLeftLabel(6), '6 days left');
 });

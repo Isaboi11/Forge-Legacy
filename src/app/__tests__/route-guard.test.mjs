@@ -25,11 +25,17 @@ const LAYOUT = join(APP_DIR, '_layout.tsx');
 const ALLOWED_OUTSIDE = new Map([
   ['sign-in', 'declared under the `auth` guard — it IS the signed-out destination'],
   ['onboarding', 'declared under the `onboarding` guard'],
-  ['ceremony-harness', 'dev-only tool; redirects on !__DEV__ in the screen itself'],
-  ['button-library-preview', 'dev-only design gallery; redirects on !__DEV__ in the screen itself'],
   ['+not-found', 'the page for a URL that matches nothing; it must answer a signed-out visitor too, and reads no data'],
   ['_sitemap', 'replaces the route list expo-router injects with the not-found page (QA 09-26 B2); reads no data'],
 ]);
+
+/*
+ * The two dev harnesses USED to be allowed out here, defended only by their own `!__DEV__` redirect. Signed
+ * out, that redirect sends to `/` — a guarded route — and the visitor got a blank grey page (QA 09-26
+ * auth-15). They are declared inside the app guard now, so a signed-out visitor meets sign-in, and they
+ * keep the `__DEV__` redirect for a signed-in athlete who types the URL on production.
+ */
+const DEV_ONLY = ['ceremony-harness', 'button-library-preview'];
 
 /** Not screens: the layouts themselves and the web HTML shell. */
 const NOT_A_SCREEN = new Set(['_layout', '+html', '(tabs)/_layout']);
@@ -66,9 +72,9 @@ test('every screen is declared in _layout, so the auth guard can reach it', () =
   );
 });
 
-test('a dev-only screen outside the guard defends itself with __DEV__', () => {
-  for (const [name, reason] of ALLOWED_OUTSIDE) {
-    if (!reason.includes('__DEV__')) continue;
+test('a dev-only screen is inside the guard AND still defends itself with __DEV__', () => {
+  for (const name of DEV_ONLY) {
+    assert.ok(declared.has(name), `${name} must be declared inside the app guard (auth-15)`);
     const src = readFileSync(join(APP_DIR, `${name}.tsx`), 'utf8');
     assert.match(
       src,

@@ -6,6 +6,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { updateStandard } from '@/data/legacy-live';
 import { useToast } from '@/hooks/useCeremony';
+import { errorMessage } from '@/lib/useQuery';
 
 /**
  * L-12 · My Standard editor (`Forge Legacy.dc.html` §"My Standard editor") — the bottom sheet that edits
@@ -37,16 +38,23 @@ export function StandardEditorSheet({
 
   const trimmed = draft.trim();
   const empty = trimmed.length === 0;
+  /**
+   * Emptying a saved Standard is a real edit — CLEAR it. Save used to stay disabled on an empty well, so
+   * once written a Standard could be changed but never removed (QA 09-26 legacy-30).
+   */
+  const clearing = empty && initial.trim().length > 0;
 
   const save = () => {
-    if (empty || busy) return;
+    if ((empty && !clearing) || busy) return;
     setBusy(true);
-    void updateStandard(trimmed)
+    void updateStandard(clearing ? null : trimmed)
       .then(() => {
         onSaved(trimmed);
         onClose();
-        showToast('Your Standard is set.');
+        showToast(clearing ? 'Your Standard is cleared.' : 'Your Standard is set.');
       })
+      // A failed save said nothing and left the sheet open, so it read as a tap that didn't register.
+      .catch((e: unknown) => showToast(`Couldn’t save your Standard — ${errorMessage(e)}`))
       .finally(() => setBusy(false));
   };
 
@@ -80,8 +88,8 @@ export function StandardEditorSheet({
             Cancel
           </Button>
           <View style={styles.saveCell}>
-            <Button variant="primary" fullWidth disabled={empty || busy} onPress={save}>
-              Save Standard
+            <Button variant="primary" fullWidth disabled={(empty && !clearing) || busy} onPress={save}>
+              {clearing ? 'Clear Standard' : 'Save Standard'}
             </Button>
           </View>
         </View>

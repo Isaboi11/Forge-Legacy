@@ -257,3 +257,19 @@ test('an empty or whitespace cue is not carried as one', () => {
   const s = structureFromDefinition(def);
   assert.equal('coachNote' in s.days[0].main[0], false, 'whitespace is not an instruction');
 });
+
+test('a hold authored as seconds adopts as a timed set, not as reps (QA 09-26 home-23: "2 × 30")', () => {
+  const plank = { catalogKey: 'plank', displayName: 'Front Plank', sets: 2, reps: 30, unit: 'seconds', restSec: 60 };
+  const def = { ...singleBlock, blocks: [block('Weeks 1–6', 1, 6, [workout('A', 'Core', [plank, rx('Back Squat', 3, 5)])])] };
+  const [ex, squat] = structureFromDefinition(def).days[0].main;
+  assert.equal(ex.durationSec, 30);
+  assert.equal(ex.reps, 0);
+  assert.equal(ex.sets, 2);
+  assert.equal(squat.durationSec, undefined, 'a rep prescription is untouched');
+});
+
+test('a warm-up written as "20 seconds" adopts as a 20-second hold', () => {
+  const def = { ...singleBlock, blocks: [block('Weeks 1–6', 1, 6, [workout('A', 'Core', [rx('Back Squat', 3, 5)], [{ name: 'Dead Hang', detail: '20 seconds', text: 'Dead Hang — 20 seconds' }])])] };
+  const [w] = structureFromDefinition(def).days[0].warmup;
+  assert.equal(w.durationSec, 20);
+});
