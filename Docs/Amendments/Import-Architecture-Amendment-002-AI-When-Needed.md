@@ -61,6 +61,14 @@ Four walls, in order:
 
 §4.3 still holds for **program import**: CSV, sheets and program photos. Those still transcribe only (`program-photo-read`), and `parseProgramTable` decides everything. Extending "AI when needed" there needs its own amendment.
 
+> **Amended 2026-09-30 (PO): PHOTOS in every import door now use the card reader and the AI check.** PO: *"shouldn't this be the same card reader as when I put it in the workout tab in build a program? that should be going through ai as well so we know it works"* → *"yes"*. The same photo of Season 12 Day 1, read by the old path, gave Back Squat 9 × 0 with every percentage dropped, Bench 1 set, and the warm-up, recovery and a rest line as exercises.
+>
+> - **One reader, `readImportPhoto`** (`src/data/import-photo-read.ts`), for Build a Program's pictures, Build a Template's picture, Home's "Paste a workout", the builders' import sheet and a picture sent to Holt: the whole-card read (table read until `workout-card-read` is deployed) → for ONE workout, the AI layout (`workout-tidy`, guarded by `checkAiRewrite` exactly as above) → the written reader → the import preview (`writtenToWeeks`), with anything to check listed above it.
+> - **A sheet of several days or weeks is still the table reader's** (`isMultiDaySheet`: two different Day/Week values in the table, or two different day or week headings). ⚠ Not "does `parseProgramTable` see two days" — it reads the single Squatober card as two.
+> - **What sets × reps cannot say now reaches the program and the template**: a per-set ramp, percentages, the rest between sets and a superset ride in `ParsedItem.rx` into the draft, the saved template (`prescriptionOfRow`) and the program (`ProgramExercise.restSec` / `restScheme`, which `sessionSetsFor` puts on each set). The builders show them in a line under the name; re-counting a row by hand makes it plain sets × reps (`withoutScheme`).
+> - **Typed and pasted text is unchanged**: `parseProgramTable`, no AI.
+> - Cost: one card read and one AI layout per photo (about one extra credit per photo).
+
 ## Files
 
 - `src/domain/workout/workout-ai-gate.ts`: `whenToUseAi`, `checkAiRewrite`, `MAX_AI_CHARS`.

@@ -49,9 +49,8 @@ import { dietAvoid, dishCards, dishLine, type DishCard } from '@/domain/nutritio
 import { isMakeRequest, kitchenError, rotationLeanToday, type KitchenNudge } from '@/domain/nutrition/kitchen-dishes';
 import { localToday } from '@/domain/nutrition/day';
 import { stashRecipeDraft } from '@/lib/recipe-draft-stash';
-import { readProgramPhoto } from '@/data/program-photo-live';
+import { readImportPhoto } from '@/data/import-photo-read';
 import { readRecipePhoto } from '@/data/recipe-photo-live';
-import { parseProgramTable } from '@/domain/program/import-parse';
 import { stashImportRead } from '@/lib/import-read-stash';
 import { pickImagesFromLibrary, preparePastedImage } from '@/lib/useMediaPicker';
 import { ATTACH_ASK, attachChoices, attachDoneLine, attachErrorLine, attachKind, type AttachKind } from '@/domain/coach/attach-intent';
@@ -162,7 +161,7 @@ import type { CoachIntent } from '@/hooks/useCoachDoor';
 import { useProfile } from '@/lib/profile';
 import { rationaleFor } from '@/domain/coach/rulebook/rationale';
 import { buildDayWorkout, whyThin } from '@/domain/coach/day';
-import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
+import { itemByKey, PICKER_DB, resolveExerciseName } from '@/domain/exercise-picker/data';
 import { fetchLearnedPreferences } from '@/data/learned-preference-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence } from '@/domain/coach/learned-preference';
@@ -2150,15 +2149,15 @@ export function CoachChatSheet({
         router.push('/my-recipes?draft=1');
         return;
       }
-      const r = await readProgramPhoto(uri);
+      /* The same card reader and AI check every import door uses (PO 2026-09-30) — `readImportPhoto`. */
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
       if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
-      if (r.kind !== 'ok') return void say({ kind: 'holt', text: attachErrorLine(kind, r.kind) });
-      const parsed = parseProgramTable(r.tsv);
-      if (!parsed.ok) {
-        say({ kind: 'holt', text: `I read it, but couldn’t turn it into a ${kind === 'template' ? 'workout' : 'program'}. ${parsed.error}` });
+      if (r.kind === 'unparsed') {
+        say({ kind: 'holt', text: `I read it, but couldn’t turn it into a ${kind === 'template' ? 'workout' : 'program'}. ${r.error}` });
         return;
       }
-      stashImportRead({ weeks: parsed.weeks, skipped: parsed.skipped ?? [] });
+      if (r.kind !== 'ok') return void say({ kind: 'holt', text: attachErrorLine(kind, r.kind) });
+      stashImportRead({ weeks: r.weeks, skipped: r.skipped, checks: r.checks });
       say({ kind: 'holt', text: attachDoneLine(kind) });
       handOff();
       router.push(kind === 'template' ? '/program-import?read=1&for=template' : '/program-import?read=1');

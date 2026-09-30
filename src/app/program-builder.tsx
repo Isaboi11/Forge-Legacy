@@ -13,6 +13,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { type ParsedWeek } from '@/domain/program/import-parse';
+import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { draftFromImport } from '@/lib/program-import-draft';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
@@ -787,7 +788,8 @@ function ProgramBuilderScreen() {
             patchSection(draft.openDay!, section, (list) =>
               list.map((x, k) => {
                 if (k !== i) return x;
-                if (x.kind !== 'cardio') return { ...x, sets: clampSets((x.sets ?? 1) + dir) };
+                /* Re-counting a card's ramp by hand makes the row plain sets × reps (`withoutScheme`, PO 09-30). */
+                if (x.kind !== 'cardio') return { ...withoutScheme(x), sets: clampSets((x.sets ?? 1) + dir) };
                 /* Stepped IN THE UNIT THE ATHLETE IS READING. A swim walks hundreds of yards; everything
                    else walks half-miles. Stepping the canonical mile figure and converting afterwards
                    would land 1200 yd on 1197. */
@@ -838,7 +840,7 @@ function ProgramBuilderScreen() {
                   : x.kind !== 'cardio' && x.durationSec != null
                     ? { ...x, durationSec: bumpTimedSet(x.durationSec, dir) }
                     : x.kind !== 'cardio'
-                    ? stepReps(x, dir)
+                    ? stepReps(withoutScheme(x), dir)
                     : x.activity === 'bike'
                       ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir, FIRST_TARGET[x.activity ?? 'bike'].spdMph) }
                       : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir, FIRST_TARGET[x.activity ?? 'run'].paceSec) },
@@ -2455,6 +2457,12 @@ function ExerciseCard({
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>
               {equipmentLabel(item.equip)}
+            </Text>
+          ) : null}
+          {/* A card's ramp, percentages and rest (PO 2026-09-30) — more than the steppers can show. */}
+          {!cardio && prescriptionLine(item) ? (
+            <Text style={styles.exEquip} numberOfLines={2}>
+              {prescriptionLine(item)}
             </Text>
           ) : null}
         </View>

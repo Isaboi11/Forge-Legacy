@@ -57,7 +57,32 @@ import {
   weekdayKey,
 } from './import-scheme.ts';
 
+/**
+ * ══ WHAT A PHOTOGRAPHED CARD SAYS THAT A TABLE CANNOT (PO 2026-09-30) ══
+ *
+ * A photo imported through the card reader and the AI check (`data/import-photo-read.ts`) is read by the written-
+ * workout reader, which holds a per-set ramp, percentages, the rest and a superset. This carries them through the
+ * preview into the draft (`toProgramStructure`), so "5 reps 60%, 65%, 70% / 3 reps 73% …" reaches the builder as
+ * nine sets and not as three-by-ten. Absent on every table read, which is unchanged. The preview drops it the
+ * moment the athlete re-counts the row by hand — the numbers are then theirs, not the card's.
+ */
+export interface ImportRx {
+  /** The library key the written reader already matched ("BB Bicep Curls" → biceps curl). */
+  catalogKey?: string;
+  repScheme?: number[];
+  repsMax?: number;
+  percentOfMax?: number;
+  percentScheme?: (number | null)[];
+  percentOf?: string;
+  restSec?: number;
+  restScheme?: (number | null)[];
+  groupId?: string;
+  groupKind?: 'superset';
+}
+
 export interface ParsedItem {
+  /** A card's prescription beyond sets × reps — see `ImportRx`. */
+  rx?: ImportRx;
   /** Verbatim from the sheet. Never normalised, never corrected. */
   name: string;
   sets: number;
@@ -1624,6 +1649,19 @@ export interface ImportedExercise {
   targetMi?: number | null;
   /** The coach's own sentence, carried onto the exercise so nothing the parser could not hold is lost. */
   coachNote?: string | null;
+  durationSec?: number;
+  restAfterSec?: number;
+  /** A photographed card's prescription (`ImportRx`), in `ProgramExercise`'s own field names. */
+  repScheme?: number[];
+  repsMax?: number;
+  percentOfMax?: number;
+  percentScheme?: (number | null)[];
+  percentOf?: string;
+  restSec?: number;
+  restScheme?: (number | null)[];
+  groupId?: string;
+  groupKind?: 'superset';
+  groupName?: string;
 }
 export interface ImportedDay {
   letter: string;
@@ -1688,7 +1726,10 @@ export function toProgramStructure(
         coachNote: i.note ?? null,
       };
     }
-    const key = resolveKey(i.name);
+    /* A card's own match wins: the written reader matched "BB Bicep Curls" by its shorthand, which a plain
+       lookup of the name as written would miss. */
+    const key = i.rx?.catalogKey ?? resolveKey(i.name);
+    const rx = i.rx;
     const base = {
       name: i.name,
       sets: i.sets,
@@ -1697,6 +1738,15 @@ export function toProgramStructure(
       ...(i.durationSec != null ? { durationSec: i.durationSec } : {}),
       ...(i.restSec != null ? { restAfterSec: i.restSec } : {}),
       ...(i.note ? { coachNote: i.note } : {}),
+      /* The card's ramp, percentages, rest between sets and superset (PO 2026-09-30) — see `ImportRx`. */
+      ...(rx?.repScheme?.length ? { repScheme: rx.repScheme } : {}),
+      ...(rx?.repsMax != null ? { repsMax: rx.repsMax } : {}),
+      ...(rx?.percentOfMax != null ? { percentOfMax: rx.percentOfMax } : {}),
+      ...(rx?.percentScheme?.length ? { percentScheme: rx.percentScheme } : {}),
+      ...(rx?.percentOf ? { percentOf: rx.percentOf } : {}),
+      ...(rx?.restSec != null ? { restSec: rx.restSec } : {}),
+      ...(rx?.restScheme?.length ? { restScheme: rx.restScheme } : {}),
+      ...(rx?.groupId ? { groupId: rx.groupId, groupKind: rx.groupKind ?? ('superset' as const), groupName: 'Superset' } : {}),
     };
     return key ? { ...base, catalogKey: key } : base;
   };
@@ -1732,6 +1782,6 @@ export function unmatchedNames(
   const out = new Set<string>();
   // A cardio bout is never looked up (see `toProgramStructure`), so it is never "not in the library" —
   // counting "Outdoor Run" here told a runner their runs had not been recognised.
-  for (const w of weeks) for (const d of w.days) for (const i of d.items) if (i.kind !== 'cardio' && !resolveKey(i.name)) out.add(i.name);
+  for (const w of weeks) for (const d of w.days) for (const i of d.items) if (i.kind !== 'cardio' && !i.rx?.catalogKey && !resolveKey(i.name)) out.add(i.name);
   return [...out];
 }

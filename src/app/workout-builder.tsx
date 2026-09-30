@@ -39,7 +39,8 @@ import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/pr
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { bumpTimedSet, durText } from '@/domain/program/prescription';
-import { toTemplateExercises } from '@/lib/workout-template-rows';
+import { prescriptionOfRow, toTemplateExercises } from '@/lib/workout-template-rows';
+import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   clampReps,
@@ -250,7 +251,8 @@ export default function WorkoutBuilderScreen() {
     const items: ProgramExercise[] = day.main.map((x) => ({
       ...x,
       id: newExerciseId(),
-      sets: clampSets(x.sets),
+      /* A card's ramp keeps every set (see `program-import-draft.ts`); anything else fits the steppers. */
+      sets: x.repScheme?.length ? x.repScheme.length : clampSets(x.sets),
       reps: clampReps(x.reps),
     }));
     const givenName = /^day \d+$/i.test(day.name.trim()) ? '' : day.name.trim();
@@ -399,7 +401,7 @@ export default function WorkoutBuilderScreen() {
                           ? x
                           : x.kind === 'cardio'
                             ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir) }
-                            : { ...x, sets: clampSets((x.sets ?? 1) + dir) },
+                            : { ...withoutScheme(x), sets: clampSets((x.sets ?? 1) + dir) },
                       ),
                     )
                   }
@@ -409,7 +411,8 @@ export default function WorkoutBuilderScreen() {
                         if (k !== i) return x;
                         // A TIMED set steps its clock, not reps (PO 2026-09-27).
                         if (x.kind !== 'cardio' && x.durationSec != null) return { ...x, durationSec: bumpTimedSet(x.durationSec, dir) };
-                        if (x.kind !== 'cardio') return { ...x, reps: clampReps((x.reps ?? 1) + dir) };
+                        /* Re-counting a card's ramp by hand makes the row plain sets × reps (`withoutScheme`). */
+                        if (x.kind !== 'cardio') return { ...withoutScheme(x), reps: clampReps((x.reps ?? 1) + dir) };
                         // Row B counts pace for a run and speed for a bike. The machines offer neither,
                         // and the stepper is hidden for them rather than stepping a value nothing renders.
                         return usesSpeed((x.activity ?? 'run') as CardioActivity)
@@ -634,6 +637,12 @@ function Row({
               {equipmentLabel(item.equip)}
             </Text>
           ) : null}
+          {/* A card's ramp, percentages and rest (PO 2026-09-30) — more than the steppers can show. */}
+          {!cardio && prescriptionLine(item) ? (
+            <Text style={styles.exEquip} numberOfLines={2}>
+              {prescriptionLine(item)}
+            </Text>
+          ) : null}
         </View>
         <View style={styles.ctrls}>
           <Pressable onPress={first ? undefined : onUp} disabled={first} accessibilityRole="button" accessibilityLabel={`Move ${item.name} up`} style={styles.ctrl}>
@@ -808,6 +817,19 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
       ...(e.groupId
         ? { groupId: e.groupId, groupName: e.groupName ?? undefined, groupKind: e.groupKind ?? 'circuit', groupRounds: e.groupRounds ?? undefined }
         : null),
+      /* The template's ramp, percentages and rest come back into the builder, so opening and saving it keeps them
+         (`prescriptionOfRow` writes them; PO 2026-09-30). */
+      ...(isCardio
+        ? null
+        : prescriptionOfRow({
+            repScheme: e.repScheme ?? undefined,
+            repsMax: e.repsMax ?? undefined,
+            percentOfMax: e.percentOfMax ?? undefined,
+            percentScheme: e.percentScheme ?? undefined,
+            percentOf: e.percentOf ?? undefined,
+            restSec: e.restSec ?? undefined,
+            restScheme: e.restScheme ?? undefined,
+          })),
     };
     d[e.section ?? 'main'].push(row);
   }

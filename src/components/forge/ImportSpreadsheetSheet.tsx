@@ -5,7 +5,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { readProgramPhoto } from '@/data/program-photo-live';
+import { readImportPhoto } from '@/data/import-photo-read';
 import { catalogForMatching, resolveExerciseName } from '@/domain/exercise-picker/data';
 import { suggestExercises } from '@/domain/program/exercise-match';
 import { parseProgramTable, summarize, type ParsedWeek } from '@/domain/program/import-parse';
@@ -14,6 +14,7 @@ import { pickTextFile } from '@/lib/pick-text-file';
 import { REPS_MAX, SETS_MAX } from '@/lib/program-draft-model';
 import { MAX_TIMED_SET_SEC } from '@/domain/program/import-scheme';
 import { importLimitNotes } from '@/lib/program-import-draft';
+import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
@@ -150,6 +151,8 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
   const [scopeNote, setScopeNote] = useState<string | null>(null);
   /** Lines the parse did not take as training — listed in the preview. */
   const [skipped, setSkipped] = useState<string[]>([]);
+  /** What a photo read asks the athlete to look at before creating (`readImportPhoto`). */
+  const [checks, setChecks] = useState<string[]>([]);
 
   /*
    * A photo read that was in flight when the sheet closed must not land in a sheet that has since been
@@ -166,6 +169,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setPreview(null);
     setScopeNote(null);
     setSkipped([]);
+    setChecks([]);
     setPhotoBusy(false);
     onClose();
   };
@@ -183,6 +187,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setPreview(fit.weeks);
     setScopeNote(fit.note);
     setSkipped(r.skipped ?? []);
+    setChecks([]);
   };
 
   const onPickFile = async () => {
@@ -216,15 +221,26 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setImportError(null);
     setPhotoBusy(true);
     try {
-      const r = await readProgramPhoto(uri);
+      /* The card reader and the AI check, the same as every other door (PO 2026-09-30) — `readImportPhoto`. */
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
       if (mine !== gen.current) return; // The sheet closed while we were reading.
       // ⚠ THREE FAILURES THAT FEEL IDENTICAL AND ARE NOT. Brief §6: an outage must be visibly different
       // from a verdict. "We couldn't read that" when the request never left the building tells somebody
       // their program is unreadable, and they will go and retake a photograph that was always fine.
       switch (r.kind) {
-        case 'ok':
-          setPasteText(r.tsv);
-          runParse(r.tsv);
+        case 'ok': {
+          /* The words go in the box, where they can be read against the photo; the preview is the checked read. */
+          setPasteText(r.text);
+          const fit = fitToScope(r.weeks, scope);
+          setImportError(null);
+          setPreview(fit.weeks);
+          setScopeNote(fit.note);
+          setSkipped(r.skipped);
+          setChecks(r.checks);
+          break;
+        }
+        case 'unparsed':
+          setImportError(r.error);
           break;
         case 'not_a_program':
           setImportError('That doesn’t look like a training program. Try a photo of the table itself.');
@@ -389,7 +405,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           ) : null}
         </View>
       ) : (
-        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} />
+        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} />
       )}
     </BottomSheet>
   );
@@ -408,6 +424,7 @@ export function ImportPreview({
   scope,
   scopeNote,
   skipped,
+  checks,
 }: {
   weeks: ParsedWeek[];
   onChange: (weeks: ParsedWeek[]) => void;
@@ -415,6 +432,8 @@ export function ImportPreview({
   scopeNote: string | null;
   /** Lines the reader did not take as training (`ParseResult.skipped`), listed so nothing vanishes unseen. */
   skipped?: readonly string[];
+  /** A photo read's "check this before you create it" — a number AI couldn't check, a set count off the card's tally. */
+  checks?: readonly string[];
 }) {
   /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
   const resolveName = (n: string) => resolveExerciseName(n);
@@ -448,6 +467,9 @@ export function ImportPreview({
                             ? { ...it, durationSec: Math.max(5, Math.min(MAX_TIMED_SET_SEC, (it.durationSec ?? 0) + delta)) }
                             : {
                               ...it,
+                              /* Re-counted by hand: a card's per-set ramp can't survive a changed count, so the row
+                                 becomes plain sets × reps (`withoutScheme`); one % and one rest for all sets stay. */
+                              ...(it.rx ? { rx: withoutScheme(it.rx) } : null),
                               // The builder's own ceilings — a stepper that climbs past them offers a
                               // number the program would silently cut on Create.
                               [field]: Math.max(1, Math.min(field === 'sets' ? SETS_MAX : REPS_MAX, it[field] + delta)),
@@ -475,7 +497,7 @@ export function ImportPreview({
         ...w,
         days: w.days.map((d) => ({
           ...d,
-          items: d.items.map((i) => (i.name === written ? { ...i, name: to, note: i.note ?? written } : i)),
+          items: d.items.map((i) => (i.name === written ? { ...i, name: to, note: i.note ?? written, ...(i.rx ? { rx: withoutKey(i.rx) } : null) } : i)),
         })),
       })),
     );
@@ -512,7 +534,7 @@ export function ImportPreview({
    */
   const removeItem = (wi: number, di: number, ii: number) => editItem(wi, di, ii, null);
   const renameItem = (wi: number, di: number, ii: number, name: string) =>
-    editItem(wi, di, ii, (it) => ({ ...it, name, note: it.note ?? it.name }));
+    editItem(wi, di, ii, (it) => ({ ...it, name, note: it.note ?? it.name, ...(it.rx ? { rx: withoutKey(it.rx) } : null) }));
 
   /** "Add another week" — copies the last week forward, which is how a block is usually extended. */
   const addPreviewWeek = () => {
@@ -543,6 +565,16 @@ export function ImportPreview({
                 </Text>
               ))}
               {skipped.length > 6 ? <Text style={styles.impSkippedLine}>+{skipped.length - 6} more</Text> : null}
+            </View>
+          ) : null}
+          {checks?.length ? (
+            <View style={styles.impSkipped} accessibilityRole="summary">
+              <Text style={styles.impSkippedHead}>Check {checks.length === 1 ? 'this' : 'these'} before you {scope === 'program' ? 'create it' : 'use it'}</Text>
+              {checks.map((c) => (
+                <Text key={c} style={styles.impCheckLine}>
+                  · {c}
+                </Text>
+              ))}
             </View>
           ) : null}
           <View style={styles.impSummary}>
@@ -589,6 +621,12 @@ export function ImportPreview({
                             kept as a coaching note rather than dropped. Without this line, a confident
                             wrong reading looks exactly like a right one.
                           */}
+                          {/* A card's ramp, percentages, rest and superset — what the steppers can't show (PO 09-30). */}
+                          {it.rx && (prescriptionLine({ ...it.rx, sets: it.sets, reps: it.reps }) || it.rx.groupId) ? (
+                            <Text style={styles.impItemRx} numberOfLines={2}>
+                              {[it.rx.groupId ? 'Superset' : null, prescriptionLine({ ...it.rx, sets: it.sets, reps: it.reps })].filter(Boolean).join(' · ')}
+                            </Text>
+                          ) : null}
                           {it.note && it.note !== it.name ? (
                             <Text style={styles.impItemSource} numberOfLines={2}>
                               {it.note}
@@ -700,6 +738,12 @@ export function ImportPreview({
   );
 }
 
+/** A renamed row is looked up again by its new name: the card's own match no longer applies to it. */
+function withoutKey<T extends { catalogKey?: string }>(rx: T): T {
+  const { catalogKey: _k, ...rest } = rx;
+  return rest as T;
+}
+
 /** "0:40", "1:30" — a timed set's clock as a timer shows it. */
 function clockText(sec: number): string {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
@@ -777,6 +821,8 @@ const styles = StyleSheet.create({
   impRemove: { width: 20, height: 20, marginLeft: 2, alignItems: 'center', justifyContent: 'center' },
   impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.labelInk },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
+  impItemRx: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 15, color: flColor.cream100 },
+  impCheckLine: { fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16, color: flColor.cream100 },
   impItemMatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.bronzeInk },
   impItemUnmatched: { fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
   impGuesses: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 5, marginTop: 4 },
