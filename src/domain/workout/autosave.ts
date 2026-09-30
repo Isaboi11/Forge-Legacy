@@ -58,7 +58,9 @@ export async function clearSession(): Promise<void> {
  * nothing in it; resuming that is indistinguishable from starting, so neither surface mentions it.
  */
 export function hasLoggedWork(session: ActiveSession | null | undefined): boolean {
-  return !!session?.exercises?.some((e) => e.sets?.some((s) => s.done));
+  /* …and a cardio bout under way is work too: an outdoor walk has no completed set until it ends, and a
+     reload mid-walk used to find "nothing to resume" and rebuild over it (workout-13, QA 09-26). */
+  return !!session?.exercises?.some((e) => e.sets?.some((s) => s.done) || e.boutOpen === true);
 }
 
 /**

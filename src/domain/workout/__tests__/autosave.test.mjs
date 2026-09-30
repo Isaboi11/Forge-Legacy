@@ -40,6 +40,13 @@ test('one completed set anywhere is work worth keeping', () => {
   );
 });
 
+test('an outdoor walk under way is work, though no set is done yet (workout-13)', () => {
+  const walk = { name: 'Outdoor Walk', kind: 'cardio', activity: 'walk', sets: [set(false)] };
+  assert.equal(hasLoggedWork(session([walk])), false, 'not started: nothing to resume');
+  assert.equal(hasLoggedWork(session([{ ...walk, boutOpen: true }])), true, 'started: a reload must bring it back');
+  assert.deepEqual(resumeSummary(session([{ ...walk, boutOpen: true }])), { name: 'W', exerciseCount: 1 });
+});
+
 test('a malformed session never throws — it just is not work', () => {
   // This is read straight out of storage, which may hold anything an older build wrote.
   assert.equal(hasLoggedWork({}), false);

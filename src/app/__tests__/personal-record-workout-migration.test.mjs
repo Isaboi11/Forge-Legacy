@@ -42,9 +42,31 @@ for (const [name, start, id] of [
 
 test('0162 is still the newest definition of both functions (no later migration restates them)', () => {
   const later = readdirSync(dir)
-    .filter((f) => /^\d{4}_.*\.sql$/.test(f) && f.slice(0, 4) > '0162' && !f.startsWith('0242'))
+    // 0253 restates continue_workout from 0242 — guarded on its own below.
+    .filter((f) => /^\d{4}_.*\.sql$/.test(f) && f.slice(0, 4) > '0162' && !f.startsWith('0242') && !f.startsWith('0253'))
     .filter((f) => /create or replace function (public\.)?(save_workout|continue_workout)\s*\(/i.test(read(f)));
   assert.deepEqual(later, []);
+});
+
+test('0253 is 0242’s continue_workout plus the into_position splice — nothing else (workout-05)', () => {
+  const m = read('0253_continue_into_same_exercise.sql').replace(/\r\n/g, '\n');
+  const start = 'create or replace function public.continue_workout(';
+  const now = body(m, start);
+  const was = body(MIGRATION.replace(/\r\n/g, '\n'), start);
+  const open = '    if v_wex is null then\n';
+  const a = now.indexOf('    -- 0253.');
+  const b = now.indexOf(open, a);
+  assert.ok(a > 0 && b > a, 'the lookup block moved');
+  const unspliced = now.slice(0, a) + now.slice(b + open.length).replace('    v_pos := v_pos + 1;\n    end if;\n', '    v_pos := v_pos + 1;\n');
+  assert.equal(unspliced, was);
+  assert.match(now, /and we\.name = v_ex->>'name'/, 'a row is reused only for the same lift');
+  const bundle = readFileSync(new URL('../../../supabase/apply/pending-0253.sql', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  assert.ok(bundle.includes(m), 'the bundle carries 0253 verbatim');
+  assert.match(bundle, /raise exception '0253: the installed continue_workout does not append/);
+  const later = readdirSync(dir)
+    .filter((f) => /^\d{4}_.*\.sql$/.test(f) && f.slice(0, 4) > '0253')
+    .filter((f) => /create or replace function (public\.)?continue_workout\s*\(/i.test(read(f)));
+  assert.deepEqual(later, [], 'a later migration restates continue_workout — move this guard to it');
 });
 
 test('additive and guarded: nullable column, set-null FK, no drop, no backfill', () => {

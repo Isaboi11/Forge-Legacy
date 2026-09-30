@@ -6,6 +6,7 @@ import { fetchRecordsSetBy } from '@/data/records-live';
 import { completionHeroKind, completionSetCount, e1rm } from '@/domain/workout/metrics';
 import { fetchProgram, fetchProgramSessions } from '@/data/programs-live';
 import { dayLabel, nextOpenSlot, touchedCount } from '@/domain/program/progress-core';
+import { activityFromKey, hasRateTarget } from '@/domain/workout/conditioning';
 
 /** This session's top set vs the same lift's previous session → +weight / +reps / Held (or null if new). */
 function deltaOf(now: { w: number; r: number } | null, last: { w: number; r: number } | null): ExerciseDelta | null {
@@ -38,6 +39,12 @@ function fmtDate(iso: string | null): string | null {
 export type ExerciseDelta = { kind: 'weight'; n: number } | { kind: 'reps'; n: number } | { kind: 'hold' };
 
 /** One conditioning bout as it was recorded. Miles and seconds — the screen converts for display. */
+/** A cardio key with a pace to report — or a row with no key at all, which keeps the old behaviour. */
+const rated = (key: string | null | undefined): boolean => {
+  const a = activityFromKey(key);
+  return a == null || hasRateTarget(a);
+};
+
 export interface CompletionCardio {
   distanceMi: number | null;
   /** Stair climber only — floors off the machine (0151). Never a distance, and never converted. */
@@ -51,6 +58,11 @@ export interface CompletionCardio {
   modality: 'outdoor' | 'indoor' | null;
   /** A rower's distance reads in metres by default (`rowUnit`), so the Record has to know it was one. */
   isRow: boolean;
+  /**
+   * Only a run and a walk happen ON A BELT (workout-09, QA 09-26). A row, an elliptical, a swim or a bike
+   * indoors is a machine, and "On the belt" under a rower was a treadmill's word for it.
+   */
+  onBelt?: boolean;
 }
 /**
  * What a run beat — ported from the retired Active Run screen, which owned this and nothing else does.
@@ -512,12 +524,15 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
           durationSec: dur,
           // 0.05 mi is the floor under the division: a 90-foot bout would otherwise report a pace, and
           // it would be a wild one.
-          paceSecPerMi: dist != null && dur != null && dist > 0.05 ? dur / dist : null,
+          // …and only for a bout that HAS a pace. A rower, an elliptical and a swim do not (EPS-D12,
+          // `hasRateTarget`); a per-mile figure under a row was a number nobody on an erg reads (workout-09).
+          paceSecPerMi: dist != null && dur != null && dist > 0.05 && rated(ex.catalog_key) ? dur / dist : null,
           // A zero grade is flat, not "no incline recorded" — but showing "0.0%" on every treadmill run
           // is noise, so it reads as absent. Outdoors it is meaningless and stays null.
           inclinePct: bout.incline_pct != null && bout.incline_pct > 0 ? Number(bout.incline_pct) : null,
           modality: bout.modality === 'indoor' || bout.modality === 'outdoor' ? bout.modality : null,
           isRow: ex.catalog_key === 'cardio:row',
+          onBelt: ex.catalog_key === 'cardio:run' || ex.catalog_key === 'cardio:walk',
         }
       : null;
 

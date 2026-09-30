@@ -18,6 +18,7 @@ import { fetchActivityDetail } from '@/data/activity-live';
 import {
   ordinalLine,
   programTag,
+  boutLine,
   sectionsOf,
   setLine,
   statTiles,
@@ -232,7 +233,7 @@ function Body({
   onOpenExercise: (keyOrName: string) => void;
   onOpenSummary: () => void;
 }) {
-  const { rowUnit } = useUnits();
+  const { rowUnit, units } = useUnits();
   const sections = sectionsOf(detail);
   const tiles = statTiles(detail, rowUnit);
   const isStrength = detail.type === 'strength';
@@ -416,7 +417,8 @@ function Body({
                       {ex.sets.length ? (
                         <View style={styles.setList}>
                           {ex.sets.map((s) => {
-                            const line = fmt(setLine(s));
+                            /* A bout reads as ground and a clock; a "10m" row was ten MINUTES (workout-10). */
+                            const line = cardio ? boutLine(s, ex.catalogKey, { metric: units === 'metric', rowUnit }) : fmt(setLine(s));
                             return (
                               <View key={s.setIndex} style={styles.setRow}>
                                 <Text style={styles.setIndex}>{s.setIndex + 1}</Text>

@@ -99,6 +99,7 @@ import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
 import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds, syncSupersetRounds } from '@/domain/workout/session-core';
 import { joinAsSuperset, supersetOffer } from '@/domain/workout/superset-offer';
+import { holdsAsTimed } from '@/domain/workout/set-goal';
 import { indexAfterMove, moveExercise } from '@/domain/workout/reorder-exercise';
 import { useListReorder } from '@/hooks/useListReorder';
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
@@ -106,6 +107,7 @@ import { completionGap, completionGapMessage } from '@/domain/workout/set-comple
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type IntensitySignalRow, type LastNote } from '@/domain/workout/save';
+import { rememberPlanRemainder } from '@/data/continue-workout-live';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import { queueSave } from '@/data/pending-save-live';
 import { saveAppPrefs, fetchVisibility } from '@/data/settings-live';
@@ -221,6 +223,17 @@ const SECTION_NOUN: Record<WorkoutSectionKind, string> = {
   main: 'exercise',
   cooldown: 'cool-down',
 };
+
+/** Narrower than this and the six fixed set-table cells and a 150pt plate no longer fit (workout-16). */
+const NARROW_PHONE_W = 362;
+/** The plate never gives up more than this — below it the demonstration stops being readable. */
+const PLATE_MIN_H = 120;
+/**
+ * Everything between the top of the hero card and the foot of the FIRST set row, other than the plate:
+ * card border 2 + `heroUpper` padding 28 + plinth 71 + the scroll gap 14 + table border and padding 15 +
+ * the heading row 20 + one set row 60, and 8 to spare. See `plateH`.
+ */
+const HERO_CHROME = 218;
 
 function nearestIdx(opts: number[], v: number): number {
   let best = 0;
@@ -878,6 +891,8 @@ export default function WorkoutScreen() {
    * back to content height for that one frame rather than to nothing.
    */
   const [pagerH, setPagerH] = useState(0);
+  /* Where the hero card starts inside the page — 14 is the scroll's own top padding, the common case. */
+  const [heroY, setHeroY] = useState(14);
   /**
    * The exercise index whose cardio bout is OPEN — started and not yet logged. Null when none is.
    *
@@ -1149,6 +1164,9 @@ export default function WorkoutScreen() {
         setSession(
           applyCredits({
             ...s,
+            /* A plank prescribed as "3 × 45" starts as three 45-second holds — every door passes through
+               here, so a program day, a template and a shared shape all get the same answer. */
+            exercises: holdsAsTimed(s.exercises, (e) => (e.catalogKey ? itemByKey(e.catalogKey) : itemByName(e.name))?.unit === 'time'),
             partnerIds: launchPartners ?? s.partnerIds,
             ...(droppedPartners.length
               ? { partnerIdsDeclined: [...new Set([...(s.partnerIdsDeclined ?? []), ...droppedPartners])] }
@@ -2406,6 +2424,9 @@ export default function WorkoutScreen() {
            everyone today and correct the moment somebody chooses Kgs. */
         ? (await continueWorkout(session.continuingWorkoutId, session, units), session.continuingWorkoutId)
         : (await saveWorkout(session, partnerNames, signals, units)).workoutId;
+      /* What was planned and not done, set aside for "Continue this workout" before the session that holds
+         it is cleared — the server never had it (workout-05). */
+      await rememberPlanRemainder(workoutId, session);
       await clearSession();
       /* One more session in the book — the tutorial's phases are counted in workouts, and this is the
          only place a workout becomes one. A no-op until the count has been seeded from the server, so it
@@ -2827,6 +2848,10 @@ export default function WorkoutScreen() {
    * and the table header just below says which unit this screen is in — and now says it correctly.
    */
   const liftHist = liftHistory?.get(liftId(ex)) ?? null;
+  /* Never done it — KNOWN, not merely "not loaded yet". The read files every lift it was asked about, so
+     `liftHist` is null only while it is in flight; testing that alone called every lift a first time for
+     a moment and none of them afterwards (workout-12). */
+  const firstTime = liftHistory != null && (liftHist == null || (liftHist.sessions.length === 0 && liftHist.best == null));
   /* ⚠ CONVERTS NOW. These figures come from `personal_records` / `workout_sets`, which hold canonical
      POUNDS since `canonicalizeWeights` — so a metric athlete's own history has to be handed back in
      kilos. Before that fix, storage held whatever was typed, and converting here would have halved a
@@ -3120,7 +3145,7 @@ export default function WorkoutScreen() {
      point there is no next set to compare and the strip says nothing. */
   const prevSet = currentSetIdx >= 0 ? liftHist?.sessions[0]?.sets[currentSetIdx] : undefined;
   const prevText =
-    prevSet?.weight != null && prevSet.reps != null ? wxr(prevSet.weight, prevSet.reps) : null;
+    prevSet?.reps == null ? null : prevSet.weight != null ? wxr(prevSet.weight, prevSet.reps) : `${prevSet.reps} reps`;
   /**
    * Every overlay this screen owns, and the bubble hides behind all of them.
    *
@@ -3267,6 +3292,32 @@ export default function WorkoutScreen() {
     setAutoCollapsed((a) => ({ ...a, [exIdx]: true })); // a manual choice also blocks the one-time auto-collapse
   };
   const isCardio = ex.kind === 'cardio';
+  /**
+   * ══ THE FIRST SET IS ON SCREEN WHEN AN EXERCISE OPENS (workout-15, workout-16, QA 09-26) ══
+   *
+   * W9-A11 bound the hero to one constraint in the PO's words — *"the first set is visible immediately.
+   * That's extremely important"* — and W9-A12 broke it knowingly with a fixed 150 × 212 plate, flagged
+   * *"if the first set must be visible before it is logged, the plate is where the height is."* On a tall
+   * phone there is room for both. On a short one the table started below the fold and every exercise
+   * opened with a scroll before anything could be logged.
+   *
+   * So the plate is A12's 212 wherever the first row still fits under it, and gives up exactly the height
+   * that is missing where it does not — never below `PLATE_MIN_H`. `contain` makes this cheap: A12's own
+   * measurement has 150 × 181 filling MORE of the plate than 150 × 212 (69.6% vs 69.1%).
+   *
+   * ⚠ MEASURED, NOT GUESSED FROM A DEVICE NAME. `pagerH` is the page's real height and `heroY` is where
+   * the card really starts (a circuit banner or the superset bar above it pushes it down). `HERO_CHROME`
+   * is everything else between the top of the card and the foot of the first set row.
+   *
+   * ⚠ AND A NARROW PHONE GETS A NARROWER PLATE. At 320pt the rail beside a 150pt plate is 90pt, of which
+   * the two icons take 46 — the name had 44pt and broke inside the word: "Bar / bell / Ben / ch". The
+   * plate keeps its proportion at 112 wide and the icons move above the name (`heroTitleNarrow`).
+   */
+  const heroNarrow = pageW > 0 && pageW < NARROW_PHONE_W;
+  const plateW = heroNarrow ? 112 : 150;
+  const plateMaxH = heroNarrow ? 158 : 212;
+  const plateH = pagerH > 0 ? Math.max(PLATE_MIN_H, Math.min(plateMaxH, Math.floor(pagerH - heroY - HERO_CHROME))) : plateMaxH;
+  const plateFit = plateW === 150 && plateH === 212 ? null : { width: plateW, height: plateH };
 
   /**
    * The block this exercise sits in, if any — its kind, its name, its size and where in it we are.
@@ -3602,7 +3653,13 @@ export default function WorkoutScreen() {
   const onPrimary = () => {
     if (blockedByBout()) return;
     if (isLastEx) {
-      if (hasLoggedSet(session)) void finishToSeal();
+      if (!hasLoggedSet(session)) return;
+      /* "Finish Workout" appears on the LAST EXERCISE, not once every set is logged — so it could end a
+         session with eight sets still open and say nothing, while ⋯ → End workout counted them first
+         (B12, QA 09-26). Both doors ask the same question now; with nothing left to lose there is nothing
+         to ask, and the normal path stays one tap. */
+      if (setsDone < totalSets) setEndConfirmOpen(true);
+      else void finishToSeal();
     } else goExercise(exIdx + 1);
   };
   const primaryDisabled = isLastEx && !hasLoggedSet(session);
@@ -3797,8 +3854,9 @@ export default function WorkoutScreen() {
    * The confirmation states the cost in NUMBERS rather than asking "are you sure": what is unlogged is
    * the thing the athlete is about to lose, and it is the one fact that decides the answer.
    *
-   * The primary "Finish Workout" button is deliberately NOT confirmed. It only appears once every set
-   * is logged, so there is nothing left to lose — a confirm there would be a tax on the normal path.
+   * The primary "Finish Workout" button is NOT confirmed once every set is logged — there is nothing left
+   * to lose, and a confirm there would be a tax on the normal path. With sets still open it asks exactly
+   * this question (see `onPrimary`): it sits on the last exercise whatever was skipped before it.
    */
   const endFromOptions = () => {
     setOptionsOpen(false);
@@ -4297,13 +4355,16 @@ export default function WorkoutScreen() {
                   table logs one member, and both would be arguing with a card whose whole point is that the
                   pairing is a single thing you do. Tapping a member's row in the card opens it on its own. */}
               {isCardio || ssFused ? null : heroExpanded ? (
+                /* The wrapper exists to be measured — see `plateH`. It carries no style, so the scroll's
+                   own gap spaces it exactly as it spaced the card. */
+                <View onLayout={(e) => setHeroY(Math.round(e.nativeEvent.layout.y))}>
                 <TourAnchor id="workout-hero" style={styles.hero}>
                   <View style={styles.heroUpper}>
                     {/* The plate — the exercise's looping demonstration, falling back to the engraved
                         dumbbell for lifts the library doesn't cover (strongman, most mobility).
                         ⚠ `contain`, AND IT IS NOT NEGOTIABLE — see `mediaSlot`. The whole movement has
                         to be in the frame; `cover` cut half of it off on a third of the catalogue. */}
-                    <View style={styles.mediaSlot}>
+                    <View style={[styles.mediaSlot, plateFit]}>
                       <ExerciseLoop
                         exerciseId={ex.catalogKey}
                         contentFit="contain"
@@ -4329,15 +4390,18 @@ export default function WorkoutScreen() {
                         in BOTH hero faces (see the collapsed strip below) because the hero auto-collapses
                         the moment the first set resolves — which is exactly when a grip cue is still true.
                       */}
-                      <View style={styles.heroTitleRow}>
+                      <View style={heroNarrow ? styles.heroTitleNarrow : styles.heroTitleRow}>
                         {/* Sized so the longest WORD fits the name column (social2-20, QA 09-26): at a fixed 25pt,
                             "Alternating" broke as "Alternatin / g" on an iPhone 14, host and joiner alike. The
-                            column is the page less the card's gutters, the 150pt plate and the two glyphs. */}
+                            column is the page less the card's gutters, the 150pt plate and the two glyphs.
+                            Under `NARROW_PHONE_W` the plate is 112 and the glyphs sit above the name, so the
+                            column is the whole rail and the face starts at 21 (workout-16). */}
                         {(() => {
-                          const size = fitWordFontSize(ex.name, Math.max(80, pageW - 273), 25, 16);
-                          return <Text style={[styles.heroName, size < 25 ? { fontSize: size, lineHeight: Math.round(size * 1.08) } : null]}>{ex.name}</Text>;
+                          const max = heroNarrow ? 21 : 25;
+                          const size = fitWordFontSize(ex.name, Math.max(80, heroNarrow ? pageW - 192 : pageW - 273), max, 16);
+                          return <Text style={[heroNarrow ? styles.heroNameNarrow : styles.heroName, size < max ? { fontSize: size, lineHeight: Math.round(size * 1.08) } : null]}>{ex.name}</Text>;
                         })()}
-                        <View style={styles.heroActionsTop}>
+                        <View style={heroNarrow ? styles.heroActionsNarrow : styles.heroActionsTop}>
                           {/* ⚠ 15pt GLYPHS, 44pt TARGETS — bought with `hitSlop`, never with size, which
                               is what the spec means by "expand with padding, not size". A 15pt icon
                               inside a 15pt Pressable is a control an athlete with chalk on cannot hit. */}
@@ -4404,17 +4468,17 @@ export default function WorkoutScreen() {
                         own text — and `marginTop: 'auto'` pushes this to the rail's foot, so the rail and
                         the plate end level at ANY title length. Remove either half and the gap comes back.
 
-                        ⚠ BOTH VARIANTS SURVIVE — the copy AND the fill. `liftHist` is null for a lift with
-                        no history, the same fact the plinth uses to print `—` for a previous best.
+                        ⚠ BOTH VARIANTS SURVIVE — the copy AND the fill. `firstTime` is a lift with no
+                        saved session and no record, the same fact the plinth prints `—` for.
                       */}
                       <Pressable
                         onPress={() => (ex.catalogKey ? router.push({ pathname: '/exercise/[id]', params: { id: ex.catalogKey } }) : undefined)}
                         accessibilityRole="button"
-                        accessibilityLabel={liftHist ? `How to ${ex.name}` : `First time on ${ex.name} — see how it's done`}
-                        style={({ pressed }) => [styles.howTo, liftHist ? null : styles.howToFirst, pressed ? styles.howToPressed : null]}
+                        accessibilityLabel={firstTime ? `First time on ${ex.name} — see how it's done` : `How to ${ex.name}`}
+                        style={({ pressed }) => [styles.howTo, firstTime ? styles.howToFirst : null, pressed ? styles.howToPressed : null]}
                       >
                         <EngravedIcon name="play" size={14} />
-                        <Text style={styles.howToText}>{liftHist ? 'How To' : "First time — here's how"}</Text>
+                        <Text style={styles.howToText}>{firstTime ? "First time — here's how" : 'How To'}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -4557,6 +4621,7 @@ export default function WorkoutScreen() {
                     the actual defect. `coachLine` decides which of the three he says — see `domain/coach/coach-says`.
                   */}
                 </TourAnchor>
+                </View>
               ) : (
                 <Pressable onPress={() => setHero(false)} accessibilityRole="button" accessibilityLabel="Expand exercise details" style={({ pressed }) => [styles.heroStrip, pressed && styles.ctlPressed]}>
                   <View style={styles.heroStripThumb}>
@@ -4632,7 +4697,14 @@ export default function WorkoutScreen() {
                   units={units}
                   onSetModality={setCardioModality}
                   onSave={saveCardioLog}
-                  onLiveChange={(live) => setLiveBoutIdx(live ? exIdx : null)}
+                  onLiveChange={(live) => {
+                    setLiveBoutIdx(live ? exIdx : null);
+                    /* On the session too, so autosave knows a bout is under way (workout-13) — see `boutOpen`. */
+                    mutate((s) => ({
+                      ...s,
+                      exercises: s.exercises.map((e, i) => (i === exIdx ? { ...e, boutOpen: live || undefined } : e.boutOpen ? { ...e, boutOpen: undefined } : e)),
+                    }));
+                  }}
                 />
               ) : (
               <SetTable exercise={ex} ei={exIdx} liftHist={liftHist} showHint={setsDone === 0} {...setTableShared} />
@@ -4779,8 +4851,7 @@ export default function WorkoutScreen() {
             through it, and a permanent Add sitting under the thumb invites editing a prescription by
             accident.
 
-            Nothing is lost — Holt's sheet carries "Add a movement" (the ⋯ menu no longer does; it
-            keeps to the session, Holt keeps the plan). With one
+            Nothing is lost — the ⋯ menu and Holt's sheet both carry it. With one
             child, `primaryWrap`'s `flex: 1.15` fills the row on its own; no style change is needed to
             make the primary full-width.
           */}
@@ -5348,9 +5419,11 @@ export default function WorkoutScreen() {
         onClose={() => setEndConfirmOpen(false)}
         headline="End this workout?"
         body={
+          /* ⚠ IT SAID "sealing is final — you can’t add to this workout afterward", which has not been true
+             since 0125: a finished workout can be continued for an hour, from its details (workout-05). */
           setsDone === totalSets
-            ? `All ${totalSets} ${totalSets === 1 ? 'set is' : 'sets are'} logged. Sealing is final — you can’t add to this workout afterward.`
-            : `You’ve logged ${setsDone} of ${totalSets} sets. The rest won’t be recorded, and sealing is final — you can’t add to this workout afterward.`
+            ? `All ${totalSets} ${totalSets === 1 ? 'set is' : 'sets are'} logged. If you end it by mistake, you can continue it for the next hour from its details.`
+            : `You’ve logged ${setsDone} of ${totalSets} sets. The rest won’t be recorded. If you end it by mistake, you can continue it for the next hour from its details.`
         }
         confirmLabel="End workout"
         cancelLabel="Keep training"
@@ -5502,6 +5575,7 @@ export default function WorkoutScreen() {
                 sub={session.workoutName}
                 icon="edit"
               />
+              <Text style={styles.optGroupLabel}>This exercise</Text>
               {/* THE AUTHOR'S CUE, restated where the athlete goes looking for instructions. Not a
                   row you can press: it belongs to the plan, and the athlete edits their own note
                   directly beneath it rather than overwriting what they were told to do. */}
@@ -5526,16 +5600,63 @@ export default function WorkoutScreen() {
                 icon="document"
               />
               {/*
-                ══ WHAT IS NOT HERE, AND WHY ══
+                ══ THIS EXERCISE — SWAP, PAIR, MOVE PAST, TAKE OUT, REORDER (B12, QA 09-26) ══
 
-                Add an exercise · Swap · Superset with next · Break the superset · Skip used to sit here
-                as five rows. Holt's sheet carries every one of them under CHANGE THE PLAN — "Add a
-                movement", "Something else…", "Short on time", "Stop pairing these", "Move past this" —
-                and the PO's instruction was plain: *"things that we should just have coach holt have.
-                Let's make sure we're not repeating and we keep it simple."* So this menu is the things
-                about the SESSION (its name, your note, who is here, the music, ending it) and Holt is
-                the things about the PLAN. The handlers still exist; Holt calls them.
+                These five sat here, were moved to Holt's sheet alone on 08-28 (PO: *"things that we
+                should just have coach holt have… not repeating and we keep it simple"*), and that left
+                them behind one round button that reads as chat. Two things have happened since that the
+                move did not survive:
+
+                  · FREE ATHLETES HAVE NO HOLT IN A WORKOUT AT ALL (`holtHidden`: `!inWorkoutHolt.ok`).
+                    `Monetization-Amendment-003` MA3-D5 is locked — *"manual substitution stays free during
+                    a workout; the Free athlete is never stranded mid-session"* — and with the coin gone
+                    there was no swap anywhere on the screen. W9-Amendment-002 requires a non-Holt
+                    "Replace Exercise" on every exercise for the same reason.
+                  · "All Exercises" learned to drag (09-28), and nothing on the screen said so.
+
+                So they are here again, under their own label, in the SAME WORDS Holt's sheet uses — one
+                vocabulary, two doors. Holt keeps what only he can do: the reasons, the suggestions, the
+                load. The handlers are the ones he calls, so the two cannot drift.
               */}
+              <OptionRow onPress={openSwap} title="Swap this exercise" sub="Pick a different movement for this slot" icon="swap" />
+              {isSuperset ? (
+                <OptionRow onPress={breakSuperset} title="Break the superset" sub="Back to one at a time, with rest between" icon="layers" />
+              ) : null}
+              {!isLastEx ? (
+                <OptionRow
+                  onPress={supersetWithNext}
+                  title={isSuperset ? 'Add the next exercise to it' : `Superset with ${session.exercises[exIdx + 1].name}`}
+                  sub="Alternate them — one rest, at the end of the round"
+                  icon="layers"
+                />
+              ) : null}
+              {!isLastEx ? (
+                <OptionRow onPress={skipExercise} title="Move past this" sub="Keep it in the session, come back to it" icon="skip-forward" />
+              ) : null}
+              {session.exercises.length > 1 ? (
+                <>
+                  <OptionRow
+                    onPress={() => {
+                      setOptionsOpen(false);
+                      askRemove(exIdx);
+                    }}
+                    title="Take it out"
+                    sub="Remove it from today’s session"
+                    icon="trash"
+                  />
+                  <OptionRow
+                    onPress={() => {
+                      setOptionsOpen(false);
+                      setOverviewOpen(true);
+                    }}
+                    title="Reorder exercises"
+                    sub="Drag them into a new order in All Exercises"
+                    icon="reorder"
+                  />
+                </>
+              ) : null}
+              <OptionRow onPress={openAdd} title="Add an exercise" sub="Pick another movement for this session" icon="plus" />
+              <Text style={styles.optGroupLabel}>This workout</Text>
               {/*
                 ⚠ THIS WAS ONE ROW CALLED "Invite training partner", SUB-TITLED "They'll do this workout
                 too" — AND IT SENT NOTHING. It opened the tagging sheet, which credits somebody already
@@ -6075,7 +6196,10 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
    */
   const prevAtIndex = (setI: number): string | null => {
     const p = liftHist?.sessions[0]?.sets[setI];
-    return p?.weight != null && p.reps != null ? prevFigure(p.weight, p.reps, units) : null;
+    if (p?.reps == null) return null;
+    /* No load on file is not no set: a band or an empty bar logged for twelve still did twelve
+       (workout-12). A bodyweight movement arrives as `0` from the history read and says `BW × 12`. */
+    return p.weight != null ? prevFigure(p.weight, p.reps, units) : `${p.reps} reps`;
   };
   /**
    * The same figure as `prevAtIndex`, as a NUMBER in the athlete's own units — what the live row's
@@ -6092,6 +6216,19 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
   };
   const popCell = (rowSi: number, field: 'weight' | 'reps', node: ReactNode) =>
     pop && pop.ei === ei && pop.si === rowSi && pop.field === field ? <Pop key={pop.token}>{node}</Pop> : node;
+  /**
+   * ══ SIX FIXED CELLS NEED 362pt OF SCREEN, AND A 320pt PHONE DOES NOT HAVE IT (workout-16) ══
+   *
+   * The cells are fixed so the columns meet their headings, and that stays true: on a phone narrower than
+   * `NARROW_PHONE_W` the three DATA columns are still fixed, just narrower by exactly what is missing, in
+   * the heading and in every row alike. They were overflowing the card instead, which pushed the trash —
+   * the last cell — half off it. Set, the check and the trash keep their size: they are the targets.
+   */
+  const { width: winW } = useWindowDimensions();
+  const squeeze = Math.max(0, NARROW_PHONE_W - winW);
+  const nPrev = squeeze > 0 ? { width: 76 - Math.ceil(squeeze * 0.4) } : null;
+  const nWeight = squeeze > 0 ? { width: 70 - Math.ceil(squeeze * 0.35) } : null;
+  const nReps = squeeze > 0 ? { width: 54 - Math.ceil(squeeze * 0.25) } : null;
 
   const body = (
     <>
@@ -6124,12 +6261,12 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
             heading: `prevVal` is 14.5pt display, so a metric athlete's `102.5 × 8` measures
             ~72pt and was overflowing 66. The word shrinks; the column stays 76, or that
             figure clips again. See `cPrev`. */}
-        <Text style={[styles.h, styles.cPrev]}>Prev</Text>
+        <Text style={[styles.h, styles.cPrev, nPrev]}>Prev</Text>
         {/* ⚠ NO `· LB`. The unit prints inside every weight field already (W9-A10-D4's
             `— lb` affordance), so in the heading it was a duplicate that cost a second line:
             `WEIGHT · LB` at 9pt/1.1 tracking measures ~76pt against this column's 70. */}
-        <Text style={[styles.h, styles.cWeight, styles.hCentered]}>Weight</Text>
-        <Text style={[styles.h, styles.cReps, styles.hCentered]}>Reps</Text>
+        <Text style={[styles.h, styles.cWeight, nWeight, styles.hCentered]}>Weight</Text>
+        <Text style={[styles.h, styles.cReps, nReps, styles.hCentered]}>Reps</Text>
         <View style={styles.cCheck} />
         <View style={styles.cTrash} />
       </View>
@@ -6228,12 +6365,12 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
                     onPress={() => onFillWeight(ei, si, prevWeight)}
                     accessibilityRole="button"
                     accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}. Use that weight.`}
-                    style={({ pressed }) => [styles.cPrev, styles.prevCell, pressed && styles.prevCellPressed]}
+                    style={({ pressed }) => [styles.cPrev, nPrev, styles.prevCell, pressed && styles.prevCellPressed]}
                   >
                     <Text style={[styles.prevVal, styles.prevValLive]} numberOfLines={1}>{rowPrev}</Text>
                   </Pressable>
                 ) : (
-                  <View style={[styles.cPrev, styles.prevCell]}>
+                  <View style={[styles.cPrev, nPrev, styles.prevCell]}>
                     {rowPrev ? (
                       <Text style={styles.prevVal} numberOfLines={1} accessibilityLabel={`Last time, set ${si + 1}, ${rowPrev}`}>{rowPrev}</Text>
                     ) : null}
@@ -6246,7 +6383,7 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
                   and can announce a personal record for it. Faded ink is the ask; only the
                   athlete's own tap turns it into an answer.
                 */}
-                <Pressable style={({ pressed }) => [styles.cWeight, styles.fieldBox, isCurrent && styles.fieldBoxLive, pressed && styles.cellBtnPressed]} onPress={() => onEdit(ei, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
+                <Pressable style={({ pressed }) => [styles.cWeight, nWeight, styles.fieldBox, isCurrent && styles.fieldBoxLive, pressed && styles.cellBtnPressed]} onPress={() => onEdit(ei, si, 'weight')} accessibilityRole="button" accessibilityLabel={`Edit weight, set ${si + 1}`}>
                   {set.weight != null ? (
                     popCell(si, 'weight', <Text style={[styles.fieldNum, weightShown.length > 4 ? styles.fieldNumSm : null, { color: valColor }]} numberOfLines={1}>{weightShown}</Text>)
                   ) : ghost?.weight != null ? (
@@ -6287,7 +6424,7 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
                     {/* A pending row is tappable too — so you can put set 3's numbers in before you
                         get there. It writes only: sets still resolve top-down (see `commitSheet`). */}
                     <Pressable
-                      style={({ pressed }) => [styles.cReps, styles.fieldBox, isCurrent && styles.fieldBoxLive, isCurrent && styles.fieldBoxReps, pressed && styles.cellBtnPressed]}
+                      style={({ pressed }) => [styles.cReps, nReps, styles.fieldBox, isCurrent && styles.fieldBoxLive, isCurrent && styles.fieldBoxReps, pressed && styles.cellBtnPressed]}
                       onPress={() => onEdit(ei, si, 'reps')}
                       accessibilityRole="button"
                       accessibilityLabel={isDone ? `Edit actual reps, set ${si + 1}` : repsAnswered ? `Reps for set ${si + 1}, ${repsShown}` : `Set ${si + 1} asks for ${repsShown} reps. Change it.`}
@@ -7156,6 +7293,12 @@ const styles = StyleSheet.create({
      `alignItems: 'flex-start'`, so without it a 15pt icon sits at the cap line of a 27pt line box and
      reads as floating above the title. */
   heroActionsTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 4 },
+  /* Under `NARROW_PHONE_W` the two icons sit ABOVE the name instead of beside it, so the name has the
+     whole rail and a seven-letter word is not broken in the middle (workout-16). `column-reverse` keeps
+     the name first in the tree, which is the order a screen reader should meet them in. */
+  heroTitleNarrow: { flexDirection: 'column-reverse', gap: 6 },
+  heroNameNarrow: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: -0.3, lineHeight: 23, color: flText.primary },
+  heroActionsNarrow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 14 },
   /* The glyph is 15; the TARGET is the 15 plus `hitSlop={15}` at the call sites = 45pt. Do not grow
      this box to buy the target — that would scale the icon with it. */
   heroIconBtn: { alignItems: 'center', justifyContent: 'center' },
@@ -7701,6 +7844,8 @@ const styles = StyleSheet.create({
   optTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   optTitleDanger: { color: flColor.redMuted },
   optSub: { fontSize: 12, color: flColor.gray600 },
+  /* A label, not a card — it names the group the rows under it act on. `labelInk` in both themes. */
+  optGroupLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, paddingHorizontal: 2, paddingTop: 6 },
 
   // toast
   toastWrap: { position: 'absolute', left: 0, right: 0, bottom: 100, alignItems: 'center', zIndex: 55 },

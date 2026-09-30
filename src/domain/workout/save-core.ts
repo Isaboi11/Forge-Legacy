@@ -325,11 +325,14 @@ export function buildAppendExercises(session: ActiveSession) {
     .map((row, i) => {
       const ex = recorded[i];
       const fresh = ex.sets.filter((s) => s.done && !s.saved);
-      return { row, fresh };
+      return { row, fresh, into: ex.savedPosition };
     })
     .filter(({ fresh }) => fresh.length > 0)
-    .map(({ row, fresh }) => ({
+    .map(({ row, fresh, into }) => ({
       ...row,
+      /* A lift that was already in the saved workout names its row, so 0253 appends to it instead of
+         filing a second copy of the lift (workout-05). A server without 0253 ignores the key. */
+      ...(into != null ? { into_position: into } : {}),
       sets: row.sets.filter((s) => fresh.some((f) => f.setIndex === s.set_index)),
     }));
 }

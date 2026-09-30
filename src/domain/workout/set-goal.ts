@@ -139,6 +139,49 @@ export function applyTimeGoal(ex: SessionExercise, sec: number): SessionExercise
   };
 }
 
+/**
+ * ══ A HOLD THAT ARRIVED PRESCRIBED IN REPS STARTS AS A TIMED SET (workout-11, QA 09-26) ══
+ *
+ * *"Planks are logged as reps with a weight column."* Three doors build a session from a prescription —
+ * a program day, a template, a shared shape — and each makes a timed set only when the row carries a
+ * clock. Plenty do not: the shipped programs wrote `Plank 3 × 45` with `unit: 'seconds'` and adoption
+ * copied the 45 into `reps` (fixed at the source in `adopt-core`, but every program adopted before that
+ * keeps the old rows), a template saved before timed rows existed says `3 × 8`, and so on. The logger
+ * then asked for forty-five repetitions of a plank and filed them.
+ *
+ * So the crossing asks the CATALOGUE, which is the authority on what a movement is (`unit: 'time'`), the
+ * same question `pickedToExercise` already asks for a lift added mid-session.
+ *
+ * ⚠ THE NUMBER: `HOLD_SECONDS_FROM` or more is read as the seconds it almost certainly was (20, 30, 45,
+ * 60 — every shipped hold); anything smaller is a rep default nobody chose (8, 10, 12) and becomes the
+ * ordinary thirty-second hold. The athlete changes either from the Goal panel, Reps/Time included.
+ *
+ * ⚠ NEVER A SESSION ALREADY UNDER WAY. An exercise with a logged set, a clock on any set, or a to-failure
+ * set is returned untouched — a resumed or continued session's sets are a record, not a prescription.
+ */
+export const HOLD_SECONDS_FROM = 15;
+
+export function holdsAsTimed(
+  exercises: readonly SessionExercise[],
+  isTimed: (ex: SessionExercise) => boolean,
+  defaultSec: number = GOAL_SEC_DEFAULT,
+): SessionExercise[] {
+  return exercises.map((ex) => {
+    if (ex.kind === 'cardio' || ex.sets.length === 0) return ex;
+    if (ex.sets.some((s) => s.done || s.toFailure || s.targetSec != null || s.durationSec != null)) return ex;
+    if (!isTimed(ex)) return ex;
+    return {
+      ...ex,
+      sets: ex.sets.map((s) => ({
+        ...s,
+        targetSec: clampSec(s.targetReps >= HOLD_SECONDS_FROM ? s.targetReps : defaultSec),
+        targetReps: 0,
+        targetRepsMax: null,
+      })),
+    };
+  });
+}
+
 /** The next value a stepper tap produces, clamped at both ends so a held thumb cannot run off. */
 export const stepReps = (reps: number, dir: 1 | -1): number => clampReps(reps + dir);
 export const stepSec = (sec: number, dir: 1 | -1): number => clampSec(sec + dir * GOAL_SEC_STEP);

@@ -258,6 +258,31 @@ test('an empty or whitespace cue is not carried as one', () => {
   assert.equal('coachNote' in s.days[0].main[0], false, 'whitespace is not an instruction');
 });
 
+// ── a hold written in seconds (workout-11) ──────────────────────────────────
+
+test('a prescription in seconds adopts as a clock, never as that many reps', () => {
+  const def = {
+    ...singleBlock,
+    blocks: [
+      block('Weeks 1–6', 1, 6, [
+        workout('A', 'Core', [
+          { catalogKey: 'plank', displayName: 'Plank', sets: 3, reps: 45, repsMax: 60, unit: 'seconds' },
+          { catalogKey: 'dead-hang', displayName: 'Dead Hang', sets: 2, reps: 1, unit: 'minutes' },
+          { catalogKey: 'superman-hold', displayName: 'Superman Hold', sets: 3, reps: 0, unit: 'seconds', durationSec: 20 },
+          { catalogKey: 'farmer-carry', displayName: 'Farmer Carry', sets: 3, reps: 30, unit: 'yards' },
+          rx('Back Squat', 3, 5),
+        ]),
+      ]),
+    ],
+  };
+  const [plank, hang, superman, carry, squat] = structureFromDefinition(def).days[0].main;
+  assert.deepEqual([plank.reps, plank.durationSec, plank.repsMax], [0, 45, undefined]);
+  assert.deepEqual([hang.reps, hang.durationSec], [0, 60]);
+  assert.deepEqual([superman.reps, superman.durationSec], [0, 20], 'an explicit clock is unchanged');
+  assert.deepEqual([carry.reps, carry.durationSec], [30, undefined], 'yards are not seconds');
+  assert.deepEqual([squat.reps, squat.durationSec], [5, undefined]);
+});
+
 test('a hold authored as seconds adopts as a timed set, not as reps (QA 09-26 home-23: "2 × 30")', () => {
   const plank = { catalogKey: 'plank', displayName: 'Front Plank', sets: 2, reps: 30, unit: 'seconds', restSec: 60 };
   const def = { ...singleBlock, blocks: [block('Weeks 1–6', 1, 6, [workout('A', 'Core', [plank, rx('Back Squat', 3, 5)])])] };

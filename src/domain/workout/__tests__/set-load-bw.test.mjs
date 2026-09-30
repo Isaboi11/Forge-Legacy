@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { setWeightLabel, setWeightLabelLb, setLoadLineLb, BODYWEIGHT, UNANSWERED } from '../set-load.ts';
+import { setWeightLabel, setWeightLabelLb, setLoadLineLb, historyWeight, BODYWEIGHT, UNANSWERED } from '../set-load.ts';
+import { progressionFor } from '../../coach/progression.ts';
 import { targetLine } from '../watch-projection.ts';
 
 /**
@@ -139,4 +140,36 @@ test('the thousands separator survives a fraction', () => {
 test('the watch shows the same half plate the phone does', () => {
   const set = { weight: 37.5, targetReps: 8, targetWeight: null, targetSec: null, toFailure: false };
   assert.equal(targetLine(set, IMP), '37.5 lb × 8');
+});
+
+// ── history: a push-up logged with the weight box untouched (workout-12) ────
+
+test('a bodyweight movement saved with no weight reads back as BW; a barbell lift stays unanswered', () => {
+  assert.equal(historyWeight(null, true), 0);
+  assert.equal(historyWeight(undefined, true), 0);
+  assert.equal(historyWeight(null, false), null, 'an empty bar is not a bodyweight set');
+  assert.equal(historyWeight(25, true), 25, 'a weighted vest stays the load that was typed');
+  assert.equal(historyWeight(0, false), 0, 'an explicit BW answer is kept wherever it was given');
+  assert.equal(setLoadLineLb(historyWeight(null, true), 12, IMP), 'BW × 12');
+});
+
+test('with that session read back, the coach counts reps instead of calling it a first time', () => {
+  const session = (bw) => ({
+    startedAt: '2026-09-20T10:00:00Z',
+    sets: [12, 12, 11].map((reps) => ({ weight: historyWeight(null, bw), reps })),
+  });
+  const ask = (bw) =>
+    progressionFor({
+      exerciseName: 'Push-Up',
+      pattern: 'Horizontal Push',
+      experience: 'intermediate',
+      prescription: { sets: 3, reps: 10, repsMax: 15 },
+      history: [session(bw)],
+      equipment: 'bodyweight',
+    });
+  assert.equal(ask(false).action, 'no_history', 'what every push-up session used to read as');
+  const p = ask(true);
+  assert.equal(p.action, 'add_reps');
+  assert.equal(p.suggestedWeight, 0);
+  assert.deepEqual(p.basis?.reps, [12, 12, 11]);
 });

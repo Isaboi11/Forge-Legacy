@@ -44,15 +44,25 @@ test("⚠ Holt's session sheet drags too — the same hook, on the grabber and t
   assert.ok(panned.length > 0 && !panned.includes('ScrollView'), 'the pan wrapper must close before the scrolling body');
 });
 
-test('the ⋮ menu keeps to the session; Holt keeps the plan — no row is in both', () => {
-  // Between the menu's title and the "Trained with" row, none of Holt's five plan actions may appear.
+test('the ⋮ menu and Holt both carry the plan actions — a free athlete has no Holt in a workout (B12, MA3-D5)', () => {
+  /*
+   * This asserted the opposite until 09-30: that none of Holt's plan actions appeared in the ⋮ menu (PO
+   * 08-28, "not repeating"). In-workout Holt then became Premium-only (`holtHidden`), so a free athlete had
+   * NO way to swap an exercise mid-session — which the locked MA3-D5 forbids. The rows are back, under a
+   * "This exercise" label, calling the SAME handlers Holt calls.
+   */
   const s = strip(WORKOUT);
   const start = s.indexOf('<Text style={styles.pickerTitle}>Workout Options</Text>');
   const end = s.indexOf('title="Trained with"', start);
   assert.ok(start > 0 && end > start, 'the Workout Options sheet moved');
   const menu = s.slice(start, end);
-  for (const dup of ['title="Add an exercise"', 'title="Swap this exercise"', 'title="Skip this exercise"', 'Superset with next exercise', 'Break the superset']) {
-    assert.ok(!menu.includes(dup), `the ⋮ menu repeats Holt: ${dup}`);
+  for (const row of ['onPress={openSwap}', 'onPress={breakSuperset}', 'onPress={supersetWithNext}', 'onPress={skipExercise}', 'askRemove(exIdx)', 'setOverviewOpen(true)', 'onPress={openAdd}']) {
+    assert.ok(menu.includes(row), `the ⋮ menu lost a plan action: ${row}`);
+  }
+  assert.ok(menu.includes('>This exercise</Text>') && menu.includes('>This workout</Text>'), 'the two groups lost their labels');
+  // Same words as Holt's sheet, so one action is not two names.
+  for (const label of ['title="Move past this"', 'title="Take it out"', 'title="Break the superset"']) {
+    assert.ok(menu.includes(label), `the ⋮ menu does not use Holt's wording: ${label}`);
   }
   /*
    * …and Holt still carries them, so nothing was lost.
