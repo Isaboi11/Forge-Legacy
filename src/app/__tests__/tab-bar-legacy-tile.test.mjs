@@ -8,15 +8,16 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(path.join(here, '../../components/forge/composites/TabBar/TabBar.tsx'), 'utf8');
 
 /*
- * QA home-04 (2026-09-26): the lit bronze Legacy tile showed on every tab, so two tabs looked selected,
- * and its taller tile pushed the Legacy label below the others.
+ * QA home-04 (2026-09-26) dimmed the Legacy tile to an outline off-tab; the PO REVERSED that (2026-09-29):
+ * the gold tile is the signature and stays lit on every tab. Its taller tile still must not push the
+ * Legacy label below the others (the second test).
  */
-test('⚠ QA home-04 — the Legacy tile is lit (bronze fill) only while Legacy is the open tab', () => {
-  assert.match(src, /const lit = emph && active/, 'lit = emphasized AND focused');
+test('⚠ PO 09-29 — the Legacy tile is lit (bronze fill) on EVERY tab, not only its own', () => {
+  assert.match(src, /const lit = emph\r?\n/, 'lit = emphasized, never gated on focus');
   const fill = src.indexOf('flGradient.bronzeFill.colors');
   const litBranch = src.indexOf('{lit ? (');
   assert.ok(litBranch > 0 && litBranch < fill, 'the bronze fill is drawn in the `lit` branch');
-  assert.doesNotMatch(src, /\{emph \? \(\s*<LinearGradient/, 'no bronze fill keyed on `emph` alone');
+  assert.doesNotMatch(src, /iconWrapResting/, 'no outline-only resting tile');
 });
 
 test('⚠ QA home-04 — every tab icon box has one height, so the labels share a line', () => {
