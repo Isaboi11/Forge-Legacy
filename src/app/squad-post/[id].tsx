@@ -22,7 +22,7 @@ import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { PostedWorkoutPanel } from '@/components/forge/PostedWorkoutPanel';
 import { cardioStats, foodLine, partnersLine } from '@/domain/share/recap-stats';
 import { useUnits } from '@/lib/settings';
-import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadPost, fetchPostMarks, isMilestoneCard, isPostedWorkout, pinSquadPost, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
+import { ACK_KINDS, ACK_LABEL, addSquadComment, asTransformationLayout, editSquadPost, fetchPostMarks, isMilestoneCard, isPostedWorkout, pinSquadPost, deleteSquadComment, deleteSquadPost, editSquadComment, fetchSquadPost, fmtDuration, fmtVolume, isProgressCard, renameSquadPost, setSquadReactionKind, squadPostTypeDef, timeAgo, toggleSquadReaction, type AckKind, type SquadMedia, type SquadPostComment, type WorkoutSummary } from '@/data/squad-feed-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -67,6 +67,8 @@ export default function SquadPostRoute() {
   const [kindOverride, setKindOverride] = useState<AckKind | null>(null);
   /** Which comment is being rewritten, and the draft. Null = nobody is editing. */
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
+  /** The comment waiting on its "Delete this comment?" answer. Null = nobody is deleting. */
+  const [removing, setRemoving] = useState<{ id: string; mine: boolean } | null>(null);
   const [commentText, setCommentText] = useState('');
   const [sending, setSending] = useState(false);
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
@@ -249,6 +251,27 @@ export default function SquadPostRoute() {
     );
   };
 
+  /** Take a comment down — the author's own, or (the squad's owner) anybody's. Refetches: RLS decides what went. */
+  const onDeleteComment = () => {
+    const r = removing;
+    if (!r || sending) return;
+    setSending(true);
+    deleteSquadComment(r.id).then(
+      () => {
+        setSending(false);
+        setRemoving(null);
+        refetch();
+        showToast('Comment deleted.');
+      },
+      (err: unknown) => {
+        setSending(false);
+        setRemoving(null);
+        refetch();
+        showToast(errorMessage(err));
+      },
+    );
+  };
+
   const onSend = () => {
     const body = commentText.trim();
     if (!post || !body || sending) return;
@@ -399,6 +422,27 @@ export default function SquadPostRoute() {
           style={[styles.editSave, editing?.body.trim() && !sending ? styles.editSaveOn : styles.editSaveOff]}
         >
           <Text style={styles.editSaveText}>{sending ? 'Saving…' : 'Save'}</Text>
+        </Pressable>
+      </BottomSheet>
+
+      {/*
+        ══ DELETE A COMMENT (social-13, QA 09-26) ══
+
+        Nobody could: not the author, not the owner. The policy for both has been in the database since
+        0041 — see `deleteSquadComment` — and no screen ever drew the control. A separate, explicit
+        confirmation, like the post's own: there is no undo anywhere in this app.
+      */}
+      <BottomSheet open={removing != null} onClose={() => setRemoving(null)} title="Delete this comment?">
+        <Text style={styles.confirmBody}>
+          {removing?.mine === false
+            ? 'It comes off the post for everyone. As the squad’s owner, this is yours to take down.'
+            : 'It comes off the post for everyone.'}
+        </Text>
+        <Pressable onPress={onDeleteComment} disabled={sending} accessibilityRole="button" accessibilityLabel="Delete the comment" style={[styles.menuRow, styles.menuDangerRow]}>
+          <Text style={[styles.menuText, styles.menuDanger]}>{sending ? 'Deleting…' : 'Delete'}</Text>
+        </Pressable>
+        <Pressable onPress={() => setRemoving(null)} disabled={sending} accessibilityRole="button" style={styles.menuRow}>
+          <Text style={styles.menuText}>Keep it</Text>
         </Pressable>
       </BottomSheet>
 
@@ -684,7 +728,15 @@ export default function SquadPostRoute() {
           <Text style={styles.commentsCount}>{comments.length === 1 ? '1 Comment' : `${comments.length} Comments`}</Text>
           {comments.length > 0 ? (
             comments.map((c) => (
-              <CommentItem key={c.id} comment={c} isMine={!!myId && c.authorId === myId} onEdit={() => setEditing({ id: c.id, body: c.body })} />
+              <CommentItem
+                key={c.id}
+                comment={c}
+                isMine={!!myId && c.authorId === myId}
+                /* The author's own, and any comment for the squad's owner — the two the delete policy admits. */
+                canDelete={!!myId && (c.authorId === myId || isOwner)}
+                onEdit={() => setEditing({ id: c.id, body: c.body })}
+                onDelete={() => setRemoving({ id: c.id, mine: c.authorId === myId })}
+              />
             ))
           ) : (
             <Text style={styles.noComments}>No comments yet. Be the first to respond.</Text>
@@ -916,7 +968,7 @@ function RecapStat({ n, label }: { n: string; label: string }) {
  * delete a comment, because removal is moderation; rewriting somebody's words while their name stays on
  * them is not, and RLS refuses it regardless of what this screen draws.
  */
-function CommentItem({ comment, isMine, onEdit }: { comment: SquadPostComment; isMine: boolean; onEdit: () => void }) {
+function CommentItem({ comment, isMine, canDelete, onEdit, onDelete }: { comment: SquadPostComment; isMine: boolean; canDelete: boolean; onEdit: () => void; onDelete: () => void }) {
   return (
     <View style={styles.comment}>
       <Avatar src={comment.authorAvatar ?? undefined} name={comment.authorName} size="listRow" />
@@ -930,10 +982,19 @@ function CommentItem({ comment, isMine, onEdit }: { comment: SquadPostComment; i
           {comment.editedAt ? <Text style={styles.commentEdited}>edited</Text> : null}
         </View>
         <Text style={styles.commentText}>{comment.body}</Text>
-        {isMine ? (
-          <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit your comment" hitSlop={8} style={styles.commentEditBtn}>
-            <Text style={styles.commentEditText}>Edit</Text>
-          </Pressable>
+        {isMine || canDelete ? (
+          <View style={styles.commentActions}>
+            {isMine ? (
+              <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit your comment" hitSlop={8} style={styles.commentEditBtn}>
+                <Text style={styles.commentEditText}>Edit</Text>
+              </Pressable>
+            ) : null}
+            {canDelete ? (
+              <Pressable onPress={onDelete} accessibilityRole="button" accessibilityLabel={isMine ? 'Delete your comment' : `Delete ${comment.authorName}'s comment`} hitSlop={8} style={styles.commentEditBtn}>
+                <Text style={[styles.commentEditText, styles.commentDeleteText]}>Delete</Text>
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
       </View>
     </View>
@@ -1086,7 +1147,9 @@ const styles = StyleSheet.create({
   ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   commentEdited: { fontSize: 11, fontStyle: 'italic', color: flColor.gray600 },
+  commentActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   commentEditBtn: { alignSelf: 'flex-start', paddingVertical: 4, paddingRight: 8 },
+  commentDeleteText: { color: flColor.dangerText },
   commentEditText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: flColor.bronzeInk },
 
   editInput: {

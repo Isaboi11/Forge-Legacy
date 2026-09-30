@@ -1169,6 +1169,23 @@ export async function editSquadComment(commentId: string, body: string): Promise
   if (error) throw error;
 }
 
+/**
+ * Delete a comment (social-13, QA 09-26) — yours, or any comment in a squad you own.
+ *
+ * ⚠ NO MIGRATION, FOR THE SAME REASON `deleteSquadPost` NEEDED NONE. `squad_post_comments_delete` has said
+ * *author OR the owner of the post's squad* since 0041 (re-stated in 0074 for friends posts, which have no
+ * squad and therefore no owner — there only the author may). Nothing in the app ever called it.
+ *
+ * ⚠ IT ASKS FOR THE ROW BACK, because RLS does not refuse a delete you are not entitled to — it matches
+ * nothing and reports success. Without `select` the comment would "delete", the toast would say so, and the
+ * refetch would put it straight back. The same trap `editSquadComment`'s note describes, closed here.
+ */
+export async function deleteSquadComment(commentId: string): Promise<void> {
+  const { data, error } = await supabase.from('squad_post_comments').delete().eq('id', commentId).select('id');
+  if (error) throw error;
+  if (!data || data.length === 0) throw new Error('That comment could not be deleted. It may already be gone.');
+}
+
 /** Compact relative time: "Just now" · "12m" · "3h" · "2d" · "5w" · then a short date. */
 export function timeAgo(iso: string): string {
   const then = new Date(iso).getTime();

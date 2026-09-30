@@ -135,7 +135,9 @@ class Query {
     if (this.mode === 'delete') {
       db.tables.set(this.table, rows.filter((r) => !hit.includes(r)));
       db.log.push({ table: this.table, mode: 'delete', n: hit.length });
-      return { data: null, error: null };
+      /* `.delete().select()` answers with the rows that went, as PostgREST does — an empty array is how a
+         delete RLS did not admit looks to the client: no error, nothing removed. */
+      return { data: this.selectAfter ? hit : null, error: null };
     }
 
     let out = [...hit];

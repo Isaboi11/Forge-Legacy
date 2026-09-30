@@ -166,6 +166,14 @@ export interface LedgerPostProps {
    */
   onLongAcknowledge?: () => void;
   onComments: () => void;
+  /**
+   * A "more" control beside the time — the author's door to editing or deleting their own post.
+   *
+   * The Friends feed passes it on YOUR posts only (social2-15, QA 09-26): a Friends post has no detail
+   * screen, so the feed row is the one place the manage menu can live. The Squad feed passes nothing —
+   * its menu is on the post page.
+   */
+  onMenu?: () => void;
   onPlaylist?: () => void;
   /**
    * Rendered under the caption. This is where a photo post's session goes (§3.5) — the image keeps the
@@ -248,6 +256,7 @@ export function LedgerPost({
   onAcknowledge,
   onLongAcknowledge,
   onComments,
+  onMenu,
   onPlaylist,
   footer,
 }: LedgerPostProps) {
@@ -298,6 +307,11 @@ export function LedgerPost({
           </View>
         </Pressable>
         <Text style={styles.time}>{time}</Text>
+        {onMenu ? (
+          <Pressable onPress={onMenu} accessibilityRole="button" accessibilityLabel="Manage this post" hitSlop={10} style={styles.menuBtn}>
+            <EngravedIcon name="more" size={18} color={flColor.gray400} />
+          </Pressable>
+        ) : null}
       </View>
 
       <Pressable onPress={onOpen} disabled={!onOpen} accessibilityRole={onOpen ? 'button' : undefined} accessibilityLabel={onOpen ? title ?? caption ?? 'Open this post' : undefined}>
@@ -628,6 +642,7 @@ const styles = StyleSheet.create({
   authorName: { fontSize: 14.5, fontWeight: '600', lineHeight: 17.4, color: flColor.cream100 },
   audience: { fontSize: 11.5, color: flColor.gray600 },
   time: { flexGrow: 0, flexShrink: 0, fontSize: 12, color: flColor.gray600 },
+  menuBtn: { flexGrow: 0, flexShrink: 0, width: 30, height: 30, marginRight: -6, alignItems: 'center', justifyContent: 'center' },
 
   attribution: { marginTop: 14, marginBottom: 12, paddingHorizontal: LEDGER_GUTTER, fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
 
