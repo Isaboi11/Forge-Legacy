@@ -11,7 +11,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
-import { dayLabel, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { dayLabel, diaryDayParam, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import { mealPhotoError } from '@/domain/nutrition/meal-photo-read';
 import {
   entriesFrom,
@@ -76,7 +76,8 @@ export default function MealPhotoScreen() {
   const premiumAi = usePremiumAi();
   const nutritionAccess = useNutritionAccess();
 
-  const iso = typeof params.date === 'string' ? params.date : localToday();
+  /* A link's date is checked, not trusted (QA 09-26 N-19). */
+  const iso = diaryDayParam(params.date, localToday());
   const [meal, setMeal] = useState<MealSlot>(() =>
     (MEAL_SLOTS as readonly string[]).includes(String(params.meal)) ? (params.meal as MealSlot) : 'lunch',
   );

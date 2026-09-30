@@ -38,6 +38,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { themeGround } from '@/constants/theme-scrim';
 import { calendarDaysBetween, dayNumberSince, toLocalDate } from '@/domain/dates/local-date';
 import { fmtDate } from '@/lib/format';
+import { pluralWord } from '@/domain/text/plural';
 
 /**
  * Athlete Profile (`/athlete/[id]`) — the specs' "Limited Athlete Profile", built to
@@ -326,9 +327,11 @@ export default function AthleteProfileScreen() {
         {/* Training stats — `squads` by default, so a stranger is never sent these at all. */}
         {data.stats ? (
           <View style={styles.statsRow}>
-            <StatCell value={data.stats.workouts} label="Workouts" />
+            <StatCell value={data.stats.workouts} label={pluralWord(data.stats.workouts, 'Workout')} />
             <StatCell value={data.stats.prs} label={data.stats.prs === 1 ? 'PR' : 'PRs'} />
-            <StatCell value={data.stats.chapters} label={data.stats.chapters === 1 ? 'Chapter' : 'Chapters'} />
+            {/* The server counts SEALED chapters; the one being written counts too (social-23, QA 09-26) —
+                an athlete in Chapter I read "0 CHAPTERS". Added only when the chapter is shown here. */}
+            <StatCell value={data.stats.chapters + (data.chapter ? 1 : 0)} label={pluralWord(data.stats.chapters + (data.chapter ? 1 : 0), 'Chapter')} />
           </View>
         ) : null}
 
@@ -676,9 +679,7 @@ function Actions({
           >
             <Text style={styles.actionLabel}>Decline</Text>
           </Pressable>
-        ) : (
-          <InertAction glyph={<SwordsGlyph />} label="Challenge" />
-        )}
+        ) : null /* No greyed "Challenge — not available yet" (social-23, QA 09-26): the note below says why. */}
       </View>
       {!isFriends ? (
         <Text style={styles.actionNote}>
@@ -706,15 +707,6 @@ function LiveAction({ glyph, label, onPress }: { glyph: ReactNode; label: string
 function PeopleGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <EngravedIcon name="people" size={size} color={engravedTint(color)} />
-  );
-}
-
-function InertAction({ glyph, label }: { glyph: ReactNode; label: string }) {
-  return (
-    <View accessibilityRole="button" accessibilityState={{ disabled: true }} accessibilityLabel={`${label} — not available yet`} style={styles.action}>
-      {glyph}
-      <Text style={styles.actionLabel}>{label}</Text>
-    </View>
   );
 }
 

@@ -14,7 +14,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { grouped, localToday, shiftDay } from '@/domain/nutrition/day';
 import { ALLERGENS } from '@/domain/nutrition/meal-plan-setup';
 import { DAY_NAMES, RECIPE_BY_ID, feedsDay, itemTotals, logKey, mondayOf, portionLabel, recipeView, slotKey, toggleLock } from '@/domain/nutrition/meal-planner';
-import { batchNote, ingredientRows, servingsFor, servingsLabel } from '@/domain/nutrition/recipe-view';
+import { batchNote, ingredientRows, servingsFor, servingsLabel, stepsNote } from '@/domain/nutrition/recipe-view';
 import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
 import {
   deleteUserRecipe,
@@ -339,6 +339,9 @@ function RecipeScreen() {
           <Text style={styles.h2}>Method</Text>
         </View>
         {!src.steps.length ? <Text style={styles.noSteps}>Steps for this recipe haven’t been written yet.</Text> : null}
+        {src.steps.length > 0 && stepsNote(src.stepsServe, count) ? (
+          <Text style={styles.batchNote}>{stepsNote(src.stepsServe, count)}</Text>
+        ) : null}
         {src.steps.map((st, j) => (
           <View key={j} style={styles.step}>
             <Text style={styles.stepN}>{j + 1}</Text>

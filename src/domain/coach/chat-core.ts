@@ -1620,6 +1620,18 @@ export function greetingSlot(thread: readonly Turn[], i: number): GreetingSlot |
   return i < start ? null : (GREETING_SLOTS[i - start] ?? null);
 }
 
+/**
+ * A stored conversation without the greeting and Home it was last opened with (kitchen-14 / holt-20, QA 09-26).
+ *
+ * He greets on arrival, UNDER the stored conversation — and the old greeting and its Home stayed in the thread
+ * above it. Every return from a door (a hand-off keeps the thread) or a reload stacked another hello and
+ * another full set of doors. A reopen greets once: the stale Home and the lines it wears are dropped before
+ * the fresh ones go under. What the athlete said, and what he answered, is all kept.
+ */
+export function withoutStaleHome(thread: readonly Turn[]): Turn[] {
+  return thread.filter((t, i) => !isHomeTurn(t) && greetingSlot(thread, i) == null);
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // HELP, WITHOUT A MODEL
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

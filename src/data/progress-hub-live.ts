@@ -25,9 +25,10 @@ import type { RankFamily } from '@/domain/rank-artwork/resolver';
 export type { MetricPoint, MetricSeries } from '@/domain/progress/lift-series';
 export interface ConsistencyStats {
   lifetime: number;
-  hoursForged: number;
+  /** Lifetime minutes trained. Printed through `forgedTime`, so a 16-minute total is never "0 hours" (home-15). */
+  minutesForged: number;
   thisMonth: number;
-  hoursPerMonth: number;
+  minutesPerMonth: number;
   avgPerWeek: number; // 1 decimal
   bestStreakWeeks: number;
 }
@@ -155,7 +156,7 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
   const workouts = (workoutsRes.data ?? []) as WorkoutRow[];
   const dates = workouts.map((w) => (w.saved_at ?? w.started_at ?? '').slice(0, 10)).filter(Boolean);
   const lifetime = workouts.length;
-  const hoursForged = Math.round(workouts.reduce((s, w) => s + (w.duration_sec ?? 0), 0) / 3600);
+  const minutesForged = Math.round(workouts.reduce((s, w) => s + (w.duration_sec ?? 0), 0) / 60);
   const thisMonth = dates.filter((d) => d.slice(0, 7) === nowMonth).length;
   const monthsActive = new Set(dates.map((d) => d.slice(0, 7))).size || 1;
   const weekKeys = [...new Set(dates.map((d) => mondayWeekKey(d)))];
@@ -217,9 +218,9 @@ export async function fetchProgressHub(): Promise<ProgressHubData> {
     metrics,
     consistency: {
       lifetime,
-      hoursForged,
+      minutesForged,
       thisMonth,
-      hoursPerMonth: Math.round(hoursForged / monthsActive),
+      minutesPerMonth: Math.round(minutesForged / monthsActive),
       avgPerWeek: round1(lifetime / weeksActive),
       bestStreakWeeks: bestStreak(weekKeys),
     },

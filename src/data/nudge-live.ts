@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { NudgeHistory, NudgeId, NudgeSignals } from '@/domain/coach/nudges';
+import { REPEAT_WINDOW_DAYS, repeatedWorkout, type NudgeHistory, type NudgeId, type NudgeSignals } from '@/domain/coach/nudges';
 
 /**
  * Coach Holt's exploration nudges — reading what the athlete has done, and recording how they answered.
@@ -18,7 +18,11 @@ export async function fetchNudgeSignals(): Promise<NudgeSignals | null> {
    */
   if (error || !data) return null;
   const d = data as Record<string, number>;
+  const programs = Number(d.programs ?? 0);
   return {
+    /* Only asked when it could matter: the `plan` nudge needs no program, so an athlete who has one
+       costs no second round trip. */
+    repeat: programs === 0 ? await fetchRepeatedWorkout() : null,
     sessions: Number(d.sessions ?? 0),
     photos: Number(d.photos ?? 0),
     goals: Number(d.goals ?? 0),
@@ -26,8 +30,41 @@ export async function fetchNudgeSignals(): Promise<NudgeSignals | null> {
     squads: Number(d.squads ?? 0),
     honors: Number(d.honors ?? 0),
     weighIns: Number(d.weighIns ?? 0),
-    programs: Number(d.programs ?? 0),
+    programs,
   };
+}
+
+/**
+ * The workout this athlete keeps running outside a program, from their own recent saved sessions.
+ *
+ * ⚠ `athlete_id` IS FILTERED EXPLICITLY. `workouts` is readable beyond its owner (squad feeds, shared
+ * sessions), so relying on RLS alone would count a squad-mate's Push Day toward this athlete's habit.
+ *
+ * No migration: it reads four columns of rows the athlete already owns. Null on any failure — a nudge
+ * that cannot be sure says nothing.
+ */
+async function fetchRepeatedWorkout(): Promise<{ name: string; count: number } | null> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    const since = new Date(Date.now() - REPEAT_WINDOW_DAYS * 86_400_000).toISOString();
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('workout_name')
+      .eq('athlete_id', user.id)
+      .eq('state', 'saved')
+      .eq('activity_type', 'strength')
+      .is('program_id', null)
+      .gte('saved_at', since)
+      .order('saved_at', { ascending: false })
+      .limit(80);
+    if (error || !data) return null;
+    return repeatedWorkout((data as { workout_name: string | null }[]).map((r) => r.workout_name));
+  } catch {
+    return null;
+  }
 }
 
 /** Everything this athlete has been offered and how they answered. Empty on any failure. */

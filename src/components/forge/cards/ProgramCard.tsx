@@ -20,6 +20,7 @@ import { color, space } from '@/constants/tokens'
 import { BaseCard } from './BaseCard'
 import { CARD } from './_cardTokens'
 import type { ProgramCardState, DifficultyLevel } from './types'
+import { countOf } from '@/domain/text/plural'
 
 export interface ProgramCardProps {
   title: string
@@ -91,7 +92,7 @@ export function ProgramCard({
 
       {/* Duration meta */}
       {durationWeeks ? (
-        <Text style={styles.meta}>{durationWeeks} weeks</Text>
+        <Text style={styles.meta}>{countOf(durationWeeks, 'week')}</Text>
       ) : null}
 
       {/* Progress */}

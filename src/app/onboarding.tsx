@@ -1,4 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
+import { countOf } from '@/domain/text/plural';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -577,7 +578,7 @@ export default function Onboarding() {
           <Text style={styles.tEyebrow}>Built for you</Text>
           <Text style={styles.revealTitle}>{firstWeek.programName}</Text>
           <Text style={styles.revealMeta}>
-            {firstWeek.weeks} weeks · {firstWeek.daysPerWeek} days a week
+            {countOf(firstWeek.weeks, 'week')} · {countOf(firstWeek.daysPerWeek, 'day')} a week
           </Text>
 
           <View style={styles.dayCard}>

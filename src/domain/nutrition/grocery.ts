@@ -1,6 +1,7 @@
 import { AISLES, GROCERY, type Aisle, type BuyUnit } from './grocery-data.ts';
 import { DAY_NAMES, cooksOf, recipeView, type PlanDay } from './meal-planner.ts';
 import { INGREDIENTS, type PlanSlot } from './recipes-data.ts';
+import { pluralOf } from '../text/plural.ts';
 
 /**
  * Grocery List — built from the week's COOKS, never from the meals shown (Recipe Schema and Planner
@@ -44,7 +45,8 @@ export interface GroceryList {
 /** Two recipe ingredients that are one thing in a shop: boiled eggs are eggs. */
 const SAME_ITEM: Record<string, string> = { boiled_egg: 'egg' };
 
-const plural = (w: string): string => (/(x|ch|sh|s)$/.test(w) ? `${w}es` : `${w}s`);
+/* The shared pluraliser (QA 09-26 N-22), with the one shop word English makes irregular. */
+const plural = (w: string): string => pluralOf(w, w === 'loaf' ? 'loaves' : undefined);
 
 /** Round a need UP to what a store sells — the design's `buyAmount`. */
 export function buyAmount(buy: BuyUnit, grams: number): string {
