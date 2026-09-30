@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   copy: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400, marginBottom: 8 },
   list: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
-  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowPressed: { backgroundColor: flColor.charcoal900 },
   rowOff: { opacity: 0.45 },
   radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   iconGap: { width: 18 },
   rowText: { flex: 1, minWidth: 0 },
   label: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
-  labelOn: { color: flColor.bronze300 },
+  labelOn: { color: flColor.selectedInk },
   sub: { marginTop: 2, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
   now: { marginTop: 8, fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
 
@@ -260,5 +260,5 @@ const styles = StyleSheet.create({
   },
   autoLabel: { flex: 1, fontSize: 13, color: flColor.cream100 },
   autoValue: { maxWidth: 140, fontSize: 12.5, color: flColor.gray600 },
-  autoValueOn: { color: flColor.bronze300, fontWeight: '600' },
+  autoValueOn: { color: flColor.selectedInk, fontWeight: '600' },
 });

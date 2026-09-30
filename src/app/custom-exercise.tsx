@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
 
   dividerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 22, marginBottom: 6 },
   dividerLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, color: flColor.gray600, textTransform: 'uppercase' },
-  dividerLine: { flex: 1, height: 1, backgroundColor: flColor.charcoal700 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: flColor.divider },
 
   label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.6, color: flColor.labelInk, marginTop: 18, marginBottom: 8, textTransform: 'uppercase' },
   input: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   selectRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 13, paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   selectSummary: { flex: 1, fontSize: 14, color: flColor.cream100 },
 
-  rule: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 30, marginBottom: 18 },
+  rule: { height: 1, backgroundColor: flColor.divider, marginTop: 30, marginBottom: 18 },
   deleteBtn: { paddingVertical: 14, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, alignItems: 'center' },
   deleteLabel: { fontSize: 14, fontWeight: '600', color: flColor.redMuted },
 

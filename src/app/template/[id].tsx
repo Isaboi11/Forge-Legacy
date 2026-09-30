@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   emptyHistText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
 
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
-  actionBar: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(6,7,8,0.86)') },
+  actionBar: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(6,7,8,0.86)') },
   secondaryRow: { flexDirection: 'row', gap: 8, marginTop: 9 },
   secondaryBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   secondaryText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },

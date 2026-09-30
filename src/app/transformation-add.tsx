@@ -103,6 +103,9 @@ export default function TransformationAddRoute() {
      dates ("September 8, 2026"), or the untouched legacy string when there is no picked day. */
   const dateLabel = dateIso ? prettyDate(dateIso, 'long') ?? '' : legacyLabel;
   const chapterName = isEdit ? existing?.chapterName ?? 'this chapter' : activeChapter?.name ?? 'your active chapter';
+  /* A progress set belongs to its chapter, so it can't be dated before the chapter began — or after today
+     (QA legacy-20). */
+  const chapterStart = isEdit ? existing?.chapterStart ?? null : activeChapter?.startDate ?? null;
   const poseFilled = Object.keys(photos).length;
   /*
    * ⚠ IN EDIT MODE, `ready` IS A PRECONDITION OF SAVING — not a rendering detail.
@@ -251,6 +254,8 @@ export default function TransformationAddRoute() {
           hideLabel
           monthStyle="long"
           value={dateIso}
+          minDate={chapterStart}
+          maxDate="today"
           onChange={(v) => {
             setDateIso(v);
             setLegacyLabel('');
@@ -444,7 +449,7 @@ const styles = StyleSheet.create({
   loadErrorBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 26, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid) },
   loadErrorBtnText: { fontSize: 14, fontWeight: '700', letterSpacing: 0.3, color: forgeOr<string>(flColor.bronze300, flColor.onBronze) },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
 
@@ -481,9 +486,9 @@ const styles = StyleSheet.create({
   tagsHelp: { marginTop: 0, marginBottom: 11, fontSize: 10.5, lineHeight: 15, color: flColor.gray600 },
   tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tagChip: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: 'transparent' },
-  tagChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  tagChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   tagChipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
-  tagChipTextOn: { color: flColor.bronze300 },
+  tagChipTextOn: { color: flColor.selectedInk },
   tagChipCustom: { borderColor: flColor.bronzeBorder, borderStyle: 'dashed', backgroundColor: 'transparent' },
   tagChipCustomText: { fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
   customRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },

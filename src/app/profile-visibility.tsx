@@ -276,9 +276,9 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     alignItems: 'center',
   },
-  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   segText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
-  segTextOn: { color: flColor.bronze300 },
+  segTextOn: { color: flColor.selectedInk },
 
   autoPost: { marginBottom: 22 },
   reset: { alignSelf: 'center', paddingVertical: 14, paddingHorizontal: 16, marginTop: 8 },

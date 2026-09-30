@@ -1398,11 +1398,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  rowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  rowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   rowLabel: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
-  rowLabelOn: { color: flColor.bronze300 },
+  rowLabelOn: { color: flColor.selectedInk },
   chevron: { fontSize: 20, color: flColor.gray600 },
-  chevronOn: { color: flColor.bronze300 },
+  chevronOn: { color: flColor.selectedInk },
 
   // Taller — earned by having something to explain.
   big: {
@@ -1413,10 +1413,10 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.surfaceRecessed,
     gap: 6,
   },
-  bigOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  bigOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   bigHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   bigTitle: { fontSize: 16, fontWeight: '700', letterSpacing: 0.2, color: flColor.cream100 },
-  bigTitleOn: { color: flColor.bronze300 },
+  bigTitleOn: { color: flColor.selectedInk },
   bigSub: { fontSize: 13, lineHeight: 19, color: flColor.gray600 },
   holtMark: { fontFamily: flFont.display, fontSize: 15, color: flColor.bronzeInk },
 
@@ -1429,9 +1429,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   cta: { marginTop: 18 },
 
@@ -1535,7 +1535,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   dayName: { fontSize: 11.5, fontWeight: '700', letterSpacing: 1.1, color: flColor.labelInk },
   dayMeta: { fontSize: 11, color: flColor.gray600 },
@@ -1552,7 +1552,7 @@ const styles = StyleSheet.create({
     padding: 18,
     gap: 8,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal900,
   },
   tertiary: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 },

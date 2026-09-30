@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
 
   dayLabels: { flexDirection: 'row', gap: 8, paddingTop: 10 },
   dayLabel: { flex: 1, textAlign: 'center', fontSize: 10.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
-  dayLabelOn: { color: flColor.bronze300 },
+  dayLabelOn: { color: flColor.selectedInk },
 
   cardFoot: {
     flexDirection: 'row',
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
   },
   footLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
   footRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -446,16 +446,16 @@ const styles = StyleSheet.create({
   macroNote: { fontSize: 12, color: flColor.gray600 },
   macroNoteGood: { color: flColor.bronzeInk },
 
-  gapBlock: { marginTop: 30, paddingTop: 14, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 8 },
+  gapBlock: { marginTop: 30, paddingTop: 14, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: flColor.divider, gap: 8 },
   gapText: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600 },
   gapAction: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
 
   sheetBody: { paddingBottom: 16 },
   sheetHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 4, paddingBottom: 12 },
   sheetSub: { fontSize: 12.5, color: flColor.gray600 },
-  histRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  histRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   histDay: { width: 52, fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
-  histTrack: { flex: 1, height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal600, overflow: 'visible' },
+  histTrack: { flex: 1, height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.divider, overflow: 'visible' },
   histFill: { position: 'absolute', left: 0, top: 0, bottom: 0, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal500 },
   histFillHit: { backgroundColor: flColor.bronze600 },
   histFillToday: { backgroundColor: 'rgba(191,143,79,0.35)' },

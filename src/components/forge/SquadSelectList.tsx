@@ -108,11 +108,11 @@ const styles = StyleSheet.create({
 
   list: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
-  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowPressed: { backgroundColor: flColor.charcoal900 },
 
   box: { width: 21, height: 21, borderRadius: 6, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  boxOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  boxOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   boxOff: { borderColor: flColor.charcoal500, backgroundColor: 'transparent' },
 
   rowText: { flex: 1, minWidth: 0 },

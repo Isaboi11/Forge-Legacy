@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
 
   muscleLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600, marginBottom: 10 },
-  secondaryBlock: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  secondaryBlock: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   pillPrimary: {
     flexDirection: 'row',
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: flColor.gray600 },
 
   stepRow: { flexDirection: 'row', gap: 12, paddingVertical: 11 },
-  stepDivider: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  stepDivider: { borderTopWidth: 1, borderTopColor: flColor.divider },
   stepBadge: {
     width: 26,
     height: 26,
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   histValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   histSub: { fontSize: 11.5, color: flColor.gray600 },
   histSessions: { marginTop: 16, gap: 2 },
-  histRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  histRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   histDate: { fontSize: 13, color: flColor.gray400 },
   histTop: { flexShrink: 1, fontSize: 13.5, fontWeight: '600', color: flColor.cream100, textAlign: 'right' },
   histSetCount: { fontSize: 12, fontWeight: '400', color: flColor.gray600 },

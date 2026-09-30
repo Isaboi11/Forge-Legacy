@@ -1882,7 +1882,7 @@ const styles = StyleSheet.create({
   },
   capRow: { height: 54, flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15 },
   // Between rows only — no rule above the first or below the last, or the group grows a double edge.
-  capRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  capRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   capRowPressed: { backgroundColor: flColor.charcoal900 },
   capRowLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
   capRowLabelFilled: { color: flColor.cream100 },
@@ -1990,7 +1990,7 @@ const styles = StyleSheet.create({
   recVolumeLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray600, marginTop: -2 },
   recList: { marginTop: 26, gap: 2 },
   recHeading: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 28, marginBottom: 10 },
-  recRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  recRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   recRowText: { gap: 2 },
   recExName: { fontFamily: flFont.sans, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   recTop: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
@@ -2008,7 +2008,7 @@ const styles = StyleSheet.create({
   bestText: { flex: 1, gap: 2 },
   bestLabel: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
   bestDetail: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
-  cardioRow: { gap: 10, paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  cardioRow: { gap: 10, paddingVertical: 14, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   cardioWhere: {
     fontFamily: flFont.sans,
     fontSize: 9.5,
@@ -2098,7 +2098,7 @@ const styles = StyleSheet.create({
   heroTitleS: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
 
   // record
-  recHeader: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 6, paddingLeft: 6, paddingRight: 14, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  recHeader: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 4, paddingTop: 6, paddingLeft: 6, paddingRight: 14, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   recBack: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   recHeaderTitle: { fontSize: 13, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
   recScroll: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 30 },
@@ -2160,7 +2160,7 @@ const styles = StyleSheet.create({
   pickerTitle: { fontFamily: flFont.display, fontSize: 18, fontWeight: '600', color: flColor.cream100, marginBottom: 12 },
   pickerScroll: { maxHeight: 300 },
   pickerRow: { paddingVertical: 14 },
-  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   pickerName: { fontSize: 15.5, fontWeight: '600', color: flColor.cream100 },
 
   // share destinations (Friends · A Squad · Friends & Squad)

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { dayNumberSince } from '@/domain/dates/local-date';
 
 /**
  * The H-1 "awaiting first workout" check (ONB-D17, minimal). A just-onboarded athlete has one active
@@ -79,7 +80,8 @@ export async function fetchHomeChapter(): Promise<HomeChapter | null> {
   if (idx < 0) return null;
   const c = rows[idx];
 
-  const days = Math.max(0, Math.floor((Date.now() - new Date(`${c.start_date}T00:00:00`).getTime()) / 86_400_000));
+  // Same count Legacy's "Day N" reads (QA 09-26 B14) — calendar days, not 24-hour blocks.
+  const days = dayNumberSince(c.start_date) - 1;
   const n = idx + 1;
   return {
     number: `Chapter ${ROMAN[n] ?? n}`,

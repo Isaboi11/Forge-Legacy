@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
   pill: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: flRadius.pill },
   pillOn: { backgroundColor: flColor.bronzeDark },
   pillText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
-  pillTextOn: { color: flColor.bronze300 },
+  pillTextOn: { color: flColor.selectedInk },
 
   list: { flex: 1 },
   listContent: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 18 },
@@ -727,7 +727,7 @@ const styles = StyleSheet.create({
   more: { alignItems: 'center', paddingVertical: 16 },
   empty: { fontSize: 13.5, color: flColor.gray400, paddingVertical: 24, lineHeight: 20 },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   rowBody: { flex: 1, minWidth: 0, gap: 3 },
   rowName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   rowMeta: { fontSize: 12.5, color: flColor.gray600 },
@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingHorizontal: 12,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal900,
   },
   footerAction: { fontSize: 12, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray400 },
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
   choice: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
   choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  choiceTextOn: { color: flColor.bronze300 },
+  choiceTextOn: { color: flColor.selectedInk },
   numberInput: {
     fontSize: 16,
     fontWeight: '600',

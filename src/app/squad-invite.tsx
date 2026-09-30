@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -8,6 +8,7 @@ import Svg, { Rect } from 'react-native-svg';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
@@ -15,6 +16,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquadInvite, regenerateSquadCode } from '@/data/squad-live';
 import { fetchMyReferralCode } from '@/data/referral-live';
 import { referralLinkFor } from '@/domain/referral/referral-core';
+import { INVITE_CODE_SPACING, inviteCodeFontSize } from '@/domain/squad/invite-code-fit';
 import { trackInvite } from '@/lib/analytics';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { encodeQr, type QrMatrix } from '@/lib/qr';
@@ -78,6 +80,7 @@ export default function SquadInviteRoute() {
   const [qrOpen, setQrOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [confirmRegen, setConfirmRegen] = useState(false);
   const linkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useFocusEffect(
@@ -103,6 +106,8 @@ export default function SquadInviteRoute() {
   const { data: myReferralCode } = useQuery(fetchMyReferralCode, []);
 
   const code = squad?.inviteCode ?? '';
+  const { width: windowWidth } = useWindowDimensions();
+  const codeSize = inviteCodeFontSize(windowWidth, code.length || 7);
   const link = code ? referralLinkFor(joinLink(code), myReferralCode) : '';
   const deepLink = code ? referralLinkFor(appLink(code), myReferralCode) : '';
   const inviteText = squad && code ? `Join ${squad.name} on Forge Legacy.\nCode: ${code}\n${link}\n\nAlready have the app? ${deepLink}` : '';
@@ -268,7 +273,7 @@ export default function SquadInviteRoute() {
         <View style={styles.codeCard}>
           <View style={styles.codeCardTop}>
             <Text style={styles.codeEyebrow}>Squad Invite Code</Text>
-            <Text style={styles.codeValue} selectable numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.codeValue, { fontSize: codeSize, letterSpacing: codeSize * INVITE_CODE_SPACING, paddingLeft: codeSize * INVITE_CODE_SPACING }]} selectable numberOfLines={1} adjustsFontSizeToFit>
               {noCode ? '— — — —' : code}
             </Text>
             <View style={styles.expiryRow}>
@@ -282,7 +287,7 @@ export default function SquadInviteRoute() {
               <Text style={styles.copyCodeText}>Copy Code</Text>
             </Pressable>
             {squad.isOwner ? (
-              <Pressable onPress={onRegenerate} disabled={noCode || regenerating} accessibilityRole="button" accessibilityLabel="Regenerate invite code" style={styles.regenBtn}>
+              <Pressable onPress={() => setConfirmRegen(true)} disabled={noCode || regenerating} accessibilityRole="button" accessibilityLabel="Regenerate invite code" style={styles.regenBtn}>
                 <RefreshIcon />
                 <Text style={styles.regenText}>{regenerating ? 'Rolling…' : 'Regenerate'}</Text>
               </Pressable>
@@ -338,6 +343,20 @@ export default function SquadInviteRoute() {
           </View>
         </View>
       </BottomSheet>
+
+      {/* Regenerating kills every link already sent (social-14, QA 09-26) — it used to fire on one tap, and
+          the people holding the old link found out from "That code didn't match a squad". */}
+      <ConfirmSheet
+        open={confirmRegen}
+        onClose={() => setConfirmRegen(false)}
+        headline="Replace the invite code?"
+        body="Every code, link and QR you’ve already shared stops working. Anyone who hasn’t joined yet will need the new one."
+        confirmLabel="Replace Code"
+        onConfirm={() => {
+          setConfirmRegen(false);
+          onRegenerate();
+        }}
+      />
     </View>
   );
 }

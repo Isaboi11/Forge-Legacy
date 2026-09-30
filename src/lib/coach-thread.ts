@@ -6,6 +6,7 @@ import type { Turn } from '@/domain/coach/chat-core';
    this file through the chat core and died with ERR_MODULE_NOT_FOUND the moment this was written as
    `@/domain/...`. Every runtime cross-import in `src/domain` is written this way for the same reason. */
 import { allowWrites, mayPersist, stopWrites } from '../domain/coach/thread-lifecycle.ts';
+import { withoutPartialReplies } from '../domain/coach/chat-core.ts';
 
 /**
  * The conversation, kept between visits.
@@ -68,8 +69,9 @@ export async function loadThread(): Promise<Turn[] | null> {
     const parsed = JSON.parse(raw) as Turn[];
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
     if (!isConversation(parsed)) return null;
-    /* A thread saved before `saveThread` stripped them can still hold a reply marked "still arriving". */
-    return parsed.map((t) => (t.kind === 'holt' && (t.streaming || t.sid != null) ? { ...t, streaming: undefined, sid: undefined } : t));
+    /* A thread saved before `saveThread` stripped them can still hold a reply marked "still arriving" — a
+       cut-off answer, which is dropped rather than restored as finished (kitchen-09). */
+    return withoutPartialReplies(parsed).map((t) => (t.kind === 'holt' && (t.streaming || t.sid != null) ? { ...t, streaming: undefined, sid: undefined } : t));
   } catch {
     // A thread we cannot read is a thread we start again — never an error in the athlete's face.
     return null;
@@ -91,8 +93,9 @@ export async function saveThread(turns: Turn[]): Promise<void> {
        each time the sheet opens. */
     /* `streaming` and `sid` are transients of the same kind: a reply saved mid-stream would restore as
        "still arriving" forever and hold every message behind it (QA R2-F5). */
-    const settled = turns
-      .slice(-MAX_TURNS)
+    /* ⚠ A REPLY STILL ARRIVING IS NOT SAVED AT ALL (kitchen-09, QA 09-26): closing mid-stream kept "N" as
+       Holt's whole answer. The finished reply is saved on the next write, when its stream ends. */
+    const settled = withoutPartialReplies(turns.slice(-MAX_TURNS))
       .map((t) => (t.kind === 'holt' ? { ...t, live: false, streaming: undefined, sid: undefined } : t));
     current = settled;
     await AsyncStorage.setItem(KEY, JSON.stringify(settled));

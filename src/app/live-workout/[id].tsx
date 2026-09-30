@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   progressText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   progressPct: { fontSize: 12.5, fontWeight: '700', color: flColor.bronze300, fontVariant: ['tabular-nums'] },
-  track: { height: 4, borderRadius: 2, backgroundColor: flColor.charcoal600, overflow: 'hidden' },
+  track: { height: 4, borderRadius: 2, backgroundColor: flColor.divider, overflow: 'hidden' },
   fill: { height: 4, backgroundColor: flColor.bronze400 },
 
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, paddingHorizontal: 14, paddingVertical: 12, gap: 8 },

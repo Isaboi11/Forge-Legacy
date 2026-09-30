@@ -1049,7 +1049,7 @@ const styles = StyleSheet.create({
   markLinkText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   historyBlock: { marginTop: 30, gap: 2 },
-  historyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  historyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.divider },
   historyLine: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   historyDate: { fontSize: 12, color: flColor.gray600 },
 
@@ -1064,9 +1064,9 @@ const styles = StyleSheet.create({
   customUnit: { marginTop: 10 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   // auto-tracking metric picker
   subChips: { marginTop: 10 },

@@ -16,6 +16,7 @@ import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution, type PastGoal 
 import { barPct, milestones, pctOf, projectedClose, recentPace, sharePct } from '@/domain/squad/goal-progress';
 import { earlyLabel } from '@/domain/squad/goal-state';
 import { useQuery } from '@/lib/useQuery';
+import { toLocalDate } from '@/domain/dates/local-date';
 
 /**
  * S-2b Squad Goal Detail — built to `Squad Goal Detail.dc.html` (Design `b029488a`).
@@ -64,9 +65,10 @@ function fmtValue(v: number, kind: string): string {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// A `YYYY-MM-DD` is that local day; a timestamp is the viewer's local day (QA 09-26 B14).
 const shortDate = (iso: string | null) => {
   if (!iso) return null;
-  const d = new Date(iso);
+  const d = toLocalDate(iso);
   return Number.isNaN(d.getTime()) ? null : `${MONTHS[d.getMonth()]} ${d.getDate()}`;
 };
 const monthOf = (d: Date) => `${MONTHS[d.getMonth()]}`;
@@ -176,7 +178,7 @@ export default function SquadGoalScreen() {
 
   const pace = recentPace(data.weeks);
   const close = projectedClose(done, target, pace, new Date());
-  const stones = milestones(target, done, data.weeks);
+  const stones = milestones(target, done, data.weeks, data.startedAt);
   const top = data.contributions.reduce((m, c) => Math.max(m, c.value), 0);
   const weekMax = data.weeks.reduce((m, w) => Math.max(m, w.value), 0);
 
@@ -327,7 +329,8 @@ export default function SquadGoalScreen() {
           <View style={styles.barLabels}>
             {data.weeks.map((w) => (
               <Text key={w.weekStart} style={styles.barLabel}>
-                {shortDate(w.weekStart)}
+                {/* The bucket's own day (a UTC Monday), not that instant in local time — the Sunday before in the US. */}
+                {shortDate(w.weekStart.slice(0, 10))}
               </Text>
             ))}
           </View>
@@ -605,13 +608,13 @@ const styles = StyleSheet.create({
 
   contribCard: { backgroundColor: flColor.charcoal800, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, borderRadius: flRadius.lg, boxShadow: flShadow.card, paddingHorizontal: 16 },
   contribRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 14 },
-  contribRowDiv: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  contribRowDiv: { borderBottomWidth: 1, borderBottomColor: flColor.divider },
   contribBody: { flex: 1, minWidth: 0 },
   contribTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
   contribName: { flex: 1, fontSize: 14.5, color: flColor.cream100 },
   contribValue: { fontFamily: flFont.display, fontSize: 15, fontWeight: '700', color: flColor.cream100 },
-  contribValueSelf: { color: flColor.bronze300 },
-  contribTrack: { marginTop: 9, height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
+  contribValueSelf: { color: flColor.selectedInk },
+  contribTrack: { marginTop: 9, height: 5, borderRadius: flRadius.pill, backgroundColor: flColor.divider, overflow: 'hidden' },
   contribFill: { height: '100%', borderRadius: flRadius.pill },
   contribFillOther: { backgroundColor: flColor.bronzeDark },
   contribShare: { fontSize: 11, color: flColor.gray600, marginTop: 6 },
@@ -622,10 +625,10 @@ const styles = StyleSheet.create({
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, height: 96 },
   barCol: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: 8, height: '100%' },
   barNum: { fontSize: 10.5, fontWeight: '600', color: flColor.gray600 },
-  barNumOn: { color: flColor.bronze300 },
+  barNumOn: { color: flColor.selectedInk },
   weekBar: { width: '100%', borderTopLeftRadius: 3, borderTopRightRadius: 3 },
   weekBarOff: { backgroundColor: forgeOr<string>('#3A342C', flColor.charcoal600) },
-  barLabels: { flexDirection: 'row', gap: 8, marginTop: 9, paddingTop: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  barLabels: { flexDirection: 'row', gap: 8, marginTop: 9, paddingTop: 9, borderTopWidth: 1, borderTopColor: flColor.divider },
   barLabel: { flex: 1, textAlign: 'center', fontSize: 9.5, letterSpacing: 0.4, color: flColor.gray600 },
 
   mileRow: { flexDirection: 'row', gap: 14 },

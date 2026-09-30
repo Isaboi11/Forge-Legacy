@@ -508,10 +508,10 @@ const styles = StyleSheet.create({
   knobOff: { left: 2, backgroundColor: flColor.charcoal500 },
   freqRow: { flexDirection: 'row', gap: 6, paddingVertical: 8, paddingHorizontal: 2 },
   freqSeg: { flex: 1, paddingVertical: 8, borderRadius: flRadius.md, borderWidth: 1, borderColor: 'transparent', alignItems: 'center' },
-  freqSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  freqSegOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   freqSegOff: { backgroundColor: flColor.charcoal800 },
   freqSegText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.4, color: flColor.gray600 },
-  freqSegTextOn: { color: flColor.bronze300 },
+  freqSegTextOn: { color: flColor.selectedInk },
 
   chapterGroup: { marginBottom: 28 },
   chapterHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 9, paddingHorizontal: 2, paddingBottom: 14 },
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
 
   actionList: { marginHorizontal: -6 },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 8 },
-  actionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  actionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   actionIcon: { flexShrink: 0 },
   actionLabel: { fontSize: 15, color: flColor.cream100 },
   actionLabelDanger: { color: flColor.redMuted },

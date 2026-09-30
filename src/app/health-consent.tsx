@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600, marginTop: 2 },
   status: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400, marginTop: 10 },
-  statusOn: { color: flColor.bronze300 },
+  statusOn: { color: flColor.selectedInk },
   action: { marginTop: 12 },
 
   footnote: { fontSize: 12, lineHeight: 18, color: flColor.gray600, marginTop: 10 },

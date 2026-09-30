@@ -2,7 +2,7 @@ import {
   PlayfairDisplay_500Medium,
   PlayfairDisplay_600SemiBold,
 } from '@expo-google-fonts/playfair-display';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router } from 'expo-router';
 import { flColor, IS_PAPER } from '@/constants/foundation';
 import { useFonts } from 'expo-font';
 import { useColorScheme } from 'react-native';
@@ -39,7 +39,9 @@ import { PushProvider } from '@/lib/push';
 import { SettingsProvider } from '@/lib/settings';
 import { EntitlementProvider } from '@/lib/entitlement';
 import { usePendingInvite } from '@/lib/pending-invite';
+import { usePendingDestination } from '@/lib/pending-destination';
 import { routeFor } from '@/lib/route-for';
+import { installSafeBack } from '@/lib/safe-back';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
 import { CeremonyProvider } from '@/hooks/useCeremony';
@@ -72,6 +74,10 @@ import { CoachDoorProvider } from '@/hooks/useCoachDoor';
  */
 startDiagnostics();
 installErrorSink();
+
+// Every `router.back()` with no history (refresh, shared link, notification) goes to the screen's parent
+// instead of doing nothing — installed once on the shared router object (QA 09-26 B1, `lib/safe-back`).
+installSafeBack(router);
 
 /**
  * Root layout — a Stack over the whole app. The `(tabs)` group holds the 5-tab shell; every
@@ -258,6 +264,8 @@ function RootNavigator() {
    * strips `join-squad` out of the tree and the `?code=` with it. See `lib/pending-invite.tsx`.
    */
   usePendingInvite(route);
+  // Any other link opened while signed out — opened again once they are in (settings-29).
+  usePendingDestination(route);
   // RevenueCat's user id = the signed-in athlete, so the purchase webhook knows whose row to write.
   useStoreIdentity(session?.user?.id ?? null);
 

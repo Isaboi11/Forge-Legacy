@@ -88,3 +88,17 @@ export function captureInstant(entry: { label: string; createdAt: string }): num
 export function sortByCapture<T extends { label: string; createdAt: string }>(entries: T[]): T[] {
   return [...entries].sort((a, b) => captureInstant(b) - captureInstant(a));
 }
+
+/**
+ * The pose Compare opens on: the first (in capture order) that BOTH entries photographed, else the first
+ * either has, else the first pose. It used to open on "Front Flexed" unconditionally, so two sets that
+ * both held relaxed-front photos showed "No photo" twice (QA legacy-03).
+ */
+export function defaultComparePose<K extends string>(
+  order: readonly K[],
+  a: Partial<Record<K, string | null | undefined>> | null | undefined,
+  b: Partial<Record<K, string | null | undefined>> | null | undefined,
+): K {
+  const has = (m: typeof a, k: K) => !!m?.[k];
+  return order.find((k) => has(a, k) && has(b, k)) ?? order.find((k) => has(a, k) || has(b, k)) ?? order[0];
+}

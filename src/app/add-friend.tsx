@@ -228,6 +228,39 @@ export default function AddFriendScreen() {
     );
   };
 
+  /* DECLINE (social2-07, QA 09-26). Every screen offered only Accept, so the one way to be rid of a
+     request was to block the sender. Declining is the same erasure as withdrawing (0073's
+     `remove_friendship`) — no DECLINED row, nothing the sender can see. */
+  const decline = (f: { id: string; name: string }) => {
+    if (busy) return;
+    setBusy(true);
+    setOptimistic((o) => ({ ...o, [f.id]: 'none' }));
+    removeFriendship(f.id).then(
+      () => {
+        setBusy(false);
+        showToast('Request declined');
+        refetch();
+      },
+      (e: unknown) => {
+        setBusy(false);
+        setOptimistic((o) => ({ ...o, [f.id]: 'incoming' }));
+        showToast(errorMessage(e));
+      },
+    );
+  };
+
+  /* Accept + Decline, side by side — the same pair on a search result and on an incoming row. */
+  const answer = (f: { id: string; name: string }) => (
+    <View style={styles.rowBtns}>
+      <Pressable onPress={() => decline(f)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Decline ${f.name}`} style={({ pressed }) => [styles.rowBtn, pressed ? styles.pressed : null]}>
+        <Text style={styles.rowBtnLabel}>Decline</Text>
+      </Pressable>
+      <Pressable onPress={() => accept(f)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${f.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
+        <Text style={styles.rowBtnLabelArmed}>Accept</Text>
+      </Pressable>
+    </View>
+  );
+
   const status = statusFor({ raw, handleMode, searchable, checked, count: showing.length, searchError });
 
   return (
@@ -295,9 +328,7 @@ export default function AddFriendScreen() {
                     state === 'friends' ? (
                       <FriendsMark />
                     ) : state === 'incoming' ? (
-                      <Pressable onPress={() => accept(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${r.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
-                        <Text style={styles.rowBtnLabelArmed}>Accept</Text>
-                      </Pressable>
+                      answer(r)
                     ) : state === 'outgoing' ? (
                       <Pressable onPress={() => withdraw(r)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Withdraw request to ${r.name}`} style={({ pressed }) => [styles.rowBtn, pressed ? styles.pressed : null]}>
                         <Text style={styles.rowBtnLabel}>Withdraw</Text>
@@ -323,11 +354,7 @@ export default function AddFriendScreen() {
                 person={f}
                 index={i}
                 onOpen={() => router.push({ pathname: '/athlete/[id]', params: { id: f.id } })}
-                action={
-                  <Pressable onPress={() => accept(f)} disabled={busy} accessibilityRole="button" accessibilityLabel={`Accept ${f.name}`} style={({ pressed }) => [styles.rowBtn, styles.rowBtnArmed, pressed ? styles.pressed : null]}>
-                    <Text style={styles.rowBtnLabelArmed}>Accept</Text>
-                  </Pressable>
-                }
+                action={answer(f)}
               />
             ))}
           </Section>
@@ -509,7 +536,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.85 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
-  pinned: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  pinned: { paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   scroll: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 40 },
   lede: { marginTop: 2, marginBottom: 14, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
 
@@ -536,12 +563,13 @@ const styles = StyleSheet.create({
   countBadgeText: { fontSize: 9.5, fontWeight: '700', color: flColor.bronze300 },
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, overflow: 'hidden' },
 
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, paddingVertical: 10, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, paddingVertical: 10, gap: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: flColor.divider },
   rowMain: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11 },
   rowText: { flex: 1, minWidth: 0 },
   rowName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   rowHandle: { marginTop: 1, fontSize: 11, color: flColor.gray600 },
   rowSquad: { marginTop: 1, fontSize: 10.5, color: flColor.bronzeInk },
+  rowBtns: { flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowBtn: { flexShrink: 0, paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
   rowBtnArmed: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
   rowBtnLabel: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },

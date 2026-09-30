@@ -604,7 +604,7 @@ export interface ProgramShelves<T> {
   active: T | null;
   /** Queued, not started. */
   planned: T[];
-  /** Authored by the athlete, and not already shown as active or planned. */
+  /** Authored or imported by the athlete (queued or sealed), and not already shown as active. */
   built: T[];
   /** Sealed runs of Forge programs — permanent records (Amendment-001 §6). */
   past: T[];
@@ -614,8 +614,12 @@ export function shelvePrograms<T extends Shelvable>(mine: T[]): ProgramShelves<T
   const sealed = (p: T) => isSealed(p.state);
   return {
     active: mine.find((p) => p.state === 'active') ?? null,
-    planned: mine.filter((p) => p.state === 'future'),
-    built: mine.filter((p) => p.sourceDefinitionId == null && p.state !== 'active' && p.state !== 'future'),
+    /* ⚠ A PROGRAM THE ATHLETE WROTE IS "BUILT" EVEN BEFORE IT STARTS (programs-13, QA 09-26). A built or
+       imported program saves as `future`, so shelving every `future` row as Planned left "Built &
+       Imported" permanently empty and piled everything the athlete made into Planned. Planned is the
+       queue of FORGE programs taken on; the row's own pill still says it hasn't started. */
+    planned: mine.filter((p) => p.state === 'future' && p.sourceDefinitionId != null),
+    built: mine.filter((p) => p.sourceDefinitionId == null && p.state !== 'active'),
     past: mine.filter((p) => p.sourceDefinitionId != null && sealed(p)),
   };
 }

@@ -216,9 +216,9 @@ const styles = StyleSheet.create({
   // activity chips
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
-  chipLabelOn: { color: flColor.bronze300 },
+  chipLabelOn: { color: flColor.selectedInk },
 
   // duration
   durationRow: { flexDirection: 'row', gap: 12 },
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   durationUnit: { fontSize: 13, color: flColor.gray400 },
 
   // commit bar
-  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnOn: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },

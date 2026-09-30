@@ -1824,7 +1824,7 @@ const styles = StyleSheet.create({
   goalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 10 },
   goalTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, color: flColor.cream100, marginBottom: 14 },
-  progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal700, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
+  progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.divider, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   progressFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
   progressCaption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400, marginTop: 9 },
 
@@ -1838,7 +1838,7 @@ const styles = StyleSheet.create({
   // options sheet
   optionsList: { marginHorizontal: -6 },
   optionRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, paddingHorizontal: 8 },
-  optionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  optionRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   optionIcon: { flexShrink: 0 },
   optionLabel: { fontSize: 15, color: flColor.cream100 },
   optionLabelDanger: { color: flColor.redMuted },
@@ -1850,9 +1850,9 @@ const styles = StyleSheet.create({
   goalChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   goalSubChips: { marginTop: 8 },
   goalChip: { paddingVertical: 9, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
-  goalChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  goalChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   goalChipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  goalChipTextOn: { color: flColor.bronze300 },
+  goalChipTextOn: { color: flColor.selectedInk },
   goalAutoNote: { fontSize: 12, lineHeight: 17, color: flColor.gray600 },
   goalDateRow: { flexDirection: 'row', gap: 12 },
   goalDateCol: { flex: 1, minWidth: 0 },
@@ -2018,10 +2018,10 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal900,
   },
-  ackRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  ackRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   ackRowPressed: { opacity: 0.75 },
   ackRowText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
-  ackRowTextOn: { color: flColor.bronze300 },
+  ackRowTextOn: { color: flColor.selectedInk },
   ackRowMark: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.bronzeInk },
 
   hallCrest: { width: 40, height: 40, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md },
@@ -2031,7 +2031,7 @@ const styles = StyleSheet.create({
      would put a gutter between rows and the ledger would read as cards again. */
   feedList: { gap: 0 },
   /* Pinned (0230): the same rows, above the feed, each with a quiet label — information, not a card around it. */
-  pinnedList: { gap: 0, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  pinnedList: { gap: 0, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   pinnedLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk, paddingHorizontal: 20, paddingTop: 10 },
   weeklyCard: { borderColor: flColor.bronzeBorder },
   weeklyIcon: {
@@ -2071,7 +2071,7 @@ const styles = StyleSheet.create({
   feedActions: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 11 },
   feedAction: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   feedActionText: { fontSize: 12.5, color: flColor.gray600 },
-  feedActionTextOn: { color: flColor.bronze300 },
+  feedActionTextOn: { color: flColor.selectedInk },
   feedTime: { marginLeft: 'auto', fontSize: 11.5, color: flColor.gray600 },
   loadMore: { marginTop: 2, paddingVertical: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal500, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
   loadMoreText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3, color: flColor.gray400 },

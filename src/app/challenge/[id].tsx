@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
   heroContent: { paddingTop: 158, alignItems: 'center' },
   heroName: { fontFamily: flFont.display, fontSize: 31, fontWeight: '700', letterSpacing: -0.4, lineHeight: 34, textAlign: 'center', color: flColor.cream100 },
   timeline: { flexDirection: 'row', gap: 5, width: 214, marginTop: 16 },
-  weekTrack: { flex: 1, height: 5, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.charcoal700, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' },
+  weekTrack: { flex: 1, height: 5, borderRadius: flRadius.pill, overflow: 'hidden', backgroundColor: flColor.divider, boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.5)' },
   weekFill: { height: '100%', borderRadius: flRadius.pill, overflow: 'hidden' },
   weekFillCurrent: { boxShadow: flShadow.glowSubtle },
   seasonLabel: { marginTop: 9, fontSize: 11, letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },

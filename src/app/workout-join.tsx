@@ -10,7 +10,8 @@ import { ScreenBackground } from '@/components/screen-background';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { fetchWorkoutInvite, requestToJoinWorkout, type WorkoutInvite } from '@/data/train-together-live';
+import { declineWorkoutInvite, fetchWorkoutInvite, requestToJoinWorkout, type WorkoutInvite } from '@/data/train-together-live';
+import { fetchAthleteProfile } from '@/data/athlete-profile-live';
 import { fetchTrainingNow } from '@/data/presence-live';
 import { CHEER_MAX, fetchSentCheers, sendCheer } from '@/data/cheers-live';
 import { cleanCheer, sentCheerStatus, type SentCheer } from '@/domain/coach/cheers';
@@ -70,6 +71,10 @@ export default function WorkoutJoinScreen() {
   const [cheerSending, setCheerSending] = useState(false);
   /* What I have sent them today, newest first, each with whether it was seen or answered. */
   const [sent, setSent] = useState<SentCheer[]>([]);
+  /* social2-12: `false` once the roster has been read and they are NOT on it. Asking to join a workout
+     nobody is running sent a request nobody would ever see, under "Join They?" placeholder text. */
+  const [training, setTraining] = useState<boolean | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -86,7 +91,19 @@ export default function WorkoutJoinScreen() {
         if (!live) return;
         const found = rows.find((r) => r.userId === hostId);
         // `label` is null when the athlete's session has no name yet — the ask falls back to their own.
-        if (found) setHost({ name: found.name, avatarUrl: found.avatarUrl, label: found.label ?? '' });
+        if (found) {
+          setHost({ name: found.name, avatarUrl: found.avatarUrl, label: found.label ?? '' });
+          setTraining(true);
+          return;
+        }
+        setTraining(false);
+        // Not training — still name them properly rather than "They".
+        fetchAthleteProfile(hostId).then(
+          (p) => {
+            if (live && p) setHost({ name: p.name, avatarUrl: p.avatarUrl, label: '' });
+          },
+          () => {},
+        );
       },
       () => {
         // A failed roster read is not a reason to block the ask — the fallback name still works.
@@ -177,6 +194,20 @@ export default function WorkoutJoinScreen() {
   }, [requestId, launch]);
 
   const name = host?.name ?? 'They';
+
+  /* social2-12: the ask can be taken back. Either party may delete the row (0121), same as a decline. */
+  const withdraw = async () => {
+    if (withdrawing || !requestId) return;
+    setWithdrawing(true);
+    try {
+      await declineWorkoutInvite(requestId);
+      showToast('Request withdrawn');
+      close();
+    } catch (e) {
+      showToast(errorMessage(e));
+      setWithdrawing(false);
+    }
+  };
   /* A message is personal — "Let's go Jordan!", not "Let's go Jordan Reyes!". */
   const first = host?.name?.trim().split(/\s+/)[0] || 'them';
 
@@ -252,7 +283,7 @@ export default function WorkoutJoinScreen() {
         ) : requestId ? (
           <>
             <Text style={styles.eyebrow}>Asked</Text>
-            <Text style={styles.headline}>Waiting on {name}</Text>
+            <Text style={styles.headline}>{host ? `Waiting on ${host.name}` : 'Waiting for an answer'}</Text>
             <View style={styles.waitRow}>
               <ActivityIndicator color={flColor.bronze400} />
               <Text style={styles.body}>
@@ -262,7 +293,29 @@ export default function WorkoutJoinScreen() {
               </Text>
             </View>
             <View style={styles.actions}>
+              <Button variant="secondary" fullWidth onPress={() => void withdraw()} disabled={withdrawing} accessibilityLabel="Withdraw your request">
+                {withdrawing ? 'Withdrawing…' : 'Withdraw Request'}
+              </Button>
               <Button variant="text" fullWidth onPress={close} accessibilityLabel="Leave this open and go back">
+                Back
+              </Button>
+            </View>
+          </>
+        ) : training === false ? (
+          <>
+            <Text style={styles.eyebrow}>Not training</Text>
+            <Text style={styles.headline}>{host ? `${host.name} isn’t training right now` : 'They aren’t training right now'}</Text>
+            <Text style={styles.body}>You can only join a workout while it’s under way. Invite them to train with you instead.</Text>
+            <View style={styles.actions}>
+              <Button
+                variant="primary"
+                fullWidth
+                onPress={() => router.replace({ pathname: '/train-invite', params: { athlete: hostId } })}
+                accessibilityLabel="Invite them to train"
+              >
+                Invite to Train
+              </Button>
+              <Button variant="text" fullWidth onPress={close} accessibilityLabel="Back">
                 Back
               </Button>
             </View>
@@ -270,7 +323,7 @@ export default function WorkoutJoinScreen() {
         ) : (
           <>
             <Text style={styles.eyebrow}>Training now</Text>
-            <Text style={styles.headline}>{name} is training</Text>
+            <Text style={styles.headline}>{host ? `${host.name} is training` : 'Training now'}</Text>
 
             {/*
               ══ SAY SOMETHING — HOLT PASSES IT ON (0231, PO 2026-09-28) ══

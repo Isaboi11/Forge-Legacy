@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.surfaceRecessed,
   },
-  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   crestCaption: { marginTop: 11, fontSize: 11, lineHeight: 16, color: flColor.gray600 },
 
   // category chips (same chip as the Discover Squads filter row)
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   catChipLabelOn: { color: flColor.onBronze },
 
   // joining (public only)
-  joinBlock: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  joinBlock: { marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.divider },
   joinLabel: { marginBottom: 10, fontSize: 11, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
 
   // privacy
@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   hintText: { flex: 1, fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
 
   // commit bar
-  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  commitBar: { paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   commitBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 15, borderRadius: flRadius.md, borderWidth: 1 },
   commitBtnOn: { borderColor: flColor.accentBorder, boxShadow: flShadow.glowSubtle },
   commitBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600, opacity: 0.75 },

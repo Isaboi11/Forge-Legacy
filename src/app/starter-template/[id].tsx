@@ -251,6 +251,6 @@ const styles = StyleSheet.create({
   note: { marginTop: 4, fontSize: 12, lineHeight: 18, color: flColor.gray600 },
 
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. */
-  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: flColor.charcoal900 },
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900 },
   footerSecondary: { marginTop: 9 },
 });

@@ -31,8 +31,10 @@ test('⚠ an answered question cannot be re-tapped, in every control shape', () 
   assert.match(answers, /const settled = answer != null;/);
   const presses = answers.match(/onPress=\{\(\) => [^\n]*onChip\(c\)\)?\}/g) ?? [];
   assert.ok(presses.length >= 5, 'every shape draws a pressable');
-  for (const p of presses) assert.match(p, /settled \? undefined : onChip\(c\)/, `ungated: ${p}`);
-  assert.equal((answers.match(/disabled=\{settled\}/g) ?? []).length, presses.length);
+  for (const p of presses) assert.match(p, /(settled|locked) \? undefined : onChip\(c\)/, `ungated: ${p}`);
+  assert.equal((answers.match(/disabled=\{(settled|locked)\}/g) ?? []).length, presses.length);
+  // holtai-08: the ONE exception is an Undo chip, which the sheet checks is still the newest change.
+  assert.match(answers, /const locked = settled && c\.typedEdit !== 'undo';/);
 });
 
 test('⚠ only the newest card has buttons; older ones say so instead of acting on another build', () => {

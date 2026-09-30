@@ -130,6 +130,11 @@ export default function SquadsScreen() {
         title="Squads"
         actions={
           <>
+            {/* Friends is one tap from the social tab (social-21, QA 09-26) — before this the only roads in
+                were a Home card and the post-workout share. */}
+            <Pressable onPress={() => router.push('/friends')} accessibilityRole="button" accessibilityLabel="Friends" style={styles.headerBtn} hitSlop={6}>
+              <EngravedIcon name="partners" size={24} color={engravedTint(flColor.bronze300)} />
+            </Pressable>
             <Pressable ref={discoverRef} onPress={openDiscover} accessibilityRole="button" accessibilityLabel="Discover squads" style={styles.headerBtn} hitSlop={6}>
               <SearchIcon />
             </Pressable>
@@ -463,7 +468,7 @@ const styles = StyleSheet.create({
   dailyRow: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingTop: 3, paddingBottom: 2 },
   dailyNumWrap: { flexShrink: 0, minWidth: 56, gap: 5 },
   dailyNum: { fontSize: 23, fontWeight: '700', letterSpacing: 0.2, lineHeight: 24 },
-  dailyNumOn: { color: flColor.bronze300 },
+  dailyNumOn: { color: flColor.selectedInk },
   dailyNumOff: { color: flColor.gray600 },
   dailyNumTotal: { color: flColor.gray600, fontWeight: '600' },
   dailyLabel: { fontSize: 11.5, letterSpacing: 0.2, color: flColor.gray400 },

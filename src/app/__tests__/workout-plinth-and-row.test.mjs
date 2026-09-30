@@ -266,7 +266,7 @@ test('the bottom actions read as a bar the screen ends at', () => {
   const bar = WORKOUT.match(/\n  bottom: \{[\s\S]*?\n  \},/)?.[0] ?? '';
   assert.ok(bar, 'the bottom bar style is gone');
   assert.match(bar, /backgroundColor: flColor\.charcoal800/, 'the bar sank back to the canvas colour');
-  assert.match(bar, /borderTopColor: flColor\.charcoal600/, 'the edge softened back to a seam');
+  assert.match(bar, /borderTopColor: flColor\.(charcoal600|divider)/, 'the edge softened back to a seam');
   assert.match(bar, /boxShadow: '0 -\d+px \d+px/, 'the upward shadow is gone — content no longer passes behind it');
 });
 

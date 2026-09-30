@@ -20,6 +20,7 @@ import {
   type TransformationEntry,
 } from '@/data/transformation-live';
 import { ADJUST_TOUCH_STYLE, useFrameAdjust } from '@/hooks/useFrameAdjust';
+import { defaultComparePose } from '@/domain/legacy/capture-date';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { forgeOr, themeGround } from '@/constants/theme-scrim';
@@ -56,7 +57,8 @@ export default function TransformationCompareRoute() {
 
   const [aId, setAId] = useState<string | null>(null);
   const [bId, setBId] = useState<string | null>(null);
-  const [poses, setPoses] = useState<PoseKey[]>(['ff']);
+  /** null = not chosen yet — derived from what the two entries actually photographed (QA legacy-03). */
+  const [posesPick, setPoses] = useState<PoseKey[] | null>(null);
   const [pickerFor, setPickerFor] = useState<'a' | 'b' | null>(null);
   /** Framings committed this session, keyed by entry id. Layered over what the entry was fetched with. */
   const [edits, setEdits] = useState<Record<string, FrameMap>>({});
@@ -69,6 +71,7 @@ export default function TransformationCompareRoute() {
   const bEntry = entries.find((e) => e.id === bEff) ?? null;
 
   const elapsed = aEntry && bEntry && aEff !== bEff ? elapsedBetween(aEntry.label, bEntry.label) : '';
+  const poses: PoseKey[] = posesPick ?? [defaultComparePose(XFORM_POSES.map((p) => p.key), aEntry?.photos, bEntry?.photos)];
 
   const framesFor = (e: TransformationEntry | null): FrameMap => (e ? { ...e.frames, ...edits[e.id] } : {});
   const aFrames = framesFor(aEntry);
@@ -93,7 +96,8 @@ export default function TransformationCompareRoute() {
   };
 
   const togglePose = (k: PoseKey) =>
-    setPoses((cur) => {
+    setPoses(() => {
+      const cur = poses;
       const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
       return next.length ? next : [k];
     });
@@ -344,7 +348,7 @@ const styles = StyleSheet.create({
   emptyBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   scroll: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34 },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
 
@@ -362,23 +366,23 @@ const styles = StyleSheet.create({
   posesHint: { fontSize: 10, color: flColor.gray600 },
   poseChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   poseChip: { paddingVertical: 7, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1 },
-  poseChipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  poseChipOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   poseChipOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
   poseChipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray400 },
-  poseChipTextOn: { color: flColor.bronze300 },
+  poseChipTextOn: { color: flColor.selectedInk },
 
   viewToggle: { flexDirection: 'row', gap: 8, marginTop: 18 },
   viewSeg: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: flRadius.pill, borderWidth: 1 },
-  viewSegOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  viewSegOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   viewSegOff: { backgroundColor: 'transparent', borderColor: flColor.charcoal600 },
   viewSegText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  viewSegTextOn: { color: flColor.bronze300 },
+  viewSegTextOn: { color: flColor.selectedInk },
 
   adjustBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 10, paddingVertical: 10, borderRadius: flRadius.md, borderWidth: 1 },
-  adjustBtnOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  adjustBtnOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   adjustBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600 },
   adjustText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  adjustTextOn: { color: flColor.bronze300 },
+  adjustTextOn: { color: flColor.selectedInk },
   adjustHint: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600, textAlign: 'center', marginTop: 8 },
 
   rowStack: { gap: 16, marginTop: 16 },
@@ -398,7 +402,7 @@ const styles = StyleSheet.create({
 
   pickerScroll: { maxHeight: 340 },
   pickerRow: { paddingVertical: 14, paddingHorizontal: 4 },
-  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  pickerRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   pickerName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   pickerSub: { fontSize: 11.5, color: flColor.gray600, marginTop: 2 },
 });

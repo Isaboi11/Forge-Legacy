@@ -135,9 +135,41 @@ export interface SkipPlan {
 
 export type TypedEditPlan = EditPlan | SkipPlan;
 
+/**
+ * The athlete's program named in what they typed, when it is NOT the one running — or null (holtai-02).
+ *
+ * A typed change only ever reaches the ACTIVE program (one active program, edit-ops header). "In my QA Holt
+ * Plan, swap…" was confirmed as a bare "Week 1, Push — …" and applied to a different program, so the
+ * confirm has to say which program it touches and say plainly when that is not the one they named. The
+ * longest name wins, so "Plan" never beats "QA Holt Plan"; a name of fewer than three letters is ignored.
+ */
+export function otherProgramNamed(said: string | undefined, activeName: string, names: readonly string[]): string | null {
+  if (!said) return null;
+  const hay = ` ${said.toLowerCase().replace(/[^a-z0-9]+/g, ' ')} `;
+  const key = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const hit = [...new Set(names)]
+    .filter((n) => key(n).length >= 3 && hay.includes(` ${key(n)} `))
+    .sort((a, b) => key(b).length - key(a).length)[0];
+  if (!hit) return null;
+  const active = key(activeName);
+  // Naming the active program (or a name inside it) is naming the right one.
+  return key(hit) === active || active.includes(key(hit)) ? null : hit;
+}
+
 export type EditIntentResolution =
   | { ok: true; plan: TypedEditPlan }
-  | { ok: false; ask: EditAsk; options: string[]; message: string };
+  | {
+      ok: false;
+      ask: EditAsk;
+      options: string[];
+      message: string;
+      /**
+       * The op the ANSWER applies to, when it is not the one asked for. "Make my Legs day shorter" reads as a
+       * `duration` edit, and a lifting day has no minutes to cut — so Holt offers to take one exercise out,
+       * and the chip the athlete taps fills a `remove` (holtai-06). Absent = the intent's own op.
+       */
+      retarget?: EditIntent['op'];
+    };
 
 export interface ResolveEditOptions {
   /** The athlete's candidate context (equipment, limitations). Absent = no gates beyond the catalogue. */
@@ -669,8 +701,33 @@ export function resolveEditIntent(
   const eligible = day.main.map((e, i) => ({ e, i })).filter(({ e }) => eligibleFor(intent.op)(e));
   const rowLabels = (idx: number[]) => idx.map((i) => describe(day.main[i]));
   if (eligible.length === 0) {
+    /*
+     * ⚠ NEVER RE-OFFER THE SESSION THAT JUST FAILED (holtai-06). "Make my Legs day shorter" reads as a
+     * `duration` edit; Legs has no cardio in it, and asking "which session?" with Legs among the chips was
+     * a loop the athlete could never leave. A lifting day gets shorter by losing an exercise, so that is
+     * what he offers — and only sessions that CAN take the edit are ever offered as the way on.
+     */
+    if (intent.op === 'duration' && day.main.length > 0) {
+      if (day.main.length - 1 < MIN_EXERCISES_AFTER_REMOVE) {
+        return ask(
+          'not_editable',
+          [],
+          `${place} has no cardio to cut time from, and it's already down to ${day.main.length} exercise${day.main.length === 1 ? '' : 's'}. Tell me what you'd swap instead.`,
+        );
+      }
+      return {
+        ...ask('which_exercise', [...new Set(day.main.map((e) => e.name))], `${place} has no cardio to cut time from. I can make it shorter by taking one exercise out — which one?`),
+        retarget: 'remove',
+      };
+    }
     const what = intent.op === 'distance' || intent.op === 'duration' ? 'no cardio' : 'nothing to lift';
-    return ask('which_day', upcoming(structure, marks), `${place} has ${what} in it — which session did you mean?`);
+    const others = editableSessions(structure, marks, 60)
+      .filter((s) => !(s.at.weekIndex === weekIndex && s.at.dayIndex === dayIndex))
+      .filter((s) => s.day.main.some((e) => eligibleFor(intent.op)(e)))
+      .slice(0, 4)
+      .map((s) => sessionLabel(structure, s.at.weekIndex, s.at.dayIndex));
+    if (others.length === 0) return ask('not_editable', [], `${place} has ${what} in it, and nothing coming up does either.`);
+    return ask('which_day', others, `${place} has ${what} in it — which session did you mean?`);
   }
   let exerciseIndex: number;
   if (!intent.exercise) {

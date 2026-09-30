@@ -3,6 +3,7 @@ import { usePathname } from 'expo-router';
 
 import { startAnalytics, trackScreen } from '@/lib/analytics';
 import { noteRoute } from '@/lib/diagnostics';
+import { noteBackPath } from '@/lib/safe-back';
 
 /**
  * Records which screen is open, for BOTH the product-usage log and the crash breadcrumb trail.
@@ -47,6 +48,8 @@ export function AnalyticsTracker() {
      *   null` — which is most of the value, lost quietly.
      */
     noteRoute(pathname);
+    // Where a no-history back arrow falls back from (QA 09-26 B1).
+    noteBackPath(pathname);
   }, [pathname]);
 
   return null;

@@ -63,11 +63,13 @@ import {
   SPLIT_STYLE_LABEL,
   defaultWeeksFor,
   stylesForDays,
+  stylesForDaysSuggestedFirst,
   type SplitStyle,
 } from '@/domain/coach/rulebook/skeletons';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { dayLines } from '@/domain/onboarding/first-week';
+import { schemeText } from '@/domain/program/prescription';
 import { DAY_LABELS, ISO_DAYS, type IsoDay } from '@/domain/settings/briefing';
 import {
   GUIDED_MAX_WEEKS,
@@ -130,8 +132,6 @@ function Guided() {
   const profileQ = useQuery(fetchCoachProfile, []);
   const known = profileQ.data ?? EMPTY_COACH_PROFILE;
   const briefingQ = useQuery(fetchBriefing, []);
-  /* Only decides whether "Save for later" is offered. The conflict check itself reads fresh at the tap. */
-  const activeQ = useQuery(fetchActiveProgram, []);
 
   const premiumAi = usePremiumAi();
   const photoOn = PHOTO_IMPORT_LIVE && premiumAi;
@@ -176,9 +176,9 @@ function Guided() {
   const step: GuidedStep | undefined = steps[index];
 
   const effWeeks = weeks ?? (effGoal ? defaultWeeksFor(effGoal) : 8);
-  const legalStyles = days != null ? stylesForDays(days) : [];
-  /* The suggested split is simply the first the rulebook says is buildable at this day count —
-     `stylesForDays` already refuses the misshapen combinations (ppl at two days, body-part at two). */
+  const legalStyles = days != null ? stylesForDaysSuggestedFirst(days) : [];
+  /* The suggested split leads the list — the one that fits the day count (upper/lower at four, never
+     full body), programs-11. `stylesForDays` underneath still refuses the misshapen combinations. */
   const effStyle: SplitStyle | null = style ?? legalStyles[0] ?? null;
   const effRemind: readonly IsoDay[] = remind ?? (days != null ? remindDefault(days) : NO_DAYS);
 
@@ -314,7 +314,7 @@ function Guided() {
   };
 
   /**
-   * THE CONFLICT CHECK (W-3 §13). Read fresh at the tap rather than from `activeQ`, so a program started
+   * THE CONFLICT CHECK (W-3 §13). Read fresh at the tap, so a program started
    * on another device since this screen opened is still caught before it is silently ended.
    */
   const onSaveAndStart = async () => {
@@ -589,11 +589,18 @@ function Guided() {
                     {/* ⚠ `dayLines` AND NOT `main.map(e => e.name)` — a cardio finisher has no `name`
                         field at all and renders as a blank row. That helper is the one tested place
                         that handles both shapes. */}
-                    {dayLines(d.main).map((line, i) => (
-                      <Text key={`${d.letter}-${i}`} style={styles.dayLine}>
-                        {line}
-                      </Text>
-                    ))}
+                    {/* With its sets × reps (programs-11) — the review is where "change anything before
+                        you save" is decided, and a list of names says nothing about the work. */}
+                    {d.main.map((e, i) => {
+                      const [line] = dayLines([e]);
+                      if (!line) return null;
+                      const dose = e.kind === 'cardio' ? '' : schemeText(e);
+                      return (
+                        <Text key={`${d.letter}-${i}`} style={styles.dayLine}>
+                          {dose ? `${line} · ${dose}` : line}
+                        </Text>
+                      );
+                    })}
                   </View>
                 ))}
               </>
@@ -612,12 +619,10 @@ function Guided() {
             <Button variant="primary" fullWidth onPress={() => void onSaveAndStart()} disabled={saving || structure == null}>
               {saving ? 'Saving…' : 'Save and start'}
             </Button>
-            {/* Only when there is a running program to keep — otherwise saving and starting costs nothing. */}
-            {activeQ.data ? (
-              <Button variant="secondary" fullWidth onPress={() => void save(false)} disabled={saving || structure == null}>
-                Save for later
-              </Button>
-            ) : null}
+            {/* Always offered (programs-11): building a program is not a promise to start it today. */}
+            <Button variant="secondary" fullWidth onPress={() => void save(false)} disabled={saving || structure == null}>
+              Save for later
+            </Button>
             <Pressable onPress={() => void openInBuilder()} accessibilityRole="button">
               <Text style={styles.quiet}>Change exercises in the full builder</Text>
             </Pressable>
@@ -962,7 +967,7 @@ const styles = StyleSheet.create({
     color: flColor.gray600,
     width: 34,
   },
-  choiceLeadOn: { color: flColor.bronze300 },
+  choiceLeadOn: { color: flColor.selectedInk },
   choiceMain: { flex: 1, minWidth: 0 },
   choiceTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   choiceSub: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 3 },
@@ -1069,7 +1074,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     gap: 10,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.surfaceNav,
   },
   quiet: { textAlign: 'center', fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk, paddingVertical: 4 },

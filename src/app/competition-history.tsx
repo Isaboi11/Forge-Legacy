@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   pressed: { opacity: 0.88 },
 
-  header: { flexShrink: 0, backgroundColor: themeGround('#070808'), borderBottomWidth: 1, borderBottomColor: flColor.charcoal700, paddingBottom: 10, zIndex: 6 },
+  header: { flexShrink: 0, backgroundColor: themeGround('#070808'), borderBottomWidth: 1, borderBottomColor: flColor.divider, paddingBottom: 10, zIndex: 6 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
 
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 9, marginHorizontal: 20, marginBottom: 4, paddingHorizontal: 12, height: 40, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
@@ -398,9 +398,9 @@ const styles = StyleSheet.create({
   chipLabel: { marginHorizontal: 20, marginBottom: 6, fontSize: 8.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
   chipStrip: { gap: 7, paddingHorizontal: 20 },
   chip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: 'transparent' },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 11.5, fontWeight: '600', color: flColor.gray600 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   scroll: { paddingBottom: 30 },
   yearHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, paddingHorizontal: 20, paddingTop: 14, paddingBottom: 8, backgroundColor: themeGround('#060708') },
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   yearCount: { fontSize: 10.5, letterSpacing: 0.3, color: flColor.gray600 },
 
   /* border-TOP, so the first row of each year carries the hairline under its header. */
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingVertical: 13, borderTopWidth: 1, borderTopColor: flColor.divider },
   rowPressed: { backgroundColor: forgeOr<string>('rgba(255,255,255,0.02)', flColor.hoverWash) },
   markChamp: { width: 34, height: 34, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.round, boxShadow: `${flShadow.glowSubtle}` },
   markPlace: { width: 34, height: 34, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },

@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
 
   card: { borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 14, paddingHorizontal: 15 },
-  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.divider },
   iconTile: {
     width: 36,
     height: 36,
@@ -265,9 +265,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal700,
     backgroundColor: flColor.charcoal800,
   },
-  dayChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  dayChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   dayChipText: { fontSize: 11, fontWeight: '600', color: flColor.gray600 },
-  dayChipTextOn: { color: flColor.bronze300 },
+  dayChipTextOn: { color: flColor.selectedInk },
 
   hourRow: { flexDirection: 'row', gap: 8, paddingRight: 4 },
   hourChip: {
@@ -278,9 +278,9 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal700,
     backgroundColor: flColor.charcoal800,
   },
-  hourChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  hourChipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   hourChipText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
-  hourChipTextOn: { color: flColor.bronze300 },
+  hourChipTextOn: { color: flColor.selectedInk },
 
   sectionNote: { fontSize: 11.5, lineHeight: 18, color: flColor.gray600, marginTop: 10, paddingHorizontal: 2 },
 

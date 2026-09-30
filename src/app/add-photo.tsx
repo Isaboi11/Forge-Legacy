@@ -18,6 +18,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
+import { shiftYmd, todayYmd } from '@/domain/dates/local-date';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
@@ -65,14 +66,10 @@ function prettyLift(slug: string): string {
   return trimmed.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
-const today = () => iso(new Date());
-
-function shiftDay(dateIso: string, days: number): string {
-  const d = new Date(`${dateIso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return iso(d);
-}
+// The athlete's calendar day (QA 09-26 B14). `toISOString().slice(0, 10)` was the UTC date, so in a US
+// evening the photo defaulted to tomorrow and the › arrow stepped past today.
+const today = () => todayYmd();
+const shiftDay = shiftYmd;
 
 function pretty(dateIso: string): string {
   const d = new Date(`${dateIso}T00:00:00`);
@@ -498,9 +495,9 @@ const styles = StyleSheet.create({
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   chipText: { fontSize: 12, fontWeight: '600', color: flColor.gray600 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
   input: { marginTop: 10, paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
 
@@ -512,7 +509,7 @@ const styles = StyleSheet.create({
   inputMulti: { minHeight: 88, textAlignVertical: 'top' },
 
   starRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 24, paddingHorizontal: 14, paddingVertical: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
-  starRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  starRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   starBody: { flex: 1, minWidth: 0 },
   starTitle: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   starSub: { marginTop: 2, fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },

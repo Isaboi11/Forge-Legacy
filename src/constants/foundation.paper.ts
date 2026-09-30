@@ -269,7 +269,16 @@ export const flColor = {
    */
   cardioGrid: 'rgba(122,104,78,0.10)',
   /** ⚠ DARKENS. Forge's groove is a white wash on black; the same groove on paper must remove light. */
-  progressTrack: 'rgba(35,31,26,0.09)',
+  progressTrack: 'rgba(35,31,26,0.15)',
+  /** A hairline rule or row divider — see the Forge twin (QA 09-26 home-07). 1.70–1.79:1 on the cream grounds, 1.63 on a sheet; `charcoal700` was 1.04–1.10. Taupe, never bronze. */
+  divider: '#C4B9A7',
+  /**
+   * Selected chip fill + words — see the Forge twin (QA 09-26 visualA-11). Selected text was `bronze300`,
+   * 2.49:1: the CHOSEN option was the faintest word on Preferences. `#765A30` measures 4.99:1 on this fill
+   * and 5.94:1 on the card — a deeper step of `bronzeInk`, so selection is still bronze (earned) and legible.
+   */
+  selectedFill: 'rgba(164,122,61,0.16)',
+  selectedInk: '#765A30',
 } as const satisfies FlColor;
 
 export const flText = {

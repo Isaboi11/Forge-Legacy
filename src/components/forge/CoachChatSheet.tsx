@@ -67,11 +67,13 @@ import {
   kitchenContext,
   kitchenDoorsFor,
   kitchenWantsTraining,
+  KITCHEN_MENU,
+  replyOffersOnline,
   medicalStopIsDietitian,
 } from '@/domain/coach/kitchen';
 import { narrowEdit } from '@/domain/coach/interpret-narrow';
 import { buildAskContext } from '@/domain/coach/ask-context';
-import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
+import { otherProgramNamed, resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { resolveAvoid } from '@/domain/coach/avoid';
 import { useDictation } from '@/hooks/useDictation';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
@@ -106,6 +108,8 @@ import {
   KITCHEN_ROWS,
   type KitchenTile,
   isHomeTurn,
+  greetingSlot,
+  type GreetingSlot,
   TYPING_ENABLED,
   interpret,
   focusSaid,
@@ -134,6 +138,7 @@ import {
   answerArriving,
   streamEnded,
   streamInto,
+  cutOffReply,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -174,6 +179,7 @@ import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
   createProgram,
+  fetchMyPrograms,
   fetchProgramSessions,
   startProgram,
   updateProgram,
@@ -191,6 +197,7 @@ import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/cons
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
 import {
   changesFor,
+  describeTappedEdit,
   editableSessions,
   replacementsFor,
   rowsFor,
@@ -200,7 +207,7 @@ import {
 } from '@/domain/coach/edit-chat';
 import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardAnchoredScroll, useKeyboardLift } from '@/lib/useKeyboardLift';
 import { useReducedMotion } from '@/lib/useReducedMotion';
-import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
+import { draftFromStructure, saveProgramDraft, setDraftTold } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
 
@@ -1062,7 +1069,11 @@ export function CoachChatSheet({
             raceLine = [raceLine, stopsShortLine(structure.weeks, builtWeeks)].filter(Boolean).join(' ');
           }
         }
-        await saveProgramDraft(draftFromStructure(structure));
+        const chatDraft = draftFromStructure(structure);
+        await saveProgramDraft(chatDraft);
+        /* QA holt-13 / holtai-16: a plan he just showed in chat is not news — mark it told, so the bubble
+           never turns it into "still sitting in the builder". A draft left in the builder itself still is. */
+        await setDraftTold(chatDraft.name || null);
         /* A week and a block are the same object from the engine and two different things to save — one
            goes to `week_templates`, the other to the Program Builder's draft. The size answer is what
            tells them apart, and `structure.weeks` is the engine's own word for it rather than the
@@ -1211,7 +1222,8 @@ export function CoachChatSheet({
         kind: 'chips',
         chips: [
           { label: 'Replace it', patch: {} },
-          { label: 'Change the one I have', patch: {} },
+          /* Where "Change the one I have" leads — the running program's own page, not the Workouts tab (holtai-06). */
+          { label: 'Change the one I have', patch: {}, goTo: `/program/${active.id}` },
         ],
       },
     );
@@ -1254,7 +1266,8 @@ export function CoachChatSheet({
        making them re-answer either would defeat the point of having read it. */
     setConstraints(athleteFacts);
     setIntroStep(intro.length + 1);
-    setThread(stamped(greetReturning(firstName)));
+    /* In the kitchen he greets as the cook, as he does on arrival (kitchen-13). */
+    setThread(stamped(kitchen ? greetKitchen(firstName) : greetReturning(firstName)));
   };
 
   /**
@@ -1341,7 +1354,8 @@ export function CoachChatSheet({
     const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
     setBusy(null);
 
-    const sessions = editableSessions(active.structure, marks, 6);
+    /* QA holt-09: every session still ahead, not the first six — a change in week 5 is a real ask. */
+    const sessions = editableSessions(active.structure, marks, Number.POSITIVE_INFINITY);
     if (sessions.length === 0) {
       /* Everything left is already trained. Not a failure — the block is essentially done. */
       say({ kind: 'holt', text: "There's nothing left in that block I'd change — you've trained all of it." });
@@ -1360,7 +1374,7 @@ export function CoachChatSheet({
 
     if (pickStep.step === 'session') {
       const at = { weekIndex: pickStep.weekIndex, dayIndex: pickStep.dayIndex };
-      const found = editableSessions(edit.program.structure, edit.marks, 60).find(
+      const found = editableSessions(edit.program.structure, edit.marks, Number.POSITIVE_INFINITY).find(
         (sn) => sn.at.weekIndex === at.weekIndex && sn.at.dayIndex === at.dayIndex,
       );
       if (!found) return;
@@ -1380,10 +1394,23 @@ export function CoachChatSheet({
         /* ⚠ REBUILD IS DELIBERATELY NOT WIRED YET. `rebuildDay` exists and is tested, but it needs the
            athlete to name what to work around, and a limitation picker is its own conversation. Saying so
            is better than a chip that quietly does the wrong thing. */
-        say({
-          kind: 'holt',
-          text: "I can rebuild a day around an injury, but I haven't finished teaching myself to ask about it properly yet. Change the exercise or the sets for now.",
-        });
+        /* QA holt-04: it was a dead end. Now it points at the program page, where Ask Holt on the session
+           does this, and keeps the other changes one tap away here. */
+        say(
+          {
+            kind: 'holt',
+            text: 'Reworking a whole session is on the program page — open it, tap the session, then Ask Holt. Or change one thing about it here.',
+          },
+          {
+            kind: 'chips',
+            chips: [
+              { label: 'Open the program', patch: {}, goTo: `/program/${edit.program.id}` },
+              ...changesFor(day)
+                .filter((c) => c.id !== 'rebuild')
+                .map((c) => ({ label: c.label, patch: {}, edit: { step: 'change' as const, change: c.id } })),
+            ],
+          },
+        );
         return;
       }
       const rows = rowsFor(day, change);
@@ -1404,7 +1431,8 @@ export function CoachChatSheet({
           : valuesFor(day, change, pickStep.index);
       setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
       say(
-        { kind: 'holt', text: pick('ask_edit_value') },
+        /* QA holt-07: a swap is a movement, not a number — never "Give me the number." */
+        { kind: 'holt', text: pick(change === 'swap' ? 'ask_edit_replacement' : 'ask_edit_value') },
         {
           kind: 'chips',
           chips: options.map((v) => ({
@@ -1480,10 +1508,23 @@ export function CoachChatSheet({
       }
 
       await updateProgram(edit.program.id, res.structure);
+      /* QA holt-05: the tapped path gets the same Undo the typed path has, and says what it changed. */
+      const undoId = Date.now();
+      lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
+      const row = edit.day?.main[edit.rowIndex];
+      const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
       setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
       say(
-        { kind: 'holt', text: pick('edit_done') },
-        { kind: 'chips', chips: [{ label: 'Change something else', patch: {} }, { label: 'Show me the program', patch: {}, goTo: '/(tabs)' }] },
+        { kind: 'holt', text: `${what} ${pick('edit_done')}` },
+        {
+          kind: 'chips',
+          chips: [
+            { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
+            { label: 'Change something else', patch: {} },
+            /* QA holt-06: to the program itself, not Home. */
+            { label: 'Show me the program', patch: {}, goTo: `/program/${edit.program.id}` },
+          ],
+        },
       );
     } catch (e) {
       say({
@@ -1505,7 +1546,9 @@ export function CoachChatSheet({
    * The last change Holt made, so "Undo" can put it back (Coach-Holt-Everywhere rule 2). One level: the
    * structure as it was before, or the sessions a skip marked. Cleared the moment it is used.
    */
-  const lastEdit = useRef<{ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] } | null>(null);
+  const lastEdit = useRef<
+    ({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number } | null
+  >(null);
   const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
 
   /**
@@ -1515,7 +1558,7 @@ export function CoachChatSheet({
    * and it applies through `edit-ops`, so every invariant (a trained session is never touched, the session
    * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
    */
-  const editByWords = async (intent: EditIntent) => {
+  const editByWords = async (intent: EditIntent, said?: string) => {
     setBusy('thinking');
     const active = await Promise.race([
       fetchActiveProgram().catch(() => null),
@@ -1526,11 +1569,15 @@ export function CoachChatSheet({
       say({ kind: 'holt', text: pick('no_active_program') }, { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
       return;
     }
-    const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+    const [marks, mine] = await Promise.all([
+      fetchProgramSessions(active.id).catch(() => [] as SessionMark[]),
+      said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
+    ]);
     setBusy(null);
     const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
     if (!res.ok) {
-      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent, ask: res.ask };
+      /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
+      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };
       say(
         { kind: 'holt', text: res.message },
         ...(res.ask !== 'not_editable' && res.options.length
@@ -1541,8 +1588,18 @@ export function CoachChatSheet({
     }
     pendingEdit.current = { programId: active.id, before: active.structure, plan: res.plan };
     pendingEditAsk.current = null;
+    /*
+     * ⚠ EVERY CONFIRM NAMES THE PROGRAM IT TOUCHES (holtai-02). A typed change only reaches the one running;
+     * "In my QA Holt Plan, swap…" was confirmed as a bare "Week 1, Push — …" and landed in another program.
+     */
+    const other = otherProgramNamed(said, active.name, mine.map((p) => p.name));
     say(
-      { kind: 'holt', text: `${res.plan.label}. Want it?` },
+      {
+        kind: 'holt',
+        text: other
+          ? `I can only change the program you're running, and that's ${active.name}, not ${other}. In ${active.name}: ${res.plan.label}. Want it there?`
+          : `In ${active.name}: ${res.plan.label}. Want it?`,
+      },
       {
         kind: 'chips',
         chips: res.plan.scope
@@ -1586,8 +1643,12 @@ export function CoachChatSheet({
     }
     if (chip.typedEdit === 'undo') {
       const le = lastEdit.current;
-      lastEdit.current = null;
       if (!le) return say({ kind: 'holt', text: 'Nothing to undo — that one is already settled.' });
+      /* holtai-08: an older Undo stays tappable, but it only ever undoes the change it was offered for. */
+      if (chip.undoOf != null && chip.undoOf !== le.id) {
+        return say({ kind: 'holt', text: "That's not the last change any more — I can only take back the newest one." });
+      }
+      lastEdit.current = null;
       setBusy('thinking');
       try {
         /* The structure goes back exactly as it was; a skip is un-marked session by session. Both keep
@@ -1612,15 +1673,16 @@ export function CoachChatSheet({
       return say({ kind: 'holt', text: res.refusal.message });
     }
     setBusy('thinking');
+    const undoId = Date.now();
     try {
       /* A skip is a MARK on each session, never a structure change — saving the unchanged structure and
          saying "done" is the defect this branch exists to prevent. The RPC ignores a session already done. */
       if (pe.plan.kind === 'skip') {
         for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
-        lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })) };
+        lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })), id: undoId };
       } else {
         await updateProgram(pe.programId, res.structure);
-        lastEdit.current = { programId: pe.programId, before: pe.before };
+        lastEdit.current = { programId: pe.programId, before: pe.before, id: undoId };
       }
       pendingEdit.current = null;
       say(
@@ -1628,9 +1690,10 @@ export function CoachChatSheet({
         {
           kind: 'chips',
           chips: [
-            { label: 'Undo', patch: {}, typedEdit: 'undo' },
+            { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
             { label: 'Change something else', patch: {} },
-            { label: 'Show me the program', patch: {}, goTo: '/(tabs)' },
+            /* QA holt-06: to the program itself, not Home. */
+            { label: 'Show me the program', patch: {}, goTo: `/program/${pe.programId}` },
           ],
         },
       );
@@ -1692,10 +1755,10 @@ export function CoachChatSheet({
       void finishTypedEdit(chip);
       return;
     }
+    /* holtai-06 (QA holt-04): he changes it here, the way "Change my program" does — not a bare hop to Workouts. */
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
-      handOff();
-      router.push('/(tabs)/workouts');
+      void beginEdit();
       return;
     }
     if (chip.label === 'Replace it') {
@@ -2162,7 +2225,7 @@ export function CoachChatSheet({
     const edit = actions.find((a) => a.name === 'propose_program_edit');
     const intent = edit ? narrowEdit(edit.input) : null;
     if (intent) {
-      await editByWords(intent);
+      await editByWords(intent, asked);
       return true;
     }
     const web = actions.find((a) => a.name === 'offer_online_recipe_search');
@@ -2317,6 +2380,8 @@ export function CoachChatSheet({
         notes: brief.notes,
         training: brief.training,
         nutrition: opts.kitchen ? kitchenContext(brief.nutrition ?? kitchenFood, pantry, undefined, left) : brief.nutrition,
+        /* kitchen-01: in the kitchen the pantry and today's food go with EVERY line, food words or not. */
+        kitchen: opts.kitchen,
       },
       askSourcesLive(),
     );
@@ -2345,14 +2410,27 @@ export function CoachChatSheet({
     setThread((t) => streamEnded(t, sid));
     switch (r.kind) {
       case 'answer':
+        /* ⚠ CUT OFF PARTWAY (kitchen-09, QA 09-26): a dropped line came back as a finished one-letter answer
+           ("N"). A fragment that says nothing is taken back; either way the athlete is told it broke. */
+        if (!r.complete && started) {
+          setThread((t) => cutOffReply(t, sid));
+          return say({ kind: 'error', text: 'I lost the line partway through.', sub: 'The connection dropped before I finished.', action: 'Ask me again in a moment.' });
+        }
         if (!started && r.text) say({ kind: 'holt', text: r.text });
         /* What he asked the APP to do — a change to confirm, or the online-search offer. */
         if (await actOn(r.actions, text)) return;
+        /* kitchen-07: he SAID he'd look online without calling the tool — the chip goes under him anyway. */
+        if (nutritionAccess && !opts.allowWeb && replyOffersOnline(r.text)) {
+          say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: text.trim().slice(0, 80) }] });
+          return;
+        }
         /* Asked mid-build: the question on the table comes back. Asked about a program with none open: the
            door to build one, since the coach-ask prompt has him offer to build it. */
         /* The kitchen's door under the answer — Meal Plan, Targets, My Recipes, Grocery List (`kitchenDoorsFor`). */
         if (opts.kitchen) {
-          const doors = kitchenDoorsFor(text);
+          /* kitchen-04: none under a refusal, a minor or a crash rate — an age said earlier counts, stopped or not
+             (the thread stays on the phone; nothing here is sent). */
+          const doors = kitchenDoorsFor(text, r.text, thread.flatMap((x) => (x.kind === 'me' ? [x.text] : [])));
           if (doors.length) say({ kind: 'chips', chips: doors.map((d) => ({ label: d.label, patch: {}, goTo: d.goTo })) });
           return;
         }
@@ -2374,6 +2452,7 @@ export function CoachChatSheet({
       case 'no_consent':
         return say({ kind: 'holt', text: AI_DECLINED_HOLT });
       case 'offline':
+        if (started) setThread((t) => cutOffReply(t, sid));
         return say({
           kind: 'error',
           text: started ? 'I lost the line partway through.' : "I couldn't reach my notes just then.",
@@ -2405,7 +2484,8 @@ export function CoachChatSheet({
     }
     if (!chip.webSearch) return tapChip(chip);
     say({ kind: 'me', text: chip.label });
-    void askAloud(`Find me a recipe online: ${chip.webSearch}`, historyFrom(thread), null, { allowWeb: true });
+    /* kitchen-07: the kitchen's pantry and today's food ride along with the search, as with any kitchen line. */
+    void askAloud(`Find me a recipe online: ${chip.webSearch}`, historyFrom(thread), null, { allowWeb: true, kitchen });
   };
 
   /**
@@ -2487,7 +2567,7 @@ export function CoachChatSheet({
           alsoSaid(text);
           return void advance(constraints, mode);
         }
-        if (r.to === 'edit' && r.edit) return editByWords(r.edit);
+        if (r.to === 'edit' && r.edit) return editByWords(r.edit, text);
         /* "Give me something for today, keep it light, mostly machines" opens the door with nothing the
            form could hold — and everything Holt needs. The door resets the request; the sentence is put
            back so he still reads it when it is time to build. */
@@ -2935,39 +3015,56 @@ export function CoachChatSheet({
                   newChat();
                 }}
               />
-              <MenuRow
-                divided
-                label="Build something"
-                onPress={() => {
-                  setMenu(false);
-                  tapChip({ label: 'Build me something', patch: {} });
-                }}
-              />
-              <MenuRow
-                divided
-                label="Training question"
-                onPress={() => {
-                  setMenu(false);
-                  tapChip({ label: 'How do I…?', patch: {} });
-                }}
-              />
-              {/* The only correction path for the one answer Holt keeps between conversations. */}
-              <MenuRow
-                divided
-                label="Change my training level"
-                onPress={() => {
-                  setMenu(false);
-                  changeLevel();
-                }}
-              />
-              <MenuRow
-                divided
-                label="Change where I train"
-                onPress={() => {
-                  setMenu(false);
-                  changeRoom();
-                }}
-              />
+              {/* kitchen-13 (QA 09-26): in the kitchen the rows are the kitchen's own doors, never training. */}
+              {kitchen ? (
+                KITCHEN_MENU.map((d) => (
+                  <MenuRow
+                    key={d.label}
+                    divided
+                    label={d.label}
+                    onPress={() => {
+                      setMenu(false);
+                      kitchenDoor(d.label, d);
+                    }}
+                  />
+                ))
+              ) : (
+                <>
+                  <MenuRow
+                    divided
+                    label="Build something"
+                    onPress={() => {
+                      setMenu(false);
+                      tapChip({ label: 'Build me something', patch: {} });
+                    }}
+                  />
+                  <MenuRow
+                    divided
+                    label="Training question"
+                    onPress={() => {
+                      setMenu(false);
+                      tapChip({ label: 'How do I…?', patch: {} });
+                    }}
+                  />
+                  {/* The only correction path for the one answer Holt keeps between conversations. */}
+                  <MenuRow
+                    divided
+                    label="Change my training level"
+                    onPress={() => {
+                      setMenu(false);
+                      changeLevel();
+                    }}
+                  />
+                  <MenuRow
+                    divided
+                    label="Change where I train"
+                    onPress={() => {
+                      setMenu(false);
+                      changeRoom();
+                    }}
+                  />
+                </>
+              )}
             </MenuPop>
           </>
         ) : null}
@@ -3574,32 +3671,7 @@ function layOut(thread: Turn[]): Block[] {
   return out;
 }
 
-/** Which slot of Home's greeting stack a turn occupies, if any. */
-type GreetingSlot = 'greeting' | 'line' | 'sub';
-const GREETING_SLOTS: readonly GreetingSlot[] = ['greeting', 'line', 'sub'];
-
-/**
- * Is this Holt turn part of the greeting Home is wearing, and which line of it?
- *
- * The greeting stack is the run of Holt lines immediately before the opener turn — the introduction's
- * three beats on a first visit, `greetReturning`'s two on every one after. Derived rather than stored,
- * because the thread already knows: a second flag saying which lines are "the greeting" is a second
- * thing that can disagree with it.
- *
- * ⚠ CAPPED AT THREE, which is how many slots the design's stack has. It also stops a stored conversation
- * that happens to end in Holt speech from being swallowed into the greeting when he greets over the top
- * of it — those lines stay conversation, which is what they are.
- */
-function greetingSlot(thread: Turn[], i: number): GreetingSlot | null {
-  if (thread[i].kind !== 'holt') return null;
-  let home = i;
-  while (home < thread.length && thread[home].kind === 'holt') home += 1;
-  if (home >= thread.length || !isHomeTurn(thread[home])) return null;
-  let runStart = home;
-  while (runStart > 0 && thread[runStart - 1].kind === 'holt') runStart -= 1;
-  const start = Math.max(runStart, home - GREETING_SLOTS.length);
-  return i < start ? null : (GREETING_SLOTS[i - start] ?? null);
-}
+/* Which slot of Home's greeting stack a turn occupies — `greetingSlot` in chat-core (kitchen-09). */
 
 /** How far a greeting line pulls back against the thread's turn gap to reach the design's 4px. */
 const GREETING_PULL: Record<GreetingSlot, number> = { greeting: 0, line: 16, sub: 14 };
@@ -4167,22 +4239,34 @@ function Answers({
   /* The default, and what every question used to be: a set of unlike things, two to a row. */
   return (
     <View style={styles.chipGrid}>
-      {chips.map((c) => (
-        <Pressable
-          key={c.label}
-          onPress={() => (settled ? undefined : onChip(c))}
-          disabled={settled}
-          accessibilityRole="button"
-          accessibilityLabel={c.label}
-          accessibilityState={{ selected: chosen(c), disabled: settled }}
-          style={({ pressed }) => [styles.chipCell, (pressed || chosen(c)) && styles.ctlOn]}
-        >
-          <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
-          {chosen(c) ? <Tick size={13} /> : null}
-        </Pressable>
-      ))}
+      {chips.map((c) => {
+        /* holtai-08: Undo stays tappable after a later message; the sheet checks it is still the newest. */
+        const locked = settled && c.typedEdit !== 'undo';
+        return (
+          <Pressable
+            key={c.label}
+            onPress={() => (locked ? undefined : onChip(c))}
+            disabled={locked}
+            accessibilityRole="button"
+            accessibilityLabel={c.label}
+            accessibilityState={{ selected: chosen(c), disabled: locked }}
+            style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (pressed || chosen(c)) && styles.ctlOn]}
+          >
+            <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+            {chosen(c) ? <Tick size={13} /> : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
+}
+
+/**
+ * QA holt-10 / holt-09: a two-to-a-row chip cut short labels ("Every week from h…", "Show me the prog…",
+ * the session names). A label longer than a half cell holds takes the whole row instead.
+ */
+function isWideChip(label: string): boolean {
+  return label.length > 15;
 }
 
 /**
@@ -4228,7 +4312,7 @@ function MultiAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: string
             accessibilityRole="checkbox"
             accessibilityLabel={c.label}
             accessibilityState={{ checked: on(c), disabled: settled }}
-            style={({ pressed }) => [styles.chipCell, (on(c) || pressed) && styles.ctlOn]}
+            style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (on(c) || pressed) && styles.ctlOn]}
           >
             <Text style={[styles.chipCellText, on(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
             <View style={[styles.optSquare, on(c) && styles.optDotOn]}>{on(c) ? <Tick size={9} /> : null}</View>
@@ -4297,7 +4381,7 @@ function MultiLimitAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: s
               accessibilityRole={one == null ? 'button' : 'checkbox'}
               accessibilityLabel={c.label}
               accessibilityState={one == null ? { disabled: settled } : { checked: on(c), disabled: settled }}
-              style={({ pressed }) => [styles.chipCell, (on(c) || pressed) && styles.ctlOn]}
+              style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (on(c) || pressed) && styles.ctlOn]}
             >
               <Text style={[styles.chipCellText, on(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
               {one == null ? null : (
@@ -5036,14 +5120,15 @@ const styles = StyleSheet.create({
   headerAction: { alignItems: 'center', gap: 5 },
   headerActionPad: { paddingLeft: 12 },
   headerActionLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
-  headerActionLabelOn: { color: flColor.bronze300 },
+  headerActionLabelOn: { color: flColor.selectedInk },
 
   /* §2's popover. Anchored under NEW CHAT rather than centred — it belongs to that button. */
   menuScrim: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 5 },
   menu: {
     position: 'absolute',
     right: 52,
-    top: 66,
+    /* Below the header (grab 14 + header 76), not over it: at 66 it covered "IN THE KITCHEN · READY" (kitchen-13). */
+    top: 90,
     width: 224,
     zIndex: 6,
     borderRadius: flRadius.lg,
@@ -5053,7 +5138,7 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.elevated,
   },
   menuRow: { paddingHorizontal: 15, paddingVertical: 13 },
-  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  menuRowDivided: { borderTopWidth: 1, borderTopColor: flColor.divider },
   menuRowPressed: { backgroundColor: bronzeWash(0.06) },
   menuText: { fontSize: 14, color: flColor.cream100 },
 
@@ -5115,9 +5200,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 2,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
   },
-  homeRowLast: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
+  homeRowLast: { borderBottomWidth: 1, borderBottomColor: flColor.divider },
   homeRowPressed: { backgroundColor: bronzeWash(0.055) },
   homeGlyph: {
     width: 26,
@@ -5201,6 +5286,8 @@ const styles = StyleSheet.create({
     borderColor: wash(0.075),
     backgroundColor: wash(0.032),
   },
+  /* A long label takes the whole row rather than an ellipsis (QA holt-10). */
+  chipCellWide: { flexBasis: '100%' },
   /* ⚠ `flex: 1; minWidth: 0` with one line and an ellipsis. §6: a fixed-height control must never wrap,
      because the text then spills out of a box that cannot grow. */
   chipCellText: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.cream100 },
@@ -5219,7 +5306,7 @@ const styles = StyleSheet.create({
     backgroundColor: wash(0.032),
   },
   segText: { fontSize: 13, color: flColor.cream100 },
-  segTextOn: { fontWeight: '600', color: flColor.bronze300 },
+  segTextOn: { fontWeight: '600', color: flColor.selectedInk },
 
   // cards — a choice that needs a sentence.
   cardCol: { gap: 8 },
@@ -5330,7 +5417,7 @@ const styles = StyleSheet.create({
   cardSubtitle: { fontSize: 12.5, color: flColor.gray400 },
   /* The rows band — a bronze marker in a fixed column, then what that week actually is. */
   markerList: {},
-  markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  markerRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 11, borderTopWidth: 1, borderTopColor: flColor.divider },
   markerRowPressed: { backgroundColor: bronzeWash(0.06) },
   marker: { width: 34, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, color: flColor.bronzeInk },
   markerText: { flex: 1, minWidth: 0, fontSize: 14, color: flColor.cream100 },
@@ -5346,7 +5433,7 @@ const styles = StyleSheet.create({
   dayDropRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 7 },
   dayDropMarker: { width: 14, fontSize: 10, fontWeight: '700', color: flColor.bronze600 },
   dayDropTitle: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.gray400 },
-  markerClosing: { paddingTop: 11, paddingBottom: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  markerClosing: { paddingTop: 11, paddingBottom: 13, borderTopWidth: 1, borderTopColor: flColor.divider },
   markerClosingText: { fontSize: 12.5, color: flColor.gray600 },
   /* Inside the card, under its own rule: the way into the full read, not a decision about it. */
   previewRow: {
@@ -5356,7 +5443,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 13,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: wash(0.02),
   },
   previewRowPressed: { backgroundColor: bronzeWash(0.06) },
@@ -5371,22 +5458,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   previewBack: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   previewTitle: { flex: 1, fontFamily: flFont.display, fontSize: 18, color: flColor.cream100 },
   previewScroll: { flex: 1 },
   previewInner: { padding: 18, gap: 16 },
   /* `paddingBottom` is applied at render from the safe-area inset — see `PlanPreview`. */
-  previewActions: { paddingHorizontal: 16, paddingTop: 12, gap: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
-  weekList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  previewActions: { paddingHorizontal: 16, paddingTop: 12, gap: 9, borderTopWidth: 1, borderTopColor: flColor.divider },
+  weekList: { borderTopWidth: 1, borderTopColor: flColor.divider },
   weekRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 9,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   weekLabel: { fontSize: 13.5, color: flColor.cream100 },
   weekDetail: { fontSize: 13.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
@@ -5408,7 +5495,7 @@ const styles = StyleSheet.create({
   previewDayEmpty: { paddingVertical: 11, fontSize: 13.5, color: flColor.gray600 },
 
   /* ── day card ───────────────────────────────────────────────────────────────────────────────── */
-  dayList: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  dayList: { borderTopWidth: 1, borderTopColor: flColor.divider },
   dayRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -5416,7 +5503,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   dayName: { flex: 1, fontSize: 14.5, color: flColor.cream100 },
   // Tabular figures so the prescriptions line up in a column, and it never wraps (§11.2.4/11.2.6).
@@ -5584,7 +5671,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     /* `paddingBottom` applied at render from the safe-area inset. */
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal800,
   },
   composerBusy: { opacity: 0.55 },
@@ -5595,7 +5682,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal800,
   },
   attachThumb: { width: 56, height: 56, borderRadius: 10, overflow: 'hidden', borderWidth: 1, borderColor: flColor.charcoal600 },

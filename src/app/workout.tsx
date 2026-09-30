@@ -68,6 +68,7 @@ import { fetchProgram, fetchProgramSessions, resolveSharedSessionSlot } from '@/
 import { nextOpenSlot } from '@/domain/program/progress-core';
 import {
   creditsInWindow,
+  droppedSharedPartners,
   mergePartnerCredits,
   resolvePartnerNames,
   PARTNER_CREDIT_WINDOW_MS,
@@ -101,6 +102,7 @@ import { joinAsSuperset, supersetOffer } from '@/domain/workout/superset-offer';
 import { indexAfterMove, moveExercise } from '@/domain/workout/reorder-exercise';
 import { useListReorder } from '@/hooks/useListReorder';
 import { setWeightLabel, setWeightLabelLb } from '@/domain/workout/set-load';
+import { completionGap, completionGapMessage } from '@/domain/workout/set-complete-gate';
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type IntensitySignalRow, type LastNote } from '@/domain/workout/save';
@@ -154,7 +156,7 @@ type Phase = 'loading' | 'resume' | 'active' | 'saving';
  */
 type SetSheet = { exIdx: number; setIdx: number; focus: 'weight' | 'reps' };
 
-const WEIGHT_OPTS = Array.from({ length: 101 }, (_, i) => i * 5); // 0–500 lb by 5 (free weights / machines)
+const WEIGHT_OPTS = Array.from({ length: 201 }, (_, i) => i * 5); // 0–1000 by 5 (free weights / machines; workout-06)
 const WEIGHT_OPTS_CABLE = Array.from({ length: 201 }, (_, i) => i * 2.5); // 0–500 lb by 2.5 (cable stacks)
 // 0–50. Was 0–30, which silently clamped a set of 40 air squats down to 30 and recorded a number the
 // athlete did not do — the same class of quiet falsehood as counting an unweighted set as no set at all.
@@ -173,6 +175,9 @@ const REST_KNOB_POS = {
   manual: { alignItems: 'flex-end' },
 } as const;
 const REPS_MAX = 999; // typed entry is not bounded by what fits on a wheel
+/* Typed weight is not bounded by the wheel either (workout-06). It was clamped to the wheel's 500 without a
+   word, so a 545 deadlift or a 900 leg press saved as 500. The ceiling is only a guard against a typo. */
+const WEIGHT_MAX = 2000;
 const DUR_MIN_OPTS = Array.from({ length: 11 }, (_, i) => i); // 0–10 min
 const DUR_SEC_OPTS = Array.from({ length: 12 }, (_, i) => i * 5); // 0–55 by 5
 
@@ -591,6 +596,9 @@ export default function WorkoutScreen() {
    * between the ask and the answer and delete something the sheet was not describing.
    */
   const [removeAsk, setRemoveAsk] = useState<number | null>(null);
+  /* A swap that would clear logged sets asks first (workout-08). `pick` is Holt's one-tap swap; null
+     `pick` is the Picker. */
+  const [swapAsk, setSwapAsk] = useState<{ at: number; pick: { key: string; name: string } | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [heroPref, setHeroPref] = useState<Record<number, 'expanded' | 'collapsed'>>({});
   const [autoCollapsed, setAutoCollapsed] = useState<Record<number, boolean>>({});
@@ -1038,6 +1046,23 @@ export default function WorkoutScreen() {
         // Held, not consumed: whichever way they answer, `startPending` re-reads it.
         return;
       }
+      /*
+       * ⚠ AN EMPTY SHARED SESSION IS NOT NOTHING (social2-14, QA 09-26).
+       *
+       * `hasLoggedWork` is false for a Train Together session nobody has logged a set in yet, so opening
+       * the logger used to rebuild over it silently — the partner was left alone in a session this side
+       * had dropped. With no new launch, it simply comes back. With one, the new session starts, and the
+       * partners of the dropped one are marked declined so the 12-hour credit window can't name them on a
+       * workout they weren't part of ("Trained with Sandbox" on an unrelated session).
+       */
+      const emptyShared = !hasWork && !!saved && (saved.partnerIds?.length ?? 0) > 0 && saved.exercises.length > 0;
+      if (emptyShared && !wantsSomething) {
+        setSession(saved);
+        setPhase('active');
+        return;
+      }
+      const droppedPartners = droppedSharedPartners(saved, hasWork, launch?.partnerId);
+      if (droppedPartners.length) showToast('Your empty shared workout was closed');
       let fresh: ActiveSession | null = null;
 
       /* Invited (0092): whoever asked is pre-tagged, so accepting credits both athletes through the
@@ -1106,6 +1131,9 @@ export default function WorkoutScreen() {
           applyCredits({
             ...s,
             partnerIds: launchPartners ?? s.partnerIds,
+            ...(droppedPartners.length
+              ? { partnerIdsDeclined: [...new Set([...(s.partnerIdsDeclined ?? []), ...droppedPartners])] }
+              : null),
             exerciseIndex: Math.min(Math.max(0, launchStart), Math.max(0, s.exercises.length - 1)),
           }),
         );
@@ -1963,6 +1991,31 @@ export default function WorkoutScreen() {
   };
 
   const uncompleteSet = (ei: number, si: number) => mutate((s) => patchSet(s, ei, si, (set) => ({ ...set, done: false })));
+  /**
+   * The row's check. It completes the set with what `completeSet` would fill in — unless that would log
+   * 0 reps or a blank weight on a bar (workout-07), in which case it opens the entry on the missing
+   * field instead. Opened from the tap itself, so the keyboard primer still gets its gesture.
+   */
+  const tapComplete = (ei: number, si: number) => {
+    const ex = session?.exercises[ei];
+    const set = ex?.sets[si];
+    if (!ex || !set) return;
+    const ghost = ghostSet(ex, si, liftHistory?.get(liftId(ex)) ?? null, units);
+    const gap = completionGap(
+      {
+        weight: set.weight ?? ghost.weight,
+        actualReps: set.actualReps ?? (set.toFailure || set.targetSec != null ? null : ghost.reps ?? set.targetReps),
+        targetSec: set.targetSec,
+      },
+      equipmentForCatalogKey(ex.catalogKey),
+    );
+    if (gap) {
+      showToast(completionGapMessage(gap));
+      openSheet(ei, si, gap);
+      return;
+    }
+    completeSet(ei, si);
+  };
 
   /**
    * A hold finished — write what the clock watched, then complete the set through the normal path.
@@ -2234,8 +2287,18 @@ export default function WorkoutScreen() {
       setSheet(null);
       return;
     }
-    const weight = readDraft(draftW, set.weight, 500, false);
+    const weight = readDraft(draftW, set.weight, WEIGHT_MAX, false);
     const reps = readDraft(draftR, set.actualReps, REPS_MAX, true);
+    /* A set that would log 0 reps, or a blank weight on a bar, stays open with the field to fill
+       (workout-07). An already-done set is held to the same rule — editing it to 0 would un-log it
+       while it still shows green. Pre-filling a LATER set is only writing, and is not gated. */
+    const completes = set.done || si === session.exercises[ei].sets.findIndex((s) => !s.done);
+    const gap = !completes ? null : completionGap({ weight, actualReps: reps, targetSec: set.targetSec }, equipmentForCatalogKey(session.exercises[ei]?.catalogKey));
+    if (gap) {
+      showToast(completionGapMessage(gap));
+      if (gap !== sheet.focus) setSheet({ ...sheet, focus: gap });
+      return;
+    }
     const base = patchSet(session, ei, si, (s) => ({ ...s, weight, actualReps: reps }));
 
     const token = nextAnimationToken();
@@ -2980,6 +3043,10 @@ export default function WorkoutScreen() {
       type: item.cat,
     };
     if (mode === 'swap') {
+      if (!swapAsk && session?.exercises[exIdx]?.sets.some((st) => st.done)) {
+        setSwapAsk({ at: exIdx, pick: { key, name } });
+        return;
+      }
       mutate((s) => ({ ...s, exercises: s.exercises.map((e, i) => (i === exIdx ? swapExercise(e, picked) : e)) }));
       showToast(`Swapped to ${name}`);
       return;
@@ -3528,7 +3595,7 @@ export default function WorkoutScreen() {
     pop,
     onEdit: openSheet,
     onFillWeight: fillWeight,
-    onComplete: completeSet,
+    onComplete: tapComplete,
     onUncomplete: uncompleteSet,
     onHold: logHold,
     onRemove: removeSet,
@@ -3600,6 +3667,10 @@ export default function WorkoutScreen() {
   const openSwap = () => {
     setOptionsOpen(false);
     if (blockedByBout()) return;
+    if (ex.sets.some((st) => st.done)) {
+      setSwapAsk({ at: exIdx, pick: null });
+      return;
+    }
     router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: ex.name, targetIdx: String(exIdx) } });
   };
   const skipExercise = () => {
@@ -5280,6 +5351,35 @@ export default function WorkoutScreen() {
         }}
       />
 
+      {/* SWAP AN EXERCISE THAT HAS LOGGED WORK IN IT (workout-08). A swap starts the slot's sets over, and
+          it used to do that without a word. Same shape and same mounting reason as the remove ask above. */}
+      <ConfirmSheet
+        open={swapAsk != null}
+        onClose={() => setSwapAsk(null)}
+        headline={`Swap ${swapAsk != null ? session.exercises[swapAsk.at]?.name ?? 'this exercise' : 'this exercise'}?`}
+        body={(() => {
+          const target = swapAsk != null ? session.exercises[swapAsk.at] : null;
+          const logged = target ? target.sets.filter((s) => s.done).length : 0;
+          return `You’ve logged ${logged} ${logged === 1 ? 'set' : 'sets'} on it. Swapping starts its sets over — the ones you logged won’t be saved. To keep them, use “Move past this” and add the new exercise instead.`;
+        })()}
+        confirmLabel="Swap it"
+        cancelLabel="Keep it"
+        onConfirm={() => {
+          const ask = swapAsk;
+          setSwapAsk(null);
+          if (!ask) return;
+          if (ask.pick) {
+            const item = itemByKey(ask.pick.key);
+            if (!item) return;
+            const picked: PickedExercise = { catalogKey: item.key, name: item.name, equip: item.equip, muscles: item.muscles, type: item.cat };
+            mutate((s) => ({ ...s, exercises: s.exercises.map((e, i) => (i === ask.at ? swapExercise(e, picked) : e)) }));
+            showToast(`Swapped to ${ask.pick.name}`);
+          } else {
+            router.push({ pathname: '/exercise-picker', params: { mode: 'replace', ex: session.exercises[ask.at]?.name ?? '', targetIdx: String(ask.at) } });
+          }
+        }}
+      />
+
       {/* rest-duration picker — minutes : seconds dual wheel */}
       {durationPicker ? (
         <View style={styles.pickerWrap}>
@@ -5434,12 +5534,23 @@ export default function WorkoutScreen() {
               />
               {/* §13.2 — an empty session cannot be saved. The footer button this replaced carried no
                   such guard, so "End Workout" on a session with nothing logged ran the whole save. */}
+              {/* social2-14: with nothing logged, End and Finish were both disabled, so an empty session —
+                  a shared one especially — had no way out but starting another over it. It can be left
+                  instead: nothing is saved because there is nothing to save. */}
               <OptionRow
-                onPress={endFromOptions}
+                onPress={
+                  hasLoggedSet(session)
+                    ? endFromOptions
+                    : async () => {
+                        setOptionsOpen(false);
+                        await clearSession();
+                        discardSession();
+                        router.replace('/(tabs)');
+                      }
+                }
                 danger
-                disabled={!hasLoggedSet(session)}
-                title="End workout"
-                sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Log at least one set to save'}
+                title={hasLoggedSet(session) ? 'End workout' : 'Discard workout'}
+                sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Nothing logged yet — leave without saving'}
                 icon="stop"
               />
             </ScrollView>
@@ -5801,6 +5912,9 @@ function swapExercise(ex: SessionExercise, p: PickedExercise): SessionExercise {
      */
     prescribedName: ex.prescribedName ?? ex.name,
     prescribedCatalogKey: ex.prescribedName ? ex.prescribedCatalogKey : (ex.catalogKey ?? null),
+    /* The athlete's note was about the lift they are leaving ("shoulder felt off" on the bench), not the
+       one they picked (workout-08). The author's `coachNote` is the slot's prescription and stays. */
+    note: null,
     sets: ex.sets.map((st) => ({ ...st, weight: null, actualReps: null, done: false })),
   };
 }
@@ -6715,7 +6829,7 @@ const styles = StyleSheet.create({
   peek: { flex: 1, paddingHorizontal: SCREEN_GUTTER, paddingTop: 18, gap: 10, opacity: 0.55 },
   peekName: { fontSize: 21, fontWeight: '600', color: flColor.cream100 },
   peekSub: { fontSize: 12.5, color: flColor.gray400 },
-  peekRule: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 4 },
+  peekRule: { height: 1, backgroundColor: flColor.divider, marginTop: 4 },
   /**
    * ⚠ `paddingBottom` CLEARS THE COACH COIN, WHICH FLOATS OVER THIS SCROLL (W9-A13). PO: the coin sat
    * on top of the last set row's delete icon.
@@ -6775,7 +6889,7 @@ const styles = StyleSheet.create({
      here, because the height that clears this screen's action bar is this screen's business. */
 
   // progress band
-  band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  band: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, gap: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   intervalBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -6820,7 +6934,7 @@ const styles = StyleSheet.create({
      Position is `alignItems` on the track — the same mechanism the two-state version used, extended by
      one value, rather than absolute offsets that would need re-measuring at every text scale. */
   restToggle: { width: 42, height: 20, borderRadius: 999, borderWidth: 1, padding: 2, justifyContent: 'center' },
-  restToggleOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.bronzeBorder },
+  restToggleOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.bronzeBorder },
   restToggleOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600 },
   restStart: { width: 20, height: 20, borderRadius: 10, borderWidth: 1, borderColor: flColor.bronzeBorder, alignItems: 'center', justifyContent: 'center', paddingLeft: 1 },
   restKnob: { width: 14, height: 14, borderRadius: 7 },
@@ -6869,7 +6983,7 @@ const styles = StyleSheet.create({
   restSkipText: { fontSize: 11, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   /* Bronze ONLY while pinned — it is the one state that is a standing choice rather than a one-off tap,
      and it needs to say so from across a gym floor. Unpinned it is the same grey as Skip beside it. */
-  restStayOn: { color: flColor.bronze300 },
+  restStayOn: { color: flColor.selectedInk },
 
   // fuse flash (green light around the row)
   fuseWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 },
@@ -6886,7 +7000,7 @@ const styles = StyleSheet.create({
   sealStats: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   sealStatText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400 },
   sealDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
-  sealNext: { marginTop: 5, paddingTop: 12, width: '100%', textAlign: 'center', borderTopWidth: 1, borderTopColor: flColor.charcoal600, fontSize: 10, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
+  sealNext: { marginTop: 5, paddingTop: 12, width: '100%', textAlign: 'center', borderTopWidth: 1, borderTopColor: flColor.divider, fontSize: 10, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
   sealNextName: { color: flColor.bronze400 },
 
   // PR prompt
@@ -7050,7 +7164,7 @@ const styles = StyleSheet.create({
      three unlike facts sit on one baseline. `1 / 1 / 1.25` because the note column carries prose and the
      other two carry a figure each; the note column simply is not rendered when there is no note, and the
      remaining two then split the card. */
-  plinth: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  plinth: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.surfaceRecessed },
   /**
    * ⚠ **THE THREE CELLS ARE 0.85 / 0.85 / 1.3 AND EACH HAS ITS OWN PADDING (W9-A12).** A10 and A11 gave
    * every column the same 10pt sides and let flex do the rest; the spec pads them individually so the
@@ -7128,7 +7242,7 @@ const styles = StyleSheet.create({
   blockName: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   blockMeta: { fontSize: 11, fontWeight: '600', color: flColor.gray400 },
   amrapBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 8, paddingVertical: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900 },
-  amrapBtnOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  amrapBtnOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   amrapBtnText: { fontSize: 13, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300, fontVariant: ['tabular-nums'] },
   amrapBtnTextOn: { color: flColor.cream100 },
 
@@ -7176,7 +7290,7 @@ const styles = StyleSheet.create({
   /* Pending rows are separated by a hairline rather than by space — the row already carries a
      transparent 1pt border all round, so colouring the top edge costs no layout. Never on a done or
      current row: those draw their own full border and a rule would double it. */
-  rowRuled: { borderTopColor: flColor.charcoal600 },
+  rowRuled: { borderTopColor: flColor.divider },
   rowDone: { borderColor: 'rgba(90,158,104,0.35)', backgroundColor: 'rgba(90,158,104,0.06)' },
   rowCurrent: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   /* The six cells, left to right. `flexGrow: 0, flexShrink: 0` on every one: `space-between` may only
@@ -7326,7 +7440,7 @@ const styles = StyleSheet.create({
    */
   bottom: {
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal800,
     boxShadow: '0 -10px 22px rgba(0, 0, 0, 0.30)',
   },
@@ -7475,9 +7589,9 @@ const styles = StyleSheet.create({
   fieldValue: { fontFamily: flFont.display, fontSize: 34, fontWeight: '600', color: flColor.cream100, minHeight: 42 },
   fieldValueEmpty: { color: flColor.gray600 },
   bwChip: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingVertical: 9, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
-  bwChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  bwChipOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.selectedFill },
   bwChipText: { fontSize: 12, fontWeight: '700', letterSpacing: 1, color: flColor.gray400 },
-  bwChipTextOn: { color: flColor.bronze300 },
+  bwChipTextOn: { color: flColor.selectedInk },
   bwChipSub: { flex: 1, fontSize: 11.5, color: flColor.gray600 },
 
   // duration dual wheel
@@ -7544,7 +7658,7 @@ const styles = StyleSheet.create({
   statBlock: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal800, gap: 3 },
   statValue: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
-  ceremonySection: { width: '100%', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.charcoal700, gap: 9 },
+  ceremonySection: { width: '100%', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.divider, gap: 9 },
   ceremonySectionLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, textAlign: 'center' },
   recordRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   recordText: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
@@ -7555,7 +7669,7 @@ const styles = StyleSheet.create({
   partnerChipName: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
   tagBtn: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 8, paddingHorizontal: 15, borderRadius: flRadius.pill, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorder },
   tagBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronze400 },
-  ceremonyFooter: { padding: 18, gap: 4, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  ceremonyFooter: { padding: 18, gap: 4, borderTopWidth: 1, borderTopColor: flColor.divider },
 
   // partner sheet (W-20)
   partnerSheet: { maxHeight: '82%', paddingTop: 8 },
@@ -7570,7 +7684,7 @@ const styles = StyleSheet.create({
   partnerEmpty: { paddingHorizontal: 4, paddingVertical: 18, fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray600 },
   partnerGroupLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze400, marginBottom: 10 },
   prow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.lg, borderWidth: 1, borderColor: 'transparent', marginBottom: 8 },
-  prowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
+  prowOn: { borderColor: flColor.bronzeBorder, backgroundColor: flColor.selectedFill },
   pText: { flex: 1, minWidth: 0, gap: 1 },
   pName: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   pSub: { fontSize: 12, color: flColor.gray600 },

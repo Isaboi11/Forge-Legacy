@@ -80,6 +80,23 @@ export interface CalendarFieldProps {
   startOpen?: boolean;
   /** `YYYY-MM-DD` to mark as today when `startOpen` draws the grid before any tap has read the clock. */
   today?: string;
+  /** Earliest pickable day, `YYYY-MM-DD`. Days before it are drawn but cannot be picked. */
+  minDate?: string | null;
+  /** Latest pickable day, `YYYY-MM-DD`, or `'today'` (resolved when the grid opens — never in render). */
+  maxDate?: string | null;
+  /**
+   * Adds « » year steps beside the month arrows. For dates that reach years back (an accomplishment
+   * from 2019 was ~90 month taps — QA legacy-18).
+   */
+  yearNav?: boolean;
+}
+
+/** `YYYY-MM` of a `YYYY-MM-DD`, for comparing whole months. */
+const monthKey = (y: number, m: number) => `${y}-${String(m + 1).padStart(2, '0')}`;
+
+/** Is `iso` outside `[min, max]`? Plain string compare — `YYYY-MM-DD` sorts as dates do. */
+export function outOfRange(iso: string, min?: string | null, max?: string | null): boolean {
+  return (min != null && iso < min.slice(0, 10)) || (max != null && iso > max.slice(0, 10));
 }
 
 export function CalendarField({
@@ -92,6 +109,9 @@ export function CalendarField({
   monthStyle = 'short',
   startOpen = false,
   today,
+  minDate = null,
+  maxDate: maxDateProp = null,
+  yearNav = false,
 }: CalendarFieldProps) {
   const selected = parseYmd(value);
   // `startOpen` opens on the value's month (pure — no clock read); otherwise the grid opens on a tap.
@@ -100,6 +120,7 @@ export function CalendarField({
   // The month on screen. Set when the grid opens, so nothing impure runs during render.
   const [view, setView] = useState<{ y: number; m: number } | null>(initial ? { y: initial.y, m: initial.m } : null);
   const [todayIso, setTodayIso] = useState<string | null>(today ?? null);
+  const maxDate = maxDateProp === 'today' ? todayIso : maxDateProp;
 
   const toggle = () => {
     if (!open) {
@@ -114,8 +135,15 @@ export function CalendarField({
     setView((v) => {
       if (!v) return v;
       const next = new Date(v.y, v.m + by, 1);
-      return { y: next.getFullYear(), m: next.getMonth() };
+      let y = next.getFullYear();
+      let m = next.getMonth();
+      // A year step lands inside the allowed range rather than past it.
+      if (minDate && monthKey(y, m) < minDate.slice(0, 7)) [y, m] = [Number(minDate.slice(0, 4)), Number(minDate.slice(5, 7)) - 1];
+      if (maxDate && monthKey(y, m) > maxDate.slice(0, 7)) [y, m] = [Number(maxDate.slice(0, 4)), Number(maxDate.slice(5, 7)) - 1];
+      return { y, m };
     });
+  const canBack = !!view && !(minDate && monthKey(view.y, view.m) <= minDate.slice(0, 7));
+  const canFwd = !!view && !(maxDate && monthKey(view.y, view.m) >= maxDate.slice(0, 7));
 
   // Leading blanks so the 1st lands under its weekday, then the month's days.
   const cells: (number | null)[] = [];
@@ -147,15 +175,29 @@ export function CalendarField({
       {open && view ? (
         <View style={styles.grid}>
           <View style={styles.gridHead}>
-            <Pressable onPress={() => shiftMonth(-1)} accessibilityRole="button" accessibilityLabel="Previous month" hitSlop={10} style={styles.navBtn}>
-              <Text style={styles.navText}>‹</Text>
-            </Pressable>
+            <View style={styles.navGroup}>
+              {yearNav ? (
+                <Pressable onPress={() => shiftMonth(-12)} disabled={!canBack} accessibilityRole="button" accessibilityLabel="Previous year" accessibilityState={{ disabled: !canBack }} hitSlop={6} style={[styles.navBtn, !canBack ? styles.navOff : null]}>
+                  <Text style={styles.navText}>«</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={() => shiftMonth(-1)} disabled={!canBack} accessibilityRole="button" accessibilityLabel="Previous month" accessibilityState={{ disabled: !canBack }} hitSlop={yearNav ? 6 : 10} style={[styles.navBtn, !canBack ? styles.navOff : null]}>
+                <Text style={styles.navText}>‹</Text>
+              </Pressable>
+            </View>
             <Text style={styles.monthLabel}>
               {MONTHS[view.m]} {view.y}
             </Text>
-            <Pressable onPress={() => shiftMonth(1)} accessibilityRole="button" accessibilityLabel="Next month" hitSlop={10} style={styles.navBtn}>
-              <Text style={styles.navText}>›</Text>
-            </Pressable>
+            <View style={styles.navGroup}>
+              <Pressable onPress={() => shiftMonth(1)} disabled={!canFwd} accessibilityRole="button" accessibilityLabel="Next month" accessibilityState={{ disabled: !canFwd }} hitSlop={yearNav ? 6 : 10} style={[styles.navBtn, !canFwd ? styles.navOff : null]}>
+                <Text style={styles.navText}>›</Text>
+              </Pressable>
+              {yearNav ? (
+                <Pressable onPress={() => shiftMonth(12)} disabled={!canFwd} accessibilityRole="button" accessibilityLabel="Next year" accessibilityState={{ disabled: !canFwd }} hitSlop={6} style={[styles.navBtn, !canFwd ? styles.navOff : null]}>
+                  <Text style={styles.navText}>»</Text>
+                </Pressable>
+              ) : null}
+            </View>
           </View>
 
           <View style={styles.dowRow}>
@@ -172,19 +214,21 @@ export function CalendarField({
               const iso = ymd(view.y, view.m, d);
               const isSel = value === iso;
               const isToday = todayIso === iso;
+              const off = outOfRange(iso, minDate, maxDate);
               return (
                 <Pressable
                   key={iso}
+                  disabled={off}
                   onPress={() => {
                     onChange(iso);
                     setOpen(false);
                   }}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: isSel }}
+                  accessibilityState={{ selected: isSel, disabled: off }}
                   accessibilityLabel={`${MONTHS[view.m]} ${d}, ${view.y}`}
                   style={[styles.day, isSel ? styles.daySelected : null]}
                 >
-                  <Text style={[styles.dayText, isSel ? styles.dayTextSelected : null, isToday && !isSel ? styles.dayTextToday : null]}>{d}</Text>
+                  <Text style={[styles.dayText, isSel ? styles.dayTextSelected : null, isToday && !isSel ? styles.dayTextToday : null, off ? styles.dayTextOff : null]}>{d}</Text>
                 </Pressable>
               );
             })}
@@ -252,6 +296,8 @@ const styles = StyleSheet.create({
   gridHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   navBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.sm },
   navText: { fontSize: 20, lineHeight: 22, color: flColor.bronze300 },
+  navGroup: { flexDirection: 'row', alignItems: 'center' },
+  navOff: { opacity: 0.3 },
   monthLabel: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
 
   dowRow: { flexDirection: 'row' },
@@ -259,10 +305,11 @@ const styles = StyleSheet.create({
 
   days: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 2 },
   day: { flexBasis: '14.2857%', height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.sm },
-  daySelected: { backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.accentBorder },
+  daySelected: { backgroundColor: flColor.selectedFill, borderWidth: 1, borderColor: flColor.accentBorder },
   dayText: { fontSize: 13.5, color: flColor.gray400, fontVariant: ['tabular-nums'] },
-  dayTextSelected: { color: flColor.bronze300, fontWeight: '700' },
+  dayTextSelected: { color: flColor.selectedInk, fontWeight: '700' },
   dayTextToday: { color: flColor.cream100, fontWeight: '700' },
+  dayTextOff: { color: flColor.gray600, opacity: 0.45 },
 
   clearRow: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14 },
   clearText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },

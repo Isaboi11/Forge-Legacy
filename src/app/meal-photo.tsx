@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
   totalMacros: { flex: 1, textAlign: 'right', fontSize: 13, color: flColor.gray400 },
   sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600, paddingTop: 10, paddingBottom: 2 },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   rowBody: { flex: 1, minWidth: 0, gap: 3 },
   rowName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   rowSeen: { fontSize: 12, color: flColor.gray400 },
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal900,
   },
   footerAction: { fontSize: 12, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray400 },
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
   choice: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
   choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  choiceTextOn: { color: flColor.bronze300 },
+  choiceTextOn: { color: flColor.selectedInk },
   qtyRow: { gap: 6 },
   numberInput: {
     fontSize: 16,

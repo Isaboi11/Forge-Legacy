@@ -763,10 +763,10 @@ const styles = StyleSheet.create({
   impWeekBlock: { gap: 10 },
   impWeekHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   impWeekLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
-  impWeekRule: { flex: 1, height: 1, backgroundColor: flColor.charcoal600 },
+  impWeekRule: { flex: 1, height: 1, backgroundColor: flColor.divider },
 
   impDayCard: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, overflow: 'hidden' },
-  impDayName: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  impDayName: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.cream100, paddingVertical: 9, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   impItems: { gap: 6, paddingVertical: 10, paddingHorizontal: 12 },
   impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   impItemText: { flex: 1, gap: 1 },

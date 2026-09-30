@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
    * over-corrects, and stronger labels pull against the quieting asked for everywhere else. If it still
    * reads flat with a rule you can see and room to breathe, that is the moment to add more — not before.
    */
-  post: { paddingTop: 26, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
+  post: { paddingTop: 26, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   postAlt: { backgroundColor: 'rgba(255,255,255,0.012)' },
 
   header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: LEDGER_GUTTER },
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingHorizontal: LEDGER_GUTTER - 8 },
   action: { flexDirection: 'row', alignItems: 'center', gap: 7, minHeight: 44, paddingHorizontal: 8 },
   actionLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  actionLabelOn: { color: flColor.bronze300 },
+  actionLabelOn: { color: flColor.selectedInk },
   actionCount: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
 
   end: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, paddingTop: 26, paddingBottom: 34 },

@@ -164,6 +164,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: flColor.charcoal600,
+    backgroundColor: flColor.divider,
   },
 })

@@ -1129,11 +1129,11 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
     backgroundColor: flColor.charcoal800,
   },
-  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  chipOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  chipTextOn: { color: flColor.bronze300 },
+  chipTextOn: { color: flColor.selectedInk },
 
-  listTop: { marginTop: 14, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  listTop: { marginTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
   listRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1141,7 +1141,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 2,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   pressed: { backgroundColor: flColor.hoverWash },
   listText: { flex: 1, minWidth: 0, gap: 4 },
@@ -1161,7 +1161,7 @@ const styles = StyleSheet.create({
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal700,
+    borderTopColor: flColor.divider,
     backgroundColor: flColor.charcoal900,
   },
   missing: { textAlign: 'center', fontSize: 12.5, color: flColor.gray400 },
@@ -1199,7 +1199,7 @@ const styles = StyleSheet.create({
   stepperSign: { fontSize: 20, color: flColor.gray400 },
   stepperValue: { flex: 1, textAlign: 'center', fontSize: 15, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
 
-  h2Row: { paddingTop: 40, paddingBottom: 6, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: flColor.charcoal600 },
+  h2Row: { paddingTop: 40, paddingBottom: 6, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   h2RowSplit: {
     flexDirection: 'row',
     alignItems: 'baseline',
@@ -1208,7 +1208,7 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
     paddingHorizontal: 2,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal600,
+    borderBottomColor: flColor.divider,
   },
   h2: { fontFamily: flFont.display, fontSize: 22, letterSpacing: -0.2, color: flColor.cream100 },
   optional: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, color: flColor.gray400 },
@@ -1240,7 +1240,7 @@ const styles = StyleSheet.create({
   scanError: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.cream100 },
 
   unmatched: { paddingTop: 6 },
-  unRow: { gap: 8, paddingVertical: 10, paddingLeft: 2, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  unRow: { gap: 8, paddingVertical: 10, paddingLeft: 2, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   unTop: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   ingRow: {
@@ -1251,7 +1251,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingLeft: 2,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   ingText: { flex: 1, minWidth: 0, gap: 2 },
   ingName: { fontSize: 14.5, color: flColor.cream100 },
@@ -1269,7 +1269,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   result: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 8, paddingHorizontal: 14 },
-  resultDivider: { borderTopWidth: 1, borderTopColor: flColor.charcoal600 },
+  resultDivider: { borderTopWidth: 1, borderTopColor: flColor.divider },
   resultText: { flex: 1, minWidth: 0, gap: 2 },
   resultName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   resultSub: { fontSize: 12, color: flColor.gray400 },
@@ -1352,7 +1352,7 @@ const styles = StyleSheet.create({
 
   methods: { marginTop: -4 },
   method: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 10, paddingHorizontal: 2 },
-  methodDivider: { borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  methodDivider: { borderBottomWidth: 1, borderBottomColor: flColor.divider },
   methodText: { flex: 1, gap: 3 },
   methodTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   methodTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },

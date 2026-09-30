@@ -617,7 +617,7 @@ const styles = StyleSheet.create({
   sharedBanner: { flexDirection: 'row', alignItems: 'center', gap: 9, alignSelf: 'flex-start', marginBottom: 14, paddingVertical: 7, paddingHorizontal: 12, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   sharedBannerText: { fontSize: 11.5, fontWeight: '600', letterSpacing: 0.2, color: flColor.bronze300 },
 
-  divider: { height: 1, backgroundColor: flColor.charcoal700, marginVertical: 22 },
+  divider: { height: 1, backgroundColor: flColor.divider, marginVertical: 22 },
 
   sectionLabel: {
     fontSize: 11,
@@ -648,7 +648,7 @@ const styles = StyleSheet.create({
   exNote: {
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
   },
   exNoteText: { fontSize: 13, lineHeight: 20, color: flColor.gray400, fontStyle: 'italic' },
   exCard: {
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: flColor.charcoal700,
+    borderBottomColor: flColor.divider,
   },
   attrLabel: { width: 100, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
   attrValue: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.cream100 },

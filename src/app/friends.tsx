@@ -239,7 +239,7 @@ export default function FriendsFeedScreen() {
           </TourAnchor>
 
           {feed.length === 0 ? (
-            <EmptyFeed onFind={() => router.push('/add-friend')} hasFriends={(lists?.friends.length ?? 0) > 0} />
+            <EmptyFeed onFind={() => router.push('/add-friend')} hasFriends={(lists?.friends.length ?? 0) > 0} pending={pendingRequests} />
           ) : (
             <>
               {feed.map((post, pi) => (
@@ -292,21 +292,28 @@ export default function FriendsFeedScreen() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function EmptyFeed({ onFind, hasFriends }: { onFind: () => void; hasFriends: boolean }) {
+function EmptyFeed({ onFind, hasFriends, pending }: { onFind: () => void; hasFriends: boolean; pending: number }) {
+  /* A WAITING REQUEST IS NOT "NO FRIENDS YET" (social2-07, QA 09-26). With no friends but a request in
+     the mailbox, the panel said nobody was there and pointed at Add — the request was one screen away
+     and never mentioned. It now says so, and the button opens the list where it can be answered. */
+  const waiting = !hasFriends && pending > 0;
+  const title = waiting ? (pending === 1 ? 'A friend request is waiting' : `${pending} friend requests are waiting`) : hasFriends ? 'Nothing shared yet' : 'No friends yet';
+  const body = waiting
+    ? 'Accept or decline it, and what your friends choose to share will appear here.'
+    : hasFriends
+      ? 'When you or a friend shares a moment, it appears here. Nothing posts automatically.'
+      : 'Add someone by their handle and what they choose to share will appear here.';
+  const cta = waiting ? (pending === 1 ? 'See Request' : 'See Requests') : hasFriends ? 'Add Another Friend' : 'Add a Friend';
   return (
     <View style={styles.empty}>
       <View style={styles.emptyCrest}>
         <FriendsGlyph size={26} />
       </View>
-      {/* Two situations, two answers — the design shows one panel for both. */}
-      <Text style={styles.emptyTitle}>{hasFriends ? 'Nothing shared yet' : 'No friends yet'}</Text>
-      <Text style={styles.emptyBody}>
-        {hasFriends
-          ? 'When you or a friend shares a moment, it appears here. Nothing posts automatically.'
-          : 'Add someone by their handle and what they choose to share will appear here.'}
-      </Text>
-      <Pressable onPress={onFind} accessibilityRole="button" accessibilityLabel="Add a friend" style={({ pressed }) => [styles.emptyBtn, pressed ? styles.pressed : null]}>
-        <Text style={styles.emptyBtnLabel}>{hasFriends ? 'Add Another Friend' : 'Add a Friend'}</Text>
+      {/* Three situations, three answers — the design shows one panel for all of them. */}
+      <Text style={styles.emptyTitle}>{title}</Text>
+      <Text style={styles.emptyBody}>{body}</Text>
+      <Pressable onPress={onFind} accessibilityRole="button" accessibilityLabel={cta} style={({ pressed }) => [styles.emptyBtn, pressed ? styles.pressed : null]}>
+        <Text style={styles.emptyBtnLabel}>{cta}</Text>
       </Pressable>
     </View>
   );
@@ -653,7 +660,7 @@ const styles = StyleSheet.create({
   badge: { position: 'absolute', top: 4, right: 3, minWidth: 15, paddingHorizontal: 3, alignItems: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal900, backgroundColor: flColor.bronzeSolid },
   badgeText: { fontSize: 8.5, fontWeight: '700', color: flColor.onBronze },
 
-  composerBar: { height: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  composerBar: { height: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   composerText: { flex: 1, minWidth: 0, fontSize: 15, color: flColor.gray600 },
   composerPlus: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorder },
 
@@ -678,9 +685,9 @@ const styles = StyleSheet.create({
 
   picker: { flexDirection: 'row', gap: 2, padding: 4, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
   pickerItem: { alignItems: 'center', gap: 2, paddingHorizontal: 8, paddingVertical: 5, borderRadius: flRadius.pill },
-  pickerItemOn: { backgroundColor: flColor.bronzeTint },
+  pickerItemOn: { backgroundColor: flColor.selectedFill },
   pickerLabel: { fontSize: 8.5, fontWeight: '600', color: flColor.gray600 },
-  pickerLabelOn: { color: flColor.bronze300 },
+  pickerLabelOn: { color: flColor.selectedInk },
 
   note: { fontSize: 11.5, lineHeight: 17, color: flColor.gray600 },
 
@@ -696,9 +703,9 @@ const styles = StyleSheet.create({
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   commentInput: { flex: 1, minWidth: 0, height: 42, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },
   sendBtn: { paddingHorizontal: 15, paddingVertical: 11, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  sendBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  sendBtnOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   sendLabel: { fontSize: 12.5, fontWeight: '700', color: flColor.gray600 },
-  sendLabelOn: { color: flColor.bronze300 },
+  sendLabelOn: { color: flColor.selectedInk },
 
   empty: { marginTop: 30, alignItems: 'center', gap: 5, paddingHorizontal: 22 },
   emptyCrest: { width: 72, height: 72, marginBottom: 12, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },

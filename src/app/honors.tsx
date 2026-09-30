@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   tileDate: { fontFamily: flFont.sans, fontSize: 10, color: flColor.gray600 },
 
   catBlock: { marginTop: 30 },
-  divider: { height: 1, backgroundColor: flColor.charcoal700, marginHorizontal: 24, marginBottom: 16 },
+  divider: { height: 1, backgroundColor: flColor.divider, marginHorizontal: 24, marginBottom: 16 },
   catHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24 },
   catHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   catName: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray400 },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal700,
   },
   sheetDesc: { fontFamily: flFont.sans, fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
-  sheetRowDivider: { height: 1, backgroundColor: flColor.charcoal700, marginTop: 14, marginBottom: 8 },
+  sheetRowDivider: { height: 1, backgroundColor: flColor.divider, marginTop: 14, marginBottom: 8 },
   sheetRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 14, paddingVertical: 6 },
   sheetRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sheetRowLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },

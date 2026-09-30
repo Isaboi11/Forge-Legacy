@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     backgroundColor: flColor.surfaceNav,
     borderTopWidth: 1,
-    borderTopColor: flColor.charcoal600,
+    borderTopColor: flColor.divider,
     paddingTop: 10,
     paddingHorizontal: 8,
   },

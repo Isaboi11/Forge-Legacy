@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     color: flColor.cream100,
   },
   section: { fontSize: 11, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk, marginTop: 6 },
-  name: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  name: { fontFamily: flFont.display, fontSize: 21, color: flColor.cream100, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   warn: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   checks: { gap: 4, padding: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   checksHead: { fontSize: 11, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },

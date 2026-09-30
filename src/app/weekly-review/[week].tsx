@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 13 },
-  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   rowIcon: {
     width: 32,
     height: 32,

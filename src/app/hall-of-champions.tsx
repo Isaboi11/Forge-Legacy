@@ -281,7 +281,7 @@ function TypeGlyph({ type }: { type: ChallengeType }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { flexShrink: 0, position: 'relative', borderBottomWidth: 1, borderBottomColor: flColor.charcoal700 },
+  header: { flexShrink: 0, position: 'relative', borderBottomWidth: 1, borderBottomColor: flColor.divider },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.cream100 },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 22, paddingTop: 2, paddingBottom: 18 },
   crest: { width: 44, height: 44, flexShrink: 0, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: flRadius.md, boxShadow: '0 0 10px rgba(186, 134, 84,0.20)' },
@@ -320,14 +320,14 @@ const styles = StyleSheet.create({
   scoreUnit: { marginTop: 3, fontSize: 8.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
 
   closing: { marginTop: 12, marginHorizontal: 24, fontSize: 11, lineHeight: 17, color: flColor.gray600 },
-  podium: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 16, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.charcoal700, backgroundColor: themeScrim('rgba(0,0,0,0.16)') },
+  podium: { flexDirection: 'row', alignItems: 'center', gap: 18, paddingHorizontal: 16, paddingVertical: 9, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: themeScrim('rgba(0,0,0,0.16)') },
   podiumEntry: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 },
   podiumPlace: { width: 15, height: 15, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1 },
   podiumSilver: { borderColor: 'rgba(185,188,194,0.6)' },
   podiumCopper: { borderColor: 'rgba(176,124,78,0.6)' },
   podiumPlaceText: { fontSize: 8, fontWeight: '700' },
   podiumName: { flexShrink: 1, fontSize: 11, color: flColor.gray400 },
-  podiumNameSelf: { color: flColor.bronze300, fontWeight: '700' },
+  podiumNameSelf: { color: flColor.selectedInk, fontWeight: '700' },
 
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, gap: 4 },
   emptyCrest: { width: 76, height: 76, marginBottom: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },

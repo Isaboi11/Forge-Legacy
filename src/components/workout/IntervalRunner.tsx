@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   moveName: { marginTop: 10, textAlign: 'center', fontFamily: flFont.display, fontSize: 34, lineHeight: 40, color: flColor.cream100 },
   count: { marginTop: 18, fontSize: 96, lineHeight: 104, fontWeight: '700', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   countRest: { color: flColor.gray400 },
-  track: { alignSelf: 'stretch', height: 8, marginTop: 18, borderRadius: 4, overflow: 'hidden', backgroundColor: flColor.charcoal700 },
+  track: { alignSelf: 'stretch', height: 8, marginTop: 18, borderRadius: 4, overflow: 'hidden', backgroundColor: flColor.divider },
   fill: { height: '100%', borderRadius: 4, backgroundColor: flColor.bronze400 },
   fillRest: { backgroundColor: flColor.gray600 },
   next: { marginTop: 18, fontSize: 16, color: flColor.gray400 },

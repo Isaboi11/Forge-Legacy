@@ -354,7 +354,7 @@ function AlbumCard({ album: a, onPress }: { album: PhotoAlbum; onPress: () => vo
 
         <View style={[styles.chip, sealed ? styles.chipSealed : styles.chipActive]}>
           {sealed ? <FlameGlyph size={11} color={flColor.gray400} /> : <BookGlyph size={11} color={flColor.bronze300} />}
-          <Text style={[styles.chipText, sealed ? styles.chipTextSealed : styles.chipTextActive]}>{status}</Text>
+          <Text style={[styles.chipText, sealed ? styles.chipTextSealed : styles.coverChipTextActive]}>{status}</Text>
         </View>
 
         {a.coverIsVideo ? (
@@ -803,7 +803,9 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: 'rgba(196,142,74,0.16)', borderColor: flColor.accentBorder },
   chipSealed: { backgroundColor: flColor.surfaceRecessed, borderColor: flColor.charcoal600 },
   chipText: { fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase' },
-  chipTextActive: { color: flColor.bronze300 },
+  chipTextActive: { color: flColor.selectedInk },
+  // On the photo cover (always dark), so the ink must not flip to Alabaster's deep selected bronze.
+  coverChipTextActive: { color: flColor.bronze300 },
   chipTextSealed: { color: flColor.gray400 },
 
   meta: { gap: 9, paddingHorizontal: 16, paddingTop: 14, paddingBottom: 18 },

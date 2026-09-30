@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   nativeNote: { fontSize: 10.5, color: flColor.bronze600, marginTop: 4 },
 
   segment: { flexDirection: 'row', gap: 8, marginTop: 12 },
-  rowerBlock: { marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowerBlock: { marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: flColor.divider },
   seg: {
     flex: 1,
     paddingVertical: 10,
@@ -363,24 +363,24 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
     alignItems: 'center',
   },
-  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeTint },
+  segOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   segText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
-  segTextOn: { color: flColor.bronze300 },
+  segTextOn: { color: flColor.selectedInk },
 
-  preview: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  preview: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: flColor.divider },
   previewLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
   previewValue: { fontSize: 13, color: flColor.gray400 },
   previewMono: { color: flColor.cream100 },
 
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 13 },
-  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.charcoal700 },
+  rowBorder: { borderTopWidth: 1, borderTopColor: flColor.divider },
 
   // coaching levels — a list of choices, not a slider: each one is a sentence, and a slider has none.
   levels: { marginTop: 4 },
   level: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13 },
   /* The selected level is marked by a bronze tint and a check, never by dimming the others — every
      level is available to everybody (see INTENSITY_COPY). */
-  levelOn: { backgroundColor: flColor.bronzeTint },
-  levelLabelOn: { color: flColor.bronze300 },
+  levelOn: { backgroundColor: flColor.selectedFill },
+  levelLabelOn: { color: flColor.selectedInk },
   rowText: { flex: 1 },
 });

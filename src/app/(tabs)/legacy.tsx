@@ -29,7 +29,7 @@ import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { fetchAccomplishments } from '@/data/accomplishments-live';
 import { fetchLegacyArchive } from '@/data/legacy-archive-live';
 import { LegacyArchiveBand } from '@/components/forge/LegacyArchiveBand';
-import { formatAccDate } from '@/domain/legacy/accomplishments';
+import { accDisplayDate, legacyStripOrder } from '@/domain/legacy/accomplishments';
 import { pinDestination } from '@/domain/legacy/pins';
 import { activityDayLabel, legacyReveal, recentLegacyEvents } from '@/domain/legacy/reveal';
 import { fetchLegacyTimeline, type TimelineKind } from '@/data/legacy-timeline-live';
@@ -143,10 +143,11 @@ export default function LegacyScreen() {
   const recentEvents = meaningfulEvents.slice(0, 3);
   const liveAccomplishments = useMemo(
     () =>
-      (accData ?? []).map((a) => ({
+      /* Featured first, and only the date the athlete gave — never the day the row was typed (QA legacy-19). */
+      legacyStripOrder(accData ?? []).map((a) => ({
         id: a.id,
         text: a.name,
-        monthYear: formatAccDate(a.date) || formatAccDate(a.createdAt),
+        monthYear: accDisplayDate(a),
         featured: a.featured,
         // The fetch has carried these since 0118 and this mapping dropped them, so the card had nothing
         // to draw and rendered as an empty bordered square. The same shape as every other field that

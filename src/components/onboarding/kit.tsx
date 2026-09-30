@@ -141,7 +141,7 @@ export function Heading({ eyebrow, title, body }: { eyebrow?: string; title: str
 const s = StyleSheet.create({
   progressRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingTop: 8, paddingBottom: 18 },
   back: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
-  track: { flex: 1, height: 3, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
+  track: { flex: 1, height: 3, borderRadius: 2, backgroundColor: flColor.divider, overflow: 'hidden' },
   fill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
   counter: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray400, minWidth: 26, textAlign: 'right' },
   /* Quieter than the counter it sits beside. This is an escape hatch, not an action anybody finishing
@@ -164,7 +164,7 @@ const s = StyleSheet.create({
   },
   tileFill: { flex: 1, justifyContent: 'center', paddingVertical: 18 },
   tileTextFill: { flex: 0, alignItems: 'center' },
-  tileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.bronzeTint },
+  tileOn: { borderColor: flColor.bronze400, backgroundColor: flColor.selectedFill },
   mark: { fontFamily: flFont.display, fontSize: 15, color: flColor.gray600, width: 22, textAlign: 'center' },
   markOn: { color: flColor.bronzeInk },
   tileText: { flex: 1, minWidth: 0, gap: 2 },

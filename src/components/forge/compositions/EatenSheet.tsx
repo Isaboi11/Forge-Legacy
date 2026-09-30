@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   qtyText: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { height: 36, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600 },
-  chipOn: { backgroundColor: flColor.bronzeTint, borderColor: flColor.accentBorder },
+  chipOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder },
   chipText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   chipTextOn: { color: flColor.bronzeInk },
   totals: { gap: 4 },
