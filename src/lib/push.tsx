@@ -10,6 +10,7 @@ import { destinationFor, type NotificationTarget } from '@/domain/notifications/
 import { useAuth } from '@/lib/auth';
 import { getDeviceId } from '@/lib/device-id';
 import { useProfile } from '@/lib/profile';
+import { isRestDone } from '@/lib/rest-notification-model';
 import { routeFor } from '@/lib/route-for';
 
 /**
@@ -32,12 +33,17 @@ import { routeFor } from '@/lib/route-for';
 // athlete is already looking at the app, so a sound would be telling them something they can see.
 if (Platform.OS !== 'web') {
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async (n) => {
+      /* The rest-complete notification exists for when the app is NOT on screen. While it is, the
+         countdown, the toast and the ding already say it — so it shows nothing at all here. */
+      const quiet = isRestDone(n.request.content.data);
+      return {
+        shouldShowBanner: !quiet,
+        shouldShowList: !quiet,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      };
+    },
   });
 }
 
@@ -163,6 +169,9 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS === 'web' || !userId) return;
 
     const go = (response: Notifications.NotificationResponse | null) => {
+      /* ⚠ A tapped "Rest complete" goes NOWHERE, on purpose. The tap has already brought the app back
+         to the workout it was on; `destinationFor`'s catch-all would push `/inbox` on top of it. */
+      if (isRestDone(response?.notification.request.content.data)) return;
       const target = targetFrom(response?.notification.request.content.data);
       if (!target) return;
       if (!ready) {
