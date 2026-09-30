@@ -217,3 +217,24 @@ export const SCOPE_CHOICES = [
   { label: 'Just this week', scope: 'this_week' as const },
   { label: 'Every week from here', scope: 'rest_of_block' as const },
 ];
+
+/**
+ * What a tapped change actually did, in one sentence (QA holt-05). The typed path names its plan before
+ * it applies; the tapped path used to say only "Done." — so the athlete could not tell what moved.
+ */
+export function describeTappedEdit(
+  change: EditChangeId,
+  name: string,
+  v: { sets?: number; targetMi?: number; targetSec?: number; replacementName?: string },
+  scope: 'this_week' | 'rest_of_block',
+): string {
+  const when = scope === 'this_week' ? 'this week' : 'from here on';
+  if (change === 'swap') return `${name} is now ${v.replacementName ?? 'the new movement'}, ${when}.`;
+  if (change === 'sets' && typeof v.sets === 'number') return `${name} is now ${v.sets} ${v.sets === 1 ? 'set' : 'sets'}, ${when}.`;
+  if (change === 'distance' && typeof v.targetMi === 'number') return `${name} is now ${Math.round(v.targetMi * 10) / 10} mi, ${when}.`;
+  if (change === 'duration' && typeof v.targetSec === 'number') {
+    const min = Math.round(v.targetSec / 60);
+    return `${name} is now ${min} ${min === 1 ? 'minute' : 'minutes'}, ${when}.`;
+  }
+  return `${name} changed, ${when}.`;
+}
