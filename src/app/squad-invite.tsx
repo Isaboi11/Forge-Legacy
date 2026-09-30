@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,6 +16,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchSquadInvite, regenerateSquadCode } from '@/data/squad-live';
 import { fetchMyReferralCode } from '@/data/referral-live';
 import { referralLinkFor } from '@/domain/referral/referral-core';
+import { INVITE_CODE_SPACING, inviteCodeFontSize } from '@/domain/squad/invite-code-fit';
 import { trackInvite } from '@/lib/analytics';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { encodeQr, type QrMatrix } from '@/lib/qr';
@@ -105,6 +106,8 @@ export default function SquadInviteRoute() {
   const { data: myReferralCode } = useQuery(fetchMyReferralCode, []);
 
   const code = squad?.inviteCode ?? '';
+  const { width: windowWidth } = useWindowDimensions();
+  const codeSize = inviteCodeFontSize(windowWidth, code.length || 7);
   const link = code ? referralLinkFor(joinLink(code), myReferralCode) : '';
   const deepLink = code ? referralLinkFor(appLink(code), myReferralCode) : '';
   const inviteText = squad && code ? `Join ${squad.name} on Forge Legacy.\nCode: ${code}\n${link}\n\nAlready have the app? ${deepLink}` : '';
@@ -270,7 +273,7 @@ export default function SquadInviteRoute() {
         <View style={styles.codeCard}>
           <View style={styles.codeCardTop}>
             <Text style={styles.codeEyebrow}>Squad Invite Code</Text>
-            <Text style={styles.codeValue} selectable numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.codeValue, { fontSize: codeSize, letterSpacing: codeSize * INVITE_CODE_SPACING, paddingLeft: codeSize * INVITE_CODE_SPACING }]} selectable numberOfLines={1} adjustsFontSizeToFit>
               {noCode ? '— — — —' : code}
             </Text>
             <View style={styles.expiryRow}>
