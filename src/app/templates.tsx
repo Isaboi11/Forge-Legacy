@@ -16,7 +16,7 @@ import { deleteTemplate, fetchTemplates, reorderTemplates, templateSummary, type
 import { ReorderTemplatesSheet } from '@/components/forge/ReorderTemplatesSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchWeekTemplates, weekSummary } from '@/data/week-templates-live';
-import { STARTER_TEMPLATES, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
+import { defaultAudiences, filterStarters, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
 import { usePlanNext } from '@/hooks/usePlanNext';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useProfile } from '@/lib/profile';
@@ -156,7 +156,13 @@ export default function TemplatesScreen() {
      didn't. Four, one per focus, matched to their profile — the rest are one tap away on
      `/forge-templates`, which is built to be filtered and this screen is not. */
   const starters = suggestedStarters(profile?.sex, adopted, 4);
-  const remaining = STARTER_TEMPLATES.length - adopted.size;
+  /* ⚠ COUNTED THE WAY THE DESTINATION OPENS. `/forge-templates` opens on the athlete's own track
+     (`defaultAudiences`), so "Browse all 81" landed a man on a list of 39 (library-14, QA 09-26). The
+     link's number is now the list it opens — adopted ones included, because that screen shows them
+     (greyed) — and the shelf still only offers the link while there is something not yet taken. */
+  const forYou = filterStarters({ audiences: defaultAudiences(profile?.sex) });
+  const browseCount = forYou.length;
+  const remaining = forYou.filter((s) => !adopted.has(s.id)).length;
 
   return (
     <View style={styles.root}>
@@ -259,16 +265,16 @@ export default function TemplatesScreen() {
                 </Pressable>
               ))}
 
-              {/* The other seventy-odd. Counts what's LEFT rather than the catalogue total, so it stops
-                  advertising sessions the athlete has already taken. */}
+              {/* The rest. Shown while there is more left than the shelf holds; numbered by what the
+                  browse screen will actually list — see `browseCount`. */}
               {remaining > starters.length ? (
                 <Pressable
                   onPress={() => router.push('/forge-templates')}
                   accessibilityRole="button"
-                  accessibilityLabel={`Browse all ${remaining} Forge sessions`}
+                  accessibilityLabel={`Browse all ${browseCount} Forge sessions`}
                   style={({ pressed }) => [styles.browseRow, pressed ? styles.pressed : null]}
                 >
-                  <Text style={styles.browseText}>Browse all {remaining}</Text>
+                  <Text style={styles.browseText}>Browse all {browseCount}</Text>
                   <Chevron />
                 </Pressable>
               ) : null}
