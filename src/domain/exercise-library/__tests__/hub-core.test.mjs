@@ -77,7 +77,53 @@ test('favorites and recents resolve in their stored order, skipping anything unk
 test('a search with no drill spans everything and is titled Results', () => {
   const r = buildLibrary(DB, state({ query: 'barbell' }), ctx);
   assert.equal(r.title, 'Results');
-  assert.deepEqual(r.rows.map((x) => x.key), ['bench', 'squat']);
+  // Both are prefix matches, so the tie goes A–Z — the Picker's order (B7), not the list's.
+  assert.deepEqual(r.rows.map((x) => x.key), ['squat', 'bench']);
+});
+
+// ── B7: the Library runs the Picker's search ────────────────────────────────
+
+test('⭐ search is RANKED — the exercise named what you typed comes first, not fourth', () => {
+  const db = [
+    ex({ key: 'a', name: 'Bear Plank Shoulder Tap', muscles: ['Core'] }),
+    ex({ key: 'b', name: 'Copenhagen Plank' }),
+    ex({ key: 'c', name: 'Plank' }),
+    ex({ key: 'd', name: 'Plank Jack' }),
+  ];
+  assert.deepEqual(buildLibrary(db, state({ query: 'plank' }), ctx).rows.map((x) => x.key), ['c', 'd', 'a', 'b']);
+  // …and within a tier, bookmarked then recent lead.
+  const c = { ...ctx, favorites: ['b'], recents: ['a'] };
+  assert.deepEqual(buildLibrary(db, state({ query: 'plank' }), c).rows.map((x) => x.key), ['c', 'd', 'b', 'a']);
+});
+
+test('⭐ a typo still finds the lift — "bnech" → the bench — but only when nothing matched properly', () => {
+  assert.deepEqual(buildLibrary(DB, state({ query: 'bnech' }), ctx).rows.map((x) => x.key), ['bench']);
+  // The typo pass widens the spelling, never the selection: the filter still applies.
+  const f = { ...EMPTY_LIBRARY_FILTERS, diff: ['Beginner'] };
+  assert.deepEqual(buildLibrary(DB, state({ query: 'bnech', filters: f }), ctx).rows, []);
+});
+
+test('⭐ your own exercises are searchable here — but never inside a category drill (EX-001-D9)', () => {
+  const mine = [ex({ key: 'custom:1', name: 'Belt Squat Machine', cat: 'LEGS_AND_GLUTES', equipId: 'custom', equip: 'Custom', muscles: [], muscleIds: [] })];
+  const c = { ...ctx, customs: mine };
+  assert.deepEqual(buildLibrary(DB, state({ query: 'belt' }), c).rows.map((x) => x.key), ['custom:1']);
+  assert.deepEqual(buildLibrary(DB, state({ query: 'squat' }), c).rows.map((x) => x.key), ['squat', 'custom:1']);
+  assert.deepEqual(buildLibrary(DB, state({ view: { type: 'category', id: 'LEGS_AND_GLUTES' }, query: 'squat' }), c).rows.map((x) => x.key), ['squat']);
+  const legs = { ...EMPTY_LIBRARY_FILTERS, cat: ['LEGS_AND_GLUTES'] };
+  assert.deepEqual(buildLibrary(DB, state({ filters: legs }), c).rows.map((x) => x.key), ['squat']);
+  // A bookmarked own exercise resolves in Favorites.
+  assert.deepEqual(buildLibrary(DB, state({ view: { type: 'favorites' } }), { ...c, favorites: ['custom:1'] }).rows.map((x) => x.key), ['custom:1']);
+});
+
+test('the Show N count agrees with the list when own exercises are in it', () => {
+  const mine = [ex({ key: 'custom:1', name: 'Belt Squat Machine', difficulty: 'Intermediate' })];
+  const f = { ...EMPTY_LIBRARY_FILTERS, diff: ['Intermediate'] };
+  assert.equal(liveCount(DB, f, null, mine), buildLibrary(DB, state({ filters: f }), { ...ctx, customs: mine }).rows.length);
+});
+
+test('without a query the order is the catalogue’s own — ranking is for searching', () => {
+  const f = { ...EMPTY_LIBRARY_FILTERS, env: ['Commercial Gym'] };
+  assert.deepEqual(buildLibrary(DB, state({ filters: f }), ctx).rows.map((x) => x.key), DB.map((x) => x.key));
 });
 
 test('filters alone produce a Filtered list', () => {

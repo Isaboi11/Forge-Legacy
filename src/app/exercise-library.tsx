@@ -17,10 +17,20 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
 import { fetchCustomExercises } from '@/data/custom-exercises-live';
-import { capMessage, CUSTOM_LIMIT } from '@/domain/exercise-picker/custom-core';
+import { capMessage, CUSTOM_LIMIT, customIdOf, customToPickerItem, isCustomKey } from '@/domain/exercise-picker/custom-core';
 import { fetchHomeGym } from '@/data/home-gym-live';
 import { ENVIRONMENTS } from '@/domain/exercise-picker/catalog-core';
-import { DIFFS, EQUIP_FILTER_GROUPS, EXERCISE_CATEGORIES, PICKER_DB } from '@/domain/exercise-picker/data';
+import {
+  CONDITIONING_ROWS,
+  DIFFS,
+  EQUIP_FILTER_GROUPS,
+  EXERCISE_CATEGORIES,
+  MUSCLE_FILTER_GROUPS,
+  PICKER_DB,
+  type PickerItem,
+} from '@/domain/exercise-picker/data';
+import { HOME_GYM_EQUIPMENT } from '@/domain/home-gym/equipment';
+import { isCardioKey } from '@/domain/workout/conditioning';
 import {
   buildLibrary,
   categoryCards,
@@ -70,6 +80,17 @@ import { forgeOr } from '@/constants/theme-scrim';
  * comes back with the filter applied. Without a profile it still works, generically, off each
  * equipment's `environments`.
  */
+
+/**
+ * The catalogue AND the seven conditioning activities — what the Picker's CARDIO category browses. They
+ * live outside `PICKER_DB` on purpose (see `CONDITIONING_ROWS`), so this screen's Cardio filter counted
+ * zero and "run", "bike" and "treadmill" found nothing (B7). They are rows here, not exercises with a
+ * detail page: tapping one opens the log for an activity already done.
+ */
+const LIBRARY_DB: readonly PickerItem[] = [...PICKER_DB, ...CONDITIONING_ROWS];
+/* A custom exercise stores ids from the Home Gym vocabulary — the Picker's same two lookups. */
+const EQUIP_LABEL = new Map(HOME_GYM_EQUIPMENT.map((e) => [e.id, e.label] as const));
+const MUSCLE_LABEL = new Map(MUSCLE_FILTER_GROUPS.flatMap((g) => g.muscles.map((m) => [m.id, m.name] as const)));
 
 export default function ExerciseLibraryScreen() {
   const persist = usePersist();
@@ -133,8 +154,16 @@ export default function ExerciseLibraryScreen() {
   const state = { query, filters, view };
   const flat = isFlatMode(state);
   const categoryLabel = (k: string) => EXERCISE_CATEGORIES.find((c) => c.key === k)?.label ?? '';
-  const result = buildLibrary(PICKER_DB, state, { favorites, recents, categoryLabel: (k) => categoryLabel(k), homeGym });
-  const cards = useMemo(() => categoryCards(PICKER_DB, EXERCISE_CATEGORIES), []);
+  /* The athlete's own, in the shape search reads — the Picker's mapping, so the two find the same rows (B7). */
+  const customItems = useMemo(
+    () =>
+      (customData ?? []).map((c) =>
+        customToPickerItem(c, { muscleName: (id) => MUSCLE_LABEL.get(id) ?? id, equipName: (id) => EQUIP_LABEL.get(id) ?? id }),
+      ),
+    [customData],
+  );
+  const result = buildLibrary(LIBRARY_DB, state, { favorites, recents, categoryLabel: (k) => categoryLabel(k), homeGym, customs: customItems });
+  const cards = useMemo(() => categoryCards(LIBRARY_DB, EXERCISE_CATEGORIES), []);
   const active = filtersActive(filters);
 
   const equipLabel = useMemo(() => {
@@ -167,21 +196,36 @@ export default function ExerciseLibraryScreen() {
     ...filters.diff.map((v) => ({ group: 'diff' as const, value: v, label: v })),
   ];
 
-  const openEx = (key: string) => router.push({ pathname: '/exercise/[id]', params: { id: key } });
+  /* Three kinds of row, three destinations: a catalogue lift has its detail page, the athlete's own
+     opens in its editor (W-28), and a cardio activity — which has no page — opens the log for one. */
+  const openEx = (key: string) => {
+    const ownId = customIdOf(key);
+    if (ownId) return router.push({ pathname: '/custom-exercise', params: { id: ownId } });
+    if (isCardioKey(key)) return router.push('/log-activity');
+    router.push({ pathname: '/exercise/[id]', params: { id: key } });
+  };
 
-  const Row = ({ x }: { x: (typeof PICKER_DB)[number] }) => {
+  const Row = ({ x }: { x: PickerItem }) => {
     const fav = isFav(x.key);
+    const own = isCustomKey(x.key);
+    const cardio = isCardioKey(x.key);
     return (
-      <Pressable onPress={() => openEx(x.key)} accessibilityRole="button" accessibilityLabel={x.name} style={styles.row}>
+      <Pressable
+        onPress={() => openEx(x.key)}
+        accessibilityRole="button"
+        accessibilityLabel={own ? `${x.name}, your own exercise` : cardio ? `${x.name} — log one you did` : x.name}
+        style={styles.row}
+      >
         <View style={styles.rowIcon}>
-          <ExercisePoster exerciseId={x.key} radius={20} fallback={<EquipIcon equip={x.equipId} size={19} />} />
+          {/* Only a catalogue row has a poster — a custom or cardio key can only ever 404. */}
+          <ExercisePoster exerciseId={own || cardio ? null : x.key} radius={20} fallback={<EquipIcon equip={x.equipId} size={19} />} />
         </View>
         <View style={styles.rowText}>
           <Text style={styles.rowName} numberOfLines={1}>
             {x.name}
           </Text>
           <Text style={styles.rowMeta} numberOfLines={1}>
-            {x.equip} · {x.difficulty}
+            {own ? (x.equip === 'Custom' ? 'Custom' : `Custom · ${x.equip}`) : cardio ? x.equip : `${x.equip} · ${x.difficulty}`}
           </Text>
         </View>
         <Pressable
@@ -287,6 +331,18 @@ export default function ExerciseLibraryScreen() {
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>Nothing found</Text>
               <Text style={styles.emptyBody}>Try a different name or muscle, or clear a filter.</Text>
+              {/* The Picker's dead-end-becomes-a-door, here too (B7): they have just typed the name of
+                  the thing that is missing, so the create form opens with it already filled in. */}
+              {query.trim() && !atCustomLimit ? (
+                <Pressable
+                  onPress={() => router.push({ pathname: '/custom-exercise', params: { name: query.trim() } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Create ${query.trim()} as your own exercise`}
+                  style={({ pressed }) => [styles.createBtn, pressed ? styles.pressed : null]}
+                >
+                  <Text style={styles.createBtnText}>Create “{query.trim()}”</Text>
+                </Pressable>
+              ) : null}
             </View>
           )
         ) : (
@@ -356,7 +412,7 @@ export default function ExerciseLibraryScreen() {
                 title="Favorites"
                 onViewAll={favorites.length > 3 ? () => setView({ type: 'favorites' }) : undefined}
               >
-                {preview(PICKER_DB, favorites).map((x) => (
+                {preview(LIBRARY_DB, favorites).map((x) => (
                   <Row key={x.key} x={x} />
                 ))}
               </HubSection>
@@ -364,7 +420,7 @@ export default function ExerciseLibraryScreen() {
 
             {recents.length ? (
               <HubSection title="Recently Used" onViewAll={recents.length > 3 ? () => setView({ type: 'recent' }) : undefined}>
-                {preview(PICKER_DB, recents).map((x) => (
+                {preview(LIBRARY_DB, recents).map((x) => (
                   <Row key={x.key} x={x} />
                 ))}
               </HubSection>
@@ -479,7 +535,7 @@ export default function ExerciseLibraryScreen() {
                 }}
                 accessibilityLabel="Apply filters"
               >
-                {`Show ${liveCount(PICKER_DB, draft, homeGym)} exercises`}
+                {`Show ${liveCount(LIBRARY_DB, draft, homeGym, customItems)} exercises`}
               </Button>
             </View>
           </View>
@@ -688,6 +744,10 @@ const styles = StyleSheet.create({
   empty: { paddingVertical: 56, alignItems: 'center', gap: 8 },
   emptyTitle: { fontFamily: flFont.display, fontSize: 17, fontWeight: '600', color: flColor.cream100 },
   emptyBody: { fontSize: 13, color: flColor.gray400, textAlign: 'center' },
+  // The Picker's own create button, restated rather than shared — both are one-line styles.
+  createBtn: { marginTop: 10, paddingHorizontal: 18, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
+  createBtnText: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300, textAlign: 'center' },
+  pressed: { opacity: 0.85 },
 
   sheet: { gap: 14 },
   sheetScroll: { maxHeight: 380 },

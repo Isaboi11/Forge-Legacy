@@ -14,7 +14,8 @@ import type { Difficulty, ExerciseCategoryKey, PickerItem } from '@/domain/exerc
 // Relative + explicit extension: this is a VALUE import, and `hub-core` has to stay runnable under
 // `node --test`, where the `@/` alias doesn't resolve.
 import { canDoExercise } from '../home-gym/equipment.ts';
-import { matchesSearch } from '../exercise-picker/search-core.ts';
+import { matchesFuzzy, matchesSearch, rankFor } from '../exercise-picker/search-core.ts';
+import { isCustomKey } from '../exercise-picker/custom-core.ts';
 
 /** The athlete's owned equipment, or `null` when they've never set a Home Gym up. */
 export type HomeGymProfile = readonly string[] | null;
@@ -99,6 +100,20 @@ export interface LibraryResult {
  * The list for flat mode: pick a base by whatever was drilled into, then narrow by query and filters.
  * A search or filter applied ON TOP of a category keeps the category as the base, so "press" inside
  * Push searches only Push — narrowing, never silently widening back to the whole catalog.
+ *
+ * ══ THE PICKER'S SEARCH, NOT A WEAKER COPY OF IT (B7, QA 09-26) ══
+ *
+ * The match was shared already; everything around it was not. So the Exercise Library, the screen
+ * literally named for finding exercises, found less than the Picker did: no typo pass ("bnech" → nothing),
+ * none of the athlete's own exercises, alphabetical order ("plank" put Plank fourth) — and no Run, Ride or
+ * Row, because conditioning is not in the catalogue (the caller now passes it in `db`). It now runs the
+ * Picker's whole rule (`buildSections`, W-23 §11.3):
+ *
+ *   · the TYPO PASS, only over an otherwise empty result, and still under the filters;
+ *   · the athlete's OWN exercises (`customs`) — in a search or filter over everything, never inside a
+ *     category drill (EX-001-D9, the same exception the Picker keeps);
+ *   · RANKED while searching: exact name > prefix > contains > metadata, then bookmarked, then recently
+ *     used, then A–Z. Without a query the order is the catalogue's own, exactly as before.
  */
 export function buildLibrary(
   db: readonly PickerItem[],
@@ -108,6 +123,8 @@ export function buildLibrary(
     recents: readonly string[];
     categoryLabel: (k: ExerciseCategoryKey) => string;
     homeGym?: HomeGymProfile;
+    /** The athlete's own exercises in picker shape (`customToPickerItem`). Absent = none. */
+    customs?: readonly PickerItem[];
   },
 ): LibraryResult {
   if (!isFlatMode(s)) return { flat: false, title: '', rows: [] };
@@ -115,23 +132,40 @@ export function buildLibrary(
   let base: PickerItem[];
   let title: string;
   const view = s.view;
+  const customs = ctx.customs ?? [];
+  // A bookmark or a recent can be the athlete's own exercise, so those lists resolve against both.
+  const byKey = (k: string) => db.find((x) => x.key === k) ?? customs.find((x) => x.key === k);
 
   if (view?.type === 'category') {
     base = db.filter((x) => x.cat === view.id);
     title = ctx.categoryLabel(view.id);
   } else if (view?.type === 'favorites') {
-    base = ctx.favorites.map((k) => db.find((x) => x.key === k)).filter((x): x is PickerItem => Boolean(x));
+    base = ctx.favorites.map(byKey).filter((x): x is PickerItem => Boolean(x));
     title = 'Favorites';
   } else if (view?.type === 'recent') {
-    base = ctx.recents.map((k) => db.find((x) => x.key === k)).filter((x): x is PickerItem => Boolean(x));
+    base = ctx.recents.map(byKey).filter((x): x is PickerItem => Boolean(x));
     title = 'Recently Used';
   } else {
-    base = [...db];
+    // Own exercises join the whole-catalogue list, but not under a category chip (EX-001-D9).
+    base = [...db, ...(s.filters.cat.length ? [] : customs)];
     title = s.query.trim() ? 'Results' : 'Filtered';
   }
 
-  const rows = base.filter((x) => matchesQuery(x, s.query) && passFilters(x, s.filters, ctx.homeGym ?? null));
-  return { flat: true, title, rows };
+  const homeGym = ctx.homeGym ?? null;
+  const searching = s.query.trim().length > 0;
+  const strict = base.filter((x) => matchesQuery(x, s.query) && passFilters(x, s.filters, homeGym));
+  const rows = strict.length === 0 && searching ? base.filter((x) => matchesFuzzy(x, s.query) && passFilters(x, s.filters, homeGym)) : strict;
+  if (!searching) return { flat: true, title, rows };
+
+  const favSet = new Set(ctx.favorites);
+  const recentRank = new Map(ctx.recents.map((k, i) => [k, i] as const));
+  const personalRank = (x: PickerItem) =>
+    favSet.has(x.key) ? -1000 : recentRank.has(x.key) ? (recentRank.get(x.key) ?? 0) - 500 : 0;
+  // Stable sort, so where two rows tie on everything the athlete's own (listed first) stays first.
+  const ordered = [...rows.filter((x) => isCustomKey(x.key)), ...rows.filter((x) => !isCustomKey(x.key))].sort(
+    (a, b) => rankFor(a.name, s.query) - rankFor(b.name, s.query) || personalRank(a) - personalRank(b) || a.name.localeCompare(b.name),
+  );
+  return { flat: true, title, rows: ordered };
 }
 
 export interface CategoryCard {
@@ -159,5 +193,9 @@ export function preview(db: readonly PickerItem[], keys: readonly string[], limi
 }
 
 /** The count of exercises the current filters would show — the sheet's live "Show N" label. */
-export const liveCount = (db: readonly PickerItem[], f: LibraryFilters, homeGym: HomeGymProfile = null) =>
-  db.filter((x) => passFilters(x, f, homeGym)).length;
+export const liveCount = (
+  db: readonly PickerItem[],
+  f: LibraryFilters,
+  homeGym: HomeGymProfile = null,
+  customs: readonly PickerItem[] = [],
+) => [...db, ...(f.cat.length ? [] : customs)].filter((x) => passFilters(x, f, homeGym)).length;

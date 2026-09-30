@@ -374,13 +374,16 @@ export default function ExercisePickerScreen() {
    * Matched on `searchFields`, not the name: token-AND over name + aliases + equipment, the same rule
    * the catalogue runs. That is what makes "bike" reach Ride and "treadmill" reach Run.
    *
-   * ⚠ NOT rendered when the CARDIO chip is applied — `buildSections` widens the pool for that one
-   * filter, so these same seven rows are already in `sections.results` and this would draw each twice.
+   * ⚠ ONLY FOR A SEARCH, AND ONLY WITHOUT A FILTER. The seven were listed twice (B7): browsing, the
+   * CARDIO tile above already holds them (7, one tap), and this section repeated all seven under it;
+   * with the CARDIO chip applied `buildSections` widens the pool, so they are already in
+   * `sections.results`. Any OTHER filter — Push, a barbell, a muscle — is one a run cannot satisfy, so
+   * listing all seven beneath it answered a question nobody asked.
    */
   const cardioRows = (() => {
-    if (applied.cat.includes('CARDIO')) return [];
     const tokens = searchTokens(search);
-    return tokens.length ? CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, searchFields(c))) : CONDITIONING_ROWS;
+    if (!tokens.length || hasFilters) return [];
+    return CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, searchFields(c)));
   })();
   /** The screen has something to show if EITHER list does. */
   const hasAnything = sections.hasResults || cardioRows.length > 0;
