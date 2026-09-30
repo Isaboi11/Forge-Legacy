@@ -22,6 +22,7 @@
 // Relative and extensioned: `node --test` loads this file directly and cannot resolve the `@/` alias.
 // (`import-session-text` gets away with `@/` because it imports a TYPE, which is stripped before then.)
 import { deriveName, type CardioActivity } from '../workout/conditioning.ts';
+import { countOf } from '../text/plural.ts';
 import {
   activityIn,
   distanceIn,
@@ -1615,14 +1616,14 @@ export function parseProgramTable(raw: string): ParseResult {
 /**
  * "3 weeks · 4 days each · 48 exercises" — the design's "Here's what we read". A WORKOUT (one day, the template
  * import) reads "1 workout · 5 exercises": "1 week · 1 day each" described a program nobody imported (PO 09-27).
+ * ONE week reads "1 week · 3 days" — "each" only means something across several (QA 09-26 holtai-23 / programs-18).
  */
 export function summarize(weeks: readonly ParsedWeek[], unit: 'program' | 'workout' = 'program'): string {
   const items = weeks.reduce((n, w) => n + w.days.reduce((m, d) => m + d.items.length, 0), 0);
-  if (unit === 'workout') return `1 workout · ${items} exercise${items === 1 ? '' : 's'}`;
+  if (unit === 'workout') return `1 workout · ${countOf(items, 'exercise')}`;
   const dayCounts = [...new Set(weeks.map((w) => w.days.length))];
-  const days = dayCounts.length === 1 ? `${dayCounts[0]} day${dayCounts[0] === 1 ? '' : 's'} each` : 'varying days';
-  const wk = `${weeks.length} week${weeks.length === 1 ? '' : 's'}`;
-  return `${wk} · ${days} · ${items} exercise${items === 1 ? '' : 's'}`;
+  const days = dayCounts.length === 1 ? `${countOf(dayCounts[0], 'day')}${weeks.length > 1 ? ' each' : ''}` : 'varying days';
+  return `${countOf(weeks.length, 'week')} · ${days} · ${countOf(items, 'exercise')}`;
 }
 
 /** True when every week holds the same days and the same work — so the program can repeat one week. */
