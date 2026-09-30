@@ -32,7 +32,18 @@ export type SymbolName =
   | 'motion'
   | 'eye'
   /** Somebody wrote something back. Added 0135, when comments first needed a control of their own. */
-  | 'chat';
+  | 'chat'
+  /*
+   * QA 09-26 settings-21: `spark` stood for Theme, Holt's intensity, Holt's tips, Transformation and Live
+   * Workout Status, and `dumbbell` for four unrelated rows. Each of those rows now has its own drawing.
+   */
+  | 'theme'
+  | 'coach'
+  | 'tips'
+  | 'transformation'
+  | 'live'
+  | 'list'
+  | 'briefing';
 
 /** Each symbol's drawing in the PO's engraved set (2026-09-25). */
 const ENGRAVED: Record<SymbolName, EngravedName> = {
@@ -54,6 +65,13 @@ const ENGRAVED: Record<SymbolName, EngravedName> = {
   motion: 'motion',
   eye: 'eye',
   chat: 'chat',
+  theme: 'moon',
+  coach: 'megaphone',
+  tips: 'lightbulb',
+  transformation: 'transformation',
+  live: 'pulse',
+  list: 'list',
+  briefing: 'sunrise',
 };
 
 export function ForgeSymbol({

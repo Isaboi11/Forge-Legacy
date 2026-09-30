@@ -37,7 +37,8 @@ test('⚠ a column field never carries flex: 1 — that is the zero-height colla
   assert.match(s, /fieldWrap: \{ gap: 7 \},/, 'fieldWrap must not carry flex: 1');
   assert.match(s, /fieldGrow: \{ flex: 1 \},/, 'the grow style for the three-up row is gone');
   // Only the measurement row's three fields grow.
-  assert.match(s, /field\(`Bodyweight \(\$\{unitLabel\}\)`, weight, setWeight, 'e\.g\. 199', 'w'\)/, 'the bodyweight field must not grow');
+  // The example became `weightExample` (unit-aware, QA 09-26 home-17); what is pinned is still the missing `true`.
+  assert.match(s, /field\(`Bodyweight \(\$\{unitLabel\}\)`, weight, setWeight, weightExample, 'w'\)/, 'the bodyweight field must not grow');
   assert.equal((s.match(/, true\)\}/g) ?? []).length, 3, 'exactly the three measurement fields grow');
 });
 

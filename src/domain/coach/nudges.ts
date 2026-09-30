@@ -16,7 +16,7 @@
  */
 import { pickFrom } from './rulebook/voice.ts';
 
-export type NudgeId = 'photos' | 'progress' | 'honors' | 'goals' | 'squads' | 'templates' | 'program' | 'metrics';
+export type NudgeId = 'plan' | 'photos' | 'progress' | 'honors' | 'goals' | 'squads' | 'templates' | 'program' | 'metrics';
 
 /** What the athlete has and has not done — `coach_nudge_signals()` (0179), counts only. */
 export interface NudgeSignals {
@@ -28,6 +28,17 @@ export interface NudgeSignals {
   honors: number;
   weighIns: number;
   programs: number;
+  /**
+   * The workout this athlete keeps coming back to, when there is one (`repeatedWorkout`). Absent or null
+   * means none — and then the `plan` nudge has nothing real to point at and stays silent.
+   */
+  repeat?: { name: string; count: number } | null;
+  /**
+   * False when a free athlete has already used the Holt program the free plan includes. Both invitations
+   * to have Holt build a plan then stay silent: following one would land on the upgrade screen, and the
+   * catalogue's rule is that Holt never invites anyone to a paywall (MA9-D1). Absent reads as true.
+   */
+  canBuildProgram?: boolean;
 }
 
 /** How this athlete has answered one nudge so far. Absent means never offered. */
@@ -61,6 +72,11 @@ export const DISMISS_COOLDOWN_DAYS = 21;
 /** Two refusals is an answer. */
 export const MAX_DISMISSALS = 2;
 
+/** Three times is a routine. Twice is a coincidence. */
+export const REPEAT_MIN = 3;
+/** Only what they are doing NOW counts — a block from last spring is not a habit. */
+export const REPEAT_WINDOW_DAYS = 60;
+
 const DAY_MS = 86_400_000;
 const daysSince = (iso: string | null | undefined, now: number): number =>
   iso ? (now - new Date(iso).getTime()) / DAY_MS : Infinity;
@@ -77,6 +93,13 @@ const daysSince = (iso: string | null | undefined, now: number): number =>
  * `{honors}`, `{honorWord}` and `{sessions}` are filled from the signals.
  */
 export const NUDGE_LINES: Record<NudgeId, readonly string[]> = {
+  /* `{name}` and `{count}` come from `signals.repeat`. He names the thing they actually did — that is
+     what separates this from the generic `program` ask further down. */
+  plan: [
+    'You’ve run {name} {count} times. Want me to build a plan around it that moves week to week?',
+    '{count} rounds of {name}. Want me to turn it into a plan that progresses?',
+    '{name} keeps coming back, {count} times now. Want me to build on it?',
+  ],
   photos: [
     'Most people can’t see their own progress week to week. A photo can. Want to start?',
     'You’re putting the work in. Want a photo to show it later?',
@@ -128,6 +151,8 @@ function nudgeLine(id: NudgeId, s: NudgeSignals): string {
     k === 'honors' ? String(s.honors)
       : k === 'honorWord' ? (s.honors === 1 ? 'honor' : 'honors')
       : k === 'sessions' ? String(s.sessions)
+      : k === 'name' ? (s.repeat?.name ?? 'that workout')
+      : k === 'count' ? String(s.repeat?.count ?? REPEAT_MIN)
       : '',
   );
 }
@@ -147,6 +172,23 @@ function nudgeLine(id: NudgeId, s: NudgeSignals): string {
  * they put the athlete in front of other people, which is their call to make unprompted.
  */
 export const NUDGES: readonly NudgeDef[] = [
+  {
+    /*
+     * ══ THE ONE NUDGE THAT ANSWERS SOMETHING THEY JUST DID (MA9-D2) ══
+     *
+     * First, because it is the only row here triggered by evidence rather than by an absence: they have
+     * run the same workout three times in two months and have no program. Every other row can wait a
+     * week; this one is only true while the habit is.
+     *
+     * ⚠ IT INVITES THEM TO THE FEATURE, NEVER TO A PLAN SCREEN. A free athlete has one Holt program
+     * included, so "Show me" builds a real plan. Once that is used, `canBuildProgram` is false and this
+     * stays silent — the upgrade screen is met at the limit, as MA6-D9 has it, never at Holt's invitation.
+     */
+    id: 'plan',
+    eligible: (s) => s.programs === 0 && (s.repeat?.count ?? 0) >= REPEAT_MIN && s.canBuildProgram !== false,
+    line: (s) => nudgeLine('plan', s),
+    route: '/coach',
+  },
   {
     id: 'photos',
     eligible: (s) => s.photos === 0,
@@ -170,7 +212,7 @@ export const NUDGES: readonly NudgeDef[] = [
   },
   {
     id: 'program',
-    eligible: (s) => s.programs === 0,
+    eligible: (s) => s.programs === 0 && s.canBuildProgram !== false,
     line: (s) => nudgeLine('program', s),
     route: '/coach',
   },
@@ -230,7 +272,83 @@ export function chooseNudge(signals: NudgeSignals, history: NudgeHistory, now: n
       /* ⚠ ALREADY SHOWN AND NOT ACTED ON IS NOT A REFUSAL, but it is not a reason to repeat either. A
          nudge shown once and never dismissed simply waits its turn behind the ones never shown. */
       if (r?.shownAt && !r?.dismissedAt) return false;
+      if (sameAskAnswered(n.id, history, now)) return false;
       return n.eligible(signals);
     }) ?? null
   );
+}
+
+/**
+ * `plan` and `program` are ONE question asked two ways — "want me to build you a plan?" — so an answer
+ * to either is an answer to both. Without this, an athlete who said no twice to the generic ask would be
+ * asked a third and fourth time by the specific one, which is the nag the cadence exists to prevent.
+ *
+ * The specific ask also SUBSUMES the generic one: once `plan` has been shown, `program` never follows it.
+ * The other direction is allowed once — naming the workout they keep doing is new information.
+ */
+const SAME_ASK: Partial<Record<NudgeId, NudgeId>> = { plan: 'program', program: 'plan' };
+
+function sameAskAnswered(id: NudgeId, history: NudgeHistory, now: number): boolean {
+  const twinId = SAME_ASK[id];
+  const twin = twinId ? history[twinId] : undefined;
+  if (!twin) return false;
+  if (twin.usedAt) return true;
+  if ((twin.dismissedCount ?? 0) >= MAX_DISMISSALS) return true;
+  if (daysSince(twin.dismissedAt, now) < DISMISS_COOLDOWN_DAYS) return true;
+  return id === 'program' && !!twin.shownAt;
+}
+
+/* ── THE WORKOUT THEY KEEP COMING BACK TO ────────────────────────────────────────────────────────── */
+
+/** Names the app gives a session nobody named. Repeating one of these is not a routine. */
+const GENERIC_NAMES = new Set(['workout', 'freestyle workout', 'shared workout', 'untitled workout']);
+
+/**
+ * The workout done most often, if it has been done `REPEAT_MIN` times — from the names of recent saved
+ * sessions that were NOT part of a program, newest first.
+ *
+ * By name, because a Forge starter has no row to count against (`workout-launch.ts` — "no id to attribute
+ * the saved workout back to"), and the athlete's own templates and a starter both save under the name on
+ * the card they tapped. A tie goes to the one done most recently.
+ */
+export function repeatedWorkout(namesNewestFirst: readonly (string | null | undefined)[]): { name: string; count: number } | null {
+  const seen = new Map<string, { name: string; count: number; first: number }>();
+  namesNewestFirst.forEach((raw, i) => {
+    const name = (raw ?? '').trim();
+    const key = name.toLowerCase();
+    if (!name || GENERIC_NAMES.has(key)) return;
+    const cur = seen.get(key);
+    if (cur) cur.count++;
+    else seen.set(key, { name, count: 1, first: i });
+  });
+  let best: { name: string; count: number; first: number } | null = null;
+  for (const c of seen.values()) {
+    if (c.count < REPEAT_MIN) continue;
+    if (!best || c.count > best.count || (c.count === best.count && c.first < best.first)) best = c;
+  }
+  return best ? { name: best.name, count: best.count } : null;
+}
+
+/* ── THE WEEKLY REVIEW'S CLOSING OFFER ───────────────────────────────────────────────────────────── */
+
+/**
+ * Whether the weekly review may end with "Want me to plan next week?" (MA9-D3).
+ *
+ * It is the same question as `plan` / `program`, asked where the week has just been read back — so it
+ * obeys the same answers: never once either has been accepted or refused twice, never inside a refusal's
+ * cooldown, and never in the same week the coin already asked. It is a line at the foot of a page the
+ * athlete opened, not a sheet, so it writes no `shown` of its own and cannot starve the catalogue.
+ */
+export function reviewOffer(signals: NudgeSignals, history: NudgeHistory, now: number): boolean {
+  if (signals.sessions < MIN_SESSIONS) return false;
+  if (signals.programs !== 0 || signals.canBuildProgram === false) return false;
+  for (const id of ['plan', 'program'] as const) {
+    const r = history[id];
+    if (!r) continue;
+    if (r.usedAt) return false;
+    if ((r.dismissedCount ?? 0) >= MAX_DISMISSALS) return false;
+    if (daysSince(r.dismissedAt, now) < DISMISS_COOLDOWN_DAYS) return false;
+    if (daysSince(r.shownAt, now) < GAP_DAYS) return false;
+  }
+  return true;
 }

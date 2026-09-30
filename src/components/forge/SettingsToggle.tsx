@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Animated, Pressable, StyleSheet } from 'react-native';
+import { Animated, Pressable, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { flColor, flGradient } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -21,6 +21,29 @@ export function SettingsToggle({
   onChange: (next: boolean) => void;
   accessibilityLabel?: string;
 }) {
+  return (
+    <Pressable
+      onPress={() => onChange(!value)}
+      accessibilityRole="switch"
+      /*
+       * ⚠ `aria-checked` IS WHAT A SCREEN READER HEARS ON WEB (QA 09-26 settings-18). react-native-web
+       * 0.21 dropped `accessibilityState` entirely — the switch rendered as `role="switch"` with no
+       * checked state, so every toggle read "off". `accessibilityState` stays for iOS/Android.
+       */
+      aria-checked={value}
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <ToggleTrack value={value} />
+    </Pressable>
+  );
+}
+
+/**
+ * The toggle's drawing alone — track and knob, no press handling — for a row that is itself the
+ * pressable (the share sheet's field switches). One look for every switch in the app (settings-24).
+ */
+export function ToggleTrack({ value }: { value: boolean }) {
   const [x] = useState(() => new Animated.Value(value ? 1 : 0));
 
   useEffect(() => {
@@ -30,13 +53,7 @@ export function SettingsToggle({
   const translateX = x.interpolate({ inputRange: [0, 1], outputRange: [0, 19] });
 
   return (
-    <Pressable
-      onPress={() => onChange(!value)}
-      accessibilityRole="switch"
-      accessibilityState={{ checked: value }}
-      accessibilityLabel={accessibilityLabel}
-      style={[styles.track, value ? styles.trackOn : styles.trackOff]}
-    >
+    <View style={[styles.track, value ? styles.trackOn : styles.trackOff]}>
       {value ? (
         <LinearGradient
           colors={flGradient.bronzeMetallic.colors}
@@ -49,7 +66,7 @@ export function SettingsToggle({
       <Animated.View
         style={[styles.knob, { backgroundColor: value ? forgeOr<string>('#1A1206', flColor.onBronze) : flColor.charcoal500, transform: [{ translateX }] }]}
       />
-    </Pressable>
+    </View>
   );
 }
 

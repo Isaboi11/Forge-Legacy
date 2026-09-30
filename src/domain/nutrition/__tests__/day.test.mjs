@@ -8,6 +8,7 @@ import {
   canGoForward,
   dayDateLine,
   dayLabel,
+  diaryDayParam,
   groupByMeal,
   mealTitle,
   remaining,
@@ -59,6 +60,14 @@ test('a meal card names one food, counts several', () => {
 
   const [empty] = groupByMeal([]);
   assert.equal(mealTitle(empty), 'Nothing logged yet');
+});
+
+test('a one-food card shows its portion under the name, never the name twice (QA 09-26 N-23)', () => {
+  const [one] = groupByMeal([e({ name: 'Chicken breast', servingLabel: '1 breast (172 g)' })]);
+  assert.equal(mealTitle(one), 'Chicken breast');
+  assert.equal(one.summary, '1 breast (172 g)');
+  const [quick] = groupByMeal([e({ name: 'Quick add', source: 'quick', servingLabel: null })]);
+  assert.equal(quick.summary, 'Quick add');
 });
 
 test('remaining goes negative rather than lying', () => {
@@ -141,4 +150,15 @@ test('and it pads, so September is 09 and the 3rd is 03', () => {
 test('midnight and one second before it land on the days they belong to', () => {
   assert.equal(toLocalIso(new Date(2026, 8, 22, 0, 0, 0)), '2026-09-22');
   assert.equal(toLocalIso(new Date(2026, 8, 22, 23, 59, 59)), '2026-09-22');
+});
+
+test('a link cannot log to 1999, a made-up day, or past the plan-ahead limit (QA 09-26 N-19)', () => {
+  const today = '2026-09-30';
+  assert.equal(diaryDayParam('2026-09-29', today), '2026-09-29');
+  assert.equal(diaryDayParam('2026-10-10', today), '2026-10-10');
+  assert.equal(diaryDayParam('1999-01-01', today), today);
+  assert.equal(diaryDayParam('2026-02-31', today), today);
+  assert.equal(diaryDayParam('2027-01-01', today), today);
+  assert.equal(diaryDayParam('yesterday', today), today);
+  assert.equal(diaryDayParam(undefined, today), today);
 });

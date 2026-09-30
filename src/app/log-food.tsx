@@ -13,7 +13,8 @@ import { BarcodeSheet } from '@/components/forge/BarcodeSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
-import { isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { dayLabel, diaryDayParam, isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { countOf } from '@/domain/text/plural';
 import {
   defaultServing,
   energyKnown,
@@ -35,6 +36,7 @@ import {
   fetchSavedMeals,
   fetchUserRecipes,
   logSavedMeal,
+  peekFoodSearch,
   searchFoods,
   type RecentFood,
 } from '@/data/nutrition-live';
@@ -85,7 +87,12 @@ export default function LogFoodScreen() {
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ date?: string; meal?: string; scan?: string }>();
 
-  const iso = typeof params.date === 'string' ? params.date : localToday();
+  /* A link's date is checked, not trusted: a 1999 or malformed date logs to today (QA 09-26 N-19). */
+  /* ⚠ Memoised on purpose: a bare `diaryDayParam(...)` call here made react-compiler give up on the whole
+     screen (react-hooks/preserve-manual-memoization on the focus callback below). */
+  const todayIso = localToday();
+  const dateParam = params.date;
+  const iso = useMemo(() => diaryDayParam(dateParam, todayIso), [dateParam, todayIso]);
   const initialMeal = (MEAL_SLOTS as readonly string[]).includes(String(params.meal))
     ? (params.meal as MealSlot)
     : mealForNow();
@@ -146,6 +153,8 @@ export default function LogFoodScreen() {
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) return;
+    /* Asked in the last ten minutes: the answer is already on screen (`cached` below) — no call, no wait (N-25). */
+    if (peekFoodSearch(q)) return;
     let live = true;
     const timer = setTimeout(async () => {
       const found = await searchFoods(q);
@@ -159,9 +168,11 @@ export default function LogFoodScreen() {
 
   const trimmed = query.trim();
   const isSearching = trimmed.length >= 2;
+  /* A query answered in the last ten minutes shows at once, from memory (QA 09-26 N-25). */
+  const cached = isSearching && search.q !== trimmed ? peekFoodSearch(trimmed) : null;
   /** Null means "not searching" — the filters and their lists own the screen instead. */
-  const results = isSearching && search.q === trimmed ? search.foods : null;
-  const searching = isSearching && search.q !== trimmed;
+  const results = !isSearching ? null : search.q === trimmed ? search.foods : cached ? cached.filter(looksSane) : null;
+  const searching = isSearching && results == null;
   const failed = results != null && search.failed;
   /* Clearing the answer first puts "Searching…" back up while the retry is out. */
   const retry = () => {
@@ -240,7 +251,12 @@ export default function LogFoodScreen() {
 
   const barBottom = useBarBottom(SCREEN_BOTTOM_GAP);
 
-  const rows = useMemo(() => buildRows({ results, filter, recents, favorites, myFoods }), [results, filter, recents, favorites, myFoods]);
+  /* While the search service is out (1.7–4.9 s), your own foods that match are already listed (N-25). */
+  const localFor = searching ? trimmed : null;
+  const rows = useMemo(
+    () => buildRows({ results, filter, recents, favorites, myFoods, localFor }),
+    [results, filter, recents, favorites, myFoods, localFor],
+  );
   /* A search shows its best ten; "Show more" opens the rest for THAT query only, so the next one starts short again. */
   const [moreFor, setMoreFor] = useState<string | null>(null);
   const capped = results != null && moreFor !== trimmed && rows.length > SEARCH_PAGE;
@@ -250,12 +266,20 @@ export default function LogFoodScreen() {
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
       {/* On a day that has not begun this is planning (0228) — the food waits there for its check. */}
-      <AppBar title={isAhead(iso, localToday()) ? 'Plan Food' : 'Log Food'} transparent onBack={() => router.back()} />
+      <AppBar title={isAhead(iso, todayIso) ? 'Plan Food' : 'Log Food'} transparent onBack={() => router.back()} />
 
-      {/* meal destination — one quiet line, tap to change */}
-      <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
+      {/* meal destination — one quiet line, tap to change. Any day but today is named on it, so food meant
+          for tonight never lands on yesterday unseen (QA 09-26 N-19). */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Adding to ${MEAL_LABELS[meal]}${iso === todayIso ? '' : `, ${dayLabel(iso, todayIso)}`}. Change meal`}
+        style={styles.mealLine}
+        onPress={() => setMealPickerOpen(true)}
+      >
         <Text style={styles.mealLineLabel}>Adding to</Text>
-        <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+        <Text style={styles.mealLineValue}>
+          {iso === todayIso ? MEAL_LABELS[meal] : `${MEAL_LABELS[meal]} · ${dayLabel(iso, todayIso)}`}
+        </Text>
         <EngravedIcon name="chevron-down" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
       </Pressable>
 
@@ -289,7 +313,7 @@ export default function LogFoodScreen() {
       </View>
 
       {/* filters — hidden while searching, because a search spans all of them */}
-      {results == null ? (
+      {!isSearching ? (
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} style={styles.filters} contentContainerStyle={styles.filtersContent}>
           {FILTERS.map((f) => (
             <Pressable key={f.id} accessibilityRole="button" onPress={() => setFilter(f.id)} style={[styles.pill, filter === f.id && styles.pillOn]}>
@@ -304,7 +328,7 @@ export default function LogFoodScreen() {
 
         {/* Your recipes — the filter's list, or the ones matching a search, above the food results. Tapping
             one asks how much you ate (`EatenSheet`) before anything is logged. */}
-        {(results == null ? (filter === 'recipes' ? filterList(myRecipes ?? [], '', 'all') : []) : filterList(myRecipes ?? [], trimmed, 'all').slice(0, 3)).map(
+        {(!isSearching ? (filter === 'recipes' ? filterList(myRecipes ?? [], '', 'all') : []) : filterList(myRecipes ?? [], trimmed, 'all').slice(0, 3)).map(
           (u) => (
             <Pressable key={u.id} accessibilityRole="button" style={styles.row} onPress={() => setEatRecipe(u)}>
               <View style={styles.rowBody}>
@@ -312,7 +336,7 @@ export default function LogFoodScreen() {
                   {u.name}
                 </Text>
                 <Text style={styles.rowMeta} numberOfLines={1}>
-                  {results == null ? recipeRowMeta(u) : `My recipe · ${recipeRowMeta(u)}`}
+                  {!isSearching ? recipeRowMeta(u) : `My recipe · ${recipeRowMeta(u)}`}
                 </Text>
               </View>
               <AddCircle />
@@ -321,7 +345,7 @@ export default function LogFoodScreen() {
         )}
 
         {/* My Meals is a different row shape: it logs several foods at once. */}
-        {results == null && filter === 'meals'
+        {!isSearching && filter === 'meals'
           ? (savedMeals ?? []).map((m) => (
               <Pressable
                 key={m.id}
@@ -329,12 +353,12 @@ export default function LogFoodScreen() {
                 style={styles.row}
                 onPress={async () => {
                   const added = await logSavedMeal(m.id, iso, meal);
-                  showToast(`${m.name} · ${added.length} items added`);
+                  showToast(`${m.name} · ${countOf(added.length, 'item')} added`);
                 }}
               >
                 <View style={styles.rowBody}>
                   <Text style={styles.rowName}>{m.name}</Text>
-                  <Text style={styles.rowMeta}>{`${m.kcal} cal · ${m.itemCount} items`}</Text>
+                  <Text style={styles.rowMeta}>{`${m.kcal} cal · ${countOf(m.itemCount, 'item')}`}</Text>
                 </View>
                 <AddCircle />
               </Pressable>
@@ -368,8 +392,8 @@ export default function LogFoodScreen() {
 
         {!searching &&
         rows.length === 0 &&
-        !(results == null && filter === 'meals' && (savedMeals ?? []).length) &&
-        !(results == null && filter === 'recipes' && (myRecipes ?? []).length) ? (
+        !(!isSearching && filter === 'meals' && (savedMeals ?? []).length) &&
+        !(!isSearching && filter === 'recipes' && (myRecipes ?? []).length) ? (
           <Text style={styles.empty}>{emptyCopy(filter, results, query, failed)}</Text>
         ) : null}
         {!searching && failed ? (
@@ -379,12 +403,12 @@ export default function LogFoodScreen() {
         ) : null}
 
         {/* The door to My Foods & Meals — where these two lists are edited, deleted and (meals) built. */}
-        {results == null && filter === 'recipes' ? (
+        {!isSearching && filter === 'recipes' ? (
           <Pressable accessibilityRole="button" style={styles.more} onPress={() => router.push('/my-recipes')}>
             <Text style={styles.footerAction}>Edit or add recipes</Text>
           </Pressable>
         ) : null}
-        {results == null && (filter === 'mine' || filter === 'meals') ? (
+        {!isSearching && (filter === 'mine' || filter === 'meals') ? (
           <Pressable
             accessibilityRole="button"
             style={styles.more}
@@ -506,13 +530,26 @@ function buildRows({
   recents,
   favorites,
   myFoods,
+  localFor,
 }: {
   results: CatalogFood[] | null;
   filter: Filter;
   recents: RecentFood[] | null | undefined;
   favorites: Awaited<ReturnType<typeof fetchFavorites>> | null | undefined;
   myFoods: CatalogFood[] | null | undefined;
+  /** The query still out at the search service: only the athlete's own matching foods, for now. */
+  localFor?: string | null;
 }): Row[] {
+  if (localFor) {
+    const words = localFor.toLowerCase().split(/\s+/).filter(Boolean);
+    return (myFoods ?? [])
+      .filter((food) => {
+        const text = `${food.name} ${food.brand ?? ''}`.toLowerCase();
+        return words.every((w) => text.includes(w));
+      })
+      .slice(0, 5)
+      .map((food) => ({ key: food.key, food, meta: [calorieMeta(food), food.brand, SOURCE_LABEL[food.source]].filter(Boolean).join(' · ') }));
+  }
   if (results) {
     return results.map((food) => ({
       key: food.key,

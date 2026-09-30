@@ -70,7 +70,9 @@ function founded(createdAt: string): string {
   const ms = Date.now() - new Date(createdAt).getTime();
   if (!Number.isFinite(ms) || ms < 0) return '—';
   const days = Math.floor(ms / DAY);
-  if (days < 30) return `${Math.max(days, 0)} d`;
+  // A squad made today was "0 d" old (social-27, QA 09-26) — it's new, and says so.
+  if (days < 1) return 'Today';
+  if (days < 30) return `${days} d`;
   const months = Math.floor(days / 30);
   if (months < 12) return `${months} mo`;
   return `${Math.floor(days / 365)} yr`;

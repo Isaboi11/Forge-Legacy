@@ -1,4 +1,4 @@
-import { readWrittenWorkout, writtenToTemplate, type WrittenTemplateRow, type WrittenWorkout } from './written-workout.ts';
+import { readWrittenWorkout, setsLeftInNote, tallyMismatch, writtenToTemplate, type WrittenTemplateRow, type WrittenWorkout } from './written-workout.ts';
 
 /**
  * WHEN AI READS A WORKOUT, AND WHEN IT DOES NOT (PO 2026-09-28: "use AI when needed. For simple workouts it shouldn't
@@ -15,8 +15,8 @@ import { readWrittenWorkout, writtenToTemplate, type WrittenTemplateRow, type Wr
  *   3. The only doubt is a name the exercise library doesn't know           → no AI. That is spelling; the poster fixes it.
  *   4. The card is too long for one read                                    → no AI; post it in parts.
  *   5. Otherwise (a line not read, a lift with no reps, a name with numbers
- *      caught in it, a % on the card that went nowhere, lifts written but
- *      none found)                                                          → AI, and only then.
+ *      caught in it, a % on the card that went nowhere or only into a
+ *      lift's note as a list, lifts written but none found)                 → AI, and only then.
  *
  * And AI's answer is thrown away, keeping the poster's own words, unless `checkAiRewrite` passes: every number AI
  * wrote is on the card, every % on the card is still there, every lift name comes from the card. The poster then
@@ -77,6 +77,13 @@ export function whenToUseAi(text: string, w: WrittenWorkout | null, rows: readon
   for (const r of rows) {
     if (/[/:"\d]/.test(r.name)) reasons.push(`“${r.name}” has numbers or another lift caught in its name.`);
     else if (noCount(r)) reasons.push(`No reps were read for “${r.name}”.`);
+    /* A % that only reached a lift's note counts as "read" below, so a whole list of sets could land there unseen. */
+    if (setsLeftInNote(r.coachNote)) reasons.push(`Some of the percentages for “${r.name}” were not read as sets.`);
+  }
+  /* The card's own arithmetic ("9 total sets, 27 total reps") against what was read: the cheapest check there is. */
+  for (const e of w.exercises) {
+    const off = tallyMismatch(e);
+    if (off) reasons.push(`“${e.name}”: ${off}.`);
   }
   const read = numbersRead(w, rows);
   const lost = [...new Set(percentsIn(text))].filter((p) => !read.has(p));
@@ -161,9 +168,13 @@ export function checkAiRewrite(source: string, tidied: string, resolveKey: (name
   if (dropped.length) problems.push(`It dropped ${dropped.map((p) => `${p}%`).join(', ')}.`);
 
   const card = expand(source);
+  /* ⚠ A handwritten "DEAD lift" is two words on the card and one in the rewrite. Matched word for word, "Deadlift"
+     "wasn't on the card" and a rewrite with every number right was thrown away (live run, 2026-09-30). A long word
+     also counts when its letters are on the card in a row with the gaps closed. */
+  const closed = card.replace(/[^a-z]+/g, '');
   for (const r of rows) {
     const words = expand(r.name).split(/[^a-z]+/).filter((x) => x.length >= 3);
-    if (words.length && !words.some((x) => card.includes(x))) problems.push(`“${r.name}” isn’t on the card.`);
+    if (words.length && !words.some((x) => card.includes(x) || (x.length >= 6 && closed.includes(x)))) problems.push(`“${r.name}” isn’t on the card.`);
   }
   return problems;
 }

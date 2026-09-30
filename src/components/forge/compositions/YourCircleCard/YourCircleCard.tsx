@@ -31,6 +31,7 @@
 import React, { useMemo } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { flColor, flFont, flRadius, flShadow, flType } from '@/constants/foundation'
+import { forgeOr } from '@/constants/theme-scrim'
 import { Avatar } from '../../composites/Avatar'
 import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
@@ -217,7 +218,8 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray400 },
   addBtn: { paddingHorizontal: 20, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.bronzeTint },
   addBtnPressed: { opacity: 0.88 },
-  addBtnText: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  // Alabaster: `bronzeInk`, not `bronze300` (2.5:1 — the button read as disabled, QA 09-26 home-20). Forge unchanged.
+  addBtnText: { fontSize: 13, fontWeight: '600', color: forgeOr(flColor.bronze300, flColor.bronzeInk) },
   card: {
     position: 'relative',
     borderRadius: flRadius.xl,

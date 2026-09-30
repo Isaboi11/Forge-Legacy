@@ -58,6 +58,8 @@ export interface WrittenExercise {
   restScheme: (number | null)[] | null;
   /** The author's words that are not numbers — "Aim for 30-40% of bodyweight in each hand", "No bouncing". */
   note: string | null;
+  /** The card's own count of this lift ("9 total sets, 27 total reps"), when it gives one. Checked, never prescribed. */
+  tally?: { sets: number | null; reps: number | null };
   /** Superset membership: the number the letters hang off ("3" for 3a/3b). */
   group: string | null;
   section: WrittenSection;
@@ -140,8 +142,31 @@ const RAMP_LINE = /^\W*(\d{1,3})\s*reps?\s*(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+
 /** "10/50%" pairs — the SeeSaw's line, left to right. */
 const PAIR = /(\d{1,3})\s*\/\s*(\d{1,3}(?:\.\d+)?)\s*%/g;
 
-/** "5@87% rest 20s" items in a comma list. */
-const MULTI = /(\d{1,3})\s*reps?\s*(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\s*%((?:\s*,\s*\d{1,3}(?:\.\d+)?\s*%)+)/i;
+/**
+ * ONE rep count at SEVERAL percentages: "7 reps @ 60%, 65%, 70%, 72%". The "@" is often not written at all, and a
+ * comma can be a full stop or nothing ("5 reps 60%, 65%, 70%", Season 12 Day 1), so neither is required.
+ */
+const MULTI = /(\d{1,3})\s*reps?\s*(?:(?:@|\bat\b|\be\b)\s*)?(\d{1,3}(?:\.\d+)?)\s*%((?:\s*[,.:]?\s*\d{1,3}(?:\.\d+)?\s*%)+)/i;
+const MULTI_ALL = new RegExp(MULTI.source, 'gi');
+
+/** Every "N reps P%, P%, P%" group in a text, as one rep count and one percentage per set, in order. */
+function multiSets(text: string): { reps: number[]; pcts: number[] } {
+  const reps: number[] = [];
+  const pcts: number[] = [];
+  for (const m of text.matchAll(MULTI_ALL)) {
+    for (const p of [m[2], ...(m[3].match(/\d{1,3}(?:\.\d+)?/g) ?? [])]) {
+      reps.push(Number(m[1]));
+      pcts.push(Number(p));
+    }
+  }
+  return { reps, pcts };
+}
+
+/** "super set all 3" — a block's lifts done as one superset, said once for all of them. */
+const SUPERSET_ALL = /^\W*super\s*-?\s*sets?\s+all(?:\s+(?:\d|two|three|four|five|of\s+them|these))?\W*$/i;
+
+/** The whole line is such groups and nothing else:"3 reps 73%, 75%, 78%", or several split by ";". */
+const onlyMulti = (line: string) => MULTI.test(line) && !line.replace(MULTI_ALL, ' ').replace(/[\s,;.*•·▪◦]+/g, '');
 
 const ITEM = /(\d{1,3})\s*(?:reps?\s*)?(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\s*%(?:\s*,?\s*rest\s*(\d{1,2}:\d{2}|[\d½.]+\s*(?:min(?:ute)?s?|sec(?:ond)?s?|s)))?/gi;
 
@@ -214,6 +239,30 @@ const blank = (section: WrittenSection): WrittenExercise => ({
   section,
 });
 
+/**
+ * The card's own count of a lift — "9 total sets", "27 total reps". It prescribes nothing (the lines above it do),
+ * but it is the author's arithmetic, so it is kept to check the reading against: `tallyMismatch`.
+ */
+function noteTally(ex: WrittenExercise, text: string): void {
+  const s = /\b(\d{1,3})\s*total\s+sets\b(?!\s+of\b)/i.exec(text);
+  const r = /\b(\d{1,4})\s*total\s+reps\b/i.exec(text);
+  if (!s && !r) return;
+  ex.tally = { sets: s ? Number(s[1]) : (ex.tally?.sets ?? null), reps: r ? Number(r[1]) : (ex.tally?.reps ?? null) };
+}
+
+/**
+ * Where a lift as read disagrees with the card's own tally, in words; null when they agree or the card gives none.
+ * Nine sets read as one is exactly this (PO 2026-09-30) — and the card had said "9 total sets" all along.
+ */
+export function tallyMismatch(e: WrittenExercise): string | null {
+  if (!e.tally) return null;
+  const sets = e.repScheme?.length ?? e.sets;
+  if (e.tally.sets != null && sets !== e.tally.sets) return `the card says ${e.tally.sets} total sets, and ${sets} ${sets === 1 ? 'was' : 'were'} read`;
+  const reps = e.repScheme ? e.repScheme.reduce((a, b) => a + b, 0) : e.reps != null && e.repsMax == null ? e.reps * e.sets : null;
+  if (e.tally.reps != null && reps != null && reps !== e.tally.reps) return `the card says ${e.tally.reps} total reps, and ${reps} were read`;
+  return null;
+}
+
 /** Read the numbers of a prescription into an exercise. Returns what was NOT understood, for the note. */
 function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
   let text = rx;
@@ -222,7 +271,8 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
   };
   /* "6 total sets of 30 yds" — a set count, not a tally ("total" is only a tally beside what the line already says). */
   text = text.replace(/\b(\d{1,3})\s*total\s+sets\s+of\b/i, '$1 sets of');
-  /* "5 total sets, 15 total reps" beside the lift — a tally, never a note. */
+  /* "5 total sets, 15 total reps" beside the lift — a tally, never a note. Kept to check the reading against. */
+  noteTally(ex, text);
   take(/\b\d{1,3}\s*total\s+(?:sets|reps)\b\s*,?/gi);
 
 
@@ -230,13 +280,31 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
    * ONE rep count at SEVERAL percentages — "7 reps @ 60%, 65%, 70%, 72%" (2024 Day 18), "3 reps @ 65%, 75%" (the Pressure
    * Cooker's build-up sets): a set at each percentage, the same reps each time.
    */
-  const multi = MULTI.exec(text);
-  if (multi) {
-    const pcts = [Number(multi[2]), ...(multi[3].match(/\d{1,3}(?:\.\d+)?/g) ?? []).map(Number)];
-    ex.repScheme = pcts.map(() => Number(multi[1]));
-    ex.percentScheme = pcts;
-    ex.sets = pcts.length;
-    take(MULTI);
+  /* …and several such groups on one line, "5 reps 60%, 65%, 70%; 3 reps 73%, 75%, 78%; 1 rep 82%, 85%, 87%" (Season
+     12 Day 1): nine sets, in the order written. */
+  /*
+   * A REP LIST AND A PERCENTAGE LIST, SIDE BY SIDE — "5,5,5,3,3,3,1,1,1 reps @ 60%,65%,70%,73%,75%,78%,82%,85%,87%".
+   * The AI layout wrote Season 12 Day 1 this way on a live run (2026-09-30), and the reader took the LAST rep count
+   * with every percentage: nine sets of ONE. Read as pairs, set by set — only when both lists are the same length.
+   */
+  const paired = /(\d{1,3}(?:\s*,\s*\d{1,3}){1,19})\s*reps?\s*(?:(?:@|\bat\b|\be\b)\s*)?(\d{1,3}(?:\.\d+)?\s*%?(?:\s*,\s*\d{1,3}(?:\.\d+)?\s*%?){1,19})/i.exec(text);
+  if (paired && /%/.test(paired[2])) {
+    const reps = paired[1].split(',').map((x) => Number(x.trim()));
+    const pcts = paired[2].split(',').map((x) => Number(x.replace('%', '').trim()));
+    if (reps.length === pcts.length) {
+      ex.repScheme = reps;
+      ex.percentScheme = pcts;
+      ex.sets = reps.length;
+      take(paired[0]);
+    }
+  }
+
+  const multi = ex.percentScheme ? { reps: [], pcts: [] } : multiSets(text);
+  if (multi.pcts.length) {
+    ex.repScheme = multi.reps;
+    ex.percentScheme = multi.pcts;
+    ex.sets = multi.pcts.length;
+    take(MULTI_ALL);
   }
 
   /* A ramp written inline: "5@65%, 4@75%, 3@80%" or with rests "5@87% rest 20s, 5@87% rest 20s, 3@90% rest 2:30". */
@@ -285,7 +353,9 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
       ex.reps = null;
       ex.note = joinNote(ex.note, `${sxr[2]} yds each set`);
     } else if (/^(s|sec|min)/.test(unit)) {
+      /* A hold for time ("3 sets of 20 seconds"): no rep count, and the time kept in words like the yards are. */
       ex.reps = null;
+      ex.note = joinNote(ex.note, `${sxr[2]}${sxr[3] ? `-${sxr[3]}` : ''} ${/^m/.test(unit) ? 'min' : 'seconds'} each set`);
     } else {
       ex.reps = Number(sxr[2]);
       if (sxr[3]) ex.repsMax = Number(sxr[3]);
@@ -411,10 +481,39 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
   let blockTitle: { n: string; text: string } | null = null;
   /** Bullets and asterisks are the page's, not the author's words. */
   const unbullet = (l: string) => l.replace(/^[•·▪◦*]\s*/, '').trim();
+  /*
+   * A BLOCK OF LIFTS WITH NO LETTERS — Season 12 Day 1's Cardio "Scary Arms": three bulleted lifts, each with its own
+   * sets, and "super set all 3" down the margin. Under a Cardio heading or a block's quoted title, a line that is a
+   * name and then its sets is a lift of its own, never the numbers or the note of the lift above it.
+   */
+  let block: WrittenExercise[] | null = null;
+  let blockSuperset = false;
+  const namedLift = (l: string): boolean => {
+    if (/^\s*\*/.test(l)) return false;
+    const s = unbullet(l);
+    if (!/^[A-Za-z]/.test(s) || labelOf(s)) return false;
+    const { name, rx } = splitName(s);
+    return !!name && !/\d|\brest\b/i.test(name) && name.split(/\s+/).length <= 6 && /^\d{1,2}\s*(?:sets?\b|[x×]\s*\d)/i.test(rx);
+  };
+  /** "super set all 3": the block's lifts become one superset, 4a / 4b / 4c, and share the round's rest. */
+  const groupBlock = () => {
+    if (!block || !blockSuperset || block.length < 2) return;
+    const g = block[0].group ?? (block[0].label ?? '').replace(/\D/g, '');
+    if (!g) return;
+    const r = block.map((e) => e.restSec).find((x) => x != null) ?? null;
+    block.forEach((e, i) => {
+      e.group = g;
+      e.label = `${g}${String.fromCharCode(97 + i)}`;
+      if (e.restSec == null) e.restSec = r;
+    });
+    lastN = g;
+  };
 
   for (let li = 0; li < lines.length; li++) {
     const line = lines[li];
     nextLine = lines[li + 1] ?? '';
+    /* The margin's "super set all 3" can be read before the lifts it is beside: look past it to the first of them. */
+    if (SUPERSET_ALL.test(nextLine)) nextLine = lines[li + 2] ?? '';
     /* ── the title and the day ── */
     const dayM = /^day\s*:?\s*(\d{1,2})\b/i.exec(line);
     if (dayM) {
@@ -445,7 +544,11 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       if (rec[1]) after.push(rec[1]);
       continue;
     }
-    const cardio = /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line);
+    /* …also written as a NOTE line by the AI layout ("* Cardio: Scary Arms", a live run 2026-09-30) — a heading only
+       when it names no number and a NEWLY NUMBERED lift follows ("4. a. Dips"). Inside a superset ("* Cardio "Scary
+       Arms"" under 4a, before "super set b.", another live run) it is that lift's note, as before. */
+    const noted = /^[*•·]\s*(?:cardio|finisher|conditioning)\s*:?\s*([^\d]*)$/i.exec(line);
+    const cardio = /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line) ?? (noted && labelOf(nextLine)?.n ? noted : null);
     if (cardio) {
       /* The card's "Cardio" is the last block of the SAME workout — curls and shrugs, KB swings — so it stays
          in the main list, and its lines are read like any other. "Planned Day off" is a note, not a lift. */
@@ -454,7 +557,15 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       cur = null;
       /* Its lifts carry on the numbering: Day 1's cardio "a. / b." is 5a / 5b, never a second "4a" beside lift 4. */
       newBlock = true;
-      if (cardio[1]) handleLift(cardio[1], true);
+      block = [];
+      blockSuperset = false;
+      /* "Cardio: Scary Arms" over "4. a. Dips …" — the block's NAME, which its first lift carries as a note; never a
+         lift called Scary Arms. A heading that names a lift ("Cardio "Bodyweight Bulgarians"", its sets below) or
+         carries numbers is read as a lift, as it always was. */
+      const next = labelOf(nextLine);
+      if (cardio[1] && !/\d/.test(cardio[1]) && (next?.n || next?.letter)) {
+        blockTitle = { n: next.n ?? String(Number(lastN ?? 0) + 1), text: cardio[1].replace(/["“”]/g, '').trim() };
+      } else if (cardio[1]) handleLift(cardio[1], true);
       continue;
     }
 
@@ -545,6 +656,45 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       return;
     }
 
+    /* "super set all 3", written down the margin beside a block's lifts — on its own line, or a word of it in front of
+       each bullet ("super • Dips …", "set • BB Curls …", "all 3 • Pinch Holds …"). */
+    const margin = block ? /^(?:super|set|all\s*\d?)\s*(?=[•·▪◦])/i.exec(line) : null;
+    if (margin) {
+      blockSuperset = true;
+      line = line.slice(margin[0].length);
+    }
+    if (SUPERSET_ALL.test(line)) {
+      if (block) {
+        blockSuperset = true;
+        groupBlock();
+      } else if (cur) (cur as WrittenExercise).note = joinNote((cur as WrittenExercise).note, tidySentence(line));
+      return;
+    }
+    if (block && mode === 'lifts' && namedLift(line)) {
+      liftLine(line, null);
+      return;
+    }
+
+    /*
+     * A GROUP of a ramp on its own line: "3 reps 73%, 75%, 78%" under "1. BACK SQUAT 5 reps 60%, 65%, 70%" — three
+     * more sets of the same lift, after the ones above (Season 12 Day 1: nine sets over three lines). Only onto a lift
+     * that is already a ramp, or has nothing yet ("2. BENCH PRESS", its sets on the next line); a lift with its own
+     * sets × reps keeps them, and the line falls through to be kept as the author's words.
+     */
+    if (cur && onlyMulti(line)) {
+      const ex = cur as WrittenExercise;
+      const more = multiSets(line);
+      const flat = !ex.percentScheme && !ex.repScheme && ex.sets === 1 && ex.reps != null && ex.percent != null;
+      if (ex.percentScheme?.length === ex.repScheme?.length && (ex.percentScheme || flat || (!ex.sets && ex.percent == null))) {
+        ex.repScheme = [...(ex.repScheme ?? (flat ? [ex.reps!] : [])), ...more.reps];
+        ex.percentScheme = [...(ex.percentScheme ?? (flat ? [ex.percent] : [])), ...more.pcts];
+        ex.sets = ex.repScheme.length;
+        ex.reps = null;
+        ex.percent = null;
+        return;
+      }
+    }
+
     /* One rung of a ramp on its own line: "5 reps @ 65%" — before the rest check, because a rung can carry its
        own rest ("3 reps @ 87% rest 20 sec"). */
     if (RAMP_LINE.test(line) && cur) {
@@ -555,6 +705,7 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     /* A tally ("5 total sets, 28 total reps") — says nothing new, except perhaps its rest. Before the rest check,
        so "5 total sets, 40 total reps, 2 min rest" does not leave its tally behind as a note. */
     if (TALLY.test(line) && cur && !labelOf(line) && !/total\s+sets\s+of\b/i.test(line)) {
+      noteTally(cur as WrittenExercise, line);
       const r = restOf(line);
       if (r != null) restFor(cur as WrittenExercise, r);
       return;
@@ -696,13 +847,14 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
 
   function liftLine(line: string, lab: ReturnType<typeof labelOf>) {
     mode = 'lifts';
-    let body = lab ? lab.rest : line;
+    if (lab?.n) block = null;
+    let body = lab ? lab.rest : unbullet(line);
     const ex = blank(section);
     let n = lab?.n ?? null;
     const letter = lab?.letter ?? null;
     const prev = cur as WrittenExercise | null;
     /* The lettered lifts under a block's title line take its number: "3. "Pumped in the Polo"" → 3a, 3b. */
-    if (letter && !n && blockTitle) {
+    if (blockTitle && (n ? n === blockTitle.n : letter || !lab)) {
       n = blockTitle.n;
       ex.note = joinNote(ex.note, tidySentence(blockTitle.text));
       blockTitle = null;
@@ -733,9 +885,21 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
         /* Nothing but a quoted phrase: a block's NAME when lettered lifts follow ("3. "Pumped in the Polo"" → 3a, 3b);
            otherwise the lift's own name ("Cardio "Bodyweight Bulgarians"", its sets on the next line). */
         const next = labelOf(nextLine);
-        if (next?.letter && !next.n) {
+        const unlettered = !next && namedLift(nextLine);
+        if ((next?.letter && !next.n) || unlettered) {
           blockTitle = { n: n ?? String(Number(lastN ?? 0) + 1), text: quoted[1] };
           if (n) lastN = n;
+          if (unlettered) {
+            block = [];
+            blockSuperset = false;
+          }
+          return;
+        }
+        /* A heading's title over a lift that has its own number — Cardio: "Scary Arms" / "4. a. Dips …" — names that
+           lift's block. It is never a seventh lift called Scary Arms with no reps. */
+        if (!lab && next?.n) {
+          blockTitle = { n: next.n, text: quoted[1] };
+          lastN = String(Number(next.n) - 1);
           return;
         }
         body = quoted[1];
@@ -812,6 +976,10 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       return;
     }
     push(ex);
+    if (block) {
+      block.push(ex);
+      groupBlock();
+    }
     return;
   }
 
@@ -1033,12 +1201,43 @@ export function tsvToWrittenText(tsv: string): string {
       if (line) out.push(line);
       continue;
     }
+    /* ⚠ A short row has no cell there at all: `?? ''`, or the first missing Reps cell throws and the photo reads as nothing. */
+    const s = (sets >= 0 ? r[sets] : '') ?? '';
+    const rp = (reps >= 0 ? r[reps] : '') ?? '';
+    const time0 = (time >= 0 ? r[time] : '') ?? '';
+    /* A card's headings can come back in the Exercise column ("Warm Up: …", "Recovery: 30 min Walk", "Rest between
+       sets"). With no sets or reps beside them they are the card's own lines, never lift number one. */
+    if (!s && !rp && /^(?:warm[\s-]?up|recovery|cardio|finisher|rest)\b/i.test(name)) {
+      out.push([name, time0, ...rest].filter(Boolean).join(' '));
+      continue;
+    }
     n += 1;
-    const s = sets >= 0 ? r[sets] : '';
-    const rp = reps >= 0 ? r[reps] : '';
-    const t = time >= 0 ? r[time] : '';
-    const rx = s && rp ? `${s} sets of ${rp} reps` : rp ? `${rp} reps` : s ? `${s} sets` : '';
-    out.push([`${n}.`, name, rx, t, ...rest].filter(Boolean).join(' '));
+    /* A rest written in the Time cell is the lift's rest line, under it, with whatever else it says kept as its note. */
+    const restLine = /\brest\b/i.test(time0) ? time0 : '';
+    const t = restLine ? '' : time0;
+    /*
+     * ⚠ A CELL CAN ALREADY CARRY ITS WORDS. A handwritten card is not a table, and its transcription comes back as
+     * "9 total sets" / "5 reps 60%,65%,70%; 3 reps 73%,75%,78%; 1 rep 82%,85%,87%" (Season 12 Day 1). Wrapping those
+     * in "… sets of … reps" again made "9 total sets sets of 5 reps 60%… reps", which read as one set of five. Only a
+     * bare number is given its word; a Reps cell with its own sets in it is written as it stands, a group per line.
+     */
+    const sNum = /^(\d{1,2})\s*(?:sets?)?$/i.exec(s)?.[1] ?? null;
+    const rpText = /^\d{1,3}(?:\s*[-–,]\s*\d{1,3})*$/.test(rp) ? `${rp} reps` : rp;
+    /* The groups come back split by ";" one time and " / " the next — the same photo, read twice. */
+    const groups = rpText.split(/\s*;\s*|\s+\/\s+(?=\d{1,3}\s*reps?\b)/i).filter(Boolean);
+    const ownSets = groups.length > 1 || MULTI.test(rpText) || [...rpText.matchAll(ITEM)].length >= 2;
+    /* "3 sets" beside a Time of "20 seconds" is three sets of twenty seconds. */
+    const timed = sNum && !rpText && /^\d{1,3}\s*(?:s|secs?|seconds?|mins?|minutes?)$/i.test(t);
+    const rx = ownSets ? groups[0] : timed ? `${sNum} sets of ${t}` : sNum && rpText ? `${sNum} sets of ${rpText}` : rpText ? rpText : sNum ? `${sNum} sets` : s;
+    out.push([`${n}.`, name, rx, ...(ownSets ? [] : [timed ? '' : t, ...rest])].filter(Boolean).join(' '));
+    if (ownSets) {
+      out.push(...groups.slice(1));
+      /* The Sets cell beside a list of sets is its tally ("9 total sets"), kept on its own line as the card has it. */
+      if (s && !sNum) out.push(s);
+      const after = [t, ...rest].filter(Boolean).join(' ');
+      if (after) out.push(after);
+    }
+    if (restLine) out.push(restLine);
   }
   return out.join('\n');
 }
@@ -1078,7 +1277,7 @@ export function rowsToWrittenText(w: { name: string; how?: string | null; after?
     if (r.percentScheme?.length) {
       const reps = r.repScheme ?? r.percentScheme.map(() => r.targetReps);
       return {
-        line: reps.map((x, i) => `${x} reps @ ${r.percentScheme![i]}%${r.restScheme?.[i] != null ? ` rest ${clockText(r.restScheme[i]!)}` : ''}`).join(', '),
+        line: reps.map((x, i) => `${x} ${x === 1 ? 'rep' : 'reps'} @ ${r.percentScheme![i]}%${r.restScheme?.[i] != null ? ` rest ${clockText(r.restScheme[i]!)}` : ''}`).join(', '),
         note,
       };
     }
@@ -1142,6 +1341,17 @@ export function roundTrips(w: { name: string; how?: string | null; after?: strin
 
 
 /**
+ * A lift's sets that ended up in its NOTE: two or more plain percentages sitting in the words ("65% 70% 3 reps 73% 75%
+ * 78%"). That is a list of sets the reader did not read as sets, so the lift is short of them and nothing said so
+ * (PO 2026-09-30: nine squat sets came out as one). A range ("30-40%"), "40% of bodyweight" and the "Option One: …"
+ * lines are the author talking and are not counted.
+ */
+export function setsLeftInNote(note: string | null | undefined): boolean {
+  if (!note || /\boption\s+\w+\s*[:.–-]/i.test(note)) return false;
+  return (note.match(/(?<![-–\d.])\d{1,3}(?:\.\d+)?\s*%(?!\s*of\b)/gi) ?? []).length >= 2;
+}
+
+/**
  * What the poster should look at before posting (PO 2026-09-28: "I don't know why we keep having to fix things").
  * The reader follows written rules; a card written a new way can fall outside them. Nothing here guesses — it
  * points: a name still carrying symbols or numbers, a lift with no sets or reps read, a name the library does
@@ -1153,8 +1363,11 @@ export function checkBeforePosting(w: WrittenWorkout, rows: readonly WrittenTemp
     const e = w.exercises[i];
     if (/[/:"\d]/.test(r.name)) out.push(`“${r.name}” — the name may have part of its numbers or another lift in it.`);
     else if (!r.catalogKey) out.push(`“${r.name}” isn’t in the exercise library, so it has no how-to. Check the spelling.`);
-    const noCount = !r.targetReps && !r.repScheme?.length && !/yds|reps total|option|discretion|seconds|each way/i.test(r.coachNote ?? '');
+    const noCount = !r.targetReps && !r.repScheme?.length && !/yds|reps total|option|discretion|seconds|min each set|each way/i.test(r.coachNote ?? '');
     if (noCount && e?.section !== 'warmup') out.push(`“${r.name}” — no reps were read. Add them (“5 sets of 5 reps”) if the card has them.`);
+    if (setsLeftInNote(r.coachNote)) out.push(`“${r.name}” — some of its percentages were not read as sets. Count its sets against the card.`);
+    const off = e ? tallyMismatch(e) : null;
+    if (off) out.push(`“${r.name}” — ${off}. Count its sets against the card.`);
   });
   for (const u of w.unread) out.push(`Couldn’t read: “${u}”`);
   return out;

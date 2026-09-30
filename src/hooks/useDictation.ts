@@ -79,8 +79,19 @@ export function dictationAvailable(): boolean {
 /** Why listening stopped without words — shown in the composer, in plain terms. */
 export type DictationProblem = 'denied' | 'unavailable' | 'no_speech' | null;
 
+/* `aborted` is our own stop (the web's `stop` aborts) — not a problem to report. Anything else that is not
+   permission or silence means this device or browser cannot hear right now (holtai-21). */
 const problemOf = (code: string): DictationProblem =>
-  code === 'not-allowed' || code === 'service-not-allowed' ? 'denied' : code === 'no-speech' || code === 'speech-timeout' ? 'no_speech' : 'unavailable';
+  code === 'aborted'
+    ? null
+    : code === 'not-allowed' || code === 'service-not-allowed'
+      ? 'denied'
+      : code === 'no-speech' || code === 'speech-timeout'
+        ? 'no_speech'
+        : 'unavailable';
+
+/** How long the browser gets to start listening before the mic is called unavailable (holtai-21). */
+const WEB_START_TIMEOUT_MS = 4000;
 
 /**
  * One utterance at a time: tap the mic, speak, stop talking — the final words arrive in `onFinal`.
@@ -88,6 +99,10 @@ const problemOf = (code: string): DictationProblem =>
  */
 export function useDictation(onFinal: (text: string) => void) {
   const [available] = useState(dictationAvailable);
+  /* ⚠ A RECOGNISER THAT EXISTS IS NOT ONE THAT WORKS (holtai-21, QA 09-26). Chromium without Google's speech
+     service ships `webkitSpeechRecognition` and then errors or never starts, so the mic did nothing at all.
+     Once it has failed that way it is hidden for the rest of the visit and the composer says why. */
+  const [broken, setBroken] = useState(false);
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState('');
   const [problem, setProblem] = useState<DictationProblem>(null);
@@ -127,7 +142,11 @@ export function useDictation(onFinal: (text: string) => void) {
           if (e.isFinal) finish(last);
           else setHeard(last);
         }),
-        native.addListener('error', (e) => setProblem(problemOf(e.error))),
+        native.addListener('error', (e) => {
+          const p = problemOf(e.error);
+          setProblem(p);
+          if (p === 'unavailable') setBroken(true);
+        }),
         native.addListener('end', () => {
           setListening(false);
           setHeard('');
@@ -146,27 +165,59 @@ export function useDictation(onFinal: (text: string) => void) {
     const Ctor = webCtor();
     if (!Ctor) {
       setProblem('unavailable');
+      setBroken(true);
       return;
     }
+    let started = false;
+    let watchdog: ReturnType<typeof setTimeout> | null = null;
     const r = new Ctor();
     r.lang = lang;
     r.interimResults = true;
     r.continuous = false;
-    r.onstart = () => setListening(true);
+    r.onstart = () => {
+      started = true;
+      setListening(true);
+    };
     r.onresult = (e) => {
       const res = e.results[e.results.length - 1];
       const text = res?.[0]?.transcript ?? '';
       if (res?.isFinal) finish(text);
       else setHeard(text);
     };
-    r.onerror = (e) => setProblem(problemOf(e.error));
+    r.onerror = (e) => {
+      const p = problemOf(e.error);
+      setProblem(p);
+      if (p === 'unavailable') setBroken(true);
+    };
     r.onend = () => {
+      if (watchdog) clearTimeout(watchdog);
       setListening(false);
       setHeard('');
       teardown.current = null;
     };
-    teardown.current = () => r.abort();
-    r.start();
+    teardown.current = () => {
+      if (watchdog) clearTimeout(watchdog);
+      r.abort();
+    };
+    try {
+      r.start();
+    } catch {
+      setProblem('unavailable');
+      setBroken(true);
+      teardown.current = null;
+      return;
+    }
+    watchdog = setTimeout(() => {
+      if (started) return;
+      teardown.current = null;
+      try {
+        r.abort();
+      } catch {
+        // already gone
+      }
+      setProblem('unavailable');
+      setBroken(true);
+    }, WEB_START_TIMEOUT_MS);
   }, [listening, finish]);
 
   /** Stop listening now; whatever was final is already delivered. */
@@ -175,5 +226,5 @@ export function useDictation(onFinal: (text: string) => void) {
     else teardown.current?.();
   }, []);
 
-  return { available, listening, heard, problem, start, stop };
+  return { available: available && !broken, listening, heard, problem, start, stop };
 }
