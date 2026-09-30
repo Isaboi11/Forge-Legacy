@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { todayYmd } from '@/domain/dates/local-date';
+import { countOf } from '@/domain/text/plural';
 import {
+  chapterSpan,
   chapterWeeks,
   headlinePr,
   mergeAlbum,
@@ -475,7 +477,12 @@ export function photoCountLabel(n: number): string {
 }
 
 export function weeksLabel(n: number): string {
-  return `${n} ${n === 1 ? 'week' : 'weeks'}`;
+  return countOf(n, 'week');
+}
+
+/** "3 days" for a chapter under a week old, "5 weeks" after — never "1 week" for a one-day chapter (legacy-24). */
+export function albumSpan(a: { startDate: string; endDate: string | null; weeks: number }): { value: number; unit: 'day' | 'week' } {
+  return chapterSpan(a.startDate, a.endDate, todayLocal(), a.weeks);
 }
 
 /** Active vs sealed — the chapter's own state, which the album card wears as a chip. */

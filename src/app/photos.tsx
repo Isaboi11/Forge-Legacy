@@ -26,13 +26,14 @@ import {
   highlightLabel,
   photoCountLabel,
   rangeLabel,
-  weeksLabel,
+  albumSpan,
   type AlbumDetail,
   type ChapterPhoto,
   type PhotoAlbum,
   type PhotoDay,
 } from '@/data/photos-live';
-import { useCapGate } from '@/lib/entitlement';
+import { useCapGate, useTier } from '@/lib/entitlement';
+import { countOf, pluralWord } from '@/domain/text/plural';
 import { useQuery } from '@/lib/useQuery';
 import { useReduceMotion } from '@/lib/settings';
 
@@ -266,6 +267,7 @@ function AlbumsView({
   // Here rather than in `PhotosScreen`: the counter renders in THIS component, and a prop threaded down
   // one level for a value the hook can read directly is a second place for the two to disagree.
   const photoGate = useCapGate('photos');
+  const tier = useTier();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
 
@@ -295,7 +297,7 @@ function AlbumsView({
       <TourAnchor id="photos-count" style={styles.countHead}>
         <Text style={styles.countValue}>{albums?.total ?? 0}</Text>
         <Text style={styles.countSub}>
-          photos · {list.length} {list.length === 1 ? 'chapter' : 'chapters'}
+          {pluralWord(albums?.total ?? 0, 'photo')} · {countOf(list.length, 'chapter')}
         </Text>
         {/* The allowance line, restored.
 
@@ -309,8 +311,10 @@ function AlbumsView({
             It renders only when a cap actually applies: a Premium athlete's ceiling is an abuse guard
             nobody reaches (Amendment 001 §4A), and putting "38 of 1,000" in front of them would turn a
             guard back into the threat this line was withheld to avoid. */}
-        {photoGate.cap != null && photoGate.cap >= 0 ? (
-          <Text style={styles.countAllowance}>{photoGate.label}</Text>
+        {/* FREE only. Premium's 1,000 is the abuse guard the note above says never to show, and it was
+            showing as an unexplained "4 of 1000" (QA 09-26 legacy-24). */}
+        {tier === 'FREE' && photoGate.cap != null && photoGate.cap >= 0 ? (
+          <Text style={styles.countAllowance}>{photoGate.label} photos on the Free plan</Text>
         ) : null}
       </TourAnchor>
 
@@ -324,6 +328,9 @@ function AlbumsView({
     </ScrollView>
   );
 }
+
+/** "3 days" / "5 weeks" — see `albumSpan`. */
+const spanText = (s: { value: number; unit: 'day' | 'week' }) => countOf(s.value, s.unit);
 
 function AlbumCard({ album: a, onPress }: { album: PhotoAlbum; onPress: () => void }) {
   const status = albumStatus(a);
@@ -380,7 +387,7 @@ function AlbumCard({ album: a, onPress }: { album: PhotoAlbum; onPress: () => vo
         <View style={styles.metaRow}>
           <Text style={styles.metaStat}>{photoCountLabel(a.photoCount)}</Text>
           <View style={styles.metaDot} />
-          <Text style={styles.metaStat}>{weeksLabel(a.weeks)}</Text>
+          <Text style={styles.metaStat}>{spanText(albumSpan(a))}</Text>
           {highlight ? (
             <View style={styles.hlPill}>
               <StarGlyph size={10} color={flColor.bronze300} />
@@ -415,9 +422,10 @@ function AlbumView({
 
   const stats = useMemo(() => {
     const days = months.flatMap((m) => m.days);
+    const span = albumSpan(album);
     return [
-      { key: 'photos', value: album.photos.length, label: 'Photos' },
-      { key: 'weeks', value: album.weeks, label: 'Weeks' },
+      { key: 'photos', value: album.photos.length, label: pluralWord(album.photos.length, 'Photo') },
+      { key: 'weeks', value: span.value, label: pluralWord(span.value, span.unit === 'day' ? 'Day' : 'Week') },
       { key: 'milestones', value: days.filter((d) => d.major).length, label: 'Milestones' },
       { key: 'videos', value: album.photos.filter((p) => p.isVideo).length, label: 'Videos' },
     ];

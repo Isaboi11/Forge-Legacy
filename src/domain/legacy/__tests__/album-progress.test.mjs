@@ -136,3 +136,10 @@ test('weeks and the headline lift follow the rules photo_albums() uses', () => {
   assert.equal(headlinePr(prs, { startDate: '2026-08-14', endDate: null, sealed: false }, '2026-09-30')?.exercise, 'squat');
   assert.equal(headlinePr([], CH1, '2026-09-30'), null);
 });
+
+test('a chapter under a week old is counted in days, not "1 week" (QA 09-26 legacy-24)', async () => {
+  const { chapterSpan } = await import('../album-progress.ts');
+  assert.deepEqual(chapterSpan('2026-09-30', null, '2026-09-30', 1), { value: 1, unit: 'day' });
+  assert.deepEqual(chapterSpan('2026-09-27', null, '2026-09-30', 1), { value: 4, unit: 'day' });
+  assert.deepEqual(chapterSpan('2026-08-03', '2026-08-14', '2026-09-30', 2), { value: 2, unit: 'week' });
+});
