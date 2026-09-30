@@ -4,6 +4,125 @@ Overflow from `Forge-Legacy-Master-Status.md` § Recently Completed, moved **ver
 
 ---
 
+### Keyboard app-wide · Holt's sign-up welcome · workout dots back · drag to reorder · wider superset offer (2026-09-28, `20f759d5` · ✅ WEB `index-a20b6247049acd8c0ba6b4aefd157e83.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0e7e2-c960-7c15-a87a-05e46bb672ad` from `ota/build9-js` `0a3685f8`, fingerprint MATCHED · ⏳ not seen on device)
+
+PO batch of five. **(1) Keyboard, everywhere:** every single-line field names a `returnKeyType` (a "Done" key; on number/decimal pads RN iOS adds a native toolbar with **Done** — `setDefaultInputAccessoryView`, OTA-safe). ⚠ A shared `InputAccessoryView` was rejected: in Fabric it attaches to ONE field found at mount. Root `KeyboardTapAway` (`_layout.tsx`) closes the keyboard when a tap (not a drag) ends off the focused field, deferred past touch-end so the press lands first (two-tap bug), skipped when focus moved to another field; `KEEP_KEYBOARD` on Send / clear / show-password. Every scroller declares `automaticallyAdjustKeyboardInsets` (iOS scrolls the focused field above the keyboard); `={false}` inside panels that already ride the keyboard (BottomSheet children, Holt's thread, comments). Guard: `src/app/__tests__/keyboard-fields.test.mjs`. **(2) Holt welcome:** `HoltWelcomeSheet` on Home, "Welcome to Forge, {first name}", offers help with lifts/program/app (not medical). Owed only by finishing onboarding (`holt-welcome.ts`), cleared on dismiss and account switch; Home holds the tour until it's answered. **(3)** Active workout dot strip + "2 / 5" restored between the arrows (removed 09-11 `0b33510c`). **(4)** All Exercises rows drag to reorder (`useListReorder` grip); `moveExercise` never splits a superset, a lift dragged out leaves its pair, athlete stays on their exercise. **(5)** Holt's superset offer now fires when the current lift has 0–2 sets logged (was ≥1). tsc 0 · full suite: 2 failures remain (`squad-goal-close`, `muscle-building-intermediate`), both outside this change. Web Safari keeps its own Done bar; no custom web bar added.
+
+### Post to Forge + auto-post + "Post what I ate?" (2026-09-28, `7e7bb5f2` · ✅ WEB `index-b437731ecf8db9d814306b5d37b00697.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0e7bd-d2c6-75fe-98a0-2229bb4e1191` from `ota/build9-js`, fingerprint MATCHED · ⏳ `0229` awaits PO paste — optional backstop · ⚠ `08e38735` + `f54f3f50` (coach's workout, Squatober pin/edit — needs `0230`) are NOT on web or phone yet)
+
+Food: a "Post what I ate?" tick box on the post sheet, off every time; ticked adds "Ate today: N cal · P g protein" to the card. Auto-post never includes food.
+
+PO feedback: some athletes never found posting; some want every workout posted, others never. Hold to Seal untouched. Capture stage: **POST TO FORGE** / "Share with Friends or your Squad", then a secondary **⚡ Automatically post workouts · Off ›** row. Post sheet: "Post your workout", "Post to" (was "Within Forge"), tiles select and the button names the destination ("Post to My Squad"). First successful manual post shows a one-time **Post here automatically?** (Turn on / Not now → `asked`). Auto-post settings sheet (Off · Friends · My Squad | Specific squad(s) › · Friends + Squad | Friends + selected squad(s) ›) is ONE component, also on Profile Visibility → Posting. Pref = `app_prefs.autoPost {friends, squadIds, asked}` (no migration, OFF by default). Fires on arrival at Workout Complete (never review, only ≤6 h after save, only once prefs load), after `save_workout` — a failure never touches the record, shows Retry. Idempotent: skips destinations the workout already has + `0229` unique index on auto rows. Never posts a caption, photos, or the map (D-RS-3). Leaving a squad removes it; emptied = Off. Tests: `auto-post.test.mjs` (17) + wiring updates; tsc + eslint clean. POST/SHARE split applied to this flow only — other "Share" labels (honors, program card, transformation, ceremony ShareSheet, share-config) left as-is.
+
+### A picture's clock is found wherever the reader put it; the reader keeps times in a Time column (2026-09-27, `d715090f` · ✅ WEB `index-4bad796f60bebf192dd808d5267bf943.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0e634-2a4d-7824-a5b8-ed5199f6c5cf` from `ota/build9-js` `35874508`, fingerprint MATCHED · ⏳ `program-photo-read` Edge Function NOT redeployed — PO pastes `supabase/apply/deploy-program-photo-read.ts`)
+
+PO: *"I did the paste a workout from the homescreen and it didn't do the seconds fix"* — the typed path read times, but a photo arrives as the reader's TSV and 6 of 10 plausible layouts still read 3 × 10. Parser: a time column by what its header says (never a rest column); else a cell that is wholly a clock anywhere on the row (Sets cell — "1:30" is 90 s, not one set — or unnamed); "0:40 min"; a time of day is never a set. Reader prompt: Time is a header; a timed exercise's time goes there as written, never into Sets/Reps, never dropped; rest rows transcribed. Sanitizer vocabulary + time/duration/interval ("Exercise | Time" was refused as not-a-program). ⚠ The exact TSV of the PO's photo was not seen (no log access), so which layout it was is inferred. tsc 0 · src 4,709/4,711 (2 pre-existing).
+
+### Home → Start a Workout → Paste a workout (2026-09-27, `d45a2825` · ✅ WEB `index-e23cd7f109dde8cd0f2e6b0bbf4b0bee.js` (alias MATCH after ~5.5 min) · ✅ OTA build 9 iOS `01a0e624-af8b-79e9-8acd-171dc0137d26` from `ota/build9-js` `7a0d5882`, fingerprint MATCHED)
+
+PO: *"a spot when you start a workout to paste the day that you want on the Home Screen"* — "Yes".
+- New row on Home's Start a Workout sheet (imports cap first) → `/program-import?for=today`: paste or one picture (Premium AI), the one-day preview, **Start workout** launches a one-off with the rows the builder would save (`writeWorkoutLaunch({ exercises })`), so timed sets / cardio / cues carry over. "Also save as a template" (off by default) saves first, past the templates cap.
+- Paste screens offer "Use a picture instead" to Premium AI. `toTemplateExercises` moved to `lib/workout-template-rows.ts` (builder + this share one conversion).
+- tsc 0 · lint 0 · +4 wiring tests · src suite 4,708/4,710 (2 pre-existing unrelated). Not seen on a device.
+
+### Timed sets import as time, not 3×10; a template import reads "1 workout" (2026-09-27, `543d77a0` · ✅ WEB `index-76e82a6ea17af681f9a98bff22fef9e3.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0e614-336e-7ae2-b535-ee3b9301f6b7` from `ota/build9-js` `8f18c229`, fingerprint MATCHED)
+
+PO tested a picture of an interval timer's "15 min Chest & Back Strength" (40 s on / 20 s rest): *"my picture is in seconds and not reps … that should transfer over"*, and the preview said "1 week · 1 day each" for one workout.
+- ⚠ **Found on the way: "Plank 3x30s" had ALWAYS imported as thirty reps**, in programs too; two tests pinned it. The parser now reads a clock as a timed set ("0:40", "40s", "3x30s", "3 sets of 45 sec", a Time/Duration column, a clock in the Reps cell), capped at 5 min so a bout ("Rowing Machine 10 min") is left alone and a named activity stays cardio; "Rest 0:20" is a rest line. `durationSec` → `ProgramExercise.durationSec`, which the logger already times.
+- Preview steps a clock 5 s a tap; a template import says "1 workout · N exercises". Templates now carry a timed strength row end to end (save `targetDurationSec`, reopen, builder time stepper, start as timed sets, into a program day, "3 × 40s" in lists); Program Builder shows and steps the clock.
+- Not done: the circuit's ROUNDS — the 15-minute list repeats the five moves; each still imports with an assumed 3 sets.
+- `workout.tsx` committed as ONE hunk (index staged from HEAD + my edit); another session's uncommitted fuse-animation work in that file was left untouched.
+- tsc 0 · lint 0 · src suite 4,704/4,706 (the 2 pre-existing unrelated failures). Not seen on a device.
+
+### Send Holt a picture to add as a program, template or recipe; import a template by paste or picture (2026-09-27, `e37f8700` · ✅ WEB `index-648a26ba32fd1d5f505db48491f6f59d.js` (deployment URL + alias MATCH, alias took ~6 min) · ✅ OTA build 9 iOS `01a0e5ee-7b54-7e1d-951b-cdd7c00e4568` from `ota/build9-js` `c433adb2`, fingerprint MATCHED)
+
+PO: *"paste a picture at any time and tell him to add it as a program, template, recipe … on templates I should be able to paste a picture or do text just like for a program."*
+- Holt's chat (Premium AI): a picture button beside the message box; Cmd/Ctrl+V on the web; on a phone the button offers a copied picture first (`expo-clipboard`, already in build 9). Pasted pictures are downscaled to JPEG like picked ones (`preparePastedImage`).
+- The words sent with it decide (`domain/coach/attach-intent.ts`, no model, explicit nouns beat hints); no word → Holt asks with chips (recipe only with Nutrition). Holt reads it in the chat, then opens: recipe → My Recipes unsaved (the dish door); program/template → `/program-import?read=1` on its preview (`import-read-stash`). Caps checked before any credit is spent.
+- `/program-import?for=template`: paste or one picture, one day, Create writes the Workout Builder draft (`workoutDraftFromImport` — warm-up and cool-down kept, unlike the builder's in-screen import which appends to Main). Create New gains **Import Workout Template**.
+- tsc 0 · lint 0 · +11 tests (attach-intent 6, workout-import-draft 5) + a source gate test. Full `src` suite: the only failures are two pre-existing, unrelated ones (`muscle-building-intermediate`, and `squad-goal-close` after another session's 0200 revoke fix). ⚠ Not seen working: the picture path needs Premium AI, which only the PO holds, so it was not driven end to end here.
+
+### ⭐ Plan ahead: pre-log a future day, check it off when eaten; Meal Plan meals on their days (2026-09-27, `d40c97ae` · ✅ `0228` APPLIED (§3: rows 16 · planned 0 · pre_logged 0, as predicted) · ✅ WEB `index-c54f6aa88e18a1a6454cf6c4fa5d07c0.js` (alias + deployment URL 200 + hash MATCH; deployed from `forge-deploy-wt` so the parallel session's uncommitted `workout.tsx` stayed off) · ✅ OTA build 9 iOS `01a0e55f-55a8-7b9f-95ab-813b64ac496b` (lane `ota/build9-js` `63c018c8`, fingerprint MATCHED `b322e3de…`, manifest serves it) · ✅ `coach-ask` re-pasted by the PO 09-27 (Holt skips unticked food) · not yet seen by the PO)
+
+PO 09-27: "an arrow that goes forward into the future … plan and pre log, and then when tomorrow comes it will all be down there with a check box". Unchecked counts toward NOTHING; a check logs it; unchecked stays unchecked. Nutrition Home's › goes 14 days ahead ("Planned Meals", Log Food → "Plan Food"). `food_log_entries.planned` / `pre_logged` (0228); `fetchDay` returns planned rows apart from `entries`, so every summing caller (ring, Home card, Holt, Workout Complete) is unchanged; `fetchRangeTotals`, Holt's `get_nutrition_log` and the export skip planned. The Meal Plan's meals (manual or Holt's fill) are READ from the saved week onto each day's checklist, never copied; the tick writes the row on the PLANNED day — fixes flow scenario A7 ("Log meal" always wrote today). Offline ticks go through the outbox (`check` op). Moving/copying onto a future day makes it planned. New `src/domain/nutrition/plan-ahead.ts`; end-to-end tests drive the real `nutrition-live.ts` against an in-memory DB (`src/data/__tests__/harness/`), incl. a 2,500-step randomised run — 58/58, 10× stable; tsc 0; lint clean.
+
+### Holt's dishes stay out of My Recipes until you save them; delete a recipe (2026-09-27, `312b0b73` · ✅ WEB `index-69604171267989b448c373d299e87e08.js` (alias MATCH, new copy found in the bundle) · ✅ OTA build 9 iOS `01a0e4a3-90e2-79cb-ac55-f93c5f8ab3db` from `ota/build9-js` `70f397e6`, fingerprint MATCHED · ✅ `0227` APPLIED AND VERIFIED (recipes 10 · trial 0, as predicted))
+
+PO: *"it saved all of the meals into my recipes … I don't want to save them all cause I haven't even tried them. I should be able to delete off the list … it should only add if I go into that meal or recipe and have a button to add."*
+- "Let Holt fill them" now saves his dishes as **trial** recipes (`user_recipes.trial`, 0227). The week plans from them; My Recipes, My Foods → Recipes, Log Food and Holt's recipe search don't list them. The fill button reads "Use these this week".
+- A trial dish's Recipe screen shows **Save to My Recipes** and "Don't use this recipe". "Only plan from my recipes" leaves trial dishes out.
+- **Delete recipe** on any of the athlete's Recipe screens (confirm sheet). `withoutRecipe` takes it out of this week's stored plan so the rest of the week is kept — before, a week naming a missing recipe was rebuilt from scratch, losing every pick and lock. Diary rows untouched. Saved meals were already deletable from their ⋯ menu in My Foods.
+- Holt's dishes from earlier fills were saved as normal recipes and stay in My Recipes; the PO deletes the ones they don't want.
+- Before 0227 is pasted a fill saves as before (fallback, latched); delete works either way.
+- tsc 0 · lint 0 · nutrition 516/516 (+2). Full `src` suite 4,653/4,654: the one failure is `muscle-building-intermediate` ("every major muscle group meets its band"), which fails identically on the lane without these commits — pre-existing, unrelated. Not yet seen on a device.
+
+### Meal plan: Same / A few / Mix per meal, share ingredients, my recipes only, Clear week; chef's hat on every kitchen reply (2026-09-27, `f18ecf3f` + `f3d8f04d` · ✅ `0226` APPLIED AND VERIFIED (setups 2 · every new count 0, as predicted) · ✅ WEB `index-17aa251f01c99c357954074ccea37049.js` (alias MATCH) · ✅ OTA build 9 iOS `01a0e496-d78f-7de2-a226-5458d667b563` from `ota/build9-js` `b3924656`, fingerprint MATCHED)
+
+PO: *"I eat the same breakfast everyday. I have the same lunch every day, but dinner is different. Where as someone might want a different breakfast, same lunch and same dinner, or any combination."*
+- Setup step 2 asks each planned meal **Same** (one recipe all week) / **A few** (up to 3 taking turns) / **Mix** (the old variety rules). A lock or logged meal in a routine slot IS the routine's recipe. Routine meals are never flagged `repeated`, never count toward variety, and never take a leftover (leftovers only into a Mix lunch from a non-Same dinner).
+- **Share ingredients**: +70 per ingredient already bought (cap 5, pantry basics ignored) and no 3-a-week protein cap. On the 40-recipe fixture book: ~66 → ~55 distinct items a week, calorie error and protein unchanged.
+- **Only plan from my recipes**: Forge's library out of the pool; "Let Holt fill" offers hidden.
+- **Clear week** (link under the lede, confirm sheet, saved before shown): empties days, locks and log marks; diary untouched. `meal_plan_weeks.cleared_at` stops `resolveWeek` refilling an empty week; a new setup or Rebuild ends it; no "short" nags while cleared.
+- Kitchen Mode: every Holt reply's mark wears the chef's hat, not just the header.
+- Unanswered = the week plans byte-for-byte as before (tested). Before 0226 the client falls back to the old columns and says so rather than dropping an answer.
+- tsc 0 · lint 0 · nutrition 514/514 (+16 in `plan-routine.test.mjs`). Not yet seen on a device.
+
+### Paste a recipe — a link or the recipe's text becomes a draft, no AI (2026-09-27, `a765ebaa` · ✅ WEB `index-e89e2673c60aba0ccf99cc1b1a724f84.js` (deployment + alias MATCH, new copy found live) · ✅ OTA build 9 iOS `01a0e3b7-e315-715d-81a2-d485120d52c1` from `ota/build9-js` `371b0044`, fingerprint MATCHED, manifest serves it · ⏳ Edge Function `recipe-link-read` NOT deployed — PO pastes `supabase/apply/deploy-recipe-link-read.ts`)
+
+PO asked for "the paste link here part of the add recipe". What shipped:
+- My Recipes → Add a recipe → **Paste a recipe** is live on every tier. It takes a recipe page link or the recipe's text (a copied caption) and opens the same unsaved draft as a picture.
+- `recipe-text-read.ts` is pure: it reads the page's schema.org Recipe JSON-LD, or microdata, or the text's headings and amount lines. It never reads a page's nutrition block (NUT-D4).
+- A link opens on the phone first. The web preview (blocked by CORS) and sites that refuse the phone go through the new `recipe-link-read` function: nutrition gate, public web only, redirects re-checked, caps of 8 s and 3 MB.
+- Social links answer "paste the caption".
+- `matchFood` got a second pass on the bare food name: 20 → 33 of 81 real ingredients now match. The rest go to Not matched; the full food-database ingredient search is the real fix.
+
+What is true now:
+- Pasted text works on web and phone.
+- A link works on the phone for sites that don't block it.
+- A link on the web preview needs the Edge Function pasted first.
+- Tested on real JSON-LD from 9 sites. Allrecipes, Serious Eats, Food Network, Half Baked Harvest, Budget Bytes and Cookie and Kate blocked scripted fetches.
+- Not yet seen on a device.
+
+### Saved meals in the meal plan (one day, Mon–Fri or every day) + Add sheet grouped by kind (2026-09-27, `2b94bc12` · ✅ WEB `index-536c018d0e7d23e576a0b9287c51bdf1.js` (deployment + alias MATCH, new copy found live) · ✅ OTA build 9 iOS `01a0e381-e56b-771e-80b8-089171637470` from `ota/build9-js` `9df9077a`, fingerprint MATCHED, manifest serves it)
+
+PO: "When I click on the meal plan add it should be able to add a recipe or a meal from there. Sometimes people repeat the meal for lunches or dinners." What shipped:
+- Meal plan "+ Add" (Choose my own) lists saved meals under recipes, with Just <day> / Mon–Fri / Every day, plus a "New meal" row. Each placed day is locked; a day already logged is skipped.
+- Saved meals register as `m:<id>` inside `fetchUserRecipes`, so every week reader knows them. They are never in the planner's pool, and `fits` passes them because they were chosen by hand.
+- Logging a planned saved meal writes its real foods (ids comma-joined for undo).
+- The grocery list buys by weight, or "6 × 1 container" when there is no weight.
+- PO also asked to consolidate the Add sheet. It is now four rows: Recipe (type it in or add a picture, on My Recipes) · Meal · Scan (Nutrition label | Barcode) · My foods, meals & recipes.
+
+Not yet seen on a device. Tests: 6 new, full suite green except the unrelated muscle-building band test.
+
+### Nutrition "Add" sheet + "Add a recipe" in the meal plan + recipe from a screenshot on the tab (2026-09-26, `5c5c5f33` · ✅ WEB `index-6a0fa2a7e143ea40e099111df78e82f7.js` (deployment + alias MATCH, new copy found in the live bundle) · ✅ OTA build 9 iOS `01a0e12b-6e73-731a-891c-3ab630160237` from `ota/build9-js` `a0697432`, fingerprint MATCHED, manifest serves it)
+
+PO asked for an easy nutrition flow. The walk-through of 38 scenarios is in `Docs/Nutrition-Flow-Scenarios-2026-09-26.md`. **The biggest bottleneck is getting a recipe in:** paste/link is still "Soon", ingredient search covers only about 106 foods, there are no drafts, and there are no starter recipes. What shipped:
+- The tab's "Scan" is now **"Add"**, which opens one sheet: Add a recipe · Recipe from a screenshot (Premium AI) · Scan a nutrition label ("Type in" on web) · Scan a barcode · Create a meal · My recipes.
+- The screenshot is picked on the tab and handed to My Recipes' existing read.
+- In the meal plan, an empty week offers "Add a recipe", and the per-slot "New recipe" opens the add choices.
+
+Still open (next, per PO): recipe paste/link, full-database ingredient search, drafts. Not yet seen on a device. Tests 4,624/4,625: the one failure is the muscle-building program band test, unrelated.
+
+### Home hides the Nutrition card until macro goals are set (2026-09-26, `979582ba` · ✅ WEB `index-eea4e5a2efd45c5f76635e640e9a315d.js` (deployment + alias MATCH) · ✅ OTA build 9 iOS `01a0e10c-6d6b-782e-a4f5-fe9c4d4998d5` from `ota/build9-js` `6ae945c9`, fingerprint MATCHED)
+
+PO: no macro goals → no Nutrition on Home. `HomeNutritionCard` now returns null without `data.targets`, so `homeNutritionView`'s "Set a target" branch no longer reaches Home. Same day: Rachelle Altamirano added as a nutrition tester (nutrition_preview + PREMIUM/coach_ai grant, SQL handed to PO).
+
+### Label scan reads "¼ cup"; Create Food says what it still needs (2026-09-26, `20eae5c7` · ✅ WEB `index-43e0c612a56bbeff025b0d5752e99aaa.js` (alias + deployment MATCH, string found live) · ✅ OTA build 9 iOS `01a0e0f9-2d2c-70b7-afff-49566771b3be` from `ota/build9-js` `5d67d953`, fingerprint MATCHED, manifest serves it)
+
+PO scanned maple syrup: serving size not found, Create Food greyed out with placeholder "80" and no reason. readServing now reads fraction glyphs + unbracketed weights + "Serv. Size"; validateFood returns "Still needed: …"; placeholder "Amount". Unverified against the PO's actual photo — if a rescan still misses, get the photo.
+
+### ⭐ Recipes findable outside Meal Plan (2026-09-26, `51d605ba` · ✅ WEB `index-edf412445236271b365786e70b5f3378.js` (hash MATCH) · ✅ BUILD 9 iOS `01a0e0de-ad97-727c-8e3c-ab7b782fb557` from lane `843c93cf` (fingerprint MATCHED; manifest serves it) · tsc 0 · lint 0)
+
+PO: recipes were reachable only from Meal Plan. **Log Food** gets a My Recipes filter and matching recipes above search results; **My Foods** gets a Recipes tab (row → the recipe, + → log, Create recipe → My Recipes). All three doors (plus Recipe) share one "How much did you eat?" sheet (`EatenSheet`) and one log function (`lib/log-recipe`). New: `mealForHour` (day.ts), `recipeRowMeta`.
+
+### ⭐ iMessage-style keyboard + Holt's first-letter drop (2026-09-26, `a429a2ef` · ✅ OTA build 9 iOS `01a0e0bc-90be-7cb2-894e-1d2991ecdd79` (manifest serves it) · ✅ WEB `index-e4ec825f6e7dadb2fde8cd743e109c5d.js`, both from `ota/build9-js` `c7b6e79a`, which also carries the other session's recipe label scan `05cbcbee` · ⏳ not yet felt on a phone)
+
+PO: *"I need it to be smooth … the same way it is in the iPhone texting."* `KEYBOARD_DISMISS_MODE` (`interactive` on iOS) on 194 containers. `useKeyboardLift` makes panels ride `useAnimatedKeyboard` frame by frame on iOS, with a press hold so the two-tap Log Set fix still holds. Holt's thread stays anchored while the keyboard moves. **First-letter drop cause:** `overflow:hidden` (a6a1627a) plus a `boxShadow` appearing on the first character made iOS insert a clip wrapper and reparent the focused text view. The ring is now always present. Guards: `keyboard-dismiss`, `focused-input-no-reparent`. Risk: `useAnimatedKeyboard` is deprecated (keyboard-controller would need a native build).
+
+### ⭐ Recipes: scan each ingredient's label; log how much you ate (2026-09-26, `dc6b23a4` on `feat/route-map` (merged from `feat/recipe-scan` `5094a739`) · ✅ WEB `index-70d9032edf36f13ff6a6b6e3b8406f3a.js` (hash MATCH) · ✅ BUILD 9 iOS `01a0e0bc-90be-7cb2-894e-1d2991ecdd79`, published by the parallel session from lane `c7b6e79a`, which carries it as `05cbcbee` (fingerprint MATCHED) · tsc 0 · lint 0 · 10 new tests)
+
+PO: *"scan in each ingredient's label and how much I'm using, and it calculates everything with how much I'm eating."* My Recipes → **Scan a label** opens Create Food straight into the camera (`?for=recipe&scan=1`); the read is checked on that form, saved to My Foods and handed back (`lib/recipe-food-handoff`) into the amount sheet (servings or grams). **Type it in** is the same without the camera (web / older builds). Ingredient search also finds My Foods. An ingredient is a catalogue key OR an own-food snapshot in the same jsonb — no migration. Own foods: no allergens detected, diet read as `any`, 'None found in Forge's foods' + check-the-label line, adding one un-confirms (NUT-D6 gate unchanged). Recipe → Log meal asks **How much did you eat?** (½ steps; ½ · 1 · 2 · All of it) from the whole recipe's exact totals.
+
 ### Text boxes keep their text inside (2026-09-26, `a6a1627a` · ✅ WEB `index-08bd9c6901b102209c8b2e3b03a6543c.js` (alias + deployment MATCH, fix found in the live bundle) · ✅ OTA build 9 iOS `01a0e08f-ba72-7a85-b432-131b4730c285` from `ota/build9-js` `25c06688`, fingerprint MATCHED `b322e3de…`, manifest serves it; also carries the other session's `a30fae78` drag-down-to-dismiss-keyboard)
 
 PO screenshot: Holt's kitchen composer drew scrolled-away lines above the box. Capped multiline inputs now `overflow: 'hidden'` (Holt composer, squad-post comment, program-import paste, spreadsheet paste, share message); Holt's composer radius pill → 22. `multiline-inputs-clip.test.mjs` guards it app-wide (verified to fail on the old code).
