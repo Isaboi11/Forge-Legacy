@@ -1,7 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,6 +20,7 @@ import { isAppAdmin } from '@/data/admin-live';
 import { usePersist } from '@/hooks/usePersist';
 import { useToast } from '@/hooks/useCeremony';
 import { fetchHomeGym } from '@/data/home-gym-live';
+import { initialsOf } from '@/domain/onboarding/derive';
 import { fetchAccountIdentity } from '@/domain/profile/live';
 import {
   ABOUT_BODY,
@@ -89,6 +90,12 @@ export default function AccountSettingsScreen() {
   const persist = usePersist();
   const { showToast } = useToast();
   const canDelete = deleteText.trim().toUpperCase() === 'DELETE';
+  /* Closing DISARMS it (settings-05). The typed word used to survive Cancel, so the dialog reopened with
+     DELETE already in the box and the destructive button live — one tap from an irreversible delete. */
+  const closeDelete = () => {
+    setDeleteOpen(false);
+    setDeleteText('');
+  };
 
   const doDeleteAccount = () => {
     if (!canDelete || deleting) return;
@@ -161,7 +168,20 @@ export default function AccountSettingsScreen() {
   const { signOut } = useAuth();
   const { tipsEnabled, setTipsEnabled, startTour } = useTour();
 
-  const { data: me, loading } = useQuery(fetchAccountIdentity, []);
+  const { data: me, loading, refetch: refetchMe } = useQuery(fetchAccountIdentity, []);
+  /* Re-read on the way BACK (settings-06). This screen stays mounted under Edit Profile, so a new name,
+     handle or photo saved there used to leave this header showing the old one until the app was
+     reloaded. Not on the first focus — the mount read is already running. */
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      refetchMe();
+    }, [refetchMe]),
+  );
   const { data: homeGym } = useQuery(fetchHomeGym, []);
   /* The operator row (0129). `isAppAdmin()` fails closed and never throws, so `data` is true only for
      a confirmed admin — while it loads, and on any error, the row simply is not there. */
@@ -213,7 +233,7 @@ export default function AccountSettingsScreen() {
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Settings" onBack={back} />
 
-      {loading ? (
+      {loading && !me ? (
         <View style={styles.loading}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -228,9 +248,15 @@ export default function AccountSettingsScreen() {
             accessibilityLabel="Edit profile"
             style={({ pressed }) => [styles.identity, pressed ? { opacity: 0.7 } : null]}
           >
-            <LinearGradient colors={AVATAR_STOPS} locations={[0, 0.52, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.avatar}>
-              <Text style={styles.avatarInitials}>{me?.initials ?? ''}</Text>
-            </LinearGradient>
+            {/* The photo when there is one (settings-06) — this header only ever drew the initials disc, so
+                the one screen you change your photo from was the one screen that never showed it. */}
+            {me?.avatarUrl ? (
+              <Image source={{ uri: me.avatarUrl }} accessibilityLabel={me.name} style={styles.avatar} />
+            ) : (
+              <LinearGradient colors={AVATAR_STOPS} locations={[0, 0.52, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.avatar}>
+                <Text style={styles.avatarInitials}>{initialsOf(me?.name ?? '')}</Text>
+              </LinearGradient>
+            )}
             <View style={styles.identityText}>
               <Text style={styles.name} numberOfLines={1}>
                 {me?.name ?? ''}
@@ -354,7 +380,7 @@ export default function AccountSettingsScreen() {
       </BottomSheet>
 
       {/* Delete account — typed confirmation, matching the squad-delete ceremony (App Store 5.1.1(v)). */}
-      <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
+      <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={closeDelete}>
         <View style={styles.confirmBackdrop}>
           <View style={styles.confirmCard}>
             <Text style={styles.confirmTitle}>Delete your account?</Text>
@@ -377,7 +403,7 @@ export default function AccountSettingsScreen() {
               <Button variant="destructive" fullWidth disabled={!canDelete || deleting} onPress={doDeleteAccount} accessibilityLabel="Delete my account forever">
                 {deleting ? 'Deleting…' : 'Delete My Account'}
               </Button>
-              <Button variant="secondary" fullWidth onPress={() => setDeleteOpen(false)} accessibilityLabel="Cancel">
+              <Button variant="secondary" fullWidth onPress={closeDelete} accessibilityLabel="Cancel">
                 Keep My Account
               </Button>
             </View>

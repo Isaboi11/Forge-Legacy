@@ -8,7 +8,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { AppBar } from '@/components/forge/composites/AppBar';
-import { Avatar } from '@/components/forge/composites/Avatar';
+import { Avatar, initials } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
@@ -754,12 +754,6 @@ function PinnedCard({ pin, onPress }: { pin: Pin; onPress: () => void }) {
  * lands. The rank BADGE lives in the right FoundationBadge slot (ProgressBadge) — never here.
  */
 function SealPortrait({ name, src }: { name: string; src?: string | null }) {
-  const initials = name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
   return (
     <View style={styles.portraitWrap}>
       {/* decorative rank-seal ring framing the portrait (faint geometric, not a fabricated badge) */}
@@ -772,7 +766,7 @@ function SealPortrait({ name, src }: { name: string; src?: string | null }) {
         {src ? (
           <Image source={{ uri: src }} style={styles.portraitImage} contentFit="cover" accessibilityLabel={name} />
         ) : (
-          <Text style={styles.portraitInitials}>{initials}</Text>
+          <Text style={styles.portraitInitials}>{initials(name)}</Text>
         )}
       </View>
     </View>

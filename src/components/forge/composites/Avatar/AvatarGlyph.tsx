@@ -10,6 +10,7 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { flColor, flRadius } from '@/constants/foundation'
+import { initialsOf } from '@/domain/onboarding/derive'
 
 export type AvatarSize = 'squadStack' | 'appBar' | 'listRow' | 'profile' | 'modalProfile' | number
 
@@ -25,11 +26,9 @@ export function resolveAvatarSize(size: AvatarSize): number {
   return typeof size === 'number' ? size : SIZES[size]
 }
 
+/** The one initials rule lives in the domain (`initialsOf`) so the profile write and every disc agree. */
 export function initials(name = ''): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return ''
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  return initialsOf(name)
 }
 
 export interface AvatarGlyphProps {

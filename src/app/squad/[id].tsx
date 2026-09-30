@@ -9,7 +9,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
-import { Avatar } from '@/components/forge/composites/Avatar';
+import { Avatar, initials } from '@/components/forge/composites/Avatar';
 import { AckGlyph } from '@/components/forge/AckGlyph';
 import { ScreenBackground } from '@/components/screen-background';
 import { CalendarField } from '@/components/forge/composites/CalendarField';
@@ -1234,13 +1234,8 @@ function OptionRow({ icon, label, onPress, divided = false, danger = false }: { 
   );
 }
 
-const initialsOf = (name: string): string =>
-  name
-    .split(/\s+/)
-    .map((p) => p[0] ?? '')
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+/** The shared rule (settings-06) — this disc used to keep a private one that could disagree with `<Avatar>`. */
+const initialsOf = initials;
 
 function CheckinDisc({ member, watched, onPress }: { member: SquadCheckin; watched: boolean; onPress: () => void }) {
   return (
