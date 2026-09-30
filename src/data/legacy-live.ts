@@ -159,12 +159,13 @@ function deriveFeatured(timeline: TimelineRow[], chapters: ChapterRow[]): Featur
 }
 
 /** L-12 My Standard editor — persist the athlete's creed (`profiles.standard`). */
-export async function updateStandard(text: string): Promise<void> {
+/** `null` clears it (legacy-30): the Legacy tab then shows its invitation to write one again. */
+export async function updateStandard(text: string | null): Promise<void> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('not signed in');
-  const { error } = await supabase.from('profiles').update({ standard: text }).eq('id', user.id);
+  const { error } = await supabase.from('profiles').update({ standard: text?.trim() ? text.trim() : null }).eq('id', user.id);
   if (error) throw error;
 }
 
