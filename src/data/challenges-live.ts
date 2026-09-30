@@ -1,6 +1,7 @@
 import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import { errorMessage } from '@/lib/useQuery';
+import { daysLeftAt } from '@/domain/challenges/season';
 
 /**
  * Challenge System (C-series) — the competition backend (migration 0059).
@@ -227,10 +228,13 @@ const TYPES = Object.keys(CHALLENGE_TYPES) as ChallengeType[];
 const asType = (v: string): ChallengeType => ((TYPES as string[]).includes(v) ? (v as ChallengeType) : 'MOST_WORKOUTS');
 const asContext = (v: string): ChallengeContext => (v === 'FRIENDS' || v === 'COMMUNITY' ? v : 'SQUAD');
 
-/** Days left, floored at 0. The hub never counts down past the end. */
+/**
+ * Whole days after today, 0 on the final day — the same count the competition page prints
+ * (`domain/challenges/season.ts`). It was `ceil(ms / day)`, one more than the page, so the hub said
+ * "7 days left" beside a page reading "6 days remaining" (B9, QA 09-26).
+ */
 export function daysLeft(endAt: string): number {
-  const ms = new Date(endAt).getTime() - Date.now();
-  return Number.isFinite(ms) ? Math.max(0, Math.ceil(ms / (24 * 60 * 60 * 1000))) : 0;
+  return daysLeftAt(endAt, Date.now());
 }
 
 /** Progress toward the leader, 0–1. A solo or scoreless challenge reads full rather than empty. */
@@ -823,10 +827,24 @@ export async function fetchSquadHall(squadId: string): Promise<SquadHall | null>
  * Returns the one ending soonest, which is the one with something at stake. Null is the ordinary case.
  */
 export async function fetchSquadActiveChallenge(squadId: string): Promise<ActiveChallenge | null> {
+  return (await fetchSquadCompetitions(squadId)).active;
+}
+
+/**
+ * The squad page's two competition facts from ONE hub read: the one you're in that ends soonest, and the
+ * soonest one of this squad's you could still join.
+ *
+ * `open` exists because a member was never told a new competition existed (social2-06, QA 09-26): the
+ * squad page drew only a competition you had ALREADY joined, so a fresh one lived three taps away under
+ * Competitions → "Open to Join". It is null whenever `active` is set — the live card owns that slot.
+ */
+export async function fetchSquadCompetitions(squadId: string): Promise<{ active: ActiveChallenge | null; open: OpenChallenge | null }> {
   const hub = await fetchChallengeHub();
   const mine = hub.active.filter((c) => c.squadId === squadId);
-  if (mine.length === 0) return null;
-  return mine.reduce((a, b) => (new Date(a.endAt) <= new Date(b.endAt) ? a : b));
+  const active = mine.length ? mine.reduce((a, b) => (new Date(a.endAt) <= new Date(b.endAt) ? a : b)) : null;
+  const joinable = hub.open.filter((c) => c.squadId === squadId);
+  const open = active || !joinable.length ? null : joinable.reduce((a, b) => (new Date(a.startAt) <= new Date(b.startAt) ? a : b));
+  return { active, open };
 }
 
 /**

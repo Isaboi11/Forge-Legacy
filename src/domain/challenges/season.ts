@@ -34,7 +34,25 @@
  *   between re-renders, and `Date.now()` in a render body is impure (react-compiler errors on it).
  */
 
+import { countOf } from '../text/plural.ts';
+
 const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Whole days AFTER today until `endAt` — 0 on the final day. The ONE days-left count (B9 / social-17,
+ * QA 09-26): the hub and the squad card used `ceil(ms / day)` and said "7 days left" on the first day of
+ * a week-long run while this page said "6 days remaining" for the same competition. Both now agree with
+ * `seasonClock().daysRemaining` — the arithmetic is the same (see the test).
+ */
+export function daysLeftAt(endAt: string, now: number): number {
+  const ms = new Date(endAt).getTime() - now;
+  return Number.isFinite(ms) ? Math.max(0, Math.ceil(ms / DAY) - 1) : 0;
+}
+
+/** "Final day" · "1 day left" · "6 days left" — the words for `daysLeftAt`, everywhere a card shows them. */
+export function daysLeftLabel(left: number): string {
+  return left <= 0 ? 'Final day' : `${countOf(left, 'day')} left`;
+}
 
 /** The longest run still drawn as one segment per day. Beyond this the segments become weeks. */
 export const DAY_SEGMENT_MAX = 14;
@@ -94,7 +112,7 @@ export function seasonClock(startAt: string, endAt: string, state: SeasonState, 
   const overdueEnd = state === 'ACTIVE' && end <= now;
 
   const startsIn = Math.max(0, Math.ceil((start - now) / DAY));
-  const remaining = finalDay ? 'final day' : `${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} remaining`;
+  const remaining = finalDay ? 'final day' : `${countOf(daysRemaining, 'day')} remaining`;
 
   /*
    * The overdue states are named rather than papered over. The lifecycle has no scheduler — it advances
@@ -109,7 +127,7 @@ export function seasonClock(startAt: string, endAt: string, state: SeasonState, 
     : overdueEnd
       ? 'The season is over — settling the final standings'
       : state === 'ENROLLMENT' || state === 'DRAFT'
-        ? `Starts in ${startsIn} ${startsIn === 1 ? 'day' : 'days'} · ${totalDays} day run`
+        ? `Starts in ${countOf(startsIn, 'day')} · ${totalDays} day run`
         : state === 'COMPLETED' || state === 'ARCHIVED'
           ? `Season complete · ${totalDays} days`
           : `${byDay ? 'Day' : 'Week'} ${currentUnit} of ${totalUnits} • ${remaining}`;
