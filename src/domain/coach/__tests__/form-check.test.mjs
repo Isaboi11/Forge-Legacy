@@ -118,7 +118,7 @@ test('capFrames keeps order and refuses anything unusable', () => {
 });
 
 test('capFrames truncates past the ceiling and strips a data-URI prefix', () => {
-  const many = Array.from({ length: 20 }, (_, i) => frame(300 + i));
+  const many = Array.from({ length: 50 }, (_, i) => frame(300 + i));
   assert.equal(capFrames(many).length, FORM_FRAMES_MAX);
   const prefixed = [`data:image/jpeg;base64,${frame()}`, frame(), frame()];
   assert.ok(capFrames(prefixed).every((f) => !f.startsWith('data:')), 'the API takes raw base64');
@@ -145,13 +145,13 @@ test('frame times label the stills only when they line up with them', () => {
   assert.equal(frameLabel(6, 10, 15600, [432, 768]), 'Frame 7 of 10 (15.6 s in, 432 x 768 px):');
 });
 
-test('a trim is read about once a second, and a tight trim densely', () => {
-  // A 10 s set: ten stills, a second apart — every phase of a ~2 s rep lands somewhere.
-  assert.equal(formFrameCount(10_000), 10);
+test('a trim is read about three times a second, and a tight trim densely', () => {
+  // A 10 s set: thirty stills, a third of a second apart — ~6 on every ~2 s rep (PO 2026-09-29).
+  assert.equal(formFrameCount(10_000), 30);
   const times = frameTimestamps(10_000, formFrameCount(10_000));
-  assert.ok(times[1] - times[0] <= 1000, `stills are ${times[1] - times[0]} ms apart`);
-  // One rep the athlete trimmed to: never fewer than six stills across it.
-  assert.equal(formFrameCount(2_000), 6);
+  assert.ok(times[1] - times[0] <= 400, `stills are ${times[1] - times[0]} ms apart`);
+  // One rep the athlete trimmed to: never fewer than eight stills across it.
+  assert.equal(formFrameCount(2_000), 8);
   // The whole 30 s window: capped at the ceiling.
   assert.equal(formFrameCount(30_000), FORM_FRAMES_MAX);
 });
@@ -172,7 +172,7 @@ test('no copy tells the athlete their angle was wrong (PO 2026-09-25: every angl
 test('the caps are the numbers the amendment and the API fixed', () => {
   assert.equal(FORM_OUTPUT_CAP, 900, 'CA-D5: form check 900 output tokens');
   assert.equal(FORM_FRAMES_MIN, 3);
-  assert.equal(FORM_FRAMES_MAX, 12);
+  assert.equal(FORM_FRAMES_MAX, 40, 'the API takes 100 images; over 20 each must be <= 2000 px');
   assert.equal(FORM_CLIP_SECONDS, 30, 'the trim screen reads up to 30 s (Coach Holt Form Check.dc.html 02)');
   assert.ok(FORM_FRAME_MAX_EDGE <= 1568, 'the API scales anything longer, so paying for it buys nothing');
 });

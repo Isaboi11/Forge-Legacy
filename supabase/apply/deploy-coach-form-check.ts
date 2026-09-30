@@ -137,8 +137,9 @@ export function withoutStoppedTurns<T extends {
     return kept;
 }
 export const FORM_FRAMES_MIN = 3;
-export const FORM_FRAMES_MAX = 12;
-export const FORM_FRAMES_DEFAULT = 10;
+export const FORM_FRAMES_MAX = 40;
+export const FORM_FRAMES_PER_SECOND = 3;
+export const FORM_FRAMES_DEFAULT = 30;
 export const FORM_CLIP_SECONDS = 30;
 export const FORM_CLIP_MS = FORM_CLIP_SECONDS * 1000;
 export const FORM_FRAME_MAX_EDGE = 768;
@@ -742,7 +743,9 @@ The same goes for frames that are partly blurred, partly dark, or where part of 
 
 # Reading the frames
 
-Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. A set is several reps, so the frames land on different moments of different reps: some catch the top, some the bottom, some the turnaround, some the middle. Put the movement together from all of them. The bottom position and the turnaround usually carry the most coaching, so look for the frames that caught them. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
+Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. They are about a third of a second apart, so every rep is covered by several frames in a row. Use the timestamps to find where each rep starts and ends, then watch each rep through: the setup, the start, the bottom or turnaround, the lockout. The bottom position and the turnaround usually carry the most coaching. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
+
+Coach THIS set, not the lift in general. Every sentence you write must be something you saw in these frames — this athlete's reps, not the faults the lift usually has. If what you write would fit any video of this lift, look again and say what is particular to this one.
 
 # What you never do
 

@@ -63,12 +63,21 @@
  * moment of the rep, it was usually nothing, and Holt said the angle was the problem. Ten stills a second
  * apart land on every phase of a rep somewhere across the set. They are sent SMALLER
  * ({@link FORM_FRAME_MAX_EDGE}), so the bill stays about where five large ones put it.
+ *
+ * ⚠ FORTY AT MOST, ~3 A SECOND (PO 2026-09-29). One a second was still one still per rep: two different
+ * deadlift clips came back with the same textbook read ("back rounds", "squatting the pull"), because
+ * Holt could not tell the clips apart and fell back on the lift's usual faults. Three a second puts ~6
+ * stills on every rep, so he can follow each one. The API takes up to 100 images a request (over 20, each
+ * must be ≤ 2000 px — ours are 768), and forty at ~440 tokens is ~18k input tokens, about 5¢ a read.
  */
 export const FORM_FRAMES_MIN = 3;
-export const FORM_FRAMES_MAX = 12;
+export const FORM_FRAMES_MAX = 40;
 
-/** What the app asks for when nothing says otherwise: about one still a second across the window. */
-export const FORM_FRAMES_DEFAULT = 10;
+/** Stills per second of the trimmed window. See {@link FORM_FRAMES_MAX}. */
+export const FORM_FRAMES_PER_SECOND = 3;
+
+/** What the app asks for when nothing says otherwise: a ten-second set at three a second. */
+export const FORM_FRAMES_DEFAULT = 30;
 
 /**
  * How much of the clip is read, in seconds.
