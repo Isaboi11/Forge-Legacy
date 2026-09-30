@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { CHEER_MAX, cleanCheer, type Cheer } from '@/domain/coach/cheers';
+import { CHEER_MAX, cleanCheer, type Cheer, type SentCheer } from '@/domain/coach/cheers';
 
 /**
  * A squad-mate's message to an athlete who is training — sent from `/workout-join`, shown by Holt on the
@@ -99,5 +99,47 @@ export async function replyToCheer(id: string, reply: CheerReply): Promise<void>
     if (error) await markCheerSeen(id);
   } catch {
     await markCheerSeen(id);
+  }
+}
+
+/** How far back "what I sent them" reaches — today's session, not the whole history. */
+const SENT_WINDOW_MS = 12 * 60 * 60 * 1000;
+
+/**
+ * My recent messages to this athlete, newest first, with whether each was seen or answered — what
+ * `/workout-join` shows under the box so a send is never a guess (PO 2026-09-30).
+ *
+ * The sender may read their own rows (0231's SELECT policy). Never throws. ⚠ A failed read is NULL, not
+ * an empty list: the screen keeps what it is already showing rather than wiping a "Sent" it just drew. On a database without 0240 the `reply`
+ * column is unknown, so it is asked for again without it.
+ */
+export async function fetchSentCheers(toId: string): Promise<SentCheer[] | null> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !toId) return null;
+    const since = new Date(Date.now() - SENT_WINDOW_MS).toISOString();
+    const read = (cols: string) =>
+      supabase
+        .from('workout_cheers')
+        .select(cols)
+        .eq('from_id', user.id)
+        .eq('to_id', toId)
+        .gte('created_at', since)
+        .order('created_at', { ascending: false })
+        .limit(3);
+    let { data, error } = await read('id, body, created_at, seen_at, reply');
+    if (error) ({ data, error } = await read('id, body, created_at, seen_at'));
+    if (error) return null;
+    return ((data ?? []) as unknown as { id: string; body: string; created_at: string; seen_at: string | null; reply?: string | null }[]).map((r) => ({
+      id: r.id,
+      body: r.body,
+      createdAt: r.created_at,
+      seenAt: r.seen_at,
+      replyLabel: CHEER_REPLIES.find((x) => x.key === r.reply)?.label ?? null,
+    }));
+  } catch {
+    return null;
   }
 }

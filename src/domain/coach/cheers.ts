@@ -44,3 +44,29 @@ export function cheerLine(c: Pick<Cheer, 'fromName' | 'body'>): string | null {
 export function nextCheer(unseen: readonly Cheer[], closed: ReadonlySet<string>): Cheer | null {
   return unseen.find((c) => !closed.has(c.id) && cleanCheer(c.body)) ?? null
 }
+
+/** A message I sent, as the sender sees it afterwards. */
+export interface SentCheer {
+  id: string
+  body: string
+  createdAt: string
+  /** Stamped when the recipient closes Holt's bubble or answers it — NOT when it is drawn. */
+  seenAt: string | null
+  /** The one-tap answer's own words ("🔥 Let’s go"), already looked up. Null until they answer. */
+  replyLabel: string | null
+}
+
+/**
+ * What the sender is told about a message they sent (PO 2026-09-30: *"don't know if he got it. There
+ * was no feedback after I sent the message."*).
+ *
+ * ⚠ THREE STATES, AND THE FIRST ONE CLAIMS ONLY WHAT IS TRUE. A row in the table means it was SENT —
+ * not that the recipient has looked at their phone. "Seen" is only said once they closed it or answered.
+ * `first` is null when the recipient's name never loaded.
+ */
+export function sentCheerStatus(c: Pick<SentCheer, 'seenAt' | 'replyLabel'>, first: string | null): { text: string; done: boolean } {
+  const who = first?.trim() || null
+  if (c.replyLabel) return { text: who ? `${who} replied ${c.replyLabel}` : `They replied ${c.replyLabel}`, done: true }
+  if (c.seenAt) return { text: who ? `${who} saw it` : 'They saw it', done: true }
+  return { text: `Sent · Coach Holt will tell ${who ?? 'them'} during the workout`, done: false }
+}
