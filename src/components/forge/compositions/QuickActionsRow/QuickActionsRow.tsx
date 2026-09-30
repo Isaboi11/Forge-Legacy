@@ -24,6 +24,7 @@ import { flColor, flRadius } from '@/constants/foundation'
 import { useTourAnchor } from '@/hooks/useTourAnchors'
 import type { TourAnchorId } from '@/domain/onboarding/tour-plan'
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
+import { FitText } from '@/components/forge/FitText'
 
 export interface QuickActionsRowProps {
   onTrainTogether: () => void
@@ -75,7 +76,8 @@ export function QuickActionsRow({
         </Pressable>
         <Pressable ref={competitionsRef} onPress={onCompetitions} accessibilityRole="button" accessibilityLabel="View competitions" style={styles.competitions}>
           <TrophyIcon />
-          <Text style={styles.competitionsText}>Competitions</Text>
+          {/* One word in the narrower of two buttons — "Competitio / ns" on a 320pt screen (home-06). */}
+          <FitText style={styles.competitionsText} numberOfLines={1}>Competitions</FitText>
           {competitionsCount > 0 ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{competitionsCount}</Text>

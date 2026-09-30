@@ -15,6 +15,7 @@ import { Image } from 'expo-image'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { HeroSurface } from '@/components/forge/HeroSurface'
+import { FitText } from '@/components/forge/FitText'
 import { flColor, flFont, flGradient, flRadius, flShadow, flType } from '@/constants/foundation'
 import type { ResolvedArtwork } from '@/domain/home-artwork/types'
 import { resolveArtworkSource } from '@/domain/home-artwork/artwork-source'
@@ -138,9 +139,11 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
           </View>
           <View style={styles.headText}>
             <Text style={flType.missionEyebrowMuted}>{kicker}</Text>
-            <Text style={styles.title} numberOfLines={2}>
+            {/* FitText: on a 320pt screen this column is 119px and "Confidence" is 152 — it used to
+                draw as "Confide / nce …" (home-06). The type gives; the word stays whole. */}
+            <FitText style={styles.title} numberOfLines={2}>
               {title}
-            </Text>
+            </FitText>
             {focus ? <Text style={styles.focus}>{focus}</Text> : null}
           </View>
         </Pressable>
