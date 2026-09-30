@@ -413,6 +413,10 @@ function FeedLedgerPost({
       busy={busy}
       acknowledgeLabel={(milestone && milestoneAckLabel(milestone)) || undefined}
       acknowledged={!!post.myReaction}
+      /* ⚠ THE KIND, OR THE ROW SAYS "Respect" WHATEVER WAS CHOSEN (social2-09, QA 09-26). The picker wrote
+         Honor / Support / Strength correctly and the row never heard which — `LedgerPost` reads an absent
+         kind as `respect`. The squad feed has always passed it. */
+      ackKind={post.myReaction ?? undefined}
       acknowledgeCount={post.reactionCount}
       commentCount={post.commentCount}
       onAuthor={onAuthor}
