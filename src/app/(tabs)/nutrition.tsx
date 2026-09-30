@@ -25,6 +25,7 @@ import {
   mealForHour,
   dayLabel,
   groupByMeal,
+  grouped,
   isAhead,
   mealTitle,
   PLAN_AHEAD_DAYS,
@@ -90,6 +91,12 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * so these four numbers are the only thing that moves.
  */
 const RING = { box: 228, r: 97, stroke: 17 } as const;
+
+/** The hero figure's size for its length: "2,450" at the `.dc`'s 52, longer figures stepped down to fit the ring. */
+function heroFontSize(text: string): { fontSize: number; lineHeight: number } | null {
+  const size = text.length <= 5 ? 52 : text.length === 6 ? 44 : text.length === 7 ? 38 : text.length <= 9 ? 30 : 24;
+  return size === 52 ? null : { fontSize: size, lineHeight: size + 2 };
+}
 const MACRO_RING = { box: 94, r: 40, stroke: 9 } as const;
 
 export default function NutritionScreen() {
@@ -214,7 +221,9 @@ export default function NutritionScreen() {
 
   const headline = targets
     ? calorieHeadline(eaten.kcal, targets.kcal, 'eaten')
-    : { value: String(eaten.kcal), label: 'Calories' };
+    : { value: grouped(eaten.kcal), label: 'Calories' };
+  /* The figure shrinks to stay INSIDE the ring (QA N-05 / N-24): at 52pt a six-figure day spilled across it. */
+  const heroFit = heroFontSize(headline.value);
 
   const goLog = (meal?: MealSlot) =>
     router.push({ pathname: '/log-food', params: meal ? { date: iso, meal } : { date: iso } });
@@ -420,7 +429,7 @@ export default function NutritionScreen() {
               the children stay interactive while the wrapper itself still passes touches through. */}
           <View style={styles.heroCentre} pointerEvents="box-none">
             <EngravedIcon name="flame" size={22} color={flColor.emberFlame} />
-            <Text style={styles.heroValue}>{headline.value}</Text>
+            <Text style={[styles.heroValue, heroFit]} numberOfLines={1}>{headline.value}</Text>
             <Text style={styles.heroLabel}>{headline.label}</Text>
             {targets ? (
               <Text style={styles.heroCaption}>{calorieCaption(eaten.kcal, targets.kcal, 'eaten')}</Text>
@@ -718,7 +727,7 @@ function MealCard({
             )}
           </View>
           <View style={styles.mealRight}>
-            <Text style={[styles.mealKcal, empty && styles.mealKcalQuiet]}>{group.kcal}</Text>
+            <Text style={[styles.mealKcal, empty && styles.mealKcalQuiet]}>{grouped(group.kcal)}</Text>
           </View>
         </View>
 
@@ -770,7 +779,7 @@ function MealCard({
           </Text>
         </View>
         <View style={styles.mealRight}>
-          <Text style={styles.mealKcal}>{group.kcal}</Text>
+          <Text style={styles.mealKcal}>{grouped(group.kcal)}</Text>
         </View>
       </View>
     </Surface>
@@ -804,7 +813,7 @@ function CheckRow({ row, disabled, onPress }: { row: ChecklistRow; disabled: boo
           </Text>
         ) : null}
       </View>
-      <Text style={[styles.checkKcal, !row.checked && styles.checkKcalWaiting]}>{row.kcal}</Text>
+      <Text style={[styles.checkKcal, !row.checked && styles.checkKcalWaiting]}>{grouped(row.kcal)}</Text>
     </Pressable>
   );
 }

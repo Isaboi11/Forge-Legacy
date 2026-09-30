@@ -237,7 +237,9 @@ export function dayCallout(day: WeekDay, todayIso: string): DayCallout {
   if (!day.target || day.target.kcal <= 0) return { title, detail: `${grouped(day.totals.kcal)} eaten`, good: false };
 
   const diff = day.totals.kcal - day.target.kcal;
-  if (day.isToday) return { title, detail: `${grouped(Math.max(0, -diff))} left · in progress`, good: false };
+  /* Past the target, today says so ("120 over"), as a finished day does. Clamping the difference at zero
+     printed "0 left" however far over the day had gone (QA N-08). */
+  if (day.isToday) return { title, detail: `${grouped(Math.abs(diff))} ${diff > 0 ? 'over' : 'left'} · in progress`, good: false };
   if (day.inRange) {
     return { title, detail: diff === 0 ? 'In range' : `In range · ${grouped(Math.abs(diff))} ${diff > 0 ? 'over' : 'under'}`, good: true };
   }

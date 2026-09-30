@@ -182,6 +182,16 @@ test('today reads as what is LEFT, because it is still being eaten', () => {
   assert.equal(c.good, false);
 });
 
+test('today PAST its target says how far over, not "0 left" (QA N-08)', () => {
+  const over = FULL.map((d) => (d.iso === TODAY ? day(TODAY, 2620, 30) : d));
+  const week = buildWeek(weekDays(TODAY, 0), totalsMap(over), HISTORY, TODAY);
+  assert.equal(dayCallout(week[6], TODAY).detail, '120 over · in progress');
+  /* Exactly on it, there is nothing left and nothing over. */
+  const exact = FULL.map((d) => (d.iso === TODAY ? day(TODAY, 2500, 30) : d));
+  const onIt = buildWeek(weekDays(TODAY, 0), totalsMap(exact), HISTORY, TODAY);
+  assert.equal(dayCallout(onIt[6], TODAY).detail, '0 left · in progress');
+});
+
 test('a day in range says so, and says by how much', () => {
   const c = dayCallout(buildFull()[0], TODAY);
   assert.equal(c.title, 'Wed, Sep 16 · 2,460 cal');
