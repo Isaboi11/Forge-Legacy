@@ -328,3 +328,120 @@ test('a bare % is never read from a range or a "% of bodyweight" line', () => {
   assert.equal(w2.exercises[0].percent, null);
   assert.match(w2.exercises[0].note, /30-40% of Bodyweight/);
 });
+
+/*
+ * SEASON TWELVE, DAY 1 (PO 2026-09-30) — the card as it is handwritten, and the table the photo read made of it.
+ * The photo came back as one row per lift with the words already in the cells; wrapping them in "… sets of … reps"
+ * again gave "9 total sets sets of 5 reps 60%,65%,70%; … reps", and nine squat sets read as ONE set of five.
+ * ⚠ THIS table is worked back from the box on the PO's screen (that read was not kept). The same photo read again
+ * came back differently (" / " for ";", a Day column, the rest in a Time cell): that one is the real answer, in
+ * `fixtures/squatober-2026-day1.mjs`, tested in `squatober-2026-day1.test.mjs`.
+ */
+const S12_DAY1 = `"DEEP End Diving"
+Day: 1 Thursday 10-1-26
+Warm Up: Trunk Twists and Crack the Knuckles
+1. BACK SQUAT 5 reps 60%, 65%, 70%
+3 reps 73%, 75%, 78%
+1 rep 82%, 85%, 87%
+• 9 total sets
+• 27 total reps
+* 2 min rest between each set
+2. BENCH PRESS
+3 reps 70%, 75%, 80%, 80%. 80%
+* 90 seconds rest between sets
+3. DEADlift 4 sets of 3 reps 75%
+* 90 sec rest between sets
+* No tapping or Bouncing weight off floor
+Cardio "Scary Arms"
+• Dips 3 sets of 8-12 reps
+• BB Bicep Curls 3 sets of 15 reps
+• Bumper Plate Pinch Holds 3 sets of 20 seconds
+super set all 3
+* 90 sec rest between sets
+Recovery
+• STEAK and Eggs
+• 30 min Walk
+• 8+ hrs of DEEP sleep`;
+
+const S12_DAY1_TSV = [
+  'Exercise\tSets\tReps',
+  'BACK SQUAT\t9 total sets\t5 reps 60%,65%,70%; 3 reps 73%,75%,78%; 1 rep 82%,85%,87%',
+  'BENCH PRESS\t\t3 reps 70%,75%,80%,80%,80%',
+  'DEADlift\t4 sets\t3 reps 75%',
+  'Dips\t3 sets\t8-12 reps',
+  'BB Bicep Curls\t3 sets\t15 reps',
+  'Bumper Plate Pinch Holds\t3 sets\t20 seconds',
+].join('\n');
+
+const SQUAT_REPS = [5, 5, 5, 3, 3, 3, 1, 1, 1];
+const SQUAT_PCTS = [60, 65, 70, 73, 75, 78, 82, 85, 87];
+
+test('Season 12 Day 1, as written: nine squat sets over three lines, five bench sets, and the bulleted superset', () => {
+  const w = readWrittenWorkout(S12_DAY1);
+  assert.equal(w.name, 'Day 1: Deep End Diving');
+  assert.deepEqual(w.unread, []);
+  assert.deepEqual(w.exercises.map((e) => `${e.label} ${e.name}`), ['1 Back Squat', '2 Bench Press', '3 Deadlift', '4a Dips', '4b BB Bicep Curls', '4c Bumper Plate Pinch Holds']);
+  const [squat, bench, dead, dips, curls, pinch] = w.exercises;
+  assert.deepEqual([squat.sets, squat.repScheme, squat.percentScheme, squat.restSec, squat.note], [9, SQUAT_REPS, SQUAT_PCTS, 120, null]);
+  assert.deepEqual([bench.sets, bench.repScheme, bench.percentScheme, bench.restSec], [5, [3, 3, 3, 3, 3], [70, 75, 80, 80, 80], 90]);
+  assert.deepEqual([dead.sets, dead.reps, dead.percent, dead.restSec], [4, 3, 75, 90]);
+  assert.match(dead.note, /No tapping or Bouncing/);
+  assert.deepEqual([dips.sets, dips.reps, dips.repsMax], [3, 8, 12]);
+  assert.deepEqual([curls.sets, curls.reps], [3, 15]);
+  assert.deepEqual([pinch.sets, pinch.reps, pinch.note], [3, null, '20 seconds each set']);
+  assert.ok(dips.group && dips.group === curls.group && curls.group === pinch.group, 'super set all 3');
+  assert.deepEqual([dips.restSec, curls.restSec, pinch.restSec], [90, 90, 90], 'the round’s rest is every member’s');
+  assert.match(w.after, /STEAK and Eggs · 30 min Walk/);
+});
+
+test('Season 12 Day 1: "super set all 3" reads the same before the lifts, or a word beside each bullet', () => {
+  const before = S12_DAY1.replace('super set all 3\n', '').replace('• Dips', 'Super set all 3\n• Dips');
+  const margin = S12_DAY1.replace('super set all 3\n', '').replace('• Dips', 'super • Dips').replace('• BB Bicep', 'set • BB Bicep').replace('• Bumper', 'all 3 • Bumper');
+  const want = JSON.stringify(readWrittenWorkout(S12_DAY1).exercises);
+  assert.equal(JSON.stringify(readWrittenWorkout(before).exercises), want);
+  assert.equal(JSON.stringify(readWrittenWorkout(margin).exercises), want);
+});
+
+test('Season 12 Day 1, from the photo: the table’s cells already carry their words, and are not given them twice', async () => {
+  const { tsvToWrittenText } = await import('../written-workout.ts');
+  const text = tsvToWrittenText(S12_DAY1_TSV);
+  assert.equal(
+    text,
+    [
+      '1. BACK SQUAT 5 reps 60%,65%,70%',
+      '3 reps 73%,75%,78%',
+      '1 rep 82%,85%,87%',
+      '9 total sets',
+      '2. BENCH PRESS 3 reps 70%,75%,80%,80%,80%',
+      '3. DEADlift 4 sets of 3 reps 75%',
+      '4. Dips 3 sets of 8-12 reps',
+      '5. BB Bicep Curls 3 sets of 15 reps',
+      '6. Bumper Plate Pinch Holds 3 sets of 20 seconds',
+    ].join('\n'),
+  );
+  const rows = writtenToTemplate(readWrittenWorkout(text), () => undefined);
+  assert.deepEqual(rows.map((r) => r.sets), [9, 5, 4, 3, 3, 3]);
+  assert.deepEqual(rows[0].repScheme, SQUAT_REPS);
+  assert.deepEqual(rows[0].percentScheme, SQUAT_PCTS);
+  assert.deepEqual(rows[1].percentScheme, [70, 75, 80, 80, 80]);
+  assert.deepEqual([rows[2].targetReps, rows[2].percentOfMax], [3, 75]);
+  assert.deepEqual([rows[3].targetReps, rows[3].repsMax, rows[4].targetReps], [8, 12, 15]);
+  assert.ok(rows.every((r) => !/sets of|reps$/i.test(r.coachNote ?? '')), 'no leftover words in a note');
+});
+
+test('a list of sets that lands in a lift’s note is pointed at, never passed in silence', async () => {
+  const { checkBeforePosting, setsLeftInNote } = await import('../written-workout.ts');
+  /* The note the old reading made of the squat — the exact words on the PO's screen. */
+  assert.equal(setsLeftInNote('Sets of 65% 70% 3 reps 73% 75% 78% 1 rep 82% 85% 87% reps'), true);
+  /* The author talking is not a list of sets. */
+  for (const note of ['Aim to get 30-40% of Bodyweight in each hand', '70-75%', 'Use around 50-60% of your DEAD max', 'Option One: 33 reps @ 70% · Option Two: 20 reps @ 80%', 'No Bouncing', null]) {
+    assert.equal(setsLeftInNote(note), false, String(note));
+  }
+  /* A way of writing sets the reader still does not know: it says so. */
+  const w = readWrittenWorkout('1. Back Squat 5 reps\n60% then 65% then 70%');
+  const checks = checkBeforePosting(w, writtenToTemplate(w, () => 'k'));
+  assert.ok(checks.some((c) => /not read as sets/.test(c)), JSON.stringify(checks));
+  /* And the card itself, read right, raises nothing about its sets. */
+  const ok = readWrittenWorkout(S12_DAY1);
+  assert.ok(!checkBeforePosting(ok, writtenToTemplate(ok, () => 'k')).some((c) => /not read as sets|no reps were read/.test(c)));
+});

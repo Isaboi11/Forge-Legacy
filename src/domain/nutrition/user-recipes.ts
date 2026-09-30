@@ -292,6 +292,8 @@ export function toBook(u: UserRecipe): { recipe: Recipe; view: RecipeView; plann
       return x.key && ing ? [{ key: x.key, name: ing.name, g: x.g / y, us: ing.us }] : [];
     }),
     mine: true,
+    /* Your steps describe the whole recipe you typed in — all `y` servings of it (N-32). */
+    stepsServe: y,
   };
   return { recipe, view, plannable: u.usePlan && u.confirmed && u.ingredients.length > 0 };
 }
@@ -428,6 +430,8 @@ export function switchUnit(unit: 'g' | 'portion', grams: number, portion: Portio
 
 export function qtyLabel(unit: 'g' | 'portion', qty: number, portion: Portion): string {
   if (unit === 'g') return `${Math.round(qty).toLocaleString('en-US')} g`;
+  /* A typed amount that is not a half (N-33: "1.3 cups") keeps its decimals rather than rounding down to "1". */
+  if (!Number.isInteger(qty * 2)) return `${+qty.toFixed(2)} ${portion.label}`;
   const whole = Math.floor(qty);
   const half = qty - whole >= 0.5 ? '½' : '';
   return `${whole || (half ? '' : '0')}${half} ${portion.label}`;

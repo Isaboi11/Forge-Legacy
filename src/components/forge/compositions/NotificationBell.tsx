@@ -24,7 +24,7 @@ export function NotificationBell() {
     <Pressable
       onPress={() => router.push('/inbox')}
       accessibilityRole="button"
-      accessibilityLabel={count > 0 ? `Notifications, ${count} new` : 'Notifications'}
+      accessibilityLabel={count > 0 ? `Inbox, ${count} new` : 'Inbox'}
       style={styles.btn}
       hitSlop={6}
     >

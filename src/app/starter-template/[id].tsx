@@ -17,6 +17,7 @@ import { itemByKey } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * Preview a Forge starter template, and take it.
@@ -120,7 +121,7 @@ export default function StarterTemplateScreen() {
           </View>
           <Text style={styles.heroName}>{def.name}</Text>
           <Text style={styles.heroStats}>
-            {def.exercises.length} {def.exercises.length === 1 ? 'lift' : 'lifts'} · {sets} sets · {starterMeta(def)}
+            {countOf(def.exercises.length, 'lift')} · {countOf(sets, 'set')} · {starterMeta(def)}
           </Text>
           <Text style={styles.heroBlurb}>{def.blurb}</Text>
           {/* The one question a home session raises that its name doesn't answer. Derived from the

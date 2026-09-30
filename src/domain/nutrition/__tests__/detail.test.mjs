@@ -70,8 +70,26 @@ test('the unit word pluralises only where English does', () => {
   // The label's own "1" is dropped beside an amount: "2 cups", never "2 1 cups" (PO, 2026-09-24).
   assert.equal(unitWord(cup, 1), 'cup');
   assert.equal(unitWord(cup, 2), 'cups');
-  assert.equal(unitWord({ label: "1 McDonald's Big Mac", serving: { label: "1 McDonald's Big Mac", grams: 205 } }, 0.5), "McDonald's Big Macs");
+  assert.equal(unitWord({ label: "1 McDonald's Big Mac", serving: { label: "1 McDonald's Big Mac", grams: 205 } }, 2), "McDonald's Big Macs");
   assert.equal(unitWord({ label: 'oz', serving: { label: 'oz', grams: 28 } }, 3), 'oz');
+});
+
+test('no "3 larges" or "0.5 breasts" — sizes stay adjectives, a fraction is singular (QA 09-26 N-22)', () => {
+  const u = (label, grams = 50) => ({ label, serving: { label, grams } });
+  assert.equal(unitWord(u('large'), 3), 'large');
+  assert.equal(unitWord(u('1 medium (7" to 7-7/8" long)'), 2), 'medium (7" to 7-7/8" long)');
+  assert.equal(unitWord(u('breast, bone and skin removed', 172), 0.5), 'breast, bone and skin removed');
+  assert.equal(unitWord(u('breast, bone and skin removed', 172), 2), 'breasts, bone and skin removed');
+  assert.equal(unitWord(u("1 McDonald's Big Mac", 205), 0.5), "McDonald's Big Mac");
+  assert.equal(unitWord(u('tbsp', 15), 2), 'tbsp');
+});
+
+test('a weight-only serving is "1 serving (250 g)", not a second gram pill (QA 09-26 N-41)', () => {
+  const mine = { ...oats, key: 'custom:1', source: 'custom', servings: [{ label: '250 g', grams: 250 }] };
+  const units = unitChoices(mine);
+  assert.deepEqual(units.map((x) => x.label), ['1 serving (250 g)', 'grams']);
+  assert.equal(unitWord(units[0], 1), 'serving');
+  assert.equal(unitWord(units[0], 2), 'servings');
 });
 
 test('the impact line flips wording instead of showing a minus', () => {

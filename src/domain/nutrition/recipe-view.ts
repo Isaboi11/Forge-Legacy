@@ -32,8 +32,22 @@ export function usAmount(us: UsMeasure, grams: number): string {
     if (c < 0.2) return spoons(c * 48);
     return `${frac(c, 0.25)} ${Math.round(c * 4) / 4 > 1 ? 'cups' : 'cup'}`;
   }
+  /* Countable things (QA 09-26 N-32): halves while there are few, whole ones from 3 up — "17½ slices" of
+     pepperoni is not a thing anyone counts out — and the word follows the number SHOWN, so 1¼ servings
+     reads "1½ tortillas", never "1½ tortilla". */
   const n = grams / us.grams;
-  return `${frac(n, 0.5) || '½'} ${n > 1.25 ? us.many : us.one}`;
+  const shown = n >= 3 ? Math.round(n) : Math.max(0.5, Math.round(n / 0.5) * 0.5);
+  return `${n >= 3 ? String(shown) : frac(n, 0.5) || '½'} ${shown > 1 ? us.many : us.one}`;
+}
+
+/**
+ * The line under Method when the amounts above are not the amounts the steps were written for (QA 09-26
+ * N-32). Free-text steps ("spoon a tenth of the filling") cannot be rescaled honestly, so they are left as
+ * written and the screen says which batch they describe. Null when the two match, or nobody recorded it.
+ */
+export function stepsNote(stepsServe: number | null | undefined, shown: number): string | null {
+  if (!stepsServe || !(stepsServe > 0) || Math.abs(stepsServe - shown) < 0.01) return null;
+  return `The steps are written for the whole batch, ${servingsLabel(stepsServe)}. The amounts above are for ${servingsLabel(shown)}.`;
 }
 
 /** Grams as a cook reads them: whole grams, a decimal under 10, "pinch" under half a gram. */

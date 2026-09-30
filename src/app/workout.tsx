@@ -142,6 +142,7 @@ import { registerWatchCommands } from '@/domain/workout/watch-commands';
 import { projectWatchState } from '@/domain/workout/watch-projection';
 import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
 import { activeTheme } from '@/constants/theme-choice';
+import { fitWordFontSize } from '@/domain/text/fit-word';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -3979,6 +3980,17 @@ export default function WorkoutScreen() {
           )}
         </View>
         <ProgressBar value={setsDone} max={totalSets || 1} height={6} />
+        {/* WHO YOU'RE TRAINING WITH (social2-22, QA 09-26). A Train Together session looked exactly like a solo
+            one on both phones — nothing on screen said the other person was in it. The names are the
+            session's tagged partners, read the way Finish reads them. */}
+        {taggedPartners.length > 0 ? (() => {
+          const names = resolvePartnerNames(taggedPartners, partners ?? [], []);
+          return names.length ? (
+            <Text style={styles.trainingWith} numberOfLines={1}>
+              Training with {names.join(', ')}
+            </Text>
+          ) : null;
+        })() : null}
       </TourAnchor>
 
       {/* START TIMER — a workout of timed moves runs itself, full screen (PO 2026-09-27). Only when two or more
@@ -4360,7 +4372,16 @@ export default function WorkoutScreen() {
                         the moment the first set resolves — which is exactly when a grip cue is still true.
                       */}
                       <View style={heroNarrow ? styles.heroTitleNarrow : styles.heroTitleRow}>
-                        <Text style={heroNarrow ? styles.heroNameNarrow : styles.heroName}>{ex.name}</Text>
+                        {/* Sized so the longest WORD fits the name column (social2-20, QA 09-26): at a fixed 25pt,
+                            "Alternating" broke as "Alternatin / g" on an iPhone 14, host and joiner alike. The
+                            column is the page less the card's gutters, the 150pt plate and the two glyphs.
+                            Under `NARROW_PHONE_W` the plate is 112 and the glyphs sit above the name, so the
+                            column is the whole rail and the face starts at 21 (workout-16). */}
+                        {(() => {
+                          const max = heroNarrow ? 21 : 25;
+                          const size = fitWordFontSize(ex.name, Math.max(80, heroNarrow ? pageW - 192 : pageW - 273), max, 16);
+                          return <Text style={[heroNarrow ? styles.heroNameNarrow : styles.heroName, size < max ? { fontSize: size, lineHeight: Math.round(size * 1.08) } : null]}>{ex.name}</Text>;
+                        })()}
                         <View style={heroNarrow ? styles.heroActionsNarrow : styles.heroActionsTop}>
                           {/* ⚠ 15pt GLYPHS, 44pt TARGETS — bought with `hitSlop`, never with size, which
                               is what the spec means by "expand with padding, not size". A 15pt icon
@@ -5898,9 +5919,15 @@ function templateToSessionExercises(rows: readonly TemplateExercise[], load?: Lo
       });
     }
     const prescribed = hasPrescription(e);
+    /* Which side it is counted on, from the name — the rule a program day (`build-session`) and an ad-hoc add
+       (`pickedToExercise`) already apply. This path skipped it, so the person who JOINED a shared workout read
+       "3×8 · Today" where the host read "3×8 · Today · per side" for the same Alternating Dumbbell Bench Press
+       (social2-22, QA 09-26), and a single-arm lift repeated from a template counted half its volume. */
+    const per = perSideFor(e.name);
     return {
       name: e.name,
       catalogKey: e.catalogKey ?? undefined,
+      ...(per ? { per } : null),
       ...(e.coachNote ? { coachNote: e.coachNote } : {}),
       // The template's own section, not a flat 'main' — warm-up and cool-down survived the round trip
       // as of 0095, and the logger is where that has to show up.
@@ -7058,6 +7085,7 @@ const styles = StyleSheet.create({
   briefText: { fontSize: 15, lineHeight: 22, color: flColor.cream100 },
   bandTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   doneLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
+  trainingWith: { marginTop: 8, fontSize: 12.5, fontWeight: '500', color: flColor.gray400 },
   doneAccent: { color: flColor.bronze400 },
   restChip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6, paddingLeft: 11, paddingRight: 8, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800 },
   restChipOn: { borderColor: flColor.bronzeBorderSubtle },

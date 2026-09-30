@@ -43,7 +43,7 @@ const TECHNIQUE: Record<string, string> = {
   'Elbow Flexion': 'Elbows pinned to your sides. If the shoulders are swinging, the weight is doing the arms’ job.',
   'Elbow Extension': 'Upper arm still, only the forearm moves. Lock out without slamming the elbow.',
   'Shoulder Isolation': 'Light and clean. Lead with the elbows, stop at shoulder height — no shrugging into it.',
-  'Hip Isolation': 'Drive through the whole foot and squeeze at the top. The lower back should be doing none of this.',
+  'Hip Isolation': 'Move only at the hip and control every rep. The lower back should be doing none of this.',
   'Calf / Ankle': 'Full stretch at the bottom, full contraction at the top. This one only works through the whole range.',
   Core: 'Brace like you are about to be hit. Breathe shallow and keep the ribs down — do not hold your breath.',
   Carry: 'Tall and quiet. Shoulders packed, small steps, and put it down before your posture goes.',
@@ -107,6 +107,13 @@ const VARIANTS: readonly (readonly [pattern: string, name: RegExp, line: string]
   ['Hinge / Hip Dominant', /./, 'Hips back, weight close to the legs, spine flat. The stretch belongs in the hamstrings — never the low back.'],
   ['Squat / Knee Dominant', /lunge|split squat|step-?up|step-?down/i, 'Long enough stride to stay balanced. Front knee tracks over the toes, torso tall, drive through the whole front foot.'],
   ['Squat / Knee Dominant', /leg press|leg extension|hack|pendulum|v-squat|belt squat|machine/i, 'Knees track over the toes through the whole range. Control the bottom — no bouncing out of it.'],
+  /* QA holt-30: Cable Hip Abduction was told to "drive through the whole foot and squeeze at the top" — a
+     bridge cue, on a standing leg raise. Hip Isolation is five different movements. */
+  ['Hip Isolation', /abduct|clamshell|lateral walk|monster walk/i, 'Push out to the side from the hip, torso tall and still. No leaning or swinging to get the leg further.'],
+  ['Hip Isolation', /adduction|adductor machine/i, 'Squeeze the legs in from the inner thigh, under control. Torso still — no rocking to finish the rep.'],
+  ['Hip Isolation', /kick|donkey|extension/i, 'Drive the leg back from the glute and pause at the end. Stop before the lower back arches.'],
+  ['Hip Isolation', /flexion/i, 'Lift the knee from the hip, under control. Torso tall — no leaning back to get it higher.'],
+  ['Hip Isolation', /frog|hip press|glute drive|bridge|thrust/i, 'Drive through the whole foot and squeeze at the top. The lower back should be doing none of this.'],
 ];
 
 /**

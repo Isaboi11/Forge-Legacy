@@ -5,7 +5,8 @@ import { checkAiRewrite } from '@/domain/workout/workout-ai-gate';
 /**
  * "FIX IT WITH AI" — the client half of `workout-tidy` (Import Amendment 002, PO 2026-09-28).
  *
- * Only ever called when `whenToUseAi` says the code reader could not read the card. The function hands back WORDS
+ * Called when `whenToUseAi` says the code reader could not read the card, and for every photo (amended 2026-09-30:
+ * a photo's transcription can read "clean" and still be wrong). The function hands back WORDS
  * in the reader's own layout; this module then runs `checkAiRewrite` against the card BEFORE the words are offered,
  * and a rewrite that wrote one number not on the card, dropped a %, or named a lift not on it comes back as
  * `unfaithful` and is never shown as the answer. The poster keeps their own words.

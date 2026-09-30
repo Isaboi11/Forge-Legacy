@@ -103,7 +103,9 @@ export function AppBar({ title, subtitle, onBack, onClose, avatar, onAvatar, act
       {actions ? <View style={styles.actions}>{actions}</View> : null}
 
       {avatar != null ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Profile" onPress={onAvatar} style={styles.avatarBtn} hitSlop={4}>
+        /* Every caller opens Account Settings — the screen titled "Settings", which holds the profile too.
+           It was labelled "Profile" and opened "Settings" (QA 09-26 firstuser-15). */
+        <Pressable accessibilityRole="button" accessibilityLabel="Profile and settings" onPress={onAvatar} style={styles.avatarBtn} hitSlop={4}>
           {avatar}
         </Pressable>
       ) : null}

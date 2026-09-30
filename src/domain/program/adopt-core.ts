@@ -60,7 +60,8 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
     if (ex.per) out.per = ex.per;
     if (ex.durationSec != null) out.durationSec = ex.durationSec;
     /*
-     * ⚠ `unit: 'seconds'` WITH NO `durationSec` IS STILL A CLOCK (workout-11, QA 09-26). 27 shipped
+     * ⚠ `unit: 'seconds'` WITH NO `durationSec` IS STILL A CLOCK (workout-11 and home-23, QA 09-26 — the
+     * medium and low passes fixed this twice; this is the one kept, as it also covers minutes). 27 shipped
      * prescriptions are written that way — "Plank 3 × 45", `unit: 'seconds'` — and this copied the 45
      * into `reps` and dropped the unit, so the athlete was asked for forty-five repetitions of a plank.
      * The count moves to `durationSec` and the reps go to zero, the same shape an explicit hold has.
@@ -145,10 +146,13 @@ function workoutToDay(
    */
   const warmup: ProgramExercise[] = w.warmup.map((item) => {
     const reps = /^(\d+)\s*reps?$/i.exec((item.detail ?? '').trim());
+    // "20 seconds" is a hold, and reads as one with its unit (QA 09-26 home-23) rather than a blank row.
+    const secs = reps ? null : /^(\d+)\s*(?:seconds?|secs?|s)$/i.exec((item.detail ?? '').trim());
     return {
       name: item.name || item.text,
       catalogKey: resolveKey?.(item.name || item.text),
       ...(reps ? { sets: 1, reps: Number(reps[1]) } : {}),
+      ...(secs ? { sets: 1, reps: 0, durationSec: Number(secs[1]) } : {}),
     };
   });
 

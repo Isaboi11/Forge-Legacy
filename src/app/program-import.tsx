@@ -10,7 +10,9 @@
  * This file is presentation. Every decision about what a program IS stays where it was:
  *   · text      → `parseProgramTable` (the same parser the sheet runs)
  *   · a PDF     → `pickTextFile` → its text lands in the box, like any paste
- *   · a photo   → `readProgramPhoto` (the Edge Function transcribes; the parser decides)
+ *   · a photo   → `readImportPhoto` (PO 2026-09-30): the whole-card read, then — for one workout — the AI layout,
+ *                 `checkAiRewrite` and the written reader, exactly as the squad screen reads a card; a sheet of
+ *                 several days is still the table reader's (`readProgramPhoto` → `parseProgramTable`)
  *   · the scope → `fitToScope('program')`
  *   · preview   → `ImportPreview`, the sheet's own preview component
  *   · the draft → `draftFromImport`, the builder's own conversion, then `/program-builder?o=imported`,
@@ -51,7 +53,8 @@ import { ScreenBoundary } from '@/components/screen-boundary';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { readProgramPhoto, type PhotoReadResult } from '@/data/program-photo-live';
+import { type PhotoReadResult } from '@/data/program-photo-live';
+import { readImportPhoto } from '@/data/import-photo-read';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import { mergeParsedWeeks } from '@/domain/program/import-merge';
@@ -135,7 +138,7 @@ function ProgramImport() {
   /* Holt read the photo in the chat — taken ONCE, here, and fitted to this screen's scope. */
   const [seed] = useState(() => {
     const r = read === '1' ? takeImportRead() : null;
-    return r ? { ...fitToScope(r.weeks, isTemplate ? 'day' : 'program'), skipped: r.skipped } : null;
+    return r ? { ...fitToScope(r.weeks, isTemplate ? 'day' : 'program'), skipped: r.skipped, checks: r.checks ?? [] } : null;
   });
   /*
    * ⚠ THE PHOTO READER IS PREMIUM AI ONLY (0203), AND A LINK IS NOT A CARD. Build a Program hides the
@@ -155,8 +158,10 @@ function ProgramImport() {
   const [scopeNote, setScopeNote] = useState<string | null>(seed?.note ?? null);
   /** Lines the parser did not take as training — the preview lists them (`ParseResult.skipped`). */
   const [skipped, setSkipped] = useState<string[]>(seed?.skipped ?? []);
+  /** What a photo read asks the athlete to check before Create (`readImportPhoto`). */
+  const [checks, setChecks] = useState<string[]>(seed?.checks ?? []);
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
-  const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[] }>());
+  const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[]; checks: string[] }>());
 
   const back = () => {
     if (preview) {
@@ -169,11 +174,12 @@ function ProgramImport() {
      "Paste a workout" came from Home, so it goes back there. */
   const cancel = () => (isToday ? router.back() : router.dismissTo('/workouts'));
 
-  const showPreview = (weeks: ParsedWeek[], notRead: string[] = []) => {
+  const showPreview = (weeks: ParsedWeek[], notRead: string[] = [], toCheck: string[] = []) => {
     const fit = fitToScope(weeks, scope);
     setError(null);
     setScopeNote(fit.note);
     setSkipped(notRead);
+    setChecks(toCheck);
     setPreview(fit.weeks);
   };
 
@@ -242,19 +248,33 @@ function ProgramImport() {
     setError(null);
     const parts: ParsedWeek[][] = [];
     const notRead: string[] = [];
+    const toCheck: string[] = [];
+    const tag = (i: number, s: string) => (photos.length > 1 ? `Photo ${i + 1}: ${s}` : s);
     for (let i = 0; i < photos.length; i += 1) {
       const uri = photos[i];
       const cached = reads.current.get(uri);
       if (cached) {
         parts.push(cached.weeks);
         notRead.push(...cached.skipped);
+        toCheck.push(...cached.checks.map((c) => tag(i, c)));
         continue;
       }
       setBusy(photos.length > 1 ? `Reading photo ${i + 1} of ${photos.length}…` : 'Reading your photo…');
-      const r = await readProgramPhoto(uri);
+      /*
+       * THE CARD READER AND THE AI CHECK — the same as the squad screen (PO 2026-09-30: "shouldn't this be the same
+       * card reader … that should be going through AI as well so we know it works"). A sheet of several days is
+       * still read as a table; one workout is laid out by AI, checked number by number, and read by the written
+       * reader, ramps and percentages and rest included. See `readImportPhoto`.
+       */
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
       if (r.kind === 'no_consent') {
         setBusy(null);
         setError(AI_DECLINED_LINE);
+        return;
+      }
+      if (r.kind === 'unparsed') {
+        setBusy(null);
+        setError(tag(i, r.error));
         return;
       }
       if (r.kind !== 'ok') {
@@ -262,18 +282,13 @@ function ProgramImport() {
         setError(photoError(r, i + 1, photos.length));
         return;
       }
-      const parsed = parseProgramTable(r.tsv);
-      if (!parsed.ok) {
-        setBusy(null);
-        setError(photos.length > 1 ? `Photo ${i + 1}: ${parsed.error}` : parsed.error);
-        return;
-      }
-      reads.current.set(uri, { weeks: parsed.weeks, skipped: parsed.skipped ?? [] });
-      parts.push(parsed.weeks);
-      notRead.push(...(parsed.skipped ?? []));
+      reads.current.set(uri, { weeks: r.weeks, skipped: r.skipped, checks: r.checks });
+      parts.push(r.weeks);
+      notRead.push(...r.skipped);
+      toCheck.push(...r.checks.map((c) => tag(i, c)));
     }
     setBusy(null);
-    showPreview(mergeParsedWeeks(parts), notRead);
+    showPreview(mergeParsedWeeks(parts), notRead, toCheck);
   };
 
   // ── create ───────────────────────────────────────────────────────────────────────────────────────
@@ -368,7 +383,7 @@ function ProgramImport() {
       >
         <View style={styles.column}>
           {preview ? (
-            <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} />
+            <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} />
           ) : mode === 'paste' ? (
             <>
               <IconPlate>

@@ -292,3 +292,12 @@ test('the newest migration reads dropped-and-rebuilt tables by their SURVIVING s
 
   assert.deepEqual([...new Set(problems)], [], `columns read from a definition that no longer exists:\n  ${[...new Set(problems)].join('\n  ')}`);
 });
+
+test('a lift honor explains itself instead of repeating its own title (QA 09-26 home-22)', () => {
+  // The ceremony printed "Bench 135" and, under it, "Bench 135 lb." — the name twice, the reason never.
+  const src = fs.readFileSync(path.join(process.cwd(), 'src', 'data', 'honors-live.ts'), 'utf8').split('\r\n').join('\n');
+  const body = src.match(/case 'lift_max':\n([\s\S]*?)\n\s*case /)?.[1] ?? '';
+  assert.ok(body, 'lift_max case not found');
+  assert.doesNotMatch(body, /return `\$\{lift\} \$\{num\(threshold\)\} lb\.`/);
+  assert.match(body, /or more/);
+});

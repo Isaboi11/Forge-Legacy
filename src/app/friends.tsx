@@ -33,6 +33,7 @@ import {
   type PostComment,
   type Reaction,
 } from '@/data/friends-feed-live';
+import { timeAgo } from '@/data/squad-feed-live';
 import { isMilestoneCard, milestoneAckLabel } from '@/domain/share/milestone-card';
 import { recapNoteLines } from '@/domain/share/recap-stats';
 import { displayOf } from '@/domain/squad/post-photos';
@@ -243,7 +244,7 @@ export default function FriendsFeedScreen() {
           ) : (
             <>
               {feed.map((post, pi) => (
-                <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined}>
+                <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined} style={pickerId === post.id ? styles.postRaised : undefined}>
                   <View style={styles.postWrap}>
                     {/* The four-way picker floats above the row it belongs to — see `toggle`. */}
                     {pickerId === post.id ? (
@@ -375,9 +376,10 @@ function FeedLedgerPost({
   return (
     <LedgerPost
       authorName={post.isMine ? 'You' : post.authorName}
+      avatarName={post.authorName}
       authorAvatarUrl={post.authorAvatarUrl}
       audience={post.audience === 'BOTH' ? 'Friends & Squad' : 'Friends'}
-      time={shortAgo(post.createdAt)}
+      time={timeAgo(post.createdAt)}
       marker={marker}
       /* `summary.name` is absent on every recap shared before the snapshot carried one, so the type
          stands in rather than a heading reading "null". No backfill, no version check. */
@@ -413,6 +415,9 @@ function FeedLedgerPost({
       busy={busy}
       acknowledgeLabel={(milestone && milestoneAckLabel(milestone)) || undefined}
       acknowledged={!!post.myReaction}
+      /* WHICH acknowledgement (social2-28, QA 09-26). Never passed here, so the row drew the default flame
+         for all four — a Strength read as Respect. */
+      ackKind={post.myReaction ?? undefined}
       acknowledgeCount={post.reactionCount}
       commentCount={post.commentCount}
       onAuthor={onAuthor}
@@ -625,17 +630,6 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
   );
 }
 
-function shortAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(ms / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return d < 7 ? `${d}d ago` : new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
 // ── glyphs ──
 function FriendsGlyph({ size = 20, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return <EngravedIcon name="partners" size={size} color={engravedTint(color)} />;
@@ -666,7 +660,11 @@ const styles = StyleSheet.create({
 
   postWrap: { position: 'relative' },
   /* The picker floats over the action row it belongs to, which sits ~52px off the bottom of the post. */
-  pickerWrap: { position: 'absolute', left: 10, bottom: 52, zIndex: 10 },
+  /* BELOW the acknowledge row, not above it (social2-19, QA 09-26): floating 52pt up from the bottom it sat
+     on the caption's last line. It now hangs from the row into the gap under the post, and the post it
+     belongs to is raised (`postRaised`) so the next post can't paint over what spills past the divider. */
+  pickerWrap: { position: 'absolute', left: 10, bottom: -10, zIndex: 10 },
+  postRaised: { zIndex: 20 },
 
   compare: { position: 'relative', width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', backgroundColor: flColor.charcoal800 },
   compareImg: { width: '100%', height: '100%' },
