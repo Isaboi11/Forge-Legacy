@@ -1,29 +1,25 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
-import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { EatenSheet } from '@/components/forge/compositions/EatenSheet';
+import { QuickEntryForm, type QuickEntryInput } from '@/components/forge/compositions/QuickEntryForm';
 import { BarcodeSheet } from '@/components/forge/BarcodeSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
-import { dayLabel, diaryDayParam, isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { dayLabel, diaryDayParam, grouped, isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { draftEntry, repeatDraft } from '@/domain/nutrition/logging';
 import { countOf } from '@/domain/text/plural';
 import {
   defaultServing,
-  energyKnown,
   looksSane,
-  MAY_STORE_MICROS,
-  portionLabel,
   portionMacros,
-  quickAddMacros,
-  repeatMacros,
   SOURCE_LABEL,
   type CatalogFood,
 } from '@/domain/nutrition/serving';
@@ -183,36 +179,42 @@ export default function LogFoodScreen() {
 
   const openDetail = (key: string) => router.push({ pathname: '/food-detail', params: { key, date: iso, meal } });
 
-  /** One tap: the food's default serving, quantity 1, straight into the day. */
+  /**
+   * ⚠ ONE TAP, ONE ROW (QA N-03). Food Detail's button locks itself while it saves; the round + had no such
+   * lock, so a double tap logged the food twice — each call mints its own row id, so the server cannot tell
+   * a repeat from a second helping. A row is held from its first tap until its write has answered and the
+   * double tap has passed; a second, deliberate + after the toast still logs a second one. A failed write
+   * says so here, instead of rejecting into nothing.
+   */
+  const inFlight = useRef(new Set<string>());
+  const once = async (key: string, run: () => Promise<void>) => {
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
+    try {
+      await run();
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setTimeout(() => inFlight.current.delete(key), DOUBLE_TAP_MS);
+    }
+  };
+
+  /**
+   * One tap: the food's default serving, quantity 1, straight into the day — the SAME row Food Detail would
+   * write for that portion (`draftEntry`, R2-B2).
+   *
+   * ⚠ UNKNOWN CALORIES ARE NEVER LOGGED AS ZERO (QA R2-F3). A food `draftEntry` refuses — energy we don't
+   * actually know, or no weighed serving to assume — goes to Food Detail instead.
+   */
   const logNow = async (food: CatalogFood) => {
-    /* ⚠ UNKNOWN CALORIES ARE NEVER LOGGED AS ZERO (QA R2-F3). A food whose energy we don't actually know —
-       null, or "0 kcal, no macros" on something that isn't water — goes to Food Detail instead. */
-    if (!energyKnown(food)) {
+    const entry = draftEntry(food, { serving: defaultServing(food), quantity: 1 }, meal);
+    if (!entry) {
       openDetail(food.key);
       return;
     }
-    const serving = defaultServing(food);
-    const macros = portionMacros(food, { serving, quantity: 1 });
-    if (macros.kcal === 0 && macros.grams == null) {
-      // No weighed serving to assume — send them to Food Detail to choose one rather than log a zero.
-      openDetail(food.key);
-      return;
-    }
-    await addEntries(iso, [
-      {
-        meal,
-        source: food.source,
-        sourceKey: food.key,
-        name: food.name,
-        brand: food.brand,
-        servingLabel: portionLabel({ serving, quantity: 1 }),
-        quantity: 1,
-        macros,
-        micros: MAY_STORE_MICROS.has(food.source) ? (food.micros ?? null) : null,
-      },
-    ]);
+    await addEntries(iso, [entry]);
     setReloads((n) => n + 1);
-    showToast(`${food.name} · ${macros.kcal} cal added to ${MEAL_LABELS[meal]}`);
+    showToast(`${food.name} · ${grouped(entry.macros.kcal)} cal added to ${MEAL_LABELS[meal]}`);
   };
 
   /**
@@ -222,23 +224,11 @@ export default function LogFoodScreen() {
    */
   const logRow = async (row: Row) => {
     if (!row.pointer) return logNow(row.food);
-    const again = row.repeat ? repeatMacros(row.repeat) : null;
-    if (row.repeat && again) {
-      await addEntries(iso, [
-        {
-          meal,
-          source: row.repeat.source,
-          sourceKey: row.repeat.key,
-          name: row.repeat.name,
-          brand: row.repeat.brand,
-          servingLabel: row.repeat.servingLabel,
-          quantity: Number.isFinite(row.repeat.quantity) && row.repeat.quantity > 0 ? row.repeat.quantity : 1,
-          macros: again,
-          micros: MAY_STORE_MICROS.has(row.repeat.source) ? row.repeat.micros : null,
-        },
-      ]);
+    const again = row.repeat ? repeatDraft(row.repeat, meal) : null;
+    if (again) {
+      await addEntries(iso, [again]);
       setReloads((n) => n + 1);
-      showToast(`${row.repeat.name} · ${Math.round(again.kcal)} cal added to ${MEAL_LABELS[meal]}`);
+      showToast(`${again.name} · ${grouped(again.macros.kcal)} cal added to ${MEAL_LABELS[meal]}`);
       return;
     }
     const food = await fetchFoodByKey(row.food.key);
@@ -247,6 +237,23 @@ export default function LogFoodScreen() {
       return;
     }
     return logNow(food);
+  };
+
+  const [quickBusy, setQuickBusy] = useState(false);
+  const quickAdd = async ({ name, macros }: QuickEntryInput) => {
+    if (quickBusy) return;
+    setQuickBusy(true);
+    try {
+      await addEntries(iso, [{ meal, source: 'quick', name: name || 'Quick add', quantity: 1, macros }]);
+      setQuickOpen(false);
+      setReloads((n) => n + 1);
+      showToast(`${grouped(macros.kcal)} cal added to ${MEAL_LABELS[meal]}`);
+    } catch (e) {
+      /* The sheet stays open with what was typed — the refusal is said, not swallowed (N-04). */
+      showToast(errorMessage(e));
+    } finally {
+      setQuickBusy(false);
+    }
   };
 
   const barBottom = useBarBottom(SCREEN_BOTTOM_GAP);
@@ -351,14 +358,16 @@ export default function LogFoodScreen() {
                 key={m.id}
                 accessibilityRole="button"
                 style={styles.row}
-                onPress={async () => {
-                  const added = await logSavedMeal(m.id, iso, meal);
-                  showToast(`${m.name} · ${countOf(added.length, 'item')} added`);
-                }}
+                onPress={() =>
+                  once(`meal:${m.id}`, async () => {
+                    const added = await logSavedMeal(m.id, iso, meal);
+                    showToast(`${m.name} · ${countOf(added.length, 'item')} added`);
+                  })
+                }
               >
                 <View style={styles.rowBody}>
                   <Text style={styles.rowName}>{m.name}</Text>
-                  <Text style={styles.rowMeta}>{`${m.kcal} cal · ${countOf(m.itemCount, 'item')}`}</Text>
+                  <Text style={styles.rowMeta}>{`${grouped(m.kcal)} cal · ${countOf(m.itemCount, 'item')}`}</Text>
                 </View>
                 <AddCircle />
               </Pressable>
@@ -378,7 +387,7 @@ export default function LogFoodScreen() {
                     {row.meta}
                   </Text>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Add ${row.food.name}`} hitSlop={6} onPress={() => logRow(row)}>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Add ${row.food.name}`} hitSlop={6} onPress={() => once(row.key, () => logRow(row))}>
                   <AddCircle />
                 </Pressable>
               </Pressable>
@@ -481,18 +490,15 @@ export default function LogFoodScreen() {
         }}
       />
 
-      <QuickAddSheet
-        open={quickOpen}
-        meal={meal}
-        onClose={() => setQuickOpen(false)}
-        onAdd={async (input) => {
-          const macros = quickAddMacros(input);
-          await addEntries(iso, [{ meal, source: 'quick', name: input.name || 'Quick add', quantity: 1, macros }]);
-          setQuickOpen(false);
-          setReloads((n) => n + 1);
-          showToast(`${macros.kcal} cal added to ${MEAL_LABELS[meal]}`);
-        }}
-      />
+      <BottomSheet open={quickOpen} onClose={() => setQuickOpen(false)} title="Quick add" scroll>
+        <QuickEntryForm
+          note="Calories now, the rest if you know them. No food attached."
+          action={`Add to ${MEAL_LABELS[meal]}`}
+          verb="add"
+          busy={quickBusy}
+          onSubmit={quickAdd}
+        />
+      </BottomSheet>
 
     </View>
   );
@@ -511,6 +517,9 @@ interface Row {
 }
 
 const SEARCH_PAGE = 10;
+
+/** How long a row stays held after its + — long enough that the second half of a double tap lands inside it. */
+const DOUBLE_TAP_MS = 600;
 
 /**
  * "515 cal · 1 item" when the food has a real serving, "234 cal / 100 g" only when it does not. PO,
@@ -667,65 +676,6 @@ function MealPicker({ open, meal, onPick, onClose }: { open: boolean; meal: Meal
   );
 }
 
-function QuickAddSheet({
-  open,
-  meal,
-  onClose,
-  onAdd,
-}: {
-  open: boolean;
-  meal: MealSlot;
-  onClose: () => void;
-  onAdd: (input: { name: string; kcal: number; protein?: number; carb?: number; fat?: number }) => void;
-}) {
-  const [name, setName] = useState('');
-  const [kcal, setKcal] = useState('');
-  const [protein, setProtein] = useState('');
-  const [carb, setCarb] = useState('');
-  const [fat, setFat] = useState('');
-  const n = (v: string) => (v.trim() === '' ? undefined : Number(v));
-
-  return (
-    <BottomSheet open={open} onClose={onClose} title="Quick add" scroll>
-      <View style={styles.sheetBody}>
-        <Text style={styles.sheetNote}>Calories now, the rest if you know them. No food attached.</Text>
-        <InputField label="What was it (optional)" value={name} onChange={setName} placeholder="Restaurant lunch" />
-        <View style={styles.macroInputs}>
-          <NumberField label="Calories" value={kcal} onChange={setKcal} />
-          <NumberField label="Protein" value={protein} onChange={setProtein} />
-          <NumberField label="Carbs" value={carb} onChange={setCarb} />
-          <NumberField label="Fat" value={fat} onChange={setFat} />
-        </View>
-        <Button
-          variant="primary"
-          fullWidth
-          disabled={!Number(kcal)}
-          onPress={() => onAdd({ name: name.trim(), kcal: Number(kcal), protein: n(protein), carb: n(carb), fat: n(fat) })}
-        >
-          {`Add to ${MEAL_LABELS[meal]}`}
-        </Button>
-      </View>
-    </BottomSheet>
-  );
-}
-
-
-function NumberField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <View style={styles.numberField}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <TextInput returnKeyType="done"
-        value={value}
-        onChangeText={onChange}
-        keyboardType="decimal-pad"
-        style={styles.numberInput}
-        accessibilityLabel={label}
-        selectTextOnFocus
-      />
-    </View>
-  );
-}
-
 const AddCircle = () => (
   <View style={styles.addCircle}>
     <EngravedIcon name="plus" size={17} color={flColor.bronze400} />
@@ -794,25 +744,11 @@ const styles = StyleSheet.create({
   footerButton: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 4 },
 
   sheetBody: { gap: 12, paddingBottom: 8 },
-  sheetNote: { fontSize: 13, color: flColor.gray400, lineHeight: 19 },
-  fieldLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
   servingWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   choice: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
   choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
   choiceText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   choiceTextOn: { color: flColor.selectedInk },
-  numberInput: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: flColor.cream100,
-    backgroundColor: flColor.charcoal800,
-    borderRadius: flRadius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    ...flBorder.subtle,
-  },
-  numberField: { flexGrow: 1, flexBasis: '30%', gap: 6 },
-  macroInputs: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
 
   portionHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   portionMeta: { flex: 1, fontSize: 12.5, color: flColor.gray600 },

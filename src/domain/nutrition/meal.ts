@@ -17,7 +17,9 @@
 import type { LogEntry, MealSlot } from './day.ts';
 import { dayLabel, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals } from './day.ts';
 import { EXTRA_NUTRIENTS, oneDecimal } from './detail.ts';
+import type { EntryPatch } from './outbox.ts';
 import { SOURCE_LABEL } from './serving.ts';
+import { clampEaten, servingsEatenLabel } from './user-recipes.ts';
 
 /* ── the header ───────────────────────────────────────────────────────────── */
 
@@ -70,6 +72,70 @@ export function countLabel(count: number): string {
  */
 export function canEditPortion(entry: LogEntry): boolean {
   return entry.source !== 'quick' && !!entry.sourceKey;
+}
+
+/**
+ * How a logged row is corrected (QA 09-26, N-17 / N-31). Every row can be — from its OWN stored values:
+ *
+ *  · `portion`  — a food: Food Detail reopens on it.
+ *  · `servings` — a dish logged in servings with no food behind it (a recipe of yours, one of Holt's, a
+ *                 Meal Plan meal): "1 serving" becomes "2 servings" and the stored numbers scale with it.
+ *  · `numbers`  — a Quick Add, or a row whose food key was lost: the name and the four figures are retyped.
+ *
+ * Before this a recipe or a Quick Add could only be moved or deleted, so one wrong digit meant logging it
+ * again from scratch.
+ */
+export type EntryEditor = 'portion' | 'servings' | 'numbers';
+
+export function entryEditor(entry: LogEntry): EntryEditor {
+  if (canEditPortion(entry)) return 'portion';
+  return entry.source === 'quick' && /\bservings?\b/i.test(entry.servingLabel ?? '') ? 'servings' : 'numbers';
+}
+
+/** The servings a `servings` row opens its stepper on — the stored quantity, on the stepper's half steps. */
+export function servingsOf(entry: LogEntry): number {
+  return clampEaten(Number.isFinite(entry.quantity) && entry.quantity > 0 ? entry.quantity : 1);
+}
+
+/**
+ * A `servings` row at a new number of servings: the stored figures scaled by new ÷ old, and the label
+ * rewritten with whatever followed the servings ("· My recipe") kept. Nothing is re-read from the recipe —
+ * it may have been edited or deleted since, and the day keeps what was eaten.
+ */
+export function rescaleServings(entry: LogEntry, servings: number): EntryPatch {
+  const from = Number.isFinite(entry.quantity) && entry.quantity > 0 ? entry.quantity : 1;
+  const to = clampEaten(servings);
+  const k = to / from;
+  const r1 = (n: number) => Math.round(n * k * 10) / 10;
+  const tail = (entry.servingLabel ?? '').split(' · ').slice(1).join(' · ');
+  return {
+    quantity: to,
+    servingLabel: tail ? `${servingsEatenLabel(to)} · ${tail}` : servingsEatenLabel(to),
+    grams: entry.grams != null && entry.grams > 0 ? r1(entry.grams) : null,
+    kcal: Math.round(entry.kcal * k),
+    protein: r1(entry.protein),
+    carb: r1(entry.carb),
+    fat: r1(entry.fat),
+  };
+}
+
+/** A `numbers` row retyped: new figures, and a new name when one was given. Its portion is left as it was. */
+export function numbersPatch(
+  entry: LogEntry,
+  name: string,
+  macros: { kcal: number; protein: number; carb: number; fat: number },
+): EntryPatch {
+  const renamed = name.trim();
+  return {
+    quantity: entry.quantity,
+    servingLabel: entry.servingLabel ?? null,
+    grams: entry.grams ?? null,
+    kcal: macros.kcal,
+    protein: macros.protein,
+    carb: macros.carb,
+    fat: macros.fat,
+    ...(renamed && renamed !== entry.name ? { name: renamed } : {}),
+  };
 }
 
 /* ── the breakdown sheet ──────────────────────────────────────────────────── */

@@ -63,6 +63,13 @@ test('an update changes the portion and keeps everything else', () => {
   assert.equal(row.meal, 'breakfast');
 });
 
+test('a Quick Add that is retyped takes its new name; a portion edit leaves the name alone', () => {
+  const patch = { quantity: 1, servingLabel: null, grams: null, kcal: 640, protein: 30, carb: 60, fat: 20, name: 'Burrito' };
+  const [row] = overlayDay('2026-09-23', [food('a')], [{ kind: 'update', id: 'a', patch }]);
+  assert.equal(row.name, 'Burrito');
+  assert.equal(row.kcal, 640);
+});
+
 test('an update to a row not on this day is ignored, never invented', () => {
   const patch = { quantity: 2, servingLabel: null, grams: null, kcal: 200, protein: 20, carb: 20, fat: 4 };
   assert.deepEqual(overlayDay('2026-09-23', [], [{ kind: 'update', id: 'zzz', patch }]), []);

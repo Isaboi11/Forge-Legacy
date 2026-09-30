@@ -13,6 +13,7 @@ import { NutritionCareLine, useCareLine } from '@/components/forge/NutritionCare
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { TARGET_KCAL_MAX, targetCeiling } from '@/domain/nutrition/amount';
 import { grouped, localToday, type Targets } from '@/domain/nutrition/day';
 import {
   ACTIVITY_LEVELS,
@@ -111,6 +112,8 @@ export default function NutritionTargetsScreen() {
   const [inText, setInText] = useState<string | null>(null);
   const [activityKey, setActivityKey] = useState<string | null>(null);
   const [manual, setManual] = useState<Record<string, string> | null>(null);
+  /* The very high manual target the athlete has already said yes to; typing another un-says it. */
+  const [agreed, setAgreed] = useState<number | null>(null);
 
   const weightLb = useMemo(() => latestBodyReading(bodyEntries ?? [], 'weight'), [bodyEntries]);
   const sex = (profile?.sex ?? 'unspecified') as AthleteSex;
@@ -160,6 +163,12 @@ export default function NutritionTargetsScreen() {
   const manKcal = man.kcal ? Number(man.kcal) : null;
   const manualCheck = checkManual(manKcal, facts, burn);
   const macroLine = macroSumLine(manKcal, Number(man.protein || 0), Number(man.carb || 0), Number(man.fat || 0));
+  /* ⚠ A MANUAL TARGET HAS A TOP AS WELL AS A FLOOR (QA N-29): 50,000 a day used to save without a word. Past
+     the ceiling it is refused; a very high one is asked about once, on the button, before it is written.
+     And a macro left empty is SAID to be saved as 0 g rather than becoming one silently. */
+  const ceiling = mode === 'manual' ? targetCeiling(manKcal) : null;
+  const asking = ceiling === 'ask' && agreed === manKcal;
+  const blankMacro = !man.protein || !man.carb || !man.fat;
 
   /* What pressing Save would write, and why it might not be allowed to. */
   let proposed: Targets | null = null;
@@ -170,6 +179,7 @@ export default function NutritionTargetsScreen() {
     else if (rec) proposed = { kcal: rec.kcal, protein: rec.protein, carb: rec.carb, fat: rec.fat };
   } else if (!manKcal) blocked = 'Enter a calorie target.';
   else if (manualCheck.tooLow) blocked = `The lowest target Forge will set for you is ${grouped(manualCheck.minimum)}.`;
+  else if (ceiling === 'too-high') blocked = `The highest daily target Forge will save is ${grouped(TARGET_KCAL_MAX)}.`;
   else {
     proposed = {
       kcal: manKcal,
@@ -191,6 +201,10 @@ export default function NutritionTargetsScreen() {
 
   const save = async () => {
     if (!proposed || !canSave) return;
+    if (ceiling === 'ask' && !asking) {
+      setAgreed(manKcal);
+      return;
+    }
     setSaving(true);
     try {
       /* The three facts were supplied in order to get a target, so they are kept with it. */
@@ -561,6 +575,7 @@ export default function NutritionTargetsScreen() {
               </View>
             </View>
             <Text style={[styles.macroSum, macroLine.off && styles.macroSumOff]}>{macroLine.text}</Text>
+            {manKcal && blankMacro ? <Text style={styles.macroSum}>A macro left blank is saved as 0 g.</Text> : null}
           </View>
         )}
 
@@ -592,9 +607,11 @@ export default function NutritionTargetsScreen() {
       {mode === 'recommended' && blocker && blocker.kind !== 'incomplete' ? null : (
         <View style={styles.footer}>
           <Button variant="primary" fullWidth disabled={!canSave} onPress={save}>
-            Use these targets
+            {asking && canSave ? `Yes, use ${grouped(manKcal ?? 0)}` : 'Use these targets'}
           </Button>
-          <Text style={styles.saveNote}>{note}</Text>
+          <Text style={styles.saveNote}>
+            {asking && canSave ? `${grouped(manKcal ?? 0)} cal a day is a very high target. Tap again if it’s right.` : note}
+          </Text>
         </View>
       )}
 

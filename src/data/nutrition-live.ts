@@ -4,7 +4,7 @@ import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
 import { rankBySource } from '@/domain/nutrition/serving';
 import { offProductToFood } from '@/domain/nutrition/off-product';
-import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
+import { opsFor, overlayDay, type EntryPatch, type OutboxOp } from '@/domain/nutrition/outbox';
 import { locatePlanItem, mayCheck, splitPlanned } from '@/domain/nutrition/plan-ahead';
 import { isFirstRun } from '@/domain/nutrition/first-run';
 import type { SavedItemRow } from '@/domain/nutrition/my-foods';
@@ -236,6 +236,7 @@ async function apply(athlete: string, op: OutboxOp): Promise<unknown> {
             protein: op.patch.protein,
             carb: op.patch.carb,
             fat: op.patch.fat,
+            ...(op.patch.name != null ? { name: op.patch.name } : {}),
           })
           .eq('id', op.id)
       ).error;
@@ -538,6 +539,16 @@ export async function updateEntry(
       fat: patch.macros.fat,
     },
   });
+}
+
+/**
+ * Correct a logged row from its own stored values — a dish's servings, or a Quick Add's name and numbers
+ * (`rescaleServings` / `numbersPatch` build the patch). The same held-or-sent write as `updateEntry`.
+ */
+export async function patchEntry(entryId: string, patch: EntryPatch): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  await sendOrHold(id, { kind: 'update', id: entryId, patch });
 }
 
 /**

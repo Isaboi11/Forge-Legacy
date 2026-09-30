@@ -7,13 +7,17 @@ import {
   dayChoices,
   defaultSavedMealName,
   defaultTargetDay,
+  entryEditor,
   entryMacroLine,
   entrySubtitle,
   isSameSpot,
   mealBreakdown,
   mealDateLabel,
   moveButtonLabel,
+  numbersPatch,
+  rescaleServings,
   saveMealHelper,
+  servingsOf,
   slotChoices,
 } from '../meal.ts';
 
@@ -201,6 +205,67 @@ test('"Current" marks the slot the food is in, and only on its own day', () => {
   assert.deepEqual(sameDay.map((s) => s.note), ['', 'Current', '', '']);
   const otherDay = slotChoices('lunch', '2026-09-22', '2026-09-23');
   assert.deepEqual(otherDay.map((s) => s.note), ['', '', '', '']);
+});
+
+/* ── correcting a row with no food behind it ──────────────────────────────── */
+
+/** What `logRecipeEaten` writes: a dish in servings, filed as a Quick Add because no food is behind it. */
+const recipe = {
+  ...quick,
+  id: 'd',
+  name: 'Turkey Chili',
+  servingLabel: '1 serving · My recipe',
+  quantity: 1,
+  kcal: 420,
+  protein: 38.5,
+  carb: 31.2,
+  fat: 14.1,
+};
+
+test('every row has a way to be corrected (N-17, N-31)', () => {
+  assert.equal(entryEditor(oats), 'portion');
+  assert.equal(entryEditor(recipe), 'servings');
+  assert.equal(entryEditor({ ...recipe, servingLabel: '1½ servings · Forge recipe' }), 'servings');
+  assert.equal(entryEditor({ ...recipe, servingLabel: '1 serving · Holt' }), 'servings');
+  assert.equal(entryEditor(quick), 'numbers');
+  /* A catalogue row whose key was lost has no food to reopen and is not counted in servings. */
+  assert.equal(entryEditor({ ...oats, sourceKey: null }), 'numbers');
+});
+
+test('a logged recipe can be changed to 2 servings: the stored numbers scale, the label follows (N-17)', () => {
+  assert.equal(servingsOf(recipe), 1);
+  assert.deepEqual(rescaleServings(recipe, 2), {
+    quantity: 2,
+    servingLabel: '2 servings · My recipe',
+    grams: null,
+    kcal: 840,
+    protein: 77,
+    carb: 62.4,
+    fat: 28.2,
+  });
+  const half = rescaleServings(recipe, 0.5);
+  assert.equal(half.servingLabel, '½ serving · My recipe');
+  assert.equal(half.kcal, 210);
+});
+
+test('rescaling works from what is STORED, so it survives the recipe being edited or deleted', () => {
+  /* Logged at 2½ servings; taken back to 1. Nothing but the row is read. */
+  const logged = { ...recipe, servingLabel: '2½ servings · My recipe', quantity: 2.5, kcal: 1050, protein: 96.3, carb: 78, fat: 35.3 };
+  assert.equal(servingsOf(logged), 2.5);
+  const one = rescaleServings(logged, 1);
+  assert.equal(one.kcal, 420);
+  assert.equal(one.protein, 38.5);
+  assert.equal(one.servingLabel, '1 serving · My recipe');
+  /* The same number of servings is the same row. */
+  assert.equal(rescaleServings(logged, 2.5).kcal, 1050);
+  assert.equal('name' in one, false);
+});
+
+test('a Quick Add is corrected by retyping it; the name changes only when a new one is given (N-31)', () => {
+  const fixed = numbersPatch(quick, '', { kcal: 510, protein: 30, carb: 40, fat: 22 });
+  assert.deepEqual(fixed, { quantity: 1, servingLabel: null, grams: null, kcal: 510, protein: 30, carb: 40, fat: 22 });
+  assert.equal(numbersPatch(quick, 'Quick add', { kcal: 510, protein: 0, carb: 0, fat: 0 }).name, undefined);
+  assert.equal(numbersPatch(quick, ' Burrito ', { kcal: 510, protein: 0, carb: 0, fat: 0 }).name, 'Burrito');
 });
 
 /* ── save as a meal ───────────────────────────────────────────────────────── */
