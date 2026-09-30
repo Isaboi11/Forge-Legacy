@@ -123,3 +123,40 @@ super set c. Bumper Plate Pinch Holds 3 sets
 * 20 seconds
 rest 1:30 between each super set
 Recovery: Steak and Eggs · 30 min Walk · 8+ hrs of DEEP sleep`;
+
+/*
+ * A SECOND photo of the same card (PO, 2026-09-30, "test this one"), through the deployed table read and workout-tidy
+ * the same day. The AI wrote the squat as "5,5,5,3,3,3,1,1,1 reps @ 60%,65%,…" — a shape not in its own layout — and
+ * the reader then read NINE SETS OF ONE; and it put the hold's time after the block name ("Cardio "Scary Arms", 20
+ * seconds"). Both are read right since; these are the answers that proved it.
+ */
+export const S12_DAY1_TABLE_B = `Day	Exercise	Sets	Reps	Time
+Day 1	Warm Up: Trunk Twists and Crack the Knuckles				
+Day 1	BACK SQUAT	9 total sets	5 reps 60%,65%,70% / 3 reps 73%,75%,78% / 1 rep 82%,85%,87%	*2 min rest between each set
+Day 1	BENCH PRESS		3 reps 70%, 75%, 80%, 80%, 80%	*90 seconds rest between sets
+Day 1	DEADlift	4 sets	3 reps 75%	*90 sec rest between sets *No tapping or Bouncing weight off floor
+Day 1	Cardio "Scary Arms" - Dips	3 sets	8-12 reps	
+Day 1	Cardio "Scary Arms" - BB Bicep Curls	3 sets	15 reps	
+Day 1	Cardio "Scary Arms" - Bumper Plate Pinch Holds	3 sets		20 seconds
+Day 1	*superset all 3, 90 sec rest between sets				
+Day 1	Recovery - STEAK and Eggs				
+Day 1	Recovery - 30 min Walk				
+Day 1	Recovery - 8+ hrs of DEEP sleep`;
+export const S12_DAY1_TABLE_B_TIDY = `"Workout"
+Warm up: Trunk Twists and Crack the Knuckles
+1. Back Squat 5,5,5,3,3,3,1,1,1 reps @ 60%,65%,70%,73%,75%,78%,82%,85%,87%
+* 9 total sets
+rest 2:00
+2. Bench Press 3,3,3,3,3 reps @ 70%,75%,80%,80%,80%
+rest 1:30
+3. Deadlift 4 sets of 3 reps @ 75%
+* No tapping or Bouncing weight off floor
+rest 1:30
+4. a. Dips 3 sets of 8-12 reps
+* Cardio "Scary Arms"
+super set b. BB Bicep Curls 3 sets of 15 reps
+* Cardio "Scary Arms"
+super set c. Bumper Plate Pinch Holds 3 sets
+* Cardio "Scary Arms", 20 seconds
+rest 1:30 between each super set
+Recovery: STEAK and Eggs · 30 min Walk · 8+ hrs of DEEP sleep`;

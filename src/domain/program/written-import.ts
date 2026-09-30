@@ -24,15 +24,13 @@ export function writtenToWeeks(w: WrittenWorkout, rows: readonly WrittenTemplate
     /* A timed hold becomes a timed set — the preview steps its clock and the logger times it. The words that said
        so come out of the note; any other words the card had stay. */
     const noteParts = (r.coachNote ?? '').split(' · ').map((s) => s.trim()).filter(Boolean);
-    /* "20 seconds, Cardio "Scary Arms" superset all 3" (a live run's note): the clock comes off the front, the rest
-       of the words stay. */
-    const at = r.targetReps === 0 && !r.repScheme?.length ? noteParts.findIndex((s) => HOLD.test(s)) : -1;
-    const hold = at >= 0 ? HOLD.exec(noteParts[at]) : null;
+    /* "20 seconds, Cardio "Scary Arms" superset all 3" and "Cardio "Scary Arms", 20 seconds" (two live runs' notes):
+       the clock is whichever comma-separated piece is ONLY a time; the rest of the words stay. */
+    const pieces = noteParts.flatMap((s) => s.split(/,\s*/)).map((s) => s.trim()).filter(Boolean);
+    const at = r.targetReps === 0 && !r.repScheme?.length ? pieces.findIndex((s) => HOLD.test(s) && !HOLD.exec(s)![3]) : -1;
+    const hold = at >= 0 ? HOLD.exec(pieces[at]) : null;
     const durationSec = hold ? Number(hold[1]) * (/^m/i.test(hold[2]) ? 60 : 1) : undefined;
-    const note = noteParts
-      .map((s, i) => (i === at ? (hold?.[3] ?? '').trim() : s))
-      .filter(Boolean)
-      .join(' · ');
+    const note = hold ? pieces.filter((_, i) => i !== at).join(', ') : noteParts.join(' · ');
 
     const rx: ImportRx = {
       ...(r.catalogKey ? { catalogKey: r.catalogKey } : null),
