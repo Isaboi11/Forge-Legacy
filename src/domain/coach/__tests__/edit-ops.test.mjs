@@ -409,3 +409,27 @@ test('setSetsMany writes a batch once, clamps to 1–8, drops a stale key, and r
   const same = setSetsMany(s, [], [{ at: { weekIndex: 0, dayIndex: 0, exerciseIndex: 4 }, sets: row.sets }]);
   assert.equal(same.refusal.reason, 'nothing_to_change');
 });
+
+/* ── QA holtai-09: a swap keeps the dose (EX-002-D5), and says so when the dose is absurd for the new lift ── */
+
+test('holtai-09 — Push-Up 5×100 → a dumbbell press keeps its dose, and the carry-over is named', async () => {
+  const { carriedDoseNote, LOADED_REPS_CEILING } = await import('../edit-ops.ts');
+  const pushUp = POOL.find((e) => e.key === 'push-up');
+  const dbBench = POOL.find((e) => e.equipId === 'dumbbell' && /Dumbbell Bench Press$/.test(e.name));
+  assert.ok(pushUp && dbBench, 'catalogue rows exist');
+  const row = { catalogKey: pushUp.key, name: pushUp.name, sets: 5, reps: 100, repsMax: null };
+  const note = carriedDoseNote(row, dbBench);
+  assert.match(note, /5×100/);
+  assert.match(note, new RegExp(dbBench.name));
+  // The ordinary carry-overs stay silent: a normal dose, and a swap onto another bodyweight movement.
+  assert.equal(carriedDoseNote({ ...row, reps: 10 }, dbBench), null);
+  assert.equal(carriedDoseNote({ ...row, reps: LOADED_REPS_CEILING }, dbBench), null);
+  assert.equal(carriedDoseNote(row, { ...pushUp }), null);
+});
+
+test('holtai-09 — the typed confirm and the tapped reply both carry the note', () => {
+  const intent = readFileSync(path.join(here, '../edit-intent.ts'), 'utf8');
+  assert.match(intent, /const note = carriedDoseNote\(row, r\.replacement\);/);
+  const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
+  assert.match(sheet, /carriedDoseNote\(row, replacement\)/);
+});

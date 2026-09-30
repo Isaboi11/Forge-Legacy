@@ -196,7 +196,7 @@ import {
 } from '@/data/programs-live';
 import { dayLabel, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
-import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
+import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
 import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
@@ -1585,9 +1585,12 @@ export function CoachChatSheet({
       lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
       const row = edit.day?.main[edit.rowIndex];
       const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
+      /* QA holtai-09: a bodyweight dose carried onto a loaded lift is said, with where to change it. */
+      const dose = replacement && row ? carriedDoseNote(row, replacement) : null;
+      const doseLine = dose ? ` It ${dose} — change the reps on the program if that's not what you meant.` : '';
       setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
       say(
-        { kind: 'holt', text: `${what} ${pick('edit_done')}` },
+        { kind: 'holt', text: `${what}${doseLine} ${pick('edit_done')}` },
         {
           kind: 'chips',
           chips: [

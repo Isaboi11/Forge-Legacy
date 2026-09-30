@@ -59,6 +59,7 @@ import {
   setPrescription,
   setSetsMany,
   swapExercise,
+  carriedDoseNote,
   type EditRefusal,
   type EditResult,
   type EditScope,
@@ -759,7 +760,9 @@ export function resolveEditIntent(
     case 'swap': {
       const r = resolveReplacement(intent.to, row, pool, ctx, slotKeysElsewhere(structure, at));
       if (!r.ok) return r;
-      return plan(`${row.name} → ${r.replacement.name}`, (scope) => swapExercise(structure, marks, at, r.replacement, scope));
+      /* QA holtai-09: a bodyweight dose landing on a loaded lift is named in the confirm, not kept silently. */
+      const note = carriedDoseNote(row, r.replacement);
+      return plan(`${row.name} → ${r.replacement.name}${note ? ` (it ${note}; tell me the reps you want after and I'll change them)` : ''}`, (scope) => swapExercise(structure, marks, at, r.replacement, scope));
     }
     case 'sets': {
       if (intent.sets == null) return ask('which_value', valueOptions('sets'), `How many sets of ${row.name}?`);
