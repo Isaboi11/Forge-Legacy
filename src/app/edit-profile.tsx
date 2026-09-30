@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -85,6 +85,9 @@ const SEXES: { id: Sex; title: string }[] = [
 
 function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => void }) {
   const insets = useSafeAreaInsets();
+  /* Three across leaves "Prefer not to say" ~68pt on a 320pt phone, where it wrapped to three lines and
+     dragged all three tiles to that height (QA legacy-26). There it takes its own row. */
+  const narrow = useWindowDimensions().width < 360;
   const { showToast } = useToast();
   const { refetch: refetchProfile } = useProfile();
   const { pick, mediaPickerSheet } = useMediaPicker();
@@ -218,10 +221,15 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
 
         <Group label="Sex" hint="Used for badge artwork and silhouettes only.">
           <View style={styles.tileRow}>
-            {SEXES.map((s) => (
+            {SEXES.filter((s) => !narrow || s.id !== 'unspecified').map((s) => (
               <SelectTile key={s.id} fill title={s.title} selected={sex === s.id} onPress={() => setSex(s.id)} />
             ))}
           </View>
+          {narrow ? (
+            <View style={styles.tileRow}>
+              <SelectTile fill title="Prefer not to say" selected={sex === 'unspecified'} onPress={() => setSex('unspecified')} />
+            </View>
+          ) : null}
         </Group>
 
         <Group label="Athlete Type" hint="Sets what personal improvement is measured against for rank. Change it whenever your training does.">

@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState, type ReactNode, useMemo } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -125,6 +125,9 @@ const EVENT_SYMBOL: Record<TimelineKind, SymbolName> = {
 export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
+  /* A 320pt phone (iPhone SE): the portrait, the badge and their gaps left the name ~110pt, so "Sandbox"
+     read "Sand…" and "FOUNDATION · I" wrapped (QA legacy-26). Tighter gutters there, in both themes. */
+  const narrow = useWindowDimensions().width < 360;
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -314,15 +317,16 @@ export default function LegacyScreen() {
         })}
       >
         {/* ── HERO · identity ── parallaxes up + fades; portrait scales from its left edge (.dc) */}
-        <Animated.View style={[styles.identityRow, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
+        <Animated.View style={[styles.identityRow, narrow ? styles.identityRowNarrow : null, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
           <Animated.View style={{ transformOrigin: 'left center', transform: [{ scale: portraitScale }] }}>
             <SealPortrait name={profile.name} src={profile.avatarUrl} />
           </Animated.View>
           <View style={styles.identityText}>
-            <Text style={styles.athleteName} numberOfLines={1}>
+            {/* Two lines before an ellipsis, and the size gives first where the platform can shrink it. */}
+            <Text style={styles.athleteName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
               {profile.name}
             </Text>
-            <RankLabel label={data.rankName} sub={data.rankSubTier} />
+            <RankLabel label={data.rankName} sub={data.rankSubTier} narrow={narrow} />
           </View>
           {/* `flexShrink: 0` — this wrapper is the actual flex child of the row, and without it the
               badge is what gives way when the name column (flex: 1) and the 90pt portrait have taken
@@ -781,11 +785,11 @@ function SealPortrait({ name, src }: { name: string; src?: string | null }) {
 }
 
 /** RankMarker — the rank name as a bronze marker label. */
-function RankLabel({ label, sub }: { label: string; sub: string }) {
+function RankLabel({ label, sub, narrow = false }: { label: string; sub: string; narrow?: boolean }) {
   return (
     <View style={styles.rankMarker}>
       <View style={styles.rankDiamond} />
-      <Text style={styles.rankText}>
+      <Text style={[styles.rankText, narrow ? styles.rankTextNarrow : null]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
         {label}
         {sub ? ` · ${sub}` : ''}
       </Text>
@@ -1205,6 +1209,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 2,
   },
+  identityRowNarrow: { gap: 10, paddingHorizontal: 16 },
   portraitWrap: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
   portrait: {
     width: 48,
@@ -1241,7 +1246,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     color: flColor.bronze300,
+    flexShrink: 1,
   },
+  rankTextNarrow: { fontSize: 10.5, letterSpacing: 0.8 },
   /*
    * `minWidth`, NOT `width`. It was a hard 76, and the pill below it needs more than that: 18pt of
    * horizontal padding + a 3pt gap + a 9pt chevron leaves 46pt for the label, and "PROGRESS" at 8.5pt
