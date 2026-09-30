@@ -1,8 +1,8 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -70,6 +70,24 @@ export default function InboxScreen() {
     seenMarked.current = true;
     void markNotificationsSeen();
   }, [data]);
+
+  /*
+   * Read again every time the screen comes back into view (QA 09-26 social2-18, social2-13). Every row is
+   * derived from a fact that can stop being true while you are away on the screen it opened: an invite you
+   * just declined, a shared program you passed on, a squad-mate who finished training. The list kept the
+   * rows it had mounted with, so a declined invite still said "Accept and start" until the app restarted.
+   * The first focus is the mount's own fetch; only a RETURN refetches.
+   */
+  const focusedOnce = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!focusedOnce.current) {
+        focusedOnce.current = true;
+        return;
+      }
+      refetch();
+    }, [refetch]),
+  );
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -158,7 +176,9 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'post_reaction' ||
     // 0153. A squad-mate trained. The squad is only the reason we are told — the row is about them.
     n.kind === 'squad_training_started' ||
-    n.kind === 'squad_training_finished';
+    n.kind === 'squad_training_finished' ||
+    // 0251. A squad-mate opened a competition — the row is their invitation, so it wears their face.
+    n.kind === 'squad_challenge_open';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -333,6 +353,25 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{n.squadName}</Text>’s goal closes soon{n.detail ? ` — ${n.detail}` : ''}
         </>
       );
+    /* 0251 — S-3 §10 and §11.1's own sentences. Neutral on purpose: the deletion never names who did it. */
+    case 'squad_owner_changed':
+      return (
+        <>
+          You are now the owner of <Text style={styles.strong}>{n.squadName}</Text>
+        </>
+      );
+    case 'squad_deleted':
+      return (
+        <>
+          <Text style={styles.strong}>{n.squadName}</Text> has been deleted
+        </>
+      );
+    case 'squad_challenge_open':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> opened <Text style={styles.strong}>{n.challengeName ?? 'a competition'}</Text> in <Text style={styles.strong}>{n.squadName}</Text>
+        </>
+      );
   }
 }
 
@@ -383,6 +422,13 @@ function subFor(n: ForgeNotification): string {
     // Owner only, and the one thing worth doing two days out is moving the date (D2).
     case 'squad_goal_closing':
       return 'Extend the deadline, or let it close';
+    case 'squad_owner_changed':
+      return 'Open the squad';
+    case 'squad_deleted':
+      return 'Your own training record is untouched';
+    // The same offer a friend's challenge makes — nobody is entered until they opt in (CS-D1).
+    case 'squad_challenge_open':
+      return 'Opt in to compete';
   }
 }
 
@@ -431,6 +477,12 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${n.squadName}'s goal closed${n.detail ? `, ${n.detail}` : ''}, ${when} ago.`;
     case 'squad_goal_closing':
       return `${n.squadName}'s goal closes soon${n.detail ? `, ${n.detail}` : ''}. Extend the deadline, or let it close.`;
+    case 'squad_owner_changed':
+      return `You are now the owner of ${n.squadName}, ${when} ago. Open the squad.`;
+    case 'squad_deleted':
+      return `${n.squadName} has been deleted, ${when} ago.`;
+    case 'squad_challenge_open':
+      return `${actor} opened ${n.challengeName ?? 'a competition'} in ${n.squadName}, ${when} ago. Opt in to compete.`;
   }
 }
 
@@ -484,6 +536,13 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <ProgramGlyph size={11} color={flColor.gray400} />;
     case 'squad_goal_closing':
       return <ProgramGlyph size={11} color={flColor.bronze300} />;
+    case 'squad_owner_changed':
+      return <PeopleGlyph size={11} color={flColor.bronze300} />;
+    // Neutral, like a closed goal — a deletion is not a warning about the reader.
+    case 'squad_deleted':
+      return <XGlyph size={11} color={flColor.gray600} />;
+    case 'squad_challenge_open':
+      return <SwordsGlyph size={11} color={flColor.bronze300} />;
   }
 }
 

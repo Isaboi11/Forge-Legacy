@@ -39,6 +39,7 @@ export type NotificationDestination =
   | { pathname: '/squad/[id]/goal'; params: { id: string } }
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/transformation'
+  | '/(tabs)/squads'
   | '/friends'
   | '/discover-squads'
   | '/'
@@ -145,6 +146,17 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
        thing to do with it (D2 — extending lives before the deadline, and this is where). */
     case 'squad_goal_closing':
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId, editGoal: 'edit' } } : '/inbox';
+    /* 0251 — a squad competition you can still opt into opens the competition, where the Join button is
+       (the same destination as a friend's `challenge_invite`). */
+    case 'squad_challenge_open':
+      return n.challengeId ? { pathname: '/challenge/[id]', params: { id: n.challengeId } } : '/inbox';
+    /*
+     * 0251 — the squad is GONE, so its page is the one place this must never go: it would answer "this
+     * squad is no longer available" to somebody who just read that it was deleted. The Squads tab is
+     * where its card used to be. `squad_owner_changed` needs no arm: the default opens the squad.
+     */
+    case 'squad_deleted':
+      return '/(tabs)/squads';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }

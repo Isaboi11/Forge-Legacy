@@ -80,7 +80,20 @@ export type NotificationKind =
   | 'squad_goal_met'
   | 'squad_goal_closed'
   /** The OWNER alone: a live goal under target is within 2 days of its deadline (§6). Inbox only — no push. */
-  | 'squad_goal_closing';
+  | 'squad_goal_closing'
+  /**
+   * The squad events nobody was told about (0251, QA 09-26 social2-06/27). Like the goal kinds they do
+   * NOT come from `notification_feed` — see `fetchSocialNotices` — and never pass `KINDS`.
+   *
+   *   squad_owner_changed  — the NEW OWNER alone (S-3 §10: "no squad-wide notification is sent").
+   *   squad_deleted        — every member the squad had (S-3 §11.1). The squad row is gone, so the name
+   *                          and crest are the server's snapshot.
+   *   squad_challenge_open — a squad competition you can still opt into. Inbox only, never a push
+   *                          (P5-D1 r4: a non-participant receives nothing).
+   */
+  | 'squad_owner_changed'
+  | 'squad_deleted'
+  | 'squad_challenge_open';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -217,14 +230,68 @@ async function fetchGoalNotifications(): Promise<ForgeNotification[]> {
     }));
 }
 
+interface SocialNoticeRow {
+  kind: string;
+  at: string;
+  unread: boolean;
+  squad_id: string | null;
+  squad_name: string | null;
+  squad_crest: string | null;
+  squad_photo_url: string | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_avatar_url: string | null;
+  challenge_id: string | null;
+  challenge_name: string | null;
+}
+
+const SOCIAL_KINDS: NotificationKind[] = ['squad_owner_changed', 'squad_deleted', 'squad_challenge_open'];
+
+/**
+ * The 0251 rows. Resolves [] on ANY error, for the reason `fetchGoalNotifications` does: the web deploy
+ * goes out before the migration is pasted, and a side-feed that does not exist yet must never cost the
+ * athlete the main one.
+ */
+async function fetchSocialNotices(): Promise<ForgeNotification[]> {
+  const { data, error } = await supabase.rpc('social_notices');
+  if (error || !data) return [];
+  return (data as SocialNoticeRow[])
+    .filter((r) => (SOCIAL_KINDS as string[]).includes(r.kind))
+    .map((r) => ({
+      kind: r.kind as NotificationKind,
+      at: r.at,
+      unread: !!r.unread,
+      squadId: r.squad_id ?? '',
+      squadName: r.squad_name ?? '',
+      squadCrest: r.squad_crest ?? '',
+      squadPhotoUrl: r.squad_photo_url ?? null,
+      challengeId: r.challenge_id ?? null,
+      challengeName: r.challenge_name ?? null,
+      inviteId: null,
+      inviteName: null,
+      shareId: null,
+      shareName: null,
+      postId: null,
+      postAudience: null,
+      actorId: r.actor_id ?? null,
+      actorName: r.actor_name ?? null,
+      actorAvatarUrl: r.actor_avatar_url ?? null,
+      detail: null,
+    }));
+}
+
 /** Everything that has happened to you, newest first. Unknown kinds are dropped, never rendered raw. */
 export async function fetchNotifications(limit = 50): Promise<ForgeNotification[]> {
-  const [{ data, error }, goals] = await Promise.all([supabase.rpc('notification_feed', { p_limit: limit }), fetchGoalNotifications()]);
+  const [{ data, error }, goals, notices] = await Promise.all([
+    supabase.rpc('notification_feed', { p_limit: limit }),
+    fetchGoalNotifications(),
+    fetchSocialNotices(),
+  ]);
   if (error) {
     if (isMissingFn(error)) throw new Error('Notifications aren’t available yet — migration 0054 hasn’t been applied.');
     throw error;
   }
-  const out: ForgeNotification[] = [...goals];
+  const out: ForgeNotification[] = [...goals, ...notices];
   for (const r of (data ?? []) as FeedRow[]) {
     const kind = asKind(r.kind);
     if (!kind) continue; // a kind this build doesn't know how to word is worse than silence
@@ -250,19 +317,24 @@ export async function fetchNotifications(limit = 50): Promise<ForgeNotification[
       detail: null,
     });
   }
-  // The two sources interleave by time, and the page stays the size it was asked for.
+  // The three sources interleave by time, and the page stays the size it was asked for.
   return out.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, limit);
 }
 
 /**
  * How many are new — what the bell reads. Resolves 0 rather than throwing: an indicator is never worth
  * breaking the screen that hosts it, and a missing migration should read as "nothing new", not an error.
- * The goal rows (0200) are counted alongside, so a goal closing lights the bell like anything else.
+ * The goal rows (0200) and the squad notices (0251) are counted alongside, so they light the bell like
+ * anything else.
  */
 export async function fetchUnreadNotificationCount(): Promise<number> {
-  const [{ data, error }, goals] = await Promise.all([supabase.rpc('notification_unread_count'), fetchGoalNotifications()]);
+  const [{ data, error }, goals, notices] = await Promise.all([
+    supabase.rpc('notification_unread_count'),
+    fetchGoalNotifications(),
+    fetchSocialNotices(),
+  ]);
   const base = error ? 0 : Number(data ?? 0);
-  return base + goals.filter((g) => g.unread).length;
+  return base + goals.filter((g) => g.unread).length + notices.filter((g) => g.unread).length;
 }
 
 /** Move the read line to now. Called when the feed is opened, after its items have already resolved. */
