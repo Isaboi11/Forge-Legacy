@@ -20,6 +20,7 @@ import { fetchNudgeHistory, fetchNudgeSignals, markNudge } from '@/data/nudge-li
 import { capAllows } from '@/domain/entitlement/caps-core';
 import { track } from '@/lib/analytics';
 import { useEntitlementState } from '@/lib/entitlement';
+import { useAuth } from '@/lib/auth';
 
 /**
  * The four surfaces the coach belongs on, and nowhere else.
@@ -207,8 +208,12 @@ export function CoachBubble() {
   const { snapshot: plan } = useEntitlementState();
   const canBuildProgram = !plan || (capAllows(plan.usage.programs, plan.caps.programs) && capAllows(plan.usage.holtPrograms, plan.caps.holt_programs));
 
+  /* Signed out, `/` is the Welcome screen and there is no athlete to read: the nudge read went out anyway
+     and came back 401 on every visit (QA 09-26 auth-16, under B3). No session, no read. */
+  const signedIn = !!useAuth().session;
+
   useEffect(() => {
-    if (!HOME_SURFACES.has(pathname) || kitchen) return;
+    if (!signedIn || !HOME_SURFACES.has(pathname) || kitchen) return;
     let alive = true;
     void (async () => {
       const [signals, history] = await Promise.all([fetchNudgeSignals(), fetchNudgeHistory()]);
@@ -222,7 +227,7 @@ export function CoachBubble() {
     return () => {
       alive = false;
     };
-  }, [pathname, kitchen, canBuildProgram]);
+  }, [signedIn, pathname, kitchen, canBuildProgram]);
 
   /*
    * RE-READ ON ARRIVAL, not once on mount. `usePathname` already re-renders this component on every
