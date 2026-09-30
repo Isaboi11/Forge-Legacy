@@ -282,7 +282,24 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
    */
   /* …and several such groups on one line, "5 reps 60%, 65%, 70%; 3 reps 73%, 75%, 78%; 1 rep 82%, 85%, 87%" (Season
      12 Day 1): nine sets, in the order written. */
-  const multi = multiSets(text);
+  /*
+   * A REP LIST AND A PERCENTAGE LIST, SIDE BY SIDE — "5,5,5,3,3,3,1,1,1 reps @ 60%,65%,70%,73%,75%,78%,82%,85%,87%".
+   * The AI layout wrote Season 12 Day 1 this way on a live run (2026-09-30), and the reader took the LAST rep count
+   * with every percentage: nine sets of ONE. Read as pairs, set by set — only when both lists are the same length.
+   */
+  const paired = /(\d{1,3}(?:\s*,\s*\d{1,3}){1,19})\s*reps?\s*(?:(?:@|\bat\b|\be\b)\s*)?(\d{1,3}(?:\.\d+)?\s*%?(?:\s*,\s*\d{1,3}(?:\.\d+)?\s*%?){1,19})/i.exec(text);
+  if (paired && /%/.test(paired[2])) {
+    const reps = paired[1].split(',').map((x) => Number(x.trim()));
+    const pcts = paired[2].split(',').map((x) => Number(x.replace('%', '').trim()));
+    if (reps.length === pcts.length) {
+      ex.repScheme = reps;
+      ex.percentScheme = pcts;
+      ex.sets = reps.length;
+      take(paired[0]);
+    }
+  }
+
+  const multi = ex.percentScheme ? { reps: [], pcts: [] } : multiSets(text);
   if (multi.pcts.length) {
     ex.repScheme = multi.reps;
     ex.percentScheme = multi.pcts;
@@ -527,7 +544,11 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       if (rec[1]) after.push(rec[1]);
       continue;
     }
-    const cardio = /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line);
+    /* …also written as a NOTE line by the AI layout ("* Cardio: Scary Arms", a live run 2026-09-30) — a heading only
+       when it names no number and a NEWLY NUMBERED lift follows ("4. a. Dips"). Inside a superset ("* Cardio "Scary
+       Arms"" under 4a, before "super set b.", another live run) it is that lift's note, as before. */
+    const noted = /^[*•·]\s*(?:cardio|finisher|conditioning)\s*:?\s*([^\d]*)$/i.exec(line);
+    const cardio = /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line) ?? (noted && labelOf(nextLine)?.n ? noted : null);
     if (cardio) {
       /* The card's "Cardio" is the last block of the SAME workout — curls and shrugs, KB swings — so it stays
          in the main list, and its lines are read like any other. "Planned Day off" is a note, not a lift. */
@@ -538,7 +559,13 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       newBlock = true;
       block = [];
       blockSuperset = false;
-      if (cardio[1]) handleLift(cardio[1], true);
+      /* "Cardio: Scary Arms" over "4. a. Dips …" — the block's NAME, which its first lift carries as a note; never a
+         lift called Scary Arms. A heading that names a lift ("Cardio "Bodyweight Bulgarians"", its sets below) or
+         carries numbers is read as a lift, as it always was. */
+      const next = labelOf(nextLine);
+      if (cardio[1] && !/\d/.test(cardio[1]) && (next?.n || next?.letter)) {
+        blockTitle = { n: next.n ?? String(Number(lastN ?? 0) + 1), text: cardio[1].replace(/["“”]/g, '').trim() };
+      } else if (cardio[1]) handleLift(cardio[1], true);
       continue;
     }
 

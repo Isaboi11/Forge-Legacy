@@ -53,6 +53,8 @@ for (const [label, text] of [
   ['whole card → AI, run 2', S12.S12_DAY1_CARD_TIDY_2],
   ['table → AI, run 1', S12.S12_DAY1_TABLE_TIDY_1],
   ['table → AI, run 2', S12.S12_DAY1_TABLE_TIDY_2],
+  /* The second photo: "5,5,5,3,3,3,1,1,1 reps @ 60%,…" once read as nine sets of ONE. */
+  ['second photo, table → AI', S12.S12_DAY1_TABLE_B_TIDY],
 ]) {
   test(`${label}: the preview's weeks hold the card, and Build a Program gets every set of it`, () => {
     const { weeks, skipped } = weeksOf(text);

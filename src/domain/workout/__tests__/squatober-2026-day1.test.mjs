@@ -67,6 +67,7 @@ for (const [label, source, tidied] of [
   ['table → AI layout, run 2', () => tsvToWrittenText(sanitizeTranscript(S12.S12_DAY1_TABLE).tsv), S12.S12_DAY1_TABLE_TIDY_2],
   ['whole card → AI layout, run 1', () => S12.S12_DAY1_CARD, S12.S12_DAY1_CARD_TIDY_1],
   ['whole card → AI layout, run 2', () => S12.S12_DAY1_CARD, S12.S12_DAY1_CARD_TIDY_2],
+  ['second photo, table → AI layout', () => tsvToWrittenText(sanitizeTranscript(S12.S12_DAY1_TABLE_B).tsv), S12.S12_DAY1_TABLE_B_TIDY],
 ]) {
   test(`${label}: accepted by the check, and reads as the card is written`, () => {
     /* "DEAD lift" on the card, "Deadlift" in the rewrite: a faithful rewrite, and no longer thrown away for it. */
