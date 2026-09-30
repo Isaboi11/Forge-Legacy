@@ -54,6 +54,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
 /* The canonical prescription renderer — the one Program Detail and the logger read. A second one here
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
+import { MEDICAL_CONTEXT } from './medical-routing.ts';
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
@@ -2201,6 +2202,28 @@ export function isMedical(text: string): boolean {
 export const STOP_KICKER = 'OUT OF MY LANE';
 export const MEDICAL_STOP =
   "That's a physio's job, not mine. Get it looked at — I'll still be here after.";
+
+/*
+ * ⛔ NOT THE PHYSIO LINE FOR A PREGNANCY, A CONDITION, OR SOMEBODY ALREADY CLEARED (QA holtai-10). "That's a
+ * physio's job… Get it looked at" went to "I'm pregnant" and to "my doctor cleared me" — the wrong person, and
+ * telling somebody who has just been checked to go and get checked. A factual correction of WHO, in the
+ * physio line's own shape; nothing here is advice.
+ *
+ * ⚠ DRAFT COPY, AWAITING PO AND LEGAL SIGN-OFF, like every stop line here.
+ */
+/** A clinician's word reported — "my doctor said", "my OB cleared me". Pregnancy, conditions and medication
+    are `MEDICAL_CONTEXT`'s, the router's own list. */
+const CLINICIAN_SAID =
+  /\b(doctor|dr\.?|surgeon|gp|ob|ob-?gyn|midwife|cardiologist|specialist)\s+(said|says|told|cleared|signed|gave|okayed|ok'?d)\b/i;
+
+/** Should the stop name the athlete's doctor rather than a physio? */
+export function isClinicianStop(text: string): boolean {
+  const t = (text ?? '').replace(/[‘’ʼ]/g, "'");
+  return MEDICAL_CONTEXT.test(t) || CLINICIAN_SAID.test(t);
+}
+
+export const CLINICIAN_STOP =
+  "That one's your doctor's call, not a coach's. They know things about you that I can't see. I'll still be here after.";
 
 /*
  * ⛔ THREE STOPS THAT ARE NOT A PHYSIO REFERRAL (stress test 2026-09-21). "That's a physio's job" was the

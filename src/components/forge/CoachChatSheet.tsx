@@ -89,6 +89,8 @@ import {
   writtenDayCardFor,
   INTRO,
   MEDICAL_STOP,
+  CLINICIAN_STOP,
+  isClinicianStop,
   CRISIS_KICKER,
   CRISIS_STOP,
   URGENT_KICKER,
@@ -158,7 +160,7 @@ import {
 } from '@/domain/coach/chat-core';
 import { typedEquipment } from '@/domain/coach/typed-equipment';
 import { limitationsLeftOut } from '@/domain/coach/rulebook/hybrid';
-import { medicalRoute } from '@/domain/coach/medical-routing';
+import { MINOR_AGE, medicalRoute } from '@/domain/coach/medical-routing';
 import { askHistory, markStopped, summaryHistory } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
@@ -2349,10 +2351,24 @@ export function CoachChatSheet({
    * ⛔ EVERY STOP GOES THROUGH `stopOn` — the card is shown AND the athlete's line that caused it is marked
    * `stopped` in the same update, so `askHistory` never sends it to a model again (QA R2-F1).
    */
+  /** What the kitchen was last asked, and what it has shown — see HOLT'S KITCHEN below. */
+  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
   const stopOn = (said: string, card: Turn) => setThread((t) => [...markStopped(t, said), ...stamped([card])]);
+  /* QA holtai-10: pregnancy, a condition or a doctor's clearance names their doctor — never "get it looked at". */
   const medicalStop = (text: string) =>
-    stopOn(text, { kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
-  const careStop = (text: string) => stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+    stopOn(text, {
+      kind: 'stop',
+      text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : isClinicianStop(text) ? CLINICIAN_STOP : MEDICAL_STOP,
+    });
+  const careStop = (text: string) => {
+    stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+    /* QA holtai-10: an under-18 food question in the kitchen keeps its recipe door — recipes are theirs to
+       have (NUT-D5 stops the numbers, not the cooking). The stopped ask is dropped so the door cannot resend it. */
+    if (kitchen && MINOR_AGE.test(text)) {
+      kitchenAsk.current.ask = '';
+      say({ kind: 'chips', chips: [{ label: 'Show me what I can cook', patch: {}, kitchen: 'go' }] });
+    }
+  };
   const crisisStop = (text: string) => stopOn(text, { kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
   const urgentStop = (text: string) => stopOn(text, { kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
   useEffect(() => {
@@ -2366,7 +2382,7 @@ export function CoachChatSheet({
    * protein / Different style ask again with everything already on screen excluded (§2). Dishes shown are
    * remembered for 30 days (`kitchen_suggestions`) and sent back as "already suggested".
    */
-  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
+  /* `kitchenAsk` is declared above the stops, which clear it (holtai-10). */
   const runKitchen = async (ask: string, nudge: KitchenNudge | null) => {
     const k = kitchenAsk.current;
     if (!nudge) k.ask = ask;
