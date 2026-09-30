@@ -2356,11 +2356,9 @@ export function CoachChatSheet({
   const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
   const stopOn = (said: string, card: Turn) => setThread((t) => [...markStopped(t, said), ...stamped([card])]);
   /* QA holtai-10: pregnancy, a condition or a doctor's clearance names their doctor — never "get it looked at". */
-  const medicalStop = (text: string) =>
-    stopOn(text, {
-      kind: 'stop',
-      text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : isClinicianStop(text) ? CLINICIAN_STOP : MEDICAL_STOP,
-    });
+  const medicalStopText = (text: string) =>
+    medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : isClinicianStop(text) ? CLINICIAN_STOP : MEDICAL_STOP;
+  const medicalStop = (text: string) => stopOn(text, { kind: 'stop', text: medicalStopText(text) });
   const careStop = (text: string) => {
     stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
     /* QA holtai-10: an under-18 food question in the kitchen keeps its recipe door — recipes are theirs to
