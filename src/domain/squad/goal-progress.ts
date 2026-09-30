@@ -7,6 +7,8 @@
  * projected close — those read as absent rather than as zero or as "today".
  */
 
+import { localYmd } from '../dates/local-date.ts';
+
 export interface GoalWeek {
   /** ISO timestamp of the week's start. */
   weekStart: string;
@@ -50,7 +52,11 @@ export function projectedClose(done: number, target: number, pace: number | null
 export interface Milestone {
   value: number;
   reached: boolean;
-  /** ISO date the squad crossed it, when the weekly series can say. Null for one still ahead. */
+  /**
+   * The calendar day (`YYYY-MM-DD`) the squad crossed it, when the weekly series can say. Null for one
+   * still ahead. A day, not an instant: the week bucket is a UTC Monday, and read as an instant it showed
+   * as the Sunday before in the US (QA 09-26 B14).
+   */
   crossedAt: string | null;
   /** True for the last one — the target itself, the one that closes the goal. */
   isTarget: boolean;
@@ -62,13 +68,13 @@ export interface Milestone {
  * Fifths rather than round hundreds because a target of 500 and a target of 30 both deserve a rail with
  * something on it — hard-coding 100/200/300/400/500 works for exactly one goal.
  */
-export function milestones(target: number, done: number, weeks: readonly GoalWeek[]): Milestone[] {
+export function milestones(target: number, done: number, weeks: readonly GoalWeek[], startedAt: string | null = null): Milestone[] {
   if (target <= 0) return [];
   const steps = 5;
   const out: Milestone[] = [];
   for (let i = 1; i <= steps; i += 1) {
     const value = Math.round((target / steps) * i);
-    out.push({ value, reached: done >= value, crossedAt: crossedWeek(weeks, value), isTarget: i === steps });
+    out.push({ value, reached: done >= value, crossedAt: crossedDay(weeks, value, startedAt), isTarget: i === steps });
   }
   return out;
 }
@@ -80,11 +86,24 @@ export function milestones(target: number, done: number, weeks: readonly GoalWee
  * "we passed 100 at some point" is true but useless, and a DATE invented to fill the slot would be a
  * specific false claim. Absent renders as absent.
  */
-function crossedWeek(weeks: readonly GoalWeek[], value: number): string | null {
+function crossedDay(weeks: readonly GoalWeek[], value: number, startedAt: string | null): string | null {
   let running = 0;
   for (const w of weeks) {
     running += w.value;
-    if (running >= value) return w.weekStart;
+    if (running >= value) {
+      // The bucket's own calendar day — the UTC date the SQL truncated to.
+      const bucket = w.weekStart.slice(0, 10);
+      // Never before the goal began: a goal started Sat Sep 26 was "Crossed Sep 20" because its first
+      // week bucket opened earlier (QA 09-26 B14, social-05). The goal's start is the earliest honest day.
+      if (startedAt) {
+        const start = new Date(startedAt);
+        if (Number.isFinite(start.getTime())) {
+          const startDay = localYmd(start);
+          if (bucket < startDay) return startDay;
+        }
+      }
+      return bucket;
+    }
   }
   return null;
 }

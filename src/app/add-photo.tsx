@@ -18,6 +18,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
+import { shiftYmd, todayYmd } from '@/domain/dates/local-date';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
@@ -65,14 +66,10 @@ function prettyLift(slug: string): string {
   return trimmed.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
-const today = () => iso(new Date());
-
-function shiftDay(dateIso: string, days: number): string {
-  const d = new Date(`${dateIso}T00:00:00`);
-  d.setDate(d.getDate() + days);
-  return iso(d);
-}
+// The athlete's calendar day (QA 09-26 B14). `toISOString().slice(0, 10)` was the UTC date, so in a US
+// evening the photo defaulted to tomorrow and the › arrow stepped past today.
+const today = () => todayYmd();
+const shiftDay = shiftYmd;
 
 function pretty(dateIso: string): string {
   const d = new Date(`${dateIso}T00:00:00`);

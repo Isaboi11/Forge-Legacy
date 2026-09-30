@@ -16,6 +16,7 @@ import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution, type PastGoal 
 import { barPct, milestones, pctOf, projectedClose, recentPace, sharePct } from '@/domain/squad/goal-progress';
 import { earlyLabel } from '@/domain/squad/goal-state';
 import { useQuery } from '@/lib/useQuery';
+import { toLocalDate } from '@/domain/dates/local-date';
 
 /**
  * S-2b Squad Goal Detail — built to `Squad Goal Detail.dc.html` (Design `b029488a`).
@@ -64,9 +65,10 @@ function fmtValue(v: number, kind: string): string {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// A `YYYY-MM-DD` is that local day; a timestamp is the viewer's local day (QA 09-26 B14).
 const shortDate = (iso: string | null) => {
   if (!iso) return null;
-  const d = new Date(iso);
+  const d = toLocalDate(iso);
   return Number.isNaN(d.getTime()) ? null : `${MONTHS[d.getMonth()]} ${d.getDate()}`;
 };
 const monthOf = (d: Date) => `${MONTHS[d.getMonth()]}`;
@@ -176,7 +178,7 @@ export default function SquadGoalScreen() {
 
   const pace = recentPace(data.weeks);
   const close = projectedClose(done, target, pace, new Date());
-  const stones = milestones(target, done, data.weeks);
+  const stones = milestones(target, done, data.weeks, data.startedAt);
   const top = data.contributions.reduce((m, c) => Math.max(m, c.value), 0);
   const weekMax = data.weeks.reduce((m, w) => Math.max(m, w.value), 0);
 
@@ -327,7 +329,8 @@ export default function SquadGoalScreen() {
           <View style={styles.barLabels}>
             {data.weeks.map((w) => (
               <Text key={w.weekStart} style={styles.barLabel}>
-                {shortDate(w.weekStart)}
+                {/* The bucket's own day (a UTC Monday), not that instant in local time — the Sunday before in the US. */}
+                {shortDate(w.weekStart.slice(0, 10))}
               </Text>
             ))}
           </View>
