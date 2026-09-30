@@ -42,6 +42,7 @@ import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { summarizeChat } from '@/data/holt-chats-live';
+import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
 import { kitchenLeftLive, kitchenPantryLive } from '@/data/holt-kitchen-live';
 import { askKitchenLive, kitchenRulesLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
@@ -82,7 +83,7 @@ import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live'
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { assemble } from '@/domain/coach/assemble';
 import { recommendFromShelf, SHELF_CANNOT_ADAPT, type ShelfProgram } from '@/domain/coach/recommend';
-import { getProgramDefinitions } from '@/domain/training/programs';
+import { getProgramDefinition, getProgramDefinitions } from '@/domain/training/programs';
 import {
   dayPreamble,
   writtenDayCardFor,
@@ -155,7 +156,7 @@ import {
 import { typedEquipment } from '@/domain/coach/typed-equipment';
 import { CONCERN } from '@/domain/coach/rulebook/hybrid';
 import { medicalRoute } from '@/domain/coach/medical-routing';
-import { askHistory, markStopped } from '@/domain/coach/chat-history';
+import { askHistory, markStopped, summaryHistory } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import { takeCoachAskSeed } from '@/lib/coach-ask-seed';
@@ -202,6 +203,8 @@ import {
   editableSessions,
   replacementsFor,
   rowsFor,
+  slotKeysElsewhere,
+  swapTerms,
   valuesFor,
   SCOPE_CHOICES,
   type EditChangeId,
@@ -301,8 +304,9 @@ export function CoachChatSheet({
     whenThreadEnds(
       premiumAi
         ? (turns) =>
-            /* The same builder every ask uses — a stopped line is never summarised either (QA R2-F1). */
-            void summarizeChat(askHistory(turns, Infinity))
+            /* A stopped line is never summarised either (QA R2-F1); and what the app DID — a failed request,
+               a plan only shown — rides along so the memory cannot say it happened (QA holtai-13). */
+            void summarizeChat(summaryHistory(turns))
         : null,
     );
   }, [premiumAi]);
@@ -841,6 +845,8 @@ export function CoachChatSheet({
               environment: merged.environment ?? 'full_gym',
             },
             shelf,
+            /* QA holt-21: the card says the program they are on ends if they start this one. */
+            { current: active?.name ?? null },
           );
           setBusy(null);
 
@@ -1442,7 +1448,7 @@ export function CoachChatSheet({
       if (!day || !change) return;
       const options =
         change === 'swap'
-          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx())
+          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx(edit.program), 5, edit.at ? slotKeysElsewhere(edit.program.structure, { ...edit.at, exerciseIndex: pickStep.index }) : [])
           : valuesFor(day, change, pickStep.index);
       setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
       say(
@@ -1479,16 +1485,26 @@ export function CoachChatSheet({
     if (pickStep.step === 'scope') void applyEdit(pickStep.scope);
   };
 
-  /** The athlete's own constraints, as the candidate ranker needs them. */
-  const editCtx = () =>
-    contextFrom({
-      owned: constraints.ownedEquipment ?? [],
+  /** The athlete's own constraints, as the candidate ranker needs them — judged against the program being
+      edited: its room and never above its rung (QA holt-24, `swapTerms`). */
+  const editCtx = (program: SavedProgram) => {
+    const def = program.sourceDefinitionId ? getProgramDefinition(program.sourceDefinitionId) : null;
+    const terms = swapTerms({
+      athleteLevel: constraints.experience?.lifting,
+      programLevel: def?.difficulty ?? null,
+      programEnvironment: def?.environment ?? null,
+      rememberedRoom: room.current,
+      owned: constraints.ownedEquipment,
+    });
+    return contextFrom({
+      owned: terms.owned,
       canDo: canDoExercise,
-      experience: constraints.experience?.lifting ?? 'intermediate',
+      experience: terms.experience,
       limitations: constraints.limitations ?? [],
       limitationPatterns,
       excludeExercises: [],
     });
+  };
 
   const applyEdit = async (scope: EditScope) => {
     if (!edit?.at || !edit.change || edit.rowIndex == null || !edit.value) return;
@@ -1589,7 +1605,7 @@ export function CoachChatSheet({
       said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
     ]);
     setBusy(null);
-    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
+    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
     if (!res.ok) {
       /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
       pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };
@@ -4633,14 +4649,7 @@ function PlanPreview({
 
         {program ? (
           <>
-            <View style={styles.statGrid}>
-              {program.stats.map((st) => (
-                <View key={st.label} style={styles.stat}>
-                  <Text style={styles.statValue}>{st.value}</Text>
-                  <Text style={styles.statLabel}>{st.label}</Text>
-                </View>
-              ))}
-            </View>
+            <HoltStatGrid stats={program.stats} />
             <Text style={styles.reasoning}>{program.reasoning}</Text>
             <View style={styles.weekList}>
               {program.weeks.map((w, i) => (
@@ -4805,14 +4814,8 @@ function ProgramCardView({
         </View>
 
         <View style={styles.artifactBody}>
-          <View style={styles.statGrid}>
-            {card.stats.map((st) => (
-              <View key={st.label} style={styles.stat}>
-                <Text style={styles.statValue}>{st.value}</Text>
-                <Text style={styles.statLabel}>{st.label}</Text>
-              </View>
-            ))}
-          </View>
+          {/* holtai-17: a one-word value is sized to fit its cell — never "Intermediat / e". */}
+          <HoltStatGrid stats={card.stats} />
 
           {card.ribbon.length > 1 ? <VolumeRibbon weeks={card.ribbon} caption={card.ribbonCaption} /> : null}
 
@@ -5758,11 +5761,6 @@ const styles = StyleSheet.create({
   },
   draftBannerText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   cardTitle: { fontFamily: flFont.display, fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: 0.4, color: flColor.cream100 },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 10 },
-  // Three across, so six stats form two clean rows and a dropped cell reflows rather than leaving a hole.
-  stat: { width: '31%', gap: 3 },
-  statValue: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100 },
-  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.labelInk },
   ribbonWrap: { gap: 7 },
   ribbon: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 46 },
   bar: { flex: 1, borderRadius: 1, backgroundColor: flColor.bronze600 },
