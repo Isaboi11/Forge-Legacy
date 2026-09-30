@@ -5,6 +5,7 @@ import {
   deriveBlocks,
   durText,
   estimatedSessionMinutes,
+  estimatedTemplateMinutes,
   isAmrap,
   isTimed,
   plannedSetCount,
@@ -287,4 +288,28 @@ test('a program day and a template cannot disagree about how long ten sets take'
   // One `MINUTES_PER_SET`, two estimators. They drifted apart the moment there were two constants.
   const main = [{ name: 'Bench Press', sets: 5, reps: 5 }, { name: 'Barbell Row', sets: 5, reps: 8 }];
   assert.equal(estimatedSessionMinutes(undefined, main), estimatedMinutes([{ sets: 10, targetReps: 8 }]));
+});
+
+test('B6: a template and the day it came from get ONE estimate, and it counts sets', () => {
+  const day = {
+    warmup: [{ name: 'Bike', sets: 1, reps: 1 }],
+    main: [
+      { name: 'Squat', sets: 5, reps: 5 },
+      { name: 'Plank', sets: 3, durationSec: 40 },
+      { name: 'A', sets: 3, reps: 10, groupId: 'g', groupKind: 'superset', groupRounds: 3 },
+      { name: 'B', sets: 3, reps: 10, groupId: 'g', groupKind: 'superset', groupRounds: 3 },
+    ],
+  };
+  const rows = [
+    { section: 'warmup', sets: 1, targetReps: 1 },
+    { section: 'main', sets: 5, targetReps: 5 },
+    { section: 'main', sets: 3, targetReps: 0, targetDurationSec: 40 },
+    { section: 'main', sets: 3, targetReps: 10, groupId: 'g', groupKind: 'superset', groupRounds: 3 },
+    { section: 'main', sets: 3, targetReps: 10, groupId: 'g', groupKind: 'superset', groupRounds: 3 },
+    { section: 'cooldown', sets: 2, targetReps: 30 },
+  ];
+  assert.equal(estimatedTemplateMinutes(rows), estimatedSessionMinutes(day.warmup, day.main));
+  // 33 sets of 70 is not "~25 min" (QA programs-12).
+  const heavy = Array.from({ length: 3 }, (_, i) => ({ name: `L${i}`, sets: 11, reps: 70 }));
+  assert.ok(estimatedSessionMinutes([], heavy) >= 90);
 });

@@ -36,9 +36,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/program/import-parse';
-import { resolveExerciseName } from '@/domain/exercise-picker/data';
+import { resolveImportedName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
-import { bumpTimedSet, durText } from '@/domain/program/prescription';
+import { bumpTimedSet, durText, estimatedSessionMinutes } from '@/domain/program/prescription';
 import { prescriptionOfRow, toTemplateExercises } from '@/lib/workout-template-rows';
 import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
@@ -249,16 +249,22 @@ export default function WorkoutBuilderScreen() {
    * parser's own "Day 1"). Sets and reps go through the same clamps every other row here obeys.
    */
   const confirmImport = (weeks: ParsedWeek[]) => {
-    const resolveKey = (n: string) => resolveExerciseName(n)?.key;
+    /* The import's resolver — a matched row takes the library's name, a typo is put right (QA library-17). */
+    const resolveKey = resolveImportedName;
     const day = toProgramStructure(weeks, '', resolveKey).days[0];
     if (!day || day.main.length === 0) return;
-    const items: ProgramExercise[] = day.main.map((x) => ({
-      ...x,
-      id: newExerciseId(),
-      /* A card's ramp keeps every set (see `program-import-draft.ts`); anything else fits the steppers. */
-      sets: x.repScheme?.length ? x.repScheme.length : clampSets(x.sets),
-      reps: clampReps(x.reps),
-    }));
+    const items: ProgramExercise[] = day.main.map((x) => {
+      /* To failure (`['F', …]`, QA programs-08) is clamped with its scheme, like any set count. */
+      const failing = !!x.repScheme?.length && x.repScheme.every((r) => r === 'F');
+      return {
+        ...x,
+        id: newExerciseId(),
+        /* A card's ramp keeps every set (see `program-import-draft.ts`); anything else fits the steppers. */
+        sets: x.repScheme?.length && !failing ? x.repScheme.length : clampSets(x.sets),
+        reps: clampReps(x.reps),
+        ...(failing ? { repScheme: x.repScheme!.slice(0, clampSets(x.sets)) } : null),
+      };
+    });
     const givenName = /^day \d+$/i.test(day.name.trim()) ? '' : day.name.trim();
     mutate((d) => ({
       ...d,
@@ -340,7 +346,8 @@ export default function WorkoutBuilderScreen() {
   const editing = !!draft.editId && !forLater;
   // The same rule The Record's save uses: a shape with nothing in its Main section is not a workout.
   const canSave = draft.main.length > 0;
-  const est = Math.round((draft.main.length * 9 + draft.warmup.length * 4 + draft.cooldown.length * 4) / 5) * 5;
+  /* The ONE estimate — sets, timed sets, supersets — that Home and the template's page show too (QA B6). */
+  const est = draft.main.length + draft.warmup.length > 0 ? estimatedSessionMinutes(draft.warmup, draft.main) : 0;
 
   return (
     <View style={styles.root}>

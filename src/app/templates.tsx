@@ -139,7 +139,7 @@ export default function TemplatesScreen() {
     setConfirmDelete(null);
     try {
       await deleteTemplate(t.id);
-      showToast(`${t.name} removed.`);
+      showToast(`${t.name} deleted.`);
       refetch();
     } catch (e) {
       showToast(errorMessage(e));
@@ -404,10 +404,11 @@ export default function TemplatesScreen() {
                   <Pressable
                     onPress={() => setConfirmDelete(t)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove ${t.name}`}
+                    accessibilityLabel={`Delete ${t.name}`}
                     style={({ pressed }) => [styles.footBtn, styles.footBtnQuiet, pressed ? styles.pressed : null]}
                   >
-                    <Text style={styles.footQuietText}>Remove</Text>
+                    {/* "Delete", as the template's own page says it — it was "Remove" here (QA B6 / library-27). */}
+                    <Text style={styles.footQuietText}>Delete</Text>
                   </Pressable>
                 </View>
               </View>
@@ -438,9 +439,9 @@ export default function TemplatesScreen() {
 
       <ConfirmSheet
         open={!!confirmDelete}
-        headline={confirmDelete ? `Remove ${confirmDelete.name}?` : ''}
+        headline={confirmDelete ? `Delete ${confirmDelete.name}?` : ''}
         body="The workouts you did from it stay in your record. Only the saved shape goes."
-        confirmLabel="Remove"
+        confirmLabel="Delete"
         tone="destructive"
         onConfirm={() => confirmDelete && void remove(confirmDelete)}
         onClose={() => setConfirmDelete(null)}
