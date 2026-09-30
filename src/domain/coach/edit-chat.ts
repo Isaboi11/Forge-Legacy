@@ -6,6 +6,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
 
 import { candidatesFor, type CandidateContext, type CatalogExercise } from './candidates.ts';
 import { canEdit } from './edit-ops.ts';
+import { countOf } from '../text/plural.ts';
 
 /**
  * Changing a plan you are already running, as a conversation.
@@ -155,7 +156,7 @@ export function valuesFor(day: ProgramDay, change: EditChangeId, index: number):
     const current = row.sets ?? 3;
     return [current - 2, current - 1, current + 1, current + 2]
       .filter((n) => n >= SETS_MIN && n <= SETS_MAX && n !== current)
-      .map((n) => ({ label: `${n} sets`, sets: n }));
+      .map((n) => ({ label: countOf(n, 'set'), sets: n }));
   }
 
   if (change === 'distance') {

@@ -78,6 +78,9 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import type { TourAnchorId } from '@/domain/onboarding/tour-plan';
+import { nameNearLimit, PROGRAM_NAME_MAX, WORKOUT_NAME_MAX } from '@/domain/text/name-limits';
+import { countOf } from '@/domain/text/plural';
+import { withArticle } from '@/domain/text/article';
 import {
   absorbBuilderInbox,
   activeDays,
@@ -166,7 +169,6 @@ const inferLabel = (items: ProgramExercise[]): string => groupLabel(items.map((i
 const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.letter || '?'}`);
 /** Fit a name into a button. Display only — never what a screen reader is handed. */
 const ellipsis = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function Glyph({ name, size = 13, color }: { name: EngravedName; size?: number; color?: string }) {
   return <EngravedIcon name={name} size={size} color={color} />;
@@ -538,7 +540,7 @@ function ProgramBuilderScreen() {
       setPendingResize({
         kind: 'weeks',
         to,
-        msg: `Weeks ${to + 1}–${draft.weeks} will be removed, along with any workouts built in them. This can’t be undone.`,
+        msg: `${to + 1 === draft.weeks ? `Week ${draft.weeks}` : `Weeks ${to + 1}–${draft.weeks}`} will be removed, along with any workouts built in them. This can’t be undone.`,
       });
       return;
     }
@@ -919,7 +921,7 @@ function ProgramBuilderScreen() {
                 ]);
               }}
               accessibilityRole="button"
-              accessibilityLabel={`Add a ${a.name.toLowerCase()}`}
+              accessibilityLabel={`Add ${withArticle(a.name.toLowerCase())}`}
               style={styles.cardioRow}
             >
               <View style={styles.cardioIcon}>
@@ -1273,7 +1275,8 @@ function ProgramBuilderScreen() {
                 label="Workout name"
                 value={days[dayMenu].name}
                 onChange={(v) => patchActiveDay(dayMenu, (day) => ({ ...day, name: v }))}
-                maxLength={30}
+                maxLength={WORKOUT_NAME_MAX}
+                showCount={nameNearLimit(days[dayMenu].name.length, WORKOUT_NAME_MAX)}
               />
               {days.length > 1 ? (
                 <View>
@@ -1297,7 +1300,7 @@ function ProgramBuilderScreen() {
                           accessibilityLabel={`Duplicate to ${dayName(d)}`}
                           style={styles.copyChip}
                         >
-                          <Text style={styles.copyChipText}>{dayName(d)}</Text>
+                          <Text style={styles.copyChipText} numberOfLines={1}>{dayName(d)}</Text>
                         </Pressable>
                       ),
                     )}
@@ -1646,8 +1649,8 @@ function SetupView({
     ? (draft.weekPlans ?? []).reduce((a, w) => a + w.days.reduce((b, d) => b + dayTotal(d), 0), 0)
     : days.reduce((a, day) => a + dayTotal(day), 0);
   const summary = draft.vary
-    ? `${plural(draft.weeks, 'week')} · ${plural(totalEx, 'exercise')}`
-    : `${plural(draft.daysPerWeek, 'day')} · ${plural(totalEx, 'exercise')}`;
+    ? `${countOf(draft.weeks, 'week')} · ${countOf(totalEx, 'exercise')}`
+    : `${countOf(draft.daysPerWeek, 'day')} · ${countOf(totalEx, 'exercise')}`;
   const nameOk = hasName(draft);
   const mainOk = hasMainExercise(draft);
   const valid = nameOk && mainOk;
@@ -1704,7 +1707,7 @@ function SetupView({
             placeholder={isWeek ? 'e.g. Deload Week' : 'e.g. Winter Powerbuilding'}
             value={draft.name}
             onChange={onName}
-            maxLength={40}
+            maxLength={PROGRAM_NAME_MAX}
             showCount
           />
 
@@ -1832,7 +1835,7 @@ function SetupView({
                     <View style={styles.dayText}>
                       <Text style={styles.dayNameText} numberOfLines={1}>Week {i + 1}</Text>
                       <Text style={[styles.daySub, total > 0 && styles.daySubBuilt]} numberOfLines={1}>
-                        {total === 0 ? 'Empty' : plural(total, 'exercise')}
+                        {total === 0 ? 'Empty' : countOf(total, 'exercise')}
                       </Text>
                     </View>
                     {built ? (
@@ -1877,7 +1880,7 @@ function SetupView({
                       {dayName(day)}
                     </Text>
                     <Text style={[styles.daySub, total > 0 && styles.daySubBuilt]} numberOfLines={1}>
-                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${plural(total, 'exercise')}`}
+                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${countOf(total, 'exercise')}`}
                     </Text>
                   </View>
                   {built ? (
@@ -1912,7 +1915,7 @@ function SetupView({
         <TourAnchor id="builder-save">
           {!valid ? (
             <View style={styles.checks}>
-              <CheckRow ok={nameOk} label="Program name" />
+              <CheckRow ok={nameOk} label={isWeek ? 'Week name' : 'Program name'} />
               <CheckRow ok={mainOk} label="At least one main exercise" />
             </View>
           ) : null}
@@ -2046,7 +2049,7 @@ function WeekDaysView({
       <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={rise} contentContainerStyle={styles.setupScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.listHeader}>
           <SectionHeader label="Workouts" />
-          <Text style={styles.listSummary}>{plural(totalEx, 'exercise')}</Text>
+          <Text style={styles.listSummary}>{countOf(totalEx, 'exercise')}</Text>
         </View>
 
         <View style={styles.dayRows}>
@@ -2063,7 +2066,7 @@ function WeekDaysView({
                   <View style={styles.dayText}>
                     <Text style={styles.dayNameText} numberOfLines={1}>{dayName(day)}</Text>
                     <Text style={[styles.daySub, total > 0 && styles.daySubBuilt]} numberOfLines={1}>
-                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${plural(total, 'exercise')}`}
+                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${countOf(total, 'exercise')}`}
                     </Text>
                   </View>
                   {done ? (
@@ -2191,10 +2194,17 @@ function DayBuilder({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.dayHead}>
-          <InputField label="Workout name" placeholder="Workout name" value={day.name} onChange={onName} maxLength={30} />
+          <InputField
+            label="Workout name"
+            placeholder="Workout name"
+            value={day.name}
+            onChange={onName}
+            maxLength={WORKOUT_NAME_MAX}
+            showCount={nameNearLimit(day.name.length, WORKOUT_NAME_MAX)}
+          />
           {total > 0 ? (
             <Text style={styles.daySummary}>
-              {plural(total, 'exercise')}
+              {countOf(total, 'exercise')}
               {est > 0 ? ` • ~${est} min` : ''}
             </Text>
           ) : null}

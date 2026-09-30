@@ -86,6 +86,7 @@ import { useShareSheet } from '@/hooks/useShareSheet';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { errorMessage } from '@/lib/useQuery';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * Program Detail (`Forge Program.dc.html`) — one athlete-authored program across its five lifecycle
@@ -920,7 +921,7 @@ export default function ProgramDetailScreen() {
             : `Custom • ${structure.vary ? 'Per-week' : 'Repeating week'}`}
         </Text>
         <Text style={styles.metaLine}>
-          {structure.weeks} weeks • {progress.perWeek} {progress.perWeek === 1 ? 'day' : 'days'} / week
+          {countOf(structure.weeks, 'week')} • {countOf(progress.perWeek, 'day')} / week
         </Text>
 
         {/* THE SEALED RECORD (W-3 §7). A finished program is history, and history states when and how
@@ -960,7 +961,7 @@ export default function ProgramDetailScreen() {
               <>
                 <Text style={styles.nextName}>{whatsNext.program.name}</Text>
                 <Text style={styles.nextMeta}>
-                  {[whatsNext.program.family, whatsNext.program.difficulty, whatsNext.program.weeks ? `${whatsNext.program.weeks} weeks` : null]
+                  {[whatsNext.program.family, whatsNext.program.difficulty, whatsNext.program.weeks ? countOf(whatsNext.program.weeks, 'week') : null]
                     .filter(Boolean)
                     .join(' · ')}
                 </Text>
