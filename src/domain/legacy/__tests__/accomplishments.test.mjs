@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  accDisplayDate,
   accSubline,
   canToggleFeatured,
   featuredAccomplishments,
   featuredCount,
   formatAccDate,
   FEATURED_MAX,
+  legacyStripOrder,
   sortAccomplishments,
   validateForm,
 } from '../accomplishments.ts';
@@ -86,4 +88,23 @@ test('the sub-line joins date and chapter, dropping whichever is missing', () =>
   assert.equal(accSubline(ac({ chapterId: null }), label), 'Jun 14, 2026', 'no chapter — no trailing dot');
   assert.equal(accSubline(ac({ date: null }), label), 'Chapter III · The Rebuild', 'no date — chapter alone');
   assert.equal(accSubline(ac({ date: null, chapterId: null }), label), '', 'neither — empty, not " · "');
+});
+
+// QA legacy-18: an accomplishment already happened — a future day is refused when today is known.
+test('validateForm refuses a date after today, allows today and earlier', () => {
+  assert.equal(validateForm({ name: 'PR', date: '2026-09-30' }, '2026-09-29').ok, false);
+  assert.equal(validateForm({ name: 'PR', date: '2026-09-29' }, '2026-09-29').ok, true);
+  assert.equal(validateForm({ name: 'PR', date: '2019-03-02' }, '2026-09-29').ok, true);
+  assert.equal(validateForm({ name: 'PR', date: null }, '2026-09-29').ok, true);
+});
+
+// QA legacy-19: the Legacy strip shows featured first, and never the created date as the accomplishment's date.
+test('legacyStripOrder puts featured first and keeps each half in order', () => {
+  const list = [ac({ id: 'a' }), ac({ id: 'b', featured: true }), ac({ id: 'c' }), ac({ id: 'd', featured: true })];
+  assert.deepEqual(legacyStripOrder(list).map((a) => a.id), ['b', 'd', 'a', 'c']);
+});
+
+test('accDisplayDate is the given date, and blank when undated (not createdAt)', () => {
+  assert.equal(accDisplayDate(ac({ date: '2019-03-02' })), 'Mar 2, 2019');
+  assert.equal(accDisplayDate(ac({ date: null, createdAt: '2026-09-26T10:00:00Z' })), '');
 });

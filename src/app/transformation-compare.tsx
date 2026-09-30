@@ -20,6 +20,7 @@ import {
   type TransformationEntry,
 } from '@/data/transformation-live';
 import { ADJUST_TOUCH_STYLE, useFrameAdjust } from '@/hooks/useFrameAdjust';
+import { defaultComparePose } from '@/domain/legacy/capture-date';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { forgeOr, themeGround } from '@/constants/theme-scrim';
@@ -56,7 +57,8 @@ export default function TransformationCompareRoute() {
 
   const [aId, setAId] = useState<string | null>(null);
   const [bId, setBId] = useState<string | null>(null);
-  const [poses, setPoses] = useState<PoseKey[]>(['ff']);
+  /** null = not chosen yet — derived from what the two entries actually photographed (QA legacy-03). */
+  const [posesPick, setPoses] = useState<PoseKey[] | null>(null);
   const [pickerFor, setPickerFor] = useState<'a' | 'b' | null>(null);
   /** Framings committed this session, keyed by entry id. Layered over what the entry was fetched with. */
   const [edits, setEdits] = useState<Record<string, FrameMap>>({});
@@ -69,6 +71,7 @@ export default function TransformationCompareRoute() {
   const bEntry = entries.find((e) => e.id === bEff) ?? null;
 
   const elapsed = aEntry && bEntry && aEff !== bEff ? elapsedBetween(aEntry.label, bEntry.label) : '';
+  const poses: PoseKey[] = posesPick ?? [defaultComparePose(XFORM_POSES.map((p) => p.key), aEntry?.photos, bEntry?.photos)];
 
   const framesFor = (e: TransformationEntry | null): FrameMap => (e ? { ...e.frames, ...edits[e.id] } : {});
   const aFrames = framesFor(aEntry);
@@ -93,7 +96,8 @@ export default function TransformationCompareRoute() {
   };
 
   const togglePose = (k: PoseKey) =>
-    setPoses((cur) => {
+    setPoses(() => {
+      const cur = poses;
       const next = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k];
       return next.length ? next : [k];
     });

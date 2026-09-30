@@ -26,7 +26,7 @@ import {
   setAccomplishmentFeatured,
   uploadAccomplishmentMedia,
 } from '@/data/accomplishments-live';
-import { CalendarField } from '@/components/forge/composites/CalendarField';
+import { CalendarField, todayYmd } from '@/components/forge/composites/CalendarField';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
@@ -457,6 +457,12 @@ function AccomplishmentForm({
 
   const save = () => {
     if (!valid.ok) return;
+    // An accomplishment already happened — the grid refuses a future day, and so does the save (QA legacy-18).
+    const dated = validateForm({ name, note, date }, todayYmd());
+    if (!dated.ok) {
+      showToast(dated.reason ?? 'Check the date.');
+      return;
+    }
     setSaving(true);
     saveAccomplishment({
       id: existing?.id,
@@ -483,7 +489,8 @@ function AccomplishmentForm({
         </Field>
 
         <Field label="Date · optional">
-          <CalendarField label="Date" hideLabel value={date || null} onChange={(v) => setDate(v ?? '')} placeholder="Choose a date" clearable />
+          {/* Year steps: a 2019 milestone was ~90 month taps away. No future days — it already happened (QA legacy-18). */}
+          <CalendarField label="Date" hideLabel value={date || null} onChange={(v) => setDate(v ?? '')} placeholder="Choose a date" clearable yearNav maxDate="today" />
         </Field>
 
         {/* The design draws this as a dashed drop zone; on a phone the equivalent is a tappable frame

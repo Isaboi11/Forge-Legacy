@@ -48,6 +48,8 @@ export interface TransformationEntry {
   id: string;
   chapterId: string | null;
   chapterName: string; // resolved (fallback "Your Progress")
+  /** The chapter's first day (`YYYY-MM-DD`) — a capture can't predate it (QA legacy-20). null = unknown. */
+  chapterStart: string | null;
   label: string; // capture date (free text)
   caption: string | null; // reflection
   meta: string | null; // context line
@@ -70,10 +72,10 @@ interface Row {
   frames: FrameMap | null;
   video_url: string | null;
   created_at: string;
-  chapters: { name: string } | null;
+  chapters: { name: string; start_date?: string | null } | null;
 }
 
-const COLS_BASE = 'id, chapter_id, label, caption, meta, tags, photos, video_url, created_at, chapters(name)';
+const COLS_BASE = 'id, chapter_id, label, caption, meta, tags, photos, video_url, created_at, chapters(name, start_date)';
 const COLS_FRAMED = `${COLS_BASE}, frames`;
 
 /**
@@ -97,6 +99,7 @@ const toEntry = (r: Row): TransformationEntry => ({
   id: r.id,
   chapterId: r.chapter_id,
   chapterName: r.chapters?.name ?? 'Your Progress',
+  chapterStart: r.chapters?.start_date?.slice(0, 10) ?? null,
   label: r.label,
   caption: r.caption,
   meta: r.meta,
@@ -171,11 +174,12 @@ export async function fetchTransformationEntry(entryId: string): Promise<Transfo
 }
 
 /** The athlete's active chapter (for the "Tied to …" label + new-entry grouping). Null if none. */
-export async function fetchActiveChapter(): Promise<{ id: string; name: string } | null> {
+export async function fetchActiveChapter(): Promise<{ id: string; name: string; startDate: string | null } | null> {
   const id = await uid();
   if (!id) return null;
-  const { data } = await supabase.from('chapters').select('id, name').eq('athlete_id', id).eq('is_active', true).maybeSingle();
-  return (data as { id: string; name: string } | null) ?? null;
+  const { data } = await supabase.from('chapters').select('id, name, start_date').eq('athlete_id', id).eq('is_active', true).maybeSingle();
+  const row = data as { id: string; name: string; start_date: string | null } | null;
+  return row ? { id: row.id, name: row.name, startDate: row.start_date?.slice(0, 10) ?? null } : null;
 }
 
 export interface SaveEntryInput {
@@ -326,7 +330,10 @@ export function elapsedBetween(l1: string, l2: string): string {
   let months = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
   if (b.getDate() < a.getDate()) months--;
   if (months < 1) {
-    const days = Math.max(1, Math.round((b.getTime() - a.getTime()) / 86400000));
+    const raw = Math.round((b.getTime() - a.getTime()) / 86400000);
+    // Two captures on the same day are not "1 day apart" (QA legacy-03). '' = no gap line; every caller hides it.
+    if (raw === 0) return '';
+    const days = Math.max(1, raw);
     const wk = Math.round(days / 7);
     return wk <= 1 ? `${days} ${days === 1 ? 'day' : 'days'}` : `${wk} weeks`;
   }
