@@ -21,6 +21,13 @@
  *
  * That is the seam the whole plan rests on: the AI cannot emit an invalid program because it is not
  * writing one.
+ *
+ * ══ ⚠ AMENDED 2026-09-30 — A TYPED ASK IS WRITTEN BY THE MODEL (Coach-AI-Amendment-003) ══
+ *
+ * The three paragraphs above still describe every TAPPED build and every race. For an ask the athlete typed
+ * or spoke, the PO reversed them: the model reads the whole sentence and writes the session (`author.ts`),
+ * and the device checks each movement against the catalogue, kit, level and limitations
+ * (`author-validate.ts`). The questionnaire here still runs for what he cannot know — time, room, limits.
  */
 
 import {
@@ -41,12 +48,13 @@ import { AUTHORED_GOALS } from './rulebook/skeletons.ts';
 import type { Recommendation as ShelfRecommendation } from './recommend.ts';
 import { RACE_SPEC, counterOfferIn, weeklyVolumePlan } from './rulebook/endurance.ts';
 import { pick, pickNamed } from './rulebook/voice.ts';
-import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type BodyPart, type DayFocus, type SplitName } from './day.ts';
+import { BODY_PART_LABEL, BODY_PARTS, SPLIT_LABEL, type AskedResult, type BodyPart, type DayFocus, type SplitName } from './day.ts';
+import { EMPHASIS, type EmphasisId } from './rulebook/emphasis.ts';
 import { plannedDays, trainingDays } from '../program/progress-core.ts';
 /* The canonical prescription renderer — the one Program Detail and the logger read. A second one here
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
-import type { ProgramExercise, ProgramStructure } from '@/data/programs-live';
+import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -229,6 +237,8 @@ export interface Chip {
    */
   startsBuild?: boolean;
   levelOnly?: boolean;
+  /** Records where the athlete trains and STOPS, the way `levelOnly` records their level. See `ROOM_CHIPS`. */
+  roomOnly?: boolean;
   /**
    * One step of a change the athlete TYPED ("swap bench for dumbbell press on Monday"): answering what
    * Holt asked back, applying it for this week or the rest of the block, or leaving it. A string, not the
@@ -595,6 +605,16 @@ function experienceQuestion(c: ChatState): Question {
   };
 }
 
+/**
+ * Does this race block also lift?
+ *
+ * ⚠ IT DECIDES WHETHER THE ROOM MATTERS. A race build never asked where the athlete trains, so its
+ * environment defaulted to `outdoor` — and "prepping for a marathon but I want weights" came back with
+ * push-ups and bodyweight squats for its lifting days (PO, 2026-09-30). A run needs no room; a lifting day does.
+ */
+export const liftsInRace = (c: ChatState): boolean =>
+  (isCount(c.liftDays) && c.liftDays > 0) || (c.days ?? []).some((d) => d.kind === 'lift');
+
 function askProgram(c: ChatState): Question | null {
 
   if (c.goal == null && !c.pickingRace) {
@@ -654,10 +674,15 @@ function askProgram(c: ChatState): Question | null {
   if (!endurance && !isNewToTraining(c) && c.weeks === undefined) return sizeQuestion();
 
   if (endurance && c.raceDate == null) {
+    /* ⚠ "BUILD ME A 7 WEEK PROGRAM" FOR A MARATHON SAYS HOW LONG THE PROGRAM IS, NOT WHEN THE RACE IS
+       (PO, 2026-09-30). The race may be at the end of those weeks or months past them, and the taper has to
+       land on the real date — so he still asks, and the first answer offered is the one their own number
+       makes likely. A race further out gets the first seven weeks of its build (`firstWeeksOf`). */
+    const said = isCount(c.weeks) && c.weeks >= 1 ? [chip(`At the end of the ${c.weeks} weeks`, { raceDate: isoInWeeks(c.weeks) })] : [];
     return {
       id: 'race_when',
       ask: pick('ask_race_when'),
-      chips: [6, 8, 12, 16, 20, 26].map((w) => chip(w === 26 ? 'Six months or more' : `About ${w} weeks`, { raceDate: isoInWeeks(w) })),
+      chips: [...said, ...[6, 8, 12, 16, 20, 26].map((w) => chip(w === 26 ? 'Six months or more' : `About ${w} weeks`, { raceDate: isoInWeeks(w) }))],
     };
   }
 
@@ -689,8 +714,9 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
-  // A race is run wherever they run. Asking about equipment would be answering a question nobody asked.
-  if (!endurance && c.environment == null) {
+  // A race is run wherever they run. Asking about equipment would be answering a question nobody asked —
+  // unless the block also LIFTS, and then the room decides every lifting day in it (see `liftsInRace`).
+  if ((!endurance || liftsInRace(c)) && c.environment == null) {
     return {
       id: 'where',
       ask: pick('ask_where'),
@@ -702,7 +728,7 @@ function askProgram(c: ChatState): Question | null {
     };
   }
 
-  if (!endurance && needsGear(c)) return gearQuestion();
+  if ((!endurance || liftsInRace(c)) && needsGear(c)) return gearQuestion();
 
   if (!endurance && c.sessionMinutes == null) {
     return {
@@ -850,10 +876,13 @@ const FOCUS_WORDS: readonly [RegExp, FocusPick[]][] = [
   [/\b(full[\s-]?body|total[\s-]?body|whole[\s-]?body|everything)\b/, [{ kind: 'split', split: 'full_body' }]],
   [/\bpush\b/, [{ kind: 'split', split: 'push' }]],
   [/\bpull\b/, [{ kind: 'split', split: 'pull' }]],
-  [/\b(legs?|leg\s+day|lower(\s+body)?|glutes?|quads?|hamstrings?|hammies)\b/, [{ kind: 'split', split: 'legs' }]],
-  [/\bupper(\s+body)?\b/, [{ kind: 'split', split: 'upper' }]],
+  /* ⚠ "UPPER CHEST" IS NOT AN UPPER-BODY DAY, AND "LOWER BACK" IS NOT A LEG DAY (2026-09-30). A split
+     wins outright in `mergeFocus`, so the bare word turned "upper chest and triceps" into the Upper body
+     split. Followed by a body part, `upper` / `lower` is a region of that part and names no split. */
+  [/\b(legs?|leg\s+day|lower(\s+body)?(?!\s+(?:chest|pecs?|back|abs|traps?|lats?))|glutes?|quads?|hamstrings?|hammies)\b/, [{ kind: 'split', split: 'legs' }]],
+  [/\bupper(\s+body)?(?!\s+(?:and\s+lower\s+)?(?:chest|pecs?|back|abs|traps?|lats?|arms?))\b/, [{ kind: 'split', split: 'upper' }]],
   [/\b(chest|pecs?)\b/, [{ kind: 'part', part: 'chest' }]],
-  [/\b(back|lats?)\b/, [{ kind: 'part', part: 'back' }]],
+  [/\b((?<!\blower\s)back|lats?)\b/, [{ kind: 'part', part: 'back' }]],
   [/\b(shoulders?|delts?)\b/, [{ kind: 'part', part: 'shoulders' }]],
   [/\b(biceps?|bis|by\s*sips?)\b/, [{ kind: 'part', part: 'biceps' }]],
   [/\b(triceps?|tris|try\s*sips?)\b/, [{ kind: 'part', part: 'triceps' }]],
@@ -870,6 +899,109 @@ export function focusFromText(text: string): DayFocus | null {
     for (let m = g.exec(t); m; m = g.exec(t)) found.push({ at: m.index, picks });
   }
   return mergeFocus(found.sort((a, b) => a.at - b.at).flatMap((f) => f.picks));
+}
+
+/**
+ * ══ HOW THE SESSION SHOULD BE DIVIDED, AND WHAT SHOULD LEAD IT — read from the athlete's own sentence ══
+ *
+ * PO, 2026-09-30, by voice: *"I really want to develop my upper chest and I'm usually trying to do about
+ * two tricep workouts and then the rest as a chest workout."* The model heard "chest and triceps", which
+ * is all `dayFocus` can carry, and the rest of the sentence was dropped — three flat presses, three
+ * triceps movements.
+ *
+ * Read HERE, from the words themselves, the way `typedEquipment` reads the kit: both halves are plain
+ * enough that a pattern places them, and the model's patch has no field for either.
+ *
+ * ⚠ A COUNT NEEDS ITS NOUN. "Two tricep workouts", "3 chest exercises", "a couple of movements for
+ * biceps" — never a bare "two triceps", and never "3 sets of…" or "4 back days", which count other things.
+ */
+const PART_WORDS: readonly [string, BodyPart][] = [
+  ['chest|pecs?', 'chest'],
+  ['back|lats?', 'back'],
+  ['shoulders?|delts?', 'shoulders'],
+  ['biceps?|bis', 'biceps'],
+  ['triceps?|tris|tries', 'triceps'],
+  ['core|abs?', 'core'],
+  ['glutes?', 'glutes'],
+  ['legs?', 'legs'],
+];
+const COUNT_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6 };
+const COUNT = '(a\\s+couple(?:\\s+of)?|one|two|three|four|five|six|[1-6])';
+const MOVEMENT = '(?:exercises?|workouts?|movements?|lifts?|moves?|variations?)';
+
+const countOf = (said: string): number => (/couple/.test(said) ? 2 : COUNT_WORDS[said] ?? Number(said));
+
+export function focusAskFromText(text: string): { counts: Partial<Record<BodyPart, number>>; emphasis: EmphasisId[] } {
+  const t = text.toLowerCase();
+  const counts: Partial<Record<BodyPart, number>> = {};
+  for (const [words, part] of PART_WORDS) {
+    // "two tricep workouts" · "two exercises for my triceps"
+    const before = new RegExp(`\\b${COUNT}\\s+(?:different\\s+)?(?:${words})\\s+${MOVEMENT}\\b`).exec(t);
+    const after = new RegExp(`\\b${COUNT}\\s+(?:different\\s+)?${MOVEMENT}\\s+(?:for|on|of)\\s+(?:my\\s+|the\\s+)?(?:${words})\\b`).exec(t);
+    const said = before?.[1] ?? after?.[1];
+    if (said) counts[part] = countOf(said);
+  }
+
+  const upper = /\b(upper|top\s+of\s+(?:my|the))\s+(and\s+lower\s+)?(chest|pecs?)\b/.test(t);
+  const lower = /\b(lower|bottom\s+of\s+(?:my|the))\s+(chest|pecs?)\b/.test(t);
+  // Both named is the whole chest, which is what a chest day already is.
+  const emphasis: EmphasisId[] = upper && !lower ? ['upper_chest'] : lower && !upper ? ['lower_chest'] : [];
+  return { counts, emphasis };
+}
+
+/**
+ * The day focus for a typed or spoken ask: WHAT is trained (the model's phrase, else the sentence itself)
+ * plus how they said to divide it.
+ *
+ * A part that was counted or emphasised is part of the day even if the phrase left it out — nobody asks
+ * for two triceps movements on a day that trains no triceps. A split stays a split: "push day" is already
+ * a pattern list, and it has no parts to count.
+ */
+export function focusSaid(said: string | null, text: string): DayFocus | null {
+  const base = (said ? focusFromText(said) : null) ?? focusFromText(text);
+  const ask = focusAskFromText(text);
+  const named = [...(Object.keys(ask.counts) as BodyPart[]), ...ask.emphasis.map((e) => EMPHASIS[e].part)];
+  if (named.length === 0 || base?.kind === 'split') return base;
+
+  const parts = BODY_PARTS.filter((p) => base?.parts.includes(p) || named.includes(p));
+  return {
+    kind: 'body_parts',
+    parts,
+    ...(base?.cardio ? { cardio: true } : {}),
+    ...(Object.keys(ask.counts).length ? { counts: ask.counts } : {}),
+    ...(ask.emphasis.length ? { emphasis: ask.emphasis } : {}),
+  };
+}
+
+const SAID_NUMBER = ['none', 'one', 'two', 'three', 'four', 'five', 'six'];
+const sayNumber = (n: number): string => SAID_NUMBER[n] ?? String(n);
+
+/**
+ * What Holt says about the things they asked for by name — read off the session, never off the request.
+ *
+ * ⚠ THIS LINE IS THE PROOF HE LISTENED, so it is composed from `DayResult.asked` and not picked from the
+ * voice pool: it has to name their region and their number. And it says so when he could NOT do it — an
+ * upper-chest ask in a room with nothing to incline on is told, not handed a flat day under silence.
+ */
+export function askedLine(asked: AskedResult | undefined): string | null {
+  if (!asked) return null;
+  const lines: string[] = [];
+  for (const e of asked.emphasis) {
+    const { label, part } = EMPHASIS[e.id];
+    const name = BODY_PART_LABEL[part].toLowerCase();
+    lines.push(
+      e.got === 0
+        ? `I've got nothing for ${label} with what you have to hand, so that's a straight ${name} day.`
+        : e.of === 1
+          ? `${capitalise(label)} is the ${name} movement.`
+          : `${capitalise(label)} leads it: ${sayNumber(e.got)} of the ${sayNumber(e.of)} ${name} movements.`,
+    );
+  }
+  for (const c of asked.counts) {
+    const name = BODY_PART_LABEL[c.part];
+    lines.push(c.got === c.asked ? `${name} is held to ${sayNumber(c.got)}, like you said.` : `I could only fit ${sayNumber(c.got)} for ${name.toLowerCase()}.`);
+  }
+  return lines.length ? lines.join(' ') : null;
 }
 
 /**
@@ -981,6 +1113,45 @@ export const LEVEL_CHIPS: readonly Chip[] = (['beginner', 'intermediate', 'advan
   levelOnly: true,
   patch: { experience: { lifting: e, running: e } },
 }));
+
+/**
+ * ══ WHERE THEY TRAIN IS ASKED ONCE TOO (PO, 2026-09-30) ══
+ *
+ * *"It made me answer the equipment question, the experience level. Wouldn't those always be the same
+ * after I answer it the first time? So he should remember."*
+ *
+ * `coach-memory.ts` used to hold the opposite view — the room "genuinely varies", so it was asked every
+ * session. For nearly everyone it does not vary: they train in one place, and being asked where on every
+ * visit is the same failure the level question had. So the last answer stands in for the question.
+ *
+ * ⚠ AND HE SAYS WHICH ROOM HE BUILT FOR, EVERY TIME HE ASSUMES IT. That is what answers the old
+ * objection: an athlete in a hotel this week is not handed last Tuesday's gym in silence — they are told,
+ * and "I'm at home today" (or Change where I train, in the menu) puts it right.
+ *
+ * `roomOnly` keeps these chips apart from the identical labels in the questionnaire, exactly as
+ * `levelOnly` does: they record the room and stop, and nothing is built.
+ */
+export type Room = 'full_gym' | 'home' | 'bodyweight';
+
+export const ROOM_CHIPS: readonly Chip[] = (
+  [
+    ['Full gym', 'full_gym'],
+    ['My home gym', 'home'],
+    ['Bodyweight only', 'bodyweight'],
+  ] as [string, Room][]
+).map(([label, environment]) => ({ label, roomOnly: true, patch: { environment } }));
+
+const ROOM_SAID: Record<Room, string> = {
+  full_gym: 'a full gym',
+  home: 'your home gym',
+  bodyweight: 'bodyweight only',
+};
+
+/** A room Holt may carry between conversations. `outdoor` is a race's default, never an answer to "where". */
+export const isRoom = (v: unknown): v is Room => v === 'full_gym' || v === 'home' || v === 'bodyweight';
+
+export const roomAssumedLine = (room: Room): string => `Built for ${ROOM_SAID[room]}, same as last time.`;
+export const roomSavedLine = (room: Room): string => `Noted. I'll build for ${ROOM_SAID[room]} from here on.`;
 
 const LIMIT_CHIPS: [string, Limitation][] = [
   ['Shoulders', 'shoulders'],
@@ -1837,6 +2008,37 @@ export function dayCardFor(
   };
 }
 
+/**
+ * The card for a session Holt WROTE (Coach-AI-Amendment-003) — the whole of it.
+ *
+ * A written session can carry what a rulebook day never does: a warm-up and a cool-down, a rep range the
+ * athlete asked for ("15 to 20"), and supersets. So every section is listed, the scheme comes from
+ * `schemeText` (the renderer the logger uses, which knows a range and a hold), and the members of a block
+ * are lettered the way a coach writes them on a whiteboard — A1, A2, then B1, B2.
+ */
+export function writtenDayCardFor(c: Partial<CoachConstraints>, day: ProgramDay): DayCard {
+  const blocks: string[] = [];
+  const seen: Record<string, number> = {};
+  const row = (e: ProgramExercise, lead: string) => {
+    let tag = lead;
+    if (e.groupId) {
+      if (!blocks.includes(e.groupId)) blocks.push(e.groupId);
+      seen[e.groupId] = (seen[e.groupId] ?? 0) + 1;
+      tag = `${String.fromCharCode(65 + blocks.indexOf(e.groupId))}${seen[e.groupId]} · `;
+    }
+    // A bout reads "5 min", as it does on every other card; everything else is the logger's own scheme.
+    return { name: `${tag}${e.name}`, prescription: e.targetSec != null ? `${Math.round(e.targetSec / 60)} min` : schemeText(e) };
+  };
+  return {
+    ...dayCardFor(c, { name: day.name, main: [] }),
+    rows: [
+      ...day.warmup.map((e) => row(e, 'Warm-up · ')),
+      ...day.main.map((e) => row(e, '')),
+      ...day.cooldown.map((e) => row(e, 'Cool-down · ')),
+    ],
+  };
+}
+
 /** "4 × 8", "3 × 10 per side", "20 min", "6 mi" — whatever the row actually prescribes. */
 function prescriptionText(e: { sets?: number; reps?: number | null; per?: string | null; targetSec?: number | null; targetMi?: number | null; durationSec?: number | null }): string {
   if (e.targetMi != null) return `${e.targetMi} mi`;
@@ -2095,7 +2297,8 @@ export function completeFor(c: Partial<CoachConstraints>, mode: 'program' | 'day
     daysPerWeek: isCount(c.daysPerWeek) ? c.daysPerWeek : DEFAULT_DAYS_PER_WEEK,
     // A race never asks this — a long run is as long as it is. 60 keeps the validator honest.
     sessionMinutes: c.sessionMinutes ?? 60,
-    environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) ? 'outdoor' : 'full_gym'),
+    // Outdoors only for a race that does not lift: a lifting day built for "outdoor" is a bodyweight day.
+    environment: c.environment ?? (mode === 'program' && c.goal && isEnduranceGoal(c.goal) && !liftsInRace(c) ? 'outdoor' : 'full_gym'),
     ownedEquipment: c.ownedEquipment ?? [],
     limitations: c.limitations ?? [],
     excludeExercises: c.excludeExercises ?? [],

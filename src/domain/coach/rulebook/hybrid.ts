@@ -315,6 +315,10 @@ export const CONCERN = {
     built === 0
       ? "There isn't a day left for lifting once the running has what a race needs — give me one more day in the week and the first lift goes in."
       : `I've kept ${built} lifting day${built === 1 ? '' : 's'} rather than ${asked}: the running peaks near ${Math.round(peakMi)} miles a week and that week still has to be trainable. Say the word and I'll put ${asked} back.`,
+  /* The athlete's own split (`splitAsSaid`) gave the race fewer running days than the distance usually
+     takes. Built as asked (PO 2026-09-21, "suggest, then build"), said once. */
+  fewRunsForRace: (runs: number, usual: number, race: string): string =>
+    `${runs === 2 ? 'Two' : runs} runs a week is light for a ${race} — most plans use ${usual}. I've built it the way you asked, and the long run carries most of it. When you can find another day to run, tell me and I'll add it.`,
   raceNeedsTwoRuns: (): string =>
     "One running day a week won't build to a race, so I've written this as a run-and-lift week rather than a race block — give me a second running day and I'll build it backwards from the date.",
   runsSwapped: (activity: string): string =>

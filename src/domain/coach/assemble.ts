@@ -1467,7 +1467,14 @@ function assembleRaceAndLift(
   const peakMi = block.volume.reduce((n, v) => Math.max(n, v.mileage), 0);
 
   let liftDays = asked;
-  if (!given) {
+  if (!given && c.splitAsSaid === true && asked > 0) {
+    /* ⚠ THE ATHLETE SAID THE SPLIT, SO IT IS NOT RE-CUT (`CoachConstraints.splitAsSaid`). The block above was
+       already built on the running days they left — `week - asked`, floored at what a running week needs —
+       so the only thing to add is the sentence. EPS-D7 below can still raise the running days for somebody
+       who cannot yet run continuously; that one is safety, and it is said by `liftDaysTrimmed`. */
+    const usual = MIN_RACE_RUN_DAYS[c.goal] ?? MIN_ENDURANCE_DAYS;
+    if (block.daysPerWeek < usual) concerns.push(CONCERN.fewRunsForRace(block.daysPerWeek, usual, block.spec.label));
+  } else if (!given) {
     const split = splitRaceWeek({ goal: c.goal, week, asked, peakMi });
     if (split.runDays !== block.daysPerWeek) block = enduranceBlock(c, eopts(split.runDays));
     liftDays = split.liftDays;

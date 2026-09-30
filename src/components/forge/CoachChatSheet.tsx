@@ -85,6 +85,7 @@ import { recommendFromShelf, SHELF_CANNOT_ADAPT, type ShelfProgram } from '@/dom
 import { getProgramDefinitions } from '@/domain/training/programs';
 import {
   dayPreamble,
+  writtenDayCardFor,
   INTRO,
   MEDICAL_STOP,
   CRISIS_KICKER,
@@ -111,10 +112,15 @@ import {
   type GreetingSlot,
   TYPING_ENABLED,
   interpret,
-  focusFromText,
+  focusSaid,
+  askedLine,
   looksLikeQuestion,
   isMedical,
   LEVEL_CHIPS,
+  ROOM_CHIPS,
+  isRoom,
+  roomAssumedLine,
+  roomSavedLine,
   nextQuestion,
   preamble,
   pickCardFor,
@@ -142,6 +148,7 @@ import {
   type ChatMode,
   type QuestionControl,
   type RefusalCard,
+  type Room,
   type Turn,
 } from '@/domain/coach/chat-core';
 import { typedEquipment } from '@/domain/coach/typed-equipment';
@@ -161,10 +168,15 @@ import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence } from '@/domain/coach/learned-preference';
 import { canDoExercise } from '@/domain/home-gym/equipment';
 import { fetchActiveProgram } from '@/data/programs-live';
-import { fetchHomeGym } from '@/data/home-gym-live';
+import { fetchCoachProfile } from '@/data/coach-profile-live';
+import { authorLive } from '@/data/coach-author-live';
+import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/domain/coach/author';
+import { authoredLine, authorFacts, validateAuthored, type ValidatedPlan } from '@/domain/coach/author-validate';
+import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
+import { endsOnRace, firstWeeksOf, RACE_WEEK_LINE, raceWeekShape, spliceLiftDays, stopsShortLine } from '@/domain/coach/author-race';
 import { endThread, hasMetHolt, loadThread, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
-import { forgetExperience, loadExperience, rememberExperience } from '@/lib/coach-memory';
+import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
   createProgram,
   fetchMyPrograms,
@@ -181,7 +193,7 @@ import type { SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
-import { isEnduranceGoal, type Limitation } from '@/domain/coach/constraints';
+import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
 import {
   changesFor,
@@ -554,6 +566,35 @@ export function CoachChatSheet({
      errors on `ref.current` touched during render, and it is right to: that is a render whose output
      depends on something React cannot see. */
   const greeted = useRef(false);
+  /* Where they train, kept between conversations (`coach-memory.ts`), and whether the build now in flight
+     ASSUMED it rather than heard it — which is what makes Holt say the room out loud. */
+  const room = useRef<Room | null>(null);
+  const roomAssumed = useRef(false);
+  /*
+   * ══ WHAT THEY TYPED FOR THE REQUEST NOW IN FLIGHT (Coach-AI-Amendment-003) ══
+   *
+   * PO, 2026-09-30: *"I need the coach holt to read and listen to everything I type and build a custom
+   * program to what I'm telling him."* The form the model used to fill has a fixed number of boxes, so most
+   * of a sentence was dropped on the way to the rulebook. Their own words are kept here instead and handed,
+   * whole, to `coach-author` when it is time to build. Empty means nothing was typed — a tapped build — and
+   * the rulebook builds exactly as it always has.
+   */
+  const typed = useRef<string[]>([]);
+  /* What onboarding recorded as their goal, and whether the goal on this request is that stand-in rather
+     than something they said — a stand-in is never passed to the model as if it were their answer. */
+  const profileGoal = useRef<Goal | null>(null);
+  /* Holt's notes on them (CA-D2), as last read by `loadNotes` — kept here so the build can send them. */
+  const heardNotes = useRef<string[]>([]);
+  /* The stop helpers are defined below `advance`; it reaches them through this, filled in by an effect. */
+  const stopFor = useRef<(route: 'crisis' | 'urgent' | 'care' | 'medical', text: string) => void>(() => undefined);
+  const goalGuessed = useRef(false);
+  const beginRequest = (words: string[]) => {
+    typed.current = words;
+    goalGuessed.current = false;
+  };
+  const alsoSaid = (text: string) => {
+    if (typed.current[typed.current.length - 1] !== text) typed.current = [...typed.current, text];
+  };
 
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...stamped(turns)]), []);
 
@@ -593,31 +634,39 @@ export function CoachChatSheet({
     if (profileLoading || greeted.current) return undefined;
     greeted.current = true;
     void (async () => {
-      const [met, stored, remembered, gym] = await Promise.all([
+      const [met, stored, remembered, rememberedRoom, athlete] = await Promise.all([
         hasMetHolt(),
         loadThread(),
         loadExperience(),
+        loadRoom(),
         /*
          * ⚠ **THE CHAT NEVER READ THE ATHLETE'S HOME GYM, AND THAT IS WHY "MY HOME GYM" BUILT
          * BODYWEIGHT.** `equipmentForEnvironment('home', owned)` returns `owned` verbatim, and the sheet
          * never set it — so choosing *My home gym* resolved to an empty list, byte-identical to
          * *Bodyweight only*. An athlete with a rack in their garage was handed push-ups. The dead wizard
-         * at `/coach` has read this since it was written (`fetchHomeGym`, line 153); the chat simply
-         * never did.
+         * at `/coach` has read this since it was written; the chat simply never did.
          *
          * ⚠ `null` ≠ `[]` (Home Gym profile rule). `null` means never set up and must NOT become "I own
          * nothing" — that is a claim the athlete has not made, and it is the difference between Holt
          * asking what they've got and Holt assuming the worst.
+         *
+         * ⚠ THE WHOLE PROFILE ROW NOW, NOT ONLY THE KIT (PO, 2026-09-30). Holt's own memory is on the
+         * device and is wiped on sign-out, so the PO — who told onboarding his level and his gym — was
+         * asked both again. What onboarding recorded is the fallback: he asks only when neither knows.
          */
-        fetchHomeGym().catch(() => null),
+        fetchCoachProfile().catch(() => null),
       ]);
       if (!alive) return;
+      const gym = athlete?.ownedEquipment ?? null;
       if (gym) setConstraints((c) => ({ ownedEquipment: gym, ...c }));
+      room.current = rememberedRoom ?? (isRoom(athlete?.environment) ? athlete.environment : null);
+      profileGoal.current = athlete?.goal ?? null;
       /* ⚠ ASKED ONCE, EVER. How long somebody has been training does not change between Tuesday and
          Thursday, and asking again every session is the app visibly not remembering a conversation it
          just had. Everything else — the time they have, the room they are in, what hurts — genuinely
          varies week to week and is still asked. */
-      if (remembered) setConstraints((c) => ({ experience: remembered, ...c }));
+      const level = remembered ?? (athlete?.experience ? { lifting: athlete.experience, running: athlete.experience } : null);
+      if (level) setConstraints((c) => ({ experience: level, ...c }));
       if (!met) {
         void rememberMetHolt();
         return; // the intro effect is already running; leave it alone
@@ -676,6 +725,22 @@ export function CoachChatSheet({
   const advance = useCallback(
     async (next: ChatState, mode_: ChatMode) => {
       const merged = { ...next };
+      /* ⚠ THE ROOM IS ANSWERED FROM MEMORY AT THE MOMENT IT WOULD HAVE BEEN ASKED (PO, 2026-09-30), not
+         seeded up front — so a race, which never asks where, never gets a gym it did not want, and a
+         room they SAID in this request ("I'm at home today") is already there and wins. */
+      /* A TYPED day is not asked "what are we chasing today?" — they have just said what they want, and
+         Holt reads the goal out of that. The rulebook fallback still needs one, so it gets what onboarding
+         recorded, else the moderate range `buildDayWorkout` already treats as the least wrong guess. */
+      if (mode_ === 'day' && typed.current.length && nextQuestion(merged, mode_)?.id === 'goal') {
+        merged.goal = profileGoal.current ?? 'muscle';
+        goalGuessed.current = profileGoal.current == null;
+      }
+      if (room.current && nextQuestion(merged, mode_)?.id === 'where') {
+        merged.environment = room.current;
+        roomAssumed.current = true;
+      } else if (merged.environment !== room.current) {
+        roomAssumed.current = false;
+      }
       setConstraints(merged);
       if (merged.experience) void rememberExperience(merged.experience);
 
@@ -796,6 +861,102 @@ export function CoachChatSheet({
            chat and the wizard must build the same program from the same answers, so both paths get it. */
         const [learned, recent] = await Promise.all([fetchLearnedPreferences(), fetchRecentWork()]);
 
+        /*
+         * ══ TYPED → HOLT WRITES IT (Coach-AI-Amendment-003, PO 2026-09-30) ══
+         *
+         * When the athlete typed or spoke the ask, the model reads every word and writes the session —
+         * movements, order, sets, reps — from the catalogue the app shows. `validateAuthored` then runs each
+         * movement through the same kit, level and limitation gates the rulebook uses; what fails is
+         * dropped and said. A tapped build, a race, and any ask the model cannot be reached for fall
+         * through to the rulebook below, and he says that it did.
+         */
+        const roomLine = roomAssumed.current && isRoom(c.environment) ? roomAssumedLine(c.environment) : null;
+        /* Held in an object because `askHolt` fills it from inside a closure, and a `let` assigned there is
+           one TypeScript still believes is null out here. */
+        const holt: { written: { plan: AuthoredPlan; valid: ValidatedPlan } | null; fellBack: string | null } = { written: null, fellBack: null };
+        /** Ask Holt to write it. `false` means a stop card went up and nothing more should be said. */
+        const askHolt = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
+          const athlete = {
+            experience: c.experience.lifting,
+            environment: c.environment,
+            ownedEquipment: c.ownedEquipment,
+            limitations: c.limitations,
+            excludeExercises: c.excludeExercises,
+          };
+          const a = await authorLive({
+            kind,
+            said: typed.current,
+            minutes: c.sessionMinutes,
+            days,
+            weeks,
+            /* Beside a race the lifting has its own purpose (`strengthGoal`), never the race itself. */
+            goal: beside ? ((c.strengthGoal ?? 'strength') as AuthorRequest['goal']) : goalGuessed.current ? null : (c.goal as AuthorRequest['goal']),
+            level: c.experience.lifting,
+            room: isRoom(c.environment) ? c.environment : null,
+            ...authorFacts(athlete, PICKER_DB, canDoExercise),
+            recent: Object.keys(recent?.sessionsAgo ?? {}),
+            notes: heardNotes.current,
+            beside,
+          });
+          if (a.kind === 'stop') {
+            setBusy(null);
+            /* Through the same four helpers as every other stop, so the line is marked and never sent again. */
+            stopFor.current(a.route, typed.current[typed.current.length - 1] ?? '');
+            return false;
+          }
+          if (a.kind === 'no_consent') holt.fellBack = AI_DECLINED_HOLT;
+          else if (a.kind !== 'ok') holt.fellBack = authorFallbackLine(a);
+          else {
+            const valid = validateAuthored(a.plan, athlete, PICKER_DB, canDoExercise);
+            holt.written = valid ? { plan: a.plan, valid } : null;
+            if (!valid) holt.fellBack = authorFallbackLine({ kind: 'none' });
+          }
+          return true;
+        };
+        if (typed.current.length && !isEnduranceGoal(c.goal)) {
+          const kind = mode_ === 'day' ? 'day' : 'program';
+          const ok = await askHolt(kind, kind === 'program' ? c.daysPerWeek : null, kind === 'program' ? (c.weeks ?? defaultWeeksFor(c.goal)) : null, null);
+          if (!ok) return;
+        }
+        const written = holt.written;
+
+        if (written && mode_ === 'day') {
+          const day = written.valid.days[0];
+          setBusy(null);
+          await saveWorkoutDraft({ name: day.name, warmup: day.warmup, main: day.main, cooldown: day.cooldown, editId: null });
+          setBuilt({ kind: 'day', day });
+          const dayCard = writtenDayCardFor(merged, day);
+          setLastCard({ day: dayCard });
+          say({ kind: 'holt', text: [authoredLine(written.plan, written.valid), roomLine].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard });
+          return;
+        }
+
+        if (written) {
+          /* One week, written by him, repeated for the length they chose. `vary: false` is the same shape
+             every shelf program with a fixed week already has. */
+          const structure: ProgramStructure = {
+            name: written.valid.title,
+            weeks: c.weeks ?? defaultWeeksFor(c.goal),
+            daysPerWeek: written.valid.days.length,
+            vary: false,
+            days: written.valid.days,
+            weekPlans: null,
+          };
+          setBusy(null);
+          await saveProgramDraft(draftFromStructure(structure));
+          setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
+          const asBuilt = { ...c, daysPerWeek: structure.daysPerWeek };
+          const programCard = programCardFor(asBuilt, structure, [], written.valid.dropped.length ? '' : written.plan.say);
+          setLastCard({ program: programCard });
+          const load = startingLoadLine(c);
+          say(
+            { kind: 'holt', text: [authoredLine(written.plan, written.valid), roomLine].filter(Boolean).join(' ') },
+            ...(load ? [{ kind: 'holt' as const, text: load }] : []),
+            { kind: 'program', card: programCard },
+          );
+          return;
+        }
+
         if (mode_ === 'day') {
           const dayReq = {
             /* ⚠ WAS HARDCODED `full_body`, WHICH IS WHY A BACK-AND-BICEPS ASK CAME BACK AS A FULL BODY
@@ -844,7 +1005,10 @@ export function CoachChatSheet({
             r.day.main.map((e) => e.catalogKey ?? ''),
             (k) => itemByKey(k)?.name ?? k,
           );
-          say({ kind: 'holt', text: learnedSaid ? `${dayPreamble()} ${learnedSaid}` : dayPreamble() }, { kind: 'day', card: dayCard });
+          /* What they asked for by name ("upper chest", "two triceps") is said back from the session that
+             was built, and an assumed room is said out loud — both so nothing he did is silent. */
+          const heard = [askedLine(r.asked), roomLine, learnedSaid];
+          say({ kind: 'holt', text: [holt.fellBack ?? dayPreamble(), ...heard].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard });
           /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block. */
           if (c.limitations.includes('knees')) say({ kind: 'holt', text: CONCERN.kneesLeftOut() });
           return;
@@ -871,7 +1035,40 @@ export function CoachChatSheet({
           return;
         }
 
-        const structure = res.assembly.structure;
+        let structure = res.assembly.structure;
+        /*
+         * ══ A TYPED RACE BLOCK THAT LIFTS (Coach-AI-Amendment-003 CW-D13, PO 2026-09-30) ══
+         *
+         * *"I want to run twice a week and lift 3 times a week. I'm prepping for a marathon but I want to
+         * have weights and strength to help me. Build me a 7 week program."* The running above is the race
+         * rulebook's arithmetic — the curve, the long run, the taper — on the days they gave it. The LIFTING
+         * days are Holt's to write from their own words and their own gym, and they replace the rulebook's
+         * in every week but race week. If he cannot be reached, the rulebook's lifting stays and he says so.
+         */
+        let raceLine: string | null = null;
+        const builtWeeks = structure.weeks;
+        if (typed.current.length && isEnduranceGoal(c.goal)) {
+          const shape = raceWeekShape(structure);
+          if (shape.liftDays > 0) {
+            setBusy('building');
+            /* The weeks they will actually be handed — told the block's full length, he reported their "7
+               weeks" as something he had not done. */
+            const keeps = merged.weeks != null && merged.weeks >= 1 && merged.weeks < structure.weeks ? merged.weeks : structure.weeks;
+            const ok = await askHolt('program', shape.liftDays, keeps, { race: RACE_SPEC[c.goal].label, runDays: shape.runDays });
+            if (!ok) return;
+            setBusy(null);
+            const wrote = holt.written;
+            if (wrote) {
+              structure = spliceLiftDays(structure, wrote.valid.days);
+              raceLine = [authoredLine(wrote.plan, wrote.valid), shape.liftDays > 1 && endsOnRace(structure) ? RACE_WEEK_LINE : null].filter(Boolean).join(' ');
+            }
+          }
+          /* "A 7 week program" for a race further off is the first seven weeks of its build. */
+          if (merged.weeks != null && merged.weeks >= 1 && merged.weeks < structure.weeks) {
+            structure = firstWeeksOf(structure, merged.weeks);
+            raceLine = [raceLine, stopsShortLine(structure.weeks, builtWeeks)].filter(Boolean).join(' ');
+          }
+        }
         const chatDraft = draftFromStructure(structure);
         await saveProgramDraft(chatDraft);
         /* QA holt-13 / holtai-16: a plan he just showed in chat is not news — mark it told, so the bubble
@@ -882,7 +1079,9 @@ export function CoachChatSheet({
            tells them apart, and `structure.weeks` is the engine's own word for it rather than the
            request's, so a clamp cannot make the buttons lie. */
         setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
-        const volume = volumeFor(c, structure.weeks);
+        /* The curve of the block that was BUILT, cut to the weeks that are kept — a fresh curve for seven
+           weeks would peak and taper inside a program that does neither. */
+        const volume = volumeFor(c, builtWeeks).slice(0, structure.weeks);
         const reason = rationaleFor({
           goal: c.goal,
           daysPerWeek: c.daysPerWeek,
@@ -909,7 +1108,9 @@ export function CoachChatSheet({
         const concern = res.assembly.concern;
         const alt = concern?.altGoal;
         say(
-          { kind: 'holt', text: preamble(c, structure.weeks) },
+          ...(holt.fellBack ? [{ kind: 'holt' as const, text: holt.fellBack }] : []),
+          { kind: 'holt', text: [preamble({ ...c, daysPerWeek: structure.daysPerWeek }, structure.weeks), roomLine].filter(Boolean).join(' ') },
+          ...(raceLine ? [{ kind: 'holt' as const, text: raceLine }] : []),
           ...(load ? [{ kind: 'holt' as const, text: load }] : []),
           ...(concern ? [{ kind: 'holt' as const, text: concern.message }] : []),
           ...(concern && alt && alt !== c.goal
@@ -1059,6 +1260,7 @@ export function CoachChatSheet({
     setPreview(false);
     setDraft('');
     askedAboutReplacing.current = false;
+    beginRequest([]);
     /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
        Their skill level and the kit in their garage did not change because they tapped New chat, and
        making them re-answer either would defeat the point of having read it. */
@@ -1103,6 +1305,14 @@ export function CoachChatSheet({
     say({ kind: 'holt', text: pick('ask_level_again') }, { kind: 'chips', chips: [...LEVEL_CHIPS] });
   };
 
+  /** CHANGE WHERE I TRAIN — the correction path for the other answer Holt keeps. Same shape as `changeLevel`. */
+  const changeRoom = () => {
+    void forgetRoom();
+    room.current = null;
+    setConstraints(({ environment: _cleared, ...rest }) => rest);
+    say({ kind: 'holt', text: pick('ask_where') }, { kind: 'chips', chips: [...ROOM_CHIPS], ctl: 'grid' });
+  };
+
   const rebuild = () => {
     setBuilt(null);
     setLastCard(null);
@@ -1110,6 +1320,7 @@ export function CoachChatSheet({
     setEdit(null);
     setDraft('');
     askedAboutReplacing.current = false;
+    beginRequest([]);
     const kept = athleteFacts(constraints);
     setConstraints(kept);
     setMode('program');
@@ -1533,6 +1744,11 @@ export function CoachChatSheet({
     });
   };
 
+  const keepRoom = (env: Room) => {
+    room.current = env;
+    void rememberRoom(env);
+  };
+
   const tapChip = (chip: Chip, echo = true) => {
     if (chip.typedEdit) {
       if (echo) say({ kind: 'me', text: chip.label });
@@ -1564,6 +1780,17 @@ export function CoachChatSheet({
       setConstraints(next);
       if (next.experience) void rememberExperience(next.experience);
       say({ kind: 'holt', text: pick('level_saved') });
+      return;
+    }
+
+    /* Recording where they train, NOT answering the build's identical question — see `ROOM_CHIPS`. */
+    if (chip.roomOnly) {
+      say({ kind: 'me', text: chip.label });
+      const env = chip.patch.environment;
+      if (isRoom(env)) {
+        keepRoom(env);
+        say({ kind: 'holt', text: roomSavedLine(env) });
+      }
       return;
     }
 
@@ -1635,6 +1862,7 @@ export function CoachChatSheet({
         return;
       }
       setMode('program');
+      beginRequest([]);
       void (async () => {
         const request: ChatState = { ...constraints, ...chip.patch };
         /* Saved before the active-program question, so "Replace it" carries this request on (QA R2-F8). */
@@ -1744,6 +1972,8 @@ export function CoachChatSheet({
       }
 
       setMode(opener.mode);
+      /* A door is tapped, not typed: nothing has been said yet for Holt to read. */
+      beginRequest([]);
       void (async () => {
         /* ⚠ THE LENGTH QUESTION USED TO BE ASKED HERE, AT THE DOOR, AND IT MOVED INTO `askProgram` —
            after the goal, so a race can skip it instead of having its answer overruled by the calendar.
@@ -1760,6 +1990,8 @@ export function CoachChatSheet({
       return;
     }
     say({ kind: 'me', text: chip.label });
+    /* A room tapped is a room answered — it is the one he builds for from now on. */
+    if (isRoom(chip.patch.environment)) keepRoom(chip.patch.environment);
     void advance({ ...constraints, ...chip.patch }, mode ?? 'program');
   };
 
@@ -2024,6 +2256,10 @@ export function CoachChatSheet({
   const careStop = (text: string) => stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
   const crisisStop = (text: string) => stopOn(text, { kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
   const urgentStop = (text: string) => stopOn(text, { kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
+  useEffect(() => {
+    stopFor.current = (route, text) =>
+      route === 'crisis' ? crisisStop(text) : route === 'urgent' ? urgentStop(text) : route === 'care' ? careStop(text) : medicalStop(text);
+  });
 
   /*
    * ══ HOLT'S KITCHEN ══ (`Docs/Holt-Kitchen-Scope-v1.0.md`) — three dishes from what they have, written by
@@ -2264,6 +2500,7 @@ export function CoachChatSheet({
     if (notesRef.current) return notesRef.current;
     const rows = await fetchNotes().catch(() => []);
     notesRef.current = rows.map((n) => n.text);
+    heardNotes.current = notesRef.current;
     return notesRef.current;
   };
   const rememberSaid = async (lines: string[]) => {
@@ -2324,7 +2561,17 @@ export function CoachChatSheet({
       case 'door':
         /* "Swap bench for dumbbell press on Monday" carries the change itself — resolve and confirm it
            rather than walking them through five taps to say what they already said. */
+        /* A draft Holt just wrote is changed by writing it again with this message added — "add one more
+           triceps movement" is about the card on screen, not about a program they are running. */
+        if (r.to === 'edit' && built && typed.current.length && mode && mode !== 'pick') {
+          alsoSaid(text);
+          return void advance(constraints, mode);
+        }
         if (r.to === 'edit' && r.edit) return editByWords(r.edit, text);
+        /* "Give me something for today, keep it light, mostly machines" opens the door with nothing the
+           form could hold — and everything Holt needs. The door resets the request; the sentence is put
+           back so he still reads it when it is time to build. */
+        if (r.to === 'build' || r.to === 'build_day') setTimeout(() => alsoSaid(text), 0);
         return tapChip(
           {
             label:
@@ -2349,17 +2596,32 @@ export function CoachChatSheet({
         if (avoidKeys.length) {
           (rest as Partial<ChatState>).excludeExercises = [...new Set([...(constraints.excludeExercises ?? []), ...avoidKeys])];
         }
-        const focus = typeof said === 'string' ? focusFromText(said) ?? focusFromText(text) : null;
+        /* …and how they said to divide it — "upper chest", "two tricep workouts and the rest chest" — is
+           read from their own sentence, because the patch has no field for either (`focusSaid`). */
+        /* A focus the model heard and the parser cannot place ("forearms and neck") must not be asked for
+           again: Holt reads the sentence itself, and full body is only what the rulebook would fall back to. */
+        const focus =
+          typeof said === 'string' ? focusSaid(said, text) ?? ({ kind: 'split', split: 'full_body' } as const) : null;
         /* QA holtai-04 — the model's patch has no equipment field, so "dumbbells only" arrived as a bare
            `home` and built from an empty home gym. The kit named in their own sentence rides along. */
         const patch: Partial<ChatState> = { ...rest, ...(focus ? { dayFocus: focus } : {}), ...(typedEquipment(text) ?? {}) };
+        /* "Run twice a week and lift three times" is THEIR split, and the race rulebook does not re-cut it
+           (`CoachConstraints.splitAsSaid`). Only ever set from words — no tap carries a lifting-day count. */
+        if (typeof patch.liftDays === 'number' && patch.liftDays > 0) patch.splitAsSaid = true;
+        /* A room typed in answer to "where?", or the first one they have ever named, is kept. Any other
+           is this request's alone: "I'm at a hotel gym today" must not become where they train. */
+        if (isRoom(patch.environment) && (q?.id === 'where' || room.current == null)) keepRoom(patch.environment);
         if (r.say) say({ kind: 'holt', text: r.say });
-        if (mode) return void advance({ ...constraints, ...patch }, m);
+        if (mode) {
+          alsoSaid(text);
+          return void advance({ ...constraints, ...patch }, m);
+        }
         const opens: ChatMode = focus ? 'day' : 'program';
         if (!guard(opens === 'day' ? 'holt_days_per_month' : 'holt_programs')) {
           return say({ kind: 'holt', text: pick(opens === 'day' ? 'allowance_day' : 'allowance_program') });
         }
         setMode(opens);
+        beginRequest([text]);
         const request: ChatState = { ...athleteFacts(constraints), ...patch };
         /* ⚠ SAVED BEFORE THE ACTIVE-PROGRAM QUESTION (QA R2-F8). The guard can stop here to ask about the
            block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
@@ -2791,6 +3053,14 @@ export function CoachChatSheet({
                     onPress={() => {
                       setMenu(false);
                       changeLevel();
+                    }}
+                  />
+                  <MenuRow
+                    divided
+                    label="Change where I train"
+                    onPress={() => {
+                      setMenu(false);
+                      changeRoom();
                     }}
                   />
                 </>
