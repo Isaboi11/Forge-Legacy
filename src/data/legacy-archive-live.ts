@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { progressItemCount } from '@/domain/legacy/album-progress';
 import { XFORM_POSES, fetchTransformationEntries, type TransformationEntry } from './transformation-live';
 
 /**
@@ -62,17 +63,22 @@ function thumbOf(e: TransformationEntry): string | null {
  * tile answers "what did you last add". An unapplied migration degrades to the empty state rather than
  * taking the Legacy screen down with it.
  */
-async function readPhotos(): Promise<ArchivePhotos> {
+async function readPhotos(entries: TransformationEntry[]): Promise<ArchivePhotos> {
   const [{ count }, { data }] = await Promise.all([
     supabase.from('chapter_photos').select('id', { count: 'exact', head: true }),
     supabase.from('chapter_photos').select('url').order('taken_on', { ascending: false }).order('created_at', { ascending: false }).limit(1),
   ]);
   const latest = ((data ?? []) as { url: string }[])[0]?.url ?? null;
-  return { count: count ?? 0, latest };
+  /* The albums show a chapter's progress photos too (Photos-Architecture-Amendment-002), so the tile
+     counts them — otherwise it says "10 photos" and opens a screen headed "30". A set tied to no chapter
+     is in no album and is not counted. The thumbnail stays the last ALBUM photo when there is one. */
+  const inAlbums = entries.filter((e) => !!e.chapterId);
+  const progress = inAlbums.reduce((n, e) => n + progressItemCount(e, XFORM_POSES), 0);
+  const fallback = inAlbums.map((e) => thumbOf(e)).find((u) => !!u) ?? null;
+  return { count: (count ?? 0) + progress, latest: latest ?? fallback };
 }
 
-async function readTransformation(): Promise<ArchiveTransformation> {
-  const entries = await fetchTransformationEntries(); // newest first
+function readTransformation(entries: TransformationEntry[]): ArchiveTransformation {
   const withPhoto = entries.map((e) => thumbOf(e)).filter((u): u is string => !!u);
   return {
     count: entries.length,
@@ -94,8 +100,10 @@ async function readTrophies(): Promise<ArchiveTrophies> {
 }
 
 export async function fetchLegacyArchive(): Promise<LegacyArchive> {
-  const [transformation, photos, trophies] = await Promise.all([readTransformation(), readPhotos(), readTrophies()]);
-  return { transformation, photos, trophies };
+  // One read of the progress sets feeds two tiles. Newest first.
+  const entriesRead = fetchTransformationEntries();
+  const [entries, photos, trophies] = await Promise.all([entriesRead, entriesRead.then(readPhotos), readTrophies()]);
+  return { transformation: readTransformation(entries), photos, trophies };
 }
 
 // ── the tiles' second lines ────────────────────────────────────────────────

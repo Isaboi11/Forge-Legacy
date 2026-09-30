@@ -4,7 +4,7 @@ import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, V
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -78,6 +78,13 @@ import { useReduceMotion } from '@/lib/settings';
  *   · It renders **only when a cap actually applies**. A Premium athlete's 1,000 is an abuse guard nobody
  *     reaches (Amendment 001 §4A); showing it would turn the guard back into the threat above.
  *
+ * ── PROGRESS PHOTOS APPEAR IN THE ALBUM (Photos-Architecture-Amendment-002, PO 2026-09-30) ──
+ *
+ * A chapter's album shows the progress photos taken during it, beside the photos added to it. The merge
+ * is in `photos-live`; this screen draws whatever the album holds and changes nothing about either kind.
+ * A progress photo carries its pose as its label ("Front Relaxed") and its set's reflection as its
+ * caption. Editing and deleting one stay in the Transformation gallery.
+ *
  * ── DELTAS VS THE `.dc` ───────────────────────────────────────────────────────
  *
  * DROPPED-FREE:
@@ -122,7 +129,10 @@ const SPINE_X = COVER_W / 2;
 
 export default function PhotosScreen() {
   const router = useRouter();
-  const [albumId, setAlbumId] = useState<string | null>(null);
+  /* A chapter's "View album" opens THAT chapter's album. It used to land on the albums list, which does
+     not list a chapter with no photos — so the button on an empty chapter led to everyone else's. */
+  const { chapter: fromChapter } = useLocalSearchParams<{ chapter?: string }>();
+  const [albumId, setAlbumId] = useState<string | null>(fromChapter ? String(fromChapter) : null);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -142,7 +152,8 @@ export default function PhotosScreen() {
   const flat = useMemo(() => flatten(months), [months]);
 
   const goBack = () => {
-    if (albumId) {
+    // Opened straight into one album from its chapter: back returns to the chapter, not the albums list.
+    if (albumId && albumId !== fromChapter) {
       setAlbumId(null);
       setExpanded({});
       return;
@@ -432,6 +443,13 @@ function AlbumView({
           </View>
         ))}
       </View>
+
+      {/* Reachable since a chapter's "View album" opens its own album, photos or not. */}
+      {months.length === 0 ? (
+        <Text style={styles.albumEmpty}>
+          No photos in this chapter yet. Photos you add to it, and progress photos you take during it, appear here.
+        </Text>
+      ) : null}
 
       <View style={styles.monthStack}>
         {months.map((m) => (
@@ -815,6 +833,7 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, lineHeight: 21, color: flColor.cream100, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', textAlign: 'center', color: flColor.gray600 },
 
+  albumEmpty: { marginTop: 22, paddingHorizontal: 2, fontSize: 13, lineHeight: 19, color: flColor.gray600 },
   monthStack: { marginTop: 24, gap: 30 },
   monthLabel: { paddingHorizontal: 2, paddingBottom: 14, fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
   dayStack: { position: 'relative', gap: 16 },

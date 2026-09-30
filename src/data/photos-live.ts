@@ -1,5 +1,17 @@
 import { supabase } from '@/lib/supabase';
 import { todayYmd } from '@/domain/dates/local-date';
+import {
+  chapterWeeks,
+  headlinePr,
+  mergeAlbum,
+  progressCover,
+  progressDay,
+  progressItemCount,
+  progressItems,
+  type PrRow,
+  type ProgressEntry,
+} from '@/domain/legacy/album-progress';
+import { XFORM_POSES, fetchTransformationEntries } from './transformation-live';
 
 /**
  * Legacy photos (L-15 / L-16) — migration 0085.
@@ -10,6 +22,16 @@ import { todayYmd } from '@/domain/dates/local-date';
  * BROWSE-ONLY, and that is a rule rather than a gap. `L-15-Photos-Architecture` §2 names the chapter
  * screens as the only creation paths and §6 makes the gallery read-only, so `addChapterPhoto` below is
  * exported for the chapter's media strip and is not reachable from the gallery.
+ *
+ * ── AN ALBUM ALSO SHOWS ITS CHAPTER'S PROGRESS PHOTOS (Photos-Architecture-Amendment-002, PO 09-30) ──
+ *
+ * The two RPCs read `chapter_photos` only, so a chapter holding nothing but progress sets had no album
+ * and its photos looked lost. `fetchPhotoAlbums` and `fetchAlbum` now merge the athlete's own
+ * `transformation_entries` in. It is a merge on the way out, not a copy: each photograph is still stored
+ * once, and editing or deleting a progress set stays in the Transformation gallery.
+ *
+ * Done here rather than in the RPCs so it needs no migration — the rows are already the athlete's to
+ * read — and so a failed progress read degrades to the album as it was, never to an empty screen.
  */
 
 export interface ChapterPhoto {
@@ -25,6 +47,8 @@ export interface ChapterPhoto {
   exercise: string | null;
   /** Derived server-side from the chapter's dates and the athlete's PRs. Null on an ordinary day. */
   event: string | null;
+  /** `progress` = a photo from a Transformation gallery set, shown here and stored there. */
+  source: 'album' | 'progress';
 }
 
 export interface PhotoAlbum {
@@ -87,38 +111,165 @@ const toPhoto = (r: Record<string, unknown>): ChapterPhoto => ({
   role: (r.role as string) ?? null,
   exercise: (r.exercise as string) ?? null,
   event: (r.event as string) ?? null,
+  source: 'album',
 });
 
 const MISSING = 'The photo archive isn’t available yet — migration 0085 hasn’t been applied.';
 
+/** Progress sets, in the shape the album merge reads. Empty on any failure — the album still draws. */
+async function readProgress(): Promise<ProgressEntry[]> {
+  try {
+    return await fetchTransformationEntries();
+  } catch {
+    return [];
+  }
+}
+
+/** The athlete's load PRs — the album's milestone days and a chapter's headline lift. */
+async function readLoadPrs(): Promise<PrRow[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('personal_records')
+    .select('exercise, load_value, achieved_on')
+    .eq('athlete_id', user.id)
+    .eq('measure_kind', 'load');
+  if (error) return [];
+  return ((data ?? []) as { exercise: string; load_value: number | null; achieved_on: string }[]).map((r) => ({
+    exercise: r.exercise,
+    loadValue: r.load_value == null ? null : Number(r.load_value),
+    achievedOn: r.achieved_on,
+  }));
+}
+
+const todayLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+interface ChapterRow {
+  id: string;
+  name: string;
+  reflection: string | null;
+  start_date: string;
+  end_date: string | null;
+  sealed_at: string | null;
+  is_active: boolean;
+}
+
+/**
+ * Albums for chapters that hold ONLY progress photos.
+ *
+ * `photo_albums()` lists a chapter only when it has a `chapter_photos` row, so these never come back
+ * from it. They are built from the chapter's own row with the same rules the RPC uses for the range,
+ * the weeks and the headline lift.
+ */
+async function progressOnlyAlbums(ids: string[], entries: ProgressEntry[]): Promise<PhotoAlbum[]> {
+  if (ids.length === 0) return [];
+  const [{ data, error }, prs] = await Promise.all([
+    supabase.from('chapters').select('id, name, reflection, start_date, end_date, sealed_at, is_active').in('id', ids),
+    readLoadPrs(),
+  ]);
+  if (error) return [];
+  const today = todayLocal();
+  return ((data ?? []) as ChapterRow[]).map((c) => {
+    const mine = entries.filter((e) => e.chapterId === c.id);
+    const endDate = c.end_date ?? (c.sealed_at ? c.sealed_at.slice(0, 10) : null);
+    const best = headlinePr(prs, { startDate: c.start_date, endDate, sealed: !!c.sealed_at }, today);
+    // `entries` arrive newest capture first, so the first one carrying a photo is the newest.
+    const cover = mine.map((e) => progressCover(e, XFORM_POSES)).find((u) => !!u) ?? null;
+    return {
+      chapterId: c.id,
+      name: c.name,
+      subtitle: c.reflection,
+      startDate: c.start_date,
+      endDate,
+      isActive: c.is_active,
+      sealed: !!c.sealed_at,
+      // A set that is only a clip has no still to show; the card draws its plate and the play badge.
+      coverUrl: cover ?? mine.find((e) => e.videoUrl)?.videoUrl ?? null,
+      coverIsVideo: !cover && mine.some((e) => e.videoUrl),
+      photoCount: mine.reduce((n, e) => n + progressItemCount(e, XFORM_POSES), 0),
+      weeks: chapterWeeks(c.start_date, endDate, today),
+      highlightExercise: best?.exercise ?? null,
+      highlightValue: best?.loadValue ?? null,
+    };
+  });
+}
+
 export async function fetchPhotoAlbums(): Promise<PhotoAlbums> {
-  const { data, error } = await supabase.rpc('photo_albums');
+  const [{ data, error }, progress] = await Promise.all([supabase.rpc('photo_albums'), readProgress()]);
   if (error) {
     if ((error as { code?: string }).code === 'PGRST202') throw new Error(MISSING);
     throw error;
   }
   const d = (data ?? {}) as { total?: number; albums?: Record<string, unknown>[] };
-  return { total: Number(d.total ?? 0), albums: (d.albums ?? []).map(toAlbum) };
+  const albums = (d.albums ?? []).map(toAlbum);
+
+  // Progress photos per chapter. A set tied to no chapter has no album to appear in.
+  const perChapter = new Map<string, number>();
+  for (const e of progress) {
+    const n = progressItemCount(e, XFORM_POSES);
+    if (e.chapterId && n > 0) perChapter.set(e.chapterId, (perChapter.get(e.chapterId) ?? 0) + n);
+  }
+  if (perChapter.size === 0) return { total: Number(d.total ?? 0), albums };
+
+  const listed = new Set(albums.map((a) => a.chapterId));
+  const extra = await progressOnlyAlbums(
+    [...perChapter.keys()].filter((id) => !listed.has(id)),
+    progress,
+  );
+
+  const merged = [
+    ...albums.map((a) => ({ ...a, photoCount: a.photoCount + (perChapter.get(a.chapterId) ?? 0) })),
+    ...extra,
+  ].sort((a, b) => Number(b.isActive) - Number(a.isActive) || (a.startDate < b.startDate ? 1 : a.startDate > b.startDate ? -1 : 0));
+
+  // Counted from what is actually listed, so the headline can never claim photos no album shows.
+  const shown = new Set(merged.map((a) => a.chapterId));
+  let progressTotal = 0;
+  for (const [id, n] of perChapter) if (shown.has(id)) progressTotal += n;
+
+  return { total: Number(d.total ?? 0) + progressTotal, albums: merged };
 }
 
 export async function fetchAlbum(chapterId: string): Promise<AlbumDetail | null> {
-  const { data, error } = await supabase.rpc('chapter_album', { p_chapter: chapterId });
+  const [{ data, error }, progress] = await Promise.all([supabase.rpc('chapter_album', { p_chapter: chapterId }), readProgress()]);
   if (error) {
     if ((error as { code?: string }).code === 'PGRST202') throw new Error(MISSING);
     throw error;
   }
   if (!data) return null;
   const d = data as Record<string, unknown>;
+  const own = ((d.photos ?? []) as Record<string, unknown>[]).map(toPhoto);
+  const startDate = String(d.start_date);
+  const endDate = (d.end_date as string) ?? null;
+  const sealed = !!d.sealed;
+
+  const mine = progress.filter((e) => e.chapterId === chapterId);
+  let photos = own;
+  if (mine.length > 0) {
+    // What the album's own photos already say about each day — taken as-is, so one day has one story.
+    const serverEvents = new Map<string, string | null>();
+    for (const p of own) if (!serverEvents.has(p.takenOn) || p.event) serverEvents.set(p.takenOn, p.event);
+    // PRs are only needed for a day no album photo covers.
+    const needsPrs = mine.some((e) => !serverEvents.has(progressDay(e)));
+    const prs = needsPrs ? await readLoadPrs() : [];
+    photos = mergeAlbum(own, progressItems(mine, chapterId, XFORM_POSES, { startDate, endDate, sealed }, prs, serverEvents));
+  }
+
   return {
     chapterId: String(d.chapter_id),
     name: String(d.name),
     subtitle: (d.subtitle as string) ?? null,
-    startDate: String(d.start_date),
-    endDate: (d.end_date as string) ?? null,
+    startDate,
+    endDate,
     isActive: !!d.is_active,
-    sealed: !!d.sealed,
+    sealed,
     weeks: Number(d.weeks ?? 1),
-    photos: ((d.photos ?? []) as Record<string, unknown>[]).map(toPhoto),
+    photos,
   };
 }
 

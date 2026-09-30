@@ -350,7 +350,7 @@ export default function ChapterDetailScreen() {
 
         {/* media — the only photo creation path in the app (L-15 arch §2) */}
         <TourAnchor id="chapter-archive" style={styles.section}>
-          <SectionHeader label="Photos" action="View album" onAction={() => router.push('/photos')} />
+          <SectionHeader label="Photos" action="View album" onAction={() => router.push({ pathname: '/photos', params: { chapter: String(id) } })} />
           <Pressable
             onPress={addPhoto}
             accessibilityRole="button"
