@@ -37,6 +37,7 @@ import { splitChapterName } from '@/domain/legacy/chapter-name';
 import { fmtDuration } from '@/domain/activity/history-core';
 import { MediaThumb } from '@/components/forge/MediaThumb';
 import { useQuery } from '@/lib/useQuery';
+import { fitWordSize } from '@/domain/text/fit-word';
 import type { Chapter, Pin, PinKind } from '@/types/legacy';
 import {
   AccomplishmentCard,
@@ -122,12 +123,19 @@ const EVENT_SYMBOL: Record<TimelineKind, SymbolName> = {
  * destinations are inert, consistent with Home/Workouts.
  */
 
+/** The hero name's size before `fitWordSize` steps it down for a long word. */
+const NAME_SIZE = 18;
+
 export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   /* A 320pt phone (iPhone SE): the portrait, the badge and their gaps left the name ~110pt, so "Sandbox"
      read "Sand…" and "FOUNDATION · I" wrapped (QA legacy-26). Tighter gutters there, in both themes. */
   const narrow = useWindowDimensions().width < 360;
+  /* The name column's measured width: a one-word name steps its size down until the word fits, so it never
+     breaks mid-word on web or ellipsizes on the phone (the shared rule, `fitWordSize`). */
+  const [nameW, setNameW] = useState(0);
+  const nameSize = fitWordSize(profile?.name ?? '', nameW, NAME_SIZE, 13);
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -321,9 +329,9 @@ export default function LegacyScreen() {
           <Animated.View style={{ transformOrigin: 'left center', transform: [{ scale: portraitScale }] }}>
             <SealPortrait name={profile.name} src={profile.avatarUrl} />
           </Animated.View>
-          <View style={styles.identityText}>
-            {/* Two lines before an ellipsis, and the size gives first where the platform can shrink it. */}
-            <Text style={styles.athleteName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+          <View style={styles.identityText} onLayout={(e) => setNameW(e.nativeEvent.layout.width)}>
+            {/* Two lines before an ellipsis, breaking only between words; the size gives first. */}
+            <Text style={[styles.athleteName, nameSize !== NAME_SIZE && { fontSize: nameSize }]} numberOfLines={2}>
               {profile.name}
             </Text>
             <RankLabel label={data.rankName} sub={data.rankSubTier} narrow={narrow} />
@@ -1233,7 +1241,7 @@ const styles = StyleSheet.create({
   identityText: { flex: 1, minWidth: 0, gap: 5 },
   athleteName: {
     fontFamily: flFont.display,
-    fontSize: 18,
+    fontSize: NAME_SIZE,
     fontWeight: '700',
     letterSpacing: -0.3,
     color: flColor.cream100,
