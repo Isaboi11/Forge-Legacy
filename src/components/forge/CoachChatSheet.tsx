@@ -153,7 +153,7 @@ import {
 import { typedEquipment } from '@/domain/coach/typed-equipment';
 import { CONCERN } from '@/domain/coach/rulebook/hybrid';
 import { medicalRoute } from '@/domain/coach/medical-routing';
-import { askHistory, markStopped } from '@/domain/coach/chat-history';
+import { askHistory, markStopped, summaryHistory } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import { takeCoachAskSeed } from '@/lib/coach-ask-seed';
@@ -301,8 +301,9 @@ export function CoachChatSheet({
     whenThreadEnds(
       premiumAi
         ? (turns) =>
-            /* The same builder every ask uses — a stopped line is never summarised either (QA R2-F1). */
-            void summarizeChat(askHistory(turns, Infinity))
+            /* A stopped line is never summarised either (QA R2-F1); and what the app DID — a failed request,
+               a plan only shown — rides along so the memory cannot say it happened (QA holtai-13). */
+            void summarizeChat(summaryHistory(turns))
         : null,
     );
   }, [premiumAi]);

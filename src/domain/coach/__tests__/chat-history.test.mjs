@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { askHistory, markStopped, CHAT_HISTORY_TURNS } from '../chat-history.ts';
+import { askHistory, markStopped, summaryHistory, CHAT_HISTORY_TURNS } from '../chat-history.ts';
 import { stopsForMedical, withoutStoppedTurns } from '../medical-routing.ts';
 import { trimHistory, ASK_HISTORY_MAX } from '../ask-wire.ts';
 import { narrowHistory } from '../interpret-narrow.ts';
@@ -122,7 +122,7 @@ test('every stop card in the sheet goes through stopOn, which marks the line', (
   assert.doesNotMatch(sheet, /careStop\(\)/);
   // The one history builder, used by every caller.
   assert.doesNotMatch(sheet, /x\.kind === 'me' \|\| x\.kind === 'holt'/, 'a second history builder is back');
-  assert.match(sheet, /summarizeChat\(askHistory\(turns, Infinity\)\)/);
+  assert.match(sheet, /summarizeChat\(summaryHistory\(turns\)\)/);
 });
 
 test('the Edge Functions guard every history turn, and the paste bundles carry it', () => {
@@ -149,4 +149,24 @@ test('each coach-ask stream writes and closes ONLY its own turn, and the queue w
   assert.match(sheet, /if \(holding \|\| queued\.current\.length === 0\) return;/);
   // A reply saved mid-stream must not restore as "still arriving" and hold the queue forever.
   assert.match(read('src/lib/coach-thread.ts'), /streaming: undefined, sid: undefined/);
+});
+
+test('holtai-13: the summary reads what the app did — a failed ask and a plan only shown are never "done"', () => {
+  const thread = [
+    { kind: 'me', text: 'Rebuild the whole program around dumbbells' },
+    { kind: 'error', text: "That didn't save.", sub: 'network', action: 'Try again.' },
+    { kind: 'me', text: 'Build me an 8-week block' },
+    { kind: 'holt', text: "Here's your block." },
+    { kind: 'program', card: { title: 'Eight Weeks Strong' } },
+    { kind: 'me', text: PREGNANT, stopped: true },
+    { kind: 'stop', text: 'That is one for your doctor.' },
+    { kind: 'saved', text: 'Saved as a template.' },
+  ];
+  const h = summaryHistory(thread);
+  const text = h.map((t) => `${t.role}: ${t.text}`).join(' | ');
+  assert.match(text, /\[The app: that did not work — That didn't save\. Nothing was changed\.\]/);
+  assert.match(text, /\[The app showed "Eight Weeks Strong" as a card\. Not started or saved unless a later note says so\.\]/);
+  assert.match(text, /\[The app: Saved as a template\.\]/);
+  assert.ok(!text.includes(PREGNANT), 'a stopped line reached the summary');
+  assert.ok(h.every((t) => t.role === 'athlete' || t.role === 'holt'), 'the wire only carries two roles');
 });
