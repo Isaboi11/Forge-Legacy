@@ -600,7 +600,7 @@ export function ImportPreview({
             <Text style={styles.impSummaryText}>{summarize(preview, scope === 'day' ? 'workout' : 'program')}</Text>
           </View>
           <Text style={styles.impNote}>
-            Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
+            Tap Edit to change anything as text — a rep, a percentage, a rest. Or tap − / + to fix sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
             as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
             rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
           </Text>
@@ -647,7 +647,9 @@ export function ImportPreview({
                         autoCapitalize="sentences"
                         textAlignVertical="top"
                         accessibilityLabel={`${d.name}, as text`}
-                        style={styles.impEditInput}
+                        scrollEnabled={false}
+                        /* Tall enough for the whole day — a box that scrolls inside a scrolling sheet hid the superset. */
+                        style={[styles.impEditInput, { height: editBoxHeight(editing.text) }]}
                       />
                       {editing.error ? <Text style={styles.impError}>{editing.error}</Text> : null}
                       <View style={styles.impEditActions}>
@@ -836,6 +838,12 @@ function groupAt(items: readonly ParsedItem[], i: number): { letter: string; fir
   const last = items[b].rx;
   const sec = last?.restSec ?? last?.restScheme?.find((x) => x != null) ?? null;
   return { letter: String.fromCharCode(97 + i - a), first: i === a, last: i === b, count: b - a + 1, rest: sec != null ? clock(sec) : null };
+}
+
+/** Every line of the day in view: about 40 characters to a wrapped line at phone width, 19 px a line. */
+function editBoxHeight(text: string): number {
+  const lines = text.split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 40)), 0);
+  return Math.max(220, lines * 19 + 28);
 }
 
 /** A renamed row is looked up again by its new name: the card's own match no longer applies to it. */
