@@ -94,6 +94,17 @@ export const streamInto = (t: readonly Turn[], sid: number, text: string): Turn[
 export const streamEnded = (t: readonly Turn[], sid: number): Turn[] =>
   t.map((x) => (x.kind === 'holt' && x.sid === sid && x.streaming ? { ...x, streaming: undefined } : x));
 export const answerArriving = (t: readonly Turn[]): boolean => t.some((x) => x.kind === 'holt' && x.streaming === true);
+/**
+ * The thread as it may be KEPT (kitchen-09, QA 09-26): an answer still arriving is not an answer. Closing the
+ * sheet mid-stream saved "N" as Holt's whole reply, for good. Storage keeps only finished turns; the sheet
+ * still shows the words as they land.
+ */
+export const withoutPartialReplies = (t: readonly Turn[]): Turn[] => t.filter((x) => !(x.kind === 'holt' && x.streaming === true));
+/** Under this many characters a cut-off answer says nothing ("N") and is taken back rather than kept. */
+export const CUT_OFF_KEEP_CHARS = 40;
+/** An answer the line dropped partway through: kept when it already says something, taken back when it doesn't. */
+export const cutOffReply = (t: readonly Turn[], sid: number): Turn[] =>
+  t.filter((x) => !(x.kind === 'holt' && x.sid === sid && x.text.trim().length < CUT_OFF_KEEP_CHARS));
 
 /** Everything on the program card, all of it out of the engine. */
 export interface ProgramCard {
@@ -1402,6 +1413,38 @@ export function isHomeTurn(turn: Turn): boolean {
     turn.chips.length === OPENERS.length &&
     turn.chips.every((c) => OPENERS.includes(c.label))
   );
+}
+
+/** Which slot of Home's greeting stack a turn occupies, if any. */
+export type GreetingSlot = 'greeting' | 'line' | 'sub';
+const GREETING_SLOTS: readonly GreetingSlot[] = ['greeting', 'line', 'sub'];
+/** `greetReturning` (and `greetKitchen`) speak two lines before the openers. */
+const RETURNING_LINES = 2;
+
+/**
+ * Is this Holt turn part of the greeting Home is wearing, and which line of it?
+ *
+ * The greeting stack is the run of Holt lines immediately before the opener turn — the introduction's
+ * three beats on a first visit, `greetReturning`'s two on every one after. Derived rather than stored,
+ * because the thread already knows: a second flag saying which lines are "the greeting" is a second
+ * thing that can disagree with it.
+ *
+ * ⚠ THREE ONLY FOR THE INTRODUCTION, WHICH IS THE WHOLE THREAD (kitchen-09, QA 09-26). The cap was three
+ * everywhere, so a stored conversation ending in Holt speech lost its last line to the greeting when he
+ * greeted over the top of it: an answer cut off after "N" came back as the big headline on every reopen,
+ * for good. The introduction only ever starts a thread; anything with turns before it is a return, and a
+ * return greets in two lines — the line before them stays conversation, which is what it is.
+ */
+export function greetingSlot(thread: readonly Turn[], i: number): GreetingSlot | null {
+  if (thread[i]?.kind !== 'holt') return null;
+  let home = i;
+  while (home < thread.length && thread[home].kind === 'holt') home += 1;
+  if (home >= thread.length || !isHomeTurn(thread[home])) return null;
+  let runStart = home;
+  while (runStart > 0 && thread[runStart - 1].kind === 'holt') runStart -= 1;
+  const cap = runStart === 0 ? GREETING_SLOTS.length : RETURNING_LINES;
+  const start = Math.max(runStart, home - cap);
+  return i < start ? null : (GREETING_SLOTS[i - start] ?? null);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
