@@ -279,15 +279,22 @@ test('the same taps in a different order build the same day', () => {
   assert.deepEqual(focusOf('Core', 'Back', 'Biceps'), focusOf('Back', 'Biceps', 'Core'));
 });
 
-test('⚠ a split replaces the parts rather than merging with them', () => {
+test('⚠ a split tapped LAST replaces the parts rather than merging with them', () => {
   /*
    * "Push" is already a list of patterns and it already contains a chest movement. Merging it with
-   * Chest would spend a third of a fixed exercise budget pressing, so the last split wins outright —
+   * Chest would spend a third of a fixed exercise budget pressing, so a split tapped last wins outright —
    * tapping Push after Chest means they changed their mind about the shape of the day.
    */
   assert.deepEqual(focusOf('Chest', 'Push'), { kind: 'split', split: 'push' });
-  assert.deepEqual(focusOf('Push', 'Chest'), { kind: 'split', split: 'push' }, 'and it wins from either side');
   assert.deepEqual(focusOf('Push', 'Pull'), { kind: 'split', split: 'pull' }, 'two splits: the later one');
+});
+
+test('QA holt-12: a part tapped AFTER a split made of parts adds to it (Legs + Core)', () => {
+  // Tapping Core used to untick Legs, so Legs + Core could not be asked for at all.
+  assert.deepEqual(focusOf('Push', 'Chest'), { kind: 'body_parts', parts: ['chest', 'shoulders', 'triceps'] });
+  const legsCore = focusOf('Legs', 'Core');
+  assert.equal(legsCore.kind, 'body_parts');
+  for (const p of ['legs', 'glutes', 'core']) assert.ok(legsCore.parts.includes(p), `${p} in ${legsCore.parts}`);
 });
 
 test('cardio combines with anything, including nothing', () => {

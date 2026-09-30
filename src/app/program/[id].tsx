@@ -1259,10 +1259,12 @@ export default function ProgramDetailScreen() {
             </Text>
           ) : null}
           {/* A Forge program is the other axis, and it does not move: provenance, not progress. */}
+          {/* QA holt-05: Holt CAN change a session ahead of you on a Forge program (Ask Holt on the session,
+              or "Change my program" in chat), so "it stays as we wrote it" was untrue here. */}
           {state === 'active' && isForgeProgram ? (
             <Text style={styles.editNote}>
-              This is a Forge program, so it stays as we wrote it. Duplicate it and the copy is yours to
-              change however you like.
+              This is a Forge program, so Edit stays off. Holt can still swap an exercise or change the sets
+              on a session ahead of you — tap the session, then Ask Holt. Duplicate it to change anything else.
             </Text>
           ) : null}
           {/* ── THE TWO KINDS OF SHARING, NAMED APART ──────────────────────────────────────────────────

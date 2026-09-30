@@ -225,6 +225,8 @@ export interface Chip {
    * restored after a reload finds nothing and says so.
    */
   typedEdit?: 'answer' | 'this_week' | 'rest_of_block' | 'apply' | 'cancel' | 'undo';
+  /** Which change an Undo chip takes back — an older Undo never undoes a newer change (holtai-08). */
+  undoOf?: number;
   /**
    * "Find one online" — Holt found nothing in the recipe book and offered to look (Coach-AI-Amendment-002).
    * Carries what to look for. Tapping it is the athlete's consent: only that ask carries web search.
@@ -772,17 +774,42 @@ export const FOCUS_PICKS: readonly { label: string; pick: FocusPick }[] = [
  * a third of the session's budget on it.
  */
 export function mergeFocus(picks: readonly FocusPick[]): DayFocus | null {
-  const lastSplit = [...picks].reverse().find((p) => p.kind === 'split');
-  if (lastSplit && lastSplit.kind === 'split') return { kind: 'split', split: lastSplit.split };
+  let splitAt = -1;
+  picks.forEach((p, i) => {
+    if (p.kind === 'split') splitAt = i;
+  });
+  const lastSplit = splitAt >= 0 ? picks[splitAt] : undefined;
+  /* QA holt-12: a part or Cardio tapped AFTER a split that names parts ("Legs" then "Core") adds to it —
+     the split becomes its own parts plus the new one. A split tapped last still wins outright. */
+  const after = splitAt >= 0 ? picks.slice(splitAt + 1) : [];
+  const splitParts = lastSplit && lastSplit.kind === 'split' ? SPLIT_AS_PARTS[lastSplit.split] : undefined;
+  if (lastSplit && lastSplit.kind === 'split' && !(splitParts && after.length > 0)) {
+    return { kind: 'split', split: lastSplit.split };
+  }
 
-  const parts = picks.filter((p): p is Extract<FocusPick, { kind: 'part' }> => p.kind === 'part').map((p) => p.part);
-  const cardio = picks.some((p) => p.kind === 'cardio');
+  const tail = splitParts ? after : picks;
+  const parts = [
+    ...(splitParts ?? []),
+    ...tail.filter((p): p is Extract<FocusPick, { kind: 'part' }> => p.kind === 'part').map((p) => p.part),
+  ];
+  const cardio = tail.some((p) => p.kind === 'cardio');
   if (parts.length === 0 && !cardio) return null;
   // De-duplicated, and in the order the catalogue names them rather than the order they were tapped, so
   // the same three taps always produce the same day.
   const ordered = BODY_PARTS.filter((b) => parts.includes(b));
   return cardio ? { kind: 'body_parts', parts: ordered, cardio: true } : { kind: 'body_parts', parts: ordered };
 }
+
+/**
+ * The splits that are a set of body parts, so a part can be ADDED to them (QA holt-12: Legs + Core was
+ * impossible — tapping Core unticked Legs). Full Body is not here: it already trains everything.
+ */
+const SPLIT_AS_PARTS: Partial<Record<SplitName, readonly BodyPart[]>> = {
+  push: ['chest', 'shoulders', 'triceps'],
+  pull: ['back', 'biceps'],
+  legs: ['legs', 'glutes'],
+  upper: ['chest', 'back', 'shoulders', 'biceps', 'triceps'],
+};
 
 const sameFocus = (a: FocusPick, b: FocusPick): boolean =>
   a.kind === b.kind &&
@@ -834,11 +861,14 @@ export function focusFromText(text: string): DayFocus | null {
   return mergeFocus(found.sort((a, b) => a.at - b.at).flatMap((f) => f.picks));
 }
 
-/** Selecting a split replaces everything; selecting anything else drops the split. Used by the control. */
+/**
+ * Selecting a split replaces everything. Selecting a part or Cardio ADDS to a split that is made of parts
+ * (Legs + Core, QA holt-12) and drops Full Body, which already trains everything. Used by the control.
+ */
 export function toggleFocus(picks: readonly FocusPick[], next: FocusPick): FocusPick[] {
   if (hasFocus(picks, next)) return picks.filter((p) => !sameFocus(p, next));
   if (next.kind === 'split') return [next];
-  return [...picks.filter((p) => p.kind !== 'split'), next];
+  return [...picks.filter((p) => p.kind !== 'split' || SPLIT_AS_PARTS[p.split] != null), next];
 }
 
 function nextDayQuestion(c: ChatState): Question | null {
@@ -1415,9 +1445,10 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
   },
   {
     q: 'Change a program',
-    a: "Open the program and pick the session. You can swap two days around, train one early, or skip it — anything you've already trained stays exactly as it happened.",
-    route: '/(tabs)',
-    cta: 'Open Home',
+    a: "Workouts, then your program, then the session. You can swap two days around, train one early, skip it, or have me change it — anything you've already trained stays exactly as it happened.",
+    /* QA holt-17: the program lives on Workouts, not Home. */
+    route: '/(tabs)/workouts',
+    cta: 'Open Workouts',
   },
   {
     q: 'Import a program',
@@ -1470,8 +1501,9 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
   },
   {
     q: 'Understand my rank',
-    a: 'Rank comes off what you have actually done — sessions logged, honors earned, chapters closed. It moves slowly on purpose.',
-    route: '/honors',
+    a: 'Rank Progression shows every rank, where you are on it, and exactly what the next one asks for. It moves slowly on purpose.',
+    /* QA holt-17: it opened Honors. The ladder and its standards are on Rank Progression. */
+    route: '/rank-progression',
     cta: 'Show me',
   },
 ];

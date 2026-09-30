@@ -94,6 +94,7 @@ export type VoiceKey =
   | 'ask_edit_change'
   | 'ask_edit_row'
   | 'ask_edit_value'
+  | 'ask_edit_replacement'
   | 'ask_edit_scope'
   | 'edit_done'
   | 'pick_one_for_you';
@@ -617,8 +618,15 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'Make it what?',
     'What are we changing it to?',
     'Give me the number.',
-    'What do you want there instead?',
     'What number feels right?',
+  ],
+  /* QA holt-07: a swap asks for a movement, never a number. */
+  ask_edit_replacement: [
+    'What do you want there instead?',
+    'Which one should it be?',
+    'Pick its replacement.',
+    'What are we swapping it for?',
+    'Which of these would you rather do?',
   ],
   ask_edit_scope: [
     'Just this week, or every week from here?',

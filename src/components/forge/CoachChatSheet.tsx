@@ -179,6 +179,7 @@ import { isEnduranceGoal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
 import {
   changesFor,
+  describeTappedEdit,
   editableSessions,
   replacementsFor,
   rowsFor,
@@ -1134,7 +1135,8 @@ export function CoachChatSheet({
     const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
     setBusy(null);
 
-    const sessions = editableSessions(active.structure, marks, 6);
+    /* QA holt-09: every session still ahead, not the first six — a change in week 5 is a real ask. */
+    const sessions = editableSessions(active.structure, marks, Number.POSITIVE_INFINITY);
     if (sessions.length === 0) {
       /* Everything left is already trained. Not a failure — the block is essentially done. */
       say({ kind: 'holt', text: "There's nothing left in that block I'd change — you've trained all of it." });
@@ -1153,7 +1155,7 @@ export function CoachChatSheet({
 
     if (pickStep.step === 'session') {
       const at = { weekIndex: pickStep.weekIndex, dayIndex: pickStep.dayIndex };
-      const found = editableSessions(edit.program.structure, edit.marks, 60).find(
+      const found = editableSessions(edit.program.structure, edit.marks, Number.POSITIVE_INFINITY).find(
         (sn) => sn.at.weekIndex === at.weekIndex && sn.at.dayIndex === at.dayIndex,
       );
       if (!found) return;
@@ -1173,10 +1175,23 @@ export function CoachChatSheet({
         /* ⚠ REBUILD IS DELIBERATELY NOT WIRED YET. `rebuildDay` exists and is tested, but it needs the
            athlete to name what to work around, and a limitation picker is its own conversation. Saying so
            is better than a chip that quietly does the wrong thing. */
-        say({
-          kind: 'holt',
-          text: "I can rebuild a day around an injury, but I haven't finished teaching myself to ask about it properly yet. Change the exercise or the sets for now.",
-        });
+        /* QA holt-04: it was a dead end. Now it points at the program page, where Ask Holt on the session
+           does this, and keeps the other changes one tap away here. */
+        say(
+          {
+            kind: 'holt',
+            text: 'Reworking a whole session is on the program page — open it, tap the session, then Ask Holt. Or change one thing about it here.',
+          },
+          {
+            kind: 'chips',
+            chips: [
+              { label: 'Open the program', patch: {}, goTo: `/program/${edit.program.id}` },
+              ...changesFor(day)
+                .filter((c) => c.id !== 'rebuild')
+                .map((c) => ({ label: c.label, patch: {}, edit: { step: 'change' as const, change: c.id } })),
+            ],
+          },
+        );
         return;
       }
       const rows = rowsFor(day, change);
@@ -1197,7 +1212,8 @@ export function CoachChatSheet({
           : valuesFor(day, change, pickStep.index);
       setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
       say(
-        { kind: 'holt', text: pick('ask_edit_value') },
+        /* QA holt-07: a swap is a movement, not a number — never "Give me the number." */
+        { kind: 'holt', text: pick(change === 'swap' ? 'ask_edit_replacement' : 'ask_edit_value') },
         {
           kind: 'chips',
           chips: options.map((v) => ({
@@ -1273,10 +1289,23 @@ export function CoachChatSheet({
       }
 
       await updateProgram(edit.program.id, res.structure);
+      /* QA holt-05: the tapped path gets the same Undo the typed path has, and says what it changed. */
+      const undoId = Date.now();
+      lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
+      const row = edit.day?.main[edit.rowIndex];
+      const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
       setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
       say(
-        { kind: 'holt', text: pick('edit_done') },
-        { kind: 'chips', chips: [{ label: 'Change something else', patch: {} }, { label: 'Show me the program', patch: {}, goTo: '/(tabs)' }] },
+        { kind: 'holt', text: `${what} ${pick('edit_done')}` },
+        {
+          kind: 'chips',
+          chips: [
+            { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
+            { label: 'Change something else', patch: {} },
+            /* QA holt-06: to the program itself, not Home. */
+            { label: 'Show me the program', patch: {}, goTo: `/program/${edit.program.id}` },
+          ],
+        },
       );
     } catch (e) {
       say({
@@ -1298,7 +1327,9 @@ export function CoachChatSheet({
    * The last change Holt made, so "Undo" can put it back (Coach-Holt-Everywhere rule 2). One level: the
    * structure as it was before, or the sessions a skip marked. Cleared the moment it is used.
    */
-  const lastEdit = useRef<{ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] } | null>(null);
+  const lastEdit = useRef<
+    ({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number } | null
+  >(null);
   const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
 
   /**
@@ -1379,8 +1410,12 @@ export function CoachChatSheet({
     }
     if (chip.typedEdit === 'undo') {
       const le = lastEdit.current;
-      lastEdit.current = null;
       if (!le) return say({ kind: 'holt', text: 'Nothing to undo — that one is already settled.' });
+      /* holtai-08: an older Undo stays tappable, but it only ever undoes the change it was offered for. */
+      if (chip.undoOf != null && chip.undoOf !== le.id) {
+        return say({ kind: 'holt', text: "That's not the last change any more — I can only take back the newest one." });
+      }
+      lastEdit.current = null;
       setBusy('thinking');
       try {
         /* The structure goes back exactly as it was; a skip is un-marked session by session. Both keep
@@ -1405,15 +1440,16 @@ export function CoachChatSheet({
       return say({ kind: 'holt', text: res.refusal.message });
     }
     setBusy('thinking');
+    const undoId = Date.now();
     try {
       /* A skip is a MARK on each session, never a structure change — saving the unchanged structure and
          saying "done" is the defect this branch exists to prevent. The RPC ignores a session already done. */
       if (pe.plan.kind === 'skip') {
         for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
-        lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })) };
+        lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })), id: undoId };
       } else {
         await updateProgram(pe.programId, res.structure);
-        lastEdit.current = { programId: pe.programId, before: pe.before };
+        lastEdit.current = { programId: pe.programId, before: pe.before, id: undoId };
       }
       pendingEdit.current = null;
       say(
@@ -1421,9 +1457,10 @@ export function CoachChatSheet({
         {
           kind: 'chips',
           chips: [
-            { label: 'Undo', patch: {}, typedEdit: 'undo' },
+            { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
             { label: 'Change something else', patch: {} },
-            { label: 'Show me the program', patch: {}, goTo: '/(tabs)' },
+            /* QA holt-06: to the program itself, not Home. */
+            { label: 'Show me the program', patch: {}, goTo: `/program/${pe.programId}` },
           ],
         },
       );
@@ -1480,10 +1517,10 @@ export function CoachChatSheet({
       void finishTypedEdit(chip);
       return;
     }
+    /* holtai-06 (QA holt-04): he changes it here, the way "Change my program" does — not a bare hop to Workouts. */
     if (chip.label === 'Change the one I have') {
       say({ kind: 'me', text: chip.label });
-      handOff();
-      router.push('/(tabs)/workouts');
+      void beginEdit();
       return;
     }
     if (chip.label === 'Replace it') {
@@ -3901,22 +3938,34 @@ function Answers({
   /* The default, and what every question used to be: a set of unlike things, two to a row. */
   return (
     <View style={styles.chipGrid}>
-      {chips.map((c) => (
-        <Pressable
-          key={c.label}
-          onPress={() => (settled ? undefined : onChip(c))}
-          disabled={settled}
-          accessibilityRole="button"
-          accessibilityLabel={c.label}
-          accessibilityState={{ selected: chosen(c), disabled: settled }}
-          style={({ pressed }) => [styles.chipCell, (pressed || chosen(c)) && styles.ctlOn]}
-        >
-          <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
-          {chosen(c) ? <Tick size={13} /> : null}
-        </Pressable>
-      ))}
+      {chips.map((c) => {
+        /* holtai-08: Undo stays tappable after a later message; the sheet checks it is still the newest. */
+        const locked = settled && c.typedEdit !== 'undo';
+        return (
+          <Pressable
+            key={c.label}
+            onPress={() => (locked ? undefined : onChip(c))}
+            disabled={locked}
+            accessibilityRole="button"
+            accessibilityLabel={c.label}
+            accessibilityState={{ selected: chosen(c), disabled: locked }}
+            style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (pressed || chosen(c)) && styles.ctlOn]}
+          >
+            <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+            {chosen(c) ? <Tick size={13} /> : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
+}
+
+/**
+ * QA holt-10 / holt-09: a two-to-a-row chip cut short labels ("Every week from h…", "Show me the prog…",
+ * the session names). A label longer than a half cell holds takes the whole row instead.
+ */
+function isWideChip(label: string): boolean {
+  return label.length > 15;
 }
 
 /**
@@ -3962,7 +4011,7 @@ function MultiAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: string
             accessibilityRole="checkbox"
             accessibilityLabel={c.label}
             accessibilityState={{ checked: on(c), disabled: settled }}
-            style={({ pressed }) => [styles.chipCell, (on(c) || pressed) && styles.ctlOn]}
+            style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (on(c) || pressed) && styles.ctlOn]}
           >
             <Text style={[styles.chipCellText, on(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
             <View style={[styles.optSquare, on(c) && styles.optDotOn]}>{on(c) ? <Tick size={9} /> : null}</View>
@@ -4031,7 +4080,7 @@ function MultiLimitAnswers({ chips, answer, onChip }: { chips: Chip[]; answer: s
               accessibilityRole={one == null ? 'button' : 'checkbox'}
               accessibilityLabel={c.label}
               accessibilityState={one == null ? { disabled: settled } : { checked: on(c), disabled: settled }}
-              style={({ pressed }) => [styles.chipCell, (on(c) || pressed) && styles.ctlOn]}
+              style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (on(c) || pressed) && styles.ctlOn]}
             >
               <Text style={[styles.chipCellText, on(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
               {one == null ? null : (
@@ -4935,6 +4984,8 @@ const styles = StyleSheet.create({
     borderColor: wash(0.075),
     backgroundColor: wash(0.032),
   },
+  /* A long label takes the whole row rather than an ellipsis (QA holt-10). */
+  chipCellWide: { flexBasis: '100%' },
   /* ⚠ `flex: 1; minWidth: 0` with one line and an ellipsis. §6: a fixed-height control must never wrap,
      because the text then spills out of a box that cannot grow. */
   chipCellText: { flex: 1, minWidth: 0, fontSize: 13.5, color: flColor.cream100 },
