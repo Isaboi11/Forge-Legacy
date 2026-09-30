@@ -115,6 +115,24 @@ export function useStoreIdentity(userId: string | null): void {
 }
 
 /**
+ * Where Manage Subscription goes on this platform — `null` where there is no store to open.
+ *
+ * ⚠ WEB IS NOT ANDROID (settings-04, QA 09-26). This was `ios ? Apple : Play`, so the web preview — which
+ * has no store at all — sent a Premium athlete to a Google Play sign-in for a subscription that was bought
+ * on an iPhone. The web has nothing to deep-link to, so it gets `null` and P-8 says where the subscription
+ * IS managed (`MANAGE_ELSEWHERE_NOTE`) instead of drawing a button that leaves for the wrong place.
+ */
+export function manageSubscriptionsUrl(): string | null {
+  if (Platform.OS === 'ios') return 'https://apps.apple.com/account/subscriptions';
+  if (Platform.OS === 'android') return 'https://play.google.com/store/account/subscriptions';
+  return null;
+}
+
+/** Shown in place of the Manage Subscription button where `manageSubscriptionsUrl()` is null. */
+export const MANAGE_ELSEWHERE_NOTE =
+  'Your subscription is managed on your iPhone: open Settings, tap your name, then Subscriptions.';
+
+/**
  * Manage Subscription — the native OS subscription settings (P-8 §5.2).
  *
  * ⚠ NEEDS NO SDK, AND SO IT WORKS TODAY. This is a deep link, not a transaction: the platform owns
@@ -125,10 +143,8 @@ export function useStoreIdentity(userId: string | null): void {
  * There is no confirmation alert — it is navigation, not a destructive action.
  */
 export async function openManageSubscriptions(): Promise<boolean> {
-  const url =
-    Platform.OS === 'ios'
-      ? 'https://apps.apple.com/account/subscriptions'
-      : 'https://play.google.com/store/account/subscriptions';
+  const url = manageSubscriptionsUrl();
+  if (url == null) return false;
   try {
     await Linking.openURL(url);
     return true;

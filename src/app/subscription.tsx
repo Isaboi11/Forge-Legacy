@@ -59,7 +59,7 @@ import {
 } from '@/domain/billing/plans-core';
 import type { CapKey, Caps } from '@/domain/entitlement/caps-core';
 import { LEGAL } from '@/domain/settings/content';
-import { billing, billingAvailable, openManageSubscriptions } from '@/lib/billing';
+import { billing, billingAvailable, MANAGE_ELSEWHERE_NOTE, manageSubscriptionsUrl, openManageSubscriptions } from '@/lib/billing';
 import { ENTITLEMENT_RETRY_MESSAGE, useEntitlementState } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -634,11 +634,20 @@ export default function SubscriptionScreen() {
                 <SectionLabel>What Premium unlocks</SectionLabel>
                 <BenefitList benefits={benefits} />
                 <OwnershipCard />
-                <View style={styles.manage}>
-                  <Button variant="secondary" fullWidth onPress={onManage} accessibilityLabel="Manage Subscription">
-                    Manage Subscription
-                  </Button>
-                </View>
+                {/* No store on the web, so no button — it says where the subscription is managed instead
+                    (settings-04) — and only for a store subscription: a founder seat or a granted Premium
+                    has nothing on the iPhone to manage. The native deep link is untouched. */}
+                {manageSubscriptionsUrl() == null ? (
+                  snapshot?.premiumKind === 'MONTHLY' || snapshot?.premiumKind === 'ANNUAL' ? (
+                    <Text style={styles.manageNote}>{MANAGE_ELSEWHERE_NOTE}</Text>
+                  ) : null
+                ) : (
+                  <View style={styles.manage}>
+                    <Button variant="secondary" fullWidth onPress={onManage} accessibilityLabel="Manage Subscription">
+                      Manage Subscription
+                    </Button>
+                  </View>
+                )}
                 {!canBuy && shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
               </>
             ) : (
@@ -1323,6 +1332,7 @@ const styles = StyleSheet.create({
   planCardValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
   planCardLine: { fontSize: 12.5, color: flColor.gray400, marginTop: 5 },
   manage: { marginTop: 22 },
+  manageNote: { marginTop: 22, fontSize: 12.5, lineHeight: 18, color: flColor.gray400, textAlign: 'center', paddingHorizontal: 10 },
 
   restore: { marginTop: 20 },
   restoreText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
