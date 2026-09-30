@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { ACK_KINDS, type AckKind } from '@/data/squad-feed-live';
 
 /**
  * The notification feed (migration 0054).
@@ -110,6 +111,10 @@ export interface ForgeNotification {
   actorAvatarUrl: string | null;
   /** The goal kinds only: "412 workouts logged together", worded by the server at close (0200). */
   detail: string | null;
+  /** `post_reaction` only: which of the four acknowledgements it was (social2-28). Read from
+   *  `squad_post_reactions` by the client — the union row carries the post and the actor, not the kind.
+   *  Null when it can't be read (RLS, or changed since), and the inbox then draws the plain heart. */
+  reactionKind?: AckKind | null;
 }
 
 const MISSING_FN = 'PGRST202';
@@ -250,6 +255,7 @@ export async function fetchNotifications(limit = 50): Promise<ForgeNotification[
       detail: null,
     });
   }
+  await attachReactionKinds(out);
   // The two sources interleave by time, and the page stays the size it was asked for.
   return out.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, limit);
 }
@@ -259,6 +265,26 @@ export async function fetchNotifications(limit = 50): Promise<ForgeNotification[
  * breaking the screen that hosts it, and a missing migration should read as "nothing new", not an error.
  * The goal rows (0200) are counted alongside, so a goal closing lights the bell like anything else.
  */
+/**
+ * "Strength" drew a heart in the inbox like every other reaction (social2-28): the union row names the post
+ * and who reacted, not how. One read of `squad_post_reactions` (primary key post_id + user_id, so one row per
+ * reactor) fills it in. A failed read leaves every kind null — the heart, never an error.
+ */
+async function attachReactionKinds(rows: ForgeNotification[]): Promise<void> {
+  const wanted = rows.filter((n) => n.kind === 'post_reaction' && n.postId && n.actorId);
+  if (!wanted.length) return;
+  const { data, error } = await supabase
+    .from('squad_post_reactions')
+    .select('post_id, user_id, kind')
+    .in('post_id', [...new Set(wanted.map((n) => n.postId as string))]);
+  if (error || !data) return;
+  const kinds = new Map<string, AckKind>();
+  for (const r of data as { post_id: string; user_id: string; kind: string | null }[]) {
+    if (r.kind && (ACK_KINDS as readonly string[]).includes(r.kind)) kinds.set(`${r.post_id}:${r.user_id}`, r.kind as AckKind);
+  }
+  for (const n of wanted) n.reactionKind = kinds.get(`${n.postId}:${n.actorId}`) ?? null;
+}
+
 export async function fetchUnreadNotificationCount(): Promise<number> {
   const [{ data, error }, goals] = await Promise.all([supabase.rpc('notification_unread_count'), fetchGoalNotifications()]);
   const base = error ? 0 : Number(data ?? 0);

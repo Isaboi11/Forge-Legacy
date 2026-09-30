@@ -130,6 +130,11 @@ export function RankRungSheet({
                 <Text style={styles.note}>Nothing was logged that day — the last thing this rung waited on was time.</Text>
               )}
             </>
+          ) : target.family === 'foundation' && target.level === 1 ? (
+            /* The first rung is where everyone starts — nothing earns it. A brand-new athlete with no sessions
+               was told they reached it "before the training history the app can replay", which is not true
+               of anyone (QA 09-26 home-16). */
+            <Text style={styles.note}>Every athlete starts here. Foundation I was yours the day you joined; what you log from here is what earns the next rung.</Text>
           ) : (
             /* Reached, but not by any day the replay can name — a rank carried from before the history the
                app holds. Say so rather than print a date nobody can stand behind. */

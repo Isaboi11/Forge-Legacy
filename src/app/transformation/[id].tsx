@@ -4,7 +4,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View
 import { Image } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBar } from '@/components/forge/composites/AppBar';
 
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
@@ -344,22 +344,21 @@ function VideoBlock({ uri }: { uri: string }) {
 /* ⚠ NO SAFE-AREA INSET — see the note on `transformation-compare`'s TopBar. All three Transformation
    screens hand-roll this bar and all three put it under the Dynamic Island. Same fix, same numbers as
    the shared `AppBar`. */
+/* legacy-28 (QA 09-26): the shared `AppBar` — one header style across the Legacy screens, and it already
+   pays the safe-area inset this bar used to hand-roll. */
 function TopBar({ onBack, onOverflow }: { onBack: () => void; onOverflow?: () => void }) {
-  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
-      <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.topBtn} hitSlop={6}>
-        <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
-      </Pressable>
-      <Text style={styles.topTitle}>Transformation Entry</Text>
-      {onOverflow ? (
-        <Pressable onPress={onOverflow} accessibilityRole="button" accessibilityLabel="Entry options" style={styles.topBtn} hitSlop={6}>
-          <EngravedIcon name="more" size={20} color={flColor.gray400} />
-        </Pressable>
-      ) : (
-        <View style={styles.topBtn} />
-      )}
-    </View>
+    <AppBar
+      title="Transformation Entry"
+      onBack={onBack}
+      actions={
+        onOverflow ? (
+          <Pressable onPress={onOverflow} accessibilityRole="button" accessibilityLabel="Entry options" style={styles.topBtn} hitSlop={6}>
+            <EngravedIcon name="more" size={20} color={flColor.gray400} />
+          </Pressable>
+        ) : undefined
+      }
+    />
   );
 }
 
@@ -378,9 +377,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
   scroll: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 24 },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
   eyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.labelInk },
   date: { marginTop: 6, fontFamily: flFont.display, fontSize: 30, fontWeight: '700', letterSpacing: -0.3, lineHeight: 32, color: flColor.cream100 },

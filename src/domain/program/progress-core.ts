@@ -19,6 +19,7 @@ import { blockRoundsText, deriveBlocks, isAmrap, schemeText, supersetBlockLetter
 import { contextMaxFor, loadText, type LoadContext } from './percent-max.ts';
 // Relative + extensioned: `@/` is TYPE-ONLY in domain code, and this is a runtime read.
 import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '../rank/thresholds.ts';
+import { countOf } from '../text/plural.ts';
 
 export type { LoadContext };
 
@@ -365,7 +366,7 @@ function loggedLine(w: LoggedWorkout): LogExercise[] {
       const weight = fmtWeight(s.weight);
       return {
         label: `Set ${s.setIndex + 1}`,
-        value: weight && s.reps != null ? `${weight} × ${s.reps}` : s.reps != null ? `${s.reps} reps` : '—',
+        value: weight && s.reps != null ? `${weight} × ${s.reps}` : s.reps != null ? countOf(s.reps, 'rep') : '—',
       };
     }),
   }));

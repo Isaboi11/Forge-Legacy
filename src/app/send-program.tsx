@@ -16,6 +16,7 @@ import { fetchMySquads, fetchSquad, type SquadSummary } from '@/data/squad-live'
 import { shareProgram } from '@/data/program-shares-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * Send Program — hand the PLAN to someone, not a picture of it.
@@ -129,7 +130,7 @@ export default function SendProgramScreen() {
             </Text>
             {program ? (
               <Text style={styles.programMeta}>
-                {program.structure.weeks} weeks • {program.structure.daysPerWeek}{' '}
+                {countOf(program.structure.weeks, 'week')} • {program.structure.daysPerWeek}{' '}
                 {program.structure.daysPerWeek === 1 ? 'day' : 'days'} / week
               </Text>
             ) : null}
@@ -229,6 +230,9 @@ function Row({
       onPress={onPress}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
+      /* `aria-checked` is what the WEB reads (social2-26, QA 09-26): react-native-web 0.21 ignores
+         `accessibilityState`, so a ticked row was announced exactly like an unticked one. */
+      aria-checked={on}
       accessibilityLabel={name}
       style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
     >

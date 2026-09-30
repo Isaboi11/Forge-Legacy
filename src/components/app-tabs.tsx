@@ -36,9 +36,11 @@ import {
  *      index 2, and it is index 2 of four as well as of five — so dropping the last tab returns the bar
  *      to exactly the shape it shipped with before Nutrition existed. Had Nutrition been inserted
  *      anywhere else, hiding it would have moved the centre tile.
- *   2. **This is not the gate.** 0206's RLS on all seven nutrition tables and the `food-search` 403 are
- *      the gate; a hidden tab is only the courtesy of not advertising an unfinished feature. Anyone who
- *      types `/nutrition` still reaches the route — and finds a screen the server will not fill.
+ *   2. **This is not the gate.** The RLS on every nutrition table and the `food-search` 403 are the gate
+ *      (`has_nutrition_access()`; since 0244 that is any signed-in athlete). ⚠ Dropping the TRIGGER also
+ *      drops the ROUTE: `expo-router/ui` builds the tab navigator from the triggers, so for an athlete
+ *      without access a typed `/nutrition` or stale deep link falls back to Home, quietly — it does NOT
+ *      reach the tab's own "Not available" screen (QA 09-26 home-24).
  *
  * `useNutritionAccess()` fails closed, so the tab is absent while entitlement loads and appears a beat
  * after launch for the two accounts that have it. Remove the condition (and 0206's gate) when Nutrition

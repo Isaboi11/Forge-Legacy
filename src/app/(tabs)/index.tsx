@@ -60,6 +60,9 @@ import { fetchAllProgramSessions, fetchMyPrograms, updateProgram } from '@/data/
 import type { ProgramDay } from '@/data/programs-live';
 import type { SessionMark } from '@/domain/program/progress-core';
 import { WorkoutPreviewSheet } from '@/components/forge/WorkoutPreviewSheet';
+import { PlannedWorkoutPreviewSheet } from '@/components/forge/PlannedWorkoutPreviewSheet';
+import { estimatedSessionMinutes } from '@/domain/program/prescription';
+import { templateRowsToDay } from '@/domain/program/template-day';
 import { SwapWorkoutSheet, type SwapOption } from '@/components/forge/SwapWorkoutSheet';
 import { dayLabel, nextOpenSlot, plannedDays, totalSessions, trainingDays } from '@/domain/program/progress-core';
 import { swapSessionOrder } from '@/domain/program/schedule-edit';
@@ -745,6 +748,8 @@ export default function HomeScreen() {
    * differently from the first.
    */
   const [previewOpen, setPreviewOpen] = useState(false);
+  /** The one-off slot's preview (PO 2026-09-30) — a squad post they took, or one built for later. */
+  const [plannedPreviewOpen, setPlannedPreviewOpen] = useState(false);
   const [swapOpen, setSwapOpen] = useState(false);
   const [swapBusy, setSwapBusy] = useState(false);
 
@@ -889,6 +894,7 @@ export default function HomeScreen() {
     title: string;
     focus?: string;
     exerciseCount?: number;
+    minutes?: number;
     onStart: () => void;
     resumeSets: number | null;
   } | null =
@@ -916,6 +922,14 @@ export default function HomeScreen() {
                 : 'Waiting for you. Start when you are ready.'
               : 'Waiting for you. Start when you are ready.',
             exerciseCount: planned?.exercises.length ?? 0,
+            /* The slot's rows read as a program day so the estimate is the SAME rule the program face uses —
+               a superset timed as rounds, a run by its bout — not a second, cruder sets-times-two. */
+            minutes: planned?.exercises.length
+              ? (() => {
+                  const d = templateRowsToDay(planned.exercises);
+                  return estimatedSessionMinutes(d.warmup, d.main);
+                })()
+              : undefined,
             onStart: startPlannedWorkout,
             resumeSets: null,
           }
@@ -936,6 +950,7 @@ export default function HomeScreen() {
               title: home.workout.name,
               focus: home.workout.focus,
               exerciseCount: home.workout.exerciseCount ?? home.workout.exercises?.length ?? 0,
+              minutes: plannedDay ? estimatedSessionMinutes(plannedDay.warmup, plannedDay.main) : undefined,
               onStart: startHomeWorkout,
               resumeSets: null,
             }
@@ -1167,12 +1182,21 @@ export default function HomeScreen() {
                 title={hero.title}
                 focus={hero.focus}
                 exerciseCount={hero.exerciseCount}
+                minutes={hero.minutes}
                 onStart={hero.onStart}
                 resumeSets={hero.resumeSets}
-                /* Preview is offered ONLY when there is an authored day to show. The `resume` face has a
-                   session in progress (the logger itself is the view of it) and the `open` face has
-                   nothing planned at all — a preview of neither would be a button onto an empty list. */
-                onPreview={composition.hero === 'program' && plannedDay ? () => setPreviewOpen(true) : undefined}
+                /* Preview is offered ONLY when there is an authored day to show: the program day, or the
+                   workout waiting in the one-off slot (PO 2026-09-30 — it had none, so seeing a taken squad
+                   workout meant starting it). The `resume` face has a session in progress (the logger itself
+                   is the view of it) and the `open` face has nothing planned at all — a preview of neither
+                   would be a button onto an empty list. */
+                onPreview={
+                  composition.hero === 'program' && plannedDay
+                    ? () => setPreviewOpen(true)
+                    : composition.hero === 'planned' && planned && planned.exercises.length > 0
+                      ? () => setPlannedPreviewOpen(true)
+                      : undefined
+                }
                 onFreestyle={composition.heroOffersFreestyle ? startFreestyleFromHome : undefined}
                 /* Only the `open` face renames its button and offers the builder: with nothing planned,
                    "Start Workout" claimed a workout that did not exist, and this is the one state where
@@ -1512,6 +1536,19 @@ export default function HomeScreen() {
       {/* The planned session, readable before it is started. Mounted unconditionally rather than inside
           the hero branch — a sheet declared in a branch that has already returned is the defect
           `overlay-branch.test.mjs` exists to catch. */}
+      {/* Mounted only while open: its maxes read is not one of Home's first-paint reads (see the sheet). */}
+      {plannedPreviewOpen && planned ? (
+        <PlannedWorkoutPreviewSheet
+          open
+          onClose={() => setPlannedPreviewOpen(false)}
+          workout={planned}
+          onStart={() => {
+            setPlannedPreviewOpen(false);
+            void startPlannedWorkout();
+          }}
+        />
+      ) : null}
+
       {plannedDay ? (
         <WorkoutPreviewSheet
           open={previewOpen}

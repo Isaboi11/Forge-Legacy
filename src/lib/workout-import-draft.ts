@@ -11,7 +11,7 @@
  *
  * ⚠ RELATIVE, EXTENSIONED IMPORTS so `node --test` can load this file (`workout-import-draft.test.mjs`).
  */
-import { toProgramStructure, unmatchedNames, type ParsedWeek } from '../domain/program/import-parse.ts';
+import { toProgramStructure, unmatchedNames, type ParsedWeek, type ResolveName } from '../domain/program/import-parse.ts';
 import { clampReps, clampSets, newExerciseId } from './program-draft-model.ts';
 import type { ProgramExercise } from '@/data/programs-live';
 import type { WorkoutDraft } from './workout-builder-draft.ts';
@@ -23,7 +23,8 @@ export interface ImportedWorkout {
 
 export function workoutDraftFromImport(
   weeks: readonly ParsedWeek[],
-  resolveKey: (name: string) => string | undefined,
+  /** Given the whole match (`resolveImportedName`), a matched row takes the library's name — QA library-17. */
+  resolveKey: ResolveName,
 ): ImportedWorkout | null {
   const day = toProgramStructure(weeks, '', resolveKey).days[0];
   if (!day) return null;
@@ -37,7 +38,12 @@ export function workoutDraftFromImport(
           id: newExerciseId(),
           ...(x.kind === 'cardio'
             ? {}
-            : 'durationSec' in x && x.durationSec != null
+            : /* To failure is clamped with its scheme; a card's ramp keeps all its sets — see `fitRow` in `program-import-draft.ts`. */
+              x.repScheme?.length && x.repScheme.every((r) => r === 'F')
+              ? { sets: clampSets(x.sets), repScheme: x.repScheme.slice(0, clampSets(x.sets)) }
+              : x.repScheme?.length
+              ? { sets: x.repScheme.length }
+              : 'durationSec' in x && x.durationSec != null
               ? { sets: clampSets(x.sets) }
               : { sets: clampSets(x.sets), reps: clampReps(x.reps) }),
         }) as unknown as ProgramExercise,

@@ -275,6 +275,14 @@ const LIFT_LABEL: Record<string, string> = {
   'barbell-overhead-press': 'Overhead press',
 };
 
+/** The lift's full name, for a sentence ("the bench press") — `LIFT_LABEL` is the short title form. */
+const LIFT_FULL: Record<string, string> = {
+  'barbell-bench-press': 'bench press',
+  'barbell-back-squat': 'squat',
+  'barbell-deadlift': 'deadlift',
+  'barbell-overhead-press': 'overhead press',
+};
+
 const ACTIVITY_LABEL: Record<string, string> = {
   running: 'Run',
   walking: 'Walk',
@@ -319,7 +327,9 @@ export function triggerText(metric: string, threshold: number, metricKey: string
       return threshold <= 1 ? 'Achieve your first goal.' : `Achieve ${num(threshold)} goals.`;
 
     case 'lift_max':
-      return `${lift} ${num(threshold)} lb.`;
+      // Was `${lift} ${num} lb.` — "Bench 135 lb." under a title reading "Bench 135": the ceremony said the
+      // name twice and never why (QA 09-26 home-22). This names the act instead.
+      return `Lift ${num(threshold)} lb or more on the ${(LIFT_FULL[metricKey ?? ''] ?? lift).toLowerCase()}.`;
     case 'combined_lifts':
       return `Bench, squat and deadlift totalling ${num(threshold)} lb.`;
     case 'lift_ratio':

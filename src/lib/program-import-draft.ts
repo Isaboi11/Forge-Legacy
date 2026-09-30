@@ -9,7 +9,7 @@
  * ⚠ RELATIVE, EXTENSIONED IMPORTS so `node --test` can load this file — `program-import-draft.test.mjs`
  * holds the limits below to what they say. `@/` would not resolve there.
  */
-import { toProgramStructure, unmatchedNames, type ParsedWeek } from '../domain/program/import-parse.ts';
+import { toProgramStructure, unmatchedNames, type ParsedWeek, type ResolveName } from '../domain/program/import-parse.ts';
 import {
   DAYS_MAX,
   REPS_MAX,
@@ -61,6 +61,8 @@ export function importLimitNotes(weeks: readonly ParsedWeek[], opts: { isWeek?: 
     for (const d of w.days) {
       for (const i of d.items) {
         if (i.kind === 'cardio') continue;
+        /* A card's ramp is kept whole (see `fitRow`), so it is not "capped". */
+        if (i.rx?.repScheme?.length) continue;
         if (i.sets > SETS_MAX || i.reps > REPS_MAX) capped.add(`${i.name} ${i.sets}×${i.reps}`);
       }
     }
@@ -77,11 +79,17 @@ export function importLimitNotes(weeks: readonly ParsedWeek[], opts: { isWeek?: 
 export function draftFromImport(
   base: ProgramDraft,
   weeks: ParsedWeek[],
-  opts: { isWeek: boolean; resolveKey: (name: string) => string | undefined },
+  opts: {
+    isWeek: boolean;
+    /** Given the whole match (`resolveImportedName`), a matched row takes the library's name — QA library-17. */
+    resolveKey: ResolveName;
+    /** What the paste called itself (`ParseResult.title`) — the name when the athlete has not typed one (programs-07). */
+    title?: string;
+  },
 ): ImportedDraft | null {
   if (!weeks.length) return null;
   const { isWeek, resolveKey } = opts;
-  const imported = toProgramStructure(weeks, base.name?.trim() || 'Imported Program', resolveKey);
+  const imported = toProgramStructure(weeks, base.name?.trim() || opts.title?.trim() || 'Imported Program', resolveKey);
 
   /*
    * FIT WHAT WAS PASTED INTO WHAT THE BUILDER CAN HOLD — and say so when it does not fit.
@@ -91,8 +99,20 @@ export function draftFromImport(
    */
   // A cardio bout carries 1 × 0 on purpose (see `toProgramStructure`); clamping would invent a rep. A TIMED set
   // (`durationSec`) has no reps either — its clock is the prescription — so only its sets are clamped.
-  const fitRow = <T extends { kind?: string; sets: number; reps: number; durationSec?: number }>(x: T) =>
-    x.kind === 'cardio' ? x : x.durationSec != null ? { ...x, sets: clampSets(x.sets) } : { ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) };
+  /* ⚠ A CARD'S RAMP KEEPS ITS SETS. Squatober's "5 reps 60/65/70%, 3 reps 73/75/78%, 1 rep 82/85/87%" is nine sets;
+     cut to the stepper's eight, the ninth rung — the heaviest — would vanish (PO 2026-09-30). A per-set scheme is
+     the prescription itself, so its length is the set count; the stepper takes over only if the athlete re-counts. */
+  /* Every set to failure (`['F', …]`, programs-08) is a set count like any other — clamped, and the scheme with it. */
+  const fitRow = <T extends { kind?: string; sets: number; reps: number; durationSec?: number; repScheme?: (number | 'F')[] }>(x: T) =>
+    x.kind === 'cardio'
+      ? x
+      : x.repScheme?.length && x.repScheme.every((r) => r === 'F')
+        ? { ...x, sets: clampSets(x.sets), repScheme: x.repScheme.slice(0, clampSets(x.sets)) }
+      : x.repScheme?.length
+        ? { ...x, sets: x.repScheme.length }
+        : x.durationSec != null
+          ? { ...x, sets: clampSets(x.sets) }
+          : { ...x, sets: clampSets(x.sets), reps: clampReps(x.reps) };
   const fit = (list: typeof imported.days) =>
     list.slice(0, DAYS_MAX).map((d) => ({
       ...d,

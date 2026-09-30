@@ -22,6 +22,7 @@
 // Relative and extensioned: `node --test` loads this file directly and cannot resolve the `@/` alias.
 // (`import-session-text` gets away with `@/` because it imports a TYPE, which is stripped before then.)
 import { deriveName, type CardioActivity } from '../workout/conditioning.ts';
+import { countOf } from '../text/plural.ts';
 import {
   activityIn,
   distanceIn,
@@ -60,7 +61,32 @@ import {
   weekdayKey,
 } from './import-scheme.ts';
 
+/**
+ * ══ WHAT A PHOTOGRAPHED CARD SAYS THAT A TABLE CANNOT (PO 2026-09-30) ══
+ *
+ * A photo imported through the card reader and the AI check (`data/import-photo-read.ts`) is read by the written-
+ * workout reader, which holds a per-set ramp, percentages, the rest and a superset. This carries them through the
+ * preview into the draft (`toProgramStructure`), so "5 reps 60%, 65%, 70% / 3 reps 73% …" reaches the builder as
+ * nine sets and not as three-by-ten. Absent on every table read, which is unchanged. The preview drops it the
+ * moment the athlete re-counts the row by hand — the numbers are then theirs, not the card's.
+ */
+export interface ImportRx {
+  /** The library key the written reader already matched ("BB Bicep Curls" → biceps curl). */
+  catalogKey?: string;
+  repScheme?: number[];
+  repsMax?: number;
+  percentOfMax?: number;
+  percentScheme?: (number | null)[];
+  percentOf?: string;
+  restSec?: number;
+  restScheme?: (number | null)[];
+  groupId?: string;
+  groupKind?: 'superset';
+}
+
 export interface ParsedItem {
+  /** A card's prescription beyond sets × reps — see `ImportRx`. */
+  rx?: ImportRx;
   /** Verbatim from the sheet. Never normalised, never corrected. */
   name: string;
   sets: number;
@@ -1726,14 +1752,14 @@ export function parseProgramTable(raw: string): ParseResult {
 /**
  * "3 weeks · 4 days each · 48 exercises" — the design's "Here's what we read". A WORKOUT (one day, the template
  * import) reads "1 workout · 5 exercises": "1 week · 1 day each" described a program nobody imported (PO 09-27).
+ * ONE week reads "1 week · 3 days" — "each" only means something across several (QA 09-26 holtai-23 / programs-18).
  */
 export function summarize(weeks: readonly ParsedWeek[], unit: 'program' | 'workout' = 'program'): string {
   const items = weeks.reduce((n, w) => n + w.days.reduce((m, d) => m + d.items.length, 0), 0);
-  if (unit === 'workout') return `1 workout · ${items} exercise${items === 1 ? '' : 's'}`;
+  if (unit === 'workout') return `1 workout · ${countOf(items, 'exercise')}`;
   const dayCounts = [...new Set(weeks.map((w) => w.days.length))];
-  const days = dayCounts.length === 1 ? `${dayCounts[0]} day${dayCounts[0] === 1 ? '' : 's'} each` : 'varying days';
-  const wk = `${weeks.length} week${weeks.length === 1 ? '' : 's'}`;
-  return `${wk} · ${days} · ${items} exercise${items === 1 ? '' : 's'}`;
+  const days = dayCounts.length === 1 ? `${countOf(dayCounts[0], 'day')}${weeks.length > 1 ? ' each' : ''}` : 'varying days';
+  return `${countOf(weeks.length, 'week')} · ${days} · ${countOf(items, 'exercise')}`;
 }
 
 /** True when every week holds the same days and the same work — so the program can repeat one week. */
@@ -1763,8 +1789,20 @@ export interface ImportedExercise {
   /** A timed set's clock, and the rest after it — see `ParsedItem`. */
   durationSec?: number;
   restAfterSec?: number;
-  /** Every set to failure — `['F', 'F', 'F']`. Set only for `ParsedItem.toFailure`. */
-  repScheme?: 'F'[];
+  /**
+   * A photographed card's prescription (`ImportRx`), in `ProgramExercise`'s own field names — or every set
+   * to failure, `['F', 'F', 'F']`, for `ParsedItem.toFailure`.
+   */
+  repScheme?: (number | 'F')[];
+  repsMax?: number;
+  percentOfMax?: number;
+  percentScheme?: (number | null)[];
+  percentOf?: string;
+  restSec?: number;
+  restScheme?: (number | null)[];
+  groupId?: string;
+  groupKind?: 'superset';
+  groupName?: string;
 }
 
 /**
@@ -1843,10 +1881,13 @@ export function toProgramStructure(
         coachNote: i.note ?? null,
       };
     }
-    const hit = resolveKey(i.name);
-    const key = typeof hit === 'string' ? hit : hit?.key;
+    /* A card's own match wins: the written reader matched "BB Bicep Curls" by its shorthand, which a plain
+       lookup of the name as written would miss. */
+    const hit = i.rx?.catalogKey ? null : resolveKey(i.name);
+    const key = i.rx?.catalogKey ?? (typeof hit === 'string' ? hit : hit?.key);
     const match = hit != null && typeof hit === 'object' ? hit : null;
     const note = i.note ?? (match?.repaired ? i.name : undefined);
+    const rx = i.rx;
     const base = {
       name: match?.name ?? i.name,
       sets: i.sets,
@@ -1854,9 +1895,20 @@ export function toProgramStructure(
       // A timed set carries its clock into the program (`ProgramExercise.durationSec`, which the logger times).
       ...(i.durationSec != null ? { durationSec: i.durationSec } : {}),
       ...(i.restSec != null ? { restAfterSec: i.restSec } : {}),
-      // To failure: one 'F' per set, which is how the program model and the logger already say it.
-      ...(i.toFailure && i.durationSec == null ? { repScheme: Array.from({ length: Math.max(1, i.sets) }, () => 'F' as const) } : {}),
       ...(note ? { coachNote: note } : {}),
+      // To failure: one 'F' per set, which is how the program model and the logger already say it.
+      ...(i.toFailure && i.durationSec == null && !rx?.repScheme?.length
+        ? { repScheme: Array.from({ length: Math.max(1, i.sets) }, () => 'F' as const) }
+        : {}),
+      /* The card's ramp, percentages, rest between sets and superset (PO 2026-09-30) — see `ImportRx`. */
+      ...(rx?.repScheme?.length ? { repScheme: rx.repScheme } : {}),
+      ...(rx?.repsMax != null ? { repsMax: rx.repsMax } : {}),
+      ...(rx?.percentOfMax != null ? { percentOfMax: rx.percentOfMax } : {}),
+      ...(rx?.percentScheme?.length ? { percentScheme: rx.percentScheme } : {}),
+      ...(rx?.percentOf ? { percentOf: rx.percentOf } : {}),
+      ...(rx?.restSec != null ? { restSec: rx.restSec } : {}),
+      ...(rx?.restScheme?.length ? { restScheme: rx.restScheme } : {}),
+      ...(rx?.groupId ? { groupId: rx.groupId, groupKind: rx.groupKind ?? ('superset' as const), groupName: 'Superset' } : {}),
     };
     return key ? { ...base, catalogKey: key } : base;
   };
@@ -1892,6 +1944,6 @@ export function unmatchedNames(
   const out = new Set<string>();
   // A cardio bout is never looked up (see `toProgramStructure`), so it is never "not in the library" —
   // counting "Outdoor Run" here told a runner their runs had not been recognised.
-  for (const w of weeks) for (const d of w.days) for (const i of d.items) if (i.kind !== 'cardio' && !resolveKey(i.name)) out.add(i.name);
+  for (const w of weeks) for (const d of w.days) for (const i of d.items) if (i.kind !== 'cardio' && !i.rx?.catalogKey && !resolveKey(i.name)) out.add(i.name);
   return [...out];
 }

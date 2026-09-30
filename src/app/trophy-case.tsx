@@ -279,6 +279,13 @@ export default function TrophyCaseScreen() {
                 ? 'Every championship and podium finish you earn is kept here for good.'
                 : 'They haven’t finished a competition yet.'}
             </Text>
+            {/* A way in from the empty case (B9 / legacy-34, QA 09-26): it said where trophies come from and
+                offered no road there. */}
+            {data.isSelf ? (
+              <Pressable onPress={() => router.push('/competitions')} accessibilityRole="button" accessibilityLabel="See competitions" style={({ pressed }) => [styles.outlineBtn, pressed ? styles.outlineBtnPressed : null]}>
+                <Text style={styles.outlineBtnLabel}>See Competitions</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <>
@@ -541,4 +548,5 @@ const styles = StyleSheet.create({
   missingBody: { marginTop: 9, fontSize: 13, lineHeight: 19, textAlign: 'center', color: flColor.gray400 },
   outlineBtn: { marginTop: 22, paddingHorizontal: 20, paddingVertical: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder },
   outlineBtnLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  outlineBtnPressed: { opacity: 0.7 },
 });

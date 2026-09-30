@@ -9,7 +9,9 @@ import {
   portionLabel,
   portionMacros,
   quickAddMacros,
+  rankBySource,
   repeatMacros,
+  SOURCE_LABEL,
   servingOptions,
 } from '../serving.ts';
 
@@ -187,4 +189,28 @@ test('a Recent repeat refuses zero and unknown numbers so the food is re-read in
   // A Recent list cached before the macros were read has NaN for them.
   assert.equal(repeatMacros({ kcal: 244, protein: NaN, carb: NaN, fat: NaN, grams: null }), null);
   assert.equal(repeatMacros({ kcal: -5, protein: 0, carb: 0, fat: 0, grams: 100 }), null);
+});
+
+test('community rows rank below USDA and FatSecret, relevance kept inside each (QA 09-26 N-21)', () => {
+  const rows = [
+    { key: 'usda:1', source: 'usda' },
+    { key: 'off:1', source: 'off' },
+    { key: 'fs:1', source: 'fs' },
+    { key: 'community:1', source: 'community' },
+    { key: 'usda:2', source: 'usda' },
+  ];
+  assert.deepEqual(rankBySource(rows).map((r) => r.key), ['usda:1', 'fs:1', 'usda:2', 'off:1', 'community:1']);
+});
+
+test('a 0-cal "coffee cake" or "sweet tea" is a blank row, not free food (QA 09-26 N-21)', () => {
+  const zero = (name) => ({ key: 'off:9', source: 'off', name, kcal100: 0, protein100: null, carb100: null, fat100: null, servings: [] });
+  assert.equal(energyKnown(zero('Coffee cake')), false);
+  assert.equal(energyKnown(zero('Sweet tea')), false);
+  assert.equal(energyKnown(zero('Zero sugar protein bar')), false);
+  assert.equal(energyKnown(zero('Black coffee')), true);
+  assert.equal(energyKnown(zero('Unsweetened iced tea')), true);
+});
+
+test('FatSecret rows are not all called restaurant food (QA 09-26 N-20)', () => {
+  assert.notEqual(SOURCE_LABEL.fs, 'Restaurant data');
 });
