@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { blockAt } from '../session-core.ts';
-import { indexAfterMove, moveExercise } from '../reorder-exercise.ts';
+import { indexAfterMove, moveExercise, stepExercise } from '../reorder-exercise.ts';
 
 /**
  * Drag to reorder in All Exercises — PO 2026-09-28: "we should make it where you can drag around the
@@ -100,4 +100,101 @@ test('⭐ the athlete stays on the exercise they were on, wherever it went', () 
   assert.equal(indexAfterMove(out, ex[2].position, 2), 2);
   assert.equal(indexAfterMove(out, ex[1].position, 1), 0, 'moving the one you are on follows it');
   assert.equal(indexAfterMove(out, undefined, 9), 2, 'unknown → clamped fallback');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE BUILDERS' UP / DOWN ARROWS (library-01, QA 09-26)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Every group id sits in ONE contiguous run — the thing a plain swap used to break. */
+const legal = (list) => {
+  const seen = new Set();
+  let prev;
+  for (const e of list) {
+    if (e.groupId && e.groupId !== prev && seen.has(e.groupId)) return false;
+    if (e.groupId) seen.add(e.groupId);
+    prev = e.groupId;
+  }
+  return true;
+};
+
+test('⭐ an arrow on a lone row next to a lone row is a plain swap', () => {
+  const ex = [lift('Squat'), lift('Bench'), lift('Row')];
+  assert.deepEqual(names(stepExercise(ex, 0, 1)), ['Bench', 'Squat', 'Row']);
+  assert.deepEqual(names(stepExercise(ex, 2, -1)), ['Squat', 'Row', 'Bench']);
+});
+
+test('an arrow past either end changes nothing (a copy)', () => {
+  const ex = [lift('Squat'), lift('Bench')];
+  assert.deepEqual(names(stepExercise(ex, 0, -1)), ['Squat', 'Bench']);
+  assert.deepEqual(names(stepExercise(ex, 1, 1)), ['Squat', 'Bench']);
+  assert.notEqual(stepExercise(ex, 1, 1), ex);
+});
+
+test('⭐ inside a superset the two members trade places and stay one superset', () => {
+  const ex = [lift('Squat'), lift('Bench', ss('s1')), lift('Row', ss('s1')), lift('Curl')];
+  const out = stepExercise(ex, 1, 1);
+  assert.deepEqual(names(out), ['Squat', 'Row', 'Bench', 'Curl']);
+  assert.equal(blockAt(out, 1).count, 2);
+});
+
+test('⭐ the old bug: the last member stepping DOWN takes the whole superset with it, unbroken', () => {
+  const ex = [lift('Bench', ss('s1')), lift('Row', ss('s1')), lift('Curl')];
+  const out = stepExercise(ex, 1, 1);
+  assert.deepEqual(names(out), ['Curl', 'Bench', 'Row']);
+  assert.equal(blockAt(out, 1).count, 2);
+  assert.ok(legal(out));
+});
+
+test('the first member stepping UP takes the whole superset with it', () => {
+  const ex = [lift('Curl'), lift('Bench', ss('s1')), lift('Row', ss('s1'))];
+  const out = stepExercise(ex, 1, -1);
+  assert.deepEqual(names(out), ['Bench', 'Row', 'Curl']);
+  assert.equal(blockAt(out, 0).count, 2);
+});
+
+test('⭐ the other old bug: a lone row steps PAST a superset, never into the middle of it', () => {
+  const ex = [lift('Curl'), lift('Bench', ss('s1')), lift('Row', ss('s1')), lift('Dip')];
+  const down = stepExercise(ex, 0, 1);
+  assert.deepEqual(names(down), ['Bench', 'Row', 'Curl', 'Dip']);
+  assert.equal(blockAt(down, 0).count, 2);
+  const up = stepExercise(ex, 3, -1);
+  assert.deepEqual(names(up), ['Curl', 'Dip', 'Bench', 'Row']);
+  assert.equal(blockAt(up, 2).count, 2);
+  assert.equal(up[1].groupId, undefined, 'the lone row did not join the superset');
+});
+
+test('two supersets side by side trade places whole', () => {
+  const ex = [lift('A', ss('s1')), lift('B', ss('s1')), lift('C', ss('s2')), lift('D', ss('s2')), lift('E', ss('s2'))];
+  const out = stepExercise(ex, 1, 1);
+  assert.deepEqual(names(out), ['C', 'D', 'E', 'A', 'B']);
+  assert.equal(blockAt(out, 0).count, 3);
+  assert.equal(blockAt(out, 3).count, 2);
+});
+
+test('⭐ no sequence of arrows can ever split a group — every row, both directions, three deep', () => {
+  const start = [lift('W'), lift('A', ss('s1')), lift('B', ss('s1')), lift('X'), lift('C', ss('s2')), lift('D', ss('s2')), lift('E', ss('s2')), lift('Y')];
+  let frontier = [start];
+  for (let depth = 0; depth < 3; depth += 1) {
+    const next = [];
+    for (const list of frontier) {
+      for (let i = 0; i < list.length; i += 1) {
+        for (const dir of [-1, 1]) {
+          const out = stepExercise(list, i, dir);
+          assert.ok(legal(out), `split after ${names(list).join(',')} @${i} ${dir}`);
+          assert.equal(out.length, list.length);
+          assert.deepEqual([...names(out)].sort(), [...names(list)].sort(), 'nothing lost, nothing duplicated');
+          assert.equal(out.filter((e) => e.groupId === 's1').length, 2);
+          assert.equal(out.filter((e) => e.groupId === 's2').length, 3);
+          next.push(out);
+        }
+      }
+    }
+    frontier = next.slice(0, 400);
+  }
+});
+
+test('a program-builder row (no sets, no position) moves the same way — only groupId is read', () => {
+  const rows = [{ id: 'x1', name: 'Press', groupId: 'g', groupKind: 'superset' }, { id: 'x2', name: 'Row', groupId: 'g', groupKind: 'superset' }, { id: 'x3', name: 'Curl' }];
+  assert.deepEqual(stepExercise(rows, 2, -1).map((r) => r.id), ['x3', 'x1', 'x2']);
 });

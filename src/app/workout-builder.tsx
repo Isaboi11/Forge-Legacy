@@ -39,6 +39,7 @@ import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/pr
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { bumpTimedSet, durText } from '@/domain/program/prescription';
+import { stepExercise } from '@/domain/workout/reorder-exercise';
 import { toTemplateExercises } from '@/lib/workout-template-rows';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
@@ -389,8 +390,10 @@ export default function WorkoutBuilderScreen() {
                   first={i === 0}
                   last={i === items.length - 1}
                   pairing={pairingAt(items, i)}
-                  onUp={() => patch(sec.key, (l) => swap(l, i, i - 1))}
-                  onDown={() => patch(sec.key, (l) => swap(l, i, i + 1))}
+                  /* The arrows go through the ONE tested step both builders share: a superset is found
+                     by adjacency, so a bare swap across its edge split it and the split was saved. */
+                  onUp={() => patch(sec.key, (l) => stepExercise(l, i, -1))}
+                  onDown={() => patch(sec.key, (l) => stepExercise(l, i, 1))}
                   onRemove={() => patch(sec.key, (l) => l.filter((_, k) => k !== i))}
                   onSets={(dir) =>
                     patch(sec.key, (l) =>
@@ -767,13 +770,6 @@ function Glyph({ name, color, size = 17 }: { name: EngravedName; color: string; 
 }
 
 // ── plumbing ────────────────────────────────────────────────────────────────
-
-const swap = (l: ProgramExercise[], i: number, j: number): ProgramExercise[] => {
-  if (j < 0 || j >= l.length) return l;
-  const next = [...l];
-  [next[i], next[j]] = [next[j], next[i]];
-  return next;
-};
 
 /** An existing template → an editable draft. Re-ids every row so React keys are stable and local. */
 function hydrate(name: string, exercises: TemplateExercise[], editId: string): WorkoutDraft {
