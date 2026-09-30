@@ -31,6 +31,9 @@ import {
 import { createFriendPost, uploadFeedMedia, type PostAudience } from '@/data/friends-feed-live';
 import { friendsTypeFor, offeredToFriends } from '@/domain/squad/post-audience';
 import { fetchMySquads } from '@/data/squad-live';
+import { fetchFriendLists } from '@/data/friends-live';
+import { Avatar } from '@/components/forge/composites/Avatar';
+import { useProfile } from '@/lib/profile';
 import { fetchTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
 import { fetchTransformationEntries, type TransformationEntry } from '@/data/transformation-live';
 import {
@@ -142,6 +145,11 @@ export default function SquadComposerRoute() {
   const [squadId, setSquadId] = useState<string>(String(id ?? ''));
   const [squads, setSquads] = useState<{ id: string; name: string }[] | null>(null);
   const fromSquad = !!String(id ?? '');
+  const { profile } = useProfile();
+  /* Whether anyone is on the other end of a Friends post (social-30, QA 09-26): posting to Friends with no
+     friends went through without a word, to a feed nobody reads. Only read when Friends is a choice. */
+  const { data: friendLists } = useQuery(() => (fromSquad ? Promise.resolve(null) : fetchFriendLists()), [fromSquad]);
+  const noFriends = friendLists != null && friendLists.friends.length === 0;
 
   const [type, setType] = useState<SquadPostType | null>(null);
   const [form, setForm] = useState<Form>(EMPTY);
@@ -516,6 +524,7 @@ export default function SquadComposerRoute() {
                   ? 'You’re not in a squad yet, so Friends is the only place inside Forge to share this.'
                   : (AUDIENCES.find((a) => a.key === audience)?.note ?? '')}
               </Text>
+              {audience !== 'SQUAD' && noFriends ? <NoFriendsNote onAdd={() => router.push('/add-friend')} /> : null}
 
               {/* Which squad, once one is needed. */}
               {needsSquad && (squads ?? []).length > 0 ? (
@@ -607,12 +616,14 @@ export default function SquadComposerRoute() {
         keyboardShouldPersistTaps="handled"
       >
         <TourAnchor id="composer-body" style={styles.authorRow}>
-          <View style={styles.authorDisc} />
+          {/* Your photo or initials, not an empty ring (social-20, QA 09-26). */}
+          <Avatar src={profile?.avatarUrl ?? undefined} name={profile?.name ?? ''} size={40} />
           <View style={styles.authorText}>
             <Text style={styles.authorName}>You</Text>
             <Text style={styles.authorMeta}>{def.label}</Text>
           </View>
         </TourAnchor>
+        {audience === 'FRIENDS' && noFriends ? <NoFriendsNote onAdd={() => router.push('/add-friend')} /> : null}
 
         {type === 'transformation' ? (
           loadingList ? (
@@ -806,7 +817,8 @@ export default function SquadComposerRoute() {
           )
         ) : type === 'discussion' ? (
           <>
-            <Area label="Note to the squad" value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />
+            {/* Named for where it's going (social2-16, QA 09-26): a Friends-only note was headed "Note to the squad". */}
+            <Area label={audience === 'FRIENDS' ? 'Note to your friends' : audience === 'BOTH' ? 'Note to your friends & squad' : 'Note to the squad'} value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />
             <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
           </>
         ) : (
@@ -824,6 +836,18 @@ export default function SquadComposerRoute() {
       <ScreenTour screenKey="squad-composer" ready={!!type} />
 
       {mediaPickerSheet}
+    </View>
+  );
+}
+
+/** Said before the post goes, not after (social-30): a Friends post with no friends reaches no one. */
+function NoFriendsNote({ onAdd }: { onAdd: () => void }) {
+  return (
+    <View style={styles.noFriends}>
+      <Text style={styles.noFriendsText}>You haven’t added any friends yet, so no one will see a Friends post.</Text>
+      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Add a friend" hitSlop={6}>
+        <Text style={styles.noFriendsLink}>Add a friend</Text>
+      </Pressable>
     </View>
   );
 }
@@ -1033,7 +1057,13 @@ function TypeGlyph({ type, locked = false }: { type: SquadPostType; locked?: boo
               ? 'video'
               : type === 'discussion'
                 ? 'chat'
-                : 'megaphone';
+                : /* Their own marks, the ones the feed already draws for them (`LedgerPost` MARKER_ICON) — all
+                     three of these fell through to the announcement's megaphone (social-20, QA 09-26). */
+                  type === 'transformation'
+                  ? 'transformation'
+                  : type === 'workout'
+                    ? 'dumbbell'
+                    : 'megaphone';
   return <EngravedIcon name={name} size={20} color={engravedTint(c)} />;
 }
 function LockIcon() {
@@ -1100,6 +1130,9 @@ const styles = StyleSheet.create({
   audienceLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'center' },
   audienceLabelOn: { color: flColor.cream100 },
   audienceNote: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 10, marginLeft: 2 },
+  noFriends: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 10, rowGap: 4, marginTop: 10, marginLeft: 2 },
+  noFriendsText: { flexShrink: 1, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
+  noFriendsLink: { fontSize: 12, lineHeight: 17, fontWeight: '600', color: flColor.bronzeInk },
   squadStrip: { gap: 8, paddingTop: 12, paddingRight: 18 },
   squadChip: {
     paddingVertical: 8,
@@ -1153,7 +1186,6 @@ const styles = StyleSheet.create({
   postBtnTextOff: { color: flColor.gray600 },
 
   authorRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  authorDisc: { width: 40, height: 40, borderRadius: flRadius.round, backgroundColor: forgeOr('#2c2118', flColor.iconContainerBg), borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   authorText: { flex: 1, minWidth: 0 },
   authorName: { fontSize: 14.5, fontWeight: '500', color: flColor.cream100 },
   authorMeta: { fontSize: 11.5, color: flColor.gray600, marginTop: 1 },
