@@ -19,7 +19,7 @@
 
 import { CARDIO_ACTIVITIES, CARDIO_SEARCH_ALIASES, cardioKey } from '../workout/conditioning.ts';
 import { type MatchResult } from '../program/exercise-match.ts';
-import { ALIASES_BY_ID, resolveAgainstCatalog } from './aliases.ts';
+import { ALIASES_BY_ID, resolveAgainstCatalog, resolveWrittenName, writtenVocabulary } from './aliases.ts';
 import { mergeForSearch } from './custom-core.ts';
 import { matchesFuzzy, matchesSearch, rankFor } from './search-core.ts';
 import equipmentData from '../exercise-relationships/source/equipment.json';
@@ -402,3 +402,17 @@ export const catalogForMatching = (): { key: string; name: string; aliases?: str
  */
 export const resolveExerciseName = (written: string): MatchResult | null =>
   resolveAgainstCatalog(written, catalogForMatching());
+
+/**
+ * The same, for a name somebody PASTED: a spelling slip is put right before giving up on it
+ * (`resolveWrittenName`). Import's resolver — the preview and the rows it creates both call this one, so
+ * what the athlete is shown is what is stored. The catalogue view and its vocabulary are built once: a
+ * preview asks for every row on every keystroke.
+ */
+let importCatalog: ReturnType<typeof catalogForMatching> | null = null;
+let importVocabulary: Set<string> | null = null;
+export const resolveImportedName = (written: string): MatchResult | null => {
+  importCatalog ??= catalogForMatching();
+  importVocabulary ??= writtenVocabulary(importCatalog);
+  return resolveWrittenName(written, importCatalog, importVocabulary);
+};

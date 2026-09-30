@@ -34,6 +34,8 @@ export interface MatchResult {
   name: string;
   /** True when a documented preference broke a tie rather than the words settling it outright. */
   byPreference: boolean;
+  /** True when a spelling slip was put right to reach it (`repairSpelling`) — a guess, so what was written is kept. */
+  repaired?: boolean;
 }
 
 /**
@@ -161,9 +163,16 @@ export function tokenize(raw: string): Set<string> {
      * (PO, 2026-09-22). Same for legs — "1 leg RDL".
      */
     .replace(/\b(?:one|1)\s+(arm|leg)(?:ged|ed)?\b/g, 'single $1')
+    /*
+     * "lat pull downs", "tricep push downs" — two words in the gym, ONE in the catalogue ("Lat Pulldown").
+     * The search box has joined them since 2026-09-04 (`matchesTokens`); import never did, so a phone note
+     * reading "lat pull downs 3x10" came in unmatched (QA programs-08, 2026-09-26).
+     */
+    .replace(/\b(pull|push)\s+downs?\b/g, '$1down')
     .trim()
     .split(/\s+/)
-    .flatMap((w) => (ABBREVIATIONS[w] ?? w).split(' '));
+    // "RDLs", "DLs", "hypers" — a plural of a shorthand is still the shorthand (QA library-17).
+    .flatMap((w) => (ABBREVIATIONS[w] ?? ABBREVIATIONS[singular(w)] ?? w).split(' '));
   return new Set(expanded.map(singular).filter((w) => w && !NOISE.has(w)));
 }
 
@@ -350,4 +359,40 @@ export function suggestExercises(written: string, catalog: readonly CatalogEntry
       a.entry.name.length - b.entry.name.length,
   );
   return scored.slice(0, limit).map((s) => ({ key: s.entry.key, name: s.entry.name, byPreference: false }));
+}
+
+// ── a spelling slip in a name that would otherwise have matched ─────────────
+
+/** Every word the catalogue uses for anything — the only words a repair may turn a slip INTO. */
+export function vocabularyOf(catalog: readonly CatalogEntry[]): Set<string> {
+  const out = new Set<string>();
+  for (const e of catalog) for (const n of [e.name, ...(e.aliases ?? [])]) for (const w of tokenize(n)) out.add(w);
+  return out;
+}
+
+/**
+ * "Tricep Pushdwon" → "tricep pushdown" — the written name with its slips put right, or null.
+ *
+ * A pasted program keeps its typos, and one transposed letter left an ordinary lift "not in the library"
+ * (QA library-17, 2026-09-26). This is NOT a looser matcher: it only ever swaps a word the catalogue has
+ * never used for the ONE catalogue word it is a slip of, and then the ordinary matcher decides. Two
+ * candidates, or an unknown word with none, and it answers nothing — a name the library really does not
+ * have ("Jefferson Curl") must stay the athlete's own.
+ */
+export function repairSpelling(written: string, vocabulary: ReadonlySet<string>): string | null {
+  const words = written.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean);
+  let changed = false;
+  const out: string[] = [];
+  for (const w of words) {
+    if ([...tokenize(w)].every((t) => vocabulary.has(t))) {
+      out.push(w);
+      continue;
+    }
+    const s = singular(w);
+    const close = [...vocabulary].filter((v) => closeWord(s, v));
+    if (close.length !== 1) return null;
+    out.push(close[0]);
+    changed = true;
+  }
+  return changed ? out.join(' ') : null;
 }

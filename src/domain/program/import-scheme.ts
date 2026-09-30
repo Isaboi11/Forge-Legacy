@@ -209,8 +209,8 @@ const EFFORT = /\s*@?\s*\b(?:rpe|rir)\s*\d+(?:\.\d+)?(?:\s*[-–—]\s*\d+(?:\.\
 const PERCENT = /\s*@?\s*\d{1,3}(?:\.\d+)?\s*%(?:\s*(?:of\s+)?(?:1\s*rm|max|tm|training max))?/gi;
 /** "each side", "per leg", "/side", "ea". */
 const PER_SIDE = /\s*(?:\/\s*(?:side|leg|arm)|\b(?:each|per)\s+(?:side|leg|arm)s?\b|\bea\b\.?)/gi;
-/** "to failure", "till failure", "AMRAP". */
-const TO_FAILURE = /\s*\b(?:(?:to|till|until)\s+failure|amrap)\b/gi;
+/** "to failure", "till failure", "AMRAP", "max reps". */
+const TO_FAILURE = /\s*\b(?:(?:to|till?|until)\s+failure|amrap|max\s+reps|as\s+many\s+(?:reps\s+)?as\s+possible)\b/gi;
 /** "rest 60 sec", "(rest 2 min)" — the rest note written the other way round from `REST_NOTE`. */
 const REST_FIRST = /\s*\(?\s*\brest\s*:?\s*\d+\s*(?:s|secs?|seconds?|m|mins?|minutes?)\b\s*\)?/gi;
 /** A lone "x" left at either end once its numbers were taken — "Squat x". */
@@ -226,6 +226,48 @@ export function hasQualifier(line: string): boolean {
   return /@|%|\/\s*side|\b(?:rpe|rir|amrap|failure|each|per|ea|rest|tempo|kg|kgs|lbs?|sec|secs|seconds?|mins?|minutes?|yds?|yards?|ft|meters?|metres?)\b|\d\s*(?:s|m)\b/i.test(
     line,
   );
+}
+
+/**
+ * Does the text prescribe AS MANY AS YOU CAN — "pushups to failure", "3 x AMRAP", "dips 3 sets till failure"?
+ *
+ * The name was always cleaned of these words, and then the reps were filled in as an assumed 10: a set to
+ * failure imported as 3 × 10 (QA programs-08, 2026-09-26). The caller only asks when no rep count and no
+ * clock was read, so "Bench 4x8 (last set AMRAP)" stays four sets of eight.
+ */
+const SAYS_FAILURE =
+  /\b(?:(?:to|till?|until)\s+failure|amrap|max\s+reps|as\s+many\s+(?:reps\s+)?as\s+possible)\b|(?<![\d.])\d{1,2}\s*[x×]\s*(?:max|failure|f)\b/i;
+
+export function saysFailure(text: string): boolean {
+  return SAYS_FAILURE.test(text);
+}
+
+/**
+ * "notes: add 5lbs each week", "Note - go heavy" → the note's text. "Notes:" alone → '' (what follows is the
+ * note). Anything else → null.
+ *
+ * A phone note ends a day with one of these, and it imported as an exercise called "notes: add each week" at
+ * an invented 3 × 10 — with the "5lbs" cut out of it as a load (QA programs-08, 2026-09-26).
+ */
+const NOTE_LINE = /^\s*(?:[-–—•*·]+\s*)?notes?\s*(?:[:\-–—]\s*(.*))?$/i;
+
+export function noteLine(line: string): string | null {
+  const m = line.replace(NBSP, ' ').replace(/\*\*|__/g, '').match(NOTE_LINE);
+  return m ? (m[1] ?? '').trim() : null;
+}
+
+/** A program's TITLE as a name — markdown, emoji bullets and quotes off, and no longer than the name field. */
+export function cleanTitle(line: string): string {
+  return line
+    .replace(NBSP, ' ')
+    .replace(MARKDOWN, '')
+    .replace(EMOJI_EDGES, '')
+    .replace(WRAPPING_QUOTES, '')
+    .replace(/[\s:\-–—|]+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40)
+    .trim();
 }
 
 /** Strip decoration, a trailing load and dangling separators — what the exercise is actually called. */

@@ -6,7 +6,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { readImportPhoto } from '@/data/import-photo-read';
-import { catalogForMatching, resolveExerciseName } from '@/domain/exercise-picker/data';
+import { catalogForMatching, resolveExerciseName, resolveImportedName } from '@/domain/exercise-picker/data';
 import { suggestExercises } from '@/domain/program/exercise-match';
 import { parseProgramTable, summarize, type ParsedDay, type ParsedItem, type ParsedWeek } from '@/domain/program/import-parse';
 import { distanceUnitFor, fmtDistanceIn, fmtDuration, type CardioActivity } from '@/domain/workout/conditioning';
@@ -93,9 +93,15 @@ type Props = {
   scope: ImportScope;
   /** The preview's CTA — "Create program", "Create week", "Add to workout". Naming what happens next. */
   cta: string;
-  /** The corrected read, already cut to `scope`. Turning it into a draft is the caller's. */
-  onConfirm: (weeks: ParsedWeek[]) => void;
+  /**
+   * The corrected read, already cut to `scope`. Turning it into a draft is the caller's. `title` is what the
+   * paste called itself (`ParseResult.title`) — a name for the draft when it has none (QA programs-07).
+   */
+  onConfirm: (weeks: ParsedWeek[], title?: string) => void;
 };
+
+/** The sheet says what it imports — "Import a program" over a single-day paste box was wrong (QA library-17). */
+const SHEET_TITLE: Record<ImportScope, string> = { program: 'Import a program', week: 'Import a week', day: 'Import a workout' };
 
 /**
  * Cut a read down to what the scope can hold, and say what was cut. Returns the note the preview shows
@@ -155,6 +161,8 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
   const [skipped, setSkipped] = useState<string[]>([]);
   /** What a photo read asks the athlete to look at before creating (`readImportPhoto`). */
   const [checks, setChecks] = useState<string[]>([]);
+  /** What the paste called itself — see `onConfirm`. */
+  const [title, setTitle] = useState<string | null>(null);
 
   /*
    * A photo read that was in flight when the sheet closed must not land in a sheet that has since been
@@ -172,6 +180,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setScopeNote(null);
     setSkipped([]);
     setChecks([]);
+    setTitle(null);
     setPhotoBusy(false);
     onClose();
   };
@@ -190,6 +199,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setScopeNote(fit.note);
     setSkipped(r.skipped ?? []);
     setChecks([]);
+    setTitle(r.title ?? null);
   };
 
   const onPickFile = async () => {
@@ -239,6 +249,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           setScopeNote(fit.note);
           setSkipped(r.skipped);
           setChecks(r.checks);
+          setTitle(null);
           break;
         }
         case 'unparsed':
@@ -284,8 +295,9 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
   const confirm = () => {
     if (!preview?.length) return;
     const weeks = preview;
+    const called = title ?? undefined;
     close();
-    onConfirm(weeks);
+    onConfirm(weeks, called);
   };
 
   return (
@@ -295,7 +307,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     <BottomSheet
       open={open}
       onClose={close}
-      title="Import a program"
+      title={SHEET_TITLE[scope]}
       scroll
       footer={
         preview == null ? undefined : (
@@ -407,7 +419,7 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           </Text>
         </View>
       ) : (
-        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} />
+        <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={scope === 'program' ? title : null} />
       )}
     </BottomSheet>
   );
@@ -427,6 +439,7 @@ export function ImportPreview({
   scopeNote,
   skipped,
   checks,
+  title,
 }: {
   weeks: ParsedWeek[];
   onChange: (weeks: ParsedWeek[]) => void;
@@ -436,9 +449,11 @@ export function ImportPreview({
   skipped?: readonly string[];
   /** A photo read's "check this before you create it" — a number AI couldn't check, a set count off the card's tally. */
   checks?: readonly string[];
+  /** What the paste called the program — the name it will be created under (QA programs-07). */
+  title?: string | null;
 }) {
-  /** The SAME resolver the preview renders and the callers commit — two resolvers would drift. */
-  const resolveName = (n: string) => resolveExerciseName(n);
+  /** The SAME resolver the preview renders and the callers commit (`resolveImportedName`) — two resolvers would drift. */
+  const resolveName = resolveImportedName;
   const resolveKey = (n: string) => resolveExerciseName(n)?.key;
 
   /** The day open as words ("Edit"), and what was typed. Null = no day is being edited. */
@@ -464,9 +479,10 @@ export function ImportPreview({
 
   /* WHICH MARKS THIS PREVIEW ACTUALLY SHOWS (QA 09-26 holtai-23): the note explains → and ≈ only when a row
      carries one, and promises grey text only when some row has it — never a legend for marks that aren't there. */
-  const marks = { matched: false, guessed: false, source: false };
+  const marks = { matched: false, guessed: false, source: false, failure: false };
   for (const w of preview) for (const d of w.days) for (const it of d.items) {
     if (it.note && it.note !== it.name) marks.source = true;
+    if (it.toFailure && it.durationSec == null) marks.failure = true;
     if (it.kind === 'cardio') continue;
     const hit = resolveName(it.name);
     if (hit && hit.name.toLowerCase() !== it.name.trim().toLowerCase()) marks[hit.byPreference ? 'guessed' : 'matched'] = true;
@@ -504,6 +520,8 @@ export function ImportPreview({
                               // Adjusting a value makes it authored, not assumed — the flag stops
                               // claiming the sheet was silent once the athlete has spoken.
                               [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
+                              // Stepping the reps of a to-failure set gives it a count; its sets stay to failure.
+                              ...(field === 'reps' ? { toFailure: false } : null),
                             },
                       ),
                     },
@@ -607,12 +625,16 @@ export function ImportPreview({
           ) : null}
           <View style={styles.impSummary}>
             <Text style={styles.impSummaryLabel}>Here&apos;s what we read</Text>
-            <Text style={styles.impSummaryText}>{summarize(preview, scope === 'day' ? 'workout' : 'program')}</Text>
+            <Text style={styles.impSummaryText}>
+              {title ? `“${title}” · ` : ''}
+              {summarize(preview, scope === 'day' ? 'workout' : 'program')}
+            </Text>
           </View>
           <Text style={styles.impNote}>
             Tap Edit to change anything as text — a rep, a percentage, a rest. Or tap − / + to fix sets × reps, edit a name, or remove a row with ✕.
             {marks.matched ? ' → shows the library exercise a name became.' : ''}
             {marks.guessed ? ' ≈ means the name didn’t say which kind, so we picked the usual one — change it in the builder if it’s wrong.' : ''}
+            {marks.failure ? ' F is a set taken to failure.' : ''}
             {marks.source
               ? ' Grey text is the sentence we read it from — it is kept as a coaching note, so anything we couldn’t turn into a number still reaches you.'
               : ''}{' '}
@@ -793,7 +815,13 @@ export function ImportPreview({
                           ) : (
                             <>
                               <ImpStep label={`Fewer reps of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'reps', -1)} />
-                              <Text style={[styles.impNum, styles.impNumWide, it.repsAssumed ? styles.impNumAssumed : null]}>{it.reps}</Text>
+                              {/* TO FAILURE says so (QA programs-08) — not an assumed 10. − / + turns it into a count. */}
+                              <Text
+                                style={[styles.impNum, styles.impNumWide, it.repsAssumed && !it.toFailure ? styles.impNumAssumed : null]}
+                                accessibilityLabel={it.toFailure ? 'to failure' : undefined}
+                              >
+                                {it.toFailure ? 'F' : it.reps}
+                              </Text>
                               <ImpStep label={`More reps of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'reps', 1)} />
                             </>
                           )}

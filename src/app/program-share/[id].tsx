@@ -10,7 +10,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
 import { acceptProgramShare, dismissProgramShare, fetchProgramShare } from '@/data/program-shares-live';
-import { equipmentOf } from '@/domain/program/progress-core';
+import { equipmentOf, sessionsPerWeek } from '@/domain/program/progress-core';
 import { deriveBlocks, plannedSetCount, schemeText } from '@/domain/program/prescription';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
@@ -139,7 +139,8 @@ export default function ProgramShareScreen() {
 
         <Text style={styles.title}>{data.name}</Text>
         <Text style={styles.meta}>
-          {countOf(structure.weeks, 'week')} • {countOf(structure.daysPerWeek, 'day')} / week
+          {/* The days that TRAIN, as the program's detail counts them — an empty day is a rest day (QA programs-06). */}
+          {countOf(structure.weeks, 'week')} • {countOf(sessionsPerWeek(structure), 'day')} / week
           {structure.vary ? ' • per-week plan' : ''}
         </Text>
 

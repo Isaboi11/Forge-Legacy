@@ -17,6 +17,7 @@ import { shareProgram } from '@/data/program-shares-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { countOf } from '@/domain/text/plural';
+import { sessionsPerWeek } from '@/domain/program/progress-core';
 
 /**
  * Send Program — hand the PLAN to someone, not a picture of it.
@@ -130,8 +131,8 @@ export default function SendProgramScreen() {
             </Text>
             {program ? (
               <Text style={styles.programMeta}>
-                {countOf(program.structure.weeks, 'week')} • {program.structure.daysPerWeek}{' '}
-                {program.structure.daysPerWeek === 1 ? 'day' : 'days'} / week
+                {/* The days that TRAIN, as the program's detail counts them — an empty day is a rest day (QA programs-06). */}
+                {countOf(program.structure.weeks, 'week')} • {countOf(sessionsPerWeek(program.structure), 'day')} / week
               </Text>
             ) : null}
           </View>

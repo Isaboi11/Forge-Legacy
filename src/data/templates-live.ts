@@ -2,12 +2,12 @@ import { supabase } from '@/lib/supabase';
 import { prescriptionOf, type TemplatePrescription } from '@/domain/workout/template-prescription';
 import { fetchActiveProgram, fetchProgramSessions } from './programs-live';
 import { nextOpenSlot } from '@/domain/program/progress-core';
+import { estimatedTemplateMinutes } from '@/domain/program/prescription';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { isCustomKey } from '@/domain/exercise-picker/custom-core';
 import {
   copyName,
   durationText,
-  estimatedMinutes,
   groupBySection,
   historyDate,
   schemeText,
@@ -17,7 +17,7 @@ import {
 
 // The pure display rules live in the domain module so `node --test` can load them — this file imports
 // the Supabase client, which it cannot. Re-exported so a screen has one import, not two.
-export { copyName, durationText, estimatedMinutes, historyDate, schemeText, statDate };
+export { copyName, durationText, historyDate, schemeText, statDate };
 export type { TemplateSection };
 
 /**
@@ -353,10 +353,10 @@ export function templateSummary(t: WorkoutTemplate): string {
   return `${lifts} ${lifts === 1 ? 'lift' : 'lifts'} · ${sets} ${sets === 1 ? 'set' : 'sets'}`;
 }
 
-/** "6 exercises · ~48 min" — the hero's one line. */
+/** "6 exercises · ~48 min" — the hero's one line. The ONE estimate the builders and Home show too (QA B6). */
 export function heroSummary(t: WorkoutTemplate): string {
   const n = t.exercises.length;
-  return `${n} ${n === 1 ? 'exercise' : 'exercises'} · ~${estimatedMinutes(t.exercises)} min`;
+  return `${n} ${n === 1 ? 'exercise' : 'exercises'} · ~${estimatedTemplateMinutes(t.exercises)} min`;
 }
 
 /** The three blocks, empties dropped. */

@@ -66,7 +66,6 @@ export default function WeekTemplateDetail() {
 
   const [busy, setBusy] = useState(false);
   const [confirmStart, setConfirmStart] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/templates'));
@@ -110,7 +109,6 @@ export default function WeekTemplateDetail() {
 
   const doDelete = async () => {
     if (!week) return;
-    setConfirmDelete(false);
     try {
       await deleteWeekTemplate(week.id);
       // Deleting the SHAPE never touches the programs it produced — those are permanent records
@@ -257,27 +255,18 @@ export default function WeekTemplateDetail() {
       />
 
       <ConfirmSheet
-        open={confirmDelete}
-        onClose={() => setConfirmDelete(false)}
-        headline="Delete this week?"
-        body="The week template goes. Any programs you already ran from it — and everything you logged — stay exactly as they are."
-        confirmLabel="Delete"
-        cancelLabel="Keep it"
-        tone="destructive"
-        onConfirm={() => void doDelete()}
-      />
-
-      <ConfirmSheet
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
         headline={week?.name ?? 'Week'}
-        body="Delete this week template. Programs you ran from it are not affected."
+        /* ONE question. This sheet is the only action behind •••, and it used to open a second "Delete this
+           week?" that asked the same thing again (QA B6 / library-27). */
+        body="Delete this week template? Any programs you already ran from it — and everything you logged — stay exactly as they are."
         confirmLabel="Delete week"
-        cancelLabel="Cancel"
+        cancelLabel="Keep it"
         tone="destructive"
         onConfirm={() => {
           setMenuOpen(false);
-          setConfirmDelete(true);
+          void doDelete();
         }}
       />
     </View>
