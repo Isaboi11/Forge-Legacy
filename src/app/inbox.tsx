@@ -5,12 +5,14 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
+import { AckGlyph } from '@/components/forge/AckGlyph';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchNotifications, markNotificationsSeen, type ForgeNotification } from '@/data/notifications-live';
+import { ACK_LABEL } from '@/data/squad-feed-live';
 import { destinationFor } from '@/domain/notifications/destination';
 import { spokenAgoAt } from '@/domain/text/time-ago';
 import { useQuery } from '@/lib/useQuery';
@@ -179,7 +181,7 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
               {n.squadPhotoUrl ? <Image source={{ uri: n.squadPhotoUrl }} style={styles.crestPhoto} contentFit="cover" /> : <SquadCrest crest={n.squadCrest} size={22} color={flColor.bronze300} />}
             </View>
           )}
-          <View style={styles.kindDisc}>{glyphFor(n.kind)}</View>
+          <View style={styles.kindDisc}>{n.kind === 'post_reaction' && n.reactionKind ? <AckGlyph kind={n.reactionKind} on size={11} /> : glyphFor(n.kind)}</View>
         </View>
 
         <View style={styles.body}>
@@ -297,7 +299,7 @@ function bodyFor(n: ForgeNotification, actor: string) {
     case 'post_reaction':
       return (
         <>
-          <Text style={styles.strong}>{actor}</Text> reacted to your post
+          <Text style={styles.strong}>{actor}</Text> {n.reactionKind ? `gave your post ${ACK_LABEL[n.reactionKind]}` : 'reacted to your post'}
         </>
       );
     /* Present tense, and the squad named, because both are load-bearing. "is training" is the only
@@ -425,7 +427,7 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
     case 'post_comment':
       return `${actor} commented on your post, ${when}. Read it and reply.`;
     case 'post_reaction':
-      return `${actor} reacted to your post, ${when}. Open your post.`;
+      return `${actor} ${n.reactionKind ? `gave your post ${ACK_LABEL[n.reactionKind]}` : 'reacted to your post'}, ${when}. Open your post.`;
     case 'squad_training_started':
       return `${actor} is training in ${n.squadName}, started ${when}. Send them a message or ask to join.`;
     case 'squad_training_finished':
