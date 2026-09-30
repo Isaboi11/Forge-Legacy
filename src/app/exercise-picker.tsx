@@ -29,8 +29,9 @@ import {
   type CustomExercise,
 } from '@/domain/exercise-picker/custom-core';
 import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
+import { replaceTemplateExercise } from '@/data/templates-live';
 import { useToast } from '@/hooks/useCeremony';
-import { usePersist } from '@/hooks/usePersist';
+import { PERSIST_FAILED, usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
   CONDITIONING_ROWS,
@@ -122,8 +123,8 @@ const draftCustom = (id: string, name: string, unit: 'reps' | 'time'): CustomExe
  * other's payload.
  *
  * Data is the REAL 809-exercise catalog (see domain/exercise-picker/data + catalog-core for the mapping
- * onto the 6 locked browse categories). Deferred vs the `.dc`: the row ⓘ → Exercise Detail (W-22), the
- * "just this / this + future" scope writing differently (both commit the same today).
+ * onto the 6 locked browse categories). Deferred vs the `.dc`: the row ⓘ → Exercise Detail (W-22), and
+ * "Update my program" (Exercise-002 §7.3) — the scope choice is offered for a TEMPLATE session only.
  *
  * MY EXERCISES is real: bookmarks come from `exercise_favorites` (0020), recents from the athlete's own
  * logged `workout_exercises`, and the athlete's OWN exercises from `custom_exercises` (0128). Both
@@ -155,12 +156,38 @@ export default function ExercisePickerScreen() {
     dest?: string;
     /** `freestyle` when this IS the start of a build-as-you-go session rather than an add mid-session. */
     start?: string;
+    /** replace: the saved template the row came from, and which row it is — see `templateRow` below. */
+    template?: string;
+    row?: string;
+    rowKey?: string;
+    rowName?: string;
   }>();
   const isBuilder = params.mode === 'builder';
   const isReplace = !isBuilder && params.mode !== 'add';
   const isAdd = !isBuilder && !isReplace;
   const replacingName = params.ex ? canonicalName(params.ex) : null;
   const targetIdx = params.targetIdx != null ? Number(params.targetIdx) : -1;
+  /**
+   * ══ "THIS & FUTURE WORKOUTS" WRITES SOMEWHERE NOW (library-02, QA 09-26) ══
+   *
+   * Both persistence buttons used to run the same code, so the second promised a program change that
+   * never happened. `Exercise-002` (LOCKED) §7.3: "Update my template" is offered when the session came
+   * from a personal template, and changes the row's exercise and nothing else (EX-002-D5). So it is
+   * offered exactly then — the Active Workout names the template and the row — and a session with no
+   * template to write to (freestyle, a Forge session, a program day) is simply swapped, with no choice
+   * that would have been a lie.
+   *
+   * `dest=template` is the other way in: a deleted custom exercise's tombstone on Template Detail
+   * (`Exercise-001` §8.2 Replace). There is no session there — only the template changes.
+   */
+  const templateRow =
+    isReplace && params.template && params.row != null && Number.isInteger(Number(params.row))
+      ? {
+          id: params.template,
+          target: { index: Number(params.row), catalogKey: params.rowKey || null, name: params.rowName || params.ex || null },
+        }
+      : null;
+  const templateOnly = templateRow != null && params.dest === 'template';
 
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null); // replace: single key
@@ -435,7 +462,9 @@ export default function ExercisePickerScreen() {
         refetchCustoms();
         return;
       }
-      if (isReplace) {
+      if (templateOnly) {
+        await writeTemplateRow({ catalogKey: customKey(id), name, unit: createUnit });
+      } else if (isReplace) {
         if (targetIdx >= 0) await writeExerciseInbox({ kind: 'replace', targetIdx, item });
       } else {
         await writeExerciseInbox({ kind: 'add', items: [item] });
@@ -455,14 +484,35 @@ export default function ExercisePickerScreen() {
     router.push({ pathname: '/custom-exercise', params: { returnTo: 'picker' } });
   };
 
-  const commitReplace = () => {
-    if (selected == null || targetIdx < 0) return;
+  /** The template row takes the new movement; its prescription stays (EX-002-D5). Says so when it could not. */
+  const writeTemplateRow = async (to: { catalogKey: string | null; name: string; unit?: 'reps' | 'time' }): Promise<void> => {
+    if (!templateRow) return;
+    try {
+      const ok = await replaceTemplateExercise(templateRow.id, templateRow.target, to);
+      /* False = the template no longer holds that row as it was (edited since), or the swap is lift ⇄
+         cardio. Nothing was written, and the athlete is told rather than left to find out next session. */
+      if (!ok) showToast(templateOnly ? 'That template changed — nothing was replaced.' : 'Your template has changed since — only this session was swapped.');
+    } catch {
+      showToast(PERSIST_FAILED);
+    }
+  };
+
+  const commitReplace = (scope: 'session' | 'template' = 'session') => {
+    if (selected == null) return;
     const item = resolveKey(selected);
     if (!item) return;
     setPersistOpen(false);
+    if (templateOnly) {
+      // Written BEFORE going back, so Template Detail's refetch-on-focus reads the new row.
+      void writeTemplateRow({ catalogKey: item.key, name: item.name, unit: item.unit }).then(() => router.back());
+      return;
+    }
+    if (targetIdx < 0) return;
     setToast({ to: item.name });
     navTimer.current = setTimeout(() => {
       void writeExerciseInbox({ kind: 'replace', targetIdx, item: toPicked(item) });
+      // After the undo window, not before: an Undo must leave the template exactly as it was.
+      if (scope === 'template') void writeTemplateRow({ catalogKey: item.key, name: item.name, unit: item.unit });
       router.back();
     }, 2800);
   };
@@ -474,7 +524,10 @@ export default function ExercisePickerScreen() {
 
   const onConfirm = () => {
     if (isReplace) {
-      if (selected != null) setPersistOpen(true);
+      if (selected == null) return;
+      // A choice is only offered when there are two true answers (library-02).
+      if (templateRow && !templateOnly) setPersistOpen(true);
+      else commitReplace();
     } else {
       const items = picked.map(resolveKey).filter((x): x is PickerItem => Boolean(x));
       if (!items.length) return;
@@ -1010,22 +1063,22 @@ export default function ExercisePickerScreen() {
             <Text style={styles.persistBlurb}>
               Swap {replacingName} for {selected != null ? resolveKey(selected)?.name : ''}.
             </Text>
-            <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="Just this session" style={styles.persistRow}>
+            <Pressable onPress={() => commitReplace('session')} accessibilityRole="button" accessibilityLabel="Just this session" style={styles.persistRow}>
               <View style={styles.persistIcon}>
                 <EngravedIcon name="clock" size={19} />
               </View>
               <View style={styles.persistText}>
                 <Text style={styles.persistName}>Just this session</Text>
-                <Text style={styles.persistSub}>Your program stays as written.</Text>
+                <Text style={styles.persistSub}>Your template stays as written.</Text>
               </View>
             </Pressable>
-            <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="This and future workouts" style={[styles.persistRow, styles.persistRowHi]}>
+            <Pressable onPress={() => commitReplace('template')} accessibilityRole="button" accessibilityLabel="This and future workouts" style={[styles.persistRow, styles.persistRowHi]}>
               <View style={styles.persistIcon}>
                 <EngravedIcon name="bookmark" size={19} />
               </View>
               <View style={styles.persistText}>
                 <Text style={styles.persistName}>This &amp; future workouts</Text>
-                <Text style={styles.persistSub}>Updates this exercise in the program.</Text>
+                <Text style={styles.persistSub}>Updates this exercise in your template. Sets and reps stay.</Text>
               </View>
             </Pressable>
           </View>

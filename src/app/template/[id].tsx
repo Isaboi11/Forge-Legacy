@@ -22,6 +22,8 @@ import { itemByKey } from '@/domain/exercise-picker/data';
 import { activityFromKey, deriveEquip, resolveModality } from '@/domain/workout/conditioning';
 import { useUnits } from '@/lib/settings';
 import { groupMarks } from '@/domain/workout/template-groups';
+import { customIdOf } from '@/domain/exercise-picker/custom-core';
+import { restoreCustomExercise } from '@/data/custom-exercises-live';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
@@ -31,6 +33,7 @@ import {
   fetchTemplateDetail,
   heroSummary,
   historyDate,
+  removeTemplateExercise,
   renameTemplate,
   schemeText,
   statDate,
@@ -169,6 +172,54 @@ export default function TemplateDetailScreen() {
     }
   };
 
+  /*
+   * ══ THE [DELETED EXERCISE] TOMBSTONE (library-12, `Exercise-001` §8.2, LOCKED) ══
+   *
+   * Deleting a custom exercise promised that "any template using it will show it as removed until you
+   * restore it" — and nothing looked. `fetchTemplateDetail` now reads the athlete's exercises live, so a
+   * rename shows here as the new name and a delete marks the row; this is where the athlete meets the
+   * problem and its three answers. Restore is the exercise (every template recovers at once, §7.2);
+   * Replace and Remove change only this template's row.
+   */
+  const [removeAsk, setRemoveAsk] = useState<TemplateExercise | null>(null);
+  const rowTarget = (e: TemplateExercise) => ({ index: t ? t.exercises.indexOf(e) : -1, catalogKey: e.catalogKey, name: e.name });
+
+  const restoreRow = async (e: TemplateExercise) => {
+    const id = customIdOf(e.catalogKey);
+    if (!id || busy) return;
+    setBusy(true);
+    try {
+      await restoreCustomExercise(id);
+      showToast(`${e.name} is back in your library.`);
+      refetch();
+    } catch (err) {
+      showToast(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const replaceRow = (e: TemplateExercise) => {
+    if (!t) return;
+    router.push({
+      pathname: '/exercise-picker',
+      params: { mode: 'replace', dest: 'template', ex: e.name, template: t.id, row: String(rowTarget(e).index), rowKey: e.catalogKey ?? '', rowName: e.name },
+    });
+  };
+
+  const doRemoveRow = async () => {
+    const e = removeAsk;
+    setRemoveAsk(null);
+    if (!t || !e) return;
+    try {
+      const ok = await removeTemplateExercise(t.id, rowTarget(e));
+      showToast(ok ? `${e.name} removed from this template.` : 'That template changed — nothing was removed.');
+      refetch();
+    } catch (err) {
+      showToast(errorMessage(err));
+    }
+  };
+
   const notFound = !loading && !error && !t;
 
   return (
@@ -246,7 +297,17 @@ export default function TemplateDetailScreen() {
                       <View key={`${e.catalogKey ?? e.name}-${i}`} style={styles.exGroup}>
                         {/* A label, not a card: it says what the rows under it ARE. */}
                         {marks[i].head ? <Text style={styles.groupHead}>{marks[i].head}</Text> : null}
-                        <ExerciseRow ex={e} tag={marks[i].tag} />
+                        {e.customDeleted ? (
+                          <DeletedExerciseRow
+                            ex={e}
+                            busy={busy}
+                            onRestore={() => void restoreRow(e)}
+                            onReplace={() => replaceRow(e)}
+                            onRemove={() => setRemoveAsk(e)}
+                          />
+                        ) : (
+                          <ExerciseRow ex={e} tag={marks[i].tag} />
+                        )}
                         <CoachCue note={e.coachNote} />
                       </View>
                     ))}
@@ -425,6 +486,72 @@ export default function TemplateDetailScreen() {
         tone="destructive"
         onConfirm={() => void doDelete()}
       />
+      <ConfirmSheet
+        open={removeAsk != null}
+        onClose={() => setRemoveAsk(null)}
+        headline="Remove from this template?"
+        body={`“${removeAsk?.name ?? ''}” and its sets come out of “${t?.name ?? ''}”. Your other templates and your logged sessions are not touched.`}
+        confirmLabel="Remove"
+        tone="destructive"
+        onConfirm={() => void doRemoveRow()}
+      />
+    </View>
+  );
+}
+
+/**
+ * `[Deleted Exercise]` — a row whose own custom exercise was deleted (`Exercise-001` §8.2). The name and
+ * the prescription stay readable ("retained read-only"); the three answers sit inside the row, because
+ * this row is something to act on. Nothing opens on the row itself — there is no exercise to open.
+ */
+function DeletedExerciseRow({
+  ex,
+  busy,
+  onRestore,
+  onReplace,
+  onRemove,
+}: {
+  ex: TemplateExercise;
+  busy: boolean;
+  onRestore: () => void;
+  onReplace: () => void;
+  onRemove: () => void;
+}) {
+  const { units, rowUnit } = useUnits();
+  return (
+    <View style={[styles.exRow, styles.tombRow]} accessible={false}>
+      <View style={styles.tombTop}>
+        <View style={styles.exIcon}>
+          <EngravedIcon name="trash" size={16} color={flColor.gray600} />
+        </View>
+        <View style={styles.exText}>
+          <Text style={[styles.exName, styles.tombName]} numberOfLines={1}>
+            {ex.name}
+          </Text>
+          <Text style={styles.exEquip} numberOfLines={1}>
+            Deleted exercise
+          </Text>
+        </View>
+        <Text style={[styles.exScheme, styles.tombScheme]}>{schemeText(ex, { metric: units === 'metric', rowUnit })}</Text>
+      </View>
+      <View style={styles.tombActions}>
+        {[
+          { label: 'Restore', a11y: `Restore ${ex.name} to your library`, on: onRestore },
+          { label: 'Replace', a11y: `Replace ${ex.name} in this template`, on: onReplace },
+          { label: 'Remove', a11y: `Remove ${ex.name} from this template`, on: onRemove },
+        ].map((b) => (
+          <Pressable
+            key={b.label}
+            onPress={b.on}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={b.a11y}
+            style={({ pressed }) => [styles.tombBtn, pressed ? styles.pressed : null, busy ? styles.disabled : null]}
+          >
+            <Text style={[styles.tombBtnText, b.label === 'Remove' ? styles.tombBtnDanger : null]}>{b.label}</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
@@ -528,6 +655,14 @@ const styles = StyleSheet.create({
   exName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   exEquip: { fontSize: 11.5, color: flColor.gray600 },
   exScheme: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  tombRow: { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderStyle: 'dashed' },
+  tombTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tombName: { color: flColor.gray400, textDecorationLine: 'line-through' },
+  tombScheme: { color: flColor.gray600 },
+  tombActions: { flexDirection: 'row', gap: 8 },
+  tombBtn: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
+  tombBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
+  tombBtnDanger: { color: flColor.redMuted },
 
   histRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingVertical: 13, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: forgeOr<string>('rgba(255,255,255,0.04)', flColor.charcoal700) },
   histRowPressed: { backgroundColor: forgeOr<string>('rgba(255,255,255,0.02)', flColor.hoverWash) },

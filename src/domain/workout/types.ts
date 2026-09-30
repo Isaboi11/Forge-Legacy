@@ -270,6 +270,13 @@ export interface ActiveSession {
    */
   templateId?: string;
   /**
+   * How many rows the template had when the session was built from it. An exercise whose `position` is
+   * below this IS template row `position`; one at or above it was added mid-session and is not in the
+   * template — which is what decides whether a swap can offer "This & future workouts" (library-02).
+   * Absent on a session autosaved before this existed: the swap then simply doesn't offer it.
+   */
+  templateRows?: number;
+  /**
    * The session arrived with a PLAN — a program day, a saved template, a Forge starter, or a shared
    * shape — rather than starting empty and being filled from the Picker.
    *

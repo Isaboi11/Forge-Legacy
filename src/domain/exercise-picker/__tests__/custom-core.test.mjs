@@ -17,6 +17,8 @@ import {
   isCustomKey,
   isDirty,
   mergeForSearch,
+  customIdsIn,
+  withLiveCustoms,
 } from '../custom-core.ts';
 import { matchesSearch } from '../search-core.ts';
 
@@ -211,4 +213,39 @@ test('a draft made from a stored exercise round-trips its fields', () => {
   assert.equal(d.notes, 'elbows in', 'a null note becomes an empty string, a real one survives');
   assert.equal(d.unit, 'time');
   assert.equal(draftFrom(ex()).notes, '', 'null notes read as an empty field, never the string "null"');
+});
+
+// ── EX-001-D10: a template row points at the exercise, live (library-12) ──────
+
+test('the ids a template uses are asked for once each, and only custom ones', () => {
+  const rows = [
+    { catalogKey: 'custom:a1', name: 'Belt Squat' },
+    { catalogKey: 'barbell-bench-press', name: 'Bench' },
+    { catalogKey: 'custom:a1', name: 'Belt Squat' },
+    { catalogKey: 'cardio:run', name: 'Run' },
+    { catalogKey: null, name: 'Loose' },
+  ];
+  assert.deepEqual(customIdsIn(rows), ['a1']);
+});
+
+test('⭐ a rename reaches the template; a delete marks it and keeps its prescription; an unknown id is left alone', () => {
+  const rows = [
+    { catalogKey: 'custom:a1', name: 'Belt Squat', sets: 3, targetReps: 8 },
+    { catalogKey: 'custom:b2', name: 'Sled Drag', sets: 4, targetReps: 20 },
+    { catalogKey: 'custom:zz', name: 'Someone Else’s', sets: 2, targetReps: 5 },
+    { catalogKey: 'barbell-row', name: 'Barbell Row', sets: 3, targetReps: 10 },
+  ];
+  const out = withLiveCustoms(rows, [
+    ex({ id: 'a1', name: 'Belt Squat Machine' }),
+    ex({ id: 'b2', name: 'Sled Drag', deletedAt: '2026-09-01T00:00:00Z' }),
+  ]);
+  assert.equal(out[0].name, 'Belt Squat Machine', 'the current name, not the one saved');
+  assert.equal(out[0].customDeleted, undefined);
+  assert.equal(out[1].customDeleted, true);
+  assert.equal(out[1].name, 'Sled Drag');
+  assert.equal(out[1].targetReps, 20, 'the prescription stays readable');
+  assert.deepEqual(out[2], rows[2], 'not found is never guessed to be deleted');
+  assert.deepEqual(out[3], rows[3]);
+  assert.equal(rows[0].name, 'Belt Squat', 'the input is not mutated');
+  assert.deepEqual(withLiveCustoms(rows, []), rows, 'a failed lookup reads as stored');
 });

@@ -94,6 +94,21 @@ export async function fetchCustomExercise(id: string): Promise<CustomExercise | 
   return data ? toCustom(data as Row) : null;
 }
 
+/**
+ * These exercises by id, INCLUDING soft-deleted ones — what a template needs to show a rename or a
+ * tombstone (`withLiveCustoms`). RLS returns only the athlete's own, so a foreign id simply is not here.
+ * Empty when there is nothing to ask for or the table is not there yet.
+ */
+export async function fetchCustomExercisesByIds(ids: readonly string[]): Promise<CustomExercise[]> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from('custom_exercises').select(SELECT).in('id', [...ids]);
+  if (error) {
+    if (isMissingTable(error)) return [];
+    throw error;
+  }
+  return ((data ?? []) as Row[]).map(toCustom);
+}
+
 const payload = (d: CustomDraft) => ({
   // Trimmed at the boundary. The column's CHECK is a backstop; this is what makes " Belt Squat " and
   // "Belt Squat" the same exercise rather than two.
