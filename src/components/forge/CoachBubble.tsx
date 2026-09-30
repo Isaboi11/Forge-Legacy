@@ -491,7 +491,7 @@ export function CoachBubble() {
       <BottomSheet open={draftSheet !== null} onClose={() => setDraftSheet(null)} title="Coach Holt">
         {confirmDiscard ? (
           <>
-            <Text style={styles.nudgeLine}>Discard {draftSheet} for good? This can't be undone.</Text>
+            <Text style={styles.nudgeLine}>Discard {draftSheet} for good? This can’t be undone.</Text>
             <View style={styles.nudgeActions}>
               <Button variant="destructive" fullWidth onPress={discardDraft} accessibilityLabel="Yes, discard it">
                 Yes, discard it
