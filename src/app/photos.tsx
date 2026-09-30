@@ -501,7 +501,8 @@ function DayRow({
 }) {
   const first = d.photos[0];
   const stack = d.photos.length > 1;
-  const caption = d.photos.find((p) => p.caption)?.caption ?? null;
+  const captioned = d.photos.find((p) => p.caption) ?? null;
+  const caption = captioned?.caption ?? null;
   const indent = COVER_W + COVER_GAP;
 
   return (
@@ -561,7 +562,9 @@ function DayRow({
 
       {caption ? (
         <View style={[styles.quote, { marginLeft: indent }]}>
-          <Text style={styles.quoteEyebrow}>Reflection</Text>
+          {/* "Reflection" is what a progress set's note IS. An album photo's line was asked for as "A line
+              about it", and relabelling it here made it read like something else (QA 09-26 legacy-25). */}
+          <Text style={styles.quoteEyebrow}>{captioned?.source === 'progress' ? 'Reflection' : 'In your words'}</Text>
           <Text style={styles.quoteBody}>{caption}</Text>
         </View>
       ) : null}

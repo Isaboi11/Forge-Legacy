@@ -388,7 +388,11 @@ export interface PhotoDay {
   date: string;
   photos: ChapterPhoto[];
   event: string | null;
-  /** A day the record can vouch for — chapter opened or sealed, or a PR. Drives the larger cover. */
+  /**
+   * A day the record can vouch for — chapter opened or sealed, or a PR — or one the athlete marked as a
+   * highlight. Drives the larger cover and the star. "Mark as a highlight" was saved (`is_starred`) and
+   * drawn nowhere, so the toggle had no visible effect (QA 09-26 legacy-25).
+   */
   major: boolean;
 }
 
@@ -422,7 +426,7 @@ export function groupByMonth(photos: ChapterPhoto[]): PhotoMonth[] {
     label: monthLabel(mKey),
     days: [...byMonth.get(mKey)!.entries()].map(([date, dayPhotos]) => {
       const event = dayPhotos.find((p) => p.event)?.event ?? null;
-      return { date, photos: dayPhotos, event, major: !!event };
+      return { date, photos: dayPhotos, event, major: !!event || dayPhotos.some((p) => p.isStarred) };
     }),
   }));
 }
