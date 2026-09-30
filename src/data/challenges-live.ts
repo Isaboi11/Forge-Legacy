@@ -575,6 +575,18 @@ export interface ChallengeResultsDetail {
  * never reached COMPLETED — a cancelled challenge has no final standings and C-4 is never shown for
  * one (spec §8), which the RPC enforces rather than trusting this caller.
  */
+/**
+ * Where a competition is in its life, as the reader can see it — or null when it is not visible to them
+ * (deleted, or never theirs). Read WITHOUT advancing, because it only explains why C-4 has nothing to show:
+ * a season still running, or one called off (social2-27, QA 09-26).
+ */
+export async function fetchChallengeState(challengeId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('challenge_detail', { p_challenge: challengeId });
+  if (error || !data) return null;
+  const state = (data as Record<string, unknown>).state;
+  return typeof state === 'string' && state ? state : null;
+}
+
 export async function fetchChallengeResults(challengeId: string): Promise<ChallengeResultsDetail | null> {
   const { data, error } = await supabase.rpc('challenge_results_detail', { p_challenge: challengeId });
   if (error) {
