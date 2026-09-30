@@ -100,7 +100,7 @@ export default function ExerciseDetailScreen() {
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* 1 · demonstration — the `.dc`'s first block, above the name */}
-        <ExerciseDemo url={demoUrl} />
+        <ExerciseDemo url={demoUrl} equip={detail.equipId} />
 
         {/* 2 · identity */}
         <Text style={[styles.tag, styles.tagAfterDemo]}>

@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppBar } from '@/components/forge/composites/AppBar';
 
 import { BeforeAfterSlider } from '@/components/forge/BeforeAfterSlider';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
@@ -281,17 +281,10 @@ export default function TransformationCompareRoute() {
  * it was written — so the fault was not a missed edge case but a component built beside the one that
  * already solved this. Matching `AppBar`'s value rather than inventing a third number.
  */
+/* legacy-28 (QA 09-26): the shared `AppBar` — one header style across the Legacy screens, and it already
+   pays the safe-area inset this bar used to hand-roll. */
 function TopBar({ onBack }: { onBack: () => void }) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={[styles.topBar, { height: 56 + insets.top, paddingTop: insets.top }]}>
-      <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.topBtn} hitSlop={6}>
-        <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
-      </Pressable>
-      <Text style={styles.topTitle}>Compare</Text>
-      <View style={styles.topBtn} />
-    </View>
-  );
+  return <AppBar title="Compare" onBack={onBack} />;
 }
 
 function SelectBox({ label, onPress }: { label: string; onPress: () => void }) {
@@ -348,9 +341,6 @@ const styles = StyleSheet.create({
   emptyBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   scroll: { paddingHorizontal: 18, paddingTop: 18, paddingBottom: 34 },
 
-  topBar: { height: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: flColor.divider },
-  topBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  topTitle: { flex: 1, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
 
   framing: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 14.5, lineHeight: 22, color: flColor.bronze300, textAlign: 'center' },
   selectRow: { flexDirection: 'row', gap: 10, marginTop: 16 },

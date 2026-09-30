@@ -83,7 +83,7 @@ test('the clock reaches the program as `durationSec`', () => {
 test('one workout reads as one workout (PO: "this is just one day, nothing more")', () => {
   const r = parseProgramTable('Chest Fly 0:40\nT Push Up 0:40');
   assert.equal(summarize(r.weeks, 'workout'), '1 workout · 2 exercises');
-  assert.equal(summarize(r.weeks), '1 week · 1 day each · 2 exercises', 'a program still reads as one');
+  assert.equal(summarize(r.weeks), '1 week · 1 day · 2 exercises', 'a program still reads as one');
 });
 
 test('a clock is found wherever the photo reader put it (PO’s second try, 2026-09-27)', async () => {

@@ -4,6 +4,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppBar } from '@/components/forge/composites/AppBar';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
@@ -152,19 +153,8 @@ export default function NewChapterScreen() {
     <View style={styles.root}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.42)' }} />
 
-      <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
-        <Pressable
-          onPress={step === 'goal' ? () => setStep('name') : attemptExit}
-          accessibilityRole="button"
-          accessibilityLabel={step === 'goal' ? 'Back' : 'Cancel'}
-          style={styles.barBtn}
-          hitSlop={8}
-        >
-          <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
-        </Pressable>
-        <Text style={styles.barTitle}>{step === 'name' ? 'New Chapter' : 'First Goal'}</Text>
-        <View style={styles.barBtn} />
-      </View>
+      {/* The shared bar (QA 09-26 legacy-28) — this was one of four header styles across the Legacy screens. */}
+      <AppBar transparent title={step === 'name' ? 'New Chapter' : 'First Goal'} onBack={step === 'goal' ? () => setStep('name') : attemptExit} />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -301,9 +291,6 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: flColor.base },
   flex: { flex: 1 },
 
-  bar: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 8, paddingBottom: 6 },
-  barBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
   body: { paddingHorizontal: 26, paddingTop: 8, paddingBottom: 28 },
   eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.labelInk },

@@ -10,11 +10,13 @@
  * the card degrades to its bronze wash + icon — never a crash, never a broken image.
  */
 
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import { Image } from 'expo-image'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { HeroSurface } from '@/components/forge/HeroSurface'
+import { BottomSheet } from '@/components/forge/composites/BottomSheet'
+import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
 import { flColor, flFont, flGradient, flRadius, flShadow, flType } from '@/constants/foundation'
 import type { ResolvedArtwork } from '@/domain/home-artwork/types'
 import { resolveArtworkSource } from '@/domain/home-artwork/artwork-source'
@@ -41,6 +43,11 @@ export interface TodaysWorkoutCardProps {
    * drops the whole meta row rather than make it.
    */
   exerciseCount?: number
+  /**
+   * "~45 min" beside the count (PO 2026-09-30). The two things an athlete needs before committing are what
+   * they are doing and how long it takes; the count alone answered only the first. Omitted with the count.
+   */
+  minutes?: number
   onStart?: () => void
   /**
    * Unfinished work waiting in local storage, as "N sets logged" — or null when there is none.
@@ -77,18 +84,65 @@ export interface TodaysWorkoutCardProps {
    * their mind is looking at it instead of their own training with no route back. The slot used to
    * empty only by being STARTED.
    *
-   * Quiet row rather than a button, and last of the three: it is the least likely thing wanted and
-   * must never compete with Start.
+   * Behind the "•••" menu, not on the card (PO 2026-09-30). It was a third line of text under Start, which
+   * made the least likely choice one of the three most visible things on Home. One tap further away is the
+   * right distance for a way out — it is still always there.
    */
   onDiscard?: () => void
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater, onDiscard }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, minutes, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater, onDiscard }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
   const kicker = eyebrow ?? 'Today’s Workout'
+  const [menuOpen, setMenuOpen] = useState(false)
+  /*
+   * ⚠ PREVIEW OPENS A SECOND SHEET, AND iOS WILL NOT PRESENT ONE WHILE THE MENU IS STILL LEAVING — the tap
+   * is silently dropped. So a menu choice runs on the menu's `onDismiss` (iOS), with a timer as the fallback
+   * for the platforms that never fire it. Web has no such limit. Same rule as Program Detail's session menu.
+   */
+  const afterMenu = useRef<(() => void) | null>(null)
+  const pick = (fn: () => void) => {
+    setMenuOpen(false)
+    if (Platform.OS === 'web') return fn()
+    let done = false
+    const once = () => {
+      if (done) return
+      done = true
+      afterMenu.current = null
+      fn()
+    }
+    afterMenu.current = once
+    setTimeout(once, Platform.OS === 'ios' ? 900 : 400)
+  }
   // "1 Exercises" was unreachable while this card only ever drew program days. A one-block cardio resume
   // makes it reachable immediately, so the plural is decided rather than assumed.
-  const countLabel = exerciseCount == null ? null : `${exerciseCount} Exercise${exerciseCount === 1 ? '' : 's'}`
+  const countLabel =
+    exerciseCount == null ? null : `${exerciseCount} Exercise${exerciseCount === 1 ? '' : 's'}${minutes ? ` · ~${minutes} min` : ''}`
+
+  /*
+   * ONE ROW UNDER START, NOT A STACK OF LINKS (PO 2026-09-30).
+   *
+   * "Something else today?" and "Discard this workout" were two centred lines with a tall gap between them —
+   * the card's bottom third was mostly air, and discarding read as a peer of choosing something else. Now the
+   * alternative is one row (the question, then the answer as the tappable line) and anything rarer lives in
+   * the "•••" menu at its end. Build for later wears the same row on the open face, so the card has one shape.
+   *
+   * ⚠ A LAYOUT CHANGE ONLY — NO NEW COLOURS (PO 2026-09-30: "just do a layout change and don't really touch
+   * the color"). Every colour below is one this card or the preview sheet already used: the rings and rule
+   * are the meta divider's `bronzeBorderSubtle`, chevrons are the old meta chevron's `gray600`, and Discard
+   * keeps the `gray400` it had as a link (the quieter-choice grey Program Detail's Skip uses, not red).
+   */
+  const alt = onFreestyle
+    ? { icon: 'swap' as const, ask: 'Something else today?', act: 'Choose another', onPress: onFreestyle, label: 'Do something else today — start a one-off workout' }
+    : onBuildLater
+      ? { icon: 'calendar' as const, ask: 'Planning ahead?', act: 'Build for later', onPress: onBuildLater, label: 'Build a workout for later' }
+      : null
+  const menuItems = onDiscard
+    ? [
+        ...(onPreview ? [{ key: 'preview', icon: 'eye' as const, text: 'Preview workout', onPress: onPreview, danger: false }] : []),
+        { key: 'discard', icon: 'trash' as const, text: 'Discard this workout', onPress: onDiscard, danger: true },
+      ]
+    : []
 
   return (
     <View style={styles.card}>
@@ -166,9 +220,12 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
             >
               <BarbellIcon size={16} color={flColor.bronze400} />
               <Text style={styles.metaText}>{countLabel}</Text>
+              {/* The word, not just the chevron: a bare arrow at the end of a stat line reads as decoration,
+                  and "can I see it first?" is a question the card has to answer at a glance. */}
               {onPreview ? (
                 <View style={styles.metaChevron}>
-                  <ChevronRightIcon size={15} color={flColor.gray600} />
+                  <Text style={styles.previewText}>Preview</Text>
+                  <ChevronRightIcon size={13} color={flColor.gray600} />
                 </View>
               ) : null}
             </Pressable>
@@ -191,55 +248,118 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
           </Text>
         ) : null}
 
-        {/* One line, under the thing it is an alternative to. Not a second button — a one-off is the
-            quieter choice and should look like it. */}
-        {onFreestyle ? (
-          <Pressable
-            onPress={onFreestyle}
-            accessibilityRole="button"
-            accessibilityLabel="Do something else today — start a one-off workout"
-            hitSlop={8}
-            style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
-          >
-            <Text style={styles.freestyleText}>Something else today?</Text>
-          </Pressable>
-        ) : null}
-
-        {/* Same quiet treatment, different intent: not "instead of today's", but "not right now". */}
-        {onBuildLater ? (
-          <Pressable
-            onPress={onBuildLater}
-            accessibilityRole="button"
-            accessibilityLabel="Build a workout for later"
-            hitSlop={8}
-            style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
-          >
-            <Text style={styles.freestyleText}>Build for later</Text>
-          </Pressable>
-        ) : null}
-
-        {/* The way out of the slot. Last, and quietest — see `onDiscard`. */}
-        {onDiscard ? (
-          <Pressable
-            onPress={onDiscard}
-            accessibilityRole="button"
-            accessibilityLabel={`Discard ${title} and go back to your program`}
-            hitSlop={8}
-            style={({ pressed }) => [styles.freestyleRow, pressed ? styles.freestylePressed : null]}
-          >
-            <Text style={styles.freestyleText}>Discard this workout</Text>
-          </Pressable>
+        {alt || menuItems.length > 0 ? (
+          <View style={styles.altRow}>
+            {alt ? (
+              <Pressable
+                onPress={alt.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={alt.label}
+                style={({ pressed }) => [styles.altMain, pressed ? styles.pressed : null]}
+              >
+                <View style={styles.altIcon}>
+                  <EngravedIcon name={alt.icon} size={18} color={flColor.gray400} />
+                </View>
+                <View style={styles.altText}>
+                  <Text style={styles.altAsk}>{alt.ask}</Text>
+                  <View style={styles.altActLine}>
+                    <Text style={styles.altAct}>{alt.act}</Text>
+                    <ChevronRightIcon size={13} color={flColor.gray600} />
+                  </View>
+                </View>
+              </Pressable>
+            ) : (
+              <View style={styles.altMain} />
+            )}
+            {menuItems.length > 0 ? (
+              <Pressable
+                onPress={() => setMenuOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`More options for ${title}`}
+                hitSlop={6}
+                style={({ pressed }) => [styles.moreBtn, pressed ? styles.pressed : null]}
+              >
+                <EngravedIcon name="more" size={20} color={flColor.gray400} />
+              </Pressable>
+            ) : null}
+          </View>
         ) : null}
       </View>
+
+      {menuItems.length > 0 ? (
+        <BottomSheet open={menuOpen} onClose={() => setMenuOpen(false)} onDismiss={() => afterMenu.current?.()} title={title}>
+          <View style={styles.menu}>
+            {menuItems.map((it) => (
+              <Pressable
+                key={it.key}
+                onPress={() => pick(it.onPress)}
+                accessibilityRole="button"
+                accessibilityLabel={it.key === 'discard' ? `Discard ${title} and go back to your program` : `Preview ${title}`}
+                style={({ pressed }) => [styles.menuRow, pressed ? styles.pressed : null]}
+              >
+                <EngravedIcon name={it.icon} size={20} color={flColor.gray400} />
+                <Text style={[styles.menuText, it.danger ? styles.menuDanger : null]}>{it.text}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </BottomSheet>
+      ) : null}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  resumeNote: { marginTop: 8, textAlign: 'center', fontSize: 12.5, color: flColor.gray600 },
-  freestyleRow: { alignSelf: 'center', marginTop: 12, paddingVertical: 4 },
-  freestylePressed: { opacity: 0.7 },
-  freestyleText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
+  resumeNote: { marginTop: -8, textAlign: 'center', fontSize: 12.5, color: flColor.gray600 },
+  pressed: { opacity: 0.7 },
+  altRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: flColor.bronzeBorderSubtle,
+  },
+  altMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  altIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  altText: { flex: 1, gap: 2 },
+  altAsk: { fontSize: 12.5, color: flColor.gray400 },
+  altActLine: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  altAct: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  moreBtn: {
+    width: 52,
+    height: 38,
+    borderRadius: flRadius.round,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menu: { paddingBottom: 8 },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: flColor.charcoal500,
+  },
+  menuText: { fontSize: 15.5, color: flColor.cream100 },
+  menuDanger: { color: flColor.gray400 },
+  previewText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    color: flColor.gray400,
+  },
   card: {
     position: 'relative',
     overflow: 'hidden',
@@ -267,7 +387,8 @@ const styles = StyleSheet.create({
   content: {
     padding: 22,
     paddingTop: 22,
-    gap: 18,
+    paddingBottom: 16,
+    gap: 16,
   },
   previewRow: {
     flexDirection: 'row',
@@ -327,5 +448,8 @@ const styles = StyleSheet.create({
   },
   metaChevron: {
     marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 })

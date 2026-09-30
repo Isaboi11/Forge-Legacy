@@ -148,7 +148,17 @@ export default function TransformationRoute() {
         onBack={() => router.back()}
         actions={
           <>
-            <Pressable ref={compareRef} onPress={() => router.push('/transformation-compare')} accessibilityRole="button" accessibilityLabel="Compare" style={styles.barBtn} hitSlop={6}>
+            {/* Compare needs two sets to line up; with fewer it opened a screen that only said so (legacy-35). */}
+            <Pressable
+              ref={compareRef}
+              onPress={() => router.push('/transformation-compare')}
+              disabled={entries.length < 2}
+              accessibilityRole="button"
+              accessibilityLabel={entries.length < 2 ? 'Compare — needs two progress sets' : 'Compare'}
+              accessibilityState={{ disabled: entries.length < 2 }}
+              style={[styles.barBtn, entries.length < 2 ? styles.barBtnOff : null]}
+              hitSlop={6}
+            >
               <CompareGlyph />
             </Pressable>
             <Pressable ref={addRef} onPress={() => router.push('/transformation-add')} accessibilityRole="button" accessibilityLabel="Add progress set" style={styles.barBtn} hitSlop={6}>
@@ -174,7 +184,7 @@ export default function TransformationRoute() {
         <TourAnchor id="transformation-grid">
           <Text style={styles.introQ}>How have I changed?</Text>
         <Text style={styles.introThesis}>A documentary record, chapter by chapter. Not a comparison — a chronicle.</Text>
-          <Text style={styles.introSummary}>{summaryLine}</Text>
+          {entries.length > 0 ? <Text style={styles.introSummary}>{summaryLine}</Text> : null}
         </TourAnchor>
 
         {/* reminder */}
@@ -445,7 +455,9 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
         <CameraGlyph size={34} />
       </View>
       <Text style={styles.emptyHeadline}>Start your record.</Text>
-      <Text style={styles.emptyBody}>Progress photos, chapter by chapter — a documentary of how you change. Not a comparison, a chronicle.</Text>
+      {/* Said once: the intro above already carries the "chronicle, not a comparison" line, and this
+          repeated it word for word (QA 09-26 legacy-35). */}
+      <Text style={styles.emptyBody}>Your first set is the baseline. Every set after it shows what changed.</Text>
       <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel="Take progress pics" style={styles.emptyCta}>
         <PlusGlyph size={16} />
         <Text style={styles.ctaText}>Take progress pics</Text>
@@ -495,6 +507,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   barTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.cream100 },
   barBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
+  barBtnOff: { opacity: 0.35 },
   scroll: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 36 },
 
   introQ: { fontFamily: flFont.display, fontStyle: 'italic', fontSize: 16, lineHeight: 24, color: flColor.bronze300, marginBottom: 6 },

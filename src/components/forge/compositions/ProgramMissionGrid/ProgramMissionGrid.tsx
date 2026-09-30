@@ -332,6 +332,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 32,
     color: flColor.cream100,
+    // Playfair's default figures are oldstyle: "0 / 18" read as "O / 18" (QA 09-26 home-15).
+    fontVariant: ['lining-nums'],
   },
   countTotal: {
     fontSize: 14,

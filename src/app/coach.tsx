@@ -54,6 +54,7 @@ import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useQuery } from '@/lib/useQuery';
+import { rememberExperience } from '@/lib/coach-memory';
 
 /**
  * Coach Holt.
@@ -319,6 +320,8 @@ export default function CoachScreen() {
   async function build() {
     setBusy(true);
     setError(null);
+    /* QA holt-31: a level answered here is THE level — the chat reads the same one and never asks again. */
+    if (askExperience && experience) void rememberExperience({ lifting: experience, running: experience });
     try {
       /* ⚠ FETCHED HERE AND PASSED DOWN, NEVER READ INSIDE THE ENGINE. `domain/coach/**` touches no
          database, and this is what keeps that true: the swaps this athlete has actually made become a

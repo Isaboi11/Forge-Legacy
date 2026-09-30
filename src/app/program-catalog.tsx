@@ -52,7 +52,8 @@ export default function ProgramCatalogScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Programs" onBack={goBack} />
+      {/* Named after the link that opens it — "Programs" was also the name of YOUR library (QA 09-26 programs-24). */}
+      <AppBar title="All Programs" onBack={goBack} />
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.scroll, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
         <Text style={styles.filterLabel}>Focus</Text>
         {/* Wraps rather than scrolling sideways — six chips fit a 360pt phone in two lines. */}

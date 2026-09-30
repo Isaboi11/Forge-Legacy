@@ -106,7 +106,8 @@ export function ForgeTextArea({
           )}
           {showCount && (
             <Text style={styles.counter}>
-              {charCount} / {maxLength}
+              {/* "12/140", the format every other counter in the app prints (social-32, QA 09-26). */}
+              {charCount}/{maxLength}
             </Text>
           )}
         </View>
