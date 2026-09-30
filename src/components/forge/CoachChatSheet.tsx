@@ -73,7 +73,7 @@ import {
 } from '@/domain/coach/kitchen';
 import { narrowEdit } from '@/domain/coach/interpret-narrow';
 import { buildAskContext } from '@/domain/coach/ask-context';
-import { resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
+import { otherProgramNamed, resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { resolveAvoid } from '@/domain/coach/avoid';
 import { useDictation } from '@/hooks/useDictation';
 import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
@@ -167,6 +167,7 @@ import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, loadExperience, rememberExperience } from '@/lib/coach-memory';
 import {
   createProgram,
+  fetchMyPrograms,
   fetchProgramSessions,
   startProgram,
   updateProgram,
@@ -1020,7 +1021,8 @@ export function CoachChatSheet({
         kind: 'chips',
         chips: [
           { label: 'Replace it', patch: {} },
-          { label: 'Change the one I have', patch: {} },
+          /* Where "Change the one I have" leads — the running program's own page, not the Workouts tab (holtai-06). */
+          { label: 'Change the one I have', patch: {}, goTo: `/program/${active.id}` },
         ],
       },
     );
@@ -1345,7 +1347,7 @@ export function CoachChatSheet({
    * and it applies through `edit-ops`, so every invariant (a trained session is never touched, the session
    * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
    */
-  const editByWords = async (intent: EditIntent) => {
+  const editByWords = async (intent: EditIntent, said?: string) => {
     setBusy('thinking');
     const active = await Promise.race([
       fetchActiveProgram().catch(() => null),
@@ -1356,11 +1358,15 @@ export function CoachChatSheet({
       say({ kind: 'holt', text: pick('no_active_program') }, { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
       return;
     }
-    const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+    const [marks, mine] = await Promise.all([
+      fetchProgramSessions(active.id).catch(() => [] as SessionMark[]),
+      said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
+    ]);
     setBusy(null);
     const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
     if (!res.ok) {
-      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent, ask: res.ask };
+      /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
+      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };
       say(
         { kind: 'holt', text: res.message },
         ...(res.ask !== 'not_editable' && res.options.length
@@ -1371,8 +1377,18 @@ export function CoachChatSheet({
     }
     pendingEdit.current = { programId: active.id, before: active.structure, plan: res.plan };
     pendingEditAsk.current = null;
+    /*
+     * ⚠ EVERY CONFIRM NAMES THE PROGRAM IT TOUCHES (holtai-02). A typed change only reaches the one running;
+     * "In my QA Holt Plan, swap…" was confirmed as a bare "Week 1, Push — …" and landed in another program.
+     */
+    const other = otherProgramNamed(said, active.name, mine.map((p) => p.name));
     say(
-      { kind: 'holt', text: `${res.plan.label}. Want it?` },
+      {
+        kind: 'holt',
+        text: other
+          ? `I can only change the program you're running, and that's ${active.name}, not ${other}. In ${active.name}: ${res.plan.label}. Want it there?`
+          : `In ${active.name}: ${res.plan.label}. Want it?`,
+      },
       {
         kind: 'chips',
         chips: res.plan.scope
@@ -1977,7 +1993,7 @@ export function CoachChatSheet({
     const edit = actions.find((a) => a.name === 'propose_program_edit');
     const intent = edit ? narrowEdit(edit.input) : null;
     if (intent) {
-      await editByWords(intent);
+      await editByWords(intent, asked);
       return true;
     }
     const web = actions.find((a) => a.name === 'offer_online_recipe_search');
@@ -2308,7 +2324,7 @@ export function CoachChatSheet({
       case 'door':
         /* "Swap bench for dumbbell press on Monday" carries the change itself — resolve and confirm it
            rather than walking them through five taps to say what they already said. */
-        if (r.to === 'edit' && r.edit) return editByWords(r.edit);
+        if (r.to === 'edit' && r.edit) return editByWords(r.edit, text);
         return tapChip(
           {
             label:
@@ -3950,7 +3966,9 @@ function Answers({
     );
   }
 
-  /* The default, and what every question used to be: a set of unlike things, two to a row. */
+  /* The default, and what every question used to be: a set of unlike things, two to a row.
+     A `stays` chip (Undo) is an action, not an answer: it stays live until it is the one tapped (holtai-08). */
+  const off = (c: Chip) => settled && !(c.stays && !chosen(c));
   return (
     <View style={styles.chipGrid}>
       {chips.map((c) => {
