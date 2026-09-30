@@ -328,8 +328,11 @@ export default function SquadDetailRoute() {
         <DetailBg />
         <AppBar title="" onBack={() => router.back()} />
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>This squad isn’t available.</Text>
-          <Text style={styles.missingBody}>{error ? 'Couldn’t load it — check your connection.' : 'It may have been deleted.'}</Text>
+          {/* S-3 §7.3 (LOCKED): a removed member who follows a deep link sees a NEUTRAL "This squad is no
+              longer available." It also said "It may have been deleted" — a guess, and a wrong one for the
+              removed member (social2-11, QA 09-26). A squad that WAS deleted now says so in the inbox (0251). */}
+          <Text style={styles.missingTitle}>{error ? 'This squad isn’t available.' : 'This squad is no longer available.'}</Text>
+          {error ? <Text style={styles.missingBody}>Couldn’t load it — check your connection.</Text> : null}
           <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back to squads" style={styles.backBtn}>
             <Text style={styles.backText}>Back to Squads</Text>
           </Pressable>

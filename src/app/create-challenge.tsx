@@ -242,7 +242,11 @@ export default function CreateChallengeScreen() {
       type: metric,
       metricKey,
       durationDays,
-      startAt: start,
+      /* "Now" means now, not midnight this morning (social2-05, QA 09-26): a start at 00:00 put that day's
+         earlier workouts on the board before anyone had opted in. CS-D9.2 counts a session only inside
+         [start, end], and C-2 §4.3 says "start may be now or future". 0251's insert trigger holds the same
+         line for every older build; this is the client saying it plainly. */
+      startAt: startWhen === 'now' ? new Date() : start,
     }).then(
       () => {
         showToast(
@@ -259,7 +263,7 @@ export default function CreateChallengeScreen() {
     );
   };
 
-  const startLabel = startWhen === 'now' ? 'today' : fmtDate(start);
+  const startLabel = startWhen === 'now' ? 'now' : fmtDate(start);
 
   return (
     <View style={styles.root}>
@@ -456,7 +460,7 @@ export default function CreateChallengeScreen() {
             <Text style={styles.subLabel}>Starts</Text>
             <View style={styles.chipWrap}>
               {([
-                { v: 'now' as const, label: 'Today' },
+                { v: 'now' as const, label: 'Now' },
                 { v: 'tmw' as const, label: 'Tomorrow' },
                 { v: 'mon' as const, label: 'Next Monday' },
               ]).map((o) => {
@@ -584,8 +588,8 @@ export default function CreateChallengeScreen() {
             <View style={styles.reviewRule} />
 
             <ReviewRow label="Scoring" value={scopedLabel} />
-            <ReviewRow label="Runs" value={`${durationDays} days`} />
-            <ReviewRow label="Starts" value={startWhen === 'now' ? 'Today' : fmtDate(start)} />
+            <ReviewRow label="Runs" value={countOf(durationDays, 'day')} />
+            <ReviewRow label="Starts" value={startWhen === 'now' ? 'Now' : fmtDate(start)} />
             <ReviewRow
               label="Competing"
               value={

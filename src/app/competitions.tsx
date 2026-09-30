@@ -298,7 +298,10 @@ export default function CompetitionsScreen() {
           {/* ── Stats ── real aggregates, not per-filter literals. */}
           <Text style={styles.sectionLabel}>Competition Stats</Text>
           <View style={styles.statGrid}>
-            <StatCell value={String(hub.stats.entered)} label="Entered" />
+            {/* "Finished", not "Entered" (social2-05, QA 09-26): the count is closed seasons only (0163 reads
+                `challenge_results`), so the day you joined your first competition it said "0 Entered". It is
+                also exactly what Win Rate divides by. */}
+            <StatCell value={String(hub.stats.entered)} label="Finished" />
             <StatCell value={String(hub.stats.wins)} label="Wins" />
             <StatCell value={String(hub.stats.podiums)} label="Podiums" />
             <StatCell value={`${rate}%`} label="Win Rate" />

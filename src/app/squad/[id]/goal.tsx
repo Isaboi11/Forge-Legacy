@@ -178,10 +178,11 @@ export default function SquadGoalScreen() {
   const remaining = Math.max(0, target - done);
   const nextGoal = (mode: 'new' | 'again' | 'raise') => router.replace({ pathname: '/squad/[id]', params: { id: squadId, editGoal: mode } });
 
-  const pace = recentPace(data.weeks);
+  const pace = recentPace(data.weeks, data.startedAt);
   const close = projectedClose(done, target, pace, new Date());
   const stones = milestones(target, done, data.weeks, data.startedAt);
   const top = data.contributions.reduce((m, c) => Math.max(m, c.value), 0);
+  const everyoneIn = data.contributions.length > 0 && data.contributions.every((c) => c.value > 0);
   const weekMax = data.weeks.reduce((m, w) => Math.max(m, w.value), 0);
 
   return (
@@ -247,7 +248,7 @@ export default function SquadGoalScreen() {
           </View>
           <Text style={styles.remaining}>
             {completed
-              ? `Reached · ${fmtValue(target, data.metricKind)} ${unitFor(target)} logged together${early ? `, ${early}` : ''}`
+              ? `Reached · ${fmtValue(done, data.metricKind)} ${unitFor(done)} logged together${early ? `, ${early}` : ''}`
               : closed
                 ? `${fmtValue(done, data.metricKind)} ${unitFor(done)} logged together${closedDay ? ` · closed ${closedDay}` : ''}`
               : pace != null && pace > 0
@@ -268,7 +269,8 @@ export default function SquadGoalScreen() {
         </View>
         <Text style={styles.paceNote}>
           {completed
-            ? 'Completed goals stay in the squad record. Every member contributed to this one.'
+            ? /* Only when it is true (social2-04, QA 09-26): it said so beside a member at 0%. */
+              `Completed goals stay in the squad record.${everyoneIn ? ' Every member contributed to this one.' : ''}`
             : closed
               ? 'This goal has closed. Everything the squad logged toward it stays in the squad record.'
             : close

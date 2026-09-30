@@ -85,6 +85,38 @@ export async function setTrainingStatus(
   }
 }
 
+/** How often an open workout phones home (0251). The server calls a session quiet after 10 minutes. */
+export const TRAINING_HEARTBEAT_MS = 2 * 60 * 1000;
+
+/** Latched by the first PGRST202, so a database without 0251 is asked once per launch and not every two minutes. */
+let heartbeatUnavailable = false;
+
+/**
+ * The open workout phoning home (0251, QA 09-26 social2-13).
+ *
+ * Close or reload the app mid-workout and friends saw "Training now" for the whole four-hour ceiling —
+ * nothing ever said the session had gone quiet. The server now ends the presence of a session whose
+ * heartbeat stops for ten minutes.
+ *
+ * Resolves `true` while the athlete is still on Live Now, `false` when the server has taken them off
+ * (the caller re-asserts, which restores the same stamp and tells nobody twice — 0202), and `null` when
+ * there is nothing to learn: offline, signed out, or 0251 not pasted yet. Never throws — presence is
+ * never worth a blocked workout.
+ */
+export async function sendTrainingHeartbeat(): Promise<boolean | null> {
+  if (heartbeatUnavailable) return null;
+  try {
+    const { data, error } = await supabase.rpc('training_heartbeat');
+    if (error) {
+      if ((error as { code?: string }).code === 'PGRST202') heartbeatUnavailable = true;
+      return null;
+    }
+    return typeof data === 'boolean' ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Squad-mates and accepted friends training right now — squad first, then most recently started. */
 export async function fetchTrainingNow(): Promise<TrainingAthlete[]> {
   const { data, error } = await supabase.rpc('training_now');

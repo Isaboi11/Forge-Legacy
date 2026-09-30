@@ -197,6 +197,9 @@ export default function AthleteProfileScreen() {
         setBusy(false);
         setPending(null); // put the button back where it was
         showToast(errorMessage(e));
+        /* ...and where it now IS. A request withdrawn while this page sat open kept saying "Accept
+           Request" after the tap failed (social2-08, QA 09-26); re-reading the profile moves it to Add. */
+        refetch();
       },
     );
   };

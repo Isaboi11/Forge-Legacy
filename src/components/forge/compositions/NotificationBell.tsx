@@ -1,5 +1,6 @@
+import { useCallback } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { usePathname, useRouter } from 'expo-router'
+import { useFocusEffect, usePathname, useRouter } from 'expo-router'
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
 
 import { fetchUnreadNotificationCount } from '@/data/notifications-live'
@@ -10,15 +11,33 @@ import { flColor, flRadius, flShadow } from '@/constants/foundation'
  * The notification bell — an AppBar action carrying the unread count, sized and spaced to sit beside
  * the existing header controls (44×44 tap target, same as the Squads header's search/create pair).
  *
- * Keyed on the pathname rather than polled: any navigation re-reads the count, so opening the feed and
- * coming back clears it without a timer. The count resolves 0 on any failure — an indicator is never
- * worth breaking the screen that hosts it.
+ * Keyed on the pathname, so any navigation re-reads the count and opening the feed and coming back
+ * clears it. The count resolves 0 on any failure — an indicator is never worth breaking the screen that
+ * hosts it.
+ *
+ * ⚠ AND A CLOCK (QA 09-26 social2-10). A friend request and a workout invite did not reach a focused
+ * Home in 70 seconds, then appeared the instant the tab changed: nothing navigates while you wait for
+ * somebody to answer, so nothing re-read. Same shape as Home's Live Now timer — it belongs to the
+ * screen being LOOKED AT (`useFocusEffect` clears it on blur), and a hidden browser tab skips its turn.
+ * 30s, because an invite to train is worth less every minute it sits unseen.
  */
+const BELL_POLL_MS = 30_000
+
 export function NotificationBell() {
   const router = useRouter()
   const pathname = usePathname()
-  const { data: unread } = useQuery(fetchUnreadNotificationCount, [pathname])
+  const { data: unread, refetch } = useQuery(fetchUnreadNotificationCount, [pathname])
   const count = unread ?? 0
+
+  useFocusEffect(
+    useCallback(() => {
+      const id = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+        refetch()
+      }, BELL_POLL_MS)
+      return () => clearInterval(id)
+    }, [refetch]),
+  )
 
   return (
     <Pressable

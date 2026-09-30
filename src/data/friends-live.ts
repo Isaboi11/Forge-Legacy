@@ -141,9 +141,19 @@ export async function requestFriend(athleteId: string): Promise<FriendState> {
   return asState(data);
 }
 
+/**
+ * What accepting says when the request is no longer there to accept (social2-08, QA 09-26): withdrawn by
+ * the sender, or answered on another device. 0073 raises "no pending request from that athlete" (P0001),
+ * which reached the toast verbatim. Exported so a screen can tell this apart and re-read the relationship.
+ */
+export const FRIEND_REQUEST_GONE = 'That request isn’t waiting any more — it was withdrawn or already answered.';
+
 export async function acceptFriendRequest(athleteId: string): Promise<void> {
   const { error } = await supabase.rpc('accept_friend_request', { p_athlete: athleteId });
-  if (error) rethrow(error);
+  if (error) {
+    if (/no pending request/i.test((error as { message?: string }).message ?? '')) throw new Error(FRIEND_REQUEST_GONE);
+    rethrow(error);
+  }
   trackInvite('accepted', { kind: 'friend', method: 'in_app' });
 }
 
