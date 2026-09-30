@@ -12,7 +12,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { diaryDayParam, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   checkCalories,
   extrasPerHundred,
@@ -97,7 +97,8 @@ export default function CreateFoodScreen() {
   const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string; for?: string; scan?: string; name?: string; brand?: string }>();
   const { width } = useWindowDimensions();
 
-  const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
+  /* A link's date is checked, not trusted (QA 09-26 N-19). */
+  const iso = diaryDayParam(params.date, localToday());
   const editId = params.mode === 'edit' && typeof params.food === 'string' && params.food ? params.food : null;
   const editing = editId != null;
   /* Opened from the recipe builder (`?for=recipe`): the food is saved to My Foods and handed back as an

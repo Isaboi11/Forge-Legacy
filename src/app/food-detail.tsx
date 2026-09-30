@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -11,7 +12,7 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { localToday, MEAL_LABELS, MEAL_SLOTS, totals, type MealSlot } from '@/domain/nutrition/day';
+import { dayLabel, diaryDayParam, localToday, MEAL_LABELS, MEAL_SLOTS, totals, type MealSlot } from '@/domain/nutrition/day';
 import {
   convertAmount,
   extraRows,
@@ -29,12 +30,13 @@ import {
   fetchDay,
   fetchFoodByKey,
   fetchFavorites,
+  removeEntry,
   reportCommunityFood,
   setFavorite,
   updateEntry,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -71,7 +73,11 @@ export default function FoodDetailScreen() {
   }>();
 
   const foodKey = typeof params.key === 'string' ? params.key : '';
-  const iso = typeof params.date === 'string' ? params.date : localToday();
+  /* A link's date is checked, not trusted (QA 09-26 N-19) — the same rule as Log Food. */
+  const todayIso = localToday();
+  const iso = diaryDayParam(params.date, todayIso);
+  /* Any day but today is named beside the meal, so the day food goes to is never a guess (N-19). */
+  const dayWord = iso === todayIso ? '' : ` · ${dayLabel(iso, todayIso)}`;
   /* Present when Meal Detail sent us here to CHANGE a portion rather than add one. */
   const entryId = typeof params.entry === 'string' && params.entry ? params.entry : null;
   const editing = entryId != null;
@@ -159,6 +165,24 @@ export default function FoodDetailScreen() {
 
   const setAmount = (next: number) => setAmountText(String(next));
 
+  /*
+   * ══ DELETE, ON THE SCREEN THAT EDITS THE ROW (QA 09-26 N-26) ══
+   * Removing one logged food was a swipe or a long-press on Meal Detail, and the swipe hint stops showing
+   * after two visits — with a mouse there was no way at all. The row is open here, so it can go from here.
+   */
+  const remove = async () => {
+    if (!entryId || saving) return;
+    setSaving(true);
+    try {
+      await removeEntry(entryId);
+      showToast(`Removed ${food?.name ?? 'food'}`);
+      router.back();
+    } catch (e) {
+      showToast(errorMessage(e));
+      setSaving(false);
+    }
+  };
+
   const add = async () => {
     if (!food || !unit || !macros || macros.kcal <= 0 || saving) return;
     setSaving(true);
@@ -243,7 +267,8 @@ export default function FoodDetailScreen() {
               refetchFavorites();
             }}
           >
-            <EngravedIcon name="star" size={20} color={isFavorite ? undefined : flColor.gray400} />
+            {/* A favourite is a FILLED star (QA 09-26 N-40): outline vs. outline-in-bronze did not read as on. */}
+            {isFavorite ? <FilledStar size={20} /> : <EngravedIcon name="star" size={20} color={flColor.gray400} />}
           </Pressable>
           </View>
         }
@@ -402,11 +427,11 @@ export default function FoodDetailScreen() {
         {editing ? (
           /* The meal is already decided — this row is IN one. Offering a picker here would look like a
              way to move it and quietly not be one (`updateEntry` writes the portion, not the slot). */
-          <Text style={styles.editingLine}>{`Editing in ${MEAL_LABELS[meal]}`}</Text>
+          <Text style={styles.editingLine}>{`Editing in ${MEAL_LABELS[meal]}${dayWord}`}</Text>
         ) : (
           <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
             <Text style={styles.mealLineLabel}>Adding to</Text>
-            <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+            <Text style={styles.mealLineValue}>{`${MEAL_LABELS[meal]}${dayWord}`}</Text>
             <EngravedIcon name="chevron-down" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
           </Pressable>
         )}
@@ -415,6 +440,17 @@ export default function FoodDetailScreen() {
             ? `Save · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`
             : `Add to ${MEAL_LABELS[meal]} · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`}
         </Button>
+        {editing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${food.name} from ${MEAL_LABELS[meal]}`}
+            disabled={saving}
+            onPress={remove}
+            style={styles.deleteButton}
+          >
+            <Text style={styles.deleteText}>{`Delete from ${MEAL_LABELS[meal]}`}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <BottomSheet open={mealPickerOpen} onClose={() => setMealPickerOpen(false)} title="Adding to">
@@ -435,6 +471,21 @@ export default function FoodDetailScreen() {
         </View>
       </BottomSheet>
     </View>
+  );
+}
+
+/** The engraved star's own outline, filled — the favourite that is ON. Bronze is earned here: it is a selection. */
+function FilledStar({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 3.2L14.35 9.56L21.13 9.83L15.8 14.04L17.64 20.57L12 16.8L6.36 20.57L8.2 14.04L2.87 9.83L9.65 9.56z"
+        fill={flColor.bronze400}
+        stroke={flColor.bronze400}
+        strokeWidth={1.35}
+        strokeLinejoin="round"
+      />
+    </Svg>
   );
 }
 
@@ -560,6 +611,8 @@ const styles = StyleSheet.create({
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
   mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   editingLine: { alignSelf: 'center', paddingVertical: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
+  deleteButton: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  deleteText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
 
   sheetBody: { gap: 10, paddingBottom: 8 },
   choice: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.md, backgroundColor: flColor.charcoal800, ...flBorder.subtle },

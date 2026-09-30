@@ -10,6 +10,7 @@
 
 import type { CatalogFood, Serving } from './serving.ts';
 import { servingOptions } from './serving.ts';
+import { pluralWord } from '../text/plural.ts';
 
 export interface UnitChoice {
   /** What the pill says: a gram serving reads "grams", everything else keeps the source's own word. */
@@ -20,6 +21,9 @@ export interface UnitChoice {
 
 /** True for the "1 g" unit the `.dc` labels "grams" — the one unit whose amount IS a gram count. */
 const isGramUnit = (s: Serving) => s.grams === 1 || /^(100\s*)?g(rams?)?$/i.test(s.label);
+
+/** "250 g" · "12 oz" · "330 ml" — a serving that is nothing but its weight. */
+const WEIGHT_ONLY = /^\d+(\.\d+)?\s*(g|ml|oz)$/i;
 
 /**
  * The unit pills, in the order they are offered. The source's own servings come first (a person reaches
@@ -35,7 +39,10 @@ export function unitChoices(food: CatalogFood): UnitChoice[] {
        rice opened on "about 2/3 cup · 0 cal" — USDA's unit was "GRM", which food-search did not read).
        Without it the food opens on grams, which is always true. */
     if (s.grams == null) continue;
-    out.push({ label: s.label, serving: s });
+    /* A serving that is only a weight ("250 g" — every food typed into Create Food by weight) beside the
+       gram pill read as two gram units, "250 G" and "GRAMS" (QA 09-26 N-41). Named, it is the food's serving. */
+    const label = WEIGHT_ONLY.test(s.label.trim()) ? `1 serving (${s.label.trim()})` : s.label;
+    out.push({ label, serving: s });
   }
   out.push({ label: 'grams', serving: { label: 'g', grams: 1 } });
   return out;
@@ -69,14 +76,28 @@ export function convertAmount(amount: number, from: UnitChoice, to: UnitChoice):
   return toGrams === 1 ? Math.round(grams) : Math.round((grams / toGrams) * 10) / 10;
 }
 
-/** "g" · "cup" · "cups" · "oz" — the word beside the amount, pluralised only where English wants it. */
+/* A size is an adjective, not a noun: "3 large" (eggs), never "3 larges" (QA 09-26 N-22). */
+const SIZE_WORD = /\b(small|medium|large|jumbo|mini|whole)$/i;
+/* Abbreviated units read the same at any amount: "2 tbsp", "3 fl oz". */
+const ABBREVIATION = /\b(g|kg|mg|ml|l|oz|lb|lbs|tbsp|tsp|cl|dl)\.?$/i;
+
+/**
+ * "g" · "cup" · "cups" · "large" · "breasts, boneless" — the word beside the amount, pluralised only where
+ * English wants it, by the shared `pluralWord` (half a breast is "0.5 breast", QA 09-26 N-22). Only the HEAD
+ * of the label changes: "cup, chopped" becomes "cups, chopped", and a size ("large", "medium (7" long)") never.
+ */
 export function unitWord(choice: UnitChoice, amount: number): string {
   if (choice.serving.grams === 1) return 'g';
+  // A weight-only serving (N-41) counts servings; its weight is on the pill.
+  if (/^1 serving \(/.test(choice.label)) return pluralWord(amount, 'serving');
   // "1 McDonald's Big Mac" already counts one; beside an amount it reads "0.9 1 McDonald's Big Macs".
   const label = choice.label.replace(/^1\s+(?=\D)/, '');
   if (/\boz\b|ounce/i.test(label)) return label;
-  if (amount === 1) return label;
-  return /s$/i.test(label) ? label : `${label}s`;
+  const cut = label.search(/[,(]/);
+  const head = (cut < 0 ? label : label.slice(0, cut)).trimEnd();
+  const tail = label.slice(head.length);
+  if (!head || /s$/i.test(head) || /\d$/.test(head) || SIZE_WORD.test(head) || ABBREVIATION.test(head)) return label;
+  return `${pluralWord(amount, head)}${tail}`;
 }
 
 /**
