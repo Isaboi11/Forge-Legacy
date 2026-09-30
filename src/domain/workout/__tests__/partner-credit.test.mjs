@@ -115,3 +115,28 @@ test('names keep the order of the ids they were resolved from', () => {
   ];
   assert.deepEqual(resolvePartnerNames(['a', 'b'], roster, []), ['Ana', 'Bea']);
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// social2-14 — an empty shared session replaced by a new start must not hand its partner on
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { droppedSharedPartners } from '../partner-credit.ts';
+
+test('an empty shared session’s partner is dropped when a new workout replaces it', () => {
+  const saved = { partnerIds: ['sandbox'], exercises: [{}] };
+  assert.deepEqual(droppedSharedPartners(saved, false, undefined), ['sandbox']);
+  // …and that drop, fed to the merge as declined, stops the 12-hour window re-crediting them.
+  const merged = mergePartnerCredits([], [credit('sandbox', 'Sandbox', 20 * MIN)], droppedSharedPartners(saved, false, null));
+  assert.deepEqual(merged, []);
+});
+
+test('a new launch WITH that same partner keeps them', () => {
+  assert.deepEqual(droppedSharedPartners({ partnerIds: ['sandbox'], exercises: [{}] }, false, 'sandbox'), []);
+});
+
+test('a session with logged work, no partners, or no exercises drops nobody', () => {
+  assert.deepEqual(droppedSharedPartners({ partnerIds: ['sandbox'], exercises: [{}] }, true, null), []);
+  assert.deepEqual(droppedSharedPartners({ partnerIds: [], exercises: [{}] }, false, null), []);
+  assert.deepEqual(droppedSharedPartners({ partnerIds: ['sandbox'], exercises: [] }, false, null), []);
+  assert.deepEqual(droppedSharedPartners(null, false, null), []);
+});
