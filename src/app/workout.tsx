@@ -46,6 +46,8 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { displayWeight, exactWeight, unitLabel, weightInExact, type UnitSystem } from '@/domain/settings/units';
 import { playRestDing, primeDing } from '@/lib/ding';
+import { restDoneScheduled, restExpiryDeferred, syncRestDone } from '@/lib/rest-notification';
+import { dingOnExpiry } from '@/lib/rest-notification-model';
 import { CardioBlockCard } from '@/components/workout/CardioBlockCard';
 import { HoldTimer } from '@/components/workout/HoldTimer';
 import { IntervalRunner } from '@/components/workout/IntervalRunner';
@@ -1481,15 +1483,25 @@ export default function WorkoutScreen() {
     const t = setInterval(() => {
       const ms = Date.now();
       if (ms >= restEndsAt) {
+        if (restExpiryDeferred()) return; // locked / in another app: the notification rings this one
         setRestEndsAt(null);
         // A small ding, and only if they want one. The toast alone required looking at the phone,
         // which is exactly what an athlete resting between sets has put down.
-        if (soundOn) playRestDing();
+        // Not a second time, minutes late, for a rest the notification already rang while we were away.
+        if (soundOn && dingOnExpiry(ms - restEndsAt, restDoneScheduled())) playRestDing();
         showToast('Rest complete — next set.');
       } else setNow(ms);
     }, 500);
     return () => clearInterval(t);
   }, [restEndsAt, restPaused, showToast, soundOn]);
+
+  /* The ticker above stops when iOS suspends the app — phone locked, or another app in front — so the
+     same deadline is also handed to the OS as a notification with a sound. One rule for every way the
+     deadline can move: start, ±15s, pause, resume, skip, expiry. See `lib/rest-notification-model`. */
+  useEffect(() => {
+    syncRestDone(soundOn && restEndsAt != null && !restPaused ? restEndsAt : null);
+  }, [restEndsAt, restPaused, soundOn]);
+  useEffect(() => () => syncRestDone(null), []);
 
   // AMRAP ticker — same deadline-based shape as the rest timer, so a re-render never loses the count
   useEffect(() => {

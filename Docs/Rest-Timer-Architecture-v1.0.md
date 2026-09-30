@@ -204,6 +204,8 @@ If the elapsed time exceeds the reference duration, the ProgressRing renders at 
 
 ### §8.1 V1 Position
 
+> ⚠ **SUPERSEDED 2026-09-30 by `Amendments/Rest-Timer-Amendment-001-Rest-Complete-Notification.md`.** A local notification with a sound now fires when a rest ends and the app is not on screen. RT-OQ-1 and RT-OQ-2 are resolved there.
+
 **No rest-timer notifications fire in V1.** This is consistent with `W9-Amendment-003-Optional-Rest-Progress-Ring.md` §6 Non-Behaviors: "No notification behavior is added or changed. The base spec defines no rest-ended notification today (§16.8 explicitly excludes any haptic for rest timer events); this amendment does not introduce one."
 
 The foreground experience is complete via the ProgressRing visual. The background experience is: timer continues silently; athlete returns when ready; timer shows accurate elapsed.
