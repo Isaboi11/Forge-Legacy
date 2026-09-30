@@ -54,6 +54,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
 /* The canonical prescription renderer — the one Program Detail and the logger read. A second one here
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
+import { shiftYmd, todayYmd } from '../dates/local-date.ts';
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
@@ -1162,10 +1163,10 @@ const LIMIT_CHIPS: [string, Limitation][] = [
   ['No barbell', 'no_barbell'],
 ];
 
+// The athlete's LOCAL day, N weeks on (B14): `toISOString()` gave the UTC day, so an evening in the US
+// put the race a day late — and across a DST change even the ms-offset in the tests disagreed.
 function isoInWeeks(weeks: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + weeks * 7);
-  return d.toISOString().slice(0, 10);
+  return shiftYmd(todayYmd(), weeks * 7);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -18,6 +18,7 @@
  * Run:  node --test --experimental-strip-types src/domain/coach/__tests__/author-race.test.mjs
  */
 
+import { shiftYmd, todayYmd } from '../../dates/local-date.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -36,7 +37,8 @@ const src = (f) => JSON.parse(readFileSync(path.join(here, '../../exercise-relat
 const POOL = buildPickerDb({ exercises: src('exercises.json'), exerciseMuscles: src('exercise_muscles.json'), muscles: src('muscles.json'), equipment: src('equipment.json') });
 const BY_KEY = new Map(POOL.map((e) => [e.key, e]));
 
-const inWeeks = (w) => new Date(Date.now() + w * 7 * 864e5).toISOString().slice(0, 10);
+// The athlete's local day, N weeks on — what the chips send (a UTC day was a day late in a US evening).
+const inWeeks = (w) => shiftYmd(todayYmd(), w * 7);
 
 /** What `coach-interpret` made of the PO's sentence, live, on 2026-09-30 — plus his answers. */
 const SAID = { goal: 'run_marathon', daysPerWeek: 5, weeks: 7, liftDays: 3 };
