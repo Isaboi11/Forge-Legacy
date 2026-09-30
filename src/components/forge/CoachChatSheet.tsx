@@ -27,6 +27,7 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
 import { bronzeWash, wash } from '@/constants/washes';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
+import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -4244,6 +4245,8 @@ function TurnView({
         <View style={styles.stop}>
           <Text style={styles.stopKicker}>{turn.kicker ?? STOP_KICKER}</Text>
           <Text style={styles.stopText}>{turn.text}</Text>
+          {/* QA holtai-11: the crisis and emergency lines can be acted on, not only read. */}
+          <StopCalls kicker={turn.kicker} />
         </View>
       );
 

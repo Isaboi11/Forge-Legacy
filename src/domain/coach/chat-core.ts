@@ -2244,6 +2244,21 @@ export const CARE_STOP =
   "I can't build around that one safely. A doctor or a registered dietitian is the right person for it, and I'd want them in your corner. When you're ready, I'll build you training that makes you stronger.";
 
 /**
+ * What the crisis and emergency cards let you DO (QA holtai-11): "Call or text 988" and "Call 911" were plain
+ * text on a phone. Each number is the one its line already names — the buttons add no advice and no number.
+ * Every other stop has nothing to call, so it gets nothing.
+ */
+export interface StopCall {
+  label: string;
+  url: string;
+}
+export function stopCalls(kicker: string | undefined): StopCall[] {
+  if (kicker === CRISIS_KICKER) return [{ label: 'Call 988', url: 'tel:988' }, { label: 'Text 988', url: 'sms:988' }];
+  if (kicker === URGENT_KICKER) return [{ label: 'Call 911', url: 'tel:911' }];
+  return [];
+}
+
+/**
  * ⛔ THE CHAT IS UNLIMITED. PO decision, 2026-08-09.
  *
  * ══ THE REASONING, BECAUSE THE NUMBER WILL COME BACK LATER ══

@@ -49,3 +49,19 @@ test('the sheet picks the line, and an under-18 kitchen stop keeps a recipe door
   assert.match(sheet, /if \(kitchen && MINOR_AGE\.test\(text\)\) \{[\s\S]{0,200}kitchenAsk\.current\.ask = '';[\s\S]{0,200}kitchen: 'go'/);
   assert.equal(medicalRoute("I'm 16, what macros should I eat to cut?"), 'care', 'the stop itself is unchanged');
 });
+
+/* ── QA holtai-11: the crisis and emergency cards have something to tap ─────────────────────────────── */
+
+test('holtai-11 — crisis offers Call and Text 988, an emergency Call 911, every other stop nothing', async () => {
+  const { stopCalls, CRISIS_KICKER, CRISIS_STOP, URGENT_KICKER, URGENT_STOP, CARE_KICKER, STOP_KICKER } = await import('../chat-core.ts');
+  assert.deepEqual(stopCalls(CRISIS_KICKER).map((c) => c.url), ['tel:988', 'sms:988']);
+  assert.deepEqual(stopCalls(URGENT_KICKER).map((c) => c.url), ['tel:911']);
+  // Each button's number is one its own line already names — the buttons add no number of their own.
+  assert.match(CRISIS_STOP, /988/);
+  assert.match(URGENT_STOP, /911/);
+  for (const k of [CARE_KICKER, STOP_KICKER, undefined]) assert.deepEqual(stopCalls(k), []);
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const read = (f) => readFileSync(path.join(here, f), 'utf8');
+  assert.match(read('../../../components/forge/CoachChatSheet.tsx'), /<StopCalls kicker=\{turn\.kicker\} \/>/);
+  assert.match(read('../../../app/form-check.tsx'), /<StopCalls kicker=\{stage\.kicker\} \/>/);
+});
