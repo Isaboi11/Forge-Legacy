@@ -273,8 +273,10 @@ export function projectWatchState(input: WatchProjectionInput): WatchState {
       ...common,
       phase: 'rest',
       restEndsAt: rest.paused ? null : rest.endsAt,
-      restRemainingSec: rest.paused ? rest.pausedRemaining : null,
-      restTotalSec: rest.totalSec,
+      /* Whole seconds: the watch decodes these as `Int`, and one fractional value (an imported
+         prescription's rest) fails the WHOLE decode — the wrist silently falls back to Idle. */
+      restRemainingSec: rest.paused && rest.pausedRemaining != null ? Math.round(rest.pausedRemaining) : null,
+      restTotalSec: Math.round(rest.totalSec),
       nextExercise: cursor.exercise.name,
       nextTarget: common.target,
       exerciseComplete,

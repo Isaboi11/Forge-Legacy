@@ -22,6 +22,8 @@ export function pushWatchState(_state: WatchState): void {}
 
 export function resetWatchStateCache(): void {}
 
+export function repushWatchState(): void {}
+
 export function isWatchReachable(): boolean {
   return false;
 }

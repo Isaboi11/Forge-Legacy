@@ -67,6 +67,25 @@ export function resetWatchStateCache(): void {
   lastPushed = null;
 }
 
+/**
+ * Send the last state again, unchanged.
+ *
+ * ⚠ THE WATCH ONLY HEARS A CONTEXT ONCE. Build 11's watch never reads `receivedApplicationContext` on
+ * launch, so a push that landed while the watch app was closed is gone, and the dedupe above means the
+ * phone never sends it again — the wrist sat on "Start a workout on your phone" for a whole session
+ * (PO 09-30). `workout.tsx` calls this on a heartbeat; the native `seq` makes every call a distinct
+ * context, so an open watch app catches up within one beat. The real fix (read the stored context on
+ * activation) is Swift and waits for build 12.
+ */
+export function repushWatchState(): void {
+  if (!native || lastPushed == null) return;
+  try {
+    native.pushState(lastPushed);
+  } catch {
+    // Same as above: the wrist is a convenience.
+  }
+}
+
 export function isWatchReachable(): boolean {
   try {
     return native ? native.isReachable() : false;

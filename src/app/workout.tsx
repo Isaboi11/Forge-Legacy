@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Animated, AppState, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { fetchTodaysChapterPhotos } from '@/data/photos-live';
@@ -138,7 +138,7 @@ import { clearExerciseInbox, readExerciseInbox, type PickedExercise } from '@/li
 import type { ActiveSession, SessionExercise, SessionSet, WorkoutSectionKind } from '@/domain/workout/types';
 import { registerWatchCommands } from '@/domain/workout/watch-commands';
 import { projectWatchState } from '@/domain/workout/watch-projection';
-import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
+import { pushWatchState, repushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
 /* Resolves `live-activity.ts` on native and the no-op `live-activity.web.ts` on web. */
 import { endLiveActivity, pushLiveActivityState } from '@/lib/live-activity';
 import { activeTheme } from '@/constants/theme-choice';
@@ -177,6 +177,7 @@ const REST_KNOB_POS = {
   manual: { alignItems: 'flex-end' },
 } as const;
 const REPS_MAX = 999; // typed entry is not bounded by what fits on a wheel
+const WATCH_HEARTBEAT_MS = 5000; // how often an open session re-sends its state to the wrist (repushWatchState)
 /* Typed weight is not bounded by the wheel either (workout-06). It was clamped to the wheel's 500 without a
    word, so a 545 deadlift or a 900 leg press saved as 500. The ceiling is only a guard against a typo. */
 const WEIGHT_MAX = 2000;
@@ -1960,6 +1961,21 @@ export default function WorkoutScreen() {
   useEffect(() => {
     pushWatchState(watchState);
   }, [watchState]);
+  /* The heartbeat — see `repushWatchState`. While a session is open the wrist hears the current state
+     every few seconds and whenever the phone comes back to the foreground, so a watch app opened
+     mid-workout catches up instead of waiting for the next set. */
+  const hasSession = session != null;
+  useEffect(() => {
+    if (!hasSession) return;
+    const beat = setInterval(repushWatchState, WATCH_HEARTBEAT_MS);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') repushWatchState();
+    });
+    return () => {
+      clearInterval(beat);
+      sub.remove();
+    };
+  }, [hasSession]);
   /**
    * The lock screen / Dynamic Island card (`Docs/Live-Activities-Build-Plan.md`) — a SECOND listener for
    * the same projection. `lib/live-activity` decides start/update/end and drops identical states, so this
