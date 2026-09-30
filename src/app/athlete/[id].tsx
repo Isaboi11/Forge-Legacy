@@ -36,6 +36,8 @@ import {
 } from '@/domain/moderation/moderation-core';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { themeGround } from '@/constants/theme-scrim';
+import { calendarDaysBetween, dayNumberSince, toLocalDate } from '@/domain/dates/local-date';
+import { fmtDate } from '@/lib/format';
 
 /**
  * Athlete Profile (`/athlete/[id]`) — the specs' "Limited Athlete Profile", built to
@@ -543,7 +545,8 @@ function toChapter(c: ProfileChapterT): Chapter {
   return {
     id: c.id,
     name: c.name,
-    startDate: c.startDate,
+    // Shown as "Began Sep 25, 2026", not the raw column (QA 09-26 B14).
+    startDate: fmtDate(c.startDate),
     goal: goalOf(c.goal),
     workoutCount: c.workoutCount,
     honorCount: c.honorCount,
@@ -552,15 +555,16 @@ function toChapter(c: ProfileChapterT): Chapter {
 }
 
 function toSealed(c: NonNullable<AthleteProfile['history']>[number]): Chapter {
-  const start = new Date(c.startDate);
-  const end = c.sealedAt ? new Date(c.sealedAt) : null;
-  const days = end ? Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000)) : null;
+  // A DATE start is that local day; `new Date('2026-09-25')` was UTC midnight — the day before in the US (B14).
+  const start = toLocalDate(c.startDate);
+  const end = c.sealedAt ? toLocalDate(c.sealedAt) : null;
+  const days = end ? Math.max(1, calendarDaysBetween(start, end)) : null;
   const mon = (d: Date) => d.toLocaleDateString('en-US', { month: 'short' });
   return {
     id: c.id,
     name: c.name,
-    startDate: c.startDate,
-    sealedAt: c.sealedAt ?? undefined,
+    startDate: fmtDate(c.startDate),
+    sealedAt: c.sealedAt ? fmtDate(c.sealedAt) : undefined,
     dateRangeFull: end ? `${mon(start)} ${start.getDate()} – ${mon(end)} ${end.getDate()}, ${end.getFullYear()}${days ? ` · ${days} days` : ''}` : undefined,
     dateRangeCompact: end ? `${mon(start)} – ${mon(end)} ${end.getFullYear()}${days ? ` · ${days}d` : ''}` : undefined,
     goal: { kind: 'none' },
@@ -585,12 +589,13 @@ function toAccomplishment(a: NonNullable<AthleteProfile['accomplishments']>[numb
   return {
     id: a.id,
     text: a.name,
-    monthYear: a.date ? new Date(a.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '',
+    monthYear: a.date ? toLocalDate(a.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '',
     featured: a.featured,
   };
 }
 
-const daysSince = (iso: string): number => Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 86400000));
+// Day 1 on the day the chapter began — the count Home and Legacy show (QA 09-26 B14).
+const daysSince = (iso: string): number => dayNumberSince(iso);
 
 // ── pieces ──
 

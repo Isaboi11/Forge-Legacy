@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { todayYmd } from '@/domain/dates/local-date';
 
 /**
  * Legacy photos (L-15 / L-16) — migration 0085.
@@ -149,7 +150,7 @@ export async function addChapterPhoto(input: AddPhotoInput): Promise<string> {
       athlete_id: user.id,
       chapter_id: input.chapterId,
       url: input.url,
-      taken_on: input.takenOn ?? new Date().toISOString().slice(0, 10),
+      taken_on: input.takenOn ?? todayYmd(), // local day, not UTC (QA 09-26 B14)
       pose: input.pose?.trim() || null,
       caption: input.caption?.trim() || null,
       is_video: !!input.isVideo,
@@ -217,7 +218,7 @@ export async function fetchTodaysChapterPhotos(): Promise<ChapterPhoto[]> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayYmd(); // local day — what add-photo stamps (QA 09-26 B14)
   const { data } = await supabase
     .from('chapter_photos')
     .select('id, url, taken_on, pose, caption, is_video, is_starred, role, exercise')

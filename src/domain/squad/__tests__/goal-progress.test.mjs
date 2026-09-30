@@ -72,7 +72,7 @@ test('reached is decided by the total, crossed-when by the weekly series', () =>
   const weeks = [wk(0, 60), wk(1, 60), wk(2, 60)]; // running: 60, 120, 180
   const m = milestones(500, 312, weeks);
   assert.equal(m[0].reached, true, '100 is behind 312');
-  assert.equal(m[0].crossedAt, weeks[1].weekStart, 'crossed during the second week');
+  assert.equal(m[0].crossedAt, weeks[1].weekStart.slice(0, 10), 'crossed during the second week — its calendar day');
   assert.equal(m[2].reached, true, '300 is behind 312');
   // 300 is NOT in the eight-week window (the series only totals 180), so there is no date to give.
   assert.equal(m[2].crossedAt, null, 'reached, but crossed before the window — no invented date');

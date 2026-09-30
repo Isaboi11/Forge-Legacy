@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { countHonorsByChapter, honorsInChapter } from '@/domain/legacy/chapter-tallies';
 import { annotateRecords } from '@/domain/workout/records-core';
+import { toLocalDate } from '@/domain/dates/local-date';
 
 /**
  * Legacy Timeline (L-2) — every mark, in order.
@@ -236,7 +237,9 @@ export async function fetchLegacyTimeline(): Promise<LegacyTimeline> {
       kind: 'chapter-open',
       title: `Began ${c.name}`,
       sub: null,
-      at: `${c.startDate}T00:00:00.000Z`,
+      // LOCAL midnight of the start day (QA 09-26 B14). `…T00:00:00.000Z` was UTC midnight, which every
+      // local formatter below showed as the day before for anyone west of Greenwich.
+      at: toLocalDate(c.startDate).toISOString(),
       route: { pathname: '/chapter/[id]', params: { id: c.id } },
     });
   }

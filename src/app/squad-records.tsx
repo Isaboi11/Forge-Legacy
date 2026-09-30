@@ -18,6 +18,7 @@ import { RECORD_META, fetchSquadRecords, formatRecordValue, isNewRecord, recordU
 import { useUnits } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { toLocalDate } from '@/domain/dates/local-date';
 
 /**
  * Squad Records (C-6) — built to `Forge Squad Records.dc.html`.
@@ -49,7 +50,8 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** "Jan 2026" — records are dated to the month, never the day. */
 function monthYear(iso: string | null): string {
   if (!iso) return '';
-  const d = new Date(iso);
+  // `achieved_on` is a DATE; read as UTC midnight, a record on Sep 1 showed "Aug 2026" (QA 09-26 B14).
+  const d = toLocalDate(iso);
   return Number.isNaN(d.getTime()) ? '' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
