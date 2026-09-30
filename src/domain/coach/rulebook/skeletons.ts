@@ -333,6 +333,28 @@ const STYLE_SPLITS: Record<SplitStyle, Record<number, DaySkeleton[]>> = {
 export const stylesForDays = (daysPerWeek: number): SplitStyle[] =>
   SPLIT_STYLES.filter((s) => STYLE_SPLITS[s][daysPerWeek] != null);
 
+/**
+ * The style the guided build SUGGESTS at each day count — the one whose own blurb says it fits.
+ *
+ * ⚠ NOT "THE FIRST LEGAL ONE" (programs-11, QA 09-26). Full body is legal at every count, so taking the
+ * first legal style suggested "Full body — best when you train two or three days" to someone who had
+ * just picked four, and built a week whose Day D was Day A again.
+ */
+const SUGGESTED_STYLE: Record<number, SplitStyle> = {
+  2: 'full_body',
+  3: 'full_body',
+  4: 'upper_lower',
+  5: 'ppl',
+  6: 'ppl',
+};
+
+/** `stylesForDays`, with the suggested style for that count first. */
+export function stylesForDaysSuggestedFirst(daysPerWeek: number): SplitStyle[] {
+  const legal = stylesForDays(daysPerWeek);
+  const pick = SUGGESTED_STYLE[daysPerWeek];
+  return pick && legal.includes(pick) ? [pick, ...legal.filter((s) => s !== pick)] : legal;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // GOAL DEFAULTS — used when the athlete expresses no preference
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
