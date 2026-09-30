@@ -38,6 +38,8 @@ import {
   nextDayStop,
   dayAtStop,
   completedWeeks,
+  emptyWeeks,
+  trainedDaysPerWeek,
   templateIntoDay,
   weekTemplateIntoWeek,
   weekFit,
@@ -785,4 +787,24 @@ test('an empty source, or a week index that does not exist, changes nothing', ()
   const base = weekDraft(3);
   assert.equal(weekTemplateIntoWeek(base, 0, []), base, 'nothing to apply is not an edit');
   assert.deepEqual(weekTemplateIntoWeek(base, 9, tplWeek(['Push'])), base);
+});
+
+test('programs-05: an empty week blocks the save, and Save & continue on it never reopens it', () => {
+  let d = setVaryMode({ ...withMainOn(0), name: 'Block', weeks: 3 });
+  d = copyWeek(d, 0, 1);
+  assert.deepEqual(emptyWeeks(d), [3]);
+  assert.equal(isDraftValid(d), false, 'week 3 has nothing in it');
+  assert.equal(nextIncompleteWeek(d, 2), null, 'from the empty last week: back to the list, not week 3 again');
+  d = copyWeek(d, 0, 2);
+  assert.deepEqual(emptyWeeks(d), []);
+  assert.equal(isDraftValid(d), true);
+  assert.deepEqual(emptyWeeks({ ...withMainOn(0), name: 'Repeat' }), [], 'repeat mode has no weeks to be empty');
+});
+
+test('programs-06: the days a draft trains are the days with something in them', () => {
+  const d = withMainOn(0);
+  assert.equal(d.daysPerWeek, 4);
+  assert.equal(trainedDaysPerWeek(d), 1);
+  const v = setVaryMode({ ...withMainOn(1), weeks: 2 });
+  assert.equal(trainedDaysPerWeek(v), 1);
 });

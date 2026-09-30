@@ -16,9 +16,9 @@ import { type ParsedWeek } from '@/domain/program/import-parse';
 import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { draftFromImport } from '@/lib/program-import-draft';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
-import { resolveExerciseName } from '@/domain/exercise-picker/data';
+import { resolveImportedName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
-import { bumpTimedSet, durText } from '@/domain/program/prescription';
+import { bumpTimedSet, durText, estimatedSessionMinutes } from '@/domain/program/prescription';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useUnits } from '@/lib/settings';
 import { EquipIcon, equipmentLabel } from '@/components/forge/EquipIcon';
@@ -101,6 +101,7 @@ import {
   daysLoseContent,
   draftHasContent,
   draftToStructure,
+  emptyWeeks,
   hasMainExercise,
   hasName,
   hydrateDraft,
@@ -114,6 +115,7 @@ import {
   pairWithNext,
   pairingAt,
   saveProgramDraft,
+  trainedDaysPerWeek,
   unpairAt,
   setRepeatMode,
   setVaryMode,
@@ -283,7 +285,7 @@ function ProgramBuilderScreen() {
    * Resolve a written name to the catalogue — the SAME call the preview renders and the import commits,
    * so what the athlete is shown is exactly what gets stored. Two resolvers would drift.
    */
-  const resolveName = (n: string) => resolveExerciseName(n);
+  const resolveName = resolveImportedName;
 
   /**
    * ⚠ TWO CAPS GUARD THIS ONE BUTTON, AND BOTH HAVE TO PASS.
@@ -310,11 +312,12 @@ function ProgramBuilderScreen() {
    * "Create program", and the create still happens where it always did, on Save. So an import that reads
    * wrong is one Back away from being fixed, not a program row to go and delete.
    */
-  const confirmImport = (weeks: ParsedWeek[]) => {
+  const confirmImport = (weeks: ParsedWeek[], title?: string) => {
     if (!draft) return;
     // The fitting, the clamps and the toast live in `draftFromImport` — shared with the Build a Program
-    // paste and photo screens so both doors produce the same draft (2026-09-21).
-    const r = draftFromImport(draft, weeks, { isWeek, resolveKey: (n) => resolveName(n)?.key });
+    // paste and photo screens so both doors produce the same draft (2026-09-21). The import's own resolver
+    // (`resolveImportedName`): a matched row takes the library's name (QA library-17).
+    const r = draftFromImport(draft, weeks, { isWeek, resolveKey: resolveName, title });
     if (!r) return;
     mutate(() => r.draft);
     setImportOpen(false);
@@ -533,7 +536,7 @@ function ProgramBuilderScreen() {
     const target = draft.vary ? draft.weekPlans?.[index] : { days: draft.days };
     if (!weekBuilt(target) && fit.dropped === 0 && fit.emptied === 0) {
       mutate((d) => weekTemplateIntoWeek(d, index, days));
-      showToast(`Week ${index + 1} is now ${name}.`);
+      showToast(draft.vary ? `Week ${index + 1} is now ${name}.` : `Every week is now ${name}.`);
       return;
     }
     setWeekTplPending({ index, name, days, fit });
@@ -544,7 +547,7 @@ function ProgramBuilderScreen() {
     setWeekTplPending(null);
     if (!p) return;
     mutate((d) => weekTemplateIntoWeek(d, p.index, p.days));
-    showToast(`Week ${p.index + 1} is now ${p.name}.`);
+    showToast(draft?.vary ? `Week ${p.index + 1} is now ${p.name}.` : `Every week is now ${p.name}.`);
   };
 
   // Shrinking weeks/days can destroy built content — confirm first (design `pendingResize`).
@@ -733,6 +736,9 @@ function ProgramBuilderScreen() {
 
   const days = activeDays(draft);
   const openDay = draft.openDay != null ? days[draft.openDay] : undefined;
+  /** Would the saved week waiting to be confirmed write over days the athlete built? */
+  const pendingReplaces =
+    weekTplPending != null && weekBuilt(draft.vary ? draft.weekPlans?.[weekTplPending.index] : { days: draft.days });
   // Three views off one draft: a day being built wins, then an open week's day list, else Setup.
   const weekView = !openDay && draft.vary && draft.openWeek != null;
 
@@ -1115,6 +1121,8 @@ function ProgramBuilderScreen() {
       <WeekTemplateSheet
         open={weekTplFor != null}
         weekNumber={(weekTplFor ?? 0) + 1}
+        repeating={!draft.vary}
+        weeks={draft.weeks}
         daysPerWeek={draft.daysPerWeek}
         onClose={() => setWeekTplFor(null)}
         onChoose={(name, days) => chooseWeekTemplate(weekTplFor ?? 0, name, days)}
@@ -1125,23 +1133,27 @@ function ProgramBuilderScreen() {
       <BottomSheet
         open={weekTplPending != null}
         onClose={() => setWeekTplPending(null)}
-        title={weekTplPending ? `Week ${weekTplPending.index + 1}` : ''}
+        /* ⚠ REPEAT MODE HAS ONE WEEK, AND IT IS EVERY WEEK. This sheet said "Week 1" there while the saved week
+           replaced the repeating week for the whole program (QA programs-15, 2026-09-26). */
+        title={weekTplPending ? (draft.vary ? `Week ${weekTplPending.index + 1}` : 'Every week') : ''}
       >
         <View style={styles.resizeSheet}>
           <Text style={styles.resizeMsg}>
             {weekTplPending
               ? [
-                  `Week ${weekTplPending.index + 1} becomes ${weekTplPending.name}.`,
-                  weekBuilt(draft.vary ? draft.weekPlans?.[weekTplPending.index] : { days: draft.days })
-                    ? 'What you built in it is replaced.'
-                    : null,
+                  draft.vary
+                    ? `Week ${weekTplPending.index + 1} becomes ${weekTplPending.name}.`
+                    : draft.weeks > 1
+                      ? `Your program repeats one week, so all ${draft.weeks} weeks become ${weekTplPending.name}.`
+                      : `Your week becomes ${weekTplPending.name}.`,
+                  pendingReplaces ? 'What you built in it is replaced.' : null,
                   /* Stated as a COUNT and a REASON, because "2 days won't fit" without the reason reads
                      as a bug in the import rather than as the arithmetic of two day counts. */
                   weekTplPending.fit.dropped > 0
                     ? `This week has ${weekTplPending.fit.taken + weekTplPending.fit.dropped} days and your program trains ${draft.daysPerWeek} — only the first ${weekTplPending.fit.taken} come in.`
                     : null,
                   weekTplPending.fit.emptied > 0
-                    ? `It has ${weekTplPending.fit.taken} days, so the last ${weekTplPending.fit.emptied === 1 ? 'day' : `${weekTplPending.fit.emptied} days`} of this week ${weekTplPending.fit.emptied === 1 ? 'is' : 'are'} left empty.`
+                    ? `It has ${weekTplPending.fit.taken} days, so the last ${weekTplPending.fit.emptied === 1 ? 'day' : `${weekTplPending.fit.emptied} days`} of ${draft.vary ? 'this week' : 'every week'} ${weekTplPending.fit.emptied === 1 ? 'is' : 'are'} left empty.`
                     : null,
                 ]
                   .filter(Boolean)
@@ -1150,13 +1162,20 @@ function ProgramBuilderScreen() {
           </Text>
           <View style={styles.resizeActions}>
             <View style={styles.resizeBtn}>
-              <Button variant="secondary" fullWidth onPress={() => setWeekTplPending(null)} accessibilityLabel="Keep this week as it is">
-                Keep it
+              {/* Named for what each does ("KEEP IT" / a red "USE IT" said neither — QA programs-15). Red only when
+                  something built is about to be replaced; a fit note alone is not a loss. */}
+              <Button variant="secondary" fullWidth onPress={() => setWeekTplPending(null)} accessibilityLabel={pendingReplaces ? 'Keep what you built' : 'Cancel'}>
+                {pendingReplaces ? 'Keep mine' : 'Cancel'}
               </Button>
             </View>
             <View style={styles.resizeBtn}>
-              <Button variant="destructive" fullWidth onPress={applyPendingWeek} accessibilityLabel="Use the saved week">
-                Use it
+              <Button
+                variant={pendingReplaces ? 'destructive' : 'primary'}
+                fullWidth
+                onPress={applyPendingWeek}
+                accessibilityLabel={weekTplPending ? `Use ${weekTplPending.name}${draft.vary ? ` for week ${weekTplPending.index + 1}` : ' for every week'}` : 'Use the saved week'}
+              >
+                {pendingReplaces ? 'Replace' : 'Use this week'}
               </Button>
             </View>
           </View>
@@ -1589,12 +1608,17 @@ function TemplateDayRow({
 function WeekTemplateSheet({
   open,
   weekNumber,
+  repeating,
+  weeks,
   daysPerWeek,
   onClose,
   onChoose,
 }: {
   open: boolean;
   weekNumber: number;
+  /** Repeat mode: the one week IS every week, so the sheet must not say "week 1" (QA programs-15). */
+  repeating: boolean;
+  weeks: number;
   daysPerWeek: number;
   onClose: () => void;
   onChoose: (name: string, days: ProgramDay[]) => void;
@@ -1603,11 +1627,13 @@ function WeekTemplateSheet({
   const rows = data ?? [];
 
   return (
-    <BottomSheet open={open} onClose={onClose} title={`Use a saved week for week ${weekNumber}`} scroll>
+    <BottomSheet open={open} onClose={onClose} title={repeating ? 'Use a saved week' : `Use a saved week for week ${weekNumber}`} scroll>
       <View style={styles.tplCol}>
         <Text style={styles.tplIntro}>
-          Its days become this week. You can change anything afterwards — nothing is linked, so editing the program
-          never touches the saved week.
+          {repeating && weeks > 1
+            ? `Its days become the week your program repeats — all ${weeks} weeks of it.`
+            : 'Its days become this week.'}{' '}
+          You can change anything afterwards — nothing is linked, so editing the program never touches the saved week.
         </Text>
 
         {loading ? <Text style={styles.tplEmpty}>Loading your weeks…</Text> : null}
@@ -1634,7 +1660,7 @@ function WeekTemplateSheet({
               key={w.id}
               onPress={() => onChoose(w.name, days)}
               accessibilityRole="button"
-              accessibilityLabel={`Use ${w.name} for week ${weekNumber} — ${weekSummary(w)}, ${note}`}
+              accessibilityLabel={`Use ${w.name} for ${repeating ? 'every week' : `week ${weekNumber}`} — ${weekSummary(w)}, ${note}`}
               style={({ pressed }) => [styles.tplRow, pressed ? styles.pressed : null]}
             >
               <View style={styles.tplRowText}>
@@ -1707,7 +1733,17 @@ function SetupView({
     : `${countOf(draft.daysPerWeek, 'day')} · ${countOf(totalEx, 'exercise')}`;
   const nameOk = hasName(draft);
   const mainOk = hasMainExercise(draft);
-  const valid = nameOk && mainOk;
+  /* An empty week cannot be saved — it would owe the athlete sessions with nothing in them (QA programs-05). */
+  const empty = emptyWeeks(draft);
+  const weeksOk = empty.length === 0;
+  const valid = nameOk && mainOk && weeksOk;
+  /* A day left empty is a REST day once saved, and the program's detail counts only the days that train — so
+     say that number here, not the day chips' (QA programs-06: 5 here, 3 on the detail). */
+  const trained = trainedDaysPerWeek(draft);
+  const restNote =
+    valid && trained < draft.daysPerWeek
+      ? `${countOf(draft.daysPerWeek - trained, 'day')} ${draft.daysPerWeek - trained === 1 ? 'has' : 'have'} no exercises${draft.vary ? ' in week 1' : ''} — ${draft.daysPerWeek - trained === 1 ? 'it’s a rest day' : 'they’re rest days'}, so this trains ${countOf(trained, 'day')} a week.`
+      : null;
 
   const dayChips = Array.from({ length: DAYS_MAX - DAYS_MIN + 1 }, (_, i) => DAYS_MIN + i);
   const rise = useEntryRise(400);
@@ -1971,7 +2007,15 @@ function SetupView({
             <View style={styles.checks}>
               <CheckRow ok={nameOk} label={isWeek ? 'Week name' : 'Program name'} />
               <CheckRow ok={mainOk} label="At least one main exercise" />
+              {draft.vary && !weeksOk ? (
+                <CheckRow
+                  ok={false}
+                  label={`Every week has a workout — ${empty.length === 1 ? `week ${empty[0]} is` : `weeks ${empty.join(', ')} are`} empty`}
+                />
+              ) : null}
             </View>
+          ) : restNote ? (
+            <Text style={styles.restNote}>{restNote}</Text>
           ) : null}
           <Button variant="primary" fullWidth disabled={!valid || saving} onPress={onSave} accessibilityLabel={saveLabel}>
             {saving ? 'Saving…' : saveLabel}
@@ -2231,7 +2275,8 @@ function DayBuilder({
   const { width } = useWindowDimensions();
   const compact = nextLabel != null && `Save & go to ${nextLabel}`.length * 9 > width - 112;
   const total = dayTotal(day);
-  const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
+  /* The ONE estimate — it counts sets (33 × 70 used to read "~25 min") and matches Home and the template page (QA B6). */
+  const est = day.main.length + day.warmup.length > 0 ? estimatedSessionMinutes(day.warmup, day.main) : 0;
   const rise = useEntryRise(360);
   // This view replaces Setup's scroller while it's open; the registry releases by identity, so the swap
   // in either direction is safe regardless of which unmounts first.
@@ -2953,6 +2998,7 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   checkLabel: { fontSize: 12, color: flColor.gray600 },
   checkLabelOk: { color: flColor.gray400 },
+  restNote: { marginBottom: 12, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
 
   // ── day builder
   dayScroll: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 26 },

@@ -577,7 +577,9 @@ export function clearWeek(d: ProgramDraft, index: number): ProgramDraft {
 export function nextIncompleteWeek(d: ProgramDraft, from: number): number | null {
   const plans = d.weekPlans ?? [];
   for (let i = from + 1; i < d.weeks; i++) if (!weekComplete(plans[i])) return i;
-  for (let i = 0; i < d.weeks; i++) if (!weekComplete(plans[i])) return i;
+  /* ⚠ NEVER `from` ITSELF. Save & continue on an empty LAST week wrapped round to that same week and reopened
+     it — forever (QA programs-05, 2026-09-26). Null closes back to the week list, which says the week is empty. */
+  for (let i = 0; i < from; i++) if (!weekComplete(plans[i])) return i;
   return null;
 }
 
@@ -642,7 +644,32 @@ export function draftHasContent(d: ProgramDraft): boolean {
 
 /** Save gate: a name and at least one main exercise somewhere (design `_isValid`). */
 export function isDraftValid(d: ProgramDraft): boolean {
-  return hasName(d) && hasMainExercise(d);
+  return hasName(d) && hasMainExercise(d) && emptyWeeks(d).length === 0;
+}
+
+/**
+ * The weeks (1-based) of a Customize-each-week program with no main exercise in them — none in repeat mode.
+ *
+ * ⚠ AN EMPTY WEEK CANNOT BE SAVED (QA programs-05, 2026-09-26). It saved, and the program then owed the
+ * athlete `daysPerWeek` sessions with nothing in them — "3 workouts" on a week that had none (`weekSizes`
+ * falls back to the configured count for an unbuilt week). A LIVE edit is exempt: that program is already
+ * running with the week as it is, and `liveEditViolation` is what guards its length.
+ */
+export function emptyWeeks(d: ProgramDraft): number[] {
+  if (!d.vary || !d.weekPlans || d.live) return [];
+  const out: number[] = [];
+  for (let i = 0; i < d.weeks; i++) if (!weekComplete(d.weekPlans[i])) out.push(i + 1);
+  return out;
+}
+
+/**
+ * How many days a week this draft TRAINS once saved — the days with something in them, as the program's
+ * detail reads it (`trainingDays`). A day left empty is a rest day, not a session (QA programs-06: the
+ * builder said 5 days, the detail 3). Customize mode reads week 1, as the detail's headline does.
+ */
+export function trainedDaysPerWeek(d: ProgramDraft): number {
+  const days = d.vary && d.weekPlans?.[0] ? d.weekPlans[0].days : d.days;
+  return days.filter(dayHasContent).length;
 }
 export const hasName = (d: ProgramDraft) => d.name.trim().length > 0;
 export const hasMainExercise = (d: ProgramDraft) =>
