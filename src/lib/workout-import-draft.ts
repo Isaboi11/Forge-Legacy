@@ -37,7 +37,10 @@ export function workoutDraftFromImport(
           id: newExerciseId(),
           ...(x.kind === 'cardio'
             ? {}
-            : 'durationSec' in x && x.durationSec != null
+            : /* A card's ramp keeps all its sets — see `fitRow` in `program-import-draft.ts`. */
+              x.repScheme?.length
+              ? { sets: x.repScheme.length }
+              : 'durationSec' in x && x.durationSec != null
               ? { sets: clampSets(x.sets) }
               : { sets: clampSets(x.sets), reps: clampReps(x.reps) }),
         }) as unknown as ProgramExercise,

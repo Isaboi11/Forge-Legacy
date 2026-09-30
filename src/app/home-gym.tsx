@@ -11,7 +11,7 @@ import { Toast } from '@/components/forge/composites/Toast';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
+import { clearHomeGym, fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import { byGroup, ownedSummary, type HomeGymGroup } from '@/domain/home-gym/equipment';
 import { useQuery } from '@/lib/useQuery';
 
@@ -45,6 +45,12 @@ const GROUP_GLYPH: Record<HomeGymGroup, EngravedName> = {
 };
 
 const ITEM_GLYPH: Record<string, EngravedName> = {
+  /* The rack group no longer draws one barbell seven times (QA 09-26 library-30): a plate face, and a frame
+     for the two things you stand inside. The bars (barbell, EZ, trap) and the bench keep the group's mark. */
+  plates: 'target',
+  rack: 'machine',
+  smith: 'machine',
+  medball: 'med-ball',
   bands: 'band',
   minibands: 'band',
   cable: 'cable',
@@ -64,7 +70,7 @@ export default function HomeGymScreen() {
   // — a derivation rather than an effect that copies fetched data into state after it lands.
   const [draft, setDraft] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const owned = draft ?? saved ?? [];
   const groups = useMemo(() => byGroup(), []);
@@ -82,10 +88,22 @@ export default function HomeGymScreen() {
     setSaving(true);
     saveHomeGym(owned).then(
       () => {
-        setToast(true);
+        setToast('Home gym saved');
         setTimeout(exit, 900);
       },
       () => setSaving(false), // stay put on failure — a silent exit would look like it saved
+    );
+  };
+
+  /** Back to "not set up" (`null`), which is not the same answer as an empty gym. See `clearHomeGym`. */
+  const onRemove = () => {
+    setSaving(true);
+    clearHomeGym().then(
+      () => {
+        setToast('Home gym removed');
+        setTimeout(exit, 900);
+      },
+      () => setSaving(false),
     );
   };
 
@@ -174,6 +192,19 @@ export default function HomeGymScreen() {
           <EngravedIcon name="bodyweight" size={19} color={flColor.gray600} />
           <Text style={styles.noteText}>Bodyweight training is always available — no equipment needed.</Text>
         </View>
+
+        {/* Only once a home gym exists: there is nothing to remove before that. */}
+        {saved != null ? (
+          <Pressable
+            onPress={onRemove}
+            disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel="I don't train at home. Remove my home gym"
+            style={styles.removeBtn}
+          >
+            <Text style={styles.removeText}>I don&rsquo;t train at home — remove my home gym</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       {/* commit bar */}
@@ -187,7 +218,7 @@ export default function HomeGymScreen() {
         </Button>
       </View>
 
-      <Toast open={toast} message="Home gym saved" durationMs={2000} onDismiss={() => setToast(false)} />
+      <Toast open={toast != null} message={toast ?? ''} durationMs={2000} onDismiss={() => setToast(null)} />
     </View>
   );
 }
@@ -199,6 +230,8 @@ const styles = StyleSheet.create({
   clearBtn: { paddingVertical: 6, paddingHorizontal: 10 },
   clearText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: flColor.bronzeInk },
   clearTextOff: { color: flColor.gray600 },
+  removeBtn: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 8, marginTop: 6 },
+  removeText: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400, textDecorationLine: 'underline' },
 
   body: { paddingHorizontal: 18 },
 

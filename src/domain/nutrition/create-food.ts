@@ -17,6 +17,7 @@
  */
 
 import type { Serving } from './serving.ts';
+import { pluralWord } from '../text/plural.ts';
 
 /* ── units ────────────────────────────────────────────────────────────────── */
 
@@ -114,7 +115,8 @@ export function labelServing(amount: string, unit: FoodUnit, grams: number): Ser
   /* A fraction keeps its printed form — "2/3 cup", not "0.67 cups". One or less is singular. */
   const fraction = amount.includes('/');
   const shown = fraction ? amount.trim().replace(/\s*\/\s*/, '/') : String(pretty);
-  const word = count <= 1 || /s$/i.test(unit.short) ? unit.short : `${unit.short}s`;
+  /* "2 tbsp", not "2 tbsps" — an abbreviation reads the same at any amount (QA 09-26 N-22). */
+  const word = unit.key === 'tbsp' ? unit.short : pluralWord(count, unit.short);
   return { label: `${shown} ${word}`, grams };
 }
 

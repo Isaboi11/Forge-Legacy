@@ -168,7 +168,7 @@ test('summarize reads like the design\'s "Here\'s what we read"', () => {
     ['2', 'A', 'Squat'], ['2', 'B', 'Bench'],
   ])));
   assert.equal(summarize(r.weeks), '2 weeks · 2 days each · 4 exercises');
-  assert.equal(summarize([r.weeks[0]]), '1 week · 2 days each · 2 exercises');
+  assert.equal(summarize([r.weeks[0]]), '1 week · 2 days · 2 exercises');
 });
 
 test('summarize does not claim a uniform shape it does not have', () => {

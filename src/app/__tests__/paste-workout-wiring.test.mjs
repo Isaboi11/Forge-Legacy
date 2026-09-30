@@ -30,6 +30,6 @@ test('a template is saved ONLY when the box is ticked, and only past the templat
 });
 
 test('one conversion, shared: the builder and the paste import both use workout-template-rows', () => {
-  assert.match(BUILDER, /import \{ toTemplateExercises \} from '@\/lib\/workout-template-rows';/);
+  assert.match(BUILDER, /import \{ prescriptionOfRow, toTemplateExercises \} from '@\/lib\/workout-template-rows';/);
   assert.doesNotMatch(BUILDER, /function toTemplateExercises\(/);
 });

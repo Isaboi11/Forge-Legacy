@@ -7,6 +7,9 @@
  * 179-honor catalog by display name — every app honor has a medal. Eight were matched by hand: the six
  * `bw_*` relative-strength honors (the DB spells the multiplier differently), `origin_not_alone` (the
  * design's `org-first-connection`), and `initiative` (granted outside the catalog: `org-initiative`).
+ * Two rows were added after generation (QA 09-26 home-14): `hidden_early_forge` → `hid-early` and
+ * `hidden_midnight_forge` → `hid-midnight` — the generator's slug scan skipped metrics with digits in them
+ * (`sessions_before_6am`), so both drew the bare category glyph. Their marks were already in `MARKS`/`FIT`.
  */
 
 /**
@@ -239,8 +242,10 @@ export const MEDALS: Record<string, MedalRecord> = {
   goals_achieved_25: ["goal-25", "goals", "goal-struck", "25", 2],
   goals_achieved_5: ["goal-5", "goals", "goal-struck", "5", 1],
   goals_achieved_50: ["goal-50", "goals", "goal-struck", "50", 3],
+  hidden_early_forge: ["hid-early", "hidden", "hid-early", "", 3],
   hidden_full_circle: ["hid-fullcircle", "hidden", "hid-fullcircle", "", 3],
   hidden_leap_day_forge: ["hid-leapday", "hidden", "hid-leapday", "", 3],
+  hidden_midnight_forge: ["hid-midnight", "hidden", "hid-midnight", "", 3],
   hidden_new_years_forge: ["hid-newyear", "hidden", "hid-newyear", "", 3],
   hidden_triple_threat: ["hid-triple", "hidden", "hid-triple", "", 4],
   hours_forged_100: ["trn-hr-100", "training", "trn-hours", "100", 1],

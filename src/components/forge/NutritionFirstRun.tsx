@@ -6,6 +6,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { Button } from '@/components/forge/composites/Button';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Nutrition First Run — built to `Nutrition First Run.dc.html` (Claude Design `b029488a`).
@@ -57,7 +58,9 @@ export function NutritionFirstRun({ onLog, onTargets }: { onLog: () => void; onT
         <Text style={[styles.sectionLabel, s.sectionLabel]}>What’s here</Text>
         <Row compact={compact} icon={<Plus />}>Log meals by search, barcode, or your own entry.</Row>
         <Row compact={compact} icon={<Clock />}>Calories, protein, carbs and fat add up as you go.</Row>
-        <Row compact={compact} icon={<Calendar />}>See how your eating lines up with training days.</Row>
+        {/* Was "See how your eating lines up with training days" — nothing on the tab shows that (QA 09-26
+            N-39). Details, a tap from Home, reads back the last seven days against the target. */}
+        <Row compact={compact} icon={<Calendar />}>Look back over your week, day by day, against your target.</Row>
 
         {compact ? (
           <>
@@ -80,17 +83,22 @@ function Row({ compact, icon, children }: { compact: boolean; icon: ReactNode; c
   );
 }
 
-/* The `.dc`'s quiet ring: a dimmed promise of the Home ring, never a real zero. */
+/*
+ * The `.dc`'s quiet ring: a dimmed promise of the Home ring, never a real zero. Quiet, not invisible — drawn in
+ * charcoal on a charcoal ground it all but vanished (QA 09-26 N-40). The rings take the `divider` role, which
+ * is measured to show on both grounds, and the flame is the Home ring's own mark (bronze on Forge; taupe-grey
+ * on Alabaster, where bronze is earned).
+ */
 function RingMark({ size, dotted }: { size: number; dotted: boolean }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 176 176">
-      <Circle cx={88} cy={88} r={74} fill="none" stroke={flColor.charcoal600} strokeWidth={10} />
-      {dotted ? <Circle cx={88} cy={88} r={74} fill="none" stroke={flColor.charcoal500} strokeWidth={1} strokeDasharray="2 9" /> : null}
-      <Circle cx={88} cy={88} r={52} fill="none" stroke={flColor.charcoal600} strokeWidth={4} />
+      <Circle cx={88} cy={88} r={74} fill="none" stroke={flColor.divider} strokeWidth={10} />
+      {dotted ? <Circle cx={88} cy={88} r={74} fill="none" stroke={flColor.gray600} strokeOpacity={0.5} strokeWidth={1} strokeDasharray="2 9" /> : null}
+      <Circle cx={88} cy={88} r={52} fill="none" stroke={flColor.divider} strokeWidth={4} />
       <Path
         d="M88 62c4 5.5 7.5 8.5 7.5 15a7.5 7.5 0 0 1-15 0c0-3 .9-5 2.2-6.3.4 2 1.9 3.2 3 3.2-.4-4.4 1.1-9.4 2.3-11.9z"
         fill="none"
-        stroke={flColor.charcoal500}
+        stroke={forgeOr(flColor.bronze400, flColor.gray600)}
         strokeWidth={1.6}
         strokeLinejoin="round"
         transform="translate(0 8)"

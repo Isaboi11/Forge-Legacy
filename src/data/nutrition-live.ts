@@ -2,6 +2,7 @@ import type { LogEntry, MealSlot, Targets } from '@/domain/nutrition/day';
 import { isAhead, localToday } from '@/domain/nutrition/day';
 import type { DayTotals } from '@/domain/nutrition/week';
 import type { CatalogFood, PortionMacros, Serving } from '@/domain/nutrition/serving';
+import { rankBySource } from '@/domain/nutrition/serving';
 import { offProductToFood } from '@/domain/nutrition/off-product';
 import { opsFor, overlayDay, type OutboxOp } from '@/domain/nutrition/outbox';
 import { locatePlanItem, mayCheck, splitPlanned } from '@/domain/nutrition/plan-ahead';
@@ -718,9 +719,52 @@ export async function fetchRecentFoods(limit = 30): Promise<RecentFood[]> {
  */
 export async function searchFoods(q: string): Promise<FoodSearch> {
   if (q.trim().length < 2) return { foods: [], failed: false };
+  const hit = peekFoodSearch(q);
+  if (hit) return { foods: hit, failed: false };
   const { data, error } = await supabase.functions.invoke('food-search', { body: { q: q.trim() } });
   if (error) return { foods: [], failed: true };
-  return { foods: normaliseFoods(data), failed: false };
+  /* Community-typed rows go below USDA and FatSecret for every caller (QA 09-26 N-21). */
+  const foods = rankBySource(normaliseFoods(data));
+  rememberSearch(q, foods);
+  return { foods, failed: false };
+}
+
+/*
+ * ══ RECENT SEARCHES ARE KEPT IN MEMORY (QA 09-26 N-25) ══
+ *
+ * `food-search` takes 1.7–4.9 s (it asks USDA, FatSecret and Open Food Facts), and the same few words are
+ * typed again all day — "eggs" at breakfast, back-spacing over "chicken b". An answer already fetched is
+ * shown at once instead of asking again. Successes only (a failure must be retried), ten minutes, forty
+ * queries, in memory — never on disk, so nothing outlives the app and a stale catalogue heals by itself.
+ * The rest of N-25 (answering with USDA first and merging the slower sources as they arrive) is the
+ * function's job, not the app's.
+ */
+const SEARCH_TTL_MS = 10 * 60_000;
+const SEARCH_CACHE_MAX = 40;
+const searchCache = new Map<string, { at: number; foods: CatalogFood[] }>();
+const searchKey = (q: string) => q.trim().toLowerCase().replace(/\s+/g, ' ');
+
+/** The answer to a query already asked in the last ten minutes, or null. Synchronous, so a screen can show it at once. */
+export function peekFoodSearch(q: string): CatalogFood[] | null {
+  const key = searchKey(q);
+  const hit = searchCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > SEARCH_TTL_MS) {
+    searchCache.delete(key);
+    return null;
+  }
+  return hit.foods;
+}
+
+function rememberSearch(q: string, foods: CatalogFood[]): void {
+  const key = searchKey(q);
+  searchCache.delete(key);
+  searchCache.set(key, { at: Date.now(), foods });
+  while (searchCache.size > SEARCH_CACHE_MAX) {
+    const oldest = searchCache.keys().next().value;
+    if (oldest === undefined) break;
+    searchCache.delete(oldest);
+  }
 }
 
 /**

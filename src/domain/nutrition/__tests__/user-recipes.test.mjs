@@ -110,6 +110,13 @@ test('pick amounts: grams or portions, and switching keeps the amount', () => {
   assert.equal(qtyLabel('g', 275, p), '275 g');
 });
 
+test('a typed amount is kept as typed: 30 g, or 1.3 cups (QA 09-26 N-33)', () => {
+  const p = { label: 'cup', g: 97 };
+  assert.equal(pickGrams('g', 30, p), 30);
+  assert.equal(qtyLabel('g', 30, p), '30 g');
+  assert.equal(qtyLabel('portion', 1.3, p), '1.3 cup');
+});
+
 test('per-serving numbers divide the whole recipe by what it makes', () => {
   const { recipe } = toBook(TRAY);
   assert.equal(recipe.kcal, Math.round(totalsOf(TRAY.ingredients).kcal / 4));

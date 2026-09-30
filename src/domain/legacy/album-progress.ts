@@ -145,6 +145,28 @@ export function chapterWeeks(startDate: string, endDate: string | null, today: s
 }
 
 /**
+ * How long a chapter has run, in the unit a person would say it (QA 09-26 legacy-24).
+ *
+ * `chapterWeeks` never returns less than one — right for the server's count, wrong to print: a chapter
+ * opened yesterday read "1 week". Under seven days it is days, counting the first day as day one; from a
+ * week on it is the weeks the album already carries.
+ */
+export function chapterSpan(
+  startDate: string,
+  endDate: string | null,
+  today: string,
+  weeks: number,
+): { value: number; unit: 'day' | 'week' } {
+  const utc = (iso: string) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  };
+  const days = (utc(endDate ?? today) - utc(startDate)) / 86400000;
+  if (Number.isFinite(days) && days < 7) return { value: Math.max(1, Math.floor(days) + 1), unit: 'day' };
+  return { value: Math.max(1, weeks), unit: 'week' };
+}
+
+/**
  * One chapter's progress sets as album items, newest day first.
  *
  * `serverEvents` is what the album's own photos already say about each day. A day that has one takes it
