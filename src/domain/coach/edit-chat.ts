@@ -4,8 +4,10 @@ import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/progr
 import type { SessionMark } from '../program/progress-core.ts';
 import { plannedDays, trainingDays } from '../program/progress-core.ts';
 
-import { candidatesFor, type CandidateContext, type CatalogExercise } from './candidates.ts';
+import { canStretch, candidatesFor, type CandidateContext, type CatalogExercise } from './candidates.ts';
+import { equipmentForEnvironment, type Environment, type Experience } from './constraints.ts';
 import { canEdit } from './edit-ops.ts';
+import { roomOf } from './recommend.ts';
 
 /**
  * Changing a plan you are already running, as a conversation.
@@ -192,13 +194,85 @@ export function replacementsFor(
   pool: readonly CatalogExercise[],
   ctx: CandidateContext,
   limit = 5,
+  /**
+   * What this same slot holds in the program's OTHER weeks (`slotKeysElsewhere`). QA holt-24: after a
+   * "just this week" swap the original was never offered back, so undoing a swap by hand was impossible.
+   * It leads the list — it is the athlete's own program, so it is already known to fit them.
+   */
+  offerBack: readonly string[] = [],
 ): EditValue[] {
   const current = pool.find((e) => e.key === row.catalogKey);
   if (!current) return [];
-  return candidatesFor(current.pattern, pool, { ...ctx, used: new Set([current.key]) })
-    .filter((e) => e.key !== current.key)
-    .slice(0, limit)
-    .map((e) => ({ label: e.name, replacement: e }));
+  const out: CatalogExercise[] = [];
+  const seen = new Set<string>([current.key]);
+  const add = (e: CatalogExercise) => {
+    if (seen.has(e.key)) return;
+    seen.add(e.key);
+    out.push(e);
+  };
+  for (const key of offerBack) {
+    const back = pool.find((e) => e.key === key);
+    if (back) add(back);
+  }
+  const at = { ...ctx, used: new Set([current.key]) };
+  /* ⚠ THE ATHLETE'S OWN RUNG FIRST, THEN ONE UP — the same two passes `fillSlot` makes (STRETCH_CEILING).
+     `difficulty` is technique demand, so a strict beginner list can be two rows long; the stretch fills the
+     rest without ever reaching `Advanced` (a pistol squat) for a beginner. */
+  for (const e of candidatesFor(current.pattern, pool, at)) add(e);
+  if (canStretch(ctx.experience)) for (const e of candidatesFor(current.pattern, pool, at, true)) add(e);
+  return out.slice(0, limit).map((e) => ({ label: e.name, replacement: e }));
+}
+
+/**
+ * The movements this slot (same session, same row) holds in the program's other weeks, nearest week
+ * first, when they differ from what is there now — what a "just this week" swap left behind.
+ */
+export function slotKeysElsewhere(
+  structure: ProgramStructure,
+  at: { weekIndex: number; dayIndex: number; exerciseIndex: number },
+): string[] {
+  const keyIn = (w: number) => trainingDays(plannedDays(structure, w))[at.dayIndex]?.main[at.exerciseIndex]?.catalogKey ?? null;
+  const here = keyIn(at.weekIndex);
+  const weeks = Array.from({ length: Math.max(1, structure.weeks) }, (_, w) => w)
+    .filter((w) => w !== at.weekIndex)
+    .sort((a, b) => Math.abs(a - at.weekIndex) - Math.abs(b - at.weekIndex) || a - b);
+  const out: string[] = [];
+  for (const w of weeks) {
+    const key = keyIn(w);
+    if (key && key !== here && !out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+const LEVELS: readonly Experience[] = ['beginner', 'intermediate', 'advanced'];
+
+/**
+ * The level and the kit a swap inside a RUNNING program is judged against (QA holt-24).
+ *
+ * ⚠ THE ROOM COMES FROM THE PROGRAM, NOT FROM WHATEVER THE SHEET HAPPENED TO HOLD. The edit flow never
+ * asks where they train, so it used `ownedEquipment ?? []` — nothing at all for anybody without a Home Gym
+ * profile — and a commercial-gym beginner block was offered only bodyweight squats: Pistol, Shrimp, Sissy,
+ * Jump Squat. A Forge program names its room; otherwise the room Holt remembers; otherwise their Home Gym;
+ * otherwise a full gym, because the program they are running is the evidence of what they train with.
+ *
+ * ⚠ AND THE RUNG IS NEVER ABOVE THE PROGRAM'S. A beginner block stays a beginner block whatever level the
+ * athlete once told Holt — a swap is a like-for-like change, not a promotion.
+ */
+export function swapTerms(opts: {
+  athleteLevel: Experience | null | undefined;
+  /** A Forge program's authored `difficulty`, or null for one Holt or the athlete wrote. */
+  programLevel?: string | null;
+  /** A Forge program's authored `environment` ("Commercial Gym", "Home — …"), or null. */
+  programEnvironment?: string | null;
+  rememberedRoom?: Environment | null;
+  /** The Home Gym profile. `null` = never set up; `[]` = owns nothing. */
+  owned: readonly string[] | null | undefined;
+}): { experience: Experience; owned: readonly string[] } {
+  const athlete: Experience = opts.athleteLevel ?? 'intermediate';
+  const rung = LEVELS.find((l) => l === (opts.programLevel ?? '').trim().toLowerCase()) ?? null;
+  const experience = rung && LEVELS.indexOf(rung) < LEVELS.indexOf(athlete) ? rung : athlete;
+  const room: Environment = roomOf(opts.programEnvironment) ?? opts.rememberedRoom ?? (opts.owned != null ? 'home' : 'full_gym');
+  return { experience, owned: equipmentForEnvironment(room, opts.owned ?? []) };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

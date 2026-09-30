@@ -48,7 +48,7 @@ import { matchExercise, tokenize } from '../program/exercise-match.ts';
 import { resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 
 import { candidatesFor, fillSlot, isCompound, type CandidateContext, type CatalogExercise } from './candidates.ts';
-import { describe, editableSessions, replacementsFor, valuesFor } from './edit-chat.ts';
+import { describe, editableSessions, replacementsFor, slotKeysElsewhere, valuesFor } from './edit-chat.ts';
 import {
   addExercise,
   canEdit,
@@ -568,8 +568,9 @@ function resolveReplacement(
   row: ProgramExercise,
   pool: readonly CatalogExercise[],
   ctx: CandidateContext,
+  offerBack: readonly string[] = [],
 ): { ok: true; replacement: CatalogExercise } | Ask {
-  const same = replacementsFor(row, pool, ctx, 60)
+  const same = replacementsFor(row, pool, ctx, 60, offerBack)
     .map((v) => v.replacement)
     .filter((e): e is CatalogExercise => !!e);
   const offer = same.slice(0, 5).map((e) => e.name);
@@ -755,7 +756,7 @@ export function resolveEditIntent(
 
   switch (intent.op) {
     case 'swap': {
-      const r = resolveReplacement(intent.to, row, pool, ctx);
+      const r = resolveReplacement(intent.to, row, pool, ctx, slotKeysElsewhere(structure, at));
       if (!r.ok) return r;
       return plan(`${row.name} → ${r.replacement.name}`, (scope) => swapExercise(structure, marks, at, r.replacement, scope));
     }

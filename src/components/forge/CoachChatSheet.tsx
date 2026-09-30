@@ -81,7 +81,7 @@ import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live'
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { assemble } from '@/domain/coach/assemble';
 import { recommendFromShelf, SHELF_CANNOT_ADAPT, type ShelfProgram } from '@/domain/coach/recommend';
-import { getProgramDefinitions } from '@/domain/training/programs';
+import { getProgramDefinition, getProgramDefinitions } from '@/domain/training/programs';
 import {
   dayPreamble,
   writtenDayCardFor,
@@ -200,6 +200,8 @@ import {
   editableSessions,
   replacementsFor,
   rowsFor,
+  slotKeysElsewhere,
+  swapTerms,
   valuesFor,
   SCOPE_CHOICES,
   type EditChangeId,
@@ -827,6 +829,8 @@ export function CoachChatSheet({
               environment: merged.environment ?? 'full_gym',
             },
             shelf,
+            /* QA holt-21: the card says the program they are on ends if they start this one. */
+            { current: active?.name ?? null },
           );
           setBusy(null);
 
@@ -1426,7 +1430,7 @@ export function CoachChatSheet({
       if (!day || !change) return;
       const options =
         change === 'swap'
-          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx())
+          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx(edit.program), 5, edit.at ? slotKeysElsewhere(edit.program.structure, { ...edit.at, exerciseIndex: pickStep.index }) : [])
           : valuesFor(day, change, pickStep.index);
       setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
       say(
@@ -1463,16 +1467,26 @@ export function CoachChatSheet({
     if (pickStep.step === 'scope') void applyEdit(pickStep.scope);
   };
 
-  /** The athlete's own constraints, as the candidate ranker needs them. */
-  const editCtx = () =>
-    contextFrom({
-      owned: constraints.ownedEquipment ?? [],
+  /** The athlete's own constraints, as the candidate ranker needs them — judged against the program being
+      edited: its room and never above its rung (QA holt-24, `swapTerms`). */
+  const editCtx = (program: SavedProgram) => {
+    const def = program.sourceDefinitionId ? getProgramDefinition(program.sourceDefinitionId) : null;
+    const terms = swapTerms({
+      athleteLevel: constraints.experience?.lifting,
+      programLevel: def?.difficulty ?? null,
+      programEnvironment: def?.environment ?? null,
+      rememberedRoom: room.current,
+      owned: constraints.ownedEquipment,
+    });
+    return contextFrom({
+      owned: terms.owned,
       canDo: canDoExercise,
-      experience: constraints.experience?.lifting ?? 'intermediate',
+      experience: terms.experience,
       limitations: constraints.limitations ?? [],
       limitationPatterns,
       excludeExercises: [],
     });
+  };
 
   const applyEdit = async (scope: EditScope) => {
     if (!edit?.at || !edit.change || edit.rowIndex == null || !edit.value) return;
@@ -1573,7 +1587,7 @@ export function CoachChatSheet({
       said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
     ]);
     setBusy(null);
-    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
+    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
     if (!res.ok) {
       /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
       pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };

@@ -361,7 +361,15 @@ function reasonsFor(req: ShelfRequest, p: ShelfProgram): { because: string[]; ca
  * from families that answer a different question. Reaching the scorer at all would mean a marathon
  * question could be answered by a barbell block if the numbers happened to line up.
  */
-export function recommendFromShelf(req: ShelfRequest, shelf: readonly ShelfProgram[]): ShelfAnswer {
+export function recommendFromShelf(
+  req: ShelfRequest,
+  shelf: readonly ShelfProgram[],
+  /**
+   * The program they are running now, by name — the caller leaves it off the shelf, and the card says that
+   * starting this one ends it (QA holt-21: the recommendation read as if they were on nothing).
+   */
+  opts: { current?: string | null } = {},
+): ShelfAnswer {
   if (isEnduranceGoal(req.goal)) {
     return {
       ok: false,
@@ -406,6 +414,27 @@ export function recommendFromShelf(req: ShelfRequest, shelf: readonly ShelfProgr
      answer from the same shelf. Deterministic beats arbitrary, and it makes the tests mean something. */
   ranked.sort((a, b) => b.score - a.score || a.program.id.localeCompare(b.program.id));
 
+  /*
+   * ⚠ **A WEEK THEY CAN FIT BEATS ONE THEY CANNOT, WHEN IT IS IN CONTENTION (QA holt-21).** More days than
+   * they said is the one mismatch the card itself calls untrimmable, and on score alone it still won:
+   * somebody who said 3 days was handed Strength Foundation II's 4 over Strength Foundation I's 3, because
+   * the rung and the theme outvoted the diary. So when the top program needs more days than they have and a
+   * program that fits their week is within the runner-up band, that one leads. Beyond the band the shelf
+   * genuinely has nothing close for their week, and the better program is still named — with its caveat.
+   * Never at the cost of the goal: a secondary-family block does not displace a primary one (the only
+   * Mobility program runs 5 days, and a 3-day dumbbell block is not a mobility answer).
+   */
+  const CONTENTION = 20;
+  const fitsWeek = (r: Recommendation) => r.program.frequencyPerWeek <= req.daysPerWeek;
+  const isPrimary = (r: Recommendation) => table.primary.includes(r.program.family);
+  if (ranked[0] && !fitsWeek(ranked[0])) {
+    const top = ranked[0];
+    const i = ranked.findIndex(
+      (r) => fitsWeek(r) && r.score >= MATCH_FLOOR && top.score - r.score <= CONTENTION && (isPrimary(r) || !isPrimary(top)),
+    );
+    if (i > 0) ranked.unshift(...ranked.splice(i, 1));
+  }
+
   const best = ranked[0];
   if (!best || best.score < MATCH_FLOOR) {
     return {
@@ -419,6 +448,11 @@ export function recommendFromShelf(req: ShelfRequest, shelf: readonly ShelfProgr
      it is genuinely in contention. A second program 20 points back is not an alternative, it is filler. */
   const second = ranked[1];
   const runnerUp = second && second.score >= MATCH_FLOOR && best.score - second.score <= 20 ? second : null;
+  const current = opts.current?.trim();
+  if (current) {
+    const line = `You're on ${current} right now — starting this one ends it.`;
+    for (const r of [best, runnerUp]) if (r) r.caveats.push(line);
+  }
   return { ok: true, best, runnerUp };
 }
 
