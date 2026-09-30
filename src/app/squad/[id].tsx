@@ -1567,7 +1567,15 @@ function FeedCard({
   const shaped = card || posted || milestone ? null : asTransformationLayout(post.layout);
   /* Both custom bands replace the standard one. Passing `post.media` as well would render the raw photos
      underneath the composition — the same double-render the friends feed avoids for its own comparison. */
-  const media = card || shaped || posted || milestone ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
+  /*
+   * ══ A POSTED WORKOUT CAN CARRY ITS PICTURE (PO 2026-09-30) ══ "Make sure I'm able to post a picture with the
+   * workout and any extra comment I want on it" — the coach's own card, photographed, beside the workout the squad
+   * can take. Then the picture is the post's image like any other photo post, the comment sits under it, and the
+   * workout card (name, tally, Take it) goes in the footer beneath both. With no picture nothing changes: the card
+   * is the band, as it was.
+   */
+  const postedWithMedia = !!posted && post.media.length > 0;
+  const media = card || shaped || (posted && !postedWithMedia) || milestone ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
   const hasMedia = !!card || !!shaped || !!posted || !!milestone || media.length > 0;
   /* §3.7: a progress post gets the photo treatment and a form check the video treatment — which they
      already do, because the media itself says which it is. What changes is that the stand-in sentence
@@ -1609,7 +1617,8 @@ function FeedCard({
          cutoff would end it mid-sentence — and the friends feed, which passes `post.body` straight
          through, would show the same post in full. Other types keep `detailFor`: their bodies are
          stand-ins it exists to suppress. */
-      caption={post.type === 'discussion' || summary ? post.body : detail || null}
+      /* A posted workout's comment is the poster's own words, whole — never the 90-character excerpt. */
+      caption={post.type === 'discussion' || summary || posted ? post.body : detail || null}
       media={media}
       mediaDisplay={displayOf(post.media)}
       customMedia={
@@ -1617,10 +1626,15 @@ function FeedCard({
           <MilestoneBand card={milestone} postId={post.id} />
         ) : card ? (
           <FeedProgressCard card={card} />
-        ) : posted ? (
+        ) : posted && !postedWithMedia ? (
           <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} onOpen={onOpen} />
         ) : shaped ? (
           <TransformationLayout data={shaped} compact />
+        ) : undefined
+      }
+      footer={
+        posted && postedWithMedia ? (
+          <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} onOpen={onOpen} />
         ) : undefined
       }
       attribution={attribution}
