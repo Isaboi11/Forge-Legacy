@@ -12,6 +12,8 @@ import {
   goalModeOf,
   goalRepsOf,
   goalSecOf,
+  holdsAsTimed,
+  HOLD_SECONDS_FROM,
   parseGoalReps,
   parseGoalSec,
   stepReps,
@@ -210,4 +212,43 @@ test('the field reads back what it wrote', () => {
   assert.equal(fmtGoalSec(90), '1:30');
   assert.equal(fmtGoalSec(600), '10:00');
   assert.equal(parseGoalSec(fmtGoalSec(95)), 95, 'a round trip through the field changes nothing');
+});
+
+// ── a hold prescribed in reps starts as a timed set (workout-11) ────────────
+
+test('a plank prescribed "3 × 45" starts as three 45-second holds, and a rep default becomes thirty', () => {
+  const ex = (name, reps, over = {}) => ({
+    name,
+    section: 'main',
+    position: 0,
+    sets: [0, 1, 2].map((i) => ({ setIndex: i, weight: null, targetReps: reps, actualReps: null, done: false })),
+    ...over,
+  });
+  const timed = (e) => e.name === 'Plank';
+  const [plank, squat] = holdsAsTimed([ex('Plank', 45, { position: 0 }), ex('Back Squat', 45, { position: 1 })], timed);
+  assert.deepEqual(plank.sets.map((s) => [s.targetSec, s.targetReps]), [[45, 0], [45, 0], [45, 0]]);
+  assert.equal(goalModeOf(plank), 'time');
+  assert.deepEqual(squat.sets.map((s) => s.targetReps), [45, 45, 45], 'a lift the catalogue counts in reps is untouched');
+  assert.equal(squat.sets[0].targetSec, undefined);
+
+  assert.equal(holdsAsTimed([ex('Plank', 8)], timed)[0].sets[0].targetSec, GOAL_SEC_DEFAULT, '8 was a rep default, not eight seconds');
+  assert.equal(holdsAsTimed([ex('Plank', HOLD_SECONDS_FROM)], timed)[0].sets[0].targetSec, HOLD_SECONDS_FROM);
+  // Nothing is written to the record that was not done: no reps, and the clock only once it is held.
+  const saved = buildSaveExercises({ workoutName: 'x', activityType: 'strength', startedAt: '2026-09-30T10:00:00Z', exercises: [{ ...plank, sets: plank.sets.map((s) => ({ ...s, done: true, durationSec: 40 })) }] });
+  assert.deepEqual(saved[0].sets.map((s) => [s.reps, s.duration_sec]), [[null, 40], [null, 40], [null, 40]]);
+});
+
+test('a session already under way, a clock already set, a to-failure hold and a cardio block are left alone', () => {
+  const set = (over = {}) => ({ setIndex: 0, weight: null, targetReps: 30, actualReps: null, done: false, ...over });
+  const all = () => true;
+  const keep = (sets, over = {}) => {
+    const ex = { name: 'Plank', section: 'main', position: 0, sets, ...over };
+    assert.equal(holdsAsTimed([ex], all)[0], ex);
+  };
+  keep([set({ done: true, actualReps: 30 }), set({ setIndex: 1 })]);
+  keep([set({ targetReps: 0, targetSec: 60 })]);
+  keep([set({ targetReps: 0, toFailure: true })]);
+  keep([set({ durationSec: 40 })]);
+  keep([set({ targetReps: 0 })], { kind: 'cardio', activity: 'row' });
+  keep([]);
 });

@@ -59,6 +59,18 @@ function prescriptionToExercise(equipFor?: (catalogKey: string) => string | unde
      */
     if (ex.per) out.per = ex.per;
     if (ex.durationSec != null) out.durationSec = ex.durationSec;
+    /*
+     * ⚠ `unit: 'seconds'` WITH NO `durationSec` IS STILL A CLOCK (workout-11, QA 09-26). 27 shipped
+     * prescriptions are written that way — "Plank 3 × 45", `unit: 'seconds'` — and this copied the 45
+     * into `reps` and dropped the unit, so the athlete was asked for forty-five repetitions of a plank.
+     * The count moves to `durationSec` and the reps go to zero, the same shape an explicit hold has.
+     * (`yards` is left alone: the athlete-program model has no distance for a strength row.)
+     */
+    else if ((ex.unit === 'seconds' || ex.unit === 'minutes') && ex.reps > 0) {
+      out.durationSec = ex.unit === 'minutes' ? ex.reps * 60 : ex.reps;
+      out.reps = 0;
+      delete out.repsMax; // the top of a "20–30 sec" range was seconds, never reps
+    }
     if (ex.optional) out.optional = true;
     /*
      * The author's coaching cue. The same crossing every field above had to be taught, and the same
