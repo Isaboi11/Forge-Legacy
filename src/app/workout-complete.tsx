@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -34,9 +34,10 @@ import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live'
 import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { AutoPostRow } from '@/components/forge/AutoPostSheet';
-import { autoPostOnArrival, fetchWorkoutPostId, runAutoPost, type AutoPostResult } from '@/data/auto-post-live';
+import { fetchWorkoutPostId, runAutoPost, type AutoPostResult } from '@/data/auto-post-live';
+import { clearAutoPostPending, markAutoPostPending } from '@/lib/auto-post-pending';
 import { fetchMySquads } from '@/data/squad-live';
-import { postedFor, postedLine, withinAutoPostWindow } from '@/domain/share/auto-post';
+import { autoPostLabel, autoPostStanding, postedFor, postedLine, withinAutoPostWindow, type AutoPostPref } from '@/domain/share/auto-post';
 import { shareState } from '@/domain/share/fanout';
 import { useAutoPost } from '@/hooks/useAutoPost';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -241,31 +242,65 @@ export default function WorkoutComplete() {
    *
    * This screen is only ever reached with a workout `save_workout` already committed, so the post below
    * can fail in any way it likes and the session is still sealed — it is a second thing, reported on the
-   * capture stage with a Retry, never a gate. It fires on ARRIVAL rather than on the hold, because the
-   * record exists either way and an athlete who leaves before holding still asked for it to be posted.
+   * capture stage with a Retry, never a gate.
+   *
+   * ══ IT FIRES WHEN THEY LEAVE, NOT WHEN THEY ARRIVE (PO 2026-09-30) ══
+   *
+   * *"It auto posted before I could attach the playlist and my comment."* It fired on arrival, so the
+   * post was the session as it stood before this screen had offered anything. Now the capture stage's
+   * button reads "Post and see your Legacy" and the post is built THEN — from the workout row, so it
+   * carries the note, the playlist and the name saved here. Three ways out, all covered:
+   *
+   *   · the button                → `postAndLeave`
+   *   · any other navigation away → the unmount effect below (an athlete who never holds the seal
+   *                                 still asked for it to be posted)
+   *   · closing the app           → the marker, posted on the next launch (`AutoPostCatchUp`)
    *
    * Never in review (a session reopened from history is not "just finished"), never outside the window
    * `withinAutoPostWindow` allows (a stale tab or reload hours later), and never before the prefs have
    * actually loaded — until then the pref reads OFF, and deciding on that would silently skip it.
-   * `autoPostOnArrival` decides ONCE per workout, so turning auto-post on from this screen applies from
-   * the next workout rather than re-posting this one.
+   * The label is drawn from the pref as it stands, so switching auto-post on or off from this screen
+   * changes what the button says and does — nothing happens that the button did not name.
    */
   const autoPost = useAutoPost();
   const [autoResult, setAutoResult] = useState<AutoPostResult | null>(null);
   const [autoRetrying, setAutoRetrying] = useState(false);
+  /* One automatic attempt per visit — made, or declined with "Leave without posting". After that the
+     only way to post from here is a person pressing something. */
+  const [autoTried, setAutoTried] = useState(false);
+  const [autoPosting, setAutoPosting] = useState(false);
   const autoEligible = !review && withinAutoPostWindow(data?.savedAt ?? null);
+  /* Squad names for "Posted to The Real Cut" and the auto-post row's "My Squad". Failure is "no names". */
+  const { data: mySquads } = useQuery(() => fetchMySquads().catch(() => []), []);
+  const autoStanding =
+    !autoTried &&
+    autoPost.loaded &&
+    /* Not until the session's posts have been READ: "unknown" must not be taken for "nowhere yet". */
+    shares !== null &&
+    autoPostStanding(autoPost.pref, mySquads ? mySquads.map((s) => s.id) : null, shares, autoEligible);
+
+  const savedAtForAuto = data?.savedAt ?? null;
   useEffect(() => {
-    if (!workoutIdForShares || !autoPost.loaded) return;
-    let alive = true;
-    void autoPostOnArrival(workoutIdForShares, autoPost.pref, autoEligible).then((r) => {
-      if (!alive || !r) return;
-      setAutoResult(r);
-      if (r.prior.length) setShares(r.prior);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [workoutIdForShares, autoPost.loaded, autoPost.pref, autoEligible]);
+    if (workoutIdForShares && savedAtForAuto && autoEligible) void markAutoPostPending(workoutIdForShares, savedAtForAuto);
+  }, [workoutIdForShares, savedAtForAuto, autoEligible]);
+
+  /* What the unmount below would post, kept in a ref because it must read the LATEST answer from a
+     cleanup that was created on the first render. Handlers null it directly — see `postAndLeave`. */
+  const autoOnLeave = useRef<{ id: string; pref: AutoPostPref } | null>(null);
+  useEffect(() => {
+    autoOnLeave.current = autoStanding && workoutIdForShares ? { id: workoutIdForShares, pref: autoPost.pref } : null;
+  }, [autoStanding, workoutIdForShares, autoPost.pref]);
+  useEffect(
+    () => () => {
+      /* Leaving inside a running app settles it one way or the other, so the marker always goes —
+         only an app that was CLOSED on this screen leaves one for the next launch to find. */
+      void clearAutoPostPending();
+      const a = autoOnLeave.current;
+      if (a) void runAutoPost(a.id, a.pref);
+    },
+    [],
+  );
+
   const retryAutoPost = () => {
     if (!workoutIdForShares || autoRetrying) return;
     setAutoRetrying(true);
@@ -275,8 +310,6 @@ export default function WorkoutComplete() {
       if (r.prior.length) setShares(r.prior);
     });
   };
-  /* Squad names for "Posted to The Real Cut" and the auto-post row's "My Squad". Failure is "no names". */
-  const { data: mySquads } = useQuery(() => fetchMySquads().catch(() => []), []);
 
   /*
    * HOW MANY PHOTOS THIS SCREEN PUT IN THE ARCHIVE — a delta, not a count.
@@ -409,6 +442,36 @@ export default function WorkoutComplete() {
       return;
     }
     router.replace('/(tabs)/legacy');
+  };
+
+  /*
+   * The auto-post, on the way out. Built now rather than on arrival so it carries what was added here.
+   *
+   * ⚠ ON FAILURE WE STAY. Leaving would put the athlete on Legacy believing it posted; the capture
+   * stage's Retry row is where a failed post is reported, and the exit under it still works.
+   *
+   * The ref is cleared in the handler itself, not left to the effect that mirrors `autoStanding`:
+   * `goHome` can unmount this screen before that effect has run, and the unmount would post again.
+   */
+  const postAndLeave = async () => {
+    if (!workoutIdForShares || autoPosting) return;
+    autoOnLeave.current = null;
+    setAutoTried(true);
+    setAutoPosting(true);
+    void clearAutoPostPending();
+    const r = await runAutoPost(workoutIdForShares, autoPost.pref);
+    setAutoPosting(false);
+    setAutoResult(r);
+    if (r.prior.length) setShares(r.prior);
+    if (r.error) return;
+    if (r.friends || r.squadNames.length) showToast(postedLine(r.squadNames, r.friends));
+    goHome();
+  };
+  const leaveWithoutPosting = () => {
+    autoOnLeave.current = null;
+    setAutoTried(true);
+    void clearAutoPostPending();
+    goHome();
   };
 
   /*
@@ -1093,6 +1156,29 @@ export default function WorkoutComplete() {
                     <Text style={styles.postAgainText}>Post somewhere else</Text>
                   </Pressable>
                 </>
+              ) : autoStanding ? (
+                /*
+                  AUTO-POST IS ON AND THIS SESSION IS NOT POSTED YET — so leaving posts it, and the
+                  button says so (PO 2026-09-30). It is built on the press, which is what lets the note
+                  and the playlist above go with it. Disabled while one of those is still saving: a
+                  post built mid-save would be the session without the thing just added.
+                */
+                <>
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    icon={<EngravedIcon name="upload" size={18} color={flColor.onBronze} />}
+                    subLabel={mySquads ? `Posts to ${autoPostLabel(autoPost.pref, mySquads)}` : 'Posts automatically'}
+                    disabled={autoPosting || savingNote || savingPlaylist || savingName}
+                    onPress={() => void postAndLeave()}
+                    accessibilityLabel="Post and see your Legacy"
+                  >
+                    {autoPosting ? 'Posting…' : 'Post and see your Legacy'}
+                  </Button>
+                  <Pressable onPress={() => setSheet('share')} accessibilityRole="button" accessibilityLabel="Add photos or post somewhere else" style={styles.postAgain}>
+                    <Text style={styles.postAgainText}>Add photos or post somewhere else</Text>
+                  </Pressable>
+                </>
               ) : (
                 <Button
                   variant="primary"
@@ -1134,9 +1220,17 @@ export default function WorkoutComplete() {
                 one named a different screen — so the app quietly moved them somewhere they had not asked
                 to go, at the exact moment it had earned their trust.
               */}
-              <Pressable onPress={goHome} accessibilityRole="button" accessibilityLabel={review ? 'Done' : 'See your Legacy'} style={styles.capExitBtn}>
-                <Text style={styles.capExit}>{review ? 'Done' : 'See your Legacy'}</Text>
-              </Pressable>
+              {/* While the filled button above is the one that leaves (and posts), this exit is the way
+                  out WITHOUT posting — and says so, because every other way of leaving does post. */}
+              {autoStanding ? (
+                <Pressable onPress={leaveWithoutPosting} accessibilityRole="button" accessibilityLabel="Leave without posting" style={styles.capExitBtn}>
+                  <Text style={styles.capExit}>Leave without posting</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={goHome} accessibilityRole="button" accessibilityLabel={review ? 'Done' : 'See your Legacy'} style={styles.capExitBtn}>
+                  <Text style={styles.capExit}>{review ? 'Done' : 'See your Legacy'}</Text>
+                </Pressable>
+              )}
               <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See workout details" style={styles.capExitBtn}>
                 <Text style={styles.capExitSub}>See workout details</Text>
               </Pressable>

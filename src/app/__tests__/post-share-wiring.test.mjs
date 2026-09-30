@@ -108,18 +108,36 @@ test('the completion screen says "Posted" and keeps saying it on the way back', 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3b. auto-post: after the save, never in review, never with a map or a caption
+// 3b. auto-post: on the way OUT, never in review, never with a map or words they did not write
 // ─────────────────────────────────────────────────────────────────────────────
 test('auto-post never runs in review or outside the just-finished window, and waits for real prefs', () => {
   const src = strip(COMPLETE);
   assert.match(src, /const autoEligible = !review && withinAutoPostWindow\(data\?\.savedAt \?\? null\);/);
-  assert.match(src, /if \(!workoutIdForShares \|\| !autoPost\.loaded\) return;/, 'deciding on unloaded (default OFF) prefs would silently skip the post');
-  assert.match(src, /autoPostOnArrival\(workoutIdForShares, autoPost\.pref, autoEligible\)/);
+  assert.match(src, /!autoTried &&\s*autoPost\.loaded &&/, 'deciding on unloaded (default OFF) prefs would silently skip the post');
+  assert.match(src, /shares !== null &&\s*autoPostStanding\(/, 'unread posts must not be taken for "nowhere yet" — that is how a session posts twice');
 });
 
-test('an auto-post carries no caption, no photos, and never the map (D-RS-3)', () => {
+test('⚠ auto-post fires when the athlete LEAVES, not on arrival — so the note and playlist go with it (PO 2026-09-30)', () => {
+  const src = strip(COMPLETE);
+  assert.doesNotMatch(src, /autoPostOnArrival/, 'posting on arrival is the bug: it published before anything could be added');
+  // the button names it
+  assert.match(src, /\{autoPosting \? 'Posting…' : 'Post and see your Legacy'\}/);
+  assert.match(src, /disabled=\{autoPosting \|\| savingNote \|\| savingPlaylist \|\| savingName\}/, 'a post built mid-save is the session without the thing just added');
+  // and there is a way out that does not post
+  assert.match(src, />Leave without posting</);
+  // leaving any other way still posts; the handler clears the ref so that does not post a second time
+  assert.match(src, /if \(a\) void runAutoPost\(a\.id, a\.pref\);/);
+  const leave = src.slice(src.indexOf('const postAndLeave = async'));
+  assert.ok(leave.indexOf('autoOnLeave.current = null;') < leave.indexOf('await runAutoPost('), 'the unmount would post again');
+  assert.ok(leave.indexOf('if (r.error) return;') < leave.indexOf('goHome();'), 'a failed post must not leave for Legacy as if it landed');
+  // closing the app is covered by the marker and the launch catch-up
+  assert.match(src, /void markAutoPostPending\(workoutIdForShares, savedAtForAuto\)/);
+  assert.match(read('../_layout.tsx'), /<AutoPostCatchUp \/>/);
+});
+
+test('an auto-post carries only the athlete’s own note, no photos, and never the map (D-RS-3)', () => {
   const src = strip(read('../../data/auto-post-live.ts'));
-  assert.match(src, /body: '',\s*media: \[\],/, 'auto-post must not put words or photos in the athlete’s mouth');
+  assert.match(src, /body: autoPostCaption\(recap\.reflection\),\s*media: \[\],/, 'the caption is their sealed note or nothing; photos never ride an automatic post');
   assert.match(src, /workoutSummary: \{ \.\.\.recap\.summary, shareRoute: false, food: null, auto: true \}/, 'the route and the food must never ride an automatic post');
   assert.doesNotMatch(src, /shareRoute: true/);
 });

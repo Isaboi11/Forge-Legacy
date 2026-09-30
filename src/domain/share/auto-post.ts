@@ -16,10 +16,18 @@
  * devices. The completion screen's row, the first-post prompt and Profile Visibility all read and write
  * this one value through `AutoPostSheet`.
  *
+ * ══ WHEN IT FIRES — ON THE WAY OUT, NOT ON ARRIVAL (PO 2026-09-30) ══
+ *
+ * *"It auto posted before I could attach the playlist and my comment."* It used to fire the moment the
+ * completion screen opened, so the post was a snapshot of the session BEFORE the athlete had added
+ * anything to it. It now fires when they leave that screen — the button says "Post and see your
+ * Legacy" — and carries what they saved there: the note, the playlist, the name. Leaving any other way
+ * still posts; closing the app posts on the next launch (`parsePendingAutoPost`).
+ *
  * ══ ⚠ WHAT AN AUTO-POST NEVER CARRIES ══
  *
- *   · No caption. A sentence in the athlete's voice that they did not write is the app speaking for
- *     them; the recap card stands on its own (`addSquadPost` puts no fallback body on a recap).
+ *   · No words the athlete did not write. The caption is their own sealed note or nothing — never a
+ *     generated sentence (`addSquadPost` puts no fallback body on a recap).
  *   · No photos. Nothing is attached at the moment it fires, and "what was added to the archive
  *     today" is not the same thing as "what I chose to post".
  *   · No map. D-RS-3 / Route-Sharing-Amendment-001 §4: the route is a per-post choice that "must not
@@ -101,6 +109,52 @@ export function withinAutoPostWindow(savedAtIso: string | null, now: number = Da
   const t = Date.parse(savedAtIso)
   if (Number.isNaN(t)) return false
   return now - t >= -5 * 60 * 1000 && now - t <= AUTO_POST_WINDOW_MS
+}
+
+/** The post's words: the note the athlete sealed on the completion screen, or nothing. */
+export function autoPostCaption(reflection: string | null | undefined): string {
+  return (reflection ?? '').trim()
+}
+
+/**
+ * Whether leaving the completion screen will post this session — what the button's label is drawn from.
+ *
+ * ⚠ A SESSION ALREADY POSTED BY HAND STANDS AUTO-POST DOWN, entirely. The athlete chose where this one
+ * goes; quietly adding the rest of their usual destinations on the way out would be posting behind a
+ * button that says "See your Legacy".
+ *
+ * `memberSquadIds` is null until the squad list has loaded. The pref is trusted as-is until then — the
+ * write path prunes it for real before anything is sent.
+ */
+export function autoPostStanding(
+  p: AutoPostPref,
+  memberSquadIds: readonly string[] | null,
+  prior: readonly PriorShare[],
+  eligible: boolean,
+): boolean {
+  if (!eligible || prior.length > 0) return false
+  return autoPostOn(memberSquadIds ? pruneAutoPost(p, memberSquadIds) : p)
+}
+
+/** A session whose auto-post has not happened yet — kept on the device so closing the app cannot lose it. */
+export interface PendingAutoPost {
+  workoutId: string
+  savedAt: string
+}
+
+/**
+ * Read the stored marker back. Null for anything malformed, and null once the session is no longer
+ * "just finished" — a marker found days later must not publish a workout out of nowhere.
+ */
+export function parsePendingAutoPost(raw: string | null, now: number = Date.now()): PendingAutoPost | null {
+  if (!raw) return null
+  try {
+    const r = JSON.parse(raw) as Record<string, unknown> | null
+    if (!r || typeof r.workoutId !== 'string' || !r.workoutId || typeof r.savedAt !== 'string') return null
+    return withinAutoPostWindow(r.savedAt, now) ? { workoutId: r.workoutId, savedAt: r.savedAt } : null
+  } catch {
+    return null
+  }
 }
 
 interface NamedSquad {

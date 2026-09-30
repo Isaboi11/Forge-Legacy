@@ -2,7 +2,8 @@ import { supabase } from '@/lib/supabase';
 import { createFriendPost } from '@/data/friends-feed-live';
 import { addSquadPost, buildWorkoutRecap } from '@/data/squad-feed-live';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
-import { autoPostOn, autoPostTargets, pruneAutoPost, sanitizeAutoPost, type AutoPostPref } from '@/domain/share/auto-post';
+import { autoPostCaption, autoPostOn, autoPostTargets, parsePendingAutoPost, pruneAutoPost, sanitizeAutoPost, type AutoPostPref } from '@/domain/share/auto-post';
+import { clearAutoPostPending, readAutoPostPending } from '@/lib/auto-post-pending';
 import { sanitizePrefs } from '@/domain/settings/preferences';
 import type { PriorShare } from '@/domain/share/fanout';
 
@@ -93,25 +94,31 @@ export function runAutoPost(workoutId: string, pref: AutoPostPref): Promise<Auto
   return p;
 }
 
-/*
- * ══ ONE DECISION PER WORKOUT PER APP SESSION ══
+/**
+ * The launch half of "auto-post fires when you leave the completion screen".
  *
- * The completion screen's effect re-runs whenever its inputs change — including when the athlete turns
- * auto-post ON from that very screen. Deciding again then would post the session they just declined to
- * post by hand, or re-post one they just posted. So the first decision (post, or don't) is remembered
- * and every later call gets the same answer. A retry is explicit, through `runAutoPost`.
+ * Closing the app from that screen is a way of leaving that runs no code, so the screen leaves a marker
+ * (`lib/auto-post-pending`) and the next launch posts what it finds. The marker is cleared BEFORE the
+ * attempt: a post that fails here is not retried on every launch after it, and one that half-landed is
+ * safe to leave — the session is still one tap from "Post to Forge" on Activity Detail.
  *
- * A reload clears this and decides again — harmless, because `autoPostTargets` skips any destination
- * that already has the workout.
+ * Null when there was nothing to do. Never throws.
  */
-const decided = new Map<string, Promise<AutoPostResult | null>>();
-
-export function autoPostOnArrival(workoutId: string, pref: AutoPostPref, eligible: boolean): Promise<AutoPostResult | null> {
-  const known = decided.get(workoutId);
-  if (known) return known;
-  const p = eligible && autoPostOn(pref) ? runAutoPost(workoutId, pref) : Promise.resolve(null);
-  decided.set(workoutId, p);
-  return p;
+export async function resumePendingAutoPost(pref: AutoPostPref): Promise<AutoPostResult | null> {
+  const pending = parsePendingAutoPost(await readAutoPostPending());
+  await clearAutoPostPending();
+  if (!pending || !autoPostOn(pref)) return null;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    /* Anything already posted by hand stands auto-post down — same rule the screen's button follows. */
+    if ((await priorPostsStrict(pending.workoutId, user.id)).length > 0) return null;
+  } catch {
+    return null;
+  }
+  return runAutoPost(pending.workoutId, pref);
 }
 
 async function attempt(workoutId: string, pref: AutoPostPref): Promise<AutoPostResult> {
@@ -144,9 +151,11 @@ async function attempt(workoutId: string, pref: AutoPostPref): Promise<AutoPostR
     if (!recap) throw new Error('Couldn’t read the workout to post it.');
     const post = {
       type: 'recap' as const,
-      /* No caption and no media — see the header of `domain/share/auto-post.ts`. The map is forced off
-         (D-RS-3): only a person ticking the box on one post may publish a route. */
-      body: '',
+      /* The athlete's own sealed note or nothing, and no media — see the header of
+         `domain/share/auto-post.ts`. The map is forced off (D-RS-3): only a person ticking the box on
+         one post may publish a route. The playlist and the name ride in `recap.summary`, read fresh
+         from the workout, which is why this runs when they LEAVE the screen and not when they arrive. */
+      body: autoPostCaption(recap.reflection),
       media: [],
       workoutId,
       /* Food is never auto-posted either — it is a tick box on a manual post (PO 2026-09-28). */

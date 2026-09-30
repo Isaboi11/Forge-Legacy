@@ -7,6 +7,7 @@ import { clearRestTimerPref } from './rest-timer-pref';
 import { clearWheelInputPref } from './set-input-pref';
 import { clearMealHint } from './meal-hint';
 import { clearSwipeHintSeen } from './swipe-hint';
+import { clearAutoPostPending } from './auto-post-pending';
 import { clearSeenPodiums } from './podium-seen';
 import { clearRetiredReviewWeeks } from './weekly-review-seen';
 import { clearProgramDraft } from './program-draft';
@@ -72,6 +73,8 @@ export async function resetFirstRunFlags(): Promise<void> {
     clearRestTimerPref(),
     clearWheelInputPref(),
     clearSwipeHintSeen(),
+    // Another account's unposted session — the next person's launch must not try to post it.
+    clearAutoPostPending(),
     // The Meal Detail gesture hint — the next person on this phone has not been shown how the rows work.
     clearMealHint(),
     clearSeenPodiums(),

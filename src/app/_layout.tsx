@@ -33,6 +33,7 @@ import { PendingSaveDrain } from '@/components/pending-save-drain';
 import { AppleHealthSync } from '@/components/apple-health-sync';
 import { CoachBubble } from '@/components/forge/CoachBubble';
 import { ConsentHost } from '@/components/forge/ConsentSheet';
+import { AutoPostCatchUp } from '@/components/forge/AutoPostCatchUp';
 import { KeyboardPrimerProvider } from '@/components/forge/KeyboardPrimer';
 import { OverlayBoundary } from '@/components/overlay-boundary';
 import { KeyboardTapAway } from '@/components/KeyboardTapAway';
@@ -198,6 +199,7 @@ function RootLayout() {
                     <CoachDoorProvider>
                     <AnimatedSplashOverlay />
                     <RootNavigator />
+                    <AutoPostCatchUp />
                     {/* Outside the Stack, like the splash above it, so it floats over every route rather
                         than being re-mounted per screen. It gates its own visibility — a live workout, a
                         ceremony, the tour and the signed-out routes all hide it (see CoachBubble).
