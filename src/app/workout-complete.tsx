@@ -26,6 +26,7 @@ import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveRef
 import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
 import { persistSession } from '@/domain/workout/autosave';
 import { withinContinueWindow } from '@/domain/workout/save';
+import { markSessionSealed, unmarkSessionSealed, wasSessionSealed } from '@/lib/sealed-sessions';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
@@ -114,7 +115,14 @@ export default function WorkoutComplete() {
    * writes that are still meaningful later stay available too — add a reflection, save it as a template,
    * attach a playlist, share it to a squad. None of those expire at the end of the session.
    */
-  const review = reviewParam === '1';
+  /*
+   * ⚠ AND ANY SESSION THIS DEVICE HAS ALREADY SEALED, whatever the route says (workout-18, QA 09-26). A
+   * reload of this page, or any way back to the same id without `review=1`, used to offer Hold to Seal
+   * again over a workout that had been sealed. `null` while the device is being asked — the page waits
+   * for the answer (see the loading gate) so the seal face cannot flash up and vanish.
+   */
+  const [sealedBefore, setSealedBefore] = useState<boolean | null>(reviewParam === '1' ? true : null);
+  const review = reviewParam === '1' || sealedBefore === true;
   const router = useRouter();
   const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
@@ -150,7 +158,7 @@ export default function WorkoutComplete() {
    */
   const { enqueue } = useCeremony();
   // Not in review — a graduation is a moment, and it has already had it. See the note on `review`.
-  const graduation = review ? null : (data?.graduation ?? null);
+  const graduation = review || sealedBefore == null ? null : (data?.graduation ?? null);
   /* Its quiet twin (M4-A1-D2). Suppressed in review for the same reason: the week finished once, and a
      reopened session must not announce it again. Deliberately NOT enqueued anywhere — it is a line on
      this screen, which is the whole of the decision. */
@@ -188,6 +196,22 @@ export default function WorkoutComplete() {
   const [stage, setStage] = useState<Stage>(review ? 'capture' : 'seal');
   /** Which stage opened The Record, so its back control returns there instead of a hardcoded target. */
   const [from, setFrom] = useState<Exclude<Stage, 'record'>>(review ? 'capture' : 'seal');
+  /* The device's answer lands in a promise, so the stage moves there — never in the effect body. */
+  useEffect(() => {
+    if (reviewParam === '1') return;
+    let alive = true;
+    void wasSessionSealed(String(id ?? '')).then((was) => {
+      if (!alive) return;
+      setSealedBefore(was);
+      if (was) {
+        setStage('capture');
+        setFrom('capture');
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [id, reviewParam]);
   const openRecord = () => {
     setFrom(stage === 'capture' ? 'capture' : 'seal');
     setStage('record');
@@ -414,8 +438,8 @@ export default function WorkoutComplete() {
   // First-run "Chapter comes alive" reveal (ONB-D18) — a restrained bronze fade/scale-in on workout #1.
   const [reveal] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    if (!review && data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
-  }, [review, data?.isFirstWorkout, reveal]);
+    if (!review && sealedBefore === false && data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
+  }, [review, sealedBefore, data?.isFirstWorkout, reveal]);
   useEffect(() => {
     const listenerId = hold.addListener(({ value }) => setHoldPct(value));
     return () => hold.removeListener(listenerId);
@@ -636,6 +660,7 @@ export default function WorkoutComplete() {
     Animated.timing(hold, { toValue: 1, duration: 900, useNativeDriver: false }).start(({ finished }) => {
       if (finished) {
         setSealed(true);
+        if (data) void markSessionSealed(data.workoutId);
         const nav = typeof navigator !== 'undefined' ? (navigator as { vibrate?: (p: number[]) => void }) : null;
         nav?.vibrate?.([10, 28, 45]); // haptics (web only; no-ops on native)
         /*
@@ -725,7 +750,7 @@ export default function WorkoutComplete() {
      on Activity Detail, which is the screen you go to when you want to look at a session rather than
      finish one. */
 
-  if (loading || !data) {
+  if (loading || !data || sealedBefore == null) {
     return (
       <Shell>
         <View style={styles.center}>{error ? <Text style={styles.err}>Couldn’t load your summary.</Text> : <ActivityIndicator color={flColor.bronze400} />}</View>
@@ -1394,6 +1419,7 @@ export default function WorkoutComplete() {
                 void (async () => {
                   const s = await fetchWorkoutAsSession(data.workoutId);
                   if (!s) return;
+                  await unmarkSessionSealed(data.workoutId);
                   await persistSession(s);
                   router.replace('/workout');
                 })();
@@ -1630,7 +1656,13 @@ function CaptureSeal({ size }: { size: number }) {
           borderColor: flColor.accentBorderSubtle,
         }}
       />
-      <ForgeMarkGlyph size={Math.round(size * 0.47)} color={flColor.bronze300} />
+      {/* ⚠ LIFTED ABOVE THE DISC, as `SealMedallion` lifts its own (workout-17, QA 09-26). The two rings are
+          `position: absolute` and the glyph was not — on the web a positioned box paints OVER a static
+          sibling whatever the order, so the opaque disc covered the mark and the sealed screen and the share
+          card both showed an empty circle. */}
+      <View style={{ position: 'relative', zIndex: 1 }}>
+        <ForgeMarkGlyph size={Math.round(size * 0.47)} color={flColor.bronze300} />
+      </View>
     </View>
   );
 }
