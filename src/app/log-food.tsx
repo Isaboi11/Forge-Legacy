@@ -88,8 +88,11 @@ export default function LogFoodScreen() {
   const params = useLocalSearchParams<{ date?: string; meal?: string; scan?: string }>();
 
   /* A link's date is checked, not trusted: a 1999 or malformed date logs to today (QA 09-26 N-19). */
+  /* ⚠ Memoised on purpose: a bare `diaryDayParam(...)` call here made react-compiler give up on the whole
+     screen (react-hooks/preserve-manual-memoization on the focus callback below). */
   const todayIso = localToday();
-  const iso = diaryDayParam(params.date, todayIso);
+  const dateParam = params.date;
+  const iso = useMemo(() => diaryDayParam(dateParam, todayIso), [dateParam, todayIso]);
   const initialMeal = (MEAL_SLOTS as readonly string[]).includes(String(params.meal))
     ? (params.meal as MealSlot)
     : mealForNow();
