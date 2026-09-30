@@ -15,7 +15,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ForgeTextArea } from '@/components/forge/inputs/ForgeTextArea';
-import { SquadCrest } from '@/components/forge/SquadCrest';
+import { CREST_KEYS, SquadCrest } from '@/components/forge/SquadCrest';
 import { ReportSheet } from '@/components/ReportSheet';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
@@ -94,6 +94,7 @@ export default function SquadSettingsScreen() {
   const [draftCommitment, setDraftCommitment] = useState('');
   const [draftPhotoUri, setDraftPhotoUri] = useState<string | null>(null);
   const [draftPhotoCleared, setDraftPhotoCleared] = useState(false);
+  const [draftCrest, setDraftCrest] = useState('swords');
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [privacyOverride, setPrivacyOverride] = useState<SquadPrivacy | null>(null);
@@ -149,6 +150,7 @@ export default function SquadSettingsScreen() {
     setDraftCommitment(discovery?.commitment ?? '');
     setDraftPhotoUri(null);
     setDraftPhotoCleared(false);
+    setDraftCrest(squad.crest);
     setEditOpen(true);
   };
 
@@ -185,6 +187,7 @@ export default function SquadSettingsScreen() {
       const patch: Parameters<typeof updateSquad>[1] = { name: draftName, motto: draftMotto, description: draftDesc };
       if (draftPhotoUri) patch.photoUrl = await uploadSquadPhoto(squad.id, draftPhotoUri);
       else if (draftPhotoCleared) patch.photoUrl = null;
+      if (draftCrest !== squad.crest) patch.crest = draftCrest;
       await updateSquad(squad.id, patch);
       if (discovery) {
         const nextCommitment = draftCommitment.trim() || null;
@@ -511,7 +514,7 @@ export default function SquadSettingsScreen() {
         <View style={styles.sheetBody}>
           <View style={styles.editPhotoWrap}>
             <Pressable onPress={pickPhoto} accessibilityRole="button" accessibilityLabel={editPhoto ? 'Change squad photo' : 'Add squad photo'} style={styles.editPhotoDisc}>
-              {editPhoto ? <Image source={{ uri: editPhoto }} style={styles.editPhotoImg} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={30} />}
+              {editPhoto ? <Image source={{ uri: editPhoto }} style={styles.editPhotoImg} contentFit="cover" /> : <SquadCrest crest={draftCrest} size={30} />}
             </Pressable>
             <View style={styles.editPhotoActions}>
               <Pressable onPress={pickPhoto} accessibilityRole="button" hitSlop={6}>
@@ -526,6 +529,27 @@ export default function SquadSettingsScreen() {
                 </>
               ) : null}
             </View>
+          </View>
+
+          {/*
+            THE CREST, CHANGEABLE AFTER CREATION (social-12, QA 09-26). Create Squad says "Your photo, crest,
+            and name become your squad's identity. You can change them anytime" — and the crest was the one
+            of the three with no control here. `updateSquad` has always accepted it and `squads_update` is
+            the owner's (0029), so this is the missing picker and nothing else: the same eight, the same grid.
+          */}
+          <View>
+            <Text style={styles.faLabel}>Crest</Text>
+            <View style={styles.crestGrid}>
+              {CREST_KEYS.map((k) => {
+                const on = draftCrest === k;
+                return (
+                  <Pressable key={k} onPress={() => setDraftCrest(k)} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} accessibilityLabel={`${k} crest`} style={[styles.crestCell, on ? styles.crestCellOn : null]}>
+                    <SquadCrest crest={k} size={22} color={on ? flColor.bronze300 : flColor.gray400} />
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={styles.catHint}>{editPhoto ? 'Your squad photo is shown in its place. Remove the photo to show the crest.' : 'The mark your squad wears wherever it has no photo.'}</Text>
           </View>
 
           <InputField label="Squad Name" value={draftName} onChange={setDraftName} maxLength={NAME_MAX} showCount placeholder="Squad name" autoCapitalize="words" />
@@ -1141,6 +1165,10 @@ const styles = StyleSheet.create({
   editPhotoDisc: { width: 76, height: 76, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 0 14px rgba(186, 134, 84,0.26)` },
   editPhotoImg: { width: '100%', height: '100%', borderRadius: flRadius.round },
   editPhotoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // the crest grid — Create Squad's, cell for cell
+  crestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  crestCell: { flexGrow: 1, flexBasis: '20%', minWidth: 56, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   editLink: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
   editLinkMuted: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
   editDot: { fontSize: 12, color: flColor.gray600 },
