@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
@@ -67,7 +67,7 @@ import { postedTally, usesMaxes } from '@/domain/workout/posted-workout-lines';
 import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flGradient, flRadius, flShadow, IS_PAPER } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
 import { textHalo } from '@/constants/washes';
 
@@ -151,6 +151,8 @@ export default function SquadDetailRoute() {
   const router = useRouter();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
+  /* How far the page has scrolled — Alabaster fades the mountains toward the page with it. See `DetailBg`. */
+  const [scrollY] = useState(() => new Animated.Value(0));
   const squadId = String(id ?? '');
   const { data, loading, error, refetch } = useQuery(() => fetchSquad(squadId), [squadId]);
   const { showToast } = useToast();
@@ -669,7 +671,7 @@ export default function SquadDetailRoute() {
   );
   return (
     <View style={styles.root}>
-      <DetailBg />
+      <DetailBg scrollY={scrollY} />
       <AppBar
         title=""
         onBack={() => router.back()}
@@ -682,7 +684,14 @@ export default function SquadDetailRoute() {
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
-        onScroll={onTourScroll}
+        onScroll={
+          IS_PAPER
+            ? (e) => {
+                scrollY.setValue(e.nativeEvent.contentOffset.y);
+                onTourScroll(e);
+              }
+            : onTourScroll
+        }
         scrollEventThrottle={16}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -697,9 +706,14 @@ export default function SquadDetailRoute() {
                 {squad.name}
               </Text>
               {squad.motto ? (
-                <Text style={styles.tagline} numberOfLines={2}>
-                  {squad.motto}
-                </Text>
+                <View style={styles.taglineWrap}>
+                  {/* Alabaster only: a soft patch of page under the motto, which sits exactly where the ridge
+                      is drawn (social-10). Forge's light ink already reads over its dark plate. */}
+                  {IS_PAPER ? <View pointerEvents="none" style={styles.taglineVeil} /> : null}
+                  <Text style={styles.tagline} numberOfLines={2}>
+                    {squad.motto}
+                  </Text>
+                </View>
               ) : null}
             </View>
             <View style={styles.crest}>
@@ -958,7 +972,10 @@ export default function SquadDetailRoute() {
             <LinearGradient colors={['rgba(186, 134, 84,0.07)', 'transparent'] as const} locations={[0, 0.58] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
             <View style={styles.hallCrest}>
               <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
-              <HallCrownIcon />
+              {/* In a View: on web a bare <svg> is not positioned, so the absolute gradient above painted over it. */}
+              <View>
+                <HallCrownIcon />
+              </View>
             </View>
             <View style={styles.recordsBody}>
               <Text style={styles.recordsTitle}>Hall of Champions</Text>
@@ -1231,7 +1248,7 @@ export default function SquadDetailRoute() {
   );
 }
 
-function DetailBg() {
+function DetailBg({ scrollY }: { scrollY?: Animated.Value }) {
   /*
    * `imageOpacity` rather than a heavier top overlay: this artwork is near-black everywhere except its
    * golden mountain band, so dimming the whole image toward the base lands almost entirely on the
@@ -1252,6 +1269,12 @@ function DetailBg() {
    *
    * The opacity lift is not theme-conditional, so it lands on BOTH themes (Design System §2.0); the
    * `paperTexture` level is the colour half and only Alabaster reads it.
+   *
+   * ⚠ ON ALABASTER THE PLATE FADES TOWARD THE PAGE AS YOU SCROLL (social-10, QA 09-26). The plate is fixed
+   * and the content scrolls over it, so the goal's numbers and "See the progress" were read THROUGH the
+   * ridge — bronze strokes behind dark ink, where Forge has them behind light ink on a dark plate. At rest
+   * the mountains are untouched (PO: *"you should be able to see the mountains"*); the fade is the one
+   * Legacy already uses (`scrimFade`). Forge passes no `scrimFade` and is unchanged.
    */
   return (
     <ScreenBackground
@@ -1260,6 +1283,8 @@ function DetailBg() {
       imageOpacity={0.78}
       paperTexture="atmospheric"
       atmospheric
+      scrimFade={IS_PAPER && scrollY != null}
+      scrollY={scrollY}
       overlay={{ colors: ['rgba(5,5,5,0.06)', 'rgba(5,5,5,0.18)', 'rgba(5,5,5,0.30)'], locations: [0, 0.38, 1] }}
       radials={[BG_RADIAL.squadTop, BG_RADIAL.squadBottom]}
     />
@@ -1827,6 +1852,10 @@ function VideoPlusGlyph() {
 function CloseX({ size = 22 }: { size?: number }) {
   return <EngravedIcon name="close" size={size} color={flColor.onMedia} />; // on the always-dark video viewer
 }
+/* Alabaster only: the small goal lines get the same page-coloured halo the squad's name already carries, for
+   the moments they scroll across the ridge before the plate has faded (social-10). Forge spreads nothing. */
+const PAPER_HALO = IS_PAPER ? ({ textShadowColor: textHalo(0.9), textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 } as const) : null;
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
@@ -1855,7 +1884,11 @@ const styles = StyleSheet.create({
     textShadowRadius: 14,
   },
   squadNameLong: { fontSize: 26, lineHeight: 29 },
-  tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, marginTop: 8, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+  taglineWrap: { alignSelf: 'flex-start', maxWidth: '100%', marginTop: 8 },
+  /* The page's own colour, feathered at the edge by a shadow of itself, so it reads as the plate thinning
+     out under the words rather than as a box behind them. Drawn on Alabaster only. */
+  taglineVeil: { position: 'absolute', top: 2, right: -2, bottom: 0, left: -4, borderRadius: 10, backgroundColor: textHalo(0.7), boxShadow: `0 0 12px 8px ${textHalo(0.7)}` },
+  tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
   crest: {
     width: 92,
     height: 92,
@@ -1882,7 +1915,7 @@ const styles = StyleSheet.create({
   goalTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, color: flColor.cream100, marginBottom: 14 },
   progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.divider, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   progressFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
-  progressCaption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400, marginTop: 9 },
+  progressCaption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400, marginTop: 9, ...PAPER_HALO },
 
   // set-goal CTA
   setGoalRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, boxShadow: flShadow.card },
@@ -1913,8 +1946,8 @@ const styles = StyleSheet.create({
   goalDateRow: { flexDirection: 'row', gap: 12 },
   goalDateCol: { flex: 1, minWidth: 0 },
   goalDateErr: { fontSize: 12, color: flColor.redMuted },
-  goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600 },
-  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
+  goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600, ...PAPER_HALO },
+  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk, ...PAPER_HALO },
   goalPressed: { opacity: 0.82 },
   // A closed goal's bar keeps its length and loses the bronze — bronze on this screen means "still going".
   progressFillClosed: { backgroundColor: flColor.gray600, boxShadow: undefined },
@@ -1946,6 +1979,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 22,
+    marginHorizontal: 20,
   },
   /** Each tile takes an equal half — and the whole width when a live competition hides the other. */
   secondaryFlex: { flex: 1 },
@@ -2048,10 +2082,13 @@ const styles = StyleSheet.create({
   feedSection: { paddingHorizontal: 20, marginTop: 10 },
   feedHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
-  compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
+  /* ⚠ THE 20px GUTTER IS ON EACH BLOCK (social-06, QA 09-26). These sit between the hero and the feed, which
+     each pad 20 themselves — so the competition card, the Hall row and the two tiles had no gutter at all and
+     ran to the screen edge in both themes. */
+  compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 20 },
   viewAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronzeInk },
-  compCard: { position: 'relative', overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
+  compCard: { position: 'relative', overflow: 'hidden', marginHorizontal: 20, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
   compTop: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   compEmblem: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.glowSubtle },
   compIdentity: { flex: 1, minWidth: 0, gap: 4 },
@@ -2065,8 +2102,8 @@ const styles = StyleSheet.create({
   compGap: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   compEnds: { flexShrink: 0, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
-  openCompRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
-  hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  openCompRow: { flexDirection: 'row', alignItems: 'center', gap: 13, marginHorizontal: 20, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, marginHorizontal: 20, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   ackRow: {
     flexDirection: 'row',
     alignItems: 'center',
