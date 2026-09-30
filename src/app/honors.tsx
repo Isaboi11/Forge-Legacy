@@ -14,7 +14,8 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
 import { useSheetDrag } from '@/hooks/useSheetDrag';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useToast } from '@/hooks/useCeremony';
+import { useShareSheet } from '@/hooks/useShareSheet';
+import { useProfile } from '@/lib/profile';
 import { useTour } from '@/hooks/useTour';
 import { claimEarnedHonors, fetchHonorsHub, type HubHonor } from '@/data/honors-live';
 import { HonorMedallion } from '@/components/honor/HonorMedallion';
@@ -43,8 +44,12 @@ import { HonorGlyph } from '@/components/honor/HonorGlyph';
  *   · The Recent strip dropped the year, so honors three years apart both read "Jan 20". It keeps the year
  *     whenever the visible honors span more than one.
  *
- * Reached from the ceremony's "View Honor" and Legacy → Honors → "View all". Share is a "coming soon"
- * toast, matching the design.
+ * Reached from the ceremony's "View Honor" and Legacy → Honors → "View all".
+ *
+ * SHARE OPENS THE REAL SHEET (home-13, QA 09-26). It was a "Share · coming soon" toast, "matching the
+ * design" — while the ceremony for the very same honor had opened SH-1 with a real card since the share
+ * system shipped. Same `openShare`, same `honor` card, same stored milestone; the only difference is
+ * the date, which here is the day it was EARNED rather than today.
  */
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -61,7 +66,8 @@ function shortDate(iso: string): string {
 
 export default function HonorsScreen() {
   const router = useRouter();
-  const { showToast } = useToast();
+  const { openShare } = useShareSheet();
+  const { profile } = useProfile();
   const { resumeTour } = useTour();
   /**
    * Claim anything already earned before reading. Honors evaluate on workout save, so a threshold added to
@@ -180,8 +186,15 @@ export default function HonorsScreen() {
           honor={selected}
           onClose={() => setSelected(null)}
           onShare={() => {
+            const h = selected;
             setSelected(null);
-            showToast('Share · coming soon');
+            const earnedOn = h.date ? fmtDate(h.date) : '';
+            openShare({
+              shareType: 'honor',
+              // The signed-in athlete or no byline; the citation is the honor's own rule, as on the ceremony.
+              overrides: { title: h.name, athlete: profile?.name, values: { citation: h.trigger, date: earnedOn } },
+              milestone: { kind: 'milestone-card', event: 'honor', eyebrow: 'Honor Earned', headline: h.name, line: h.trigger, date: earnedOn },
+            });
           }}
         />
       ) : null}
@@ -260,10 +273,13 @@ function HonorDetailSheet({ honor, onClose, onShare }: { honor: HubHonor; onClos
           ) : null}
         </View>
 
-        <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share honor" style={styles.shareBtn}>
-          <EngravedIcon name="share" size={16} color={flColor.bronze300} />
-          <Text style={styles.shareText}>Share Honor</Text>
-        </Pressable>
+        {/* Only an honor you HOLD can be shared — the card says "Honor Earned" and carries the date. */}
+        {honor.date ? (
+          <Pressable onPress={onShare} accessibilityRole="button" accessibilityLabel="Share honor" style={styles.shareBtn}>
+            <EngravedIcon name="share" size={16} color={flColor.bronze300} />
+            <Text style={styles.shareText}>Share Honor</Text>
+          </Pressable>
+        ) : null}
       </Animated.View>
     </View>
   );
