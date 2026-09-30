@@ -90,13 +90,21 @@ test('a posted workout reopens as words only when they read back identical, and 
   assert.match(WRITE, /await editSquadPost\(editId, editPost\.body \?\? '', \{ kind: 'posted-workout'/);
 });
 
-/* Import Amendment 002 (PO 2026-09-28: "use AI when needed"): AI is offered only where the gate says, a photo the
-   reader can't read is tidied without a second tap, and every rewrite can be undone back to the poster's words. */
-test('the write screen asks the gate before offering AI, auto-tidies an unreadable photo, and can undo', () => {
+/* Import Amendment 002 (PO 2026-09-28: "use AI when needed"): AI is offered only where the gate says, a photo is
+   tidied without a second tap, and every rewrite can be undone back to the poster's words.
+   Amended 2026-09-30: EVERY photo is tidied — quietly when the rules read it clean, since "clean" was one squat set
+   where the card had nine. Typed and pasted text is still only offered AI by the gate. */
+test('the write screen asks the gate before offering AI, tidies every photo, and can undo', () => {
   const WRITE = read('../workout-write.tsx');
   assert.match(WRITE, /whenToUseAi\(text, written, rows/);
   assert.match(WRITE, /aiCall\.kind === 'ai' && !busy \?[\s\S]*?Fix it with AI/);
-  assert.match(WRITE, /if \(whenToUseAi\(words, w, writtenToTemplate\(w, resolveKey\)\)\.kind === 'ai'\) await tidy\(words\);/);
+  assert.match(WRITE, /if \(call\.kind === 'ai'\) await tidy\(words\);\s*else if \(call\.kind === 'rules'\) await tidy\(words, true\);/);
+  /* Over a clean reading, AI's layout is taken only if it reads clean too, and a failure says nothing. */
+  assert.match(WRITE, /if \(quiet\) \{[\s\S]*?\.kind !== 'rules'\) return;\s*\}/);
+  assert.match(WRITE, /if \(quiet\) return;/);
+  /* The card is read whole first; the table read is the fallback only when that function has no answer. */
+  assert.match(WRITE, /const card = await readWorkoutCard\(picked\[0\]\);/);
+  assert.match(WRITE, /card\.kind === 'not_deployed' \|\| card\.kind === 'offline' \|\| card\.kind === 'unavailable'\) r = await readProgramPhoto\(picked\[0\]\);/);
   assert.match(WRITE, /setText\(beforeAi\);/);
   assert.match(WRITE, /Tidied by AI\. Check every number against the card/);
   /* The rewrite is only ever put in the box by the client, which ran checkAiRewrite first. */

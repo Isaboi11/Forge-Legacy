@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Experience } from '@/domain/coach/constraints';
+import { fetchProfileExperience, saveProfileExperience } from '@/data/coach-profile-live';
 import { isRoom, type Room } from '@/domain/coach/chat-core';
 
 /**
@@ -23,11 +24,13 @@ import { isRoom, type Room } from '@/domain/coach/chat-core';
  * would get a session built around last Tuesday's circumstances without ever being given the chance to
  * say otherwise. A coach who assumes is not better than one who asks.
  *
- * ══ WHY DEVICE-LOCAL ══
+ * ══ WHY DEVICE-LOCAL — AND WHY THE LEVEL IS NOT ONLY THAT (QA holt-31) ══
  *
  * Same reasoning as the thread and the Builder's draft: this is a working convenience, not a record.
  * Losing it costs one extra tap. It is not training history, and nothing downstream trusts it — the
  * value seeds the questionnaire and is then answered, confirmed or overwritten like any other.
+ * The LEVEL is the exception: it is written through to `profiles.experience`, the one level every screen
+ * reads, so the chat and the wizards can never disagree about it. See `loadExperience`.
  *
  * ⚠ IT IS WIPED ON SIGN-OUT (`first-run.ts`), so the sheet falls back to the athlete's own profile —
  * what they told onboarding — before it asks again. See the mount effect in `CoachChatSheet`.
@@ -45,7 +48,7 @@ export interface RememberedExperience {
 
 const valid = (v: unknown): v is Experience => typeof v === 'string' && (LEVELS as readonly string[]).includes(v);
 
-export async function loadExperience(): Promise<RememberedExperience | null> {
+async function readDevice(): Promise<RememberedExperience | null> {
   try {
     const raw = await AsyncStorage.getItem(EXPERIENCE_KEY);
     if (!raw) return null;
@@ -58,18 +61,63 @@ export async function loadExperience(): Promise<RememberedExperience | null> {
   }
 }
 
-export async function rememberExperience(e: RememberedExperience): Promise<void> {
+/** Set once this device's answer has reached `profiles.experience`. Cleared with the answer. */
+const SYNCED_KEY = 'forge_coach_experience_synced_v1';
+
+const pushToProfile = async (lifting: Experience): Promise<void> => {
+  if (await saveProfileExperience(lifting)) {
+    try {
+      await AsyncStorage.setItem(SYNCED_KEY, '1');
+    } catch {
+      // Harmless: it is pushed again next time.
+    }
+  }
+};
+
+/**
+ * ══ ONE LEVEL, AND IT IS THE PROFILE'S (QA holt-31) ══
+ *
+ * The chat read this device copy and the wizards read `profiles.experience`, so the same athlete had two
+ * levels, and whichever did not know asked again. Now the profile is the answer and this copy is a cache:
+ *   · a device answer that never reached the profile (every answer given before this fix) is pushed there
+ *     once, because it is the newest thing the athlete said;
+ *   · after that the profile wins — it is what every other screen and device reads. The running level stays
+ *     the device's when it has one (the profile holds a single level).
+ */
+export async function loadExperience(): Promise<RememberedExperience | null> {
+  const device = await readDevice();
+  let synced = false;
   try {
-    if (!valid(e?.lifting) || !valid(e?.running)) return;
+    synced = (await AsyncStorage.getItem(SYNCED_KEY)) === '1';
+  } catch {
+    // Treated as not yet synced — pushing the same value twice is harmless.
+  }
+  if (device && !synced) {
+    await pushToProfile(device.lifting);
+    return device;
+  }
+  const profile = await fetchProfileExperience();
+  if (profile) return { lifting: profile, running: device?.running ?? profile };
+  return device;
+}
+
+export async function rememberExperience(e: RememberedExperience): Promise<void> {
+  if (!valid(e?.lifting) || !valid(e?.running)) return;
+  try {
     await AsyncStorage.setItem(EXPERIENCE_KEY, JSON.stringify({ lifting: e.lifting, running: e.running }));
   } catch {
     // Best-effort. Worst case he asks once more.
   }
+  await pushToProfile(e.lifting);
 }
 
+/**
+ * Forgets the DEVICE copy only (sign-out, "change my level"). ⚠ Never the profile: sign-out must not erase
+ * the athlete's answer, and a level being changed is overwritten by the new answer, not blanked first.
+ */
 export async function forgetExperience(): Promise<void> {
   try {
-    await AsyncStorage.removeItem(EXPERIENCE_KEY);
+    await AsyncStorage.multiRemove([EXPERIENCE_KEY, SYNCED_KEY]);
   } catch {
     // ignore
   }

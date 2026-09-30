@@ -10,6 +10,8 @@
  * big number keeps counting up instead of showing "−120 left".
  */
 
+import { countOf } from '../text/plural.ts';
+
 export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 
 /** The four slots in the order Nutrition Home lists them. */
@@ -111,9 +113,20 @@ export function groupByMeal(entries: readonly LogEntry[]): MealGroup[] {
       label: MEAL_LABELS[meal],
       entries: own,
       kcal: totals(own).kcal,
-      summary: own.map((e) => e.name).join(', '),
+      summary: own.length === 1 ? singleSummary(own[0]) : own.map((e) => e.name).join(', '),
     };
   });
+}
+
+/**
+ * The subtitle under a ONE-food card. Its title is already the food's name (`mealTitle`), so repeating
+ * the name there said "Chicken breast / Chicken breast" (QA 09-26 N-23) — the portion is the news instead:
+ * "Generic · 1 cup (158 g)". A Quick Add has neither, and says what it is.
+ */
+function singleSummary(entry: LogEntry): string {
+  const parts = [entry.brand, entry.servingLabel].filter((s): s is string => !!s && s.trim().length > 0);
+  if (parts.length) return parts.join(' · ');
+  return entry.source === 'quick' ? 'Quick add' : '';
 }
 
 /**
@@ -123,7 +136,7 @@ export function groupByMeal(entries: readonly LogEntry[]): MealGroup[] {
 export function mealTitle(group: MealGroup): string {
   if (group.entries.length === 0) return 'Nothing logged yet';
   if (group.entries.length === 1) return group.entries[0].name;
-  return `${group.entries.length} items`;
+  return countOf(group.entries.length, 'item');
 }
 
 /** Remaining may be negative — that is the honest number, and the UI shows it without alarm (NUT-D5). */
@@ -264,4 +277,19 @@ export function canGoForward(iso: string, todayIso: string): boolean {
 /** A day that has not begun. Food put on it is PLANNED; it can be checked off once the day comes. */
 export function isAhead(iso: string, todayIso: string): boolean {
   return iso > todayIso;
+}
+
+/** How far back a link may file food. A year covers any honest back-fill; "1999-01-01" is a typo (QA 09-26 N-19). */
+export const LOG_BACK_DAYS = 365;
+
+/**
+ * The day a `?date=` link asks to log to — or today, when it is not a real calendar day ("2026-02-31"),
+ * is not a date at all, or lies outside [a year back, the plan-ahead limit] (QA 09-26 N-19: a 1999 date
+ * in the link was accepted and the food went there without a word).
+ */
+export function diaryDayParam(raw: unknown, todayIso: string): string {
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return todayIso;
+  if (shiftDay(raw, 0) !== raw) return todayIso;
+  if (raw < shiftDay(todayIso, -LOG_BACK_DAYS) || raw > shiftDay(todayIso, PLAN_AHEAD_DAYS)) return todayIso;
+  return raw;
 }

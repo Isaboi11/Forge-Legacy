@@ -21,6 +21,7 @@
 import React from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { flColor, flRadius } from '@/constants/foundation'
+import { forgeOr } from '@/constants/theme-scrim'
 import { useTourAnchor } from '@/hooks/useTourAnchors'
 import type { TourAnchorId } from '@/domain/onboarding/tour-plan'
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon'
@@ -114,7 +115,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.3,
-    color: flColor.bronze300,
+    // Alabaster: `bronze300` is 2.5:1 on the tinted fill, so the button read as disabled (QA 09-26 home-20).
+    // `bronzeInk` is the paper ink for actions (4.5:1+). Forge is unchanged.
+    color: forgeOr(flColor.bronze300, flColor.bronzeInk),
   },
   competitions: {
     flex: 1,

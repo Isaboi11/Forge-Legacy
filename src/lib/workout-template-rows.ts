@@ -9,6 +9,25 @@ import type { WorkoutDraft } from '@/lib/workout-builder-draft';
  * builder would have saved — timed sets, cardio blocks, supersets and cues included. Two copies would drift.
  */
 
+/**
+ * ⚠ THE PRESCRIPTION RIDES ALONG, BOTH WAYS (PO 2026-09-30). A card imported into Build a Template carries a ramp,
+ * percentages and the rest between sets (`ImportRx` → the draft). This used to write sets × reps only, so saving
+ * the template quietly turned nine squat sets at 60–87% into eight plain ones. `TemplateExercise` holds every one of
+ * these fields already (`template-prescription.ts`); the builder's loader reads them back the same way.
+ */
+export function prescriptionOfRow(x: Pick<ProgramExercise, 'repScheme' | 'repsMax' | 'percentOfMax' | 'percentScheme' | 'percentOf' | 'restSec' | 'restScheme'>) {
+  const reps = (x.repScheme ?? []).filter((r): r is number => typeof r === 'number');
+  return {
+    ...(reps.length && reps.length === x.repScheme?.length ? { repScheme: reps } : null),
+    ...(x.repsMax != null ? { repsMax: x.repsMax } : null),
+    ...(x.percentOfMax != null ? { percentOfMax: x.percentOfMax } : null),
+    ...(x.percentScheme?.length ? { percentScheme: x.percentScheme } : null),
+    ...(x.percentOf ? { percentOf: x.percentOf } : null),
+    ...(x.restSec != null ? { restSec: x.restSec } : null),
+    ...(x.restScheme?.length ? { restScheme: x.restScheme } : null),
+  };
+}
+
 /** Draft rows → the stored template shape, section by section, order preserved. */
 export function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
   const of = (list: ProgramExercise[], section: TemplateExercise['section']): TemplateExercise[] =>
@@ -38,6 +57,7 @@ export function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
       targetDurationSec: x.kind === 'cardio' ? (x.targetSec ?? null) : (x.durationSec ?? null),
       restAfterSec: x.kind === 'cardio' ? null : (x.restAfterSec ?? null),
       coachNote: x.coachNote ?? null,
+      ...(x.kind === 'cardio' ? null : prescriptionOfRow(x)),
     }));
   return [...of(d.warmup, 'warmup'), ...of(d.main, 'main'), ...of(d.cooldown, 'cooldown')];
 }

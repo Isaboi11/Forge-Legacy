@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode, type Ref } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type DimensionValue, type TextInputProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 
 /**
  * Shared forged pieces for the onboarding flow (Gate B) — the progress header, selectable tiles, and a
@@ -108,20 +109,50 @@ export function SelectTile({
   );
 }
 
-/** A labeled forged text field. `showCount` renders an x/max counter by the label (needs `maxLength`). */
-export function Field({ label, hint, showCount, ...input }: { label: string; hint?: string; showCount?: boolean } & TextInputProps) {
+/**
+ * A labeled forged text field. `showCount` renders an x/max counter by the label (needs `maxLength`).
+ *
+ * `ref` reaches the TextInput, so a form can move the caret on Enter (sign-in: Email → Password, auth-19).
+ * The edge turns bronze while the field is live — on web that edge IS the focus signal, because the
+ * browser ring is switched off for text fields in `global.css` (QA 09-26 auth-18).
+ */
+export function Field({
+  label,
+  hint,
+  showCount,
+  ref,
+  ...input
+}: { label?: string; hint?: string; showCount?: boolean; ref?: Ref<TextInput> } & TextInputProps) {
+  const [focused, setFocused] = useState(false);
   const count = typeof input.value === 'string' ? input.value.length : 0;
   return (
     <View style={s.field}>
-      <View style={s.fieldLabelRow}>
-        <Text style={s.fieldLabel}>{label}</Text>
-        {showCount && input.maxLength != null ? (
-          <Text style={s.fieldCount}>
-            {count}/{input.maxLength}
-          </Text>
-        ) : null}
-      </View>
-      <TextInput returnKeyType="done" style={s.input} placeholderTextColor={flColor.gray600} {...input} />
+      {label ? (
+        <View style={s.fieldLabelRow}>
+          <Text style={s.fieldLabel}>{label}</Text>
+          {showCount && input.maxLength != null ? (
+            <Text style={s.fieldCount}>
+              {count}/{input.maxLength}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+      <TextInput
+        ref={ref}
+        accessibilityLabel={label}
+        returnKeyType="done"
+        style={[s.input, focused && s.inputFocused]}
+        placeholderTextColor={flColor.gray600}
+        {...input}
+        onFocus={(e) => {
+          setFocused(true);
+          input.onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          input.onBlur?.(e);
+        }}
+      />
       {hint ? <Text style={s.hint}>{hint}</Text> : null}
     </View>
   );
@@ -178,7 +209,9 @@ const s = StyleSheet.create({
   fieldCount: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
   input: {
     borderWidth: 1,
-    borderColor: flColor.charcoal600,
+    /* auth-18: Forge's `charcoal600` edge on `charcoal900` was ~1.2:1 — the field could not be found at
+       rest. `divider` is the role built for a visible quiet line; Alabaster keeps its taupe edge. */
+    borderColor: forgeOr<string>(flColor.divider, flColor.charcoal600),
     backgroundColor: flColor.charcoal900,
     borderRadius: flRadius.md,
     paddingHorizontal: 15,
@@ -187,6 +220,7 @@ const s = StyleSheet.create({
     fontSize: 15,
     color: flColor.cream100,
   },
+  inputFocused: { borderColor: flColor.accentBorder },
   hint: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },
 
   headingWrap: { gap: 10, paddingBottom: 6 },

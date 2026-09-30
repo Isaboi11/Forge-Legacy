@@ -65,9 +65,9 @@ test('stepping back moves the whole window seven days', () => {
   assert.equal(weekDays(TODAY, 1)[0], '2026-09-09');
 });
 
-test('the kicker names the week the way a person would', () => {
-  assert.equal(weekKicker(0), 'This week');
-  assert.equal(weekKicker(1), 'Last week');
+test('the kicker names a ROLLING window as seven days, not as a calendar week (QA 09-26 N-28)', () => {
+  assert.equal(weekKicker(0), 'Last 7 days');
+  assert.equal(weekKicker(1), 'The 7 days before');
   assert.equal(weekKicker(3), '3 weeks ago');
 });
 
@@ -291,4 +291,21 @@ test('an unlogged day shows a dash rather than a zero', () => {
   const h = macroHistory(week, protein, TODAY);
   assert.equal(h.rows[0].value, '—');
   assert.equal(h.rows[0].percent, 0);
+});
+
+test('a target set TODAY reaches the macro rows, and days before it are not misses (QA 09-26 N-28)', () => {
+  const week = buildWeek(weekDays(TODAY, 0), totalsMap(FULL), [{ from: TODAY, targets: TARGET }], TODAY);
+  const s = summarise(week);
+  assert.ok(s.band, 'the chart draws the band set today');
+  assert.equal(s.judged, 0, 'no finished day had a target to miss');
+  const [protein] = macroSummaries(week, s.average);
+  assert.equal(protein.target, 190, 'the macro row shows the same target as the band');
+  assert.equal(protein.note, 'No target on these days yet');
+  assert.equal(protein.clean, false);
+});
+
+test('a macro judged on one day reads singular (QA 09-26 N-22)', () => {
+  const week = buildWeek(weekDays(TODAY, 0), totalsMap(FULL), [{ from: '2026-09-21', targets: TARGET }], TODAY);
+  const [protein] = macroSummaries(week, summarise(week).average);
+  assert.equal(protein.note, 'Under on 1 of 1 day');
 });

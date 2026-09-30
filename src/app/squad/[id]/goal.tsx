@@ -12,7 +12,7 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
 import { forgeOr } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
-import { fetchSquadGoalDetail, GOAL_UNITS, type GoalContribution, type PastGoal } from '@/data/squad-live';
+import { fetchSquadGoalDetail, GOAL_UNITS, goalUnitOf, type GoalContribution, type PastGoal } from '@/data/squad-live';
 import { barPct, milestones, pctOf, projectedClose, recentPace, sharePct } from '@/domain/squad/goal-progress';
 import { earlyLabel } from '@/domain/squad/goal-state';
 import { useQuery } from '@/lib/useQuery';
@@ -162,6 +162,8 @@ export default function SquadGoalScreen() {
   const target = data.target;
   const done = data.total;
   const unit = GOAL_UNITS[data.metricKind];
+  /** Singular for one — "1 workout to go", never "1 workouts" (N-22, QA 09-26). */
+  const unitFor = (n: number): string => goalUnitOf(data.metricKind, Number(fmtValue(n, data.metricKind).replace(/,/g, '')));
   const pct = pctOf(done, target);
   /*
    * Live, met or closed — the same answer the S-2 card draws (Amendment 006 §4). This screen used to know
@@ -245,12 +247,12 @@ export default function SquadGoalScreen() {
           </View>
           <Text style={styles.remaining}>
             {completed
-              ? `Reached · ${fmtValue(target, data.metricKind)} ${unit} logged together${early ? `, ${early}` : ''}`
+              ? `Reached · ${fmtValue(target, data.metricKind)} ${unitFor(target)} logged together${early ? `, ${early}` : ''}`
               : closed
-                ? `${fmtValue(done, data.metricKind)} ${unit} logged together${closedDay ? ` · closed ${closedDay}` : ''}`
+                ? `${fmtValue(done, data.metricKind)} ${unitFor(done)} logged together${closedDay ? ` · closed ${closedDay}` : ''}`
               : pace != null && pace > 0
-                ? `${fmtValue(remaining, data.metricKind)} ${unit} to go · ${data.squadName} logs about ${fmtValue(pace, data.metricKind)} a week`
-                : `${fmtValue(remaining, data.metricKind)} ${unit} to go`}
+                ? `${fmtValue(remaining, data.metricKind)} ${unitFor(remaining)} to go · ${data.squadName} logs about ${fmtValue(pace, data.metricKind)} a week`
+                : `${fmtValue(remaining, data.metricKind)} ${unitFor(remaining)} to go`}
           </Text>
         </View>
 
@@ -278,7 +280,7 @@ export default function SquadGoalScreen() {
         <View style={styles.sectionHead}>
           <Text style={styles.sectionLabel}>Contribution</Text>
           <Text style={styles.sectionMeta}>
-            {data.memberCount} {data.memberCount === 1 ? 'member' : 'members'} · {fmtValue(done, data.metricKind)} {unit}
+            {data.memberCount} {data.memberCount === 1 ? 'member' : 'members'} · {fmtValue(done, data.metricKind)} {unitFor(done)}
           </Text>
         </View>
         <View style={styles.contribCard}>
@@ -359,7 +361,7 @@ export default function SquadGoalScreen() {
                 </View>
                 <View style={[styles.mileBody, !last && styles.mileBodyPad]}>
                   <Text style={[styles.mileTitle, m.reached && styles.mileTitleOn]}>
-                    {fmtValue(m.value, data.metricKind)} {unit}
+                    {fmtValue(m.value, data.metricKind)} {unitFor(m.value)}
                   </Text>
                   {/* On a closed goal an uncrossed waypoint says nothing — "Ahead" is over, and naming what
                       was not reached is the shortfall §5 rules out. */}

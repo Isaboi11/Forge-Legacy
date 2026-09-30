@@ -22,8 +22,9 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { UploadError } from '@/lib/storage-upload';
-import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
-import { CHALLENGE_TYPES, daysLeft, fetchSquadActiveChallenge, fetchSquadHall, formatScore, placeLabel } from '@/data/challenges-live';
+import { fetchSquadInvite, GOAL_UNITS, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
+import { CHALLENGE_TYPES, daysLeft, fetchSquadCompetitions, fetchSquadHall, formatScore, metricLabel, placeLabel } from '@/data/challenges-live';
+import { daysLeftLabel } from '@/domain/challenges/season';
 import {
   detailFor,
   ensureWeeklyRecap,
@@ -126,6 +127,12 @@ const GOAL_TARGET_PLACEHOLDER: Record<SquadGoalMetric, string> = {
 };
 const goalUnit = (kind: SquadGoalMetric): string => GOAL_UNITS[kind];
 const fmtProgress = (n: number): string => String(Number(n.toFixed(1)));
+/** Digits and the FIRST decimal point only — "10.5.5" becomes "10.55", never a value `Number()` reads as NaN. */
+const oneDecimalPoint = (v: string): string => {
+  const clean = v.replace(/[^0-9.]/g, '');
+  const dot = clean.indexOf('.');
+  return dot < 0 ? clean : clean.slice(0, dot + 1) + clean.slice(dot + 1).replace(/\./g, '');
+};
 
 /** The goal section's label per state (Amendment 006 §4). "Last Goal", not "Failed" or "Ended" — §5. */
 const GOAL_SECTION_LABEL: Record<GoalPhase, string> = { live: 'Current Goal', met: 'Goal Complete', closed: 'Last Goal' };
@@ -156,6 +163,10 @@ export default function SquadDetailRoute() {
   const [reactMap, setReactMap] = useState<Record<string, { on: boolean; n: number }>>({});
   /** Which acknowledgement I left on each post — read for the whole feed in one query. */
   const [kindMap, setKindMap] = useState<Record<string, AckKind>>({});
+  /* Re-reads the kinds on every focus (social2-28, QA 09-26). Focus CLEARS `kindMap`, and the read below
+     was keyed on the post ids alone — unchanged on a return — so it never ran again and every post you had
+     marked Strength, Honor or Support came back drawn as the default flame. */
+  const [kindsTick, setKindsTick] = useState(0);
   /** The post whose kind chooser is open. PO: the four kinds must be reachable ON THE FEED. */
   const [ackFor, setAckFor] = useState<string | null>(null);
   // SQ-D8: no scheduler exists, so the first athlete to open the feed in a new week generates that
@@ -207,7 +218,9 @@ export default function SquadDetailRoute() {
   };
   // Its own tolerant read: a squad with no competition — or an unapplied migration — must not take the
   // whole screen down, so the section is simply absent rather than the page erroring.
-  const { data: liveChallenge } = useQuery(() => fetchSquadActiveChallenge(squadId).catch(() => null), [squadId]);
+  const { data: compState } = useQuery(() => fetchSquadCompetitions(squadId).catch(() => null), [squadId]);
+  const liveChallenge = compState?.active ?? null;
+  const openChallenge = compState?.open ?? null;
   const { data: hall } = useQuery(() => fetchSquadHall(squadId).catch(() => null), [squadId]);
   const titles = hall?.entries.length ?? 0;
   const canInvite = inviteInfo?.canInvite ?? false;
@@ -223,8 +236,6 @@ export default function SquadDetailRoute() {
   const [confirmRemove, setConfirmRemove] = useState<SquadMemberView | null>(null);
   const [removing, setRemoving] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   /*
    * The goal editor opens EITHER from a control here or from `?editGoal=<mode>`, which is how Squad Goal
    * Detail hands the owner back — `1` for an edit (what it has always sent), `new` / `again` / `raise`
@@ -269,6 +280,7 @@ export default function SquadDetailRoute() {
       refetchCheckins();
       setReactMap({}); // let fresh server truth win each time the screen regains focus
       setKindMap({});
+      setKindsTick((t) => t + 1);
     }, [refetch, refetchFeed, refetchPinned, refetchCheckins]),
   );
 
@@ -292,7 +304,7 @@ export default function SquadDetailRoute() {
     return () => {
       alive = false;
     };
-  }, [feedIds]);
+  }, [feedIds, kindsTick]);
 
   const squad = data?.squad;
   const members = data?.members ?? [];
@@ -441,7 +453,13 @@ export default function SquadDetailRoute() {
   const parsedEnd = parseYmd(goalEndText);
   // The DB enforces this too (`squads_goal_window_check`); catching it here turns a 400 into a sentence.
   const windowOk = !(parsedStart && parsedEnd) || parsedEnd > parsedStart;
-  const goalValid = Number(goalTargetText) >= 1 && windowOk;
+  /* A goal needs a name and one real number (social-22, QA 09-26). An empty name saved and "10.5.5" turned
+     Save grey with nothing saying why; the field now keeps one decimal point and each problem says itself. */
+  const titleOk = goalTitle.trim().length > 0;
+  const targetOk = Number(goalTargetText) >= 1;
+  const goalValid = titleOk && targetOk && windowOk;
+  const titleError = goalTitleEdit != null && !titleOk ? 'Give the goal a name.' : undefined;
+  const targetError = goalTargetEdit != null && goalTargetEdit !== '' && !targetOk ? 'Enter a number of at least 1.' : undefined;
   const windowError = windowOk ? null : 'The end date has to come after the start.';
   const pinnedPosts = pinnedData ?? [];
   /* A pinned post is drawn once, at the top — never again further down where it would read as a duplicate. */
@@ -602,18 +620,6 @@ export default function SquadDetailRoute() {
     });
   };
 
-  const doDelete = () => {
-    if (deleting) return;
-    setDeleting(true);
-    deleteSquad(squad.id).then(
-      () => router.replace('/(tabs)/squads'),
-      (e: unknown) => {
-        setDeleting(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t delete the squad.');
-      },
-    );
-  };
-
   /** One feed row — the same card for a pinned post and the feed, so the two cannot drift. */
   const feedCard = (p: SquadFeedPost, i: number) => (
     <FeedCard
@@ -685,7 +691,11 @@ export default function SquadDetailRoute() {
         <View style={styles.hero}>
           <View style={styles.heroHead}>
             <View style={styles.heroText}>
-              <Text style={styles.squadName}>{squad.name}</Text>
+              {/* A long name steps down a size and stops at three lines (social-18 / visualB-18, QA 09-26):
+                  "QA SQUAD RENAMED FOR TESTING" filled five lines of an SE at 34pt and pushed the page down. */}
+              <Text style={[styles.squadName, squad.name.length > 16 ? styles.squadNameLong : null]} numberOfLines={3}>
+                {squad.name}
+              </Text>
               {squad.motto ? (
                 <Text style={styles.tagline} numberOfLines={2}>
                   {squad.motto}
@@ -759,7 +769,7 @@ export default function SquadDetailRoute() {
                 accessibilityLabel={goalPhase === 'live' ? "See this goal's progress" : 'See how this goal went'}
                 style={({ pressed }) => (pressed ? styles.goalPressed : null)}
               >
-              <Text style={styles.goalTitle}>{squad.goal || `Reach ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)}`}</Text>
+              <Text style={styles.goalTitle}>{squad.goal || `Reach ${squad.goalTarget} ${goalUnitOf(squad.goalMetricKind, squad.goalTarget)}`}</Text>
               <View style={styles.progressTrack}>
                 {goalPhase === 'closed' ? (
                   <View style={[styles.progressFill, styles.progressFillClosed, { width: `${goalPct}%` }]} />
@@ -769,7 +779,7 @@ export default function SquadDetailRoute() {
               </View>
               <Text style={styles.progressCaption}>
                 {goalPhase === 'closed'
-                  ? `${fmtProgress(squad.goalProgress)} ${goalUnit(squad.goalMetricKind)} logged${closedOn(squad.goalState.closedAt ?? squad.goalEndsAt)}`
+                  ? `${fmtProgress(squad.goalProgress)} ${goalUnitOf(squad.goalMetricKind, Number(fmtProgress(squad.goalProgress)))} logged${closedOn(squad.goalState.closedAt ?? squad.goalEndsAt)}`
                   : goalPhase === 'met'
                     ? `${fmtProgress(squad.goalTarget)} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${squad.goalState.closedAt ? `met ${shortDay(squad.goalState.closedAt)}` : 'goal met'}`
                     : `${fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${goalPct}% complete`}
@@ -885,9 +895,53 @@ export default function SquadDetailRoute() {
                   </Text>
                 </View>
                 <Text style={styles.compEnds}>
-                  {daysLeft(liveChallenge.endAt) === 0 ? 'Final day' : `${daysLeft(liveChallenge.endAt)} days left`}
+                  {daysLeftLabel(daysLeft(liveChallenge.endAt))}
                 </Text>
               </View>
+            </Pressable>
+          </>
+        ) : openChallenge ? (
+          /* A COMPETITION YOU HAVEN'T JOINED YET (social2-06, QA 09-26). Members were never told a new one
+             existed: this page drew only one you had already entered, so a fresh competition sat three taps
+             away under Competitions → Open to Join. It opens the competition page, where Join lives. */
+          <>
+            <View style={styles.compHead}>
+              <Text style={styles.feedLabel}>Open to Join</Text>
+              <Pressable
+                onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
+                accessibilityRole="button"
+                accessibilityLabel="View all competitions"
+                hitSlop={8}
+                style={styles.viewAll}
+              >
+                <Text style={styles.viewAllText}>View All</Text>
+                <ChevronRight color={flColor.bronze400} size={13} />
+              </Pressable>
+            </View>
+            <Pressable
+              onPress={() => router.push({ pathname: '/challenge/[id]', params: { id: openChallenge.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`${openChallenge.name}, open to join`}
+              style={({ pressed }) => [styles.openCompRow, pressed ? styles.recordsRowPressed : null]}
+            >
+              <View style={styles.recordsIcon}>
+                <SwordsIcon />
+              </View>
+              <View style={styles.recordsBody}>
+                <Text style={styles.recordsTitle} numberOfLines={1}>
+                  {openChallenge.name}
+                </Text>
+                <Text style={styles.recordsSub} numberOfLines={1}>
+                  {[
+                    metricLabel(openChallenge.type, openChallenge.metricKey),
+                    `from ${openChallenge.creatorName}`,
+                    openChallenge.state === 'ACTIVE' ? `underway · ${daysLeftLabel(daysLeft(openChallenge.endAt)).toLowerCase()}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+              </View>
+              <ChevronRight />
             </Pressable>
           </>
         ) : null}
@@ -1061,7 +1115,10 @@ export default function SquadDetailRoute() {
           {canInvite ? (
             <OptionRow icon={<InviteIcon />} label="Invite to Squad" divided onPress={() => { setOptionsOpen(false); router.push({ pathname: '/squad-invite', params: { id: squad.id } }); }} />
           ) : null}
-          {squad.isOwner ? <OptionRow icon={<TrashIcon />} label="Delete Squad" divided danger onPress={() => { setOptionsOpen(false); setConfirmDelete(true); }} /> : null}
+          {/* ONE DELETE, ONE SAFETY LEVEL (social-16, QA 09-26). This row had its own one-tap confirm while
+              Squad Settings asks you to type DELETE — two doors to the same unrecoverable act, guarded
+              differently. It now opens Settings with that typed confirm already up. */}
+          {squad.isOwner ? <OptionRow icon={<TrashIcon />} label="Delete Squad" divided danger onPress={() => { setOptionsOpen(false); router.push({ pathname: '/squad-settings', params: { id: squad.id, confirmDelete: '1' } }); }} /> : null}
         </View>
       </BottomSheet>
 
@@ -1117,7 +1174,7 @@ export default function SquadDetailRoute() {
       >
         <View style={styles.goalSheetBody}>
           <Text style={styles.goalSheetSub}>One shared objective the whole squad pushes toward together.</Text>
-          <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" />
+          <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" error={titleError} />
           <View>
             <Text style={styles.goalFieldLabel}>Track</Text>
             <View style={styles.goalChipRow}>
@@ -1149,9 +1206,10 @@ export default function SquadDetailRoute() {
           <InputField
             label={GOAL_TARGET_LABEL[goalMetricKind]}
             value={goalTargetText}
-            onChange={(v) => setGoalTargetText(v.replace(/[^0-9.]/g, '').slice(0, 9))}
+            onChange={(v) => setGoalTargetText(oneDecimalPoint(v).slice(0, 9))}
             keyboardType="decimal-pad"
             placeholder={GOAL_TARGET_PLACEHOLDER[goalMetricKind]}
+            error={targetError}
           />
           <CalendarField label="Starts" value={goalStartText || null} onChange={(v) => setGoalStartText(v ?? '')} placeholder="Today" />
           <CalendarField
@@ -1169,23 +1227,6 @@ export default function SquadDetailRoute() {
         </View>
       </BottomSheet>
 
-      {/* CONFIRM DELETE (centered ceremony modal) */}
-      <Modal visible={confirmDelete} transparent animationType="fade" onRequestClose={() => setConfirmDelete(false)}>
-        <View style={styles.confirmBackdrop}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>Delete {squad.name}?</Text>
-            <Text style={styles.confirmBody}>This permanently removes {squad.name} and everything in it. This can’t be undone.</Text>
-            <View style={styles.confirmActions}>
-              <Button variant="destructive" fullWidth disabled={deleting} onPress={doDelete} accessibilityLabel="Delete squad">
-                {deleting ? 'Deleting…' : 'Delete Squad'}
-              </Button>
-              <Button variant="secondary" fullWidth onPress={() => setConfirmDelete(false)} accessibilityLabel="Cancel">
-                Cancel
-              </Button>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1567,7 +1608,15 @@ function FeedCard({
   const shaped = card || posted || milestone ? null : asTransformationLayout(post.layout);
   /* Both custom bands replace the standard one. Passing `post.media` as well would render the raw photos
      underneath the composition — the same double-render the friends feed avoids for its own comparison. */
-  const media = card || shaped || posted || milestone ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
+  /*
+   * ══ A POSTED WORKOUT CAN CARRY ITS PICTURE (PO 2026-09-30) ══ "Make sure I'm able to post a picture with the
+   * workout and any extra comment I want on it" — the coach's own card, photographed, beside the workout the squad
+   * can take. Then the picture is the post's image like any other photo post, the comment sits under it, and the
+   * workout card (name, tally, Take it) goes in the footer beneath both. With no picture nothing changes: the card
+   * is the band, as it was.
+   */
+  const postedWithMedia = !!posted && post.media.length > 0;
+  const media = card || shaped || (posted && !postedWithMedia) || milestone ? [] : post.media.map((m) => ({ url: m.url, kind: m.kind }));
   const hasMedia = !!card || !!shaped || !!posted || !!milestone || media.length > 0;
   /* §3.7: a progress post gets the photo treatment and a form check the video treatment — which they
      already do, because the media itself says which it is. What changes is that the stand-in sentence
@@ -1609,7 +1658,8 @@ function FeedCard({
          cutoff would end it mid-sentence — and the friends feed, which passes `post.body` straight
          through, would show the same post in full. Other types keep `detailFor`: their bodies are
          stand-ins it exists to suppress. */
-      caption={post.type === 'discussion' || summary ? post.body : detail || null}
+      /* A posted workout's comment is the poster's own words, whole — never the 90-character excerpt. */
+      caption={post.type === 'discussion' || summary || posted ? post.body : detail || null}
       media={media}
       mediaDisplay={displayOf(post.media)}
       customMedia={
@@ -1617,10 +1667,15 @@ function FeedCard({
           <MilestoneBand card={milestone} postId={post.id} />
         ) : card ? (
           <FeedProgressCard card={card} />
-        ) : posted ? (
+        ) : posted && !postedWithMedia ? (
           <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} onOpen={onOpen} />
         ) : shaped ? (
           <TransformationLayout data={shaped} compact />
+        ) : undefined
+      }
+      footer={
+        posted && postedWithMedia ? (
+          <FeedPostedWorkout card={posted} taken={takenPostId === post.id} busy={takingPostId === post.id} onTake={() => onTake(posted)} onOpen={onOpen} />
         ) : undefined
       }
       attribution={attribution}
@@ -1676,7 +1731,7 @@ function MemberRow({
       <Pressable
         onPress={onOpen}
         accessibilityRole="button"
-        accessibilityLabel={`View ${member.name}${member.isSelf ? ', you' : ''}'s profile`}
+        accessibilityLabel={member.isSelf ? 'View your profile' : `View ${member.name}'s profile`}
         style={({ pressed }) => [styles.memberMain, pressed ? styles.memberMainPressed : null]}
       >
         <Avatar src={member.avatarUrl ?? undefined} name={member.name} size="listRow" />
@@ -1799,6 +1854,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 14,
   },
+  squadNameLong: { fontSize: 26, lineHeight: 29 },
   tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, marginTop: 8, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
   crest: {
     width: 92,
@@ -1862,8 +1918,10 @@ const styles = StyleSheet.create({
   goalPressed: { opacity: 0.82 },
   // A closed goal's bar keeps its length and loses the bronze — bronze on this screen means "still going".
   progressFillClosed: { backgroundColor: flColor.gray600, boxShadow: undefined },
-  goalActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  goalActionCell: { flex: 1 },
+  /* Stacked, not side by side (social2-24, QA 09-26): "SET THE NEXT GOAL" wrapped to two lines in half a
+     phone's width and stood taller than "RAISE THE BAR" beside it. Full width, neither can wrap. */
+  goalActions: { flexDirection: 'column', gap: 10, marginTop: 14 },
+  goalActionCell: { alignSelf: 'stretch' },
   goalOwnerNote: { marginTop: 12, fontSize: 12, color: flColor.gray400 },
   removeGoalBtn: { alignSelf: 'center', paddingVertical: 4 },
   removeGoalText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
@@ -1945,7 +2003,8 @@ const styles = StyleSheet.create({
    * pads 20. It carried its own 20 as a page-level section and would now be inset 40, half a check-in
    * disc narrower than everything above it.
    */
-  checkinsSection: { marginTop: 14, marginBottom: 2 },
+  // The gap before CURRENT GOAL (social-25, QA 09-26): the empty-state line ran straight into the label.
+  checkinsSection: { marginTop: 14, marginBottom: 22 },
   checkinHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   checkinDate: { fontSize: 11.5, color: flColor.gray600 },
   checkinStrip: { gap: 6, paddingBottom: 4, paddingRight: 8 },
@@ -2006,6 +2065,7 @@ const styles = StyleSheet.create({
   compGap: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   compEnds: { flexShrink: 0, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
+  openCompRow: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   ackRow: {
     flexDirection: 'row',

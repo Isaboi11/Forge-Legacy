@@ -171,7 +171,8 @@ export default function PreferencesScreen() {
             <View style={styles.preview}>
               <Text style={styles.previewLabel}>Preview</Text>
               <Text style={styles.previewValue}>
-                Best squat <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
+                {/* An example, and says so: "Best squat" read as the athlete's own record (QA 09-26 home-17). */}
+                Example lift <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
               </Text>
             </View>
 
@@ -207,7 +208,7 @@ export default function PreferencesScreen() {
           <View style={styles.card}>
             <View style={styles.unitsHead}>
               <View style={styles.iconTile}>
-                <ForgeSymbol name="spark" size={19} color={flColor.bronze300} />
+                <ForgeSymbol name="theme" size={19} color={flColor.bronze300} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>Theme</Text>
@@ -230,6 +231,8 @@ export default function PreferencesScreen() {
                       <Text style={[styles.rowLabel, on && styles.levelLabelOn]}>{t.label}</Text>
                       <Text style={styles.rowHint}>{t.hint}</Text>
                     </View>
+                    {/* The same mark the intensity list uses — the chosen theme said so by colour alone (settings-21). */}
+                    {on ? <ForgeSymbol name="seal" size={17} color={flColor.bronze400} /> : null}
                   </Pressable>
                 );
               })}
@@ -247,7 +250,7 @@ export default function PreferencesScreen() {
           <View style={styles.card}>
             <View style={styles.unitsHead}>
               <View style={styles.iconTile}>
-                <ForgeSymbol name="spark" size={19} color={flColor.bronze300} />
+                <ForgeSymbol name="coach" size={19} color={flColor.bronze300} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>How hard Holt pushes</Text>
@@ -296,7 +299,7 @@ export default function PreferencesScreen() {
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={styles.iconTile}>
-                <ForgeSymbol name="spark" size={18} color={flColor.bronze300} />
+                <ForgeSymbol name="tips" size={18} color={flColor.bronze300} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>Tips from Holt</Text>

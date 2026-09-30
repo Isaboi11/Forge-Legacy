@@ -96,3 +96,43 @@ export async function fetchCoachProfile(): Promise<CoachProfile> {
     ownedEquipment: row.home_gym_equipment == null ? null : sanitize(row.home_gym_equipment),
   };
 }
+
+/**
+ * THE ONE PLACE A TRAINING LEVEL IS WRITTEN (QA holt-31).
+ *
+ * `profiles.experience` is the athlete's level everywhere: the `/coach` wizard, Program Guided and — first —
+ * the chat. The chat used to keep its answer on the device only, so the wizard read a different level (or
+ * none, and asked again), and after a sign-out Holt asked again too. Every "Holt learned your level" now
+ * lands here as well; the device copy (`lib/coach-memory.ts`) is only a cache of it.
+ *
+ * Boolean, never throws: a level that fails to save is asked once more, never an error on screen.
+ */
+export async function saveProfileExperience(level: Experience): Promise<boolean> {
+  if (!EXPERIENCES.includes(level)) return false;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase.from('profiles').update({ experience: level }).eq('id', user.id);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+/** Just the level — `fetchCoachProfile().experience` without the rest of the row. Null on any failure. */
+export async function fetchProfileExperience(): Promise<Experience | null> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase.from('profiles').select('experience').eq('id', user.id).maybeSingle();
+    if (error || !data) return null;
+    const v = (data as { experience: string | null }).experience;
+    return EXPERIENCES.includes(v ?? '') ? (v as Experience) : null;
+  } catch {
+    return null;
+  }
+}

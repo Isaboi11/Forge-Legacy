@@ -44,7 +44,11 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
  * (`Coach Holt Form Check.dc.html` 04). The words travel in `lib/coach-ask-seed.ts` and land in the
  * composer unsent; see `CoachChatSheet`.
  */
-export type CoachIntent = 'build' | 'import' | 'recommend' | 'ask';
+/**
+ * `help` opens him on the "How do I…?" topics — Settings' help row (QA 09-26 firstuser-21). Local answers,
+ * no model call, so it is behind no plan.
+ */
+export type CoachIntent = 'build' | 'import' | 'recommend' | 'ask' | 'help';
 
 export interface CoachDoorValue {
   /** True while the chat sheet is on screen. Read by `CoachBubble`, which does the rendering. */
