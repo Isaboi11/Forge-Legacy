@@ -13,6 +13,7 @@ import { useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   acceptFriendRequest,
+  FRIEND_REQUEST_GONE,
   fetchFriendLists,
   findAthletes,
   removeFriendship,
@@ -222,8 +223,11 @@ export default function AddFriendScreen() {
       },
       (e: unknown) => {
         setBusy(false);
-        setOptimistic((o) => ({ ...o, [f.id]: 'incoming' }));
+        /* A request that is gone must not be offered again (social2-08): drop the Accept, re-read the lists. */
+        const gone = e instanceof Error && e.message === FRIEND_REQUEST_GONE;
+        setOptimistic((o) => ({ ...o, [f.id]: gone ? 'none' : 'incoming' }));
         showToast(errorMessage(e));
+        if (gone) refetch();
       },
     );
   };
