@@ -754,7 +754,10 @@ export default function SquadComposerRoute() {
                   <Text style={styles.recapChangeText}>Choose a different workout</Text>
                 </Pressable>
               </View>
-              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="Tomorrow's session…" rows={2} />
+              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="Tomorrow's session…" rows={3} />
+              {/* The card itself, photographed, or anything else worth showing with it (PO 2026-09-30: "post a
+                  picture with the workout and any extra comment I want on it"). */}
+              <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
               {/*
                 Said before posting, not discovered afterwards. What travels is a COPY: editing this
                 template next week will not change what anybody took, and deleting it will not take their
