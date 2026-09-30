@@ -552,3 +552,40 @@ test('volume — "less cardio" never removes a whole run day; a finisher inside 
   const more = resolveEditIntent({ op: 'volume', target: 'cardio', direction: 'more' }, gapped(), [], POOL);
   assert.equal(more.ask, 'not_editable', 'more cardio asks for the athlete\'s own number');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// holtai-06 — "make my Legs day shorter" looped on "which day?" for good
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('holtai-06: a shorter LIFTING day offers to take one exercise out, and the answer removes it', () => {
+  const s = program();
+  const r = resolveEditIntent({ op: 'duration', day: 'Lower A' }, s, [], POOL);
+  assert.equal(r.ok, false);
+  assert.equal(r.ask, 'which_exercise', 'asks which exercise, not which day again');
+  assert.equal(r.retarget, 'remove', 'the answer fills a remove');
+  assert.ok(r.options.length >= 2, 'the real rows of Lower A are the options');
+  // What the chat sends back when the athlete taps the second chip.
+  const next = resolveEditIntent({ op: r.retarget, day: 'Lower A', exercise: r.options[1] }, s, [], POOL);
+  assert.ok(next.ok, next.ok ? '' : next.message);
+  assert.match(next.plan.label, /^Week 1, Lower A — take out /);
+  const after = applyOk(s, next.plan);
+  assert.equal(trainingAt(after, 0, 1).main.length, trainingAt(s, 0, 1).main.length - 1);
+});
+
+test('holtai-06: a session that cannot take the edit is never offered back as the answer', () => {
+  const s = program();
+  const r = resolveEditIntent({ op: 'distance', miles: 3, day: 'Lower A' }, s, [], POOL);
+  assert.equal(r.ok, false);
+  assert.ok(!r.options.includes('Week 1, Lower A'), `looped back to the same session: ${r.options}`);
+  // A strength block has no cardio anywhere — nothing to offer, so it ends rather than asks.
+  assert.equal(r.ask, 'not_editable');
+});
+
+test('holtai-02: a typed change that names another program is caught; naming the active one is not', async () => {
+  const { otherProgramNamed } = await import('../edit-intent.ts');
+  const names = ['Strength Block', 'QA Holt Plan', 'Plan'];
+  assert.equal(otherProgramNamed('In my QA Holt Plan, swap push-ups for dumbbell bench', 'Strength Block', names), 'QA Holt Plan');
+  assert.equal(otherProgramNamed('in my strength block swap bench', 'Strength Block', names), null);
+  assert.equal(otherProgramNamed('swap bench for dumbbell press', 'Strength Block', names), null);
+  assert.equal(otherProgramNamed(undefined, 'Strength Block', names), null);
+});
