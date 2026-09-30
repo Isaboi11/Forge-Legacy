@@ -16,6 +16,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * A program someone sent you (migration 0110) — read it before you take it.
@@ -138,7 +139,7 @@ export default function ProgramShareScreen() {
 
         <Text style={styles.title}>{data.name}</Text>
         <Text style={styles.meta}>
-          {structure.weeks} weeks • {structure.daysPerWeek} {structure.daysPerWeek === 1 ? 'day' : 'days'} / week
+          {countOf(structure.weeks, 'week')} • {countOf(structure.daysPerWeek, 'day')} / week
           {structure.vary ? ' • per-week plan' : ''}
         </Text>
 

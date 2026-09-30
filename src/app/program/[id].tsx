@@ -86,6 +86,12 @@ import { useShareSheet } from '@/hooks/useShareSheet';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { errorMessage } from '@/lib/useQuery';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
+import { countOf } from '@/domain/text/plural';
+
+/** "3-Day" stays on one line: a word joiner after an in-word hyphen stops the display title breaking into
+    "QA Custom Weeks 3-" / "Day" on a narrow phone (QA 09-26 programs-30). Display only. */
+const WORD_JOINER = String.fromCharCode(0x2060);
+const keepHyphensTogether = (s: string) => s.replace(/(\w)-(?=\w)/g, `$1-${WORD_JOINER}`);
 
 /**
  * Program Detail (`Forge Program.dc.html`) — one athlete-authored program across its five lifecycle
@@ -392,7 +398,11 @@ export default function ProgramDetailScreen() {
    * screen would rather say nothing than say "A program you built." underneath the name they gave it.
    */
   const def = sourceDefId ? getProgramDefinition(sourceDefId) : null;
-  const goals = def?.goals?.filter((g) => g.trim().length > 0) ?? [];
+  /* A goal that names the successor ("Arrive ready for Mobility Intermediate") stays only when that program is
+     in the catalogue — `nextAfter` is the existence check. Five definitions name one nobody has written, and
+     "What this builds" was promising it (QA 09-26 programs-19). */
+  const unwrittenNext = def?.successorName?.trim() && nextAfter(def.id).kind !== 'program' ? def.successorName.trim() : null;
+  const goals = def?.goals?.filter((g) => g.trim().length > 0 && !(unwrittenNext && g.includes(unwrittenNext))) ?? [];
 
   /**
    * PERCENTAGE PRESCRIPTIONS resolve here, at render, against the run's own frozen maxes.
@@ -908,7 +918,7 @@ export default function ProgramDetailScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>{programName}</Text>
+        <Text style={styles.title}>{keepHyphensTogether(programName)}</Text>
         {/* WAS HARDCODED "Custom". Squat Ascent Intermediate — a Strength/Intermediate catalog program —
             introduced itself to the athlete as Custom, which is simply untrue of anything adopted from
             the catalog. A program the athlete actually built keeps "Custom", and keeps the week shape
@@ -920,7 +930,7 @@ export default function ProgramDetailScreen() {
             : `Custom • ${structure.vary ? 'Per-week' : 'Repeating week'}`}
         </Text>
         <Text style={styles.metaLine}>
-          {structure.weeks} weeks • {progress.perWeek} {progress.perWeek === 1 ? 'day' : 'days'} / week
+          {countOf(structure.weeks, 'week')} • {countOf(progress.perWeek, 'day')} / week
         </Text>
 
         {/* THE SEALED RECORD (W-3 §7). A finished program is history, and history states when and how
@@ -960,7 +970,7 @@ export default function ProgramDetailScreen() {
               <>
                 <Text style={styles.nextName}>{whatsNext.program.name}</Text>
                 <Text style={styles.nextMeta}>
-                  {[whatsNext.program.family, whatsNext.program.difficulty, whatsNext.program.weeks ? `${whatsNext.program.weeks} weeks` : null]
+                  {[whatsNext.program.family, whatsNext.program.difficulty, whatsNext.program.weeks ? countOf(whatsNext.program.weeks, 'week') : null]
                     .filter(Boolean)
                     .join(' · ')}
                 </Text>
@@ -976,7 +986,8 @@ export default function ProgramDetailScreen() {
             ) : (
               <>
                 <Text style={styles.nextName}>
-                  {whatsNext.named ? `${whatsNext.named} isn't written yet.` : 'Nothing follows this one yet.'}
+                  {/* Never the name of a program that doesn't exist (QA 09-26 programs-19). */}
+                  Nothing follows this one yet.
                 </Text>
                 <Text style={styles.nextMeta}>
                   Holt can build the next block from what you just did, rather than picking one off a shelf.

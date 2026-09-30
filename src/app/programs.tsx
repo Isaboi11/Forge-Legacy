@@ -108,7 +108,17 @@ export default function ProgramsScreen() {
           {empty ? (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>No programs yet</Text>
-              <Text style={styles.emptyBody}>Build one around your goal, or find a Forge program in Discover.</Text>
+              <Text style={styles.emptyBody}>Build one around your goal, or pick one of Forge&rsquo;s programs.</Text>
+              {/* The way there, not just its name (QA 09-26 programs-24). */}
+              <Pressable
+                onPress={() => router.push('/program-catalog')}
+                accessibilityRole="button"
+                accessibilityLabel="Browse Forge programs"
+                style={({ pressed }) => [styles.createRow, pressed ? styles.createRowPressed : null]}
+              >
+                <EngravedIcon name="search" size={16} color={flColor.bronze300} />
+                <Text style={styles.createRowText}>Browse Forge Programs</Text>
+              </Pressable>
             </View>
           ) : null}
 

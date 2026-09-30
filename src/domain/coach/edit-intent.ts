@@ -66,6 +66,7 @@ import {
 import type { EditIntent } from './interpret-narrow.ts';
 import { isTimedExercise, prescribeReps, prescribeTimed, roleFor, type PrescribeContext } from './prescribe.ts';
 import { FOCUS_SPEC } from './rulebook/focus.ts';
+import { countOf } from '../text/plural.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
 
 export type { EditIntent };
@@ -763,17 +764,17 @@ export function resolveEditIntent(
     case 'sets': {
       if (intent.sets == null) return ask('which_value', valueOptions('sets'), `How many sets of ${row.name}?`);
       const next = clamp(intent.sets, 1, 8);
-      if (next === row.sets) return ask('which_value', valueOptions('sets'), `${row.name} is already ${next} sets — how many do you want?`);
-      return plan(`${row.name}: ${row.sets ?? '?'} → ${next} sets`, (scope) => setPrescription(structure, marks, at, { sets: next }, scope));
+      if (next === row.sets) return ask('which_value', valueOptions('sets'), `${row.name} is already ${countOf(next, 'set')} — how many do you want?`);
+      return plan(`${row.name}: ${row.sets ?? '?'} → ${countOf(next, 'set')}`, (scope) => setPrescription(structure, marks, at, { sets: next }, scope));
     }
     case 'reps': {
       const current = row.reps ?? 8;
-      const offer = [current - 4, current - 2, current + 2, current + 4].filter((n) => n >= 1 && n <= 60).map((n) => `${n} reps`);
+      const offer = [current - 4, current - 2, current + 2, current + 4].filter((n) => n >= 1 && n <= 60).map((n) => countOf(n, 'rep'));
       if (intent.reps == null) return ask('which_value', offer, `How many reps of ${row.name}?`);
       const next = clamp(intent.reps, 1, 60);
-      if (next === row.reps && !row.repsMax) return ask('which_value', offer, `${row.name} is already ${next} reps — how many do you want?`);
+      if (next === row.reps && !row.repsMax) return ask('which_value', offer, `${row.name} is already ${countOf(next, 'rep')} — how many do you want?`);
       // A fixed count replaces a range: "make it 10" on an 8–12 is 10, not 10–12.
-      return plan(`${row.name}: ${repsText(row)} → ${next} reps`, (scope) =>
+      return plan(`${row.name}: ${repsText(row)} → ${countOf(next, 'rep')}`, (scope) =>
         setPrescription(structure, marks, at, { reps: next, repsMax: null }, scope),
       );
     }

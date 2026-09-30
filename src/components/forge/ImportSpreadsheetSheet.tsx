@@ -328,22 +328,6 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
               : scope === 'week'
                 ? 'One week at a time — a longer paste keeps its first week.'
                 : 'One day at a time — Week and Day aren’t needed, and a longer paste keeps its first day.'}
-            {'\n\n'}
-            Keep it one row per <Text style={styles.impHintStrong}>day</Text> instead? That works too —
-            write the session out (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the
-            rides, runs and swims out of it. Check what we read before you {scope === 'program' ? 'create it' : 'use it'}.
-            {'\n\n'}
-            Bought a program as a <Text style={styles.impHintStrong}>PDF</Text>? Upload it below — we read
-            the text out of it into the box, where you can fix anything before previewing. A scanned PDF has
-            no text to read.
-            {PHOTO_IMPORT_ENABLED ? (
-              <>
-              {'\n\n'}
-              Only have a <Text style={styles.impHintStrong}>screenshot</Text>? Read it in below — we type
-              the table out for you and it lands in the box above, where you can fix anything we misread
-              before previewing it.
-              </>
-            ) : null}
           </Text>
           <TextInput
             value={pasteText}
@@ -405,6 +389,22 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
               </Text>
             </Pressable>
           ) : null}
+          {/* The rest of the help sits UNDER the box and its buttons (QA 09-26 library-21): three paragraphs
+              above it pushed the paste box below the fold on a phone. */}
+          <Text style={styles.impNote}>
+            One row per <Text style={styles.impHintStrong}>day</Text> works too — write the session out
+            (&ldquo;75min bike Z2 + 30min upper strength&rdquo;) and we&rsquo;ll read the rides, runs and swims out of it.
+            {'\n\n'}
+            A <Text style={styles.impHintStrong}>PDF</Text>&rsquo;s text lands in the box, where you can fix anything
+            before previewing. A scanned PDF has no text to read.
+            {PHOTO_IMPORT_ENABLED ? (
+              <>
+                {' '}Only have a <Text style={styles.impHintStrong}>screenshot</Text>? It&rsquo;s typed out into the box the same way.
+              </>
+            ) : null}
+            {'\n\n'}
+            Check what we read before you {scope === 'program' ? 'create it' : 'use it'}.
+          </Text>
         </View>
       ) : (
         <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} />
@@ -461,6 +461,16 @@ export function ImportPreview({
    * A day template has its own ceilings and keeps its own messages.
    */
   const limitNotes = scope === 'day' ? [] : importLimitNotes(preview, { isWeek: scope === 'week' });
+
+  /* WHICH MARKS THIS PREVIEW ACTUALLY SHOWS (QA 09-26 holtai-23): the note explains → and ≈ only when a row
+     carries one, and promises grey text only when some row has it — never a legend for marks that aren't there. */
+  const marks = { matched: false, guessed: false, source: false };
+  for (const w of preview) for (const d of w.days) for (const it of d.items) {
+    if (it.note && it.note !== it.name) marks.source = true;
+    if (it.kind === 'cardio') continue;
+    const hit = resolveName(it.name);
+    if (hit && hit.name.toLowerCase() !== it.name.trim().toLowerCase()) marks[hit.byPreference ? 'guessed' : 'matched'] = true;
+  }
 
   /**
    * Adjust a parsed set/rep count — or a timed set's clock, 5 s a tap — before creating. The design's − / + on
@@ -600,9 +610,13 @@ export function ImportPreview({
             <Text style={styles.impSummaryText}>{summarize(preview, scope === 'day' ? 'workout' : 'program')}</Text>
           </View>
           <Text style={styles.impNote}>
-            Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕. Grey text is the sentence we read it from — it is kept
-            as a coaching note, so anything we couldn&rsquo;t turn into a number still reaches you. You can
-            rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
+            Tap − / + to fix any sets × reps, edit a name, or remove a row with ✕.
+            {marks.matched ? ' → shows the library exercise a name became.' : ''}
+            {marks.guessed ? ' ≈ means the name didn’t say which kind, so we picked the usual one — change it in the builder if it’s wrong.' : ''}
+            {marks.source
+              ? ' Grey text is the sentence we read it from — it is kept as a coaching note, so anything we couldn’t turn into a number still reaches you.'
+              : ''}{' '}
+            You can rename, reorder and add exercises after{scope === 'program' ? ' you create the program' : 'wards'}.
           </Text>
 
           {preview.map((w, wi) => (
@@ -927,11 +941,13 @@ const styles = StyleSheet.create({
   impGroupLetter: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', color: flColor.bronze300, minWidth: 12 },
   impItems: { gap: 6, paddingVertical: 10, paddingHorizontal: 12 },
   impItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  impItemText: { flex: 1, gap: 1 },
+  /* `minWidth: 0` lets the name column SHRINK: a web input's intrinsic width otherwise pushed a long name under
+     the − / + steppers (QA 09-26 library-21). */
+  impItemText: { flex: 1, minWidth: 0, gap: 1 },
   impItemName: { fontFamily: flFont.sans, fontSize: 12.5, color: flColor.gray400 },
   impNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   /* An input rather than text, because a misread name is the one thing the steppers could never fix. */
-  impItemNameInput: { flex: 1, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
+  impItemNameInput: { flex: 1, minWidth: 0, fontFamily: flFont.sans, fontSize: 12.5, color: flColor.cream100, paddingVertical: 2 },
   impRemove: { width: 20, height: 20, marginLeft: 2, alignItems: 'center', justifyContent: 'center' },
   impSectionTag: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 0.8, color: flColor.labelInk },
   impItemSource: { fontFamily: flFont.sans, fontSize: 10.5, lineHeight: 14, color: flColor.gray600 },
