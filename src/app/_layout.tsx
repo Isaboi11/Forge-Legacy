@@ -43,6 +43,7 @@ import { PushProvider } from '@/lib/push';
 import { SettingsProvider } from '@/lib/settings';
 import { EntitlementProvider } from '@/lib/entitlement';
 import { usePendingInvite } from '@/lib/pending-invite';
+import { usePendingDestination } from '@/lib/pending-destination';
 import { routeFor } from '@/lib/route-for';
 import { WorkoutSessionProvider } from '@/hooks/useWorkoutSession';
 import { ShareProvider } from '@/hooks/useShareSheet';
@@ -273,6 +274,8 @@ function RootNavigator() {
    * strips `join-squad` out of the tree and the `?code=` with it. See `lib/pending-invite.tsx`.
    */
   usePendingInvite(route);
+  // Any other link opened while signed out — opened again once they are in (settings-29).
+  usePendingDestination(route);
   // RevenueCat's user id = the signed-in athlete, so the purchase webhook knows whose row to write.
   useStoreIdentity(session?.user?.id ?? null);
   // Sentry's user = the account UUID only (PO 09-28), cleared on sign-out. No-op unless Sentry is on.
