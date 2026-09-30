@@ -668,7 +668,7 @@ export function resolveEditIntent(
         return ask(
           'which_day',
           holding.map((s) => sessionLabel(structure, s.at.weekIndex, s.at.dayIndex)),
-          `${intent.exercise} is in more than one session this week — which day?`,
+          `${intent.exercise} shows up in more than one session this week — which day?`,
         );
       } else return ask('which_day', options, `I can't find ${intent.exercise} in this week's sessions — which day?`);
     }

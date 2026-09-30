@@ -67,7 +67,7 @@ test('⚠ QA R2-F8 — a request interrupted by the active-program question is k
   const guarded = [...sheet.matchAll(/const request: ChatState = [^\n]+\n([\s\S]{0,600}?)guardActiveProgram\(\)/g)];
   assert.equal(guarded.length, 3, 'typed sentence, tapped opener, shelf-to-build');
   for (const m of guarded) assert.match(m[1], /setConstraints\(request\);/);
-  assert.match(sheet, /if \(chip\.label === 'Replace it'\) \{\s*say\(\{ kind: 'me', text: chip\.label \}\);\s*void advance\(constraints, mode \?\? 'program'\);/);
+  assert.match(sheet, /if \(chip\.label === 'Replace it'\) \{\s*say\(\{ kind: 'me', text: chip\.label \}\);\s*void advance\(constraints, mode \?\? 'program'(, '[^']*')?\);/);
 });
 
 test('⚠ QA F14 — a race concern is said BEFORE the card with the Start button, never after it', () => {
