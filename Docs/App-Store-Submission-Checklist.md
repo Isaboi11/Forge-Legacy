@@ -24,12 +24,13 @@ Detail lives in `Docs/GO-LIVE.md`, `Docs/Launch-Checklist-Free-And-Premium.md` a
   - ✅ `pending-0233.sql` applied 09-28 (weekly summary as a story): 4 of 4 recent summaries `has_story = true` (2 squads × 2 weeks, 4–7 members each), as predicted
   - ✅ Published 09-28: web `index-30621b29…` + build 9 iOS `01a0e8a3` (squad story summary, 24 h pin, recipe barcode scan) · ⚠ both then rolled back by the barcode-only publish · ✅ restored 09-28: web `index-3c1a683c…` + build 9 iOS `01a0e8b3` (also: set-logged fuse)
   - ✅ `diagnose-po-chapter-photos.sql` run 09-30 — nothing is lost. Chapter I: 0 album photos, 1 progress entry with 5 photos (08-10). Chapter II: 10 album photos, 3 progress entries with 15 photos. Storage matches exactly (10 album files, 20 progress files). The first album file ever saved is 08-26, after Chapter I ended 08-14 — no album photo was ever added to Chapter I. ✅ PO decided 09-30: a chapter's album shows its progress photos. Built `20b9d5b3` (`Photos-Architecture-Amendment-002`, no SQL needed)
-  - ⬜ Tell Claude "deploy" — the album change goes to the web preview and the phone (build 11). Then open Legacy → Photos: Chapter I should be listed with 5 photos (added 09-30)
+  - ✅ Published 09-30: web `index-d36593d0…` + build 11 iOS `01a0f28d-6ab7…` — album shows progress photos, typed to Holt = Holt writes it, the 24 QA medium fixes (first time on web), CRM Social. ⬜ PO: open Legacy → Photos — Chapter I should be listed with 5 photos
+  - ⬜ Deploy the `coach-author` Edge Function: paste `supabase/apply/deploy-coach-author.ts` (dashboard → Edge Functions → Via Editor → name `coach-author`). Until then a typed ask to Holt is built from the rulebook and he says so (added 09-30)
   - ✅ `pending-0245.sql` applied 09-30 (plain-English bug summaries): `0 · 284 · true`, as predicted
-  - ⬜ Deploy the `bug-plain` Edge Function (`supabase/functions/bug-plain/index.ts`), then the web deploy — until then the CRM bug board shows "Summary unavailable" (added 09-30)
+  - ⬜ Deploy the `bug-plain` Edge Function (paste `supabase/functions/bug-plain/index.ts`, Verify JWT on) — the web is already deployed; until then the CRM bug board shows "Summary unavailable" (added 09-30)
   - **CRM Social section (added 09-30; built on `feat/crm-social` `f94e8216`, not a submission blocker). Do these in order:**
     - ✅ `pending-0247.sql` pasted 09-30 (PO said "Yes"; the result row itself was not sent — expected `13 · 17 · 13 · 2 · 1 · 1 · 0 · 0`)
-    - ⬜ Tell Claude "deploy" — the web CRM gets Social → Numbers, Content, Playbook. Ideas, the pipeline, the calendar and the Playbook work from here
+    - ✅ Web deployed 09-30 (`index-d36593d0…`) — the web CRM has Social → Numbers, Content, Playbook. Not on the phone
     - ⬜ Follow `Docs/Social-Accounts-Setup.md` (about 45 minutes, once): make the TikTok and Meta developer apps, set 4 secrets in Supabase, paste the `social-sync` function with Verify JWT **off**, press Connect in the CRM. Numbers then arrive on their own
     - ⬜ Approve the one-line privacy policy addition ("How you found us", in `Admin-Analytics-Amendment-003-Social.md` §5), then tell Claude to deploy the site
     - ⬜ Put `forgelegacy.app/go/tiktok` in the TikTok bio and `forgelegacy.app/go/instagram` in the Instagram bio
