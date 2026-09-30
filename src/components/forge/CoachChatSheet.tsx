@@ -67,6 +67,8 @@ import {
   kitchenContext,
   kitchenDoorsFor,
   kitchenWantsTraining,
+  KITCHEN_MENU,
+  replyOffersOnline,
   medicalStopIsDietitian,
 } from '@/domain/coach/kitchen';
 import { narrowEdit } from '@/domain/coach/interpret-narrow';
@@ -105,6 +107,8 @@ import {
   KITCHEN_ROWS,
   type KitchenTile,
   isHomeTurn,
+  greetingSlot,
+  type GreetingSlot,
   TYPING_ENABLED,
   interpret,
   focusFromText,
@@ -128,6 +132,7 @@ import {
   answerArriving,
   streamEnded,
   streamInto,
+  cutOffReply,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -1057,7 +1062,8 @@ export function CoachChatSheet({
        making them re-answer either would defeat the point of having read it. */
     setConstraints(athleteFacts);
     setIntroStep(intro.length + 1);
-    setThread(stamped(greetReturning(firstName)));
+    /* In the kitchen he greets as the cook, as he does on arrival (kitchen-13). */
+    setThread(stamped(kitchen ? greetKitchen(firstName) : greetReturning(firstName)));
   };
 
   /**
@@ -2122,6 +2128,8 @@ export function CoachChatSheet({
         notes: brief.notes,
         training: brief.training,
         nutrition: opts.kitchen ? kitchenContext(brief.nutrition ?? kitchenFood, pantry, undefined, left) : brief.nutrition,
+        /* kitchen-01: in the kitchen the pantry and today's food go with EVERY line, food words or not. */
+        kitchen: opts.kitchen,
       },
       askSourcesLive(),
     );
@@ -2150,14 +2158,27 @@ export function CoachChatSheet({
     setThread((t) => streamEnded(t, sid));
     switch (r.kind) {
       case 'answer':
+        /* ⚠ CUT OFF PARTWAY (kitchen-09, QA 09-26): a dropped line came back as a finished one-letter answer
+           ("N"). A fragment that says nothing is taken back; either way the athlete is told it broke. */
+        if (!r.complete && started) {
+          setThread((t) => cutOffReply(t, sid));
+          return say({ kind: 'error', text: 'I lost the line partway through.', sub: 'The connection dropped before I finished.', action: 'Ask me again in a moment.' });
+        }
         if (!started && r.text) say({ kind: 'holt', text: r.text });
         /* What he asked the APP to do — a change to confirm, or the online-search offer. */
         if (await actOn(r.actions, text)) return;
+        /* kitchen-07: he SAID he'd look online without calling the tool — the chip goes under him anyway. */
+        if (nutritionAccess && !opts.allowWeb && replyOffersOnline(r.text)) {
+          say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: text.trim().slice(0, 80) }] });
+          return;
+        }
         /* Asked mid-build: the question on the table comes back. Asked about a program with none open: the
            door to build one, since the coach-ask prompt has him offer to build it. */
         /* The kitchen's door under the answer — Meal Plan, Targets, My Recipes, Grocery List (`kitchenDoorsFor`). */
         if (opts.kitchen) {
-          const doors = kitchenDoorsFor(text);
+          /* kitchen-04: none under a refusal, a minor or a crash rate — an age said earlier counts, stopped or not
+             (the thread stays on the phone; nothing here is sent). */
+          const doors = kitchenDoorsFor(text, r.text, thread.flatMap((x) => (x.kind === 'me' ? [x.text] : [])));
           if (doors.length) say({ kind: 'chips', chips: doors.map((d) => ({ label: d.label, patch: {}, goTo: d.goTo })) });
           return;
         }
@@ -2179,6 +2200,7 @@ export function CoachChatSheet({
       case 'no_consent':
         return say({ kind: 'holt', text: AI_DECLINED_HOLT });
       case 'offline':
+        if (started) setThread((t) => cutOffReply(t, sid));
         return say({
           kind: 'error',
           text: started ? 'I lost the line partway through.' : "I couldn't reach my notes just then.",
@@ -2210,7 +2232,8 @@ export function CoachChatSheet({
     }
     if (!chip.webSearch) return tapChip(chip);
     say({ kind: 'me', text: chip.label });
-    void askAloud(`Find me a recipe online: ${chip.webSearch}`, historyFrom(thread), null, { allowWeb: true });
+    /* kitchen-07: the kitchen's pantry and today's food ride along with the search, as with any kitchen line. */
+    void askAloud(`Find me a recipe online: ${chip.webSearch}`, historyFrom(thread), null, { allowWeb: true, kitchen });
   };
 
   /**
@@ -2714,31 +2737,48 @@ export function CoachChatSheet({
                   newChat();
                 }}
               />
-              <MenuRow
-                divided
-                label="Build something"
-                onPress={() => {
-                  setMenu(false);
-                  tapChip({ label: 'Build me something', patch: {} });
-                }}
-              />
-              <MenuRow
-                divided
-                label="Training question"
-                onPress={() => {
-                  setMenu(false);
-                  tapChip({ label: 'How do I…?', patch: {} });
-                }}
-              />
-              {/* The only correction path for the one answer Holt keeps between conversations. */}
-              <MenuRow
-                divided
-                label="Change my training level"
-                onPress={() => {
-                  setMenu(false);
-                  changeLevel();
-                }}
-              />
+              {/* kitchen-13 (QA 09-26): in the kitchen the rows are the kitchen's own doors, never training. */}
+              {kitchen ? (
+                KITCHEN_MENU.map((d) => (
+                  <MenuRow
+                    key={d.label}
+                    divided
+                    label={d.label}
+                    onPress={() => {
+                      setMenu(false);
+                      kitchenDoor(d.label, d);
+                    }}
+                  />
+                ))
+              ) : (
+                <>
+                  <MenuRow
+                    divided
+                    label="Build something"
+                    onPress={() => {
+                      setMenu(false);
+                      tapChip({ label: 'Build me something', patch: {} });
+                    }}
+                  />
+                  <MenuRow
+                    divided
+                    label="Training question"
+                    onPress={() => {
+                      setMenu(false);
+                      tapChip({ label: 'How do I…?', patch: {} });
+                    }}
+                  />
+                  {/* The only correction path for the one answer Holt keeps between conversations. */}
+                  <MenuRow
+                    divided
+                    label="Change my training level"
+                    onPress={() => {
+                      setMenu(false);
+                      changeLevel();
+                    }}
+                  />
+                </>
+              )}
             </MenuPop>
           </>
         ) : null}
@@ -3345,32 +3385,7 @@ function layOut(thread: Turn[]): Block[] {
   return out;
 }
 
-/** Which slot of Home's greeting stack a turn occupies, if any. */
-type GreetingSlot = 'greeting' | 'line' | 'sub';
-const GREETING_SLOTS: readonly GreetingSlot[] = ['greeting', 'line', 'sub'];
-
-/**
- * Is this Holt turn part of the greeting Home is wearing, and which line of it?
- *
- * The greeting stack is the run of Holt lines immediately before the opener turn — the introduction's
- * three beats on a first visit, `greetReturning`'s two on every one after. Derived rather than stored,
- * because the thread already knows: a second flag saying which lines are "the greeting" is a second
- * thing that can disagree with it.
- *
- * ⚠ CAPPED AT THREE, which is how many slots the design's stack has. It also stops a stored conversation
- * that happens to end in Holt speech from being swallowed into the greeting when he greets over the top
- * of it — those lines stay conversation, which is what they are.
- */
-function greetingSlot(thread: Turn[], i: number): GreetingSlot | null {
-  if (thread[i].kind !== 'holt') return null;
-  let home = i;
-  while (home < thread.length && thread[home].kind === 'holt') home += 1;
-  if (home >= thread.length || !isHomeTurn(thread[home])) return null;
-  let runStart = home;
-  while (runStart > 0 && thread[runStart - 1].kind === 'holt') runStart -= 1;
-  const start = Math.max(runStart, home - GREETING_SLOTS.length);
-  return i < start ? null : (GREETING_SLOTS[i - start] ?? null);
-}
+/* Which slot of Home's greeting stack a turn occupies — `greetingSlot` in chat-core (kitchen-09). */
 
 /** How far a greeting line pulls back against the thread's turn gap to reach the design's 4px. */
 const GREETING_PULL: Record<GreetingSlot, number> = { greeting: 0, line: 16, sub: 14 };
@@ -4826,7 +4841,8 @@ const styles = StyleSheet.create({
   menu: {
     position: 'absolute',
     right: 52,
-    top: 66,
+    /* Below the header (grab 14 + header 76), not over it: at 66 it covered "IN THE KITCHEN · READY" (kitchen-13). */
+    top: 90,
     width: 224,
     zIndex: 6,
     borderRadius: flRadius.lg,

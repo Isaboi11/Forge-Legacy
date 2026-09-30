@@ -108,6 +108,12 @@ export interface AskContextInput {
    * the same rule the training summary follows — CA-D5, only what the job needs.
    */
   nutrition?: string | null;
+  /**
+   * Opened from the Nutrition tab (Kitchen Mode). The kitchen context is then attached to EVERY question,
+   * food words or not — "I'm at Chipotle, what should I order?" reached Holt with no pantry and no "Left
+   * today" (kitchen-01, QA 09-26).
+   */
+  kitchen?: boolean;
 }
 
 /** At most this many coaching records per question (CA-D5 — the context stays small). */
@@ -353,7 +359,7 @@ export function buildAskContext(input: AskContextInput, sources: AskSources): As
   const notes = (input.notes ?? []).map((n) => (typeof n === 'string' ? n.trim() : '')).filter(Boolean);
   if (notes.length) ctx.notes = notes.slice(0, ASK_NOTES_MAX);
   if (input.training && input.training.trim() && isTrainingQuestion(question)) ctx.training = input.training.trim();
-  if (input.nutrition && input.nutrition.trim() && isNutritionQuestion(question)) ctx.nutrition = input.nutrition.trim();
+  if (input.nutrition && input.nutrition.trim() && (input.kitchen || isNutritionQuestion(question))) ctx.nutrition = input.nutrition.trim();
 
   return ctx;
 }

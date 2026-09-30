@@ -12,7 +12,7 @@
  * ⚠ Relative imports only — `@/` is type-only in domain code (`node --test` cannot resolve it).
  */
 import { greetReturning, type Turn } from './chat-core.ts';
-import { medicalRoute, NUTRITION_MEDICAL } from './medical-routing.ts';
+import { isCrashCut, medicalRoute, MINOR_AGE, NUTRITION_MEDICAL } from './medical-routing.ts';
 
 /*
  * Two strengths each way (stress test 2026-09-25). "Program / workout / routine" is plainly training unless a
@@ -42,7 +42,9 @@ export function kitchenWantsTraining(text: string): boolean {
  */
 export const KITCHEN_INTRO: string[] = [
   "I'm Holt. Out here I'm your coach; in here I'm your cook.",
-  "Tell me what's in the fridge, paste a recipe, or ask what fits the rest of your day. The numbers always come from the app's food data, never a guess of mine.",
+  /* kitchen-08 (QA 09-26): "paste a recipe" here read as "paste it to me", and a recipe pasted into the chat
+     is never saved. Saving lives in My Recipes, so he says so. */
+  "Tell me what's in the fridge, or ask what fits the rest of your day. Recipes you want to keep go in My Recipes. The numbers always come from the app's food data, never a guess of mine.",
   'Allergies and anything medical stay with you and your doctor. Everything else, start wherever you like.',
 ];
 
@@ -129,12 +131,49 @@ const DOORS: readonly { re: RegExp; label: string; goTo: string }[] = [
   { re: /\b(macros?|calorie\s+target|target|tdee|how\s+(many|much)\s+(calories|cals|protein)\s+should|(cut|bulk|lean\s+out)\b|(lose|drop)\s+\d+\s*(lbs?|pounds|kg))/i, label: 'Set my macros', goTo: '/nutrition-targets' },
   { re: /(https?:\/\/|\b(save|import|add)\b[^.?!]{0,30}\brecipes?\b|\brecipe\b[^.?!]{0,20}\b(save|import)\b)/i, label: 'Save a recipe', goTo: '/my-recipes' },
   { re: /\b(grocery|groceries|shopping\s+list|what('?s| is)\s+left\s+to\s+buy)\b/i, label: 'Grocery list', goTo: '/grocery-list' },
+  /* kitchen-08: "log it for me" — Holt can't write the diary, so the door to where it's done goes under him. */
+  { re: /\b(log|track)\s+(it|this|that|these|those|my|the|what\s+i\s+(ate|had)|food|a\s+meal)\b|\badd\s+[^.?!]{0,30}\bto\s+my\s+(diary|food\s+log|log)\b/i, label: 'Log food', goTo: '/log-food' },
 ];
 
-export function kitchenDoorsFor(text: string): { label: string; goTo: string }[] {
-  const t = text ?? '';
+/*
+ * ══ NO DOOR UNDER A REFUSAL ══ (kitchen-04, QA 09-26). Holt declined "im 16 give me a cutting meal plan" and
+ * "30 pounds in 2 weeks", then a "Plan my week" / "Set my macros" door led straight to the thing refused. When
+ * the athlete is a minor (in this message or earlier in the chat), the ask is a crash rate, or his answer
+ * sends them to a professional, the doors stay down. Under 18 gets no targets (NUT-D5); a crash cut is past
+ * the safe floor either way.
+ */
+const FAST_LOSS =
+  /\b(lose|losing|drop|dropping|shed|shedding|cut|cutting)\b[^.?!]{0,30}\b(fast|quick(ly)?|asap|rapid(ly)?|overnight|by\s+(tomorrow|next\s+week|the\s+weekend)|in\s+(a|one|two|1|2|3|three)\s+(days?|weeks?))\b/i;
+const REFERRED =
+  /\b(doctor|dietitian|dietician|physician|pediatrician|paediatrician|physio\w*|healthcare|health\s+care)\b|\b(can'?t|cannot|won'?t|not\s+going\s+to|not\s+able\s+to)\s+(help|build|set|give|make|do|plan)\b/i;
+
+export function kitchenDoorsFor(text: string, reply = '', earlier: readonly string[] = []): { label: string; goTo: string }[] {
+  const t = (text ?? '').replace(/[‘’ʼ]/g, "'");
+  if ([t, ...earlier].some((s) => MINOR_AGE.test((s ?? '').replace(/[‘’ʼ]/g, "'")))) return [];
+  if (isCrashCut(t) || FAST_LOSS.test(t) || REFERRED.test(reply ?? '')) return [];
   return DOORS.filter((d) => d.re.test(t)).map(({ label, goTo }) => ({ label, goTo })).slice(0, 2);
 }
+
+/*
+ * ══ HE SAID HE'D LOOK ONLINE — THE CHIP HAS TO BE THERE ══ (kitchen-07, QA 09-26). The prompt tells him to
+ * call `offer_online_recipe_search` with the offer, and in 2 of 3 replies he only said it, leaving another
+ * paid message as the only way on. When his words make the offer and no tool call came, the app adds the chip.
+ */
+const OFFERS_ONLINE =
+  /\b((look|search|check|hunt|find\s+(you\s+)?(one|some(thing)?|a\s+recipe|recipes))\s+(for\s+(one|some|it|that|a\s+recipe|recipes)\s+)?online|online\s+(search|for\s+(one|a\s+recipe|recipes)))\b/i;
+export function replyOffersOnline(reply: string): boolean {
+  return OFFERS_ONLINE.test(reply ?? '');
+}
+
+/*
+ * ══ THE KITCHEN'S NEW CHAT MENU ══ (kitchen-13, QA 09-26). It offered "Build something" and "Training
+ * question" in the kitchen. These are the Kitchen Home doors instead — each goes where the card does.
+ */
+export const KITCHEN_MENU: readonly { label: string; goTo?: string; ask?: string }[] = [
+  { label: 'What can I make?', ask: KITCHEN_MAKE_SEED, goTo: '/my-recipes' },
+  { label: 'Log food', goTo: '/log-food' },
+  { label: 'Grocery list', goTo: '/grocery-list' },
+];
 
 /** What's left today, from the app's own totals — so Holt quotes it rather than doing the subtraction. */
 export function leftTodayLine(eaten: { kcal: number; protein: number }, target: { kcal: number; protein: number } | null): string | null {
