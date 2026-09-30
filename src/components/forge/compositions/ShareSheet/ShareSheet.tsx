@@ -23,8 +23,8 @@
  *     is audience-scoped, so a link needs a sharing model and a privacy decision, not a clipboard call.
  *
  * STILL HONESTLY PLACEHOLDER: image export. The card is rendered on screen but not captured, so an
- * external share carries the text snippet. The note under the button says so rather than implying a
- * picture went with it.
+ * external share carries the text snippet. The note under the button says it sends text — stated as what
+ * happens, not as an apology for what isn't built (QA 09-26 programs-31).
  *
  * ══ THE SQUAD CHIPS ARE CHECKBOXES ══
  *
@@ -37,7 +37,7 @@
 
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss'
 import React, { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { BottomSheet } from '../../composites/BottomSheet'
 import { Button } from '../../composites/Button'
 import { Toast } from '../../composites/Toast'
@@ -72,6 +72,10 @@ const FORGE_DESTS: { id: DestId; label: string; verb: string }[] = [
 ]
 
 export function ShareSheet({ open, onClose, content, milestone = null }: ShareSheetProps) {
+  /* The body's cap follows the screen. A fixed 440 plus the title and the footer outgrew the sheet's own 88%
+     cap on a 664pt web viewport and clipped the CTA at the bottom (QA 09-26 programs-31). */
+  const { height: windowHeight } = useWindowDimensions()
+  const bodyCap = Math.min(440, windowHeight * 0.5)
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const [includeName, setIncludeName] = useState(true)
   const [forgingSince, setForgingSince] = useState(false)
@@ -196,7 +200,7 @@ export function ShareSheet({ open, onClose, content, milestone = null }: ShareSh
           </Button>
         }
       >
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ maxHeight: bodyCap }} showsVerticalScrollIndicator={false}>
           <View style={styles.previewWrap}>
             <ShareCard content={content} hiddenKeys={hidden} includeName={includeName} />
           </View>
@@ -292,7 +296,8 @@ export function ShareSheet({ open, onClose, content, milestone = null }: ShareSh
               <Text style={styles.outText}>Share…</Text>
             </Pressable>
           </View>
-          <Text style={styles.note}>Image export is not wired yet — shares carry the text above, not the card.</Text>
+          {/* What Share… sends, said plainly — never a note about what isn't built (QA 09-26 programs-31). */}
+          <Text style={styles.note}>Share… sends the details above as text.</Text>
         </ScrollView>
       </BottomSheet>
 
@@ -313,7 +318,6 @@ function ToggleRow({ label, on, first, onToggle }: { label: string; on: boolean;
 }
 
 const styles = StyleSheet.create({
-  scroll: { maxHeight: 440 },
   previewWrap: { paddingVertical: 8, marginBottom: 14 },
   section: {
     fontSize: 9.5,
