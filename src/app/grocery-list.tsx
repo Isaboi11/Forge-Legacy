@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
-import { Animated, PanResponder, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Animated, PanResponder, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -35,6 +36,10 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const HAVE_AT = -72;
+
+/* A browser with a share sheet (phones) shares; one without (most desktop browsers) copies (QA 09-26 N-36). */
+const CAN_SHARE =
+  Platform.OS !== 'web' || (typeof navigator !== 'undefined' && typeof (navigator as { share?: unknown }).share === 'function');
 
 /**
  * Grocery List — built to `Grocery List.dc.html` (Claude Design b029488a).
@@ -120,6 +125,34 @@ function GroceryListScreen() {
 
   const sheetActive = sheetKey ? active.find((x) => x.key === sheetKey) ?? null : null;
   const sheetItem = sheetKey && list ? (list.items.find((x) => x.key === sheetKey) ?? null) : null;
+  /* ⚠ Open only while its row is still ON the list. On the web a mouse swipe ends in a click, so the swipe
+     that removed an extra also opened a title-less "Added by you" sheet for it, and it stayed up (QA 09-26
+     kitchen-22). Every way into the sheet is an active row, so an item that has left the list has none. */
+  const sheetOpen = !!sheetKey && !!state && !!sheetActive;
+
+  const shareList = async () => {
+    if (!state) return;
+    const message = shareText(range, active, state);
+    if (CAN_SHARE) {
+      try {
+        await Share.share({ title: 'Grocery list', message });
+        return;
+      } catch (e) {
+        /* The athlete closed the share sheet — not a failure, and nothing to fall back to. */
+        if ((e as { name?: string } | null)?.name === 'AbortError') return;
+        if (Platform.OS !== 'web') {
+          showToast('Couldn’t share the list');
+          return;
+        }
+      }
+    }
+    try {
+      await Clipboard.setStringAsync(message);
+      showToast('List copied. Paste it anywhere.');
+    } catch {
+      showToast('Couldn’t copy the list');
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -165,6 +198,7 @@ function GroceryListScreen() {
                     onToggle={() => update({ ...state, checked: toggle(state.checked, x.key) })}
                     onOpen={() => setSheetKey(x.key)}
                     onSwipe={() => {
+                      setSheetKey(null);
                       if (x.extra) {
                         const checked = { ...state.checked };
                         delete checked[x.key];
@@ -218,23 +252,14 @@ function GroceryListScreen() {
             </Text>
             {estimate && estimate.dollars > 0 ? <Text style={styles.estimate}>{estimateLine(estimate, budget)}</Text> : null}
           </View>
-          <Button
-            variant="secondary"
-            onPress={async () => {
-              try {
-                await Share.share({ title: 'Grocery list', message: shareText(range, active, state) });
-              } catch {
-                showToast('Couldn’t share the list');
-              }
-            }}
-          >
-            Share
+          <Button variant="secondary" onPress={() => void shareList()}>
+            {CAN_SHARE ? 'Share' : 'Copy list'}
           </Button>
         </View>
       ) : null}
 
-      <BottomSheet open={!!sheetKey && !!state} onClose={() => setSheetKey(null)} title={sheetActive?.name ?? sheetItem?.name ?? ''}>
-        {state && sheetKey ? (
+      <BottomSheet open={sheetOpen} onClose={() => setSheetKey(null)} title={sheetActive?.name ?? sheetItem?.name ?? ''}>
+        {state && sheetKey && sheetOpen ? (
           <View style={styles.sheetBody}>
             {sheetItem ? (
               <>
@@ -342,9 +367,12 @@ function SwipeRow({
         <Text style={styles.revealText}>{item.extra ? 'Remove' : 'Have it'}</Text>
       </Animated.View>
       <Animated.View style={[styles.row, { transform: [{ translateX: dx }] }]} {...pan.panHandlers}>
+        {/* `aria-checked` as well: react-native-web 0.21 ignores `accessibilityState`, so on the web the
+            box was announced as a checkbox with no state (QA 09-26 kitchen-22). */}
         <Pressable
           accessibilityRole="checkbox"
           accessibilityState={{ checked }}
+          aria-checked={checked}
           accessibilityLabel={item.amount ? `${item.name}, ${item.amount}` : item.name}
           style={styles.checkHit}
           onPress={onToggle}

@@ -254,6 +254,11 @@ export interface RecipeSource {
   /** Grams of each ingredient in ONE serving. */
   ingredients: readonly (readonly [IngredientKey, number])[];
   steps: readonly RecipeStep[];
+  /**
+   * How many servings the STEPS are written for — the source batch ("a tenth of the filling" is a batch of
+   * 10). The Recipe screen says so when the amounts shown are for a different number (QA 09-26 N-32).
+   */
+  stepsServe?: number;
 }
 
 /**
@@ -270,7 +275,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
    * Amounts are the source batch divided by its servings.
    */
   {
-    id: 'p01', slot: 'breakfast', mealTypes: ["breakfast"], leftoverDays: 4, reheat: 'ok', proteinSource: 'egg', format: "sandwich",
+    id: 'p01', stepsServe: 8, slot: 'breakfast', mealTypes: ["breakfast"], leftoverDays: 4, reheat: 'ok', proteinSource: 'egg', format: "sandwich",
     name: "Egg and turkey bacon breakfast bagels", minutes: 40, batch: true, equipment: ["8×8-inch baking dish"],
     // Batch of 8: 16 slices turkey bacon, 8 eggs, 500 g egg whites, 300 g fat-free cottage cheese, 5 g parmesan,
     // 1 tsp each onion + garlic powder, 8 low-carb bagels, 8 cheddar slices.
@@ -284,7 +289,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     ],
   },
   {
-    id: 'p02', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 3, reheat: 'great', proteinSource: 'chicken', format: "rice bowl",
+    id: 'p02', stepsServe: 8, slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 3, reheat: 'great', proteinSource: 'chicken', format: "rice bowl",
     name: "Chicken Alfredo sheet-pan rice", minutes: 60, batch: true, equipment: ["Large sheet pan"],
     // Batch of 8: 1400 g chicken breast, 350 g dry rice, 450 g skim milk, 110 g parmesan, 190 g light cream cheese,
     // 25 g light butter, 40 g garlic, 90 g white + 200 g red onion, 200 g sun-dried tomatoes, 40 g olive oil,
@@ -305,7 +310,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     ],
   },
   {
-    id: 'p03', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 2, reheat: 'ok', proteinSource: 'beef', format: "burger",
+    id: 'p03', stepsServe: 6, slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 2, reheat: 'ok', proteinSource: 'beef', format: "burger",
     name: "Honey barbecue beef sliders", minutes: 35, batch: true, equipment: [],
     // Batch of 6: 800 g 95% lean beef, 30 g tomato paste, 60 g barbecue sauce, 2 tsp honey, the spices,
     // 1 red onion with balsamic + 1 tsp brown sugar, 6 brioche buns (57 g), 6 reduced-fat American slices, 250 g mozzarella.
@@ -323,7 +328,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     ],
   },
   {
-    id: 'p04', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 3, reheat: 'ok', proteinSource: 'beef', format: "taco",
+    id: 'p04', stepsServe: 7.5, slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 3, reheat: 'ok', proteinSource: 'beef', format: "taco",
     name: "Crispy sheet-pan beef tacos", minutes: 55, batch: true, equipment: ["Large sheet pan"],
     // Batch of 15 tacos; ONE SERVING = 2 TACOS, so the batch is divided by 7.5. 1200 g 95% lean beef,
     // 200 g tomato paste, 200 g onion, 200 g bell pepper, 15 mini wraps, 320 g mozzarella; sauce: 300 g yogurt,
@@ -343,7 +348,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     ],
   },
   {
-    id: 'p05', slot: 'snacks', mealTypes: ["snacks"], leftoverDays: 4, reheat: 'cold', proteinSource: 'dairy', format: "cookie",
+    id: 'p05', stepsServe: 6, slot: 'snacks', mealTypes: ["snacks"], leftoverDays: 4, reheat: 'cold', proteinSource: 'dairy', format: "cookie",
     name: "Stuffed s'mores protein cookies", minutes: 20, batch: true, equipment: [],
     // Batch of 6 filled cookies (12 dough balls, sandwiched): 45 g whey + 15 g casein (casein as whey — SR
     // Legacy has no casein powder), 30 g flour, 3 g baking powder, 30 g applesauce, 35 g Greek yogurt,
@@ -361,7 +366,7 @@ export const RECIPE_SOURCES: readonly RecipeSource[] = [
     ],
   },
   {
-    id: 'p06', slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 4, reheat: 'great', proteinSource: 'chicken', format: "burrito",
+    id: 'p06', stepsServe: 10, slot: 'dinner', mealTypes: ["lunch", "dinner"], leftoverDays: 4, reheat: 'great', proteinSource: 'chicken', format: "burrito",
     name: "Crispy pepperoni pizza chicken burritos", minutes: 45, batch: true, equipment: [],
     // Batch of 10: 1.7 kg chicken breast, 200 g turkey pepperoni (the source allows beef, turkey or regular) in the filling + 4 slices outside each, 350 g pizza sauce,
     // 80 g parmesan, 5 garlic cloves, 200 g light cream cheese, 100 ml hot sauce, 10 large low-carb tortillas, 25 g mozzarella inside + 20 g reduced-fat cheddar outside each.

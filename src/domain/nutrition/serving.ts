@@ -50,7 +50,10 @@ export const MAY_STORE_MICROS: ReadonlySet<string> = new Set(['usda', 'custom', 
 export const SOURCE_LABEL: Record<string, string> = {
   usda: 'USDA',
   off: 'Community data',
-  fs: 'Restaurant data',
+  /* FatSecret carries eggs, bananas and Diet Coke as well as restaurant food, so "Restaurant data" was wrong
+     on most of its rows (QA 09-26 N-20). The source's own name is true for all of them, and matches the
+     "Powered by fatsecret" attribution its terms require under the same food. */
+  fs: 'FatSecret',
   custom: 'Yours',
   quick: 'Quick add',
   // Amendment 004: foods Forge athletes shared after a barcode missed. Open Food Facts keeps "Community data".
@@ -151,6 +154,10 @@ export function alcoholAllowance(food: Pick<CatalogFood, 'name' | 'brand'>): num
    anything else with that shape is a row whose numbers were never filled in. */
 const TRULY_ZERO =
   /\b(water|diet|zero|sugar[- ]free|unsweetened|black coffee|coffee|espresso|tea|club soda|seltzer|sparkling|mineral|sweetener|stevia|sucralose|salt)\b/i;
+/* ...unless the name also says there is food in it: "Coffee cake", "Sweet tea", "Zero sugar protein bar" and
+   "Salted caramel latte" at 0 kcal are blanks, not free food (QA 09-26 N-21, 0-cal rows passing the filter). */
+const HAS_ENERGY =
+  /\b(cakes?|cookies?|creamer|latte|mocha|cappuccino|frappuccino|lemonade|milk|smoothie|shake|muffins?|sweet|sweetened|honey|juice|bars?|chips?|caramel|chocolate)\b/i;
 
 /** Alcohol per 100 g, when the source stated it (FDC nutrient 221 lands here as `micros.alcohol`). */
 function statedAlcohol(food: CatalogFood): number | null {
@@ -170,7 +177,21 @@ export function energyKnown(food: CatalogFood): boolean {
   const kcal = food.kcal100;
   if (kcal == null || !Number.isFinite(kcal) || kcal < 0) return false;
   if (kcal > 0 || macroEnergy(food) > 0) return true;
-  return TRULY_ZERO.test(food.name ?? '') && alcoholAllowance(food) === 0;
+  const name = food.name ?? '';
+  return TRULY_ZERO.test(name) && !HAS_ENERGY.test(name) && alcoholAllowance(food) === 0;
+}
+
+/* Search order by source (QA 09-26 N-21). Open Food Facts and Forge-athlete rows are typed by the public,
+   and a "Big Mac · 540 cal / 100 g" (a real one is about 257) is internally consistent, so no ratio check
+   can catch it — but it can stop leading the list. Your own foods, USDA and FatSecret come first. */
+const SOURCE_TIER: Record<CatalogFood['source'], number> = { custom: 0, usda: 0, fs: 0, community: 1, off: 1 };
+
+/** A stable partition: reviewed sources first, community-entered after, relevance order kept inside each. */
+export function rankBySource<T extends Pick<CatalogFood, 'source'>>(foods: readonly T[]): T[] {
+  return foods
+    .map((food, i) => ({ food, i, tier: SOURCE_TIER[food.source] ?? 1 }))
+    .sort((a, b) => a.tier - b.tier || a.i - b.i)
+    .map((x) => x.food);
 }
 
 /**
