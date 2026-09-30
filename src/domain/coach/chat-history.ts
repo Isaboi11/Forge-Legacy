@@ -42,6 +42,50 @@ export function askHistory(thread: readonly Turn[], max: number = CHAT_HISTORY_T
 }
 
 /**
+ * ══ THE CHAT AS THE END-OF-CHAT SUMMARY READS IT (QA holtai-13) ══
+ *
+ * The summariser only ever saw the words, so what the APP did was invisible to it: a request that failed
+ * shows up as an error card, a plan is a card, and whether that plan was saved is a `saved` line — none of
+ * them words. It read "build it around dumbbells" and wrote that it had happened; it read Holt presenting a
+ * block and wrote "built and underway", for a block that was discarded. So the outcomes go in too, as short
+ * bracketed notes in Holt's column that say plainly what the app did and did not do. `SUMMARY_SYSTEM`
+ * (`ask-tools.ts`) tells the summariser what the brackets mean.
+ *
+ * Same stop rule as `askHistory` — a stopped line and the reply to it never leave the phone.
+ */
+export function summaryHistory(thread: readonly Turn[]): AskTurn[] {
+  const out: AskTurn[] = [];
+  const note = (text: string) => out.push({ role: 'holt', text: `[${text}]` });
+  for (const x of thread) {
+    switch (x.kind) {
+      case 'me':
+        if (!x.stopped && x.text.trim()) out.push({ role: 'athlete', text: x.text });
+        break;
+      case 'holt':
+        if (x.text.trim()) out.push({ role: 'holt', text: x.text });
+        break;
+      case 'error':
+        note(`The app: that did not work — ${x.text.trim()} Nothing was changed.`);
+        break;
+      case 'saved':
+        note(`The app: ${x.text.trim()}`);
+        break;
+      case 'program':
+      case 'day':
+      case 'pick':
+        note(`The app showed "${x.card.title}" as a card. Not started or saved unless a later note says so.`);
+        break;
+      case 'refusal':
+        note(`The app: Holt could not do that — ${x.card.title}.`);
+        break;
+      default:
+        break;
+    }
+  }
+  return withoutStoppedTurns(out);
+}
+
+/**
  * `thread` with the athlete's line `said` marked stopped — every unmarked `me` turn with those exact
  * words, since the same words would stop again. Returns the same array when nothing changed.
  */

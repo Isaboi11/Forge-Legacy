@@ -36,8 +36,9 @@ function seededHonorSlugs() {
   for (const f of fs.readdirSync(migrations).filter((n) => n.endsWith('.sql'))) {
     const sql = fs.readFileSync(path.join(migrations, f), 'utf8');
     if (!sql.includes('honor_catalog')) continue;
-    // ('slug', 'Display Name', 'Category', 'metric', …) — the catalog seed rows.
-    for (const m of sql.matchAll(/\(\s*'([a-z0-9_]+)'\s*,\s*'(?:[^']|'')+'\s*,\s*'[A-Za-z ]+'\s*,\s*'[a-z_]+'/g)) {
+    // ('slug', 'Display Name', 'Category', 'metric', …) — the catalog seed rows. A metric can carry digits
+    // (`sessions_before_6am`): the first version of this pattern skipped Early/Midnight Forge (QA home-14).
+    for (const m of sql.matchAll(/\(\s*'([a-z0-9_]+)'\s*,\s*'(?:[^']|'')+'\s*,\s*'[A-Za-z ]+'\s*,\s*'[a-z0-9_]+'/g)) {
       slugs.add(m[1]);
     }
   }

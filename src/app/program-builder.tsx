@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenBoundary } from '@/components/screen-boundary';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +13,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { type ParsedWeek } from '@/domain/program/import-parse';
+import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { draftFromImport } from '@/lib/program-import-draft';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { resolveExerciseName } from '@/domain/exercise-picker/data';
@@ -78,6 +79,9 @@ import { TourAnchor } from '@/components/tour/TourAnchor';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import type { TourAnchorId } from '@/domain/onboarding/tour-plan';
+import { nameNearLimit, PROGRAM_NAME_MAX, WORKOUT_NAME_MAX } from '@/domain/text/name-limits';
+import { countOf } from '@/domain/text/plural';
+import { withArticle } from '@/domain/text/article';
 import {
   absorbBuilderInbox,
   activeDays,
@@ -164,9 +168,10 @@ const SECTION_META: { key: BuilderSection; label: string; addLabel: string; req:
 const inferLabel = (items: ProgramExercise[]): string => groupLabel(items.map((it) => it.muscles));
 
 const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.letter || '?'}`);
+/** Everything a day holds — what a copy or a clear would throw away. */
+const dayExerciseCount = (day: ProgramDay) => day.warmup.length + day.main.length + day.cooldown.length;
 /** Fit a name into a button. Display only — never what a screen reader is handed. */
 const ellipsis = (s: string, max: number) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 function Glyph({ name, size = 13, color }: { name: EngravedName; size?: number; color?: string }) {
   return <EngravedIcon name={name} size={size} color={color} />;
@@ -257,6 +262,12 @@ function ProgramBuilderScreen() {
    * nothing looks destructive at the moment the athlete chooses it.
    */
   const [pendingResize, setPendingResize] = useState<{ kind: 'weeks' | 'days' | 'repeat'; to: number; msg: string } | null>(null);
+  /**
+   * The day menu's two overwrites — "Duplicate exercises to" and "Clear all exercises" — asked nothing and had
+   * no undo (QA 09-26 programs-17). They now confirm whenever the day they write over HOLDS exercises; an empty
+   * target has nothing to lose, so it still happens in one tap.
+   */
+  const [pendingDayOp, setPendingDayOp] = useState<{ kind: 'copy' | 'clear'; from: number; to: number; msg: string } | null>(null);
 
   /*
    * ── IMPORT FROM A SPREADSHEET ────────────────────────────────────────────
@@ -471,6 +482,14 @@ function ProgramBuilderScreen() {
     mutate((d) => withActiveDays(d, activeDays(d).map((day, i) => (i === idx ? fn(day) : day))));
   };
 
+  /** Every section of one day copied onto another — the day menu's "Duplicate exercises to". */
+  const copyDay = (from: number, to: number) => {
+    const src = draft ? activeDays(draft)[from] : undefined;
+    if (!src) return;
+    const [copy] = cloneDays([src]);
+    patchActiveDay(to, (day) => ({ ...day, warmup: copy.warmup, main: copy.main, cooldown: copy.cooldown }));
+  };
+
   const patchSection = (idx: number, section: BuilderSection, fn: (list: ProgramExercise[]) => ProgramExercise[]) =>
     patchActiveDay(idx, (day) => ({ ...day, [section]: fn(day[section]) }));
 
@@ -538,7 +557,7 @@ function ProgramBuilderScreen() {
       setPendingResize({
         kind: 'weeks',
         to,
-        msg: `Weeks ${to + 1}–${draft.weeks} will be removed, along with any workouts built in them. This can’t be undone.`,
+        msg: `${to + 1 === draft.weeks ? `Week ${draft.weeks}` : `Weeks ${to + 1}–${draft.weeks}`} will be removed, along with any workouts built in them. This can’t be undone.`,
       });
       return;
     }
@@ -782,7 +801,8 @@ function ProgramBuilderScreen() {
             patchSection(draft.openDay!, section, (list) =>
               list.map((x, k) => {
                 if (k !== i) return x;
-                if (x.kind !== 'cardio') return { ...x, sets: clampSets((x.sets ?? 1) + dir) };
+                /* Re-counting a card's ramp by hand makes the row plain sets × reps (`withoutScheme`, PO 09-30). */
+                if (x.kind !== 'cardio') return { ...withoutScheme(x), sets: clampSets((x.sets ?? 1) + dir) };
                 /* Stepped IN THE UNIT THE ATHLETE IS READING. A swim walks hundreds of yards; everything
                    else walks half-miles. Stepping the canonical mile figure and converting afterwards
                    would land 1200 yd on 1197. */
@@ -833,7 +853,7 @@ function ProgramBuilderScreen() {
                   : x.kind !== 'cardio' && x.durationSec != null
                     ? { ...x, durationSec: bumpTimedSet(x.durationSec, dir) }
                     : x.kind !== 'cardio'
-                    ? stepReps(x, dir)
+                    ? stepReps(withoutScheme(x), dir)
                     : x.activity === 'bike'
                       ? { ...x, targetSpdMph: bumpSpeed(x.targetSpdMph ?? null, dir, FIRST_TARGET[x.activity ?? 'bike'].spdMph) }
                       : { ...x, targetPaceSec: bumpPace(x.targetPaceSec ?? null, dir, FIRST_TARGET[x.activity ?? 'run'].paceSec) },
@@ -912,7 +932,7 @@ function ProgramBuilderScreen() {
                 ]);
               }}
               accessibilityRole="button"
-              accessibilityLabel={`Add a ${a.name.toLowerCase()}`}
+              accessibilityLabel={`Add ${withArticle(a.name.toLowerCase())}`}
               style={styles.cardioRow}
             >
               <View style={styles.cardioIcon}>
@@ -1266,7 +1286,8 @@ function ProgramBuilderScreen() {
                 label="Workout name"
                 value={days[dayMenu].name}
                 onChange={(v) => patchActiveDay(dayMenu, (day) => ({ ...day, name: v }))}
-                maxLength={30}
+                maxLength={WORKOUT_NAME_MAX}
+                showCount={nameNearLimit(days[dayMenu].name.length, WORKOUT_NAME_MAX)}
               />
               {days.length > 1 ? (
                 <View>
@@ -1277,20 +1298,22 @@ function ProgramBuilderScreen() {
                         <Pressable
                           key={`${d.letter}-${i}`}
                           onPress={() => {
-                            const src = days[dayMenu];
-                            patchActiveDay(i, () => ({
-                              ...d,
-                              warmup: cloneDays([src])[0].warmup,
-                              main: cloneDays([src])[0].main,
-                              cooldown: cloneDays([src])[0].cooldown,
-                            }));
+                            const held = dayExerciseCount(d);
                             setDayMenu(null);
+                            if (held > 0) {
+                              setPendingDayOp({
+                                kind: 'copy',
+                                from: dayMenu,
+                                to: i,
+                                msg: `${dayName(d)} already has ${countOf(held, 'exercise')}. Duplicating replaces them with ${dayName(days[dayMenu])}'s.`,
+                              });
+                            } else copyDay(dayMenu, i);
                           }}
                           accessibilityRole="button"
                           accessibilityLabel={`Duplicate to ${dayName(d)}`}
                           style={styles.copyChip}
                         >
-                          <Text style={styles.copyChipText}>{dayName(d)}</Text>
+                          <Text style={styles.copyChipText} numberOfLines={1}>{dayName(d)}</Text>
                         </Pressable>
                       ),
                     )}
@@ -1301,8 +1324,11 @@ function ProgramBuilderScreen() {
                 variant="destructive"
                 fullWidth
                 onPress={() => {
-                  patchActiveDay(dayMenu, (day) => ({ ...day, warmup: [], main: [], cooldown: [] }));
+                  const held = dayExerciseCount(days[dayMenu]);
                   setDayMenu(null);
+                  if (held > 0) {
+                    setPendingDayOp({ kind: 'clear', from: dayMenu, to: dayMenu, msg: `${countOf(held, 'exercise')} will be removed from ${dayName(days[dayMenu])}.` });
+                  }
                 }}
                 accessibilityLabel="Clear all exercises"
               >
@@ -1349,6 +1375,39 @@ function ProgramBuilderScreen() {
           switching to Repeat sets it aside and only discards it on the next Save. Titling that "Remove
           content?" would be a threat the app does not carry out, and the athlete would learn the sheet
           lies. */}
+      <BottomSheet
+        open={pendingDayOp != null}
+        onClose={() => setPendingDayOp(null)}
+        title={pendingDayOp?.kind === 'copy' ? 'Replace these exercises?' : 'Clear this day?'}
+      >
+        <View style={styles.resizeSheet}>
+          <Text style={styles.resizeMsg}>{pendingDayOp?.msg ?? ''}</Text>
+          <View style={styles.resizeActions}>
+            <View style={styles.resizeBtn}>
+              <Button variant="secondary" fullWidth onPress={() => setPendingDayOp(null)} accessibilityLabel="Cancel">
+                Cancel
+              </Button>
+            </View>
+            <View style={styles.resizeBtn}>
+              <Button
+                variant="destructive"
+                fullWidth
+                onPress={() => {
+                  const op = pendingDayOp;
+                  setPendingDayOp(null);
+                  if (!op) return;
+                  if (op.kind === 'copy') copyDay(op.from, op.to);
+                  else patchActiveDay(op.to, (day) => ({ ...day, warmup: [], main: [], cooldown: [] }));
+                }}
+                accessibilityLabel={pendingDayOp?.kind === 'copy' ? 'Replace the exercises' : 'Clear the day'}
+              >
+                {pendingDayOp?.kind === 'copy' ? 'Replace' : 'Clear'}
+              </Button>
+            </View>
+          </View>
+        </View>
+      </BottomSheet>
+
       <BottomSheet
         open={pendingResize != null}
         onClose={() => setPendingResize(null)}
@@ -1639,8 +1698,8 @@ function SetupView({
     ? (draft.weekPlans ?? []).reduce((a, w) => a + w.days.reduce((b, d) => b + dayTotal(d), 0), 0)
     : days.reduce((a, day) => a + dayTotal(day), 0);
   const summary = draft.vary
-    ? `${plural(draft.weeks, 'week')} · ${plural(totalEx, 'exercise')}`
-    : `${plural(draft.daysPerWeek, 'day')} · ${plural(totalEx, 'exercise')}`;
+    ? `${countOf(draft.weeks, 'week')} · ${countOf(totalEx, 'exercise')}`
+    : `${countOf(draft.daysPerWeek, 'day')} · ${countOf(totalEx, 'exercise')}`;
   const nameOk = hasName(draft);
   const mainOk = hasMainExercise(draft);
   const valid = nameOk && mainOk;
@@ -1697,7 +1756,7 @@ function SetupView({
             placeholder={isWeek ? 'e.g. Deload Week' : 'e.g. Winter Powerbuilding'}
             value={draft.name}
             onChange={onName}
-            maxLength={40}
+            maxLength={PROGRAM_NAME_MAX}
             showCount
           />
 
@@ -1825,7 +1884,7 @@ function SetupView({
                     <View style={styles.dayText}>
                       <Text style={styles.dayNameText} numberOfLines={1}>Week {i + 1}</Text>
                       <Text style={[styles.daySub, total > 0 && styles.daySubBuilt]} numberOfLines={1}>
-                        {total === 0 ? 'Empty' : plural(total, 'exercise')}
+                        {total === 0 ? 'Empty' : countOf(total, 'exercise')}
                       </Text>
                     </View>
                     {built ? (
@@ -1870,7 +1929,7 @@ function SetupView({
                       {dayName(day)}
                     </Text>
                     <Text style={[styles.daySub, total > 0 && styles.daySubBuilt]} numberOfLines={1}>
-                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${plural(total, 'exercise')}`}
+                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${countOf(total, 'exercise')}`}
                     </Text>
                   </View>
                   {built ? (
@@ -1905,7 +1964,7 @@ function SetupView({
         <TourAnchor id="builder-save">
           {!valid ? (
             <View style={styles.checks}>
-              <CheckRow ok={nameOk} label="Program name" />
+              <CheckRow ok={nameOk} label={isWeek ? 'Week name' : 'Program name'} />
               <CheckRow ok={mainOk} label="At least one main exercise" />
             </View>
           ) : null}
@@ -2039,7 +2098,7 @@ function WeekDaysView({
       <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={rise} contentContainerStyle={styles.setupScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.listHeader}>
           <SectionHeader label="Workouts" />
-          <Text style={styles.listSummary}>{plural(totalEx, 'exercise')}</Text>
+          <Text style={styles.listSummary}>{countOf(totalEx, 'exercise')}</Text>
         </View>
 
         <View style={styles.dayRows}>
@@ -2056,7 +2115,7 @@ function WeekDaysView({
                   <View style={styles.dayText}>
                     <Text style={styles.dayNameText} numberOfLines={1}>{dayName(day)}</Text>
                     <Text style={[styles.daySub, total > 0 && styles.daySubBuilt]} numberOfLines={1}>
-                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${plural(total, 'exercise')}`}
+                      {total === 0 ? 'No exercises yet · Tap to build' : `${label ? `${label} · ` : ''}${countOf(total, 'exercise')}`}
                     </Text>
                   </View>
                   {done ? (
@@ -2162,6 +2221,10 @@ function DayBuilder({
   onUnpair: (section: BuilderSection, i: number) => void;
 }) {
   const barBottom = useBarBottom();
+  /* Would "SAVE & GO TO <DAY>" wrap? ~9pt per spaced capital, and ~112pt of the width goes to the gutters,
+     the button's padding and its chevron. When it would, the button drops the day's name (see the footer). */
+  const { width } = useWindowDimensions();
+  const compact = nextLabel != null && `Save & go to ${nextLabel}`.length * 9 > width - 112;
   const total = dayTotal(day);
   const est = Math.round((day.main.length * 9 + day.warmup.length * 4 + day.cooldown.length * 4) / 5) * 5;
   const rise = useEntryRise(360);
@@ -2184,10 +2247,17 @@ function DayBuilder({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.dayHead}>
-          <InputField label="Workout name" placeholder="Workout name" value={day.name} onChange={onName} maxLength={30} />
+          <InputField
+            label="Workout name"
+            placeholder="Workout name"
+            value={day.name}
+            onChange={onName}
+            maxLength={WORKOUT_NAME_MAX}
+            showCount={nameNearLimit(day.name.length, WORKOUT_NAME_MAX)}
+          />
           {total > 0 ? (
             <Text style={styles.daySummary}>
-              {plural(total, 'exercise')}
+              {countOf(total, 'exercise')}
               {est > 0 ? ` • ~${est} min` : ''}
             </Text>
           ) : null}
@@ -2317,7 +2387,9 @@ function DayBuilder({
               accessibilityLabel={`Save and go to ${nextLabelFull ?? nextLabel}`}
               trailingIcon={<Glyph name="chevron-right" size={15} color="#F7F5F1" />}
             >
-              Save &amp; go to {nextLabel}
+              {/* A 320pt phone can't hold "Save & go to <day>" on one line — it wrapped (QA 09-26 programs-30). The
+                  screen reader still hears the whole destination. */}
+              {compact ? 'Save & Next' : <>Save &amp; go to {nextLabel}</>}
             </Button>
             <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Save workout and go back" style={styles.nextDay}>
               <Text style={styles.nextDayText}>Save workout</Text>
@@ -2445,12 +2517,19 @@ function ExerciseCard({
           {cardio ? <ActivityGlyph activity={activity} size={19} color={flColor.bronze400} /> : <EquipIcon equip={item.equip} size={19} />}
         </View>
         <View style={styles.exText}>
-          <Text style={styles.exName} numberOfLines={1}>
+          {/* Two lines, not one: on a 320pt phone three 40px controls left a name like "Barbell Back Sq…" (QA 09-26 programs-30). */}
+          <Text style={styles.exName} numberOfLines={2}>
             {pairing ? `${pairing.label}  ` : ''}{item.name}
           </Text>
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>
               {equipmentLabel(item.equip)}
+            </Text>
+          ) : null}
+          {/* A card's ramp, percentages and rest (PO 2026-09-30) — more than the steppers can show. */}
+          {!cardio && prescriptionLine(item) ? (
+            <Text style={styles.exEquip} numberOfLines={2}>
+              {prescriptionLine(item)}
             </Text>
           ) : null}
         </View>

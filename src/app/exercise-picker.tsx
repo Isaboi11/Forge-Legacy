@@ -31,6 +31,8 @@ import {
 import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
 import { replaceTemplateExercise } from '@/data/templates-live';
 import { useToast } from '@/hooks/useCeremony';
+import { countOf } from '@/domain/text/plural';
+import { isCardioKey } from '@/domain/workout/conditioning';
 import { PERSIST_FAILED, usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
@@ -571,15 +573,18 @@ export default function ExercisePickerScreen() {
   /* The button says what it is about to do, section included. "Add 2 exercises" and "Add 2 warm-ups"
      are different sentences, and the second is the only confirmation the athlete gets that the pills
      above took — the list itself looks identical either way. */
-  const sectionNoun = addSection === 'warmup' ? 'warm-up' : addSection === 'cooldown' ? 'cool-down' : 'exercise';
+  /* A builder arrives already addressed (`params.section`) — its "Add warm-up" said "Add 1 exercise" because only
+     the in-workout `addSection` was read here (QA 09-26 library-29). */
+  const nounSection = isBuilder ? (params.section as BuilderSection | undefined) ?? 'main' : addSection;
+  const sectionNoun = nounSection === 'warmup' ? 'warm-up' : nounSection === 'cooldown' ? 'cool-down' : 'exercise';
   const confirmLabel = isReplace
     ? selected != null
       ? `Replace with ${resolveKey(selected)?.name ?? ''}`
       : 'Select an exercise'
     : supersetOn
-      ? `Add ${picked.length} ${sectionNoun}s as a superset`
+      ? `Add ${countOf(picked.length, sectionNoun)} as a superset`
       : picked.length
-        ? `Add ${picked.length} ${picked.length === 1 ? sectionNoun : `${sectionNoun}s`}`
+        ? `Add ${countOf(picked.length, sectionNoun)}`
         : 'Select exercises';
 
   const appliedChips: { group: keyof PickerFilters; value: string; label: string }[] = [
@@ -607,7 +612,7 @@ export default function ExercisePickerScreen() {
         <View style={styles.rowIcon}>
           {/* No poster for an athlete's own exercise: the media bucket is keyed by CATALOGUE id, so a
               `custom:` key can only ever 404 — asking is a request that is guaranteed to fail. */}
-          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={x.equipId} />} />
+          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={isCardioKey(x.key) ? 'cardio' : x.equipId} />} />
         </View>
         <View style={styles.rowText}>
           <View style={styles.rowNameLine}>
@@ -783,7 +788,7 @@ export default function ExercisePickerScreen() {
               onPress={toggleGearOnly}
               accessibilityRole="button"
               accessibilityState={{ selected: gearOnly }}
-              accessibilityLabel={gearOnly ? `Showing only what you own. ${hiddenByGear} exercises hidden. Tap to show everything.` : 'Showing every exercise. Tap to narrow to your own equipment.'}
+              accessibilityLabel={gearOnly ? `Showing only what you own. ${countOf(hiddenByGear, 'exercise')} hidden. Tap to show everything.` : 'Showing every exercise. Tap to narrow to your own equipment.'}
               style={[styles.appliedChip, !gearOnly && styles.gearChipOff]}
             >
               <Text style={[styles.appliedChipText, !gearOnly && styles.gearChipTextOff]}>
@@ -871,14 +876,14 @@ export default function ExercisePickerScreen() {
             {sections.browsing ? (
               <>
                 <SectionHeader label="All exercises" />
-                <Text style={styles.bestSub}>{sections.total} exercises · tap a category to narrow</Text>
+                <Text style={styles.bestSub}>{countOf(sections.total, 'exercise')} · tap a category to narrow</Text>
                 <View style={styles.rows}>
                   {sections.categoryRows.map((c) => (
                     <Pressable
                       key={c.key}
                       onPress={() => openCategory(c.key)}
                       accessibilityRole="button"
-                      accessibilityLabel={`${c.label}, ${c.count} exercises`}
+                      accessibilityLabel={`${c.label}, ${countOf(c.count, 'exercise')}`}
                       style={styles.catRow}
                     >
                       <Text style={styles.catRowLabel} numberOfLines={1}>{c.label}</Text>
@@ -977,7 +982,7 @@ export default function ExercisePickerScreen() {
         <Text style={styles.createName} numberOfLines={2}>
           {search.trim()}
         </Text>
-        <Text style={styles.createHint}>Saved to your library. You can add muscles, equipment and notes later.</Text>
+        <Text style={styles.createHint}>Creating it saves it to your library. You can add muscles, equipment and notes later.</Text>
         <View style={styles.createRow}>
           {([
             { key: 'reps' as const, label: 'Reps' },

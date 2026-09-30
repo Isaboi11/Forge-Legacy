@@ -437,7 +437,8 @@ export function templateIntoDay(
         ...(groupId ? { groupId } : null),
         // The builder's steppers reach 1–8 sets and 1–60 reps. A template row outside that would sit in
         // the day at a value no control on the screen can express or correct.
-        ...(x.kind === 'cardio' ? null : { sets: clampSets(x.sets ?? 1), reps: clampReps(x.reps ?? 1) }),
+        /* A card's ramp keeps every set — its length IS the count (imported cards, PO 2026-09-30). */
+        ...(x.kind === 'cardio' ? null : { sets: x.repScheme?.length ? x.repScheme.length : clampSets(x.sets ?? 1), reps: clampReps(x.reps ?? 1) }),
       };
     });
 
@@ -577,7 +578,7 @@ export function weekTemplateIntoWeek(d: ProgramDraft, weekIndex: number, source:
  */
 function clampDayRows(day: ProgramDay): Pick<ProgramDay, 'warmup' | 'main' | 'cooldown'> {
   const fix = (list: ProgramExercise[]): ProgramExercise[] =>
-    list.map((x) => (x.kind === 'cardio' ? x : { ...x, sets: clampSets(x.sets ?? 1), reps: clampReps(x.reps ?? 1) }));
+    list.map((x) => (x.kind === 'cardio' ? x : { ...x, sets: x.repScheme?.length ? x.repScheme.length : clampSets(x.sets ?? 1), reps: clampReps(x.reps ?? 1) }));
   return { warmup: fix(day.warmup), main: fix(day.main), cooldown: fix(day.cooldown) };
 }
 

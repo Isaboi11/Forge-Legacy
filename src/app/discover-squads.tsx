@@ -251,7 +251,8 @@ export default function DiscoverSquadsScreen() {
             <View style={styles.emptyDisc}>
               <PeopleGlyph size={30} color={flColor.bronze300} />
             </View>
-            <Text style={styles.emptyTitle}>{searching ? 'No squads found' : 'No squads in this category'}</Text>
+            {/* "In this category" read wrong on All (social-27, QA 09-26), where there is no category. */}
+            <Text style={styles.emptyTitle}>{searching ? 'No squads found' : category === 'All' ? 'No public squads yet' : 'No squads in this category'}</Text>
             <Text style={styles.emptyText}>{searching ? 'Try another search or category.' : 'Check back later, or forge one yourself.'}</Text>
             <TourAnchor id="discover-create">
               <Pressable onPress={() => router.push('/create-squad')} accessibilityRole="button" accessibilityLabel="Create a squad" style={styles.outlineBtn}>

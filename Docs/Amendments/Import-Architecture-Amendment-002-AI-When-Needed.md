@@ -24,6 +24,10 @@ Decided by code, `whenToUseAi()` in `src/domain/workout/workout-ai-gate.ts`, nev
 
 - **Typed or pasted:** case 5 shows "Fix it with AI". It never runs by itself.
 - **Photo:** the poster already chose AI by choosing a photo, so a transcription that lands in case 5 is tidied straight away, with no second tap.
+  - **Amended 2026-09-30 (PO): every photo gets the AI pass, case 2 included.** PO: *"I thought we were having ai read it to make sure it gets it right?"* Season 12 Day 1 came back from the photo as a table whose cells already carried their words; the reader read it "clean" (case 2) as **one** squat set where the card has nine, so AI was never asked. A photo in case 2 is now tidied too, quietly: AI's layout replaces the reading only if it passes `checkAiRewrite` **and** itself reads as case 2; otherwise the code reading stands and no error is shown. One extra credit per photo. Typed and pasted workouts are unchanged.
+  - **Live proof, the PO's own photo, 2026-09-30** (4 AI layouts, about 6¢ in all): every set, rep, % and rest right in 4 of 4, and all four accepted by `checkAiRewrite`. From today's table photo read the workout's title is lost (a table has no row for it); from a whole-card read (a prompt tried in the test, **not deployed**) nothing was lost.
+  - **Amended 2026-09-30 (PO: "yes I want the title"): a card is photographed through its own function, `workout-card-read`, which copies the card line by line** — name, warm-up, every lift, the rests, the margin notes, the recovery. `program-photo-read` is untouched and still reads tables, rows only, for program import. ⚠ What this gives up, knowingly: the table read's guard is structural (a line with no tab is dropped, so it cannot carry a sentence); a card's lines are sentences. In its place, in code: the answer must contain sets and reps written as sets and reps or it is refused as "not a workout" (`cleanCardTranscript`, on the device, and the same rule in the function), it is capped at 120 lines / 6,000 characters, and it is never posted as it stands — it goes into the poster's own box, through the AI layout, `checkAiRewrite` and the code reader. It meters as `photo_import` (no migration). Until the function is deployed the app falls back to the table read.
+- **Case 5 also covers** (2026-09-30): a lift whose note holds a list of percentages (`setsLeftInNote`), and a lift that disagrees with the card's own tally, "9 total sets, 27 total reps" (`tallyMismatch`). Both also show under "Check these before posting".
 - **After AI has rewritten the box**, it is not offered again on its own rewrite. What is left is the poster's to check.
 
 Proof: `workout-ai-gate.test.mjs` shows all 19 real cards land in case 1 or 2.
@@ -38,7 +42,7 @@ Four walls, in order:
 2. **`checkAiRewrite()` on the device** throws the rewrite away, keeping the poster's words, if:
    - it wrote a number that isn't on the card (a rest may be restated: 2½ min = 2:30 = 150 s; lift labels and "1 set of" are the layout's own);
    - it lost a % that is on the card;
-   - it named a lift that shares no word with the card (DB/Dumbbell, BB/Barbell, RDL/Romanian and similar count as the same);
+   - it named a lift that shares no word with the card (DB/Dumbbell, BB/Barbell, RDL/Romanian and similar count as the same; since 2026-09-30 a handwritten "DEAD lift" counts for "Deadlift", which had been rejecting faithful rewrites);
    - it found no lifts in a card that has sets and reps.
 3. **The poster sees the rewrite in the box**, marked "Tidied by AI. Check every number against the card", with **Undo**, and the live preview of exactly what the squad will get. The "Check these before posting" list still runs on it.
 4. **Nothing is posted until the poster presses Use.**
@@ -57,6 +61,14 @@ Four walls, in order:
 
 §4.3 still holds for **program import**: CSV, sheets and program photos. Those still transcribe only (`program-photo-read`), and `parseProgramTable` decides everything. Extending "AI when needed" there needs its own amendment.
 
+> **Amended 2026-09-30 (PO): PHOTOS in every import door now use the card reader and the AI check.** PO: *"shouldn't this be the same card reader as when I put it in the workout tab in build a program? that should be going through ai as well so we know it works"* → *"yes"*. The same photo of Season 12 Day 1, read by the old path, gave Back Squat 9 × 0 with every percentage dropped, Bench 1 set, and the warm-up, recovery and a rest line as exercises.
+>
+> - **One reader, `readImportPhoto`** (`src/data/import-photo-read.ts`), for Build a Program's pictures, Build a Template's picture, Home's "Paste a workout", the builders' import sheet and a picture sent to Holt: the whole-card read (table read until `workout-card-read` is deployed) → for ONE workout, the AI layout (`workout-tidy`, guarded by `checkAiRewrite` exactly as above) → the written reader → the import preview (`writtenToWeeks`), with anything to check listed above it.
+> - **A sheet of several days or weeks is still the table reader's** (`isMultiDaySheet`: two different Day/Week values in the table, or two different day or week headings). ⚠ Not "does `parseProgramTable` see two days" — it reads the single Squatober card as two.
+> - **What sets × reps cannot say now reaches the program and the template**: a per-set ramp, percentages, the rest between sets and a superset ride in `ParsedItem.rx` into the draft, the saved template (`prescriptionOfRow`) and the program (`ProgramExercise.restSec` / `restScheme`, which `sessionSetsFor` puts on each set). The builders show them in a line under the name; re-counting a row by hand makes it plain sets × reps (`withoutScheme`).
+> - **Typed and pasted text is unchanged**: `parseProgramTable`, no AI.
+> - Cost: one card read and one AI layout per photo (about one extra credit per photo).
+
 ## Files
 
 - `src/domain/workout/workout-ai-gate.ts`: `whenToUseAi`, `checkAiRewrite`, `MAX_AI_CHARS`.
@@ -64,7 +76,8 @@ Four walls, in order:
 - `src/data/workout-tidy-live.ts`: the client; runs `checkAiRewrite` before offering anything.
 - `src/app/workout-write.tsx`: the "Fix it with AI" button, auto-tidy on a photo, the banner and Undo.
 - `supabase/migrations/0232_workout_tidy_action.sql` + `supabase/apply/pending-0232.sql`: the credit weight.
-- Tests: `workout-ai-gate.test.mjs` (the line, and the check), `workout-tidy-prompt.test.mjs` (the prompt's example reads cleanly and passes the check), `workout-tidy-live.test.mjs` (the client).
+- `supabase/functions/workout-card-read/index.ts` (self-contained, the dashboard paste copy), `src/data/workout-card-read-live.ts`, `src/domain/workout/card-transcript.ts`: the card photo read (2026-09-30).
+- Tests: `squatober-2026-day1.test.mjs` (the PO's photo, end to end, on the live prompts' real answers), `card-transcript.test.mjs`, `workout-card-read-live.test.mjs`, and `workout-ai-gate.test.mjs` (the line, and the check), `workout-tidy-prompt.test.mjs` (the prompt's example reads cleanly and passes the check), `workout-tidy-live.test.mjs` (the client).
 
 ## Order to go live
 

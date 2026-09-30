@@ -60,7 +60,8 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * Nutrition tab root — built to `Nutrition Home.dc.html` (Claude Design), wired to the real diary (0205).
  *
  * Faithful to the `.dc`: the day strip (‹ Today · SEP 16, 2026 › · See Details), the bronze calorie ring
- * over its ember glow with the flame mark, three macro rings (protein green · carbs bronze · fat blue),
+ * over its ember glow with the flame mark, three macro rings (protein green · carbs purple · fat blue — the
+ * `.dc` drew carbs bronze, the same as calories; the PO moved it to `macroCarb` on 2026-09-24, QA 09-26 N-40),
  * Log Food, the Scan / Meal Plan pair, and "Today's Meals" — a card per slot with its kcal on the right,
  * empty slots drawn as dashed rows, and "Copy yesterday" on an empty one.
  *
@@ -96,9 +97,11 @@ export default function NutritionScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const { profile } = useProfile();
-  /* 0206 — the preview allowlist. The TAB is hidden for everyone else, but `/nutrition` is still a real
-     route, so a typed URL or a stale deep link lands here. Read alongside `status` so the two accounts
-     that DO have access never see the refusal flash while entitlement is still loading. */
+  /* Who may open the tab: `my_entitlement().nutrition` — any signed-in athlete since 0244 (0206 → 0237 →
+     0244; the planner half is `useNutritionPlanner`, below). ⚠ An athlete WITHOUT it never reaches this
+     screen by URL: `app-tabs` drops the Nutrition TabTrigger, so the tab navigator has no `/nutrition` route
+     and a typed URL or stale deep link falls back to Home (QA 09-26 home-24). Read alongside `status` so an
+     athlete who has it never sees the refusal below flash while entitlement is still loading. */
   const mayUseNutrition = useNutritionAccess();
   /* 0244: the meal planner, grocery list and building recipes are Premium; logging stays free. */
   const planner = useNutritionPlanner();
@@ -237,17 +240,19 @@ export default function NutritionScreen() {
   };
 
   /*
-   * ══ 0206 — NOT ON THE PREVIEW ALLOWLIST ══
+   * ══ NO NUTRITION ACCESS — THE FALLBACK, NOT THE DOOR ══
    *
    * Every hook above has already run, so this early return cannot change hook order. It is placed after
    * them deliberately rather than at the top of the component.
    *
-   * ⚠ This is a COURTESY, not the gate: 0206 puts the allowlist inside the RLS of all seven nutrition
-   * tables, so without it `fetchDay` returns nothing and every write is refused. What this avoids is a
-   * chromed, permanently-empty food diary that reads as a bug rather than as a closed door.
+   * ⚠ Rarely seen, and that is correct (QA 09-26 home-24). Without access the route is not in the tab
+   * navigator at all, so a typed `/nutrition` lands on HOME, quietly — this screen only shows if access
+   * drops while the tab is already mounted. It is a COURTESY, not the gate: the RLS on every nutrition
+   * table and `food-search`'s 403 are the gate (`has_nutrition_access()`); this only avoids a chromed,
+   * permanently-empty diary that reads as a bug rather than as a closed door.
    *
-   * While entitlement is still loading nothing is said either way — claiming "not available" to the PO
-   * for a few hundred milliseconds would be a lie with a short shelf life.
+   * While entitlement is still loading nothing is said either way — claiming "not available" for a few
+   * hundred milliseconds would be a lie with a short shelf life.
    */
   if (!mayUseNutrition) {
     return (
@@ -260,11 +265,8 @@ export default function NutritionScreen() {
         />
         {entitlementStatus === 'ready' ? (
           <View style={styles.previewGate}>
-            <Text style={styles.previewTitle}>Not open yet</Text>
-            <Text style={styles.previewBody}>
-              Nutrition is still being built. It will arrive as part of Forge when it is finished — nothing to
-              sign up for.
-            </Text>
+            <Text style={styles.previewTitle}>Not available</Text>
+            <Text style={styles.previewBody}>Nutrition isn’t open on this account right now.</Text>
           </View>
         ) : null}
       </View>
@@ -787,6 +789,8 @@ function CheckRow({ row, disabled, onPress }: { row: ChecklistRow; disabled: boo
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: row.checked, disabled }}
+      /* react-native-web 0.21 ignores accessibilityState — the web needs the aria prop (QA 09-26 kitchen-22). */
+      aria-checked={row.checked}
       accessibilityLabel={`${row.name}, ${row.kcal} calories`}
       onPress={onPress}
       style={({ pressed }) => [styles.checkRow, pressed && styles.checkRowPressed]}

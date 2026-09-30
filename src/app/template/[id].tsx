@@ -25,6 +25,7 @@ import { groupMarks } from '@/domain/workout/template-groups';
 import { customIdOf } from '@/domain/exercise-picker/custom-core';
 import { restoreCustomExercise } from '@/data/custom-exercises-live';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
+import { nameNearLimit, WORKOUT_NAME_MAX } from '@/domain/text/name-limits';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
   deleteTemplate,
@@ -460,9 +461,15 @@ export default function TemplateDetailScreen() {
           placeholderTextColor={flColor.gray600}
           style={styles.input}
           accessibilityLabel="Template name"
-          maxLength={60}
+          maxLength={WORKOUT_NAME_MAX}
           autoFocus
         />
+        {/* Never a silent cut (QA 09-26 library-23): the count shows as the name nears its cap. */}
+        {nameNearLimit(draftName.length, WORKOUT_NAME_MAX) ? (
+          <Text style={styles.nameCount}>
+            {draftName.length}/{WORKOUT_NAME_MAX}
+          </Text>
+        ) : null}
         <View style={styles.renameSave}>
           <Button
             variant="primary"
@@ -693,6 +700,7 @@ const styles = StyleSheet.create({
 
   input: { paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 14, color: flColor.cream100 },
   renameSave: { marginTop: 12 },
+  nameCount: { marginTop: 6, alignSelf: 'flex-end', fontSize: 12, color: flColor.gray400 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.85 },
 });

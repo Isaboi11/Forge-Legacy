@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,6 +31,7 @@ import {
   type NotifMap,
 } from '@/domain/settings/notifications';
 import { usePersist } from '@/hooks/usePersist';
+import { useToast } from '@/hooks/useCeremony';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -66,6 +67,7 @@ export default function NotificationsScreen() {
   const [override, setOverride] = useState<Partial<NotifMap>>({});
   const value = (k: NotifKey): boolean => override[k] ?? data?.[k] ?? NOTIF_DEFAULTS[k];
   const persist = usePersist();
+  const { showToast } = useToast();
 
   /* 0159. Read alongside the preferences; an absent row resolves to the default schedule rather than to
      silence, so the editor below always has something to draw. */
@@ -115,7 +117,11 @@ export default function NotificationsScreen() {
     const has = briefing.days.includes(day);
     // ⚠ The last day cannot be removed. An empty selection is a second, hidden off switch that would
     // disagree with the toggle above it — and the table's own check constraint refuses it anyway.
-    if (has && briefing.days.length === 1) return;
+    // It says so instead of silently ignoring the tap (QA 09-26 settings-19).
+    if (has && briefing.days.length === 1) {
+      showToast('Keep at least one day. To stop the briefing, switch it off above.');
+      return;
+    }
     const days = has ? briefing.days.filter((d) => d !== day) : ISO_DAYS.filter((d) => d === day || briefing.days.includes(d));
     writeBriefing({ ...briefing, days });
   };
@@ -133,6 +139,13 @@ export default function NotificationsScreen() {
         </View>
       ) : (
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+          {/* A browser cannot receive these. The switches still save — they govern the phone (QA 09-26 B11). */}
+          {Platform.OS === 'web' ? (
+            <Text style={styles.webNote}>
+              These are push notifications, and they arrive on the iPhone app. Your choices here save to your
+              account and apply there. Everything still shows in the app’s Inbox (the bell on Home).
+            </Text>
+          ) : null}
           {NOTIF_SECTIONS.map((sec) => (
             <View key={sec.key} style={styles.section}>
               <Text style={styles.sectionLabel}>{sec.label}</Text>
@@ -175,7 +188,9 @@ export default function NotificationsScreen() {
                     </View>
 
                     <Text style={[styles.editorLabel, styles.editorLabelSpaced]}>Time</Text>
-                    <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hourRow}>
+                    {/* Wrapped, not a sideways scroller: 8–11 AM sat off the edge with no scrollbar to say
+                        they existed (QA 09-26 settings-19). Eight chips fit on two lines. */}
+                    <View style={styles.hourRow}>
                       {BRIEFING_HOURS.map((h) => {
                         const on = briefing.hour === h;
                         return (
@@ -191,7 +206,7 @@ export default function NotificationsScreen() {
                           </Pressable>
                         );
                       })}
-                    </ScrollView>
+                    </View>
 
                     <Text style={styles.editorSummary}>
                       {describeDays(briefing.days)} at {formatHour(briefing.hour)}, your time.
@@ -269,7 +284,7 @@ const styles = StyleSheet.create({
   dayChipText: { fontSize: 11, fontWeight: '600', color: flColor.gray600 },
   dayChipTextOn: { color: flColor.selectedInk },
 
-  hourRow: { flexDirection: 'row', gap: 8, paddingRight: 4 },
+  hourRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   hourChip: {
     paddingVertical: 9,
     paddingHorizontal: 14,
@@ -289,5 +304,6 @@ const styles = StyleSheet.create({
   calloutTitle: { fontSize: 13.5, fontWeight: '700', color: flColor.bronze300, marginBottom: 3 },
   calloutBody: { fontSize: 12, lineHeight: 18, color: flColor.gray400 },
 
+  webNote: { fontSize: 12, lineHeight: 18, color: flColor.gray400, marginBottom: 18, paddingHorizontal: 2 },
   footer: { fontSize: 11.5, lineHeight: 18, color: flColor.gray600, paddingHorizontal: 2 },
 });

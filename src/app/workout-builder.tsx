@@ -38,7 +38,8 @@ import { resolveExerciseName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
 import { bumpTimedSet, durText } from '@/domain/program/prescription';
 import { stepExercise } from '@/domain/workout/reorder-exercise';
-import { toTemplateExercises } from '@/lib/workout-template-rows';
+import { prescriptionOfRow, toTemplateExercises } from '@/lib/workout-template-rows';
+import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   clampReps,
@@ -54,14 +55,18 @@ import {
   emptyWorkoutDraft,
   loadWorkoutDraft,
   saveWorkoutDraft,
-  workoutDraftHasContent,
+  workoutDraftIsDirty,
   workoutDraftTotal,
+  withWorkoutBaseline,
   type WorkoutDraft,
 } from '@/lib/workout-builder-draft';
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
+import { countOf } from '@/domain/text/plural';
+import { withArticle } from '@/domain/text/article';
+import { nameNearLimit, WORKOUT_NAME_MAX } from '@/domain/text/name-limits';
 
 /**
  * W-25 Free Workout Builder — plan a session, then keep it (and start it).
@@ -143,7 +148,7 @@ export default function WorkoutBuilderScreen() {
         let d = stored;
         if (entryId && !inbox && (!d || d.editId !== entryId)) {
           const src = await fetchTemplateDetail(entryId).catch(() => null);
-          d = src ? hydrate(src.name, src.exercises, entryId) : d;
+          d = src ? withWorkoutBaseline(hydrate(src.name, src.exercises, entryId)) : d;
         } else if (!entryId && !inbox && d && d.editId) {
           d = null; // a fresh "build it first" must not reopen someone's edit session
         }
@@ -231,7 +236,8 @@ export default function WorkoutBuilderScreen() {
     const items: ProgramExercise[] = day.main.map((x) => ({
       ...x,
       id: newExerciseId(),
-      sets: clampSets(x.sets),
+      /* A card's ramp keeps every set (see `program-import-draft.ts`); anything else fits the steppers. */
+      sets: x.repScheme?.length ? x.repScheme.length : clampSets(x.sets),
       reps: clampReps(x.reps),
     }));
     const givenName = /^day \d+$/i.test(day.name.trim()) ? '' : day.name.trim();
@@ -244,8 +250,8 @@ export default function WorkoutBuilderScreen() {
     const n = items.length;
     showToast(
       unmatched.length
-        ? `Imported ${n} · ${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`
-        : `Imported ${n} exercise${n === 1 ? '' : 's'} — review and save`,
+        ? `Imported ${n} · ${countOf(unmatched.length, 'name')} ${unmatched.length === 1 ? 'wasn’t' : 'weren’t'} in the library and kept yours`
+        : `Imported ${countOf(n, 'exercise')} — review and save`,
     );
   };
 
@@ -256,7 +262,7 @@ export default function WorkoutBuilderScreen() {
   };
 
   const onBack = () => {
-    if (draft && workoutDraftHasContent(draft)) setConfirmLeave(true);
+    if (draft && workoutDraftIsDirty(draft)) setConfirmLeave(true);
     else leave();
   };
 
@@ -311,6 +317,8 @@ export default function WorkoutBuilderScreen() {
   }
 
   const total = workoutDraftTotal(draft);
+  /* An existing template being edited (Home's one-off "Build for later" never carries an editId). */
+  const editing = !!draft.editId && !forLater;
   // The same rule The Record's save uses: a shape with nothing in its Main section is not a workout.
   const canSave = draft.main.length > 0;
   const est = Math.round((draft.main.length * 9 + draft.warmup.length * 4 + draft.cooldown.length * 4) / 5) * 5;
@@ -331,11 +339,17 @@ export default function WorkoutBuilderScreen() {
             placeholder="e.g. Push Day A"
             placeholderTextColor={flColor.gray600}
             style={styles.nameInput}
-            maxLength={60}
+            maxLength={WORKOUT_NAME_MAX}
             accessibilityLabel="Workout name"
           />
+          {/* The cap is never a silent cut (QA 09-26 library-23): the count shows as the name nears it. */}
+          {nameNearLimit(draft.name.length, WORKOUT_NAME_MAX) ? (
+            <Text style={styles.headMeta}>
+              {draft.name.length}/{WORKOUT_NAME_MAX}
+            </Text>
+          ) : null}
           <Text style={styles.headMeta}>
-            {total > 0 ? `${total} ${total === 1 ? 'exercise' : 'exercises'}${est > 0 ? ` · ~${est} min` : ''}` : 'Plan it here, then start it whenever you like.'}
+            {total > 0 ? `${countOf(total, 'exercise')}${est > 0 ? ` · ~${est} min` : ''}` : 'Plan it here, then start it whenever you like.'}
           </Text>
           {/* The same link, the same words and the same glyph as the Program Builder's — one door, wherever
               a plan gets built. Under the name because that is where the Program Builder keeps it too. */}
@@ -382,7 +396,7 @@ export default function WorkoutBuilderScreen() {
                           ? x
                           : x.kind === 'cardio'
                             ? { ...x, targetMi: bumpDistance(x.targetMi ?? null, dir) }
-                            : { ...x, sets: clampSets((x.sets ?? 1) + dir) },
+                            : { ...withoutScheme(x), sets: clampSets((x.sets ?? 1) + dir) },
                       ),
                     )
                   }
@@ -392,7 +406,8 @@ export default function WorkoutBuilderScreen() {
                         if (k !== i) return x;
                         // A TIMED set steps its clock, not reps (PO 2026-09-27).
                         if (x.kind !== 'cardio' && x.durationSec != null) return { ...x, durationSec: bumpTimedSet(x.durationSec, dir) };
-                        if (x.kind !== 'cardio') return { ...x, reps: clampReps((x.reps ?? 1) + dir) };
+                        /* Re-counting a card's ramp by hand makes the row plain sets × reps (`withoutScheme`). */
+                        if (x.kind !== 'cardio') return { ...withoutScheme(x), reps: clampReps((x.reps ?? 1) + dir) };
                         // Row B counts pace for a run and speed for a bike. The machines offer neither,
                         // and the stepper is hidden for them rather than stepping a value nothing renders.
                         return usesSpeed((x.activity ?? 'run') as CardioActivity)
@@ -450,10 +465,11 @@ export default function WorkoutBuilderScreen() {
           onPress={() => void save(false)}
           disabled={!canSave || saving}
           accessibilityRole="button"
-          accessibilityLabel="Save for later"
+          accessibilityLabel={editing ? 'Save changes' : 'Save for later'}
           style={styles.laterBtn}
         >
-          <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>Save for later</Text>
+          {/* Editing a saved template is not "for later" - it already exists (QA 09-26 library-19). */}
+          <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>{editing ? 'Save changes' : 'Save for later'}</Text>
         </Pressable>
         {!canSave ? <Text style={styles.gate}>Add at least one Main exercise to save.</Text> : null}
       </View>
@@ -471,7 +487,7 @@ export default function WorkoutBuilderScreen() {
               key={a.key}
               onPress={() => cardioSheet && addCardio(cardioSheet, a.key)}
               accessibilityRole="button"
-              accessibilityLabel={`Add a ${a.name.toLowerCase()}`}
+              accessibilityLabel={`Add ${withArticle(a.name.toLowerCase())}`}
               style={styles.cardioRow}
             >
               <Text style={styles.cardioSymbol}>{activitySymbol(a.key)}</Text>
@@ -547,8 +563,8 @@ export default function WorkoutBuilderScreen() {
       <ConfirmSheet
         open={confirmLeave}
         onClose={() => setConfirmLeave(false)}
-        headline="Discard this workout?"
-        body="Nothing has been saved to your templates yet."
+        headline={editing ? 'Discard your changes?' : 'Discard this workout?'}
+        body={editing ? 'The saved template stays as it was.' : 'Nothing has been saved to your templates yet.'}
         confirmLabel="Discard"
         tone="destructive"
         onConfirm={() => {
@@ -619,6 +635,12 @@ function Row({
           {item.equip ? (
             <Text style={styles.exEquip} numberOfLines={1}>
               {equipmentLabel(item.equip)}
+            </Text>
+          ) : null}
+          {/* A card's ramp, percentages and rest (PO 2026-09-30) — more than the steppers can show. */}
+          {!cardio && prescriptionLine(item) ? (
+            <Text style={styles.exEquip} numberOfLines={2}>
+              {prescriptionLine(item)}
             </Text>
           ) : null}
         </View>
@@ -790,6 +812,19 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
       ...(e.groupId
         ? { groupId: e.groupId, groupName: e.groupName ?? undefined, groupKind: e.groupKind ?? 'circuit', groupRounds: e.groupRounds ?? undefined }
         : null),
+      /* The template's ramp, percentages and rest come back into the builder, so opening and saving it keeps them
+         (`prescriptionOfRow` writes them; PO 2026-09-30). */
+      ...(isCardio
+        ? null
+        : prescriptionOfRow({
+            repScheme: e.repScheme ?? undefined,
+            repsMax: e.repsMax ?? undefined,
+            percentOfMax: e.percentOfMax ?? undefined,
+            percentScheme: e.percentScheme ?? undefined,
+            percentOf: e.percentOf ?? undefined,
+            restSec: e.restSec ?? undefined,
+            restScheme: e.restScheme ?? undefined,
+          })),
     };
     d[e.section ?? 'main'].push(row);
   }

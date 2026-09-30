@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { extensionFor, MAX_CHECKIN_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { goalState, mergePastGoals, type GoalOutcome, type GoalState } from '@/domain/squad/goal-state';
 import { sanitizePrefs } from '@/domain/settings/preferences';
+import { isSingularCount } from '@/domain/text/plural';
 
 /**
  * Squad Core data (Social · Part 1) — real `squads` + `squad_members` (migrations 0029/0030). Create is
@@ -25,6 +26,13 @@ export const GOAL_UNITS: Record<SquadGoalMetric, string> = {
   time_total: 'hrs',
   pr_count: 'PRs',
 };
+
+const GOAL_UNIT_ONE: Partial<Record<SquadGoalMetric, string>> = { workout_count: 'workout', time_total: 'hr', pr_count: 'PR' };
+
+/** The unit for ONE figure — "1 workout to go", "3 workouts to go" (N-22 / social-27, QA 09-26: "1 workouts"). */
+export function goalUnitOf(kind: SquadGoalMetric, n: number): string {
+  return isSingularCount(n) ? (GOAL_UNIT_ONE[kind] ?? GOAL_UNITS[kind]) : GOAL_UNITS[kind];
+}
 
 export interface SquadMemberAvatar {
   name: string;

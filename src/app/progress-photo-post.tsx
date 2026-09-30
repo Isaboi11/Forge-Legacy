@@ -1,7 +1,8 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { Image } from 'expo-image';
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -226,7 +227,7 @@ export default function ProgressPhotoPostRoute() {
             : 'Copied — paste it anywhere',
         );
       } else if (result.via === 'download') {
-        showToast(result.count > 1 ? `Saved ${result.count} images` : 'Saved to your photos');
+        showToast(result.count > 1 ? `Downloaded ${result.count} images` : 'Image downloaded');
       } else if (result.slides > result.count) {
         // The sheet is the receipt for the slide it carried; the ones it did not carry still need saying.
         showToast(`Slide 1 of ${result.slides} — the rest need another tap`);
@@ -264,26 +265,29 @@ export default function ProgressPhotoPostRoute() {
     }
   };
 
+  /**
+   * "More" and the footer's Share: the CARD, not a line of text (QA 09-26 legacy-23).
+   *
+   * This used to hand the system sheet "Name · Week 4 · Chapter" and nothing else, and on a desktop
+   * browser — no `navigator.share` — it only said sharing wasn't available. It now renders the same PNG
+   * Save does: on iPhone the share sheet carries the image, on the web it downloads, on Android it goes to
+   * the clipboard (see `lib/save-image-file.ts`). The caption goes on the clipboard first, which is what
+   * the note under the caption field promises — except on Android, where the image itself is the paste.
+   */
   const systemShare = async () => {
-    const text = `${athlete} · ${entry.label}${entry.chapterName ? ` · ${entry.chapterName}` : ''}`;
-    if (Platform.OS === 'web') {
-      const nav = typeof navigator !== 'undefined' ? (navigator as { share?: (d: { title?: string; text?: string }) => Promise<void> }) : undefined;
-      if (nav?.share) {
-        try {
-          await nav.share({ title: 'Forge Legacy', text });
-        } catch {
-          /* dismissed */
-        }
-        return;
-      }
-      showToast('Sharing isn’t available here');
-      return;
-    }
-    try {
-      await Share.share({ message: text });
-    } catch {
-      /* dismissed */
-    }
+    const text = effCaption.trim();
+    const captionCopied =
+      text && Platform.OS !== 'android'
+        ? await Clipboard.setStringAsync(text).then(
+            () => true,
+            () => false,
+          )
+        : false;
+    if (captionCopied && Platform.OS === 'ios') showToast('Caption copied — paste it with the image');
+    const ok = await renderCard(false, 'sheet');
+    if (!ok) return;
+    if (lastVia.current === 'download') showToast(captionCopied ? 'Image downloaded — caption copied' : 'Image downloaded');
+    else if (lastVia.current === 'clipboard') showToast('Image copied — paste it anywhere');
   };
 
   const postToSquad = () => {
@@ -419,7 +423,7 @@ export default function ProgressPhotoPostRoute() {
                     </View>
                   ) : null}
                 </View>
-                <Text style={[styles.poseCap, on ? styles.poseCapOn : null]} numberOfLines={1}>
+                <Text style={[styles.poseCap, on ? styles.poseCapOn : null]} numberOfLines={2}>
                   {p.short.toUpperCase()}
                 </Text>
               </Pressable>
@@ -490,7 +494,7 @@ export default function ProgressPhotoPostRoute() {
           fullWidth
           disabled={posting}
           icon={<ShareGlyph />}
-          onPress={() => (origin === 'squad' && squadId ? postToSquad() : void systemShare())}
+          onPress={() => (origin === 'squad' && squadId ? postToSquad() : void sendTo('more'))}
           accessibilityLabel={origin === 'squad' ? `Post to ${squadName}` : 'Share'}
         >
           {posting ? 'Posting…' : origin === 'squad' && squadId ? `Post to ${squadName}` : 'Share'}

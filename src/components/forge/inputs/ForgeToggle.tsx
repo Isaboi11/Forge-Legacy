@@ -75,6 +75,10 @@ export function ForgeToggle({
       disabled={disabled || loading}
       accessibilityLabel={accessibilityLabel ?? label ?? 'Toggle'}
       accessibilityRole="switch"
+      // Web reads `aria-*`, not `accessibilityState` (react-native-web 0.21) — QA 09-26 settings-18.
+      aria-checked={value}
+      aria-disabled={disabled}
+      aria-busy={loading}
       accessibilityState={{ checked: value, disabled, busy: loading }}
       style={[
         styles.row,
