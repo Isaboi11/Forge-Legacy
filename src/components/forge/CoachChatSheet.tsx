@@ -3966,9 +3966,7 @@ function Answers({
     );
   }
 
-  /* The default, and what every question used to be: a set of unlike things, two to a row.
-     A `stays` chip (Undo) is an action, not an answer: it stays live until it is the one tapped (holtai-08). */
-  const off = (c: Chip) => settled && !(c.stays && !chosen(c));
+  /* The default, and what every question used to be: a set of unlike things, two to a row. */
   return (
     <View style={styles.chipGrid}>
       {chips.map((c) => {
