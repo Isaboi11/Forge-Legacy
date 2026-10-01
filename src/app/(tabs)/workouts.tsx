@@ -1,9 +1,8 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import Svg, { Circle } from 'react-native-svg';
 
 import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -425,10 +424,9 @@ export default function WorkoutsScreen() {
                 /* ══ NO ACTIVE PROGRAM — "BUILD WHAT'S NEXT" (PO mockup, 2026-09-23) ══
                    No "Active Program" header above it: the eyebrow already says there isn't one, and a
                    heading announcing an empty slot was the same fact twice. Build My Own is THE action
-                   (bronze fill); Find Me One is the quiet sibling. The plate behind it is a background
-                   detail at 7% — if it is noticeable, it is too loud. */
+                   (bronze fill); Find Me One is the quiet sibling. No plate drawing behind it — the PO saw
+                   the 7% outline as "that weird target" and had it removed (2026-10-01). */
                 <View style={styles.hero}>
-                  <HeroPlate style={styles.heroPlateMine} />
                   <Text style={styles.kicker}>No active program</Text>
                   <Text style={styles.heroTitle}>Build What’s Next</Text>
                   <Text style={styles.heroBody}>Create your own program or find one built for your goals.</Text>
@@ -538,7 +536,6 @@ export default function WorkoutsScreen() {
               beneath them; Holt is the last door — "I've looked and still don't know".
             */}
             <View style={styles.hero}>
-              <HeroPlate style={styles.heroPlateDiscover} />
               <Text style={styles.kicker}>Discover</Text>
               <Text style={styles.heroTitle}>Find Your Next Program</Text>
               <Text style={styles.heroBody}>Search programs, single workouts, or browse by focus.</Text>
@@ -780,23 +777,6 @@ function HammerIcon() {
 function CompassIcon() {
   return <EngravedIcon name="compass" size={18} />;
 }
-/**
- * The heroes' background detail — a weight plate in outline, bronze at 7%, bled off the right edge.
- * Drawn, not a raster: it takes the theme's own bronze in both palettes, and at this opacity it reads as
- * part of the slate texture rather than an illustration. Never under the text column's first ~60%.
- */
-function HeroPlate({ style }: { style: StyleProp<ViewStyle> }) {
-  return (
-    <View pointerEvents="none" style={[styles.heroPlate, style]}>
-      <Svg width={190} height={190} viewBox="0 0 200 200" fill="none" stroke={flColor.bronze400}>
-        <Circle cx={100} cy={100} r={96} strokeWidth={3} />
-        <Circle cx={100} cy={100} r={82} strokeWidth={1.2} />
-        <Circle cx={100} cy={100} r={40} strokeWidth={1.5} />
-        <Circle cx={100} cy={100} r={14} strokeWidth={3} />
-      </Svg>
-    </View>
-  );
-}
 /** One mark per program family, for the focus chips. */
 const FOCUS_ICON: Record<ProgramFamily, EngravedName> = {
   Strength: 'barbell',
@@ -973,9 +953,6 @@ const styles = StyleSheet.create({
   },
   /* ── HEROES — "Build What's Next" and Discover's intro. Type on the ground, no container. ─────────── */
   hero: { gap: 6 },
-  heroPlate: { position: 'absolute', opacity: 0.07 },
-  heroPlateMine: { top: -30, right: -64 },
-  heroPlateDiscover: { top: -34, right: -70 },
   heroTitle: {
     fontFamily: flFont.display,
     fontSize: 32,
