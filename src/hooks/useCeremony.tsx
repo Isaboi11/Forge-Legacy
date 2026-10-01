@@ -196,6 +196,28 @@ function ceremonyShareType(event: CeremonyEvent): ShareKind | null {
   }
 }
 
+/*
+ * ══ ⚠ NO OVERLAY WHILE A SCREEN IS CLOSING — `holdOverlays` ══
+ *
+ * A ceremony and a toast are each a native `Modal`: their own presented view controller. iOS presents one
+ * view controller at a time, and a Modal presented while a full-screen screen is mid-dismissal is either
+ * dropped or left orphaned — an invisible window over the app that takes every tap. That reads as a
+ * freeze, throws nothing, and so reaches no crash report.
+ *
+ * It froze a tester twice on the same path (PO 10-01): seal → "Post and see your Legacy". That button
+ * toasts "Posted to …" and leaves in the same tick, and the tab underneath regains focus during the close
+ * animation, where `useEarnedMoments` can enqueue a fresh honor or rank ceremony. The 09-29 fix
+ * (dismiss instead of replace) narrowed the window; this closes it. A screen about to dismiss calls
+ * `holdOverlays(ms)`; anything enqueued or toasted meanwhile WAITS — it is not dropped — and appears once
+ * the hold ends, on top of whatever screen the athlete landed on.
+ */
+let holdListener: ((ms: number) => void) | null = null
+
+/** Keep ceremonies and toasts off screen for `ms` — call it right before dismissing a full-screen screen. */
+export function holdOverlays(ms: number): void {
+  holdListener?.(ms)
+}
+
 export function CeremonyProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { openShare } = useShareSheet()
@@ -214,6 +236,23 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
   const dismiss = useCallback(() => setQueue((q) => q.slice(1)), [])
   const showToast = useCallback((message: string) => setToast(message), [])
   const hideToast = useCallback(() => setToast(null), [])
+
+  /* See `holdOverlays`. A newer hold extends rather than shortens the current one. */
+  const [holding, setHolding] = useState(false)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    let until = 0
+    holdListener = (ms) => {
+      until = Math.max(until, Date.now() + ms)
+      setHolding(true)
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => setHolding(false), Math.max(0, until - Date.now()))
+    }
+    return () => {
+      holdListener = null
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
 
   const current = queue[0] ?? null
 
@@ -320,7 +359,7 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
       <ToastContext.Provider value={toastValue}>
         {children}
 
-        {current && copy ? (
+        {current && copy && !holding ? (
           current.kind === 'honorEarned' ? (
             // Honors earn the forged-medallion ceremony (Forge First Honor Ceremony): the per-honor SYMBOL
             // swaps, the frame/coloring/glow stay constant. Every other ceremony keeps the centered Modal.
@@ -351,7 +390,7 @@ export function CeremonyProvider({ children }: { children: React.ReactNode }) {
           )
         ) : null}
 
-        <Toast open={toast != null} message={toast ?? ''} onDismiss={hideToast} />
+        <Toast open={toast != null && !holding} message={toast ?? ''} onDismiss={hideToast} />
       </ToastContext.Provider>
     </CeremonyContext.Provider>
   )
