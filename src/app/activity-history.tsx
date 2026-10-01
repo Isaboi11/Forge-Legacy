@@ -198,6 +198,7 @@ export default function ActivityHistoryScreen() {
           is NOT an empty history: it gets its own state, never "your first session will show up here". */}
       <FlatList
         keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        automaticallyAdjustKeyboardInsets
         data={rows}
         keyExtractor={(r) => r.id}
         showsVerticalScrollIndicator={false}
