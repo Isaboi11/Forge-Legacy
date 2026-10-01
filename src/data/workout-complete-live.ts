@@ -1,3 +1,5 @@
+import { fetchPreviousWorkoutAt } from '@/data/welcome-back-live';
+import { isFirstSessionBack } from '@/domain/home/welcome-back';
 import { supabase } from '@/lib/supabase';
 import { playlistFromRow, playlistToRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { personalBests, type ActivityKind, type PersonalBest, type UnitSystem } from '@/domain/run/run-core';
@@ -113,6 +115,9 @@ export interface Completion {
   /** What this run beat, when it was a run. Empty for a strength session and for a first-ever run. */
   runBests: PersonalBest[];
   workoutId: string;
+  /** The first saved workout after a 7+ day break (`domain/home/welcome-back.ts`). The quote line
+   *  becomes "First session back. That's the hardest one." — never a count of days away. */
+  firstSessionBack: boolean;
   workoutName: string;
   /** The session's saved activity_type ('strength', 'running', 'stair_climber', …) — derived at save
    *  time by `sessionActivityType`. The recap snapshot labels its cardio marker off this. */
@@ -647,8 +652,12 @@ export async function fetchCompletion(workoutId: string, units: UnitSystem = 'im
    * rather than by luck.
    */
 
+  const thisStart = workout.started_at ?? savedAt ?? null;
+  const firstSessionBack = thisStart ? isFirstSessionBack(await fetchPreviousWorkoutAt(thisStart, workoutId), thisStart) : false;
+
   return {
     workoutId,
+    firstSessionBack,
     activityType: (workout.activity_type as string | null) ?? null,
     note: workout.notes ?? null,
     savedAt: savedAt ?? null,
