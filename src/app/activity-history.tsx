@@ -1,23 +1,33 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ChipScroller } from '@/components/forge/ChipScroller';
 import { ScreenBackground } from '@/components/screen-background';
+import { ActivityCalendar, CALENDAR_COLOR } from '@/components/workout/ActivityCalendar';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
-import { themeGround, themeScrim } from '@/constants/theme-scrim';
-import { fetchActivityHistory } from '@/data/activity-live';
+import { forgeOr, themeScrim } from '@/constants/theme-scrim';
+import { ACTIVITY_HISTORY_LIMIT, fetchActivityHistory, fetchChapterMarks } from '@/data/activity-live';
+import {
+  buildMonthGrid,
+  chapterRowFor,
+  compareYM,
+  dayTitle,
+  monthRange,
+  monthSummary,
+  sessionsInMonth,
+  sessionsOnDay,
+  type YearMonth,
+} from '@/domain/activity/calendar-core';
 import {
   ACTIVITY_LABEL,
   ACTIVITY_ORDER,
-  emptyMessage,
   fmtDuration,
   fmtRowDate,
-  groupByMonth,
   partnersLabel,
   rowA11y,
   statLine,
@@ -42,6 +52,13 @@ import { useUnits } from '@/lib/settings';
  *
  * Rows open Activity Detail (W-19), which reads the same `workouts` table — so a tapped row always
  * resolves to the session it described.
+ *
+ * ── THE CALENDAR (`Activity History Calendar.dc.html`, variant 1a, PO 10-01) ──
+ *
+ * A month calendar sits above the list and scrolls with it, and the list is now THAT MONTH's sessions
+ * rather than the whole log under sticky month headers. Arrows or a sideways swipe change month — back
+ * to the first session, never past this one. Tapping a trained day narrows the list to that day; tapping
+ * it again (or Show all) clears it. The type chips filter both. Rules live in `calendar-core`.
  */
 
 /** One glyph per logged modality. A bronze colour becomes the engraved gradient; grey (an off chip) stays flat. */
@@ -62,14 +79,48 @@ function TypeIcon({ type, size = 22, color }: { type: Modality; size?: number; c
 export default function ActivityHistoryScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState<ActivityFilter>('all');
-  const { data, settled, error, refetch } = useQuery(() => fetchActivityHistory(), []);
+  /** The month on show; `null` follows this month. */
+  const [cursor, setCursor] = useState<YearMonth | null>(null);
+  const [pickedDay, setPickedDay] = useState<number | null>(null);
+  const [now] = useState(() => new Date());
+  const { data, loading, settled, error, refetch } = useQuery(() => fetchActivityHistory(), []);
+  const chapters = useQuery(() => fetchChapterMarks(), []);
   /* Refetched on focus: "Log" below opens `/log-activity` over this screen, and the bout it records has
      to be in the list the moment it closes — a `[]` query would show it next time the screen mounts. */
   useFocusEffect(useCallback(() => refetch(), [refetch]));
 
   const records = data ?? [];
-  const groups = groupByMonth(records, filter);
-  const sections = groups.map((g) => ({ title: g.month, data: g.rows }));
+  // A focus refetch keeps the month on screen; only a first read, or a retry after a failure, shows blocks.
+  const isLoading = !settled || (loading && data == null && !error);
+  const isError = !!error && !isLoading;
+
+  const months = monthRange(records, now, records.length >= ACTIVITY_HISTORY_LIMIT);
+  const found = cursor ? months.findIndex((m) => compareYM(m, cursor) === 0) : -1;
+  const at = found >= 0 ? found : months.length - 1;
+  const ym = months[at];
+
+  const sessions = sessionsInMonth(records, filter, ym);
+  // A chapter is not a Run — its diamond and its row belong to All only.
+  const chapterMarks = filter === 'all' ? (chapters.data ?? []) : [];
+  const cells = buildMonthGrid(sessions, ym, now, chapterMarks);
+  const day = pickedDay != null && cells.some((c) => c?.day === pickedDay && c.tappable) ? pickedDay : null;
+  const chapterRow = day != null ? chapterRowFor(chapterMarks, ym, day) : null;
+  const rows = isLoading || isError ? [] : day != null ? sessionsOnDay(sessions, day) : sessions;
+
+  const goMonth = (dir: -1 | 1) => {
+    const next = months[at + dir];
+    if (!next) return;
+    setCursor(next);
+    setPickedDay(null);
+  };
+  const pickFilter = (f: ActivityFilter) => {
+    setFilter(f);
+    setPickedDay(null);
+  };
+  const retry = () => {
+    refetch();
+    chapters.refetch();
+  };
 
   return (
     <View style={styles.root}>
@@ -101,65 +152,100 @@ export default function ActivityHistoryScreen() {
           Row, Mobility and Other behind the right edge with nothing to say they were there. */}
       <View style={styles.chipStrip}>
         <ChipScroller ground={STRIP_GROUND} contentContainerStyle={styles.chips}>
-          <Chip label="All" on={filter === 'all'} onPress={() => setFilter('all')} />
+          <Chip label="All" on={filter === 'all'} onPress={() => pickFilter('all')} />
           {ACTIVITY_ORDER.map((t) => (
             <Chip
               key={t}
               label={ACTIVITY_LABEL[t]}
               on={filter === t}
-              onPress={() => setFilter(t)}
+              onPress={() => pickFilter(t)}
               icon={<TypeIcon type={t} size={13} color={filter === t ? flColor.bronze300 : flColor.gray600} />}
             />
           ))}
         </ChipScroller>
       </View>
 
-      {!settled ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={flColor.bronze400} />
-        </View>
-      ) : error ? (
-        // A failed read is NOT an empty history. Showing "your workouts will appear here" over a broken
-        // query is the kind of quiet lie that costs an afternoon to track down.
-        <View style={styles.empty}>
-          <View style={styles.emptyIcon}>
-            <EngravedIcon name="warning" size={22} color={flColor.redMuted} />
-          </View>
-          <Text style={styles.errorTitle}>Couldn’t load your history</Text>
-          <Text style={styles.errorDetail}>{error}</Text>
-        </View>
-      ) : sections.length === 0 ? (
-        <View style={styles.empty}>
-          <View style={styles.emptyIcon}>
-            <EngravedIcon name="calendar" size={22} />
-          </View>
-          <Text style={styles.emptyText}>{emptyMessage(filter)}</Text>
-          {records.length > 0 ? (
-            <Text style={styles.errorDetail}>
-              {records.length} session{records.length === 1 ? '' : 's'} logged — clear the filter to see them.
-            </Text>
-          ) : null}
-        </View>
-      ) : (
-        <SectionList keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
-          sections={sections}
-          keyExtractor={(r) => r.id}
-          stickySectionHeadersEnabled
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listPad}
-          renderSectionHeader={({ section }) => (
-            <View style={styles.monthHeader}>
-              <Text style={styles.monthLabel}>{section.title}</Text>
-            </View>
-          )}
-          renderItem={({ item }) => (
-            <SessionRow
-              record={item}
-              onPress={() => router.push({ pathname: '/activity/[id]', params: { id: item.id } })}
+      {/* The calendar is the list's header, so it scrolls away with the sessions under it. A failed read
+          is NOT an empty history: it gets its own state, never "your first session will show up here". */}
+      <FlatList
+        keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        data={rows}
+        keyExtractor={(r) => r.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listPad}
+        ListHeaderComponent={
+          <>
+            <ActivityCalendar
+              ym={ym}
+              cells={cells}
+              state={isLoading ? 'loading' : isError ? 'error' : 'ready'}
+              summary={monthSummary(sessions, filter, records.length === 0)}
+              selectedDay={day}
+              canPrev={at > 0}
+              canNext={at < months.length - 1}
+              onMonth={goMonth}
+              onDay={(d) => setPickedDay((cur) => (cur === d ? null : d))}
+              onRetry={retry}
+              chapterLine={(d) => chapterRowFor(chapterMarks, ym, d)?.title}
             />
-          )}
-        />
-      )}
+            <View style={styles.rule} />
+
+            {day != null && !isLoading && !isError ? (
+              <View style={styles.dayHead}>
+                <Text style={styles.dayLabel}>{dayTitle(ym, day)}</Text>
+                <Pressable
+                  onPress={() => setPickedDay(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Show all sessions this month"
+                  style={({ pressed }) => [styles.showAll, pressed ? { opacity: 0.7 } : null]}
+                >
+                  <Text style={styles.showAllText}>Show all</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {chapterRow && !isLoading && !isError ? (
+              <Pressable
+                onPress={() => router.push({ pathname: '/chapter/[id]', params: { id: chapterRow.chapterId } })}
+                accessibilityRole="button"
+                accessibilityLabel={[chapterRow.title, chapterRow.sub].filter(Boolean).join(', ')}
+                style={styles.chapterRow}
+              >
+                <View style={styles.rowIcon}>
+                  <View style={styles.chapterDiamond} />
+                </View>
+                <View style={styles.rowBody}>
+                  <Text style={styles.title} numberOfLines={1}>
+                    {chapterRow.title}
+                  </Text>
+                  {chapterRow.sub ? <Text style={styles.stat}>{chapterRow.sub}</Text> : null}
+                </View>
+                <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
+              </Pressable>
+            ) : null}
+
+            {isLoading ? (
+              <View style={styles.skelRows}>
+                {[0, 1, 2].map((k) => (
+                  <View key={k} style={styles.skelRow}>
+                    <View style={[styles.skelIcon, { backgroundColor: CALENDAR_COLOR.skel }]} />
+                    <View style={styles.skelLines}>
+                      <View style={[styles.skelLine, { width: '55%', backgroundColor: CALENDAR_COLOR.skel }]} />
+                      <View style={[styles.skelLine, styles.skelLineSm, { backgroundColor: CALENDAR_COLOR.skel }]} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </>
+        }
+        renderItem={({ item }) => (
+          <SessionRow
+            record={item}
+            onPress={() => router.push({ pathname: '/activity/[id]', params: { id: item.id } })}
+          />
+        )}
+      />
     </View>
   );
 }
@@ -244,7 +330,6 @@ const styles = StyleSheet.create({
   logBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 8, paddingHorizontal: 6 },
   logBtnText: { fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
   root: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34 },
 
   chipStrip: { paddingBottom: 13, borderBottomWidth: 1, borderBottomColor: flColor.divider, backgroundColor: STRIP_GROUND },
   chips: { flexDirection: 'row', gap: 7, paddingHorizontal: 16 },
@@ -264,23 +349,41 @@ const styles = StyleSheet.create({
   chipTextOn: { color: flColor.selectedInk, fontWeight: '700' },
 
   listPad: { paddingBottom: 22 },
-  monthHeader: { backgroundColor: themeGround('#060708'), paddingTop: 40, paddingBottom: 14, paddingHorizontal: 24 },
-  monthLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: flColor.cream100,
-    opacity: 0.82,
+  rule: { height: 1, backgroundColor: flColor.divider, marginHorizontal: 18 },
+
+  dayHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 14, paddingRight: 18, paddingBottom: 2, paddingLeft: 22 },
+  dayLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray400 },
+  showAll: { height: 36, paddingHorizontal: 8, justifyContent: 'center' },
+  showAllText: { fontSize: 12.5, fontWeight: '600', color: forgeOr(flColor.bronze300, flColor.bronzeInk) },
+
+  chapterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginTop: 6,
+    marginHorizontal: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: flColor.divider,
   },
+  chapterDiamond: { width: 9, height: 9, transform: [{ rotate: '45deg' }], backgroundColor: CALENDAR_COLOR.brzHi },
+
+  skelRows: { paddingHorizontal: 22 },
+  skelRow: { flexDirection: 'row', alignItems: 'center', gap: 14, height: 80, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  skelIcon: { width: 26, height: 26, borderRadius: 8 },
+  skelLines: { flex: 1, gap: 8 },
+  skelLine: { height: 12, borderRadius: 6 },
+  skelLineSm: { height: 10, width: '35%', borderRadius: 5 },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     minHeight: 80,
+    marginHorizontal: 18,
     paddingVertical: 16,
-    paddingHorizontal: 22,
+    paddingHorizontal: 4,
     borderBottomWidth: 1,
     borderBottomColor: flColor.divider,
   },
@@ -319,18 +422,4 @@ const styles = StyleSheet.create({
   rowMeta: { alignItems: 'flex-end', gap: 4 },
   duration: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400, fontVariant: ['tabular-nums'] },
   date: { fontSize: 11, color: flColor.gray600 },
-
-  empty: { flex: 1, alignItems: 'center', paddingTop: 70, paddingHorizontal: 34, gap: 13 },
-  emptyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: flRadius.md,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
-  errorTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100, textAlign: 'center' },
-  errorDetail: { fontSize: 12, lineHeight: 18, color: flColor.gray600, textAlign: 'center' },
 });
