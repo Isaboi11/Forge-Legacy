@@ -53,6 +53,23 @@ import type { UnitSystem } from '@/domain/settings/units';
  *    session's detail there is nothing to swap, so the block is absent rather than inert.
  */
 
+/**
+ * A line of text beside a mark (cue diamond, mistake ✕) that WRAPS on iPhone.
+ *
+ * PO 10-01: a Common Mistakes row was drawn on one line running out of its box ("…bending the knees t"),
+ * while the box itself was sized for two — iOS measured the text wrapped and then painted it unwrapped.
+ * Larger Text was off, so it is not Dynamic Type. A `Text` that is itself the `flex: 1` child of a row is
+ * measured by the row; inside its own `minWidth: 0` box it is measured at that box's exact width, which is
+ * the arrangement that wraps reliably. Web wrapped either way.
+ */
+function RowText({ children }: { children: string }) {
+  return (
+    <View style={styles.rowTextBox}>
+      <Text style={styles.rowText}>{children}</Text>
+    </View>
+  );
+}
+
 export default function ExerciseDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -197,7 +214,7 @@ export default function ExerciseDetailScreen() {
               {c.tips.map((t) => (
                 <View key={t} style={styles.cueRow}>
                   <View style={styles.diamond} />
-                  <Text style={styles.body}>{t}</Text>
+                  <RowText>{t}</RowText>
                 </View>
               ))}
             </View>
@@ -212,7 +229,7 @@ export default function ExerciseDetailScreen() {
                 <View style={styles.mistakeMark}>
                   <EngravedIcon name="close" size={11} color={flColor.redMuted} />
                 </View>
-                <Text style={styles.body}>{m}</Text>
+                <RowText>{m}</RowText>
               </View>
             ))}
           </View>
@@ -225,7 +242,7 @@ export default function ExerciseDetailScreen() {
               {c.safetyNotes.map((s) => (
                 <View key={s} style={styles.cueRow}>
                   <View style={styles.diamond} />
-                  <Text style={styles.body}>{s}</Text>
+                  <RowText>{s}</RowText>
                 </View>
               ))}
             </View>
@@ -395,6 +412,8 @@ const styles = StyleSheet.create({
   },
   cardBronze: { borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   body: { flex: 1, fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
+  rowTextBox: { flex: 1, minWidth: 0 },
+  rowText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400 },
 
   muscleLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600, marginBottom: 10 },
   secondaryBlock: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: flColor.divider },
