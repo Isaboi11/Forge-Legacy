@@ -129,7 +129,9 @@ test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — nev
   assert.doesNotMatch(edit, /updateProgram\(/, 'resolving must not save');
   const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
   assert.match(finish, /pe\.plan\.apply\(scope\)/);
-  assert.match(finish, /await updateProgram\(pe\.programId, res\.structure\)/);
+  // What the athlete confirmed is what saves — stamped "Updated by Holt" on the way (PO 2026-10-01).
+  assert.match(finish, /const saved = markHoltChange\(pe\.before, res\.structure, \{/);
+  assert.match(finish, /await updateProgram\(pe\.programId, saved\)/);
   assert.match(finish, /That change went stale/, 'a chip restored after a reload says so instead of doing nothing');
 });
 

@@ -90,9 +90,11 @@ export interface TodaysWorkoutCardProps {
    * right distance for a way out — it is still always there.
    */
   onDiscard?: () => void
+  /** A small label under the title — "Updated by Holt" when Holt changed the session being offered. */
+  badge?: React.ReactNode
 }
 
-export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, minutes, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater, onDiscard }: TodaysWorkoutCardProps) {
+export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCount, minutes, onStart, resumeSets, onPreview, onFreestyle, startLabel, onBuildLater, onDiscard, badge }: TodaysWorkoutCardProps) {
   const artSource = resolveArtworkSource(resolved.assetPath)
   const kicker = eyebrow ?? 'Today’s Workout'
   const [menuOpen, setMenuOpen] = useState(false)
@@ -199,6 +201,7 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
               {title}
             </FitText>
             {focus ? <Text style={styles.focus}>{focus}</Text> : null}
+            {badge ? <View style={styles.badge}>{badge}</View> : null}
           </View>
         </Pressable>
 
@@ -314,6 +317,7 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
 const styles = StyleSheet.create({
   resumeNote: { marginTop: -8, textAlign: 'center', fontSize: 12.5, color: flColor.gray600 },
   pressed: { opacity: 0.7 },
+  badge: { marginTop: 8 },
   altRow: {
     flexDirection: 'row',
     alignItems: 'center',

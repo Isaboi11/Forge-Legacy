@@ -200,6 +200,7 @@ import {
 import { dayLabel, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
 import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
+import { markHoltChange } from '@/domain/coach/holt-marks';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
 import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
@@ -1582,16 +1583,18 @@ export function CoachChatSheet({
         return;
       }
 
-      await updateProgram(edit.program.id, res.structure);
       /* QA holt-05: the tapped path gets the same Undo the typed path has, and says what it changed. */
       const undoId = Date.now();
-      lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
       const row = edit.day?.main[edit.rowIndex];
       const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
+      /* "Updated by Holt" (PO 2026-10-01): the changed sessions carry what changed and how they were. */
+      const saved = markHoltChange(edit.program.structure, res.structure, { id: String(undoId), at: new Date().toISOString(), what, asked: null });
+      await updateProgram(edit.program.id, saved);
+      lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
       /* QA holtai-09: a bodyweight dose carried onto a loaded lift is said, with where to change it. */
       const dose = replacement && row ? carriedDoseNote(row, replacement) : null;
       const doseLine = dose ? ` It ${dose} — change the reps on the program if that's not what you meant.` : '';
-      setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
+      setEdit({ ...edit, program: { ...edit.program, structure: saved }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
       say(
         { kind: 'holt', text: `${what}${doseLine} ${pick('edit_done')}` },
         {
@@ -1628,6 +1631,8 @@ export function CoachChatSheet({
     ({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number } | null
   >(null);
   const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
+  /** The athlete's own words that started this change — shown as "You asked" on the updated workout. */
+  const editAsked = useRef<string | null>(null);
 
   /**
    * Resolve "swap bench for dumbbell press on Monday" against the running program and confirm it.
@@ -1637,6 +1642,7 @@ export function CoachChatSheet({
    * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
    */
   const editByWords = async (intent: EditIntent, said?: string) => {
+    if (said) editAsked.current = said;
     setBusy('thinking');
     const active = await Promise.race([
       fetchActiveProgram().catch(() => null),
@@ -1759,10 +1765,13 @@ export function CoachChatSheet({
         for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
         lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })), id: undoId };
       } else {
-        await updateProgram(pe.programId, res.structure);
+        /* "Updated by Holt" (PO 2026-10-01): the changed sessions carry what changed, what was asked and how they were. */
+        const saved = markHoltChange(pe.before, res.structure, { id: String(undoId), at: new Date().toISOString(), what: pe.plan.label, asked: editAsked.current });
+        await updateProgram(pe.programId, saved);
         lastEdit.current = { programId: pe.programId, before: pe.before, id: undoId };
       }
       pendingEdit.current = null;
+      editAsked.current = null;
       say(
         { kind: 'holt', text: pick('edit_done') },
         {

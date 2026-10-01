@@ -66,6 +66,8 @@ import {
 import { buildSessionFromProgram } from '@/domain/workout/build-session';
 import { fetchProgram, fetchProgramSessions, resolveSharedSessionSlot } from '@/data/programs-live';
 import { nextOpenSlot } from '@/domain/program/progress-core';
+import { holtNoteAt, holtSpanLabel, type HoltNote } from '@/domain/coach/holt-marks';
+import { HoltUpdateSheet, HoltUpdatedChip } from '@/components/forge/HoltUpdate';
 import {
   creditsInWindow,
   droppedSharedPartners,
@@ -538,6 +540,9 @@ export default function WorkoutScreen() {
   /* Start timer (PO 2026-09-27): a timed workout run full-screen — `IntervalRunner`. */
   const [intervalsOpen, setIntervalsOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('loading');
+  /** "Updated by Holt" — the program session being trained was changed by Holt (PO 2026-10-01). Read-only here. */
+  const [holtInfo, setHoltInfo] = useState<{ note: HoltNote; span: string | null } | null>(null);
+  const [holtOpen, setHoltOpen] = useState(false);
   const [sheet, setSheet] = useState<SetSheet | null>(null);
   /**
    * The mid-set nudge — "next set, 195" — keyed by exercise index.
@@ -1351,6 +1356,8 @@ export default function WorkoutScreen() {
                 : null;
             const next = chosen ?? nextOpenSlot(program.structure, marks);
             if (next) {
+              const hn = holtNoteAt(program.structure, next.weekIndex, next.dayIndex);
+              setHoltInfo(hn ? { note: hn, span: holtSpanLabel(program.structure, hn.id) } : null);
               // Percentages resolve HERE, from the run's own frozen maxes, so each set carries the bar
               // it is asking for and the athlete does no arithmetic mid-session. A program with no
               // percentages, or one whose gate is unanswered, produces sets with no target weight —
@@ -3923,6 +3930,13 @@ export default function WorkoutScreen() {
           </>
         }
       />
+
+      {holtInfo ? (
+        <View style={styles.holtRow}>
+          <HoltUpdatedChip onPress={() => setHoltOpen(true)} />
+        </View>
+      ) : null}
+      <HoltUpdateSheet note={holtOpen ? (holtInfo?.note ?? null) : null} span={holtInfo?.span ?? null} onClose={() => setHoltOpen(false)} />
 
       {/* progress band — rest chip flips to a live countdown while resting */}
       <TourAnchor id="workout-rest" style={styles.band}>
@@ -7667,6 +7681,7 @@ const styles = StyleSheet.create({
   // picker sheet
   /* Off-screen rather than invisible: `opacity: 0` alone still occupies layout, and `display: none`
      would make it unfocusable, which is the one thing it exists to be. */
+  holtRow: { paddingHorizontal: 16, paddingBottom: 8 },
   keyboardPrimer: { position: 'absolute', top: -1000, left: -1000, width: 1, height: 1, opacity: 0 },
 
   wNameInput: {
