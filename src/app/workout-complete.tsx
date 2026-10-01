@@ -12,7 +12,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { useCeremony, useToast } from '@/hooks/useCeremony';
+import { holdOverlays, useCeremony, useToast } from '@/hooks/useCeremony';
 import { saveWorkoutAsTemplate } from '@/data/templates-live';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
@@ -95,6 +95,9 @@ function quoteFor(id: string): string {
  * memory (need the honor service / set-history). Primary path = Seal → hold → Legacy; the note lives on
  * the secondary "See the details → Reflect" branch, so most workouts intentionally carry no reflection.
  */
+/** How long ceremonies and toasts wait while this screen closes — comfortably past iOS's ~0.5 s dismissal. */
+const OVERLAY_HOLD_MS = 900;
+
 export default guardRoute(WorkoutComplete, hasId, { title: 'There’s no workout to show.', reason: 'Open a session from your activity history to see its summary.' });
 
 function WorkoutComplete() {
@@ -463,6 +466,9 @@ function WorkoutComplete() {
      * ceremony is its own `Modal`, presented mid-transition. Dismissing unwinds the modal instead, the way
      * every other full-screen modal here leaves. `replace` stays only for a cold start with nothing under it.
      */
+    // ⚠ Hold every ceremony and toast until the close has finished (PO 10-01: the same tester froze twice
+    // on "Post and see your Legacy", which toasts AND leaves). See `holdOverlays` in hooks/useCeremony.
+    holdOverlays(OVERLAY_HOLD_MS);
     if (router.canDismiss()) {
       router.dismissAll();
       router.navigate('/(tabs)/legacy');
