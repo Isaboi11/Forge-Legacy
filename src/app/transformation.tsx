@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -46,6 +47,9 @@ const CARD_GAP = 14;
 /** The pose tile inside a card, and the gap between two of them — the `.dc`'s `fl-strip` numbers. */
 const POSE_W = 76;
 const POSE_GAP = 8;
+
+/** The newest card's top wash — see `EntryCard`. */
+const NEWEST_WASH = ['rgba(186, 134, 84,0.06)', 'rgba(186, 134, 84,0)'] as const;
 
 const FREQ_LABEL: Record<RemindFreq, string> = { weekly: 'weekly', biweekly: 'every two weeks', monthly: 'monthly' };
 const FREQ_OPTS: [RemindFreq, string][] = [
@@ -358,10 +362,12 @@ function EntryCard({ entry, isNewest, onOpen, onLongPress }: { entry: Transforma
       accessibilityLabel={`Open ${entry.label} entry`}
       style={[styles.card, isNewest ? styles.cardNewest : emph ? styles.cardEmph : styles.cardPlain]}
     >
+      {/* The `.dc` draws `linear-gradient(180deg, bronze 6%, transparent 42%)`. It was built as a flat
+          block 42% tall, whose bottom edge cut a lighter band straight across the photos (QA legacy-21).
+          It fades to the same bronze at zero alpha, never to `transparent` — that is black at zero alpha,
+          and the ramp through it greys the middle of the fade. */}
       {isNewest ? (
-        <View style={styles.newestWash} pointerEvents="none">
-          <View style={styles.newestWashInner} />
-        </View>
+        <LinearGradient colors={NEWEST_WASH} style={styles.newestWash} pointerEvents="none" />
       ) : null}
       {accent ? <View style={styles.accentBar} pointerEvents="none" /> : null}
 
@@ -538,8 +544,7 @@ const styles = StyleSheet.create({
   cardNewest: { borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800 },
   cardEmph: { borderWidth: 1, borderColor: flColor.accentBorderSubtle, backgroundColor: flColor.charcoal800 },
   cardPlain: { borderWidth: 1, borderColor: flColor.charcoal700, backgroundColor: flColor.charcoal800 },
-  newestWash: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-  newestWashInner: { position: 'absolute', top: 0, left: 0, right: 0, height: '42%', backgroundColor: 'rgba(186, 134, 84,0.06)' },
+  newestWash: { position: 'absolute', top: 0, left: 0, right: 0, height: '42%' },
   accentBar: { position: 'absolute', left: 0, top: 14, bottom: 14, width: 2, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
   cardHead: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, paddingTop: 13, paddingHorizontal: 15, paddingBottom: 10 },

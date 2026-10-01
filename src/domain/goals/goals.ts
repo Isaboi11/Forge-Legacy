@@ -9,6 +9,7 @@
  *
  * Kept free of data/JSON imports so it runs under `node --test`.
  */
+import { toLocalDate } from '../dates/local-date.ts';
 
 /** How a quantifiable goal's progress is tracked. 'manual' = the athlete types it (default); the rest are
  *  computed from workout data (Hybrid Progress Model). */
@@ -216,6 +217,27 @@ export function progressLabel(g: Pick<Goal, 'target' | 'current' | 'unit' | 'ach
 }
 
 const trimNum = (n: number): string => (Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2))));
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Sep 26, 2026" — the day a goal was achieved, on the athlete's own calendar. '' when there is none. */
+export function achievedDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = toLocalDate(iso);
+  return Number.isFinite(d.getTime()) ? `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : '';
+}
+
+/**
+ * The one line a goal card shows under its name (G-1 §12.4), so the numbers are READ, not only drawn:
+ * "5 / 10 sessions · 50%" while counting, "In progress" for a narrative goal, and "Achieved Sep 26, 2026"
+ * once it is done — the achievement replaces the bar and the percentage (§12.5), whatever the number
+ * stood at when the athlete called it (QA legacy-14: an achieved goal drew a half bar).
+ */
+export function goalStatusLine(g: Pick<Goal, 'target' | 'current' | 'unit' | 'achievedAt'> & { metricDir?: MetricDir; metricStartValue?: number | null }): string {
+  if (g.achievedAt != null) return `Achieved ${achievedDate(g.achievedAt)}`.trim();
+  if (g.target == null) return 'In progress';
+  return `${progressLabel(g)} · ${progressPct(g)}%`;
+}
 
 export interface GoalSections {
   /** The chapter's primary goal, if one is set — pinned at the top whether in-progress or achieved. */

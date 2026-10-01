@@ -29,10 +29,12 @@ import {
 import {
   GOAL_NAME_MAX,
   UNIT_MAX,
+  achievedDate,
   bodyTargetProblem,
   bodyTargetSummary,
   directionLabels,
   goalSections,
+  goalStatusLine,
   historyDate,
   isAchieved,
   isAutoTracked,
@@ -304,16 +306,28 @@ function ChapterAnchor({ name }: { name: string | null }) {
 
 function PrimaryCard({ goal, onPress }: { goal: Goal; onPress: () => void }) {
   const done = isAchieved(goal);
+  /* The numbers are TEXT (QA legacy-14). They used to live only in the bar's accessibility label, so
+     "5 / 10 sessions" was never on screen. Achieved replaces the bar (G-1 §12.5) — a goal called done at
+     5 of 10 must not go on drawing half a bar beside the word Achieved. */
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={goal.name} style={[styles.primary, done && styles.primaryDone]}>
-      <Text style={styles.primaryEyebrow}>{done ? 'Chapter Goal · Achieved' : 'Chapter Goal'}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${goal.name}. ${goalStatusLine(goal)}`} style={[styles.primary, done && styles.primaryDone]}>
+      <Text style={styles.primaryEyebrow}>Chapter Goal</Text>
       <Text style={styles.primaryName}>{goal.name}</Text>
-      {isQuantifiable(goal) ? (
+      {done ? (
+        <>
+          {isQuantifiable(goal) ? <Text style={styles.narrativeState}>{progressLabel(goal)}</Text> : null}
+          <View style={styles.achievedRow}>
+            <EngravedIcon name="check" size={15} color={flColor.bronzeInk} />
+            <Text style={styles.achievedLine}>{goalStatusLine(goal)}</Text>
+          </View>
+        </>
+      ) : isQuantifiable(goal) ? (
         <View style={styles.primaryProgress}>
-          <ProgressBar value={progressPct(goal)} max={100} height={8} label={`${progressLabel(goal)} · ${progressPct(goal)}%`} />
+          <Text style={styles.primaryNumbers}>{goalStatusLine(goal)}</Text>
+          <ProgressBar value={progressPct(goal)} max={100} height={8} label={goalStatusLine(goal)} />
         </View>
       ) : (
-        <Text style={styles.narrativeState}>{done ? 'Achieved' : 'In progress — renewed each week'}</Text>
+        <Text style={styles.narrativeState}>{goalStatusLine(goal)}</Text>
       )}
     </Pressable>
   );
@@ -322,13 +336,13 @@ function PrimaryCard({ goal, onPress }: { goal: Goal; onPress: () => void }) {
 function GoalRow({ goal, onPress }: { goal: Goal; onPress: () => void }) {
   const done = isAchieved(goal);
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={goal.name} style={[styles.row, done && styles.rowDone]}>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${goal.name}. ${goalStatusLine(goal)}`} style={[styles.row, done && styles.rowDone]}>
       <View style={styles.rowText}>
         <Text style={[styles.rowName, done && styles.rowNameDone]} numberOfLines={1}>
           {goal.name}
         </Text>
         <Text style={styles.rowSub} numberOfLines={1}>
-          {progressLabel(goal)}
+          {goalStatusLine(goal)}
         </Text>
       </View>
       <EngravedIcon name="chevron-right" size={16} color={flColor.gray600} />
@@ -381,8 +395,9 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
+      {/* The bar names the goal (G-2 §4) — it was an empty string, so the screen had no title at all. */}
       <AppBar
-        title=""
+        title={goal.name}
         onBack={onBack}
         actions={
           !done ? (
@@ -395,60 +410,65 @@ function GoalDetail({ goal, chapterName, insets, onBack, onEdit, onChanged }: { 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
         {goal.isPrimary ? <Text style={styles.detailEyebrow}>Chapter Goal</Text> : null}
         <Text style={styles.detailName}>{goal.name}</Text>
+        {chapterName ? <Text style={styles.detailChapter}>{chapterName}</Text> : null}
 
-        {isQuantifiable(goal) ? (
+        {done ? (
+          /* G-2 §7 — Achieved is one state for both kinds: the word, the day, and for a counted goal the
+             number it stood at. No bar (a goal called done at 5 of 10 drew half of one) and no sentence
+             about renewing a commitment that is already kept (QA legacy-13, legacy-14). */
+          <View style={styles.detailBlock}>
+            <View style={styles.achievedRow}>
+              <EngravedIcon name="check" size={18} color={flColor.bronzeInk} />
+              <Text style={styles.achievedTitle}>Achieved</Text>
+            </View>
+            {achievedDate(goal.achievedAt) ? <Text style={styles.achievedOn}>{achievedDate(goal.achievedAt)}</Text> : null}
+            {isQuantifiable(goal) ? <Text style={styles.achievedOn}>{progressLabel(goal)}</Text> : null}
+          </View>
+        ) : isQuantifiable(goal) ? (
           <View style={styles.detailBlock}>
             <Text style={styles.detailLabel}>Progress</Text>
             <Text style={styles.detailBig}>{progressLabel(goal)}</Text>
             <ProgressBar value={progressPct(goal)} max={100} height={8} label={`${progressPct(goal)}%`} />
-            {!done ? (
-              <>
-                {isAutoTracked(goal) ? (
-                  <View style={styles.autoNote}>
-                    <EngravedIcon name="clock" size={15} />
-                    <Text style={styles.autoNoteText}>Tracked automatically from your workouts</Text>
-                  </View>
-                ) : (
-                  /* `primeKeyboard('decimal-pad')` first, synchronously — the sheet's field is inside a
-                     `<Modal>` and does not exist yet, so its `autoFocus` fires outside this gesture and
-                     iOS Safari shows no keyboard. The DECIMAL primer, because the field it hands over to
-                     is `decimal-pad`; priming the wrong one flips the keyboard visibly on handover.
-                     See `KeyboardPrimer`. */
-                  <Pressable
-                    onPress={() => {
-                      primeKeyboard('decimal-pad');
-                      setUpdateOpen(true);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Update progress"
-                    style={styles.updateBtn}
-                  >
-                    <EngravedIcon name="edit" size={16} color={flColor.bronze300} />
-                    <Text style={styles.updateText}>Update Progress</Text>
-                  </Pressable>
-                )}
-                {/* Declare it done before the number lands — the design allows marking a tracked goal achieved. */}
-                <Pressable onPress={() => setAchieveOpen(true)} accessibilityRole="button" accessibilityLabel="Mark achieved" style={styles.markLink}>
-                  <Text style={styles.markLinkText}>Mark as Achieved</Text>
-                </Pressable>
-              </>
-            ) : (
-              <View style={styles.achievedPill}>
-                <Text style={styles.achievedPillText}>Achieved</Text>
+            {isAutoTracked(goal) ? (
+              <View style={styles.autoNote}>
+                <EngravedIcon name="clock" size={15} />
+                <Text style={styles.autoNoteText}>Tracked automatically from your workouts</Text>
               </View>
+            ) : (
+              /* `primeKeyboard('decimal-pad')` first, synchronously — the sheet's field is inside a
+                 `<Modal>` and does not exist yet, so its `autoFocus` fires outside this gesture and
+                 iOS Safari shows no keyboard. The DECIMAL primer, because the field it hands over to
+                 is `decimal-pad`; priming the wrong one flips the keyboard visibly on handover.
+                 See `KeyboardPrimer`. */
+              <Pressable
+                onPress={() => {
+                  primeKeyboard('decimal-pad');
+                  setUpdateOpen(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Update progress"
+                style={styles.updateBtn}
+              >
+                <EngravedIcon name="edit" size={16} color={flColor.bronze300} />
+                <Text style={styles.updateText}>Update Progress</Text>
+              </Pressable>
             )}
+            {/* Declare it done before the number lands — the design allows marking a tracked goal achieved. */}
+            <Pressable onPress={() => setAchieveOpen(true)} accessibilityRole="button" accessibilityLabel="Mark achieved" style={styles.markLink}>
+              <Text style={styles.markLinkText}>Mark as Achieved</Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.detailBlock}>
             <View style={styles.achievedPill}>
-              <Text style={styles.achievedPillText}>{done ? 'Achieved' : 'In Progress'}</Text>
+              <Text style={styles.achievedPillText}>In Progress</Text>
             </View>
-            <Text style={styles.narrativeCopy}>A commitment you renew each week. Mark it achieved when the chapter has proven it.</Text>
-            {!done ? (
-              <Button variant="primary" fullWidth onPress={() => setAchieveOpen(true)} accessibilityLabel="Mark achieved">
-                Mark Achieved
-              </Button>
-            ) : null}
+            {/* Was "A commitment you renew each week…" on every narrative goal — the design mock's example
+                goal was a weekly one, and its sentence was kept for goals that are nothing of the kind. */}
+            <Text style={styles.narrativeCopy}>No number to hit. Mark it achieved when the chapter has proven it.</Text>
+            <Button variant="primary" fullWidth onPress={() => setAchieveOpen(true)} accessibilityLabel="Mark achieved">
+              Mark Achieved
+            </Button>
           </View>
         )}
 
@@ -1019,7 +1039,10 @@ const styles = StyleSheet.create({
   primaryDone: { borderColor: flColor.accentBorderSubtle },
   primaryEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 8 },
   primaryName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
-  primaryProgress: { marginTop: 16 },
+  primaryProgress: { marginTop: 14, gap: 9 },
+  primaryNumbers: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400, fontVariant: ['tabular-nums'] },
+  achievedRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 10 },
+  achievedLine: { flexShrink: 1, fontSize: 14, fontWeight: '600', color: flColor.bronzeInk },
   narrativeState: { fontSize: 13, color: flColor.gray400, marginTop: 12 },
 
   group: { marginBottom: 16, gap: 8 },
@@ -1037,7 +1060,10 @@ const styles = StyleSheet.create({
   // detail
   detailEyebrow: { fontSize: 10, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk, marginBottom: 8 },
   detailName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '600', color: flColor.cream100 },
+  detailChapter: { fontSize: 13, color: flColor.gray600, marginTop: 6 },
   detailBlock: { marginTop: 28, gap: 12 },
+  achievedTitle: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.bronzeInk },
+  achievedOn: { fontSize: 14, color: flColor.gray400 },
   detailLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray600 },
   detailBig: { fontFamily: flFont.display, fontSize: 24, fontWeight: '600', color: flColor.cream100 },
   updateBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: 'rgba(196,142,74,0.06)', marginTop: 4 },

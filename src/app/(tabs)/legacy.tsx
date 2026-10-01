@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useState, type ReactNode, useMemo } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -37,6 +37,7 @@ import { splitChapterName } from '@/domain/legacy/chapter-name';
 import { fmtDuration } from '@/domain/activity/history-core';
 import { MediaThumb } from '@/components/forge/MediaThumb';
 import { useQuery } from '@/lib/useQuery';
+import { fitWordSize } from '@/domain/text/fit-word';
 import type { Chapter, Pin, PinKind } from '@/types/legacy';
 import {
   AccomplishmentCard,
@@ -122,9 +123,19 @@ const EVENT_SYMBOL: Record<TimelineKind, SymbolName> = {
  * destinations are inert, consistent with Home/Workouts.
  */
 
+/** The hero name's size before `fitWordSize` steps it down for a long word. */
+const NAME_SIZE = 18;
+
 export default function LegacyScreen() {
   const router = useRouter();
   const { profile } = useProfile();
+  /* A 320pt phone (iPhone SE): the portrait, the badge and their gaps left the name ~110pt, so "Sandbox"
+     read "Sand…" and "FOUNDATION · I" wrapped (QA legacy-26). Tighter gutters there, in both themes. */
+  const narrow = useWindowDimensions().width < 360;
+  /* The name column's measured width: a one-word name steps its size down until the word fits, so it never
+     breaks mid-word on web or ellipsizes on the phone (the shared rule, `fitWordSize`). */
+  const [nameW, setNameW] = useState(0);
+  const nameSize = fitWordSize(profile?.name ?? '', nameW, NAME_SIZE, 13);
   const { data, error, refetch } = useQuery(fetchLegacyData, []);
   // Accomplishments are now LIVE (0023) — replacing the fixture. Newest first; the strip shows a few and
   // "View all" opens the full L-12 screen. `featured` drives the filled star.
@@ -314,15 +325,16 @@ export default function LegacyScreen() {
         })}
       >
         {/* ── HERO · identity ── parallaxes up + fades; portrait scales from its left edge (.dc) */}
-        <Animated.View style={[styles.identityRow, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
+        <Animated.View style={[styles.identityRow, narrow ? styles.identityRowNarrow : null, { opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }]}>
           <Animated.View style={{ transformOrigin: 'left center', transform: [{ scale: portraitScale }] }}>
             <SealPortrait name={profile.name} src={profile.avatarUrl} />
           </Animated.View>
-          <View style={styles.identityText}>
-            <Text style={styles.athleteName} numberOfLines={1}>
+          <View style={styles.identityText} onLayout={(e) => setNameW(e.nativeEvent.layout.width)}>
+            {/* Two lines before an ellipsis, breaking only between words; the size gives first. */}
+            <Text style={[styles.athleteName, nameSize !== NAME_SIZE && { fontSize: nameSize }]} numberOfLines={2}>
               {profile.name}
             </Text>
-            <RankLabel label={data.rankName} sub={data.rankSubTier} />
+            <RankLabel label={data.rankName} sub={data.rankSubTier} narrow={narrow} />
           </View>
           {/* `flexShrink: 0` — this wrapper is the actual flex child of the row, and without it the
               badge is what gives way when the name column (flex: 1) and the 90pt portrait have taken
@@ -357,6 +369,7 @@ export default function LegacyScreen() {
               chapter={chapter}
               dayCount={data.dayCount}
               onOpen={() => router.push({ pathname: '/chapter/[id]', params: { id: chapter.id } })}
+              onGoal={() => router.push('/goals')}
             />
           </View>
         ) : reveal.chapter === 'start-first' ? (
@@ -774,11 +787,11 @@ function SealPortrait({ name, src }: { name: string; src?: string | null }) {
 }
 
 /** RankMarker — the rank name as a bronze marker label. */
-function RankLabel({ label, sub }: { label: string; sub: string }) {
+function RankLabel({ label, sub, narrow = false }: { label: string; sub: string; narrow?: boolean }) {
   return (
     <View style={styles.rankMarker}>
       <View style={styles.rankDiamond} />
-      <Text style={styles.rankText}>
+      <Text style={[styles.rankText, narrow ? styles.rankTextNarrow : null]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
         {label}
         {sub ? ` · ${sub}` : ''}
       </Text>
@@ -852,7 +865,7 @@ function PlusIcon({ color = flColor.bronze400 }: { color?: string }) {
  * The mountain plate sits on the card's right and fades into the card surface through `themeScrim`, so
  * Alabaster gets its own paper plate and cream fade rather than a dark rectangle.
  */
-function ChapterHero({ chapter, dayCount, onOpen }: { chapter: Chapter; dayCount: number; onOpen: () => void }) {
+function ChapterHero({ chapter, dayCount, onOpen, onGoal }: { chapter: Chapter; dayCount: number; onOpen: () => void; onGoal: () => void }) {
   const { prefix, title } = splitChapterName(chapter.name);
   const goal = chapter.goal;
   const value = goalValue(goal);
@@ -863,13 +876,12 @@ function ChapterHero({ chapter, dayCount, onOpen }: { chapter: Chapter; dayCount
   ]
     .filter(Boolean)
     .join(' · ');
+  const hasGoal = goal.kind !== 'none';
+  /* The card is a plate holding TWO press targets — the chapter above, its goal below — never one button
+     wrapped round another: a nested button is invalid markup on web (React flags it) and gives a screen
+     reader one control where there are two. */
   return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${chapter.name}. ${meta}. View chapter.`}
-      style={({ pressed }) => [styles.heroCard, pressed ? styles.cardPressed : null]}
-    >
+    <View style={styles.heroCard}>
       <Image source={SCREEN_BG.legacyMountains} style={styles.heroArt} contentFit="cover" contentPosition="right" accessible={false} />
       <LinearGradient
         pointerEvents="none"
@@ -879,29 +891,45 @@ function ChapterHero({ chapter, dayCount, onOpen }: { chapter: Chapter; dayCount
         end={{ x: 1, y: 0.5 }}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.heroTop}>
-        <Text style={styles.heroOrdinal}>{prefix}</Text>
-        <View style={styles.heroPill}>
-          <Text style={styles.heroPillText}>View Chapter</Text>
-          <ChevronRightIcon size={10} color={forgeOr(flColor.bronze300, flColor.bronzeInk)} />
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${chapter.name}. ${meta}. View chapter.`}
+        style={({ pressed }) => [styles.heroOpen, hasGoal ? styles.heroOpenAboveGoal : null, pressed ? styles.cardPressed : null]}
+      >
+        <View style={styles.heroTop}>
+          <Text style={styles.heroOrdinal}>{prefix}</Text>
+          <View style={styles.heroPill}>
+            <Text style={styles.heroPillText}>View Chapter</Text>
+            <ChevronRightIcon size={10} color={forgeOr(flColor.bronze300, flColor.bronzeInk)} />
+          </View>
         </View>
-      </View>
-      <Text style={styles.heroTitle} numberOfLines={2}>
-        {title}
-      </Text>
-      <Text style={styles.heroMeta}>{meta}</Text>
-      {goal.kind !== 'none' ? (
-        <View style={styles.heroGoal}>
+        <Text style={styles.heroTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        <Text style={styles.heroMeta}>{meta}</Text>
+      </Pressable>
+      {hasGoal ? (
+        /* Its own press target: the card opens the chapter, the goal opens Goals (QA legacy-11 — there was
+           no way to Goals from this tab). An achieved goal says so instead of drawing the bar it was
+           called done at (legacy-14). */
+        <Pressable
+          onPress={onGoal}
+          accessibilityRole="button"
+          accessibilityLabel={`${goal.name}${goal.achieved ? ', achieved' : value ? `, ${value}` : ''}. View goals.`}
+          hitSlop={6}
+          style={({ pressed }) => [styles.heroGoal, pressed ? styles.cardPressed : null]}
+        >
           <Text style={styles.heroGoalText}>
             {goal.name}
-            {value ? <Text style={styles.heroGoalValue}>{`  ${value}`}</Text> : null}
+            {goal.achieved ? <Text style={styles.heroGoalValue}>{'  Achieved'}</Text> : value ? <Text style={styles.heroGoalValue}>{`  ${value}`}</Text> : null}
           </Text>
-          {goal.kind === 'quantifiable' ? (
+          {goal.kind === 'quantifiable' && !goal.achieved ? (
             <ProgressBar value={goal.progress} max={100} height={6} label={`${goal.progress}% to goal`} />
           ) : null}
-        </View>
+        </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -1040,7 +1068,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     minHeight: 180,
-    padding: 20,
     borderRadius: flRadius.xl,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
@@ -1073,7 +1100,10 @@ const styles = StyleSheet.create({
     maxWidth: '82%',
   },
   heroMeta: { fontSize: 13, fontWeight: '500', color: flColor.gray400, marginTop: 12 },
-  heroGoal: { marginTop: 14, gap: 10, maxWidth: '88%' },
+  // The card's 20pt inset now lives on its two press targets, so each reaches the card's edge.
+  heroOpen: { flexGrow: 1, padding: 20 },
+  heroOpenAboveGoal: { paddingBottom: 0 },
+  heroGoal: { marginTop: 14, marginHorizontal: 20, marginBottom: 20, gap: 10, maxWidth: '80%' },
   heroGoalText: { fontSize: 14, lineHeight: 20, color: flColor.cream100 },
   heroGoalValue: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
 
@@ -1189,6 +1219,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 2,
   },
+  identityRowNarrow: { gap: 10, paddingHorizontal: 16 },
   portraitWrap: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
   portrait: {
     width: 48,
@@ -1212,7 +1243,7 @@ const styles = StyleSheet.create({
   identityText: { flex: 1, minWidth: 0, gap: 5 },
   athleteName: {
     fontFamily: flFont.display,
-    fontSize: 18,
+    fontSize: NAME_SIZE,
     fontWeight: '700',
     letterSpacing: -0.3,
     color: flColor.cream100,
@@ -1225,7 +1256,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     color: flColor.bronze300,
+    flexShrink: 1,
   },
+  rankTextNarrow: { fontSize: 10.5, letterSpacing: 0.8 },
   /*
    * `minWidth`, NOT `width`. It was a hard 76, and the pill below it needs more than that: 18pt of
    * horizontal padding + a 3pt gap + a 9pt chevron leaves 46pt for the label, and "PROGRESS" at 8.5pt

@@ -410,7 +410,9 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.fact}>
       <Text style={styles.factLabel}>{label}</Text>
-      <Text style={styles.factValue} numberOfLines={1}>
+      {/* Two lines, and smaller first where the platform can: a third-width tile cut "Year One" to
+          "Year …" on a 320pt phone (QA legacy-26). */}
+      <Text style={styles.factValue} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
         {value}
       </Text>
     </View>
@@ -595,7 +597,9 @@ const styles = StyleSheet.create({
   sealMuted: { opacity: 0.4 },
   rungAhead: { opacity: 0.75 },
   rungLabel: { flex: 1, minWidth: 0, gap: 3, paddingVertical: 2 },
-  rungNameRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  /* Wraps: on a narrow phone the "You are here" chip drops under the rank name instead of squeezing it
+     to "Fou…" (QA legacy-26). */
+  rungNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 9, rowGap: 4 },
   rungNameEarned: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   rungNameCurrent: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   rungNameLocked: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray600 },
