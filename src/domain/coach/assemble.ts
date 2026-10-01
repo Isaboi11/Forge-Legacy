@@ -62,6 +62,7 @@ import {
   roleFor,
 } from './prescribe.ts';
 import { MIN_DAY_MOVEMENTS } from './day.ts';
+import { todayYmd } from '../dates/local-date.ts';
 import {
   equipmentAfterLimitations,
   forbidsRunning,
@@ -1445,7 +1446,7 @@ function assembleRaceAndLift(
   const concerns: string[] = [];
   const stretches = stretchesIn(pool);
   const eopts = (enduranceDays: number): EnduranceOpts => ({
-    todayISO: new Date().toISOString().slice(0, 10),
+    todayISO: todayYmd(), // the athlete's local day (B14) — the UTC day lost a week from a race set in a US evening
     stretches,
     canRunContinuously: c.canRunContinuously ?? undefined,
     recentRaceMi: c.recentRaceMi,
@@ -2008,7 +2009,7 @@ function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExerci
   const stretches = stretchesIn(pool);
 
   const result = assembleEndurance(c, {
-    todayISO: new Date().toISOString().slice(0, 10),
+    todayISO: todayYmd(), // the athlete's local day (B14) — the UTC day lost a week from a race set in a US evening
     stretches,
     canRunContinuously: c.canRunContinuously ?? undefined,
     recentRaceMi: c.recentRaceMi,
