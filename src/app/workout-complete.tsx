@@ -1,3 +1,4 @@
+import { WELCOME_BACK_COPY } from '@/domain/home/welcome-back';
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
@@ -1024,7 +1025,7 @@ function WorkoutComplete() {
           {!data.hero || !data.hero.featured ? (
             <View style={styles.quoteRow}>
               <LinearGradient colors={[flColor.bronze400, forgeOr<string>('rgba(0,0,0,0)', 'rgba(164,122,61,0)')]} style={styles.quoteRule} />
-              <Text style={styles.quote}>{quoteFor(data.workoutId)}</Text>
+              <Text style={styles.quote}>{data.firstSessionBack ? WELCOME_BACK_COPY.firstSessionBack : quoteFor(data.workoutId)}</Text>
             </View>
           ) : null}
 

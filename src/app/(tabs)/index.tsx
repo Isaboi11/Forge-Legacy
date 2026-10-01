@@ -23,6 +23,10 @@ import { circleActivity as circleActivityFor } from '@/domain/home/circle-activi
 import { displayWeight } from '@/domain/settings/units';
 import { useUnits } from '@/lib/settings';
 import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
+import { WelcomeBackLine } from '@/components/forge/compositions/WelcomeBackLine';
+import { fetchWelcomeBackFacts } from '@/data/welcome-back-live';
+import { WELCOME_BACK_COPY, breakKey, builtLine, shouldWelcomeBack } from '@/domain/home/welcome-back';
+import { closeBreak, getClosedBreak } from '@/lib/welcome-back-seen';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
 import { reviewWindowOpen } from '@/domain/coach/rulebook/review';
 import { getRetiredReviewWeeks, isWeekRetired, retireReviewWeek } from '@/lib/weekly-review-seen';
@@ -206,6 +210,30 @@ export default function HomeScreen() {
     setReviewRetired(true);
     void retireReviewWeek(weeklyReview.weekStart);
   }, [weeklyReview]);
+
+  /*
+   * WELCOME BACK (PO 2026-10-01) — the greeting after a 7+ day break. Rules in `domain/home/welcome-back.ts`.
+   * Same both-reads-settle reasoning as the weekly review above: the closed break is device-local and the
+   * facts come from the network, so `closedBreak` stays `undefined` until it has actually been read and the
+   * line is never painted for a break the athlete already closed.
+   */
+  const { data: welcomeFacts, refetch: refetchWelcome } = useQuery(fetchWelcomeBackFacts, []);
+  const [closedBreak, setClosedBreak] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    void getClosedBreak().then((k) => {
+      if (alive) setClosedBreak(k);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const closeWelcome = useCallback(() => {
+    const last = welcomeFacts?.lastWorkoutAt;
+    if (!last) return;
+    setClosedBreak(breakKey(last));
+    void closeBreak(breakKey(last));
+  }, [welcomeFacts]);
 
   const [friendSheetOpen, setFriendSheetOpen] = useState(false);
   /**
@@ -484,7 +512,8 @@ export default function HomeScreen() {
       refetchPlanned(); // built one for later, or just trained the one that was waiting
       refetchTrainingNow(); // somebody may have started while you were on another tab
       refetchRank(); // a promotion is persisted on Legacy focus — the line must not lag behind it
-    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow, refetchRank]),
+      refetchWelcome(); // a workout just saved ends the break — the greeting must go with it
+    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow, refetchRank, refetchWelcome]),
   );
 
   /*
@@ -1189,6 +1218,21 @@ export default function HomeScreen() {
             The `open` face passes no `exerciseCount` (there is nothing to count and "0 Exercises" would be
             a confident false claim) and no `onFreestyle` (its button already asks that question).
           */}
+          {/* WELCOME BACK sits ABOVE the hero because it is the first thing to say to someone returning,
+              and it carries no button of its own: the hero right under it is the action. Hidden while a
+              workout is in progress — someone mid-session is already back. */}
+          {welcomeFacts &&
+          closedBreak !== undefined &&
+          shouldWelcomeBack({ lastWorkoutAt: welcomeFacts.lastWorkoutAt, dismissedBreak: closedBreak, inProgress: resumeSets != null }) ? (
+            <WelcomeBackLine
+              eyebrow={WELCOME_BACK_COPY.eyebrow}
+              title={WELCOME_BACK_COPY.title(liveProfile?.firstName?.trim() || null)}
+              body={WELCOME_BACK_COPY.body}
+              built={builtLine(storedRank ? rankName(storedRank.family, storedRank.subTier) : null, welcomeFacts.workouts, welcomeFacts.honors)}
+              onClose={closeWelcome}
+            />
+          ) : null}
+
           {hero ? (
             <TourAnchor id="todays-workout">
               <TodaysWorkoutCard

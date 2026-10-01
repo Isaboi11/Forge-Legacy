@@ -10,6 +10,7 @@ import { clearSwipeHintSeen } from './swipe-hint';
 import { clearAutoPostPending } from './auto-post-pending';
 import { clearSeenPodiums } from './podium-seen';
 import { clearRetiredReviewWeeks } from './weekly-review-seen';
+import { clearClosedBreak } from './welcome-back-seen';
 import { clearProgramDraft } from './program-draft';
 import { clearWorkoutDraft } from './workout-builder-draft';
 import { clearStartChoice } from './program-intent';
@@ -81,6 +82,8 @@ export async function resetFirstRunFlags(): Promise<void> {
     // Weeks whose Home card has been read or skipped. Another account's weeks — inheriting them would
     // retire a review the new athlete has never laid eyes on.
     clearRetiredReviewWeeks(),
+    // The break this phone closed "Welcome back" for belongs to whoever was signed in before.
+    clearClosedBreak(),
     clearSession(),
     clearProgramDraft(),
     // Same reasoning as the program draft: half-authored work belonging to whoever was signed in before.
