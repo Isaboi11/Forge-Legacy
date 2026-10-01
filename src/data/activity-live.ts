@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { cardioKindsIn, type ActivityRecord, type Modality } from '@/domain/activity/history-core';
 import type { ActivityDetail } from '@/domain/activity/detail-core';
+import { chapterMarksFrom, type ChapterMark, type ChapterRowSource } from '@/domain/activity/calendar-core';
 import { playlistFromRow, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
 import { annotateRecords, recordLine, recordsByWorkout } from '@/domain/workout/records-core';
@@ -37,7 +38,10 @@ type Row = {
     | null;
 };
 
-export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[]> {
+/** The history read's cap — when a read comes back this full, its oldest month may be only partly loaded. */
+export const ACTIVITY_HISTORY_LIMIT = 200;
+
+export async function fetchActivityHistory(limit = ACTIVITY_HISTORY_LIMIT): Promise<ActivityRecord[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -142,6 +146,23 @@ export async function fetchActivityHistory(limit = 200): Promise<ActivityRecord[
       contains: cardioKindsIn(exercises.map((e) => e.catalog_key)),
     };
   });
+}
+
+/**
+ * The days the athlete's chapters began and were sealed, for the calendar's corner diamond. Decoration,
+ * so best-effort: a failed read is no diamonds, never a failed calendar.
+ */
+export async function fetchChapterMarks(): Promise<ChapterMark[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await supabase
+    .from('chapters')
+    .select('id, name, start_date, end_date, sealed_at')
+    .eq('athlete_id', user.id);
+  if (error) return [];
+  return chapterMarksFrom((data ?? []) as ChapterRowSource[]);
 }
 
 /**
