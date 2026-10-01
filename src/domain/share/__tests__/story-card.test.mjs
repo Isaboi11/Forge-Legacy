@@ -244,3 +244,14 @@ test('the message beside the picture names the session and carries the link', ()
   assert.equal(storyMessage(storyInputFrom(runCompletion(), extra(), 'imperial')), 'Evening Run: 5.21 mi. https://forgelegacy.app');
   assert.match(storyMessage(storyInputFrom(liftCompletion(), extra(), 'imperial')), /^Pull Day B: new Deadlift record, 485 lb\. https:\/\/forgelegacy\.app$/);
 });
+
+test('a long session’s stat strip keeps a clear gap between its numbers, all at one size', () => {
+  // The PO's first real post: 1:19:09 · 20.5K lb · 27 — the time crowded the volume.
+  const input = storyInputFrom(liftCompletion({ durationSec: 4749, volume: 20512, sets: 27 }), extra({ route: null }), 'imperial');
+  const d = composeStory('photo-stats', input, PHOTO, { showRoute: false });
+  const values = texts(d).filter((o) => o.runs[0].size >= 60 && o.runs[0].face === 'sans');
+  assert.equal(values.length, 3);
+  assert.equal(new Set(values.map((o) => o.runs[0].size)).size, 1, 'the three numbers are one size');
+  values.sort((a, b) => a.x - b.x);
+  for (let k = 0; k < 2; k++) assert.ok(extent(values[k]).right + 30 <= values[k + 1].x, `column ${k} runs into column ${k + 1}`);
+});

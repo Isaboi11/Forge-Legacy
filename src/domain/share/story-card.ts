@@ -355,7 +355,7 @@ function brandLeft(ops: StoryOp[], x: number, y: number, size = 64) {
   ops.push({ kind: 'mark', x, y, size });
   const tx = x + size + 22;
   ops.push({ kind: 'text', x: tx, y: y + size * 0.47, anchor: 'start', runs: [run('FORGE LEGACY', 26, 'sans', '700', INK, { letterSpacing: 8 })] });
-  ops.push({ kind: 'text', x: tx, y: y + size * 0.97, anchor: 'start', runs: [run(SITE, 22, 'sans', '500', INK, { opacity: 0.62 })] });
+  ops.push({ kind: 'text', x: tx, y: y + size * 0.97, anchor: 'start', runs: [run(SITE, 22, 'sans', '600', INK, { opacity: 0.86 })] });
 }
 
 /** The same three lines stacked and centred — the plaque's and the sticker's. Returns the y below it. */
@@ -370,12 +370,17 @@ function brandCentered(ops: StoryOp[], cx: number, y: number, size: number, ink 
 function statRow(ops: StoryOp[], stats: Stat[], left: number, w: number, valueBaseline: number, o: { valueSize: number; valueFace: CardFace; unitFill: string; labelAbove: boolean; labelFill: string; labelOpacity?: number }) {
   if (!stats.length) return;
   const colW = w / stats.length;
+  const runsFor = (st: Stat, size: number) => [
+    run(st.value, size, o.valueFace, o.valueFace === 'serif' ? '600' : '700', INK),
+    ...(st.unit ? [run(` ${st.unit}`, Math.round(size * 0.46), 'sans', '600', o.unitFill)] : []),
+  ];
+  // ONE size for the whole strip, set by the widest value: "1:19:09" beside "20.5K lb" crowded its
+  // neighbour when each column shrank on its own (PO's first real post, 10-01). The 40 is the gutter a
+  // reader needs to see three numbers rather than one long one.
+  const size = Math.floor(stats.reduce((m, st) => Math.min(m, o.valueSize * Math.min(1, (colW - 40) / width(runsFor(st, o.valueSize)))), o.valueSize));
   stats.forEach((s, i) => {
     const x = left + colW * i;
-    const runs = fitRuns(
-      [run(s.value, o.valueSize, o.valueFace, o.valueFace === 'serif' ? '600' : '700', INK), ...(s.unit ? [run(` ${s.unit}`, Math.round(o.valueSize * 0.46), 'sans', '600', o.unitFill)] : [])],
-      colW - 18,
-    );
+    const runs = runsFor(s, size);
     ops.push({ kind: 'text', x, y: valueBaseline, anchor: 'start', runs });
     const ly = o.labelAbove ? valueBaseline - o.valueSize - 22 : valueBaseline + 50;
     ops.push({ kind: 'text', x, y: ly, anchor: 'start', runs: [run(s.label.toUpperCase(), 25, 'sans', '700', o.labelFill, { letterSpacing: 4, opacity: o.labelOpacity })] });
@@ -484,7 +489,8 @@ function photoGround(ops: StoryOp[], photo: StoryPhoto) {
   }
   // Readability, not decoration: the mark at the top and the whole stat block at the bottom sit on whatever
   // the athlete photographed.
-  ops.push({ kind: 'vgrad', x: 0, y: 0, w: STORY_W, h: 520, stops: [{ at: 0, color: BASE, opacity: 0.62 }, { at: 1, color: BASE, opacity: 0 }] });
+  // Darker than it first shipped: the address under the badge washed out against a lit gym ceiling.
+  ops.push({ kind: 'vgrad', x: 0, y: 0, w: STORY_W, h: 600, stops: [{ at: 0, color: BASE, opacity: 0.74 }, { at: 0.5, color: BASE, opacity: 0.4 }, { at: 1, color: BASE, opacity: 0 }] });
   ops.push({ kind: 'vgrad', x: 0, y: 760, w: STORY_W, h: STORY_H - 760, stops: [{ at: 0, color: BASE, opacity: 0 }, { at: 0.45, color: BASE, opacity: 0.74 }, { at: 1, color: BASE, opacity: 0.94 }] });
 }
 
