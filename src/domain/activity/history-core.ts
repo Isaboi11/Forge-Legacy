@@ -167,6 +167,11 @@ export function rowA11y(r: ActivityRecord): string {
 // FILTER + GROUP
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** A session matches the kind it is filed under AND any cardio it carries — see `contains`. */
+export function matchesFilter(r: ActivityRecord, filter: ActivityFilter): boolean {
+  return filter === 'all' || r.type === filter || !!r.contains?.includes(filter);
+}
+
 export interface MonthGroup {
   month: string;
   rows: ActivityRecord[];
@@ -177,8 +182,7 @@ export interface MonthGroup {
  * order rather than re-sorting, so a caller that has already ordered by `started_at desc` keeps it.
  */
 export function groupByMonth(records: readonly ActivityRecord[], filter: ActivityFilter): MonthGroup[] {
-  // A session matches the kind it is filed under AND any cardio it carries — see `contains`.
-  const matched = filter === 'all' ? records : records.filter((r) => r.type === filter || !!r.contains?.includes(filter));
+  const matched = records.filter((r) => matchesFilter(r, filter));
   const groups: MonthGroup[] = [];
   for (const r of matched) {
     const key = monthKey(r.startedAt);
