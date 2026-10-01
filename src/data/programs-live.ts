@@ -1,3 +1,4 @@
+import type { HoltNote } from '@/domain/coach/holt-marks';
 import type { CardioActivity } from '@/domain/workout/conditioning';
 import { supabase } from '@/lib/supabase';
 import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
@@ -229,6 +230,8 @@ export type ProgramDay = {
   warmup: ProgramExercise[];
   main: ProgramExercise[];
   cooldown: ProgramExercise[];
+  /** Holt changed this session from the chat — "Updated by Holt" (`domain/coach/holt-marks.ts`). jsonb, no migration. */
+  holtNote?: HoltNote;
 };
 export type ProgramWeekPlan = { days: ProgramDay[] };
 export type ProgramStructure = {

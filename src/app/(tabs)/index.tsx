@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -24,6 +24,8 @@ import { displayWeight } from '@/domain/settings/units';
 import { useUnits } from '@/lib/settings';
 import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
 import { WelcomeBackLine } from '@/components/forge/compositions/WelcomeBackLine';
+import { HoltUpdateSheet, HoltUpdatedChip } from '@/components/forge/HoltUpdate';
+import { holtSpanLabel, undoHoltChange } from '@/domain/coach/holt-marks';
 import { fetchWelcomeBackFacts } from '@/data/welcome-back-live';
 import { WELCOME_BACK_COPY, breakKey, builtLine, shouldWelcomeBack } from '@/domain/home/welcome-back';
 import { closeBreak, getClosedBreak } from '@/lib/welcome-back-seen';
@@ -217,7 +219,7 @@ export default function HomeScreen() {
    * facts come from the network, so `closedBreak` stays `undefined` until it has actually been read and the
    * line is never painted for a break the athlete already closed.
    */
-  const { data: welcomeFacts, refetch: refetchWelcome } = useQuery(fetchWelcomeBackFacts, []);
+  const { data: welcomeFacts, refetch: refetchWelcome, settled: welcomeSettled } = useQuery(fetchWelcomeBackFacts, []);
   const [closedBreak, setClosedBreak] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let alive = true;
@@ -782,6 +784,8 @@ export default function HomeScreen() {
   const [plannedPreviewOpen, setPlannedPreviewOpen] = useState(false);
   const [swapOpen, setSwapOpen] = useState(false);
   const [swapBusy, setSwapBusy] = useState(false);
+  /** The "Updated by Holt" sheet for the session the hero is offering (PO 2026-10-01). */
+  const [holtSheetOpen, setHoltSheetOpen] = useState(false);
 
   /** The session Home is offering — the one a swap moves. */
   const nextSlot = useMemo(
@@ -1054,6 +1058,8 @@ export default function HomeScreen() {
       friendListsSettled, // ├ Your Circle
       trainingNowSettled, // ┘ (also the Quick Actions "training now" count)
       challengeSettled, // the Competitions badge — two round trips deep, so usually the last one in
+      welcomeSettled, // ┐ "Welcome back" sits ABOVE the hero, so a late arrival would shove the whole
+      closedBreak !== undefined, // ┘ screen down — the facts and this device's closed break both gate it
     ],
     ceilingReached,
   );
@@ -1266,6 +1272,12 @@ export default function HomeScreen() {
                 onBuildLater={composition.hero === 'open' ? buildForLater : undefined}
                 /* Only the face that HAS something in the slot can give it back (SQ-A5-D4). */
                 onDiscard={composition.hero === 'planned' ? () => void discardPlannedWorkout() : undefined}
+                /* Holt changed the session being offered — say so, with the way to see what and undo it. */
+                badge={
+                  composition.hero === 'program' && plannedDay?.holtNote ? (
+                    <HoltUpdatedChip onPress={() => setHoltSheetOpen(true)} />
+                  ) : undefined
+                }
               />
             </TourAnchor>
           ) : null}
@@ -1596,6 +1608,28 @@ export default function HomeScreen() {
           the hero branch — a sheet declared in a branch that has already returned is the defect
           `overlay-branch.test.mjs` exists to catch. */}
       {/* Mounted only while open: its maxes read is not one of Home's first-paint reads (see the sheet). */}
+      <HoltUpdateSheet
+        note={holtSheetOpen && composition.hero === 'program' ? (plannedDay?.holtNote ?? null) : null}
+        span={plannedDay?.holtNote && anchorProgram ? holtSpanLabel(anchorProgram.structure, plannedDay.holtNote.id) : null}
+        onClose={() => setHoltSheetOpen(false)}
+        onUndo={
+          anchorProgram && activeProgram && plannedDay?.holtNote
+            ? async () => {
+                const res = undoHoltChange(anchorProgram.structure, plannedDay.holtNote!.id, builtMarks);
+                if (!res.ok) return res.message;
+                try {
+                  await updateProgram(anchorProgram.id, res.structure);
+                  refetchPrograms();
+                  return null;
+                } catch {
+                  return 'That did not save. Your program is unchanged. Try again in a moment.';
+                }
+              }
+            : undefined
+        }
+        onAsk={() => setTimeout(() => openCoach('ask'), Platform.OS === 'ios' ? 900 : 0)}
+      />
+
       {plannedPreviewOpen && planned ? (
         <PlannedWorkoutPreviewSheet
           open

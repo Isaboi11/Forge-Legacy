@@ -7,6 +7,8 @@ import { NotFoundBody } from '@/components/forge/NotFound';
 import { AskHoltSheet } from '@/components/forge/AskHoltSheet';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { HoltUpdateSheet, HoltUpdatedChip } from '@/components/forge/HoltUpdate';
+import { holtNoteAt, holtSpanLabel, markHoltChange, undoHoltChange, type HoltNote } from '@/domain/coach/holt-marks';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -172,6 +174,8 @@ export default function ProgramDetailScreen() {
   /** Which week's order is being rearranged, or null when the sheet is closed. */
   const [reordering, setReordering] = useState<number | null>(null);
   const [asking, setAsking] = useState<{ weekIndex: number; dayIndex: number; name: string } | null>(null);
+  /** The "Updated by Holt" sheet — open on the session whose label was tapped. */
+  const [holtSheet, setHoltSheet] = useState<{ note: HoltNote; weekIndex: number; dayIndex: number; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -548,13 +552,29 @@ export default function ProgramDetailScreen() {
     if (!program || busy) return;
     setBusy(true);
     try {
-      await updateProgram(program.id, next);
-      setProgram({ ...program, structure: next });
+      /* "Updated by Holt" (PO 2026-10-01): no chat confirm to quote here, so each session describes its own change. */
+      const saved = markHoltChange(program.structure, next, { id: String(Date.now()), at: new Date().toISOString() });
+      await updateProgram(program.id, saved);
+      setProgram({ ...program, structure: saved });
       setAsking(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** Put a Holt change back from its label. Returns Holt's sentence when it can't, null when it did. */
+  const undoHolt = async (): Promise<string | null> => {
+    if (!program || !holtSheet) return null;
+    const res = undoHoltChange(program.structure, holtSheet.note.id, marks);
+    if (!res.ok) return res.message;
+    try {
+      await updateProgram(program.id, res.structure);
+      setProgram({ ...program, structure: res.structure });
+      return null;
+    } catch {
+      return 'That did not save. Your program is unchanged. Try again in a moment.';
     }
   };
 
@@ -1162,6 +1182,8 @@ export default function ProgramDetailScreen() {
               onUnskipDay={state === 'active' ? (di) => void unskipDay(wi, di) : undefined}
               onSwapDay={state === 'active' ? (di, name) => openSwap(wi, di, name) : undefined}
               onAskHolt={state === 'active' ? (di, name) => setAsking({ weekIndex: wi, dayIndex: di, name }) : undefined}
+              holtNoteFor={(di) => holtNoteAt(structure, wi, di)}
+              onHoltNote={(di, name, note) => setHoltSheet({ note, weekIndex: wi, dayIndex: di, name })}
               /* Offered only where there is something to rearrange: at least two sessions in the week
                  still outstanding. One left, or none, and the control would open onto a fixed list.
 
@@ -1500,6 +1522,22 @@ export default function ProgramDetailScreen() {
         onConfirm={() => skipping && void skipDay(skipping.weekIndex, skipping.dayIndex)}
       />
 
+      <HoltUpdateSheet
+        note={holtSheet?.note ?? null}
+        span={holtSheet && program ? holtSpanLabel(program.structure, holtSheet.note.id) : null}
+        onClose={() => setHoltSheet(null)}
+        onUndo={state === 'active' ? undoHolt : undefined}
+        onAsk={
+          state === 'active' && holtSheet
+            ? () => {
+                const at = { weekIndex: holtSheet.weekIndex, dayIndex: holtSheet.dayIndex, name: holtSheet.name };
+                // iOS drops a modal presented while another is still animating out (see WeekCard's menu).
+                setTimeout(() => setAsking(at), Platform.OS === 'ios' ? 900 : 0);
+              }
+            : undefined
+        }
+      />
+
       {/* Only mounted while a session is actually being edited. `program` is non-null here because the
           action that opens it is gated on `state === 'active'`, which requires a real row. */}
       {asking && program ? (
@@ -1607,6 +1645,8 @@ function WeekCard({
   onSwapDay,
   onAskHolt,
   onReorder,
+  holtNoteFor,
+  onHoltNote,
 }: {
   week: LogWeek;
   current: boolean;
@@ -1628,6 +1668,9 @@ function WeekCard({
   onAskHolt?: (dayIndex: number, name: string) => void;
   /** Rearrange the whole week. Absent when fewer than two of its sessions are still outstanding. */
   onReorder?: () => void;
+  /** The "Updated by Holt" note on a session (schedule index), shown only while it is still to come. */
+  holtNoteFor?: (dayIndex: number) => HoltNote | null;
+  onHoltNote?: (dayIndex: number, name: string, note: HoltNote) => void;
 }) {
   const meta = week.complete
     ? 'Complete'
@@ -1766,6 +1809,7 @@ function WeekCard({
           {week.days.map((d, di) => {
             const key = `${week.week}:${di}`;
             const dayOpen = openDay === key;
+            const holtNote = !d.completed && !d.skipped ? (holtNoteFor?.(di) ?? null) : null;
             return (
               <View key={key} style={styles.dayBlock}>
                 {/* Any OUTSTANDING session can be trained, moved, handed to Holt or passed over — not just
@@ -1790,6 +1834,11 @@ function WeekCard({
                       <Text style={styles.dayMeta} numberOfLines={1}>
                         {d.completed && d.date ? `${d.date} • ${d.meta}` : d.meta}
                       </Text>
+                      {holtNote && onHoltNote ? (
+                        <View style={styles.holtChip}>
+                          <HoltUpdatedChip onPress={() => onHoltNote(di, d.name, holtNote)} />
+                        </View>
+                      ) : null}
                     </View>
                     {/* SKIPPED is its own mark, never a tick. A skipped session carries you to the end of
                         the program (PO decision) and the record still says you did not train it — the
@@ -1977,6 +2026,7 @@ const styles = StyleSheet.create({
   dayNumText: { fontSize: 11, fontWeight: '700', color: flColor.gray600 },
   dayNumTextDone: { color: flColor.bronze300 },
   dayText: { flex: 1, minWidth: 0 },
+  holtChip: { marginTop: 6 },
   dayName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   dayMeta: { fontSize: 11.5, color: flColor.gray600 },
 
