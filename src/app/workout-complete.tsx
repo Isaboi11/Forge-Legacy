@@ -1,7 +1,8 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +27,7 @@ import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveRef
 import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
 import { persistSession } from '@/domain/workout/autosave';
 import { withinContinueWindow } from '@/domain/workout/save';
+import { markSessionSealed, unmarkSessionSealed, wasSessionSealed } from '@/lib/sealed-sessions';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem } from '@/domain/run/run-core';
@@ -93,7 +95,9 @@ function quoteFor(id: string): string {
  * memory (need the honor service / set-history). Primary path = Seal → hold → Legacy; the note lives on
  * the secondary "See the details → Reflect" branch, so most workouts intentionally carry no reflection.
  */
-export default function WorkoutComplete() {
+export default guardRoute(WorkoutComplete, hasId, { title: 'There’s no workout to show.', reason: 'Open a session from your activity history to see its summary.' });
+
+function WorkoutComplete() {
   const { id, review: reviewParam } = useLocalSearchParams<{ id?: string; review?: string }>();
   /*
    * ══ REVIEW: THE SAME SUMMARY, RE-OPENED FROM HISTORY ══
@@ -114,7 +118,14 @@ export default function WorkoutComplete() {
    * writes that are still meaningful later stay available too — add a reflection, save it as a template,
    * attach a playlist, share it to a squad. None of those expire at the end of the session.
    */
-  const review = reviewParam === '1';
+  /*
+   * ⚠ AND ANY SESSION THIS DEVICE HAS ALREADY SEALED, whatever the route says (workout-18, QA 09-26). A
+   * reload of this page, or any way back to the same id without `review=1`, used to offer Hold to Seal
+   * again over a workout that had been sealed. `null` while the device is being asked — the page waits
+   * for the answer (see the loading gate) so the seal face cannot flash up and vanish.
+   */
+  const [sealedBefore, setSealedBefore] = useState<boolean | null>(reviewParam === '1' ? true : null);
+  const review = reviewParam === '1' || sealedBefore === true;
   const router = useRouter();
   const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
@@ -150,7 +161,7 @@ export default function WorkoutComplete() {
    */
   const { enqueue } = useCeremony();
   // Not in review — a graduation is a moment, and it has already had it. See the note on `review`.
-  const graduation = review ? null : (data?.graduation ?? null);
+  const graduation = review || sealedBefore == null ? null : (data?.graduation ?? null);
   /* Its quiet twin (M4-A1-D2). Suppressed in review for the same reason: the week finished once, and a
      reopened session must not announce it again. Deliberately NOT enqueued anywhere — it is a line on
      this screen, which is the whole of the decision. */
@@ -188,6 +199,22 @@ export default function WorkoutComplete() {
   const [stage, setStage] = useState<Stage>(review ? 'capture' : 'seal');
   /** Which stage opened The Record, so its back control returns there instead of a hardcoded target. */
   const [from, setFrom] = useState<Exclude<Stage, 'record'>>(review ? 'capture' : 'seal');
+  /* The device's answer lands in a promise, so the stage moves there — never in the effect body. */
+  useEffect(() => {
+    if (reviewParam === '1') return;
+    let alive = true;
+    void wasSessionSealed(String(id ?? '')).then((was) => {
+      if (!alive) return;
+      setSealedBefore(was);
+      if (was) {
+        setStage('capture');
+        setFrom('capture');
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [id, reviewParam]);
   const openRecord = () => {
     setFrom(stage === 'capture' ? 'capture' : 'seal');
     setStage('record');
@@ -414,8 +441,8 @@ export default function WorkoutComplete() {
   // First-run "Chapter comes alive" reveal (ONB-D18) — a restrained bronze fade/scale-in on workout #1.
   const [reveal] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    if (!review && data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
-  }, [review, data?.isFirstWorkout, reveal]);
+    if (!review && sealedBefore === false && data?.isFirstWorkout) Animated.timing(reveal, { toValue: 1, duration: 1100, useNativeDriver: true }).start();
+  }, [review, sealedBefore, data?.isFirstWorkout, reveal]);
   useEffect(() => {
     const listenerId = hold.addListener(({ value }) => setHoldPct(value));
     return () => hold.removeListener(listenerId);
@@ -636,6 +663,7 @@ export default function WorkoutComplete() {
     Animated.timing(hold, { toValue: 1, duration: 900, useNativeDriver: false }).start(({ finished }) => {
       if (finished) {
         setSealed(true);
+        if (data) void markSessionSealed(data.workoutId);
         const nav = typeof navigator !== 'undefined' ? (navigator as { vibrate?: (p: number[]) => void }) : null;
         nav?.vibrate?.([10, 28, 45]); // haptics (web only; no-ops on native)
         /*
@@ -690,7 +718,10 @@ export default function WorkoutComplete() {
   /* The sheet seeds its field from what is already stored, so re-opening a sealed note shows it back
      rather than an empty box that looks like the note was lost. */
   const openNote = () => {
-    setNote(reflection);
+    /* The two notes know about each other (QA 09-26 workout-28): with no reflection sealed yet, the sheet starts
+       from the training note already written under "How did it go?", so nothing is typed twice. Sealing writes
+       the reflection only — the training note stays exactly as it was. */
+    setNote(reflection || sessNote.trim());
     setSheet('note');
   };
   /*
@@ -725,10 +756,10 @@ export default function WorkoutComplete() {
      on Activity Detail, which is the screen you go to when you want to look at a session rather than
      finish one. */
 
-  if (loading || !data) {
+  if (loading || !data || sealedBefore == null) {
     return (
       <Shell>
-        <View style={styles.center}>{error ? <Text style={styles.err}>Couldn’t load your summary.</Text> : <ActivityIndicator color={flColor.bronze400} />}</View>
+        {error ? <NotFoundBody title="Couldn’t load your summary." reason={error} /> : <View style={styles.center}><ActivityIndicator color={flColor.bronze400} /></View>}
       </Shell>
     );
   }
@@ -921,7 +952,7 @@ export default function WorkoutComplete() {
               <Stat n={vol(data.volume)} label="Volume" />
             </View>
             {data.hero ? <Hero hero={data.hero} /> : null}
-            <Pressable style={styles.holdBtn} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
+            <Pressable style={[styles.holdBtn, noCallout]} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
               <AnimatedGradient
               colors={flGradient.bronzeMetallic.colors}
               locations={flGradient.bronzeMetallic.locations}
@@ -929,7 +960,7 @@ export default function WorkoutComplete() {
               end={flGradient.bronzeMetallic.end}
               style={[styles.holdFill, { width: fillW }]}
             />
-              <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
+              <Text selectable={false} style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
             <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
               <Text style={styles.textLinkText}>View details</Text>
@@ -1015,7 +1046,7 @@ export default function WorkoutComplete() {
                 offering it again would be theatre over a settled fact, so a reviewed session opens on
                 the capture stage instead of on a ceremony with its ceremony taken out. */}
             <Pressable
-              style={[styles.holdBtn, styles.holdBtnInSection]}
+              style={[styles.holdBtn, styles.holdBtnInSection, noCallout]}
               onPressIn={startHold}
               onPressOut={cancelHold}
               accessibilityRole="button"
@@ -1028,7 +1059,7 @@ export default function WorkoutComplete() {
                 end={flGradient.bronzeMetallic.end}
                 style={[styles.holdFill, { width: fillW }]}
               />
-              <Text style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
+              <Text selectable={false} style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
             <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
               <Text style={styles.textLinkText}>View details</Text>
@@ -1394,6 +1425,7 @@ export default function WorkoutComplete() {
                 void (async () => {
                   const s = await fetchWorkoutAsSession(data.workoutId);
                   if (!s) return;
+                  await unmarkSessionSealed(data.workoutId);
                   await persistSession(s);
                   router.replace('/workout');
                 })();
@@ -1436,6 +1468,8 @@ export default function WorkoutComplete() {
             <Text style={styles.sessNoteHint}>
               {sessNoteSaved ? 'Saved — you’ll see this in your history.' : 'For the next time you train this.'}
             </Text>
+            {/* …and this box knows about the sealed one, so the two never read as the same question twice. */}
+            {reflection ? <Text style={styles.sessNoteHint}>Your note for future you: “{reflection}”</Text> : null}
           </View>
 
           <View style={styles.longGameWrap}>
@@ -1630,7 +1664,13 @@ function CaptureSeal({ size }: { size: number }) {
           borderColor: flColor.accentBorderSubtle,
         }}
       />
-      <ForgeMarkGlyph size={Math.round(size * 0.47)} color={flColor.bronze300} />
+      {/* ⚠ LIFTED ABOVE THE DISC, as `SealMedallion` lifts its own (workout-17, QA 09-26). The two rings are
+          `position: absolute` and the glyph was not — on the web a positioned box paints OVER a static
+          sibling whatever the order, so the opaque disc covered the mark and the sealed screen and the share
+          card both showed an empty circle. */}
+      <View style={{ position: 'relative', zIndex: 1 }}>
+        <ForgeMarkGlyph size={Math.round(size * 0.47)} color={flColor.bronze300} />
+      </View>
     </View>
   );
 }
@@ -1817,7 +1857,7 @@ function CardioRecordRow({ name, cardio, units }: { name: string; cardio: Comple
   }
 
   const where =
-    cardio.modality === 'indoor' ? 'On the belt' : cardio.modality === 'outdoor' ? 'Outdoors' : null;
+    cardio.modality === 'indoor' ? (cardio.onBelt === false ? 'Indoors' : 'On the belt') : cardio.modality === 'outdoor' ? 'Outdoors' : null;
 
   return (
     <View style={styles.cardioRow}>
@@ -1838,6 +1878,9 @@ function CardioRecordRow({ name, cardio, units }: { name: string; cardio: Comple
     </View>
   );
 }
+
+/** iOS Safari's long-press callout (Copy / Look Up) — web-only, untyped in RN. See `holdBtn`. */
+const noCallout = Platform.OS === 'web' ? ({ WebkitTouchCallout: 'none' } as unknown as ViewStyle) : null;
 
 const styles = StyleSheet.create({
   nameInput: { paddingHorizontal: 13, paddingVertical: 12, minHeight: 46, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 15, color: flColor.cream100 },
@@ -1949,7 +1992,11 @@ const styles = StyleSheet.create({
   prLine: { fontFamily: flFont.display, fontSize: 18, color: flColor.bronzeInk },
   quote: { flex: 1, fontFamily: flFont.display, fontSize: 16, fontStyle: 'italic', lineHeight: 22, color: flColor.bronze300, textAlign: 'left' },
 
-  holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset },
+  holdBtn: { marginTop: 26, width: '100%', height: 54, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal800, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: flShadow.borderInset, userSelect: 'none' },
+  /* ⚠ `userSelect` + `WebkitTouchCallout` are load-bearing on web (PO 09-29, Racine): the hold is 900ms and
+     iOS Safari turns a ~500ms press on text into a text selection, which cancels the touch — the words
+     highlight, `onPressOut` fires, and the fill drains back to zero. Only when the thumb lands ON the
+     label, hence "sometimes". Native text isn't selectable, so the installed app never did this. */
   holdFill: { position: 'absolute', left: 0, top: 0, bottom: 0 },
   holdBtnInSection: { marginTop: 0 },
   /* 32→14: the seal belongs TO the sentence above it, not to a separate footer region. */
@@ -1957,7 +2004,7 @@ const styles = StyleSheet.create({
   upNext: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 15 },
   upNextDiamond: { width: 5, height: 5, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },
   upNextText: { fontSize: 12, color: flColor.gray600 },
-  holdText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
+  holdText: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300, userSelect: 'none' },
   holdTextDark: { color: flColor.onBronze },
   // alignSelf, not just textAlign: the Pressable would otherwise stretch to the column's full width and
   // sit its label on the left edge, off-axis from the medallion and the Hold-to-Seal button above it.

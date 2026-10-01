@@ -23,6 +23,7 @@
 
 import type { Macros, Targets } from './day.ts';
 import { grouped, shiftDay } from './day.ts';
+import { pluralWord } from '../text/plural.ts';
 
 /** How far back the stepper goes. The `.dc`'s number. */
 export const WEEKS_BACK = 7;
@@ -55,10 +56,15 @@ export function weekDays(todayIso: string, offset: number): string[] {
   return Array.from({ length: 7 }, (_, i) => shiftDay(end, i - 6));
 }
 
-/** "This week" · "Last week" · "3 weeks ago". */
+/**
+ * "Last 7 days" · "The 7 days before" · "3 weeks ago".
+ *
+ * ⚠ The window ROLLS (above), so "This week" over "Sep 20 – 26" read as a Sunday-start calendar week beside
+ * Meal Plan's Monday weeks (QA 09-26 N-28). Naming it as seven days says what it is.
+ */
 export function weekKicker(offset: number): string {
-  if (offset === 0) return 'This week';
-  if (offset === 1) return 'Last week';
+  if (offset === 0) return 'Last 7 days';
+  if (offset === 1) return 'The 7 days before';
   return `${offset} weeks ago`;
 }
 
@@ -150,6 +156,11 @@ export function buildWeek(
 export interface WeekSummary {
   /** Days that counted — logged and finished. */
   counted: number;
+  /**
+   * Counted days that HAD a calorie target — what "days in range" is out of. A day logged before the first
+   * target was ever set is not a miss; it had nothing to miss (QA 09-26 N-28).
+   */
+  judged: number;
   /** Days in the window with nothing logged, today excluded. */
   missed: number;
   average: Macros;
@@ -182,6 +193,7 @@ export function summarise(week: readonly WeekDay[], tolerance = CALORIE_TOLERANC
 
   return {
     counted: n,
+    judged: counted.filter((d) => d.target != null && d.target.kcal > 0).length,
     missed: week.filter((d) => !d.totals.logged && !d.isToday).length,
     average: n
       ? {
@@ -237,7 +249,9 @@ export function dayCallout(day: WeekDay, todayIso: string): DayCallout {
   if (!day.target || day.target.kcal <= 0) return { title, detail: `${grouped(day.totals.kcal)} eaten`, good: false };
 
   const diff = day.totals.kcal - day.target.kcal;
-  if (day.isToday) return { title, detail: `${grouped(Math.max(0, -diff))} left · in progress`, good: false };
+  /* Past the target, today says so ("120 over"), as a finished day does. Clamping the difference at zero
+     printed "0 left" however far over the day had gone (QA N-08). */
+  if (day.isToday) return { title, detail: `${grouped(Math.abs(diff))} ${diff > 0 ? 'over' : 'left'} · in progress`, good: false };
   if (day.inRange) {
     return { title, detail: diff === 0 ? 'In range' : `In range · ${grouped(Math.abs(diff))} ${diff > 0 ? 'over' : 'under'}`, good: true };
   }
@@ -274,24 +288,31 @@ export function macroSummaries(
 ): MacroSummary[] {
   const counted = week.filter((d) => d.counts);
   return MACRO_ROWS.map(({ key, label }) => {
-    const target = counted.length ? (counted[counted.length - 1].target?.[key] ?? null) : null;
+    /*
+     * ⚠ THE SAME TARGET THE BAND SHOWS — the newest in the window, today included (QA 09-26 N-28). Reading
+     * it off the last COUNTED day meant a target set today drew "2,100 – 2,300" on the chart while every
+     * macro row said "No target set".
+     */
+    const latest = [...week].reverse().find((d) => (d.target?.[key] ?? 0) > 0);
+    const target = latest?.target?.[key] ?? null;
+    /* Only days that had a target are judged; one logged before any target existed is not "on target". */
+    const judged = counted.filter((d) => (d.target?.[key] ?? 0) > 0);
     let under = 0;
     let over = 0;
-    if (target && target > 0) {
-      for (const d of counted) {
-        const t = d.target?.[key];
-        if (!t || t <= 0) continue;
-        if (d.totals[key] < t * (1 - tolerance)) under += 1;
-        else if (d.totals[key] > t * (1 + tolerance)) over += 1;
-      }
+    for (const d of judged) {
+      const t = d.target![key];
+      if (d.totals[key] < t * (1 - tolerance)) under += 1;
+      else if (d.totals[key] > t * (1 + tolerance)) over += 1;
     }
-    const onTarget = counted.length - under - over;
+    const onTarget = judged.length - under - over;
+    const of = `${judged.length} ${pluralWord(judged.length, 'day')}`;
     let note: string;
     if (!target) note = 'No target set';
     else if (!counted.length) note = 'Nothing logged yet';
-    else if (under > over && under > 0) note = `Under on ${under} of ${counted.length} days`;
-    else if (over > 0) note = `Over on ${over} of ${counted.length} days`;
-    else note = `On target all ${counted.length} days`;
+    else if (!judged.length) note = 'No target on these days yet';
+    else if (under > over && under > 0) note = `Under on ${under} of ${of}`;
+    else if (over > 0) note = `Over on ${over} of ${of}`;
+    else note = judged.length === 1 ? 'On target' : `On target all ${of}`;
 
     return {
       key,
@@ -302,7 +323,7 @@ export function macroSummaries(
       over,
       onTarget,
       note,
-      clean: !!target && counted.length > 0 && onTarget === counted.length,
+      clean: !!target && judged.length > 0 && onTarget === judged.length,
     };
   });
 }

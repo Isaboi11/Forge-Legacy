@@ -50,9 +50,10 @@ const ACTIVITIES: { key: DistanceActivity; label: string }[] = [
 /** The field's own label and example, per unit. A pool is written in whole lengths, a road in decimals. */
 const UNIT_COPY: Record<DistanceUnit, { label: string; placeholder: string }> = {
   mi: { label: 'Miles', placeholder: '3.1' },
-  km: { label: 'Kilometres', placeholder: '5.0' },
+  // US spelling, as Preferences writes them — "Meters" there and "METRES" here read as two apps (home-17).
+  km: { label: 'Kilometers', placeholder: '5.0' },
   yd: { label: 'Yards', placeholder: '1000' },
-  m: { label: 'Metres', placeholder: '1000' },
+  m: { label: 'Meters', placeholder: '1000' },
 };
 
 export default function LogActivityScreen() {

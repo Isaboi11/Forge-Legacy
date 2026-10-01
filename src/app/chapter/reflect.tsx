@@ -2,8 +2,10 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppBar } from '@/components/forge/composites/AppBar';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet';
@@ -44,7 +46,9 @@ const PROMPTS = [
 
 type ReflectPath = 'sealing' | 'post';
 
-export default function ChapterReflectionScreen() {
+export default guardRoute(ChapterReflectionScreen, hasId, { title: 'Chapter not found', reason: 'Open a chapter from your Legacy to write its reflection.' });
+
+function ChapterReflectionScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string; path?: string }>();
@@ -140,17 +144,8 @@ export default function ChapterReflectionScreen() {
 
       {/* app bar — back/Cancel only on the POST path (L-6 §4.2). Path A has none (§4.1): the chapter is
           already sealed, so there is nothing behind this screen to return to — "Skip" is the exit. */}
-      <View style={[styles.bar, { paddingTop: insets.top + 6 }]}>
-        {isPost ? (
-          <>
-            <Pressable onPress={attemptExit} accessibilityRole="button" accessibilityLabel="Cancel" style={styles.barBtn} hitSlop={8}>
-              <EngravedIcon name="chevron-left" size={22} color={flColor.gray400} />
-            </Pressable>
-            <Text style={styles.barTitle}>Reflection</Text>
-            <View style={styles.barBtn} />
-          </>
-        ) : null}
-      </View>
+      {/* The shared bar on the POST path (QA 09-26 legacy-28); Path A keeps only the spacing. */}
+      {isPost ? <AppBar transparent title="Reflection" onBack={attemptExit} /> : <View style={[styles.bar, { paddingTop: insets.top + 6 }]} />}
 
       {/* Path A on a chapter that is NOT sealed can only be a stale link (M-5 now seals before routing
           here). Send it back to Chapter Detail, where the seal is confirmed — never show the "sealed"
@@ -158,7 +153,7 @@ export default function ChapterReflectionScreen() {
       {!isPost && data?.isActive ? <Redirect href={{ pathname: '/chapter/[id]', params: { id } }} /> : null}
 
       {loading || !data || !header ? (
-        <View style={styles.center}>{loading ? <ActivityIndicator color={flColor.bronze400} /> : <Text style={styles.err}>Chapter not found.</Text>}</View>
+        loading ? <View style={styles.center}><ActivityIndicator color={flColor.bronze400} /></View> : <NotFoundBody title="Chapter not found" reason="It may have been removed." />
       ) : (
         <>
           <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 32 }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -377,8 +372,6 @@ const styles = StyleSheet.create({
   err: { fontSize: 14, color: flColor.gray400 },
 
   bar: { flexDirection: 'row', alignItems: 'center', minHeight: 44, paddingHorizontal: 8, paddingBottom: 6 },
-  barBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  barTitle: { flex: 1, fontFamily: flFont.sans, fontSize: 11, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.gray400 },
 
   body: { paddingHorizontal: 26, paddingTop: 8 },
   eyebrow: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', color: flColor.labelInk },

@@ -55,7 +55,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { type PhotoReadResult } from '@/data/program-photo-live';
 import { readImportPhoto } from '@/data/import-photo-read';
-import { resolveExerciseName } from '@/domain/exercise-picker/data';
+import { resolveExerciseName, resolveImportedName } from '@/domain/exercise-picker/data';
 import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import { mergeParsedWeeks } from '@/domain/program/import-merge';
 import { useToast } from '@/hooks/useCeremony';
@@ -160,6 +160,8 @@ function ProgramImport() {
   const [skipped, setSkipped] = useState<string[]>(seed?.skipped ?? []);
   /** What a photo read asks the athlete to check before Create (`readImportPhoto`). */
   const [checks, setChecks] = useState<string[]>(seed?.checks ?? []);
+  /** What the paste called the program (`ParseResult.title`) — the draft's name, and said in the preview (QA programs-07). */
+  const [title, setTitle] = useState<string | null>(null);
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
   const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[]; checks: string[] }>());
 
@@ -174,9 +176,10 @@ function ProgramImport() {
      "Paste a workout" came from Home, so it goes back there. */
   const cancel = () => (isToday ? router.back() : router.dismissTo('/workouts'));
 
-  const showPreview = (weeks: ParsedWeek[], notRead: string[] = [], toCheck: string[] = []) => {
+  const showPreview = (weeks: ParsedWeek[], notRead: string[] = [], toCheck: string[] = [], called: string | null = null) => {
     const fit = fitToScope(weeks, scope);
     setError(null);
+    setTitle(called);
     setScopeNote(fit.note);
     setSkipped(notRead);
     setChecks(toCheck);
@@ -190,7 +193,7 @@ function ProgramImport() {
       setError(r.error);
       return;
     }
-    showPreview(r.weeks, r.skipped);
+    showPreview(r.weeks, r.skipped, [], r.title ?? null);
   };
 
   const uploadPdf = async () => {
@@ -303,7 +306,7 @@ function ProgramImport() {
 
   const startNow = async () => {
     if (!preview?.length) return;
-    const w = workoutDraftFromImport(preview, (n) => resolveExerciseName(n)?.key);
+    const w = workoutDraftFromImport(preview, resolveImportedName);
     if (!w) {
       setError('Nothing in that read could go in a workout. Go back and check the paste.');
       return;
@@ -327,7 +330,7 @@ function ProgramImport() {
   const writeDraft = async () => {
     if (!preview?.length) return;
     if (isTemplate) {
-      const w = workoutDraftFromImport(preview, (n) => resolveExerciseName(n)?.key);
+      const w = workoutDraftFromImport(preview, resolveImportedName);
       if (!w) {
         setError('Nothing in that read could go in a workout. Go back and check the paste.');
         return;
@@ -339,7 +342,8 @@ function ProgramImport() {
     }
     const r = draftFromImport(newDraft(), preview, {
       isWeek: false,
-      resolveKey: (n) => resolveExerciseName(n)?.key,
+      resolveKey: resolveImportedName,
+      title: title ?? undefined,
     });
     if (!r) return;
     await saveProgramDraft(r.draft);
@@ -383,7 +387,7 @@ function ProgramImport() {
       >
         <View style={styles.column}>
           {preview ? (
-            <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} />
+            <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={title} />
           ) : mode === 'paste' ? (
             <>
               <IconPlate>

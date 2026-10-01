@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -55,7 +56,9 @@ function monthYear(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? '' : `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export default function SquadRecordsScreen() {
+export default guardRoute(SquadRecordsScreen, hasId, { title: 'This squad isn’t available.' });
+
+function SquadRecordsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const squadId = String(id ?? '');
   const router = useRouter();
@@ -85,11 +88,7 @@ export default function SquadRecordsScreen() {
         </View>
       ) : error ? (
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>Couldn’t load the record book.</Text>
-          <Text style={styles.missingBody}>{error}</Text>
-          <Pressable onPress={refetch} accessibilityRole="button" accessibilityLabel="Try again" style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnLabel}>Try Again</Text>
-          </Pressable>
+          <NotFoundBody title="Couldn’t load the record book." reason={error} onRetry={refetch} onBack={goBack} />
         </View>
       ) : (
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets

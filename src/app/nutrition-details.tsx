@@ -12,6 +12,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { grouped, localToday } from '@/domain/nutrition/day';
+import { countOf } from '@/domain/text/plural';
 import {
   barPercent,
   buildWeek,
@@ -142,7 +143,8 @@ export default function NutritionDetailsScreen() {
           </View>
           <View style={styles.summaryRight}>
             <Text style={styles.summaryValue}>
-              {summary.band ? `${summary.inRange} of ${summary.counted}` : '—'}
+              {/* Out of the days that HAD a target — a day before the first target is not a miss (N-28). */}
+              {summary.band && summary.judged ? `${summary.inRange} of ${summary.judged}` : '—'}
             </Text>
             <Text style={styles.summaryLabel}>Days in range</Text>
           </View>
@@ -248,7 +250,9 @@ export default function NutritionDetailsScreen() {
         <View style={styles.sectionRow}>
           <Text style={styles.sectionLabel}>Macros · daily average</Text>
           <Text style={styles.sectionNote}>
-            {offset === 0 ? `${summary.counted} full days · today excluded` : `${summary.counted} logged days`}
+            {offset === 0
+              ? `${countOf(summary.counted, 'full day')} · today excluded`
+              : countOf(summary.counted, 'logged day')}
           </Text>
         </View>
         <View style={styles.macroList}>
@@ -415,7 +419,9 @@ const styles = StyleSheet.create({
   calloutGood: { color: flColor.bronzeInk },
 
   dayLabels: { flexDirection: 'row', gap: 8, paddingTop: 10 },
-  dayLabel: { flex: 1, textAlign: 'center', fontSize: 10.5, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
+  /* Each label borrows 3 pt of the gap on either side (centred under its bar still), and the tracking is
+     tighter, so "TODAY" fits a 375 pt column instead of reading "TOD…" (QA 09-26 N-28). */
+  dayLabel: { flex: 1, marginHorizontal: -3, textAlign: 'center', fontSize: 10.5, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   dayLabelOn: { color: flColor.selectedInk },
 
   cardFoot: {

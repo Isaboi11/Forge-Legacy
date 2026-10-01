@@ -54,7 +54,8 @@ test('Program Detail renders a catalog program without reading or writing a row'
   // And the fetch must be skipped for it, or "no row" becomes a failed lookup and an error screen.
   assert.match(
     src,
-    /if \(previewDef\) \{[\s\S]{0,200}?setLoading\(false\);[\s\S]{0,40}?return;/,
+    /if \(previewDef(?: \|\| !UUID\.test\(id\))?\) \{[\s\S]{0,200}?setLoading\(false\);[\s\S]{0,40}?return;/,
+    // (A link whose id is neither a slug nor a uuid short-circuits on the same line — QA 09-26 B4.)
     'the focus effect must short-circuit for a preview rather than fetching a row that does not exist',
   );
 });

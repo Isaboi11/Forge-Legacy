@@ -99,6 +99,10 @@ to Founder holders mechanically, MA3-D26 applies: it must not be offered.
 
 ## Section 4 — Where Every Feature Sits (Locked placement)
 
+> ⚠ **2026-09-28 — Amendment 008 changes this table.** Holt changing your program → Premium AI; changing it
+> yourself stays free on every plan; Holt AI check-ins → Premium AI. See
+> `Monetization-Architecture-Amendment-008-Premium-AI-Scope.md` before reading the rows below.
+
 Nutrition is **designed, not built**. This section fixes *placement* so the nutrition architecture is
 written against it; it does not specify the features.
 

@@ -7,7 +7,7 @@
  */
 
 import { ACTIVITY_LABEL, fmtDuration, type Modality } from './history-core.ts';
-import { DEFAULT_ROW_UNIT, rowMetresText, type RowUnit } from '../workout/conditioning.ts';
+import { DEFAULT_ROW_UNIT, activityFromKey, distanceUnitFor, fmtClock, rowMetresText, toDistanceIn, type RowUnit } from '../workout/conditioning.ts';
 /**
  * ⚠ `durText`, NOT `fmtDuration`. They answer different questions and only one of them is right here.
  *
@@ -38,6 +38,12 @@ export interface DetailSet {
    * before it: a 60s Plank was stored as "10 reps" and read back here as one.
    */
   durationSec: number | null;
+  /**
+   * Ground covered, for a cardio bout — `workout_sets.distance`, canonical miles since 0096. Absent on a
+   * shared session (the RPC does not return it) and null on every strength set.
+   */
+  distance?: number | null;
+  distanceUnit?: string | null;
 }
 export interface DetailExercise {
   name: string;
@@ -235,6 +241,36 @@ export function setLine(s: DetailSet): string {
   if (isBw && s.reps != null) return `BW × ${s.reps}`;
   if (s.reps != null) return `${s.reps} reps`;
   return '';
+}
+
+/**
+ * A CARDIO BOUT inside a session — "2000 m · 10:00", "1.52 mi · 24:10", "48 floors · 24:10" — or '' when
+ * this exercise is not one, so the caller keeps `setLine`.
+ *
+ * ⚠ WHY A BOUT DOES NOT GO THROUGH `setLine` (workout-10, QA 09-26). A bout carries a clock and no reps,
+ * which is the shape of a hold — so a ten-minute row read "10m", in the spelling a plank uses for ten
+ * MINUTES, on the one movement where "m" means metres. The distance was never selected at all. A bout
+ * reads as a clock (`10:00`), with its ground first, in the unit the card it was logged on used.
+ */
+export function boutLine(
+  s: DetailSet,
+  catalogKey: string | null | undefined,
+  opts: { metric?: boolean; rowUnit?: RowUnit } = {},
+): string {
+  const activity = activityFromKey(catalogKey);
+  if (!activity) return '';
+  const parts: string[] = [];
+  if (s.distance != null && s.distance > 0) {
+    if ((s.distanceUnit ?? 'mi') !== 'mi') parts.push(`${Number(s.distance.toFixed(2))} ${s.distanceUnit}`);
+    else {
+      const unit = distanceUnitFor(activity, !!opts.metric, opts.rowUnit ?? DEFAULT_ROW_UNIT);
+      const v = toDistanceIn(s.distance, unit);
+      parts.push(`${unit === 'yd' || unit === 'm' ? Math.round(v) : Number(v.toFixed(2))} ${unit}`);
+    }
+  }
+  if (s.floors != null && s.floors > 0) parts.push(`${s.floors} ${s.floors === 1 ? 'floor' : 'floors'}`);
+  if (s.durationSec != null && s.durationSec > 0) parts.push(fmtClock(s.durationSec));
+  return parts.join(' · ');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

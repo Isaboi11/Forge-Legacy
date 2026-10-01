@@ -5,6 +5,9 @@ import { useCrm } from '@/components/forge/admin/crm-theme';
 import { when } from '@/components/forge/admin/crm-ui';
 import { usePhone, type MoreView } from '@/components/forge/admin/phone/context';
 import { FilePick } from '@/components/forge/admin/phone/FilePick';
+import { SocialContentView, SocialNumbersView, SocialPlaybookView, SocialSyncBar, socialSubs } from '@/components/forge/admin/phone/SocialViews';
+import { SurveysView } from '@/components/forge/admin/phone/SurveysView';
+import { useSocial } from '@/components/forge/admin/social-ui';
 import {
   BigBtn,
   BottomBar,
@@ -27,7 +30,7 @@ import {
   type PFig,
 } from '@/components/forge/admin/phone/kit';
 import { dashboardTz, fetchAdminCohorts, fetchAdminEvents, fetchAdminOverview } from '@/data/admin-live';
-import { deleteDocument, documentLink, fetchAppStore, fetchDocuments, runAscSync, saveDocument, uploadDocumentFiles, type Doc, type PickedFile } from '@/data/crm-live';
+import { deleteDocument, documentLink, fetchAppStore, fetchDocuments, fetchSurveys, runAscSync, saveDocument, uploadDocumentFiles, type Doc, type PickedFile } from '@/data/crm-live';
 import { fetchAdminReports, resolveReport, type AdminReport } from '@/data/moderation-live';
 import { deltaNote, int, RANGE_INFO } from '@/domain/admin/briefing';
 import { bytes, DOC_CATEGORIES, guessCategory, pctText, rate, titleFromFile, type DocCategory } from '@/domain/admin/crm-core';
@@ -35,12 +38,12 @@ import { ascState } from '@/domain/admin/notes/appstore';
 import { daysSince, waitingTag } from '@/domain/admin/notes/moderation';
 import { REPORT_REASON_LABEL, isReportReason } from '@/domain/moderation/moderation-core';
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * More — the phone CRM's fifth tab (`Forge CRM Phone.dc.html`, MORE + the Add-a-document and Upload sheets).
- * A root list (App Store · Usage · Moderation · Documents, Appearance, Back to the app) and four sub-views over
- * the same reads the desktop pages use (`AppStorePage`, `UsagePage`, `ModerationPage`, `DocumentsPage`).
+ * A root list (App Store · Usage · Moderation · Surveys · Documents, Appearance, Back to the app) and five sub-views over
+ * the same reads the desktop pages use (`AppStorePage`, `UsagePage`, `ModerationPage`, `SurveysPage`, `DocumentsPage`).
  */
 
 const OFFLINE_MSG = 'You’re offline, so saving is paused.';
@@ -48,7 +51,7 @@ const OFFLINE_TOAST = 'You’re offline. Saving is paused until you reconnect.';
 const SETUP_DOC = 'Docs/App-Store-Connect-Key-Setup.md';
 const MAX_BYTES = 50 * 1024 * 1024;
 
-const SUBT: Record<Exclude<MoreView, 'root'>, string> = { appstore: 'App Store', usage: 'Usage', moderation: 'Moderation', documents: 'Documents' };
+const SUBT: Record<Exclude<MoreView, 'root'>, string> = { social: 'Numbers', content: 'Content', playbook: 'Playbook', appstore: 'App Store', usage: 'Usage', moderation: 'Moderation', surveys: 'Surveys', documents: 'Documents' };
 
 const shelfLabel = (k: DocCategory) => DOC_CATEGORIES.find((d) => d.key === k)?.label ?? k;
 const isLink = (d: Doc) => !!d.url && !d.storage_path;
@@ -92,7 +95,10 @@ function useMoreData() {
     return { r, at: Date.now() };
   }, [stamp]);
   const docs = useQuery(() => fetchDocuments(null, null), [stamp]);
-  return { appstore, reports, docs };
+  const surveys = useQuery(() => fetchSurveys(), [stamp]);
+  // The owner's TikTok and Instagram (0247): one read for the three Social rows and their views.
+  const social = useSocial(stamp);
+  return { appstore, reports, docs, surveys, social };
 }
 
 // ── The tab ─────────────────────────────────────────────────────────────────
@@ -108,7 +114,7 @@ type MoreData = ReturnType<typeof useMoreData>;
 
 function MoreRoot({ data }: { data: MoreData }) {
   const { c, pref, setMode } = useCrm();
-  const { setMoreView, exit } = usePhone();
+  const { setMoreView, exit, openSheet } = usePhone();
   const s = data.appstore.data;
   const avg = s?.rating?.avg ?? null;
   const asSub = !s
@@ -123,12 +129,22 @@ function MoreRoot({ data }: { data: MoreData }) {
   const waiting = data.reports.data?.r.counts.open ?? 0;
   const modSub = data.reports.data ? (waiting ? `${waiting} report${waiting > 1 ? 's' : ''} waiting` : 'Nothing waiting') : data.reports.error ? 'Couldn’t load' : '—';
   const nDocs = data.docs.data?.rows.length;
+  const sv = data.surveys.data;
+  const svN = sv ? sv.reduce((n, s) => n + s.responses, 0) : null;
+  const surveySub = svN != null ? (sv!.length ? `${svN} ${svN === 1 ? 'response' : 'responses'}` : 'No surveys yet') : data.surveys.error ? 'Couldn’t load' : '—';
   const docSub = nDocs != null ? `${nDocs} ${nDocs === 1 ? 'file' : 'files'}` : data.docs.error ? 'Couldn’t load' : '—';
 
+  const soc = socialSubs(data.social);
+  // The first three are the Social group (AA-D25); each group's heading is drawn above its first row.
+  const SOCIAL_ROWS = 3;
   const rows: { key: Exclude<MoreView, 'root'>; label: string; sub: string; badge?: number }[] = [
+    { key: 'social', label: 'Numbers', sub: soc.numbers },
+    { key: 'content', label: 'Content', sub: soc.content },
+    { key: 'playbook', label: 'Playbook', sub: soc.playbook },
     { key: 'appstore', label: 'App Store', sub: asSub },
     { key: 'usage', label: 'Usage', sub: 'Active athletes and retention' },
     { key: 'moderation', label: 'Moderation', sub: modSub, badge: waiting },
+    { key: 'surveys', label: 'Surveys', sub: surveySub },
     { key: 'documents', label: 'Documents', sub: docSub },
   ];
 
@@ -136,10 +152,14 @@ function MoreRoot({ data }: { data: MoreData }) {
     <PhoneScroll>
       <ScreenTitle title="More" />
       <OfflineLine />
-      <View style={{ marginTop: 14 }}>
-        {rows.map((r) => (
-          <Pressable
-            key={r.key}
+      <View style={{ flexDirection: 'row', marginTop: 12 }}>
+        <BigBtn label="New idea" onPress={() => openSheet({ kind: 'newIdea' })} />
+      </View>
+      <View>
+        {rows.map((r, i) => (
+          <View key={r.key}>
+            {i === 0 ? <SectionHead label="Social" style={{ marginTop: 22, marginBottom: 2 }} /> : i === SOCIAL_ROWS ? <SectionHead label="Business" style={{ marginTop: 26, marginBottom: 2 }} /> : null}
+            <Pressable
             onPress={() => setMoreView(r.key)}
             accessibilityRole="button"
             style={({ pressed }) => [
@@ -157,7 +177,8 @@ function MoreRoot({ data }: { data: MoreData }) {
               </View>
             ) : null}
             <Text style={{ fontSize: 22, color: c.ink3 }}>›</Text>
-          </Pressable>
+            </Pressable>
+          </View>
         ))}
       </View>
 
@@ -191,7 +212,7 @@ function MoreSub({ view, data }: { view: Exclude<MoreView, 'root'>; data: MoreDa
   const { c } = useCrm();
   const { setMoreView, openSheet, offline, toast, refresh } = usePhone();
   const [syncing, setSyncing] = useState(false);
-  const bar = view === 'appstore' || view === 'documents';
+  const bar = view === 'appstore' || view === 'documents' || view === 'social' || view === 'content';
 
   const sync = async () => {
     if (syncing) return;
@@ -217,18 +238,22 @@ function MoreSub({ view, data }: { view: Exclude<MoreView, 'root'>; data: MoreDa
           <Pressable onPress={() => setMoreView('root')} accessibilityRole="button" accessibilityLabel="Back to More" style={{ height: 44, paddingRight: 12, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, color: c.brz }}>‹ More</Text>
           </Pressable>
-          {view === 'appstore' || view === 'usage' ? <RangeSeg /> : null}
+          {view === 'appstore' || view === 'usage' || view === 'social' ? <RangeSeg /> : null}
         </View>
         <Text accessibilityRole="header" style={{ fontFamily: SERIF, fontSize: 30, marginTop: 8, color: c.ink }}>
           {SUBT[view]}
         </Text>
         <OfflineLine />
-        {view === 'appstore' ? <AppStoreView data={data} /> : view === 'usage' ? <UsageView /> : view === 'moderation' ? <ModerationView data={data} /> : <DocumentsView data={data} />}
+        {view === 'social' ? <SocialNumbersView q={data.social} /> : view === 'content' ? <SocialContentView q={data.social} /> : view === 'playbook' ? <SocialPlaybookView q={data.social} /> : view === 'appstore' ? <AppStoreView data={data} /> : view === 'usage' ? <UsageView /> : view === 'moderation' ? <ModerationView data={data} /> : view === 'surveys' ? <SurveysView surveys={data.surveys.data} error={data.surveys.error} onRetry={data.surveys.refetch} /> : <DocumentsView data={data} />}
       </PhoneScroll>
       {bar ? (
         <BottomBar>
           {view === 'appstore' ? (
             <BigBtn label={syncing ? 'Syncing…' : 'Sync now'} busy={syncing} disabled={offline} onPress={() => void sync()} />
+          ) : view === 'social' ? (
+            <SocialSyncBar q={data.social} />
+          ) : view === 'content' ? (
+            <BigBtn label="New idea" onPress={() => openSheet({ kind: 'newIdea' })} />
           ) : (
             <BigBtn label="Add" onPress={() => openSheet({ kind: 'docPick' })} />
           )}

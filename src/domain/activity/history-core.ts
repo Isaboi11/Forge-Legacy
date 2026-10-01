@@ -34,6 +34,34 @@ export interface ActivityRecord {
   partners: string[];
   /** Where an imported workout came from ("Garmin Connect"); null when Forge recorded it (0234). */
   importedFrom: string | null;
+  /**
+   * The cardio it CARRIES as well as the one kind it is filed under (workout-10, QA 09-26). A lifting day
+   * with a row in it is filed `strength` on purpose (`sessionActivityType`), and the Row chip then said
+   * "No Row sessions" about an athlete who had rowed. Optional: a caller with no exercise rows leaves it off.
+   */
+  contains?: Modality[];
+}
+
+/**
+ * The cardio kinds inside a session, from its exercises' `cardio:<activity>` keys. The two machines the
+ * enum has no chip for (stair, elliptical) read as `other`, exactly as a session of only those does.
+ */
+const MODALITY_OF_CARDIO: Record<string, Modality> = {
+  run: 'running',
+  walk: 'walking',
+  bike: 'cycling',
+  row: 'rowing',
+  swim: 'swimming',
+  stair: 'other',
+  elliptical: 'other',
+};
+export function cardioKindsIn(catalogKeys: readonly (string | null | undefined)[]): Modality[] {
+  const out: Modality[] = [];
+  for (const k of catalogKeys) {
+    const m = k?.startsWith('cardio:') ? MODALITY_OF_CARDIO[k.slice('cardio:'.length)] : undefined;
+    if (m && !out.includes(m)) out.push(m);
+  }
+  return out;
 }
 
 export const ACTIVITY_ORDER: Modality[] = [
@@ -152,7 +180,8 @@ export interface MonthGroup {
  * order rather than re-sorting, so a caller that has already ordered by `started_at desc` keeps it.
  */
 export function groupByMonth(records: readonly ActivityRecord[], filter: ActivityFilter): MonthGroup[] {
-  const matched = filter === 'all' ? records : records.filter((r) => r.type === filter);
+  // A session matches the kind it is filed under AND any cardio it carries — see `contains`.
+  const matched = filter === 'all' ? records : records.filter((r) => r.type === filter || !!r.contains?.includes(filter));
   const groups: MonthGroup[] = [];
   for (const r of matched) {
     const key = monthKey(r.startedAt);

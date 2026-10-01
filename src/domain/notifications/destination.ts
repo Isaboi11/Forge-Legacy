@@ -39,7 +39,9 @@ export type NotificationDestination =
   | { pathname: '/squad/[id]/goal'; params: { id: string } }
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/transformation'
+  | '/(tabs)/squads'
   | '/friends'
+  | { pathname: '/friends'; params: { post: string } }
   | '/discover-squads'
   | '/'
   | '/inbox';
@@ -82,10 +84,16 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
      * Friends feed, so branching on the id's presence would be right by accident for a SQUAD post and
      * wrong for a friend's. And a FRIENDS post has no detail screen at all — `post-detail` is still
      * deferred — so the honest destination is the feed that holds it, which is where its comments open.
+     *
+     * ⚠ A COMMENT CARRIES THE POST WITH IT (social2-15, QA 09-26). The feed used to open with every thread
+     * shut, so "somebody commented" landed the athlete on a list to go hunting in. `?post=<id>` opens that
+     * post's comments on arrival. An acknowledgement has no thread to open and keeps the bare feed.
      */
     case 'post_comment':
     case 'post_reaction':
-      if (n.postAudience === 'FRIENDS') return '/friends';
+      if (n.postAudience === 'FRIENDS') {
+        return n.kind === 'post_comment' && n.postId ? { pathname: '/friends', params: { post: n.postId } } : '/friends';
+      }
       return n.postId ? { pathname: '/squad-post/[id]', params: { id: n.postId } } : '/inbox';
     /*
      * 0153. THE TWO TRAINING KINDS DO NOT SHARE A DESTINATION, even though they share a preference and
@@ -145,6 +153,17 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
        thing to do with it (D2 — extending lives before the deadline, and this is where). */
     case 'squad_goal_closing':
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId, editGoal: 'edit' } } : '/inbox';
+    /* 0251 — a squad competition you can still opt into opens the competition, where the Join button is
+       (the same destination as a friend's `challenge_invite`). */
+    case 'squad_challenge_open':
+      return n.challengeId ? { pathname: '/challenge/[id]', params: { id: n.challengeId } } : '/inbox';
+    /*
+     * 0251 — the squad is GONE, so its page is the one place this must never go: it would answer "this
+     * squad is no longer available" to somebody who just read that it was deleted. The Squads tab is
+     * where its card used to be. `squad_owner_changed` needs no arm: the default opens the squad.
+     */
+    case 'squad_deleted':
+      return '/(tabs)/squads';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }

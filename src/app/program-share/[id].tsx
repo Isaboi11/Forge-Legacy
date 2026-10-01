@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -10,12 +11,13 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
 import { acceptProgramShare, dismissProgramShare, fetchProgramShare } from '@/data/program-shares-live';
-import { equipmentOf } from '@/domain/program/progress-core';
+import { equipmentOf, sessionsPerWeek } from '@/domain/program/progress-core';
 import { deriveBlocks, plannedSetCount, schemeText } from '@/domain/program/prescription';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * A program someone sent you (migration 0110) — read it before you take it.
@@ -39,14 +41,16 @@ import { equipmentLabel } from '@/components/forge/EquipIcon';
  * auto-starting would end whatever the athlete is currently running (`start_program` is exclusive).
  */
 
-export default function ProgramShareScreen() {
+export default guardRoute(ProgramShareScreen, hasId, { title: 'This shared program isn’t available.', reason: 'The link may be wrong, or the program was withdrawn.' });
+
+function ProgramShareScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
   const [busy, setBusy] = useState(false);
   const [openDay, setOpenDay] = useState<string | null>(null);
 
-  const { data, loading, error } = useQuery(() => fetchProgramShare(String(id)), [id]);
+  const { data, loading, error, refetch } = useQuery(() => fetchProgramShare(String(id)), [id]);
 
   const guard = usePremiumGate();
 
@@ -109,8 +113,7 @@ export default function ProgramShareScreen() {
         <ScreenBackground image={SCREEN_BG.slate2} base="#050505" />
         <AppBar title="Program" onBack={goBack} />
         <View style={styles.center}>
-          <Text style={styles.emptyTitle}>This program isn’t being shared any more.</Text>
-          <Text style={styles.emptyBody}>{error ?? 'It may have been withdrawn.'}</Text>
+          <NotFoundBody title={error ? 'Couldn’t load this program.' : 'This program isn’t being shared any more.'} reason={error ?? 'It may have been withdrawn.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       </View>
     );
@@ -138,7 +141,8 @@ export default function ProgramShareScreen() {
 
         <Text style={styles.title}>{data.name}</Text>
         <Text style={styles.meta}>
-          {structure.weeks} weeks • {structure.daysPerWeek} {structure.daysPerWeek === 1 ? 'day' : 'days'} / week
+          {/* The days that TRAIN, as the program's detail counts them — an empty day is a rest day (QA programs-06). */}
+          {countOf(structure.weeks, 'week')} • {countOf(sessionsPerWeek(structure), 'day')} / week
           {structure.vary ? ' • per-week plan' : ''}
         </Text>
 
@@ -154,7 +158,9 @@ export default function ProgramShareScreen() {
 
         {taken ? (
           <View style={styles.takenBanner}>
-            <Text style={styles.takenText}>You’ve already taken this one. It’s in your programs.</Text>
+            {/* Not "It's in your programs" (social2-26, QA 09-26): taking it once doesn't mean it's still there — it
+                may have been removed since. */}
+            <Text style={styles.takenText}>You’ve already taken this one.</Text>
           </View>
         ) : null}
 

@@ -69,7 +69,7 @@ import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { useToast } from '@/hooks/useCeremony';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
@@ -125,6 +125,7 @@ const UNMATCHED_WHY: Record<UnmatchedLine['reason'], string> = {
  */
 function MyRecipesScreen() {
   const router = useRouter();
+  const barBottom = useBarBottom();
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string; add?: string }>();
   /* A dish Holt wrote ("See the recipe", Kitchen Scope §1.4) arrives as `?draft=1` with the read stashed —
@@ -163,6 +164,9 @@ function MyRecipesScreen() {
   const [addSheet, setAddSheet] = useState(() => params.add === '1');
   const [foodQ, setFoodQ] = useState('');
   const [pick, setPick] = useState<Pick | null>(null);
+  /* The amount as TYPED, tied to the pick it was typed on (QA 09-26 N-33): a stepper in 25 g steps could
+     never say 30 g of whey. A stepper tap or a unit switch makes a new pick, so the box re-reads the number. */
+  const [typedQty, setTypedQty] = useState<{ for: Pick; text: string } | null>(null);
   const [editAllergens, setEditAllergens] = useState(false);
   const [focusStep, setFocusStep] = useState(-1);
   const [saving, setSaving] = useState(false);
@@ -480,14 +484,14 @@ function MyRecipesScreen() {
             ) : listQ.settled ? (
               <View style={styles.empty}>
                 <Text style={styles.emptyTitle}>Add meals you already eat</Text>
+                {/* kitchen-18: this named a "starter set" that was removed on 2026-09-24. */}
                 <Text style={styles.emptyBody}>
-                  The planner can use them in your week. Quick meals and vegan dishes help most, because those are where the
-                  starter set is thinnest.
+                  {`${scanOn ? 'Type one in, paste a link, or add a picture of one.' : 'Type one in, or paste a link.'} Once it’s saved you can log it in a tap, and the meal planner can use it in your week.`}
                 </Text>
               </View>
             ) : null}
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: barBottom }]}>
             <Button variant="primary" fullWidth disabled={scanBusy} onPress={() => setAddSheet(true)}>
               Add recipe
             </Button>
@@ -876,7 +880,7 @@ function MyRecipesScreen() {
               </View>
             </Pressable>
           </ScrollView>
-          <View style={styles.footer}>
+          <View style={[styles.footer, { paddingBottom: barBottom }]}>
             {missing ? <Text style={styles.missing}>{missing}</Text> : null}
             <Button variant="primary" fullWidth disabled={!!missing || saving} onPress={save}>
               Save recipe
@@ -1006,7 +1010,32 @@ function MyRecipesScreen() {
               >
                 <Text style={styles.pickStepText}>−</Text>
               </Pressable>
-              <Text style={styles.pickQtyText}>{qtyLabel(pick.unit, pick.qty, pickPortion)}</Text>
+              <View style={styles.pickQtyField}>
+                <TextInput
+                  value={
+                    typedQty?.for === pick
+                      ? typedQty.text
+                      : String(pick.unit === 'g' ? Math.round(pick.qty) : +pick.qty.toFixed(2))
+                  }
+                  onChangeText={(t) => {
+                    const text = t.replace(/[^0-9.]/g, '').slice(0, 6);
+                    const v = parseFloat(text);
+                    if (Number.isFinite(v) && v > 0) {
+                      const next = { ...pick, qty: v };
+                      setPick(next);
+                      setTypedQty({ for: next, text });
+                    } else setTypedQty({ for: pick, text });
+                  }}
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  selectTextOnFocus
+                  accessibilityLabel={pick.unit === 'g' ? 'Grams' : `How many, in ${pickPortion.label}`}
+                  style={styles.pickQtyInput}
+                />
+                <Text style={styles.pickQtyUnit} numberOfLines={1}>
+                  {pick.unit === 'g' ? 'g' : pickPortion.label}
+                </Text>
+              </View>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="More"
@@ -1026,6 +1055,8 @@ function MyRecipesScreen() {
             <Button
               variant="primary"
               fullWidth
+              /* An emptied or "0" box is not an amount — the last good number is not silently used. */
+              disabled={typedQty?.for === pick && !(parseFloat(typedQty.text) > 0)}
               onPress={() => {
                 const amount = { g: pickG, unit: pick.unit, qty: pick.qty };
                 setForm(withIngredient(form, pick.food ? { food: pick.food, ...amount } : { key: pick.key, ...amount }, pick.index));
@@ -1395,7 +1426,18 @@ const styles = StyleSheet.create({
   },
   pickStep: { width: 56, height: '100%', alignItems: 'center', justifyContent: 'center' },
   pickStepText: { fontSize: 22, color: flColor.gray400 },
-  pickQtyText: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
+  pickQtyField: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  pickQtyInput: {
+    minWidth: 56,
+    maxWidth: 110,
+    paddingVertical: 6,
+    textAlign: 'right',
+    fontSize: 17,
+    fontWeight: '600',
+    color: flColor.cream100,
+    fontVariant: ['tabular-nums'],
+  },
+  pickQtyUnit: { flexShrink: 1, fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   pickFoot: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingTop: 14, paddingBottom: 18, paddingHorizontal: 2 },
   pickFootText: { fontSize: 13, color: flColor.gray400, fontVariant: ['tabular-nums'] },
   pickCal: { fontWeight: '600', color: flColor.cream100 },

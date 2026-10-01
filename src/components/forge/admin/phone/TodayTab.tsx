@@ -10,7 +10,7 @@ import { fetchAdminReports, type AdminReportsBundle } from '@/data/moderation-li
 import { buildBriefing, deltaNote, int, lastLabel, RANGE_INFO, type AttentionItem, type Briefing, type RangeKey } from '@/domain/admin/briefing';
 import { churnRate, money, pctText, todayKey } from '@/domain/admin/crm-core';
 import { parseSyncMessage } from '@/domain/admin/notes/appstore';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Today (Forge CRM Phone.dc.html, TODAY): the date, the greeting and summary, "What I’d do today", the

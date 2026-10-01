@@ -9,11 +9,11 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { Pill } from '@/components/forge/composites/Pill';
-import { LogWeightSheet } from '@/components/forge/LogWeightSheet';
 import { NutritionCareLine, useCareLine } from '@/components/forge/NutritionCareLine';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
+import { TARGET_KCAL_MAX, targetCeiling } from '@/domain/nutrition/amount';
 import { grouped, localToday, type Targets } from '@/domain/nutrition/day';
 import {
   ACTIVITY_LEVELS,
@@ -40,12 +40,12 @@ import {
   type AthleteSex,
   type Goal,
 } from '@/domain/nutrition/targets';
-import { fetchBodyEntries, latestBodyReading } from '@/data/body-metrics-live';
+import { addBodyEntry, fetchBodyEntries, latestBodyReading } from '@/data/body-metrics-live';
 import { fetchNutritionProfile, fetchTargetHistory, saveNutritionProfile, saveTargets } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
 import { useUnits } from '@/lib/settings';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
@@ -86,16 +86,20 @@ export default function NutritionTargetsScreen() {
   const [mode, setMode] = useState<'recommended' | 'manual'>('recommended');
   const [editingProfile, setEditingProfile] = useState(false);
   const [sheet, setSheet] = useState<'pace' | 'method' | null>(null);
-  const [weighInOpen, setWeighInOpen] = useState(false);
   /* null until the athlete picks one: the default depends on the care line below. */
   const [pickedGoal, setGoal] = useState<Goal | null>(null);
-  const [rate, setRate] = useState(1);
+  /* Each direction keeps its own pace (QA 09-26 N-42): one shared number was clamped to 0.5 on Gain, so
+     Lose → Gain → Lose came back at half the pace the athlete had picked. */
+  const [rates, setRates] = useState<{ lose: number; gain: number }>({ lose: 1, gain: 0.5 });
   /* ⚠ THE CARE LINE (`domain/nutrition/care-line.ts`). While it is on, the screen still works (nothing is
      blocked), but the goal starts on MAINTAIN (PO 09-25), and a LOSE goal is held to the slowest pace: it
      is neither pre-selected faster nor offered faster, in the stepper or the sheet. The athlete's own pick
      comes back if the line is dismissed. */
   const care = useCareLine();
   const goal: Goal = pickedGoal ?? (care.active ? 'maintain' : 'lose');
+  const rate = goal === 'gain' ? rates.gain : rates.lose;
+  const setRate = (next: (r: number) => number) =>
+    setRates((all) => (goal === 'gain' ? { ...all, gain: next(all.gain) } : { ...all, lose: next(all.lose) }));
   const slowestOnly = care.active && goal === 'lose';
   const pace = slowestOnly ? paceOptions('lose')[0] : rate;
   const [saving, setSaving] = useState(false);
@@ -108,6 +112,8 @@ export default function NutritionTargetsScreen() {
   const [inText, setInText] = useState<string | null>(null);
   const [activityKey, setActivityKey] = useState<string | null>(null);
   const [manual, setManual] = useState<Record<string, string> | null>(null);
+  /* The very high manual target the athlete has already said yes to; typing another un-says it. */
+  const [agreed, setAgreed] = useState<number | null>(null);
 
   const weightLb = useMemo(() => latestBodyReading(bodyEntries ?? [], 'weight'), [bodyEntries]);
   const sex = (profile?.sex ?? 'unspecified') as AthleteSex;
@@ -157,6 +163,12 @@ export default function NutritionTargetsScreen() {
   const manKcal = man.kcal ? Number(man.kcal) : null;
   const manualCheck = checkManual(manKcal, facts, burn);
   const macroLine = macroSumLine(manKcal, Number(man.protein || 0), Number(man.carb || 0), Number(man.fat || 0));
+  /* ⚠ A MANUAL TARGET HAS A TOP AS WELL AS A FLOOR (QA N-29): 50,000 a day used to save without a word. Past
+     the ceiling it is refused; a very high one is asked about once, on the button, before it is written.
+     And a macro left empty is SAID to be saved as 0 g rather than becoming one silently. */
+  const ceiling = mode === 'manual' ? targetCeiling(manKcal) : null;
+  const asking = ceiling === 'ask' && agreed === manKcal;
+  const blankMacro = !man.protein || !man.carb || !man.fat;
 
   /* What pressing Save would write, and why it might not be allowed to. */
   let proposed: Targets | null = null;
@@ -167,6 +179,7 @@ export default function NutritionTargetsScreen() {
     else if (rec) proposed = { kcal: rec.kcal, protein: rec.protein, carb: rec.carb, fat: rec.fat };
   } else if (!manKcal) blocked = 'Enter a calorie target.';
   else if (manualCheck.tooLow) blocked = `The lowest target Forge will set for you is ${grouped(manualCheck.minimum)}.`;
+  else if (ceiling === 'too-high') blocked = `The highest daily target Forge will save is ${grouped(TARGET_KCAL_MAX)}.`;
   else {
     proposed = {
       kcal: manKcal,
@@ -179,6 +192,10 @@ export default function NutritionTargetsScreen() {
   const same = sameAsCurrent(proposed, current);
   const note = saveNote({ blocked, same, replacesToday: currentFrom === todayIso });
   const canSave = !!proposed && !same && !saving;
+  /* QA N-13: macros that disagree with the calorie target are said ABOVE the button, where the bar can't hide
+     them — the line under the three fields is below the fold on a short screen. */
+  const macroWarn = mode === 'manual' && !blocked && macroLine.off ? macroLine.text : null;
+  const barBottom = useBarBottom();
 
   const profileComplete = !blocker;
   /* The notice's words. `rec` is already recomputed from the LATEST weigh-in above, so when it exists
@@ -188,6 +205,10 @@ export default function NutritionTargetsScreen() {
 
   const save = async () => {
     if (!proposed || !canSave) return;
+    if (ceiling === 'ask' && !asking) {
+      setAgreed(manKcal);
+      return;
+    }
     setSaving(true);
     try {
       /* The three facts were supplied in order to get a target, so they are kept with it. */
@@ -309,11 +330,13 @@ export default function NutritionTargetsScreen() {
                 onPress={() => router.push('/account-settings')}
               />
             ) : blocker?.kind === 'no-weight' ? (
-              <MissingCard
-                headline="Log a weigh-in first"
-                body="A target is built from what you weigh now. One weigh-in is enough to start, and Forge will ask you to review the target when it moves."
-                action="Log a weigh-in"
-                onPress={() => setWeighInOpen(true)}
+              /* ⚠ THE WEIGHT IS ASKED FOR HERE (QA 09-26 kitchen-21). Kitchen's "Set my macros" promises "your
+                 weight, activity and goal", and this screen then refused with a button to a sheet. A field
+                 on the card is the same weigh-in (`addBodyEntry`, stored in lb) one step sooner. */
+              <WeighInCard
+                metric={units === 'metric'}
+                onSaved={() => setReloads((n) => n + 1)}
+                onError={(message) => showToast(message)}
               />
             ) : (
               <>
@@ -385,6 +408,7 @@ export default function NutritionTargetsScreen() {
                                 key={level.key}
                                 accessibilityRole="radio"
                                 accessibilityState={{ checked: on }}
+                                aria-checked={on}
                                 style={[styles.activityRow, i > 0 && styles.activityDivider, on && styles.activityRowOn]}
                                 onPress={() => setActivityKey(level.key)}
                               >
@@ -422,10 +446,7 @@ export default function NutritionTargetsScreen() {
                         accessibilityRole="button"
                         accessibilityState={{ selected: on }}
                         style={[styles.goalButton, on && styles.goalButtonOn]}
-                        onPress={() => {
-                          setGoal(key);
-                          if (key === 'gain') setRate((r) => Math.min(r, 0.5));
-                        }}
+                        onPress={() => setGoal(key)}
                       >
                         <Text style={[styles.goalText, on && styles.goalTextOn]}>
                           {key === 'lose' ? 'Lose' : key === 'maintain' ? 'Maintain' : 'Gain'}
@@ -558,6 +579,7 @@ export default function NutritionTargetsScreen() {
               </View>
             </View>
             <Text style={[styles.macroSum, macroLine.off && styles.macroSumOff]}>{macroLine.text}</Text>
+            {manKcal && blankMacro ? <Text style={styles.macroSum}>A macro left blank is saved as 0 g.</Text> : null}
           </View>
         )}
 
@@ -584,13 +606,25 @@ export default function NutritionTargetsScreen() {
         )}
       </ScrollView>
 
-      {/* commit */}
-      <View style={styles.footer}>
-        <Button variant="primary" fullWidth disabled={!canSave} onPress={save}>
-          Use these targets
-        </Button>
-        <Text style={styles.saveNote}>{note}</Text>
-      </View>
+      {/* commit — not on a gate (under 18, no sex, no weigh-in): there is no target to use, and a greyed
+          USE THESE TARGETS only repeated the card's own message (QA 09-26 N-42). */}
+      {mode === 'recommended' && blocker && blocker.kind !== 'incomplete' ? null : (
+        <View style={[styles.footer, { paddingBottom: barBottom }]}>
+          {macroWarn ? (
+            <Text style={styles.footerWarn} accessibilityLiveRegion="polite">
+              {macroWarn}
+            </Text>
+          ) : null}
+          <Button variant="primary" fullWidth disabled={!canSave} onPress={save}>
+            {asking && canSave ? `Yes, use ${grouped(manKcal ?? 0)}` : 'Use these targets'}
+          </Button>
+          {asking && canSave ? (
+            <Text style={styles.saveNote}>{`${grouped(manKcal ?? 0)} cal a day is a very high target. Tap again if it’s right.`}</Text>
+          ) : macroWarn && !same ? null : (
+            <Text style={styles.saveNote}>{note}</Text>
+          )}
+        </View>
+      )}
 
       <BottomSheet open={sheet === 'pace'} onClose={() => setSheet(null)} title="Pace">
         <View style={styles.sheetBody}>
@@ -607,9 +641,10 @@ export default function NutritionTargetsScreen() {
                 key={option}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
+                aria-checked={on}
                 style={styles.sheetRow}
                 onPress={() => {
-                  setRate(option);
+                  setRate(() => option);
                   setSheet(null);
                 }}
               >
@@ -642,21 +677,57 @@ export default function NutritionTargetsScreen() {
           </Text>
         </View>
       </BottomSheet>
-
-      <LogWeightSheet
-        open={weighInOpen}
-        units={units}
-        onClose={() => setWeighInOpen(false)}
-        onSaved={() => {
-          setWeighInOpen(false);
-          setReloads((n) => n + 1);
-        }}
-      />
     </View>
   );
 }
 
 /* ── pieces ──────────────────────────────────────────────────────────────── */
+
+const LB_PER_KG = 0.45359237;
+
+/** "What do you weigh?" — the no-weigh-in gate, answered in place (kitchen-21). */
+function WeighInCard({ metric, onSaved, onError }: { metric: boolean; onSaved: () => void; onError: (message: string) => void }) {
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const value = parseFloat(text);
+  const lb = Number.isFinite(value) ? Math.round(metric ? value / LB_PER_KG : value) : NaN;
+  /* A person, not a typo: 60–700 lb. */
+  const valid = lb >= 60 && lb <= 700;
+  const save = async () => {
+    if (!valid || busy) return;
+    setBusy(true);
+    try {
+      await addBodyEntry({ weightLb: lb, waist: null, chest: null, arm: null });
+      onSaved();
+    } catch {
+      onError('Couldn’t save your weight — check your connection and try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <View style={styles.gateCard}>
+      <Text style={styles.gateHeadline}>What do you weigh?</Text>
+      <Text style={styles.gateBody}>
+        A target is built from what you weigh now. This is saved as today’s weigh-in, and Forge will ask you to
+        review the target when it moves.
+      </Text>
+      <InputField
+        label={`Bodyweight (${metric ? 'kg' : 'lb'})`}
+        value={text}
+        onChange={(v) => setText(v.replace(/[^0-9.]/g, '').slice(0, 5))}
+        keyboardType="decimal-pad"
+        placeholder={metric ? 'e.g. 80' : 'e.g. 180'}
+        error={text && !valid ? 'Enter your weight.' : undefined}
+      />
+      <View style={styles.gateActions}>
+        <Button variant="secondary" fullWidth disabled={!valid || busy} onPress={save}>
+          Save weight
+        </Button>
+      </View>
+    </View>
+  );
+}
 
 /** A fact Forge needs before it may calculate anything, with the one place to supply it. */
 function MissingCard({
@@ -901,8 +972,8 @@ const styles = StyleSheet.create({
   historyEmpty: { paddingHorizontal: 2, fontSize: 13, lineHeight: 20, color: flColor.gray600 },
 
   footer: {
-    gap: 10,
-    paddingTop: 14,
+    gap: 8,
+    paddingTop: 12,
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
@@ -910,6 +981,7 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   saveNote: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray600 },
+  footerWarn: { textAlign: 'center', fontSize: 12, lineHeight: 17, color: flColor.gray400 },
 
   sheetBody: { paddingBottom: 12 },
   sheetRow: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 56, paddingVertical: 8, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },

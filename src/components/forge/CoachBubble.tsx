@@ -17,6 +17,10 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { chooseNudge, type NudgeDef } from '@/domain/coach/nudges';
 import { fetchNudgeHistory, fetchNudgeSignals, markNudge } from '@/data/nudge-live';
+import { capAllows } from '@/domain/entitlement/caps-core';
+import { track } from '@/lib/analytics';
+import { useEntitlementState } from '@/lib/entitlement';
+import { useAuth } from '@/lib/auth';
 
 /**
  * The four surfaces the coach belongs on, and nowhere else.
@@ -195,22 +199,35 @@ export function CoachBubble() {
   /** Lifetime sessions, from the same read as the nudge. Null until known — see `introducing`. */
   const [sessions, setSessions] = useState<number | null>(null);
   const router = useRouter();
+  /*
+   * Can Holt actually build this athlete a program? (MA9-D1.) On Free the first one is included; once it
+   * is used, "Want me to build you a plan?" would lead to the upgrade screen, and the catalogue's rule is
+   * that the coin never invites anyone there. Unknown reads as yes — the same direction `useEntitlement`
+   * fails in — and the gate at the feature is what actually decides.
+   */
+  const { snapshot: plan } = useEntitlementState();
+  const canBuildProgram = !plan || (capAllows(plan.usage.programs, plan.caps.programs) && capAllows(plan.usage.holtPrograms, plan.caps.holt_programs));
+
+  /* Signed out, `/` is the Welcome screen and there is no athlete to read: the nudge read went out anyway
+     and came back 401 on every visit (QA 09-26 auth-16, under B3). No session, no read. */
+  const signedIn = !!useAuth().session;
 
   useEffect(() => {
-    if (!HOME_SURFACES.has(pathname) || kitchen) return;
+    if (!signedIn || !HOME_SURFACES.has(pathname) || kitchen) return;
     let alive = true;
     void (async () => {
       const [signals, history] = await Promise.all([fetchNudgeSignals(), fetchNudgeHistory()]);
       /* Null signals means 0179 has not been applied, or the read failed. Either way: say nothing. */
       if (!alive || !signals) return;
       setSessions(signals.sessions);
-      const chosen = chooseNudge(signals, history, Date.now());
-      setNudge(chosen ? { def: chosen, line: chosen.line(signals) } : null);
+      const full = { ...signals, canBuildProgram };
+      const chosen = chooseNudge(full, history, Date.now());
+      setNudge(chosen ? { def: chosen, line: chosen.line(full) } : null);
     })();
     return () => {
       alive = false;
     };
-  }, [pathname, kitchen]);
+  }, [signedIn, pathname, kitchen, canBuildProgram]);
 
   /*
    * RE-READ ON ARRIVAL, not once on mount. `usePathname` already re-renders this component on every
@@ -388,6 +405,8 @@ export function CoachBubble() {
     if (recordedShown.current === nudge.def.id) return;
     recordedShown.current = nudge.def.id;
     void markNudge(nudge.def.id, 'shown');
+    // Counted, so the CRM can say which invitations people follow (MA9-D5). The id only, never the line.
+    track('nudge_shown', { id: nudge.def.id });
   }, [nudgeOnScreen, nudge]);
 
   /*
@@ -464,6 +483,7 @@ export function CoachBubble() {
                    question; whether they finish is their business, and asking again because they backed
                    out of the camera would be the nag the cadence exists to prevent. */
                 void markNudge(def.id, 'used');
+                track('nudge_accepted', { id: def.id });
                 router.push(def.route as never);
               }}
               accessibilityLabel="Show me"
@@ -478,6 +498,7 @@ export function CoachBubble() {
                 setNudgeOpen(false);
                 setNudge(null);
                 void markNudge(def.id, 'dismissed');
+                track('nudge_dismissed', { id: def.id });
               }}
               accessibilityLabel="Not now"
             >

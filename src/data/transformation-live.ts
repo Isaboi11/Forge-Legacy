@@ -14,13 +14,17 @@ import { sortByCapture } from '@/domain/legacy/capture-date';
 export type PoseKey = 'rf' | 'rs' | 'rb' | 'ff' | 'su' | 'bf';
 
 /** Six guided poses — relaxed triad, then flexed triad (bodybuilding-shoot convention). */
+/**
+ * `short` is the chip on a photo and the caption under a thumbnail. The flexed poses were "Front" and
+ * "Back" — the same words as the relaxed ones — so a card with both read FRONT · FRONT (QA 09-26 legacy-23).
+ */
 export const XFORM_POSES: { key: PoseKey; label: string; short: string }[] = [
   { key: 'rf', label: 'Front Relaxed', short: 'Front' },
   { key: 'rs', label: 'Side Relaxed', short: 'Side' },
   { key: 'rb', label: 'Back Relaxed', short: 'Back' },
-  { key: 'ff', label: 'Front Flexed', short: 'Front' },
+  { key: 'ff', label: 'Front Flexed', short: 'Front Flex' },
   { key: 'su', label: 'Side Arms Up', short: 'Arms Up' },
-  { key: 'bf', label: 'Back Flexed', short: 'Back' },
+  { key: 'bf', label: 'Back Flexed', short: 'Back Flex' },
 ];
 
 export const XFORM_TAGS = ['Milestone', 'Competition', 'Posing', 'Bulk', 'Cut', 'Off-season'];

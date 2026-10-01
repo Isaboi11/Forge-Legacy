@@ -70,6 +70,11 @@ export interface AppPrefs {
    *   their colours when first imported, so switching reloads the JS — see `constants/theme-choice.ts`.
    *   Server-backed like `units` rather than device-local, so an athlete who chose Paper does not get
    *   dark again on a new phone with no idea why.
+   *
+   * ⚠ WHAT RENDERS IS THE DEVICE'S COPY (`constants/theme-choice`); this field is the account's record of
+   *   it. Preferences shows, compares and saves the RUNNING theme, never this value, so a second device
+   *   cannot highlight one theme over a screen drawn in the other (QA 09-26 B15). Nothing yet seeds a new
+   *   device from it.
    */
   theme: ThemeName;
   /**

@@ -8,7 +8,7 @@ import { ActivityIndicator, Animated, Easing, Pressable, ScrollView, StyleSheet,
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -25,6 +25,7 @@ import { BG_RADIAL } from '@/constants/backgrounds';
 import {
   REACTIONS,
   addPostComment,
+  deleteFriendPost,
   fetchFriendsFeed,
   fetchPostComments,
   setPostReaction,
@@ -33,6 +34,8 @@ import {
   type PostComment,
   type Reaction,
 } from '@/data/friends-feed-live';
+import { deleteSquadComment, editSquadPost, fetchPostMarks, timeAgo } from '@/data/squad-feed-live';
+import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { isMilestoneCard, milestoneAckLabel } from '@/domain/share/milestone-card';
 import { recapNoteLines } from '@/domain/share/recap-stats';
 import { displayOf } from '@/domain/squad/post-photos';
@@ -129,9 +132,38 @@ export default function FriendsFeedScreen() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const addRef = useTourAnchor('friends-add');
-  const [commentsFor, setCommentsFor] = useState<FeedPost | null>(null);
+  /*
+   * ══ A COMMENT NOTIFICATION ARRIVES WITH ITS COMMENTS OPEN (social2-15, QA 09-26) ══
+   *
+   * A Friends post has no detail screen, so "somebody commented" could only ever open this feed — and it
+   * opened it with every thread shut, leaving the athlete to find the post and tap its bubble. The
+   * notification now carries the post (`?post=<id>`, see `destinationFor`) and the sheet starts open on it.
+   *
+   * An id, not a `FeedPost`: the thread is read by id under RLS, so it opens whether or not the post is
+   * among the forty this feed loaded. Seeded in the initialiser rather than set from an effect — a tapped
+   * notification pushes a NEW instance of this screen, so the param is there on the first render.
+   */
+  const { post: openPostId } = useLocalSearchParams<{ post?: string }>();
+  const [commentsFor, setCommentsFor] = useState<string | null>(() => (typeof openPostId === 'string' && openPostId ? openPostId : null));
   const [pickerId, setPickerId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  /*
+   * ══ YOUR OWN POST: EDIT IT, OR TAKE IT DOWN (social2-15) ══
+   *
+   * The Squad post page has had this menu since 0186/0230; a Friends post has no page, so its own author
+   * could neither fix a typo nor remove it. Same doors, no new ones: `edit_squad_post` checks authorship and
+   * not audience, and `squad_posts_delete` has admitted the author since 0041. Edit is offered only where
+   * 0230 is applied (`fetchPostMarks`), exactly as on the post page — a control that always fails is worse
+   * than none.
+   */
+  const [menuFor, setMenuFor] = useState<FeedPost | null>(null);
+  const [editFor, setEditFor] = useState<FeedPost | null>(null);
+  const [editBody, setEditBody] = useState('');
+  const [deleteFor, setDeleteFor] = useState<FeedPost | null>(null);
+  const [working, setWorking] = useState(false);
+  const primeKeyboard = useKeyboardPrimer();
+  const menuId = menuFor?.id ?? null;
+  const { data: menuMarks } = useQuery(() => (menuId ? fetchPostMarks(menuId) : Promise.resolve(null)), [menuId]);
   const feed = posts ?? [];
   const pendingRequests = lists?.incoming.length ?? 0;
   const { units } = useUnits();
@@ -162,6 +194,47 @@ export default function FriendsFeedScreen() {
    * three in a table nothing can reach. So the tap writes the default and the press-and-hold changes it.
    */
   const toggle = (post: FeedPost) => react(post, post.myReaction ?? 'respect');
+
+  const openEdit = () => {
+    const post = menuFor;
+    if (!post) return;
+    /* First, and synchronously — the field lives in a `<Modal>` and its `autoFocus` fires outside this
+       gesture. Same rule as every other sheet with an input; see `KeyboardPrimer`. */
+    primeKeyboard();
+    setMenuFor(null);
+    setEditBody(post.body ?? '');
+    setEditFor(post);
+  };
+
+  const commitEdit = async () => {
+    if (working || !editFor) return;
+    setWorking(true);
+    try {
+      await editSquadPost(editFor.id, editBody);
+      setEditFor(null);
+      refetch();
+      showToast('Post updated.');
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const commitDelete = async () => {
+    if (working || !deleteFor) return;
+    setWorking(true);
+    try {
+      await deleteFriendPost(deleteFor.id);
+      setDeleteFor(null);
+      refetch();
+      showToast('Post deleted.');
+    } catch (e) {
+      showToast(errorMessage(e));
+    } finally {
+      setWorking(false);
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -243,7 +316,7 @@ export default function FriendsFeedScreen() {
           ) : (
             <>
               {feed.map((post, pi) => (
-                <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined}>
+                <TourAnchor key={post.id} id={pi === 0 ? 'friends-post' : undefined} style={pickerId === post.id ? styles.postRaised : undefined}>
                   <View style={styles.postWrap}>
                     {/* The four-way picker floats above the row it belongs to — see `toggle`. */}
                     {pickerId === post.id ? (
@@ -259,7 +332,8 @@ export default function FriendsFeedScreen() {
                       onAcknowledge={() => toggle(post)}
                       onLongAcknowledge={() => setPickerId((cur) => (cur === post.id ? null : post.id))}
                       onAuthor={() => router.push({ pathname: '/athlete/[id]', params: { id: post.authorId } })}
-                      onComments={() => setCommentsFor(post)}
+                      onComments={() => setCommentsFor(post.id)}
+                      onMenu={post.isMine ? () => setMenuFor(post) : undefined}
                       onWorkout={() => post.workoutId && router.push({ pathname: '/activity/[id]', params: { id: post.workoutId } })}
                       /* The clip PLAYS — the same player the squad feed and a pinned video use. A recap's band used to
                          open the workout summary and a plain video post's band did nothing at all, because the card
@@ -285,7 +359,68 @@ export default function FriendsFeedScreen() {
           line rendering it did not. */}
       <ScreenTour screenKey="friends" />
 
-      <CommentsSheet post={commentsFor} onClose={() => setCommentsFor(null)} onChanged={refetch} />
+      <CommentsSheet postId={commentsFor} onClose={() => setCommentsFor(null)} onChanged={refetch} />
+
+      {/* ══ MANAGE YOUR OWN POST — the same three sheets the squad post page uses ══ */}
+      <BottomSheet open={menuFor != null} onClose={() => setMenuFor(null)} title="This post">
+        {menuMarks?.supported ? (
+          <Pressable onPress={openEdit} accessibilityRole="button" style={styles.menuRow}>
+            <Text style={styles.menuText}>{menuFor?.type === 'discussion' ? 'Edit this post' : 'Edit the caption'}</Text>
+          </Pressable>
+        ) : null}
+        <Pressable
+          onPress={() => {
+            const post = menuFor;
+            setMenuFor(null);
+            setDeleteFor(post);
+          }}
+          accessibilityRole="button"
+          style={styles.menuRow}
+        >
+          <Text style={[styles.menuText, styles.menuDanger]}>Delete this post</Text>
+        </Pressable>
+      </BottomSheet>
+
+      <BottomSheet open={editFor != null} onClose={() => setEditFor(null)} title={editFor?.type === 'discussion' ? 'Edit this post' : 'Edit the caption'}>
+        <TextInput
+          value={editBody}
+          onChangeText={setEditBody}
+          editable={!working}
+          autoFocus
+          multiline
+          maxLength={2000}
+          placeholder="Say it better"
+          placeholderTextColor={flColor.gray600}
+          accessibilityLabel="The post’s words"
+          style={styles.editInput}
+        />
+        {/* A note is its words — emptied, it is a delete, which has its own door (the database says the same). */}
+        <Pressable
+          onPress={() => void commitEdit()}
+          disabled={working || (editFor?.type === 'discussion' && !editBody.trim())}
+          accessibilityRole="button"
+          accessibilityLabel="Save your edit"
+          style={[styles.menuRow, styles.menuPrimary]}
+        >
+          <Text style={[styles.menuText, styles.menuPrimaryText]}>{working ? 'Saving…' : 'Save'}</Text>
+        </Pressable>
+      </BottomSheet>
+
+      {/* ⚠ A SEPARATE, EXPLICIT CONFIRMATION. The row cascades — comments and acknowledgements go with it —
+          and there is no undo anywhere in this app. */}
+      <BottomSheet open={deleteFor != null} onClose={() => setDeleteFor(null)} title="Delete this post?">
+        <Text style={styles.confirmBody}>
+          {deleteFor?.audience === 'BOTH'
+            ? 'It comes off your friends’ feed and your squad’s, along with its comments. Your photos stay in your own archive — only the post goes.'
+            : 'It comes off the feed for everyone, along with its comments. Your photos stay in your own archive — only the post goes.'}
+        </Text>
+        <Pressable onPress={() => void commitDelete()} disabled={working} accessibilityRole="button" accessibilityLabel="Delete the post" style={[styles.menuRow, styles.menuDangerRow]}>
+          <Text style={[styles.menuText, styles.menuDanger]}>{working ? 'Deleting…' : 'Delete'}</Text>
+        </Pressable>
+        <Pressable onPress={() => setDeleteFor(null)} disabled={working} accessibilityRole="button" style={styles.menuRow}>
+          <Text style={styles.menuText}>Keep it</Text>
+        </Pressable>
+      </BottomSheet>
     </View>
   );
 }
@@ -336,6 +471,7 @@ function FeedLedgerPost({
   onLongAcknowledge,
   onAuthor,
   onComments,
+  onMenu,
   onWorkout,
   onMedia,
 }: {
@@ -347,6 +483,8 @@ function FeedLedgerPost({
   onLongAcknowledge: () => void;
   onAuthor: () => void;
   onComments: () => void;
+  /** Your own post only — opens the edit / delete menu. */
+  onMenu?: () => void;
   onWorkout: () => void;
   /** A tap on the media band — a video plays instead of the card's destination. */
   onMedia?: () => void;
@@ -375,9 +513,10 @@ function FeedLedgerPost({
   return (
     <LedgerPost
       authorName={post.isMine ? 'You' : post.authorName}
+      avatarName={post.authorName}
       authorAvatarUrl={post.authorAvatarUrl}
       audience={post.audience === 'BOTH' ? 'Friends & Squad' : 'Friends'}
-      time={shortAgo(post.createdAt)}
+      time={timeAgo(post.createdAt)}
       marker={marker}
       /* `summary.name` is absent on every recap shared before the snapshot carried one, so the type
          stands in rather than a heading reading "null". No backfill, no version check. */
@@ -413,6 +552,9 @@ function FeedLedgerPost({
       busy={busy}
       acknowledgeLabel={(milestone && milestoneAckLabel(milestone)) || undefined}
       acknowledged={!!post.myReaction}
+      /* WHICH acknowledgement (social2-28 · social2-09, QA 09-26). Never passed here, so the row drew the default
+         flame and the word "Respect" for all four — a Strength read as Respect. The squad feed has always passed it. */
+      ackKind={post.myReaction ?? undefined}
       acknowledgeCount={post.reactionCount}
       commentCount={post.commentCount}
       onAuthor={onAuthor}
@@ -421,6 +563,7 @@ function FeedLedgerPost({
       onAcknowledge={onAcknowledge}
       onLongAcknowledge={onLongAcknowledge}
       onComments={onComments}
+      onMenu={onMenu}
     />
   );
 }
@@ -521,12 +664,33 @@ function PlusGlyph() {
 
 
 /** Comments, with a real field that writes. The design's Send only toasts. */
-function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; onClose: () => void; onChanged: () => void }) {
+function CommentsSheet({ postId, onClose, onChanged }: { postId: string | null; onClose: () => void; onChanged: () => void }) {
   const { showToast } = useToast();
   const [comments, setComments] = useState<PostComment[] | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
-  const postId = post?.id ?? null;
+  /** The comment of mine waiting on "Delete?" — answered in the row itself; a sheet cannot open a second sheet. */
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  /**
+   * Delete my own comment (social-13, QA 09-26). Only mine: on a Friends post the delete policy admits the
+   * comment's author and nobody else (a squad's owner moderates on the squad's post page).
+   */
+  const remove = (id: string) => {
+    if (!postId || deletingId) return;
+    setDeletingId(id);
+    const after = () => {
+      setDeletingId(null);
+      setConfirmId(null);
+      fetchPostComments(postId).then(setComments, () => undefined);
+      onChanged();
+    };
+    deleteSquadComment(id).then(after, (e: unknown) => {
+      after();
+      showToast(errorMessage(e));
+    });
+  };
 
   useEffect(() => {
     if (!postId) return undefined;
@@ -576,7 +740,7 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
    */
   return (
     <BottomSheet
-      open={post != null}
+      open={postId != null}
       onClose={onClose}
       title="Comments"
       scroll
@@ -616,6 +780,23 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
               <View style={styles.commentBody}>
                 <Text style={styles.commentName}>{c.isMine ? 'You' : c.authorName}</Text>
                 <Text style={styles.commentText}>{c.body}</Text>
+                {c.isMine ? (
+                  confirmId === c.id ? (
+                    <View style={styles.commentActions}>
+                      <Text style={styles.commentAsk}>Delete this comment?</Text>
+                      <Pressable onPress={() => remove(c.id)} disabled={deletingId != null} accessibilityRole="button" accessibilityLabel="Yes, delete the comment" hitSlop={8} style={styles.commentActionBtn}>
+                        <Text style={[styles.commentActionText, styles.menuDanger]}>{deletingId === c.id ? 'Deleting…' : 'Delete'}</Text>
+                      </Pressable>
+                      <Pressable onPress={() => setConfirmId(null)} disabled={deletingId != null} accessibilityRole="button" accessibilityLabel="Keep the comment" hitSlop={8} style={styles.commentActionBtn}>
+                        <Text style={styles.commentActionText}>Keep it</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Pressable onPress={() => setConfirmId(c.id)} accessibilityRole="button" accessibilityLabel="Delete your comment" hitSlop={8} style={styles.commentActionBtn}>
+                      <Text style={styles.commentActionText}>Delete</Text>
+                    </Pressable>
+                  )
+                ) : null}
               </View>
             </View>
           ))
@@ -623,17 +804,6 @@ function CommentsSheet({ post, onClose, onChanged }: { post: FeedPost | null; on
       </View>
     </BottomSheet>
   );
-}
-
-function shortAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(ms / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return d < 7 ? `${d}d ago` : new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // ── glyphs ──
@@ -666,7 +836,11 @@ const styles = StyleSheet.create({
 
   postWrap: { position: 'relative' },
   /* The picker floats over the action row it belongs to, which sits ~52px off the bottom of the post. */
-  pickerWrap: { position: 'absolute', left: 10, bottom: 52, zIndex: 10 },
+  /* BELOW the acknowledge row, not above it (social2-19, QA 09-26): floating 52pt up from the bottom it sat
+     on the caption's last line. It now hangs from the row into the gap under the post, and the post it
+     belongs to is raised (`postRaised`) so the next post can't paint over what spills past the divider. */
+  pickerWrap: { position: 'absolute', left: 10, bottom: -10, zIndex: 10 },
+  postRaised: { zIndex: 20 },
 
   compare: { position: 'relative', width: '100%', aspectRatio: 4 / 5, overflow: 'hidden', backgroundColor: flColor.charcoal800 },
   compareImg: { width: '100%', height: '100%' },
@@ -699,6 +873,20 @@ const styles = StyleSheet.create({
   commentBody: { flex: 1, minWidth: 0 },
   commentName: { fontSize: 12, fontWeight: '600', color: flColor.cream100 },
   commentText: { marginTop: 2, fontSize: 13, lineHeight: 19, color: flColor.gray400 },
+  commentActions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 12 },
+  commentAsk: { fontSize: 12, color: flColor.gray400 },
+  commentActionBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
+  commentActionText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.4, color: flColor.gray400 },
+
+  /* ── manage-your-own-post sheets — the squad post page's, value for value ── */
+  menuRow: { paddingVertical: 14, alignItems: 'center', borderRadius: flRadius.md },
+  menuText: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  menuPrimary: { backgroundColor: flColor.bronze400, marginTop: 6 },
+  menuPrimaryText: { color: flColor.onBronze },
+  menuDangerRow: { borderWidth: 1, borderColor: flColor.dangerBorder, backgroundColor: flColor.dangerBg },
+  menuDanger: { color: flColor.dangerText },
+  confirmBody: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, marginBottom: 6 },
+  editInput: { minHeight: 108, borderWidth: 1, borderColor: flColor.charcoal500, borderRadius: flRadius.md, backgroundColor: flColor.surfaceRecessed, color: flColor.cream100, fontSize: 15, lineHeight: 21, padding: 12, textAlignVertical: 'top' },
   /* No `marginTop` — it is the sheet's pinned footer now, and the footer supplies its own padding. */
   commentInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   commentInput: { flex: 1, minWidth: 0, height: 42, paddingHorizontal: 13, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 13.5, color: flColor.cream100 },

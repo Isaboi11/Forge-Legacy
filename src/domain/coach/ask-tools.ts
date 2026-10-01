@@ -184,7 +184,7 @@ export const ASK_TOOLS: AskToolDef[] = [
   {
     name: 'get_recipes',
     description:
-      "Search the app's recipe book and the athlete's own saved recipes. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
+      "Search Forge's recipes and the athlete's own saved recipes (their My Recipes screen); each result says which it is. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
     input_schema: {
       type: 'object',
       properties: {
@@ -1019,9 +1019,14 @@ export function narrowRecipes(v: unknown): RecipeCard[] {
   return out;
 }
 
-/** get_recipes' text: the best matches, the athlete's own first on a tie. */
+/**
+ * get_recipes' text: the best matches, the athlete's own first on a tie.
+ *
+ * kitchen-18 (QA 09-26): the whole book reached him as "their recipe book", so with My Recipes empty he offered
+ * Forge's recipes as the athlete's own. Each line now says whose it is, in the screen's words.
+ */
 export function formatRecipes(cards: readonly RecipeCard[], q: { query?: string | null; meal?: string | null; maxMinutes?: number | null; minProtein?: number | null }): string {
-  if (cards.length === 0) return 'The recipe book is empty (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.';
+  if (cards.length === 0) return "There are no recipes: their My Recipes is empty and Forge has none that reach them (or Nutrition is not on for this account). You can offer an online search with offer_online_recipe_search.";
   const words = liftTokens(q.query ?? '').filter((w) => w.length > 2);
   const scored = cards
     .filter((c) => !q.meal || q.meal === 'any' || c.meals.includes(q.meal))
@@ -1036,12 +1041,12 @@ export function formatRecipes(cards: readonly RecipeCard[], q: { query?: string 
     .filter((x) => words.length === 0 || x.hits > 0)
     .sort((a, b) => b.hits - a.hits || Number(b.c.mine) - Number(a.c.mine) || b.c.protein - a.c.protein);
   if (scored.length === 0) {
-    return `Nothing in their recipe book matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
+    return `Nothing in Forge's recipes or their My Recipes matches${q.query ? ` "${q.query}"` : ''}. You can offer an online search with offer_online_recipe_search.`;
   }
-  const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} in the recipe book (numbers are the app's, per serving):`];
+  const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} among Forge's recipes and their My Recipes (numbers are the app's, per serving):`];
   for (const { c } of scored.slice(0, 6)) {
     lines.push(
-      `${c.name}${c.mine ? ' (their own recipe)' : ''} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
+      `${c.name}${c.mine ? ' (their own recipe, in My Recipes)' : " (one of Forge's recipes, not theirs)"} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
         c.meals.join('/') || 'any meal'
       }${c.allergens.length ? `; contains ${c.allergens.join(', ')}` : ''}. Main ingredients: ${c.ingredients.slice(0, 6).join(', ')}.`,
     );
@@ -1063,8 +1068,9 @@ export const CHAT_SUMMARY_CHARS = 500;
 export const SUMMARY_SYSTEM = `You write Coach Holt's private memory of a chat with an athlete in a training app. Given the chat, write 1 to 3 short plain sentences, at most 400 characters in total, that Holt would want to know next time: what the athlete asked or wanted, what was decided, built or changed, and anything they said about themselves that matters for coaching (schedule, likes, dislikes, goals, equipment).
 
 Rules:
-- Write about the athlete in the third person ("Asked how their bench is progressing; it went from 205x5 to 225x5 since March.").
+- The athlete reads these notes, so write to them in the second person ("You asked how your bench is progressing; it went from 205x5 to 225x5 since March."). Never "the athlete" or "they".
 - Only what was actually said in the chat. Never guess or infer.
+- Lines in [square brackets] are notes from the app about what it actually did. Trust them over the words: something Holt built or showed is only started or saved if a note says so, otherwise write that Holt offered it. A request that failed, was refused, or that Holt said he could not do was asked for and NOT done — never write it as done or underway.
 - Never include anything about health, pain, injury, illness, medication, supplements, pregnancy, mental health, or their body or weight.
 - If nothing worth remembering happened (a greeting, a single tap), reply with exactly: NOTHING
 - Plain text only. No lists, no markdown, no quotation marks around the whole thing.`;
@@ -1093,7 +1099,7 @@ export function transcriptOf(turns: readonly { role: 'athlete' | 'holt'; text: s
 
 export function formatPastChats(rows: readonly { summary: string; created_at: string }[], tz: number): string {
   if (rows.length === 0) return 'No earlier conversations saved yet.';
-  return [`Your last ${rows.length} conversation${rows.length === 1 ? '' : 's'} with this athlete, newest first:`, ...rows.map((r) => `${localDate(r.created_at, tz)}: ${r.summary}`)].join('\n');
+  return [`Your last ${rows.length} conversation${rows.length === 1 ? '' : 's'} with this athlete, newest first ("you" in a note is the athlete):`, ...rows.map((r) => `${localDate(r.created_at, tz)}: ${r.summary}`)].join('\n');
 }
 
 export interface AskToolContext {

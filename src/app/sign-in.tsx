@@ -1,10 +1,10 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/forge/composites/Button';
-import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { DocSheet } from '@/components/forge/DocSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { WelcomeAtmosphere } from '@/components/onboarding/WelcomeAtmosphere';
@@ -73,6 +73,8 @@ export default function AuthFlow() {
    */
   const step: Step = recovering ? 'reset' : chosenStep;
   const [password, setPasswordState] = useState('');
+  /** Enter in Email moves the caret to Password, as every sign-in form does (QA 09-26 auth-19). */
+  const passwordRef = useRef<TextInput>(null);
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -325,7 +327,9 @@ export default function AuthFlow() {
                       textContentType="emailAddress"
                       value={email}
                       onChangeText={setEmail}
-                      onSubmitEditing={step === 'forgot' ? () => void sendReset() : undefined}
+                      returnKeyType={step === 'forgot' ? 'send' : 'next'}
+                      submitBehavior={step === 'forgot' ? undefined : 'submit'}
+                      onSubmitEditing={step === 'forgot' ? () => void sendReset() : () => passwordRef.current?.focus()}
                     />
                   )}
                   {/* The forgot step asks for an address and nothing else — a password field on a screen
@@ -333,6 +337,7 @@ export default function AuthFlow() {
                   {step === 'forgot' ? null : (
                     <View>
                       <Field
+                        ref={passwordRef}
                         label={step === 'reset' ? 'New password' : 'Password'}
                         placeholder={step === 'signin' ? 'Password' : `At least ${PASSWORD_MIN} characters`}
                         secureTextEntry={!reveal}
@@ -442,18 +447,14 @@ export default function AuthFlow() {
       </KeyboardAvoidingView>
       </View>
 
-      {/* The same in-app content sheet Account Settings uses. Nothing is fetched; no browser is opened. */}
-      <BottomSheet open={legal !== null} onClose={() => setLegal(null)} title={legal ? LEGAL[legal].host : ''}>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.sheetScroll} contentContainerStyle={styles.sheetBody} showsVerticalScrollIndicator={false}>
-          <Text style={styles.sheetTitle}>{legal ? LEGAL[legal].title : ''}</Text>
-          <Text style={styles.sheetUpdated}>{legal ? LEGAL[legal].updated : ''}</Text>
-          {(legal ? LEGAL[legal].body : []).map((p) => (
-            <Text key={p} style={styles.sheetPara}>
-              {p}
-            </Text>
-          ))}
-        </ScrollView>
-      </BottomSheet>
+      {/* The same in-app reading sheet Account Settings uses. Nothing is fetched; a tapped address opens mail or the browser. */}
+      <DocSheet
+        open={legal !== null}
+        onClose={() => setLegal(null)}
+        title={legal ? LEGAL[legal].title : ''}
+        updated={legal ? LEGAL[legal].updated : undefined}
+        body={legal ? LEGAL[legal].body : []}
+      />
     </View>
   );
 }
@@ -493,10 +494,4 @@ const styles = StyleSheet.create({
   centerLink: { alignItems: 'center', paddingVertical: 8 },
   centerLinkText: { fontFamily: flFont.sans, fontSize: 13.5, color: forgeOr(flColor.bronze300, flColor.bronzeInk), fontWeight: '600' },
   quiet: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 20, color: forgeOr(flColor.gray600, flColor.gray400) },
-
-  sheetScroll: { maxHeight: 460 },
-  sheetBody: { paddingHorizontal: 22, paddingBottom: 30, gap: 13 },
-  sheetTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100 },
-  sheetUpdated: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600, marginTop: -6 },
-  sheetPara: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 22, color: flColor.gray400 },
 });

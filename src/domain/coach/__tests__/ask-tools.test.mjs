@@ -344,14 +344,24 @@ const BOOK = narrowRecipes([
 test('the recipe book: matched on names and ingredients, the app numbers quoted, their own first', () => {
   assert.equal(BOOK.length, 3);
   const chicken = formatRecipes(BOOK, { query: 'chicken' });
-  assert.match(chicken, /Chicken Rice Bowl — 612 kcal, 48 g protein, 70 g carbs, 14 g fat; 25 min; lunch\/dinner/);
+  assert.match(chicken, /Chicken Rice Bowl \(one of Forge's recipes, not theirs\) — 612 kcal, 48 g protein, 70 g carbs, 14 g fat; 25 min; lunch\/dinner/);
   assert.ok(!chicken.includes('Oats'));
   const dinner = formatRecipes(BOOK, { meal: 'dinner' });
   assert.ok(dinner.indexOf("Mom's Turkey Chili (their own recipe)") < dinner.indexOf('Chicken Rice Bowl'), 'their own recipe first');
   assert.match(formatRecipes(BOOK, { query: 'oats' }), /contains milk/);
-  assert.match(formatRecipes(BOOK, { query: 'salmon' }), /Nothing in their recipe book matches "salmon"\. You can offer an online search/);
+  assert.match(formatRecipes(BOOK, { query: 'salmon' }), /Nothing in Forge's recipes or their My Recipes matches "salmon"\. You can offer an online search/);
   assert.match(formatRecipes(BOOK, { maxMinutes: 10 }), /Overnight Oats/);
   assert.match(formatRecipes([], {}), /offer_online_recipe_search/);
+});
+
+test("⚠ kitchen-18: every recipe says whose it is — Forge's is never offered as the athlete's own", () => {
+  /* QA 09-26: My Recipes was empty and Holt still said "from your recipe book", meaning Forge's list. */
+  const all = formatRecipes(BOOK, {});
+  assert.match(all, /among Forge's recipes and their My Recipes/);
+  assert.match(all, /Mom's Turkey Chili \(their own recipe, in My Recipes\)/);
+  assert.match(all, /Overnight Oats \(one of Forge's recipes, not theirs\)/);
+  assert.doesNotMatch(all, /their recipe book/);
+  assert.match(formatRecipes([], {}), /their My Recipes is empty/);
 });
 
 test('get_recipes reads the book the device sent, and touches no table', async () => {

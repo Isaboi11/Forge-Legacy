@@ -12,6 +12,7 @@ import {
   programSummary,
 } from '../ask-context.ts';
 import { HIDDEN_EXERCISE_IDS } from '../../exercise-picker/catalog-core.ts';
+import { kitchenContext } from '../kitchen.ts';
 
 /*
  * THE REAL INPUTS, read as data — `data.ts` and the coaching service import JSON in a way `node --test`
@@ -218,4 +219,28 @@ test('the whole context stays small — a few hundred tokens', () => {
 
 test('an empty question builds an empty context, not a throw', () => {
   assert.deepEqual(buildAskContext({ question: '' }, SOURCES), {});
+});
+
+/* ── kitchen-10 (QA 09-26): the logging gap is said once ─────────────────── */
+
+test('kitchen-10: unlogged days ride with the FIRST question of a conversation and not again', () => {
+  const nutrition = 'Nutrition, last 7 days: 2,320 cal/day over 4 logged days (3 unlogged), today excluded. Target 2,500 — in range on 2 of 4. Avg protein 165 g, carbs 240 g, fat 78 g. Today so far: 1,180 cal.';
+  const first = buildAskContext({ question: 'am I eating enough protein?', nutrition }, SOURCES);
+  assert.match(first.nutrition, /\(3 unlogged\)/);
+  const later = buildAskContext(
+    { question: 'and my carbs?', nutrition, history: [{ role: 'user', text: 'am I eating enough protein?' }, { role: 'holt', text: 'Here is what I see.' }] },
+    SOURCES,
+  );
+  assert.doesNotMatch(later.nutrition, /unlogged/);
+  assert.match(later.nutrition, /2,320 cal\/day over 4 logged days, today excluded\./);
+});
+
+test('kitchen-10: in the kitchen a too-few-days note is dropped after the first line, and the pantry still goes', () => {
+  const nutrition = kitchenContext('Nutrition: 1 logged day in the last 7 before today — too few to average.', ['chicken thighs', 'rice']);
+  const history = [{ role: 'user', text: "I'm at Chipotle, what should I order?" }, { role: 'holt', text: 'A bowl.' }];
+  assert.match(buildAskContext({ question: 'what about dessert', nutrition, kitchen: true }, SOURCES).nutrition, /too few to average/);
+  const later = buildAskContext({ question: 'what about dessert', nutrition, kitchen: true, history }, SOURCES).nutrition;
+  assert.doesNotMatch(later, /logged day|too few|Food logged/);
+  assert.match(later, /On hand this week \(their grocery list\): chicken thighs, rice\./);
+  assert.match(later, /^Opened from the Nutrition tab/);
 });

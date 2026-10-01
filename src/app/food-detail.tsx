@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -11,7 +12,8 @@ import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { localToday, MEAL_LABELS, MEAL_SLOTS, totals, type MealSlot } from '@/domain/nutrition/day';
+import { amountIssueLine, largeEntryLine, parseAmount } from '@/domain/nutrition/amount';
+import { dayLabel, diaryDayParam, grouped, localToday, MEAL_LABELS, MEAL_SLOTS, totals, type MealSlot } from '@/domain/nutrition/day';
 import {
   convertAmount,
   extraRows,
@@ -23,18 +25,21 @@ import {
   unitWord,
   type UnitChoice,
 } from '@/domain/nutrition/detail';
-import { MAY_STORE_MICROS, portionLabel, portionMacros, SOURCE_LABEL } from '@/domain/nutrition/serving';
+import { checkPortion, draftEntry, entryAsFood, portionRefusalLine, pricedFood } from '@/domain/nutrition/logging';
+import { portionLabel, SOURCE_LABEL } from '@/domain/nutrition/serving';
 import {
   addEntries,
+  allRows,
   fetchDay,
   fetchFoodByKey,
   fetchFavorites,
+  removeEntry,
   reportCommunityFood,
   setFavorite,
   updateEntry,
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
-import { useQuery } from '@/lib/useQuery';
+import { errorMessage, useQuery } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -71,13 +76,33 @@ export default function FoodDetailScreen() {
   }>();
 
   const foodKey = typeof params.key === 'string' ? params.key : '';
-  const iso = typeof params.date === 'string' ? params.date : localToday();
+  /* A link's date is checked, not trusted (QA 09-26 N-19) — the same rule as Log Food. */
+  const todayIso = localToday();
+  const iso = diaryDayParam(params.date, todayIso);
+  /* Any day but today is named beside the meal, so the day food goes to is never a guess (N-19). */
+  const dayWord = iso === todayIso ? '' : ` · ${dayLabel(iso, todayIso)}`;
   /* Present when Meal Detail sent us here to CHANGE a portion rather than add one. */
   const entryId = typeof params.entry === 'string' && params.entry ? params.entry : null;
   const editing = entryId != null;
 
-  const { data: food, loading } = useQuery(useCallback(() => fetchFoodByKey(foodKey), [foodKey]), [foodKey]);
-  const { data: day } = useQuery(useCallback(() => fetchDay(iso), [iso]), [iso]);
+  const { data: catalogFood, loading: foodLoading } = useQuery(useCallback(() => fetchFoodByKey(foodKey), [foodKey]), [foodKey]);
+  const { data: day, settled: daySettled } = useQuery(useCallback(() => fetchDay(iso), [iso]), [iso]);
+  /**
+   * ⚠ AN EDIT IS PRICED FROM THE ROW, NOT FROM THE FOOD AS IT READS TODAY (QA N-07, `pricedFood`). My Foods
+   * promises "Days you've already logged keep what you ate"; re-multiplying from the current food broke it
+   * on the first reopen. The food still supplies the serving pills. If the food is gone — a custom food
+   * since deleted — the row is enough on its own to change its portion in grams (`entryAsFood`).
+   */
+  const editedRow = useMemo(() => (editing ? (allRows(day).find((e) => e.id === entryId) ?? null) : null), [editing, day, entryId]);
+  const priced = useMemo(() => {
+    const base = catalogFood ?? (editedRow ? entryAsFood(editedRow) : null);
+    return base ? pricedFood(base, editedRow) : null;
+  }, [catalogFood, editedRow]);
+  /* An edit waits for the day as well as the food, so the figure never flips from today's to the row's. */
+  const waitingForRow = editing && !daySettled;
+  const loading = foodLoading || waitingForRow;
+  const food = waitingForRow ? null : (priced?.food ?? null);
+  const fromRow = priced?.stored ?? false;
   const { data: favorites, refetch: refetchFavorites } = useQuery(fetchFavorites, []);
 
   const [meal, setMeal] = useState<MealSlot>(
@@ -89,6 +114,8 @@ export default function FoodDetailScreen() {
   const [amountText, setAmountText] = useState<string | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  /* The calories the athlete has already said yes to, for an entry large enough to ask about. */
+  const [agreed, setAgreed] = useState<number | null>(null);
 
   const units = useMemo<UnitChoice[]>(() => (food ? unitChoices(food) : []), [food]);
 
@@ -130,15 +157,22 @@ export default function FoodDetailScreen() {
   const unitIndex = pickedUnit ?? seed?.index ?? 0;
   const unit = units[unitIndex] ?? units[0];
   /* Until the athlete types, the amount is the logged one, or the unit's natural one: a cup, or 100 g. */
-  const amount =
-    amountText != null
-      ? Number(amountText.replace(',', '.')) || 0
-      : (seed?.amount ?? (unit?.serving.grams === 1 ? 100 : 1));
+  /* ⚠ THE TYPED AMOUNT IS READ, NOT FILTERED (QA N-05). Stripping every non-digit turned "-5" into 5 and
+     let 999,999 eggs through; `parseAmount` refuses what it cannot use and the card says why. */
+  const typed = amountText != null ? parseAmount(amountText) : null;
+  const typedProblem = typed ? amountIssueLine('The amount', typed) : null;
+  const typedValue = typed ? (typed.value ?? 0) : null;
+  const amount = typedValue ?? seed?.amount ?? (unit?.serving.grams === 1 ? 100 : 1);
 
-  const macros = useMemo(
-    () => (food && unit ? portionMacros(food, { serving: unit.serving, quantity: amount }) : null),
-    [food, unit, amount],
+  /* One check for both doors (`checkPortion`, R2-B2): what the portion comes to, and whether it may be written. */
+  const portion = useMemo(
+    () => (food && unit ? checkPortion(food, { serving: unit.serving, quantity: amount }, fromRow) : null),
+    [food, unit, amount, fromRow],
   );
+  const macros = portion?.macros ?? null;
+  const amountProblem = typedProblem ?? portionRefusalLine(portion?.refusal ?? null);
+  const canSave = !!portion && !portion.refusal && !saving;
+  const asking = !!portion?.ask && agreed === macros?.kcal;
 
   /**
    * What the rest of the day already holds.
@@ -159,39 +193,60 @@ export default function FoodDetailScreen() {
 
   const setAmount = (next: number) => setAmountText(String(next));
 
-  const add = async () => {
-    if (!food || !unit || !macros || macros.kcal <= 0 || saving) return;
+  /*
+   * ══ DELETE, ON THE SCREEN THAT EDITS THE ROW (QA 09-26 N-26) ══
+   * Removing one logged food was a swipe or a long-press on Meal Detail, and the swipe hint stops showing
+   * after two visits — with a mouse there was no way at all. The row is open here, so it can go from here.
+   */
+  const remove = async () => {
+    if (!entryId || saving) return;
     setSaving(true);
-    const servingLabel = portionLabel({ serving: unit.serving, quantity: amount });
-
-    /* Editing re-files the row that is already there. It never adds a second one, and it never leaves
-       the meal — moving between meals is Meal Detail's "Move to…", which is a different intention. */
-    if (entryId) {
-      await updateEntry(entryId, { quantity: amount, servingLabel, macros });
-      showToast(`${food.name} updated`);
+    try {
+      await removeEntry(entryId);
+      showToast(`Removed ${food?.name ?? 'food'}`);
       router.back();
+    } catch (e) {
+      showToast(errorMessage(e));
+      setSaving(false);
+    }
+  };
+
+  const add = async () => {
+    if (!food || !unit || !macros || !portion || portion.refusal || saving) return;
+    /* A very large entry is asked about once, on the button itself, before anything is written (N-05). */
+    if (portion.ask && !asking) {
+      setAgreed(macros.kcal);
       return;
     }
+    setSaving(true);
+    try {
+      /* Editing re-files the row that is already there. It never adds a second one, and it never leaves
+         the meal — moving between meals is Meal Detail's "Move to…", which is a different intention. */
+      if (entryId) {
+        const servingLabel = portionLabel({ serving: unit.serving, quantity: amount });
+        await updateEntry(entryId, { quantity: amount, servingLabel, macros });
+        showToast(`${food.name} updated`);
+        router.back();
+        return;
+      }
 
-    await addEntries(iso, [
-      {
-        meal,
-        source: food.source,
-        sourceKey: food.key,
-        name: food.name,
-        brand: food.brand,
-        servingLabel,
-        quantity: amount,
-        /* Keep the per-100 g micronutrients with the row, so a meal's full breakdown survives the
-           catalogue changing under it — and only from a source whose licence allows it (§4). */
-        micros: MAY_STORE_MICROS.has(food.source) ? (food.micros ?? null) : null,
-        macros,
-      },
-    ]);
-    showToast(`${food.name} added to ${MEAL_LABELS[meal]}`);
-    /* Back to the diary, not to the search: the athlete came here to log one thing and has logged it. */
-    router.dismissAll?.();
-    router.replace('/nutrition');
+      /* The same row the round + in Log Food writes (`draftEntry`): the portion's label, its numbers, and
+         the per-100 g micronutrients the source's licence lets the row keep (§4). */
+      const entry = draftEntry(food, { serving: unit.serving, quantity: amount }, meal);
+      if (!entry) {
+        setSaving(false);
+        return;
+      }
+      await addEntries(iso, [entry]);
+      showToast(`${food.name} added to ${MEAL_LABELS[meal]}`);
+      /* Back to the diary, not to the search: the athlete came here to log one thing and has logged it. */
+      router.dismissAll?.();
+      router.replace('/nutrition');
+    } catch (e) {
+      /* A refused write is said, and the button comes back — it used to stay locked on a silent failure. */
+      showToast(errorMessage(e));
+      setSaving(false);
+    }
   };
 
   if (!food) {
@@ -219,7 +274,7 @@ export default function FoodDetailScreen() {
             {/* ⚠ Only a food the athlete TYPED can be edited. A USDA or Open Food Facts row is
                 reference data shared by everyone, and `user_foods` is the only table this app may
                 write a food into. Without this the Edit half of Create Food has no door at all. */}
-            {food.source === 'custom' ? (
+            {catalogFood && food.source === 'custom' ? (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Edit this food"
@@ -243,7 +298,8 @@ export default function FoodDetailScreen() {
               refetchFavorites();
             }}
           >
-            <EngravedIcon name="star" size={20} color={isFavorite ? undefined : flColor.gray400} />
+            {/* A favourite is a FILLED star (QA 09-26 N-40): outline vs. outline-in-bronze did not read as on. */}
+            {isFavorite ? <FilledStar size={20} /> : <EngravedIcon name="star" size={20} color={flColor.gray400} />}
           </Pressable>
           </View>
         }
@@ -282,7 +338,7 @@ export default function FoodDetailScreen() {
             <View style={styles.amountWrap}>
               <TextInput returnKeyType="done"
                 value={amountText ?? String(amount)}
-                onChangeText={(t) => setAmountText(t.replace(/[^0-9.]/g, '').slice(0, 6))}
+                onChangeText={(t) => setAmountText(t.slice(0, 8))}
                 keyboardType="decimal-pad"
                 accessibilityLabel="Amount"
                 selectTextOnFocus
@@ -300,6 +356,9 @@ export default function FoodDetailScreen() {
               <EngravedIcon name="plus" size={17} color={flColor.bronze400} />
             </Pressable>
           </View>
+
+          {amountProblem ? <Text style={styles.amountProblem}>{amountProblem}</Text> : null}
+          {asking && macros ? <Text style={styles.amountNote}>{largeEntryLine(macros.kcal)}</Text> : null}
 
           <View style={styles.unitPills}>
             {units.map((u, i) => (
@@ -402,19 +461,32 @@ export default function FoodDetailScreen() {
         {editing ? (
           /* The meal is already decided — this row is IN one. Offering a picker here would look like a
              way to move it and quietly not be one (`updateEntry` writes the portion, not the slot). */
-          <Text style={styles.editingLine}>{`Editing in ${MEAL_LABELS[meal]}`}</Text>
+          <Text style={styles.editingLine}>{`Editing in ${MEAL_LABELS[meal]}${dayWord}`}</Text>
         ) : (
           <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
             <Text style={styles.mealLineLabel}>Adding to</Text>
-            <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+            <Text style={styles.mealLineValue}>{`${MEAL_LABELS[meal]}${dayWord}`}</Text>
             <EngravedIcon name="chevron-down" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
           </Pressable>
         )}
-        <Button variant="primary" fullWidth disabled={!macros || macros.kcal <= 0 || saving} onPress={add}>
-          {editing
-            ? `Save · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`
-            : `Add to ${MEAL_LABELS[meal]} · ${(macros?.kcal ?? 0).toLocaleString('en-US')} cal`}
+        <Button variant="primary" fullWidth disabled={!canSave} onPress={add}>
+          {asking
+            ? `Yes, ${editing ? 'save' : 'add'} ${grouped(macros?.kcal ?? 0)} cal`
+            : editing
+              ? `Save · ${grouped(macros?.kcal ?? 0)} cal`
+              : `Add to ${MEAL_LABELS[meal]} · ${grouped(macros?.kcal ?? 0)} cal`}
         </Button>
+        {editing ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${food.name} from ${MEAL_LABELS[meal]}`}
+            disabled={saving}
+            onPress={remove}
+            style={styles.deleteButton}
+          >
+            <Text style={styles.deleteText}>{`Delete from ${MEAL_LABELS[meal]}`}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <BottomSheet open={mealPickerOpen} onClose={() => setMealPickerOpen(false)} title="Adding to">
@@ -435,6 +507,21 @@ export default function FoodDetailScreen() {
         </View>
       </BottomSheet>
     </View>
+  );
+}
+
+/** The engraved star's own outline, filled — the favourite that is ON. Bronze is earned here: it is a selection. */
+function FilledStar({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 3.2L14.35 9.56L21.13 9.83L15.8 14.04L17.64 20.57L12 16.8L6.36 20.57L8.2 14.04L2.87 9.83L9.65 9.56z"
+        fill={flColor.bronze400}
+        stroke={flColor.bronze400}
+        strokeWidth={1.35}
+        strokeLinejoin="round"
+      />
+    </Svg>
   );
 }
 
@@ -507,6 +594,8 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   unitWord: { fontSize: 15, fontWeight: '600', color: flColor.gray400 },
+  amountProblem: { textAlign: 'center', fontSize: 13, lineHeight: 19, color: flColor.redMuted },
+  amountNote: { textAlign: 'center', fontSize: 13, lineHeight: 19, color: flColor.gray400 },
   unitPills: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 4 },
   pill: { paddingVertical: 7, paddingHorizontal: 12, borderRadius: flRadius.pill },
   pillOn: { backgroundColor: flColor.bronzeDark },
@@ -560,6 +649,8 @@ const styles = StyleSheet.create({
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
   mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
   editingLine: { alignSelf: 'center', paddingVertical: 4, fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
+  deleteButton: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 },
+  deleteText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
 
   sheetBody: { gap: 10, paddingBottom: 8 },
   choice: { paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.md, backgroundColor: flColor.charcoal800, ...flBorder.subtle },

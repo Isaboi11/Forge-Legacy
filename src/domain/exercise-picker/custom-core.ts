@@ -159,6 +159,50 @@ export const isCustomKey = (key: string | null | undefined): boolean =>
 export const customIdOf = (key: string | null | undefined): string | null =>
   isCustomKey(key) ? (key as string).slice(CUSTOM_KEY_PREFIX.length) || null : null;
 
+/** The custom-exercise ids a list of rows points at — so a reader asks for those rows and no others. */
+export function customIdsIn(rows: readonly { catalogKey?: string | null }[]): string[] {
+  const ids = new Set<string>();
+  for (const r of rows) {
+    const id = customIdOf(r.catalogKey);
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
+
+/**
+ * ══ A SAVED ROW POINTS AT A CUSTOM EXERCISE; IT DOES NOT OWN A COPY OF IT (EX-001-D10) ══
+ *
+ * A template stores `custom:<id>` AND the name as it was on the day it was saved. The spec (LOCKED) is
+ * that the reference is LIVE: *"Rename propagates. Deletion tombstones. Restore auto-recovers."* Nothing
+ * re-read the name, so a rename reached the library and the picker and not one template that used the
+ * exercise — and the delete dialog promised templates would "show it as removed" when nothing looked
+ * (library-12, QA 09-26).
+ *
+ * This is that re-read, applied where rows are loaded:
+ *
+ *   · still there      → the row takes the exercise's CURRENT name.
+ *   · soft-deleted     → the row is marked `customDeleted`, and keeps its name and its whole prescription
+ *                        ("prescription data retained read-only", §7.2). Restoring clears the mark with
+ *                        no repair, because the id was never removed.
+ *   · not in `customs` → untouched. The read failed, the table is not there yet, or it is someone else's
+ *                        exercise (§8.3, not built) — and guessing "deleted" would be the worse error.
+ *
+ * Catalogue and cardio rows pass straight through.
+ */
+export function withLiveCustoms<T extends { catalogKey?: string | null; name: string }>(
+  rows: readonly T[],
+  customs: readonly Pick<CustomExercise, 'id' | 'name' | 'deletedAt'>[],
+): (T & { customDeleted?: boolean })[] {
+  if (!customs.length) return rows.slice();
+  const byId = new Map(customs.map((c) => [c.id, c] as const));
+  return rows.map((r) => {
+    const live = byId.get(customIdOf(r.catalogKey) ?? '');
+    if (!live) return r;
+    if (live.deletedAt) return { ...r, customDeleted: true };
+    return live.name && live.name !== r.name ? { ...r, name: live.name } : r;
+  });
+}
+
 /**
  * An athlete's exercise, in the shape the Picker renders.
  *

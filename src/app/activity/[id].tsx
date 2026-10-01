@@ -23,6 +23,7 @@ import { invalidateEarnedMoments } from '@/hooks/useEarnedMoments';
 import {
   ordinalLine,
   programTag,
+  boutLine,
   sectionsOf,
   setLine,
   statTiles,
@@ -281,7 +282,7 @@ function Body({
   /** Opens the Remove from Forge confirm. Offered only when `detail.importedFrom` is set. */
   onRemove: () => void;
 }) {
-  const { rowUnit } = useUnits();
+  const { rowUnit, units } = useUnits();
   const sections = sectionsOf(detail);
   const tiles = statTiles(detail, rowUnit);
   const isStrength = detail.type === 'strength';
@@ -468,7 +469,8 @@ function Body({
                       {ex.sets.length ? (
                         <View style={styles.setList}>
                           {ex.sets.map((s) => {
-                            const line = fmt(setLine(s));
+                            /* A bout reads as ground and a clock; a "10m" row was ten MINUTES (workout-10). */
+                            const line = cardio ? boutLine(s, ex.catalogKey, { metric: units === 'metric', rowUnit }) : fmt(setLine(s));
                             return (
                               <View key={s.setIndex} style={styles.setRow}>
                                 <Text style={styles.setIndex}>{s.setIndex + 1}</Text>

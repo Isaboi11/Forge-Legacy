@@ -1,7 +1,9 @@
 # Android — Build Plan
 
 **Type:** Build plan (open accounts → make it build → make it honest → ship)
-**Status:** 📝 PROPOSED — awaiting PO scope sign-off. Nothing in Phase 0 has been applied.
+**Status:** 📝 PROPOSED — awaiting PO scope sign-off. **Phase 0 started 2026-09-28** (see below).
+
+**Phase 0 progress (2026-09-28):** Play Console **Organization** account (Forge Legacy LLC, D-U-N-S 149910851, account ID 7993703055773180898) · ✅ identity verified · ✅ website verified (Search Console Domain property `forgelegacy.app`, Cloudflare TXT) · ✅ contact email `isaiah@forgelegacy.app` verified · ✅ org document uploaded (Utah stamped filing) · ⏳ phone verification locked until Google approves the document · ⏳ public developer name change "Altimealix Holdings" → "Forge Legacy LLC" under Google review · ⬜ Create app (package **`app.forgelegacy`**, PO 09-28 — `app.json` changes in the build-10 commit, it moves the iOS fingerprint) · ⬜ payments profile · No 12-tester closed-test requirement shown (organization account). Next: phone codes → Claude in Chrome runs Create app + listing draft + copies the declaration questions back.
 **Date:** 2026-08-30
 **Evidence basis:** Live repository scan, 2026-08-30 — `app.json`, `eas.json`, `package.json`, 93 screens, 191 components, 119 `.dc.html`, `git log` on the icon assets, and the installed `@expo/config-types` schema. Expo facts verified against the **v56.0.0** docs and the SDK 56 changelog, per `AGENTS.md`.
 **Contradicts, deliberately:** `Docs/Business-Operations-Map.md` §118 — *"Android: ⛔ Zero builds"* — and `Docs/GO-LIVE.md` §130 — *"iOS only. Zero Android."* Both remain true of the **binary**. Neither is true of the **code**, and this plan exists because those two statements have been read as the same statement.

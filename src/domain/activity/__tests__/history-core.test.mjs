@@ -11,6 +11,7 @@ import {
   partnersLabel,
   rowA11y,
   statLine,
+  cardioKindsIn,
 } from '../history-core.ts';
 
 const rec = (over = {}) => ({
@@ -94,6 +95,20 @@ test('filtering by type keeps only that type, and can empty the list', () => {
   const rows = [rec({ id: 'a', type: 'strength' }), rec({ id: 'b', type: 'running' })];
   assert.deepEqual(groupByMonth(rows, 'running')[0].rows.map((r) => r.id), ['b']);
   assert.deepEqual(groupByMonth(rows, 'swimming'), [], 'no matches produces no month headers at all');
+});
+
+test('a row inside a lifting day answers the Row chip, and stays a strength session (workout-10)', () => {
+  assert.deepEqual(cardioKindsIn(['barbell-bench-press', 'cardio:row', null, 'cardio:row']), ['rowing']);
+  assert.deepEqual(cardioKindsIn(['cardio:stair', 'cardio:elliptical']), ['other'], 'the two machines with no chip');
+  assert.deepEqual(cardioKindsIn(['cardio:nonsense', undefined]), []);
+  const rows = [
+    rec({ id: 'a', type: 'strength', contains: cardioKindsIn(['back-squat', 'cardio:row']) }),
+    rec({ id: 'b', type: 'strength' }),
+    rec({ id: 'c', type: 'rowing' }),
+  ];
+  assert.deepEqual(groupByMonth(rows, 'rowing')[0].rows.map((r) => r.id), ['a', 'c']);
+  assert.deepEqual(groupByMonth(rows, 'strength')[0].rows.map((r) => r.id), ['a', 'b'], 'still filed under strength');
+  assert.deepEqual(groupByMonth(rows, 'running'), []);
 });
 
 test('a month group only appears when it still has rows after filtering', () => {

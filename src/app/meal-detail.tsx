@@ -9,11 +9,13 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
+import { QuickEntryForm, ServingsForm } from '@/components/forge/compositions/QuickEntryForm';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
-import { isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
+import { grouped, isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, shiftDay, totals, type LogEntry, type MealSlot } from '@/domain/nutrition/day';
+import type { EntryPatch } from '@/domain/nutrition/outbox';
 import { mayCheck } from '@/domain/nutrition/plan-ahead';
 import {
   canEditPortion,
@@ -21,12 +23,14 @@ import {
   dayChoices,
   defaultSavedMealName,
   defaultTargetDay,
+  entryEditor,
   entryMacroLine,
   entrySubtitle,
   isSameSpot,
   mealBreakdown,
   mealDateLabel,
   moveButtonLabel,
+  numbersPatch,
   saveMealHelper,
   slotChoices,
   type MoveMode,
@@ -39,6 +43,7 @@ import {
   copyMealTo,
   fetchDay,
   moveEntry,
+  patchEntry,
   removeEntry,
   saveMealFromDay,
 } from '@/data/nutrition-live';
@@ -46,6 +51,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { consumeMealHint } from '@/lib/meal-hint';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { isDayKey } from '@/lib/plain-error';
 
 /**
  * Meal Detail — built to `Meal Detail.dc.html`, wired to the real diary (0205).
@@ -70,7 +76,7 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 /** How far a row slides to uncover Delete. The `.dc`'s number. */
 const SWIPE = 88;
 
-type SheetKind = 'entry' | 'meal' | 'move' | 'copy' | 'breakdown' | 'save' | 'clear';
+type SheetKind = 'entry' | 'edit' | 'meal' | 'move' | 'copy' | 'breakdown' | 'save' | 'clear';
 
 export default function MealDetailScreen() {
   const router = useRouter();
@@ -80,7 +86,8 @@ export default function MealDetailScreen() {
   /* Minted once per mount, like Nutrition Home: a session that crosses midnight keeps showing the day
      the athlete opened, rather than silently re-labelling it. */
   const [todayIso] = useState(() => localToday());
-  const iso = typeof params.date === 'string' && params.date ? params.date : todayIso;
+  /* `?date=garbage` used to reach the query as a date and leave a blank screen with no app bar (N-38). */
+  const iso = isDayKey(params.date) ? params.date : todayIso;
   const meal: MealSlot = (MEAL_SLOTS as readonly string[]).includes(String(params.meal))
     ? (params.meal as MealSlot)
     : 'breakfast';
@@ -173,6 +180,23 @@ export default function MealDetailScreen() {
     });
   };
 
+  /** Save a correction to a row with no food behind it — a recipe's servings, a Quick Add's numbers. */
+  const saveEdit = async (entry: LogEntry, patch: EntryPatch) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await patchEntry(entry.id, patch);
+      setSheet(null);
+      reload();
+      showToast(`${patch.name ?? entry.name} updated`);
+    } catch (e) {
+      /* The sheet stays open with what was typed, like Save as meal. */
+      showToast(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const confirmMove = async () => {
     if (busy) return;
     setBusy(true);
@@ -252,7 +276,7 @@ export default function MealDetailScreen() {
   };
 
   const sheetTitle =
-    sheet === 'entry'
+    sheet === 'entry' || sheet === 'edit'
       ? (targetEntry?.name ?? '')
       : sheet === 'meal'
         ? MEAL_LABELS[meal]
@@ -333,14 +357,14 @@ export default function MealDetailScreen() {
                 entry={entry}
                 first={i === 0}
                 onOpen={() => {
-                  /* A Quick Add has no food to reopen, so a tap offers what it CAN do instead of
-                     pushing a screen that would have nothing to show. */
+                  /* A food reopens in Food Detail. A Quick Add or a recipe has no food to reopen, so a
+                     tap opens the sheet that corrects it from its own stored values (N-17, N-31). */
                   if (canEditPortion(entry)) {
                     editPortion(entry);
                     return;
                   }
                   setTargetId(entry.id);
-                  setSheet('entry');
+                  setSheet('edit');
                 }}
                 onActions={() => {
                   setTargetId(entry.id);
@@ -397,7 +421,7 @@ export default function MealDetailScreen() {
         </View>
       </View>
 
-      <BottomSheet open={sheet != null} onClose={closeSheet} title={sheetTitle} scroll={sheet === 'breakdown'}>
+      <BottomSheet open={sheet != null} onClose={closeSheet} title={sheetTitle} scroll={sheet === 'breakdown' || sheet === 'edit'}>
         {/* one row's actions, or the meal's */}
         {sheet === 'entry' || sheet === 'meal' ? (
           <View style={styles.actionList}>
@@ -427,17 +451,21 @@ export default function MealDetailScreen() {
               : targetEntry
                 ? [
                     /* A Quick Add has no food behind it to re-multiply (0205: `source_key` is null), so
-                       there is nothing for Food Detail to open. Move and Delete still apply. */
-                    ...(canEditPortion(targetEntry)
-                      ? [
-                          {
-                            label: 'Edit portion',
-                            note: targetEntry.servingLabel ?? '',
-                            danger: false,
-                            run: () => editPortion(targetEntry),
-                          },
-                        ]
-                      : []),
+                       there is nothing for Food Detail to open — its servings or its numbers are
+                       corrected in this sheet instead (`entryEditor`). */
+                    canEditPortion(targetEntry)
+                      ? {
+                          label: 'Edit portion',
+                          note: targetEntry.servingLabel ?? '',
+                          danger: false,
+                          run: () => editPortion(targetEntry),
+                        }
+                      : {
+                          label: entryEditor(targetEntry) === 'servings' ? 'Change servings' : 'Edit entry',
+                          note: entryEditor(targetEntry) === 'servings' ? (targetEntry.servingLabel ?? '') : '',
+                          danger: false,
+                          run: () => setSheet('edit'),
+                        },
                     ...(targetEntry.preLogged && (targetEntry.planned ? mayCheck(iso, todayIso) : true)
                       ? [
                           targetEntry.planned
@@ -461,6 +489,22 @@ export default function MealDetailScreen() {
               </Pressable>
             ))}
           </View>
+        ) : null}
+
+        {/* correct a row that has no food behind it — a step of THIS sheet, like Clear below */}
+        {sheet === 'edit' && targetEntry ? (
+          entryEditor(targetEntry) === 'servings' ? (
+            <ServingsForm key={targetEntry.id} entry={targetEntry} busy={busy} onSubmit={(patch) => saveEdit(targetEntry, patch)} />
+          ) : (
+            <QuickEntryForm
+              key={targetEntry.id}
+              initial={targetEntry}
+              action="Save"
+              verb="save"
+              busy={busy}
+              onSubmit={({ name, macros }) => saveEdit(targetEntry, numbersPatch(targetEntry, name, macros))}
+            />
+          )
         ) : null}
 
         {/* move one row, or copy the whole meal */}
@@ -680,7 +724,7 @@ function EntryRow({
             <Text style={styles.rowName} numberOfLines={1}>
               {entry.name}
             </Text>
-            <Text style={styles.rowCal}>{Math.round(entry.kcal)}</Text>
+            <Text style={styles.rowCal}>{grouped(entry.kcal)}</Text>
           </View>
           <View style={styles.rowLine}>
             <Text style={styles.rowSub} numberOfLines={1}>

@@ -438,6 +438,46 @@ export function estimatedSessionMinutes(
 }
 
 /**
+ * A saved TEMPLATE's rows, priced by the SAME rule — the one estimate every surface shows.
+ *
+ * ⚠ THERE WERE THREE (QA B6 / library-09 / programs-12, 2026-09-26). Both builders counted exercises (9 min a
+ * lift, sets ignored — 33 × 70 still read "~25 min"), a template's detail counted sets × 3 with every
+ * section in it (the same workout "~50 min" in the builder and "~190 min" on its page), and Home used this
+ * one. Now the builders and the template page all ask `estimatedSessionMinutes`, with the rows mapped onto
+ * the program shape it reads. Cool-down rows are left out, as Home leaves them out.
+ */
+export interface TemplateRowForEstimate {
+  sets: number;
+  targetReps: number;
+  section?: 'warmup' | 'main' | 'cooldown';
+  kind?: 'strength' | 'cardio';
+  targetDurationSec?: number | null;
+  targetMi?: number | null;
+  groupId?: string | null;
+  groupKind?: 'superset' | 'circuit' | null;
+  groupRounds?: number | null;
+  repScheme?: RepTarget[] | null;
+}
+
+export function estimatedTemplateMinutes(rows: readonly TemplateRowForEstimate[]): number {
+  const asExercise = (r: TemplateRowForEstimate): ProgramExercise => ({
+    name: '',
+    sets: r.sets,
+    reps: r.targetReps,
+    ...(r.kind === 'cardio'
+      ? { kind: 'cardio' as const, targetSec: r.targetDurationSec ?? null, targetMi: r.targetMi ?? null }
+      : r.targetDurationSec != null && r.targetDurationSec > 0
+        ? { durationSec: r.targetDurationSec }
+        : null),
+    ...(r.groupId ? { groupId: r.groupId, groupKind: r.groupKind ?? 'circuit', groupRounds: r.groupRounds ?? undefined } : null),
+    ...(r.repScheme?.length ? { repScheme: r.repScheme } : null),
+  });
+  const warmup = rows.filter((r) => r.section === 'warmup').map(asExercise);
+  const main = rows.filter((r) => (r.section ?? 'main') === 'main').map(asExercise);
+  return estimatedSessionMinutes(warmup, main);
+}
+
+/**
  * A grouped block in the words the athlete would use for it.
  *
  * `last` earns the word "finisher": a circuit that ENDS the day is a finisher, and one sitting in the

@@ -100,3 +100,21 @@ test('Home reads session marks in one unchained query', () => {
 test('the gate reads latched flags, never loading', () => {
   assert.doesNotMatch(gateList(), /[Ll]oading/, 'a loading flag in the gate re-closes it on every focus');
 });
+
+/**
+ * ⚠ THE SAME RULE, ONE CALL LOWER — AND THE REASON HOME LOST ITS PLACE (home-10, QA 09-26).
+ *
+ * `composeHome({ chapterLoading })` was handed `awaitingLoading`. That read is refetched on every focus,
+ * so every return to the tab drew one frame of the LOADING composition — no hero, no tiles, no social
+ * cards. The page collapsed, the scroll view clamped to the top because there was nothing left to be
+ * scrolled into, and the cards came back under an offset of zero. Legacy kept its place because it keeps
+ * drawing through a refetch. The gate above could not see this: it is about whether the screen is
+ * REVEALED, and this is about how tall it is once it has been.
+ */
+test('what Home draws is decided by latched flags too, so a focus refetch cannot collapse the page', () => {
+  const call = /composeHome\(\{([\s\S]*?)\}\)/.exec(src)?.[1];
+  assert.ok(call, 'Home no longer calls composeHome({...})');
+  assert.match(call, /chapterLoading:\s*!awaitingSettled\b/, 'chapterLoading must be "has never answered", not "is fetching"');
+  assert.doesNotMatch(call, /[Ll]oading\s*[,}]|:\s*\w*[Ll]oading\b/, 'a loading flag here empties Home on every focus');
+  assert.doesNotMatch(src, /loading:\s*awaitingLoading/, 'the refetch-sensitive flag is back in scope');
+});

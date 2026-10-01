@@ -1,15 +1,16 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
-import { Avatar } from '@/components/forge/composites/Avatar';
+import { Avatar, initials } from '@/components/forge/composites/Avatar';
 import { AckGlyph } from '@/components/forge/AckGlyph';
 import { ScreenBackground } from '@/components/screen-background';
 import { CalendarField } from '@/components/forge/composites/CalendarField';
@@ -22,8 +23,9 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { UploadError } from '@/lib/storage-upload';
-import { fetchSquadInvite, GOAL_UNITS, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, deleteSquad, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
-import { CHALLENGE_TYPES, daysLeft, fetchSquadActiveChallenge, fetchSquadHall, formatScore, placeLabel } from '@/data/challenges-live';
+import { fetchSquadInvite, GOAL_UNITS, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
+import { CHALLENGE_TYPES, daysLeft, fetchSquadCompetitions, fetchSquadHall, formatScore, metricLabel, placeLabel } from '@/data/challenges-live';
+import { daysLeftLabel } from '@/domain/challenges/season';
 import {
   detailFor,
   ensureWeeklyRecap,
@@ -59,6 +61,7 @@ import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
 import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchPlannedWorkout, takePostedWorkout } from '@/data/planned-workout-live';
@@ -66,7 +69,7 @@ import { postedTally, usesMaxes } from '@/domain/workout/posted-workout-lines';
 import { useUnits } from '@/lib/settings';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flGradient, flRadius, flShadow, IS_PAPER } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
 import { textHalo } from '@/constants/washes';
 
@@ -126,6 +129,12 @@ const GOAL_TARGET_PLACEHOLDER: Record<SquadGoalMetric, string> = {
 };
 const goalUnit = (kind: SquadGoalMetric): string => GOAL_UNITS[kind];
 const fmtProgress = (n: number): string => String(Number(n.toFixed(1)));
+/** Digits and the FIRST decimal point only — "10.5.5" becomes "10.55", never a value `Number()` reads as NaN. */
+const oneDecimalPoint = (v: string): string => {
+  const clean = v.replace(/[^0-9.]/g, '');
+  const dot = clean.indexOf('.');
+  return dot < 0 ? clean : clean.slice(0, dot + 1) + clean.slice(dot + 1).replace(/\./g, '');
+};
 
 /** The goal section's label per state (Amendment 006 §4). "Last Goal", not "Failed" or "Ended" — §5. */
 const GOAL_SECTION_LABEL: Record<GoalPhase, string> = { live: 'Current Goal', met: 'Goal Complete', closed: 'Last Goal' };
@@ -139,11 +148,15 @@ const shortDay = (iso: string): string => {
 const closedOn = (iso: string | null): string => (iso ? ` · closed ${shortDay(iso)}` : '');
 const capitalise = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
 
-export default function SquadDetailRoute() {
+export default guardRoute(SquadDetailRoute, hasId, { title: 'This squad isn’t available.' });
+
+function SquadDetailRoute() {
   const { id, editGoal } = useLocalSearchParams<{ id: string; editGoal?: string }>();
   const router = useRouter();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
+  /* How far the page has scrolled — Alabaster fades the mountains toward the page with it. See `DetailBg`. */
+  const [scrollY] = useState(() => new Animated.Value(0));
   const squadId = String(id ?? '');
   const { data, loading, error, refetch } = useQuery(() => fetchSquad(squadId), [squadId]);
   const { showToast } = useToast();
@@ -156,6 +169,10 @@ export default function SquadDetailRoute() {
   const [reactMap, setReactMap] = useState<Record<string, { on: boolean; n: number }>>({});
   /** Which acknowledgement I left on each post — read for the whole feed in one query. */
   const [kindMap, setKindMap] = useState<Record<string, AckKind>>({});
+  /* Re-reads the kinds on every focus (social2-28, QA 09-26). Focus CLEARS `kindMap`, and the read below
+     was keyed on the post ids alone — unchanged on a return — so it never ran again and every post you had
+     marked Strength, Honor or Support came back drawn as the default flame. */
+  const [kindsTick, setKindsTick] = useState(0);
   /** The post whose kind chooser is open. PO: the four kinds must be reachable ON THE FEED. */
   const [ackFor, setAckFor] = useState<string | null>(null);
   // SQ-D8: no scheduler exists, so the first athlete to open the feed in a new week generates that
@@ -187,7 +204,7 @@ export default function SquadDetailRoute() {
       await refetchSlot();
       showToast(`${name} is on your home screen.`);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Couldn’t take that workout.');
+      showToast(plainError(e, 'Couldn’t take that workout.'));
     } finally {
       setTakingPostId(null);
     }
@@ -207,7 +224,9 @@ export default function SquadDetailRoute() {
   };
   // Its own tolerant read: a squad with no competition — or an unapplied migration — must not take the
   // whole screen down, so the section is simply absent rather than the page erroring.
-  const { data: liveChallenge } = useQuery(() => fetchSquadActiveChallenge(squadId).catch(() => null), [squadId]);
+  const { data: compState } = useQuery(() => fetchSquadCompetitions(squadId).catch(() => null), [squadId]);
+  const liveChallenge = compState?.active ?? null;
+  const openChallenge = compState?.open ?? null;
   const { data: hall } = useQuery(() => fetchSquadHall(squadId).catch(() => null), [squadId]);
   const titles = hall?.entries.length ?? 0;
   const canInvite = inviteInfo?.canInvite ?? false;
@@ -223,8 +242,6 @@ export default function SquadDetailRoute() {
   const [confirmRemove, setConfirmRemove] = useState<SquadMemberView | null>(null);
   const [removing, setRemoving] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   /*
    * The goal editor opens EITHER from a control here or from `?editGoal=<mode>`, which is how Squad Goal
    * Detail hands the owner back — `1` for an edit (what it has always sent), `new` / `again` / `raise`
@@ -269,6 +286,7 @@ export default function SquadDetailRoute() {
       refetchCheckins();
       setReactMap({}); // let fresh server truth win each time the screen regains focus
       setKindMap({});
+      setKindsTick((t) => t + 1);
     }, [refetch, refetchFeed, refetchPinned, refetchCheckins]),
   );
 
@@ -292,7 +310,7 @@ export default function SquadDetailRoute() {
     return () => {
       alive = false;
     };
-  }, [feedIds]);
+  }, [feedIds, kindsTick]);
 
   const squad = data?.squad;
   const members = data?.members ?? [];
@@ -314,11 +332,14 @@ export default function SquadDetailRoute() {
         <DetailBg />
         <AppBar title="" onBack={() => router.back()} />
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>This squad isn’t available.</Text>
-          <Text style={styles.missingBody}>{error ? 'Couldn’t load it — check your connection.' : 'It may have been deleted.'}</Text>
-          <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back to squads" style={styles.backBtn}>
-            <Text style={styles.backText}>Back to Squads</Text>
-          </Pressable>
+          {/* S-3 §7.3 (LOCKED): a removed member who follows a deep link sees a NEUTRAL "This squad is no longer
+              available." — never "It may have been deleted", a guess and a wrong one for them (social2-11). A squad
+              that WAS deleted says so in the inbox (0251). The shared not-found body gives Back/Home and Try again (B4). */}
+          <NotFoundBody
+            title={error ? 'Couldn’t load this squad.' : 'This squad is no longer available.'}
+            reason={error ?? null}
+            onRetry={error ? refetch : undefined}
+          />
         </View>
       </View>
     );
@@ -398,7 +419,7 @@ export default function SquadDetailRoute() {
                       },
                       (e: unknown) => {
                         setRemoving(false);
-                        showToast(e instanceof Error ? e.message : 'Couldn’t remove the member.');
+                        showToast(plainError(e, 'Couldn’t remove the member.'));
                       },
                     );
                   }}
@@ -441,7 +462,13 @@ export default function SquadDetailRoute() {
   const parsedEnd = parseYmd(goalEndText);
   // The DB enforces this too (`squads_goal_window_check`); catching it here turns a 400 into a sentence.
   const windowOk = !(parsedStart && parsedEnd) || parsedEnd > parsedStart;
-  const goalValid = Number(goalTargetText) >= 1 && windowOk;
+  /* A goal needs a name and one real number (social-22, QA 09-26). An empty name saved and "10.5.5" turned
+     Save grey with nothing saying why; the field now keeps one decimal point and each problem says itself. */
+  const titleOk = goalTitle.trim().length > 0;
+  const targetOk = Number(goalTargetText) >= 1;
+  const goalValid = titleOk && targetOk && windowOk;
+  const titleError = goalTitleEdit != null && !titleOk ? 'Give the goal a name.' : undefined;
+  const targetError = goalTargetEdit != null && goalTargetEdit !== '' && !targetOk ? 'Enter a number of at least 1.' : undefined;
   const windowError = windowOk ? null : 'The end date has to come after the start.';
   const pinnedPosts = pinnedData ?? [];
   /* A pinned post is drawn once, at the top — never again further down where it would read as a duplicate. */
@@ -490,7 +517,7 @@ export default function SquadDetailRoute() {
       },
       (e: unknown) => {
         setSavingGoal(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t save the goal.');
+        showToast(plainError(e, 'Couldn’t save the goal.'));
       },
     );
   };
@@ -548,7 +575,7 @@ export default function SquadDetailRoute() {
     } catch (e: unknown) {
       // `UploadError.message` is already a sentence with the real numbers in it — don't paraphrase it.
       if (e instanceof UploadError && e.kind === 'cancelled') showToast('Check-in cancelled.');
-      else showToast(e instanceof Error ? e.message : 'Couldn’t post your check-in.');
+      else showToast(plainError(e, 'Couldn’t post your check-in.'));
     } finally {
       checkinAbortRef.current = null;
       setUploadingCheckin(false);
@@ -602,18 +629,6 @@ export default function SquadDetailRoute() {
     });
   };
 
-  const doDelete = () => {
-    if (deleting) return;
-    setDeleting(true);
-    deleteSquad(squad.id).then(
-      () => router.replace('/(tabs)/squads'),
-      (e: unknown) => {
-        setDeleting(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t delete the squad.');
-      },
-    );
-  };
-
   /** One feed row — the same card for a pinned post and the feed, so the two cannot drift. */
   const feedCard = (p: SquadFeedPost, i: number) => (
     <FeedCard
@@ -663,7 +678,7 @@ export default function SquadDetailRoute() {
   );
   return (
     <View style={styles.root}>
-      <DetailBg />
+      <DetailBg scrollY={scrollY} />
       <AppBar
         title=""
         onBack={() => router.back()}
@@ -676,7 +691,14 @@ export default function SquadDetailRoute() {
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
-        onScroll={onTourScroll}
+        onScroll={
+          IS_PAPER
+            ? (e) => {
+                scrollY.setValue(e.nativeEvent.contentOffset.y);
+                onTourScroll(e);
+              }
+            : onTourScroll
+        }
         scrollEventThrottle={16}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -685,11 +707,20 @@ export default function SquadDetailRoute() {
         <View style={styles.hero}>
           <View style={styles.heroHead}>
             <View style={styles.heroText}>
-              <Text style={styles.squadName}>{squad.name}</Text>
+              {/* A long name steps down a size and stops at three lines (social-18 / visualB-18, QA 09-26):
+                  "QA SQUAD RENAMED FOR TESTING" filled five lines of an SE at 34pt and pushed the page down. */}
+              <Text style={[styles.squadName, squad.name.length > 16 ? styles.squadNameLong : null]} numberOfLines={3}>
+                {squad.name}
+              </Text>
               {squad.motto ? (
-                <Text style={styles.tagline} numberOfLines={2}>
-                  {squad.motto}
-                </Text>
+                <View style={styles.taglineWrap}>
+                  {/* Alabaster only: a soft patch of page under the motto, which sits exactly where the ridge
+                      is drawn (social-10). Forge's light ink already reads over its dark plate. */}
+                  {IS_PAPER ? <View pointerEvents="none" style={styles.taglineVeil} /> : null}
+                  <Text style={styles.tagline} numberOfLines={2}>
+                    {squad.motto}
+                  </Text>
+                </View>
               ) : null}
             </View>
             <View style={styles.crest}>
@@ -759,7 +790,7 @@ export default function SquadDetailRoute() {
                 accessibilityLabel={goalPhase === 'live' ? "See this goal's progress" : 'See how this goal went'}
                 style={({ pressed }) => (pressed ? styles.goalPressed : null)}
               >
-              <Text style={styles.goalTitle}>{squad.goal || `Reach ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)}`}</Text>
+              <Text style={styles.goalTitle}>{squad.goal || `Reach ${squad.goalTarget} ${goalUnitOf(squad.goalMetricKind, squad.goalTarget)}`}</Text>
               <View style={styles.progressTrack}>
                 {goalPhase === 'closed' ? (
                   <View style={[styles.progressFill, styles.progressFillClosed, { width: `${goalPct}%` }]} />
@@ -769,7 +800,7 @@ export default function SquadDetailRoute() {
               </View>
               <Text style={styles.progressCaption}>
                 {goalPhase === 'closed'
-                  ? `${fmtProgress(squad.goalProgress)} ${goalUnit(squad.goalMetricKind)} logged${closedOn(squad.goalState.closedAt ?? squad.goalEndsAt)}`
+                  ? `${fmtProgress(squad.goalProgress)} ${goalUnitOf(squad.goalMetricKind, Number(fmtProgress(squad.goalProgress)))} logged${closedOn(squad.goalState.closedAt ?? squad.goalEndsAt)}`
                   : goalPhase === 'met'
                     ? `${fmtProgress(squad.goalTarget)} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${squad.goalState.closedAt ? `met ${shortDay(squad.goalState.closedAt)}` : 'goal met'}`
                     : `${fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${goalPct}% complete`}
@@ -885,9 +916,53 @@ export default function SquadDetailRoute() {
                   </Text>
                 </View>
                 <Text style={styles.compEnds}>
-                  {daysLeft(liveChallenge.endAt) === 0 ? 'Final day' : `${daysLeft(liveChallenge.endAt)} days left`}
+                  {daysLeftLabel(daysLeft(liveChallenge.endAt))}
                 </Text>
               </View>
+            </Pressable>
+          </>
+        ) : openChallenge ? (
+          /* A COMPETITION YOU HAVEN'T JOINED YET (social2-06, QA 09-26). Members were never told a new one
+             existed: this page drew only one you had already entered, so a fresh competition sat three taps
+             away under Competitions → Open to Join. It opens the competition page, where Join lives. */
+          <>
+            <View style={styles.compHead}>
+              <Text style={styles.feedLabel}>Open to Join</Text>
+              <Pressable
+                onPress={() => router.push({ pathname: '/competitions', params: { id: squad.id } })}
+                accessibilityRole="button"
+                accessibilityLabel="View all competitions"
+                hitSlop={8}
+                style={styles.viewAll}
+              >
+                <Text style={styles.viewAllText}>View All</Text>
+                <ChevronRight color={flColor.bronze400} size={13} />
+              </Pressable>
+            </View>
+            <Pressable
+              onPress={() => router.push({ pathname: '/challenge/[id]', params: { id: openChallenge.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={`${openChallenge.name}, open to join`}
+              style={({ pressed }) => [styles.openCompRow, pressed ? styles.recordsRowPressed : null]}
+            >
+              <View style={styles.recordsIcon}>
+                <SwordsIcon />
+              </View>
+              <View style={styles.recordsBody}>
+                <Text style={styles.recordsTitle} numberOfLines={1}>
+                  {openChallenge.name}
+                </Text>
+                <Text style={styles.recordsSub} numberOfLines={1}>
+                  {[
+                    metricLabel(openChallenge.type, openChallenge.metricKey),
+                    `from ${openChallenge.creatorName}`,
+                    openChallenge.state === 'ACTIVE' ? `underway · ${daysLeftLabel(daysLeft(openChallenge.endAt)).toLowerCase()}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+              </View>
+              <ChevronRight />
             </Pressable>
           </>
         ) : null}
@@ -904,7 +979,10 @@ export default function SquadDetailRoute() {
             <LinearGradient colors={['rgba(186, 134, 84,0.07)', 'transparent'] as const} locations={[0, 0.58] as const} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
             <View style={styles.hallCrest}>
               <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} />
-              <HallCrownIcon />
+              {/* In a View: on web a bare <svg> is not positioned, so the absolute gradient above painted over it. */}
+              <View>
+                <HallCrownIcon />
+              </View>
             </View>
             <View style={styles.recordsBody}>
               <Text style={styles.recordsTitle}>Hall of Champions</Text>
@@ -1061,7 +1139,10 @@ export default function SquadDetailRoute() {
           {canInvite ? (
             <OptionRow icon={<InviteIcon />} label="Invite to Squad" divided onPress={() => { setOptionsOpen(false); router.push({ pathname: '/squad-invite', params: { id: squad.id } }); }} />
           ) : null}
-          {squad.isOwner ? <OptionRow icon={<TrashIcon />} label="Delete Squad" divided danger onPress={() => { setOptionsOpen(false); setConfirmDelete(true); }} /> : null}
+          {/* ONE DELETE, ONE SAFETY LEVEL (social-16, QA 09-26). This row had its own one-tap confirm while
+              Squad Settings asks you to type DELETE — two doors to the same unrecoverable act, guarded
+              differently. It now opens Settings with that typed confirm already up. */}
+          {squad.isOwner ? <OptionRow icon={<TrashIcon />} label="Delete Squad" divided danger onPress={() => { setOptionsOpen(false); router.push({ pathname: '/squad-settings', params: { id: squad.id, confirmDelete: '1' } }); }} /> : null}
         </View>
       </BottomSheet>
 
@@ -1117,7 +1198,7 @@ export default function SquadDetailRoute() {
       >
         <View style={styles.goalSheetBody}>
           <Text style={styles.goalSheetSub}>One shared objective the whole squad pushes toward together.</Text>
-          <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" />
+          <InputField label="Goal" value={goalTitle} onChange={setGoalTitle} maxLength={60} showCount placeholder="e.g. Run 200 miles together" error={titleError} />
           <View>
             <Text style={styles.goalFieldLabel}>Track</Text>
             <View style={styles.goalChipRow}>
@@ -1149,9 +1230,10 @@ export default function SquadDetailRoute() {
           <InputField
             label={GOAL_TARGET_LABEL[goalMetricKind]}
             value={goalTargetText}
-            onChange={(v) => setGoalTargetText(v.replace(/[^0-9.]/g, '').slice(0, 9))}
+            onChange={(v) => setGoalTargetText(oneDecimalPoint(v).slice(0, 9))}
             keyboardType="decimal-pad"
             placeholder={GOAL_TARGET_PLACEHOLDER[goalMetricKind]}
+            error={targetError}
           />
           <CalendarField label="Starts" value={goalStartText || null} onChange={(v) => setGoalStartText(v ?? '')} placeholder="Today" />
           <CalendarField
@@ -1169,28 +1251,11 @@ export default function SquadDetailRoute() {
         </View>
       </BottomSheet>
 
-      {/* CONFIRM DELETE (centered ceremony modal) */}
-      <Modal visible={confirmDelete} transparent animationType="fade" onRequestClose={() => setConfirmDelete(false)}>
-        <View style={styles.confirmBackdrop}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>Delete {squad.name}?</Text>
-            <Text style={styles.confirmBody}>This permanently removes {squad.name} and everything in it. This can’t be undone.</Text>
-            <View style={styles.confirmActions}>
-              <Button variant="destructive" fullWidth disabled={deleting} onPress={doDelete} accessibilityLabel="Delete squad">
-                {deleting ? 'Deleting…' : 'Delete Squad'}
-              </Button>
-              <Button variant="secondary" fullWidth onPress={() => setConfirmDelete(false)} accessibilityLabel="Cancel">
-                Cancel
-              </Button>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
 
-function DetailBg() {
+function DetailBg({ scrollY }: { scrollY?: Animated.Value }) {
   /*
    * `imageOpacity` rather than a heavier top overlay: this artwork is near-black everywhere except its
    * golden mountain band, so dimming the whole image toward the base lands almost entirely on the
@@ -1211,6 +1276,12 @@ function DetailBg() {
    *
    * The opacity lift is not theme-conditional, so it lands on BOTH themes (Design System §2.0); the
    * `paperTexture` level is the colour half and only Alabaster reads it.
+   *
+   * ⚠ ON ALABASTER THE PLATE FADES TOWARD THE PAGE AS YOU SCROLL (social-10, QA 09-26). The plate is fixed
+   * and the content scrolls over it, so the goal's numbers and "See the progress" were read THROUGH the
+   * ridge — bronze strokes behind dark ink, where Forge has them behind light ink on a dark plate. At rest
+   * the mountains are untouched (PO: *"you should be able to see the mountains"*); the fade is the one
+   * Legacy already uses (`scrimFade`). Forge passes no `scrimFade` and is unchanged.
    */
   return (
     <ScreenBackground
@@ -1219,6 +1290,8 @@ function DetailBg() {
       imageOpacity={0.78}
       paperTexture="atmospheric"
       atmospheric
+      scrimFade={IS_PAPER && scrollY != null}
+      scrollY={scrollY}
       overlay={{ colors: ['rgba(5,5,5,0.06)', 'rgba(5,5,5,0.18)', 'rgba(5,5,5,0.30)'], locations: [0, 0.38, 1] }}
       radials={[BG_RADIAL.squadTop, BG_RADIAL.squadBottom]}
     />
@@ -1234,13 +1307,8 @@ function OptionRow({ icon, label, onPress, divided = false, danger = false }: { 
   );
 }
 
-const initialsOf = (name: string): string =>
-  name
-    .split(/\s+/)
-    .map((p) => p[0] ?? '')
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
+/** The shared rule (settings-06) — this disc used to keep a private one that could disagree with `<Avatar>`. */
+const initialsOf = initials;
 
 function CheckinDisc({ member, watched, onPress }: { member: SquadCheckin; watched: boolean; onPress: () => void }) {
   return (
@@ -1690,7 +1758,7 @@ function MemberRow({
       <Pressable
         onPress={onOpen}
         accessibilityRole="button"
-        accessibilityLabel={`View ${member.name}${member.isSelf ? ', you' : ''}'s profile`}
+        accessibilityLabel={member.isSelf ? 'View your profile' : `View ${member.name}'s profile`}
         style={({ pressed }) => [styles.memberMain, pressed ? styles.memberMainPressed : null]}
       >
         <Avatar src={member.avatarUrl ?? undefined} name={member.name} size="listRow" />
@@ -1786,6 +1854,10 @@ function VideoPlusGlyph() {
 function CloseX({ size = 22 }: { size?: number }) {
   return <EngravedIcon name="close" size={size} color={flColor.onMedia} />; // on the always-dark video viewer
 }
+/* Alabaster only: the small goal lines get the same page-coloured halo the squad's name already carries, for
+   the moments they scroll across the ridge before the plate has faded (social-10). Forge spreads nothing. */
+const PAPER_HALO = IS_PAPER ? ({ textShadowColor: textHalo(0.9), textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 } as const) : null;
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.round },
@@ -1813,7 +1885,12 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 14,
   },
-  tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, marginTop: 8, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+  squadNameLong: { fontSize: 26, lineHeight: 29 },
+  taglineWrap: { alignSelf: 'flex-start', maxWidth: '100%', marginTop: 8 },
+  /* The page's own colour, feathered at the edge by a shadow of itself, so it reads as the plate thinning
+     out under the words rather than as a box behind them. Drawn on Alabaster only. */
+  taglineVeil: { position: 'absolute', top: 2, right: -2, bottom: 0, left: -4, borderRadius: 10, backgroundColor: textHalo(0.7), boxShadow: `0 0 12px 8px ${textHalo(0.7)}` },
+  tagline: { fontSize: 14, lineHeight: 20, color: flColor.gray400, textShadowColor: textHalo(0.6), textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
   crest: {
     width: 92,
     height: 92,
@@ -1840,7 +1917,7 @@ const styles = StyleSheet.create({
   goalTitle: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', lineHeight: 28, color: flColor.cream100, marginBottom: 14 },
   progressTrack: { height: 10, borderRadius: flRadius.pill, backgroundColor: flColor.divider, overflow: 'hidden', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.6)' },
   progressFill: { height: '100%', borderRadius: flRadius.pill, boxShadow: flShadow.glowSubtle },
-  progressCaption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400, marginTop: 9 },
+  progressCaption: { fontSize: 12, fontWeight: '500', letterSpacing: 0.3, color: flColor.gray400, marginTop: 9, ...PAPER_HALO },
 
   // set-goal CTA
   setGoalRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, boxShadow: flShadow.card },
@@ -1871,13 +1948,15 @@ const styles = StyleSheet.create({
   goalDateRow: { flexDirection: 'row', gap: 12 },
   goalDateCol: { flex: 1, minWidth: 0 },
   goalDateErr: { fontSize: 12, color: flColor.redMuted },
-  goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600 },
-  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk },
+  goalWindow: { marginTop: 6, fontSize: 11.5, color: flColor.gray600, ...PAPER_HALO },
+  goalMore: { marginTop: 8, fontSize: 11.5, fontWeight: '600', color: flColor.bronzeInk, ...PAPER_HALO },
   goalPressed: { opacity: 0.82 },
   // A closed goal's bar keeps its length and loses the bronze — bronze on this screen means "still going".
   progressFillClosed: { backgroundColor: flColor.gray600, boxShadow: undefined },
-  goalActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
-  goalActionCell: { flex: 1 },
+  /* Stacked, not side by side (social2-24, QA 09-26): "SET THE NEXT GOAL" wrapped to two lines in half a
+     phone's width and stood taller than "RAISE THE BAR" beside it. Full width, neither can wrap. */
+  goalActions: { flexDirection: 'column', gap: 10, marginTop: 14 },
+  goalActionCell: { alignSelf: 'stretch' },
   goalOwnerNote: { marginTop: 12, fontSize: 12, color: flColor.gray400 },
   removeGoalBtn: { alignSelf: 'center', paddingVertical: 4 },
   removeGoalText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
@@ -1902,6 +1981,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     marginTop: 22,
+    marginHorizontal: 20,
   },
   /** Each tile takes an equal half — and the whole width when a live competition hides the other. */
   secondaryFlex: { flex: 1 },
@@ -1959,7 +2039,8 @@ const styles = StyleSheet.create({
    * pads 20. It carried its own 20 as a page-level section and would now be inset 40, half a check-in
    * disc narrower than everything above it.
    */
-  checkinsSection: { marginTop: 14, marginBottom: 2 },
+  // The gap before CURRENT GOAL (social-25, QA 09-26): the empty-state line ran straight into the label.
+  checkinsSection: { marginTop: 14, marginBottom: 22 },
   checkinHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 },
   checkinDate: { fontSize: 11.5, color: flColor.gray600 },
   checkinStrip: { gap: 6, paddingBottom: 4, paddingRight: 8 },
@@ -2003,10 +2084,13 @@ const styles = StyleSheet.create({
   feedSection: { paddingHorizontal: 20, marginTop: 10 },
   feedHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12 },
   feedLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.labelInk },
-  compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 2 },
+  /* ⚠ THE 20px GUTTER IS ON EACH BLOCK (social-06, QA 09-26). These sit between the hero and the feed, which
+     each pad 20 themselves — so the competition card, the Hall row and the two tiles had no gutter at all and
+     ran to the screen edge in both themes. */
+  compHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 28, marginBottom: 12, marginHorizontal: 20 },
   viewAll: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   viewAllText: { fontSize: 12, fontWeight: '500', color: flColor.bronzeInk },
-  compCard: { position: 'relative', overflow: 'hidden', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
+  compCard: { position: 'relative', overflow: 'hidden', marginHorizontal: 20, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.card },
   compTop: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
   compEmblem: { width: 46, height: 46, flexShrink: 0, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.surfaceRecessed, boxShadow: flShadow.glowSubtle },
   compIdentity: { flex: 1, minWidth: 0, gap: 4 },
@@ -2020,7 +2104,8 @@ const styles = StyleSheet.create({
   compGap: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
   compGapText: { flexShrink: 1, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.bronzeInk },
   compEnds: { flexShrink: 0, fontSize: 10.5, fontWeight: '600', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.gray600 },
-  hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  openCompRow: { flexDirection: 'row', alignItems: 'center', gap: 13, marginHorizontal: 20, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  hallRow: { position: 'relative', overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 13, marginTop: 12, marginHorizontal: 20, paddingHorizontal: 15, paddingVertical: 14, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
   ackRow: {
     flexDirection: 'row',
     alignItems: 'center',

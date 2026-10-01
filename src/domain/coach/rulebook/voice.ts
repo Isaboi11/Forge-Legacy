@@ -231,7 +231,8 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     "Weekend training. That's commitment. What are we doing?",
     'Training on the weekend. I like where your head is. What do you need?',
     'Weekend session. Plenty of time to do it right. What are we working on?',
-    'While everyone else sleeps in. What do you need?',
+    /* Not "while everyone else sleeps in" — it turned up at 11:58 AM (holtai-22, QA 09-26). */
+    'Weekend, and you still showed up. What do you need?',
   ],
 
   // ── the short beat between an answer and the next question ───────────────────────────────────────
@@ -256,7 +257,8 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'Good, that tells me a lot.',
     'Okay, I can work with that.',
     'On it.',
-    'Helpful. Thanks.',
+    /* Not "Helpful. Thanks." — it followed a tapped Replace it, which is a decision, not information (holtai-22). */
+    'Okay, noted.',
     "Right, that's useful.",
     'Okay, taking that into account.',
     'Good. That shapes things.',
@@ -422,21 +424,24 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     'How long have you been at this?',
     "Where would you put yourself right now? There's no wrong answer.",
     "How experienced are you? New is great — it means everything's ahead of you.",
-    'How much lifting have you done before?',
+    /* Not "How much lifting…" — this is asked on a race build too, after the mileage (holt-20, QA 09-26). */
+    'How much training have you done before?',
     'Tell me where you are with training. I meet you there.',
     "What's your background? It helps me pitch the first weeks right.",
   ],
+  /* QA holtai-19 / holt-02: he asks what to LEAVE OUT — a preference he can act on. "Anything hurting?" and
+     "Any injuries, old or new?" invited the injury talk the medical stop then has to refuse (PO 09-22). */
   ask_limits: [
     'Anything I should train around?',
-    "Anything giving you trouble? I'll work around it rather than through it.",
-    'Any injuries or areas to avoid?',
-    'Anything I need to know about? Better I hear it now than program into it.',
-    'Anything hurting, or anything you want left out?',
-    "Any injuries, old or new? I'd rather know.",
+    "Any movements you'd rather skip? I'll build without them.",
+    'Anything you want left out?',
+    "Anything you don't want in this? Better I hear it now than program it in.",
+    "Anything you'd rather not do? Tap it and it stays out.",
+    'Any movements or kit you want me to leave out?',
     'Anything you want me to steer clear of?',
-    'Any body parts that need looking after?',
-    'Anything that flares up I should build around?',
-    "Last one: anything to work around? I'll keep you healthy first.",
+    'Anything you want me to build around?',
+    'Anything to leave out before I build?',
+    'Last one: anything you want left out?',
   ],
 
   // ── the handover ─────────────────────────────────────────────────────────────────────────────────

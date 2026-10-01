@@ -52,6 +52,7 @@ import { cardioMarkerLabel, cardioStats, liftsLabel } from '@/domain/share/recap
 import type { RowUnit } from '@/domain/workout/conditioning';
 import { SERVICE_LABEL, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { artLabel } from '@/domain/workout/playlist-art';
+import { countOf } from '@/domain/text/plural';
 import { usePlaylistArt } from '@/lib/usePlaylistArt';
 
 /** The 18px gutter every non-media block sits on. Media ignores it — see `bleed`. */
@@ -72,6 +73,11 @@ export interface LedgerMediaItem {
 export interface LedgerPostProps {
   authorName: string;
   authorAvatarUrl: string | null;
+  /**
+   * The name the avatar's INITIALS come from, when the label above differs from it. Your own post is
+   * labelled "You", and the avatar made "YO" out of that (social2-17, QA 09-26) — it wants your name.
+   */
+  avatarName?: string;
   /** `Friends`, `Friends & Squad`, or the squad's name. Null when the screen already says it. */
   audience: string | null;
   time: string;
@@ -166,6 +172,14 @@ export interface LedgerPostProps {
    */
   onLongAcknowledge?: () => void;
   onComments: () => void;
+  /**
+   * A "more" control beside the time — the author's door to editing or deleting their own post.
+   *
+   * The Friends feed passes it on YOUR posts only (social2-15, QA 09-26): a Friends post has no detail
+   * screen, so the feed row is the one place the manage menu can live. The Squad feed passes nothing —
+   * its menu is on the post page.
+   */
+  onMenu?: () => void;
   onPlaylist?: () => void;
   /**
    * Rendered under the caption. This is where a photo post's session goes (§3.5) — the image keeps the
@@ -221,6 +235,7 @@ export function recapMarker(summary: WorkoutSummary): { kind: LedgerMarker; labe
 export function LedgerPost({
   authorName,
   authorAvatarUrl,
+  avatarName,
   audience,
   time,
   marker,
@@ -248,6 +263,7 @@ export function LedgerPost({
   onAcknowledge,
   onLongAcknowledge,
   onComments,
+  onMenu,
   onPlaylist,
   footer,
 }: LedgerPostProps) {
@@ -282,10 +298,10 @@ export function LedgerPost({
           onPress={onAuthor}
           disabled={!onAuthor}
           accessibilityRole={onAuthor ? 'button' : undefined}
-          accessibilityLabel={onAuthor ? `View ${authorName}'s profile` : undefined}
+          accessibilityLabel={onAuthor ? (authorName === 'You' ? 'View your profile' : `View ${authorName}'s profile`) : undefined}
           style={styles.headerWho}
         >
-          <Avatar src={authorAvatarUrl ?? undefined} name={authorName} size={34} />
+          <Avatar src={authorAvatarUrl ?? undefined} name={avatarName ?? authorName} size={34} />
           <View style={styles.headerText}>
             <Text style={styles.authorName} numberOfLines={1}>
               {authorName}
@@ -298,6 +314,11 @@ export function LedgerPost({
           </View>
         </Pressable>
         <Text style={styles.time}>{time}</Text>
+        {onMenu ? (
+          <Pressable onPress={onMenu} accessibilityRole="button" accessibilityLabel="Manage this post" hitSlop={10} style={styles.menuBtn}>
+            <EngravedIcon name="more" size={18} color={flColor.gray400} />
+          </Pressable>
+        ) : null}
       </View>
 
       <Pressable onPress={onOpen} disabled={!onOpen} accessibilityRole={onOpen ? 'button' : undefined} accessibilityLabel={onOpen ? title ?? caption ?? 'Open this post' : undefined}>
@@ -361,7 +382,14 @@ export function LedgerPost({
 
       {playlist ? <PlaylistRow link={playlist} onPress={onPlaylist} /> : null}
 
-      {caption ? <Text style={[styles.caption, hasMedia ? styles.captionUnderMedia : null]}>{caption}</Text> : null}
+      {/* ⚠ THE WORDS OPEN THE POST TOO (social-03, QA 09-26). The caption sits outside the Pressable above, so
+          a text-only Discussion post — which is nothing BUT its caption — had no tap target except the small
+          comment icon. Inert where the caller gives no destination. */}
+      {caption ? (
+        <Text onPress={onOpen} suppressHighlighting style={[styles.caption, hasMedia ? styles.captionUnderMedia : null]}>
+          {caption}
+        </Text>
+      ) : null}
 
       {footer ? <View style={styles.footer}>{footer}</View> : null}
 
@@ -374,7 +402,7 @@ export function LedgerPost({
           disabled={busy}
           accessibilityRole="button"
           accessibilityState={{ selected: acknowledged }}
-          accessibilityLabel={acknowledged ? `Acknowledged, ${acknowledgeCount}` : acknowledgeLabel}
+          accessibilityLabel={acknowledged ? `Acknowledged with ${ACK_LABEL[ackKind ?? 'respect']}, ${acknowledgeCount}` : acknowledgeLabel}
           accessibilityHint={onLongAcknowledge ? 'Press and hold to change how' : undefined}
           style={styles.action}
         >
@@ -389,7 +417,7 @@ export function LedgerPost({
           ) : null}
         </Pressable>
 
-        <Pressable onPress={onComments} accessibilityRole="button" accessibilityLabel={`${commentCount} comments`} style={styles.action}>
+        <Pressable onPress={onComments} accessibilityRole="button" accessibilityLabel={countOf(commentCount, 'comment')} style={styles.action}>
           <CommentGlyph />
           {/* Hidden at zero — a "0" beside a speech bubble reads as a result rather than an invitation. */}
           {commentCount > 0 ? <Text style={styles.actionCount}>{commentCount}</Text> : null}
@@ -621,6 +649,7 @@ const styles = StyleSheet.create({
   authorName: { fontSize: 14.5, fontWeight: '600', lineHeight: 17.4, color: flColor.cream100 },
   audience: { fontSize: 11.5, color: flColor.gray600 },
   time: { flexGrow: 0, flexShrink: 0, fontSize: 12, color: flColor.gray600 },
+  menuBtn: { flexGrow: 0, flexShrink: 0, width: 30, height: 30, marginRight: -6, alignItems: 'center', justifyContent: 'center' },
 
   attribution: { marginTop: 14, marginBottom: 12, paddingHorizontal: LEDGER_GUTTER, fontSize: 13.5, lineHeight: 19, color: flColor.gray400 },
 

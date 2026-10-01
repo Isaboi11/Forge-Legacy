@@ -1,12 +1,13 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { Button } from '@/components/forge/composites/Button';
+import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { Field, SelectTile } from '@/components/onboarding/kit';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
@@ -17,6 +18,7 @@ import {
   fetchAccountIdentity,
   HandleTakenError,
   normalizeHandle,
+  removeSelfAvatar,
   updateSelfProfile,
   type AccountIdentity,
 } from '@/domain/profile/live';
@@ -56,11 +58,13 @@ export default function EditProfileScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Edit Profile" onBack={back} />
       {loading || !data ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={flColor.bronze400} />
-        </View>
+        <>
+          <AppBar title="Edit Profile" onBack={back} />
+          <View style={styles.loading}>
+            <ActivityIndicator color={flColor.bronze400} />
+          </View>
+        </>
       ) : (
         <Form initial={data} onDone={back} />
       )}
@@ -96,6 +100,10 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   /** The picked-but-not-yet-positioned image. Non-null while the crop editor is up. */
   const [cropping, setCropping] = useState<string | null>(null);
+  /** The photo on the profile RIGHT NOW. Its own state because Remove takes it down at once, without Save. */
+  const [storedPhoto, setStoredPhoto] = useState<string | null>(initial.avatarUrl);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [uStatus, setUStatus] = useState<UStatus>('unchanged');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,8 +153,12 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
     athleteType !== (initial.athleteType || 'Hybrid') ||
     photoUri != null;
 
-  // 'idle' is a CLEARED handle, which 0009 allows (null) — not an error.
-  const handleOk = uStatus === 'unchanged' || uStatus === 'available' || uStatus === 'idle';
+  /*
+   * ⚠ A CLEARED HANDLE NO LONGER SAVES (QA 09-26 settings-23). 0009 allows a null handle, but handle
+   * search is the only way anyone can add you — clearing it made an athlete unfindable in one tap, with
+   * nothing but a grey line to say so. An account that never had one is still 'unchanged' and saves.
+   */
+  const handleOk = uStatus === 'unchanged' || uStatus === 'available';
   const canSave = dirty && handleOk && !!name.trim() && !saving;
 
   const cropEditor = cropping ? (
@@ -159,6 +171,29 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
       }}
     />
   ) : null;
+
+  /**
+   * Take the photo down (settings-08). Its own confirmed action rather than one more field behind Save:
+   * it deletes a file, which Save cannot undo, and an athlete who wants their face off the feed should
+   * not also have to pass the name and handle checks to get it.
+   */
+  const onRemovePhoto = async () => {
+    setConfirmRemove(false);
+    if (removing) return;
+    setRemoving(true);
+    setError(null);
+    try {
+      await removeSelfAvatar();
+      setStoredPhoto(null);
+      // The AppBar avatars and the Legacy portrait read the shared profile — same reason as `onSave`.
+      refetchProfile();
+      showToast('Profile photo removed');
+    } catch {
+      setError('Couldn’t remove your photo. Check your connection and try again.');
+    } finally {
+      setRemoving(false);
+    }
+  };
 
   const onSave = async () => {
     if (!canSave) return;
@@ -182,8 +217,25 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
     }
   };
 
+  /* Back with unsaved edits asks first — it used to throw them away silently (QA 09-26 settings-23). */
+  const back = () => {
+    if (!dirty || saving) return onDone();
+    const msg = 'Your changes haven’t been saved.';
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm(`Discard changes?
+
+${msg}`)) onDone();
+      return;
+    }
+    Alert.alert('Discard changes?', msg, [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: onDone },
+    ]);
+  };
+
   return (
     <>
+      <AppBar title="Edit Profile" onBack={back} />
       {cropEditor}
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         contentContainerStyle={[styles.scroll, { paddingBottom: 40 + insets.bottom }]}
@@ -192,11 +244,20 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
       >
         <View style={styles.avatarRow}>
           <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel="Change profile photo">
-            <Avatar src={photoUri ?? initial.avatarUrl ?? undefined} name={name || '  '} size="profile" ring />
+            <Avatar src={photoUri ?? storedPhoto ?? undefined} name={name || '  '} size="profile" ring />
           </Pressable>
-          <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel="Change photo">
-            <Text style={styles.changePhoto}>{photoUri ? 'Positioned — save to apply' : 'Change photo'}</Text>
-          </Pressable>
+          <View style={styles.photoActions}>
+            <Pressable onPress={() => void onPickPhoto()} accessibilityRole="button" accessibilityLabel={storedPhoto || photoUri ? 'Change photo' : 'Add photo'}>
+              <Text style={styles.changePhoto}>{photoUri ? 'Positioned — save to apply' : storedPhoto ? 'Change photo' : 'Add photo'}</Text>
+            </Pressable>
+            {/* Only for a photo that is actually ON the profile. A picked-but-unsaved one is dropped by
+                leaving without saving; offering Remove there would delete the old photo instead. */}
+            {storedPhoto && !photoUri ? (
+              <Pressable onPress={() => setConfirmRemove(true)} disabled={removing} accessibilityRole="button" accessibilityLabel="Remove photo">
+                <Text style={styles.removePhoto}>{removing ? 'Removing…' : 'Remove photo'}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
         <Field
@@ -211,14 +272,32 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
         <Group label="Handle" hint="How friends find you — handle search is the only way to add someone.">
           <View style={styles.handleRow}>
             <Text style={styles.at}>@</Text>
-            <Field label="Username" placeholder="marcusvale" autoCapitalize="none" autoCorrect={false} value={handle} onChangeText={onHandle} />
+            {/* No second label: "Handle" above already names it, and the extra "Username" pushed the field
+                to 60% width (QA 09-26 settings-22). */}
+            <View style={styles.handleField}>
+              <Field
+                accessibilityLabel="Handle"
+                placeholder="marcusvale"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={handle}
+                onChangeText={onHandle}
+              />
+            </View>
           </View>
           <HandleStatus status={uStatus} handle={handle} />
         </Group>
 
         <Group label="Sex" hint="Used for badge artwork and silhouettes only.">
+          {/* Two across, then "Prefer not to say" on its own line: three across left it a third of the
+              width and it broke over three lines (QA 09-26 settings-22). Onboarding's pair is the same shape. */}
           <View style={styles.tileRow}>
-            {SEXES.map((s) => (
+            {SEXES.filter((s) => s.id !== 'unspecified').map((s) => (
+              <SelectTile key={s.id} fill title={s.title} selected={sex === s.id} onPress={() => setSex(s.id)} />
+            ))}
+          </View>
+          <View style={styles.tileRow}>
+            {SEXES.filter((s) => s.id === 'unspecified').map((s) => (
               <SelectTile key={s.id} fill title={s.title} selected={sex === s.id} onPress={() => setSex(s.id)} />
             ))}
           </View>
@@ -245,6 +324,14 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
         </Text>
       </ScrollView>
       {mediaPickerSheet}
+      <ConfirmSheet
+        open={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        headline="Remove your photo?"
+        body="Your initials show in its place — on your profile, in your squads and beside your posts. You can add a photo again whenever you like."
+        confirmLabel="Remove Photo"
+        onConfirm={() => void onRemovePhoto()}
+      />
     </>
   );
 }
@@ -263,7 +350,7 @@ function Group({ label, hint, children }: { label: string; hint?: string; childr
 function HandleStatus({ status, handle }: { status: UStatus; handle: string }) {
   const map: Record<UStatus, { text: string; color: string }> = {
     unchanged: { text: '', color: flColor.gray600 },
-    idle: { text: 'No handle — nobody will be able to find you by search.', color: flColor.gray400 },
+    idle: { text: 'Pick a handle — it’s how friends find you, so it can’t be left empty.', color: flColor.gray400 },
     short: { text: 'At least 3 characters.', color: flColor.gray400 },
     checking: { text: 'Checking availability…', color: flColor.gray400 },
     available: { text: `@${handle} is available.`, color: flColor.greenMuted },
@@ -279,7 +366,9 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 24, paddingTop: 8, gap: 22 },
 
   avatarRow: { alignItems: 'center', gap: 10, paddingVertical: 6 },
+  photoActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', columnGap: 22, rowGap: 8 },
   changePhoto: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
+  removePhoto: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '600', color: flColor.gray400 },
 
   group: { gap: 8 },
   groupLabel: { fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
@@ -287,8 +376,9 @@ const styles = StyleSheet.create({
   tileRow: { flexDirection: 'row', gap: 10 },
   typeCol: { gap: 8 },
 
-  handleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronzeInk, paddingBottom: 12 },
+  handleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  handleField: { flex: 1, minWidth: 0 },
+  at: { fontFamily: flFont.display, fontSize: 20, color: flColor.bronzeInk },
   uStatus: { fontFamily: flFont.sans, fontSize: 13 },
   uStatusGap: { height: 18 },
 

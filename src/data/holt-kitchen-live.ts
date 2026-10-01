@@ -1,7 +1,7 @@
 import { fetchDay, fetchGroceryState, fetchMealPlanPrefs, fetchMealPlanWeek } from '@/data/nutrition-live';
 import { leftTodayLine } from '@/domain/coach/kitchen';
 import { localToday, totals } from '@/domain/nutrition/day';
-import { groceryList, planSignature, stateFor } from '@/domain/nutrition/grocery';
+import { groceryList, onHandNames, planSignature, stateFor } from '@/domain/nutrition/grocery';
 import { mondayOf, planIsReadable } from '@/domain/nutrition/meal-planner';
 
 /**
@@ -15,13 +15,14 @@ export async function kitchenPantryLive(): Promise<string[]> {
   try {
     const monday = mondayOf(localToday());
     const [week, prefs, saved] = await Promise.all([fetchMealPlanWeek(monday), fetchMealPlanPrefs(), fetchGroceryState(monday)]);
-    const extras = (saved?.extras ?? []).map((x) => x.name);
-    if (!week || !planIsReadable(week.days)) return extras.slice(0, 30);
+    /* Bought or at home only — an extra still to buy is not food on hand (kitchen-12, `onHandNames`). */
+    if (!week || !planIsReadable(week.days)) {
+      return onHandNames(null, { checked: saved?.checked ?? {}, have: {}, removed: {}, extras: saved?.extras ?? [] }).slice(0, 30);
+    }
     const household = prefs?.household ?? 1;
     const list = groceryList(week.days, household);
     const state = stateFor(saved, list, planSignature(week.days, household));
-    const onHand = list.items.filter((i) => !state.removed[i.key] && (state.have[i.key] || state.checked[i.key])).map((i) => i.name);
-    return [...onHand, ...state.extras.map((x) => x.name)].slice(0, 30);
+    return onHandNames(list, state).slice(0, 30);
   } catch {
     return [];
   }

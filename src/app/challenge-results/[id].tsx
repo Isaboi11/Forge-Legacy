@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -13,6 +14,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   CHALLENGE_TYPES,
   fetchChallengeResults,
+  fetchChallengeState,
   finishLabel,
   formatScore,
   metricLabel,
@@ -84,15 +86,33 @@ const TOTAL_LABEL: Record<ChallengeType, string> = {
   GAIN_DISTANCE: 'Miles gained',
 };
 
-export default function ChallengeResultsScreen() {
+export default guardRoute(ChallengeResultsScreen, hasId, { title: 'These results aren’t available.' });
+
+function ChallengeResultsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const challengeId = String(id ?? '');
   const router = useRouter();
   const { data, loading, error, refetch } = useQuery(() => fetchChallengeResults(challengeId), [challengeId]);
 
+  /*
+   * NO RESULTS HAS TWO REASONS, AND ONLY ONE OF THEM IS "NOT CLOSED YET" (social2-27, QA 09-26). A
+   * called-off competition answered "This season hasn't closed yet" — it never will. C-3 §9.5 (LOCKED):
+   * a cancelled challenge resolves to C-1, "challenge absent; no tombstone" — so it goes back to the hub
+   * rather than being announced here. The same for one that is no longer visible at all.
+   */
+  const noResults = !loading && !error && !data;
+  const { data: seen } = useQuery(
+    async () => (noResults ? { state: await fetchChallengeState(challengeId) } : null),
+    [noResults, challengeId],
+  );
+  const absent = noResults && seen != null && (seen.state === null || seen.state === 'CANCELLED');
+  useEffect(() => {
+    if (absent) router.replace('/competitions');
+  }, [absent, router]);
+
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/competitions'));
 
-  if (loading && !data) {
+  if ((loading && !data) || (noResults && (seen == null || absent))) {
     return (
       <Shell onBack={goBack}>
         <View style={styles.center}>
@@ -106,11 +126,7 @@ export default function ChallengeResultsScreen() {
     return (
       <Shell onBack={goBack}>
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>{error ? 'Couldn’t load these results.' : 'This season hasn’t closed yet.'}</Text>
-          {error ? <Text style={styles.missingBody}>{error}</Text> : null}
-          <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-          </Pressable>
+          <NotFoundBody title={error ? 'Couldn’t load these results.' : 'These results aren’t available.'} reason={error ?? 'The season may not have closed yet.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       </Shell>
     );

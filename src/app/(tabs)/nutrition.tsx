@@ -1,6 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -25,6 +26,7 @@ import {
   mealForHour,
   dayLabel,
   groupByMeal,
+  grouped,
   isAhead,
   mealTitle,
   PLAN_AHEAD_DAYS,
@@ -55,12 +57,14 @@ import { labelScanAvailable } from '@/lib/label-scan';
 import { useProfile } from '@/lib/profile';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { fitWordSize } from '@/domain/text/fit-word';
 
 /**
  * Nutrition tab root — built to `Nutrition Home.dc.html` (Claude Design), wired to the real diary (0205).
  *
  * Faithful to the `.dc`: the day strip (‹ Today · SEP 16, 2026 › · See Details), the bronze calorie ring
- * over its ember glow with the flame mark, three macro rings (protein green · carbs bronze · fat blue),
+ * over its ember glow with the flame mark, three macro rings (protein green · carbs purple · fat blue — the
+ * `.dc` drew carbs bronze, the same as calories; the PO moved it to `macroCarb` on 2026-09-24, QA 09-26 N-40),
  * Log Food, the Scan / Meal Plan pair, and "Today's Meals" — a card per slot with its kcal on the right,
  * empty slots drawn as dashed rows, and "Copy yesterday" on an empty one.
  *
@@ -90,15 +94,61 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * so these four numbers are the only thing that moves.
  */
 const RING = { box: 228, r: 97, stroke: 17 } as const;
+
+/** The width inside the ring the hero figure may use: the inner diameter, less a margin either side. */
+const HERO_WIDTH = 2 * (RING.r - RING.stroke / 2) - 24;
+/** The hero figure's size: "2,450" at the `.dc`'s 52, a longer figure stepped down to fit the ring (`fitWordSize`). */
+function heroFontSize(text: string): { fontSize: number; lineHeight: number } | null {
+  const size = fitWordSize(text, HERO_WIDTH, 52, 24);
+  return size === 52 ? null : { fontSize: size, lineHeight: size + 2 };
+}
+/** The figure fits the ring (N-24/N-05) AND shrinks with it on a short screen (N-14) — the smaller of the two. */
+function heroFitScaled(fitted: { fontSize: number; lineHeight: number } | null, scale: number): { fontSize: number; lineHeight: number } | null {
+  const size = Math.min(fitted?.fontSize ?? 52, Math.round(52 * scale));
+  return size === 52 ? null : { fontSize: size, lineHeight: size + 2 };
+}
 const MACRO_RING = { box: 94, r: 40, stroke: 9 } as const;
+
+/*
+ * How big the rings may be on THIS screen (QA N-14). At full size the tab needs 537 pt above Log Food's lower
+ * edge (day strip 66, calorie ring 238, macro row 179, the button 52, 2 of padding), and on a short screen that
+ * put the tab's main button half behind the tab bar with Holt's coin over its right end. The rings give the
+ * room back: both scale by one factor until Log Food sits clear of the coin's band (its 52 + the 18 it floats
+ * above the tab bar + 6 of air), never below 0.62 — under that the numbers inside stop being readable.
+ *
+ * `compact` also takes 22 pt out of the gaps. `captionOut` moves the "of 2,200 · 300 left" line under the ring
+ * (21 pt) once the ring is too small to hold it without the words crossing the stroke.
+ */
+const RINGS_FULL = 537;
+const RINGS_COMPACT_FIXED = 193;
+const COIN_BAND = 76;
+const CAPTION_OUT = 21;
+function ringFit(viewport: number): { scale: number; compact: boolean; captionOut: boolean } {
+  const room = viewport - COIN_BAND;
+  if (room >= RINGS_FULL) return { scale: 1, compact: false, captionOut: false };
+  const boxes = RING.box + MACRO_RING.box;
+  const inside = (room - RINGS_COMPACT_FIXED) / boxes;
+  if (inside >= 0.75) return { scale: Math.min(1, inside), compact: true, captionOut: false };
+  return { scale: Math.max(0.62, Math.min(0.75, (room - RINGS_COMPACT_FIXED - CAPTION_OUT) / boxes)), compact: true, captionOut: true };
+}
 
 export default function NutritionScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const { profile } = useProfile();
-  /* 0206 — the preview allowlist. The TAB is hidden for everyone else, but `/nutrition` is still a real
-     route, so a typed URL or a stale deep link lands here. Read alongside `status` so the two accounts
-     that DO have access never see the refusal flash while entitlement is still loading. */
+  /* The scroll area's real height once it has laid out; until then, the window less the two bars (the app
+     bar is 56 + the top inset, the tab bar 80 + the bottom one). */
+  const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const fit = ringFit(viewportHeight ?? windowHeight - insets.top - insets.bottom - 136);
+  const ringBox = Math.round(RING.box * fit.scale);
+  const macroBox = Math.round(MACRO_RING.box * fit.scale);
+  /* Who may open the tab: `my_entitlement().nutrition` — any signed-in athlete since 0244 (0206 → 0237 →
+     0244; the planner half is `useNutritionPlanner`, below). ⚠ An athlete WITHOUT it never reaches this
+     screen by URL: `app-tabs` drops the Nutrition TabTrigger, so the tab navigator has no `/nutrition` route
+     and a typed URL or stale deep link falls back to Home (QA 09-26 home-24). Read alongside `status` so an
+     athlete who has it never sees the refusal below flash while entitlement is still loading. */
   const mayUseNutrition = useNutritionAccess();
   /* 0244: the meal planner, grocery list and building recipes are Premium; logging stays free. */
   const planner = useNutritionPlanner();
@@ -214,7 +264,9 @@ export default function NutritionScreen() {
 
   const headline = targets
     ? calorieHeadline(eaten.kcal, targets.kcal, 'eaten')
-    : { value: String(eaten.kcal), label: 'Calories' };
+    : { value: grouped(eaten.kcal), label: 'Calories' };
+  /* The figure shrinks to stay INSIDE the ring (QA N-05 / N-24): at 52pt a six-figure day spilled across it. */
+  const heroFit = heroFontSize(headline.value);
 
   const goLog = (meal?: MealSlot) =>
     router.push({ pathname: '/log-food', params: meal ? { date: iso, meal } : { date: iso } });
@@ -237,17 +289,19 @@ export default function NutritionScreen() {
   };
 
   /*
-   * ══ 0206 — NOT ON THE PREVIEW ALLOWLIST ══
+   * ══ NO NUTRITION ACCESS — THE FALLBACK, NOT THE DOOR ══
    *
    * Every hook above has already run, so this early return cannot change hook order. It is placed after
    * them deliberately rather than at the top of the component.
    *
-   * ⚠ This is a COURTESY, not the gate: 0206 puts the allowlist inside the RLS of all seven nutrition
-   * tables, so without it `fetchDay` returns nothing and every write is refused. What this avoids is a
-   * chromed, permanently-empty food diary that reads as a bug rather than as a closed door.
+   * ⚠ Rarely seen, and that is correct (QA 09-26 home-24). Without access the route is not in the tab
+   * navigator at all, so a typed `/nutrition` lands on HOME, quietly — this screen only shows if access
+   * drops while the tab is already mounted. It is a COURTESY, not the gate: the RLS on every nutrition
+   * table and `food-search`'s 403 are the gate (`has_nutrition_access()`); this only avoids a chromed,
+   * permanently-empty diary that reads as a bug rather than as a closed door.
    *
-   * While entitlement is still loading nothing is said either way — claiming "not available" to the PO
-   * for a few hundred milliseconds would be a lie with a short shelf life.
+   * While entitlement is still loading nothing is said either way — claiming "not available" for a few
+   * hundred milliseconds would be a lie with a short shelf life.
    */
   if (!mayUseNutrition) {
     return (
@@ -260,11 +314,8 @@ export default function NutritionScreen() {
         />
         {entitlementStatus === 'ready' ? (
           <View style={styles.previewGate}>
-            <Text style={styles.previewTitle}>Not open yet</Text>
-            <Text style={styles.previewBody}>
-              Nutrition is still being built. It will arrive as part of Forge when it is finished — nothing to
-              sign up for.
-            </Text>
+            <Text style={styles.previewTitle}>Not available</Text>
+            <Text style={styles.previewBody}>Nutrition isn’t open on this account right now.</Text>
           </View>
         ) : null}
       </View>
@@ -317,6 +368,17 @@ export default function NutritionScreen() {
     );
   }
 
+  /* Inside the ring, or under it when the ring is too small to hold it (`ringFit`). */
+  const heroCaption = targets ? (
+    <Text style={styles.heroCaption}>{calorieCaption(eaten.kcal, targets.kcal, 'eaten')}</Text>
+  ) : (
+    /* No target yet: the ring still counts what was eaten. Setting one is an invitation, not a
+       wall — nothing here is blocked without it. */
+    <Pressable accessibilityRole="button" onPress={() => router.push('/nutrition-targets')}>
+      <Text style={styles.heroSetTarget}>Set a daily target</Text>
+    </Pressable>
+  );
+
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
@@ -343,9 +405,10 @@ export default function NutritionScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingBottom: TAB_SCREEN_BOTTOM_GAP }]}
         showsVerticalScrollIndicator={false}
+        onLayout={(e) => setViewportHeight(Math.round(e.nativeEvent.layout.height))}
       >
         {/* ── day strip ─────────────────────────────────────────────────── */}
-        <View style={styles.dayStrip}>
+        <View style={[styles.dayStrip, fit.compact && styles.dayStripCompact]}>
           <View style={styles.dayLeft}>
             <Pressable
               accessibilityRole="button"
@@ -396,42 +459,45 @@ export default function NutritionScreen() {
           onPress={() => router.push('/nutrition-targets')}
           style={styles.heroWrap}
         >
-          <View style={styles.heroGlow} pointerEvents="none" />
-          <Svg width={RING.box} height={RING.box} viewBox={`0 0 ${RING.box} ${RING.box}`}>
-            <Circle cx={RING.box / 2} cy={RING.box / 2} r={RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={RING.stroke} />
-            {targets ? (
-              <Circle
-                cx={RING.box / 2}
-                cy={RING.box / 2}
-                r={RING.r}
-                fill="none"
-                stroke={flColor.bronze400}
-                strokeWidth={RING.stroke}
-                strokeLinecap="round"
-                strokeDasharray={ringDash(ringFraction(eaten.kcal, targets.kcal), RING.r)}
-                transform={`rotate(-90 ${RING.box / 2} ${RING.box / 2})`}
-              />
-            ) : null}
-          </Svg>
+          <View
+            style={[styles.heroGlow, fit.scale < 1 && { width: 250 * fit.scale, height: 250 * fit.scale }]}
+            pointerEvents="none"
+          />
+          <View style={{ width: ringBox, height: ringBox }}>
+            <Svg width={ringBox} height={ringBox} viewBox={`0 0 ${RING.box} ${RING.box}`}>
+              <Circle cx={RING.box / 2} cy={RING.box / 2} r={RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={RING.stroke} />
+              {targets ? (
+                <Circle
+                  cx={RING.box / 2}
+                  cy={RING.box / 2}
+                  r={RING.r}
+                  fill="none"
+                  stroke={flColor.bronze400}
+                  strokeWidth={RING.stroke}
+                  strokeLinecap="round"
+                  strokeDasharray={ringDash(ringFraction(eaten.kcal, targets.kcal), RING.r)}
+                  transform={`rotate(-90 ${RING.box / 2} ${RING.box / 2})`}
+                />
+              ) : null}
+            </Svg>
 
-          {/* ⚠ `box-none`, NOT `none`. This wrapper sits over the ring so touches fall through to it,
-              but `none` excludes the view AND ITS CHILDREN — which made "Set a daily target" below
-              completely untappable, on the one screen a brand-new athlete starts from. `box-none` lets
-              the children stay interactive while the wrapper itself still passes touches through. */}
-          <View style={styles.heroCentre} pointerEvents="box-none">
-            <EngravedIcon name="flame" size={22} color={flColor.emberFlame} />
-            <Text style={styles.heroValue}>{headline.value}</Text>
-            <Text style={styles.heroLabel}>{headline.label}</Text>
-            {targets ? (
-              <Text style={styles.heroCaption}>{calorieCaption(eaten.kcal, targets.kcal, 'eaten')}</Text>
-            ) : (
-              /* No target yet: the ring still counts what was eaten. Setting one is an invitation, not a
-                 wall — nothing here is blocked without it. */
-              <Pressable accessibilityRole="button" onPress={() => router.push('/nutrition-targets')}>
-                <Text style={styles.heroSetTarget}>Set a daily target</Text>
-              </Pressable>
-            )}
+            {/* ⚠ `box-none`, NOT `none`. This wrapper sits over the ring so touches fall through to it,
+                but `none` excludes the view AND ITS CHILDREN — which made "Set a daily target" below
+                completely untappable, on the one screen a brand-new athlete starts from. `box-none` lets
+                the children stay interactive while the wrapper itself still passes touches through. */}
+            <View style={[styles.heroCentre, fit.compact && styles.heroCentreCompact]} pointerEvents="box-none">
+              <EngravedIcon name="flame" size={fit.scale < 0.8 ? 16 : 22} color={flColor.emberFlame} />
+              <Text
+                style={[styles.heroValue, heroFitScaled(heroFit, fit.scale)]}
+                numberOfLines={1}
+              >
+                {headline.value}
+              </Text>
+              <Text style={styles.heroLabel}>{headline.label}</Text>
+              {fit.captionOut ? null : heroCaption}
+            </View>
           </View>
+          {fit.captionOut ? <View style={styles.heroCaptionOut}>{heroCaption}</View> : null}
         </Pressable>
 
         {/* ── macro rings ───────────────────────────────────────────────── */}
@@ -439,11 +505,11 @@ export default function NutritionScreen() {
           accessibilityRole="button"
           accessibilityLabel="Edit macro targets"
           onPress={() => router.push('/nutrition-targets')}
-          style={styles.macroRow}
+          style={[styles.macroRow, fit.compact && styles.macroRowCompact]}
         >
-          <MacroRing label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.macroProtein} />
-          <MacroRing label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.macroCarb} />
-          <MacroRing label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.macroFat} />
+          <MacroRing box={macroBox} label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.macroProtein} />
+          <MacroRing box={macroBox} label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.macroCarb} />
+          <MacroRing box={macroBox} label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.macroFat} />
         </Pressable>
 
         {/* ── actions ───────────────────────────────────────────────────── */}
@@ -645,12 +711,14 @@ function AddRow({
   );
 }
 
-function MacroRing({ label, value, target, color }: { label: string; value: number; target: number | null; color: string }) {
+function MacroRing({ box, label, value, target, color }: { box: number; label: string; value: number; target: number | null; color: string }) {
   const c = MACRO_RING.box / 2;
+  /* `box` is the drawn size (QA N-14); the geometry stays in MACRO_RING's units and the viewBox scales it. */
+  const small = box < MACRO_RING.box * 0.85;
   return (
     <View style={styles.macro}>
-      <View style={styles.macroRingWrap}>
-        <Svg width={MACRO_RING.box} height={MACRO_RING.box} viewBox={`0 0 ${MACRO_RING.box} ${MACRO_RING.box}`}>
+      <View style={{ width: box, height: box }}>
+        <Svg width={box} height={box} viewBox={`0 0 ${MACRO_RING.box} ${MACRO_RING.box}`}>
           <Circle cx={c} cy={c} r={MACRO_RING.r} fill="none" stroke={flColor.charcoal600} strokeWidth={MACRO_RING.stroke} />
           {target ? (
             <Circle
@@ -667,9 +735,9 @@ function MacroRing({ label, value, target, color }: { label: string; value: numb
           ) : null}
         </Svg>
         <View style={styles.macroValueWrap} pointerEvents="none">
-          <Text style={styles.macroValue}>
+          <Text style={[styles.macroValue, small && styles.macroValueSmall]}>
             {Math.round(value)}
-            <Text style={styles.macroUnit}>g</Text>
+            <Text style={[styles.macroUnit, small && styles.macroUnitSmall]}>g</Text>
           </Text>
         </View>
       </View>
@@ -718,7 +786,7 @@ function MealCard({
             )}
           </View>
           <View style={styles.mealRight}>
-            <Text style={[styles.mealKcal, empty && styles.mealKcalQuiet]}>{group.kcal}</Text>
+            <Text style={[styles.mealKcal, empty && styles.mealKcalQuiet]}>{grouped(group.kcal)}</Text>
           </View>
         </View>
 
@@ -770,7 +838,7 @@ function MealCard({
           </Text>
         </View>
         <View style={styles.mealRight}>
-          <Text style={styles.mealKcal}>{group.kcal}</Text>
+          <Text style={styles.mealKcal}>{grouped(group.kcal)}</Text>
         </View>
       </View>
     </Surface>
@@ -787,6 +855,8 @@ function CheckRow({ row, disabled, onPress }: { row: ChecklistRow; disabled: boo
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: row.checked, disabled }}
+      /* react-native-web 0.21 ignores accessibilityState — the web needs the aria prop (QA 09-26 kitchen-22). */
+      aria-checked={row.checked}
       accessibilityLabel={`${row.name}, ${row.kcal} calories`}
       onPress={onPress}
       style={({ pressed }) => [styles.checkRow, pressed && styles.checkRowPressed]}
@@ -804,7 +874,7 @@ function CheckRow({ row, disabled, onPress }: { row: ChecklistRow; disabled: boo
           </Text>
         ) : null}
       </View>
-      <Text style={[styles.checkKcal, !row.checked && styles.checkKcalWaiting]}>{row.kcal}</Text>
+      <Text style={[styles.checkKcal, !row.checked && styles.checkKcalWaiting]}>{grouped(row.kcal)}</Text>
     </Pressable>
   );
 }
@@ -839,6 +909,7 @@ const styles = StyleSheet.create({
   pickBody: { gap: 14, paddingBottom: 8 },
 
   dayStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 4, paddingBottom: 18 },
+  dayStripCompact: { paddingBottom: 10 },
   dayLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dayArrow: { width: 44, height: 44, marginHorizontal: -7, alignItems: 'center', justifyContent: 'center' },
   dayName: { fontFamily: flFont.display, fontSize: 23, color: flColor.cream100, letterSpacing: -0.2, lineHeight: 26 },
@@ -856,17 +927,21 @@ const styles = StyleSheet.create({
     boxShadow: '0 0 90px 40px rgba(186,134,84,0.10)',
   },
   heroCentre: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  heroCentreCompact: { gap: 2 },
   heroValue: { fontFamily: flFont.display, fontSize: 52, color: flColor.cream100, letterSpacing: -1, lineHeight: 54 },
   heroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
   heroCaption: { fontSize: 13, color: flColor.gray400 },
+  heroCaptionOut: { paddingTop: 4 },
   heroSetTarget: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
 
   macroRow: { flexDirection: 'row', gap: 8, paddingTop: 16, paddingBottom: 22 },
+  macroRowCompact: { paddingTop: 10, paddingBottom: 14 },
   macro: { flex: 1, alignItems: 'center', gap: 9 },
-  macroRingWrap: { width: MACRO_RING.box, height: MACRO_RING.box },
   macroValueWrap: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   macroValue: { fontSize: 19, fontWeight: '700', color: flColor.cream100, letterSpacing: -0.3 },
+  macroValueSmall: { fontSize: 15 },
   macroUnit: { fontSize: 11.5, fontWeight: '600' },
+  macroUnitSmall: { fontSize: 10 },
   macroLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray400 },
   macroTarget: { fontSize: 11.5, color: flColor.gray600 },
 

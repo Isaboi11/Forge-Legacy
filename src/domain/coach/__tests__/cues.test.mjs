@@ -114,3 +114,16 @@ test('a cue is one thought, not a paragraph', () => {
     }
   }
 });
+
+test('holt-30: a hip abduction is not coached like a hip thrust', () => {
+  const at = (name) => cueFor({ pattern: 'Hip Isolation', goal: 'muscle', experience: 'beginner', isPrimary: false, name });
+  for (const name of ['Cable Hip Abduction', 'Hip Abductor Machine', 'Band Clamshell', 'Band Lateral Walk']) {
+    assert.match(at(name), /to the side/i, name);
+    assert.doesNotMatch(at(name), /drive through|squeeze at the top/i, name);
+  }
+  assert.match(at('Cable Hip Adduction'), /inner thigh/i);
+  assert.match(at('Cable Glute Kickback'), /leg back/i);
+  // The bridge family keeps the bridge cue.
+  assert.match(at('Frog Pump'), /drive through the whole foot/i);
+  assert.match(at('Glute Drive Machine'), /drive through the whole foot/i);
+});

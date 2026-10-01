@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { batchNote, ingredientRows, metricAmount, servingsFor, usAmount } from '../recipe-view.ts';
+import { batchNote, ingredientRows, metricAmount, servingsFor, stepsNote, usAmount } from '../recipe-view.ts';
 import { setForgeRecipes } from '../meal-planner.ts';
 // The app ships no Forge recipes since 2026-09-24; the planner is tested against the 40 retired ones.
 import { STARTER_RECIPES as RECIPE_SOURCES } from './fixtures/starter-recipes.ts';
@@ -109,4 +109,19 @@ test('a leftover at a ¾ portion reheats ¾ of a serving', () => {
   const c = ctx({ portion: 0.75, leftover: true, cookedOn: 'Monday', slot: 'lunch' });
   assert.deepEqual(servingsFor(c).options, [0.75]);
   assert.equal(batchNote(c, 0.75, null), 'Cooked with Monday dinner. Reheat ¾ serving.');
+});
+
+test('countable things: "1½ tortillas" (plural by what is shown), whole slices from 3 up (QA 09-26 N-32)', () => {
+  const tortilla = { kind: 'each', grams: 71, one: 'tortilla', many: 'tortillas' };
+  const slice = { kind: 'each', grams: 2, one: 'slice', many: 'slices' };
+  assert.equal(usAmount(tortilla, 71 * 1.25), '1½ tortillas');
+  assert.equal(usAmount(slice, 28 * 1.25), '18 slices');
+  assert.equal(usAmount(slice, 2), '1 slice');
+});
+
+test('the method says which batch it describes when the amounts are for another number (QA 09-26 N-32)', () => {
+  assert.equal(stepsNote(10, 10), null);
+  assert.equal(stepsNote(null, 5), null);
+  assert.match(stepsNote(10, 5), /whole batch, 10 servings.*for 5 servings/);
+  assert.match(stepsNote(10, 1.25), /for 1¼ servings/);
 });

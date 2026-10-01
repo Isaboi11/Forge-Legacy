@@ -59,7 +59,7 @@ import {
 } from '@/domain/billing/plans-core';
 import type { CapKey, Caps } from '@/domain/entitlement/caps-core';
 import { LEGAL } from '@/domain/settings/content';
-import { billing, billingAvailable, openManageSubscriptions } from '@/lib/billing';
+import { billing, billingAvailable, MANAGE_ELSEWHERE_NOTE, manageSubscriptionsUrl, openManageSubscriptions } from '@/lib/billing';
 import { ENTITLEMENT_RETRY_MESSAGE, useEntitlementState } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
@@ -621,8 +621,11 @@ export default function SubscriptionScreen() {
                   seat={snapshot?.founderSeat ?? null}
                   coachAi={coachAi}
                 />
-                {/* The one thing left to offer a Premium athlete: the AI step, from their own group only. */}
-                {tiers.length > 0 ? (
+                {/* The one thing left to offer a Premium athlete: the AI step, from their own group only.
+                    ⚠ SHOWN EVEN WITH NO PLANS TO READ (QA holt-16): "See Premium AI" from Form Check landed
+                    here, and with no store (the web) or a failed read the section vanished — no AI plan, no
+                    price, no reason. The picker's own empty state now says why, under what AI adds. */}
+                {!coachAi ? (
                   <>
                     <SectionLabel>Add Holt AI</SectionLabel>
                     <Text style={styles.sectionLead}>{TIER_DISCLOSURE[activeTier ?? 'premium_ai']}</Text>
@@ -630,16 +633,34 @@ export default function SubscriptionScreen() {
                     <AiBenefits />
                   </>
                 ) : null}
+                {/* A Premium AI athlete is paying for the AI — the page named none of it, only Premium's list
+                    (QA 09-26 holtai-20). The same `AI_BENEFITS` the plan picker sells, nothing new. */}
+                {coachAi ? (
+                  <>
+                    <SectionLabel>What Premium AI adds</SectionLabel>
+                    <AiBenefits />
+                  </>
+                ) : null}
                 {/* No comparison table and no usage review in Premium (§3.4) — nothing left to compare. */}
                 <SectionLabel>What Premium unlocks</SectionLabel>
                 <BenefitList benefits={benefits} />
                 <OwnershipCard />
-                <View style={styles.manage}>
-                  <Button variant="secondary" fullWidth onPress={onManage} accessibilityLabel="Manage Subscription">
-                    Manage Subscription
-                  </Button>
-                </View>
-                {!canBuy && shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
+                {/* No store on the web, so no button — it says where the subscription is managed instead
+                    (settings-04) — and only for a store subscription: a founder seat or a granted Premium
+                    has nothing on the iPhone to manage. The native deep link is untouched. */}
+                {manageSubscriptionsUrl() == null ? (
+                  snapshot?.premiumKind === 'MONTHLY' || snapshot?.premiumKind === 'ANNUAL' ? (
+                    <Text style={styles.manageNote}>{MANAGE_ELSEWHERE_NOTE}</Text>
+                  ) : null
+                ) : (
+                  <View style={styles.manage}>
+                    <Button variant="secondary" fullWidth onPress={onManage} accessibilityLabel="Manage Subscription">
+                      Manage Subscription
+                    </Button>
+                  </View>
+                )}
+                {/* Without the AI section above, which carries its own notice under its button. */}
+                {coachAi && !canBuy && shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
               </>
             ) : (
               <>
@@ -1323,6 +1344,7 @@ const styles = StyleSheet.create({
   planCardValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '600', color: flColor.cream100, marginTop: 6 },
   planCardLine: { fontSize: 12.5, color: flColor.gray400, marginTop: 5 },
   manage: { marginTop: 22 },
+  manageNote: { marginTop: 22, fontSize: 12.5, lineHeight: 18, color: flColor.gray400, textAlign: 'center', paddingHorizontal: 10 },
 
   restore: { marginTop: 20 },
   restoreText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },

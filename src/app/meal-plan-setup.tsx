@@ -33,7 +33,7 @@ import {
 } from '@/domain/nutrition/meal-plan-setup';
 import { fetchMealPlanPrefs, fetchNutritionProfile, fetchTargetsOn, saveMealPlanPrefs } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
@@ -58,6 +58,7 @@ function MealPlanSetupScreen() {
   const router = useRouter();
   const { showToast } = useToast();
   const scrollRef = useRef<ScrollView>(null);
+  const barBottom = useBarBottom();
 
   const [todayIso] = useState(() => localToday());
   const [reloads, setReloads] = useState(0);
@@ -280,6 +281,7 @@ function MealPlanSetupScreen() {
                         key={m.key}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: on }}
+                        aria-checked={on}
                         style={[styles.choice, styles.mealChoice, on && styles.choiceOn]}
                         onPress={() => set({ meals: toggleMeal(d.meals, m.key) })}
                       >
@@ -311,6 +313,7 @@ function MealPlanSetupScreen() {
                                   key={r.key}
                                   accessibilityRole="radio"
                                   accessibilityState={{ checked: on }}
+                                  aria-checked={on}
                                   style={[styles.tab, on && styles.tabOn]}
                                   onPress={() => set({ routine: { ...d.routine, [m.key]: r.key } })}
                                 >
@@ -352,6 +355,7 @@ function MealPlanSetupScreen() {
                         key={t.label}
                         accessibilityRole="radio"
                         accessibilityState={{ checked: on }}
+                        aria-checked={on}
                         style={[styles.tab, on && styles.tabOn]}
                         onPress={() => set({ cookMinutes: t.key })}
                       >
@@ -412,7 +416,7 @@ function MealPlanSetupScreen() {
       </ScrollView>
 
       {ready ? (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: barBottom }]}>
           <Button variant="primary" fullWidth disabled={!canGo} onPress={submit}>
             {step === 1 ? 'Continue' : 'Build my week'}
           </Button>
@@ -434,6 +438,7 @@ function Choice({ label, on, role, onPress }: { label: string; on: boolean; role
     <Pressable
       accessibilityRole={role}
       accessibilityState={{ checked: on }}
+      aria-checked={on}
       style={[styles.choice, on && styles.choiceOn]}
       onPress={onPress}
     >
@@ -447,6 +452,7 @@ function Toggle({ label, on, onPress }: { label: string; on: boolean; onPress: (
     <Pressable
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
+      aria-checked={on}
       style={[styles.choice, styles.mealChoice, styles.toggle, on && styles.choiceOn]}
       onPress={onPress}
     >
@@ -584,8 +590,8 @@ const styles = StyleSheet.create({
   dollar: { fontSize: 15, fontWeight: '600', color: flColor.gray400 },
 
   footer: {
-    gap: 10,
-    paddingTop: 14,
+    gap: 8,
+    paddingTop: 12,
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,

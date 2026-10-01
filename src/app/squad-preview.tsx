@@ -4,6 +4,7 @@ import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, T
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -70,7 +71,9 @@ function founded(createdAt: string): string {
   const ms = Date.now() - new Date(createdAt).getTime();
   if (!Number.isFinite(ms) || ms < 0) return '—';
   const days = Math.floor(ms / DAY);
-  if (days < 30) return `${Math.max(days, 0)} d`;
+  // A squad made today was "0 d" old (social-27, QA 09-26) — it's new, and says so.
+  if (days < 1) return 'Today';
+  if (days < 30) return `${days} d`;
   const months = Math.floor(days / 30);
   if (months < 12) return `${months} mo`;
   return `${Math.floor(days / 365)} yr`;
@@ -87,7 +90,9 @@ function activityOf(m: SquadPreviewMember): string | null {
 }
 
 
-export default function SquadPreviewScreen() {
+export default guardRoute(SquadPreviewScreen, hasId, { title: 'This squad isn’t available.' });
+
+function SquadPreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const squadId = String(id ?? '');
   const router = useRouter();
@@ -145,11 +150,7 @@ export default function SquadPreviewScreen() {
         <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
         <AppBar onBack={goBack} />
         <View style={styles.center}>
-          <Text style={styles.missingTitle}>{error ? 'Couldn’t load this squad.' : 'This squad isn’t available.'}</Text>
-          {error ? <Text style={styles.missingBody}>{error}</Text> : <Text style={styles.missingBody}>It may be private, or it no longer exists.</Text>}
-          <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-          </Pressable>
+          <NotFoundBody title={error ? 'Couldn’t load this squad.' : 'This squad isn’t available.'} reason={error ?? 'It may be private, or it no longer exists.'} onRetry={error ? refetch : undefined} onBack={goBack} />
         </View>
       </View>
     );

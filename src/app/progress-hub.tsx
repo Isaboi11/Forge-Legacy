@@ -32,6 +32,8 @@ import { EditMetricsSheet } from '@/components/forge/EditMetricsSheet';
 import { BodySection } from '@/components/forge/BodySection';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { useUnits } from '@/lib/settings';
+import { countOf, pluralWord } from '@/domain/text/plural';
+import { forgedTime } from '@/domain/progress/forged-time';
 
 /**
  * P-2 Progress Hub (`Forge Progress Hub.dc.html`) — the full picture reached from the Legacy rank badge:
@@ -113,6 +115,8 @@ export default function ProgressHubScreen() {
   const shownIds = selected.length ? selected : metrics.slice(0, 4).map((m) => m.id);
   const shown = shownIds.map((id) => metrics.find((m) => m.id === id)).filter((m): m is MetricSeries => m != null).slice(0, 4);
   const openMetric = openId ? metrics.find((m) => m.id === openId) ?? null : null;
+  const forged = forgedTime(data.consistency.minutesForged);
+  const perMonth = forgedTime(data.consistency.minutesPerMonth);
 
   return (
     <View style={styles.root}>
@@ -299,18 +303,20 @@ export default function ProgressHubScreen() {
           </TourAnchor>
           <View style={styles.bigStatRow}>
             <Text style={styles.bigStat}>{data.consistency.lifetime}</Text>
-            <Text style={styles.bigStatSub}>workouts,{'\n'}and counting</Text>
+            <Text style={styles.bigStatSub}>{pluralWord(data.consistency.lifetime, 'workout')},{'\n'}and counting</Text>
           </View>
           <View style={styles.statGrid}>
-            <StatCell value={`${data.consistency.hoursForged}`} label="Hours Forged" />
+            {/* Minutes under an hour — this rounded to whole hours first and read "0 HOURS FORGED" after a
+                16-minute workout (QA 09-26 home-15). */}
+            <StatCell value={forged.value} label={`${forged.unit} Forged`} />
             <StatCell value={`${data.consistency.thisMonth}`} label="This Month" />
-            <StatCell value={`${data.consistency.hoursPerMonth}`} label="Hours / Month" />
+            <StatCell value={perMonth.value} label={`${perMonth.unit === 'Minute' || perMonth.unit === 'Minutes' ? 'Min' : 'Hours'} / Month`} />
             <StatCell value={`${data.consistency.avgPerWeek}`} label="Avg / Week" />
           </View>
           <View style={styles.streakRow}>
             <EngravedIcon name="flame" size={14} />
             <Text style={styles.streakText}>
-              Best streak · <Text style={styles.streakVal}>{data.consistency.bestStreakWeeks} weeks</Text>
+              Best streak · <Text style={styles.streakVal}>{countOf(data.consistency.bestStreakWeeks, 'week')}</Text>
             </Text>
           </View>
         </View>
@@ -404,7 +410,9 @@ function Fact({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.fact}>
       <Text style={styles.factLabel}>{label}</Text>
-      <Text style={styles.factValue} numberOfLines={1}>
+      {/* Two lines, and smaller first where the platform can: a third-width tile cut "Year One" to
+          "Year …" on a 320pt phone (QA legacy-26). */}
+      <Text style={styles.factValue} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
         {value}
       </Text>
     </View>
@@ -490,7 +498,9 @@ function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () =
         {/* Was hardcoded "lb" here, then hardcoded again inside `currentLabel` when it moved. It now
             takes the athlete's system, so a metric athlete reads kg on their own progress. */}
         <Text style={styles.tileValue}>{currentLabel(metric, units)}</Text>
-        {metric.improving ? <Glyph name="trend-up" size={13} color={flColor.bronze300} /> : <Text style={styles.tileFlat}>—</Text>}
+        {/* Only a rising lift gets a mark. A flat one printed a lone "—" after the number, which read as a
+            missing value (QA 09-26 home-15). */}
+        {metric.improving ? <Glyph name="trend-up" size={13} color={flColor.bronze300} /> : null}
       </View>
       {s ? (
         <Svg viewBox="0 0 82 30" width="100%" height={26} preserveAspectRatio="none" style={styles.spark}>
@@ -551,7 +561,7 @@ const styles = StyleSheet.create({
   facts: { flexDirection: 'row', gap: 10, marginTop: 20 },
   fact: { flex: 1, gap: 4, paddingVertical: 12, paddingHorizontal: 14, borderRadius: flRadius.lg, backgroundColor: flColor.surfaceRecessed, borderWidth: 1, borderColor: HAIRLINE },
   factLabel: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray600 },
-  factValue: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  factValue: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.cream100, fontVariant: ['lining-nums'] },
   pinned: { flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 12, paddingVertical: 11, paddingHorizontal: 14, borderRadius: flRadius.lg, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
   pinnedText: { flex: 1, minWidth: 0, gap: 1 },
   pinnedLabel: { fontFamily: flFont.sans, fontSize: 9, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
@@ -587,7 +597,9 @@ const styles = StyleSheet.create({
   sealMuted: { opacity: 0.4 },
   rungAhead: { opacity: 0.75 },
   rungLabel: { flex: 1, minWidth: 0, gap: 3, paddingVertical: 2 },
-  rungNameRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  /* Wraps: on a narrow phone the "You are here" chip drops under the rank name instead of squeezing it
+     to "Fou…" (QA legacy-26). */
+  rungNameRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 9, rowGap: 4 },
   rungNameEarned: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   rungNameCurrent: { fontFamily: flFont.display, fontSize: 19, fontWeight: '600', color: flColor.cream100 },
   rungNameLocked: { fontFamily: flFont.display, fontSize: 15, fontWeight: '600', color: flColor.gray600 },
@@ -607,8 +619,8 @@ const styles = StyleSheet.create({
   tileCat: { fontFamily: flFont.sans, fontSize: 8.5, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
   tileName: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   tileValueRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  tileValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.4, color: flColor.cream100 },
-  tileFlat: { fontSize: 14, color: flColor.gray600 },
+  // `lining-nums`: the display serif's default figures are oldstyle, so a 0 read as a small "o" (home-15).
+  tileValue: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', letterSpacing: -0.4, color: flColor.cream100, fontVariant: ['lining-nums'] },
   tileSingle: { height: 26, paddingTop: 7, fontFamily: flFont.sans, fontSize: 10.5, color: flColor.gray600 },
   strengthCaption: { marginTop: 11, fontFamily: flFont.sans, fontSize: 11.5, lineHeight: 16.5, color: flColor.gray600 },
   spark: { marginTop: 2 },
@@ -617,11 +629,11 @@ const styles = StyleSheet.create({
 
   // consistency
   bigStatRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 14, paddingHorizontal: 2, paddingTop: 4, paddingBottom: 16 },
-  bigStat: { fontFamily: flFont.display, fontSize: 52, fontWeight: '700', letterSpacing: -1, color: flColor.cream100 },
+  bigStat: { fontFamily: flFont.display, fontSize: 52, fontWeight: '700', letterSpacing: -1, color: flColor.cream100, fontVariant: ['lining-nums'] },
   bigStatSub: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray600, paddingBottom: 8 },
   statGrid: { flexDirection: 'row', flexWrap: 'wrap', borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal700, overflow: 'hidden' },
   statCell: { width: '50%', gap: 3, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: flColor.surfaceRecessed, borderWidth: 0.5, borderColor: flColor.charcoal700 },
-  statValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100 },
+  statValue: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', letterSpacing: -0.3, color: flColor.cream100, fontVariant: ['lining-nums'] },
   statLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '600', letterSpacing: 0.6, textTransform: 'uppercase', color: flColor.gray600 },
   streakRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 4, paddingTop: 12 },
   streakText: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600 },

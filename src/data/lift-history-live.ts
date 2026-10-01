@@ -3,6 +3,8 @@ import type { HistorySession } from '@/domain/coach/progression';
 import { PR_MAX_REPS } from '@/domain/workout/metrics';
 import { bestMark, sameLift, type LiftMark, type RecordRow } from '@/domain/workout/records-core';
 import type { TrainingSession } from '@/domain/coach/training-summary';
+import { equipmentForCatalogKey } from '@/domain/home-artwork/catalog';
+import { historyWeight } from '@/domain/workout/set-load';
 
 /**
  * What the athlete has actually lifted — the ONE lift-history read in the app.
@@ -191,9 +193,13 @@ async function fetchSessions(
       const hit = hits.find((r) => r.section === 'main') ?? hits[0];
       if (!hit) continue;
 
+      /* A bodyweight movement logged with the weight box untouched reads back as BW, not as nothing —
+         see `historyWeight`. Decided HERE, in the one history read, so `Prev`, the faded "same again" and
+         the coach's line all see the same session (workout-12). */
+      const bodyweight = equipmentForCatalogKey(lift.catalogKey ?? hit.catalog_key ?? undefined) === 'bodyweight';
       const sets = [...(hit.workout_sets ?? [])]
         .sort((a, b) => a.set_index - b.set_index)
-        .map((s) => ({ weight: s.weight, reps: s.reps }));
+        .map((s) => ({ weight: historyWeight(s.weight, bodyweight), reps: s.reps }));
       if (sets.length === 0) continue; // an exercise row with nothing logged under it says nothing
 
       list.push({ startedAt: w.started_at, sets });

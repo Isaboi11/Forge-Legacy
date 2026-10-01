@@ -97,6 +97,40 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   },
 };
 
+/** One run of a legal paragraph: plain words, or an address the reader can tap. */
+export interface LinkPart {
+  text: string;
+  /** `mailto:` for an email, `https://` for a web address; absent for plain words. */
+  href?: string;
+}
+
+/*
+ * An email, or a forgelegacy.app address with an optional path. The path stops at the first character
+ * that is not a letter, digit or hyphen, so "…at forgelegacy.app/terms." leaves the full stop outside.
+ */
+const LINK_RE = /([\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?:https?:\/\/)?(?:www\.)?forgelegacy\.app(?:\/[\w-]+)*)/g;
+
+/**
+ * Split a paragraph so its addresses can be tapped (QA 09-26 auth-17: the legal sheet named
+ * support@forgelegacy.app and forgelegacy.app/terms as dead text). Joining every `text` gives back the
+ * paragraph exactly.
+ */
+export function linkParts(paragraph: string): LinkPart[] {
+  const parts: LinkPart[] = [];
+  let last = 0;
+  for (const m of paragraph.matchAll(LINK_RE)) {
+    const at = m.index ?? 0;
+    const hit = m[0].replace(/\.+$/, '');
+    if (!hit) continue;
+    if (at > last) parts.push({ text: paragraph.slice(last, at) });
+    const href = hit.includes('@') ? `mailto:${hit}` : /^https?:\/\//.test(hit) ? hit : `https://${hit}`;
+    parts.push({ text: hit, href });
+    last = at + hit.length;
+  }
+  if (last < paragraph.length) parts.push({ text: paragraph.slice(last) });
+  return parts;
+}
+
 export const ABOUT_BODY: string[] = [
   'Forge Legacy is a training record built to outlast the session it was written in. Every workout you finish becomes part of a chapter; every chapter becomes part of a legacy.',
   'Ranks, records and honors are earned in the work. Nothing here can be bought, and nothing is awarded for showing up to the app instead of the gym.',
@@ -131,7 +165,12 @@ export interface SettingsRow {
   /** Trailing value text, e.g. the membership state or the home-gym item count. Empty renders just a chevron. */
   value?: string;
   /** What tapping does: push a route, or open one of the in-app sheets. */
-  action: { type: 'route'; path: string } | { type: 'sheet'; key: LegalKey | 'about' | 'appleHealth' } | { type: 'deleteAccount' };
+  action:
+    | { type: 'route'; path: string }
+    | { type: 'sheet'; key: LegalKey | 'about' | 'appleHealth' }
+    | { type: 'deleteAccount' }
+    /** Opens Coach Holt on his "How do I…?" topics (firstuser-21). */
+    | { type: 'holtHelp' };
   /** Renders in the destructive treatment. Only ever the one row — see `settingsSections`. */
   destructive?: boolean;
 }
@@ -214,6 +253,12 @@ export function settingsSections(opts: {
    * importing `Tier`, so this module stays free of runtime imports outside its own folder.
    */
   tier?: 'FREE' | 'PREMIUM';
+  /**
+   * "How do I…?" — opens Coach Holt on his app-help topics, the closest thing the app has to a help
+   * centre (QA 09-26 firstuser-21). Flag-gated like the rows above so an undefined flag keeps the exact
+   * menu the tests pin.
+   */
+  hasHoltHelp?: boolean;
 }): SettingsSection[] {
   const sections: SettingsSection[] = [];
 
@@ -245,7 +290,9 @@ export function settingsSections(opts: {
     },
   ];
   if (opts.hasPreferences) {
-    training.push({ key: 'prefs', label: 'Preferences', action: { type: 'route', path: '/preferences' } });
+    /* The value names what is inside: Units were hiding behind a word that does not say "units"
+       (QA 09-26 firstuser-15). The label stays the design's "Preferences" (P-1 Dissolution §3). */
+    training.push({ key: 'prefs', label: 'Preferences', value: 'Units, theme', action: { type: 'route', path: '/preferences' } });
   }
   // In Training, not Privacy & Alerts: it is about where workouts come from (plan §3.3).
   if (opts.appleHealth === 'not-here') {
@@ -306,6 +353,9 @@ export function settingsSections(opts: {
      * Feedback first: it is the actionable row, and the one somebody arrives at this screen needing.
      */
     rows: [
+      /* Help first when it is on: somebody who opened "Help & About" with a question is looking for an
+         answer before a feedback form. */
+      ...(opts.hasHoltHelp ? [{ key: 'help', label: 'How do I…? Ask Holt', action: { type: 'holtHelp' as const } }] : []),
       { key: 'feedback', label: 'Send Feedback', action: { type: 'route', path: '/feedback' } },
       { key: 'about', label: 'About Forge Legacy', action: { type: 'sheet', key: 'about' } },
     ],

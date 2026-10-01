@@ -12,7 +12,7 @@ import { InputField } from '@/components/forge/composites/InputField';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { diaryDayParam, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import {
   checkCalories,
   extrasPerHundred,
@@ -37,9 +37,16 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { labelScanAvailable, takeLabelScan } from '@/lib/label-scan';
+import {
+  clearCreateFoodDraft,
+  createFoodDraftHasContent,
+  loadCreateFoodDraft,
+  saveCreateFoodDraft,
+  type CreateFoodDraft,
+} from '@/lib/create-food-draft';
 import { leaveRecipeFood } from '@/lib/recipe-food-handoff';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -96,8 +103,10 @@ export default function CreateFoodScreen() {
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ meal?: string; date?: string; food?: string; mode?: string; from?: string; gtin?: string; for?: string; scan?: string; name?: string; brand?: string }>();
   const { width } = useWindowDimensions();
+  const barBottom = useBarBottom();
 
-  const iso = typeof params.date === 'string' && params.date ? params.date : localToday();
+  /* A link's date is checked, not trusted (QA 09-26 N-19). */
+  const iso = diaryDayParam(params.date, localToday());
   const editId = params.mode === 'edit' && typeof params.food === 'string' && params.food ? params.food : null;
   const editing = editId != null;
   /* Opened from the recipe builder (`?for=recipe`): the food is saved to My Foods and handed back as an
@@ -111,7 +120,7 @@ export default function CreateFoodScreen() {
   const [unitsOpen, setUnitsOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [unitKey, setUnitKey] = useState('g');
+  const [unitPicked, setUnitKey] = useState<string | null>(null);
   /* A scan that found this barcode with NO nutrition brings the record's name and brand along
      (`from=barcode-empty`, PO 2026-09-28), so only the label's numbers are left to type. */
   const [edited, setEdited] = useState<Fields | null>(() =>
@@ -141,6 +150,28 @@ export default function CreateFoodScreen() {
   const gtin = editing ? (addedDigits.length >= 8 ? addedDigits : '') : typeof params.gtin === 'string' ? params.gtin.replace(/\D/g, '') : '';
   const [shareIt, setShareIt] = useState(true);
 
+  /*
+   * ══ THE UNSAVED FORM SURVIVES A REFRESH (QA 09-26 N-30) ══
+   * The Workout Builder's pattern (`lib/create-food-draft.ts`): read once on arrival, written as the athlete
+   * types, cleared when the food is saved. New foods only — editing re-reads the saved food. The restored
+   * draft is DERIVED under the athlete's own edits (`f`, `unitKey` below), never pushed into them, so a
+   * keystroke that beats the read is never overwritten.
+   */
+  const [draft, setDraft] = useState<CreateFoodDraft | null>(null);
+  useEffect(() => {
+    if (editing) return;
+    let live = true;
+    void loadCreateFoodDraft(gtin, Date.now()).then((d) => {
+      if (live && d) setDraft(d);
+    });
+    return () => {
+      live = false;
+    };
+    // Read once, on arrival — the barcode the form was opened for does not change while it is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const unitKey = unitPicked ?? draft?.unitKey ?? 'g';
+
   /* A scan lands here on the way back from the camera. Taken once, so a later focus cannot re-apply
      it over the athlete's edits. A rescan replaces every nutrient — misses become blanks — and keeps
      the name and brand they may already have typed. */
@@ -162,7 +193,7 @@ export default function CreateFoodScreen() {
         if (!r.serving.sure) doubts.serving = true;
         setUnitKey(r.serving.unitKey);
       }
-      const base = edited ?? EMPTY;
+      const base = edited ?? draft?.fields ?? EMPTY;
       setEdited({ ...base, ...values });
       setScan({
         photoUri: landed.photoUri,
@@ -175,7 +206,7 @@ export default function CreateFoodScreen() {
       });
       /* "More nutrients opens automatically when it holds a blank or a dot." */
       setMoreOpen(MORE_NUTRIENTS.some((n) => !values[n.key] || doubts[n.key]));
-    }, [edited]),
+    }, [edited, draft]),
   );
 
   const { data: existing } = useQuery(
@@ -213,7 +244,19 @@ export default function CreateFoodScreen() {
     return out;
   }, [existing]);
 
-  const f = edited ?? loaded ?? EMPTY;
+  const f = edited ?? loaded ?? (draft ? { ...EMPTY, ...draft.fields } : EMPTY);
+
+  /* Written as they type. An effect with no state in it — only the storage write. */
+  useEffect(() => {
+    if (editing || !edited || !createFoodDraftHasContent(edited)) return;
+    void saveCreateFoodDraft({ fields: edited, unitKey, gtin, savedAt: Date.now() });
+  }, [editing, edited, unitKey, gtin]);
+  const startOver = () => {
+    setDraft(null);
+    setEdited(null);
+    setUnitKey(null);
+    void clearCreateFoodDraft();
+  };
   /** Touching a dotted field is checking it — the dot goes. */
   const checked = (key: string) => {
     if (!scan?.doubts[key]) return;
@@ -275,6 +318,7 @@ export default function CreateFoodScreen() {
       const input = build();
       const food = editing ? await updateUserFood(editId, input) : await createUserFood(input);
       if (!food) return;
+      if (!editing) await clearCreateFoodDraft();
 
       /* Shared AFTER the athlete's own copy is saved, so a refusal costs them nothing: the toast says
          "saved", and adds why it was not shared. */
@@ -353,6 +397,16 @@ export default function CreateFoodScreen() {
           </View>
         ) : null}
         {canScan && !scan ? <ScanCard onPress={() => router.push('/scan-label')} /> : null}
+
+        {/* N-30 — said once, so numbers that appear by themselves are never a mystery. */}
+        {draft && !editing ? (
+          <View style={styles.draftLine}>
+            <Text style={styles.draftText}>Picked up where you left off.</Text>
+            <Pressable accessibilityRole="button" hitSlop={8} onPress={startOver}>
+              <Text style={styles.draftAction}>Start over</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {/* A3 / A4 — what the scan did */}
         {scan ? <ScanSummary scan={scan} onView={() => setLabelOpen(true)} onRescan={() => router.push('/scan-label')} /> : null}
@@ -524,6 +578,7 @@ export default function CreateFoodScreen() {
           <Pressable
             accessibilityRole="checkbox"
             accessibilityState={{ checked: shareIt }}
+            aria-checked={shareIt}
             onPress={() => setShareIt((v) => !v)}
             style={styles.shareRow}
           >
@@ -543,15 +598,15 @@ export default function CreateFoodScreen() {
         ) : null}
       </ScrollView>
 
-      {/* commit */}
-      <View style={styles.footer}>
-        {validity.reason ? <Text style={styles.blocker}>{validity.reason}</Text> : null}
-        {!editing && !forRecipe ? (
-          <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
-            <Text style={styles.mealLineLabel}>Adding to</Text>
-            <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
-            <Chevron />
-          </Pressable>
+      {/* commit — ONE pinned button (QA N-13): what blocks or questions it sits directly above it, and the two
+          quiet choices share one row beneath, so the bar stays short enough for the form on a 568-pt screen. */}
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
+        {validity.reason ? (
+          <Text style={styles.blocker}>{validity.reason}</Text>
+        ) : calories.warn && calories.helper ? (
+          <Text style={[styles.blocker, styles.calWarn]} accessibilityLiveRegion="polite">
+            {calories.helper}
+          </Text>
         ) : null}
         <Button variant="primary" fullWidth disabled={!validity.ok || saving} onPress={() => save(!editing && !forRecipe)}>
           {editing
@@ -563,9 +618,16 @@ export default function CreateFoodScreen() {
                 : 'Create food'}
         </Button>
         {!editing && !forRecipe ? (
-          <Pressable accessibilityRole="button" disabled={!validity.ok || saving} onPress={() => save(false)}>
-            <Text style={[styles.saveOnly, (!validity.ok || saving) && styles.saveOnlyOff]}>Create without logging</Text>
-          </Pressable>
+          <View style={styles.footerChoices}>
+            <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
+              <Text style={styles.mealLineLabel}>Adding to</Text>
+              <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+              <Chevron />
+            </Pressable>
+            <Pressable accessibilityRole="button" style={styles.saveOnlyTap} disabled={!validity.ok || saving} onPress={() => save(false)}>
+              <Text style={[styles.saveOnly, (!validity.ok || saving) && styles.saveOnlyOff]}>Create without logging</Text>
+            </Pressable>
+          </View>
         ) : null}
       </View>
 
@@ -781,6 +843,9 @@ const styles = StyleSheet.create({
 
   /* A2 — after a barcode miss */
   missNote: { gap: 3, paddingHorizontal: 2, paddingBottom: 10 },
+  draftLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 2, paddingBottom: 10 },
+  draftText: { flex: 1, fontSize: 12.5, lineHeight: 17.5, color: flColor.gray400 },
+  draftAction: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   missTitle: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
   missText: { fontSize: 12.5, lineHeight: 17.5, color: flColor.gray600 },
   addGtin: { gap: 8, marginTop: 22 },
@@ -877,8 +942,8 @@ const styles = StyleSheet.create({
   moreNote: { width: '100%', paddingTop: 6, paddingHorizontal: 2, fontSize: 12, lineHeight: 17, color: flColor.gray600 },
 
   footer: {
-    gap: 10,
-    paddingTop: 14,
+    gap: 8,
+    paddingTop: 12,
     paddingBottom: SCREEN_BOTTOM_GAP,
     paddingHorizontal: 20,
     borderTopWidth: 1,
@@ -886,10 +951,12 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal900,
   },
   blocker: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center' },
-  mealLine: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
+  footerChoices: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  mealLine: { flexDirection: 'row', alignItems: 'center', gap: 7, paddingVertical: 4, paddingHorizontal: 2 },
   mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
   mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
-  saveOnly: { alignSelf: 'center', paddingVertical: 6, fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'center' },
+  saveOnlyTap: { flexShrink: 1, minWidth: 0 },
+  saveOnly: { paddingVertical: 4, paddingHorizontal: 2, fontSize: 12.5, fontWeight: '600', color: flColor.gray600, textAlign: 'right' },
   saveOnlyOff: { opacity: 0.4 },
 
   sheetBody: { paddingBottom: 8 },

@@ -370,7 +370,15 @@ export async function uploadFeedMedia(uri: string, kind: 'image' | 'video'): Pro
   return supabase.storage.from('squad-media').getPublicUrl(path).data.publicUrl;
 }
 
+/**
+ * Delete a post I wrote. `squad_posts_delete` (0041, re-stated in 0074) admits the author, whatever the
+ * audience — this had no caller until the feed gained its manage menu (social2-15, QA 09-26).
+ *
+ * ⚠ ASKS FOR THE ROW BACK: a delete RLS does not admit matches nothing and reports success, so without
+ * `select` the toast would say "deleted" over a post that is still there.
+ */
 export async function deleteFriendPost(postId: string): Promise<void> {
-  const { error } = await supabase.from('squad_posts').delete().eq('id', postId);
+  const { data, error } = await supabase.from('squad_posts').delete().eq('id', postId).select('id');
   if (error) rethrow(error);
+  if (!data || data.length === 0) throw new Error('That post could not be deleted. It may already be gone.');
 }

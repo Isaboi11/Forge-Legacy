@@ -395,7 +395,14 @@ test('the reply branches cannot grow without bound', () => {
  * because the push and the inbox row have to land in the same place.
  */
 test('a reply opens the feed that actually holds the post', () => {
-  assert.equal(destinationFor({ kind: 'post_comment', postId: 'p1', postAudience: 'FRIENDS', squadId: 's1' }), '/friends');
+  // A comment opens the Friends feed WITH that post's comments open (social2-15, QA 09-26) — the feed reads
+  // `?post=`. An acknowledgement has no thread to open; nor has a comment that arrived without its post id.
+  assert.deepEqual(destinationFor({ kind: 'post_comment', postId: 'p1', postAudience: 'FRIENDS', squadId: 's1' }), {
+    pathname: '/friends',
+    params: { post: 'p1' },
+  });
+  assert.equal(destinationFor({ kind: 'post_reaction', postId: 'p1', postAudience: 'FRIENDS', squadId: 's1' }), '/friends');
+  assert.equal(destinationFor({ kind: 'post_comment', postAudience: 'FRIENDS' }), '/friends');
   assert.equal(destinationFor({ kind: 'post_reaction', postId: 'p1', postAudience: 'BOTH', squadId: 's1' }).pathname, '/squad-post/[id]');
   assert.deepEqual(destinationFor({ kind: 'post_comment', postId: 'p1', postAudience: 'SQUAD', squadId: 's1' }), {
     pathname: '/squad-post/[id]',

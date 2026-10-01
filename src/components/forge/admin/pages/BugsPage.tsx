@@ -3,6 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View, type TextStyle } from 'react-native';
 
+import { BugPlainView } from '@/components/forge/admin/BugPlain';
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import {
   age,
@@ -54,7 +55,7 @@ import {
 import { bugBrief, bugsBrief } from '@/domain/admin/bug-brief';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
 import { bugsNote } from '@/domain/admin/notes/bugs';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Bugs — the one bug board (Admin-Analytics-Amendment-002, AA-D19 + AA-D21), built to `Forge CRM.v2.dc.html`.
@@ -186,6 +187,7 @@ export function BugsPage({ arg }: PageProps) {
   const [delErr, setDelErr] = useState<{ id: string; msg: string } | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const { armed, tap } = useTwoTap();
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
 
   // ── New bug ──
   const [form, setForm] = useState<NewBug | null>(null);
@@ -285,6 +287,36 @@ export function BugsPage({ arg }: PageProps) {
     } catch {
       toast('Couldn’t copy. Your browser blocked the clipboard.');
     }
+  };
+
+  /* "Mark all N Fixed" (PO 09-29: marking a fixed batch one bug at a time was "a lot to click"). Closes
+     every item the filters show that isn't already closed, through the same `admin_bug_save` as one tap on
+     Fixed — four at a time, and a failure never stops the rest. Two taps, because it can't be undone in bulk. */
+  const toClose = shown.filter((b) => b.status === 'open' || b.status === 'in_progress');
+  const markAllFixed = async () => {
+    const list = toClose;
+    if (!list.length || bulk) return;
+    setBulk({ done: 0, total: list.length });
+    const ok: string[] = [];
+    let failed = 0;
+    for (let i = 0; i < list.length; i += 4) {
+      await Promise.all(
+        list.slice(i, i + 4).map((b) =>
+          saveBug(b.id, { status: 'fixed' })
+            .then(() => {
+              ok.push(b.id);
+            })
+            .catch(() => {
+              failed++;
+            }),
+        ),
+      );
+      setBulk({ done: Math.min(i + 4, list.length), total: list.length });
+    }
+    setPatches((p) => Object.fromEntries([...Object.entries(p), ...ok.map((id) => [id, { ...p[id], status: 'fixed' as BugStatus }])]));
+    setBulk(null);
+    board.refetch();
+    toast(failed ? `Marked ${ok.length} Fixed. ${failed} couldn’t be saved — check your connection and try again.` : `Marked ${ok.length} Fixed.`);
   };
 
   // ── Writes ──
@@ -544,6 +576,14 @@ export function BugsPage({ arg }: PageProps) {
             label={`Copy ${shown.length === 1 ? 'this bug' : `all ${shown.length}`} for Claude`}
             onPress={() => void copyForClaude(bugsBrief(shown, linksOf, filterLabel), shown.length === 1 ? '1 bug' : `${shown.length} bugs`)}
           />
+          {toClose.length || bulk ? (
+            <Btn
+              size="sm"
+              busy={!!bulk}
+              label={bulk ? `Marking ${bulk.done} of ${bulk.total}…` : armed === 'bulk-fixed' ? `Tap again to mark ${toClose.length} Fixed` : `Mark ${toClose.length === 1 ? 'this' : `all ${toClose.length}`} Fixed`}
+              onPress={() => tap('bulk-fixed', () => void markAllFixed())}
+            />
+          ) : null}
           <Text style={{ fontSize: 12.5, color: c.ink3 }}>Everything the filters are showing, most severe first.</Text>
         </Row>
       ) : null}
@@ -840,6 +880,23 @@ export function BugsPage({ arg }: PageProps) {
               <Row>
                 <Btn size="sm" label="Copy for Claude" onPress={() => void copyForClaude(bugBrief(sel, linksOf(sel)), sel.ref ?? 'the bug')} />
               </Row>
+              {/* The report's own text, split on blank lines. QA items are written in markdown, so the
+                  emphasis markers and backticks come off and "- " becomes a bullet — the words are kept
+                  exactly, and stay selectable so they can be copied out. */}
+              <BugPlainView bug={sel}>
+                <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }} nestedScrollEnabled>
+                  {(sel.detail ?? '')
+                    .split(/\n\s*\n/)
+                    .map((p) => readableMarkdown(p).trim())
+                    .filter(Boolean)
+                    .map((p, i) => (
+                      <Text key={i} selectable style={{ fontSize: 14, lineHeight: 22.4, color: c.ink2 }}>
+                        {p}
+                      </Text>
+                    ))}
+                  {!sel.detail?.trim() ? <Text style={{ fontSize: 14, lineHeight: 22.4, color: c.ink3 }}>No description.</Text> : null}
+                </ScrollView>
+              </BugPlainView>
               <View style={{ gap: 8 }}>
                 <Text style={{ fontSize: 12, color: c.ink3 }}>Severity</Text>
                 <Row gap={6}>
@@ -859,21 +916,6 @@ export function BugsPage({ arg }: PageProps) {
                   {save?.id !== sel.id ? 'Changes save as you tap' : save.state === 'saving' ? `Saving “${save.msg}”…` : save.state === 'error' ? save.msg : 'Saved'}
                 </Text>
               </View>
-              {/* The report's own text, split on blank lines. QA items are written in markdown, so the
-                  emphasis markers and backticks come off and "- " becomes a bullet — the words are kept
-                  exactly, and stay selectable so they can be copied out. */}
-              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 10, paddingRight: 4 }} nestedScrollEnabled>
-                {(sel.detail ?? '')
-                  .split(/\n\s*\n/)
-                  .map((p) => readableMarkdown(p).trim())
-                  .filter(Boolean)
-                  .map((p, i) => (
-                    <Text key={i} selectable style={{ fontSize: 14, lineHeight: 22.4, color: c.ink2 }}>
-                      {p}
-                    </Text>
-                  ))}
-                {!sel.detail?.trim() ? <Text style={{ fontSize: 14, lineHeight: 22.4, color: c.ink3 }}>No description.</Text> : null}
-              </ScrollView>
               <View style={{ gap: 6 }}>
                 <Input
                   multiline

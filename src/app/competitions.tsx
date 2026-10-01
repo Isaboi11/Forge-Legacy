@@ -24,6 +24,7 @@ import {
   type PastChallenge,
 } from '@/data/challenges-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { daysLeftLabel } from '@/domain/challenges/season';
 import { getSeenPodiums, podiumIsFresh } from '@/lib/podium-seen';
 import { useToast } from '@/hooks/useCeremony';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -297,7 +298,10 @@ export default function CompetitionsScreen() {
           {/* ── Stats ── real aggregates, not per-filter literals. */}
           <Text style={styles.sectionLabel}>Competition Stats</Text>
           <View style={styles.statGrid}>
-            <StatCell value={String(hub.stats.entered)} label="Entered" />
+            {/* "Finished", not "Entered" (social2-05, QA 09-26): the count is closed seasons only (0163 reads
+                `challenge_results`), so the day you joined your first competition it said "0 Entered". It is
+                also exactly what Win Rate divides by. */}
+            <StatCell value={String(hub.stats.entered)} label="Finished" />
             <StatCell value={String(hub.stats.wins)} label="Wins" />
             <StatCell value={String(hub.stats.podiums)} label="Podiums" />
             <StatCell value={`${rate}%`} label="Win Rate" />
@@ -334,7 +338,7 @@ function openMeta(c: OpenChallenge): string {
   return [
     c.squadName,
     `from ${c.creatorName}`,
-    c.state === 'ACTIVE' ? `underway · ${left} ${left === 1 ? 'day' : 'days'} left` : null,
+    c.state === 'ACTIVE' ? `underway · ${daysLeftLabel(left).toLowerCase()}` : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -383,7 +387,7 @@ function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOp
         <Text style={styles.standing}>
           {placeLabel(c.myPlace)} · {formatScore(c.type, c.myScore)} {meta.unit}
         </Text>
-        <Text style={styles.days}>{left === 0 ? 'Ends today' : `${left} ${left === 1 ? 'day' : 'days'} left`}</Text>
+        <Text style={styles.days}>{daysLeftLabel(left)}</Text>
       </View>
     </Pressable>
   );

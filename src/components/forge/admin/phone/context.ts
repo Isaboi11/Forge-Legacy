@@ -14,17 +14,17 @@ export type PhoneTab = 'today' | 'money' | 'bugs' | 'people' | 'more';
 export const TAB_NAME: Record<PhoneTab, string> = { today: 'Today', money: 'Money', bugs: 'Bugs', people: 'People', more: 'More' };
 
 /** Full-screen pages that slide over a tab (and over the tab bar). Each tab keeps its own stack. */
-export type OverlayKind = 'bug' | 'report' | 'crash' | 'contact' | 'contactEdit' | 'user';
+export type OverlayKind = 'bug' | 'report' | 'crash' | 'contact' | 'contactEdit' | 'user' | 'video';
 
 export interface Overlay {
   kind: OverlayKind;
-  /** Bug uuid, report/crash origin, contact uuid or athlete uuid. */
+  /** Bug uuid, report/crash origin, contact uuid, athlete uuid, or a Social video uuid. */
   id: string;
   /** The tab the overlay was opened FROM — the back button says "‹ Today" when a to-do opened it. */
   from?: PhoneTab;
 }
 
-export type SheetKind = 'bugFilter' | 'userFilter' | 'newBug' | 'log' | 'docPick' | 'docConfirm';
+export type SheetKind = 'bugFilter' | 'userFilter' | 'newBug' | 'log' | 'docPick' | 'docConfirm' | 'newIdea';
 
 export interface Sheet {
   kind: SheetKind;
@@ -41,7 +41,7 @@ export interface BugFilter {
 
 export const DEFAULT_BUG_FILTER: BugFilter = { status: 'active', severity: null, source: null, area: null };
 
-export type MoreView = 'root' | 'appstore' | 'usage' | 'moderation' | 'documents';
+export type MoreView = 'root' | 'social' | 'content' | 'playbook' | 'appstore' | 'usage' | 'moderation' | 'surveys' | 'documents';
 
 export interface PhoneCtx {
   tab: PhoneTab;

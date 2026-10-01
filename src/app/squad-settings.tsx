@@ -15,7 +15,8 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { ForgeTextArea } from '@/components/forge/inputs/ForgeTextArea';
-import { SquadCrest } from '@/components/forge/SquadCrest';
+import { CREST_KEYS, SquadCrest } from '@/components/forge/SquadCrest';
+import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ReportSheet } from '@/components/ReportSheet';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
@@ -41,6 +42,7 @@ import { fetchVisibility, saveVisibility } from '@/data/settings-live';
 import type { AudienceId } from '@/domain/settings/visibility';
 import { SQUAD_CATEGORIES, fetchPendingRequestCount, fetchSquadDiscovery, updateSquadDiscovery, type SquadCategory } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 import { callerModalGone, useMediaPicker } from '@/lib/useMediaPicker';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
@@ -63,12 +65,14 @@ const DESC_MAX = 140;
 const COMMITMENT_MAX = 200;
 
 const PRIVACY_HINT: Record<SquadPrivacy, string> = {
-  private: 'Invite-only and hidden from search. Members join through invitations or approval.',
-  public: 'Visible to everyone. Athletes can discover your squad and request to join — you approve each one.',
+  /* What a private squad actually does (social2-25, QA 09-26): an invite code or link joins you at once — there
+     is no approval step on that door. "Through invitations or approval" promised one that doesn't exist. */
+  private: 'Hidden from search. Anyone with your invite code or link joins straight away.',
+  public: 'Visible to everyone. Athletes who find it ask to join and you approve each one — your invite code or link still joins straight away.',
 };
 
 export default function SquadSettingsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, confirmDelete } = useLocalSearchParams<{ id: string; confirmDelete?: string }>();
   const router = useRouter();
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
@@ -94,6 +98,7 @@ export default function SquadSettingsScreen() {
   const [draftCommitment, setDraftCommitment] = useState('');
   const [draftPhotoUri, setDraftPhotoUri] = useState<string | null>(null);
   const [draftPhotoCleared, setDraftPhotoCleared] = useState(false);
+  const [draftCrest, setDraftCrest] = useState('swords');
   const [savingEdit, setSavingEdit] = useState(false);
 
   const [privacyOverride, setPrivacyOverride] = useState<SquadPrivacy | null>(null);
@@ -102,7 +107,9 @@ export default function SquadSettingsScreen() {
   const [invitePermOverride, setInvitePermOverride] = useState<'owner' | 'members' | null>(null);
   const [savingInvitePerm, setSavingInvitePerm] = useState(false);
 
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  /* `?confirmDelete=1` is how the squad page's ⋯ → Delete Squad arrives (social-16): straight to this typed
+     confirm, so both doors to deleting a squad ask the same thing. */
+  const [deleteOpen, setDeleteOpen] = useState(confirmDelete === '1');
   const [deleteText, setDeleteText] = useState('');
   const [deleting, setDeleting] = useState(false);
 
@@ -149,6 +156,7 @@ export default function SquadSettingsScreen() {
     setDraftCommitment(discovery?.commitment ?? '');
     setDraftPhotoUri(null);
     setDraftPhotoCleared(false);
+    setDraftCrest(squad.crest);
     setEditOpen(true);
   };
 
@@ -185,6 +193,7 @@ export default function SquadSettingsScreen() {
       const patch: Parameters<typeof updateSquad>[1] = { name: draftName, motto: draftMotto, description: draftDesc };
       if (draftPhotoUri) patch.photoUrl = await uploadSquadPhoto(squad.id, draftPhotoUri);
       else if (draftPhotoCleared) patch.photoUrl = null;
+      if (draftCrest !== squad.crest) patch.crest = draftCrest;
       await updateSquad(squad.id, patch);
       if (discovery) {
         const nextCommitment = draftCommitment.trim() || null;
@@ -204,7 +213,7 @@ export default function SquadSettingsScreen() {
       },
       (e: unknown) => {
         setSavingEdit(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t save changes.');
+        showToast(plainError(e, 'Couldn’t save changes.'));
       },
     );
   };
@@ -266,7 +275,7 @@ export default function SquadSettingsScreen() {
       () => router.replace('/(tabs)/squads'),
       (e: unknown) => {
         setDeleting(false);
-        showToast(e instanceof Error ? e.message : 'Couldn’t delete the squad.');
+        showToast(plainError(e, 'Couldn’t delete the squad.'));
       },
     );
   };
@@ -349,7 +358,7 @@ export default function SquadSettingsScreen() {
             {(['private', 'public'] as const).map((p) => {
               const on = displayedPrivacy === p;
               return (
-                <Pressable key={p} onPress={() => changePrivacy(p)} accessibilityRole="button" accessibilityState={{ selected: on }} style={styles.segBtn}>
+                <Pressable key={p} onPress={() => changePrivacy(p)} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} accessibilityLabel={`Squad visibility: ${p === 'private' ? 'Private' : 'Public'}`} style={styles.segBtn}>
                   {on ? <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} /> : null}
                   <Text style={[styles.segLabel, on ? styles.segLabelOn : null]}>{p === 'private' ? 'Private' : 'Public'}</Text>
                 </Pressable>
@@ -372,9 +381,9 @@ export default function SquadSettingsScreen() {
             <Text style={styles.sectionLabel}>Training Standard</Text>
             <View style={styles.card}>
               <Text style={styles.privacyLabel}>Days a week</Text>
+              {/* Plain words (social-32, QA 09-26): the old line explained what the number was NOT. */}
               <Text style={styles.privacyHint}>
-                Days a week every member trains. Rest days are part of training — this is the bar the squad agrees
-                to clear, not the number of days in a week.
+                How many days a week each member aims to train. A week where everyone reaches it counts as a Perfect Week.
               </Text>
               <View style={styles.stdRow}>
                 <Pressable
@@ -418,7 +427,7 @@ export default function SquadSettingsScreen() {
                 ]).map((o) => {
                   const on = displayedInvitePerm === o.v;
                   return (
-                    <Pressable key={o.v} onPress={() => changeInvitePerm(o.v)} accessibilityRole="button" accessibilityState={{ selected: on }} style={styles.segBtn}>
+                    <Pressable key={o.v} onPress={() => changeInvitePerm(o.v)} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} accessibilityLabel={`Who can invite: ${o.label}`} style={styles.segBtn}>
                       {on ? <LinearGradient colors={flGradient.bronzeMetallic.colors} locations={flGradient.bronzeMetallic.locations} start={flGradient.bronzeMetallic.start} end={flGradient.bronzeMetallic.end} style={StyleSheet.absoluteFill} /> : null}
                       <Text style={[styles.segLabel, on ? styles.segLabelOn : null]}>{o.label}</Text>
                     </Pressable>
@@ -511,7 +520,7 @@ export default function SquadSettingsScreen() {
         <View style={styles.sheetBody}>
           <View style={styles.editPhotoWrap}>
             <Pressable onPress={pickPhoto} accessibilityRole="button" accessibilityLabel={editPhoto ? 'Change squad photo' : 'Add squad photo'} style={styles.editPhotoDisc}>
-              {editPhoto ? <Image source={{ uri: editPhoto }} style={styles.editPhotoImg} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={30} />}
+              {editPhoto ? <Image source={{ uri: editPhoto }} style={styles.editPhotoImg} contentFit="cover" /> : <SquadCrest crest={draftCrest} size={30} />}
             </Pressable>
             <View style={styles.editPhotoActions}>
               <Pressable onPress={pickPhoto} accessibilityRole="button" hitSlop={6}>
@@ -526,6 +535,27 @@ export default function SquadSettingsScreen() {
                 </>
               ) : null}
             </View>
+          </View>
+
+          {/*
+            THE CREST, CHANGEABLE AFTER CREATION (social-12, QA 09-26). Create Squad says "Your photo, crest,
+            and name become your squad's identity. You can change them anytime" — and the crest was the one
+            of the three with no control here. `updateSquad` has always accepted it and `squads_update` is
+            the owner's (0029), so this is the missing picker and nothing else: the same eight, the same grid.
+          */}
+          <View>
+            <Text style={styles.faLabel}>Crest</Text>
+            <View style={styles.crestGrid}>
+              {CREST_KEYS.map((k) => {
+                const on = draftCrest === k;
+                return (
+                  <Pressable key={k} onPress={() => setDraftCrest(k)} accessibilityRole="radio" accessibilityState={{ checked: on }} aria-checked={on} accessibilityLabel={`${k} crest`} style={[styles.crestCell, on ? styles.crestCellOn : null]}>
+                    <SquadCrest crest={k} size={22} color={on ? flColor.bronze300 : flColor.gray400} />
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Text style={styles.catHint}>{editPhoto ? 'Your squad photo is shown in its place. Remove the photo to show the crest.' : 'The mark your squad wears wherever it has no photo.'}</Text>
           </View>
 
           <InputField label="Squad Name" value={draftName} onChange={setDraftName} maxLength={NAME_MAX} showCount placeholder="Squad name" autoCapitalize="words" />
@@ -940,11 +970,16 @@ function TrainingAlerts({ squadId, isLeader }: { squadId: string; isLeader: bool
     </>
   );
 }
+/**
+ * The app's ONE settings switch (visualB-19, QA 09-26): this screen drew its own — a cream knob on bronze —
+ * beside Settings' dark-knob `SettingsToggle`. It now IS that component, so a restyle or an accessibility
+ * fix there lands here too. A dimmed row (the squad is muted) ignores the tap, as the old switch did.
+ */
 function NotifSwitch({ on, disabled = false, onToggle, label }: { on: boolean; disabled?: boolean; onToggle: () => void; label: string }) {
   return (
-    <Pressable onPress={onToggle} disabled={disabled} accessibilityRole="switch" accessibilityState={{ checked: on, disabled }} accessibilityLabel={label} style={[styles.sw, on ? styles.swOn : styles.swOff]}>
-      <View style={[styles.swKnob, on ? styles.swKnobOn : styles.swKnobOff]} />
-    </Pressable>
+    <View style={disabled ? styles.swDisabled : null} pointerEvents={disabled ? 'none' : 'auto'}>
+      <SettingsToggle value={on} onChange={() => { if (!disabled) onToggle(); }} accessibilityLabel={label} />
+    </View>
   );
 }
 
@@ -1117,12 +1152,7 @@ const styles = StyleSheet.create({
   notifText: { flex: 1, minWidth: 0, gap: 2 },
   notifTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   notifSub: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600 },
-  sw: { width: 46, height: 27, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-  swOn: { backgroundColor: flColor.bronzeSolid, borderColor: flColor.bronze400, alignItems: 'flex-end' },
-  swOff: { backgroundColor: flColor.charcoal900, borderColor: flColor.charcoal700, alignItems: 'flex-start' },
-  swKnob: { width: 21, height: 21, borderRadius: 10.5 },
-  swKnobOn: { backgroundColor: '#E4D4B8' },
-  swKnobOff: { backgroundColor: flColor.gray600 },
+  swDisabled: { opacity: 0.5 },
 
   reportRow: { flexDirection: 'row', alignItems: 'center', gap: 13, padding: 15, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.charcoal900, boxShadow: flShadow.card, marginBottom: 12 },
   reportIcon: { width: 34, height: 34, flexShrink: 0, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
@@ -1141,6 +1171,10 @@ const styles = StyleSheet.create({
   editPhotoDisc: { width: 76, height: 76, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: flColor.charcoal900, boxShadow: `0 0 0 2px ${flColor.bronze400}, 0 0 14px rgba(186, 134, 84,0.26)` },
   editPhotoImg: { width: '100%', height: '100%', borderRadius: flRadius.round },
   editPhotoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  // the crest grid — Create Squad's, cell for cell
+  crestGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  crestCell: { flexGrow: 1, flexBasis: '20%', minWidth: 56, paddingVertical: 13, alignItems: 'center', justifyContent: 'center', borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
+  crestCellOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   editLink: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
   editLinkMuted: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
   editDot: { fontSize: 12, color: flColor.gray600 },

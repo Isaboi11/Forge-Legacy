@@ -78,6 +78,16 @@ export default function ChallengeDetailScreen() {
 
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/competitions'));
 
+  /* C-3 §9.5 (LOCKED): "Challenge cancelled while viewing — resolve to C-1; challenge absent; no
+     tombstone." A called-off competition reached from a stale row or a push drew its old standings with
+     no way in and no word why (social2-27, QA 09-26). It goes to the hub, where it is simply not listed. */
+  const calledOff = data?.state === 'CANCELLED';
+  const offSquad = calledOff ? data?.squadId ?? null : null;
+  useEffect(() => {
+    if (!calledOff) return;
+    router.replace(offSquad ? { pathname: '/competitions', params: { id: offSquad } } : '/competitions');
+  }, [calledOff, offSquad, router]);
+
   /**
    * THE CORONATION, FROM HERE TOO.
    *
@@ -148,7 +158,7 @@ export default function ChallengeDetailScreen() {
     );
   };
 
-  if (loading && !data) {
+  if ((loading && !data) || calledOff) {
     return (
       <Shell onBack={goBack}>
         <View style={styles.center}>

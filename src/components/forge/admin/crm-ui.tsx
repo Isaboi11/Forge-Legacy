@@ -796,24 +796,40 @@ const dayLabel = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+/**
+ * Where a zoomed chart's axis starts: a round number a little under the lowest value. A count that only
+ * grows (followers) drawn from zero is a flat line near the top; drawn from here, the month is readable.
+ * The gridline labels say where the axis starts, so the zoom is never hidden.
+ */
+export function zoomBase(values: number[]): number {
+  if (!values.length) return 0;
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  const step = 10 ** Math.floor(Math.log10(Math.max(hi - lo, 1)));
+  return Math.max(0, Math.floor((lo - (hi - lo) * 0.1) / step) * step);
+}
+
 let gradSeq = 0;
 
 /**
  * One series over time: smooth bronze line, fading area, three gridlines labelled at the left, four dates
  * under it, a hover crosshair and tooltip (web). `days` are yyyy-mm-dd, parallel to `values`; `weekly`
- * says each point is a week (the 1Y range) and prefixes the tooltip "Week of".
+ * says each point is a week (the 1Y range) and prefixes the tooltip "Week of". `zoom` starts the axis near
+ * the lowest value instead of at zero (see `zoomBase`) — for a running total, never for money or a rate.
  */
-export function Chart({ values, days, fmt, weekly }: { values: number[]; days: string[]; fmt: (v: number) => string; weekly?: boolean }) {
+export function Chart({ values, days, fmt, weekly, zoom }: { values: number[]; days: string[]; fmt: (v: number) => string; weekly?: boolean; zoom?: boolean }) {
   const { c, mode } = useCrm();
   const [w, setW] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
   const [gid] = useState(() => `crm-g-${gradSeq++}`);
   const n = values.length;
-  const max = niceMax(Math.max(0, ...values) * 1.08);
-  const pts = values.map((v, i) => ({ x: n > 1 ? (i / (n - 1)) * w : w / 2, y: TOP + (1 - Math.max(0, v) / max) * (CH - TOP) }));
+  const base = zoom ? zoomBase(values) : 0;
+  const span = niceMax((Math.max(0, ...values) - base) * 1.08);
+  const max = base + span;
+  const pts = values.map((v, i) => ({ x: n > 1 ? (i / (n - 1)) * w : w / 2, y: TOP + (1 - Math.max(0, v - base) / span) * (CH - TOP) }));
   const line = smooth(pts);
   const area = pts.length ? `${line} L${w},${CH} L0,${CH} Z` : '';
-  const grid = [0, max / 2, max].map((v) => ({ v, y: TOP + (1 - v / max) * (CH - TOP) }));
+  const grid = [base, base + span / 2, max].map((v) => ({ v, y: TOP + (1 - (v - base) / span) * (CH - TOP) }));
   const L = n - 1;
   const ticks = n > 1 ? [0, Math.round(L / 3), Math.round((2 * L) / 3), L] : [0];
   const last = pts[pts.length - 1];

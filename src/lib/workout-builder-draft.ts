@@ -19,6 +19,12 @@ export interface WorkoutDraft {
   cooldown: ProgramExercise[];
   /** Set when editing an existing template — save writes back rather than creating a second one. */
   editId: string | null;
+  /**
+   * When editing: the fingerprint of the template AS LOADED. Back compares against it, so opening a saved
+   * template and leaving without touching it does not ask "Discard?" (QA 09-26 library-19). Absent on a
+   * new build, where any content at all is worth a confirm.
+   */
+  baseline?: string | null;
 }
 
 const KEY = 'forge_workout_builder_draft_v1';
@@ -29,6 +35,19 @@ export const workoutDraftTotal = (d: WorkoutDraft) => d.warmup.length + d.main.l
 
 /** Worth a confirmation before discarding? A name typed or a single exercise added both count. */
 export const workoutDraftHasContent = (d: WorkoutDraft) => d.name.trim().length > 0 || workoutDraftTotal(d) > 0;
+
+/** What "unchanged" compares: the name and the three sections, never the edit bookkeeping. */
+export const workoutDraftFingerprint = (d: WorkoutDraft) => JSON.stringify([d.name.trim(), d.warmup, d.main, d.cooldown]);
+
+/** Stamp the as-loaded fingerprint onto an edit draft that has just been read from the server. */
+export const withWorkoutBaseline = (d: WorkoutDraft): WorkoutDraft => ({ ...d, baseline: workoutDraftFingerprint(d) });
+
+/**
+ * Worth a "Discard?" on Back. An edit with a baseline asks only when something CHANGED; a new build (or an
+ * edit draft saved before baselines existed) asks whenever it holds anything.
+ */
+export const workoutDraftIsDirty = (d: WorkoutDraft) =>
+  d.editId && d.baseline ? workoutDraftFingerprint(d) !== d.baseline : workoutDraftHasContent(d);
 
 export async function loadWorkoutDraft(): Promise<WorkoutDraft | null> {
   try {
@@ -43,6 +62,7 @@ export async function loadWorkoutDraft(): Promise<WorkoutDraft | null> {
       main: Array.isArray(v.main) ? v.main : [],
       cooldown: Array.isArray(v.cooldown) ? v.cooldown : [],
       editId: typeof v.editId === 'string' ? v.editId : null,
+      baseline: typeof v.baseline === 'string' ? v.baseline : null,
     };
   } catch {
     return null;

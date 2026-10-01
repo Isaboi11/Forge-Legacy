@@ -48,7 +48,7 @@ import { matchExercise, tokenize } from '../program/exercise-match.ts';
 import { resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 
 import { candidatesFor, fillSlot, isCompound, type CandidateContext, type CatalogExercise } from './candidates.ts';
-import { describe, editableSessions, replacementsFor, valuesFor } from './edit-chat.ts';
+import { describe, editableSessions, replacementsFor, slotKeysElsewhere, valuesFor } from './edit-chat.ts';
 import {
   addExercise,
   canEdit,
@@ -59,6 +59,7 @@ import {
   setPrescription,
   setSetsMany,
   swapExercise,
+  carriedDoseNote,
   type EditRefusal,
   type EditResult,
   type EditScope,
@@ -66,6 +67,7 @@ import {
 import type { EditIntent } from './interpret-narrow.ts';
 import { isTimedExercise, prescribeReps, prescribeTimed, roleFor, type PrescribeContext } from './prescribe.ts';
 import { FOCUS_SPEC } from './rulebook/focus.ts';
+import { countOf } from '../text/plural.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
 
 export type { EditIntent };
@@ -568,8 +570,9 @@ function resolveReplacement(
   row: ProgramExercise,
   pool: readonly CatalogExercise[],
   ctx: CandidateContext,
+  offerBack: readonly string[] = [],
 ): { ok: true; replacement: CatalogExercise } | Ask {
-  const same = replacementsFor(row, pool, ctx, 60)
+  const same = replacementsFor(row, pool, ctx, 60, offerBack)
     .map((v) => v.replacement)
     .filter((e): e is CatalogExercise => !!e);
   const offer = same.slice(0, 5).map((e) => e.name);
@@ -668,7 +671,7 @@ export function resolveEditIntent(
         return ask(
           'which_day',
           holding.map((s) => sessionLabel(structure, s.at.weekIndex, s.at.dayIndex)),
-          `${intent.exercise} is in more than one session this week — which day?`,
+          `${intent.exercise} shows up in more than one session this week — which day?`,
         );
       } else return ask('which_day', options, `I can't find ${intent.exercise} in this week's sessions — which day?`);
     }
@@ -755,24 +758,26 @@ export function resolveEditIntent(
 
   switch (intent.op) {
     case 'swap': {
-      const r = resolveReplacement(intent.to, row, pool, ctx);
+      const r = resolveReplacement(intent.to, row, pool, ctx, slotKeysElsewhere(structure, at));
       if (!r.ok) return r;
-      return plan(`${row.name} → ${r.replacement.name}`, (scope) => swapExercise(structure, marks, at, r.replacement, scope));
+      /* QA holtai-09: a bodyweight dose landing on a loaded lift is named in the confirm, not kept silently. */
+      const note = carriedDoseNote(row, r.replacement);
+      return plan(`${row.name} → ${r.replacement.name}${note ? ` (it ${note}; tell me the reps you want after and I'll change them)` : ''}`, (scope) => swapExercise(structure, marks, at, r.replacement, scope));
     }
     case 'sets': {
       if (intent.sets == null) return ask('which_value', valueOptions('sets'), `How many sets of ${row.name}?`);
       const next = clamp(intent.sets, 1, 8);
-      if (next === row.sets) return ask('which_value', valueOptions('sets'), `${row.name} is already ${next} sets — how many do you want?`);
-      return plan(`${row.name}: ${row.sets ?? '?'} → ${next} sets`, (scope) => setPrescription(structure, marks, at, { sets: next }, scope));
+      if (next === row.sets) return ask('which_value', valueOptions('sets'), `${row.name} is already ${countOf(next, 'set')} — how many do you want?`);
+      return plan(`${row.name}: ${row.sets ?? '?'} → ${countOf(next, 'set')}`, (scope) => setPrescription(structure, marks, at, { sets: next }, scope));
     }
     case 'reps': {
       const current = row.reps ?? 8;
-      const offer = [current - 4, current - 2, current + 2, current + 4].filter((n) => n >= 1 && n <= 60).map((n) => `${n} reps`);
+      const offer = [current - 4, current - 2, current + 2, current + 4].filter((n) => n >= 1 && n <= 60).map((n) => countOf(n, 'rep'));
       if (intent.reps == null) return ask('which_value', offer, `How many reps of ${row.name}?`);
       const next = clamp(intent.reps, 1, 60);
-      if (next === row.reps && !row.repsMax) return ask('which_value', offer, `${row.name} is already ${next} reps — how many do you want?`);
+      if (next === row.reps && !row.repsMax) return ask('which_value', offer, `${row.name} is already ${countOf(next, 'rep')} — how many do you want?`);
       // A fixed count replaces a range: "make it 10" on an 8–12 is 10, not 10–12.
-      return plan(`${row.name}: ${repsText(row)} → ${next} reps`, (scope) =>
+      return plan(`${row.name}: ${repsText(row)} → ${countOf(next, 'rep')}`, (scope) =>
         setPrescription(structure, marks, at, { reps: next, repsMax: null }, scope),
       );
     }

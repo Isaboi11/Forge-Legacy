@@ -36,7 +36,7 @@ import {
 } from '@/data/crm-live';
 import { CONTACT_STAGES, followUpLabel, todayKey, type ContactKind, type ContactStage } from '@/domain/admin/crm-core';
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * People — the phone CRM's contacts (`Forge CRM Phone.dc.html`, PEOPLE + the contact / edit overlays + the
@@ -87,6 +87,7 @@ const displayName = (ct: Contact) => ct.name || ct.email || 'Unnamed contact';
 function sourceLine(ct: Contact): string {
   if (ct.source === 'testflight_form') return 'Arrived from the website waitlist';
   if (ct.source === 'trainer_seat') return 'Arrived from trainer sign-up';
+  if (ct.source === 'survey') return 'Asked for early access in a survey';
   if (ct.athlete_handle) return `Linked to @${ct.athlete_handle}`;
   return 'Added by you';
 }

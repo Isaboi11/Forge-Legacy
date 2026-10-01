@@ -45,3 +45,19 @@ export async function saveHomeGym(ids: readonly string[]): Promise<void> {
 
   if (error) throw error;
 }
+
+/**
+ * Back to "never set up" (`null`) — NOT the same as saving `[]` ("I own nothing", bodyweight only). The editor
+ * had no way back once a profile existed (QA 09-26 library-30), so an athlete who only trains at a commercial
+ * gym stayed filtered to a home inventory forever.
+ */
+export async function clearHomeGym(): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+
+  const { error } = await supabase.from('profiles').update({ home_gym_equipment: null }).eq('id', user.id);
+
+  if (error) throw error;
+}

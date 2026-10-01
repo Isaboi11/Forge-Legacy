@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
@@ -19,7 +20,13 @@ import { useToast } from '@/hooks/useCeremony';
 import { usePlanNext } from '@/hooks/usePlanNext';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { itemByKey } from '@/domain/exercise-picker/data';
+import { activityFromKey, deriveEquip, resolveModality } from '@/domain/workout/conditioning';
+import { useUnits } from '@/lib/settings';
+import { groupMarks } from '@/domain/workout/template-groups';
+import { customIdOf } from '@/domain/exercise-picker/custom-core';
+import { restoreCustomExercise } from '@/data/custom-exercises-live';
 import { ExercisePoster } from '@/components/forge/ExercisePoster';
+import { nameNearLimit, WORKOUT_NAME_MAX } from '@/domain/text/name-limits';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import {
   deleteTemplate,
@@ -28,6 +35,7 @@ import {
   fetchTemplateDetail,
   heroSummary,
   historyDate,
+  removeTemplateExercise,
   renameTemplate,
   schemeText,
   statDate,
@@ -86,7 +94,9 @@ function Chevron({ size = 15 }: { size?: number }) {
   return <EngravedIcon name="chevron-right" size={size} color={flColor.gray600} />;
 }
 
-export default function TemplateDetailScreen() {
+export default guardRoute(TemplateDetailScreen, hasId, { title: 'Template not found' });
+
+function TemplateDetailScreen() {
   const barBottom = useBarBottom();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -166,6 +176,54 @@ export default function TemplateDetailScreen() {
     }
   };
 
+  /*
+   * ══ THE [DELETED EXERCISE] TOMBSTONE (library-12, `Exercise-001` §8.2, LOCKED) ══
+   *
+   * Deleting a custom exercise promised that "any template using it will show it as removed until you
+   * restore it" — and nothing looked. `fetchTemplateDetail` now reads the athlete's exercises live, so a
+   * rename shows here as the new name and a delete marks the row; this is where the athlete meets the
+   * problem and its three answers. Restore is the exercise (every template recovers at once, §7.2);
+   * Replace and Remove change only this template's row.
+   */
+  const [removeAsk, setRemoveAsk] = useState<TemplateExercise | null>(null);
+  const rowTarget = (e: TemplateExercise) => ({ index: t ? t.exercises.indexOf(e) : -1, catalogKey: e.catalogKey, name: e.name });
+
+  const restoreRow = async (e: TemplateExercise) => {
+    const id = customIdOf(e.catalogKey);
+    if (!id || busy) return;
+    setBusy(true);
+    try {
+      await restoreCustomExercise(id);
+      showToast(`${e.name} is back in your library.`);
+      refetch();
+    } catch (err) {
+      showToast(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const replaceRow = (e: TemplateExercise) => {
+    if (!t) return;
+    router.push({
+      pathname: '/exercise-picker',
+      params: { mode: 'replace', dest: 'template', ex: e.name, template: t.id, row: String(rowTarget(e).index), rowKey: e.catalogKey ?? '', rowName: e.name },
+    });
+  };
+
+  const doRemoveRow = async () => {
+    const e = removeAsk;
+    setRemoveAsk(null);
+    if (!t || !e) return;
+    try {
+      const ok = await removeTemplateExercise(t.id, rowTarget(e));
+      showToast(ok ? `${e.name} removed from this template.` : 'That template changed — nothing was removed.');
+      refetch();
+    } catch (err) {
+      showToast(errorMessage(err));
+    }
+  };
+
   const notFound = !loading && !error && !t;
 
   return (
@@ -187,19 +245,11 @@ export default function TemplateDetailScreen() {
         </View>
       ) : error ? (
         <View style={styles.status}>
-          <Text style={styles.statusText}>Couldn&apos;t load this template.</Text>
-          <Text style={styles.statusDetail}>{errorMessage(error)}</Text>
-          <Pressable onPress={refetch} accessibilityRole="button" accessibilityLabel="Try again" style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnText}>Try again</Text>
-          </Pressable>
+          <NotFoundBody title="Couldn’t load this template." reason={error} onRetry={refetch} onBack={goBack} />
         </View>
       ) : notFound ? (
         <View style={styles.status}>
-          <Text style={styles.notFoundTitle}>Template not found</Text>
-          <Text style={styles.statusDetail}>It may have been deleted.</Text>
-          <Pressable onPress={() => router.replace('/templates')} accessibilityRole="button" accessibilityLabel="Back to Templates" style={styles.outlineBtn}>
-            <Text style={styles.outlineBtnText}>Back to Templates</Text>
-          </Pressable>
+          <NotFoundBody title="Template not found" reason="It may have been deleted." onBack={() => router.replace('/templates')} />
         </View>
       ) : t ? (
         <>
@@ -226,7 +276,11 @@ export default function TemplateDetailScreen() {
             {/* structure */}
             <View style={styles.block}>
               <SectionHeader label="Structure" />
-              {templateSections(t).map((sec) => (
+              {templateSections(t).map((sec) => {
+                /* The blocks and the tags, per section — the same letters the builder drew when this
+                   was authored and the logger will show when it is trained (library-11). */
+                const marks = groupMarks(sec.items);
+                return (
                 <View key={sec.key} style={styles.secBlock}>
                   <View style={styles.secHead}>
                     {/* Bronze marks the block that matters; warm-up and cool-down recede. */}
@@ -236,11 +290,27 @@ export default function TemplateDetailScreen() {
                   </View>
                   <View style={styles.exList}>
                     {sec.items.map((e, i) => (
-                      <ExerciseRow key={`${e.catalogKey ?? e.name}-${i}`} ex={e} />
+                      <View key={`${e.catalogKey ?? e.name}-${i}`} style={styles.exGroup}>
+                        {/* A label, not a card: it says what the rows under it ARE. */}
+                        {marks[i].head ? <Text style={styles.groupHead}>{marks[i].head}</Text> : null}
+                        {e.customDeleted ? (
+                          <DeletedExerciseRow
+                            ex={e}
+                            busy={busy}
+                            onRestore={() => void restoreRow(e)}
+                            onReplace={() => replaceRow(e)}
+                            onRemove={() => setRemoveAsk(e)}
+                          />
+                        ) : (
+                          <ExerciseRow ex={e} tag={marks[i].tag} />
+                        )}
+                        <CoachCue note={e.coachNote} />
+                      </View>
                     ))}
                   </View>
                 </View>
-              ))}
+                );
+              })}
             </View>
 
             {/* session history */}
@@ -386,9 +456,15 @@ export default function TemplateDetailScreen() {
           placeholderTextColor={flColor.gray600}
           style={styles.input}
           accessibilityLabel="Template name"
-          maxLength={60}
+          maxLength={WORKOUT_NAME_MAX}
           autoFocus
         />
+        {/* Never a silent cut (QA 09-26 library-23): the count shows as the name nears its cap. */}
+        {nameNearLimit(draftName.length, WORKOUT_NAME_MAX) ? (
+          <Text style={styles.nameCount}>
+            {draftName.length}/{WORKOUT_NAME_MAX}
+          </Text>
+        ) : null}
         <View style={styles.renameSave}>
           <Button
             variant="primary"
@@ -412,14 +488,85 @@ export default function TemplateDetailScreen() {
         tone="destructive"
         onConfirm={() => void doDelete()}
       />
+      <ConfirmSheet
+        open={removeAsk != null}
+        onClose={() => setRemoveAsk(null)}
+        headline="Remove from this template?"
+        body={`“${removeAsk?.name ?? ''}” and its sets come out of “${t?.name ?? ''}”. Your other templates and your logged sessions are not touched.`}
+        confirmLabel="Remove"
+        tone="destructive"
+        onConfirm={() => void doRemoveRow()}
+      />
+    </View>
+  );
+}
+
+/**
+ * `[Deleted Exercise]` — a row whose own custom exercise was deleted (`Exercise-001` §8.2). The name and
+ * the prescription stay readable ("retained read-only"); the three answers sit inside the row, because
+ * this row is something to act on. Nothing opens on the row itself — there is no exercise to open.
+ */
+function DeletedExerciseRow({
+  ex,
+  busy,
+  onRestore,
+  onReplace,
+  onRemove,
+}: {
+  ex: TemplateExercise;
+  busy: boolean;
+  onRestore: () => void;
+  onReplace: () => void;
+  onRemove: () => void;
+}) {
+  const { units, rowUnit } = useUnits();
+  return (
+    <View style={[styles.exRow, styles.tombRow]} accessible={false}>
+      <View style={styles.tombTop}>
+        <View style={styles.exIcon}>
+          <EngravedIcon name="trash" size={16} color={flColor.gray600} />
+        </View>
+        <View style={styles.exText}>
+          <Text style={[styles.exName, styles.tombName]} numberOfLines={1}>
+            {ex.name}
+          </Text>
+          <Text style={styles.exEquip} numberOfLines={1}>
+            Deleted exercise
+          </Text>
+        </View>
+        <Text style={[styles.exScheme, styles.tombScheme]}>{schemeText(ex, { metric: units === 'metric', rowUnit })}</Text>
+      </View>
+      <View style={styles.tombActions}>
+        {[
+          { label: 'Restore', a11y: `Restore ${ex.name} to your library`, on: onRestore },
+          { label: 'Replace', a11y: `Replace ${ex.name} in this template`, on: onReplace },
+          { label: 'Remove', a11y: `Remove ${ex.name} from this template`, on: onRemove },
+        ].map((b) => (
+          <Pressable
+            key={b.label}
+            onPress={b.on}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={b.a11y}
+            style={({ pressed }) => [styles.tombBtn, pressed ? styles.pressed : null, busy ? styles.disabled : null]}
+          >
+            <Text style={[styles.tombBtnText, b.label === 'Remove' ? styles.tombBtnDanger : null]}>{b.label}</Text>
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 }
 
 /** One lift: engraved icon disc · name over equipment · scheme in mono · chevron only when it opens. */
-function ExerciseRow({ ex }: { ex: TemplateExercise }) {
+function ExerciseRow({ ex, tag }: { ex: TemplateExercise; tag: string | null }) {
   const router = useRouter();
+  const { units, rowUnit } = useUnits();
   const rec = ex.catalogKey ? itemByKey(ex.catalogKey) : undefined;
+  /* A cardio block is not in the exercise catalogue, so the lookup above finds nothing — and "nothing"
+     used to print as "Custom · 1 × 0" (library-03). It names its own ground, the same word the builder's
+     card shows, and `schemeText` states its distance and clock. */
+  const activity = ex.kind === 'cardio' ? (activityFromKey(ex.catalogKey) ?? 'run') : null;
   // A custom exercise has no catalog record and correctly stays inert — no chevron, no press.
   const open = rec ? () => router.push({ pathname: '/exercise/[id]', params: { id: rec.key } }) : undefined;
 
@@ -432,19 +579,40 @@ function ExerciseRow({ ex }: { ex: TemplateExercise }) {
       style={({ pressed }) => [styles.exRow, open && pressed ? styles.exRowPressed : null]}
     >
       <View style={styles.exIcon}>
-        <ExercisePoster exerciseId={ex.catalogKey} radius={18} fallback={<EquipGlyph cls={rec?.equipClass ?? 'Bodyweight'} />} />
+        {/* Only a catalogue row has a poster — a cardio or custom key can only ever 404. */}
+        <ExercisePoster exerciseId={rec ? ex.catalogKey : null} radius={18} fallback={<EquipGlyph cls={rec?.equipClass ?? 'Bodyweight'} />} />
       </View>
       <View style={styles.exText}>
         <Text style={styles.exName} numberOfLines={1}>
+          {tag ? `${tag}  ` : ''}
           {ex.name}
         </Text>
         <Text style={styles.exEquip} numberOfLines={1}>
-          {rec?.equip ?? 'Custom'}
+          {activity ? deriveEquip(activity, resolveModality(activity, ex.modality)) : (rec?.equip ?? 'Custom')}
         </Text>
       </View>
-      <Text style={styles.exScheme}>{schemeText(ex)}</Text>
+      <Text style={styles.exScheme}>{schemeText(ex, { metric: units === 'metric', rowUnit })}</Text>
       {open ? <Chevron /> : null}
     </Pressable>
+  );
+}
+
+/**
+ * The author's cue, under the row it belongs to — "4 seconds down, then push up".
+ *
+ * Written in the builder and shown in the logger, and absent from the one screen that describes the
+ * template (library-11). Outside the row's press target on purpose: the row opens the exercise, and a
+ * sentence you are reading should not navigate when your thumb rests on it. Italic, as the builder and
+ * the logger show it.
+ */
+function CoachCue({ note }: { note: string | null | undefined }) {
+  const text = note?.trim();
+  if (!text) return null;
+  return (
+    <View style={styles.cue} accessible accessibilityLabel={`Coaching note: ${text}`}>
+      <EngravedIcon name="document" size={12} color={flColor.gray600} />
+      <Text style={styles.cueText}>{text}</Text>
+    </View>
   );
 }
 
@@ -477,6 +645,10 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   secCount: { fontSize: 10, fontWeight: '600', color: flColor.gray600 },
   exList: { gap: 8 },
+  exGroup: { gap: 6 },
+  groupHead: { marginTop: 4, paddingHorizontal: 2, fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.labelInk },
+  cue: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, paddingHorizontal: 14, paddingBottom: 2 },
+  cueText: { flex: 1, fontSize: 12, lineHeight: 17, fontStyle: 'italic', color: flColor.gray400 },
 
   exRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, paddingHorizontal: 13, borderRadius: flRadius.lg, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal900 },
   exRowPressed: { borderColor: flColor.accentBorderSubtle },
@@ -485,6 +657,14 @@ const styles = StyleSheet.create({
   exName: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   exEquip: { fontSize: 11.5, color: flColor.gray600 },
   exScheme: { fontSize: 13, fontWeight: '600', color: flColor.bronze300 },
+  tombRow: { flexDirection: 'column', alignItems: 'stretch', gap: 10, borderStyle: 'dashed' },
+  tombTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tombName: { color: flColor.gray400, textDecorationLine: 'line-through' },
+  tombScheme: { color: flColor.gray600 },
+  tombActions: { flexDirection: 'row', gap: 8 },
+  tombBtn: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600 },
+  tombBtnText: { fontSize: 12.5, fontWeight: '600', color: flColor.cream100 },
+  tombBtnDanger: { color: flColor.redMuted },
 
   histRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 13, paddingVertical: 13, paddingHorizontal: 2, borderTopWidth: 1, borderTopColor: forgeOr<string>('rgba(255,255,255,0.04)', flColor.charcoal700) },
   histRowPressed: { backgroundColor: forgeOr<string>('rgba(255,255,255,0.02)', flColor.hoverWash) },
@@ -515,6 +695,7 @@ const styles = StyleSheet.create({
 
   input: { paddingHorizontal: 13, paddingVertical: 11, minHeight: 44, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed, fontSize: 14, color: flColor.cream100 },
   renameSave: { marginTop: 12 },
+  nameCount: { marginTop: 6, alignSelf: 'flex-end', fontSize: 12, color: flColor.gray400 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.85 },
 });

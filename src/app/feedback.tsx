@@ -13,6 +13,7 @@ import {
   BODY_MAX,
   FEEDBACK_COPY,
   FEEDBACK_KINDS,
+  feedbackAttachNote,
   feedbackProblem,
   feedbackProblemMessage,
   feedbackSendError,
@@ -123,7 +124,7 @@ export default function FeedbackRoute() {
           {shownProblem ? (
             <Text style={styles.error}>{shownProblem}</Text>
           ) : (
-            <Text style={styles.helper}>{FEEDBACK_COPY.attachNote}</Text>
+            <Text style={styles.helper}>{feedbackAttachNote(params.from)}</Text>
           )}
           <Text style={[styles.count, body.length >= BODY_MAX && styles.countFull]}>
             {body.length}/{BODY_MAX}

@@ -62,6 +62,7 @@ import {
   roleFor,
 } from './prescribe.ts';
 import { MIN_DAY_MOVEMENTS } from './day.ts';
+import { todayYmd } from '../dates/local-date.ts';
 import {
   equipmentAfterLimitations,
   forbidsRunning,
@@ -108,6 +109,7 @@ import {
   ATHLETE_SIZED_RUN_HAS_WARMUP,
   COMPARE_MIN_PER_MI,
   CONCERN,
+  limitationsLeftOut,
   DEFAULT_CARDIO_MIN,
   DEFAULT_RUN_MIN,
   DELOAD_RUN_MULTIPLIER,
@@ -739,7 +741,8 @@ function coverageConcerns(
   if (lifting && patterns.size > 0 && !patterns.has('Horizontal Pull') && !patterns.has('Vertical Pull')) {
     out.push(CONCERN.noPulling());
   }
-  if (lifting && c.limitations.includes('knees') && patterns.size > 0) out.push(CONCERN.kneesLeftOut());
+  /* QA holt-02: shoulders and lower back say what they took out too, as knees does. */
+  if (lifting && patterns.size > 0) out.push(...limitationsLeftOut(c.limitations));
   return out;
 }
 
@@ -1443,7 +1446,7 @@ function assembleRaceAndLift(
   const concerns: string[] = [];
   const stretches = stretchesIn(pool);
   const eopts = (enduranceDays: number): EnduranceOpts => ({
-    todayISO: new Date().toISOString().slice(0, 10),
+    todayISO: todayYmd(), // the athlete's local day (B14) — the UTC day lost a week from a race set in a US evening
     stretches,
     canRunContinuously: c.canRunContinuously ?? undefined,
     recentRaceMi: c.recentRaceMi,
@@ -2006,7 +2009,7 @@ function assembleEnduranceGoal(c: CoachConstraints, pool: readonly CatalogExerci
   const stretches = stretchesIn(pool);
 
   const result = assembleEndurance(c, {
-    todayISO: new Date().toISOString().slice(0, 10),
+    todayISO: todayYmd(), // the athlete's local day (B14) — the UTC day lost a week from a race set in a US evening
     stretches,
     canRunContinuously: c.canRunContinuously ?? undefined,
     recentRaceMi: c.recentRaceMi,

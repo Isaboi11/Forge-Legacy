@@ -384,3 +384,30 @@ test('what the shelf collects is enough to answer with, from cold', () => {
   );
   assert.equal(out.ok, true, 'four answered questions produced no recommendation');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QA holt-21 — the days they asked for, and the program they are on
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('holt-21: 3 days asked → a 3-day program leads when one is in contention', () => {
+  // The QA case: strength, intermediate, full gym, 3 days. It was Strength Foundation II — 4 days.
+  const out = ask({ goal: 'strength', experience: 'intermediate', daysPerWeek: 3 });
+  assert.equal(out.ok, true);
+  assert.equal(out.best.program.frequencyPerWeek, 3, `${out.best.program.id} runs ${out.best.program.frequencyPerWeek} days`);
+  // The 4-day block is still there as the alternative, not hidden.
+  assert.equal(out.runnerUp?.program.id, 'strength-foundation-ii-4day');
+});
+
+test('holt-21: a week that fits never costs the goal — the only Mobility program still wins at 3 days', () => {
+  const out = recommendFromShelf({ goal: 'mobility', experience: 'beginner', daysPerWeek: 3, environment: 'home' }, SHELF);
+  assert.equal(out.ok, true);
+  assert.equal(out.best.program.id, 'mobility-foundation');
+});
+
+test('holt-21: the card says the program they are on ends if they start this one', () => {
+  const out = recommendFromShelf({ goal: 'strength', experience: 'beginner', daysPerWeek: 3, environment: 'full_gym' }, SHELF, { current: 'My Push Pull' });
+  assert.equal(out.ok, true);
+  assert.ok(out.best.caveats.some((c) => c.includes('My Push Pull') && /ends it/.test(c)), 'the running program went unmentioned');
+  const none = recommendFromShelf({ goal: 'strength', experience: 'beginner', daysPerWeek: 3, environment: 'full_gym' }, SHELF);
+  assert.ok(!none.best.caveats.some((c) => /right now/.test(c)));
+});

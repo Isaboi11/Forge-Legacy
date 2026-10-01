@@ -204,6 +204,15 @@
   /* ── TestFlight form ─────────────────────────────────────────────────────── */
   const CFG = window.FL_SITE || {};
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Which platform link brought this visitor (forgelegacy.app/go/<platform>, migration 0247). Kept for the
+  // tab, so it survives the #training-style page switches; it becomes the early-access form's source.
+  const SRC = (() => {
+    let s = null;
+    try { s = new URLSearchParams(location.search).get('src') || sessionStorage.getItem('fl_src'); } catch (e) { /* private mode */ }
+    s = s === 'tiktok' || s === 'instagram' ? s : null;
+    try { if (s) sessionStorage.setItem('fl_src', s); } catch (e) { /* ignore */ }
+    return s;
+  })();
   let submitted = false;
   function done(email) {
     submitted = true;
@@ -229,7 +238,7 @@
         const res = await fetch(CFG.supabaseUrl + '/rest/v1/rpc/request_testflight_invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', apikey: CFG.anonKey, Authorization: 'Bearer ' + CFG.anonKey },
-          body: JSON.stringify({ p_email: v, p_source: 'site' + (form.dataset.form ? '-' + form.dataset.form : '') }),
+          body: JSON.stringify({ p_email: v, p_source: (SRC || 'site') + (form.dataset.form ? '-' + form.dataset.form : '') }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         done(v);

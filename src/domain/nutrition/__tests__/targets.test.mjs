@@ -45,15 +45,29 @@ test('⛔ NOTHING IS RECOMMENDED TO ANYONE UNDER 18 — not a lower number, noth
   const blocker = blockerFor(kid, TODAY);
   assert.equal(blocker.kind, 'under-age');
   assert.equal(blocker.age, 16);
-  assert.equal(blocker.unlockYear, 2028);
+  assert.equal(blocker.unlockYear, 2029);
   assert.equal(recommend(kid, burn(kid), 'lose', 1, TODAY), null);
 });
 
-test('⛔ and 18 exactly is an adult — the gate opens on the year, not a day later', () => {
-  const eighteen = { ...MAN, birthYear: 2008 };
+test('⛔ THE YEAR THEY TURN 18 IS STILL UNDER 18 — a birth year cannot say the birthday has passed (QA N-18)', () => {
+  /* Born 2008, asked on 2026-09-23: 18 if the birthday was before today, 17 if it is in October. Forge holds
+     no date, so nothing is recommended until the January every one of them is 18. */
+  const turning = { ...MAN, birthYear: 2008 };
   assert.equal(ageFrom(2008, TODAY), 18);
-  assert.equal(blockerFor(eighteen, TODAY), null);
-  assert.ok(recommend(eighteen, burn(eighteen), 'lose', 1, TODAY));
+  const blocker = blockerFor(turning, TODAY);
+  assert.equal(blocker.kind, 'under-age');
+  assert.equal(blocker.unlockYear, 2027);
+  assert.equal(recommend(turning, burn(turning), 'lose', 1, TODAY), null);
+  /* …and on the first day of that January the gate is open. */
+  assert.equal(blockerFor(turning, '2027-01-01'), null);
+  assert.ok(recommend(turning, burnFor(turning, '2027-01-01'), 'lose', 1, '2027-01-01'));
+});
+
+test('⛔ and the year after is an adult — the gate opens with the year, not a day later', () => {
+  const adult = { ...MAN, birthYear: 2007 };
+  assert.equal(ageFrom(2007, TODAY), 19);
+  assert.equal(blockerFor(adult, TODAY), null);
+  assert.ok(recommend(adult, burn(adult), 'lose', 1, TODAY));
 });
 
 test('⛔ NO RECOMMENDATION BELOW THE FLOOR, and the pace is restated rather than left as a lie', () => {

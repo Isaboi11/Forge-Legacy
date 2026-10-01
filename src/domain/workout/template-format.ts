@@ -3,8 +3,18 @@
  *
  * Split from `data/templates-live.ts` because that module imports the Supabase client, which makes it
  * unloadable under `node --test`. These are the decisions worth pinning down: an estimate's rounding, a
- * copy's name, when "reps" means seconds, and which date format each surface gets.
+ * copy's name, how a hold and a cardio block state themselves, and which date format each surface gets.
  */
+
+// Relative + extensioned: a VALUE import, and this file is loaded by `node --test`, where `@/` is not resolved.
+import {
+  activityFromKey,
+  distanceUnitFor,
+  fmtDistanceIn,
+  fmtDuration,
+  TRACKS_DISTANCE,
+  type RowUnit,
+} from './conditioning.ts';
 
 export type TemplateSection = 'warmup' | 'main' | 'cooldown';
 
@@ -23,6 +33,10 @@ interface ExerciseShape {
   /** A timed row's clock — set for a strength row only when it is timed (PO 2026-09-27). */
   targetDurationSec?: number | null;
   kind?: 'strength' | 'cardio';
+  /** A cardio block's activity rides here as `cardio:<activity>` — see `workout-template-rows`. */
+  catalogKey?: string | null;
+  /** A cardio block's distance, canonical miles. */
+  targetMi?: number | null;
 }
 
 /**
@@ -47,21 +61,41 @@ export function estimatedMinutes(exercises: readonly ExerciseShape[]): number {
 }
 
 /**
- * "3 × 8", or "2 × 30s" when a cool-down's "reps" are really seconds.
+ * What one row asks for, in one line — the SAME line on every surface that shows a saved workout.
  *
- * The design inferred seconds from `reps >= 20`, which mislabels a genuine 20-rep cool-down set as half a
- * minute. The inference is worth keeping — a 30-second stretch is far commoner than a 30-rep one — but
- * the threshold moved to 30, because 20 reps is an ordinary set and 30 reps of anything is not programmed.
+ *   3 × 8              sets of reps
+ *   3 × 40s            a timed row (a hold, an interval) — its own clock, never a guess
+ *   3.0 mi · 30 min    a cardio block: whichever of its two targets were set
+ *   Open               a cardio block with neither — "go for a run"
+ *
+ * ══ TWO THINGS THIS USED TO GET WRONG (library-03, library-10, programs-26, QA 09-26) ══
+ *
+ * A CARDIO BLOCK read "1 × 0": it has no sets and no reps, and this printed both anyway.
+ *
+ * A COOL-DOWN ROW OF 30+ REPS read "30s". That was an inference from the days a strength row could not
+ * say "seconds" — and it was only ever true on the preview: the builder showed the same row as "30
+ * reps" and the logger asked for thirty of them. A hold now carries `targetDurationSec` and says so
+ * itself, so the guess is gone and a rep count is printed as the rep count it is.
+ *
+ * `units` is the athlete's own — kilometres, a rower in metres. Absent means miles, which is storage.
  */
-export function schemeText(e: ExerciseShape): string {
-  // A TIMED row says its clock: "3 × 40s", "3 × 1m 30s". (A cardio row's clock is its bout, drawn elsewhere.)
-  if (e.kind !== 'cardio' && e.targetDurationSec != null && e.targetDurationSec > 0) {
+export function schemeText(e: ExerciseShape, units: { metric?: boolean; rowUnit?: RowUnit } = {}): string {
+  if (e.kind === 'cardio') {
+    const activity = activityFromKey(e.catalogKey) ?? 'run';
+    const unit = distanceUnitFor(activity, units.metric ?? false, units.rowUnit);
+    const parts = [
+      TRACKS_DISTANCE[activity] && e.targetMi != null && e.targetMi > 0 ? `${fmtDistanceIn(e.targetMi, unit)} ${unit}` : '',
+      fmtDuration(e.targetDurationSec),
+    ].filter(Boolean);
+    return parts.length ? parts.join(' · ') : 'Open';
+  }
+  // A TIMED row says its clock: "3 × 40s", "3 × 1m 30s".
+  if (e.targetDurationSec != null && e.targetDurationSec > 0) {
     const m = Math.floor(e.targetDurationSec / 60);
     const sec = e.targetDurationSec % 60;
     return `${e.sets} × ${m ? `${m}m${sec ? ` ${sec}s` : ''}` : `${sec}s`}`;
   }
-  const seconds = (e.section ?? 'main') === 'cooldown' && e.targetReps >= 30;
-  return `${e.sets} × ${e.targetReps}${seconds ? 's' : ''}`;
+  return `${e.sets} × ${e.targetReps}`;
 }
 
 /** "Leg Day" → "Leg Day (copy)" → "Leg Day (copy 2)". Never silently two things with one name. */

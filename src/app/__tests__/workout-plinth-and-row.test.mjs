@@ -95,16 +95,17 @@ test('Prev is a column with its own header, not a subline — and the column sta
      display so a metric athlete's `102.5 × 8` measures ~72pt and was overflowing 66. A13 shortens the
      word; only the first reason went away. Re-narrowing the column to 66 clips the figure again. */
   assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cSet, styles\.hCentered\]\}>Set<\/Text>/, 'the Set heading is not centred over its ring');
-  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cPrev\]\}>Prev<\/Text>/, 'the Prev heading changed');
+  // `nPrev` narrows it on a phone under 362pt only, heading and rows alike (workout-16).
+  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cPrev, nPrev\]\}>Prev<\/Text>/, 'the Prev heading changed');
   assert.match(WORKOUT, /cPrev: \{ width: 76, flexGrow: 0, flexShrink: 0 \}/, '⚠ the Prev column was re-narrowed — 102.5 × 8 clips at 66');
   /* The unit prints inside every weight field already; in the heading it cost a second line. */
-  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cWeight, styles\.hCentered\]\}>Weight<\/Text>/, 'the Weight heading is not the bare word');
+  assert.match(WORKOUT, /<Text style=\{\[styles\.h, styles\.cWeight, nWeight, styles\.hCentered\]\}>Weight<\/Text>/, 'the Weight heading is not the bare word');
   assert.ok(!/>Weight · \{unitLabel/.test(WORKOUT), 'the unit is back in the Weight heading — it wraps to two lines there');
   /* ⚠ THE HEADER MUST KEEP THE ROWS' HORIZONTAL PADDING OR EVERY LABEL SITS INBOARD OF ITS CELL.
      A13 asked for `11px 14px 9px`; 14 would put the header 10pt off the rows, which is the defect the
      instruction exists to fix. Both stay at 4. */
   const head = WORKOUT.slice(WORKOUT.indexOf('headRow: {'), WORKOUT.indexOf('},', WORKOUT.indexOf('headRow: {')));
-  const rowAt = WORKOUT.indexOf('row: { flexDirection');
+  const rowAt = WORKOUT.search(/\n\s+row: \{ flexDirection/); // the key itself, not `heroTitleNarrow:`
   const row = WORKOUT.slice(rowAt, WORKOUT.indexOf('},', rowAt));
   const pad = (b) => Number(b.match(/paddingHorizontal: (\d+)/)?.[1]);
   assert.equal(pad(head), pad(row), 'the header and the rows no longer share a horizontal inset — the labels have drifted off their cells');
@@ -324,8 +325,10 @@ test('⚠ How To is a pill anchored to the foot of the rail, and BOTH its faces 
   assert.ok(!/heroRow1/.test(WORKOUT), 'the A12 column wrapper is back — the block holds one row now');
   /* Both colour faces, and the copy that goes with them. */
   assert.match(WORKOUT, /howToFirst: \{ borderColor: flColor\.bronzeBorder, backgroundColor: flColor\.bronzeTint \}/, 'the first-time face lost its colouring');
-  assert.match(WORKOUT, /liftHist \? null : styles\.howToFirst/, 'the first-time face is no longer applied');
-  assert.match(WORKOUT, /liftHist \? 'How To' : "First time — here's how"/, 'the first-time copy was dropped');
+  assert.match(WORKOUT, /firstTime \? styles\.howToFirst : null/, 'the first-time face is no longer applied');
+  assert.match(WORKOUT, /firstTime \? "First time — here's how" : 'How To'/, 'the first-time copy was dropped');
+  // …and it is a lift with no saved session, not merely a history read still in flight (workout-12).
+  assert.match(WORKOUT, /const firstTime = liftHistory != null && \(liftHist == null \|\| \(liftHist\.sessions\.length === 0 && liftHist\.best == null\)\)/);
 });
 
 test('⚠ an un-entered rep count reads as a suggestion — by OPACITY, not by a new colour', () => {

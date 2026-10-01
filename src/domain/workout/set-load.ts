@@ -89,3 +89,22 @@ export function setLoadLineLb(lb: number | null | undefined, reps: number | null
       : `${exactWeight(lb, units).value.toLocaleString('en-US')} ${unitLabel(units)}`;
   return reps != null ? `${load} × ${reps}` : load;
 }
+
+/**
+ * A SAVED set's weight, as HISTORY reads it back.
+ *
+ * ══ A PUSH-UP LOGGED WITH THE WEIGHT BOX UNTOUCHED IS A BODYWEIGHT SET (workout-12, QA 09-26) ══
+ *
+ * The three-value rule above is about what the athlete SAID, and on a barbell lift silence must stay
+ * silence. But nobody types a weight for a push-up — the check is pressed with the box empty, the set is
+ * saved `weight: null`, and every reader downstream then treated last week's three sets of twelve as no
+ * history at all: `Prev` empty on every row, and the coach opening with "First time on Push-Up".
+ *
+ * So for a movement the CATALOGUE files under bodyweight equipment, an unanswered weight on a logged set
+ * reads back as `0` — BW — which is what it was. Anything else is returned untouched: a typed load (a
+ * weighted vest) stays that load, and an empty bar stays unanswered.
+ */
+export function historyWeight(weight: number | null | undefined, bodyweightLift: boolean): number | null {
+  if (weight != null) return weight;
+  return bodyweightLift ? 0 : null;
+}

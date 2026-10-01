@@ -29,8 +29,11 @@ import {
   type CustomExercise,
 } from '@/domain/exercise-picker/custom-core';
 import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
+import { replaceTemplateExercise } from '@/data/templates-live';
 import { useToast } from '@/hooks/useCeremony';
-import { usePersist } from '@/hooks/usePersist';
+import { countOf } from '@/domain/text/plural';
+import { isCardioKey } from '@/domain/workout/conditioning';
+import { PERSIST_FAILED, usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
   CONDITIONING_ROWS,
@@ -122,8 +125,8 @@ const draftCustom = (id: string, name: string, unit: 'reps' | 'time'): CustomExe
  * other's payload.
  *
  * Data is the REAL 809-exercise catalog (see domain/exercise-picker/data + catalog-core for the mapping
- * onto the 6 locked browse categories). Deferred vs the `.dc`: the row ⓘ → Exercise Detail (W-22), the
- * "just this / this + future" scope writing differently (both commit the same today).
+ * onto the 6 locked browse categories). Deferred vs the `.dc`: the row ⓘ → Exercise Detail (W-22), and
+ * "Update my program" (Exercise-002 §7.3) — the scope choice is offered for a TEMPLATE session only.
  *
  * MY EXERCISES is real: bookmarks come from `exercise_favorites` (0020), recents from the athlete's own
  * logged `workout_exercises`, and the athlete's OWN exercises from `custom_exercises` (0128). Both
@@ -155,12 +158,38 @@ export default function ExercisePickerScreen() {
     dest?: string;
     /** `freestyle` when this IS the start of a build-as-you-go session rather than an add mid-session. */
     start?: string;
+    /** replace: the saved template the row came from, and which row it is — see `templateRow` below. */
+    template?: string;
+    row?: string;
+    rowKey?: string;
+    rowName?: string;
   }>();
   const isBuilder = params.mode === 'builder';
   const isReplace = !isBuilder && params.mode !== 'add';
   const isAdd = !isBuilder && !isReplace;
   const replacingName = params.ex ? canonicalName(params.ex) : null;
   const targetIdx = params.targetIdx != null ? Number(params.targetIdx) : -1;
+  /**
+   * ══ "THIS & FUTURE WORKOUTS" WRITES SOMEWHERE NOW (library-02, QA 09-26) ══
+   *
+   * Both persistence buttons used to run the same code, so the second promised a program change that
+   * never happened. `Exercise-002` (LOCKED) §7.3: "Update my template" is offered when the session came
+   * from a personal template, and changes the row's exercise and nothing else (EX-002-D5). So it is
+   * offered exactly then — the Active Workout names the template and the row — and a session with no
+   * template to write to (freestyle, a Forge session, a program day) is simply swapped, with no choice
+   * that would have been a lie.
+   *
+   * `dest=template` is the other way in: a deleted custom exercise's tombstone on Template Detail
+   * (`Exercise-001` §8.2 Replace). There is no session there — only the template changes.
+   */
+  const templateRow =
+    isReplace && params.template && params.row != null && Number.isInteger(Number(params.row))
+      ? {
+          id: params.template,
+          target: { index: Number(params.row), catalogKey: params.rowKey || null, name: params.rowName || params.ex || null },
+        }
+      : null;
+  const templateOnly = templateRow != null && params.dest === 'template';
 
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string | null>(null); // replace: single key
@@ -347,13 +376,16 @@ export default function ExercisePickerScreen() {
    * Matched on `searchFields`, not the name: token-AND over name + aliases + equipment, the same rule
    * the catalogue runs. That is what makes "bike" reach Ride and "treadmill" reach Run.
    *
-   * ⚠ NOT rendered when the CARDIO chip is applied — `buildSections` widens the pool for that one
-   * filter, so these same seven rows are already in `sections.results` and this would draw each twice.
+   * ⚠ ONLY FOR A SEARCH, AND ONLY WITHOUT A FILTER. The seven were listed twice (B7): browsing, the
+   * CARDIO tile above already holds them (7, one tap), and this section repeated all seven under it;
+   * with the CARDIO chip applied `buildSections` widens the pool, so they are already in
+   * `sections.results`. Any OTHER filter — Push, a barbell, a muscle — is one a run cannot satisfy, so
+   * listing all seven beneath it answered a question nobody asked.
    */
   const cardioRows = (() => {
-    if (applied.cat.includes('CARDIO')) return [];
     const tokens = searchTokens(search);
-    return tokens.length ? CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, searchFields(c))) : CONDITIONING_ROWS;
+    if (!tokens.length || hasFilters) return [];
+    return CONDITIONING_ROWS.filter((c) => matchesTokens(tokens, searchFields(c)));
   })();
   /** The screen has something to show if EITHER list does. */
   const hasAnything = sections.hasResults || cardioRows.length > 0;
@@ -435,7 +467,9 @@ export default function ExercisePickerScreen() {
         refetchCustoms();
         return;
       }
-      if (isReplace) {
+      if (templateOnly) {
+        await writeTemplateRow({ catalogKey: customKey(id), name, unit: createUnit });
+      } else if (isReplace) {
         if (targetIdx >= 0) await writeExerciseInbox({ kind: 'replace', targetIdx, item });
       } else {
         await writeExerciseInbox({ kind: 'add', items: [item] });
@@ -455,14 +489,35 @@ export default function ExercisePickerScreen() {
     router.push({ pathname: '/custom-exercise', params: { returnTo: 'picker' } });
   };
 
-  const commitReplace = () => {
-    if (selected == null || targetIdx < 0) return;
+  /** The template row takes the new movement; its prescription stays (EX-002-D5). Says so when it could not. */
+  const writeTemplateRow = async (to: { catalogKey: string | null; name: string; unit?: 'reps' | 'time' }): Promise<void> => {
+    if (!templateRow) return;
+    try {
+      const ok = await replaceTemplateExercise(templateRow.id, templateRow.target, to);
+      /* False = the template no longer holds that row as it was (edited since), or the swap is lift ⇄
+         cardio. Nothing was written, and the athlete is told rather than left to find out next session. */
+      if (!ok) showToast(templateOnly ? 'That template changed — nothing was replaced.' : 'Your template has changed since — only this session was swapped.');
+    } catch {
+      showToast(PERSIST_FAILED);
+    }
+  };
+
+  const commitReplace = (scope: 'session' | 'template' = 'session') => {
+    if (selected == null) return;
     const item = resolveKey(selected);
     if (!item) return;
     setPersistOpen(false);
+    if (templateOnly) {
+      // Written BEFORE going back, so Template Detail's refetch-on-focus reads the new row.
+      void writeTemplateRow({ catalogKey: item.key, name: item.name, unit: item.unit }).then(() => router.back());
+      return;
+    }
+    if (targetIdx < 0) return;
     setToast({ to: item.name });
     navTimer.current = setTimeout(() => {
       void writeExerciseInbox({ kind: 'replace', targetIdx, item: toPicked(item) });
+      // After the undo window, not before: an Undo must leave the template exactly as it was.
+      if (scope === 'template') void writeTemplateRow({ catalogKey: item.key, name: item.name, unit: item.unit });
       router.back();
     }, 2800);
   };
@@ -474,7 +529,10 @@ export default function ExercisePickerScreen() {
 
   const onConfirm = () => {
     if (isReplace) {
-      if (selected != null) setPersistOpen(true);
+      if (selected == null) return;
+      // A choice is only offered when there are two true answers (library-02).
+      if (templateRow && !templateOnly) setPersistOpen(true);
+      else commitReplace();
     } else {
       const items = picked.map(resolveKey).filter((x): x is PickerItem => Boolean(x));
       if (!items.length) return;
@@ -487,7 +545,10 @@ export default function ExercisePickerScreen() {
           week: Number(params.week ?? 0) || 0,
           day: Number(params.day ?? 0) || 0,
           section: (params.section as BuilderSection | undefined) ?? 'main',
-          items: items.map(toPicked),
+          /* `unit` rides along for EVERY row here, not only a custom one: a builder is authoring a
+             prescription, and a hold has to arrive as seconds rather than as reps (`toDayRow`). The
+             draft model cannot ask the catalogue itself — it has to stay loadable under `node --test`. */
+          items: items.map((x) => ({ ...toPicked(x), unit: x.unit })),
         });
       } else {
         void writeExerciseInbox({
@@ -512,15 +573,18 @@ export default function ExercisePickerScreen() {
   /* The button says what it is about to do, section included. "Add 2 exercises" and "Add 2 warm-ups"
      are different sentences, and the second is the only confirmation the athlete gets that the pills
      above took — the list itself looks identical either way. */
-  const sectionNoun = addSection === 'warmup' ? 'warm-up' : addSection === 'cooldown' ? 'cool-down' : 'exercise';
+  /* A builder arrives already addressed (`params.section`) — its "Add warm-up" said "Add 1 exercise" because only
+     the in-workout `addSection` was read here (QA 09-26 library-29). */
+  const nounSection = isBuilder ? (params.section as BuilderSection | undefined) ?? 'main' : addSection;
+  const sectionNoun = nounSection === 'warmup' ? 'warm-up' : nounSection === 'cooldown' ? 'cool-down' : 'exercise';
   const confirmLabel = isReplace
     ? selected != null
       ? `Replace with ${resolveKey(selected)?.name ?? ''}`
       : 'Select an exercise'
     : supersetOn
-      ? `Add ${picked.length} ${sectionNoun}s as a superset`
+      ? `Add ${countOf(picked.length, sectionNoun)} as a superset`
       : picked.length
-        ? `Add ${picked.length} ${picked.length === 1 ? sectionNoun : `${sectionNoun}s`}`
+        ? `Add ${countOf(picked.length, sectionNoun)}`
         : 'Select exercises';
 
   const appliedChips: { group: keyof PickerFilters; value: string; label: string }[] = [
@@ -548,7 +612,7 @@ export default function ExercisePickerScreen() {
         <View style={styles.rowIcon}>
           {/* No poster for an athlete's own exercise: the media bucket is keyed by CATALOGUE id, so a
               `custom:` key can only ever 404 — asking is a request that is guaranteed to fail. */}
-          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={x.equipId} />} />
+          <ExercisePoster exerciseId={own ? null : x.key} radius={20} fallback={<EquipIcon equip={isCardioKey(x.key) ? 'cardio' : x.equipId} />} />
         </View>
         <View style={styles.rowText}>
           <View style={styles.rowNameLine}>
@@ -724,7 +788,7 @@ export default function ExercisePickerScreen() {
               onPress={toggleGearOnly}
               accessibilityRole="button"
               accessibilityState={{ selected: gearOnly }}
-              accessibilityLabel={gearOnly ? `Showing only what you own. ${hiddenByGear} exercises hidden. Tap to show everything.` : 'Showing every exercise. Tap to narrow to your own equipment.'}
+              accessibilityLabel={gearOnly ? `Showing only what you own. ${countOf(hiddenByGear, 'exercise')} hidden. Tap to show everything.` : 'Showing every exercise. Tap to narrow to your own equipment.'}
               style={[styles.appliedChip, !gearOnly && styles.gearChipOff]}
             >
               <Text style={[styles.appliedChipText, !gearOnly && styles.gearChipTextOff]}>
@@ -812,14 +876,14 @@ export default function ExercisePickerScreen() {
             {sections.browsing ? (
               <>
                 <SectionHeader label="All exercises" />
-                <Text style={styles.bestSub}>{sections.total} exercises · tap a category to narrow</Text>
+                <Text style={styles.bestSub}>{countOf(sections.total, 'exercise')} · tap a category to narrow</Text>
                 <View style={styles.rows}>
                   {sections.categoryRows.map((c) => (
                     <Pressable
                       key={c.key}
                       onPress={() => openCategory(c.key)}
                       accessibilityRole="button"
-                      accessibilityLabel={`${c.label}, ${c.count} exercises`}
+                      accessibilityLabel={`${c.label}, ${countOf(c.count, 'exercise')}`}
                       style={styles.catRow}
                     >
                       <Text style={styles.catRowLabel} numberOfLines={1}>{c.label}</Text>
@@ -918,7 +982,7 @@ export default function ExercisePickerScreen() {
         <Text style={styles.createName} numberOfLines={2}>
           {search.trim()}
         </Text>
-        <Text style={styles.createHint}>Saved to your library. You can add muscles, equipment and notes later.</Text>
+        <Text style={styles.createHint}>Creating it saves it to your library. You can add muscles, equipment and notes later.</Text>
         <View style={styles.createRow}>
           {([
             { key: 'reps' as const, label: 'Reps' },
@@ -1007,22 +1071,22 @@ export default function ExercisePickerScreen() {
             <Text style={styles.persistBlurb}>
               Swap {replacingName} for {selected != null ? resolveKey(selected)?.name : ''}.
             </Text>
-            <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="Just this session" style={styles.persistRow}>
+            <Pressable onPress={() => commitReplace('session')} accessibilityRole="button" accessibilityLabel="Just this session" style={styles.persistRow}>
               <View style={styles.persistIcon}>
                 <EngravedIcon name="clock" size={19} />
               </View>
               <View style={styles.persistText}>
                 <Text style={styles.persistName}>Just this session</Text>
-                <Text style={styles.persistSub}>Your program stays as written.</Text>
+                <Text style={styles.persistSub}>Your template stays as written.</Text>
               </View>
             </Pressable>
-            <Pressable onPress={commitReplace} accessibilityRole="button" accessibilityLabel="This and future workouts" style={[styles.persistRow, styles.persistRowHi]}>
+            <Pressable onPress={() => commitReplace('template')} accessibilityRole="button" accessibilityLabel="This and future workouts" style={[styles.persistRow, styles.persistRowHi]}>
               <View style={styles.persistIcon}>
                 <EngravedIcon name="bookmark" size={19} />
               </View>
               <View style={styles.persistText}>
                 <Text style={styles.persistName}>This &amp; future workouts</Text>
-                <Text style={styles.persistSub}>Updates this exercise in the program.</Text>
+                <Text style={styles.persistSub}>Updates this exercise in your template. Sets and reps stay.</Text>
               </View>
             </Pressable>
           </View>

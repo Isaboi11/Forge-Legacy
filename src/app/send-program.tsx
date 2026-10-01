@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
@@ -16,6 +17,8 @@ import { fetchMySquads, fetchSquad, type SquadSummary } from '@/data/squad-live'
 import { shareProgram } from '@/data/program-shares-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { countOf } from '@/domain/text/plural';
+import { sessionsPerWeek } from '@/domain/program/progress-core';
 
 /**
  * Send Program — hand the PLAN to someone, not a picture of it.
@@ -43,7 +46,9 @@ import { useToast } from '@/hooks/useCeremony';
 
 type Recipients = { friends: FriendSummary[]; squads: SquadSummary[] };
 
-export default function SendProgramScreen() {
+export default guardRoute(SendProgramScreen, hasId, { title: 'There’s no program to send.', reason: 'Open one of your programs and choose Send from there.' });
+
+function SendProgramScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
@@ -129,8 +134,8 @@ export default function SendProgramScreen() {
             </Text>
             {program ? (
               <Text style={styles.programMeta}>
-                {program.structure.weeks} weeks • {program.structure.daysPerWeek}{' '}
-                {program.structure.daysPerWeek === 1 ? 'day' : 'days'} / week
+                {/* The days that TRAIN, as the program's detail counts them — an empty day is a rest day (QA programs-06). */}
+                {countOf(program.structure.weeks, 'week')} • {countOf(sessionsPerWeek(program.structure), 'day')} / week
               </Text>
             ) : null}
           </View>
@@ -229,6 +234,9 @@ function Row({
       onPress={onPress}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: on }}
+      /* `aria-checked` is what the WEB reads (social2-26, QA 09-26): react-native-web 0.21 ignores
+         `accessibilityState`, so a ticked row was announced exactly like an unticked one. */
+      aria-checked={on}
       accessibilityLabel={name}
       style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
     >

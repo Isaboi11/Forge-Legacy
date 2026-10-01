@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import { when } from '@/components/forge/admin/crm-ui';
+import { BugPlainView } from '@/components/forge/admin/BugPlain';
 import { Select } from '@/components/forge/admin/Select';
 import { DEFAULT_BUG_FILTER, usePhone, type BugFilter } from '@/components/forge/admin/phone/context';
 import {
@@ -48,7 +49,7 @@ import {
 } from '@/data/crm-live';
 import { bugBrief, bugsBrief } from '@/domain/admin/bug-brief';
 import { BUG_STATUSES, SEVERITIES, type BugSeverity, type BugStatus } from '@/domain/admin/crm-core';
-import { errorMessage, useQuery } from '@/lib/useQuery';
+import { rawErrorMessage as errorMessage, useQuery } from '@/lib/useQuery';
 
 /**
  * Bugs on the phone (`Forge CRM Phone.dc.html`, BUGS + the bug / report / crash overlays + the Filter and
@@ -188,7 +189,10 @@ async function copyForClaude(text: string, what: string, toast: (m: string) => v
 
 export function BugsTab() {
   const { c } = useCrm();
-  const { bugFilter, setBugFilter, bugSeg, setBugSeg, openSheet, open, stamp, toast } = usePhone();
+  const { bugFilter, setBugFilter, bugSeg, setBugSeg, openSheet, open, stamp, toast, refresh, offline } = usePhone();
+  /* "Mark all N Fixed" — two taps (the first arms it for 3 s), four saves at a time, a failure never stops the rest. */
+  const [bulkArmed, setBulkArmed] = useState(false);
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
   const statusColor = useStatusColor();
 
   const board = useBoard();
@@ -199,6 +203,27 @@ export function BugsTab() {
 
   const all = board.data?.rows ?? [];
   const shown = applyFilter(all, bugFilter);
+  const toClose = shown.filter((b) => b.status === 'open' || b.status === 'in_progress');
+  const markAllFixed = async () => {
+    if (!bulkArmed) {
+      setBulkArmed(true);
+      setTimeout(() => setBulkArmed(false), 3000);
+      return;
+    }
+    setBulkArmed(false);
+    const list = toClose;
+    if (!list.length || bulk || offline) return;
+    setBulk({ done: 0, total: list.length });
+    let ok = 0;
+    let failed = 0;
+    for (let i = 0; i < list.length; i += 4) {
+      await Promise.all(list.slice(i, i + 4).map((b) => saveBug(b.id, { status: 'fixed' }).then(() => void ok++, () => void failed++)));
+      setBulk({ done: Math.min(i + 4, list.length), total: list.length });
+    }
+    setBulk(null);
+    refresh();
+    toast(failed ? `Marked ${ok} Fixed. ${failed} couldn’t be saved — try again.` : `Marked ${ok} Fixed.`);
+  };
   const nF = filterCount(bugFilter);
   const cnt = board.data?.counts;
   const at = board.data?.at ?? 0;
@@ -292,6 +317,15 @@ export function BugsTab() {
                   style={{ marginTop: 8, paddingVertical: 6, fontSize: 15, fontWeight: '600', color: c.brz }}
                 >
                   {shown.length === 1 ? 'Copy this bug for Claude' : `Copy all ${shown.length} for Claude`}
+                </Text>
+              ) : null}
+              {toClose.length || bulk ? (
+                <Text
+                  onPress={bulk || offline ? undefined : () => void markAllFixed()}
+                  accessibilityRole="button"
+                  style={{ paddingVertical: 6, fontSize: 15, fontWeight: '600', color: offline ? c.ink3 : c.brz }}
+                >
+                  {bulk ? `Marking ${bulk.done} of ${bulk.total}…` : bulkArmed ? `Tap again to mark ${toClose.length} Fixed` : `Mark ${toClose.length === 1 ? 'this' : `all ${toClose.length}`} Fixed`}
                 </Text>
               ) : null}
               {shown.map((b) => {
@@ -570,7 +604,9 @@ export function BugOverlay({ id, backLabel }: { id: string; backLabel: string })
         >
           Copy for Claude
         </Text>
-        <View style={{ marginTop: 18, gap: 12 }}>
+        <View style={{ marginTop: 18 }}>
+          <BugPlainView bug={bug} offline={offline} phone>
+            <View style={{ gap: 12 }}>
           {paras.length ? (
             paras.map((p, i) => (
               <Text key={i} selectable style={{ fontSize: 16, lineHeight: 24.8, color: c.ink2 }}>
@@ -580,6 +616,8 @@ export function BugOverlay({ id, backLabel }: { id: string; backLabel: string })
           ) : (
             <Text style={{ fontSize: 16, lineHeight: 24.8, color: c.ink3 }}>No description yet.</Text>
           )}
+            </View>
+          </BugPlainView>
         </View>
         <Text style={{ marginTop: 26, fontSize: 12, fontWeight: '600', letterSpacing: 0.96, textTransform: 'uppercase', color: c.ink3 }}>Note</Text>
         <PInput

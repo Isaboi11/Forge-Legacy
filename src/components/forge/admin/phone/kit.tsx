@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from 'react-native-svg';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
+import { zoomBase } from '@/components/forge/admin/crm-ui';
 import { usePhone } from '@/components/forge/admin/phone/context';
 import { flFont } from '@/constants/foundation';
 
@@ -579,7 +580,7 @@ let gid = 0;
  * The design's scrub chart: no hover on a phone, so you touch and drag across it and the reading sits ABOVE
  * your finger. 150 pt tall, dashed gridlines labelled at the right, three dates under it.
  */
-export function ScrubChart({ values, days, fmt, weekly }: { values: number[]; days: string[]; fmt: (v: number) => string; weekly?: boolean }) {
+export function ScrubChart({ values, days, fmt, weekly, zoom }: { values: number[]; days: string[]; fmt: (v: number) => string; weekly?: boolean; /** Start the axis near the lowest value (`zoomBase`). */ zoom?: boolean }) {
   const { c } = useCrm();
   const [w, setW] = useState(0);
   const [i, setI] = useState<number | null>(null);
@@ -587,10 +588,12 @@ export function ScrubChart({ values, days, fmt, weekly }: { values: number[]; da
   const H = 150;
   const TOPP = 10;
   const n = values.length;
-  const max = niceMax(Math.max(0, ...values) * 1.08);
-  const pts = values.map((v, k) => ({ x: n > 1 ? (k / (n - 1)) * w : w / 2, y: TOPP + (1 - Math.max(0, v) / max) * (H - TOPP) }));
+  const base = zoom ? zoomBase(values) : 0;
+  const span = niceMax((Math.max(0, ...values) - base) * 1.08);
+  const max = base + span;
+  const pts = values.map((v, k) => ({ x: n > 1 ? (k / (n - 1)) * w : w / 2, y: TOPP + (1 - Math.max(0, v - base) / span) * (H - TOPP) }));
   const line = smooth(pts, TOPP, H);
-  const grid = [max / 2, max].map((v) => ({ v, y: TOPP + (1 - v / max) * (H - TOPP) }));
+  const grid = [base + span / 2, max].map((v) => ({ v, y: TOPP + (1 - (v - base) / span) * (H - TOPP) }));
 
   const at = (x: number) => {
     if (!w || n < 1) return;

@@ -71,8 +71,11 @@ const CATEGORY_CHIPS = EXERCISE_CATEGORIES.filter((c) => c.key !== 'CARDIO');
 export default function CustomExerciseScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { id, returnTo } = useLocalSearchParams<{ id?: string; returnTo?: string }>();
+  const { id, returnTo, name: typedName } = useLocalSearchParams<{ id?: string; returnTo?: string; name?: string }>();
   const editId = typeof id === 'string' && id.length > 0 ? id : null;
+  /* CREATE only: what the athlete searched the Library for and did not find (B7) — the name they have
+     already typed once, so the form opens with it rather than asking again. */
+  const prefillName = !editId && typeof typedName === 'string' ? typedName.trim().slice(0, NAME_MAX) : '';
   const isEdit = editId != null;
   /* Sent here by the Exercise Picker to fill a gap in a workout or a program day — so the exercise is
      wanted RIGHT NOW, not merely filed. See `custom-exercise-inbox`. */
@@ -94,7 +97,10 @@ export default function CustomExerciseScreen() {
 
   /* The baseline the dirty check compares against — captured the first render that has data, and never
      recomputed. Deriving it instead of storing it would make every keystroke "clean" again. */
-  const baseline = useMemo(() => (existing ? draftFrom(existing) : emptyDraft()), [existing]);
+  const baseline = useMemo(
+    () => (existing ? draftFrom(existing) : { ...emptyDraft(), name: prefillName }),
+    [existing, prefillName],
+  );
   const d = draft ?? baseline;
   const set = <K extends keyof CustomDraft>(k: K, v: CustomDraft[K]) => setDraft({ ...d, [k]: v });
 

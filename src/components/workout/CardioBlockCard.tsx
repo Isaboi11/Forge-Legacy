@@ -196,6 +196,14 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
      a pool swim and a stair climber. `resolveModality` is the model's own answer. */
   const modality: Modality = resolveModality(activity, exercise.modality);
   const treadmill = modality === 'indoor';
+  /**
+   * ⚠ INDOORS IS NOT A TREADMILL (workout-09, QA 09-26). `treadmill` has always meant "indoors, on a
+   * clock", and every machine is indoors — so a rower drew a moving belt, said "BELT RUNNING" and "ON THE
+   * BELT", and its log form asked for an incline. Only a run and a walk have a belt; everything the belt
+   * implies (the belt lines, its words, the incline) is keyed off this instead.
+   */
+  const hasBelt = activity === 'run' || activity === 'walk';
+  const onBelt = treadmill && hasBelt;
   const result: CardioResult | undefined = exercise.cardio;
   const logged = isLogged(result);
   /** How it was RECORDED. Everything visual keys off this, never off the live toggle. */
@@ -248,7 +256,13 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
    * here because the hook needs A kind, not because any machine has one.
    */
   const trackerKind: ActivityKind = OUTDOOR_CAPABLE[activity] ? (activity as ActivityKind) : 'walk';
-  const tracker = useRunTracker(trackerKind);
+  const tracker = useRunTracker(
+    trackerKind,
+    /* On disk under the treadmill clock's own key, so an outdoor walk survives a reload too and the
+       session-end sweep removes both (workout-13). Only for a road bout — a machine has no GPS side. */
+    logged || !OUTDOOR_CAPABLE[activity] ? null : `${cardioTimerKey(sessionKey, index)}:run`,
+    () => onLiveChange?.(true),
+  );
 
   /**
    * One notion of "in progress" across both modalities: the belt is moving, or GPS is.
@@ -476,7 +490,14 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
      * athlete happened to notice and zero it. Guarding the seed rather than the save keeps the two ends
      * agreeing: the number the form shows is the number that gets filed.
      */
-    const distanceMi = tracksDistance ? (bout?.distanceMi ?? result?.distanceMi ?? target) : 0;
+    /*
+     * ⚠ AND A BOUT THAT WAS TIMED OPENS WITH NO DISTANCE, NOT WITH THE TARGET (workout-21, QA 09-26). A
+     * walk with no GPS ended on a pre-filled "1.00 mi" — a mile nobody measured, filed unless it was
+     * noticed. Timed and not measured means the distance is the athlete's to type; left empty it saves
+     * as none. The target still seeds a bout logged from scratch ("Already did it"), as a starting point.
+     */
+    const clocked = bout != null || timer.elapsedSec > 0;
+    const distanceMi = tracksDistance ? (bout?.distanceMi ?? result?.distanceMi ?? (clocked ? 0 : target)) : 0;
     setDraft({
       distanceMi,
       floors: result?.floors ?? 0,
@@ -485,8 +506,9 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
       timeSec: bout
         ? bout.timeSec
         : (result?.timeSec ?? (timer.elapsedSec || (tracksDistance ? Math.round(target * pace) : 0))),
-      inclinePct: result?.inclinePct ?? (formTreadmill ? 1 : 0),
-      hasIncline: formTreadmill,
+      inclinePct: result?.inclinePct ?? (formTreadmill && hasBelt ? 1 : 0),
+      // A belt has a grade; a rower, an elliptical, a pool and a bike on a trainer do not (workout-09).
+      hasIncline: formTreadmill && hasBelt,
       modality: formTreadmill ? 'indoor' : 'outdoor',
       source: gpsMeasured ? 'tracked' : (result?.source ?? 'manual'),
     });
@@ -618,6 +640,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
     tracker.weakSignal,
     tracker.accuracyM,
     tracker.gps,
+    VERB[activity].toLowerCase(),
   );
 
   /**
@@ -745,7 +768,9 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
       <View style={[styles.band, treadmill ? styles.bandIndoor : styles.bandOutdoor]}>
         {treadmill ? (
           <>
-            {/* A treadmill reports elapsed time and nothing more, so the band shows exactly that. */}
+            {/* A treadmill reports elapsed time and nothing more, so the band shows exactly that. The moving
+                belt is drawn only under a run or a walk — a rower's band is the clock alone. */}
+            {onBelt ? (
             <Animated.View
               pointerEvents="none"
               style={[
@@ -757,6 +782,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                 <View key={i} style={[styles.beltLine, { top: i * 28 }]} />
               ))}
             </Animated.View>
+            ) : null}
             <View style={styles.bandCentre}>
               <Text style={[styles.bandClock, timer.running ? styles.bandClockLive : null]}>
                 {fmtClock(logged ? result?.timeSec : timer.elapsedSec)}
@@ -775,13 +801,13 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                       : !tracksDistance
                         ? 'LOGGED'
                         : loggedIndoors
-                          ? `${d1(result?.distanceMi)} ${dU} ON THE BELT`
+                          ? `${d1(result?.distanceMi)} ${dU} ${hasBelt ? 'ON THE BELT' : 'LOGGED'}`
                           : `${d1(result?.distanceMi)} ${dU} LOGGED OUTDOORS`
                     : timer.running
-                      ? 'BELT RUNNING'
+                      ? hasBelt ? 'BELT RUNNING' : 'CLOCK RUNNING'
                       : timer.elapsedSec > 0
                         ? 'PAUSED'
-                        : 'TIME ONLY · NO GPS INDOORS'}
+                        : hasBelt ? 'TIME ONLY · NO GPS INDOORS' : 'TIME HERE · THE REST OFF THE CONSOLE'}
                 </Text>
               </View>
             </View>
@@ -919,8 +945,8 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                     ? `${d1(result?.distanceMi)} ${dU} · tap the map`
                     : `${d1(result?.distanceMi)} ${dU} · ${fmtClock(result?.timeSec)}`
                   : loggedIndoors
-                    ? 'Logged on a treadmill · no route'
-                    : 'Your route traces as you run'}
+                    ? `Logged ${hasBelt ? 'on a treadmill' : 'indoors'} · no route`
+                    : 'Your route traces as you go'}
             </Text>
           </>
         )}
@@ -1018,8 +1044,8 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
             {tracksDistance ? (
               <Field
                 label="DISTANCE"
-                hint={draft.hasIncline ? 'Read it off the console' : ''}
-                value={`${d1(draft.distanceMi)} ${dU}`}
+                hint={draft.modality === 'indoor' ? 'Read it off the console' : ''}
+                value={draft.distanceMi > 0 ? `${d1(draft.distanceMi)} ${dU}` : '—'}
                 onDec={() => adj('distanceMi', -1)}
                 onInc={() => adj('distanceMi', 1)}
                 decLabel="Less distance"
@@ -1057,7 +1083,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                * a number had to guess whether it would be read as minutes or as seconds. It reads as
                * MINUTES (see `parseClock`), and now the field says so.
                */
-              hint={draft.hasIncline && timer.elapsedSec > 0 ? 'From your timer' : draft.timeSec >= 3600 ? 'h:mm:ss' : 'min:sec'}
+              hint={draft.modality === 'indoor' && timer.elapsedSec > 0 ? 'From your timer' : draft.timeSec >= 3600 ? 'h:mm:ss' : 'min:sec'}
               value={fmtClock(draft.timeSec)}
               onDec={() => adj('timeSec', -15)}
               onInc={() => adj('timeSec', 15)}
@@ -1086,8 +1112,9 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
               />
             ) : null}
             {/* An average is a distance over a time. Without the distance it is not "—", it is not a
-                question — so the row goes, rather than standing there with a dash in it. */}
-            {tracksDistance ? (
+                question — so the row goes, rather than standing there with a dash in it. Nor for a
+                machine with no pace (`rated`, EPS-D12): a rower does not read a per-mile pace (workout-09). */}
+            {tracksDistance && rated ? (
               <View style={styles.computed}>
                 <Text style={styles.computedLabel}>{speed ? 'AVG SPEED' : 'AVG PACE'}</Text>
                 <Text style={styles.computedValue}>
@@ -1110,14 +1137,14 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                 <Button
                   variant="primary"
                   fullWidth
-                  accessibilityLabel="Save run"
+                  accessibilityLabel={`Save ${VERB[activity].toLowerCase()}`}
                   onPress={() => {
                   const typed = parseDistanceIn(distanceText, dU);
                   const mi = typed ?? draft.distanceMi;
                   onSave({
                     /* NULL, not 0, for a machine that covers no ground — the record should say "this bout
                        had no distance", not "it travelled nothing". Zero is a measurement. */
-                    distanceMi: tracksDistance ? dRound(mi) : null,
+                    distanceMi: tracksDistance && mi > 0 ? dRound(mi) : null,
                     floors: tracksFloors && draft.floors > 0 ? Math.round(draft.floors) : null,
                     timeSec: draft.timeSec,
                     inclinePct: draft.hasIncline ? draft.inclinePct : null,
@@ -1156,7 +1183,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                 label={(result?.timeSec ?? 0) >= 3600 ? 'TIME · H:MM:SS' : 'TIME · MIN:SEC'}
                 first={!tracksDistance && !tracksFloors}
               />
-              {tracksDistance ? (
+              {tracksDistance && rated ? (
                 <ResultCell
                   value={(() => {
                     const p = avgPaceSec(result?.distanceMi, result?.timeSec);
@@ -1217,7 +1244,11 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
             <Text style={styles.note}>
               {timer.running || timer.elapsedSec > 0
                 ? 'The clock reads the time of day, so it stays right even if your screen sleeps.'
-                : 'A treadmill only gives us time — you’ll read the distance off the console at the end.'}
+                : hasBelt
+                  ? 'A treadmill only gives us time — you’ll read the distance off the console at the end.'
+                  : tracksFloors
+                    ? 'The clock runs here — you’ll read the floors off the console at the end.'
+                    : 'The clock runs here — you’ll read the distance off the console at the end.'}
             </Text>
           </View>
         ) : (
@@ -1260,8 +1291,15 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                        not: the OS buffers fixes while the phone is locked and the run drains them on
                        the way back. Someone reading the old line would have run the whole way holding
                        an unlocked phone for no reason. */
-                    : 'Lock your phone and put it away if you like — the run keeps measuring in your pocket.'}
+                    : `Lock your phone and put it away if you like — the ${VERB[activity].toLowerCase()} keeps measuring in your pocket.`}
                 </Text>
+                {/* No signal is not final (workout-21): step outside, allow location, and ask again. The
+                    clock is not touched — only the position stream is re-requested. */}
+                {noGps ? (
+                  <Pressable onPress={tracker.retryGps} accessibilityRole="button" accessibilityLabel="Try GPS again" style={styles.textBtn}>
+                    <Text style={styles.textBtnText}>Try GPS again</Text>
+                  </Pressable>
+                ) : null}
               </>
             ) : (
               <>
@@ -1560,7 +1598,10 @@ const styles = StyleSheet.create({
   /** The clock in words, under the field — "1h 45m". A colon is not a unit. */
   timeSpell: { fontSize: 11, color: flColor.gray600, textAlign: 'right', marginTop: -4, marginBottom: 2 },
   field: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingVertical: 10, paddingHorizontal: 12, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.charcoal500, backgroundColor: flColor.charcoal800 },
-  fieldText: { gap: 2, minWidth: 0 },
+  /* ⚠ `flex: 1` + `minWidth: 0` HERE AND ON THE INPUT (workout-09). A web `<input>` has an intrinsic
+     width of ~20 characters, and with nothing letting this column shrink it pushed the − / + pair half
+     off the card — and all the way off on an iPhone SE. The column now takes what the steppers leave. */
+  fieldText: { flex: 1, gap: 2, minWidth: 0 },
   fieldLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   fieldLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.2, color: flColor.gray600 },
   fieldHint: { fontSize: 9, fontWeight: '600', letterSpacing: 0.6, color: flColor.bronzeInk },
@@ -1570,7 +1611,7 @@ const styles = StyleSheet.create({
   /* `outlineWidth: 0` for the same reason as the Set Input Sheet's fields: react-native-web's TextInput
      reset does not cover `outline`, so the browser would paint a blue focus ring over the bronze. It
      matters more now than it did — the input is mounted the whole time rather than only while editing. */
-  fieldInput: { minWidth: 110, padding: 0, borderBottomWidth: 1, alignSelf: 'flex-start', paddingRight: 6, outlineWidth: 0 },
+  fieldInput: { flex: 1, minWidth: 0, padding: 0, borderBottomWidth: 1, alignSelf: 'flex-start', paddingRight: 6, outlineWidth: 0 },
   /* ⚠ `bronze400`, NOT `bronzeBorder`. The border token is 40% opacity, which under a 22px display face
      on a near-black card is a rule you cannot see — and an invisible affordance is the reason the PO
      believed the steppers were the only way to enter a time. Dotted still distinguishes it from focused. */
@@ -1578,7 +1619,7 @@ const styles = StyleSheet.create({
   fieldInputActive: { borderBottomColor: flColor.bronze400, borderStyle: 'solid' },
   fieldInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   fieldPencil: { paddingVertical: 2 },
-  fieldBtns: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  fieldBtns: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
   stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: flColor.bronzeBorder, backgroundColor: flColor.charcoal900, alignItems: 'center', justifyContent: 'center' },
   stepGlyph: { fontSize: 22, lineHeight: 26, color: flColor.bronze300 },
   computed: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', paddingHorizontal: 12, paddingTop: 2 },

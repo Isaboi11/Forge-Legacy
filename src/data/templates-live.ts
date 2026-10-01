@@ -2,12 +2,14 @@ import { supabase } from '@/lib/supabase';
 import { prescriptionOf, type TemplatePrescription } from '@/domain/workout/template-prescription';
 import { fetchActiveProgram, fetchProgramSessions } from './programs-live';
 import { nextOpenSlot } from '@/domain/program/progress-core';
+import { estimatedTemplateMinutes } from '@/domain/program/prescription';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
-import { isCustomKey } from '@/domain/exercise-picker/custom-core';
+import { customIdsIn, isCustomKey, withLiveCustoms } from '@/domain/exercise-picker/custom-core';
+import { fetchCustomExercisesByIds } from './custom-exercises-live';
+import { removeTemplateRow, replaceTemplateRow, type RowSubstitute, type RowTarget } from '@/domain/workout/template-substitute';
 import {
   copyName,
   durationText,
-  estimatedMinutes,
   groupBySection,
   historyDate,
   schemeText,
@@ -17,7 +19,7 @@ import {
 
 // The pure display rules live in the domain module so `node --test` can load them — this file imports
 // the Supabase client, which it cannot. Re-exported so a screen has one import, not two.
-export { copyName, durationText, estimatedMinutes, historyDate, schemeText, statDate };
+export { copyName, durationText, historyDate, schemeText, statDate };
 export type { TemplateSection };
 
 /**
@@ -65,6 +67,12 @@ export interface TemplateExercise extends TemplatePrescription {
    * Absent on every template saved before this, which read as having no cue — which they didn't.
    */
   coachNote?: string | null;
+  /**
+   * The athlete's own exercise behind this row has been DELETED (`Exercise-001` §7.2) — the row keeps its
+   * name and prescription and the detail screen draws a tombstone with Restore / Replace / Remove.
+   * Set at READ time by `withLiveCustoms`; never stored (`toExercise` does not read it back).
+   */
+  customDeleted?: boolean;
   /*
    * ══ A PRESCRIPTION, NOT JUST A SHAPE (PO 2026-09-27, Squatober) ══
    *
@@ -141,6 +149,27 @@ const toTemplate = (r: Record<string, unknown>): WorkoutTemplate => ({
 });
 
 /**
+ * Re-read every custom-exercise row against the athlete's live exercises — see `withLiveCustoms`.
+ *
+ * ONE extra request, and only when a template actually uses a custom exercise; most never do. A failed
+ * lookup returns the rows as stored, which is exactly what every screen showed before this existed.
+ */
+async function withCustoms<T extends WorkoutTemplate>(templates: T[]): Promise<T[]> {
+  const ids = customIdsIn(templates.flatMap((t) => t.exercises));
+  if (!ids.length) return templates;
+  try {
+    const customs = await fetchCustomExercisesByIds(ids);
+    return templates.map((t) => ({ ...t, exercises: withLiveCustoms(t.exercises, customs) }));
+  } catch {
+    return templates;
+  }
+}
+
+/** The stored rows, without the read-time tombstone mark — what goes BACK into the database. */
+const storable = (rows: readonly TemplateExercise[]): TemplateExercise[] =>
+  rows.map(({ customDeleted: _d, ...e }) => e);
+
+/**
  * The session the athlete already has planned today — the most likely thing to ask someone to do with
  * you, and the one thing an invite could not offer before 0093.
  *
@@ -191,7 +220,7 @@ export async function fetchTemplates(): Promise<WorkoutTemplate[]> {
   const { data, error } = await supabase.rpc('workout_templates_list');
   // An unapplied migration reads as "no templates", which is the safe direction.
   if (error) return [];
-  return ((data ?? []) as Record<string, unknown>[]).map(toTemplate);
+  return withCustoms(((data ?? []) as Record<string, unknown>[]).map(toTemplate));
 }
 
 /** One template with everything W-27 renders. Null when it isn't yours or no longer exists. */
@@ -203,16 +232,46 @@ export async function fetchTemplateDetail(id: string): Promise<TemplateDetail | 
   }
   if (!data) return null;
   const d = data as Record<string, unknown>;
-  return {
-    ...toTemplate(d),
-    history: ((d.history ?? []) as Record<string, unknown>[]).map((h) => ({
-      workoutId: String(h.workout_id),
-      at: String(h.at),
-      durationSec: h.duration_sec == null ? null : Number(h.duration_sec),
-      note: (h.note as string) ?? null,
-    })),
-  };
+  const [detail] = await withCustoms<TemplateDetail>([
+    {
+      ...toTemplate(d),
+      history: ((d.history ?? []) as Record<string, unknown>[]).map((h) => ({
+        workoutId: String(h.workout_id),
+        at: String(h.at),
+        durationSec: h.duration_sec == null ? null : Number(h.duration_sec),
+        note: (h.note as string) ?? null,
+      })),
+    },
+  ]);
+  return detail;
 }
+
+/**
+ * Change ONE row of a template and keep the rest (`domain/workout/template-substitute` owns the rule).
+ *
+ * False when the row is no longer what the caller saw — the template was edited since — and then nothing
+ * is written. Only `exercises` is updated, never the name, so this cannot rename anything in passing.
+ */
+async function editTemplateRows(
+  id: string,
+  edit: (rows: TemplateExercise[]) => TemplateExercise[] | null,
+): Promise<boolean> {
+  const t = await fetchTemplateDetail(id);
+  if (!t) return false;
+  const next = edit(t.exercises);
+  if (!next) return false;
+  const { error } = await supabase.from('workout_templates').update({ exercises: storable(next) }).eq('id', id);
+  if (error) throw error;
+  return true;
+}
+
+/** "This & future workouts" / a tombstone's Replace: the row's exercise changes, its prescription stays (EX-002-D5). */
+export const replaceTemplateExercise = (id: string, target: RowTarget, to: RowSubstitute): Promise<boolean> =>
+  editTemplateRows(id, (rows) => replaceTemplateRow(rows, target, to));
+
+/** A tombstone's Remove (`Exercise-001` §8.2): the row goes, the template stays. */
+export const removeTemplateExercise = (id: string, target: RowTarget): Promise<boolean> =>
+  editTemplateRows(id, (rows) => removeTemplateRow(rows, target));
 
 /** Copy a template — lands you on the copy, so the thing you just made is the thing you're looking at. */
 export async function duplicateTemplate(id: string): Promise<string | null> {
@@ -226,7 +285,7 @@ export async function duplicateTemplate(id: string): Promise<string | null> {
     .from('workout_templates')
     // The copy starts its own history at zero — it has never been trained, and `use_count` is derived
     // from workouts anyway, so there is nothing to reset and nothing that could be inherited by mistake.
-    .insert({ athlete_id: user.id, name: copyName(src.name), exercises: src.exercises })
+    .insert({ athlete_id: user.id, name: copyName(src.name), exercises: storable(src.exercises) })
     .select('id')
     .single();
   if (error) throw error;
@@ -353,10 +412,10 @@ export function templateSummary(t: WorkoutTemplate): string {
   return `${lifts} ${lifts === 1 ? 'lift' : 'lifts'} · ${sets} ${sets === 1 ? 'set' : 'sets'}`;
 }
 
-/** "6 exercises · ~48 min" — the hero's one line. */
+/** "6 exercises · ~48 min" — the hero's one line. The ONE estimate the builders and Home show too (QA B6). */
 export function heroSummary(t: WorkoutTemplate): string {
   const n = t.exercises.length;
-  return `${n} ${n === 1 ? 'exercise' : 'exercises'} · ~${estimatedMinutes(t.exercises)} min`;
+  return `${n} ${n === 1 ? 'exercise' : 'exercises'} · ~${estimatedTemplateMinutes(t.exercises)} min`;
 }
 
 /** The three blocks, empties dropped. */

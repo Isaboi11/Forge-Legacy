@@ -4,6 +4,7 @@ import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
 // directly, where the alias does not resolve — the type-only imports above survive only because they are
 // stripped before anything tries. The same rule `domain/program/prescription` states about its own.
 import { activityFromKey, newCardioBlock } from '../domain/workout/conditioning.ts';
+import { DEFAULT_HOLD_SEC } from '../domain/exercise-picker/catalog-core.ts';
 import { supersetLabelAt } from '../domain/program/prescription.ts';
 import { totalSessions } from '../domain/program/progress-core.ts';
 
@@ -128,9 +129,17 @@ export function stepReps<T extends { reps?: number | null; repsMax?: number | nu
   return { ...x, reps: lo, repsMax: hi > lo ? hi : null };
 }
 
-/** Per-section defaults when the Picker hands an exercise back: Main 3×10, Warm-up 2×12, Cool-down 1×30. */
+/**
+ * Per-section defaults when the Picker hands an exercise back: Main 3×10, Warm-up 2×12, Cool-down 1×10.
+ *
+ * ⚠ THE COOL-DOWN'S WAS 30, AND IT MEANT SECONDS. The design's cool-down is a stretch held for half a
+ * minute, and with no way to say "seconds" the number went into `reps` — so the builder read "30 reps",
+ * the saved template guessed "30s", and the logger asked for thirty of them (library-10). A movement the
+ * catalogue measures by the clock now arrives as a TIMED row (`toDayRow`), which is where the thirty
+ * went; what is left here is a rep count, for the cool-down moves that really are counted.
+ */
 export const defaultSets = (s: BuilderSection) => (s === 'main' ? 3 : s === 'warmup' ? 2 : 1);
-export const defaultReps = (s: BuilderSection) => (s === 'cooldown' ? 30 : s === 'warmup' ? 12 : 10);
+export const defaultReps = (s: BuilderSection) => (s === 'warmup' ? 12 : 10);
 
 let idSeq = 0;
 /** Stable-enough local id for a draft exercise row (React keys + move/remove targeting). */
@@ -333,7 +342,17 @@ export function applyDaysPerWeek(d: ProgramDraft, n: number): ProgramDraft {
  * simply never called it. A conditioning key becomes the block the builder's own cardio sheet would have
  * made (`newCardioBlock`), so both doors produce the identical row.
  */
-function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): ProgramExercise {
+/**
+ * ══ …AND A HOLD IS NOT TEN REPS ══
+ *
+ * A plank, a hang, a stretch: the catalogue marks them `unit: 'time'` and the Picker says so on the pick.
+ * Such a row arrives TIMED — `durationSec`, no reps — so the builder draws its clock, the saved template
+ * reads "1 × 30s" and the logger runs a hold timer, all from the one field. It used to arrive as reps in
+ * every section, and in the cool-down as "30 reps".
+ *
+ * Exported because the Workout Builder drains the same inbox and must build the identical row.
+ */
+export function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): ProgramExercise {
   const activity = activityFromKey(it.catalogKey ?? '');
   if (activity) {
     return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio', ...newCardioBlock(activity) };
@@ -346,7 +365,7 @@ function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): P
     muscles: it.muscles ?? [],
     type: it.type ?? '',
     sets: defaultSets(section),
-    reps: defaultReps(section),
+    ...(it.unit === 'time' ? { durationSec: DEFAULT_HOLD_SEC } : { reps: defaultReps(section) }),
   };
 }
 
@@ -577,7 +596,9 @@ export function clearWeek(d: ProgramDraft, index: number): ProgramDraft {
 export function nextIncompleteWeek(d: ProgramDraft, from: number): number | null {
   const plans = d.weekPlans ?? [];
   for (let i = from + 1; i < d.weeks; i++) if (!weekComplete(plans[i])) return i;
-  for (let i = 0; i < d.weeks; i++) if (!weekComplete(plans[i])) return i;
+  /* ⚠ NEVER `from` ITSELF. Save & continue on an empty LAST week wrapped round to that same week and reopened
+     it — forever (QA programs-05, 2026-09-26). Null closes back to the week list, which says the week is empty. */
+  for (let i = 0; i < from; i++) if (!weekComplete(plans[i])) return i;
   return null;
 }
 
@@ -642,7 +663,32 @@ export function draftHasContent(d: ProgramDraft): boolean {
 
 /** Save gate: a name and at least one main exercise somewhere (design `_isValid`). */
 export function isDraftValid(d: ProgramDraft): boolean {
-  return hasName(d) && hasMainExercise(d);
+  return hasName(d) && hasMainExercise(d) && emptyWeeks(d).length === 0;
+}
+
+/**
+ * The weeks (1-based) of a Customize-each-week program with no main exercise in them — none in repeat mode.
+ *
+ * ⚠ AN EMPTY WEEK CANNOT BE SAVED (QA programs-05, 2026-09-26). It saved, and the program then owed the
+ * athlete `daysPerWeek` sessions with nothing in them — "3 workouts" on a week that had none (`weekSizes`
+ * falls back to the configured count for an unbuilt week). A LIVE edit is exempt: that program is already
+ * running with the week as it is, and `liveEditViolation` is what guards its length.
+ */
+export function emptyWeeks(d: ProgramDraft): number[] {
+  if (!d.vary || !d.weekPlans || d.live) return [];
+  const out: number[] = [];
+  for (let i = 0; i < d.weeks; i++) if (!weekComplete(d.weekPlans[i])) out.push(i + 1);
+  return out;
+}
+
+/**
+ * How many days a week this draft TRAINS once saved — the days with something in them, as the program's
+ * detail reads it (`trainingDays`). A day left empty is a rest day, not a session (QA programs-06: the
+ * builder said 5 days, the detail 3). Customize mode reads week 1, as the detail's headline does.
+ */
+export function trainedDaysPerWeek(d: ProgramDraft): number {
+  const days = d.vary && d.weekPlans?.[0] ? d.weekPlans[0].days : d.days;
+  return days.filter(dayHasContent).length;
 }
 export const hasName = (d: ProgramDraft) => d.name.trim().length > 0;
 export const hasMainExercise = (d: ProgramDraft) =>

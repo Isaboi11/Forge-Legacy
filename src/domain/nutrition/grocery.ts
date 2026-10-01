@@ -1,6 +1,7 @@
 import { AISLES, GROCERY, type Aisle, type BuyUnit } from './grocery-data.ts';
 import { DAY_NAMES, cooksOf, recipeView, type PlanDay } from './meal-planner.ts';
 import { INGREDIENTS, type PlanSlot } from './recipes-data.ts';
+import { pluralOf } from '../text/plural.ts';
 
 /**
  * Grocery List — built from the week's COOKS, never from the meals shown (Recipe Schema and Planner
@@ -44,7 +45,8 @@ export interface GroceryList {
 /** Two recipe ingredients that are one thing in a shop: boiled eggs are eggs. */
 const SAME_ITEM: Record<string, string> = { boiled_egg: 'egg' };
 
-const plural = (w: string): string => (/(x|ch|sh|s)$/.test(w) ? `${w}es` : `${w}s`);
+/* The shared pluraliser (QA 09-26 N-22), with the one shop word English makes irregular. */
+const plural = (w: string): string => pluralOf(w, w === 'loaf' ? 'loaves' : undefined);
 
 /** Round a need UP to what a store sells — the design's `buyAmount`. */
 export function buyAmount(buy: BuyUnit, grams: number): string {
@@ -204,6 +206,20 @@ export function markHave(s: GroceryState, key: string): GroceryState {
   const checked = { ...s.checked };
   delete checked[key];
   return { ...s, have: { ...s.have, [key]: true }, checked };
+}
+
+/**
+ * What is IN the kitchen, by name — what Holt is told the athlete has (`kitchenPantryLive`): the plan's items
+ * marked "have it" or ticked into the cart, and the athlete's own additions ONCE TICKED.
+ *
+ * QA kitchen-12: every extra went to Holt as food on hand the moment it was typed, so something still to buy
+ * ("paper towels", "oat milk") was offered back as an ingredient. An extra has no "have it" — it is on the list
+ * because it is wanted — so the tick is the only thing that says it came home. `list` is null when there is no
+ * readable plan; the extras are still the athlete's.
+ */
+export function onHandNames(list: GroceryList | null, s: Pick<GroceryState, 'checked' | 'have' | 'removed' | 'extras'>): string[] {
+  const planned = list ? list.items.filter((i) => !s.removed[i.key] && (s.have[i.key] || s.checked[i.key])).map((i) => i.name) : [];
+  return [...planned, ...s.extras.filter((x) => s.checked[x.key]).map((x) => x.name)];
 }
 
 /* ── the estimate ───────────────────────────────────────────────────────── */

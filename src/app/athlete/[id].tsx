@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -38,6 +39,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { themeGround } from '@/constants/theme-scrim';
 import { calendarDaysBetween, dayNumberSince, toLocalDate } from '@/domain/dates/local-date';
 import { fmtDate } from '@/lib/format';
+import { pluralWord } from '@/domain/text/plural';
 
 /**
  * Athlete Profile (`/athlete/[id]`) — the specs' "Limited Athlete Profile", built to
@@ -117,7 +119,9 @@ import { fmtDate } from '@/lib/format';
 
 const SCROLL_RANGE = 220;
 
-export default function AthleteProfileScreen() {
+export default guardRoute(AthleteProfileScreen, hasId, { title: 'This profile isn’t available.' });
+
+function AthleteProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const athleteId = String(id ?? '').trim();
   const router = useRouter();
@@ -168,11 +172,7 @@ export default function AthleteProfileScreen() {
   if (error || !data) {
     return (
       <Shell onBack={goBack}>
-        <Text style={styles.missingTitle}>{error ? 'Couldn’t load this profile.' : 'This profile isn’t available.'}</Text>
-        {error ? <Text style={styles.missingBody}>{error}</Text> : null}
-        <Pressable onPress={error ? refetch : goBack} accessibilityRole="button" accessibilityLabel={error ? 'Try again' : 'Back'} style={styles.outlineBtn}>
-          <Text style={styles.outlineBtnLabel}>{error ? 'Try Again' : 'Back'}</Text>
-        </Pressable>
+        <NotFoundBody title={error ? 'Couldn’t load this profile.' : 'This profile isn’t available.'} reason={error ?? 'It may be private, or it no longer exists.'} onRetry={error ? refetch : undefined} onBack={goBack} />
       </Shell>
     );
   }
@@ -196,6 +196,9 @@ export default function AthleteProfileScreen() {
         setBusy(false);
         setPending(null); // put the button back where it was
         showToast(errorMessage(e));
+        /* ...and where it now IS. A request withdrawn while this page sat open kept saying "Accept
+           Request" after the tap failed (social2-08, QA 09-26); re-reading the profile moves it to Add. */
+        refetch();
       },
     );
   };
@@ -326,9 +329,11 @@ export default function AthleteProfileScreen() {
         {/* Training stats — `squads` by default, so a stranger is never sent these at all. */}
         {data.stats ? (
           <View style={styles.statsRow}>
-            <StatCell value={data.stats.workouts} label="Workouts" />
+            <StatCell value={data.stats.workouts} label={pluralWord(data.stats.workouts, 'Workout')} />
             <StatCell value={data.stats.prs} label={data.stats.prs === 1 ? 'PR' : 'PRs'} />
-            <StatCell value={data.stats.chapters} label={data.stats.chapters === 1 ? 'Chapter' : 'Chapters'} />
+            {/* The server counts SEALED chapters; the one being written counts too (social-23, QA 09-26) —
+                an athlete in Chapter I read "0 CHAPTERS". Added only when the chapter is shown here. */}
+            <StatCell value={data.stats.chapters + (data.chapter ? 1 : 0)} label={pluralWord(data.stats.chapters + (data.chapter ? 1 : 0), 'Chapter')} />
           </View>
         ) : null}
 
@@ -676,9 +681,7 @@ function Actions({
           >
             <Text style={styles.actionLabel}>Decline</Text>
           </Pressable>
-        ) : (
-          <InertAction glyph={<SwordsGlyph />} label="Challenge" />
-        )}
+        ) : null /* No greyed "Challenge — not available yet" (social-23, QA 09-26): the note below says why. */}
       </View>
       {!isFriends ? (
         <Text style={styles.actionNote}>
@@ -706,15 +709,6 @@ function LiveAction({ glyph, label, onPress }: { glyph: ReactNode; label: string
 function PeopleGlyph({ size = 16, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return (
     <EngravedIcon name="people" size={size} color={engravedTint(color)} />
-  );
-}
-
-function InertAction({ glyph, label }: { glyph: ReactNode; label: string }) {
-  return (
-    <View accessibilityRole="button" accessibilityState={{ disabled: true }} accessibilityLabel={`${label} — not available yet`} style={styles.action}>
-      {glyph}
-      <Text style={styles.actionLabel}>{label}</Text>
-    </View>
   );
 }
 

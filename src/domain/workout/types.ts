@@ -192,6 +192,20 @@ export interface SessionExercise {
   /** What was actually covered, once it was. Written at log time; see `CardioResult`. */
   cardio?: CardioResult;
   /**
+   * A bout on this block has STARTED and is not logged yet (workout-13, QA 09-26). Cardio only, and on
+   * the exercise rather than the screen so it rides autosave: an outdoor walk under way has no completed
+   * set, so `hasLoggedWork` read the session as empty and a reload rebuilt over it. Never written to the
+   * database — `buildSaveExercises` names its columns.
+   */
+  boutOpen?: boolean;
+  /**
+   * The position this exercise was SAVED at, on a finished workout reopened by "Continue this workout"
+   * (workout-05, 0253). Set only by `fetchWorkoutAsSession`, and sent back as `into_position` so a set
+   * added to a lift that was already there lands under that lift's row, not under a second copy of it.
+   * Absent on everything added after reopening — those are new rows.
+   */
+  savedPosition?: number;
+  /**
    * ══ CIRCUIT MEMBERSHIP ══
    *
    * Carried through from the program so the logger can draw a warm-up circuit, a finisher or an AMRAP as
@@ -269,6 +283,13 @@ export interface ActiveSession {
    * not a session you trained.
    */
   templateId?: string;
+  /**
+   * How many rows the template had when the session was built from it. An exercise whose `position` is
+   * below this IS template row `position`; one at or above it was added mid-session and is not in the
+   * template — which is what decides whether a swap can offer "This & future workouts" (library-02).
+   * Absent on a session autosaved before this existed: the swap then simply doesn't offer it.
+   */
+  templateRows?: number;
   /**
    * The session arrived with a PLAN — a program day, a saved template, a Forge starter, or a shared
    * shape — rather than starting empty and being filled from the Picker.

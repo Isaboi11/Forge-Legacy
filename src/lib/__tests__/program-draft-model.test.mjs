@@ -38,6 +38,8 @@ import {
   nextDayStop,
   dayAtStop,
   completedWeeks,
+  emptyWeeks,
+  trainedDaysPerWeek,
   templateIntoDay,
   weekTemplateIntoWeek,
   weekFit,
@@ -218,7 +220,7 @@ test('a normal lift is untouched by the cardio branch', () => {
   assert.equal(row.name, 'Back Squat');
 });
 
-test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×30', () => {
+test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×10', () => {
   const mk = (section) =>
     absorbBuilderInbox(newDraft(), {
       vary: false,
@@ -228,7 +230,28 @@ test('absorbBuilderInbox uses per-section defaults: warm-up 2×12, cool-down 1×
       items: [{ name: 'X', equip: 'Bodyweight', muscles: [], type: '' }],
     }).days[0][section][0];
   assert.deepEqual([mk('warmup').sets, mk('warmup').reps], [2, 12]);
-  assert.deepEqual([mk('cooldown').sets, mk('cooldown').reps], [1, 30]);
+  // Was 1×30 — thirty SECONDS written into `reps`, which the logger then asked for as thirty reps.
+  assert.deepEqual([mk('cooldown').sets, mk('cooldown').reps], [1, 10]);
+});
+
+test('⭐ a HOLD picked into a builder arrives timed — seconds, never reps (library-10)', () => {
+  const mk = (section, unit) =>
+    absorbBuilderInbox(newDraft(), {
+      vary: false,
+      week: 0,
+      day: 0,
+      section,
+      items: [{ catalogKey: 'couch-stretch', name: 'Couch Stretch', equip: 'Bodyweight', muscles: [], type: 'Mobility', unit }],
+    }).days[0][section][0];
+  const stretch = mk('cooldown', 'time');
+  assert.equal(stretch.durationSec, 30);
+  assert.equal(stretch.reps, undefined, 'a hold has no rep count to show as "30 reps"');
+  assert.equal(stretch.sets, 1);
+  const plank = mk('main', 'time');
+  assert.deepEqual([plank.sets, plank.durationSec, plank.reps], [3, 30, undefined]);
+  // A counted move, and a pick from a build that sent no unit, stay sets × reps.
+  assert.deepEqual([mk('main', 'reps').reps, mk('main', 'reps').durationSec], [10, undefined]);
+  assert.deepEqual([mk('main', undefined).reps, mk('main', undefined).durationSec], [10, undefined]);
 });
 
 test('absorbBuilderInbox appends rather than replacing, and assigns distinct ids', () => {
@@ -785,4 +808,24 @@ test('an empty source, or a week index that does not exist, changes nothing', ()
   const base = weekDraft(3);
   assert.equal(weekTemplateIntoWeek(base, 0, []), base, 'nothing to apply is not an edit');
   assert.deepEqual(weekTemplateIntoWeek(base, 9, tplWeek(['Push'])), base);
+});
+
+test('programs-05: an empty week blocks the save, and Save & continue on it never reopens it', () => {
+  let d = setVaryMode({ ...withMainOn(0), name: 'Block', weeks: 3 });
+  d = copyWeek(d, 0, 1);
+  assert.deepEqual(emptyWeeks(d), [3]);
+  assert.equal(isDraftValid(d), false, 'week 3 has nothing in it');
+  assert.equal(nextIncompleteWeek(d, 2), null, 'from the empty last week: back to the list, not week 3 again');
+  d = copyWeek(d, 0, 2);
+  assert.deepEqual(emptyWeeks(d), []);
+  assert.equal(isDraftValid(d), true);
+  assert.deepEqual(emptyWeeks({ ...withMainOn(0), name: 'Repeat' }), [], 'repeat mode has no weeks to be empty');
+});
+
+test('programs-06: the days a draft trains are the days with something in them', () => {
+  const d = withMainOn(0);
+  assert.equal(d.daysPerWeek, 4);
+  assert.equal(trainedDaysPerWeek(d), 1);
+  const v = setVaryMode({ ...withMainOn(1), weeks: 2 });
+  assert.equal(trainedDaysPerWeek(v), 1);
 });

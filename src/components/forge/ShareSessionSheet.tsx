@@ -16,6 +16,7 @@ import { shareState, shareTargets, type PriorShare } from '@/domain/share/fanout
 import { autoPostFromPost, autoPostLabel, postedFor, postedLine, postVerb, shouldOfferAutoPost } from '@/domain/share/auto-post';
 import { useAutoPost } from '@/hooks/useAutoPost';
 import { errorMessage } from '@/lib/useQuery';
+import { plainError } from '@/lib/plain-error';
 
 /**
  * WHERE A SESSION GOES — one sheet, every destination, wherever it is opened from.
@@ -318,7 +319,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
         // Anything already inserted STAYS inserted, so the message says what got through rather than
         // implying the whole share failed and inviting a second, duplicating attempt.
         const done = landed.length ? ` ${postedLine(landed, includeFriends)}.` : '';
-        showToast(`${e instanceof Error ? e.message : 'Couldn’t post that.'}${done}`);
+        showToast(`${plainError(e, 'Couldn’t post that.')}${done}`);
         return;
       }
       record();

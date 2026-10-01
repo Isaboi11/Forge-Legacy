@@ -13,7 +13,7 @@ import { flColor, flRadius } from '@/constants/foundation';
 import { fetchAppPrefs, saveAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, type AppPrefs, type ExperienceKey } from '@/domain/settings/preferences';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
-import { applyThemeAndReload, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
+import { activeTheme, applyThemeAndReload, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
 import { previewSquat, type UnitSystem } from '@/domain/settings/units';
 import type { RowUnit } from '@/domain/workout/conditioning';
 import { useAppPrefs } from '@/lib/settings';
@@ -69,7 +69,17 @@ export default function PreferencesScreen() {
 
   const { data, loading } = useQuery(fetchAppPrefs, []);
   const [override, setOverride] = useState<Partial<AppPrefs>>({});
-  const prefs: AppPrefs = { ...APP_PREFS_DEFAULTS, ...data, ...override };
+  /*
+   * ⚠ THE THEME IS THE ONE THIS DEVICE IS SHOWING, NOT THE SERVER'S COPY (QA 09-26 B15).
+   *
+   * What renders is the device's stored choice (`constants/theme-choice`), read at launch. The picker used
+   * to highlight `app_prefs.theme` instead — so on a second device it lit Alabaster over a Forge screen, and
+   * tapping the lit option did nothing (`theme === prefs.theme`). Now the picker, the tap check and every
+   * save below all use the running theme, so the server copy follows the device rather than contradicting it.
+   */
+  const prefs: AppPrefs = { ...APP_PREFS_DEFAULTS, ...data, ...override, theme: activeTheme() };
+  /** The option tapped while its save lands and the app restarts into it. */
+  const [choosing, setChoosing] = useState<ThemeName | null>(null);
 
   /**
    * ⚠ THE OPTIMISTIC OVERRIDE IS ROLLED BACK ON FAILURE, AND IT WAS NOT.
@@ -117,15 +127,16 @@ export default function PreferencesScreen() {
    * theme the server rejected would flip straight back on the next launch with no explanation.
    */
   const setTheme = (theme: ThemeName) => {
-    if (theme === prefs.theme) return;
-    setOverride((o) => ({ ...o, theme }));
+    if (theme === prefs.theme || choosing) return;
+    setChoosing(theme);
     void saveAppPrefs({ ...prefs, theme })
       .then(() => applyThemeAndReload(theme))
       .catch(() => {
-        setOverride((o) => ({ ...o, theme: prefs.theme }));
+        setChoosing(null);
         showToast('Couldn’t save that — check your connection and try again.');
       });
   };
+  const shownTheme = choosing ?? prefs.theme;
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
 
@@ -172,7 +183,8 @@ export default function PreferencesScreen() {
             <View style={styles.preview}>
               <Text style={styles.previewLabel}>Preview</Text>
               <Text style={styles.previewValue}>
-                Best squat <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
+                {/* An example, and says so: "Best squat" read as the athlete's own record (QA 09-26 home-17). */}
+                Example lift <Text style={styles.previewMono}>{previewSquat(prefs.units)}</Text>
               </Text>
             </View>
 
@@ -208,7 +220,7 @@ export default function PreferencesScreen() {
           <View style={styles.card}>
             <View style={styles.unitsHead}>
               <View style={styles.iconTile}>
-                <ForgeSymbol name="spark" size={19} color={flColor.bronze300} />
+                <ForgeSymbol name="theme" size={19} color={flColor.bronze300} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>Theme</Text>
@@ -217,7 +229,7 @@ export default function PreferencesScreen() {
             </View>
             <View style={styles.levels}>
               {THEME_OPTIONS.map((t, i) => {
-                const on = prefs.theme === t.id;
+                const on = shownTheme === t.id;
                 return (
                   <Pressable
                     key={t.id}
@@ -231,6 +243,8 @@ export default function PreferencesScreen() {
                       <Text style={[styles.rowLabel, on && styles.levelLabelOn]}>{t.label}</Text>
                       <Text style={styles.rowHint}>{t.hint}</Text>
                     </View>
+                    {/* The same mark the intensity list uses — the chosen theme said so by colour alone (settings-21). */}
+                    {on ? <ForgeSymbol name="seal" size={17} color={flColor.bronze400} /> : null}
                   </Pressable>
                 );
               })}
@@ -248,7 +262,7 @@ export default function PreferencesScreen() {
           <View style={styles.card}>
             <View style={styles.unitsHead}>
               <View style={styles.iconTile}>
-                <ForgeSymbol name="spark" size={19} color={flColor.bronze300} />
+                <ForgeSymbol name="coach" size={19} color={flColor.bronze300} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>How hard Holt pushes</Text>
@@ -297,7 +311,7 @@ export default function PreferencesScreen() {
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={styles.iconTile}>
-                <ForgeSymbol name="spark" size={18} color={flColor.bronze300} />
+                <ForgeSymbol name="tips" size={18} color={flColor.bronze300} />
               </View>
               <View style={styles.rowText}>
                 <Text style={styles.rowLabel}>Tips from Holt</Text>

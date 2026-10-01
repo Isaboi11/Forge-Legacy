@@ -248,6 +248,37 @@ export default function WorkoutsScreen() {
   const liveFor = (id: string) => mine.find((m) => m.sourceDefinitionId === id && (m.state === 'future' || m.state === 'active'));
   const openCatalogProgram = (id: string) => router.push({ pathname: '/program/[id]', params: { id: liveFor(id)?.id ?? id } });
 
+  /* ── BROWSE BY FOCUS — compact filters, each opening the ONE catalogue filtered to its
+      family. One row that scrolls sideways when it runs out of width, rather than a tall
+      wrapped block; no "See all" — All Programs sits on For You. Drawn on the landing page AND
+      above search results, so typing never takes the chips away (QA 09-26 programs-23). ── */
+  const focusRow = (
+    <View>
+      <SectionHeader label="Browse by Focus" />
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.focusScroller}
+        contentContainerStyle={styles.focusRow}
+      >
+        {focuses.map((f) => (
+          <Pressable
+            key={f}
+            onPress={() => router.push({ pathname: '/program-catalog', params: { family: f } })}
+            accessibilityRole="button"
+            accessibilityLabel={`${f} programs`}
+            style={({ pressed }) => [styles.focusChip, pressed ? styles.pressed : null]}
+          >
+            <FocusIcon family={f} />
+            <Text style={styles.focusText} numberOfLines={1}>
+              {f}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate2} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
@@ -536,15 +567,29 @@ export default function WorkoutsScreen() {
             {searching ? (
               /* ── SEARCH RESULTS — the same two shelves the landing page samples, matched in full. ── */
               <>
+                {/* The focus chips stay while you type (QA 09-26 programs-23) — a search that misses should
+                    still leave the one-tap way into the catalogue on screen. */}
+                {focusRow}
                 {searchHits.programs.length === 0 && searchHits.sessions.length === 0 ? (
                   <View style={styles.searchEmpty}>
                     <Text style={styles.rowTitle}>Nothing matches “{query.trim()}”</Text>
-                    <Text style={styles.rowSub}>Try a focus, a lift, or a level — or browse all programs.</Text>
+                    <Text style={styles.rowSub}>
+                      Try a focus, a lift, or a level — or{' '}
+                      <Text
+                        style={styles.inlineLink}
+                        onPress={() => router.push('/program-catalog')}
+                        accessibilityRole="link"
+                        accessibilityLabel="Browse all programs"
+                      >
+                        browse all programs
+                      </Text>
+                      .
+                    </Text>
                   </View>
                 ) : null}
                 {searchHits.programs.length > 0 ? (
                   <View>
-                    <SectionHeader label="Programs" action="All Programs ›" onAction={() => router.push('/program-catalog')} />
+                    <SectionHeader label="Programs" action="All Programs" onAction={() => router.push('/program-catalog')} />
                     <View style={styles.stackTight}>
                       {searchHits.programs.map((p) => (
                         <ProgramCatalogRow key={p.id} program={p} held={liveFor(p.id)?.state ?? null} onPress={() => openCatalogProgram(p.id)} />
@@ -556,7 +601,7 @@ export default function WorkoutsScreen() {
                   <View>
                     <SectionHeader
                       label="Single Sessions"
-                      action={searchHits.sessionTotal > searchHits.sessions.length ? 'All Sessions ›' : undefined}
+                      action={searchHits.sessionTotal > searchHits.sessions.length ? 'All Sessions' : undefined}
                       onAction={() => router.push('/forge-templates')}
                     />
                     <View style={styles.stackTight}>
@@ -576,38 +621,12 @@ export default function WorkoutsScreen() {
               </>
             ) : (
               <>
-                {/* ── BROWSE BY FOCUS — compact filters, each opening the ONE catalogue filtered to its
-                    family. One row that scrolls sideways when it runs out of width, rather than a tall
-                    wrapped block; no "See all" — All Programs sits on For You. ── */}
-                <View>
-                  <SectionHeader label="Browse by Focus" />
-                  <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.focusScroller}
-                    contentContainerStyle={styles.focusRow}
-                  >
-                    {focuses.map((f) => (
-                      <Pressable
-                        key={f}
-                        onPress={() => router.push({ pathname: '/program-catalog', params: { family: f } })}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${f} programs`}
-                        style={({ pressed }) => [styles.focusChip, pressed ? styles.pressed : null]}
-                      >
-                        <FocusIcon family={f} />
-                        <Text style={styles.focusText} numberOfLines={1}>
-                          {f}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                </View>
+                {focusRow}
 
                 {/* ── FOR YOU — the top two of `recommended`. "All Programs" is the WHOLE catalogue, not
                     "more recommendations". ── */}
                 <View>
-                  <SectionHeader label="For You" action="All Programs ›" onAction={() => router.push('/program-catalog')} />
+                  <SectionHeader label="For You" action="All Programs" onAction={() => router.push('/program-catalog')} />
                   <View style={styles.stackTight}>
                     {recommended.slice(0, 2).map((p) => (
                       <ProgramCatalogRow key={p.id} program={p} held={liveFor(p.id)?.state ?? null} onPress={() => openCatalogProgram(p.id)} />
@@ -1010,6 +1029,7 @@ const styles = StyleSheet.create({
   },
   searchClear: { position: 'absolute', right: 12, zIndex: 1 },
   searchEmpty: { gap: 2 },
+  inlineLink: { color: flColor.bronzeInk, fontWeight: '600', textDecorationLine: 'underline' },
 
   /* ── NAV CARDS ────────────────────────────────────────────────────────────────────────────────── */
   navCard: {

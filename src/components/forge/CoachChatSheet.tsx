@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * `@types/react-native`, so the types are correct and the runtime is not — the same shape as the
  * `useSafeAreaInsets` crash that shipped with every gate green.
  */
-import { Animated, Easing, Image, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Image, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type LayoutChangeEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Reanimated, { useAnimatedRef, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,6 +27,7 @@ import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/fou
 import { bronzeWash, wash } from '@/constants/washes';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
+import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -40,7 +41,9 @@ import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
+import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { summarizeChat } from '@/data/holt-chats-live';
+import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
 import { kitchenLeftLive, kitchenPantryLive } from '@/data/holt-kitchen-live';
 import { askKitchenLive, kitchenRulesLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
@@ -81,12 +84,14 @@ import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live'
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { assemble } from '@/domain/coach/assemble';
 import { recommendFromShelf, SHELF_CANNOT_ADAPT, type ShelfProgram } from '@/domain/coach/recommend';
-import { getProgramDefinitions } from '@/domain/training/programs';
+import { getProgramDefinition, getProgramDefinitions } from '@/domain/training/programs';
 import {
   dayPreamble,
   writtenDayCardFor,
   INTRO,
   MEDICAL_STOP,
+  CLINICIAN_STOP,
+  isClinicianStop,
   CRISIS_KICKER,
   CRISIS_STOP,
   URGENT_KICKER,
@@ -108,6 +113,7 @@ import {
   type KitchenTile,
   isHomeTurn,
   greetingSlot,
+  withoutStaleHome,
   type GreetingSlot,
   TYPING_ENABLED,
   interpret,
@@ -138,6 +144,9 @@ import {
   streamEnded,
   streamInto,
   cutOffReply,
+  programSessionOffer,
+  isOneWeek,
+  JUST_A_WEEK,
   type ChatState,
   type Chip,
   type FocusPick,
@@ -151,9 +160,9 @@ import {
   type Turn,
 } from '@/domain/coach/chat-core';
 import { typedEquipment } from '@/domain/coach/typed-equipment';
-import { CONCERN } from '@/domain/coach/rulebook/hybrid';
-import { medicalRoute } from '@/domain/coach/medical-routing';
-import { askHistory, markStopped } from '@/domain/coach/chat-history';
+import { limitationsLeftOut } from '@/domain/coach/rulebook/hybrid';
+import { MINOR_AGE, medicalRoute } from '@/domain/coach/medical-routing';
+import { askHistory, markStopped, summaryHistory } from '@/domain/coach/chat-history';
 import { pick } from '@/domain/coach/rulebook/voice';
 import { setStartChoice } from '@/lib/program-intent';
 import { takeCoachAskSeed } from '@/lib/coach-ask-seed';
@@ -173,7 +182,7 @@ import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/dom
 import { authoredLine, authorFacts, validateAuthored, type ValidatedPlan } from '@/domain/coach/author-validate';
 import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
 import { endsOnRace, firstWeeksOf, RACE_WEEK_LINE, raceWeekShape, spliceLiftDays, stopsShortLine } from '@/domain/coach/author-race';
-import { endThread, hasMetHolt, loadThread, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
+import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
@@ -188,9 +197,9 @@ import {
   type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
-import type { SessionMark } from '@/domain/program/progress-core';
+import { dayLabel, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
 import { contextFrom } from '@/domain/coach/candidates';
-import { setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
+import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
 import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
@@ -200,6 +209,8 @@ import {
   editableSessions,
   replacementsFor,
   rowsFor,
+  slotKeysElsewhere,
+  swapTerms,
   valuesFor,
   SCOPE_CHOICES,
   type EditChangeId,
@@ -299,8 +310,9 @@ export function CoachChatSheet({
     whenThreadEnds(
       premiumAi
         ? (turns) =>
-            /* The same builder every ask uses — a stopped line is never summarised either (QA R2-F1). */
-            void summarizeChat(askHistory(turns, Infinity))
+            /* A stopped line is never summarised either (QA R2-F1); and what the app DID — a failed request,
+               a plan only shown — rides along so the memory cannot say it happened (QA holtai-13). */
+            void summarizeChat(summaryHistory(turns))
         : null,
     );
   }, [premiumAi]);
@@ -432,7 +444,9 @@ export function CoachChatSheet({
    * It is CONTENT PADDING rather than a spacer view, so a short conversation that does not fill the
    * thread costs nothing — there is no invisible block pushing a two-line greeting up the screen.
    */
-  const { height: winH } = useWindowDimensions();
+  const { height: winH, width: winW } = useWindowDimensions();
+  /* A 320pt phone (iPhone SE): the header folds to one line of name and one of status (holt-26 / holtai-18). */
+  const compact = winW < COMPACT_WIDTH;
   const insets = useSafeAreaInsets();
   /*
    * ⚠ THE INSET IS BACK, because the pinned row beneath the thread is gone (PO, 2026-08-14) and the
@@ -448,6 +462,8 @@ export function CoachChatSheet({
   const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: intro[0] }]));
   const [introStep, setIntroStep] = useState(1);
   const [draft, setDraft] = useState('');
+  /* Focused by the NEW CHAT menu's "Training question" (holt-22) — read only in handlers, never in render. */
+  const composerInput = useRef<TextInput>(null);
   /*
    * ══ A PICTURE, SENT WITH THE NEXT MESSAGE ══ (PO 2026-09-27: *"paste a picture at any time and tell him to
    * add it as a program, template, recipe"*). Premium AI only — reading a picture spends that tier's credits.
@@ -607,6 +623,10 @@ export function CoachChatSheet({
    */
   useEffect(() => {
     if (!thread.some((t) => t.kind === 'me')) return;
+    /* ⚠ AND NOT WHEN HE HAS JUST GREETED UNDER A STORED CONVERSATION (kitchen-14). The end of the thread is
+       then the bottom of Home, past his hello; the fresh greeting scrolls itself to the top instead (see
+       `greetingAtTop` in the render). */
+    if (isHomeTurn(thread[thread.length - 1])) return;
     const id = setTimeout(() => scroller.current?.scrollToEnd({ animated: true }), 60);
     return () => clearTimeout(id);
     // `scroller` is an animated ref — stable for the component's life, listed only because the lint
@@ -633,9 +653,10 @@ export function CoachChatSheet({
     if (profileLoading || greeted.current) return undefined;
     greeted.current = true;
     void (async () => {
-      const [met, stored, remembered, rememberedRoom, athlete] = await Promise.all([
+      const [met, stored, place, remembered, rememberedRoom, athlete] = await Promise.all([
         hasMetHolt(),
         loadThread(),
+        loadThreadPlace(),
         loadExperience(),
         loadRoom(),
         /*
@@ -671,10 +692,19 @@ export function CoachChatSheet({
         return; // the intro effect is already running; leave it alone
       }
       setIntroStep(intro.length + 1);
-      /* He greets you on arrival — unless he is already stood at the door with the openers up, which is
-         what a stored thread ending in chips means. Otherwise every glance would stack another hello. */
-      const endsWaiting = stored != null && stored[stored.length - 1]?.kind === 'chips';
-      setThread([...(stored ?? []), ...stamped(endsWaiting ? [] : kitchen ? greetKitchen(firstName) : greetReturning(firstName))]);
+      /* QA holt-08: a restored conversation comes back in the build it was in, with the answers given so
+         far — so the chips under his last question answer THAT question instead of starting a program
+         build that asks the goal again. Only with a restored thread; alone it answers nothing visible. */
+      if (stored && place) {
+        setMode(place.mode);
+        setConstraints((c) => ({ ...c, ...place.constraints }));
+      }
+      /* He greets you on arrival — unless a question of his is still on the table, which is what a stored
+         thread ending in chips means. The greeting and Home he last opened with come out first, so a
+         reopen greets ONCE rather than stacking another hello and another set of doors (kitchen-14). */
+      const kept = stored ? withoutStaleHome(stored) : [];
+      const endsWaiting = kept[kept.length - 1]?.kind === 'chips';
+      setThread([...kept, ...stamped(endsWaiting ? [] : kitchen ? greetKitchen(firstName) : greetReturning(firstName))]);
     })();
     return () => {
       alive = false;
@@ -697,8 +727,9 @@ export function CoachChatSheet({
    * gate as it deletes, so the two can never drift apart. See `domain/coach/thread-lifecycle.ts`.
    */
   useEffect(() => {
-    void saveThread(thread);
-  }, [thread]);
+    /* With where it had got to, so a refresh restores the build as well as the words (QA holt-08). */
+    void saveThread(thread, { mode, constraints });
+  }, [thread, mode, constraints]);
 
   /**
    * ⚠ **AND CLOSING IS NOT ONLY THE X.** `collapse` covers the three deliberate closes — the X, the
@@ -722,7 +753,9 @@ export function CoachChatSheet({
   /* ── the turn cycle ────────────────────────────────────────────────────────────────────────────── */
 
   const advance = useCallback(
-    async (next: ChatState, mode_: ChatMode) => {
+    /* `lead` replaces the ack beat when the answer was a DECISION rather than information — "Replace it"
+       is not something to thank anybody for (holtai-22). */
+    async (next: ChatState, mode_: ChatMode, lead?: string) => {
       const merged = { ...next };
       /* ⚠ THE ROOM IS ANSWERED FROM MEMORY AT THE MOMENT IT WOULD HAVE BEEN ASKED (PO, 2026-09-30), not
          seeded up front — so a race, which never asks where, never gets a gym it did not want, and a
@@ -754,7 +787,7 @@ export function CoachChatSheet({
           /* The short beat before the question — "Good." / "Right." / "Noted." It is what the original
            hardcoded line did ("Good. What are you training for?"), now varied so it does not become the
              tic that makes him sound like a script. */
-          if (q) say({ kind: 'holt', text: `${pick('ack')} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+          if (q) say({ kind: 'holt', text: `${lead ?? pick('ack')} ${q.ask}` }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
           return;
         }
 
@@ -827,6 +860,8 @@ export function CoachChatSheet({
               environment: merged.environment ?? 'full_gym',
             },
             shelf,
+            /* QA holt-21: the card says the program they are on ends if they start this one. */
+            { current: active?.name ?? null },
           );
           setBusy(null);
 
@@ -1008,8 +1043,9 @@ export function CoachChatSheet({
              was built, and an assumed room is said out loud — both so nothing he did is silent. */
           const heard = [askedLine(r.asked), roomLine, learnedSaid];
           say({ kind: 'holt', text: [holt.fellBack ?? dayPreamble(), ...heard].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard });
-          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block. */
-          if (c.limitations.includes('knees')) say({ kind: 'holt', text: CONCERN.kneesLeftOut() });
+          /* PO 2026-09-29 (holtai-04): he says what "knees" took out, on a single day as on a block —
+             and shoulders and lower back the same way (QA holt-02). */
+          for (const line of limitationsLeftOut(c.limitations)) say({ kind: 'holt', text: line });
           return;
         }
 
@@ -1192,8 +1228,11 @@ export function CoachChatSheet({
   /** Long enough for a slow connection, short enough that it never reads as a hang. */
   const ACTIVE_LOOKUP_TIMEOUT_MS = 4000;
 
-  const guardActiveProgram = useCallback(async (): Promise<boolean> => {
+  const guardActiveProgram = useCallback(async (request?: ChatState): Promise<boolean> => {
     if (askedAboutReplacing.current) return true;
+    /* QA holt-19: a single week is saved as a week, not started as a program — it ends nothing, so a
+       running block is no reason to refuse it. Starting it later asks by name, as any Start does. */
+    if (request && isOneWeek(request)) return true;
     /*
      * ⚠ **A SILENT AWAIT IS A STALL, WHICH IS WHAT THIS LOOKED LIKE.** The athlete taps "Build me a
      * program", their own line appears, and then nothing happens at all while this round-trip runs —
@@ -1221,12 +1260,37 @@ export function CoachChatSheet({
         kind: 'chips',
         chips: [
           { label: 'Replace it', patch: {} },
+          /* QA holt-19: "A program or a week" — the week needs no replacing; it carries this request on. */
+          { label: JUST_A_WEEK, patch: { weeks: 1 } },
           /* Where "Change the one I have" leads — the running program's own page, not the Workouts tab (holtai-06). */
           { label: 'Change the one I have', patch: {}, goTo: `/program/${active.id}` },
         ],
       },
     );
     return false;
+  }, [say]);
+
+  /**
+   * QA holt-19 — "What should I train today?" with a program running names the program's next session
+   * and offers it, before building anything. True when he asked; false (build the day as before) when
+   * there is no program, it is finished, or the lookup failed or ran long — never a reason to refuse.
+   */
+  const offerProgramSession = useCallback(async (): Promise<boolean> => {
+    setBusy('thinking');
+    const found = await Promise.race([
+      (async () => {
+        const active = await fetchActiveProgram().catch(() => null);
+        if (!active) return null;
+        const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
+        const next = nextOpenSlot(active.structure, marks);
+        return next?.day ? { active, name: dayLabel(next.day, next.dayIndex) } : null;
+      })(),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
+    ]);
+    setBusy(null);
+    if (!found) return false;
+    say(...programSessionOffer(found.active.id, found.active.name, found.name));
+    return true;
   }, [say]);
 
   const helpChips = (): Chip[] => HELP_TOPICS.map((t) => ({ label: t.q, patch: {}, helpTopic: t.q }));
@@ -1267,6 +1331,8 @@ export function CoachChatSheet({
     setIntroStep(intro.length + 1);
     /* In the kitchen he greets as the cook, as he does on arrival (kitchen-13). */
     setThread(stamped(kitchen ? greetKitchen(firstName) : greetReturning(firstName)));
+    /* From the top — the new hello, not wherever the old conversation was scrolled to (kitchen-14). */
+    scroller.current?.scrollTo({ y: 0, animated: false });
   };
 
   /**
@@ -1426,7 +1492,7 @@ export function CoachChatSheet({
       if (!day || !change) return;
       const options =
         change === 'swap'
-          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx())
+          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx(edit.program), 5, edit.at ? slotKeysElsewhere(edit.program.structure, { ...edit.at, exerciseIndex: pickStep.index }) : [])
           : valuesFor(day, change, pickStep.index);
       setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
       say(
@@ -1463,16 +1529,26 @@ export function CoachChatSheet({
     if (pickStep.step === 'scope') void applyEdit(pickStep.scope);
   };
 
-  /** The athlete's own constraints, as the candidate ranker needs them. */
-  const editCtx = () =>
-    contextFrom({
-      owned: constraints.ownedEquipment ?? [],
+  /** The athlete's own constraints, as the candidate ranker needs them — judged against the program being
+      edited: its room and never above its rung (QA holt-24, `swapTerms`). */
+  const editCtx = (program: SavedProgram) => {
+    const def = program.sourceDefinitionId ? getProgramDefinition(program.sourceDefinitionId) : null;
+    const terms = swapTerms({
+      athleteLevel: constraints.experience?.lifting,
+      programLevel: def?.difficulty ?? null,
+      programEnvironment: def?.environment ?? null,
+      rememberedRoom: room.current,
+      owned: constraints.ownedEquipment,
+    });
+    return contextFrom({
+      owned: terms.owned,
       canDo: canDoExercise,
-      experience: constraints.experience?.lifting ?? 'intermediate',
+      experience: terms.experience,
       limitations: constraints.limitations ?? [],
       limitationPatterns,
       excludeExercises: [],
     });
+  };
 
   const applyEdit = async (scope: EditScope) => {
     if (!edit?.at || !edit.change || edit.rowIndex == null || !edit.value) return;
@@ -1512,9 +1588,12 @@ export function CoachChatSheet({
       lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
       const row = edit.day?.main[edit.rowIndex];
       const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
+      /* QA holtai-09: a bodyweight dose carried onto a loaded lift is said, with where to change it. */
+      const dose = replacement && row ? carriedDoseNote(row, replacement) : null;
+      const doseLine = dose ? ` It ${dose} — change the reps on the program if that's not what you meant.` : '';
       setEdit({ ...edit, program: { ...edit.program, structure: res.structure }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
       say(
-        { kind: 'holt', text: `${what} ${pick('edit_done')}` },
+        { kind: 'holt', text: `${what}${doseLine} ${pick('edit_done')}` },
         {
           kind: 'chips',
           chips: [
@@ -1573,7 +1652,7 @@ export function CoachChatSheet({
       said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
     ]);
     setBusy(null);
-    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx() });
+    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
     if (!res.ok) {
       /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
       pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };
@@ -1762,7 +1841,7 @@ export function CoachChatSheet({
     }
     if (chip.label === 'Replace it') {
       say({ kind: 'me', text: chip.label });
-      void advance(constraints, mode ?? 'program');
+      void advance(constraints, mode ?? 'program', 'Okay.');
       return;
     }
 
@@ -1796,6 +1875,19 @@ export function CoachChatSheet({
     if (chip.edit) {
       say({ kind: 'me', text: chip.label });
       stepEdit(chip.edit);
+      return;
+    }
+
+    /* QA holt-19: train the running program's next session — the same launch its Train button writes. */
+    if (chip.trainsProgram) {
+      const programId = chip.trainsProgram;
+      say({ kind: 'me', text: chip.label });
+      void writeWorkoutLaunch({ programId })
+        .then(() => {
+          handOff();
+          router.push('/workout');
+        })
+        .catch((e) => say({ kind: 'error', text: "I couldn't open that.", sub: errorText(e), action: 'Try again in a moment.' }));
       return;
     }
 
@@ -1866,7 +1958,7 @@ export function CoachChatSheet({
         const request: ChatState = { ...constraints, ...chip.patch };
         /* Saved before the active-program question, so "Replace it" carries this request on (QA R2-F8). */
         setConstraints(request);
-        if (!(await guardActiveProgram())) return;
+        if (!(await guardActiveProgram(request))) return;
         await advance(request, 'program');
       })();
       return;
@@ -1983,7 +2075,8 @@ export function CoachChatSheet({
            one (QA R2-F8). */
         const request: ChatState = { ...athleteFacts(constraints), ...opener.patch };
         setConstraints(request);
-        if (opener.mode === 'program' && !(await guardActiveProgram())) return;
+        if (opener.mode === 'program' && !(await guardActiveProgram(request))) return;
+        if (opener.mode === 'day' && (await offerProgramSession())) return;
         await advance(request, opener.mode);
       })();
       return;
@@ -2039,7 +2132,9 @@ export function CoachChatSheet({
         ? "I've got a program already"
         : intent === 'recommend'
           ? 'Which one should I pick?'
-          : 'Build me something';
+          : intent === 'help'
+            ? 'How do I…?'
+            : 'Build me something';
     const id = setTimeout(() => tapChipRef.current({ label, patch: {} }), 240);
     return () => clearTimeout(id);
   }, [intent, introStep, intro.length]);
@@ -2071,6 +2166,14 @@ export function CoachChatSheet({
     if (!text) return;
     setDraft('');
     sendText(text);
+  };
+
+  /* Web only: Enter sends, Shift+Enter (or an IME still composing) keeps the newline (kitchen-20). */
+  const sendOnEnter = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
+    const k = e.nativeEvent as TextInputKeyPressEventData & { shiftKey?: boolean; isComposing?: boolean };
+    if (k.key !== 'Enter' || k.shiftKey || k.isComposing) return;
+    e.preventDefault();
+    send();
   };
 
   /* ── pictures ─────────────────────────────────────────────────────────────────────────────────────── */
@@ -2249,10 +2352,22 @@ export function CoachChatSheet({
    * ⛔ EVERY STOP GOES THROUGH `stopOn` — the card is shown AND the athlete's line that caused it is marked
    * `stopped` in the same update, so `askHistory` never sends it to a model again (QA R2-F1).
    */
+  /** What the kitchen was last asked, and what it has shown — see HOLT'S KITCHEN below. */
+  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
   const stopOn = (said: string, card: Turn) => setThread((t) => [...markStopped(t, said), ...stamped([card])]);
-  const medicalStop = (text: string) =>
-    stopOn(text, { kind: 'stop', text: medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : MEDICAL_STOP });
-  const careStop = (text: string) => stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+  /* QA holtai-10: pregnancy, a condition or a doctor's clearance names their doctor — never "get it looked at". */
+  const medicalStopText = (text: string) =>
+    medicalStopIsDietitian(text, kitchen) ? DIETITIAN_STOP : isClinicianStop(text) ? CLINICIAN_STOP : MEDICAL_STOP;
+  const medicalStop = (text: string) => stopOn(text, { kind: 'stop', text: medicalStopText(text) });
+  const careStop = (text: string) => {
+    stopOn(text, { kind: 'stop', text: kitchen ? KITCHEN_CARE_STOP : CARE_STOP, kicker: CARE_KICKER });
+    /* QA holtai-10: an under-18 food question in the kitchen keeps its recipe door — recipes are theirs to
+       have (NUT-D5 stops the numbers, not the cooking). The stopped ask is dropped so the door cannot resend it. */
+    if (kitchen && MINOR_AGE.test(text)) {
+      kitchenAsk.current.ask = '';
+      say({ kind: 'chips', chips: [{ label: 'Show me what I can cook', patch: {}, kitchen: 'go' }] });
+    }
+  };
   const crisisStop = (text: string) => stopOn(text, { kind: 'stop', text: CRISIS_STOP, kicker: CRISIS_KICKER });
   const urgentStop = (text: string) => stopOn(text, { kind: 'stop', text: URGENT_STOP, kicker: URGENT_KICKER });
   useEffect(() => {
@@ -2266,7 +2381,7 @@ export function CoachChatSheet({
    * protein / Different style ask again with everything already on screen excluded (§2). Dishes shown are
    * remembered for 30 days (`kitchen_suggestions`) and sent back as "already suggested".
    */
-  const kitchenAsk = useRef<{ ask: string; shown: string[]; asks: number }>({ ask: '', shown: [], asks: 0 });
+  /* `kitchenAsk` is declared above the stops, which clear it (holtai-10). */
   const runKitchen = async (ask: string, nudge: KitchenNudge | null) => {
     const k = kitchenAsk.current;
     if (!nudge) k.ask = ask;
@@ -2293,9 +2408,12 @@ export function CoachChatSheet({
       if (r.route === 'care') return void careStop(k.ask);
       return void medicalStop(k.ask);
     }
-    /* ⚠ CLIENT-FIRST SAFE: until `coach-kitchen` is deployed (and 0222 applied) the call fails as
-       unavailable/offline — so the question goes to coach-ask, the way the kitchen answered before this. */
-    if (r.kind === 'unavailable' || r.kind === 'offline') return void askAloud(k.ask, historyFrom(thread), null, { kitchen: true });
+    /* ⚠ THE DISH WRITER COULDN'T ANSWER, AND HE SAYS SO (kitchen-06, QA 09-26). This used to hand the question
+       to coach-ask, which only reads the recipe book — so a failure came back looking like his real answer
+       ("nothing in your book, want me to look online?"). Now it is named, with a way to ask again. */
+    if (r.kind === 'unavailable' || r.kind === 'offline') {
+      return void say({ kind: 'holt', text: kitchenError(r) }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
+    }
     if (r.kind !== 'ok') return void say({ kind: 'holt', text: kitchenError(r) });
     const cards = dishCards(r.dishes, rules.allergens, rules.diet);
     if (!cards.length) return void say({ kind: 'holt', text: kitchenError({ kind: 'none' }) });
@@ -2434,8 +2552,9 @@ export function CoachChatSheet({
           return;
         }
         if (q) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
-        /* Never in the kitchen: "plan my meals" is not a training program (stress test). */
-        else if (!opts.kitchen && /\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
+        /* Never in the kitchen: "plan my meals" is not a training program (stress test). And never while a
+           program is running — "what's my next workout?" is about the one they have (holtai-22). */
+        else if (!opts.kitchen && !active && /\b(program|plan|routine|workout|split)\b/i.test(text)) say({ kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
         return;
       case 'crisis':
         return crisisStop(text);
@@ -2626,7 +2745,7 @@ export function CoachChatSheet({
            block they already run, and "Replace it" carries on from `constraints` — so the parsed request has
            to be in state first, or a fully typed build comes back as "What's the goal?". */
         setConstraints(request);
-        if (opens === 'program' && !(await guardActiveProgram())) return;
+        if (opens === 'program' && !(await guardActiveProgram(request))) return;
         return void advance(request, opens);
       }
     }
@@ -2738,6 +2857,16 @@ export function CoachChatSheet({
      carry their own controls. Derived every render on purpose — the thread is capped at 100 turns and a
      memo here would be a second copy that can go stale. */
   const blocks = layOut(thread);
+  /*
+   * ══ A REOPEN SHOWS HIS HELLO, NOT THE BOTTOM OF HOME (kitchen-14) ══
+   *
+   * While the thread ends at Home — he has just greeted, and nothing has been said since — the newest greeting
+   * brings itself to the top of the view once it has a position. Above it is the stored conversation, a scroll
+   * away; below it, the doors.
+   */
+  const endsAtHome = thread.length > 0 && isHomeTurn(thread[thread.length - 1]);
+  const freshGreeting = endsAtHome ? [...blocks].reverse().find((b) => b.kind === 'greeting' && b.slot === 'greeting')?.key : undefined;
+  const greetingAtTop = (e: LayoutChangeEvent) => scroller.current?.scrollTo({ y: Math.max(0, e.nativeEvent.layout.y - 4), animated: false });
 
   const openBuilder = () => {
     handOff();
@@ -2964,17 +3093,29 @@ export function CoachChatSheet({
         {/* §2 — medallion, name, liveness line, two icon-over-caption actions. NO RULE UNDERNEATH:
             the separation is spacing plus the warm wash, and a hard line under it flattens the header
             into a toolbar. */}
-        <View style={styles.header}>
-          <HoltMark size={52} state={waiting ?? 'idle'} kitchen={kitchen} />
+        {/* ⚠ ON A 320pt PHONE THE HEADER FOLDS (holt-26, holtai-18, kitchen-17, QA 09-26). The name wrapped to two
+            lines, "IN THE KITCHEN" to two more, and the status line jumped between one and two lines as READY
+            became THINKING — about a third of the screen. Compact: a 40pt coin, the name on one line, the
+            status on one line (the chef's hat still says "kitchen"), and the actions as bare icons. */}
+        <View style={[styles.header, compact && styles.headerCompact]}>
+          <HoltMark size={compact ? 40 : 52} state={waiting ?? 'idle'} kitchen={kitchen} />
           <View style={styles.headerText}>
-            <Text style={styles.headerName}>COACH HOLT</Text>
+            <Text style={[styles.headerName, compact && styles.headerNameCompact]} numberOfLines={1}>
+              COACH HOLT
+            </Text>
             {/* `YOUR COACH · ● · READY`. The dot is the ONLY green on this surface, and it is a liveness
                 indicator rather than a colour in the palette — so it stays lit while he works and the
                 word beside it changes instead. */}
             <View style={styles.headerStatusRow}>
-              <Text style={styles.headerStatus}>{kitchen ? 'IN THE KITCHEN' : 'YOUR COACH'}</Text>
+              {compact ? null : (
+                /* One line, always: when THINKING is wider than READY it is this label that gives way, never
+                   the row that grows a second line (kitchen-17). */
+                <Text style={[styles.headerStatus, styles.headerStatusContext]} numberOfLines={1}>
+                  {kitchen ? 'IN THE KITCHEN' : 'YOUR COACH'}
+                </Text>
+              )}
               <View style={styles.headerDot} />
-              <Text style={styles.headerStatus}>
+              <Text style={styles.headerStatus} numberOfLines={1}>
                 {busy === 'building' ? 'BUILDING' : busy === 'reading' ? 'READING' : busy === 'thinking' ? 'THINKING' : 'READY'}
               </Text>
             </View>
@@ -2992,10 +3133,11 @@ export function CoachChatSheet({
             accessibilityLabel="Start something new"
             expanded={menu}
             icon="plus"
+            bare={compact}
           />
           {/* §4.9 — it collapses to the bubble, and it DOES end the conversation. The comment here used
               to say the opposite; it had been wrong since 2026-08-11, when closing started clearing. */}
-          <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad icon="close" />
+          <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad={!compact} icon="close" bare={compact} />
         </View>
 
         {/*
@@ -3037,12 +3179,17 @@ export function CoachChatSheet({
                       tapChip({ label: 'Build me something', patch: {} });
                     }}
                   />
+                  {/* holt-22 (QA 09-26): "Training question" opened the app-help list. Where he can read a typed
+                      question it now asks for one and puts the cursor in the box; where he can't, the row says
+                      what it opens. */}
                   <MenuRow
                     divided
-                    label="Training question"
+                    label={canType ? 'Training question' : 'How do I…?'}
                     onPress={() => {
                       setMenu(false);
-                      tapChip({ label: 'How do I…?', patch: {} });
+                      if (!canType) return tapChip({ label: 'How do I…?', patch: {} });
+                      say({ kind: 'me', text: 'Training question' }, { kind: 'holt', text: 'Go ahead — ask me anything about your training.' });
+                      setTimeout(() => composerInput.current?.focus(), 80);
                     }}
                   />
                   {/* The only correction path for the one answer Holt keeps between conversations. */}
@@ -3129,7 +3276,7 @@ export function CoachChatSheet({
             }
             if (b.kind === 'greeting') {
               return (
-                <TurnEnter key={b.key} pullUp={GREETING_PULL[b.slot]}>
+                <TurnEnter key={b.key} pullUp={GREETING_PULL[b.slot]} onLayout={b.key === freshGreeting ? greetingAtTop : undefined}>
                   <Text style={styles[GREETING_STYLE[b.slot]]}>{b.text}</Text>
                 </TurnEnter>
               );
@@ -3218,6 +3365,15 @@ export function CoachChatSheet({
             )}
           </View>
         ) : null}
+        {/* kitchen-20 (QA 09-26): a long paste is counted as it nears the limit, and a paste past it SAYS it was
+            cut — a 1,434-character recipe used to lose its last third without a word. */}
+        {draft.length >= COMPOSER_COUNT_FROM ? (
+          <Text style={[styles.composerCount, draft.length >= COMPOSER_MAX && styles.composerCountFull]} accessibilityLiveRegion="polite">
+            {draft.length >= COMPOSER_MAX
+              ? `${COMPOSER_MAX.toLocaleString('en-US')} characters is all Holt can read at once — anything past that was cut.`
+              : `${draft.length.toLocaleString('en-US')} / ${COMPOSER_MAX.toLocaleString('en-US')}`}
+          </Text>
+        ) : null}
         <View style={[styles.composer, { paddingBottom: 12 + insets.bottom }, holding ? styles.composerBusy : null]}>
           {premiumAi && !dictation.listening ? (
             <Pressable
@@ -3233,6 +3389,7 @@ export function CoachChatSheet({
             </Pressable>
           ) : null}
           <TextInput
+            ref={composerInput}
             /* While listening, the words so far — read-only — so the athlete can see they are being heard. */
             value={dictation.listening ? dictation.heard : draft}
             editable={!dictation.listening}
@@ -3244,6 +3401,8 @@ export function CoachChatSheet({
                   ? 'The mic is off for Forge — turn it on in Settings'
                   : dictation.problem === 'no_speech'
                     ? 'Didn’t catch that — tap the mic and try again'
+                    : dictation.problem === 'unavailable'
+                    ? 'Talking isn’t available here — type instead'
                     : holding
                       ? 'Holt is working — go ahead, he’ll get it'
                       : dictation.available
@@ -3254,9 +3413,13 @@ export function CoachChatSheet({
             style={[styles.input, draft.trim() ? styles.inputTyping : null]}
             multiline
             /* 280 cut off the detailed requests — a fifth of what real people type is a paragraph (stress test
-               2026-09-21). coach-interpret accepts 2,000; 1,000 keeps a paste from becoming an essay. */
-            maxLength={1000}
+               2026-09-21). 1,000 then cut a pasted recipe short (kitchen-20); the cap is now what coach-ask and
+               coach-interpret accept, and the count above says when it is reached. */
+            maxLength={COMPOSER_MAX}
             onSubmitEditing={send}
+            /* On the web Enter sends and Shift+Enter makes a new line, as in any chat (kitchen-20). A multiline
+               box on react-native-web otherwise treats Enter as a newline. Phones keep Return as a newline. */
+            onKeyPress={Platform.OS === 'web' ? sendOnEnter : undefined}
             accessibilityLabel="Message Holt"
           />
           {micShown ? (
@@ -3351,6 +3514,13 @@ const SURFACE_ELEVATED = flGradient.surfaceSheetRaised.colors;
 
 const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** Narrower than this (a 320pt iPhone SE) and the header and Home's cards take their compact form (holt-26). */
+const COMPACT_WIDTH = 360;
+
+/** The composer's cap — what `coach-ask` and `coach-interpret` accept — and where the count starts showing. */
+const COMPOSER_MAX = ASK_QUESTION_CHARS;
+const COMPOSER_COUNT_FROM = Math.round(COMPOSER_MAX * 0.8);
+
 const errorText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
 /**
@@ -3361,7 +3531,15 @@ const errorText = (e: unknown): string => (e instanceof Error ? e.message : Stri
  * with no dependencies and the value is never reset. Anything keyed off props would make the entire
  * conversation twitch each time a character is typed.
  */
-function TurnEnter({ children, pullUp = 0 }: { children: React.ReactNode; pullUp?: number }) {
+function TurnEnter({
+  children,
+  pullUp = 0,
+  onLayout,
+}: {
+  children: React.ReactNode;
+  pullUp?: number;
+  onLayout?: (e: LayoutChangeEvent) => void;
+}) {
   const [v] = useState(() => new Animated.Value(0));
   const still = useReducedMotion();
   useEffect(() => {
@@ -3374,6 +3552,7 @@ function TurnEnter({ children, pullUp = 0 }: { children: React.ReactNode; pullUp
   }, [v]);
   return (
     <Animated.View
+      onLayout={onLayout}
       style={{
         opacity: v,
         /* The thread's own `gap` is the space between two TURNS. Home's greeting stack is three lines of
@@ -3406,6 +3585,7 @@ function TurnEnter({ children, pullUp = 0 }: { children: React.ReactNode; pullUp
  * claiming to know what you trained yesterday. It is left out rather than faked.
  */
 function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
+  const compact = useWindowDimensions().width < COMPACT_WIDTH;
   return (
     <View style={styles.home}>
       <View style={styles.homeCards}>
@@ -3417,14 +3597,15 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
             accessibilityLabel={`${c.title}. ${c.sub}`}
             style={({ pressed }) => [
               styles.homeCard,
+              compact && styles.homeCardCompact,
               c.tag === 'BUILD' ? styles.homeCardPrimary : styles.homeCardPlain,
               pressed && styles.homeCardPressed,
             ]}
           >
             <HomeCardIcon tag={c.tag} />
             <Text style={styles.homeTag}>{c.tag}</Text>
-            <Text style={styles.homeCardTitle}>{c.title}</Text>
-            <Text style={styles.homeCardSub}>{c.sub}</Text>
+            <Text style={[styles.homeCardTitle, compact && styles.homeCardTitleCompact]}>{c.title}</Text>
+            <Text style={[styles.homeCardSub, compact && styles.homeCardSubCompact]}>{c.sub}</Text>
             {/* `marginTop: auto` is what keeps the three arrows on one baseline when the subs are
                 different lengths — the design calls it out by name. Keep it. */}
             <View style={styles.homeArrow}>
@@ -3464,6 +3645,7 @@ function CoachHome({ onOpener }: { onOpener: (opener: string) => void }) {
  * warm wash), with the kitchen doors. See `KITCHEN_CARDS` for why each goes where it goes.
  */
 function KitchenHome({ onDoor }: { onDoor: (label: string, door: { goTo?: string; ask?: string }) => void }) {
+  const compact = useWindowDimensions().width < COMPACT_WIDTH;
   return (
     <View style={styles.home}>
       <View style={styles.homeCards}>
@@ -3475,14 +3657,15 @@ function KitchenHome({ onDoor }: { onDoor: (label: string, door: { goTo?: string
             accessibilityLabel={`${c.title}. ${c.sub}`}
             style={({ pressed }) => [
               styles.homeCard,
+              compact && styles.homeCardCompact,
               c.tag === 'MAKE' ? styles.homeCardPrimary : styles.homeCardPlain,
               pressed && styles.homeCardPressed,
             ]}
           >
             <EngravedIcon name={KITCHEN_CARD_GLYPH[c.tag]} size={22} />
             <Text style={styles.homeTag}>{c.tag}</Text>
-            <Text style={styles.homeCardTitle}>{c.title}</Text>
-            <Text style={styles.homeCardSub}>{c.sub}</Text>
+            <Text style={[styles.homeCardTitle, compact && styles.homeCardTitleCompact]}>{c.title}</Text>
+            <Text style={[styles.homeCardSub, compact && styles.homeCardSubCompact]}>{c.sub}</Text>
             <View style={styles.homeArrow}>
               <EngravedIcon name="arrow-right" size={15} color={flColor.bronze400} />
             </View>
@@ -3776,6 +3959,7 @@ function HeaderAction({
   on = false,
   pad = false,
   expanded,
+  bare = false,
 }: {
   label: string;
   icon: EngravedName;
@@ -3784,6 +3968,8 @@ function HeaderAction({
   on?: boolean;
   pad?: boolean;
   expanded?: boolean;
+  /** The icon alone, on a 320pt phone — the caption is what pushed the name onto two lines (holt-26). */
+  bare?: boolean;
 }) {
   return (
     <Pressable
@@ -3792,12 +3978,14 @@ function HeaderAction({
       accessibilityLabel={accessibilityLabel}
       accessibilityState={expanded == null ? undefined : { expanded }}
       hitSlop={8}
-      style={[styles.headerAction, pad && styles.headerActionPad]}
+      style={[styles.headerAction, pad && styles.headerActionPad, bare && styles.headerActionBare]}
     >
       <EngravedIcon name={icon} size={20} color={on ? flColor.bronze300 : flColor.gray600} />
-      <Text style={[styles.headerActionLabel, on && styles.headerActionLabelOn]} numberOfLines={1}>
-        {label}
-      </Text>
+      {bare ? null : (
+        <Text style={[styles.headerActionLabel, on && styles.headerActionLabelOn]} numberOfLines={1}>
+          {label}
+        </Text>
+      )}
     </Pressable>
   );
 }
@@ -4055,6 +4243,8 @@ function TurnView({
         <View style={styles.stop}>
           <Text style={styles.stopKicker}>{turn.kicker ?? STOP_KICKER}</Text>
           <Text style={styles.stopText}>{turn.text}</Text>
+          {/* QA holtai-11: the crisis and emergency lines can be acted on, not only read. */}
+          <StopCalls kicker={turn.kicker} />
         </View>
       );
 
@@ -4534,14 +4724,7 @@ function PlanPreview({
 
         {program ? (
           <>
-            <View style={styles.statGrid}>
-              {program.stats.map((st) => (
-                <View key={st.label} style={styles.stat}>
-                  <Text style={styles.statValue}>{st.value}</Text>
-                  <Text style={styles.statLabel}>{st.label}</Text>
-                </View>
-              ))}
-            </View>
+            <HoltStatGrid stats={program.stats} />
             <Text style={styles.reasoning}>{program.reasoning}</Text>
             <View style={styles.weekList}>
               {program.weeks.map((w, i) => (
@@ -4706,14 +4889,8 @@ function ProgramCardView({
         </View>
 
         <View style={styles.artifactBody}>
-          <View style={styles.statGrid}>
-            {card.stats.map((st) => (
-              <View key={st.label} style={styles.stat}>
-                <Text style={styles.statValue}>{st.value}</Text>
-                <Text style={styles.statLabel}>{st.label}</Text>
-              </View>
-            ))}
-          </View>
+          {/* holtai-17: a one-word value is sized to fit its cell — never "Intermediat / e". */}
+          <HoltStatGrid stats={card.stats} />
 
           {card.ribbon.length > 1 ? <VolumeRibbon weeks={card.ribbon} caption={card.ribbonCaption} /> : null}
 
@@ -5110,14 +5287,18 @@ const styles = StyleSheet.create({
   /* ⚠ NO BOTTOM BORDER (§2). "Separation is spacing plus the warm wash. Do not add a rule." A hard line
      here turns the header into a toolbar and the sheet into a screen. */
   header: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 },
-  headerText: { flex: 1, gap: 5 },
+  headerText: { flex: 1, minWidth: 0, gap: 5 },
   headerName: { fontFamily: flFont.display, fontSize: 21, fontWeight: '600', letterSpacing: 1.4, color: flColor.bronzeInk },
   headerStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  headerStatus: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.gray600 },
+  headerStatus: { fontSize: 9.5, fontWeight: '700', letterSpacing: 2.2, color: flColor.gray600, flexShrink: 0 },
+  headerStatusContext: { flexShrink: 1, minWidth: 0 },
   /* The only green on this surface, and it is a liveness indicator rather than a palette colour. */
   headerDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: flColor.statusOnline, boxShadow: flShadow.statusOnlineGlow },
   headerAction: { alignItems: 'center', gap: 5 },
   headerActionPad: { paddingLeft: 12 },
+  headerActionBare: { width: 32, height: 36, justifyContent: 'center' },
+  headerCompact: { gap: 10, paddingBottom: 10 },
+  headerNameCompact: { fontSize: 18, letterSpacing: 1.2 },
   headerActionLabel: { fontSize: 8, fontWeight: '700', letterSpacing: 1.4, color: flColor.gray600 },
   headerActionLabelOn: { color: flColor.selectedInk },
 
@@ -5173,6 +5354,10 @@ const styles = StyleSheet.create({
     borderColor: flColor.bronzeBorderSubtle,
     boxShadow: flShadow.trainTogetherCard,
   },
+  /* 320pt: three cards leave ~66pt of text each and the titles broke a word a line (holt-26). */
+  homeCardCompact: { paddingHorizontal: 8 },
+  homeCardTitleCompact: { fontSize: 12.5, lineHeight: 16 },
+  homeCardSubCompact: { fontSize: 10.5, lineHeight: 14.5 },
   homeCardPlain: { backgroundColor: wash(0.028), borderWidth: 1, borderColor: wash(0.07) },
   homeCardPressed: { backgroundColor: bronzeWash(0.08), borderColor: flColor.accentBorderSubtle },
   homeTag: { fontSize: 8.5, fontWeight: '700', letterSpacing: 1.8, color: flColor.labelInk },
@@ -5406,7 +5591,7 @@ const styles = StyleSheet.create({
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
   kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
-  cardActions: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 2 },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10, paddingTop: 2 },
   reasoning: { fontSize: 13.5, lineHeight: 21, color: flColor.gray400 },
 
   /* ══ THE ARTIFACT (§7) ══ Reading it happens inside the card; deciding happens outside. */
@@ -5447,7 +5632,9 @@ const styles = StyleSheet.create({
   },
   previewRowPressed: { backgroundColor: bronzeWash(0.06) },
   previewRowText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
-  artifactActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  /* Wraps: on a 320pt phone the text button drops under START IT NOW rather than squeezing it onto two
+     lines (holtai-18). `ctaGrow`'s minimum is what one line of the primary label needs. */
+  artifactActions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10 },
   retiredNote: { color: flColor.gray600, fontSize: 13, lineHeight: 18, fontStyle: 'italic', paddingTop: 4 },
   previewWrap: { flex: 1 },
   previewBar: {
@@ -5632,7 +5819,7 @@ const styles = StyleSheet.create({
   cardHero: { boxShadow: flShadow.missionCard },
   cardSoft: { boxShadow: flShadow.trainTogetherCard },
   heroWash: { position: 'absolute', left: 0, right: 0, top: 0, height: 120 },
-  ctaGrow: { flex: 1 },
+  ctaGrow: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 170 },
   draftBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -5649,11 +5836,6 @@ const styles = StyleSheet.create({
   },
   draftBannerText: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
   cardTitle: { fontFamily: flFont.display, fontSize: 24, lineHeight: 29, fontWeight: '600', letterSpacing: 0.4, color: flColor.cream100 },
-  statGrid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 14, columnGap: 10 },
-  // Three across, so six stats form two clean rows and a dropped cell reflows rather than leaving a hole.
-  stat: { width: '31%', gap: 3 },
-  statValue: { fontFamily: flFont.display, fontSize: 19, color: flColor.cream100 },
-  statLabel: { fontSize: 9.5, fontWeight: '700', letterSpacing: 1.6, color: flColor.labelInk },
   ribbonWrap: { gap: 7 },
   ribbon: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 46 },
   bar: { flex: 1, borderRadius: 1, backgroundColor: flColor.bronze600 },
@@ -5674,6 +5856,8 @@ const styles = StyleSheet.create({
     backgroundColor: flColor.charcoal800,
   },
   composerBusy: { opacity: 0.55 },
+  composerCount: { paddingHorizontal: 20, paddingTop: 8, fontSize: 11.5, lineHeight: 15, color: flColor.gray600, textAlign: 'right' },
+  composerCountFull: { color: flColor.labelInk, textAlign: 'left' },
   attachRow: {
     flexDirection: 'row',
     alignItems: 'center',

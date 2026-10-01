@@ -50,6 +50,15 @@ const FROM_MIGRATION: Record<string, string> = {
       'admin_documents', 'admin_document_save', 'admin_document_delete',
     ].map((fn) => [fn, '0238']),
   ),
+  // 0247 — the CRM's Social section (Admin-Analytics-Amendment-003).
+  ...Object.fromEntries(
+    [
+      'admin_social_media', 'admin_social_video_save', 'admin_social_video_delete',
+      'admin_social_posting_save', 'admin_social_posting_delete', 'admin_social_posting_attach', 'admin_social_posting_unlink',
+      'admin_social_tag_save', 'admin_social_tag_delete', 'admin_social_goal_save', 'admin_social_followers_save',
+      'admin_social_item_save', 'admin_social_item_delete', 'admin_social_question_to_video', 'admin_social_disconnect',
+    ].map((fn) => [fn, '0247']),
+  ),
   // 0239 — the Bugs page's four sources.
   ...Object.fromEntries(['admin_bug_sources', 'admin_reports_inbox', 'admin_report_dismiss', 'admin_crashes', 'admin_report_track', 'admin_bug_links'].map((fn) => [fn, '0239'])),
 };

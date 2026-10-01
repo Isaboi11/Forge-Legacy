@@ -1,7 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -11,6 +11,7 @@ import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { HonorInsignia } from '@/components/forge/profile-sections';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { MediaThumb } from '@/components/forge/MediaThumb';
 import { ScreenBackground } from '@/components/screen-background';
 import { ScreenTour } from '@/components/tour/ScreenTour';
 import { TourAnchor } from '@/components/tour/TourAnchor';
@@ -21,8 +22,9 @@ import { forgeOr } from '@/constants/theme-scrim';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { fetchChapterDetail, renameChapter, sealChapter } from '@/data/chapter-detail-live';
+import { fetchAlbum, photoCountLabel } from '@/data/photos-live';
 import { CHAPTER_TITLE_MAX, DEFAULT_CHAPTER_I_TITLE, isValidChapterTitle } from '@/domain/legacy/chapter-name';
-import { goalSections, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
+import { goalSections, goalStatusLine, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
@@ -48,6 +50,9 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** How many of the chapter's photos the strip shows before "+N" hands over to the album. */
+const PHOTO_STRIP_MAX = 6;
+
 /** "Oct 2026" — a goal's expected/target date (0025 `target_date`), month + year. */
 function monthYear(iso: string): string {
   const [y, m] = iso.split('-').map(Number);
@@ -63,7 +68,20 @@ export default function ChapterDetailScreen() {
   // athlete skipped naming in onboarding already exists, so starting it means naming it.
   const { id, rename } = useLocalSearchParams<{ id: string; rename?: string }>();
   const { data, loading, refetch } = useQuery(() => fetchChapterDetail(String(id)), [id]);
+  /* The chapter's own photos (QA B10): this screen is where a photo is ADDED, and it showed none of them.
+     The album's read, so the strip, its count and "View album" can never disagree — progress photos
+     included (Photos-Architecture-Amendment-002). A failed read draws no strip; it never blocks the chapter. */
+  const { data: album, refetch: refetchAlbum } = useQuery(() => fetchAlbum(String(id)).catch(() => null), [id]);
   const { showToast } = useToast();
+
+  /* Coming back from Goals or Add a Photo has to show what was just added — this screen read once at mount,
+     so a goal set from "Add a Chapter Goal" left the invitation standing. */
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      refetchAlbum();
+    }, [refetch, refetchAlbum]),
+  );
 
   /**
    * Renaming, which until now was impossible for any chapter (see `renameChapter`).
@@ -133,7 +151,8 @@ export default function ChapterDetailScreen() {
    */
   const addPhoto = () => router.push({ pathname: '/add-photo', params: { chapter: String(id) } });
 
-  if (loading || !data) {
+  // `!data`, not `loading ||`: a refetch keeps the chapter drawn instead of blanking to the spinner.
+  if (!data) {
     return (
       <View style={styles.root}>
         <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.legacyMountains} imageOpacity={0.375} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
@@ -145,6 +164,9 @@ export default function ChapterDetailScreen() {
 
   const { primary, active: supporting } = goalSections(data.goals);
   const goalCount = data.goals.length;
+  // Newest first — the strip is a glance at the chapter, and the album is where the whole order lives.
+  const photos = (album?.photos ?? []).slice().sort((a, b) => (a.takenOn < b.takenOn ? 1 : a.takenOn > b.takenOn ? -1 : 0));
+  const openAlbum = () => router.push({ pathname: '/photos', params: { chapter: String(id) } });
 
   // M-5 first: nothing is written until "Seal This Chapter" is pressed in the sheet below.
   const goSeal = () => {
@@ -210,7 +232,10 @@ export default function ChapterDetailScreen() {
                 </TourAnchor>
                 <Pressable onPress={() => router.push('/goals')} accessibilityRole="button" accessibilityLabel={primary.name} style={styles.primaryCard}>
                   <Text style={styles.primaryName}>{primary.name}</Text>
-                  {isQuantifiable(primary) ? (
+                  {isAchieved(primary) ? (
+                    // Achieved replaces the bar (G-1 §12.5) — called done at 5 of 10, it drew half of one.
+                    <Text style={styles.narrative}>{goalStatusLine(primary)}</Text>
+                  ) : isQuantifiable(primary) ? (
                     <>
                       <View style={styles.primaryProgRow}>
                         <Text style={styles.primaryPct}>{progressPct(primary)}%</Text>
@@ -219,7 +244,7 @@ export default function ChapterDetailScreen() {
                       <ProgressBar value={progressPct(primary)} max={100} height={8} />
                     </>
                   ) : (
-                    <Text style={styles.narrative}>{isAchieved(primary) ? 'Achieved' : 'In progress'}</Text>
+                    <Text style={styles.narrative}>In progress</Text>
                   )}
                   <View style={styles.viewGoalRow}>
                     {primary.targetDate ? <Text style={styles.expected}>Expected by {monthYear(primary.targetDate)}</Text> : <View />}
@@ -230,7 +255,22 @@ export default function ChapterDetailScreen() {
                   </View>
                 </Pressable>
               </View>
-            ) : null}
+            ) : (
+              /* L-3 §23.4 — an active chapter with no goal keeps the section and offers the way in. It
+                 used to render nothing, so a new chapter had no route to Goals at all (QA legacy-11). */
+              <View style={styles.section}>
+                <Text style={styles.sectionEyebrow}>Primary Goal</Text>
+                <Pressable
+                  onPress={() => router.push('/goals')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add a chapter goal"
+                  style={({ pressed }) => [styles.addPhoto, styles.addGoal, pressed ? styles.addPhotoPressed : null]}
+                >
+                  <EngravedIcon name="plus" size={16} color={flColor.bronze300} />
+                  <Text style={styles.addPhotoLabel}>Add a Chapter Goal</Text>
+                </Pressable>
+              </View>
+            )}
 
             {/* supporting goals */}
             {supporting.length ? (
@@ -350,7 +390,30 @@ export default function ChapterDetailScreen() {
 
         {/* media — the only photo creation path in the app (L-15 arch §2) */}
         <TourAnchor id="chapter-archive" style={styles.section}>
-          <SectionHeader label="Photos" action="View album" onAction={() => router.push({ pathname: '/photos', params: { chapter: String(id) } })} />
+          <SectionHeader label="Photos" action="View album" onAction={openAlbum} />
+          {photos.length > 0 ? (
+            <>
+              <Text style={styles.photoCount}>{photoCountLabel(photos.length)}</Text>
+              <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoStrip}>
+                {photos.slice(0, PHOTO_STRIP_MAX).map((ph) => (
+                  <Pressable
+                    key={ph.id}
+                    onPress={openAlbum}
+                    accessibilityRole="button"
+                    accessibilityLabel={ph.pose ? `${ph.pose}. Open this chapter's album.` : "Open this chapter's album."}
+                    style={({ pressed }) => [styles.photoTile, pressed ? styles.addPhotoPressed : null]}
+                  >
+                    <MediaThumb url={ph.url} kind={ph.isVideo ? 'video' : 'image'} />
+                  </Pressable>
+                ))}
+                {photos.length > PHOTO_STRIP_MAX ? (
+                  <Pressable onPress={openAlbum} accessibilityRole="button" accessibilityLabel={`${photos.length - PHOTO_STRIP_MAX} more. Open this chapter's album.`} style={[styles.photoTile, styles.photoMore]}>
+                    <Text style={styles.photoMoreText}>+{photos.length - PHOTO_STRIP_MAX}</Text>
+                  </Pressable>
+                ) : null}
+              </ScrollView>
+            </>
+          ) : null}
           <Pressable
             onPress={addPhoto}
             accessibilityRole="button"
@@ -512,6 +575,13 @@ const styles = StyleSheet.create({
   addPhoto: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 10, paddingVertical: 15, borderRadius: flRadius.lg, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.bronzeTint },
   addPhotoPressed: { opacity: 0.88, borderColor: flColor.accentBorder },
   addPhotoLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.bronze300 },
+  /* The same dashed invitation, under a section eyebrow that already carries the spacing. */
+  addGoal: { marginTop: 0 },
+  photoCount: { fontSize: 12, color: flColor.gray600, marginTop: 2 },
+  photoStrip: { gap: 8, paddingTop: 10, paddingRight: 18 },
+  photoTile: { width: 72, height: 96, borderRadius: flRadius.md, overflow: 'hidden', borderWidth: 1, borderColor: flColor.bronzeBorderSubtle, backgroundColor: flColor.surfaceRecessed },
+  photoMore: { alignItems: 'center', justifyContent: 'center' },
+  photoMoreText: { fontSize: 14, fontWeight: '700', color: flColor.bronzeInk },
   root: { flex: 1, backgroundColor: flColor.base },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   err: { fontSize: 14, color: flColor.gray400 },

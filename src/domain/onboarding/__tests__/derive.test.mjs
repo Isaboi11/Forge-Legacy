@@ -112,6 +112,10 @@ test('firstNameOf + initialsOf', () => {
   assert.equal(firstNameOf('Cher'), 'Cher');
   assert.equal(initialsOf('Isa Altamirano'), 'IA');
   assert.equal(initialsOf('The Forge'), 'TF');
-  assert.equal(initialsOf('marcus vale ridge'), 'MV'); // max 2
-  assert.equal(initialsOf('cher'), 'C');
+  // ONE rule for every avatar (settings-06): first + LAST word; a single name gives its first two letters.
+  // These two used to be 'MV' and 'C' here while the Avatar glyph drew 'MR' and 'CH' for the same athlete.
+  assert.equal(initialsOf('marcus vale ridge'), 'MR'); // max 2
+  assert.equal(initialsOf('cher'), 'CH');
+  assert.equal(initialsOf('  '), '');
+  assert.equal(initialsOf('a'), 'A');
 });

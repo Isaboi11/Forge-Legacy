@@ -18,7 +18,7 @@ const TODAY = '2026-09-23';
 const TARGET = { kcal: 2500, protein: 190, carb: 250, fat: 80 };
 
 test('under 18 is shut even WITH a manual target — and says the year it opens', () => {
-  assert.deepEqual(setupGate(2010, TARGET, TODAY), { kind: 'under-age', unlockYear: 2028 });
+  assert.deepEqual(setupGate(2010, TARGET, TODAY), { kind: 'under-age', unlockYear: 2029 });
 });
 
 test('the age door is checked before the target door', () => {
@@ -38,8 +38,10 @@ test('no birth year on file is not treated as under 18', () => {
   assert.equal(setupGate(null, TARGET, TODAY), null);
 });
 
-test('turning 18 this year opens the door', () => {
-  assert.equal(setupGate(2008, TARGET, TODAY), null);
+test('turning 18 this year keeps the door shut — the year alone cannot say the birthday has passed (QA N-18)', () => {
+  assert.deepEqual(setupGate(2008, TARGET, TODAY), { kind: 'under-age', unlockYear: 2027 });
+  assert.equal(setupGate(2008, TARGET, '2027-01-01'), null);
+  assert.equal(setupGate(2007, TARGET, TODAY), null);
 });
 
 test('a fresh setup starts with allergies UNANSWERED, and Continue shut', () => {

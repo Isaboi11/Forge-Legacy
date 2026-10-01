@@ -2,6 +2,7 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { guardRoute } from '@/components/forge/NotFound';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -29,7 +30,14 @@ const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 
 const lowerLead = (t: string) => (/^[A-Z][a-z]/.test(t) ? t[0].toLowerCase() + t.slice(1) : t);
 
-export default function FormHistoryScreen() {
+// With no lift in the link the title read "Form history" and Film a set passed THAT on as the lift's
+// name (QA 09-26 B4). A history is always a lift's; without one there is nothing to open.
+export default guardRoute(FormHistoryScreen, (p) => (typeof p.key === 'string' && p.key.length > 0) || (typeof p.lift === 'string' && p.lift.length > 0), {
+  title: 'No lift chosen.',
+  reason: 'Form history opens from a lift’s form check. Film a set first, then open its history from there.',
+});
+
+function FormHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ key?: string; lift?: string }>();

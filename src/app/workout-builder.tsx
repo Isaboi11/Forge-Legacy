@@ -2,7 +2,6 @@ import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
@@ -11,7 +10,6 @@ import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { themeScrim } from '@/constants/theme-scrim';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
 import { savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
@@ -36,20 +34,20 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { ImportSpreadsheetSheet } from '@/components/forge/ImportSpreadsheetSheet';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { toProgramStructure, unmatchedNames, type ParsedWeek } from '@/domain/program/import-parse';
-import { resolveExerciseName } from '@/domain/exercise-picker/data';
+import { resolveImportedName } from '@/domain/exercise-picker/data';
 import { useToast } from '@/hooks/useCeremony';
-import { bumpTimedSet, durText } from '@/domain/program/prescription';
+import { bumpTimedSet, durText, estimatedSessionMinutes } from '@/domain/program/prescription';
+import { stepExercise } from '@/domain/workout/reorder-exercise';
 import { prescriptionOfRow, toTemplateExercises } from '@/lib/workout-template-rows';
 import { prescriptionLine, withoutScheme } from '@/lib/prescription-line';
 import { clearBuilderInbox, readBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
 import {
   clampReps,
   clampSets,
-  defaultReps,
-  defaultSets,
   newExerciseId,
   pairWithNext,
   pairingAt,
+  toDayRow,
   unpairAt,
 } from '@/lib/program-draft';
 import {
@@ -57,14 +55,18 @@ import {
   emptyWorkoutDraft,
   loadWorkoutDraft,
   saveWorkoutDraft,
-  workoutDraftHasContent,
+  workoutDraftIsDirty,
   workoutDraftTotal,
+  withWorkoutBaseline,
   type WorkoutDraft,
 } from '@/lib/workout-builder-draft';
 import { errorMessage } from '@/lib/useQuery';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { equipmentLabel } from '@/components/forge/EquipIcon';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
+import { countOf } from '@/domain/text/plural';
+import { withArticle } from '@/domain/text/article';
+import { nameNearLimit, WORKOUT_NAME_MAX } from '@/domain/text/name-limits';
 
 /**
  * W-25 Free Workout Builder — plan a session, then keep it (and start it).
@@ -146,7 +148,7 @@ export default function WorkoutBuilderScreen() {
         let d = stored;
         if (entryId && !inbox && (!d || d.editId !== entryId)) {
           const src = await fetchTemplateDetail(entryId).catch(() => null);
-          d = src ? hydrate(src.name, src.exercises, entryId) : d;
+          d = src ? withWorkoutBaseline(hydrate(src.name, src.exercises, entryId)) : d;
         } else if (!entryId && !inbox && d && d.editId) {
           d = null; // a fresh "build it first" must not reopen someone's edit session
         }
@@ -158,27 +160,10 @@ export default function WorkoutBuilderScreen() {
             ...d,
             [inbox.section]: [
               ...d[inbox.section],
-              /* A conditioning key becomes a cardio BLOCK, not three sets of eight. The Picker's
-                 "Running & Cardio" section hands back `cardio:<activity>` and this mapped it like any
-                 other row — producing exactly the "Interval Run" trap the catalogue cleanup removed,
-                 one door over. Same reader (`activityFromKey`) and same block (`newCardioBlock`) as
-                 this screen's own Add-a-cardio-block sheet, so both doors agree. */
-              ...inbox.items.map((it) => {
-                const activity = activityFromKey(it.catalogKey ?? '');
-                if (activity) {
-                  return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio' as const, ...newCardioBlock(activity) };
-                }
-                return {
-                  id: newExerciseId(),
-                  catalogKey: it.catalogKey,
-                  name: it.name,
-                  equip: it.equip,
-                  muscles: it.muscles ?? [],
-                  type: it.type ?? '',
-                  sets: defaultSets(inbox.section),
-                  reps: defaultReps(inbox.section),
-                };
-              }),
+              /* The SAME row the Program Builder makes from the same pick (`toDayRow`): a conditioning
+                 key becomes a cardio block, a hold becomes a timed row, everything else sets × reps.
+                 This screen carried its own copy of that mapping, and the copy had no timed branch. */
+              ...inbox.items.map((it) => toDayRow(it, inbox.section)),
             ],
           };
         }
@@ -245,16 +230,22 @@ export default function WorkoutBuilderScreen() {
    * parser's own "Day 1"). Sets and reps go through the same clamps every other row here obeys.
    */
   const confirmImport = (weeks: ParsedWeek[]) => {
-    const resolveKey = (n: string) => resolveExerciseName(n)?.key;
+    /* The import's resolver — a matched row takes the library's name, a typo is put right (QA library-17). */
+    const resolveKey = resolveImportedName;
     const day = toProgramStructure(weeks, '', resolveKey).days[0];
     if (!day || day.main.length === 0) return;
-    const items: ProgramExercise[] = day.main.map((x) => ({
-      ...x,
-      id: newExerciseId(),
-      /* A card's ramp keeps every set (see `program-import-draft.ts`); anything else fits the steppers. */
-      sets: x.repScheme?.length ? x.repScheme.length : clampSets(x.sets),
-      reps: clampReps(x.reps),
-    }));
+    const items: ProgramExercise[] = day.main.map((x) => {
+      /* To failure (`['F', …]`, QA programs-08) is clamped with its scheme, like any set count. */
+      const failing = !!x.repScheme?.length && x.repScheme.every((r) => r === 'F');
+      return {
+        ...x,
+        id: newExerciseId(),
+        /* A card's ramp keeps every set (see `program-import-draft.ts`); anything else fits the steppers. */
+        sets: x.repScheme?.length && !failing ? x.repScheme.length : clampSets(x.sets),
+        reps: clampReps(x.reps),
+        ...(failing ? { repScheme: x.repScheme!.slice(0, clampSets(x.sets)) } : null),
+      };
+    });
     const givenName = /^day \d+$/i.test(day.name.trim()) ? '' : day.name.trim();
     mutate((d) => ({
       ...d,
@@ -265,8 +256,8 @@ export default function WorkoutBuilderScreen() {
     const n = items.length;
     showToast(
       unmatched.length
-        ? `Imported ${n} · ${unmatched.length} name${unmatched.length === 1 ? '' : 's'} weren’t in the library and kept yours`
-        : `Imported ${n} exercise${n === 1 ? '' : 's'} — review and save`,
+        ? `Imported ${n} · ${countOf(unmatched.length, 'name')} ${unmatched.length === 1 ? 'wasn’t' : 'weren’t'} in the library and kept yours`
+        : `Imported ${countOf(n, 'exercise')} — review and save`,
     );
   };
 
@@ -277,7 +268,7 @@ export default function WorkoutBuilderScreen() {
   };
 
   const onBack = () => {
-    if (draft && workoutDraftHasContent(draft)) setConfirmLeave(true);
+    if (draft && workoutDraftIsDirty(draft)) setConfirmLeave(true);
     else leave();
   };
 
@@ -332,9 +323,12 @@ export default function WorkoutBuilderScreen() {
   }
 
   const total = workoutDraftTotal(draft);
+  /* An existing template being edited (Home's one-off "Build for later" never carries an editId). */
+  const editing = !!draft.editId && !forLater;
   // The same rule The Record's save uses: a shape with nothing in its Main section is not a workout.
   const canSave = draft.main.length > 0;
-  const est = Math.round((draft.main.length * 9 + draft.warmup.length * 4 + draft.cooldown.length * 4) / 5) * 5;
+  /* The ONE estimate — sets, timed sets, supersets — that Home and the template's page show too (QA B6). */
+  const est = draft.main.length + draft.warmup.length > 0 ? estimatedSessionMinutes(draft.warmup, draft.main) : 0;
 
   return (
     <View style={styles.root}>
@@ -352,11 +346,17 @@ export default function WorkoutBuilderScreen() {
             placeholder="e.g. Push Day A"
             placeholderTextColor={flColor.gray600}
             style={styles.nameInput}
-            maxLength={60}
+            maxLength={WORKOUT_NAME_MAX}
             accessibilityLabel="Workout name"
           />
+          {/* The cap is never a silent cut (QA 09-26 library-23): the count shows as the name nears it. */}
+          {nameNearLimit(draft.name.length, WORKOUT_NAME_MAX) ? (
+            <Text style={styles.headMeta}>
+              {draft.name.length}/{WORKOUT_NAME_MAX}
+            </Text>
+          ) : null}
           <Text style={styles.headMeta}>
-            {total > 0 ? `${total} ${total === 1 ? 'exercise' : 'exercises'}${est > 0 ? ` · ~${est} min` : ''}` : 'Plan it here, then start it whenever you like.'}
+            {total > 0 ? `${countOf(total, 'exercise')}${est > 0 ? ` · ~${est} min` : ''}` : 'Plan it here, then start it whenever you like.'}
           </Text>
           {/* The same link, the same words and the same glyph as the Program Builder's — one door, wherever
               a plan gets built. Under the name because that is where the Program Builder keeps it too. */}
@@ -391,8 +391,10 @@ export default function WorkoutBuilderScreen() {
                   first={i === 0}
                   last={i === items.length - 1}
                   pairing={pairingAt(items, i)}
-                  onUp={() => patch(sec.key, (l) => swap(l, i, i - 1))}
-                  onDown={() => patch(sec.key, (l) => swap(l, i, i + 1))}
+                  /* The arrows go through the ONE tested step both builders share: a superset is found
+                     by adjacency, so a bare swap across its edge split it and the split was saved. */
+                  onUp={() => patch(sec.key, (l) => stepExercise(l, i, -1))}
+                  onDown={() => patch(sec.key, (l) => stepExercise(l, i, 1))}
                   onRemove={() => patch(sec.key, (l) => l.filter((_, k) => k !== i))}
                   onSets={(dir) =>
                     patch(sec.key, (l) =>
@@ -458,7 +460,11 @@ export default function WorkoutBuilderScreen() {
         })}
       </ScrollView>
 
-      <LinearGradient colors={[themeScrim('rgba(6,7,8,0.35)'), themeScrim('rgba(6,7,8,0.82)')]} style={[styles.footer, { paddingBottom: barBottom }]}>
+      {/* A SOLID BAR IN THE FLOW, not a see-through gradient floating over the list (library-08). It was
+          absolutely placed over the scroller with a 35%-82% scrim, so the Cool-down rows showed through
+          the buttons and on a short phone "Add cool-down" sat underneath them. The same ground and rule
+          the Exercise Picker's and the Program Builder's footers stand on. */}
+      <View style={[styles.footer, { paddingBottom: barBottom }]}>
         <Button variant="primary" fullWidth disabled={!canSave || saving} onPress={() => void save(true)} accessibilityLabel="Save and start this workout">
           {saving ? 'Saving…' : 'Save & Start'}
         </Button>
@@ -466,13 +472,14 @@ export default function WorkoutBuilderScreen() {
           onPress={() => void save(false)}
           disabled={!canSave || saving}
           accessibilityRole="button"
-          accessibilityLabel="Save for later"
+          accessibilityLabel={editing ? 'Save changes' : 'Save for later'}
           style={styles.laterBtn}
         >
-          <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>Save for later</Text>
+          {/* Editing a saved template is not "for later" - it already exists (QA 09-26 library-19). */}
+          <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>{editing ? 'Save changes' : 'Save for later'}</Text>
         </Pressable>
         {!canSave ? <Text style={styles.gate}>Add at least one Main exercise to save.</Text> : null}
-      </LinearGradient>
+      </View>
 
       {/* Same rows and the same `newCardioBlock` seed as the Program Builder, so a run authored here and
           a run authored there are the same thing. Targets are set on the card afterwards, because either
@@ -487,7 +494,7 @@ export default function WorkoutBuilderScreen() {
               key={a.key}
               onPress={() => cardioSheet && addCardio(cardioSheet, a.key)}
               accessibilityRole="button"
-              accessibilityLabel={`Add a ${a.name.toLowerCase()}`}
+              accessibilityLabel={`Add ${withArticle(a.name.toLowerCase())}`}
               style={styles.cardioRow}
             >
               <Text style={styles.cardioSymbol}>{activitySymbol(a.key)}</Text>
@@ -563,8 +570,8 @@ export default function WorkoutBuilderScreen() {
       <ConfirmSheet
         open={confirmLeave}
         onClose={() => setConfirmLeave(false)}
-        headline="Discard this workout?"
-        body="Nothing has been saved to your templates yet."
+        headline={editing ? 'Discard your changes?' : 'Discard this workout?'}
+        body={editing ? 'The saved template stays as it was.' : 'Nothing has been saved to your templates yet.'}
         confirmLabel="Discard"
         tone="destructive"
         onConfirm={() => {
@@ -667,9 +674,11 @@ function Row({
        * stepping a number nothing will ever render.
        */}
       <View style={styles.steppers}>
+        {/* An OPEN target still says WHICH target it is. Both steppers read a bare "Open" with nothing
+            under it, so a new cardio block was two identical unlabelled controls (library-03). */}
         {cardio ? (
           <Stepper
-            label={item.targetMi == null ? '' : 'mi'}
+            label={item.targetMi == null ? 'distance' : 'mi'}
             value={distanceLabel(item.targetMi ?? null, (m) => m)}
             onDown={() => onSets(-1)}
             onUp={() => onSets(1)}
@@ -682,7 +691,7 @@ function Row({
             the Program Builder offers, so a day built here and a day built there mean the same thing. */}
         {cardio ? (
           <Stepper
-            label={item.targetSec == null ? '' : 'time'}
+            label="time"
             value={item.targetSec == null ? 'Open' : fmtDuration(item.targetSec)}
             onDown={() => onTime(-1)}
             onUp={() => onTime(1)}
@@ -777,13 +786,6 @@ function Glyph({ name, color, size = 17 }: { name: EngravedName; color: string; 
 
 // ── plumbing ────────────────────────────────────────────────────────────────
 
-const swap = (l: ProgramExercise[], i: number, j: number): ProgramExercise[] => {
-  if (j < 0 || j >= l.length) return l;
-  const next = [...l];
-  [next[i], next[j]] = [next[j], next[i]];
-  return next;
-};
-
 /** An existing template → an editable draft. Re-ids every row so React keys are stable and local. */
 function hydrate(name: string, exercises: TemplateExercise[], editId: string): WorkoutDraft {
   const d = emptyWorkoutDraft();
@@ -839,7 +841,7 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { paddingHorizontal: 18, paddingBottom: 190 },
+  scroll: { paddingHorizontal: 18, paddingBottom: 28 },
 
   head: { paddingTop: 6, paddingBottom: 16, gap: 7 },
   fieldLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk },
@@ -941,7 +943,7 @@ const styles = StyleSheet.create({
 
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. It was a hand-picked 26,
      which was generous on a home-button phone and still under the home indicator on a modern one. */
-  footer: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: SCREEN_GUTTER, paddingTop: 16, gap: 8 },
+  footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900 },
   laterBtn: { alignItems: 'center', paddingVertical: 8 },
   laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   laterTextOff: { color: flColor.gray600 },

@@ -34,6 +34,14 @@ import type { WeekDay } from './week.ts';
 /** The wire ceiling. The builder aims well under it. */
 export const NUTRITION_SUMMARY_CHARS = 420;
 
+/**
+ * Fewer logged days than this is not an average (QA kitchen-10). One logged day went to Holt as "cal/day over
+ * 1 logged day (6 unlogged) … Avg protein 40 g", and he told the athlete their protein was light and to log more
+ * in nine replies out of thirteen. One day is an anecdote: below three, no average, no in-range count and no
+ * macro line are sent at all, so there is nothing for a verdict to stand on.
+ */
+export const MIN_DAYS_FOR_AVERAGE = 3;
+
 /* ── is this a food question ──────────────────────────────────────────────── */
 
 const NUTRITION = [
@@ -82,7 +90,7 @@ export function summariseNutrition(input: NutritionSummaryInput): string | null 
 
   const parts: string[] = [];
 
-  if (counted > 0) {
+  if (counted >= MIN_DAYS_FOR_AVERAGE) {
     const unlogged = missed > 0 ? ` (${missed} unlogged)` : '';
     parts.push(
       `Nutrition, last 7 days: ${grouped(average.kcal)} cal/day over ${counted} logged ${counted === 1 ? 'day' : 'days'}${unlogged}, today excluded.`,
@@ -95,6 +103,8 @@ export function summariseNutrition(input: NutritionSummaryInput): string | null 
     parts.push(
       `Avg protein ${Math.round(average.protein)} g, carbs ${Math.round(average.carb)} g, fat ${Math.round(average.fat)} g.`,
     );
+  } else if (counted > 0) {
+    parts.push(`Nutrition: ${counted} logged ${counted === 1 ? 'day' : 'days'} in the last 7 before today — too few to average.`);
   } else {
     parts.push('Nutrition: nothing logged in the last 7 days before today.');
   }
@@ -104,4 +114,27 @@ export function summariseNutrition(input: NutritionSummaryInput): string | null 
 
   const line = parts.join(' ');
   return line.length > NUTRITION_SUMMARY_CHARS ? `${line.slice(0, NUTRITION_SUMMARY_CHARS - 1)}…` : line;
+}
+
+/* ── said once ────────────────────────────────────────────────────────────── */
+
+const GAP_NOTES = [
+  / \(\d+ unlogged\)/g,
+  /Nutrition: \d+ logged days? in the last 7 before today — too few to average\.\s*/g,
+  /Nutrition: nothing logged in the last 7 days before today\.\s*/g,
+];
+
+/**
+ * The same line with its logging-gap facts taken out — "(4 unlogged)", "too few to average", "nothing logged".
+ *
+ * QA kitchen-10: the gap rode on EVERY question, so Holt raised it on every answer. It is a fact worth stating
+ * once; `buildAskContext` sends the full line with the first question of a conversation and this one after it.
+ * Works on the bare summary and on the kitchen's wrapped one alike, because both carry the sentences verbatim.
+ */
+export function withoutLoggingGaps(line: string): string {
+  let out = line;
+  for (const re of GAP_NOTES) out = out.replace(re, '');
+  /* The kitchen wraps the summary as "Food logged: …"; with nothing left to say, the label goes too. */
+  out = out.replace(/Food logged:\s*(?=On hand this week|$)/, '');
+  return out.replace(/\s{2,}/g, ' ').trim();
 }

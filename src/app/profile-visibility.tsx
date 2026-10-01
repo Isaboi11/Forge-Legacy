@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -109,6 +109,25 @@ export default function ProfileVisibilityScreen() {
    * ⚠ THE TOAST USED TO FIRE UNCONDITIONALLY, BEFORE AND REGARDLESS OF THE WRITE. "Reset to defaults" is
    * a confident claim about a privacy state; it now only appears once the server has actually accepted it.
    */
+  /*
+   * ⚠ IT ASKS FIRST (QA 09-26 settings-14). One tap rewrote every audience on the screen — including
+   * anything an athlete had deliberately narrowed or opened — with nothing to undo it.
+   */
+  const confirmReset = () => {
+    const msg = 'Every section goes back to its starting audience. Anything you changed here is replaced.';
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && !window.confirm(`Reset to defaults?
+
+${msg}`)) return;
+      reset();
+      return;
+    }
+    Alert.alert('Reset to defaults?', msg, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reset', style: 'destructive', onPress: reset },
+    ]);
+  };
+
   const reset = () => {
     const before = override;
     setOverride({ ...VISIBILITY_DEFAULTS });
@@ -182,7 +201,7 @@ export default function ProfileVisibilityScreen() {
             </View>
           ))}
 
-          <Pressable onPress={reset} accessibilityRole="button" accessibilityLabel="Reset to defaults" style={styles.reset}>
+          <Pressable onPress={confirmReset} accessibilityRole="button" accessibilityLabel="Reset to defaults" style={styles.reset}>
             <Text style={styles.resetText}>Reset to defaults</Text>
           </Pressable>
 

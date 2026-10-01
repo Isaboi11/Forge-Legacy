@@ -1,9 +1,10 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { ChipScroller } from '@/components/forge/ChipScroller';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -51,10 +52,14 @@ import { useQuery } from '@/lib/useQuery';
 
 type AudienceChoice = StarterAudience | 'default';
 
+/** Below this window height (an SE is 667) the filters do not stay pinned — see the ScrollView. */
+const SHORT_SCREEN_H = 740;
+
 export default function ForgeTemplatesScreen() {
   const router = useRouter();
   const { profile } = useProfile();
   const params = useLocalSearchParams<{ focus?: string; venue?: string }>();
+  const shortScreen = useWindowDimensions().height < SHORT_SCREEN_H;
 
   /* Deep-linked from a focus row on W-26 so "see the other five glute days" lands pre-filtered rather
      than on the whole library with the athlete's place in it lost. */
@@ -103,7 +108,10 @@ export default function ForgeTemplatesScreen() {
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       <AppBar title="Built by Forge" onBack={goBack} />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={[0]}>
+      {/* Sticky only where there is room for it: four filter rows pinned on an iPhone SE held ~40% of
+          the screen for the whole scroll (visualA-12). On a short screen they scroll away with the
+          list and are one flick back up. */}
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} stickyHeaderIndices={shortScreen ? undefined : [0]}>
         <View style={styles.filterWrap}>
           <FilterRow label="Focus">
             <Chip label="All" on={focus === null} onPress={() => setFocus(null)} />
@@ -198,13 +206,15 @@ export default function ForgeTemplatesScreen() {
   );
 }
 
+/* The chips scroll, and the row now says so — a fade and a chevron at whichever edge hides more
+   (visualA-12). The focus row alone hid eight of its options behind the right edge. */
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <View style={styles.filterRow}>
       <Text style={styles.filterLabel}>{label}</Text>
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ChipScroller ground={flColor.base} style={styles.chipScroller} contentContainerStyle={styles.chips}>
         {children}
-      </ScrollView>
+      </ChipScroller>
     </View>
   );
 }
@@ -232,6 +242,7 @@ const styles = StyleSheet.create({
   filterWrap: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 10, gap: 9, backgroundColor: flColor.base, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   filterRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   filterLabel: { width: 44, flexShrink: 0, fontSize: 9.5, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
+  chipScroller: { flex: 1, minWidth: 0 },
   chips: { gap: 6, paddingRight: 12 },
   chip: { paddingHorizontal: 11, paddingVertical: 6, borderRadius: flRadius.pill, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.surfaceRecessed },
   chipOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },

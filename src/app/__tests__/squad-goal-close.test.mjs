@@ -93,7 +93,16 @@ test('the inbox merges the goal rows, and a missing function costs nothing', () 
   assert.match(live, /supabase\.rpc\('squad_goal_notifications'\)/);
   assert.match(live, /if \(error \|\| !data\) return \[\];/);
   // Both the list and the bell.
-  assert.equal((live.match(/, fetchGoalNotifications\(\)\]\)/g) ?? []).length, 2, 'the list and the unread count must both read the goal rows');
+  assert.equal((live.match(/fetchGoalNotifications\(\),\s*fetchSocialNotices\(\),?\s*\]\)/g) ?? []).length, 2, 'the list and the unread count must both read the goal rows (and 0251’s notices beside them)');
+  // 0251's side feed obeys the same rule: a database without it costs the inbox nothing.
+  assert.match(live, /supabase\.rpc\('social_notices'\);\s*if \(error \|\| !data\) return \[\];/);
+});
+
+test('0251: a deleted squad never opens its own page; an open competition opens where Join is', () => {
+  assert.equal(destinationFor({ kind: 'squad_deleted', squadId: 's1' }), '/(tabs)/squads');
+  assert.deepEqual(destinationFor({ kind: 'squad_challenge_open', squadId: 's1', challengeId: 'c1' }), { pathname: '/challenge/[id]', params: { id: 'c1' } });
+  assert.deepEqual(destinationFor({ kind: 'squad_owner_changed', squadId: 's1' }), { pathname: '/squad/[id]', params: { id: 's1' } });
+  assert.equal(destinationFor({ kind: 'squad_challenge_open', squadId: 's1' }), '/inbox');
 });
 
 test('a goal push and a goal row open the goal; the owner reminder opens the editor', () => {

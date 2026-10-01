@@ -1,17 +1,20 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
+import { AckGlyph } from '@/components/forge/AckGlyph';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { fetchNotifications, markNotificationsSeen, type ForgeNotification } from '@/data/notifications-live';
+import { ACK_LABEL } from '@/data/squad-feed-live';
 import { destinationFor } from '@/domain/notifications/destination';
+import { spokenAgoAt } from '@/domain/text/time-ago';
 import { useQuery } from '@/lib/useQuery';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 
@@ -71,6 +74,24 @@ export default function InboxScreen() {
     void markNotificationsSeen();
   }, [data]);
 
+  /*
+   * Read again every time the screen comes back into view (QA 09-26 social2-18, social2-13). Every row is
+   * derived from a fact that can stop being true while you are away on the screen it opened: an invite you
+   * just declined, a shared program you passed on, a squad-mate who finished training. The list kept the
+   * rows it had mounted with, so a declined invite still said "Accept and start" until the app restarted.
+   * The first focus is the mount's own fetch; only a RETURN refetches.
+   */
+  const focusedOnce = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!focusedOnce.current) {
+        focusedOnce.current = true;
+        return;
+      }
+      refetch();
+    }, [refetch]),
+  );
+
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
   const grouped = useMemo(() => {
@@ -85,7 +106,9 @@ export default function InboxScreen() {
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} base="#050505" overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Notifications" onBack={goBack} />
+      {/* "Inbox", not "Notifications": Settings → Notifications is the push switches, and two screens with one
+          name sent people to the wrong one (QA 09-26 B11). The Settings title is P-5's locked one. */}
+      <AppBar title="Inbox" onBack={goBack} />
 
       {loading && !data ? (
         <View style={styles.center}>
@@ -158,7 +181,9 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'post_reaction' ||
     // 0153. A squad-mate trained. The squad is only the reason we are told — the row is about them.
     n.kind === 'squad_training_started' ||
-    n.kind === 'squad_training_finished';
+    n.kind === 'squad_training_finished' ||
+    // 0251. A squad-mate opened a competition — the row is their invitation, so it wears their face.
+    n.kind === 'squad_challenge_open';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -176,7 +201,7 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
               {n.squadPhotoUrl ? <Image source={{ uri: n.squadPhotoUrl }} style={styles.crestPhoto} contentFit="cover" /> : <SquadCrest crest={n.squadCrest} size={22} color={flColor.bronze300} />}
             </View>
           )}
-          <View style={styles.kindDisc}>{glyphFor(n.kind)}</View>
+          <View style={styles.kindDisc}>{n.kind === 'post_reaction' && n.reactionKind ? <AckGlyph kind={n.reactionKind} on size={11} /> : glyphFor(n.kind)}</View>
         </View>
 
         <View style={styles.body}>
@@ -294,7 +319,7 @@ function bodyFor(n: ForgeNotification, actor: string) {
     case 'post_reaction':
       return (
         <>
-          <Text style={styles.strong}>{actor}</Text> reacted to your post
+          <Text style={styles.strong}>{actor}</Text> {n.reactionKind ? `gave your post ${ACK_LABEL[n.reactionKind]}` : 'reacted to your post'}
         </>
       );
     /* Present tense, and the squad named, because both are load-bearing. "is training" is the only
@@ -331,6 +356,25 @@ function bodyFor(n: ForgeNotification, actor: string) {
       return (
         <>
           <Text style={styles.strong}>{n.squadName}</Text>’s goal closes soon{n.detail ? ` — ${n.detail}` : ''}
+        </>
+      );
+    /* 0251 — S-3 §10 and §11.1's own sentences. Neutral on purpose: the deletion never names who did it. */
+    case 'squad_owner_changed':
+      return (
+        <>
+          You are now the owner of <Text style={styles.strong}>{n.squadName}</Text>
+        </>
+      );
+    case 'squad_deleted':
+      return (
+        <>
+          <Text style={styles.strong}>{n.squadName}</Text> has been deleted
+        </>
+      );
+    case 'squad_challenge_open':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> opened <Text style={styles.strong}>{n.challengeName ?? 'a competition'}</Text> in <Text style={styles.strong}>{n.squadName}</Text>
         </>
       );
   }
@@ -383,54 +427,69 @@ function subFor(n: ForgeNotification): string {
     // Owner only, and the one thing worth doing two days out is moving the date (D2).
     case 'squad_goal_closing':
       return 'Extend the deadline, or let it close';
+    case 'squad_owner_changed':
+      return 'Open the squad';
+    case 'squad_deleted':
+      return 'Your own training record is untouched';
+    // The same offer a friend's challenge makes — nobody is entered until they opt in (CS-D1).
+    case 'squad_challenge_open':
+      return 'Opt in to compete';
   }
 }
 
 function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
-  const when = shortAgo(n.at);
+  /* Spoken, not the row's "5m" — which a screen reader read as "started 1 minutes ago" once the label
+     appended "ago" to it (social2-23 / N-22, QA 09-26). `spokenAgoAt` carries its own "ago". */
+  const when = spokenAgoAt(n.at, Date.now());
   switch (n.kind) {
     case 'join_request':
-      return `${actor} asked to join ${n.squadName}, ${when} ago. Review the request.`;
+      return `${actor} asked to join ${n.squadName}, ${when}. Review the request.`;
     case 'member_joined':
-      return `${actor} joined ${n.squadName}, ${when} ago.`;
+      return `${actor} joined ${n.squadName}, ${when}.`;
     case 'request_approved':
-      return `You joined ${n.squadName}, ${when} ago.`;
+      return `You joined ${n.squadName}, ${when}.`;
     case 'request_declined':
-      return `Your request to ${n.squadName} wasn’t accepted, ${when} ago.`;
+      return `Your request to ${n.squadName} wasn’t accepted, ${when}.`;
     case 'friend_request':
-      return `${actor} wants to be friends, ${when} ago. Open their profile to accept.`;
+      return `${actor} wants to be friends, ${when}. Open their profile to accept.`;
     case 'friend_accepted':
-      return `${actor} accepted your friend request, ${when} ago.`;
+      return `${actor} accepted your friend request, ${when}.`;
     case 'challenge_invite':
-      return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when} ago. Opt in to compete.`;
+      return `${actor} challenged you to ${n.challengeName ?? 'a competition'}, ${when}. Opt in to compete.`;
     case 'challenge_joined':
-      return `${actor} joined ${n.challengeName ?? 'your competition'}, ${when} ago. See the roster.`;
+      return `${actor} joined ${n.challengeName ?? 'your competition'}, ${when}. See the roster.`;
     case 'workout_invite':
-      return `${actor} wants to train ${n.inviteName ?? 'together'} with you, ${when} ago. Accept and start.`;
+      return `${actor} wants to train ${n.inviteName ?? 'together'} with you, ${when}. Accept and start.`;
     case 'workout_join_request':
-      return `${actor} wants to join your workout, ${when} ago. They are training now.`;
+      return `${actor} wants to join your workout, ${when}. They are training now.`;
     case 'program_shared':
-      return `${actor} sent you the program ${n.shareName ?? 'a program'}, ${when} ago. Read it before you take it.`;
+      return `${actor} sent you the program ${n.shareName ?? 'a program'}, ${when}. Read it before you take it.`;
     case 'squad_post':
-      return `${actor} posted in ${n.squadName}, ${when} ago. Open the squad.`;
+      return `${actor} posted in ${n.squadName}, ${when}. Open the squad.`;
     case 'squad_checkin':
-      return `${actor} checked in to ${n.squadName}, ${when} ago. Watch it before it expires.`;
+      return `${actor} checked in to ${n.squadName}, ${when}. Watch it before it expires.`;
     case 'squad_recap':
-      return `The weekly review for ${n.squadName} is in, ${when} ago. See how the squad's week went.`;
+      return `The weekly review for ${n.squadName} is in, ${when}. See how the squad's week went.`;
     case 'post_comment':
-      return `${actor} commented on your post, ${when} ago. Read it and reply.`;
+      return `${actor} commented on your post, ${when}. Read it and reply.`;
     case 'post_reaction':
-      return `${actor} reacted to your post, ${when} ago. Open your post.`;
+      return `${actor} ${n.reactionKind ? `gave your post ${ACK_LABEL[n.reactionKind]}` : 'reacted to your post'}, ${when}. Open your post.`;
     case 'squad_training_started':
-      return `${actor} is training in ${n.squadName}, started ${when} ago. Send them a message or ask to join.`;
+      return `${actor} is training in ${n.squadName}, started ${when}. Send them a message or ask to join.`;
     case 'squad_training_finished':
-      return `${actor} finished a workout in ${n.squadName}, ${when} ago. See what they did.`;
+      return `${actor} finished a workout in ${n.squadName}, ${when}. See what they did.`;
     case 'squad_goal_met':
-      return `${n.squadName} hit its goal${n.detail ? `, ${n.detail}` : ''}, ${when} ago.`;
+      return `${n.squadName} hit its goal${n.detail ? `, ${n.detail}` : ''}, ${when}.`;
     case 'squad_goal_closed':
-      return `${n.squadName}'s goal closed${n.detail ? `, ${n.detail}` : ''}, ${when} ago.`;
+      return `${n.squadName}'s goal closed${n.detail ? `, ${n.detail}` : ''}, ${when}.`;
     case 'squad_goal_closing':
       return `${n.squadName}'s goal closes soon${n.detail ? `, ${n.detail}` : ''}. Extend the deadline, or let it close.`;
+    case 'squad_owner_changed':
+      return `You are now the owner of ${n.squadName}, ${when}. Open the squad.`;
+    case 'squad_deleted':
+      return `${n.squadName} has been deleted, ${when}.`;
+    case 'squad_challenge_open':
+      return `${actor} opened ${n.challengeName ?? 'a competition'} in ${n.squadName}, ${when}. Opt in to compete.`;
   }
 }
 
@@ -484,6 +543,13 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <ProgramGlyph size={11} color={flColor.gray400} />;
     case 'squad_goal_closing':
       return <ProgramGlyph size={11} color={flColor.bronze300} />;
+    case 'squad_owner_changed':
+      return <PeopleGlyph size={11} color={flColor.bronze300} />;
+    // Neutral, like a closed goal — a deletion is not a warning about the reader.
+    case 'squad_deleted':
+      return <XGlyph size={11} color={flColor.gray600} />;
+    case 'squad_challenge_open':
+      return <SwordsGlyph size={11} color={flColor.bronze300} />;
   }
 }
 

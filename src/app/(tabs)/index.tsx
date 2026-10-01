@@ -93,7 +93,9 @@ import { clearHoltWelcome, isHoltWelcomeOwed } from '@/lib/holt-welcome';
  */
 function splitChapterTitle(full: string): { number: string; name: string } {
   const parts = full.split('—');
-  if (parts.length >= 2) return { number: parts[0].trim(), name: parts.slice(1).join('—').trim() };
+  // Only a "Chapter …" prefix is a number. An athlete's own "Squat — Season Two" keeps every word (home-02
+  // runs every chapter's name through here now, not just the first one's).
+  if (parts.length >= 2 && /^\s*chapter\b/i.test(parts[0])) return { number: parts[0].trim(), name: parts.slice(1).join('—').trim() };
   return { number: 'Chapter I', name: full.trim() };
 }
 
@@ -347,7 +349,6 @@ export default function HomeScreen() {
   const {
     data: awaiting,
     refetch: refetchAwaiting,
-    loading: awaitingLoading,
     settled: awaitingSettled,
   } = useQuery(fetchAwaitingChapter, []);
   const { data: homeChapter, settled: chapterSettled } = useQuery(fetchHomeChapter, []);
@@ -835,15 +836,29 @@ export default function HomeScreen() {
   const chapter = awaiting
     ? { ...splitChapterTitle(awaiting.chapterName), weekDay: 'Your first chapter' }
     : homeChapter
-      ? { number: homeChapter.number, name: homeChapter.name, weekDay: homeChapter.weekDay }
+      ? /* The stored name is the WHOLE title — "Chapter I — Year One" — so drawing it under the counted
+           number said the chapter twice, and wrapped the hero to two lines on a narrow phone (home-02).
+           Only the awaiting branch above split it, so everyone past their first workout got both. The
+           number stays the COUNTED one (`fetchHomeChapter`); the split supplies the title alone. */
+        { number: homeChapter.number, name: splitChapterTitle(homeChapter.name).name, weekDay: homeChapter.weekDay }
       : { number: '', name: '', weekDay: '' };
 
   /**
    * WHAT HOME DRAWS — one call, so the rules can be read and tested in one place (`src/domain/home`).
    *
-   * `awaitingLoading` matters more than it looks: `useQuery` starts at `data: null`, so `awaiting` reads
+   * `chapterLoading` matters more than it looks: `useQuery` starts at `data: null`, so `awaiting` reads
    * false for a frame on every cold load. Passing it through means Home says nothing about the athlete
    * until it knows something, instead of flashing a claim it then takes back.
+   *
+   * ⚠ IT IS `!awaitingSettled`, NOT `loading`, AND THAT IS WHY HOME KEEPS ITS PLACE (home-10, QA 09-26).
+   * `loading` goes true again on every refetch, and Home refetches this read on every focus. So each
+   * return to the tab — a tab switch, or Back from any pushed screen — ran one frame of the LOADING
+   * composition: no hero, no mission or program tile, no social cards. The page collapsed to a fraction
+   * of its height, the scroll view clamped to the top because there was nothing left to be scrolled
+   * down into, and the cards then came back underneath an offset of zero. Legacy never did this
+   * because it keeps drawing its data through a refetch. "Until it knows something" is a fact about the
+   * FIRST answer — which is exactly what `settled` latches — and the old answer stays drawn while the
+   * new one is fetched.
    */
   /*
    * ⚠ HOLT CAN ANSWER HOME'S OWN QUESTION, SO HOME HAS TO LOOK AGAIN WHEN HE CLOSES.
@@ -868,7 +883,7 @@ export default function HomeScreen() {
   }, [coachOpen, refetchStartChoice]);
 
   const composition = composeHome({
-    chapterLoading: awaitingLoading,
+    chapterLoading: !awaitingSettled,
     awaiting: !!awaiting,
     startChosen: startChoice != null,
     hasProgram,

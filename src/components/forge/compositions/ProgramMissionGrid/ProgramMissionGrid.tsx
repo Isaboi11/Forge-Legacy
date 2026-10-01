@@ -17,6 +17,7 @@ import { ProgressBar } from '../../composites/ProgressBar'
 import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
 import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
+import { FitText } from '@/components/forge/FitText'
 
 export interface ProgramMissionGridProps {
   /**
@@ -163,9 +164,10 @@ export function ProgramMissionGrid({
         style={({ pressed }) => [styles.col, pressed ? styles.colPressed : null]}
       >
         <ColumnHeader label={programPlanned ? 'Planned Program' : 'Current Program'} />
-        <Text style={styles.colTitle} numberOfLines={2}>
+        {/* Half-width columns: a one-word program name ("Conditioning") is wider than one on a small phone. */}
+        <FitText style={styles.colTitle} numberOfLines={2}>
           {programName}
-        </Text>
+        </FitText>
         {/* A PLANNED program shows its SIZE, not its progress. An empty bar under "0 / 32 Workouts"
             is the picture of somebody who has started and done nothing, which is a different and
             worse thing to say to an athlete than "you have not started this yet". */}
@@ -203,9 +205,9 @@ export function ProgramMissionGrid({
         style={({ pressed }) => [styles.col, pressed ? styles.colPressed : null]}
       >
         <ColumnHeader label="Mission" />
-        <Text style={styles.colTitle} numberOfLines={2}>
+        <FitText style={styles.colTitle} numberOfLines={2}>
           {missionTarget}
-        </Text>
+        </FitText>
         <Text style={styles.subtle}>Your long-term objective</Text>
         <View style={styles.missionDivider} />
         <View style={styles.goalsRow}>
@@ -332,6 +334,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 32,
     color: flColor.cream100,
+    // Playfair's default figures are oldstyle: "0 / 18" read as "O / 18" (QA 09-26 home-15).
+    fontVariant: ['lining-nums'],
   },
   countTotal: {
     fontSize: 14,

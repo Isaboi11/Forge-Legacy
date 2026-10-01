@@ -175,11 +175,27 @@ export const KITCHEN_MENU: readonly { label: string; goTo?: string; ask?: string
   { label: 'Grocery list', goTo: '/grocery-list' },
 ];
 
+/*
+ * ══ ONLY A DAY SOMEBODY COULD HAVE EATEN ══ (kitchen-19, QA 09-26). A 99,999,999-calorie test entry went out as
+ * "99,999,899 kcal over", Holt read it as calories LEFT ("nobody's got 100 million calories to spend") and gave
+ * no dinner idea at all. Past these the diary is a typo, not a day — the line is left out and he works without it.
+ */
+const PLAUSIBLE_EATEN_KCAL = 15000;
+const PLAUSIBLE_EATEN_PROTEIN_G = 1000;
+const PLAUSIBLE_TARGET_KCAL = 10000;
+
 /** What's left today, from the app's own totals — so Holt quotes it rather than doing the subtraction. */
 export function leftTodayLine(eaten: { kcal: number; protein: number }, target: { kcal: number; protein: number } | null): string | null {
   if (!target || !(target.kcal > 0)) return null;
+  const plausible =
+    Number.isFinite(eaten.kcal) && Number.isFinite(eaten.protein) && Number.isFinite(target.protein) &&
+    eaten.kcal >= 0 && eaten.kcal <= PLAUSIBLE_EATEN_KCAL &&
+    eaten.protein >= 0 && eaten.protein <= PLAUSIBLE_EATEN_PROTEIN_G &&
+    target.kcal <= PLAUSIBLE_TARGET_KCAL;
+  if (!plausible) return null;
   const kcal = Math.round(target.kcal - eaten.kcal);
   const protein = Math.round(target.protein - eaten.protein);
   const fmt = (n: number) => n.toLocaleString('en-US');
-  return `Left today (the app's numbers — quote these, don't recalculate): ${kcal >= 0 ? `${fmt(kcal)} kcal` : `${fmt(-kcal)} kcal over`}, ${protein >= 0 ? `${protein} g protein` : 'protein met'}.`;
+  /* Over is said as "none left", first — "N kcal over" alone was read as N left. */
+  return `Left today (the app's numbers — quote these, don't recalculate): ${kcal >= 0 ? `${fmt(kcal)} kcal` : `no calories left (${fmt(-kcal)} kcal over the target)`}, ${protein >= 0 ? `${protein} g protein` : 'protein met'}.`;
 }

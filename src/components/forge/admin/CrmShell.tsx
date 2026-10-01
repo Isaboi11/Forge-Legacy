@@ -14,6 +14,10 @@ import { DocumentsPage } from '@/components/forge/admin/pages/DocumentsPage';
 import { ModerationPage } from '@/components/forge/admin/pages/ModerationPage';
 import { OverviewPage } from '@/components/forge/admin/pages/OverviewPage';
 import { RevenuePage } from '@/components/forge/admin/pages/RevenuePage';
+import { SocialContentPage } from '@/components/forge/admin/pages/SocialContentPage';
+import { SocialNumbersPage } from '@/components/forge/admin/pages/SocialNumbersPage';
+import { SocialPlaybookPage } from '@/components/forge/admin/pages/SocialPlaybookPage';
+import { SurveysPage } from '@/components/forge/admin/pages/SurveysPage';
 import { UsagePage } from '@/components/forge/admin/pages/UsagePage';
 import { UsersPage } from '@/components/forge/admin/pages/UsersPage';
 import { isPageKey, NAV, RANGE_PAGES, type PageKey, type PageProps } from '@/components/forge/admin/pages/types';
@@ -26,7 +30,7 @@ import { useQuery } from '@/lib/useQuery';
 /**
  * The Business CRM shell, built to `Forge CRM.dc.html` (Admin-Analytics-Amendment-002).
  *
- * Wide (≥ 900): a 236 px sidebar — brand, "‹ Back to the app", four headed groups, badges on Bugs
+ * Wide (≥ 900): a 236 px sidebar — brand, "‹ Back to the app", five headed groups, badges on Bugs
  * (critical + high still open) and Moderation (reports waiting). Narrow: the brand row and a scrolling row
  * of page pills. Both: a top bar with the breadcrumb, the Dark / Light switch and, on the pages that use
  * it, the 7D / 30D / 90D / 1Y range; then a content column up to 1240 px.
@@ -181,12 +185,20 @@ function PageBody({ page, props }: { page: PageKey; props: PageProps }) {
       return <AppStorePage {...props} />;
     case 'usage':
       return <UsagePage {...props} />;
+    case 'social':
+      return <SocialNumbersPage {...props} />;
+    case 'content':
+      return <SocialContentPage {...props} />;
+    case 'playbook':
+      return <SocialPlaybookPage {...props} />;
     case 'bugs':
       return <BugsPage {...props} />;
     case 'moderation':
       return <ModerationPage {...props} />;
     case 'contacts':
       return <ContactsPage {...props} />;
+    case 'surveys':
+      return <SurveysPage {...props} />;
     case 'documents':
       return <DocumentsPage {...props} />;
   }

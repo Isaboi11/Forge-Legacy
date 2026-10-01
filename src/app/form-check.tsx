@@ -21,6 +21,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { HoltMark } from '@/components/forge/HoltMark';
 import { CloseGlyph, FC, FcPrimary, FcSecondary, FormBar, FrameFill, HoltSays, MarkedFrame } from '@/components/forge/form-check/FormCheckParts';
+import { StopCalls } from '@/components/forge/StopCalls';
 import { ScreenBackground } from '@/components/screen-background';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import {
@@ -449,6 +450,8 @@ export default function FormCheckScreen() {
           <View style={s.stopBox}>
             <Text style={s.stopKicker}>{stage.kicker}</Text>
             <Text style={s.stopText}>{stage.text}</Text>
+            {/* QA holtai-11: Call / Text under a crisis or emergency line. */}
+            <StopCalls kicker={stage.kicker} />
           </View>
         </View>
       </Shell>
