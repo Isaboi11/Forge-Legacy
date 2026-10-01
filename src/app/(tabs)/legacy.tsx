@@ -882,13 +882,12 @@ function ChapterHero({ chapter, dayCount, onOpen, onGoal }: { chapter: Chapter; 
   ]
     .filter(Boolean)
     .join(' · ');
+  const hasGoal = goal.kind !== 'none';
+  /* The card is a plate holding TWO press targets — the chapter above, its goal below — never one button
+     wrapped round another: a nested button is invalid markup on web (React flags it) and gives a screen
+     reader one control where there are two. */
   return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${chapter.name}. ${meta}. View chapter.`}
-      style={({ pressed }) => [styles.heroCard, pressed ? styles.cardPressed : null]}
-    >
+    <View style={styles.heroCard}>
       <Image source={SCREEN_BG.legacyMountains} style={styles.heroArt} contentFit="cover" contentPosition="right" accessible={false} />
       <LinearGradient
         pointerEvents="none"
@@ -898,18 +897,25 @@ function ChapterHero({ chapter, dayCount, onOpen, onGoal }: { chapter: Chapter; 
         end={{ x: 1, y: 0.5 }}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.heroTop}>
-        <Text style={styles.heroOrdinal}>{prefix}</Text>
-        <View style={styles.heroPill}>
-          <Text style={styles.heroPillText}>View Chapter</Text>
-          <ChevronRightIcon size={10} color={forgeOr(flColor.bronze300, flColor.bronzeInk)} />
+      <Pressable
+        onPress={onOpen}
+        accessibilityRole="button"
+        accessibilityLabel={`${chapter.name}. ${meta}. View chapter.`}
+        style={({ pressed }) => [styles.heroOpen, hasGoal ? styles.heroOpenAboveGoal : null, pressed ? styles.cardPressed : null]}
+      >
+        <View style={styles.heroTop}>
+          <Text style={styles.heroOrdinal}>{prefix}</Text>
+          <View style={styles.heroPill}>
+            <Text style={styles.heroPillText}>View Chapter</Text>
+            <ChevronRightIcon size={10} color={forgeOr(flColor.bronze300, flColor.bronzeInk)} />
+          </View>
         </View>
-      </View>
-      <Text style={styles.heroTitle} numberOfLines={2}>
-        {title}
-      </Text>
-      <Text style={styles.heroMeta}>{meta}</Text>
-      {goal.kind !== 'none' ? (
+        <Text style={styles.heroTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        <Text style={styles.heroMeta}>{meta}</Text>
+      </Pressable>
+      {hasGoal ? (
         /* Its own press target: the card opens the chapter, the goal opens Goals (QA legacy-11 — there was
            no way to Goals from this tab). An achieved goal says so instead of drawing the bar it was
            called done at (legacy-14). */
@@ -929,7 +935,7 @@ function ChapterHero({ chapter, dayCount, onOpen, onGoal }: { chapter: Chapter; 
           ) : null}
         </Pressable>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -1068,7 +1074,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     minHeight: 180,
-    padding: 20,
     borderRadius: flRadius.xl,
     borderWidth: 1,
     borderColor: flColor.bronzeBorderSubtle,
@@ -1101,7 +1106,10 @@ const styles = StyleSheet.create({
     maxWidth: '82%',
   },
   heroMeta: { fontSize: 13, fontWeight: '500', color: flColor.gray400, marginTop: 12 },
-  heroGoal: { marginTop: 14, gap: 10, maxWidth: '88%' },
+  // The card's 20pt inset now lives on its two press targets, so each reaches the card's edge.
+  heroOpen: { flexGrow: 1, padding: 20 },
+  heroOpenAboveGoal: { paddingBottom: 0 },
+  heroGoal: { marginTop: 14, marginHorizontal: 20, marginBottom: 20, gap: 10, maxWidth: '80%' },
   heroGoalText: { fontSize: 14, lineHeight: 20, color: flColor.cream100 },
   heroGoalValue: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
 
