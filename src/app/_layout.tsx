@@ -338,6 +338,7 @@ function RootNavigator() {
         <Stack.Screen name="transformation-add" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="transformation-compare" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="share-config" options={{ presentation: 'transparentModal', animation: 'fade' }} />
+        <Stack.Screen name="share-story" options={{ presentation: 'fullScreenModal' }} />
         {/* Progress Photo Post — reached from the squad composer and from a Transformation entry's Share. */}
         <Stack.Screen name="progress-photo-post" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="create-squad" options={{ presentation: 'fullScreenModal' }} />

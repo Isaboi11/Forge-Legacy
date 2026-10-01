@@ -52,7 +52,7 @@ const fileNameFor = (stem: string) => `${stem.replace(/[^a-zA-Z0-9-]+/g, '-').re
  * deep-link into Instagram needs the image on the PASTEBOARD, because that is what the athlete will do
  * next; opening a share sheet and then jumping to another app would be two hand-offs for one tap.
  */
-export async function handOffImage(base64: string, fileStem: string, prefer: HandOff = 'sheet'): Promise<HandOff | null> {
+export async function handOffImage(base64: string, fileStem: string, prefer: HandOff = 'sheet', message?: string): Promise<HandOff | null> {
   const payload = bare(base64);
 
   if (prefer === 'sheet' && Platform.OS === 'ios' && cacheDirectory) {
@@ -61,7 +61,9 @@ export async function handOffImage(base64: string, fileStem: string, prefer: Han
       await writeAsStringAsync(uri, payload, { encoding: EncodingType.Base64 });
       // Resolves with `dismissedAction` when the sheet is cancelled — a dismissal is not a failure, and
       // must not fall through to the clipboard behind the athlete's back.
-      await Share.share({ url: uri });
+      // `message` rides beside the image — Messages and WhatsApp keep it (with its link), Photos and
+      // Instagram take the image alone. Optional, so the other exporters hand over exactly what they did.
+      await Share.share(message ? { url: uri, message } : { url: uri });
       return 'sheet';
     } catch {
       /* cache write refused, or the sheet would not open — the clipboard still works */

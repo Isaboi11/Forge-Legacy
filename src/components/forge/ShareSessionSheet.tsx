@@ -17,6 +17,7 @@ import { autoPostFromPost, autoPostLabel, postedFor, postedLine, postVerb, shoul
 import { useAutoPost } from '@/hooks/useAutoPost';
 import { errorMessage } from '@/lib/useQuery';
 import { plainError } from '@/lib/plain-error';
+import { callerModalGone } from '@/lib/useMediaPicker';
 
 /**
  * WHERE A SESSION GOES — one sheet, every destination, wherever it is opened from.
@@ -391,9 +392,25 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
   const stepSquads = unshared;
   const stepPicked = selectedSquads(stepSquads, picked);
 
+  /* The link rides with the words (PO 2026-10-01): a share outside Forge is how somebody who has never
+     heard of it finds it, and Messages turns the address into something they can tap. */
   const sentence = () => {
     const vol = snapshot ? ` ${fmtVolume(snapshot.volume)} moved.` : '';
-    return `${workoutName} — sealed.${vol}`;
+    return `${workoutName} — sealed.${vol} https://forgelegacy.app`;
+  };
+
+  /**
+   * The session as a PICTURE — `/share-story`, three styles drawn from the session itself.
+   *
+   * The photo the athlete added on Workout Complete goes along as the starting photo; Activity Detail
+   * passes none and the screen offers one. Navigated AFTER the sheet is gone: iOS presents one view
+   * controller at a time, and pushing a full-screen modal while this sheet's `Modal` is still dismissing
+   * is dropped without a word (see `callerModalGone`).
+   */
+  const sharePicture = () => {
+    const photo = media.find((m) => m.kind === 'image')?.url;
+    close();
+    void callerModalGone().then(() => router.push({ pathname: '/share-story', params: photo ? { workoutId, photo } : { workoutId } }));
   };
 
   const shareOutside = () => {
@@ -701,16 +718,14 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
 
           <Text style={styles.group}>Outside Forge</Text>
           {/*
-            ⚠ TWO ROWS, NOT FOUR — AND THE TWO MISSING ONES ARE MISSING HONESTLY.
-            The handoff also lists "Save workout card" and "Instagram Stories". Both need the card above
-            rendered to an IMAGE, and nothing in this project can do that: there is no view-shot
-            dependency, `expo-image-manipulator` only transforms images it is handed, and a Stories
-            deep link with no image attached opens an empty story. Shipping either as a row that quietly
-            does nothing is worse than not shipping it. They come back with an image renderer.
-            Neither row is ever disabled by a missing snapshot: they carry a sentence, not the recap.
+            The picture leads: it is the share that carries the session's look, and what the handoff's
+            "Save workout card" and "Instagram Stories" rows were waiting on — an image renderer
+            (`domain/share/story-card`). Messages and More… still send the sentence and its link.
+            None of the rows is disabled by a missing snapshot: the picture screen reads its own.
           */}
           <View style={styles.outside}>
-            <OutsideRow icon={<MessageGlyph />} label="Messages" onPress={shareToMessages} disabled={sharing} />
+            <OutsideRow icon={<PictureGlyph />} label="Share as a picture" onPress={sharePicture} disabled={sharing} />
+            <OutsideRow divided icon={<MessageGlyph />} label="Messages" onPress={shareToMessages} disabled={sharing} />
             <OutsideRow divided icon={<MoreGlyph />} label="More…" onPress={shareOutside} disabled={sharing} />
           </View>
         </View>
@@ -787,6 +802,9 @@ function SquadGlyph() {
 }
 function BothGlyph() {
   return <EngravedIcon name="layers" size={ICON_SIZE} />;
+}
+function PictureGlyph() {
+  return <EngravedIcon name="image" size={17} color={flColor.bronze300} />;
 }
 function MessageGlyph() {
   return <EngravedIcon name="chat" size={17} color={flColor.gray400} />;
