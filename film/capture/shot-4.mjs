@@ -27,7 +27,7 @@ const toHome = realAt(10.6) - realAt(from);
 take.pauses = [[0.5, +(toHome - 1.0).toFixed(3)], [2.5, 30]];
 // PO 10-02: no outlines — the WELCOME BACK card is lifted off the phone (~2×).
 take.lifts = [
-  { at: 1.6, until: 3.2, x: 12, y: 368, w: 378, h: 140, r: 16, k: 1.8 },  // WELCOME BACK · Good to see you, Jordan.
+  { at: 1.3, until: 3.2, x: 12, y: 368, w: 378, h: 140, r: 16, k: 1.8 },  // WELCOME BACK · Good to see you, Jordan.
 ];
 register('missed', take, from);
 console.log('frames', take.frames, '· calendar until', toHome.toFixed(2), 's · shot', (realAt(14.25) - realAt(from)).toFixed(2), 's');

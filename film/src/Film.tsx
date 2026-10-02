@@ -4,7 +4,7 @@ import { loadFont as loadPlayfair } from '@remotion/google-fonts/PlayfairDisplay
 import { loadFont as loadHanken } from '@remotion/google-fonts/HankenGrotesk';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
-import { CAPS, DUR, E, L, P, RDUR, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
+import { CAPS, DUR, E, L, P, RDUR, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone } from './Phone';
 import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
 import { SCREEN_W } from './Phone';
@@ -84,19 +84,20 @@ const Caption: React.FC<{ c: (typeof CAPS)[number]; x: number; portrait: boolean
   const out = E.inC(P(x, B - 0.4, B));
   let wa = A;
   let pain: React.ReactNode = null;
+  const rd = readOf(c);
   if (c.pain) {
     const pp = E.outC(P(x, A, A + 0.35));
-    wa = A + 1.3;
+    wa = A + rd + 0.2;
     pain = (
       <div style={{
         position: 'relative', width: 'max-content', maxWidth: '100%', marginBottom: 22, marginInline: c.wide ? 'auto' : undefined,
-        fontFamily: sans, fontWeight: 500, fontSize: 34, letterSpacing: 0, lineHeight: 1.2, color: '#8B8377',
-        opacity: pp * (1 - out) * (1 - 0.45 * P(x, A + 1.45, A + 1.7)), transform: `translateY(${(1 - pp) * 16 - out * 18}px)`,
+        fontFamily: sans, fontWeight: 500, fontSize: c.wide ? 46 : 34, letterSpacing: 0, lineHeight: 1.2, color: c.wide ? '#B8AFA2' : '#9A9286',
+        opacity: pp * (1 - out) * (1 - 0.45 * P(x, A + rd + 0.35, A + rd + 0.6)), transform: `translateY(${(1 - pp) * 16 - out * 18}px)`,
       }}>
         {c.pain}
         <i style={{
           position: 'absolute', left: -4, top: '54%', height: 3, borderRadius: 2, background: '#BA8654',
-          width: `calc(${E.io(P(x, A + 1.1, A + 1.45)) * 100}% + 8px)`, opacity: P(x, A + 1.1, A + 1.15),
+          width: `calc(${E.io(P(x, A + rd, A + rd + 0.35)) * 100}% + 8px)`, opacity: P(x, A + rd, A + rd + 0.05),
         }} />
       </div>
     );
@@ -163,7 +164,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
   for (const c of CAPS) {
     if (!c.pain) continue;
     const A = realAt(c.a);
-    const d = amb < A ? 0 : amb < A + 1.3 ? E.outC(P(amb, A, A + 0.3)) : 1 - E.io(P(amb, A + 1.3, A + 1.75));
+    const d = amb < A ? 0 : amb < A + readOf(c) + 0.2 ? E.outC(P(amb, A, A + 0.3)) : 1 - E.io(P(amb, A + readOf(c) + 0.2, A + readOf(c) + 0.65));
     if (d > dimV) dimV = d;
     const v = win(amb, A + 1.4, A + 3.6, 0.25, 0.6);
     if (c.spot && v > spotV) { spotV = v; spotC = c.spot; }
@@ -179,8 +180,10 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     const rt = recTime(rec, since);
     // Only while this recording's screen is the one showing (a slowed take would otherwise outlive its shot).
     // …and only after this shot's problem line has been read (the phone is lit): read first, then watch.
-    const lastPain = CAPS.filter((c) => c.pain && realAt(c.a) <= amb && realAt(c.a) >= realAt(rec.from) - 0.5).pop();
-    const lit = lastPain ? E.outC(P(amb, realAt(lastPain.a) + 1.4, realAt(lastPain.a) + 1.75)) : 0;
+    // This shot's own problem line (a later shot's caption must never switch this screen's lift off mid-air).
+    const ownPain = CAPS.find((c) => c.pain && realAt(c.a) >= realAt(rec.from) - 0.5 && c.a < screenEnd(k));
+    const lit = ownPain ? E.outC(P(amb, realAt(ownPain.a) + readOf(ownPain) + 0.3, realAt(ownPain.a) + readOf(ownPain) + 0.65)) : 0;
+    const nextCap = CAPS.find((c) => ownPain && c.a > ownPain.a);
     const shown = (screenStack(t).find(([id]) => id === k)?.[1] ?? 0) * lit;
     for (const sp of rec.spots ?? []) {
       const v = shown * (rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until))));
@@ -191,7 +194,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     for (const l of rec.lifts ?? []) {
       const a = onScreenTime(rec, l.at), b0 = onScreenTime(rec, l.until);
       if (a == null) continue;
-      const out = realAt(screenEnd(k)) - realAt(rec.from) - 0.25;
+      const out = Math.min(realAt(screenEnd(k)) - 0.25, nextCap ? realAt(nextCap.a) - 0.05 : Infinity) - realAt(rec.from);
       const b = Math.min(b0 ?? out, out);
       const v = (lit > 0.99 ? 1 : 0) * Math.min(E.io(P(since, a, a + 0.55)), 1 - E.io(P(since, b - 0.5, b)));
       if (v > liftV) { liftV = v; lifted = { l, id: k }; }
@@ -284,7 +287,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
         <AbsoluteFill style={{ perspective: 2400 }}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
             {LEGACY_CARDS.map((card, i) => {
-              const a = 14.55 + i * 0.14, p = E.outC(P(t, a, a + 0.7)), o = E.inQ(P(t, 17.25 + i * 0.05, 17.75 + i * 0.05));
+              const a = 14.2 + i * 0.14, p = E.outC(P(t, a, a + 0.7)), o = E.inQ(P(t, 17.25 + i * 0.05, 17.75 + i * 0.05));
               const c = CPOS[i], yOff = portrait ? 260 : 0;
               const x = L(ph.x, c.x, p), y = L(ph.y, c.y + yOff, p) + Math.sin(t * 1.2 + i) * 6 - o * 80, z = L(-300, c.z, p);
               const op = P(t, a, a + 0.2) * (1 - o);
