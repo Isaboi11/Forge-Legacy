@@ -164,8 +164,9 @@
   .film { position:relative; width:min(100%, 420px, calc((100vh - 170px) * 9 / 16)); min-width:min(100%, 300px); margin:0 auto; aspect-ratio:9/16;
     border-radius:28px; overflow:hidden; background:#030405 url(assets/film/poster-9x16.jpg) center/cover no-repeat;
     box-shadow:0 40px 90px -36px rgba(31,27,22,0.55); }
-  .film video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity 400ms var(--fl-ease-out); }
-  .film.on video { opacity:1; }
+  /* Never hidden (no opacity:0 until it plays): iPhone Safari won't autoplay a video it can't see, so the film sat on
+     its poster forever (PO 10-02). The video shows the same poster itself until the first frame. */
+  .film video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
   .film-btn { position:absolute; right:14px; bottom:14px; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px;
     border-radius:999px; border:1px solid rgba(243,217,174,0.35); background:rgba(10,9,8,0.62); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
     color:#F4EFE6; font-size:14px; font-weight:600; cursor:pointer; }

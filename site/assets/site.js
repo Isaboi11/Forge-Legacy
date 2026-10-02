@@ -270,7 +270,7 @@
     v.muted = true;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Play and Sound share the corner: Sound shows once the film is actually playing.
-    v.addEventListener('playing', () => { box.classList.add('on'); play.hidden = true; if (!reduce) snd.hidden = false; });
+    v.addEventListener('playing', () => { play.hidden = true; if (!reduce) snd.hidden = false; });
     if (reduce) {
       play.hidden = false;
       play.addEventListener('click', () => { play.hidden = true; v.loop = false; v.muted = false; v.controls = true; v.play(); });
