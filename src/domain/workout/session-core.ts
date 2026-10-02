@@ -45,13 +45,12 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
    */
   const pcts = percentTargets(ex);
   const max = contextMaxFor(load, ex);
-  const loadFor = (i: number): number | null => {
-    const p = pcts.length === 1 && targets.length > 1 ? pcts[0] : pcts[i];
-    return resolveLoad(max, p, load?.rules)?.weight ?? null;
-  };
+  const pctFor = (i: number): number | null => (pcts.length === 1 && targets.length > 1 ? pcts[0] : pcts[i]) ?? null;
+  const loadFor = (i: number): number | null => resolveLoad(max, pctFor(i), load?.rules)?.weight ?? null;
 
   return targets.map((t, setIndex) => {
     const target = loadFor(setIndex);
+    const pct = pctFor(setIndex);
     return {
       setIndex,
       /**
@@ -86,6 +85,10 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
       ...(t === 'F' ? { toFailure: true } : null),
       ...(ex.durationSec != null ? { targetSec: ex.durationSec } : null),
       ...(target != null ? { targetWeight: target } : null),
+      /* The percentage the bar came from. The logger's ramp rule reads it (`ghostSet`, PO 2026-09-27: "a ramp is
+         not the same again"): without it, set 1's weight carried into every later set of a program day's ramp,
+         so 135 / 185 / 205 / 225 prefilled as 135 four times and a one-tap check logged the wrong bar. */
+      ...(pct != null ? { targetPct: pct } : null),
       /* The rest the program prescribes after this set — "2 min rest between each set" off an imported card (PO
          2026-09-30). The logger starts the timer on it by itself, as it does for a posted workout. */
       ...((ex.restScheme?.[setIndex] ?? ex.restSec) != null ? { restSec: (ex.restScheme?.[setIndex] ?? ex.restSec) as number } : null),
