@@ -32,10 +32,10 @@ export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
    [11.45, 13.95] (the old squad shot) takes no real time at all. */
 // PO 10-01 after the first rough cut: "the home screen and the first active workout screen … should be seen
 // for a little longer. Feels really rushed." → Home +1.0 s ([2.15, 2.2]), the lit squat screen +0.8 s ([2.85, 2.9]
-// 2.0 → 2.8), the rest ring +0.4 s ([5.3, 5.35]). Shot 3 +3.6 s ([7.0, 7.05]) for the real Holt exchange, whose
-// recording keeps 9 s after cutting the model's waits (recordings.json → coach.pauses).
+// 2.0 → 2.8), and shot 2's logging +2.0 s ([5.3, 5.35]) so the record card and the rest ring can be read. Shot 3 +2.0 s
+// ([7.0, 7.05]) for the simplified Holt exchange (one message, the proposal, "Changed").
 export const HOLDS: [number, number, number][] = [
-  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.4], [5.78, 5.82, 2.0], [7.0, 7.05, 3.6], [9.35, 9.4, 2.0], [10.95, 11.3, 0.6],
+  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 2.0], [5.78, 5.82, 2.0], [7.0, 7.05, 2.0], [9.35, 9.4, 2.0], [10.95, 11.3, 0.6],
   [11.45, 13.95, -2.5], [13.97, 14.0, 2.0], [14.9, 15.0, 0.45], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
 ];
 const KN: [number, number][] = [[0, 0]];
@@ -141,9 +141,12 @@ export const doyAt = (t: number) => sample(DT, t).d;
 export type Spot = { x: number; y: number; w: number; h: number };
 export type Cap = { a: number; b: number; text: string; pain?: string; spot?: Spot; wide?: boolean };
 export const CAPS: Cap[] = [
-  { a: 0.25, b: 2.15, text: 'Most people quit their workout app *by spring.*' },
-  { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*', spot: { x: 22, y: 370, w: 358, h: 252 } },
-  { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *fixes the plan.*' },
+  // PO 10-01: generic to any time of year (research: a median 70% gone within 100 days — the notch on the counter),
+  // and an answer as the phone turns into Forge Legacy.
+  { a: 0.25, b: 1.45, text: 'Most people quit their workout app *within 100 days.*' },
+  { a: 1.95, b: 2.5, text: "Let's *change that.*" },
+  { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*' }, // outlines come from the take
+  { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *gets you unstuck.*' }, // PO 10-01
   { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*', spot: { x: 10, y: 266, w: 382, h: 54 } },
   { a: 13.97, b: 17.4, pain: 'Numbers nobody looks at.', text: 'A year that tells *your story.*', wide: true },
 ];
