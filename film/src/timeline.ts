@@ -40,8 +40,10 @@ export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
 // read after the pull-back ([14.9, 15.05], replacing [13.97, 14.0] and [14.9, 15.0]).
 // PO 10-02: shot 3 is now Holt BUILDING a program (message → his words over the program → the program's screen): +4.7 s,
 // with Jordan's message and Holt's reply each held still a beat longer (recordings.json coach.pauses).
+// PO 10-02 (later): "simplify" — the shot ends on Holt's reply over his program card, which is what lifts; the
+// program screen is gone and the message → reply cut is a dissolve. Net +2 s over 10-01.
 export const HOLDS: [number, number, number][] = [
-  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.6], [5.78, 5.82, 2.0], [7.0, 7.05, 5.8], [9.35, 9.4, 2.0], [10.95, 11.3, 2.4],
+  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.6], [5.78, 5.82, 2.0], [7.0, 7.05, 3.05], [9.35, 9.4, 2.0], [10.95, 11.3, 2.4],
   [11.45, 13.95, -2.5], [14.9, 15.05, 3.6], [16.5, 16.55, 2.2], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
 ];
 const KN: [number, number][] = [[0, 0]];

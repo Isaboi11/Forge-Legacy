@@ -69,6 +69,9 @@ export type Rec = {
   // `slow`: [fromRec, toRec, factor] — play that stretch `factor`× slower. Used ONLY to undo a capture artefact:
   // the logger's rest countdown runs ~2× fast under the fake clock, so at 2× slow it reads as the app really runs.
   slow?: [number, number, number];
+  // `dissolves`: recording seconds where the take CUTS (a wait happened between two frames). PO 10-02 "smoother":
+  // the frame before the cut fades out over the one after, instead of a hard jump.
+  dissolves?: number[];
 };
 export const RECS = recordings as unknown as Record<string, Rec>;
 const sorted = (rec: Rec) => [...(rec.pauses ?? [])].sort((a, b) => a[0] - b[0]);
@@ -127,11 +130,18 @@ export function frameSrc(rec: Rec, r: number) {
 export const RecordingOrPlaceholder: React.FC<{ id: string; r: number }> = ({ id, r }) => {
   const rec = RECS[id];
   if (rec) {
+    const rt = recTime(rec, r - realAt(rec.from));
+    const D = 0.45;
+    const d = (rec.dissolves ?? []).find((c) => rt >= c && rt < c + D);
+    const img = { position: 'absolute' as const, left: 0, top: STATUS_H, width: REC_W, height: REC_H };
     return (
-      <Img
-        src={frameSrc(rec, r)}
-        style={{ position: 'absolute', left: 0, top: STATUS_H, width: REC_W, height: REC_H }}
-      />
+      <>
+        <Img src={frameSrc(rec, r)} style={img} />
+        {d != null && (
+          <Img src={staticFile(`${rec.dir}/f${String(Math.max(0, Math.floor(d * rec.fps) - 1)).padStart(5, '0')}.jpg`)}
+            style={{ ...img, opacity: 1 - E.io((rt - d) / D) }} />
+        )}
+      </>
     );
   }
   const [a, b] = LABELS[id] ?? [id, ''];
