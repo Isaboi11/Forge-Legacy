@@ -144,8 +144,7 @@ export const RecordingOrPlaceholder: React.FC<{ id: string; r: number }> = ({ id
 export function screenStack(t: number): [string, number][] {
   const s = (a: number, b: number) => win(t, a, b, 0.28, 0.28);
   return [
-    ['home', s(1.75, 2.55)],
-    ['tap', s(2.45, 5.7)],
+    ['tap', s(1.75, 5.7)], // PO 10-01: no Home screen — the logger is what the phone turns into
     ['coach', s(5.6, 9.15)],
     ['missed', s(9.05, 14.25)],
     ['story', s(14.05, 21)],

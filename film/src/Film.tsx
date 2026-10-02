@@ -126,13 +126,13 @@ const Caption: React.FC<{ c: (typeof CAPS)[number]; x: number; portrait: boolean
 };
 
 /* ---------- touches: from the recording manifest when a shot is real, the mock-up's list otherwise ---------- */
-type Tap = { t: number; x: number; y: number };
+type Tap = { t: number; x: number; y: number; id?: string };
 const MOCK_TAPS: Tap[] = [{ t: 2.22, x: 201, y: 450 }, { t: 3.2, x: 352, y: 285 }, { t: 3.9, x: 352, y: 347 }, { t: 4.6, x: 352, y: 409 }, { t: 5.86, x: 356, y: 810 }];
 function tapsReal(): Tap[] {
   const out: Tap[] = [];
   for (const k in RECS) for (const tp of RECS[k].taps ?? []) {
     const on = onScreenTime(RECS[k], tp.at);
-    if (on != null) out.push({ t: realAt(RECS[k].from) + on, x: tp.x, y: tp.y + 54 });
+    if (on != null) out.push({ t: realAt(RECS[k].from) + on, x: tp.x, y: tp.y + 54, id: k });
   }
   return out;
 }
@@ -177,7 +177,10 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     if (since < 0) continue;
     const rt = recTime(rec, since);
     // Only while this recording's screen is the one showing (a slowed take would otherwise outlive its shot).
-    const shown = screenStack(t).find(([id]) => id === k)?.[1] ?? 0;
+    // …and only after this shot's problem line has been read (the phone is lit): read first, then watch.
+    const lastPain = CAPS.filter((c) => c.pain && realAt(c.a) <= amb).pop();
+    const lit = lastPain ? E.outC(P(amb, realAt(lastPain.a) + 1.4, realAt(lastPain.a) + 1.75)) : 0;
+    const shown = (screenStack(t).find(([id]) => id === k)?.[1] ?? 0) * lit;
     for (const sp of rec.spots) {
       const v = shown * (rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until))));
       if (v > spotV) { spotV = v; spotC = { x: sp.x, y: sp.y, w: sp.w, h: sp.h }; }
@@ -186,7 +189,8 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
 
   // touches
   const taps = realTaps.length ? realTaps : MOCK_TAPS.map((k) => ({ ...k, t: realAt(k.t) }));
-  const tch = taps.find((k) => amb > k.t - 0.18 && amb < k.t + 0.55);
+  const onScreen = (id?: string) => !id || (screenStack(t).find(([sid]) => sid === id)?.[1] ?? 0) > 0.5;
+  const tch = taps.find((k) => amb > k.t - 0.18 && amb < k.t + 0.55 && onScreen(k.id));
 
   const overlay = (
     <>
@@ -221,9 +225,10 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
   );
 
   // floating Legacy cards
+  // PO 10-01: two chapters, one either side of the phone — nothing else flies out.
   const CPOS = portrait
-    ? [{ x: -250, y: -560, z: -60, ry: 14 }, { x: 250, y: -560, z: -60, ry: -14 }, { x: -280, y: -250, z: -200, ry: 20 }, { x: 280, y: -250, z: -200, ry: -20 }]
-    : [{ x: -620, y: -60, z: -60, ry: 26 }, { x: -350, y: -250, z: -260, ry: 16 }, { x: 350, y: -250, z: -260, ry: -16 }, { x: 620, y: -60, z: -60, ry: -26 }];
+    ? [{ x: -250, y: -560, z: -60, ry: 14 }, { x: 250, y: -560, z: -60, ry: -14 }]
+    : [{ x: -560, y: -110, z: -60, ry: 24 }, { x: 560, y: -110, z: -60, ry: -24 }];
 
   const mpos = medalPos(portrait);
   const m1 = P(t, 15.35, 15.72), m2 = E.outBack(m1), mo = E.inQ(P(t, 17.2, 17.6));
@@ -263,7 +268,6 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.16em', color: '#BA8654' }}>{card.k}</div>
                   {card.n && <div style={{ fontFamily: display, fontSize: 32, fontWeight: 600, lineHeight: 1.1, marginTop: 10 }}>{card.n}</div>}
-                  {card.tiles && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginTop: 14 }}>{[0, 1, 2, 3].map((k) => <i key={k} style={{ height: 52, borderRadius: 8, background: 'linear-gradient(160deg,#3a2d20,#14110d)' }} />)}</div>}
                   <div style={{ fontSize: 16, color: '#A39C92', marginTop: 10 }}>{card.m}</div>
                 </div>
               );
@@ -323,10 +327,9 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
             {END.headline[0]}<br /><em style={{ fontStyle: 'italic', color: '#D9AB78' }}>{END.headline[1]}</em>
           </div>
           <div style={{ fontSize: 34, fontWeight: 600, color: '#E3B98A', marginTop: 30, ...endItem(0) }}>{END.one}</div>
-          <div style={{ fontSize: 26, color: '#A39C92', marginTop: 14, ...endItem(1) }}>{END.sub}</div>
           <div style={{ display: 'flex', gap: 22, alignItems: 'center', marginTop: 44, justifyContent: portrait ? 'center' : undefined }}>
             <Img src={staticFile('badge/download-on-the-app-store.svg')} style={{ height: 64, opacity: badgeOn ? 1 : 0 }} />
-            <div style={{ fontFamily: mono, fontSize: 24, color: '#E3B98A', letterSpacing: '.06em', ...endItem(2) }}>{END.url}</div>
+            <div style={{ fontFamily: mono, fontSize: 24, color: '#E3B98A', letterSpacing: '.06em', ...endItem(1) }}>{END.url}</div>
           </div>
         </div>
         <div style={{ position: 'absolute', inset: 0, background: '#fff', opacity: 0, pointerEvents: 'none' }} />

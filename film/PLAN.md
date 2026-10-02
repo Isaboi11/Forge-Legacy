@@ -7,6 +7,19 @@ project lives in `film/`; recordings and renders are git-ignored.
 
 ---
 
+## 0. Current cut (PO 10-01, after two rough cuts: "simplify… someone watching will see and understand right away")
+
+One idea and one action per shot, held long enough to read. Every screen is a real recording.
+
+| # | Shot | On the phone |
+|---|---|---|
+| 1 | The gap | Plain grey app: "You lost your 23-day streak." Caption "Most people quit their workout app *within 100 days.*" The phone turns into Forge Legacy: "Let's *change that.*" |
+| 2 | One tap | Logger, sets 1–3 already done. "Logging felt like homework." → "One tap *per set.*" One tap on 225 → **NEW PERSONAL RECORD** held ~3 s. No Home screen, no rest timer. |
+| 3 | The coach | "Stuck for weeks." → "Your AI coach *gets you unstuck.*" Jordan: "Bench is stuck at 225 for three weeks. Add close-grip bench to Upper B, 4 sets of 6." → Holt's proposal, held. No tapping. |
+| 4 | The missed week | Calendar with Mar 9–15 empty → Home's WELCOME BACK card. |
+| 5 | The story | Pull back: Chapter I and Chapter II float out; one honor medal (1,000 Pound Club). "Day 100 · Still here." No rank-up. |
+| 6 | The promise | "Get stronger. *Keep the proof.*" + "Lifting, running and nutrition. One app." + App Store badge + forgelegacy.app. |
+
 ## 1. Decisions for the PO
 
 | # | Decision | Recommendation | Why |
