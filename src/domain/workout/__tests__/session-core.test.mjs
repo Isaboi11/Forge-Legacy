@@ -268,6 +268,18 @@ test('a ramp carries one bar per rung', () => {
   assert.deepEqual(sets.map((s) => s.targetWeight), [265, 305, 325, 350, 375]);
 });
 
+test('each rung keeps the percentage it came from, so the logger does not carry set 1 up the ramp', () => {
+  // A program day started from Home is built here, not by `prescribedSets`. Without targetPct the logger's
+  // ramp rule (ghostSet) treated every set as "the same again" and prefilled set 1's bar into sets 2–5.
+  const ramp = sessionSetsFor({ name: 'Back Squat', catalogKey: 'back-squat', sets: 5, reps: 5, percentScheme: [54, 74, 82, 90, 90] }, LOAD);
+  assert.deepEqual(ramp.map((s) => s.targetPct), [54, 74, 82, 90, 90]);
+  const flat = sessionSetsFor({ name: 'Bench Press', catalogKey: 'bench-press', sets: 3, reps: 5, percentOfMax: 75 }, LOAD);
+  assert.deepEqual(flat.map((s) => s.targetPct), [75, 75, 75], 'one percentage for every set of a flat day');
+  for (const s of sessionSetsFor({ name: 'Bench Press', sets: 4, reps: 8 })) {
+    assert.equal('targetPct' in s, false, 'no percentage prescribed, no field');
+  }
+});
+
 test('a percentage against a lift with no max carries no target weight', () => {
   const ex = { name: 'Bench Press', catalogKey: 'bench-press', sets: 5, reps: 5, percentOfMax: 75 };
   for (const s of sessionSetsFor(ex, LOAD)) {
