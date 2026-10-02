@@ -18,6 +18,7 @@ CDT −05 after). Sessions start at 06:15–07:30 local, so the UTC date always 
 | 2 | `seed-demo-jordan-2-feb.sql` | **Shot 3 · Tue Feb 10 2026**, e.g. 06:10 CST. Today = "Upper A" (Barbell Bench Press first). Holt chat (live AI, ~2¢ per take). |
 | 3 | `seed-demo-jordan-3-mar.sql` | **Shot 4 · Mon Mar 16 2026**, e.g. 08:00 CDT. Newest workout is Sun Mar 8 07:30 → 8 days → Welcome back card: **"Builder II · 47 workouts · 18 honors"**. Calendar: Mar 9–15 bare. |
 | 4 | `seed-demo-jordan-4-year.sql` | **Shot 5.** See §6 (rank) before choosing the clock. |
+| 5 | `seed-demo-jordan-5-squad-today.sql` (10-02, after RESTORE-YEAR; paste on the capture day after 13:30 Chicago) | **Squad shot · today, real clock.** All six Ironside members have one session today → the Squads tab card reads "6 / 6 trained today". No posts, PRs or honors. Applied 10-02 (6 / 6, 0 push rows). |
 | — | `seed-demo-jordan-REMOVE.sql` | When the film is done. |
 
 Each stage refuses to run before the previous one, and refuses to run after a later one. Re-running the same stage is

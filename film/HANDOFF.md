@@ -47,6 +47,12 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
   drop lands ON the pull-back (27.40 — it had drifted ~1 s early when the Welcome back hold grew); final hit 37.00.
   Ad: same build + pickup into the final hit. Track map in `capture/score-moments.py`. New music was muxed into the
   masters (video unchanged, `-c:v copy`), then `deliver.sh` again.
+- **PO round 3 (10-02): the squad shot.** Squads tab, Ironside card "6 / 6 trained today", lifted ×1.35; captions
+  "Training alone." → "Your squad *keeps you showing up.*". It sits in the mock-up's old squad slot, film 11.45–13.95
+  (after the missed week, before the pull-back), now 6.72 s real — sized so the pull-back lands on the beat grid.
+  Film is 47.47 s. Data: `supabase/apply/seed-demo-jordan-5-squad-today.sql` (all six members train TODAY in Chicago —
+  re-paste on the day of any re-take, after 13:30; `capture/shot-squad.mjs` refuses unless the card reads 6 / 6).
+  The ad keeps shots 1, 4, 6 (its end-card segment just moved with the timeline).
 - **Site**: the film in the hero column of `site/index.html` + the "Hero film" block in `site/assets/site.js`.
   Preview: version `ee53a44f` → https://ee53a44f-forgelegacy.isaiahaltamirano.workers.dev (production stays
   `64183374` until the PO says "go live"; then `wrangler versions deploy ee53a44f-e6d4-4855-ab94-79a6d24e55c4@100%`,
