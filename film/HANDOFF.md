@@ -54,8 +54,8 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
   re-paste on the day of any re-take, after 13:30; `capture/shot-squad.mjs` refuses unless the card reads 6 / 6).
   The ad keeps shots 1, 4, 6 (its end-card segment just moved with the timeline).
 - **Site**: the film in the hero column of `site/index.html` + the "Hero film" block in `site/assets/site.js`.
-  Preview: version `4b783210` → https://4b783210-forgelegacy.isaiahaltamirano.workers.dev (production stays
-  `64183374` until the PO says "go live"; then `wrangler versions deploy 4b783210-808c-474f-89a3-2966204a19bf@100%`,
+  Preview: version `5e3ebaa5` → https://5e3ebaa5-forgelegacy.isaiahaltamirano.workers.dev (production stays
+  `64183374` until the PO says "go live"; then `wrangler versions deploy 5e3ebaa5-1bfa-42ef-a16c-229dee67d6d0@100%`,
   rollback = `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`). ⚠ The assets layer ignores byte ranges (200 to a Range
   request) and iPhone Safari won't play video without 206 — so `site/worker/film-range.js` runs for
   `/assets/film/*` ONLY (`run_worker_first`), everything else stays assets-only.
@@ -115,3 +115,11 @@ Real app wording only; change the film, never fake a screen. Never publish witho
 - Holt has no "paused bench" in the catalogue (pause squat/deadlift exist); his reply to a bare "I'm stuck" rebuilt
   Upper B with almost no change; one reply started lowercase ("bench shows up in more than one session…"). Reported, not fixed.
 - Shipped this session: ramp-prefill fix (web `index-52b8a28d`, build 11 OTA `bfd32e9e`, trunk `94b37f61`).
+
+## iPhone playback (10-02, PO: "never moved")
+Three causes, all fixed: (1) WebM was offered first; WebKit said it "probably" plays VP9 WebM, committed to it, failed to
+decode (MEDIA_ERR_DECODE) and never fell back — MP4 (H.264) is first now. (2) The video was `opacity:0` until `playing`;
+iPhone Safari won't autoplay a video it can't see — it's visible from the start and shows its own poster. (3) The
+encodes were full-range BT.601, H.264 level 5.0 / 16 refs — now limited-range BT.709, level 4.0 (web) / 4.2 (social).
+Test with Playwright WebKit + `devices['iPhone 13']` (out/webkit-check.mjs), not only Chromium — Chromium played the
+broken page fine.
