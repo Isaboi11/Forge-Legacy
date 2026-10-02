@@ -52,9 +52,9 @@ test('the recap snapshot carries a playlist at all', () => {
 // ── the wiring: the screen has to hand over the LIVE values ─────────────────
 
 test('Workout Complete snapshots the live playlist, not the fetched one', () => {
-  // Inline, or hoisted to `postSummary` so the post's photo choice previews the same strip (PO 10-02).
-  const call = COMPLETE.match(/summary=\{recapSummaryFrom\(([^)]*)\)\}/) ?? (/summary=\{postSummary\}/.test(COMPLETE) ? COMPLETE.match(/const postSummary = recapSummaryFrom\(([^)]*)\)/) : null);
-  assert.ok(call, 'the share sheet is no longer given a summary built by recapSummaryFrom');
+  // Hoisted to `postSummary`, which the screen's own button posts (PO 2026-10-02).
+  const call = /\.\.\.postSummary,/.test(COMPLETE) ? COMPLETE.match(/const postSummary = recapSummaryFrom\(([^)]*)\)/) : null;
+  assert.ok(call, 'the post is no longer built from a summary made by recapSummaryFrom');
   assert.match(
     call[1],
     /playlist\s*[,}]/,
@@ -64,8 +64,8 @@ test('Workout Complete snapshots the live playlist, not the fetched one', () => 
 });
 
 test('Workout Complete sends the note and the photos it just collected', () => {
-  assert.match(COMPLETE, /note=\{reflection/, 'the reflection never reaches the post as its caption');
-  assert.match(COMPLETE, /media=\{sharePhotos\}/, 'the photos added on this screen never reach the post');
+  assert.match(COMPLETE, /const postBody = reflection/, 'the reflection never reaches the post as its caption');
+  assert.match(COMPLETE, /media: sharePhotos,/, 'the photos added on this screen never reach the post');
 });
 
 test('the photos it sends are the ones added HERE, identified rather than counted', () => {

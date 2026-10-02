@@ -48,6 +48,14 @@ export async function saveAutoPost(pref: AutoPostPref): Promise<void> {
  * same answer would be dangerous: an unreadable list read as "nothing posted yet" is how a retry posts
  * everything a second time. So a failed read fails the auto-post, and the retry asks again.
  */
+export async function fetchWorkoutSharesStrict(workoutId: string): Promise<PriorShare[]> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  return priorPostsStrict(workoutId, user.id);
+}
+
 async function priorPostsStrict(workoutId: string, uid: string): Promise<PriorShare[]> {
   const { data, error } = await supabase
     .from('squad_posts')

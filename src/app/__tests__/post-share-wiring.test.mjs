@@ -29,6 +29,7 @@ const CARD = read('../../components/forge/compositions/LedgerPost.tsx');
 const COMPLETE = read('../workout-complete.tsx');
 const SHEET = read('../../components/forge/ShareSessionSheet.tsx');
 const DATA = read('../../data/squad-feed-live.ts');
+const POST = read('../../data/workout-post-live.ts');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. the video plays
@@ -64,7 +65,9 @@ test('the card gives the media band its own control when asked', () => {
 test('⚠ the line typed under a photo or video becomes the post body when no reflection was sealed', () => {
   const src = strip(COMPLETE);
   assert.match(src, /const mediaCaption = addedPhotos\.map\(\(p\) => p\.caption\?\.trim\(\) \?\? ''\)\.find\(Boolean\) \?\? '';/);
-  assert.match(src, /note=\{reflection \|\| mediaCaption \|\| note\.trim\(\) \|\| null\}/, 'the share sheet no longer receives the caption / unsealed note');
+  // Since 2026-10-02 the completion screen posts from its own button: the sealed note, else the caption.
+  assert.match(src, /const postBody = reflection \|\| mediaCaption;/, 'the post no longer carries the caption when no note was sealed');
+  assert.match(src, /body: postBody,/, 'the button no longer posts the body it built');
 });
 
 test('⚠ the sentence that posts is the one on the share sheet, in a box the athlete can see', () => {
@@ -72,7 +75,8 @@ test('⚠ the sentence that posts is the one on the share sheet, in a box the at
   // upstream boxes survived — it is typed (or confirmed) where the post is made.
   const src = strip(SHEET);
   assert.match(src, /const body = \(bodyDraft \?\? note \?\? ''\)\.trim\(\);/, 'the sheet no longer derives the body from its own box');
-  assert.match(src, /type: 'recap' as const,\s*body,/, 'the recap must post the body from the sheet');
+  assert.match(src, /postWorkoutRecap\(\{\s*workoutId,\s*body,/, 'the recap must post the body from the sheet');
+  assert.match(strip(POST), /type: 'recap' as const, body,/, 'the shared post path must carry the body it is given');
   assert.match(src, /accessibilityLabel="A comment for the post"/, 'the comment box is gone');
 });
 
@@ -89,7 +93,9 @@ test('the already-shared record is read from the rows that already exist — no 
 test('the sheet reads it on open, records every landed post, and refuses what already exists', () => {
   const src = strip(SHEET);
   assert.match(src, /if \(prior == null\) void fetchWorkoutShares\(workoutId\)/, 'the sheet no longer reads prior shares on open');
-  assert.match(src, /done\.push\(\{ audience: t\.audience, squadId: t\.squadId \}\);/, 'a landed post must be recorded per target, so a halfway failure still marks what exists');
+  // The loop moved into `postWorkoutRecap` (shared with Workout Complete's button); the sheet records its `done`.
+  assert.match(strip(POST), /out\.done\.push\(\{ audience: t\.audience, squadId: t\.squadId \}\);/, 'a landed post must be recorded per target, so a halfway failure still marks what exists');
+  assert.match(src, /const next = \[\.\.\.\(prior \?\? \[\]\), \.\.\.r\.done\];/, 'the sheet must record what landed even when the post failed halfway');
   assert.match(src, /const squads = unshared;/, 'choose() must offer only the squads that do not have it yet');
   assert.match(src, /disabled=\{sharing \|\| !snapshot \|\| state\.friends\}/, 'the Friends tile must refuse when friends already have it');
   assert.match(src, /disabled=\{sharing \|\| !hasSquad \|\| !snapshot \|\| state\.friends \|\| allSquadsShared\}/, 'the Both tile must refuse when either half already has it');
@@ -98,13 +104,36 @@ test('the sheet reads it on open, records every landed post, and refuses what al
 
 test('the completion screen says "Posted" and keeps saying it on the way back', () => {
   const src = strip(COMPLETE);
-  assert.match(src, /void fetchWorkoutShares\(workoutIdForShares\)/, 'the screen must read prior shares on arrival, not only learn them from the sheet');
-  assert.match(src, /onShared=\{setShares\}/, 'the sheet must be able to update the screen');
-  // 2026-09-28: POST is the in-app word. The button says so, and says who sees it.
-  assert.match(src, /subLabel="Share with Friends or your Squad"/, 'the Post to Forge sub-line is gone');
-  assert.match(src, />\s*Post to Forge\s*</, 'the primary CTA no longer says Post to Forge');
+  assert.match(src, /void fetchWorkoutShares\(workoutIdForShares\)/, 'the screen must read prior shares on arrival, not only learn them from a post');
+  assert.match(src, /setShares\(\[\.\.\.prior, \.\.\.r\.done\]\);/, 'a post from the button must update the screen, even a half-landed one');
   assert.match(src, /const postedWhere = postedFor\(postedState, mySquads \?\? \[\]\);/, 'the posted state no longer names where');
   assert.doesNotMatch(src, /'Share your workout'/, 'the old share wording is back on the completion screen');
+});
+
+/*
+ * ══ FRIENDS / SQUADS ON THE SCREEN, ONE BUTTON (PO 2026-10-02) ══
+ *
+ * The destinations moved out of the post sheet onto the capture stage: Friends toggles, Squads opens a
+ * picker (so a squad count never adds height), and the button says whether it posts on the way out.
+ */
+test('the button posts exactly what the rows show, never what is already there', () => {
+  const src = strip(COMPLETE);
+  assert.match(src, /const ctaLabel = forgeSelected \? 'SAVE & SHARE' : review \? 'DONE' : 'SAVE TO LEGACY';/);
+  assert.match(src, /const pendingTargets = destinationTargets\(selection, memberIds \?\? \[\], shares \?\? \[\]\);/);
+  // the strict re-read comes before the post, and decides the targets
+  const fin = src.slice(src.indexOf('const finish = async'));
+  assert.ok(fin.indexOf('fetchWorkoutSharesStrict(') > -1 && fin.indexOf('fetchWorkoutSharesStrict(') < fin.indexOf('postWorkoutRecap('), 'the button must re-read where it is posted before posting — that is what stops a double post');
+  assert.match(fin, /const targets = destinationTargets\(sel, memberIds \?\? \[\], prior\);/);
+  assert.ok(fin.indexOf('if (posting) return;') > -1, 'a second tap must not post twice');
+  // the squad picker is the only place squads are listed; the screen shows a count
+  assert.match(src, /<SquadSelectList\s+squads=\{unshared\}/, 'the picker must offer only squads that do not have it yet');
+  assert.doesNotMatch(src, /mySquads\.map\(\(s\) => \(\s*<ShareRow/, 'one row per squad is back on the completion screen');
+});
+
+test('⚠ nothing on the completion screen suggests leaving loses the workout', () => {
+  const src = strip(COMPLETE);
+  assert.doesNotMatch(src, /Leave without (posting|saving)/, 'a "Leave without …" exit is back — the workout is already saved');
+  assert.match(src, /View workout details/);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -120,16 +149,17 @@ test('auto-post never runs in review or outside the just-finished window, and wa
 test('⚠ auto-post fires when the athlete LEAVES, not on arrival — so the note and playlist go with it (PO 2026-09-30)', () => {
   const src = strip(COMPLETE);
   assert.doesNotMatch(src, /autoPostOnArrival/, 'posting on arrival is the bug: it published before anything could be added');
-  // the button names it
-  assert.match(src, /\{autoPosting \? 'Posting…' : 'Post and see your Legacy'\}/);
-  assert.match(src, /disabled=\{autoPosting \|\| savingNote \|\| savingPlaylist \|\| savingName\}/, 'a post built mid-save is the session without the thing just added');
-  // and there is a way out that does not post
-  assert.match(src, />Leave without posting</);
-  // leaving any other way still posts; the handler clears the ref so that does not post a second time
+  // the button posts what the rows show — auto-post's destinations are what they START on (PO 2026-10-02)
+  assert.match(src, /\{posting \? 'POSTING…' : ctaLabel\}/);
+  assert.match(src, /disabled=\{posting \|\| savingNote \|\| savingPlaylist \|\| savingName\}/, 'a post built mid-save is the session without the thing just added');
+  // leaving any other way still posts — but ONLY while the rows are untouched: a row they changed is their answer
   assert.match(src, /if \(a\) void runAutoPost\(a\.id, a\.pref\);/);
-  const leave = src.slice(src.indexOf('const postAndLeave = async'));
-  assert.ok(leave.indexOf('autoOnLeave.current = null;') < leave.indexOf('await runAutoPost('), 'the unmount would post again');
-  assert.ok(leave.indexOf('if (r.error) return;') < leave.indexOf('goHome();'), 'a failed post must not leave for Legacy as if it landed');
+  assert.match(src, /autoOnLeave\.current = autoStanding && !touched && workoutIdForShares/, 'leaving would post the pref over a squad they had just unticked');
+  assert.match(src, /if \(touched\) void clearAutoPostPending\(\);/, 'closing the app after changing the rows would still auto-post the pref');
+  const leave = src.slice(src.indexOf('const finish = async'));
+  assert.ok(leave.indexOf('autoOnLeave.current = null;') < leave.indexOf('await postWorkoutRecap('), 'the unmount would post again');
+  const failed = leave.indexOf('if (r.error) {');
+  assert.ok(failed > -1 && failed < leave.lastIndexOf('goHome();'), 'a failed post must not leave for Legacy as if it landed');
   // closing the app is covered by the marker and the launch catch-up
   assert.match(src, /void markAutoPostPending\(workoutIdForShares, savedAtForAuto\)/);
   assert.match(read('../_layout.tsx'), /<AutoPostCatchUp \/>/);
