@@ -5,13 +5,14 @@
 # 125 BPM exactly (beat 0.48 s, bar 1.92 s), kick grid phase 0.46 s, measured on the file. Each piece is spliced on a
 # beat with a short equal-power crossfade, placed on the film's real-time beats (src/timeline.ts realAt):
 #   1 · the intro's tail fading to the break's silence under the grey app → the DROP (beat 64, 31.18 s) on the turn
-#       (film 1.4 → real 3.40 s), full energy through one tap, Holt AND the missed week's line — the momentum holds
-#   2 · as Home's Welcome back arrives (real 24.52 s, realAt(10.95) = 24.40): the last five beats of the track's BUILD
-#       (beats 179-183, the hats climbing; its thinning bar and pre-drop silence left out), then the one-beat PICKUP
-#       (beat 191) straight into
-#   3 · the SECOND DROP (beat 192, 92.62 s) on the Legacy pull-back (real 27.40 s; the move starts at realAt(14.0) = 27.35)
-#   4 · the track's FINAL HIT and outro (beat 284, 136.78 s) as the end card arrives (real 37.00 s: shot 5's pieces start
-#       leaving at 36.95, the end card at 37.30), faded out at the end
+#       (film 1.4 → real 3.40 s), full energy through one tap, Holt, the missed week AND the squad — the momentum holds
+#       (drop 1 is 15 bars long, to real 32.20; it plays 14 bars and 2 beats of it)
+#   2 · the last five beats of the track's BUILD under the squad card (real 31.24 s; beats 179-183, the hats climbing;
+#       its thinning bar and pre-drop silence left out), then the one-beat PICKUP (beat 191) straight into
+#   3 · the SECOND DROP (beat 192, 92.62 s) on the Legacy pull-back (real 34.12 s = TURN + 64 beats; the move starts at
+#       realAt(14.0) = 34.07 — the squad shot's length was chosen for this)
+#   4 · the track's FINAL HIT and outro (beat 284, 136.78 s) as the end card arrives (real 43.72 s: shot 5's pieces start
+#       leaving at realAt(17.2) = 43.67, the end card at realAt(17.55) = 44.02), faded out at the end
 # PO 10-02 on the earlier cut: the missed week "kind of loses momentum" — it cut to the BREAKDOWN (beat 124) for three
 # bars, where the kick stops; and the Welcome back hold (+2.4 s) had left the second drop ~1 s ahead of the pull-back.
 # Then loudness: -14 LUFS integrated, -1 dBTP (ffmpeg loudnorm, two passes) → public/music/score-moments.wav.
@@ -25,7 +26,7 @@ RAW = 'public/music/score-moments-raw.wav'
 OUT = 'public/music/score-moments.wav'
 BAR = 1.92
 TURN = 3.40          # realAt(1.4)
-FILM = 40.75         # RDUR
+FILM = 47.47         # RDUR (47.47 since the squad shot, PO 10-02)
 
 # Downbeats = the kicks themselves, measured at 10 ms on the file (kick grid phase 0.46 s; an onset-envelope fit
 # was 0.29 s early and the drop landed half a beat late). Track map (per-bar RMS, low band = kick): intro bars 0-14,
@@ -35,9 +36,9 @@ PHASE, BEAT = 0.46, 0.48
 at = lambda k: PHASE + k * BEAT
 D1, D2, HIT = at(64), at(192), at(284)                # 31.18, 92.62, 136.78
 BUILD_END, PICKUP = at(184), at(191)                  # 88.78 (bar 46 starts thinning), 92.14
-f1 = TURN + 11 * BAR         # 24.52 — Welcome back (realAt(10.95) = 24.40)
-f2 = f1 + 6 * BEAT           # 27.40 — the pull-back (realAt(14.0) = 27.35)
-f3 = f2 + 5 * BAR            # 37.00 — shot 5 leaves, the end card arrives (realAt(17.2) = 36.95, realAt(17.55) = 37.30)
+f2 = TURN + 64 * BEAT        # 34.12 — the pull-back (realAt(14.0) = 34.07)
+f1 = f2 - 6 * BEAT           # 31.24 — the build, under the squad card (inside drop 1, which runs to 32.20)
+f3 = f2 + 5 * BAR            # 43.72 — shot 5 leaves, the end card arrives (realAt(17.2) = 43.67, realAt(17.55) = 44.02)
 def build_into(fa, fb):      # the build, ending on the pickup at fb: [build … BUILD_END] + [PICKUP, one beat]
     return [(BUILD_END - (fb - BEAT - fa), fa, fb - BEAT), (PICKUP, fb - BEAT, fb)]
 pieces = [                   # (track start, film start, film end)

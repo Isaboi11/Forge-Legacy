@@ -28,8 +28,10 @@ export const L = (a: number, b: number, p: number) => a + (b - a) * p;
 export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
   t < a || t > b ? 0 : Math.min(E.outC(P(t, a, a + fi)), 1 - E.inQ(P(t, b - fo, b)));
 
-/* Reading holds: [filmStart, filmEnd, extra real seconds]. A negative extra is a cut:
-   [11.45, 13.95] (the old squad shot) takes no real time at all. */
+/* Reading holds: [filmStart, filmEnd, extra real seconds]. A negative extra is a cut (no real time at all).
+   [11.45, 13.95] is the squad shot (PO 10-02: "add the squads" — the mock-up's old squad slot, between the missed
+   week and the pull-back): 6.72 s, chosen so the pull-back (film 14.0) lands on the score's beat grid — the second
+   drop at TURN + 64 beats = 34.12 s (capture/score-moments.py). */
 // PO 10-01, second pass: "simplify… someone watching will see and understand right away" — one action per shot.
 // Shot 2 is one tap → the record; shot 3 is Jordan's message → Holt's proposal. Earlier notes, still true:
 // PO 10-01 after the first rough cut: "the home screen and the first active workout screen … should be seen
@@ -45,7 +47,7 @@ export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
 // PO 10-02: the opening screen holds 1 s longer ([0.55, 1.3] 1.0 → 2.0).
 export const HOLDS: [number, number, number][] = [
   [0.55, 1.3, 2.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.6], [5.78, 5.82, 2.0], [7.0, 7.05, 3.05], [9.35, 9.4, 2.0], [10.95, 11.3, 2.4],
-  [11.45, 13.95, -2.5], [14.9, 15.05, 3.6], [16.5, 16.55, 2.2], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
+  [11.45, 13.95, 4.22], [14.9, 15.05, 3.6], [16.5, 16.55, 2.2], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
 ];
 const KN: [number, number][] = [[0, 0]];
 (() => {
@@ -160,6 +162,7 @@ export const CAPS: Cap[] = [
   { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*' }, // outlines come from the take
   { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *helps you move forward.*' }, // PO 10-02
   { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*' },
+  { a: 11.52, b: 13.9, pain: 'Training alone.', text: 'Your squad *keeps you showing up.*' }, // PO 10-02: the squad shot
   // PO 10-02: "I can't see those words… it crosses them out without me knowing what it's saying" — the line now
   // waits for the pull-back (the phone small and centred, Day 100, the chapters out), is larger, and reads 1.8 s.
   { a: 14.92, b: 17.4, pain: 'Numbers nobody looks at.', text: 'A year that tells *your story.*', wide: true, read: 1.8 },
@@ -170,7 +173,7 @@ export const CAPS: Cap[] = [
    lines of its own score (`python capture/score-moments.py ad15`): [adStart, filmRealStart, filmRealEnd] in real
    seconds. The end card's last frame holds to 15.0. */
 export const AD15_DUR = 15;
-export const AD15: [number, number, number][] = [[0, 0, 5.32], [5.32, 20.75, 26.51], [11.08, 37.55, 40.75]];
+export const AD15: [number, number, number][] = [[0, 0, 5.32], [5.32, 20.75, 26.51], [11.08, 44.27, 47.47]];
 export const adToFilm = (a: number) => {
   const [s0, from, to] = [...AD15].reverse().find(([s]) => a >= s)!;
   return Math.min(to, from + a - s0);
@@ -182,6 +185,7 @@ export const SHOTS = [
   { id: 'tap', a: 2.5, b: 5.6 },
   { id: 'coach', a: 5.6, b: 9.1 },
   { id: 'missed', a: 9.1, b: 11.45 },
+  { id: 'squad', a: 11.45, b: 13.95 },
   { id: 'story', a: 13.95, b: 17.6 },
   { id: 'promise', a: 17.6, b: 20 },
 ] as const;

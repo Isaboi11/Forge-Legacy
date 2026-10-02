@@ -118,6 +118,7 @@ const LABELS: Record<string, [string, string]> = {
   tap: ['Logger · Back Squat', 'Sets 2–4 in three taps → NEW PERSONAL RECORD 225 × 5 → Rest'],
   coach: ['Coach Holt · Feb 10', '"Bench has been stuck at 225 for three weeks." → reply → Do it → Updated by Holt'],
   missed: ['Activity History · March', 'Mar 9–15 empty → Home: WELCOME BACK · Good to see you, Jordan.'],
+  squad: ['Squads · Ironside', '6 / 6 trained today'],
   story: ['Legacy · Oct', 'Sealed chapters · the two chapters float out · 1,000 Pound Club medal'],
 };
 
@@ -164,13 +165,14 @@ export function screenStack(t: number): [string, number][] {
   return [
     ['tap', s(1.75, 5.7)], // PO 10-01: no Home screen — the logger is what the phone turns into
     ['coach', s(5.6, 9.15)],
-    ['missed', s(9.05, 14.25)],
+    ['missed', s(9.05, 11.7)],
+    ['squad', s(11.45, 14.25)], // PO 10-02
     ['story', s(14.05, 21)],
   ];
 }
 
 /** Film time at which a screen's window closes (its fade-out ends). */
-export const screenEnd = (id: string) => ({ tap: 5.7, coach: 9.15, missed: 14.25, story: 21 } as Record<string, number>)[id] ?? 21;
+export const screenEnd = (id: string) => ({ tap: 5.7, coach: 9.15, missed: 11.7, squad: 14.25, story: 21 } as Record<string, number>)[id] ?? 21;
 
 export const AppScreen: React.FC<{ t: number; r: number }> = ({ t, r }) => {
   return (
