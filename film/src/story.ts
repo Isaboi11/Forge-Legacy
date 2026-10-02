@@ -35,6 +35,7 @@ export const END = {
   url: 'forgelegacy.app',
 };
 
-// The soundtrack. Until the licensed track arrives: the mock-up's own score, rendered by capture/mock-score.mjs
-// (git-ignored, regenerate with `node capture/mock-score.mjs`). Placeholder only, never ships.
-export const SCORE: string | null = 'music/mock-score.wav';
+// The soundtrack: "Moments (Instrumental Version)" by Ayoub (Epidemic Sound, licensed by the PO 10-02), cut to the film by
+// capture/score-moments.py (drop on the turn, breakdown for the missed week, second drop on the pull-back, the final
+// hit on the end card; -14 LUFS). The WAVs are git-ignored — regenerate with `python capture/score-moments.py`.
+export const SCORE: string | null = 'music/score-moments.wav';
