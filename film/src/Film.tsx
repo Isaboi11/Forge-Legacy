@@ -23,9 +23,10 @@ export type FilmProps = { portrait: boolean; cut?: 'full' | 'ad15' };
 // (A generic phone: Apple's no-spinning rule is about iPhone images.)
 const drift = (p: Pose, r: number): Pose => ({
   ...p,
-  ry: p.ry + 3.5 * Math.sin((2 * Math.PI * r) / 14),
-  rx: p.rx + 1.0 * Math.sin((2 * Math.PI * r) / 9 + 1),
-  y: p.y + 4 * Math.sin((2 * Math.PI * r) / 11 + 2),
+  // PO 10-02: 3.5° was "too subtle" → 8°.
+  ry: p.ry + 8 * Math.sin((2 * Math.PI * r) / 13),
+  rx: p.rx + 2 * Math.sin((2 * Math.PI * r) / 9 + 1),
+  y: p.y + 8 * Math.sin((2 * Math.PI * r) / 11 + 2),
 });
 
 /* ---------- background: light pool, beams, embers, sparks (verbatim from the mock-up) ---------- */
