@@ -32,9 +32,17 @@ async function cardBox(page, label) {
   }, label);
 }
 
+// After a restore the app owes Jordan two ceremonies (RANK ASCENDED, HONOR EARNED · 1,000 Pound Club). They are
+// dismissed off camera with their own Continue — PO: no rank-up in the film.
 async function openLegacy(page) {
   await page.goto(BASE + '/legacy');
   await settle(page, 7000);
+  for (let i = 0; i < 4; i++) {
+    const cont = page.getByRole('button', { name: 'Continue' }).first();
+    if (!(await cont.isVisible().catch(() => false))) break;
+    await cont.click(); await settle(page, 3500);
+    console.log('dismissed a ceremony');
+  }
   await quietHolt(page);
 }
 
@@ -56,24 +64,19 @@ async function openLegacy(page) {
   // Accomplishment cards, from Legacy's Accomplishments strip (AccomplishmentCard, 184 × 200).
   await openLegacy(page);
   for (const [key, name] of ACCS) {
+    // The name also sits on its Pinned Legacy tile (150 × 196): take the leaf whose card is the 184 × 200 one.
     const box = await page.evaluate((name) => {
-      const el = [...document.querySelectorAll('div')].find((d) => d.childElementCount === 0 && d.textContent.trim() === name);
-      for (let n = el; n; n = n.parentElement) {
-        const r = n.getBoundingClientRect();
-        if (r.width >= 170 && r.width <= 200 && r.height >= 180 && r.height <= 230) { n.scrollIntoView({ block: 'center', inline: 'center' }); return true; }
+      for (const el of [...document.querySelectorAll('div')].filter((d) => d.childElementCount === 0 && d.textContent.trim() === name)) {
+        for (let n = el; n; n = n.parentElement) {
+          const r = n.getBoundingClientRect();
+          if (r.width >= 170 && r.width <= 200 && r.height >= 180 && r.height <= 230) { n.scrollIntoView({ block: 'center', inline: 'center' }); window.__flCard = n; return true; }
+        }
       }
       return false;
     }, name);
     if (!box) throw new Error('no accomplishment card: ' + name);
     await settle(page, 900);
-    const clip = await page.evaluate((name) => {
-      const el = [...document.querySelectorAll('div')].find((d) => d.childElementCount === 0 && d.textContent.trim() === name);
-      for (let n = el; n; n = n.parentElement) {
-        const r = n.getBoundingClientRect();
-        if (r.width >= 170 && r.width <= 200 && r.height >= 180 && r.height <= 230) return { x: r.x, y: r.y, width: r.width, height: r.height };
-      }
-      return null;
-    }, name);
+    const clip = await page.evaluate(() => { const r = window.__flCard.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; });
     await page.screenshot({ path: `${LIFT}/acc-${key}.png`, clip });
     console.log('accomplishment', name, clip);
   }

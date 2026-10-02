@@ -352,8 +352,8 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
             })}
             {ACCOMPLISHMENTS.map((c, i) => {
               const a = 15.9 + i * 0.15, p = E.outC(P(t, a, a + 0.55)), o = E.inQ(P(t, 17.2, 17.6));
-              const AW = portrait ? 150 : 160, AH = (AW * c.h) / c.w, gap = 18;
-              const x = (i - 1) * (AW + gap), y = portrait ? -95 : -385;
+              const AW = portrait ? 150 : 192, AH = (AW * c.h) / c.w, gap = 18;
+              const x = (i - 1) * (AW + gap), y = portrait ? -95 : -370;
               const op = P(t, a, a + 0.2) * (1 - o);
               if (op <= 0) return null;
               return (

@@ -149,12 +149,12 @@
   },
   "story": {
     "dir": "rec/story",
-    "frames": 60,
+    "frames": 531,
     "fps": 60,
     "taps": [],
     "pauses": [
       [
-        0.5,
+        8.8,
         30
       ]
     ],
