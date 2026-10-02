@@ -54,8 +54,8 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
   re-paste on the day of any re-take, after 13:30; `capture/shot-squad.mjs` refuses unless the card reads 6 / 6).
   The ad keeps shots 1, 4, 6 (its end-card segment just moved with the timeline).
 - **Site**: the film in the hero column of `site/index.html` + the "Hero film" block in `site/assets/site.js`.
-  Preview: version `ee53a44f` → https://ee53a44f-forgelegacy.isaiahaltamirano.workers.dev (production stays
-  `64183374` until the PO says "go live"; then `wrangler versions deploy ee53a44f-e6d4-4855-ab94-79a6d24e55c4@100%`,
+  Preview: version `4b783210` → https://4b783210-forgelegacy.isaiahaltamirano.workers.dev (production stays
+  `64183374` until the PO says "go live"; then `wrangler versions deploy 4b783210-808c-474f-89a3-2966204a19bf@100%`,
   rollback = `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`). ⚠ The assets layer ignores byte ranges (200 to a Range
   request) and iPhone Safari won't play video without 206 — so `site/worker/film-range.js` runs for
   `/assets/film/*` ONLY (`run_worker_first`), everything else stays assets-only.
