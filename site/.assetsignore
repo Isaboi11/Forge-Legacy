@@ -22,3 +22,6 @@ wrangler.jsonc
 # The name is random per run, so this cannot be caught by listing files beforehand — only by reading
 # what the upload actually said it sent. Read the manifest, not the directory.
 .wrangler/
+
+# The film-range Worker's source (wrangler bundles it as the script; it is not a page).
+worker/

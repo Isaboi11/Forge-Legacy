@@ -13,8 +13,8 @@
   "name": "forgelegacy",
   "compatibility_date": "2026-08-19",
 
-  // ⚠ ASSETS-ONLY WORKER — there is no `main`. This is a static site; adding a script entrypoint would
-  // put code in front of every request for no reason.
+  // ⚠ ASSETS-ONLY WORKER, except /assets/film/* (see `run_worker_first` below). This is a static site; a script in
+  // front of every request would be there for no reason.
   //
   // Pointed at this directory rather than at a hand-staged copy, with `.assetsignore` doing the
   // excluding. The staged-folder ritual in README.md exists because a dashboard upload takes whatever
@@ -22,8 +22,14 @@
   // a public indexable page. A rule written in a README is followed by whoever read it; a rule in
   // `.assetsignore` is followed by the tool.
   "assets": {
-    "directory": "."
+    "directory": ".",
+    // The ONE exception to assets-only (2026-10-02, the hero film): /assets/film/* runs worker/film-range.js first,
+    // because the assets layer ignores byte ranges and iPhone Safari won't play video without them. Nothing else
+    // runs code; `run_worker_first` is an allow-list, not a switch.
+    "binding": "ASSETS",
+    "run_worker_first": ["/assets/film/*"]
   },
+  "main": "worker/film-range.js",
 
   // Cloudflare replaces the ENTIRE asset manifest per deploy — there is no partial upload. That is the
   // mechanism behind /support 404ing for two days: the 08-16 deploy simply did not contain the file.
