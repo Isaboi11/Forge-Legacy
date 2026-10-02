@@ -34,9 +34,9 @@ export async function launch() {
   return chromium.launch({ args: ['--font-render-hinting=none'] });
 }
 
-export async function newPhone(browser, { time, storage = {}, auth = true } = {}) {
+export async function newPhone(browser, { time, storage = {}, auth = true, dsf = DSF } = {}) {
   const ctx = await browser.newContext({
-    viewport: VIEW, deviceScaleFactor: DSF, isMobile: true, hasTouch: true,
+    viewport: VIEW, deviceScaleFactor: dsf, isMobile: true, hasTouch: true,
     timezoneId: 'America/Chicago', locale: 'en-US', colorScheme: 'dark',
     storageState: auth && existsSync(AUTH) ? fsPath(AUTH) : undefined,
   });

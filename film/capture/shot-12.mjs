@@ -48,11 +48,9 @@ const tap = await record(page, 'tap', end, [
   { at: at(beats.notNow), run: press('Not now') },
   { at: at(beats.rest), run: press('Start rest now') },
 ]);
-// Bronze outlines on the real screen, in recording seconds (rects measured on the 402 × 862 screen).
-tap.spots = [
-  { at: at(beats.set1) + 0.45, until: at(beats.set4) + 0.05, x: 22, y: 370, w: 358, h: 252 },   // the set rows
-  { at: at(beats.set4) + 0.3, until: at(beats.notNow), x: 46, y: 281, w: 310, h: 352 },        // NEW PERSONAL RECORD
-  { at: at(beats.rest) + 0.25, until: end, x: 53, y: 250, w: 296, h: 280 },                    // the Rest ring
+// PO 10-02: no outlines — the NEW PERSONAL RECORD card is lifted off the phone (~2×), in recording seconds.
+tap.lifts = [
+  { at: at(beats.set4) + 0.3, until: at(beats.notNow), x: 50, y: 286, w: 302, h: 344, r: 14, k: 1.9 },
 ];
 // The rest countdown runs ~2× fast under the fake clock: play it at half speed so it reads as it really runs.
 tap.slow = [+(at(beats.rest) + 0.05).toFixed(2), +end.toFixed(2), 2];

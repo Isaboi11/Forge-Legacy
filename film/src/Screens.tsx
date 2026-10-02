@@ -59,10 +59,13 @@ export const OldApp: React.FC<{ t: number }> = ({ t }) => (
 // still, so the hold shows exactly what the app shows). Negative = SKIP that many seconds of the recording — a cut
 // over dead air (waiting on the model, navigating), never over anything that changes what the app did.
 // `spots`: bronze outline on part of the real screen, in recording seconds, in screen coordinates (status bar incl.).
+// `lifts`: PO 10-02 zoom-outs — ONE key piece of the real screen per shot is lifted off the phone, ~2× (`k`), and set
+// back. Same timing and coordinates as a spot; `r` is the piece's own corner radius so the crop keeps its shape.
 export type Spot = { at: number; until: number; x: number; y: number; w: number; h: number };
+export type Lift = Spot & { k?: number; r?: number };
 export type Rec = {
   dir: string; frames: number; fps: number; from: number;
-  pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[]; spots?: Spot[];
+  pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[]; spots?: Spot[]; lifts?: Lift[];
   // `slow`: [fromRec, toRec, factor] — play that stretch `factor`× slower. Used ONLY to undo a capture artefact:
   // the logger's rest countdown runs ~2× fast under the fake clock, so at 2× slow it reads as the app really runs.
   slow?: [number, number, number];
@@ -112,16 +115,21 @@ const LABELS: Record<string, [string, string]> = {
   tap: ['Logger · Back Squat', 'Sets 2–4 in three taps → NEW PERSONAL RECORD 225 × 5 → Rest'],
   coach: ['Coach Holt · Feb 10', '"Bench has been stuck at 225 for three weeks." → reply → Do it → Updated by Holt'],
   missed: ['Activity History · March', 'Mar 9–15 empty → Home: WELCOME BACK · Good to see you, Jordan.'],
-  story: ['Legacy · Oct', 'Chapters sealed · HONOR EARNED · RANK ASCENDED Craftsman I'],
+  story: ['Legacy · Oct', 'Sealed chapters · the two chapters float out · 1,000 Pound Club medal'],
 };
+
+/** The recording's frame on screen at real time r. */
+export function frameSrc(rec: Rec, r: number) {
+  const f = Math.max(0, Math.min(rec.frames - 1, Math.floor(recTime(rec, r - realAt(rec.from)) * rec.fps)));
+  return staticFile(`${rec.dir}/f${String(f).padStart(5, '0')}.jpg`);
+}
 
 export const RecordingOrPlaceholder: React.FC<{ id: string; r: number }> = ({ id, r }) => {
   const rec = RECS[id];
   if (rec) {
-    const f = Math.max(0, Math.min(rec.frames - 1, Math.floor(recTime(rec, r - realAt(rec.from)) * rec.fps)));
     return (
       <Img
-        src={staticFile(`${rec.dir}/f${String(f).padStart(5, '0')}.jpg`)}
+        src={frameSrc(rec, r)}
         style={{ position: 'absolute', left: 0, top: STATUS_H, width: REC_W, height: REC_H }}
       />
     );
@@ -150,6 +158,9 @@ export function screenStack(t: number): [string, number][] {
     ['story', s(14.05, 21)],
   ];
 }
+
+/** Film time at which a screen's window closes (its fade-out ends). */
+export const screenEnd = (id: string) => ({ tap: 5.7, coach: 9.15, missed: 14.25, story: 21 } as Record<string, number>)[id] ?? 21;
 
 export const AppScreen: React.FC<{ t: number; r: number }> = ({ t, r }) => {
   return (

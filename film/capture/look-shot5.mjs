@@ -1,0 +1,20 @@
+// Look-around for shot 5 (stage 4). No AI cost. Chapter I's own numbers + the 1,000 Pound Club honor sheet.
+import { launch, newPhone, settle, BASE } from './lib.mjs';
+const shot = (page, name) => page.screenshot({ path: `capture/frames/look/s5-${name}.png` });
+const browser = await launch();
+const { page } = await newPhone(browser, { time: '2026-10-02T09:00:00-05:00' });
+await page.goto(BASE + '/legacy');
+await settle(page, 8000);
+const c1 = page.getByText('Chapter I — The Return').first();
+await c1.scrollIntoViewIfNeeded(); await settle(page, 800);
+await shot(page, '1-sealed');
+await c1.click(); await settle(page, 3000);
+await shot(page, '2-chapter1');
+await page.goto(BASE + '/honors');
+await settle(page, 5000);
+const club = page.getByText('1,000 Pound Club').first();
+await club.scrollIntoViewIfNeeded(); await settle(page, 600);
+await club.click(); await settle(page, 2500);
+await shot(page, '3-honor-sheet');
+console.log(await page.locator('body').innerText().then(s => s.slice(-1500)));
+await browser.close();

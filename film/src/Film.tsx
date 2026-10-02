@@ -6,8 +6,9 @@ import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { CAPS, DUR, E, L, P, RDUR, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone } from './Phone';
-import { AppScreen, RECS, onScreenTime, recTime, screenStack } from './Screens';
-import { LEGACY_CARDS, MEDAL_LABEL, END, SCORE } from './story';
+import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
+import { SCREEN_W } from './Phone';
+import { LEGACY_CARDS, MEDAL, END, SCORE } from './story';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
 loadPlayfair('italic', { weights: ['500', '600'], subsets: ['latin'] });
@@ -22,7 +23,8 @@ const r1 = rng(7);
 const EMB = Array.from({ length: 80 }, () => ({ x: r1(), y: r1(), v: 0.02 + r1() * 0.07, s: 0.6 + r1() * 2.2, ph: r1() * 6.28, a: 0.25 + r1() * 0.6, sw: 10 + r1() * 40 }));
 const r2 = rng(11);
 const SPK = Array.from({ length: 46 }, () => { const an = r2() * Math.PI * 2; return { c: Math.cos(an), s: Math.sin(an), v: 300 + r2() * 900, l: 0.5 + r2() * 0.8 }; });
-const medalPos = (portrait: boolean) => (portrait ? { x: -300, y: 560 } : { x: -230, y: 230 });
+// Under Chapter I, clear of the bottom caption (PO 10-02).
+const medalPos = (portrait: boolean) => (portrait ? { x: -330, y: 160 } : { x: -600, y: 150 });
 
 function drawBG(g: CanvasRenderingContext2D, cw: number, ch: number, W: number, H: number, t: number, ph: Pose, amb: number, portrait: boolean) {
   const sx = cw / W;
@@ -62,7 +64,6 @@ function drawBG(g: CanvasRenderingContext2D, cw: number, ch: number, W: number, 
     }
   };
   sparks(1.4, cx, cy, 0.9);
-  const mp = medalPos(portrait); sparks(15.72, W / 2 + mp.x, H / 2 + mp.y, 0.8);
   g.globalCompositeOperation = 'source-over';
 }
 
@@ -149,7 +150,6 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
   // shake on the turn and the medal
   let shx = 0, shy = 0;
   if (t > 1.4 && t < 2.0) { const a = 16 * Math.exp(-(t - 1.4) * 8); shx = Math.sin(t * 95) * a; shy = Math.cos(t * 80) * a * 0.7; }
-  if (t > 15.72 && t < 16.2) { const a = 8 * Math.exp(-(t - 15.72) * 9); shx += Math.sin(t * 90) * a; shy += Math.cos(t * 70) * a * 0.6; }
 
   // motion blur from speed
   const q = pose(Math.min(DUR, t + 1 / 60), portrait);
@@ -169,10 +169,11 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     if (c.spot && v > spotV) { spotV = v; spotC = c.spot; }
   }
 
-  // A recording can place its own outline on a beat of the real screen (the proposal, "What changed").
+  // A recording can place its own outline on a beat of the real screen, or lift one piece of it off the phone.
+  let liftV = 0, lifted: { l: Lift; id: string } | null = null;
   for (const k in RECS) {
     const rec = RECS[k];
-    if (!rec.spots?.length) continue;
+    if (!rec.spots?.length && !rec.lifts?.length) continue;
     const since = amb - realAt(rec.from);
     if (since < 0) continue;
     const rt = recTime(rec, since);
@@ -181,9 +182,19 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     const lastPain = CAPS.filter((c) => c.pain && realAt(c.a) <= amb && realAt(c.a) >= realAt(rec.from) - 0.5).pop();
     const lit = lastPain ? E.outC(P(amb, realAt(lastPain.a) + 1.4, realAt(lastPain.a) + 1.75)) : 0;
     const shown = (screenStack(t).find(([id]) => id === k)?.[1] ?? 0) * lit;
-    for (const sp of rec.spots) {
+    for (const sp of rec.spots ?? []) {
       const v = shown * (rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until))));
       if (v > spotV) { spotV = v; spotC = { x: sp.x, y: sp.y, w: sp.w, h: sp.h }; }
+    }
+    // Lifts ramp on screen time, not recording time (a held frame would stall them half-way), and are set back down
+    // before this screen fades: calm in, hold, calm out.
+    for (const l of rec.lifts ?? []) {
+      const a = onScreenTime(rec, l.at), b0 = onScreenTime(rec, l.until);
+      if (a == null) continue;
+      const out = realAt(screenEnd(k)) - realAt(rec.from) - 0.25;
+      const b = Math.min(b0 ?? out, out);
+      const v = (lit > 0.99 ? 1 : 0) * Math.min(E.io(P(since, a, a + 0.55)), 1 - E.io(P(since, b - 0.5, b)));
+      if (v > liftV) { liftV = v; lifted = { l, id: k }; }
     }
   }
 
@@ -224,15 +235,34 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     </>
   );
 
+  // The lifted piece: the same recording frame, cropped to the piece, raised toward the camera and grown ~2x,
+  // drifting to the screen's centre line so it stays over the phone. Real pixels; nothing is redrawn.
+  const liftNode = lifted && liftV > 0 && (() => {
+    const { l, id } = lifted, k = l.k ?? 2, e = liftV;
+    const dx = (SCREEN_W / 2 - (l.x + l.w / 2)) * e;
+    return (
+      <div style={{
+        position: 'absolute', left: l.x, top: l.y, width: l.w, height: l.h, borderRadius: l.r ?? 16, overflow: 'hidden',
+        transform: `translate3d(${dx}px,0px,${90 * e}px) scale(${1 + (k - 1) * e})`,
+        boxShadow: `0 ${34 * e}px ${90 * e}px rgba(0,0,0,${0.75 * e}), 0 0 0 1px rgba(186,134,84,${0.35 * e})`,
+        opacity: Math.min(1, e * 5),
+      }}>
+        <Img src={frameSrc(RECS[id], r)} style={{ position: 'absolute', left: -l.x, top: STATUS_H - l.y, width: REC_W, height: REC_H }} />
+      </div>
+    );
+  })();
+
   // floating Legacy cards
-  // PO 10-01: two chapters, one either side of the phone — nothing else flies out.
+  // PO 10-01: two chapters, one either side of the phone — nothing else flies out. PO 10-02: they are the app's own
+  // chapter cards (captured by capture/shot-5.mjs), about 2x their size on the phone.
+  const CW = portrait ? 430 : 440;
   const CPOS = portrait
-    ? [{ x: -250, y: -560, z: -60, ry: 14 }, { x: 250, y: -560, z: -60, ry: -14 }]
-    : [{ x: -560, y: -110, z: -60, ry: 24 }, { x: 560, y: -110, z: -60, ry: -24 }];
+    ? [{ x: -228, y: -590, z: 0, ry: 8 }, { x: 228, y: -590, z: 0, ry: -8 }]
+    : [{ x: -600, y: -120, z: 0, ry: 12 }, { x: 600, y: -120, z: 0, ry: -12 }];
 
   const mpos = medalPos(portrait);
-  const m1 = P(t, 15.35, 15.72), m2 = E.outBack(m1), mo = E.inQ(P(t, 17.2, 17.6));
-  const spin = (1 - E.outC(P(t, 15.35, 16.4))) * 540;
+  // PO 10-02 "keep it calm": the medal settles in from slightly larger, no spin, no shake.
+  const m1 = E.outC(P(t, 15.3, 15.75)), mo = E.inQ(P(t, 17.2, 17.6));
 
   const doy = doyAt(t);
   const pastQuit = doy >= 100;
@@ -260,16 +290,11 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
               const op = P(t, a, a + 0.2) * (1 - o);
               if (op <= 0) return null;
               return (
-                <div key={i} style={{
-                  position: 'absolute', left: -150, top: -95, width: 300, height: 190, borderRadius: 22, padding: '22px 24px', color: '#F2EEE7',
-                  background: 'linear-gradient(160deg, rgba(28,24,20,.92), rgba(10,11,13,.92))', border: '1px solid rgba(186,134,84,.45)',
-                  boxShadow: '0 40px 90px rgba(0,0,0,.6), inset 0 1px 0 rgba(243,217,174,.12)', opacity: op,
-                  transform: `translate3d(${x}px,${y}px,${z}px) rotateY(${c.ry * p}deg) scale(${0.4 + 0.6 * p})`,
-                }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '.16em', color: '#BA8654' }}>{card.k}</div>
-                  {card.n && <div style={{ fontFamily: display, fontSize: 32, fontWeight: 600, lineHeight: 1.1, marginTop: 10 }}>{card.n}</div>}
-                  <div style={{ fontSize: 16, color: '#A39C92', marginTop: 10 }}>{card.m}</div>
-                </div>
+                <Img key={i} src={staticFile(card.src)} style={{
+                  position: 'absolute', left: -CW / 2, top: -(CW * card.h) / card.w / 2, width: CW, height: (CW * card.h) / card.w,
+                  borderRadius: (16 * CW) / card.w, boxShadow: '0 40px 90px rgba(0,0,0,.65), 0 0 0 1px rgba(186,134,84,.35)', opacity: op,
+                  transform: `translate3d(${x}px,${y}px,${z}px) rotateY(${c.ry * p}deg) scale(${0.45 + 0.55 * p})`,
+                }} />
               );
             })}
           </div>
@@ -282,27 +307,25 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
           opacity: 0.75 * lift * (1 - P(t, 14, 14.8) * 0.6),
         }} />
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 60% at 50% 55%, rgba(243,217,174,.55), rgba(243,217,174,0) 70%)',
-          opacity: (t > 1.4 ? 0.9 * Math.exp(-(t - 1.4) * 4) : 0) + (t > 15.72 ? 0.7 * Math.exp(-(t - 15.72) * 4) : 0) }} />
+          opacity: (t > 1.4 ? 0.9 * Math.exp(-(t - 1.4) * 4) : 0) + (t > 15.72 ? 0.25 * Math.exp(-(t - 15.72) * 4) : 0) }} />
         {/* phone */}
         <AbsoluteFill style={{ perspective: 2400, filter: blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : undefined }}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
-            <Phone pose={ph} overlay={overlay}><AppScreen t={t} r={r} /></Phone>
+            <Phone pose={ph} overlay={overlay} lift={liftNode || undefined}><AppScreen t={t} r={r} /></Phone>
           </div>
         </AbsoluteFill>
         {/* medal */}
         <AbsoluteFill style={{ perspective: 2400 }}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d',
-            transform: `translate3d(${mpos.x}px,${mpos.y}px,${L(700, 80, E.outC(m1))}px) rotateY(${spin}deg) scale(${L(2.2, 1, m2) * (1 - mo * 0.3)})` }}>
-            <svg viewBox="0 0 220 220" style={{ position: 'absolute', left: -110, top: -110, width: 220, height: 220, opacity: P(t, 15.35, 15.45) * (1 - mo) }}>
-              <defs>
-                <radialGradient id="mg" cx="40%" cy="35%" r="70%"><stop offset="0" stopColor="#F3D9AE" /><stop offset=".45" stopColor="#C99767" /><stop offset="1" stopColor="#5C4726" /></radialGradient>
-                <linearGradient id="mr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#F3D9AE" /><stop offset=".5" stopColor="#7E5C3B" /><stop offset="1" stopColor="#C99767" /></linearGradient>
-              </defs>
-              <circle cx="110" cy="110" r="104" fill="url(#mr)" /><circle cx="110" cy="110" r="90" fill="url(#mg)" />
-              <circle cx="110" cy="110" r="76" fill="none" stroke="#5C4726" strokeWidth="2" strokeDasharray="3 5" />
-              <path d="M62 110h96M74 92v36M146 92v36M64 98v24M156 98v24" stroke="#3B2D20" strokeWidth="9" strokeLinecap="round" />
-            </svg>
-            <div style={{ position: 'absolute', left: -160, top: 122, width: 320, textAlign: 'center', fontSize: 15, fontWeight: 600, letterSpacing: '.18em', color: '#E3B98A', opacity: P(t, 15.85, 16.1) * (1 - mo) }}>{MEDAL_LABEL}</div>
+            transform: `translate3d(${mpos.x}px,${mpos.y}px,${L(260, 60, m1)}px) scale(${L(1.25, 1, m1) * (1 - mo * 0.2)})` }}>
+            <Img src={staticFile(MEDAL.src)} style={{
+              position: 'absolute', left: -MEDAL.size / 2, top: -MEDAL.size / 2, width: MEDAL.size, height: MEDAL.size, borderRadius: '50%',
+              boxShadow: '0 0 60px rgba(201,151,103,.45), 0 30px 70px rgba(0,0,0,.6)', opacity: P(t, 15.3, 15.5) * (1 - mo),
+            }} />
+            <div style={{ position: 'absolute', left: -180, top: MEDAL.size / 2 + 18, width: 360, textAlign: 'center', opacity: P(t, 15.8, 16.1) * (1 - mo) }}>
+              <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '.18em', color: '#BA8654' }}>{MEDAL.eyebrow}</div>
+              <div style={{ fontFamily: display, fontSize: 30, fontWeight: 600, color: '#F4EFE6', marginTop: 6 }}>{MEDAL.name}</div>
+            </div>
           </div>
         </AbsoluteFill>
         {/* date counter */}

@@ -1,11 +1,11 @@
-// Shot 3 · Tue Feb 10 2026, 7:45 am. Needs seed stage 2 (bench stuck at 225 since Jan 20) + Premium AI.
+// Shot 3 · Tue Feb 10 2026, 7:45 am. Needs seed stage 2 (or 2-REDO): bench stuck at 225 since Jan 20 + Premium AI.
 // ⚠ Spends ~2 real AI calls (~4¢).
-// PO 10-01: "Simplify it and go slower… Hey Holt, I have this problem. You do? Let me help with that."
-// So: Holt's greeting sits (dimmed) while the problem line is read → Jordan's one message → Holt's proposal, held
-// long enough to read → "The rest of the block" → "Changed. That's your plan now." No program screen, no sheet.
+// PO 10-02: the shot ENDS ON THE ACTUAL WORKOUT. Holt's greeting sits while the problem line is read → Jordan's one
+// message → Holt's proposal, held to read → "The rest of the block" → cut to the program: Week 6 · Upper B open,
+// "Updated by Holt" and Barbell Close-Grip Bench Press 4 × 6 — that block is lifted off the phone (~2×).
 // Naming the session ("Upper B") is what the athlete would say, and it means Holt doesn't have to ask which day
 // (bench is in two sessions; programs aren't tied to weekdays).
-// Every wait for the model happens BETWEEN recorded frames, so on screen the reply simply arrives (a cut).
+// Every wait for the model, and the walk to the program, happens BETWEEN recorded frames, so on screen it's a cut.
 import { launch, newPhone, settle, record, register, centre, BASE } from './lib.mjs';
 import { realAt } from '../src/timeline.ts';
 
@@ -16,13 +16,14 @@ await page.goto(BASE + '/');
 await settle(page, 6000);
 
 // Off camera: undo any earlier Holt change (a previous take), through the program's own "Undo this change".
+// (seed-demo-jordan-2-REDO.sql already resets the plan; this keeps a second take honest too.)
 await page.getByText('Return to Strength', { exact: true }).first().click();
 await settle(page, 4000);
 const pills = () => page.getByRole('button', { name: 'Updated by Holt. See what changed' });
+const week6 = () => page.getByRole('button', { name: /^Week 6,/ });
 for (let round = 0; round < 6; round++) {
   if (!(await pills().count())) {                      // weeks start collapsed; open Week 6 if needed
-    const wk = page.getByRole('button', { name: /^Week 6,/ });
-    await wk.scrollIntoViewIfNeeded(); await wk.click(); await settle(page, 1200);
+    await week6().scrollIntoViewIfNeeded(); await week6().click(); await settle(page, 1200);
   }
   if (!(await pills().count())) break;
   const pill = pills().first();
@@ -46,13 +47,12 @@ async function until(test, ms = 60000) {
   console.log('--- screen text at timeout ---\n' + (await page.evaluate(() => document.body.innerText)).slice(-900));
   throw new Error('timed out');
 }
-const box = async (loc, pad = 10) => { const b = await loc.boundingBox({ timeout: 5000 }); return b && { x: Math.round(b.x - pad), y: Math.round(b.y - pad + 54), w: Math.round(b.width + 2 * pad), h: Math.round(b.height + 2 * pad) }; };
 
 const from = 5.6;                                   // film time the coach screen starts to show
 const LIT = realAt(5.78) + 1.75 - realAt(from);     // seconds into the take when the phone lights up
 const END = realAt(9.15) - realAt(from);
-const beats = { type: LIT + 0.15, send: LIT + 0.75, proposal: LIT + 1.45, accept: LIT + 3.55, changed: LIT + 3.65 };
-const spots = [];
+const beats = { type: LIT + 0.15, send: LIT + 0.75, proposal: LIT + 1.45, accept: LIT + 3.45, program: LIT + 3.95 };
+let workout = null;
 const take = await record(page, 'coach', END, [
   { at: beats.type, run: async (p) => { await p.getByRole('textbox', { name: 'Message Holt' }).fill(MSG); } },
   { at: beats.send, run: async (p) => { const s = p.getByLabel('Send', { exact: true }); const c = await centre(s); await s.click(); return c; } },
@@ -65,17 +65,34 @@ const take = await record(page, 'coach', END, [
         await until(() => proposalText.isVisible().catch(() => false));
       }
       await until(() => visible('The rest of the block'));
-      const r = await box(proposalText); if (r) spots.push({ at: beats.proposal + 0.2, until: beats.accept, ...r });
+      console.log('proposal:', await proposalText.innerText());
   } },
   { at: beats.accept, run: async (p) => { const el = p.getByText('The rest of the block', { exact: true }).first(); const c = await centre(el); await el.click(); return c; } },
-  { at: beats.changed, run: async (p) => {
+  { at: beats.program, run: async (p) => {
+      // The cut: Holt confirms, "Show me the program", Week 6, Upper B open — all between two frames.
       await until(() => visible('Show me the program'));
-      // Holt's confirmation varies ("Changed. That's your plan now." / "Done. Everything else stays where it was.").
-      const ch = p.getByText(/^(Changed|Done)/).last();
-      const r = await box(ch).catch(() => null); if (r) spots.push({ at: beats.changed + 0.3, until: END, ...r });
+      await p.getByText('Show me the program', { exact: true }).first().click();
+      await until(() => week6().count());
+      await settle(p, 2500);
+      if (!(await pills().first().isVisible().catch(() => false))) { await week6().scrollIntoViewIfNeeded(); await week6().click(); await settle(p, 1500); }
+      const cg = p.getByText(/Close-Grip Bench Press/).first();
+      if (!(await cg.isVisible().catch(() => false))) { await p.getByText('Upper B', { exact: true }).first().click(); await settle(p, 1500); }
+      // Upper B's title near the top third, so its exercises sit clear of the CONTINUE TRAINING bar.
+      const title = p.getByText('Upper B', { exact: true }).first();
+      await title.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await settle(p, 600);
+      const t0 = await title.boundingBox();
+      if (t0 && t0.y > 230) { await p.mouse.move(200, 400); await p.mouse.wheel(0, t0.y - 200); await settle(p, 1200); }
+      await p.screenshot({ path: 'capture/frames/look/holt-end.png' });
+      const t = await title.boundingBox(), c = await cg.boundingBox();
+      if (!t || !c) throw new Error('Upper B / Close-Grip not on screen');
+      // The lift: Upper B's title and its "Updated by Holt" pill, down to the Close-Grip row and its "4 × 6".
+      const y0 = t.y - 16, y1 = c.y + c.height + 44;
+      workout = { x: 24, y: Math.round(y0 + 54), w: 354, h: Math.round(y1 - y0) };
+      console.log('workout block', workout, '\n', (await p.evaluate(() => document.body.innerText.split('Upper B')[1]?.slice(0, 300))));
   } },
 ]);
-take.spots = spots;
+take.lifts = workout ? [{ at: +(beats.program + 0.6).toFixed(2), until: +END.toFixed(2), ...workout, r: 14, k: 1.8 }] : [];
 register('coach', take, from);
-console.log('frames', take.frames, 'taps', take.taps.length, 'spots', JSON.stringify(spots));
+console.log('frames', take.frames, 'taps', take.taps.length, 'lifts', JSON.stringify(take.lifts));
 await browser.close();

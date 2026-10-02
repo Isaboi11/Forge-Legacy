@@ -11,7 +11,11 @@ export const SCREEN_H = 862;
 
 const edgeLayers = Array.from({ length: 12 }, (_, i) => i + 1);
 
-export const Phone: React.FC<{ pose: Pose; children: React.ReactNode; overlay?: React.ReactNode }> = ({ pose, children, overlay }) => {
+// The screen's top-left inside the phone body (bezel 4 + 10): `lift` children are placed in screen coordinates
+// from here, outside the screen's clip, so a lifted piece can rise off the glass and grow past the edges.
+export const SCREEN_X = 14;
+
+export const Phone: React.FC<{ pose: Pose; children: React.ReactNode; overlay?: React.ReactNode; lift?: React.ReactNode }> = ({ pose, children, overlay, lift }) => {
   const p = pose;
   return (
     <div
@@ -58,6 +62,7 @@ export const Phone: React.FC<{ pose: Pose; children: React.ReactNode; overlay?: 
           </div>
         </div>
       </div>
+      {lift && <div style={{ position: 'absolute', left: SCREEN_X, top: SCREEN_X, transformStyle: 'preserve-3d' }}>{lift}</div>}
     </div>
   );
 };

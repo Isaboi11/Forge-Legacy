@@ -2,12 +2,17 @@
 // Numbers marked SEED come from Jordan's seeded year and must be re-read from the real Legacy screen
 // before the final render — the film never states a number the app doesn't show.
 
+// PO 10-02: the floating chapters are the app's own "THIS CHAPTER" cards, captured from each chapter's screen on
+// Oct 2 (capture/shot-5.mjs, 4x): Chapter I — The Return · 82 workouts · 3 honors · 115 days; Chapter II — Stronger Than
+// Before · 89 workouts · 3 honors · 122 days. `w`/`h` = the card's size on the phone (CSS px).
 export const LEGACY_CARDS = [
-  { k: 'CHAPTER I · SEALED', n: 'The Return', m: 'Jan – Apr · 48 workouts' /* SEED */ },
-  { k: 'CHAPTER II · SEALED', n: 'Stronger Than Before', m: 'May – Aug · 61 workouts' /* SEED */ },
+  { src: 'rec/story-lift/chapter-1.png', w: 366, h: 219 },
+  { src: 'rec/story-lift/chapter-2.png', w: 366, h: 245 },
 ];
 
-export const MEDAL_LABEL = 'HONOR EARNED'; // the ceremony's own eyebrow; the honor's name is added from the seed
+// The real 1,000 Pound Club medallion (struck face) from its honor sheet; the words are the honor sheet's and the
+// ceremony's own ("HONOR EARNED" is the ceremony eyebrow; earned May 12 2026).
+export const MEDAL = { src: 'rec/story-lift/medal.png', size: 200, eyebrow: 'HONOR EARNED', name: '1,000 Pound Club' };
 
 export const END = {
   wordmark: 'FORGE LEGACY',
