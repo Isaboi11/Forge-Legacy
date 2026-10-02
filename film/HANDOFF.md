@@ -5,7 +5,9 @@ current cut), then this file. Work only in the worktree `C:\Users\isaia\forge-fi
 outside OneDrive). Commit with explicit paths (`git commit -o`). Keep chat answers short and plain.
 
 ## Where it stands (10-02, end of session)
-- ALL SIX SHOTS captured and cut. Latest render: `film/out/rough-v8.mp4` (~41 s, desktop). PO: "2 changes and then we're
+- ALL SIX SHOTS captured and cut. Latest render: `film/out/rough-v10.mp4` (~41 s, desktop) — PO: "that's perfect".
+  Phone drift on real time (8° turn / 2° tilt / 8 px float, Film.tsx `drift`) approved; 3.5° was too subtle.
+- Earlier: `rough-v8.mp4`. PO: "2 changes and then we're
   good" — both made (opening held +1 s; space under the phone for shot 5's line). Treat the cut as LOCKED pending the PO.
 - Shots: 1 grey app (+1 s) · 2 one tap → NEW PERSONAL RECORD (lifted) · 3 Holt BUILDS a program: Jordan's message →
   dissolve → Holt's reply over "Bench Strength Builder" card (lifted 1.35×), caption "helps you move forward" ·
