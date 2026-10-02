@@ -251,38 +251,44 @@
   });
 
   /* ── Hero film ───────────────────────────────────────────────────────────────
-     The hero's own visual (9:16), attached after the page has loaded so it never competes with first paint. WebM
-     first, MP4 for Safari. Muted autoplay, plays only while on screen. "Sound on" restarts it from the top with sound,
-     since the score is cut to the picture. Reduced motion: the poster stays and a Play button starts it with sound
-     and controls. */
+     The hero's own visual (9:16), attached after the page has loaded so it never competes with first paint.
+     MP4 (H.264) FIRST: every browser plays it and every phone decodes it in hardware. The VP9 WebM is only a fallback
+     — offered first, iPhone Safari picked it and decoded it in software, and the film froze (PO 10-02).
+     Muted autoplay while on screen. If the browser refuses autoplay (iPhone Low Power Mode does), a Play button shows
+     instead of a still frame that looks frozen. "Sound on" restarts it from the top with sound, since the score is
+     cut to the picture. Reduced motion: the poster stays and Play starts it with sound and controls. */
   function film() {
     const box = $('[data-film]');
     if (!box) return;
     const v = $('video', box), snd = $('[data-film-sound]', box), play = $('[data-film-play]', box);
     const base = 'assets/film/hero-9x16';
     v.poster = 'assets/film/poster-9x16.jpg';
-    [['webm', 'video/webm; codecs="vp9,opus"'], ['mp4', 'video/mp4']].forEach(([ext, type]) => {
+    v.setAttribute('webkit-playsinline', '');
+    [['mp4', 'video/mp4'], ['webm', 'video/webm; codecs="vp9,opus"']].forEach(([ext, type]) => {
       const s = document.createElement('source'); s.src = base + '.' + ext; s.type = type; v.appendChild(s);
     });
     v.muted = true;
-    v.addEventListener('playing', () => box.classList.add('on'));
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Play and Sound share the corner: Sound shows once the film is actually playing.
+    v.addEventListener('playing', () => { box.classList.add('on'); play.hidden = true; if (!reduce) snd.hidden = false; });
+    if (reduce) {
       play.hidden = false;
       play.addEventListener('click', () => { play.hidden = true; v.loop = false; v.muted = false; v.controls = true; v.play(); });
       return;
     }
     v.preload = 'auto';
-    let soundOn = false;
+    let soundOn = false, refused = false;
+    const tryPlay = () => v.play().catch(() => { refused = true; snd.hidden = true; play.hidden = false; });
+    play.addEventListener('click', () => { refused = false; play.hidden = true; v.play(); });
     const io = new IntersectionObserver(es => {
-      if (es[0].isIntersecting) v.play().catch(() => { /* autoplay refused: the poster stays */ });
+      if (es[0].isIntersecting) { if (!refused) tryPlay(); }
       else v.pause();
-    }, { threshold: 0.25 });
+    }, { threshold: 0 });
     io.observe(box);
-    snd.hidden = false;
     snd.addEventListener('click', () => {
       soundOn = !soundOn;
       v.muted = !soundOn;
-      if (soundOn) { v.currentTime = 0; v.play(); }
+      if (soundOn) { refused = false; play.hidden = true; v.currentTime = 0; v.play(); }
       snd.setAttribute('aria-pressed', String(soundOn));
       $('span', snd).textContent = soundOn ? 'Sound off' : 'Sound on';
     });
