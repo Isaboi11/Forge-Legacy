@@ -37,7 +37,7 @@ export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
 // 2.0 → 2.8), and shot 2's logging +2.0 s ([5.3, 5.35]) so the record card and the rest ring can be read. Shot 3 +2.0 s
 // ([7.0, 7.05]) for the simplified Holt exchange (one message, the proposal, "Changed").
 export const HOLDS: [number, number, number][] = [
-  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.78, 5.82, 2.0], [7.0, 7.05, 1.15], [9.35, 9.4, 2.0], [10.95, 11.3, 0.6],
+  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.6], [5.78, 5.82, 2.0], [7.0, 7.05, 1.15], [9.35, 9.4, 2.0], [10.95, 11.3, 0.6],
   [11.45, 13.95, -2.5], [13.97, 14.0, 2.0], [14.9, 15.0, 0.45], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
 ];
 const KN: [number, number][] = [[0, 0]];

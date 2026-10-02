@@ -194,7 +194,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
 
   const overlay = (
     <>
-      <div style={{ position: 'absolute', inset: 0, background: '#000', opacity: dimV * 0.62, zIndex: 18 }} />
+      {/* PO 10-01: no dimming while a line is read — the phone just holds still. */}
       {spotC && spotV > 0 && (
         <div style={{
           position: 'absolute', left: spotC.x, top: spotC.y, width: spotC.w, height: spotC.h, borderRadius: 18, zIndex: 21,
