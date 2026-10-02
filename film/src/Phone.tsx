@@ -15,15 +15,32 @@ const edgeLayers = Array.from({ length: 12 }, (_, i) => i + 1);
 // from here, outside the screen's clip, so a lifted piece can rise off the glass and grow past the edges.
 export const SCREEN_X = 14;
 
+const box = (p: Pose): React.CSSProperties => ({
+  position: 'absolute', left: -215, top: -445, width: 430, height: 890, transformStyle: 'preserve-3d',
+  transform: `translate3d(${p.x}px,${p.y}px,${p.z}px) rotateX(${p.rx}deg) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) scale(${p.s})`,
+});
+
+// With the 3D phone (Phone3D.tsx) the body is drawn by three.js; the DOM keeps only what lives on the glass —
+// the screen, under the canvas — and the lifted piece, over it. Both sit exactly where they sit in the CSS phone.
+export const PhoneFace: React.FC<{ pose: Pose; children: React.ReactNode; overlay?: React.ReactNode }> = ({ pose, children, overlay }) => (
+  <div style={box(pose)}>
+    <div style={{ position: 'absolute', left: SCREEN_X, top: SCREEN_X, width: SCREEN_W, height: SCREEN_H, borderRadius: 52, overflow: 'hidden', background: '#05080A', backfaceVisibility: 'hidden' }}>
+      {children}
+      <div style={{ position: 'absolute', left: '50%', top: 14, width: 22, height: 22, marginLeft: -11, borderRadius: '50%', background: '#000', boxShadow: '0 0 0 2px #0b0b0c', zIndex: 50 }} />
+      {overlay}
+    </div>
+  </div>
+);
+export const PhoneLift: React.FC<{ pose: Pose; lift: React.ReactNode }> = ({ pose, lift }) => (
+  <div style={box(pose)}>
+    <div style={{ position: 'absolute', left: SCREEN_X, top: SCREEN_X, transformStyle: 'preserve-3d' }}>{lift}</div>
+  </div>
+);
+
 export const Phone: React.FC<{ pose: Pose; children: React.ReactNode; overlay?: React.ReactNode; lift?: React.ReactNode }> = ({ pose, children, overlay, lift }) => {
   const p = pose;
   return (
-    <div
-      style={{
-        position: 'absolute', left: -215, top: -445, width: 430, height: 890, transformStyle: 'preserve-3d',
-        transform: `translate3d(${p.x}px,${p.y}px,${p.z}px) rotateX(${p.rx}deg) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) scale(${p.s})`,
-      }}
-    >
+    <div style={box(p)}>
       {edgeLayers.map((i) => (
         <div key={i} style={{
           position: 'absolute', inset: 0, borderRadius: 66, transform: `translateZ(-${i}px)`,

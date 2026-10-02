@@ -5,7 +5,8 @@ import { loadFont as loadHanken } from '@remotion/google-fonts/HankenGrotesk';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { CAPS, DUR, E, L, P, RDUR, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
-import { Phone } from './Phone';
+import { Phone, PhoneFace, PhoneLift } from './Phone';
+import { PhoneBody3D } from './Phone3D';
 import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
 import { SCREEN_W } from './Phone';
 import { LEGACY_CARDS, MEDAL, MORE_MEDALS, ACCOMPLISHMENTS, END, SCORE } from './story';
@@ -16,7 +17,8 @@ const sans = loadHanken('normal', { weights: ['400', '500', '600', '700'], subse
 const mono = loadMono('normal', { weights: ['400', '500'], subsets: ['latin'] }).fontFamily;
 loadInter('normal', { weights: ['400', '500', '600', '700'], subsets: ['latin'] });
 
-export type FilmProps = { portrait: boolean; cut?: 'full' | 'ad15' };
+// `flatPhone`: the old CSS phone (quick drafts — the 3D phone renders several times slower).
+export type FilmProps = { portrait: boolean; cut?: 'full' | 'ad15'; flatPhone?: boolean };
 
 // PO 10-02: "slight motion with the phones… slowly spinning, really slow and barely noticeable". A slow turn of a few
 // degrees and back (~14 s), a faint tilt and float, on REAL time — so the phone keeps breathing while a line is held.
@@ -149,7 +151,7 @@ function tapsReal(): Tap[] {
   return out;
 }
 
-export const Film: React.FC<FilmProps> = ({ portrait }) => {
+export const Film: React.FC<FilmProps> = ({ portrait, flatPhone }) => {
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
   const r = Math.min(RDUR, frame / fps);
@@ -238,8 +240,8 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
           </>
         );
       })()}
-      {/* glare */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.10) 45%, rgba(255,255,255,0) 60%)', backgroundSize: '300% 100%', backgroundPosition: `${50 + ph.ry * 2.2}% 0` }} />
+      {/* glare (the CSS phone only — the 3D phone's glass reflects a real studio) */}
+      {flatPhone && <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.10) 45%, rgba(255,255,255,0) 60%)', backgroundSize: '300% 100%', backgroundPosition: `${50 + ph.ry * 2.2}% 0` }} />}
       {/* bronze sweep after the turn */}
       {(() => { const swp = P(t, 2.05, 2.7); return swp > 0 && swp < 1 ? (
         <div style={{ position: 'absolute', top: '-10%', bottom: '-10%', width: 120, zIndex: 31, left: L(-160, 460, E.io(swp)), transform: 'skewX(-18deg)',
@@ -323,9 +325,27 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
           opacity: (t > 1.4 ? 0.9 * Math.exp(-(t - 1.4) * 4) : 0) + (t > 15.72 ? 0.25 * Math.exp(-(t - 15.72) * 4) : 0) }} />
         {/* phone */}
         <AbsoluteFill style={{ perspective: 2400, filter: blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : undefined }}>
-          <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
-            <Phone pose={ph} overlay={overlay} lift={liftNode || undefined}><AppScreen t={t} r={r} /></Phone>
-          </div>
+          {flatPhone ? (
+            <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
+              <Phone pose={ph} overlay={overlay} lift={liftNode || undefined}><AppScreen t={t} r={r} /></Phone>
+            </div>
+          ) : (
+            <>
+              <AbsoluteFill style={{ perspective: 2400 }}>
+                <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
+                  <PhoneFace pose={ph} overlay={overlay}><AppScreen t={t} r={r} /></PhoneFace>
+                </div>
+              </AbsoluteFill>
+              <PhoneBody3D W={W} H={H} pose={ph} />
+              {liftNode && (
+                <AbsoluteFill style={{ perspective: 2400 }}>
+                  <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
+                    <PhoneLift pose={ph} lift={liftNode} />
+                  </div>
+                </AbsoluteFill>
+              )}
+            </>
+          )}
         </AbsoluteFill>
         {/* medal */}
         <AbsoluteFill style={{ perspective: 2400 }}>
