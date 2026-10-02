@@ -250,6 +250,46 @@
     });
   });
 
+  /* ── Hero film ───────────────────────────────────────────────────────────────
+     Attached after the page has loaded, so it never competes with first paint. One shape per visit (16:9 above
+     600 px, 9:16 below), WebM first and MP4 for Safari. Muted autoplay, plays only while on screen. "Sound on"
+     restarts it from the top with sound, since the score is cut to the picture. Reduced motion: the poster stays and
+     a Play button starts it with sound and controls. */
+  function film() {
+    const box = $('[data-film]');
+    if (!box) return;
+    const v = $('video', box), snd = $('[data-film-sound]', box), play = $('[data-film-play]', box);
+    const tall = matchMedia('(max-width:600px)').matches;
+    const base = 'assets/film/hero-' + (tall ? '9x16' : '16x9');
+    v.poster = base.replace('hero-', 'poster-') + '.jpg';
+    [['webm', 'video/webm; codecs="vp9,opus"'], ['mp4', 'video/mp4']].forEach(([ext, type]) => {
+      const s = document.createElement('source'); s.src = base + '.' + ext; s.type = type; v.appendChild(s);
+    });
+    v.muted = true;
+    v.addEventListener('playing', () => box.classList.add('on'));
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      play.hidden = false;
+      play.addEventListener('click', () => { play.hidden = true; v.loop = false; v.muted = false; v.controls = true; v.play(); });
+      return;
+    }
+    v.preload = 'auto';
+    let soundOn = false;
+    const io = new IntersectionObserver(es => {
+      if (es[0].isIntersecting) v.play().catch(() => { /* autoplay refused: the poster stays */ });
+      else v.pause();
+    }, { threshold: 0.25 });
+    io.observe(box);
+    snd.hidden = false;
+    snd.addEventListener('click', () => {
+      soundOn = !soundOn;
+      v.muted = !soundOn;
+      if (soundOn) { v.currentTime = 0; v.play(); }
+      snd.setAttribute('aria-pressed', String(soundOn));
+      $('span', snd).textContent = soundOn ? 'Sound off' : 'Sound on';
+    });
+  }
+  if (document.readyState === 'complete') film(); else window.addEventListener('load', film);
+
   /* ── Mobile sticky bar ───────────────────────────────────────────────────── */
   const bar = $('#bar');
   function onScroll() {

@@ -25,7 +25,26 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
 - Recordings: `film/public/rec/*` (git-ignored), captured at 2× by `capture/shot-12.mjs`, `shot-3.mjs` (live AI ~5¢),
   `shot-4.mjs`, `shot-5.mjs` (+ 4× stills in `public/rec/story-lift/`).
 
-## NEXT SESSION: THE FINAL (PO 10-02: "all the needed and all the optional")
+## THE FINAL — done 10-02 (evening session)
+- **3D phone** (`src/Phone3D.tsx`, PO approved the still): three.js body over the DOM screen — the screen opening is a
+  depth-only mask, the glass adds studio reflections as light (additive). Studio = Poly Haven Studio Small 09 (CC0) as a
+  faint fill + strip softboxes behind the camera, PMREM'd; every material gets `envMap` directly (three ignores
+  `envMapIntensity` for `scene.environment`). Camera = CSS `perspective: 2400`; CSS→three = flip y, negate rx/rz.
+  `flatPhone` prop = the old CSS phone for drafts. Renders ~6 frames/s on this laptop (not 1–3 s/frame).
+- **3× screens: SKIPPED** (PO) — no visible gain at 1080p.
+- **60 fps master** (`Root.tsx`); motion blur = the existing speed blur. **Grade** = one ffmpeg chain in
+  `capture/deliver.sh` (warmer shadows, deeper blacks, +4% saturation), applied to every deliverable.
+- **9:16**: portrait captions moved to top 330 (they touched the counter's quit label).
+- **15 s ad** (PO: "whatever converts best" → shots 1, 4, 6): `AD15` in `timeline.ts`, own score
+  `python capture/score-moments.py ad15`; compositions Ad15Desktop / Ad15Phone.
+- Scripts: `node capture/stills.mjs <comp> out/x 2.0 9.3` (stills at real seconds, one bundle),
+  `node capture/render.mjs HeroDesktop HeroPhone Ad15Desktop Ad15Phone` (masters), `bash capture/deliver.sh` (grade,
+  social masters in `out/final/`, web loops + posters in `site/assets/film/`).
+- **Site**: film section under the hero in `site/index.html` + the "Hero film" block in `site/assets/site.js`.
+  Preview uploaded with `wrangler versions upload`; production stays 64183374 until the PO says "go live".
+- ⚠ The end card carries the App Store badge while the site says "In TestFlight now" — PO decides before go-live.
+
+## (previous plan) NEXT SESSION: THE FINAL (PO 10-02: "all the needed and all the optional")
 Optional polish first — show the PO ONE still before any full render:
 1. **3D phone** (`@remotion/three` + react-three-fiber, already in package.json): procedural generic phone, metal edge,
    glass with an HDRI reflection (Poly Haven, CC0), the recording as the screen texture; same pose/drift as today.
