@@ -55,8 +55,25 @@ export const OldApp: React.FC<{ t: number }> = ({ t }) => (
    recordings.json is written by the capture scripts: { shotId: { dir, frames, fps, from } } where `from` is the
    film time at which recording frame 0 is on screen. The recording then plays in REAL time, so a reading hold
    (which freezes the choreography) does not freeze the app — the app is dimmed during holds anyway. */
-type Rec = { dir: string; frames: number; fps: number; from: number };
-const RECS = recordings as Record<string, Rec>;
+// `pauses`: [recordingSecond, extraSeconds] — the recording holds that exact frame a little longer, used only
+// where the real screen is still (nothing on it is moving), so the hold shows exactly what the app shows.
+export type Rec = { dir: string; frames: number; fps: number; from: number; pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[] };
+export const RECS = recordings as unknown as Record<string, Rec>;
+
+/** Seconds since the take started on screen → the recording's own second, honouring pauses. */
+export function recTime(rec: Rec, sinceStart: number): number {
+  let p = sinceStart;
+  for (const [at, extra] of [...(rec.pauses ?? [])].sort((a, b) => a[0] - b[0])) {
+    if (p <= at) break;
+    if (p <= at + extra) return at;
+    p -= extra;
+  }
+  return p;
+}
+/** The inverse, for taps: a recording second → seconds since the take started on screen. */
+export function onScreenTime(rec: Rec, recSec: number): number {
+  return recSec + (rec.pauses ?? []).filter(([at]) => at < recSec).reduce((n, [, e]) => n + e, 0);
+}
 
 const LABELS: Record<string, [string, string]> = {
   home: ['Home · Jan 19', "Today's Workout · Lower A · Start Workout"],
@@ -69,7 +86,7 @@ const LABELS: Record<string, [string, string]> = {
 export const RecordingOrPlaceholder: React.FC<{ id: string; r: number }> = ({ id, r }) => {
   const rec = RECS[id];
   if (rec) {
-    const f = Math.max(0, Math.min(rec.frames - 1, Math.floor((r - realAt(rec.from)) * rec.fps)));
+    const f = Math.max(0, Math.min(rec.frames - 1, Math.floor(recTime(rec, r - realAt(rec.from)) * rec.fps)));
     return (
       <Img
         src={staticFile(`${rec.dir}/f${String(f).padStart(5, '0')}.jpg`)}

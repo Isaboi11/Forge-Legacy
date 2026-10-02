@@ -30,8 +30,11 @@ export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
 
 /* Reading holds: [filmStart, filmEnd, extra real seconds]. A negative extra is a cut:
    [11.45, 13.95] (the old squad shot) takes no real time at all. */
-const HOLDS: [number, number, number][] = [
-  [0.55, 1.3, 1.0], [2.85, 2.9, 2.0], [5.78, 5.82, 2.0], [9.35, 9.4, 2.0], [10.95, 11.3, 0.6],
+// PO 10-01 after the first rough cut: "the home screen and the first active workout screen … should be seen
+// for a little longer. Feels really rushed." → Home +1.0 s ([2.15, 2.2]), the lit squat screen +0.8 s ([2.85, 2.9]
+// 2.0 → 2.8), the rest ring +0.4 s ([5.3, 5.35]).
+export const HOLDS: [number, number, number][] = [
+  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.4], [5.78, 5.82, 2.0], [9.35, 9.4, 2.0], [10.95, 11.3, 0.6],
   [11.45, 13.95, -2.5], [13.97, 14.0, 2.0], [14.9, 15.0, 0.45], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
 ];
 const KN: [number, number][] = [[0, 0]];
@@ -137,7 +140,7 @@ export const doyAt = (t: number) => sample(DT, t).d;
 export type Spot = { x: number; y: number; w: number; h: number };
 export type Cap = { a: number; b: number; text: string; pain?: string; spot?: Spot; wide?: boolean };
 export const CAPS: Cap[] = [
-  { a: 0.25, b: 2.4, text: 'Most people quit their workout app *by spring.*' },
+  { a: 0.25, b: 2.15, text: 'Most people quit their workout app *by spring.*' },
   { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*', spot: { x: 22, y: 370, w: 358, h: 252 } },
   { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *fixes the plan.*', spot: { x: 12, y: 160, w: 378, h: 240 } },
   { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*', spot: { x: 10, y: 266, w: 382, h: 54 } },

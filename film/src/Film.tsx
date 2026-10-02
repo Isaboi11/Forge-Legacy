@@ -6,9 +6,8 @@ import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { CAPS, DUR, E, L, P, RDUR, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone } from './Phone';
-import { AppScreen } from './Screens';
+import { AppScreen, RECS, onScreenTime } from './Screens';
 import { LEGACY_CARDS, MEDAL_LABEL, END, SCORE } from './story';
-import recordings from './recordings.json';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
 loadPlayfair('italic', { weights: ['500', '600'], subsets: ['latin'] });
@@ -131,8 +130,7 @@ type Tap = { t: number; x: number; y: number };
 const MOCK_TAPS: Tap[] = [{ t: 2.22, x: 201, y: 450 }, { t: 3.2, x: 352, y: 285 }, { t: 3.9, x: 352, y: 347 }, { t: 4.6, x: 352, y: 409 }, { t: 5.86, x: 356, y: 810 }];
 function tapsReal(): Tap[] {
   const out: Tap[] = [];
-  const recs = recordings as Record<string, { from: number; taps?: { at: number; x: number; y: number }[] }>;
-  for (const k in recs) for (const tp of recs[k].taps ?? []) out.push({ t: realAt(recs[k].from) + tp.at, x: tp.x, y: tp.y + 54 });
+  for (const k in RECS) for (const tp of RECS[k].taps ?? []) out.push({ t: realAt(RECS[k].from) + onScreenTime(RECS[k], tp.at), x: tp.x, y: tp.y + 54 });
   return out;
 }
 

@@ -35,12 +35,15 @@ const tapFrom = 2.45;
 const R0 = realAt(tapFrom);
 const at = (real) => real - R0;
 const press = (name) => async (p) => { const b = p.getByRole('button', { name, exact: true }); const c = await centre(b); await b.click(); return c; };
+// The phone lights up 1.75 s after the problem line appears (Film.tsx dimmer); the squat screen is then held
+// in view ~0.95 s before the first tap (PO 10-01: "feels really rushed").
+const LIT = realAt(2.85) + 1.75;
 const tap = await record(page, 'tap', realAt(5.7) - R0 + 0.1, [
-  { at: at(5.75), run: press('Complete set 2') },
-  { at: at(6.25), run: press('Complete set 3') },
-  { at: at(6.75), run: press('Complete set 4') },  // 225 × 5 beats 215 × 5 → NEW PERSONAL RECORD
-  { at: at(7.55), run: press('Not now') },
-  { at: at(7.85), run: press('Start rest now') },
+  { at: at(LIT + 0.95), run: press('Complete set 2') },
+  { at: at(LIT + 1.45), run: press('Complete set 3') },
+  { at: at(LIT + 1.95), run: press('Complete set 4') },  // 225 × 5 beats 215 × 5 → NEW PERSONAL RECORD
+  { at: at(LIT + 2.75), run: press('Not now') },
+  { at: at(LIT + 3.05), run: press('Start rest now') },
 ]);
 register('tap', tap, tapFrom);
 console.log('home', home.frames, 'frames, taps', home.taps.length, '· tap', tap.frames, 'frames, taps', tap.taps.length);

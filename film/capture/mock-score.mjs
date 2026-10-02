@@ -7,10 +7,14 @@ let html = readFileSync(new URL('../reference/mockup-v1.html', import.meta.url),
 const patch = (from, to) => { if (!html.includes(from)) throw new Error('patch target missing: ' + from); html = html.replace(from, to); };
 // Schedule every cue at once instead of 1.6 s ahead of a live clock.
 patch('const horizon = AC.currentTime - s.base + 1.6;', 'const horizon = 1e9;');
+// Use the film's CURRENT reading holds, not the mock-up's, so the placeholder score stays on the cut.
+const { HOLDS } = await import('../src/timeline.ts');
+html = html.replace(/const HOLDS = \[\[.*?\]\];/, `const HOLDS = ${JSON.stringify(HOLDS)};`);
+if (!html.includes(`const HOLDS = ${JSON.stringify(HOLDS)};`)) throw new Error('HOLDS patch failed');
 // Hand the context to the harness.
 patch('initAudio(); playing = true;', 'initAudio(); window.__AC = AC; playing = true;');
 
-const SR = 48000, SECONDS = 33;
+const SR = 48000, SECONDS = 36;
 const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.addInitScript(([sr, secs]) => {
