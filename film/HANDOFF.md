@@ -1,29 +1,54 @@
-# Hero film — handoff (2026-10-02)
+# Hero film — handoff (2026-10-02, end of day)
 
-Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then `film/PLAN.md` (§0 is the
-current cut), then this file. Work only in the worktree `C:\Users\isaia\forge-film-wt` (branch `feat/hero-film`,
-outside OneDrive). Commit with explicit paths (`git commit -o`). Keep chat answers short and plain.
+Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then this file, then `film/PLAN.md`
+(§3 production route, §6 deliverables). Work only in the worktree `C:\Users\isaia\forge-film-wt` (branch
+`feat/hero-film`, outside OneDrive). Commit with explicit paths. Keep chat answers short and plain.
 
-## Where it stands (10-02, end of session)
-- ALL SIX SHOTS captured and cut. Latest render: `film/out/rough-v10.mp4` (~41 s, desktop) — PO: "that's perfect".
-  Phone drift on real time (8° turn / 2° tilt / 8 px float, Film.tsx `drift`) approved; 3.5° was too subtle.
-- Earlier: `rough-v8.mp4`. PO: "2 changes and then we're
-  good" — both made (opening held +1 s; space under the phone for shot 5's line). Treat the cut as LOCKED pending the PO.
-- Shots: 1 grey app (+1 s) · 2 one tap → NEW PERSONAL RECORD (lifted) · 3 Holt BUILDS a program: Jordan's message →
-  dissolve → Holt's reply over "Bench Strength Builder" card (lifted 1.35×), caption "helps you move forward" ·
-  4 calendar → Welcome back (lifted) · 5 Legacy scroll + chapter cards + 5 real medals + 3 accomplishment cards ·
-  6 end card.
-- Engine adds this session: `lifts` (one real piece per shot, raised ~2×, gated on its own shot's line), `dissolves`,
-  caption `read` time. Shot 5's floating pieces are 4× stills in `public/rec/story-lift/` (git-ignored, from shot-5.mjs).
-- Engine: Remotion project in `film/` (`src/timeline.ts` = film clock + HOLDS + captions; `src/Film.tsx`;
-  `src/Screens.tsx`; `src/recordings.json` = takes). Generic phone. Badge cut in still.
-- Capture: Playwright on forgelegacy.expo.app, 402×808, frozen clock. Run `node capture/signin.mjs` before EVERY take.
-  ⚠ Never freeze the clock LATER than the real time + ~1 h: the app refreshes the token and burns the saved sign-in
-  (shot 5 uses Oct 2 05:30 for this reason).
-- Music is still the placeholder. Next: phone 9:16 render check, <5 MB H.264 + WebM, poster, 15 s cut, site embed.
-- App bug found (not fixed): onboarding environment 'commercial_gym' isn't a Room to Holt's chat (`isRoom` =
-  full_gym/home/bodyweight, CoachChatSheet.tsx:683), so Holt assumes an EMPTY HOME GYM and builds push-ups. Real users
-  who chose commercial gym are affected. Film works around it ("…at the gym").
+## Where it stands — the CUT IS LOCKED
+- Approved rough cut: `film/out/rough-v12.mp4` (~41 s, 1920×1080, 30 fps). PO: "sounds and feels good". Content —
+  shots, timing, captions, music, background — is final. Do not re-time or re-word anything without the PO.
+- Shots: 1 grey "other app" (held +1 s) → the turn · 2 one tap → NEW PERSONAL RECORD (lifted) · 3 Holt BUILDS a program:
+  Jordan's message → dissolve → Holt's reply over his "Bench Strength Builder" card (lifted 1.35×), caption "Your AI
+  coach helps you move forward." · 4 calendar → Welcome back (lifted) · 5 Legacy scroll + 2 chapter cards + 5 real medals
+  + 3 accomplishment cards, "Numbers nobody looks at." → "A year that tells your story." · 6 end card.
+- Phone: generic (never an iPhone — Apple rule), slow drift on real time (8° turn / 2° tilt / 8 px float, `drift` in
+  Film.tsx) — PO: "perfect". Background: soft warm pool + overhead wash + few faint embers; the diagonal beams were
+  removed (PO: "cheesy").
+- Music: "Moments (Instrumental Version)" by Ayoub, Epidemic Sound, LICENSED by the PO (business plan). Source WAV and
+  the cut live in `film/public/music/` (git-ignored — never commit or publish the raw track). `python
+  capture/score-moments.py` rebuilds the cut on bar lines: drop on the turn (3.40 s), breakdown for the missed week
+  (20.68), second drop on the pull-back (26.44), final hit on the end card (37.96); −14 LUFS / −1 dBTP. If ANY timing
+  changes, re-derive those film times from `realAt()` and rebuild the score.
+- Engine: Remotion in `film/` — `src/timeline.ts` (film clock, HOLDS, captions), `src/Film.tsx`, `src/Phone.tsx`
+  (CSS 3D phone today), `src/Screens.tsx` (recordings: pauses/skips/slow/dissolves/lifts), `src/recordings.json`,
+  `src/story.ts`. Two compositions exist: HeroDesktop (1920×1080) and HeroPhone (1080×1920).
+- Recordings: `film/public/rec/*` (git-ignored), captured at 2× by `capture/shot-12.mjs`, `shot-3.mjs` (live AI ~5¢),
+  `shot-4.mjs`, `shot-5.mjs` (+ 4× stills in `public/rec/story-lift/`).
+
+## NEXT SESSION: THE FINAL (PO 10-02: "all the needed and all the optional")
+Optional polish first — show the PO ONE still before any full render:
+1. **3D phone** (`@remotion/three` + react-three-fiber, already in package.json): procedural generic phone, metal edge,
+   glass with an HDRI reflection (Poly Haven, CC0), the recording as the screen texture; same pose/drift as today.
+   Keep lifts, taps and the end card working. Laptop is integrated graphics: ~1–3 s/frame → plan renders.
+2. **3× screens**: re-capture at `dsf: 3` (lib.mjs `newPhone({ dsf })`). Shots 2, 4, 5 cost nothing; shot 3 spends ~5¢
+   and needs the 2-REDO paste then RESTORE-YEAR after (see Seed). Shot 2 needs stage 1 state — NOT available without
+   REMOVE → 0 → 1; ask the PO before rewinding that far, or keep shot 2 at 2×.
+3. **60 fps master + motion blur** on the turn/pull-back (`@remotion/motion-blur` or the existing speed blur).
+4. **Light colour grade** so bronze and blacks match shot to shot.
+Then the needed deliverables (PLAN §6):
+5. HeroPhone 9:16 render — check every shot's layout (lifts, Legacy pieces, captions) in portrait.
+6. Web encodes: H.264 MP4 < 5 MB and WebM (VP9) for both 16:9 and 9:16; muted-autoplay-friendly; check quality.
+7. Poster JPG (the NEW PERSONAL RECORD moment) for both ratios.
+8. 15 s ad cut (shots 1, 4, 6 per PLAN — confirm with the PO), with its own score edit on bar lines.
+9. Site embed in `site/` per PLAN §3 step 6 (video autoplay muted loop playsinline, poster, 9:16 under 600 px,
+   reduced-motion → poster, "Sound on" button, "Holt is part of Forge AI" line). Deploy = `wrangler versions upload`
+   → preview URL to the PO → **go live only when the PO says "go live"**. Never publish anything without that.
+10. Update `Forge-Legacy-Master-Status.md` + memory `project_hero_film.md` when shipped.
+
+## Known app bug found while filming (not fixed — report to the PO, separate work)
+Onboarding environment 'commercial_gym' isn't a Room to Holt's chat (`isRoom` = full_gym/home/bodyweight,
+CoachChatSheet.tsx:683), so Holt assumes an EMPTY HOME GYM and builds bodyweight programs. Real users who chose
+commercial gym are affected. The film works around it ("…at the gym").
 
 ## Seed (demo athlete Jordan, production DB, PO pastes SQL)
 - Files: `supabase/apply/seed-demo-jordan-{0..4}*.sql`, `-1-REDO.sql`, `-REMOVE.sql`; notes `film/SEED-NOTES.md`.
@@ -36,20 +61,6 @@ outside OneDrive). Commit with explicit paths (`git commit -o`). Keep chat answe
   rewind block) — OR REMOVE → 0 → 1 → 2. Put each paste on the PO's clipboard (PowerShell `Get-Content -Raw -Encoding
   UTF8 … | Set-Clipboard`) and wait for their result table.
 
-## Open asks from the PO (answer "go" before building)
-1. Zoom-outs: lift ONE key element per shot off the phone, ~2× (PR card, Holt's new workout, Welcome back card,
-   the chapter cards), replacing the bronze outline. I recommended yes; PO asked "tell me simply" — confirm.
-2. Holt shot must END ON THE ACTUAL WORKOUT: re-record at Feb 10 (needs stage 2 state): message "Bench is stuck at
-   225 for three weeks. Add close-grip bench to Upper B, 4 sets of 6." → proposal → "The rest of the block" →
-   "Show me the program" → Week 6 → Upper B showing "Barbell Close-Grip Bench Press 4 × 6" + "Updated by Holt".
-   `capture/shot-3.mjs` undoes earlier Holt edits first. ~2 AI calls (~4¢); PO has OK'd spend (total so far ~45¢).
-3. Shot 5 (Legacy, current state is ready): phone on Legacy's sealed chapters; the two chapters float out
-   (real text: "Chapter I — The Return · Jan – Apr 2026 · 82 workouts"; "Chapter II — Stronger Than Before ·
-   May 1 – Aug 31 · 89 workouts · 3 honors"); the real 1,000 Pound Club medal lands; "Day 100 · Still here".
-   Update `src/story.ts` numbers (still the mock-up's 48/61). No rank-up.
-Then: shot 6 end card (headline + "Lifting, running and nutrition. One app." + badge + url), phone 9:16 render,
-<5 MB H.264 + WebM, poster, 15 s cut, site embed (`site/`, wrangler versions upload → preview → "go live" only).
-
 ## PO decisions to respect (all 10-01)
 Simplify: one idea + one action per shot, held to read. No dimming. Phone motion stays as is. Captions:
 "Most people quit their workout app within 100 days." → "Let's change that." / "One tap per set." /
@@ -57,6 +68,10 @@ Simplify: one idea + one action per shot, held to read. No dimming. Phone motion
 Real app wording only; change the film, never fake a screen. Never publish without the PO's explicit OK.
 
 ## Gotchas learned
+- Run `node capture/signin.mjs` before EVERY take. Never freeze the capture clock LATER than real time + ~1 h: the app
+  refreshes the token and burns the saved sign-in (shot 5 uses Oct 2 05:30 for this).
+- After a RESTORE the app owes Jordan RANK ASCENDED + HONOR EARNED ceremonies; shot-5.mjs dismisses them off camera.
+- Holt only builds for a full gym if told ("…at the gym"); his chips are answered inside a cut (shot-3.mjs).
 - Capture runs the rest countdown ~2× fast (fake clock) — play it slowed (`slow` in recordings.json).
 - `quietHolt()` must match Holt's bubble exactly — a prefix match closed "Close welcome back".
 - Recording outlines are gated to their own shot's caption; caption `spot`s are removed (they were mock positions).
