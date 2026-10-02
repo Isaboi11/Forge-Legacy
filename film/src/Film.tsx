@@ -6,7 +6,7 @@ import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { CAPS, DUR, E, L, P, RDUR, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone } from './Phone';
-import { AppScreen, RECS, onScreenTime, recTime } from './Screens';
+import { AppScreen, RECS, onScreenTime, recTime, screenStack } from './Screens';
 import { LEGACY_CARDS, MEDAL_LABEL, END, SCORE } from './story';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
@@ -176,8 +176,10 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     const since = amb - realAt(rec.from);
     if (since < 0) continue;
     const rt = recTime(rec, since);
+    // Only while this recording's screen is the one showing (a slowed take would otherwise outlive its shot).
+    const shown = screenStack(t).find(([id]) => id === k)?.[1] ?? 0;
     for (const sp of rec.spots) {
-      const v = rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until)));
+      const v = shown * (rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until))));
       if (v > spotV) { spotV = v; spotC = { x: sp.x, y: sp.y, w: sp.w, h: sp.h }; }
     }
   }
