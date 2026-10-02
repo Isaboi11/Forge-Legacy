@@ -1,0 +1,28 @@
+{
+  "name": "forge-hero-film",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render:desktop": "remotion render src/index.ts HeroDesktop out/hero-desktop.mp4",
+    "render:phone": "remotion render src/index.ts HeroPhone out/hero-phone.mp4",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/fiber": "^9.8.1",
+    "@remotion/cli": "^4.0.532",
+    "@remotion/google-fonts": "^4.0.532",
+    "@remotion/three": "^4.0.532",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.532",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/three": "^0.186.0",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2"
+  }
+}

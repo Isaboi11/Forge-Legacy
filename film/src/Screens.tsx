@@ -1,0 +1,122 @@
+import React from 'react';
+import { Img, staticFile } from 'remotion';
+import { SCREEN_W } from './Phone';
+import { realAt, win, P, E } from './timeline';
+import recordings from './recordings.json';
+
+// The status bar is drawn here, not captured: the web build has no safe-area inset, so recordings are taken
+// at 402 × 808 and sit below a 54 px bar, exactly where an iPhone app's content starts.
+export const STATUS_H = 54;
+export const REC_W = 402;
+export const REC_H = 808;
+
+export const StatusBar: React.FC<{ dark?: boolean }> = ({ dark }) => {
+  const c = dark ? '#1C1C1E' : '#F2EEE7';
+  return (
+    <div style={{
+      position: 'absolute', left: 0, right: 0, top: 0, height: STATUS_H, display: 'flex', alignItems: 'center',
+      justifyContent: 'space-between', padding: '6px 34px 0 44px', fontSize: 16, fontWeight: 600, color: c, zIndex: 45,
+      fontFamily: 'Inter, -apple-system, sans-serif',
+    }}>
+      <span>9:41</span>
+      <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {[5, 8, 11, 14].map((h) => <b key={h} style={{ display: 'block', width: 4, height: h, background: c, borderRadius: 1 }} />)}
+        <span style={{ width: 26, height: 12, border: `1.5px solid ${c}`, borderRadius: 4, padding: 1.5, marginLeft: 4 }}>
+          <i style={{ display: 'block', height: '100%', width: '78%', background: c, borderRadius: 1.5 }} />
+        </span>
+      </span>
+    </div>
+  );
+};
+
+/* ---------- the grey, unbranded "other app" in shot 1. Not a real product, names nobody. ---------- */
+export const OldApp: React.FC<{ t: number }> = ({ t }) => (
+  <div style={{
+    position: 'absolute', inset: 0, background: '#EDEDF0', color: '#1C1C1E', fontFamily: 'Inter, -apple-system, sans-serif',
+    filter: `grayscale(1) brightness(${1 - 0.5 * P(t, 1.0, 1.4)})`,
+  }}>
+    <StatusBar dark />
+    <div style={{ position: 'absolute', left: 24, top: 72, fontSize: 32, fontWeight: 700, letterSpacing: '-.01em' }}>Workouts</div>
+    <div style={{ position: 'absolute', left: 20, right: 20, top: 136, height: 340, borderRadius: 22, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,.08)' }}>
+      <svg style={{ position: 'absolute', left: '50%', top: 34, marginLeft: -30 }} width="60" height="74" viewBox="0 0 60 74">
+        <path d="M30 2C34 18 52 26 52 46a22 22 0 0 1-44 0c0-12 8-18 10-28 4 6 6 10 6 14 4-8 6-18 6-30z" fill="#D1D1D6" />
+        <path d="M22 30l10 12-6 6 10 14" stroke="#EDEDF0" strokeWidth="3" fill="none" />
+      </svg>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 118, textAlign: 'center', fontSize: 104, fontWeight: 800, lineHeight: 1, color: '#C7C7CC' }}>0</div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 230, textAlign: 'center', fontSize: 16, color: '#8E8E93', letterSpacing: '.04em' }}>DAY STREAK</div>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 272, textAlign: 'center', fontSize: 18, fontWeight: 600, color: '#3A3A3C' }}>You lost your 23-day streak.</div>
+    </div>
+    <div style={{ position: 'absolute', left: 20, right: 20, top: 500, height: 56, borderRadius: 14, background: '#D1D1D6', color: '#3A3A3C', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>Start over</div>
+    <div style={{ position: 'absolute', left: 0, right: 0, top: 574, textAlign: 'center', color: '#8E8E93', fontSize: 14 }}>Day 1 of a new streak</div>
+  </div>
+);
+
+/* ---------- real recordings ----------
+   recordings.json is written by the capture scripts: { shotId: { dir, frames, fps, from } } where `from` is the
+   film time at which recording frame 0 is on screen. The recording then plays in REAL time, so a reading hold
+   (which freezes the choreography) does not freeze the app — the app is dimmed during holds anyway. */
+type Rec = { dir: string; frames: number; fps: number; from: number };
+const RECS = recordings as Record<string, Rec>;
+
+const LABELS: Record<string, [string, string]> = {
+  home: ['Home · Jan 19', "Today's Workout · Lower A · Start Workout"],
+  tap: ['Logger · Back Squat', 'Sets 2–4 in three taps → NEW PERSONAL RECORD 225 × 5 → Rest'],
+  coach: ['Coach Holt · Feb 10', '"Bench has been stuck at 225 for three weeks." → reply → Do it → Updated by Holt'],
+  missed: ['Activity History · March', 'Mar 9–15 empty → Home: WELCOME BACK · Good to see you, Jordan.'],
+  story: ['Legacy · Oct', 'Chapters sealed · HONOR EARNED · RANK ASCENDED Craftsman I'],
+};
+
+export const RecordingOrPlaceholder: React.FC<{ id: string; r: number }> = ({ id, r }) => {
+  const rec = RECS[id];
+  if (rec) {
+    const f = Math.max(0, Math.min(rec.frames - 1, Math.floor((r - realAt(rec.from)) * rec.fps)));
+    return (
+      <Img
+        src={staticFile(`${rec.dir}/f${String(f).padStart(5, '0')}.jpg`)}
+        style={{ position: 'absolute', left: 0, top: STATUS_H, width: REC_W, height: REC_H }}
+      />
+    );
+  }
+  const [a, b] = LABELS[id] ?? [id, ''];
+  return (
+    <div style={{
+      position: 'absolute', left: 0, top: STATUS_H, width: SCREEN_W, height: REC_H, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 14, padding: 36, textAlign: 'center',
+      background: 'repeating-linear-gradient(135deg,#0B0E11 0 18px,#0E1216 18px 36px)', fontFamily: 'Inter, sans-serif',
+    }}>
+      <div style={{ fontSize: 12, letterSpacing: '.18em', color: '#BA8654', fontWeight: 600 }}>REAL SCREEN GOES HERE</div>
+      <div style={{ fontFamily: 'Playfair Display, Georgia, serif', fontSize: 30, color: '#F2EEE7', fontWeight: 600 }}>{a}</div>
+      <div style={{ fontSize: 16, color: '#A39C92', lineHeight: 1.4 }}>{b}</div>
+    </div>
+  );
+};
+
+/* Which app screen is showing, film time → [id, opacity]. Same windows as the mock-up's scene() calls. */
+export function screenStack(t: number): [string, number][] {
+  const s = (a: number, b: number) => win(t, a, b, 0.28, 0.28);
+  return [
+    ['home', s(1.75, 2.55)],
+    ['tap', s(2.45, 5.7)],
+    ['coach', s(5.6, 9.15)],
+    ['missed', s(9.05, 14.25)],
+    ['story', s(14.05, 21)],
+  ];
+}
+
+export const AppScreen: React.FC<{ t: number; r: number }> = ({ t, r }) => {
+  return (
+    <>
+      {t < 1.75 && <OldApp t={t} />}
+      {t >= 1.75 && (
+        <>
+          <StatusBar />
+          {screenStack(t).map(([id, v]) => v > 0 && (
+            <div key={id} style={{ position: 'absolute', inset: 0, opacity: v, transform: `translateY(${(1 - E.outC(Math.min(1, v * 1.5))) * 30}px)` }}>
+              <RecordingOrPlaceholder id={id} r={r} />
+            </div>
+          ))}
+        </>
+      )}
+    </>
+  );
+};

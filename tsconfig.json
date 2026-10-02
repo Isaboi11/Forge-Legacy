@@ -21,6 +21,7 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
-    "supabase/apply/*.ts"
+    "supabase/apply/*.ts",
+    "film"
   ]
 }

@@ -1,0 +1,7 @@
+node_modules/
+out/
+capture/frames/
+capture/.auth/
+public/rec/
+public/music/
+*.log
