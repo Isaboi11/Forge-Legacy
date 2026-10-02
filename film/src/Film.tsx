@@ -118,8 +118,8 @@ const Caption: React.FC<{ c: (typeof CAPS)[number]; x: number; portrait: boolean
     return pi % 2 ? <em key={pi} style={{ fontStyle: 'italic', color: '#D9AB78' }}>{nodes}</em> : <React.Fragment key={pi}>{nodes}</React.Fragment>;
   });
   const pos: React.CSSProperties = portrait
-    ? c.wide ? { left: 84, right: 84, bottom: 110, textAlign: 'center', fontSize: 80 } : { left: 84, right: 84, top: 250, fontSize: 96 }
-    : c.wide ? { left: 0, width: '100%', bottom: 96, textAlign: 'center', fontSize: 76 } : { left: 330, top: 380, width: 640, fontSize: 84 };
+    ? c.wide ? { left: 84, right: 84, bottom: 64, textAlign: 'center', fontSize: 80 } : { left: 84, right: 84, top: 250, fontSize: 96 }
+    : c.wide ? { left: 0, width: '100%', bottom: 52, textAlign: 'center', fontSize: 76 } : { left: 330, top: 380, width: 640, fontSize: 84 };
   return (
     <div style={{ position: 'absolute', fontFamily: display, fontWeight: 600, color: '#F4EFE6', letterSpacing: '-.015em', lineHeight: 1.04, ...pos }}>
       {pain}{words}
