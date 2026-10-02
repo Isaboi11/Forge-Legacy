@@ -8,7 +8,7 @@
 --      (active again, no end date, no reflection), and the program is un-graduated (stage 4's own rewind block).
 --   3. The program's plan is reset to the seeded one, so every earlier Holt edit (programs.structure, any week) is
 --      gone and Week 6 Upper B is the original. The program row, its id and the stage-1 sessions are kept.
--- After filming: stage 3 then stage 4 put the year back (each rewinds and replays). Holt's Feb 10 change stays.
+-- After filming: run THIS file once more (it removes the program Holt built in the take), then stage 3, then stage 4.
 --
 -- PASTE THE WHOLE FILE into the Supabase SQL editor and run it once. Safe to run twice.
 --
@@ -93,6 +93,16 @@ update public.chapters c set is_active = true, sealed_at = null, end_date = null
 update public.programs p set state = 'active', ended_at = null, updated_at = p.created_at
   from fl_demo d where d.who = 'jordan' and p.athlete_id = d.id and p.id = pg_temp.fl_id('program:return-to-strength')
    and p.state = 'graduated';
+-- REDO: Jordan's pins go too (stage 4b writes them; a pin is a soft reference that would outlive its row).
+delete from public.pins p using fl_demo d where d.who = 'jordan' and p.athlete_id = d.id;
+-- REDO: a program Holt built during a take is removed and "Return to Strength" runs again ("Start it anyway" ended it
+-- early). workouts.program_id is ON DELETE SET NULL (0018) and program_sessions cascade (0119). Run this file again
+-- after filming shot 3, before stage 3, so stage 3 finds the seeded program active.
+delete from public.programs p using fl_demo d
+ where d.who = 'jordan' and p.athlete_id = d.id and p.id <> pg_temp.fl_id('program:return-to-strength');
+update public.programs p set state = 'active', ended_at = null, updated_at = p.created_at
+  from fl_demo d where d.who = 'jordan' and p.athlete_id = d.id and p.id = pg_temp.fl_id('program:return-to-strength')
+   and p.state <> 'active';
 -- REDO: the plan back to the seeded one (drops every Holt edit). Row, id, lift maxes and sessions are kept.
 update public.programs p set structure = $json${"name":"Return to Strength","weeks":12,"daysPerWeek":4,"vary":false,"days":[{"letter":"A","name":"Lower A","warmup":[],"cooldown":[],"main":[{"id":"xfl1a1","catalogKey":"barbell-back-squat","name":"Barbell Back Squat","equip":"Barbell","muscles":["Quadriceps","Glutes","Hamstrings","Rectus Abdominis"],"type":"","sets":5,"reps":5,"percentScheme":[54,74,82,90,90]},{"id":"xfl1a2","catalogKey":"barbell-romanian-deadlift","name":"Barbell Romanian Deadlift","equip":"Barbell","muscles":["Glutes","Erector Spinae","Rectus Abdominis","Adductors"],"type":"","sets":3,"reps":8},{"id":"xfl1a3","catalogKey":"dumbbell-split-squat","name":"Dumbbell Split Squat","equip":"Dumbbell","muscles":["Quadriceps","Glutes","Hamstrings","Rectus Abdominis"],"type":"","sets":3,"reps":8,"per":"leg"}]},{"letter":"B","name":"Upper A","warmup":[],"cooldown":[],"main":[{"id":"xfl1b1","catalogKey":"barbell-bench-press","name":"Barbell Bench Press","equip":"Barbell","muscles":["Chest","Triceps","Front Deltoids"],"type":"","sets":5,"reps":5},{"id":"xfl1b2","catalogKey":"barbell-bent-over-row","name":"Barbell Bent-Over Row","equip":"Barbell","muscles":["Upper Back","Latissimus Dorsi","Biceps","Rear Deltoids"],"type":"","sets":4,"reps":8},{"id":"xfl1b3","catalogKey":"pull-up","name":"Pull-Up","equip":"Bodyweight","muscles":["Latissimus Dorsi","Biceps","Upper Back"],"type":"","sets":3,"reps":8}]},{"letter":"C","name":"Upper B","warmup":[],"cooldown":[],"main":[{"id":"xfl1c1","catalogKey":"barbell-overhead-press","name":"Barbell Overhead Press","equip":"Barbell","muscles":["Front Deltoids","Triceps","Chest"],"type":"","sets":4,"reps":5},{"id":"xfl1c2","catalogKey":"barbell-bench-press","name":"Barbell Bench Press","equip":"Barbell","muscles":["Chest","Triceps","Front Deltoids"],"type":"","sets":3,"reps":8},{"id":"xfl1c3","catalogKey":"cable-face-pull","name":"Cable Face Pull","equip":"Cable Machine","muscles":["Rear Deltoids","Latissimus Dorsi","Biceps"],"type":"","sets":3,"reps":15}]},{"letter":"D","name":"Lower B","warmup":[],"cooldown":[],"main":[{"id":"xfl1d1","catalogKey":"barbell-back-squat","name":"Barbell Back Squat","equip":"Barbell","muscles":["Quadriceps","Glutes","Hamstrings","Rectus Abdominis"],"type":"","sets":4,"reps":5},{"id":"xfl1d2","catalogKey":"barbell-deadlift","name":"Barbell Deadlift","equip":"Barbell","muscles":["Glutes","Erector Spinae","Rectus Abdominis","Adductors"],"type":"","sets":3,"reps":5},{"id":"xfl1d3","catalogKey":"lying-leg-curl-machine","name":"Lying Leg Curl Machine","equip":"Selectorized Machine","muscles":["Hamstrings"],"type":"","sets":3,"reps":10}]}],"weekPlans":null}$json$::jsonb, updated_at = p.created_at
   from fl_demo d where d.who = 'jordan' and p.athlete_id = d.id and p.id = pg_temp.fl_id('program:return-to-strength');

@@ -38,10 +38,10 @@ export const win = (t: number, a: number, b: number, fi = 0.3, fo = 0.3) =>
 // ([7.0, 7.05]) for the simplified Holt exchange (one message, the proposal, "Changed").
 // PO 10-02: Home's Welcome back held ~2 s longer ([10.95, 11.3] 0.6 → 2.4) so its lift can be seen; shot 5's line is
 // read after the pull-back ([14.9, 15.05], replacing [13.97, 14.0] and [14.9, 15.0]).
-// PO 10-02: shot 3 now ends on the actual workout (Week 6 · Upper B, "Updated by Holt", Close-Grip 4 × 6): +2.3 s.
+// PO 10-02: shot 3 is now Holt BUILDING a program (message → his words over the program → the program's screen): +3 s.
 export const HOLDS: [number, number, number][] = [
-  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.6], [5.78, 5.82, 2.0], [7.0, 7.05, 3.45], [9.35, 9.4, 2.0], [10.95, 11.3, 2.4],
-  [11.45, 13.95, -2.5], [14.9, 15.05, 3.6], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
+  [0.55, 1.3, 1.0], [2.15, 2.2, 1.0], [2.85, 2.9, 2.8], [5.3, 5.35, 0.6], [5.78, 5.82, 2.0], [7.0, 7.05, 4.1], [9.35, 9.4, 2.0], [10.95, 11.3, 2.4],
+  [11.45, 13.95, -2.5], [14.9, 15.05, 3.6], [16.5, 16.55, 2.2], [16.75, 17.2, 0.6], [18.7, 20, 1.0],
 ];
 const KN: [number, number][] = [[0, 0]];
 (() => {
@@ -130,7 +130,7 @@ export function pose(t: number, portrait: boolean): Pose {
 const DT = buildTrack([
   [0, { d: 5 }], [1.4, { d: 5 }], [2.45, { d: 19 }, 'io'], [5.35, { d: 19 }], [5.8, { d: 41 }],
   [9.1, { d: 41 }], [9.3, { d: 65 }], [9.45, { d: 65 }], [10.55, { d: 75 }, 'lin'], [14.15, { d: 75 }],
-  [14.9, { d: 100 }, 'io'], [15.0, { d: 100 }], [17.0, { d: 365 }, 'io'],
+  [14.9, { d: 100 }, 'io'], [15.0, { d: 100 }], [16.45, { d: 365 }, 'io'], // PO 10-02: the year is full while the Legacy pieces sit
 ]);
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const MD = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];

@@ -8,7 +8,7 @@ import { CAPS, DUR, E, L, P, RDUR, readOf, doyAt, doyLabel, filmAt, pose, realAt
 import { Phone } from './Phone';
 import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
 import { SCREEN_W } from './Phone';
-import { LEGACY_CARDS, MEDAL, END, SCORE } from './story';
+import { LEGACY_CARDS, MEDAL, MORE_MEDALS, ACCOMPLISHMENTS, END, SCORE } from './story';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
 loadPlayfair('italic', { weights: ['500', '600'], subsets: ['latin'] });
@@ -271,7 +271,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
   const pastQuit = doy >= 100;
   let tag = '', tagColor = '#A39C92', tagScale = 1;
   if (t > 9.45 && t < 10.55) tag = 'MISSED WEEK';
-  else if (pastQuit && t < 16.7) { tag = 'DAY 100 · STILL HERE'; tagColor = '#E3B98A'; tagScale = 1 + 0.18 * Math.exp(-Math.max(0, t - 14.9) * 5); }
+  else if (pastQuit && t < 16.0) { tag = 'DAY 100 · STILL HERE'; tagColor = '#E3B98A'; tagScale = 1 + 0.18 * Math.exp(-Math.max(0, t - 14.9) * 5); }
 
   const ep = E.outC(P(t, 17.55, 18.4));
   const endItem = (i: number) => { const p2 = E.outC(P(t, 18.0 + i * 0.25, 18.7 + i * 0.25)); return { opacity: p2, transform: `translateY(${(1 - p2) * 16}px)` }; };
@@ -329,6 +329,41 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
               <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '.18em', color: '#BA8654' }}>{MEDAL.eyebrow}</div>
               <div style={{ fontFamily: display, fontSize: 30, fontWeight: 600, color: '#F4EFE6', marginTop: 6 }}>{MEDAL.name}</div>
             </div>
+          </div>
+        </AbsoluteFill>
+        {/* PO 10-02: more of the year — four more real medals beside the chapters, then three accomplishment cards
+            rise between the chapters and the phone. Calm: each settles in from slightly larger, one after another. */}
+        <AbsoluteFill style={{ perspective: 2400 }}>
+          <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
+            {MORE_MEDALS.map((m, i) => {
+              const a = 15.5 + i * 0.13, p = E.outC(P(t, a, a + 0.45)), o = E.inQ(P(t, 17.2, 17.6));
+              const S = portrait ? 104 : 110, gx = portrait ? 150 : 170, gy = portrait ? 200 : 190;
+              const base = portrait ? { x: 330, y: 75 } : { x: 600, y: 120 };
+              const x = base.x + (i % 2 ? gx / 2 : -gx / 2), y = base.y + (i < 2 ? 0 : gy);
+              const op = P(t, a, a + 0.15) * (1 - o);
+              if (op <= 0) return null;
+              return (
+                <div key={i} style={{ position: 'absolute', transform: `translate3d(${x}px,${y}px,${L(200, 40, p)}px) scale(${L(1.2, 1, p)})`, opacity: op }}>
+                  <Img src={staticFile(m.src)} style={{ position: 'absolute', left: -S / 2, top: -S / 2, width: S, height: S, borderRadius: '50%',
+                    boxShadow: '0 0 40px rgba(201,151,103,.35), 0 20px 50px rgba(0,0,0,.6)' }} />
+                  <div style={{ position: 'absolute', left: -85, top: S / 2 + 10, width: 170, textAlign: 'center', fontSize: 17, fontWeight: 600, lineHeight: 1.2, color: '#E9E3D8' }}>{m.name}</div>
+                </div>
+              );
+            })}
+            {ACCOMPLISHMENTS.map((c, i) => {
+              const a = 15.9 + i * 0.15, p = E.outC(P(t, a, a + 0.55)), o = E.inQ(P(t, 17.2, 17.6));
+              const AW = portrait ? 150 : 160, AH = (AW * c.h) / c.w, gap = 18;
+              const x = (i - 1) * (AW + gap), y = portrait ? -95 : -385;
+              const op = P(t, a, a + 0.2) * (1 - o);
+              if (op <= 0) return null;
+              return (
+                <Img key={i} src={staticFile(c.src)} style={{
+                  position: 'absolute', left: -AW / 2, top: -AH / 2, width: AW, height: AH, borderRadius: (14 * AW) / c.w, opacity: op,
+                  boxShadow: '0 30px 70px rgba(0,0,0,.6), 0 0 0 1px rgba(186,134,84,.35)',
+                  transform: `translate3d(${x}px,${y + (1 - p) * 40}px,${L(160, 30, p)}px) scale(${L(1.15, 1, p)})`,
+                }} />
+              );
+            })}
           </div>
         </AbsoluteFill>
         {/* date counter */}
