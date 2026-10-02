@@ -178,7 +178,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     const rt = recTime(rec, since);
     // Only while this recording's screen is the one showing (a slowed take would otherwise outlive its shot).
     // …and only after this shot's problem line has been read (the phone is lit): read first, then watch.
-    const lastPain = CAPS.filter((c) => c.pain && realAt(c.a) <= amb).pop();
+    const lastPain = CAPS.filter((c) => c.pain && realAt(c.a) <= amb && realAt(c.a) >= realAt(rec.from) - 0.5).pop();
     const lit = lastPain ? E.outC(P(amb, realAt(lastPain.a) + 1.4, realAt(lastPain.a) + 1.75)) : 0;
     const shown = (screenStack(t).find(([id]) => id === k)?.[1] ?? 0) * lit;
     for (const sp of rec.spots) {

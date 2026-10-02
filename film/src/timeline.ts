@@ -149,7 +149,7 @@ export const CAPS: Cap[] = [
   { a: 1.95, b: 2.5, text: "Let's *change that.*" },
   { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*' }, // outlines come from the take
   { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *gets you unstuck.*' }, // PO 10-01
-  { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*', spot: { x: 10, y: 266, w: 382, h: 54 } },
+  { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*' },
   { a: 13.97, b: 17.4, pain: 'Numbers nobody looks at.', text: 'A year that tells *your story.*', wide: true },
 ];
 

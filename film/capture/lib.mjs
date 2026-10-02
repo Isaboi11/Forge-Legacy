@@ -58,7 +58,8 @@ export async function settle(page, ms = 3000) {
 // Close Holt's speech line on the coin if one is showing (a nudge such as "Want to start a photo record?").
 export async function quietHolt(page) {
   for (let i = 0; i < 3; i++) {
-    const x = page.getByRole('button', { name: /^(Close|Dismiss)( Holt)?/ }).first();
+    // Exact names only: a prefix match also hit "Close welcome back" and removed the card shot 4 is about.
+    const x = page.getByRole('button', { name: /^(Close|Dismiss)( Holt[^]*)?$/ }).first();
     if (!(await x.isVisible().catch(() => false))) return;
     await x.click().catch(() => {});
     await settle(page, 800);
