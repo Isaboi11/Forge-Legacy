@@ -54,17 +54,16 @@ function drawBG(g: CanvasRenderingContext2D, cw: number, ch: number, W: number, 
   lg.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = lg; g.fillRect(0, 0, W, H);
   g.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < 3; i++) {
-    const bx = W * (0.3 + 0.22 * i) + Math.sin(amb * 0.25 + i * 2) * 60;
-    const a = (0.045 + 0.02 * Math.sin(amb * 0.7 + i)) * (1 + inten * 0.4);
-    const bg2 = g.createLinearGradient(bx, 0, bx + 200, H); bg2.addColorStop(0, `rgba(243,217,174,${a})`); bg2.addColorStop(1, 'rgba(243,217,174,0)');
-    g.fillStyle = bg2; g.beginPath(); g.moveTo(bx - 40, 0); g.lineTo(bx + 60, 0); g.lineTo(bx + 420, H); g.lineTo(bx + 120, H); g.closePath(); g.fill();
-  }
-  for (const e of EMB) {
+  // PO 10-02: the diagonal light beams read as cheesy — gone. A soft overhead wash instead, no hard edges.
+  const top = g.createRadialGradient(W / 2, -H * 0.35, 0, W / 2, -H * 0.35, H * 1.25);
+  top.addColorStop(0, `rgba(243,217,174,${0.07 * lo})`); top.addColorStop(1, 'rgba(243,217,174,0)');
+  g.fillStyle = top; g.fillRect(0, 0, W, H);
+  // …and fewer, fainter embers: dust in the light, not sparks.
+  for (const e of EMB.slice(0, 28)) {
     const y = (e.y * H * 1.2 - amb * e.v * H * 1.0) % (H * 1.2); const yy = y < 0 ? y + H * 1.2 : y;
     const x = e.x * W + Math.sin(amb * 1.3 + e.ph) * e.sw;
     const tw = 0.5 + 0.5 * Math.sin(amb * 3 + e.ph * 3);
-    g.fillStyle = `rgba(232,170,100,${e.a * tw * 0.7 * (0.15 + 0.85 * warm)})`; g.beginPath(); g.arc(x, yy - H * 0.1, e.s, 0, 6.283); g.fill();
+    g.fillStyle = `rgba(232,170,100,${e.a * tw * 0.32 * (0.15 + 0.85 * warm)})`; g.beginPath(); g.arc(x, yy - H * 0.1, e.s * 0.8, 0, 6.283); g.fill();
   }
   const sparks = (t0: number, ox: number, oy: number, scale: number) => {
     const dt = t - t0; if (dt < 0 || dt > 1.4) return;
