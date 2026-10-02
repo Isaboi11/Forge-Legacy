@@ -22,15 +22,21 @@ interface Job {
   photo: string | null;
 }
 
-let activeHost: ((job: Job, resolve: Resolver) => void) | null = null;
+type Host = (job: Job, resolve: Resolver) => void;
+/**
+ * Every mounted host, newest last. A stack, not one slot: Workout Complete mounts one for its post picture
+ * and `/share-story` (pushed over it) mounts another — with a single slot, leaving `/share-story` cleared
+ * the slot and stranded Workout Complete's host.
+ */
+const hosts: Host[] = [];
 
 export function storyHostReady(): boolean {
-  return activeHost != null;
+  return hosts.length > 0;
 }
 
 /** Draw and snapshot. Null when no host is mounted, the platform declines, or six seconds pass. */
 export function rasterizeStory(drawing: StoryDrawing, photo: string | null): Promise<string | null> {
-  const host = activeHost;
+  const host = hosts[hosts.length - 1];
   if (!host) return Promise.resolve(null);
   return new Promise<string | null>((resolve) => {
     let settled = false;
@@ -53,12 +59,14 @@ export function StoryCardHost() {
   const pending = useRef<Resolver | null>(null);
 
   useEffect(() => {
-    activeHost = (next, resolve) => {
+    const host: Host = (next, resolve) => {
       pending.current = resolve;
       setJob(next);
     };
+    hosts.push(host);
     return () => {
-      activeHost = null;
+      const at = hosts.indexOf(host);
+      if (at >= 0) hosts.splice(at, 1);
       // Unmounting mid-rasterise releases the caller rather than leaving it on the timeout.
       pending.current?.(null);
       pending.current = null;

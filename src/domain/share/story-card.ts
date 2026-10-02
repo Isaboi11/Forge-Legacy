@@ -51,6 +51,28 @@ export const STORY_H = 1920;
 export const SAFE_TOP = 190;
 export const SAFE_BOTTOM = 1670;
 
+/**
+ * The FEED's frame — 4:5, because `LedgerPost`'s media band crops every post photo to 4:5 (PO 2026-10-02:
+ * "if they add a picture in that slot it gives them the option for the overlays or to have the strip
+ * underneath"). A story-sized picture posted there would lose its badge and its numbers to the crop, so
+ * the two photo styles are laid out again for this frame. No platform bars sit over a post, so its
+ * margins are the post's own.
+ */
+export const POST_W = 1080;
+export const POST_H = 1350;
+
+/** Where a photo style puts things: the frame, the band text stays inside, the title's size, the route's box. */
+interface Frame {
+  w: number;
+  h: number;
+  top: number;
+  bottom: number;
+  title: number;
+  route: number;
+}
+const STORY_FRAME: Frame = { w: STORY_W, h: STORY_H, top: SAFE_TOP, bottom: SAFE_BOTTOM, title: 124, route: 330 };
+const POST_FRAME: Frame = { w: POST_W, h: POST_H, top: 64, bottom: POST_H - 72, title: 104, route: 280 };
+
 // ── palette — the Forge dark theme, fixed: the picture is a brand artifact and does not follow the app theme ──
 
 const INK = '#F0EDE8';
@@ -479,28 +501,31 @@ const hash = (t: string) => {
 const L = 72;
 const W = STORY_W - L * 2;
 
-function photoGround(ops: StoryOp[], photo: StoryPhoto) {
-  ops.push({ kind: 'rect', x: 0, y: 0, w: STORY_W, h: STORY_H, fill: STONE });
+function photoGround(ops: StoryOp[], photo: StoryPhoto, f: Frame) {
+  ops.push({ kind: 'rect', x: 0, y: 0, w: f.w, h: f.h, fill: STONE });
   if (photo) {
-    const frame = { x: 0, y: 0, w: STORY_W, h: STORY_H };
+    const frame = { x: 0, y: 0, w: f.w, h: f.h };
     ops.push({ kind: 'photo', frame, image: coverRect(frame, photo), opacity: 1 });
   } else {
-    ops.push({ kind: 'vgrad', x: 0, y: 0, w: STORY_W, h: STORY_H, stops: [{ at: 0, color: BRONZE, opacity: 0.12 }, { at: 0.55, color: BRONZE, opacity: 0 }] });
+    ops.push({ kind: 'vgrad', x: 0, y: 0, w: f.w, h: f.h, stops: [{ at: 0, color: BRONZE, opacity: 0.12 }, { at: 0.55, color: BRONZE, opacity: 0 }] });
   }
   // Readability, not decoration: the mark at the top and the whole stat block at the bottom sit on whatever
   // the athlete photographed.
   // Darker than it first shipped: the address under the badge washed out against a lit gym ceiling.
-  ops.push({ kind: 'vgrad', x: 0, y: 0, w: STORY_W, h: 600, stops: [{ at: 0, color: BASE, opacity: 0.74 }, { at: 0.5, color: BASE, opacity: 0.4 }, { at: 1, color: BASE, opacity: 0 }] });
-  ops.push({ kind: 'vgrad', x: 0, y: 760, w: STORY_W, h: STORY_H - 760, stops: [{ at: 0, color: BASE, opacity: 0 }, { at: 0.45, color: BASE, opacity: 0.74 }, { at: 1, color: BASE, opacity: 0.94 }] });
+  // Both scrims scale with the frame: 600 and 760 of the story's 1920.
+  const topH = Math.round(f.h * 0.3125);
+  const lowY = Math.round(f.h * 0.396);
+  ops.push({ kind: 'vgrad', x: 0, y: 0, w: f.w, h: topH, stops: [{ at: 0, color: BASE, opacity: 0.74 }, { at: 0.5, color: BASE, opacity: 0.4 }, { at: 1, color: BASE, opacity: 0 }] });
+  ops.push({ kind: 'vgrad', x: 0, y: lowY, w: f.w, h: f.h - lowY, stops: [{ at: 0, color: BASE, opacity: 0 }, { at: 0.45, color: BASE, opacity: 0.74 }, { at: 1, color: BASE, opacity: 0.94 }] });
 }
 
 /** LIFT 1 — the athlete's photo, the numbers along the bottom. */
-function photoStats(i: StoryInput, photo: StoryPhoto): StoryDrawing {
+function photoStats(i: StoryInput, photo: StoryPhoto, f: Frame = STORY_FRAME): StoryDrawing {
   const ops: StoryOp[] = [];
-  photoGround(ops, photo);
-  brandLeft(ops, L, SAFE_TOP + 10);
+  photoGround(ops, photo, f);
+  brandLeft(ops, L, f.top + 10);
 
-  let y = SAFE_BOTTOM - 20;
+  let y = f.bottom - 20;
   if (i.lift.pr) {
     const w = weightOf(i.lift.pr.weightLb, i.units);
     const badgeW = Math.ceil(measureText('PR', 26, 'sans', 3)) + 36;
@@ -517,31 +542,31 @@ function photoStats(i: StoryInput, photo: StoryPhoto): StoryDrawing {
   const d = parse(i.when);
   const dateLine = [d ? shortDate(d) : null, i.chapter].filter(Boolean).join(' · ');
   if (dateLine) ops.push({ kind: 'text', x: L, y: dateY, anchor: 'start', runs: [run(ellipsize(dateLine, W, 36, 'sans'), 36, 'sans', '500', INK, { opacity: 0.8 })] });
-  titleUp(ops, i.title, L, W, dateLine ? dateY - 66 : dateY, 124, 80);
-  return { width: STORY_W, height: STORY_H, style: 'photo-stats', transparent: false, needsPhoto: !photo, ops };
+  titleUp(ops, i.title, L, W, dateLine ? dateY - 66 : dateY, f.title, 80);
+  return { width: f.w, height: f.h, style: 'photo-stats', transparent: false, needsPhoto: !photo, ops };
 }
 
 /** RUN 1 — the athlete's photo, the route over it when they chose to show it, the run along the bottom. */
-function photoRoute(i: StoryInput, photo: StoryPhoto, showRoute: boolean): StoryDrawing {
+function photoRoute(i: StoryInput, photo: StoryPhoto, showRoute: boolean, f: Frame = STORY_FRAME): StoryDrawing {
   const ops: StoryOp[] = [];
-  photoGround(ops, photo);
-  brandLeft(ops, L, SAFE_TOP + 10);
+  photoGround(ops, photo, f);
+  brandLeft(ops, L, f.top + 10);
 
-  const y = SAFE_BOTTOM - 20;
+  const y = f.bottom - 20;
   statRow(ops, runStats(i), L, W, y, { valueSize: 84, valueFace: 'sans', unitFill: INK, labelAbove: true, labelFill: INK, labelOpacity: 0.72 });
   const dateY = y - 84 - 22 - 25 - 54;
   const d = parse(i.when);
   const dateLine = d ? `${shortDate(d)} · ${clockTime(d)}` : null;
   if (dateLine) ops.push({ kind: 'text', x: L, y: dateY, anchor: 'start', runs: [run(dateLine, 36, 'sans', '500', INK, { opacity: 0.8 })] });
-  titleUp(ops, i.title, L, W, dateLine ? dateY - 66 : dateY, 124, 80);
+  titleUp(ops, i.title, L, W, dateLine ? dateY - 66 : dateY, f.title, 80);
 
   // Top right, opposite the badge — the athlete is usually in the middle of their own photo, and the
   // bottom is the numbers. Sky, trees and the far side of the street are what live up here.
   if (showRoute) {
-    const size = 330;
-    drawRoute(ops, i.run.route, { x: STORY_W - L - size + 14, y: SAFE_TOP - 6, w: size, h: size }, 18, { line: INK, width: 9, casing: 9 });
+    const size = f.route;
+    drawRoute(ops, i.run.route, { x: f.w - L - size + 14, y: f.top - 6, w: size, h: size }, 18, { line: INK, width: 9, casing: 9 });
   }
-  return { width: STORY_W, height: STORY_H, style: 'photo-route', transparent: false, needsPhoto: !photo, ops };
+  return { width: f.w, height: f.h, style: 'photo-route', transparent: false, needsPhoto: !photo, ops };
 }
 
 /** What the plaque commemorates: the session's best record, else the work itself. */
@@ -779,6 +804,14 @@ export function composeStory(style: StoryStyle, input: StoryInput, photo: StoryP
     case 'sticker':
       return sticker(input, opts.showRoute);
   }
+}
+
+/**
+ * The session's numbers ON the athlete's photo, for a post in the feed (4:5) — Photo Stats for a lifting day,
+ * Photo Route for a run. The route draws only when this post carries it (D-RS-3: ticked while composing).
+ */
+export function composePostPicture(input: StoryInput, photo: StoryPhoto, opts: { showRoute: boolean }): StoryDrawing {
+  return input.kind === 'run' ? photoRoute(input, photo, opts.showRoute, POST_FRAME) : photoStats(input, photo, POST_FRAME);
 }
 
 // ── from a finished session ───────────────────────────────────────────────────

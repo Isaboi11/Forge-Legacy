@@ -10,7 +10,9 @@ import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
 import { addSquadPost, buildWorkoutRecap, fetchWorkoutShares, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
 import { cardioMarkerLabel, foodLine, type RecapFood, type RecapLead } from '@/domain/share/recap-stats';
-import { createFriendPost, type PostAudience } from '@/data/friends-feed-live';
+import { createFriendPost, uploadFeedImageData, type PostAudience } from '@/data/friends-feed-live';
+import type { StoryDrawing } from '@/domain/share/story-card';
+import { renderStoryImage } from '@/lib/story-image';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { shareState, shareTargets, type PriorShare } from '@/domain/share/fanout';
 import { autoPostFromPost, autoPostLabel, postedFor, postedLine, postVerb, shouldOfferAutoPost } from '@/domain/share/auto-post';
@@ -128,6 +130,13 @@ export interface ShareSessionSheetProps {
    */
   preview?: ReactNode;
   /**
+   * The athlete chose their numbers ON the photo (PO 2026-10-02, Workout Complete). At post time the picture
+   * is drawn — `compose` takes this post's map tick, because a Photo Route draws the route only when the
+   * post carries it (D-RS-3) — uploaded once, and posted in place of `photoUri`. Absent: the photo posts as
+   * it always has, with the stats strip under it.
+   */
+  photoOverlay?: { photoUri: string; compose: (showRoute: boolean) => StoryDrawing } | null;
+  /**
    * Every post this session now has, after a share lands — the caller's chance to say "Shared" on its
    * own screen. PO: *"I just need something that says that I actually shared it or else people will
    * double post."*
@@ -141,7 +150,7 @@ export interface ShareSessionSheetProps {
   food?: RecapFood | null;
 }
 
-export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview, onShared, food = null }: ShareSessionSheetProps) {
+export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summary, note, media = [], preview, onShared, food = null, photoOverlay = null }: ShareSessionSheetProps) {
   const { showToast } = useToast();
   const [mySquads, setMySquads] = useState<SquadSummary[] | null>(null);
   const [squadStep, setSquadStep] = useState<PostAudience | null>(null);
@@ -292,7 +301,29 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       },
       media,
     };
+    const withRoute = canShareRoute && shareRoute;
     const run = async () => {
+      /*
+       * The overlay picture, drawn and uploaded ONCE before any row is written, so every squad and the
+       * friends row carry the same image. It could not be built (no host, an unreadable photo, an upload
+       * that failed): the post goes out the old way — the photo with its strip — and says so, rather than
+       * posting nothing or a picture missing its photo.
+       */
+      let sent = recap;
+      let pictureFailed = false;
+      if (photoOverlay && media.some((m) => m.url === photoOverlay.photoUri)) {
+        const pic = await renderStoryImage(photoOverlay.compose(withRoute), photoOverlay.photoUri).catch(() => null);
+        const url = pic ? await uploadFeedImageData(pic.base64, pic.mime).catch(() => null) : null;
+        if (url) {
+          sent = {
+            ...recap,
+            media: [{ url, kind: 'image' as const }, ...media.filter((m) => m.url !== photoOverlay.photoUri)],
+            workoutSummary: { ...recap.workoutSummary, photoLook: 'overlay' as const },
+          };
+        } else {
+          pictureFailed = true;
+        }
+      }
       const landed: string[] = [];
       let firstSquadPost: string | null = null;
       /* What actually got inserted — recorded per target, so a failure halfway still marks the posts that
@@ -307,8 +338,8 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
         for (const t of targets) {
           const id =
             t.audience === 'SQUAD' && t.squadId
-              ? await addSquadPost({ squadId: t.squadId, ...recap })
-              : await createFriendPost({ ...recap, audience: t.audience, squadId: t.squadId });
+              ? await addSquadPost({ squadId: t.squadId, ...sent })
+              : await createFriendPost({ ...sent, audience: t.audience, squadId: t.squadId });
           if (t.squadId && !firstSquadPost) firstSquadPost = id;
           done.push({ audience: t.audience, squadId: t.squadId });
           const name = squads.find((s) => s.id === t.squadId)?.name;
@@ -325,6 +356,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
       }
       record();
       setSharing(false);
+      if (pictureFailed) showToast('Couldn’t build the picture, so your stats went under the photo.');
       setSquadStep(null);
       setPicked(new Set());
       setChoice(null);

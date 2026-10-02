@@ -378,6 +378,12 @@ export interface WorkoutSummary {
    */
   auto?: boolean;
   /**
+   * The athlete chose the session's numbers ON their photo (PO 2026-10-02): the post's first image is the
+   * app-drawn overlay picture, so the card shows no stats strip under it — the numbers would show twice.
+   * Optional; absent on every other post, which keeps its strip.
+   */
+  photoLook?: 'overlay' | null;
+  /**
    * The day's food totals — ONLY when the athlete ticked "Post what I ate" on this post (PO 2026-09-28:
    * food was reading as posted with the workout, and it must be their choice). Never set by auto-post,
    * never remembered between posts. Absent = no food line.

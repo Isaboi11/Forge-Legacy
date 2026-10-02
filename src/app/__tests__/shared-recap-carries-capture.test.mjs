@@ -52,7 +52,8 @@ test('the recap snapshot carries a playlist at all', () => {
 // ── the wiring: the screen has to hand over the LIVE values ─────────────────
 
 test('Workout Complete snapshots the live playlist, not the fetched one', () => {
-  const call = COMPLETE.match(/summary=\{recapSummaryFrom\(([^)]*)\)\}/);
+  // Inline, or hoisted to `postSummary` so the post's photo choice previews the same strip (PO 10-02).
+  const call = COMPLETE.match(/summary=\{recapSummaryFrom\(([^)]*)\)\}/) ?? (/summary=\{postSummary\}/.test(COMPLETE) ? COMPLETE.match(/const postSummary = recapSummaryFrom\(([^)]*)\)/) : null);
   assert.ok(call, 'the share sheet is no longer given a summary built by recapSummaryFrom');
   assert.match(
     call[1],

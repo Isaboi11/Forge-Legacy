@@ -26,7 +26,8 @@ export async function fetchShareStory(workoutId: string, units: UnitSystem): Pro
   return { completion, ...extra };
 }
 
-async function fetchRouteBits(workoutId: string): Promise<Omit<ShareStoryData, 'completion'>> {
+/** The route, climb and start time alone — for a caller that already holds the completion (Workout Complete). */
+export async function fetchRouteBits(workoutId: string): Promise<Omit<ShareStoryData, 'completion'>> {
   try {
     const { data, error } = await supabase
       .from('workouts')

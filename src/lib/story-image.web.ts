@@ -1,7 +1,7 @@
 import { ANVIL_PATH, ON_BRONZE, STORY_BRONZE, type StoryDrawing, type StoryOp } from '@/domain/share/story-card';
-import type { StoryExportResult, StoryExportSpec } from './story-image';
+import type { RenderedStory, StoryExportResult, StoryExportSpec } from './story-image';
 
-export type { StoryExportResult, StoryExportSpec } from './story-image';
+export type { RenderedStory, StoryExportResult, StoryExportSpec } from './story-image';
 
 /**
  * Export the share picture — the browser path. Paints the SAME draw list the phone snapshots
@@ -151,7 +151,7 @@ function paint(ctx: Ctx, op: StoryOp, img: HTMLImageElement | null) {
   }
 }
 
-/** Paint a drawing onto a fresh canvas. Exported for the screen's tests and nothing else. */
+/** Paint a drawing onto a fresh canvas — `exportStory`, `renderStoryImage`, and the screen's tests. */
 export function paintStory(drawing: StoryDrawing, img: HTMLImageElement | null): HTMLCanvasElement | null {
   const canvas = document.createElement('canvas');
   canvas.width = drawing.width;
@@ -160,6 +160,36 @@ export function paintStory(drawing: StoryDrawing, img: HTMLImageElement | null):
   if (!ctx) return null;
   for (const op of drawing.ops) paint(ctx, op, img);
   return canvas;
+}
+
+/** The browser's `renderStoryImage` — painted, then read back as a JPEG (a photo compresses ~10× smaller than PNG). */
+export async function renderStoryImage(drawing: StoryDrawing, photoUri: string | null): Promise<RenderedStory | null> {
+  if (typeof document === 'undefined' || drawing.needsPhoto) return null;
+  let img: HTMLImageElement | null = null;
+  if (drawing.ops.some((o) => o.kind === 'photo')) {
+    if (!photoUri) return null;
+    try {
+      img = await loadImage(photoUri);
+    } catch {
+      return null;
+    }
+  }
+  try {
+    const fonts = (document as Document & { fonts?: { ready: Promise<unknown>; load: (f: string) => Promise<unknown> } }).fonts;
+    await fonts?.load(`600 100px ${SERIF}`);
+    await fonts?.ready;
+  } catch {
+    /* no Font Loading API — still draws, with fallbacks */
+  }
+  const canvas = paintStory(drawing, img);
+  if (!canvas) return null;
+  try {
+    const url = canvas.toDataURL('image/jpeg', 0.9);
+    const base64 = url.slice(url.indexOf(',') + 1);
+    return base64 ? { base64, mime: 'image/jpeg' } : null;
+  } catch {
+    return null; // tainted by a photo served without CORS headers
+  }
 }
 
 export async function exportStory(spec: StoryExportSpec): Promise<StoryExportResult> {

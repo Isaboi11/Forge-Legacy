@@ -371,6 +371,25 @@ export async function uploadFeedMedia(uri: string, kind: 'image' | 'video'): Pro
 }
 
 /**
+ * Upload a picture the APP drew — the post's stats-on-the-photo overlay (PO 2026-10-02) — as base64, so the
+ * phone needs no temporary file and the browser no blob URL. Same bucket and folder as `uploadFeedMedia`:
+ * the picture is the post's photo, uploaded once and referenced by every squad and friends row it goes to.
+ */
+export async function uploadFeedImageData(base64: string, mime: 'image/png' | 'image/jpeg'): Promise<string> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const bin = atob(base64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+  const path = `friends/${user.id}-${Date.now()}-${Math.round(performance.now())}.${mime === 'image/png' ? 'png' : 'jpg'}`;
+  const { error } = await supabase.storage.from('squad-media').upload(path, bytes, { contentType: mime, upsert: true });
+  if (error) throw error;
+  return supabase.storage.from('squad-media').getPublicUrl(path).data.publicUrl;
+}
+
+/**
  * Delete a post I wrote. `squad_posts_delete` (0041, re-stated in 0074) admits the author, whatever the
  * audience — this had no caller until the feed gained its manage menu (social2-15, QA 09-26).
  *
