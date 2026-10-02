@@ -40,7 +40,14 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
 - Scripts: `node capture/stills.mjs <comp> out/x 2.0 9.3` (stills at real seconds, one bundle),
   `node capture/render.mjs HeroDesktop HeroPhone Ad15Desktop Ad15Phone` (masters), `bash capture/deliver.sh` (grade,
   social masters in `out/final/`, web loops + posters in `site/assets/film/`).
-- **Site**: film section under the hero in `site/index.html` + the "Hero film" block in `site/assets/site.js`.
+- **PO round 2 (10-02):** (a) the film REPLACES the hero's animated reel (`data-anim="heroDay"`) — 9:16 everywhere,
+  sized to the viewport beside the headline; the 16:9 web loop is no longer on the page (social 16:9 stays in
+  `out/final/`). (b) Music "loses momentum" at the missed week — it cut to the BREAKDOWN (no kick). Now drop 1 runs on
+  through the missed week's line, the build's last 5 beats + the pickup start at Welcome back (24.52), and the second
+  drop lands ON the pull-back (27.40 — it had drifted ~1 s early when the Welcome back hold grew); final hit 37.00.
+  Ad: same build + pickup into the final hit. Track map in `capture/score-moments.py`. New music was muxed into the
+  masters (video unchanged, `-c:v copy`), then `deliver.sh` again.
+- **Site**: the film in the hero column of `site/index.html` + the "Hero film" block in `site/assets/site.js`.
   Preview: version `10509313` → https://10509313-forgelegacy.isaiahaltamirano.workers.dev (production stays
   `64183374` until the PO says "go live"; then `wrangler versions deploy 10509313-2e14-465b-a55e-753923e06555@100%`,
   rollback = `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`). ⚠ The assets layer ignores byte ranges (200 to a Range

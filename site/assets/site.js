@@ -251,17 +251,16 @@
   });
 
   /* ── Hero film ───────────────────────────────────────────────────────────────
-     Attached after the page has loaded, so it never competes with first paint. One shape per visit (16:9 above
-     600 px, 9:16 below), WebM first and MP4 for Safari. Muted autoplay, plays only while on screen. "Sound on"
-     restarts it from the top with sound, since the score is cut to the picture. Reduced motion: the poster stays and
-     a Play button starts it with sound and controls. */
+     The hero's own visual (9:16), attached after the page has loaded so it never competes with first paint. WebM
+     first, MP4 for Safari. Muted autoplay, plays only while on screen. "Sound on" restarts it from the top with sound,
+     since the score is cut to the picture. Reduced motion: the poster stays and a Play button starts it with sound
+     and controls. */
   function film() {
     const box = $('[data-film]');
     if (!box) return;
     const v = $('video', box), snd = $('[data-film-sound]', box), play = $('[data-film-play]', box);
-    const tall = matchMedia('(max-width:600px)').matches;
-    const base = 'assets/film/hero-' + (tall ? '9x16' : '16x9');
-    v.poster = base.replace('hero-', 'poster-') + '.jpg';
+    const base = 'assets/film/hero-9x16';
+    v.poster = 'assets/film/poster-9x16.jpg';
     [['webm', 'video/webm; codecs="vp9,opus"'], ['mp4', 'video/mp4']].forEach(([ext, type]) => {
       const s = document.createElement('source'); s.src = base + '.' + ext; s.type = type; v.appendChild(s);
     });

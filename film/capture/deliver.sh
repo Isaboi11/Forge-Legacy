@@ -4,7 +4,8 @@
 # One light grade for everything: warmer shadows so the app's slightly teal blacks sit in the same warm black as the
 # background, a touch deeper blacks, a hair more saturation for the bronze.
 #   out/final/   graded 60 fps masters with full sound (film 16:9 + 9:16, ad 16:9 + 9:16) — for social and archive
-#   ../site/assets/film/   web loops: 30 fps, H.264 MP4 + VP9 WebM per shape, each under 5 MB, and the posters
+#   ../site/assets/film/   the homepage hero's loop (9:16 — PO 10-02, it lives in the hero column): 30 fps,
+#                          H.264 MP4 + VP9 WebM, each under 5 MB, and its poster
 set -euo pipefail
 G="colorbalance=rs=0.015:gs=0.003:bs=-0.025:rm=0.005:bm=-0.005,curves=master='0/0 0.05/0.038 0.5/0.505 0.9/0.92 1/1',eq=saturation=1.04"
 WEB=../site/assets/film
@@ -37,5 +38,6 @@ web() { # master, shape, width, height, video kbps
   ff -ss $POSTER_AT -i "$src" -frames:v 1 -vf "$G,scale=$w:$h:flags=lanczos" -q:v 4 "$WEB/poster-$shape.jpg"
   ls -la "$WEB"/hero-$shape.* "$WEB"/poster-$shape.jpg
 }
-web out/master-HeroDesktop.mp4 16x9 ${W16:-1920} ${H16:-1080} ${KB16:-800}
-web out/master-HeroPhone.mp4 9x16 720 1280 ${KB9:-760}
+web out/master-HeroPhone.mp4 9x16 720 1280 ${KB9:-820}
+# (a 16:9 web loop: web out/master-HeroDesktop.mp4 16x9 1920 1080 800 — 4.6 MB; not on the page since the film moved
+#  into the hero)

@@ -2,15 +2,20 @@
 # by the PO 10-02). The WAV lives in public/music/ (git-ignored) — never commit it.
 #   python capture/score-moments.py          → the film's score
 #   python capture/score-moments.py ad15     → the 15 s ad's score (shots 1, 4, 6 — src/timeline.ts AD15)
-# 125 BPM exactly (beat 0.48 s, bar 1.92 s), kick grid phase 0.46 s, measured on the file. Four pieces, each spliced on a
-# bar line with a short equal-power crossfade, placed on the film's real-time beats (src/timeline.ts realAt):
+# 125 BPM exactly (beat 0.48 s, bar 1.92 s), kick grid phase 0.46 s, measured on the file. Each piece is spliced on a
+# beat with a short equal-power crossfade, placed on the film's real-time beats (src/timeline.ts realAt):
 #   1 · the intro's tail fading to the break's silence under the grey app → the DROP (beat 64, 31.18 s) on the turn
-#       (film 1.4 → real 3.40 s), full energy through one tap and Holt
-#   2 · the BREAKDOWN (beat 124, 59.98 s) for the missed week, from the bar nearest Activity History (real 20.68 s)
-#   3 · the SECOND DROP (beat 192, 92.62 s) on the Legacy pull-back (real 26.44 s)
-#   4 · the track's FINAL HIT and outro (beat 284, 136.78 s) as the end card arrives (real 37.96 s), faded out at the end
+#       (film 1.4 → real 3.40 s), full energy through one tap, Holt AND the missed week's line — the momentum holds
+#   2 · as Home's Welcome back arrives (real 24.52 s, realAt(10.95) = 24.40): the last five beats of the track's BUILD
+#       (beats 179-183, the hats climbing; its thinning bar and pre-drop silence left out), then the one-beat PICKUP
+#       (beat 191) straight into
+#   3 · the SECOND DROP (beat 192, 92.62 s) on the Legacy pull-back (real 27.40 s; the move starts at realAt(14.0) = 27.35)
+#   4 · the track's FINAL HIT and outro (beat 284, 136.78 s) as the end card arrives (real 37.00 s: shot 5's pieces start
+#       leaving at 36.95, the end card at 37.30), faded out at the end
+# PO 10-02 on the earlier cut: the missed week "kind of loses momentum" — it cut to the BREAKDOWN (beat 124) for three
+# bars, where the kick stops; and the Welcome back hold (+2.4 s) had left the second drop ~1 s ahead of the pull-back.
 # Then loudness: -14 LUFS integrated, -1 dBTP (ffmpeg loudnorm, two passes) → public/music/score-moments.wav.
-# If the film's timing changes, re-derive the film times below from realAt() and keep every piece a whole number of bars.
+# If the film's timing changes, re-derive the film times below from realAt().
 import json, subprocess, sys
 import numpy as np
 from scipy.io import wavfile
@@ -23,25 +28,31 @@ TURN = 3.40          # realAt(1.4)
 FILM = 40.75         # RDUR
 
 # Downbeats = the kicks themselves, measured at 10 ms on the file (kick grid phase 0.46 s; an onset-envelope fit
-# was 0.29 s early and the drop landed half a beat late): beat 64, 124, 192, 284.
+# was 0.29 s early and the drop landed half a beat late). Track map (per-bar RMS, low band = kick): intro bars 0-14,
+# silence 15, DROP 1 bars 16-30, BREAKDOWN 31-38 (no kick), silence 39, BUILD 40-46 (kick, rising), silence 47 with a
+# pickup on its beat 4, DROP 2 bars 48-70, OUTRO 71+.
 PHASE, BEAT = 0.46, 0.48
-D1, BD, D2, HIT = (PHASE + k * BEAT for k in (64, 124, 192, 284))   # 31.18, 59.98, 92.62, 136.78
-f1 = TURN + 9 * BAR          # 20.68 — Activity History (realAt(9.05) = 20.50)
-f2 = f1 + 3 * BAR            # 26.44 — the pull-back (realAt(14.0) = 26.35)
-f3 = f2 + 6 * BAR            # 37.96 — the end card (realAt(17.55) = 37.30, badge 38.25)
+at = lambda k: PHASE + k * BEAT
+D1, D2, HIT = at(64), at(192), at(284)                # 31.18, 92.62, 136.78
+BUILD_END, PICKUP = at(184), at(191)                  # 88.78 (bar 46 starts thinning), 92.14
+f1 = TURN + 11 * BAR         # 24.52 — Welcome back (realAt(10.95) = 24.40)
+f2 = f1 + 6 * BEAT           # 27.40 — the pull-back (realAt(14.0) = 27.35)
+f3 = f2 + 5 * BAR            # 37.00 — shot 5 leaves, the end card arrives (realAt(17.2) = 36.95, realAt(17.55) = 37.30)
+def build_into(fa, fb):      # the build, ending on the pickup at fb: [build … BUILD_END] + [PICKUP, one beat]
+    return [(BUILD_END - (fb - BEAT - fa), fa, fb - BEAT), (PICKUP, fb - BEAT, fb)]
 pieces = [                   # (track start, film start, film end)
     (D1 - TURN, 0.0, f1),
-    (BD, f1, f2),
-    (D2, f2, f3),
+    *build_into(f1, f2)[:1],
+    (PICKUP, f2 - BEAT, f3),  # the pickup runs on into the second drop: one continuous stretch of the track
     (HIT, f3, FILM),
 ]
 if sys.argv[1:] == ['ad15']:
-    # The ad: the same opening and drop on the turn, one bar of it → the BREAKDOWN for the missed week (3 bars) → the
-    # FINAL HIT on the end card. Every picture cut is one of these bar lines (AD15 in src/timeline.ts must match).
+    # The ad: the same opening, the drop on the turn running on through the cut to the missed week, then the build's
+    # last five beats and the pickup → the FINAL HIT on the end card (11.08, its picture cut; AD15 in src/timeline.ts).
     RAW, OUT, FILM = 'public/music/score-ad15-raw.wav', 'public/music/score-ad15.wav', 15.0
-    a1 = TURN + BAR          # 5.32
-    a2 = a1 + 3 * BAR        # 11.08
-    pieces = [(D1 - TURN, 0.0, a1), (BD, a1, a2), (HIT, a2, FILM)]
+    a2 = TURN + 4 * BAR      # 11.08
+    a1 = a2 - 6 * BEAT       # 8.20
+    pieces = [(D1 - TURN, 0.0, a1), *build_into(a1, a2), (HIT, a2, FILM)]
 
 sr, x = wavfile.read(SRC)
 x = x.astype(np.float64)
