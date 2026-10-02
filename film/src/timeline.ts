@@ -138,7 +138,7 @@ export type Spot = { x: number; y: number; w: number; h: number };
 export type Cap = { a: number; b: number; text: string; pain?: string; spot?: Spot; wide?: boolean };
 export const CAPS: Cap[] = [
   { a: 0.25, b: 2.4, text: 'Most people quit their workout app *by spring.*' },
-  { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*', spot: { x: 12, y: 192, w: 378, h: 256 } },
+  { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*', spot: { x: 22, y: 370, w: 358, h: 252 } },
   { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *fixes the plan.*', spot: { x: 12, y: 160, w: 378, h: 240 } },
   { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*', spot: { x: 10, y: 266, w: 382, h: 54 } },
   { a: 13.97, b: 17.4, pain: 'Numbers nobody looks at.', text: 'A year that tells *your story.*', wide: true },
