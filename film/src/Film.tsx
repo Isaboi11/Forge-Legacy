@@ -18,6 +18,16 @@ loadInter('normal', { weights: ['400', '500', '600', '700'], subsets: ['latin'] 
 
 export type FilmProps = { portrait: boolean; cut?: 'full' | 'ad15' };
 
+// PO 10-02: "slight motion with the phones… slowly spinning, really slow and barely noticeable". A slow turn of a few
+// degrees and back (~14 s), a faint tilt and float, on REAL time — so the phone keeps breathing while a line is held.
+// (A generic phone: Apple's no-spinning rule is about iPhone images.)
+const drift = (p: Pose, r: number): Pose => ({
+  ...p,
+  ry: p.ry + 3.5 * Math.sin((2 * Math.PI * r) / 14),
+  rx: p.rx + 1.0 * Math.sin((2 * Math.PI * r) / 9 + 1),
+  y: p.y + 4 * Math.sin((2 * Math.PI * r) / 11 + 2),
+});
+
 /* ---------- background: light pool, beams, embers, sparks (verbatim from the mock-up) ---------- */
 const r1 = rng(7);
 const EMB = Array.from({ length: 80 }, () => ({ x: r1(), y: r1(), v: 0.02 + r1() * 0.07, s: 0.6 + r1() * 2.2, ph: r1() * 6.28, a: 0.25 + r1() * 0.6, sw: 10 + r1() * 40 }));
@@ -145,7 +155,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
   const r = Math.min(RDUR, frame / fps);
   const t = filmAt(r);
   const amb = r;
-  const ph = pose(t, portrait);
+  const ph = drift(pose(t, portrait), r);
   const realTaps = useMemo(tapsReal, []);
 
   // shake on the turn and the medal
@@ -153,7 +163,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
   if (t > 1.4 && t < 2.0) { const a = 16 * Math.exp(-(t - 1.4) * 8); shx = Math.sin(t * 95) * a; shy = Math.cos(t * 80) * a * 0.7; }
 
   // motion blur from speed
-  const q = pose(Math.min(DUR, t + 1 / 60), portrait);
+  const q = drift(pose(filmAt(Math.min(RDUR, r + 1 / 60)), portrait), r + 1 / 60);
   const sp = Math.abs(q.ry - ph.ry) + Math.abs(q.rx - ph.rx) + Math.abs(q.y - ph.y) / 12 + Math.abs(q.x - ph.x) / 12 + Math.abs(q.s - ph.s) * 60;
   const blur = Math.min(6, sp * 0.55);
 
