@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, Img, staticFile } from 'remotion';
+import { AbsoluteFill, Audio, useCurrentFrame, useVideoConfig, Img, staticFile } from 'remotion';
 import { loadFont as loadPlayfair } from '@remotion/google-fonts/PlayfairDisplay';
 import { loadFont as loadHanken } from '@remotion/google-fonts/HankenGrotesk';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
@@ -7,7 +7,7 @@ import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { CAPS, DUR, E, L, P, RDUR, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone } from './Phone';
 import { AppScreen } from './Screens';
-import { LEGACY_CARDS, MEDAL_LABEL, END } from './story';
+import { LEGACY_CARDS, MEDAL_LABEL, END, SCORE } from './story';
 import recordings from './recordings.json';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
@@ -226,6 +226,7 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
 
   return (
     <AbsoluteFill style={{ background: '#030405', overflow: 'hidden', fontFamily: sans }}>
+      {SCORE && <Audio src={staticFile(SCORE)} />}
       <Background W={W} H={H} t={t} ph={ph} amb={amb} portrait={portrait} />
       <AbsoluteFill style={{ transform: `translate(${shx}px,${shy}px)` }}>
         {/* Legacy cards */}

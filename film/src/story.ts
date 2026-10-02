@@ -19,3 +19,7 @@ export const END = {
   sub: 'Your record is yours. We never charge for your history.',
   url: 'forgelegacy.app',
 };
+
+// The soundtrack. Until the licensed track arrives: the mock-up's own score, rendered by capture/mock-score.mjs
+// (git-ignored, regenerate with `node capture/mock-score.mjs`). Placeholder only, never ships.
+export const SCORE: string | null = 'music/mock-score.wav';
