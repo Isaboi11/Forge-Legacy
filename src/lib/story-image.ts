@@ -26,6 +26,12 @@ export interface StoryExportSpec {
 
 export type StoryExportResult = { ok: true; via: 'sheet' | 'clipboard' | 'download' } | { ok: false; reason: string };
 
+/** A finished picture as data, for a caller that uploads it rather than handing it to the share sheet. */
+export interface RenderedStory {
+  base64: string;
+  mime: 'image/png' | 'image/jpeg';
+}
+
 async function toDataUri(uri: string): Promise<string> {
   if (uri.startsWith('data:')) return uri;
   if (/^(file|content|ph|assets-library):/i.test(uri)) {
@@ -42,6 +48,26 @@ async function toDataUri(uri: string): Promise<string> {
     reader.onload = () => resolve(String(reader.result));
     reader.readAsDataURL(blob);
   });
+}
+
+/**
+ * The picture as image data — the feed post's overlay (PO 2026-10-02). Same path as `exportStory` up to the
+ * snapshot, then returned instead of handed off. Null whenever it could not be built WITH its photo: a
+ * caller must never post a photo picture that went out without the photo.
+ */
+export async function renderStoryImage(drawing: StoryDrawing, photoUri: string | null): Promise<RenderedStory | null> {
+  if (drawing.needsPhoto || !storyHostReady()) return null;
+  let photo: string | null = null;
+  if (drawing.ops.some((o) => o.kind === 'photo')) {
+    if (!photoUri) return null;
+    try {
+      photo = await toDataUri(photoUri);
+    } catch {
+      return null;
+    }
+  }
+  const base64 = await rasterizeStory(drawing, photo);
+  return base64 ? { base64, mime: 'image/png' } : null;
 }
 
 export async function exportStory(spec: StoryExportSpec): Promise<StoryExportResult> {

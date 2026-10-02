@@ -206,6 +206,9 @@ export interface LedgerPostProps {
  * judged and found wanting when the honest statement is that this one was not about records.
  */
 export function workoutStats(summary: WorkoutSummary, units: UnitSystem, rowUnit?: RowUnit): LedgerStat[] {
+  /* The numbers are IN the picture (`photoLook`, PO 2026-10-02) — with no strip, the picture is the post's
+     subject and the card reads like any photo post. */
+  if (summary.photoLook === 'overlay') return [];
   if (summary.lead === 'cardio' && summary.cardio) {
     return cardioStats(summary.cardio, summary.durationSec, units, rowUnit);
   }

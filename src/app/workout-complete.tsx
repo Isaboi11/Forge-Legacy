@@ -1,7 +1,7 @@
 import { WELCOME_BACK_COPY } from '@/domain/home/welcome-back';
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
+import { ActivityIndicator, Animated, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type ViewStyle } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { NotFoundBody, guardRoute, hasId } from '@/components/forge/NotFound';
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
@@ -36,6 +36,11 @@ import { recapSummaryFrom, fetchWorkoutShares } from '@/data/squad-feed-live';
 import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live';
 import { fetchRecentPlaylists } from '@/data/playlists-live';
 import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
+import { PhotoLookChoice, type PhotoLook } from '@/components/forge/PhotoLookChoice';
+import { workoutStats } from '@/components/forge/compositions/LedgerPost';
+import { composePostPicture, storyInputFrom } from '@/domain/share/story-card';
+import { postPictureBits } from '@/lib/post-picture';
+import { StoryCardHost } from '@/lib/story-card-host';
 import { AutoPostRow } from '@/components/forge/AutoPostSheet';
 import { fetchWorkoutPostId, runAutoPost, type AutoPostResult } from '@/data/auto-post-live';
 import { clearAutoPostPending, markAutoPostPending } from '@/lib/auto-post-pending';
@@ -133,7 +138,7 @@ function WorkoutComplete() {
   const router = useRouter();
   const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
-  const { units, fmt } = useUnits();
+  const { units, fmt, rowUnit } = useUnits();
   const { data, loading, error } = useQuery(() => fetchCompletion(String(id), units), [id, units]);
 
   /*
@@ -372,6 +377,18 @@ function WorkoutComplete() {
      was creating the post after the workout and it's not showing the comment."* It is the post's body
      when no reflection was sealed; a sealed reflection still wins, being the more deliberate of the two. */
   const mediaCaption = addedPhotos.map((p) => p.caption?.trim() ?? '').find(Boolean) ?? '';
+  /*
+   * ══ STATS ON THE PHOTO, OR UNDER IT ══ (PO 2026-10-02) — offered once a photo was added here. The first
+   * PHOTO (not a clip) is the one the numbers go on; any others post beside it as they always have. The
+   * strip stays the default: a post looks the way it always has until the athlete picks the other.
+   */
+  const firstPhoto = addedPhotos.find((p) => !p.isVideo) ?? null;
+  const [photoLook, setPhotoLook] = useState<PhotoLook>('strip');
+  const { data: pictureBits } = useQuery(
+    () => (firstPhoto ? postPictureBits(String(id), firstPhoto.url).catch(() => null) : Promise.resolve(null)),
+    [id, firstPhoto?.url],
+  );
+  const { width: windowW } = useWindowDimensions();
   useFocusEffect(
     useCallback(() => {
       let alive = true;
@@ -871,6 +888,11 @@ function WorkoutComplete() {
   /* ⚠ THE SAME SHEET ACTIVITY DETAIL USES. It lived inline on this screen, which is why the only way to
      share a session was to have just finished one. The audience rules, the squad-count edge cases and the
      `(audience = 'FRIENDS') = (squad_id is null)` constraint have one home. */
+  /* The post's summary and its picture, from the session as it stands on this screen (renamed, playlist). */
+  const postSummary = recapSummaryFrom({ ...data, workoutName: sessionName, playlist });
+  const postPicture = pictureBits
+    ? (showRoute: boolean) => composePostPicture(storyInputFrom({ ...data, workoutName: shownName }, pictureBits.extras, units), pictureBits.size, { showRoute })
+    : null;
   const shareSheet = (
     <ShareSessionSheet
       open={sheet === 'share'}
@@ -894,7 +916,7 @@ function WorkoutComplete() {
        * already on the row by the time this screen loaded. Moving the attach point into `capture` moved
        * it to after the read.
        */
-      summary={recapSummaryFrom({ ...data, workoutName: sessionName, playlist })}
+      summary={postSummary}
       /*
        * The three things `capture` invites, all of which used to stop at this screen. A recap posted a
        * snapshot and nothing else — `body: ''` and `media: []` were hardcoded in the sheet — so the note
@@ -909,6 +931,7 @@ function WorkoutComplete() {
       /* Today's food, OFFERED as a tick box on the sheet — never posted unless ticked. Same gate as the
          "Log what you ate" row: no Nutrition access or a reviewed session, no offer. */
       food={showFoodRow && today ? totals(today.entries) : null}
+      photoOverlay={photoLook === 'overlay' && firstPhoto && postPicture ? { photoUri: firstPhoto.url, compose: postPicture } : null}
     />
   );
 
@@ -1167,6 +1190,17 @@ function WorkoutComplete() {
               ) : null}
             </View>
 
+            {firstPhoto ? (
+              <PhotoLookChoice
+                value={photoLook}
+                onChange={setPhotoLook}
+                overlay={postPicture ? postPicture(false) : null}
+                photoUrl={firstPhoto.url}
+                stats={workoutStats(postSummary, units, rowUnit)}
+                width={Math.min(322, windowW - 48)}
+              />
+            ) : null}
+
             {/*
               ══ POST TO FORGE — the only filled button on this screen ══
 
@@ -1279,6 +1313,8 @@ function WorkoutComplete() {
         {noteSheet}
         {playlistSheet}
         {shareSheet}
+        {/* The phone draws the stats-on-the-photo picture here when the post is sent (`renderStoryImage`). */}
+        <StoryCardHost />
       </Shell>
     );
   }
