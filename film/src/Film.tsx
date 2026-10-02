@@ -6,7 +6,7 @@ import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
 import { CAPS, DUR, E, L, P, RDUR, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone } from './Phone';
-import { AppScreen, RECS, onScreenTime } from './Screens';
+import { AppScreen, RECS, onScreenTime, recTime } from './Screens';
 import { LEGACY_CARDS, MEDAL_LABEL, END, SCORE } from './story';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
@@ -130,7 +130,10 @@ type Tap = { t: number; x: number; y: number };
 const MOCK_TAPS: Tap[] = [{ t: 2.22, x: 201, y: 450 }, { t: 3.2, x: 352, y: 285 }, { t: 3.9, x: 352, y: 347 }, { t: 4.6, x: 352, y: 409 }, { t: 5.86, x: 356, y: 810 }];
 function tapsReal(): Tap[] {
   const out: Tap[] = [];
-  for (const k in RECS) for (const tp of RECS[k].taps ?? []) out.push({ t: realAt(RECS[k].from) + onScreenTime(RECS[k], tp.at), x: tp.x, y: tp.y + 54 });
+  for (const k in RECS) for (const tp of RECS[k].taps ?? []) {
+    const on = onScreenTime(RECS[k], tp.at);
+    if (on != null) out.push({ t: realAt(RECS[k].from) + on, x: tp.x, y: tp.y + 54 });
+  }
   return out;
 }
 
@@ -164,6 +167,19 @@ export const Film: React.FC<FilmProps> = ({ portrait }) => {
     if (d > dimV) dimV = d;
     const v = win(amb, A + 1.4, A + 3.6, 0.25, 0.6);
     if (c.spot && v > spotV) { spotV = v; spotC = c.spot; }
+  }
+
+  // A recording can place its own outline on a beat of the real screen (the proposal, "What changed").
+  for (const k in RECS) {
+    const rec = RECS[k];
+    if (!rec.spots?.length) continue;
+    const since = amb - realAt(rec.from);
+    if (since < 0) continue;
+    const rt = recTime(rec, since);
+    for (const sp of rec.spots) {
+      const v = rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until)));
+      if (v > spotV) { spotV = v; spotC = { x: sp.x, y: sp.y, w: sp.w, h: sp.h }; }
+    }
   }
 
   // touches

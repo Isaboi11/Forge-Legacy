@@ -55,24 +55,37 @@ export const OldApp: React.FC<{ t: number }> = ({ t }) => (
    recordings.json is written by the capture scripts: { shotId: { dir, frames, fps, from } } where `from` is the
    film time at which recording frame 0 is on screen. The recording then plays in REAL time, so a reading hold
    (which freezes the choreography) does not freeze the app — the app is dimmed during holds anyway. */
-// `pauses`: [recordingSecond, extraSeconds] — the recording holds that exact frame a little longer, used only
-// where the real screen is still (nothing on it is moving), so the hold shows exactly what the app shows.
-export type Rec = { dir: string; frames: number; fps: number; from: number; pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[] };
+// `pauses`: [recordingSecond, extraSeconds]. Positive = hold that exact frame longer (only where the real screen is
+// still, so the hold shows exactly what the app shows). Negative = SKIP that many seconds of the recording — a cut
+// over dead air (waiting on the model, navigating), never over anything that changes what the app did.
+// `spots`: bronze outline on part of the real screen, in recording seconds, in screen coordinates (status bar incl.).
+export type Spot = { at: number; until: number; x: number; y: number; w: number; h: number };
+export type Rec = {
+  dir: string; frames: number; fps: number; from: number;
+  pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[]; spots?: Spot[];
+};
 export const RECS = recordings as unknown as Record<string, Rec>;
+const sorted = (rec: Rec) => [...(rec.pauses ?? [])].sort((a, b) => a[0] - b[0]);
 
-/** Seconds since the take started on screen → the recording's own second, honouring pauses. */
+/** Seconds since the take started on screen → the recording's own second, honouring holds and skips. */
 export function recTime(rec: Rec, sinceStart: number): number {
   let p = sinceStart;
-  for (const [at, extra] of [...(rec.pauses ?? [])].sort((a, b) => a[0] - b[0])) {
+  for (const [at, extra] of sorted(rec)) {
     if (p <= at) break;
-    if (p <= at + extra) return at;
-    p -= extra;
+    if (extra > 0) { if (p <= at + extra) return at; p -= extra; }
+    else p -= extra; // a skip: the recording jumps ahead
   }
   return p;
 }
-/** The inverse, for taps: a recording second → seconds since the take started on screen. */
-export function onScreenTime(rec: Rec, recSec: number): number {
-  return recSec + (rec.pauses ?? []).filter(([at]) => at < recSec).reduce((n, [, e]) => n + e, 0);
+/** The inverse: a recording second → seconds since the take started on screen; null if it was cut out. */
+export function onScreenTime(rec: Rec, recSec: number): number | null {
+  let shift = 0;
+  for (const [at, extra] of sorted(rec)) {
+    if (at >= recSec) break;
+    if (extra < 0 && recSec < at - extra) return null; // inside a skipped stretch
+    shift += extra;
+  }
+  return recSec + shift;
 }
 
 const LABELS: Record<string, [string, string]> = {

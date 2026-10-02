@@ -1,0 +1,23 @@
+// Look-around: the program screen at Week 6 and the "Updated by Holt" sheet (no AI cost).
+import { launch, newPhone, settle, BASE } from './lib.mjs';
+const shot = (page, name) => page.screenshot({ path: `capture/frames/look/prog-${name}.png` });
+const browser = await launch();
+const { page } = await newPhone(browser, { time: '2026-02-10T07:50:00-06:00' });
+await page.goto(BASE + '/');
+await settle(page, 6000);
+await shot(page, '0-home');
+await page.getByText('Return to Strength', { exact: true }).first().click();
+await settle(page, 4000);
+const wk = page.getByRole('button', { name: /^Week 6,/ });
+await wk.scrollIntoViewIfNeeded(); await wk.click(); await settle(page, 1500);
+await shot(page, '1-week6');
+const pill = page.getByRole('button', { name: 'Updated by Holt. See what changed' }).first();
+console.log('pills:', await page.getByRole('button', { name: 'Updated by Holt. See what changed' }).count());
+await pill.scrollIntoViewIfNeeded(); await settle(page, 500); await shot(page, '2-pill');
+await page.getByText('Upper B', { exact: true }).first().click(); await settle(page, 1500);
+await page.getByText('Upper B', { exact: true }).first().scrollIntoViewIfNeeded(); await settle(page, 500);
+await shot(page, '4-upperB');
+await page.mouse.move(200, 600); await page.mouse.wheel(0, 420); await settle(page, 800);
+await shot(page, '5-upperB-more');
+console.log(await page.evaluate(() => document.body.innerText.split('Upper B')[1]?.slice(0, 400)));
+await browser.close();

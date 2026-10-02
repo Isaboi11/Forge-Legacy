@@ -14,7 +14,7 @@ if (!html.includes(`const HOLDS = ${JSON.stringify(HOLDS)};`)) throw new Error('
 // Hand the context to the harness.
 patch('initAudio(); playing = true;', 'initAudio(); window.__AC = AC; playing = true;');
 
-const SR = 48000, SECONDS = 36;
+const SR = 48000, SECONDS = 38;
 const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.addInitScript(([sr, secs]) => {
