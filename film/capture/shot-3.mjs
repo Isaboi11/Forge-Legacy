@@ -8,12 +8,15 @@
 // Inside the cuts, between recorded frames: Holt's questions (the active program, length, days, room, session length,
 // limitations) answered with his own chips, "Start it now", and "Start it anyway" (it ends Return to Strength).
 // The message ends with a period: a question goes to coach-ask, not a build (chat-core looksLikeQuestion).
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { launch, newPhone, settle, record, register, centre, BASE } from './lib.mjs';
 import { realAt } from '../src/timeline.ts';
 
-const MSG = 'My bench has been stuck at 225 for three weeks. Build me a new program to bring it up.';
+// "at the gym": Jordan's onboarding room is 'commercial_gym', which the chat's isRoom() doesn't read (full_gym/home/
+// bodyweight) — left unsaid, take 1 came back built for an empty home gym (push-ups, no bench).
+const MSG = 'My bench has been stuck at 225 for three weeks. Build me a new program at the gym to bring it up.';
 // Holt's chips, answered in this order of preference whenever one is showing.
-const ANSWERS = ['Replace it', 'Get stronger', '8 weeks', '4 days', 'Full gym', '60 minutes', 'Nothing — build it', 'Build it'];
+const ANSWERS = ['Full gym', 'Replace it', 'Get stronger', '8 weeks', '4 days', '60 minutes', 'Nothing — build it', 'Build it'];
 
 const browser = await launch();
 const { page } = await newPhone(browser, { time: '2026-02-10T07:45:00-06:00' });
@@ -37,6 +40,7 @@ const LIT = realAt(5.78) + 1.75 - realAt(from);     // seconds into the take whe
 const END = realAt(9.15) - realAt(from);
 const beats = { type: LIT + 0.15, send: LIT + 0.75, built: LIT + 1.45, program: LIT + 4.25 };
 const log = [];
+writeFileSync('capture/frames/look/holt-log.txt', 'MSG: ' + MSG + '\n');
 const take = await record(page, 'coach', END, [
   { at: beats.type, run: async (p) => { await p.getByRole('textbox', { name: 'Message Holt' }).fill(MSG); } },
   { at: beats.send, run: async (p) => { const s = p.getByLabel('Send', { exact: true }); const c = await centre(s); await s.click(); return c; } },
@@ -48,7 +52,12 @@ const take = await record(page, 'coach', END, [
         for (const a of ANSWERS) {
           if (answered.has(a) && a !== 'Build it') continue;
           const chip = p.getByText(a, { exact: true }).last();
-          if (await chip.isVisible().catch(() => false)) { await chip.click().catch(() => {}); answered.add(a); log.push(a); await settle(p, 600); break; }
+          if (await chip.isVisible().catch(() => false)) {
+            const said = (await p.evaluate(() => document.body.innerText)).slice(-500).replace(/\s+/g, ' ');
+            await chip.click().catch(() => {}); answered.add(a); log.push(a);
+            appendFileSync('capture/frames/look/holt-log.txt', `\n--- Holt, then I tapped "${a}":\n${said}\n`);
+            await settle(p, 600); break;
+          }
         }
         return false;
       }, 150000);
@@ -83,8 +92,11 @@ const take = await record(page, 'coach', END, [
       console.log('--- program ---\n' + (await p.evaluate(() => document.body.innerText)).slice(0, 1500));
   } },
 ]);
-// The lift (the program's sessions) is set by hand from holt-program-top.png once the screen is known.
-take.lifts = [];
+// The lift: Week 1's first session and its exercises (measured on holt-program.png, take 2 of 10-02: "Bench Focus",
+// Barbell Close-Grip Bench Press 5 × 4-6 … Dumbbell Lateral Raise). Re-measure if a new take lays out differently.
+// Held still a beat longer to read: Jordan's sent message, then Holt's reply over his program.
+take.pauses = [[+(beats.built - 0.03).toFixed(2), 0.9], [+(beats.program - 0.08).toFixed(2), 0.8]];
+take.lifts = [{ at: +(beats.program + 0.6).toFixed(2), until: +END.toFixed(2), x: 22, y: 224, w: 358, h: 388, r: 10, k: 1.6 }];
 register('coach', take, from);
 console.log('frames', take.frames, 'taps', take.taps.length, '· program shown from', beats.program.toFixed(2), 's of', END.toFixed(2));
 await browser.close();
