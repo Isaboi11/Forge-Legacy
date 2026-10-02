@@ -41,7 +41,11 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
   `node capture/render.mjs HeroDesktop HeroPhone Ad15Desktop Ad15Phone` (masters), `bash capture/deliver.sh` (grade,
   social masters in `out/final/`, web loops + posters in `site/assets/film/`).
 - **Site**: film section under the hero in `site/index.html` + the "Hero film" block in `site/assets/site.js`.
-  Preview uploaded with `wrangler versions upload`; production stays 64183374 until the PO says "go live".
+  Preview: version `10509313` → https://10509313-forgelegacy.isaiahaltamirano.workers.dev (production stays
+  `64183374` until the PO says "go live"; then `wrangler versions deploy 10509313-2e14-465b-a55e-753923e06555@100%`,
+  rollback = `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`). ⚠ The assets layer ignores byte ranges (200 to a Range
+  request) and iPhone Safari won't play video without 206 — so `site/worker/film-range.js` runs for
+  `/assets/film/*` ONLY (`run_worker_first`), everything else stays assets-only.
 - ⚠ The end card carries the App Store badge while the site says "In TestFlight now" — PO decides before go-live.
 
 ## (previous plan) NEXT SESSION: THE FINAL (PO 10-02: "all the needed and all the optional")
