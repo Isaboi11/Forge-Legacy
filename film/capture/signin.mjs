@@ -1,9 +1,12 @@
 // One-time sign-in as the demo athlete; saves the session for every shot script.
-// Usage: JORDAN_PASSWORD=... node capture/signin.mjs   (the password is the one set in seed stage 0; never committed)
+// Usage: node capture/signin.mjs   (password from capture/.auth/password or JORDAN_PASSWORD; never committed)
+import { readFileSync, existsSync } from 'node:fs';
 import { launch, newPhone, settle, saveAuth, BASE } from './lib.mjs';
 
-const pw = process.env.JORDAN_PASSWORD;
-if (!pw) throw new Error('set JORDAN_PASSWORD');
+// The password lives in capture/.auth/password (git-ignored), written when stage 0 was prepared.
+const pwFile = new URL('./.auth/password', import.meta.url);
+const pw = process.env.JORDAN_PASSWORD ?? (existsSync(pwFile) ? readFileSync(pwFile, 'utf8').trim() : null);
+if (!pw) throw new Error('no password: set JORDAN_PASSWORD or write capture/.auth/password');
 const browser = await launch();
 const { ctx, page } = await newPhone(browser, { auth: false }); // real clock: the sign-in itself is not filmed
 await page.goto(BASE + '/sign-in?step=signin');

@@ -1,6 +1,6 @@
 # Homepage hero film — production plan
 
-**Status:** waiting on PO decisions (§1). Nothing seeded, recorded, rendered or published.
+**Status (2026-10-01):** all PO decisions made (D1 generic phone · D2 web capture · D3 seed approved · D4 nutrition line kept · D5 script changes approved). Seed written and reviewed (`supabase/apply/seed-demo-jordan-*.sql`, notes in `film/SEED-NOTES.md`); waiting for the PO to paste stage 0 + 1. Engine, capture kit and placeholder score built. Music (D6) still open.
 **Source of truth for story and timing:** artifact `CYw5vmuyKNaJi6iVEPvS3d` (plan + playable mock-up, 2026-10-01).
 **Branch / worktree:** `feat/hero-film` at `C:\Users\isaia\forge-film-wt` (outside OneDrive). The render
 project lives in `film/`; recordings and renders are git-ignored.
@@ -38,6 +38,7 @@ Costs to know about: Remotion is free for a company with ≤3 employees. One liv
 | 4 | "Welcome back. Everything you built is here." on Mar 16 | Real wording above; shows when the newest workout is 7+ days old. | Real card. |
 | 5 | Floating card "SQUAD · IRONSIDE — The people who noticed" | **Legacy has no squad card, and "The people who noticed" exists nowhere in the app.** "Noticed" isn't app language, and "Acknowledged by" isn't rendered either (the squad control reads "Acknowledge" / "Respect"). | Replace with a real Legacy element: **Accomplishments (Bench Press 235)**. Squads live in the site section under the video, as the brief says. |
 | 5 | Medal "HONOR EARNED · STRENGTH" in 3D | Real ceremony: **"HONOR EARNED"**, honor name, citation, "Continue". It fires on the next tab focus, not on Workout Complete. The ceremony draws the honor symbol; the medal art (`medal-art.ts`) is on the Honors screen. | The 3D medal uses the real medal art for the same honor. The phone shows the real ceremony. |
+| 5 | Rank-up and medal timing | The seed shows Jordan honestly crosses **Builder IV → Craftsman I in the week of May 12** (by October he'd be Craftsman IV). The same day his bench hits 235 × 3 and earns **"1,000 Pound Club"** (Strength). | Shot 5's two ceremonies are captured with the clock at **Tue May 12**: "RANK ASCENDED · Craftsman I", then "HONOR EARNED · 1,000 Pound Club". The medal art is that honor's. |
 | 5 | "Builder III → Craftsman I" | Tiers run **I–IV** (Foundation, Builder, Craftsman, Architect, Established, Legend, Legacy). The real ceremony reads **"RANK ASCENDED"**. | **Builder IV → Craftsman I**, recorded from the real ceremony. |
 | 5 | Chapter III "Still Writing · Sep – now" | Chapters are named by the athlete, so any name is real once Jordan names it. | Keep the names "The Return" and "Stronger Than Before". |
 | All | — | The app shows streaks ("Best streak", post badges). | The film never says "no streaks", and it doesn't. |
