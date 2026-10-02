@@ -5,7 +5,7 @@
 //              read → Not now → ▶ → the Rest ring, long enough to tell what it is.                film 2.45 → 5.70
 // Rest is in MANUAL mode: armed after every set, started by ▶ — so quick taps aren't each covered by a rest overlay.
 // The workout is never finished, so nothing is saved.
-import { launch, newPhone, settle, record, register, centre, BASE } from './lib.mjs';
+import { launch, newPhone, settle, record, register, centre, quietHolt, BASE } from './lib.mjs';
 import { realAt } from '../src/timeline.ts';
 
 const T = '2026-01-19T08:30:00-06:00';
@@ -13,6 +13,9 @@ const browser = await launch();
 const { page } = await newPhone(browser, { time: T, storage: { forge_rest_timer_mode_v1: 'manual' } });
 await page.goto(BASE + '/');
 await settle(page, 6000);
+await page.getByRole('button', { name: 'Start workout' }).waitFor({ timeout: 20000 });
+await quietHolt(page);
+await settle(page, 1000);
 
 // ── take: home ────────────────────────────────────────────────────────────────────────────────────────────
 const homeFrom = 1.75;
@@ -51,6 +54,8 @@ tap.spots = [
   { at: at(beats.set4) + 0.3, until: at(beats.notNow), x: 46, y: 281, w: 310, h: 352 },        // NEW PERSONAL RECORD
   { at: at(beats.rest) + 0.25, until: end, x: 53, y: 250, w: 296, h: 280 },                    // the Rest ring
 ];
+// The rest countdown runs ~2× fast under the fake clock: play it at half speed so it reads as it really runs.
+tap.slow = [+(at(beats.rest) + 0.05).toFixed(2), +end.toFixed(2), 2];
 register('tap', tap, tapFrom);
 console.log('home', home.frames, 'frames · tap', tap.frames, 'frames, taps', tap.taps.length, '· take seconds', end.toFixed(2));
 await browser.close();

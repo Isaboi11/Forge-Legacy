@@ -63,6 +63,9 @@ export type Spot = { at: number; until: number; x: number; y: number; w: number;
 export type Rec = {
   dir: string; frames: number; fps: number; from: number;
   pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[]; spots?: Spot[];
+  // `slow`: [fromRec, toRec, factor] — play that stretch `factor`× slower. Used ONLY to undo a capture artefact:
+  // the logger's rest countdown runs ~2× fast under the fake clock, so at 2× slow it reads as the app really runs.
+  slow?: [number, number, number];
 };
 export const RECS = recordings as unknown as Record<string, Rec>;
 const sorted = (rec: Rec) => [...(rec.pauses ?? [])].sort((a, b) => a[0] - b[0]);
@@ -70,6 +73,15 @@ const sorted = (rec: Rec) => [...(rec.pauses ?? [])].sort((a, b) => a[0] - b[0])
 /** Seconds since the take started on screen → the recording's own second, honouring holds and skips. */
 export function recTime(rec: Rec, sinceStart: number): number {
   let p = sinceStart;
+  if (rec.slow) {
+    const [a, b, k] = rec.slow;
+    const pa = onScreenNoSlow(rec, a);
+    if (pa != null && p > pa) {
+      const span = (b - a) * k;
+      if (p <= pa + span) return a + (p - pa) / k;
+      p -= span - (b - a);
+    }
+  }
   for (const [at, extra] of sorted(rec)) {
     if (p <= at) break;
     if (extra > 0) { if (p <= at + extra) return at; p -= extra; }
@@ -79,6 +91,13 @@ export function recTime(rec: Rec, sinceStart: number): number {
 }
 /** The inverse: a recording second → seconds since the take started on screen; null if it was cut out. */
 export function onScreenTime(rec: Rec, recSec: number): number | null {
+  const base = onScreenNoSlow(rec, recSec);
+  if (base == null || !rec.slow) return base;
+  const [a, b, k] = rec.slow;
+  if (recSec <= a) return base;
+  return recSec < b ? base + (recSec - a) * (k - 1) : base + (b - a) * (k - 1);
+}
+function onScreenNoSlow(rec: Rec, recSec: number): number | null {
   let shift = 0;
   for (const [at, extra] of sorted(rec)) {
     if (at >= recSec) break;

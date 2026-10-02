@@ -55,6 +55,16 @@ export async function settle(page, ms = 3000) {
   for (let t = 0; t < ms; t += 100) { await page.clock.runFor(100); await page.waitForTimeout(40); }
 }
 
+// Close Holt's speech line on the coin if one is showing (a nudge such as "Want to start a photo record?").
+export async function quietHolt(page) {
+  for (let i = 0; i < 3; i++) {
+    const x = page.getByRole('button', { name: /^(Close|Dismiss)( Holt)?/ }).first();
+    if (!(await x.isVisible().catch(() => false))) return;
+    await x.click().catch(() => {});
+    await settle(page, 800);
+  }
+}
+
 export async function saveAuth(ctx) {
   mkdirSync(new URL('./.auth/', import.meta.url), { recursive: true });
   writeFileSync(AUTH, JSON.stringify(await ctx.storageState()));
