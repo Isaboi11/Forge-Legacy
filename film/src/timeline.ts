@@ -165,6 +165,17 @@ export const CAPS: Cap[] = [
   { a: 14.92, b: 17.4, pain: 'Numbers nobody looks at.', text: 'A year that tells *your story.*', wide: true, read: 1.8 },
 ];
 
+/* ---------- the 15 s ad (PO 10-02: "whatever converts best") ----------
+   Shots 1, 4 and 6 — the quit-by-day-100 opening and the turn, the missed week, the end card — hard cuts on the bar
+   lines of its own score (`python capture/score-moments.py ad15`): [adStart, filmRealStart, filmRealEnd] in real
+   seconds. The end card's last frame holds to 15.0. */
+export const AD15_DUR = 15;
+export const AD15: [number, number, number][] = [[0, 0, 5.32], [5.32, 20.75, 26.51], [11.08, 37.55, 40.75]];
+export const adToFilm = (a: number) => {
+  const [s0, from, to] = [...AD15].reverse().find(([s]) => a >= s)!;
+  return Math.min(to, from + a - s0);
+};
+
 /* ---------- shots (film time) ---------- */
 export const SHOTS = [
   { id: 'gap', a: 0, b: 2.5 },

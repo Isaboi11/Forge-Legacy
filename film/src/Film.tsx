@@ -4,12 +4,12 @@ import { loadFont as loadPlayfair } from '@remotion/google-fonts/PlayfairDisplay
 import { loadFont as loadHanken } from '@remotion/google-fonts/HankenGrotesk';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
-import { CAPS, DUR, E, L, P, RDUR, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
+import { CAPS, E, L, P, RDUR, adToFilm, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
 import { Phone, PhoneFace, PhoneLift } from './Phone';
 import { PhoneBody3D } from './Phone3D';
 import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
 import { SCREEN_W } from './Phone';
-import { LEGACY_CARDS, MEDAL, MORE_MEDALS, ACCOMPLISHMENTS, END, SCORE } from './story';
+import { LEGACY_CARDS, MEDAL, MORE_MEDALS, ACCOMPLISHMENTS, END, SCORE, SCORE_AD15 } from './story';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
 loadPlayfair('italic', { weights: ['500', '600'], subsets: ['latin'] });
@@ -130,7 +130,7 @@ const Caption: React.FC<{ c: (typeof CAPS)[number]; x: number; portrait: boolean
     return pi % 2 ? <em key={pi} style={{ fontStyle: 'italic', color: '#D9AB78' }}>{nodes}</em> : <React.Fragment key={pi}>{nodes}</React.Fragment>;
   });
   const pos: React.CSSProperties = portrait
-    ? c.wide ? { left: 84, right: 84, bottom: 64, textAlign: 'center', fontSize: 80 } : { left: 84, right: 84, top: 250, fontSize: 96 }
+    ? c.wide ? { left: 84, right: 84, bottom: 64, textAlign: 'center', fontSize: 80 } : { left: 84, right: 84, top: 330, fontSize: 96 } // portrait: clear of the counter's quit label
     : c.wide ? { left: 0, width: '100%', bottom: 52, textAlign: 'center', fontSize: 76 } : { left: 330, top: 380, width: 640, fontSize: 84 };
   return (
     <div style={{ position: 'absolute', fontFamily: display, fontWeight: 600, color: '#F4EFE6', letterSpacing: '-.015em', lineHeight: 1.04, ...pos }}>
@@ -151,10 +151,10 @@ function tapsReal(): Tap[] {
   return out;
 }
 
-export const Film: React.FC<FilmProps> = ({ portrait, flatPhone }) => {
+export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
-  const r = Math.min(RDUR, frame / fps);
+  const r = cut === 'ad15' ? adToFilm(frame / fps) : Math.min(RDUR, frame / fps);
   const t = filmAt(r);
   const amb = r;
   const ph = drift(pose(t, portrait), r);
@@ -292,7 +292,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, flatPhone }) => {
 
   return (
     <AbsoluteFill style={{ background: '#030405', overflow: 'hidden', fontFamily: sans }}>
-      {SCORE && <Audio src={staticFile(SCORE)} />}
+      {cut === 'ad15' ? <Audio src={staticFile(SCORE_AD15)} /> : SCORE && <Audio src={staticFile(SCORE)} />}
       <Background W={W} H={H} t={t} ph={ph} amb={amb} portrait={portrait} />
       <AbsoluteFill style={{ transform: `translate(${shx}px,${shy}px)` }}>
         {/* Legacy cards */}

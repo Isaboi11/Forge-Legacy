@@ -39,3 +39,4 @@ export const END = {
 // capture/score-moments.py (drop on the turn, breakdown for the missed week, second drop on the pull-back, the final
 // hit on the end card; -14 LUFS). The WAVs are git-ignored — regenerate with `python capture/score-moments.py`.
 export const SCORE: string | null = 'music/score-moments.wav';
+export const SCORE_AD15 = 'music/score-ad15.wav';

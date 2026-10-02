@@ -1,6 +1,7 @@
 # The film's score, cut from the licensed track "Moments (Instrumental Version)" by Ayoub (Epidemic Sound, licensed
 # by the PO 10-02). The WAV lives in public/music/ (git-ignored) — never commit it.
-#   python capture/score-moments.py
+#   python capture/score-moments.py          → the film's score
+#   python capture/score-moments.py ad15     → the 15 s ad's score (shots 1, 4, 6 — src/timeline.ts AD15)
 # 125 BPM exactly (beat 0.48 s, bar 1.92 s), kick grid phase 0.46 s, measured on the file. Four pieces, each spliced on a
 # bar line with a short equal-power crossfade, placed on the film's real-time beats (src/timeline.ts realAt):
 #   1 · the intro's tail fading to the break's silence under the grey app → the DROP (beat 64, 31.18 s) on the turn
@@ -10,7 +11,7 @@
 #   4 · the track's FINAL HIT and outro (beat 284, 136.78 s) as the end card arrives (real 37.96 s), faded out at the end
 # Then loudness: -14 LUFS integrated, -1 dBTP (ffmpeg loudnorm, two passes) → public/music/score-moments.wav.
 # If the film's timing changes, re-derive the film times below from realAt() and keep every piece a whole number of bars.
-import json, subprocess
+import json, subprocess, sys
 import numpy as np
 from scipy.io import wavfile
 
@@ -34,6 +35,13 @@ pieces = [                   # (track start, film start, film end)
     (D2, f2, f3),
     (HIT, f3, FILM),
 ]
+if sys.argv[1:] == ['ad15']:
+    # The ad: the same opening and drop on the turn, one bar of it → the BREAKDOWN for the missed week (3 bars) → the
+    # FINAL HIT on the end card. Every picture cut is one of these bar lines (AD15 in src/timeline.ts must match).
+    RAW, OUT, FILM = 'public/music/score-ad15-raw.wav', 'public/music/score-ad15.wav', 15.0
+    a1 = TURN + BAR          # 5.32
+    a2 = a1 + 3 * BAR        # 11.08
+    pieces = [(D1 - TURN, 0.0, a1), (BD, a1, a2), (HIT, a2, FILM)]
 
 sr, x = wavfile.read(SRC)
 x = x.astype(np.float64)
