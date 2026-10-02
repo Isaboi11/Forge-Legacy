@@ -13,7 +13,8 @@ POSTER_AT=10.6   # NEW PERSONAL RECORD, lifted off the phone
 mkdir -p out/final out/enc "$WEB"
 ff() { ffmpeg -hide_banner -loglevel error -y "$@"; }
 
-for pair in HeroDesktop:forge-hero-16x9 HeroPhone:forge-hero-9x16 Ad15Desktop:forge-ad15-16x9 Ad15Phone:forge-ad15-9x16; do
+# WEB_ONLY=1 skips the social masters (they take ~6 min and only change when a master does).
+[ -n "${WEB_ONLY:-}" ] || for pair in HeroDesktop:forge-hero-16x9 HeroPhone:forge-hero-9x16 Ad15Desktop:forge-ad15-16x9 Ad15Phone:forge-ad15-9x16; do
   id=${pair%%:*}; name=${pair##*:}
   [ -f "out/master-$id.mp4" ] || { echo "missing out/master-$id.mp4"; continue; }
   ff -i "out/master-$id.mp4" -vf "$G" -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -profile:v high \
@@ -38,6 +39,6 @@ web() { # master, shape, width, height, video kbps
   ff -ss $POSTER_AT -i "$src" -frames:v 1 -vf "$G,scale=$w:$h:flags=lanczos" -q:v 4 "$WEB/poster-$shape.jpg"
   ls -la "$WEB"/hero-$shape.* "$WEB"/poster-$shape.jpg
 }
-web out/master-HeroPhone.mp4 9x16 720 1280 ${KB9:-820}
+web out/master-HeroPhone.mp4 9x16 720 1280 ${KB9:-700}   # 47.5 s: 700 + 96 audio kbps ≈ 4.7 MB (5 MB cap)
 # (a 16:9 web loop: web out/master-HeroDesktop.mp4 16x9 1920 1080 800 — 4.6 MB; not on the page since the film moved
 #  into the hero)
