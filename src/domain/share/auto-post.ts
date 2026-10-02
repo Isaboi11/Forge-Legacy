@@ -157,6 +157,68 @@ export function parsePendingAutoPost(raw: string | null, now: number = Date.now(
   }
 }
 
+// ── Workout Complete's own Friends / Squads rows (PO 2026-10-02) ──
+
+/** Where a session is about to be posted, as the completion screen's two rows hold it. */
+export interface Destinations {
+  friends: boolean
+  squadIds: string[]
+}
+
+export const NO_DESTINATIONS: Destinations = { friends: false, squadIds: [] }
+
+/** The device's memory of the last places a session was posted by hand. Malformed = none. */
+export function parseDestinations(raw: string | null): Destinations | null {
+  if (!raw) return null
+  try {
+    const r = JSON.parse(raw) as Record<string, unknown> | null
+    if (!r || typeof r !== 'object') return null
+    const ids = Array.isArray(r.squadIds) ? r.squadIds.filter((x): x is string => typeof x === 'string' && x.length > 0) : []
+    return { friends: r.friends === true, squadIds: [...new Set(ids)].slice(0, 50) }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * What the rows START as — nothing is posted until the athlete presses the button that says so.
+ *
+ *   · Not "just finished" (a session reopened from history, a stale tab): nothing. Posting from history is
+ *     deliberate, every time.
+ *   · Already posted somewhere: nothing. The rows show where it is; adding more is a fresh choice.
+ *   · Auto-post on: its destinations — the screen shows, and lets them change, what leaving would post.
+ *   · Otherwise: where they posted by hand last time, if this phone remembers. Squads they have since
+ *     left are dropped, exactly as auto-post prunes.
+ *
+ * ⚠ ONLY THE AUDIENCE IS EVER REMEMBERED. The map (D-RS-3) and the food line are per-post ticks and
+ * start off on every visit; nothing here may carry them.
+ */
+export function startingDestinations(a: {
+  eligible: boolean
+  prior: readonly PriorShare[]
+  pref: AutoPostPref
+  last: Destinations | null
+  memberSquadIds: readonly string[]
+}): Destinations {
+  if (!a.eligible || a.prior.length > 0) return NO_DESTINATIONS
+  const member = new Set(a.memberSquadIds)
+  const live = pruneAutoPost(a.pref, a.memberSquadIds)
+  if (autoPostOn(live)) return { friends: live.friends, squadIds: [...live.squadIds] }
+  if (!a.last) return NO_DESTINATIONS
+  return { friends: a.last.friends, squadIds: a.last.squadIds.filter((id) => member.has(id)) }
+}
+
+/**
+ * The rows a press of the button becomes: the selection, minus squads they no longer belong to, minus
+ * anywhere this session already is. Empty means the button only closes the screen.
+ */
+export function destinationTargets(sel: Destinations, memberSquadIds: readonly string[], prior: readonly PriorShare[]): ShareTarget[] {
+  const member = new Set(memberSquadIds)
+  const already = shareState(prior)
+  const squads = sel.squadIds.filter((id) => member.has(id) && !already.squadIds.includes(id))
+  return shareTargets(squads, sel.friends && !already.friends)
+}
+
 interface NamedSquad {
   id: string
   name: string

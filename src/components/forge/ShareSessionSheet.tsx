@@ -8,11 +8,11 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
-import { addSquadPost, buildWorkoutRecap, fetchWorkoutShares, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
+import { buildWorkoutRecap, fetchWorkoutShares, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
 import { cardioMarkerLabel, foodLine, type RecapFood, type RecapLead } from '@/domain/share/recap-stats';
-import { createFriendPost, uploadFeedImageData, type PostAudience } from '@/data/friends-feed-live';
+import type { PostAudience } from '@/data/friends-feed-live';
+import { postWorkoutRecap } from '@/data/workout-post-live';
 import type { StoryDrawing } from '@/domain/share/story-card';
-import { renderStoryImage } from '@/lib/story-image';
 import { fetchMySquads, type SquadSummary } from '@/data/squad-live';
 import { shareState, shareTargets, type PriorShare } from '@/domain/share/fanout';
 import { autoPostFromPost, autoPostLabel, postedFor, postedLine, postVerb, shouldOfferAutoPost } from '@/domain/share/auto-post';
@@ -276,85 +276,43 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     if (!targets.length) return; // the footer disables this; belt-and-braces for the constraint
     setSharing(true);
 
-    /*
-     * The whole post, built once so the squad and friends paths cannot carry different things.
-     *
-     * `body` and `media` used to be the literals `''` and `[]` right here, which is why a session shared
-     * with a note and a photo arrived as a bare stat strip. The playlist rides inside `snapshot` — see
-     * `recapSummaryFrom` — and the caller is responsible for that snapshot being current.
-     */
-    const recap = {
-      type: 'recap' as const,
-      body,
-      workoutId,
-      /* The choice rides the snapshot, so the post renders the same strip forever — the feed never
-         re-derives it. On a non-mixed session this spread writes back the value already there. */
-      /* `shareRoute` rides the snapshot exactly as `lead` does, and for the same reason: the post keeps
-         what was chosen when it was written. `shared_workout_detail` reads this key and nothing else —
-         a session's stored route is never enough on its own. Forced to a real boolean rather than
-         passed through, so the key is always present and always means what it says. */
-      workoutSummary: {
-        ...snapshot,
-        lead: effectiveLead ?? snapshot.lead,
-        shareRoute: canShareRoute && shareRoute,
-        food: shareFood && foodText && food ? { kcal: food.kcal, protein: food.protein } : null,
-      },
-      media,
-    };
-    const withRoute = canShareRoute && shareRoute;
     const run = async () => {
       /*
-       * The overlay picture, drawn and uploaded ONCE before any row is written, so every squad and the
-       * friends row carry the same image. It could not be built (no host, an unreadable photo, an upload
-       * that failed): the post goes out the old way — the photo with its strip — and says so, rather than
-       * posting nothing or a picture missing its photo.
+       * The post itself — the loop, the overlay picture, the per-target record — is `postWorkoutRecap`,
+       * shared with Workout Complete's own button so the two cannot drift.
+       *
+       * The choices ride the snapshot, so the post renders the same strip forever — the feed never
+       * re-derives it. `shareRoute` rides it exactly as `lead` does: `shared_workout_detail` reads this key
+       * and nothing else, so it is forced to a real boolean rather than passed through.
        */
-      let sent = recap;
-      let pictureFailed = false;
-      if (photoOverlay && media.some((m) => m.url === photoOverlay.photoUri)) {
-        const pic = await renderStoryImage(photoOverlay.compose(withRoute), photoOverlay.photoUri).catch(() => null);
-        const url = pic ? await uploadFeedImageData(pic.base64, pic.mime).catch(() => null) : null;
-        if (url) {
-          sent = {
-            ...recap,
-            media: [{ url, kind: 'image' as const }, ...media.filter((m) => m.url !== photoOverlay.photoUri)],
-            workoutSummary: { ...recap.workoutSummary, photoLook: 'overlay' as const },
-          };
-        } else {
-          pictureFailed = true;
-        }
-      }
-      const landed: string[] = [];
-      let firstSquadPost: string | null = null;
+      const r = await postWorkoutRecap({
+        workoutId,
+        body,
+        media,
+        summary: {
+          ...snapshot,
+          lead: effectiveLead ?? snapshot.lead,
+          shareRoute: canShareRoute && shareRoute,
+          food: shareFood && foodText && food ? { kcal: food.kcal, protein: food.protein } : null,
+        },
+        targets,
+        squads,
+        photoOverlay,
+      });
+      const { landed, firstSquadPost, pictureFailed } = r;
       /* What actually got inserted — recorded per target, so a failure halfway still marks the posts that
          exist and the tiles cannot offer them a second time. */
-      const done: PriorShare[] = [];
-      const record = () => {
-        const next = [...(prior ?? []), ...done];
-        setPrior(next);
-        onShared?.(next);
-      };
-      try {
-        for (const t of targets) {
-          const id =
-            t.audience === 'SQUAD' && t.squadId
-              ? await addSquadPost({ squadId: t.squadId, ...sent })
-              : await createFriendPost({ ...sent, audience: t.audience, squadId: t.squadId });
-          if (t.squadId && !firstSquadPost) firstSquadPost = id;
-          done.push({ audience: t.audience, squadId: t.squadId });
-          const name = squads.find((s) => s.id === t.squadId)?.name;
-          if (name) landed.push(name);
-        }
-      } catch (e) {
-        record();
+      const next = [...(prior ?? []), ...r.done];
+      setPrior(next);
+      onShared?.(next);
+      if (r.error) {
         setSharing(false);
         // Anything already inserted STAYS inserted, so the message says what got through rather than
         // implying the whole share failed and inviting a second, duplicating attempt.
         const done = landed.length ? ` ${postedLine(landed, includeFriends)}.` : '';
-        showToast(`${plainError(e, 'Couldn’t post that.')}${done}`);
+        showToast(`${plainError(r.error, 'Couldn’t post that.')}${done}`);
         return;
       }
-      record();
       setSharing(false);
       if (pictureFailed) showToast('Couldn’t build the picture, so your stats went under the photo.');
       setSquadStep(null);

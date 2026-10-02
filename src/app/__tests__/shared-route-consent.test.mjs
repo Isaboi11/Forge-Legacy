@@ -25,6 +25,7 @@ const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 const SHEET = strip(read('../../components/forge/ShareSessionSheet.tsx'));
+const COMPLETE = strip(read('../workout-complete.tsx'));
 const FEED = strip(read('../../data/squad-feed-live.ts'));
 const LIVE = strip(read('../../data/activity-live.ts'));
 const SQL = read('../../../supabase/migrations/0185_shared_route_consent.sql');
@@ -57,9 +58,13 @@ test('the choice rides the post snapshot, and is forced to a real boolean', () =
   // `canShareRoute &&` matters: a snapshot that lost its route must not post a tick that outlived it.
   assert.match(
     SHEET,
-    /workoutSummary: \{\s*\.\.\.snapshot,\s*lead: effectiveLead \?\? snapshot\.lead,\s*shareRoute: canShareRoute && shareRoute,/,
+    /summary: \{\s*\.\.\.snapshot,\s*lead: effectiveLead \?\? snapshot\.lead,\s*shareRoute: canShareRoute && shareRoute,/,
     'the posted snapshot no longer carries the guarded shareRoute',
   );
+  // Workout Complete posts from its own button since 2026-10-02 — the same guard, and the same per-visit tick.
+  assert.match(COMPLETE, /shareRoute: canShareRoute && shareRoute,/, 'the completion screen posts an unguarded shareRoute');
+  assert.match(COMPLETE, /const \[shareRoute, setShareRoute\] = useState\(false\);/, 'the completion screen’s map tick no longer starts off');
+  assert.doesNotMatch(COMPLETE, /saveLastDestinations\([^)]*shareRoute/, 'the map tick is being remembered between posts (D-RS-3)');
 });
 
 test('hasRoute is resolved by a read, and never fails a recap', () => {

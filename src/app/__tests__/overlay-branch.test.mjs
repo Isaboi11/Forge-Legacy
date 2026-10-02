@@ -77,7 +77,8 @@ const SHEETS = [
   { sheet: 'renameSheet', trigger: 'openRename', mount: '<BottomSheet open={renameOpen}' },
   { sheet: 'noteSheet', trigger: 'openNote', mount: "<BottomSheet open={sheet === 'note'}" },
   { sheet: 'playlistSheet', trigger: "setSheet('playlist')", mount: '<PlaylistSheet' },
-  { sheet: 'shareSheet', trigger: "setSheet('share')", mount: '<ShareSessionSheet' },
+  // The squad picker (PO 2026-10-02) — Friends / Squads moved onto the capture stage; the post sheet left it.
+  { sheet: 'squadSheet', trigger: "setSheet('squads')", mount: "open={sheet === 'squads'}" },
 ];
 
 test('every branch that can open a sheet also mounts it', () => {

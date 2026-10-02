@@ -190,3 +190,54 @@ test('⚠ the closed-app marker is honoured inside the window and ignored after 
   assert.equal(parsePendingAutoPost(JSON.stringify({ savedAt: '2026-09-30T17:30:00Z' }), now), null);
   assert.equal(now - Date.parse('2026-09-30T17:30:00Z') < AUTO_POST_WINDOW_MS, true);
 });
+
+// ── Workout Complete's Friends / Squads rows (PO 2026-10-02) ──
+
+import { NO_DESTINATIONS, destinationTargets, parseDestinations, startingDestinations } from '../auto-post.ts';
+
+const OFF = { friends: false, squadIds: [], asked: true };
+
+test('the rows start empty in review, and empty once the session is posted anywhere', () => {
+  const last = { friends: true, squadIds: ['a'] };
+  assert.deepEqual(startingDestinations({ eligible: false, prior: [], pref: OFF, last, memberSquadIds: ['a'] }), NO_DESTINATIONS);
+  assert.deepEqual(startingDestinations({ eligible: true, prior: [{ audience: 'FRIENDS', squadId: null }], pref: OFF, last, memberSquadIds: ['a'] }), NO_DESTINATIONS);
+});
+
+test('auto-post on: the rows start on its destinations, pruned to squads still joined', () => {
+  const pref = { friends: true, squadIds: ['a', 'gone'], asked: true };
+  assert.deepEqual(startingDestinations({ eligible: true, prior: [], pref, last: null, memberSquadIds: ['a', 'b'] }), { friends: true, squadIds: ['a'] });
+});
+
+test('auto-post off: the rows start where this phone last posted, never on a squad since left', () => {
+  const last = { friends: false, squadIds: ['a', 'left'] };
+  assert.deepEqual(startingDestinations({ eligible: true, prior: [], pref: OFF, last, memberSquadIds: ['a'] }), { friends: false, squadIds: ['a'] });
+  assert.deepEqual(startingDestinations({ eligible: true, prior: [], pref: OFF, last: null, memberSquadIds: ['a'] }), NO_DESTINATIONS);
+  // zero squads: only Friends can survive
+  assert.deepEqual(startingDestinations({ eligible: true, prior: [], pref: OFF, last: { friends: true, squadIds: ['a'] }, memberSquadIds: [] }), { friends: true, squadIds: [] });
+});
+
+test('the button posts the selection — minus squads left, minus anywhere it already is', () => {
+  const sel = { friends: true, squadIds: ['a', 'b', 'left'] };
+  assert.deepEqual(destinationTargets(sel, ['a', 'b'], []), [
+    { audience: 'BOTH', squadId: 'a' },
+    { audience: 'SQUAD', squadId: 'b' },
+  ]);
+  // friends and squad a already have it (a half-landed earlier press): only b is sent
+  assert.deepEqual(destinationTargets(sel, ['a', 'b'], [{ audience: 'BOTH', squadId: 'a' }]), [{ audience: 'SQUAD', squadId: 'b' }]);
+  // a deselected squad is simply not in the selection — never posted
+  assert.deepEqual(destinationTargets({ friends: false, squadIds: ['b'] }, ['a', 'b'], []), [{ audience: 'SQUAD', squadId: 'b' }]);
+  assert.deepEqual(destinationTargets(NO_DESTINATIONS, ['a'], []), []);
+});
+
+test('many squads stay one BOTH row plus plain SQUAD rows — the friends feed sees it once', () => {
+  const ids = Array.from({ length: 30 }, (_, i) => `s${i}`);
+  const t = destinationTargets({ friends: true, squadIds: ids }, ids, []);
+  assert.equal(t.length, 30);
+  assert.equal(t.filter((x) => x.audience !== 'SQUAD').length, 1);
+});
+
+test('the remembered destinations parse defensively', () => {
+  assert.equal(parseDestinations(null), null);
+  assert.equal(parseDestinations('nope'), null);
+  assert.deepEqual(parseDestinations(JSON.stringify({ friends: 'yes', squadIds: ['a', 'a', 3, ''] })), { friends: false, squadIds: ['a'] });
+});

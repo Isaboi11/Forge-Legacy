@@ -1,7 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 import { flColor, flRadius } from '@/constants/foundation';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
+import { SquadCrest } from '@/components/forge/SquadCrest';
 import type { SquadSummary } from '@/data/squad-live';
 
 /**
@@ -32,9 +34,11 @@ export interface SquadSelectListProps {
   disabled?: boolean;
   /** Shown under the header when the caller wants to say what the selection means. */
   hint?: string;
+  /** Each row leads with the squad's photo (or its crest) — Workout Complete's picker (PO 2026-10-02). */
+  showCrest?: boolean;
 }
 
-export function SquadSelectList({ squads, selected, onChange, disabled, hint }: SquadSelectListProps) {
+export function SquadSelectList({ squads, selected, onChange, disabled, hint, showCrest = false }: SquadSelectListProps) {
   const all = squads.length > 0 && squads.every((s) => selected.has(s.id));
 
   const toggle = (id: string) => {
@@ -79,6 +83,11 @@ export function SquadSelectList({ squads, selected, onChange, disabled, hint }: 
                   <EngravedIcon name="check" size={13} color={flColor.bronze300} />
                 ) : null}
               </View>
+              {showCrest ? (
+                <View style={styles.crest}>
+                  {s.photoUrl ? <Image source={{ uri: s.photoUrl }} style={styles.crestPhoto} contentFit="cover" /> : <SquadCrest crest={s.crest} size={18} />}
+                </View>
+              ) : null}
               <View style={styles.rowText}>
                 <Text style={styles.name} numberOfLines={1}>
                   {s.name}
@@ -115,6 +124,8 @@ const styles = StyleSheet.create({
   boxOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
   boxOff: { borderColor: flColor.charcoal500, backgroundColor: 'transparent' },
 
+  crest: { width: 36, height: 36, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.charcoal600, backgroundColor: flColor.charcoal800, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  crestPhoto: { width: '100%', height: '100%' },
   rowText: { flex: 1, minWidth: 0 },
   name: { fontSize: 14.5, fontWeight: '600', color: flColor.cream100 },
   meta: { marginTop: 2, fontSize: 11, color: flColor.gray600 },

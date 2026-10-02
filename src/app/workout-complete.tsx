@@ -35,18 +35,32 @@ import { distanceLabel, fmtClock, fmtPace, toDistance, toPace, type UnitSystem }
 import { recapSummaryFrom, fetchWorkoutShares } from '@/data/squad-feed-live';
 import { fetchTodaysChapterPhotos, type ChapterPhoto } from '@/data/photos-live';
 import { fetchRecentPlaylists } from '@/data/playlists-live';
-import { ShareSessionSheet } from '@/components/forge/ShareSessionSheet';
 import { PhotoLookChoice, type PhotoLook } from '@/components/forge/PhotoLookChoice';
 import { workoutStats } from '@/components/forge/compositions/LedgerPost';
 import { composePostPicture, storyInputFrom } from '@/domain/share/story-card';
 import { postPictureBits } from '@/lib/post-picture';
 import { StoryCardHost } from '@/lib/story-card-host';
-import { AutoPostRow } from '@/components/forge/AutoPostSheet';
-import { fetchWorkoutPostId, runAutoPost, type AutoPostResult } from '@/data/auto-post-live';
+import { SquadSelectList } from '@/components/forge/SquadSelectList';
+import { fetchWorkoutPostId, fetchWorkoutSharesStrict, runAutoPost } from '@/data/auto-post-live';
+import { postWorkoutRecap } from '@/data/workout-post-live';
 import { clearAutoPostPending, markAutoPostPending } from '@/lib/auto-post-pending';
+import { readLastDestinations, saveLastDestinations } from '@/lib/post-destinations';
 import { fetchMySquads } from '@/data/squad-live';
-import { autoPostLabel, autoPostStanding, postedFor, postedLine, withinAutoPostWindow, type AutoPostPref } from '@/domain/share/auto-post';
-import { shareState } from '@/domain/share/fanout';
+import {
+  NO_DESTINATIONS,
+  autoPostStanding,
+  destinationTargets,
+  parseDestinations,
+  postedFor,
+  postedLine,
+  startingDestinations,
+  withinAutoPostWindow,
+  type AutoPostPref,
+  type Destinations,
+} from '@/domain/share/auto-post';
+import { shareState, squadList } from '@/domain/share/fanout';
+import { foodLine } from '@/domain/share/recap-stats';
+import { plainError } from '@/lib/plain-error';
 import { useAutoPost } from '@/hooks/useAutoPost';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { PriorShare } from '@/domain/share/fanout';
@@ -136,6 +150,7 @@ function WorkoutComplete() {
   const [sealedBefore, setSealedBefore] = useState<boolean | null>(reviewParam === '1' ? true : null);
   const review = reviewParam === '1' || sealedBefore === true;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   // Volume is stored in lb; show it in the athlete's system. `fmt` re-expresses per-set strings.
   const { units, fmt, rowUnit } = useUnits();
@@ -229,7 +244,7 @@ function WorkoutComplete() {
     setStage('record');
   };
   /** The one sheet the capture stage has open, if any. */
-  const [sheet, setSheet] = useState<'note' | 'playlist' | 'share' | null>(null);
+  const [sheet, setSheet] = useState<'note' | 'playlist' | 'squads' | null>(null);
   /* Saving the day as a template. Offered on The Record and nowhere else — it belongs beside the shape it
      would keep, and the primary path (Seal → hold → Legacy) never sees it, which is the point. Most
      sessions should not be templates. */
@@ -278,54 +293,90 @@ function WorkoutComplete() {
    *
    * This screen is only ever reached with a workout `save_workout` already committed, so the post below
    * can fail in any way it likes and the session is still sealed — it is a second thing, reported on the
-   * capture stage with a Retry, never a gate.
+   * capture stage with the error under the button, never a gate.
    *
    * ══ IT FIRES WHEN THEY LEAVE, NOT WHEN THEY ARRIVE (PO 2026-09-30) ══
    *
    * *"It auto posted before I could attach the playlist and my comment."* It fired on arrival, so the
-   * post was the session as it stood before this screen had offered anything. Now the capture stage's
-   * button reads "Post and see your Legacy" and the post is built THEN — from the workout row, so it
-   * carries the note, the playlist and the name saved here. Three ways out, all covered:
+   * post was the session as it stood before this screen had offered anything. Since 2026-10-02 auto-post's
+   * destinations are simply what the Friends / Squads rows START on, and the button posts what they show
+   * — with the note, the photos and the playlist added here. Three ways out, all covered:
    *
-   *   · the button                → `postAndLeave`
-   *   · any other navigation away → the unmount effect below (an athlete who never holds the seal
-   *                                 still asked for it to be posted)
-   *   · closing the app           → the marker, posted on the next launch (`AutoPostCatchUp`)
+   *   · the button                → `finish` (posts the rows as they stand, whatever the pref says)
+   *   · any other navigation away → the unmount effect below, ONLY while the rows are untouched — a row
+   *                                 the athlete changed is their answer, and posting the pref over it
+   *                                 would post to a squad they had just unticked
+   *   · closing the app           → the marker, posted on the next launch (`AutoPostCatchUp`), on the
+   *                                 same condition
    *
    * Never in review (a session reopened from history is not "just finished"), never outside the window
    * `withinAutoPostWindow` allows (a stale tab or reload hours later), and never before the prefs have
    * actually loaded — until then the pref reads OFF, and deciding on that would silently skip it.
-   * The label is drawn from the pref as it stands, so switching auto-post on or off from this screen
-   * changes what the button says and does — nothing happens that the button did not name.
    */
   const autoPost = useAutoPost();
-  const [autoResult, setAutoResult] = useState<AutoPostResult | null>(null);
-  const [autoRetrying, setAutoRetrying] = useState(false);
-  /* One automatic attempt per visit — made, or declined with "Leave without posting". After that the
-     only way to post from here is a person pressing something. */
+  /* One automatic attempt per visit — the button was pressed, after which leaving posts nothing more. */
   const [autoTried, setAutoTried] = useState(false);
-  const [autoPosting, setAutoPosting] = useState(false);
   const autoEligible = !review && withinAutoPostWindow(data?.savedAt ?? null);
-  /* Squad names for "Posted to The Real Cut" and the auto-post row's "My Squad". Failure is "no names". */
-  const { data: mySquads } = useQuery(() => fetchMySquads().catch(() => []), []);
+  /* The athlete's squads — the Squads row, its picker, and the names in "Posted to …". A failed read is
+     said as such on the row, never drawn as "No Squads yet". */
+  const { data: mySquads, error: squadsError } = useQuery(() => fetchMySquads(), []);
+  const memberIds = mySquads ? mySquads.map((s) => s.id) : null;
   const autoStanding =
     !autoTried &&
     autoPost.loaded &&
     /* Not until the session's posts have been READ: "unknown" must not be taken for "nowhere yet". */
     shares !== null &&
-    autoPostStanding(autoPost.pref, mySquads ? mySquads.map((s) => s.id) : null, shares, autoEligible);
+    autoPostStanding(autoPost.pref, memberIds, shares, autoEligible);
 
+  /*
+   * ══ FRIENDS AND SQUADS ARE CHOSEN ON THE SCREEN (PO 2026-10-02) ══
+   *
+   * The destinations used to live behind "Post to Forge" in a sheet; they are two rows on the capture
+   * stage now, and the one button below them posts to exactly what they show. `null` means "untouched —
+   * whatever `startingDestinations` says", which is auto-post's destinations when it is on, else where
+   * this phone last posted by hand, else nothing. Touching either row makes the choice the athlete's own.
+   *
+   * ⚠ NOTHING IS POSTED UNTIL THE BUTTON IS PRESSED, with one exception kept from auto-post: an athlete
+   * who has it on and leaves some other way without touching the rows still gets it posted (below).
+   */
+  const [lastRaw, setLastRaw] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let alive = true;
+    void readLastDestinations().then((r) => alive && setLastRaw(r));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const [friendsPick, setFriendsPick] = useState<boolean | null>(null);
+  const [squadPick, setSquadPick] = useState<ReadonlySet<string> | null>(null);
+  const touched = friendsPick !== null || squadPick !== null;
+  const starting: Destinations =
+    shares !== null && autoPost.loaded && memberIds && lastRaw !== undefined
+      ? startingDestinations({ eligible: autoEligible, prior: shares, pref: autoPost.pref, last: parseDestinations(lastRaw), memberSquadIds: memberIds })
+      : NO_DESTINATIONS;
+  const selection: Destinations = {
+    friends: friendsPick ?? starting.friends,
+    squadIds: squadPick ? [...squadPick] : starting.squadIds,
+  };
+  /* Per-post ticks, off on every visit and never remembered — the map by D-RS-3, the food by PO 09-28. */
+  const [shareRoute, setShareRoute] = useState(false);
+  const [shareFood, setShareFood] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+
+  /* The closing-the-app marker stands only while leaving would auto-post — i.e. while the rows are untouched. */
   const savedAtForAuto = data?.savedAt ?? null;
   useEffect(() => {
-    if (workoutIdForShares && savedAtForAuto && autoEligible) void markAutoPostPending(workoutIdForShares, savedAtForAuto);
-  }, [workoutIdForShares, savedAtForAuto, autoEligible]);
+    if (touched) void clearAutoPostPending();
+    else if (workoutIdForShares && savedAtForAuto && autoEligible) void markAutoPostPending(workoutIdForShares, savedAtForAuto);
+  }, [workoutIdForShares, savedAtForAuto, autoEligible, touched]);
 
   /* What the unmount below would post, kept in a ref because it must read the LATEST answer from a
-     cleanup that was created on the first render. Handlers null it directly — see `postAndLeave`. */
+     cleanup that was created on the first render. The button nulls it directly — see `finish`. */
   const autoOnLeave = useRef<{ id: string; pref: AutoPostPref } | null>(null);
   useEffect(() => {
-    autoOnLeave.current = autoStanding && workoutIdForShares ? { id: workoutIdForShares, pref: autoPost.pref } : null;
-  }, [autoStanding, workoutIdForShares, autoPost.pref]);
+    autoOnLeave.current = autoStanding && !touched && workoutIdForShares ? { id: workoutIdForShares, pref: autoPost.pref } : null;
+  }, [autoStanding, touched, workoutIdForShares, autoPost.pref]);
   useEffect(
     () => () => {
       /* Leaving inside a running app settles it one way or the other, so the marker always goes —
@@ -336,16 +387,6 @@ function WorkoutComplete() {
     },
     [],
   );
-
-  const retryAutoPost = () => {
-    if (!workoutIdForShares || autoRetrying) return;
-    setAutoRetrying(true);
-    void runAutoPost(workoutIdForShares, autoResult?.pref ?? autoPost.pref).then((r) => {
-      setAutoRetrying(false);
-      setAutoResult(r);
-      if (r.prior.length) setShares(r.prior);
-    });
-  };
 
   /*
    * HOW MANY PHOTOS THIS SCREEN PUT IN THE ARCHIVE — a delta, not a count.
@@ -495,35 +536,6 @@ function WorkoutComplete() {
     router.replace('/(tabs)/legacy');
   };
 
-  /*
-   * The auto-post, on the way out. Built now rather than on arrival so it carries what was added here.
-   *
-   * ⚠ ON FAILURE WE STAY. Leaving would put the athlete on Legacy believing it posted; the capture
-   * stage's Retry row is where a failed post is reported, and the exit under it still works.
-   *
-   * The ref is cleared in the handler itself, not left to the effect that mirrors `autoStanding`:
-   * `goHome` can unmount this screen before that effect has run, and the unmount would post again.
-   */
-  const postAndLeave = async () => {
-    if (!workoutIdForShares || autoPosting) return;
-    autoOnLeave.current = null;
-    setAutoTried(true);
-    setAutoPosting(true);
-    void clearAutoPostPending();
-    const r = await runAutoPost(workoutIdForShares, autoPost.pref);
-    setAutoPosting(false);
-    setAutoResult(r);
-    if (r.prior.length) setShares(r.prior);
-    if (r.error) return;
-    if (r.friends || r.squadNames.length) showToast(postedLine(r.squadNames, r.friends));
-    goHome();
-  };
-  const leaveWithoutPosting = () => {
-    autoOnLeave.current = null;
-    setAutoTried(true);
-    void clearAutoPostPending();
-    goHome();
-  };
 
   /*
    * What this session is CALLED right now — the edit if there is one, otherwise what loaded.
@@ -789,52 +801,18 @@ function WorkoutComplete() {
   }
 
   /*
-   * ── THE CAPTURE STAGE'S THREE SHEETS ──
+   * ── THE CAPTURE STAGE'S THREE SHEETS — note, playlist, and the squad picker ──
    *
    * Declared here, below the loading guard, so they can read `data` without threading `?.` through every
    * line of a card that is only ever drawn once the session has loaded. They are mounted in the capture
    * branch and nowhere else, which is the rule `__tests__/overlay-branch.test.mjs` exists to hold.
    */
 
-  /*
-   * WHAT THEY ARE ABOUT TO SEND, BEFORE THEY CHOOSE WHERE.
-   *
-   * Passed INTO the share sheet rather than built inside it: the seal mark, the chapter and the unit
-   * conversion all live on this screen, and Activity Detail — which opens the same sheet — holds a
-   * different shape and simply passes nothing.
-   */
-  const shareCard = (
-    <View style={styles.shareCard}>
-      <LinearGradient colors={forgeOr<readonly [string, string]>(['#0E1216', '#070A0C'], [flColor.charcoal800, flColor.charcoal700])} style={StyleSheet.absoluteFill} />
-      {/* RN has no radial gradient; a top-anchored linear wash that fades out by ~55% is the sanctioned
-          stand-in (the same trick the Mission Card uses). */}
-      <LinearGradient
-        colors={['rgba(198,154,110,0.13)', 'rgba(198,154,110,0)']}
-        locations={[0, 0.55]}
-        style={StyleSheet.absoluteFill}
-      />
-      <CaptureSeal size={64} />
-      <Text style={styles.shareSealed}>SESSION SEALED</Text>
-      <Text style={styles.shareName} numberOfLines={2}>
-        {shownName}
-      </Text>
-      {data.chapterName || data.dateLabel ? (
-        <Text style={styles.shareChapter}>{[data.chapterName, data.dateLabel].filter(Boolean).join(' · ')}</Text>
-      ) : null}
-      <View style={styles.shareRule} />
-      <View style={styles.shareStats}>
-        <ShareStat n={vol(data.volume)} label="Volume" />
-        <View style={styles.shareStatDiv} />
-        <ShareStat n={fmtDuration(data.durationSec)} label="Under Iron" />
-      </View>
-      <Text style={styles.shareWordmark}>FORGE LEGACY</Text>
-    </View>
-  );
-
   const noteSheet = (
     <BottomSheet open={sheet === 'note'} onClose={() => setSheet(null)} title="A note for future you">
       <View style={styles.noteSheet}>
-        <Text style={styles.noteHelper}>One line. You&apos;ll read it again someday.</Text>
+        {/* Said here because it is true: a sealed note is the caption when this workout is shared. */}
+        <Text style={styles.noteHelper}>One line. You&apos;ll read it again someday — and it goes with the workout if you share it.</Text>
         {/* SMART OMISSION: no past note, no block — never an empty state explaining what a memory would be.
             The label is the data layer's, because only it knows whether this was a year ago or last time. */}
         {data.pastReflection ? (
@@ -885,54 +863,148 @@ function WorkoutComplete() {
       />
     ) : null;
 
-  /* ⚠ THE SAME SHEET ACTIVITY DETAIL USES. It lived inline on this screen, which is why the only way to
-     share a session was to have just finished one. The audience rules, the squad-count edge cases and the
-     `(audience = 'FRIENDS') = (squad_id is null)` constraint have one home. */
-  /* The post's summary and its picture, from the session as it stands on this screen (renamed, playlist). */
+  /*
+   * ══ WHAT A PRESS OF THE BUTTON POSTS — built from the session as it stands on THIS screen ══
+   *
+   * ⚠ `sessionName` AND `playlist`, NOT THE VALUES ON `data`. `data` is the completion as it was FETCHED.
+   * Renaming the session or attaching a playlist writes to the database and updates this screen's own
+   * derived state — it does not refetch — so a snapshot read off `data` is the session as it looked before
+   * the athlete touched it (the reported regression: a playlist attached here never reached the post).
+   */
   const postSummary = recapSummaryFrom({ ...data, workoutName: sessionName, playlist });
   const postPicture = pictureBits
     ? (showRoute: boolean) => composePostPicture(storyInputFrom({ ...data, workoutName: shownName }, pictureBits.extras, units), pictureBits.size, { showRoute })
     : null;
-  const shareSheet = (
-    <ShareSessionSheet
-      open={sheet === 'share'}
+  /* The post's words: the sealed reflection, else the line typed under a photo on `/add-photo`. The note
+     sheet says so — there is no second box on this screen to catch a sentence the athlete didn't mean. */
+  const postBody = reflection || mediaCaption;
+  /* Only a session that stored a shape may be asked about the map; only a day with food about the food. */
+  const canShareRoute = postSummary.hasRoute === true;
+  const foodTotals = showFoodRow && today ? totals(today.entries) : null;
+  const foodText = foodLine(foodTotals);
+
+  /* Where this session already is, and what the rows would add to that. */
+  const postedState = shareState(shares ?? []);
+  const unshared = (mySquads ?? []).filter((s) => !postedState.squadIds.includes(s.id));
+  const chosenSquads = unshared.filter((s) => selection.squadIds.includes(s.id));
+  const pendingTargets = destinationTargets(selection, memberIds ?? [], shares ?? []);
+  const forgeSelected = pendingTargets.length > 0;
+
+  const toggleFriends = () => {
+    setPostError(null);
+    setFriendsPick(!selection.friends);
+  };
+  const pickSquads = (next: ReadonlySet<string>) => {
+    setPostError(null);
+    setSquadPick(new Set(next));
+  };
+
+  /*
+   * ══ THE ONE BUTTON — "SAVE & SHARE" OR "SAVE TO LEGACY" ══
+   *
+   * ⚠ THE WORKOUT IS ALREADY SAVED. `save_workout` committed before this screen drew, so nothing here
+   * decides whether the session exists: "Save to Legacy" closes the record, and "Save & Share" posts to
+   * the rows' destinations first. A post that fails leaves the athlete HERE, with what landed recorded and
+   * the button ready to send only the rest — leaving would put them on Legacy believing it posted.
+   *
+   * ⚠ RE-READ, STRICTLY, BEFORE POSTING. The rows were drawn from a read that never throws (an unreadable
+   * list reads as "nowhere yet"), and auto-post may have landed from another launch since. A failed strict
+   * read fails the press; it never guesses, because guessing "nowhere" is how a session posts twice.
+   *
+   * The selection is frozen into the rows on the press, so a retry after a partial failure posts the same
+   * choice rather than whatever the defaults would now say about a session that is posted somewhere.
+   */
+  const finish = async () => {
+    if (posting) return;
+    autoOnLeave.current = null;
+    setAutoTried(true);
+    void clearAutoPostPending();
+    const sel = selection;
+    setFriendsPick(sel.friends);
+    setSquadPick(new Set(sel.squadIds));
+    if (!forgeSelected) {
+      goHome();
+      return;
+    }
+    setPosting(true);
+    setPostError(null);
+    let prior: PriorShare[];
+    try {
+      prior = await fetchWorkoutSharesStrict(data.workoutId);
+    } catch (e) {
+      setPosting(false);
+      setPostError(`${plainError(e, 'Couldn’t check where this is already posted.')} Your workout is saved — try again.`);
+      return;
+    }
+    setShares(prior);
+    const targets = destinationTargets(sel, memberIds ?? [], prior);
+    if (!targets.length) {
+      // Everything chosen already has it (posted from another launch) — nothing to add, nothing doubled.
+      setPosting(false);
+      goHome();
+      return;
+    }
+    const r = await postWorkoutRecap({
+      workoutId: data.workoutId,
+      body: postBody,
+      media: sharePhotos,
+      summary: {
+        ...postSummary,
+        shareRoute: canShareRoute && shareRoute,
+        food: shareFood && foodText && foodTotals ? { kcal: foodTotals.kcal, protein: foodTotals.protein } : null,
+      },
+      targets,
+      squads: mySquads ?? [],
+      photoOverlay: photoLook === 'overlay' && firstPhoto && postPicture ? { photoUri: firstPhoto.url, compose: postPicture } : null,
+    });
+    setShares([...prior, ...r.done]);
+    setPosting(false);
+    if (r.error) {
+      const landed = r.landed.length || r.friends ? ` ${postedLine(r.landed, r.friends)}, but the rest didn’t post.` : '';
+      setPostError(`${plainError(r.error, 'Couldn’t post your workout.')}${landed} Your workout is saved.`);
+      return;
+    }
+    void saveLastDestinations({ friends: sel.friends, squadIds: sel.squadIds });
+    showToast(r.pictureFailed ? `${postedLine(r.landed, r.friends)} — your stats went under the photo.` : postedLine(r.landed, r.friends));
+    goHome();
+  };
+
+  /*
+   * ══ SHARE TO SQUADS — the picker, so a squad count never adds height to the screen ══
+   *
+   * It edits the selection DIRECTLY — no draft — so closing it any way at all keeps what was ticked; Done
+   * only says how many. Squads that already have this session are not offered (the same rule
+   * `ShareSessionSheet` follows) and the hint says how many are left out.
+   */
+  const chosenIds = new Set(chosenSquads.map((s) => s.id));
+  const squadSheet = (
+    <BottomSheet
+      open={sheet === 'squads'}
       onClose={() => setSheet(null)}
-      workoutId={data.workoutId}
-      workoutName={shownName}
-      /*
-       * ⚠ `sessionName` AND `playlist`, NOT THE VALUES ON `data`.
-       *
-       * `data` is the completion as it was FETCHED. Renaming the session or attaching a playlist writes
-       * to the database and updates this screen's own derived state — it does not refetch — so anything
-       * read off `data` here is the session as it looked before the athlete touched it.
-       *
-       * The rename case was already handled. The playlist case was not, and it is the whole of a reported
-       * regression: attaching a playlist on this stage and sharing in the same visit posted a snapshot
-       * whose `playlist` was still null, so the feed card showed no playlist row while Activity Detail —
-       * which reads the WORKOUT rather than the post — showed it correctly. The card was not dropping the
-       * playlist; the share never carried one.
-       *
-       * The old flow hid this: the playlist was attached from the ⋯ menu DURING the session, so it was
-       * already on the row by the time this screen loaded. Moving the attach point into `capture` moved
-       * it to after the read.
-       */
-      summary={postSummary}
-      /*
-       * The three things `capture` invites, all of which used to stop at this screen. A recap posted a
-       * snapshot and nothing else — `body: ''` and `media: []` were hardcoded in the sheet — so the note
-       * and the photo an athlete had just added were, from the feed's point of view, never made.
-       */
-      /* A sealed reflection, else the caption under the video, else a note typed and never sealed — the
-         sheet shows whichever it gets in an editable box, so nothing typed is lost on the way to the post. */
-      note={reflection || mediaCaption || note.trim() || null}
-      media={sharePhotos}
-      onShared={setShares}
-      preview={shareCard}
-      /* Today's food, OFFERED as a tick box on the sheet — never posted unless ticked. Same gate as the
-         "Log what you ate" row: no Nutrition access or a reviewed session, no offer. */
-      food={showFoodRow && today ? totals(today.entries) : null}
-      photoOverlay={photoLook === 'overlay' && firstPhoto && postPicture ? { photoUri: firstPhoto.url, compose: postPicture } : null}
-    />
+      title="Share to Squads"
+      scroll
+      footer={
+        <Button variant="primary" fullWidth onPress={() => setSheet(null)} accessibilityLabel={`Done, ${chosenSquads.length} selected`}>
+          {`Done (${chosenSquads.length})`}
+        </Button>
+      }
+    >
+      <Text style={styles.pickerSub}>Select which squads to share this workout to.</Text>
+      <SquadSelectList
+        squads={unshared}
+        selected={chosenIds}
+        onChange={pickSquads}
+        disabled={posting}
+        showCrest
+        hint={
+          postedState.squadIds.length
+            ? postedState.squadIds.length === 1
+              ? 'One squad already has it and isn’t listed.'
+              : `${postedState.squadIds.length} squads already have it and aren’t listed.`
+            : undefined
+        }
+      />
+    </BottomSheet>
   );
 
   /*
@@ -1103,208 +1175,241 @@ function WorkoutComplete() {
   /*
    * ── Stage 2 · Capture — a second, distinct moment that happens AFTER closure ──
    *
-   * Everything flows from the top: no `marginTop: auto`, no space-between, no pinned footer. The dead
-   * band between the rows and the buttons is the defect this layout exists to not have.
+   * REDESIGNED 2026-10-02 (PO mockup) to read as five things, in order: the workout is complete · the one
+   * accomplishment, if there is one · add to the record · decide where it appears · finish. The record
+   * offers became four equal tiles and the destinations became rows ON the screen (Friends toggles,
+   * Squads opens a picker, outside Forge opens the picture), so neither grows with a squad count.
    *
-   * The three rows are offers, not steps — nothing here is required and nothing is "skipped". The only
-   * done-affordance is the icon shifting from bronze-primary to bronze-bright; no ticks, no badges.
+   * Nothing here is required and nothing is "skipped". Nothing here can lose the workout either — it was
+   * committed before this screen drew, which is why there is no "Leave without …" exit any more: every way
+   * out is safe, and the button's label only says whether it posts on the way.
    */
   if (stage === 'capture') {
-    /* What this session's posts add up to — the screen's own read, plus anything auto-post landed that
-       the read (which began earlier) may not have seen. `shareState` collapses the overlap. */
-    const postedState = shareState([...(shares ?? []), ...(autoResult?.prior ?? [])]);
+    /* What this session's posts add up to — named, for the line under the share rows. */
     const postedWhere = postedFor(postedState, mySquads ?? []);
-    const autoFailed = !!autoResult?.error;
-    const autoPartial = autoResult && (autoResult.friends || autoResult.squadNames.length) ? postedLine(autoResult.squadNames, autoResult.friends) : null;
     /* A squad post has a page; a friends-only post lives in the friends feed. */
     const viewPost = async () => {
-      const id = autoResult?.squadPostId ?? (await fetchWorkoutPostId(data.workoutId));
+      const id = await fetchWorkoutPostId(data.workoutId);
       if (id) router.push({ pathname: '/squad-post/[id]', params: { id } });
       else router.push('/friends');
     };
     const noteFilled = reflection.length > 0;
     const playlistName = playlist ? playlistLabel(playlist) : '';
-    /* One line instead of the seal stage's boxed stat strip — the numbers are a fact you already read a
-       moment ago, not the subject of this screen. Volume is omitted rather than shown as "0" on a
-       session that moved none (a run, a mobility day). */
-    const metaLine = [data.dateLabel, fmtDuration(data.durationSec), data.volume > 0 ? `${vol(data.volume)} volume` : null]
-      .filter(Boolean)
-      .join(' · ');
     const riseY = rise.interpolate({ inputRange: [0, 1], outputRange: [14, 0] });
+
+    /* The second number: volume when iron moved, else the distance a run or a row covered, else nothing —
+       never a "0 lb" on a session that moved none. */
+    const distanceMi = data.exercises.reduce((n, ex) => n + (ex.cardio?.distanceMi ?? 0), 0);
+    const second =
+      data.volume > 0
+        ? { icon: 'barbell' as const, n: `${vol(data.volume)} ${volUnit}`, label: 'Total Volume' }
+        : distanceMi > 0
+          ? { icon: 'route' as const, n: `${toDistance(distanceMi, units).toFixed(2)} ${distanceLabel(units)}`, label: 'Distance' }
+          : null;
+
+    /*
+     * ══ ONE ACCOMPLISHMENT, AND ONLY A REAL ONE ══
+     *
+     * Every source here is derived by the data layer from the database — a PR or honor this session set, a
+     * chapter milestone, a program finished or a week of one completed. "Consistency · Another one down" is
+     * deliberately NOT surfaced: it is true of every workout, which is the definition of manufactured.
+     */
+    const moment: { glyph: EngravedName; title: string; sub: string } | null = graduation
+      ? { glyph: 'medal', title: 'Program complete', sub: graduation.programName }
+      : data.hero && data.hero.kind !== 'consistency'
+        ? {
+            glyph: MOMENT_GLYPHS[data.hero.kind],
+            title: data.hero.featured ? data.hero.eyebrow : data.hero.title,
+            sub: data.hero.featured ? data.hero.title : [data.hero.eyebrow, data.hero.note].filter(Boolean).join(' · '),
+          }
+        : completion
+          ? { glyph: 'milestone', title: 'Week complete', sub: completion.programName }
+          : null;
+
+    /* The Squads row says how many, and which — never one row per squad, whatever the count. */
+    const squadRow: { title: string; sub: string; disabled: boolean } = !mySquads
+      ? { title: 'Squads', sub: squadsError ? 'Couldn’t load your Squads' : 'Loading your Squads…', disabled: true }
+      : mySquads.length === 0
+        ? { title: 'No Squads yet', sub: 'Join a Squad to share here', disabled: true }
+        : unshared.length === 0
+          ? { title: postedState.squadIds.length === 1 ? 'Posted to your Squad' : 'Posted to your Squads', sub: squadList(mySquads.filter((s) => postedState.squadIds.includes(s.id)).map((s) => s.name)), disabled: true }
+          : {
+              title: chosenSquads.length === 0 ? 'No Squads selected' : `${chosenSquads.length} ${chosenSquads.length === 1 ? 'Squad' : 'Squads'} selected`,
+              sub: chosenSquads.length
+                ? chosenSquads.map((s) => s.name).join(', ')
+                : postedState.squadIds.length
+                  ? `Already posted to ${squadList(mySquads.filter((s) => postedState.squadIds.includes(s.id)).map((s) => s.name))}`
+                  : 'Choose which Squads see it',
+              disabled: posting,
+            };
+
+    const ctaLabel = forgeSelected ? 'SAVE & SHARE' : review ? 'DONE' : 'SAVE TO LEGACY';
+
+    /* The picture, not a screenshot — `/share-story` draws the branded card in its templates and hands it
+       to the phone's own share sheet, which lists only the apps that are actually installed. */
+    const shareOutside = () => {
+      const photo = sharePhotos.find((m) => m.kind === 'image')?.url;
+      router.push({ pathname: '/share-story', params: photo ? { workoutId: data.workoutId, photo } : { workoutId: data.workoutId } });
+    };
 
     return (
       <Shell>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.capScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={[styles.capScroll, { paddingTop: insets.top + 18, paddingBottom: insets.bottom + 18 }]}
+          showsVerticalScrollIndicator={false}
+        >
           <Animated.View style={[styles.capBlock, { opacity: rise, transform: [{ translateY: riseY }] }]}>
-            {/* No ember glow and no pulse. The glow belongs to the ceremony, and this is not one. */}
-            <CaptureSeal size={72} />
-            <Text style={styles.capName}>{shownName}</Text>
-            {metaLine ? <Text style={styles.capMeta}>{metaLine}</Text> : null}
-
-            <View style={styles.capSection}>
-              <Text style={styles.capSectionLabel}>YOUR RECORD</Text>
-              {/* Load-bearing copy: it is the only thing explaining why the workout is already done and
-                  there are still things to add. Do not rewrite it. */}
-              <Text style={styles.capSectionBody}>The workout is sealed. What surrounds it is still yours to add.</Text>
-            </View>
-
-            <View style={styles.capRows}>
-              <CaptureRow
-                icon={<PencilGlyph size={18} color={noteFilled ? flColor.bronze300 : flColor.bronze400} />}
-                label={noteFilled ? `“${reflection}”` : 'Add a note'}
-                filled={noteFilled}
-                onPress={openNote}
-              />
-              <CaptureRow
-                divided
-                icon={<CameraGlyph size={18} color={photos > 0 ? flColor.bronze300 : flColor.bronze400} />}
-                label={photos > 0 ? `${photos} ${photos === 1 ? 'photo' : 'photos'} attached` : 'Add photo or video'}
-                filled={photos > 0}
-                /*
-                 * ROUTES TO THE ARCHIVE'S ONE DOOR rather than opening a bare picker. `/add-photo` is
-                 * where the 75-photo / 5-video cap is actually enforced (M-7's pre-action check — see
-                 * `useMediaPicker`'s header on why it is not enforced in the picker), and it is where a
-                 * photo gets its date, its label and its caption. A picker wired straight in here would
-                 * bypass the cap and file every shot as an unlabelled one.
-                 */
-                onPress={() => router.push('/add-photo')}
-              />
-              <CaptureRow
-                divided
-                icon={<NoteGlyph size={18} color={playlist ? flColor.bronze300 : flColor.bronze400} />}
-                label={playlist ? playlistName : 'Add playlist'}
-                filled={!!playlist}
-                onPress={() => setSheet('playlist')}
-              />
-              {showFoodRow ? (
-                <CaptureRow
-                  divided
-                  icon={<BowlGlyph size={18} color={eatenToday > 0 ? flColor.bronze300 : flColor.bronze400} />}
-                  /* Reads as a fact once there is one, like the note and the photo above it — not as a
-                     second ask. Nothing here nags: an unlogged day simply offers the door. */
-                  label={eatenToday > 0 ? `${thousands(eatenToday)} cal logged today` : 'Log what you ate'}
-                  filled={eatenToday > 0}
-                  /* Outside the Nutrition tab, so it asks for the Nutrition consent itself (MHMDA). */
-                  onPress={() => void consentForRoute('/log-food').then((ok) => ok && router.push('/log-food'))}
-                />
+            {/* ── 1 · the completion moment ── No ember glow and no pulse: the glow belongs to the ceremony. */}
+            <CaptureSeal size={56} />
+            <Text style={styles.capName} numberOfLines={2} accessibilityRole="header">
+              {shownName}
+            </Text>
+            <Text style={styles.capEyebrow}>{review && data.dateLabel ? `Workout complete · ${data.dateLabel}` : 'Workout complete'}</Text>
+            <View style={styles.capStats}>
+              <CapStat icon="clock" n={fmtDuration(data.durationSec)} label="Duration" />
+              {second ? (
+                <>
+                  <View style={styles.capStatDiv} />
+                  <CapStat icon={second.icon} n={second.n} label={second.label} />
+                </>
               ) : null}
             </View>
 
-            {firstPhoto ? (
-              <PhotoLookChoice
-                value={photoLook}
-                onChange={setPhotoLook}
-                overlay={postPicture ? postPicture(false) : null}
-                photoUrl={firstPhoto.url}
-                stats={workoutStats(postSummary, units, rowUnit)}
-                width={Math.min(322, windowW - 48)}
-              />
+            {/* ── 2 · the accomplishment, when there is one ── */}
+            {moment ? (
+              <Pressable
+                onPress={openRecord}
+                accessibilityRole="button"
+                accessibilityLabel={`${moment.title}. ${moment.sub}. View workout details`}
+                style={({ pressed }) => [styles.moment, pressed ? styles.pressed : null]}
+              >
+                <EngravedIcon name={moment.glyph} size={24} color={flColor.bronze300} />
+                <View style={styles.momentText}>
+                  <Text style={styles.momentTitle} numberOfLines={1}>
+                    {moment.title}
+                  </Text>
+                  <Text style={styles.momentSub} numberOfLines={1}>
+                    {moment.sub}
+                  </Text>
+                </View>
+                <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
+              </Pressable>
             ) : null}
 
-            {/*
-              ══ POST TO FORGE — the only filled button on this screen ══
-
-              It said "Share your workout", and some athletes never realised it published anything inside
-              Forge: "share" reads as the phone's share sheet. POST is the in-app word now (Friends,
-              Squads); SHARE is kept for leaving the app. The sub-line says who sees it.
-
-              Once the session is posted — by hand or by auto-post — the button gives way to a quiet
-              confirmation that names where, with View post. Posting somewhere else stays one tap away
-              underneath: the sheet refuses destinations that already have it, so it cannot duplicate.
-            */}
-            <View style={styles.capShare}>
-              {postedWhere ? (
-                <>
-                  <View style={styles.postedBox} accessibilityRole="text" accessibilityLabel={postedWhere}>
-                    <EngravedIcon name="check" size={15} color={flColor.bronze300} />
-                    <Text style={styles.postedText} numberOfLines={2}>
-                      {postedWhere}
-                    </Text>
-                    <Pressable onPress={() => void viewPost()} accessibilityRole="button" accessibilityLabel="View post" hitSlop={8}>
-                      <Text style={styles.postedLink}>View post</Text>
-                    </Pressable>
-                  </View>
-                  <Pressable onPress={() => setSheet('share')} accessibilityRole="button" accessibilityLabel="Post somewhere else" style={styles.postAgain}>
-                    <Text style={styles.postAgainText}>Post somewhere else</Text>
-                  </Pressable>
-                </>
-              ) : autoStanding ? (
-                /*
-                  AUTO-POST IS ON AND THIS SESSION IS NOT POSTED YET — so leaving posts it, and the
-                  button says so (PO 2026-09-30). It is built on the press, which is what lets the note
-                  and the playlist above go with it. Disabled while one of those is still saving: a
-                  post built mid-save would be the session without the thing just added.
-                */
-                <>
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    icon={<EngravedIcon name="upload" size={18} color={flColor.onBronze} />}
-                    subLabel={mySquads ? `Posts to ${autoPostLabel(autoPost.pref, mySquads)}` : 'Posts automatically'}
-                    disabled={autoPosting || savingNote || savingPlaylist || savingName}
-                    onPress={() => void postAndLeave()}
-                    accessibilityLabel="Post and see your Legacy"
-                  >
-                    {autoPosting ? 'Posting…' : 'Post and see your Legacy'}
-                  </Button>
-                  <Pressable onPress={() => setSheet('share')} accessibilityRole="button" accessibilityLabel="Add photos or post somewhere else" style={styles.postAgain}>
-                    <Text style={styles.postAgainText}>Add photos or post somewhere else</Text>
-                  </Pressable>
-                </>
-              ) : (
-                <Button
-                  variant="primary"
-                  fullWidth
-                  icon={<EngravedIcon name="upload" size={18} color={flColor.onBronze} />}
-                  subLabel="Share with Friends or your Squad"
-                  onPress={() => setSheet('share')}
-                  accessibilityLabel="Post to Forge. Share with Friends or your Squad"
-                >
-                  Post to Forge
-                </Button>
-              )}
-              {/* An auto-post that did not finish. The session is sealed regardless; this is only the post. */}
-              {autoFailed ? (
-                <View style={styles.autoFail}>
-                  <Text style={styles.autoFailText}>
-                    {autoPartial ? `${autoPartial}, but the rest didn’t post.` : 'Couldn’t post automatically.'} Your workout is saved.
-                  </Text>
-                  <Pressable onPress={retryAutoPost} disabled={autoRetrying} accessibilityRole="button" accessibilityLabel="Retry posting" hitSlop={8}>
-                    <Text style={styles.postedLink}>{autoRetrying ? 'Posting…' : 'Retry'}</Text>
-                  </Pressable>
-                </View>
-              ) : null}
-              <View style={styles.autoRowWrap}>
-                <AutoPostRow squads={mySquads ?? null} />
+            {/* ── 3 · add to the record ── four offers, never a checklist: an attached one reads as attached. */}
+            <View style={styles.capSection}>
+              <SectionHead title="Add to your record" sub="Add something worth remembering." />
+              <View style={styles.tiles}>
+                <RecordTile icon="edit" label="Note" done={noteFilled} a11y={noteFilled ? `Note added: ${reflection}` : 'Add a note'} onPress={openNote} />
+                <RecordTile
+                  icon="camera"
+                  label={photos > 1 ? `${photos} Photos` : 'Photo'}
+                  done={photos > 0}
+                  a11y={photos > 0 ? `${photos} ${photos === 1 ? 'photo' : 'photos'} attached` : 'Add a photo or video'}
+                  /*
+                   * ROUTES TO THE ARCHIVE'S ONE DOOR rather than opening a bare picker. `/add-photo` is where
+                   * the 75-photo / 5-video cap is enforced (M-7's pre-action check) and where a photo gets its
+                   * date, its label and its caption.
+                   */
+                  onPress={() => router.push('/add-photo')}
+                />
+                <RecordTile icon="music" label="Playlist" done={!!playlist} a11y={playlist ? `Playlist: ${playlistName}` : 'Add a playlist'} onPress={() => setSheet('playlist')} />
+                {/* Gated on Nutrition access, and never on a reviewed session — "log what you ate" would be ambiguous about which day. */}
+                {showFoodRow ? (
+                  <RecordTile
+                    icon="bowl"
+                    label="Meal"
+                    done={eatenToday > 0}
+                    a11y={eatenToday > 0 ? `${thousands(eatenToday)} calories logged today` : 'Log what you ate'}
+                    /* Outside the Nutrition tab, so it asks for the Nutrition consent itself (MHMDA). */
+                    onPress={() => void consentForRoute('/log-food').then((ok) => ok && router.push('/log-food'))}
+                  />
+                ) : null}
               </View>
             </View>
 
-            {/* Two bare text buttons, never full-width ones. The weight difference is the whole hierarchy:
-                the exit reads above the secondary navigation, and neither competes with Share. */}
-            <View style={styles.capExits}>
-              {/*
-                ⚠ IT SAID "Back to home" AND WENT TO LEGACY — for two years, on the screen an athlete
-                reaches at the single best moment the app has.
+            {/* ── 4 · where it appears ── POST inside Forge (Friends, Squads); SHARE leaves it. */}
+            <View style={styles.capSection}>
+              <SectionHead title="Share this workout" sub="Choose where it appears." aside="Optional" />
+              <View style={styles.shareRows}>
+                <ShareRow
+                  icon="partners"
+                  title="Friends"
+                  sub={postedState.friends ? 'Posted' : null}
+                  mode="toggle"
+                  selected={postedState.friends || selection.friends}
+                  disabled={postedState.friends || posting}
+                  onPress={toggleFriends}
+                />
+                <ShareRow icon="people" title={squadRow.title} sub={squadRow.sub} mode="open" disabled={squadRow.disabled} onPress={() => setSheet('squads')} />
+                <ShareRow icon="share" title="Share outside Forge" sub="Instagram, Stories, Messages + More" mode="open" onPress={shareOutside} />
+              </View>
 
-                The DESTINATION is right and deliberate (see `goHome`): the session just landed in Legacy,
-                the first-workout chapter reveal draws there, and the Initiative ceremony fires on
-                whichever tab has focus. The LABEL was the defect. A control names what happens, and this
-                one named a different screen — so the app quietly moved them somewhere they had not asked
-                to go, at the exact moment it had earned their trust.
-              */}
-              {/* While the filled button above is the one that leaves (and posts), this exit is the way
-                  out WITHOUT posting — and says so, because every other way of leaving does post. */}
-              {autoStanding ? (
-                <Pressable onPress={leaveWithoutPosting} accessibilityRole="button" accessibilityLabel="Leave without posting" style={styles.capExitBtn}>
-                  <Text style={styles.capExit}>Leave without posting</Text>
-                </Pressable>
-              ) : (
-                <Pressable onPress={goHome} accessibilityRole="button" accessibilityLabel={review ? 'Done' : 'See your Legacy'} style={styles.capExitBtn}>
-                  <Text style={styles.capExit}>{review ? 'Done' : 'See your Legacy'}</Text>
-                </Pressable>
-              )}
-              <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="See workout details" style={styles.capExitBtn}>
-                <Text style={styles.capExitSub}>See workout details</Text>
+              {/* Per-post ticks, asked only when there is something to ask and somewhere in Forge to post it. */}
+              {forgeSelected && canShareRoute ? (
+                <PostTick
+                  on={shareRoute}
+                  onPress={() => setShareRoute((v) => !v)}
+                  disabled={posting}
+                  label="Include the map"
+                  sub="Shows where you went, start and finish included."
+                  a11y="Include the map of your route on this post"
+                />
+              ) : null}
+              {forgeSelected && foodText ? (
+                <PostTick on={shareFood} onPress={() => setShareFood((v) => !v)} disabled={posting} label="Post what I ate?" sub={foodText} a11y="Include what you ate today on this post" />
+              ) : null}
+              {/* Stats ON the photo or under it (PO 10-02) — a choice about the Forge post, so it appears with one. */}
+              {forgeSelected && firstPhoto ? (
+                <View style={styles.photoLook}>
+                  <PhotoLookChoice
+                    value={photoLook}
+                    onChange={setPhotoLook}
+                    overlay={postPicture ? postPicture(false) : null}
+                    photoUrl={firstPhoto.url}
+                    stats={workoutStats(postSummary, units, rowUnit)}
+                    width={Math.min(360, windowW - 40)}
+                  />
+                </View>
+              ) : null}
+
+              {/* Where it already is — the durable answer to "did that post?", so nobody posts it twice. */}
+              {postedWhere ? (
+                <View style={styles.postedLine} accessibilityRole="text">
+                  <EngravedIcon name="check" size={14} color={flColor.bronze300} />
+                  <Text style={styles.postedText} numberOfLines={2}>
+                    {postedWhere}
+                  </Text>
+                  <Pressable onPress={() => void viewPost()} accessibilityRole="button" accessibilityLabel="View post" hitSlop={10}>
+                    <Text style={styles.postedLink}>View post</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
+
+            {/* ── 5 · finish ── The workout is already saved; this button only decides whether it is also posted. */}
+            <View style={styles.capCta}>
+              <Button
+                variant="primary"
+                fullWidth
+                icon={<ForgeMarkGlyph size={20} color={flColor.onBronze} />}
+                /* Not mid-save: a post built while the note or playlist is still writing is the session without it. */
+                disabled={posting || savingNote || savingPlaylist || savingName}
+                onPress={() => void finish()}
+                accessibilityLabel={forgeSelected ? 'Save and share' : review ? 'Done' : 'Save to Legacy'}
+              >
+                {posting ? 'POSTING…' : ctaLabel}
+              </Button>
+              {postError ? (
+                <Text style={styles.postError} accessibilityRole="alert">
+                  {postError}
+                </Text>
+              ) : null}
+              <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.detailsLink} hitSlop={6}>
+                <Text style={styles.detailsText}>View workout details</Text>
+                <EngravedIcon name="chevron-right" size={14} color={flColor.gray400} />
               </Pressable>
             </View>
           </Animated.View>
@@ -1312,7 +1417,7 @@ function WorkoutComplete() {
 
         {noteSheet}
         {playlistSheet}
-        {shareSheet}
+        {squadSheet}
         {/* The phone draws the stats-on-the-photo picture here when the post is sent (`renderStoryImage`). */}
         <StoryCardHost />
       </Shell>
@@ -1718,54 +1823,146 @@ function CaptureSeal({ size }: { size: number }) {
   );
 }
 
+/** One number in the capture hero: an engraved glyph beside the figure, its label under it. */
+function CapStat({ icon, n, label }: { icon: EngravedName; n: string; label: string }) {
+  return (
+    <View style={styles.capStat} accessible accessibilityLabel={`${label}: ${n}`}>
+      <EngravedIcon name={icon} size={22} color={flColor.bronze300} />
+      <View>
+        <Text style={styles.capStatN}>{n}</Text>
+        <Text style={styles.capStatLabel}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
+/** A section label in the screen's label voice, its one-line purpose under it, an optional aside on the right. */
+function SectionHead({ title, sub, aside }: { title: string; sub: string; aside?: string }) {
+  return (
+    <View style={styles.sectionHead}>
+      <View style={styles.sectionHeadTop}>
+        <Text style={styles.sectionTitle} accessibilityRole="header">
+          {title}
+        </Text>
+        {aside ? <Text style={styles.sectionAside}>{aside}</Text> : null}
+      </View>
+      <Text style={styles.sectionSub}>{sub}</Text>
+    </View>
+  );
+}
+
 /**
- * One offer on the capture stage: `[icon] [label] [chevron]`, 54px, and nothing else.
+ * One of the four things that can be added to the record — glyph over a short label, an equal share of the row.
  *
- * ⚠ THE ONLY "DONE" AFFORDANCE IS THE ICON GOING FROM BRONZE-PRIMARY TO BRONZE-BRIGHT. No checkmarks,
- * no filled backgrounds, no badges — these are things you may add, not a checklist you are failing.
+ * ⚠ ATTACHED READS AS ATTACHED. The rows this replaced only brightened the icon, and on a tile that is not
+ * enough to tell an added note from an untouched one. So a done tile takes the app's one selected
+ * vocabulary — `accentBorder` + `selectedFill` + `selectedInk` (bronze is earned) — and a small check in
+ * its corner. It stays tappable: the same tap edits what was added.
  */
-function CaptureRow({
-  icon,
-  label,
-  filled,
-  onPress,
-  divided = false,
-}: {
-  icon: ReactNode;
-  label: string;
-  filled: boolean;
-  onPress: () => void;
-  divided?: boolean;
-}) {
+function RecordTile({ icon, label, done, a11y, onPress }: { icon: EngravedName; label: string; done: boolean; a11y: string; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={label}
-      style={({ pressed }) => [styles.capRow, divided ? styles.capRowDiv : null, pressed ? styles.capRowPressed : null]}
+      accessibilityLabel={a11y}
+      accessibilityState={{ selected: done }}
+      style={({ pressed }) => [styles.tile, done ? styles.tileDone : null, pressed ? styles.pressed : null]}
     >
-      {icon}
-      <Text style={[styles.capRowLabel, filled ? styles.capRowLabelFilled : null]} numberOfLines={1}>
+      <EngravedIcon name={icon} size={22} color={done ? flColor.bronze300 : flColor.bronze400} />
+      <Text style={[styles.tileLabel, done ? styles.tileLabelDone : null]} numberOfLines={1}>
         {label}
       </Text>
-      <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
+      {done ? (
+        <View style={styles.tileCheck}>
+          <EngravedIcon name="check" size={9} color={flColor.onBronze} />
+        </View>
+      ) : null}
     </Pressable>
   );
 }
 
-function PencilGlyph({ size = 18, color = flColor.bronze400 }: { size?: number; color?: string }) {
-  return <EngravedIcon name="edit" size={size} color={engravedTint(color)} />;
-}
-
-/** One figure on the share card. Smaller and quieter than `Stat` — the card is 238px wide. */
-function ShareStat({ n, label }: { n: string; label: string }) {
+/**
+ * One destination row. `toggle` selects in place (Friends) and shows a check disc; `open` leads somewhere
+ * (the squad picker, the picture) and shows a chevron. Selected is the restrained bronze edge, never a fill
+ * of colour across the row.
+ */
+function ShareRow({
+  icon,
+  title,
+  sub,
+  mode,
+  selected = false,
+  disabled = false,
+  onPress,
+}: {
+  icon: EngravedName;
+  title: string;
+  sub: string | null;
+  mode: 'toggle' | 'open';
+  selected?: boolean;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
   return (
-    <View style={styles.shareStat}>
-      <Text style={styles.shareStatN}>{n}</Text>
-      <Text style={styles.shareStatLabel}>{label}</Text>
-    </View>
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole={mode === 'toggle' ? 'checkbox' : 'button'}
+      accessibilityLabel={sub ? `${title}. ${sub}` : title}
+      accessibilityState={mode === 'toggle' ? { checked: selected, disabled } : { disabled }}
+      style={({ pressed }) => [styles.shareRow, selected ? styles.shareRowOn : null, pressed && !disabled ? styles.pressed : null]}
+    >
+      <EngravedIcon name={icon} size={22} color={selected ? flColor.bronze300 : flColor.gray400} />
+      <View style={styles.shareRowText}>
+        <Text style={[styles.shareRowTitle, selected ? styles.shareRowTitleOn : null]} numberOfLines={1}>
+          {title}
+        </Text>
+        {sub ? (
+          <Text style={styles.shareRowSub} numberOfLines={1}>
+            {sub}
+          </Text>
+        ) : null}
+      </View>
+      {mode === 'toggle' ? (
+        <View style={[styles.checkDisc, selected ? styles.checkDiscOn : null]}>
+          {selected ? <EngravedIcon name="check" size={12} color={flColor.onBronze} /> : null}
+        </View>
+      ) : disabled ? null : (
+        <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
+      )}
+    </Pressable>
   );
 }
+
+/** A per-post tick — the map, the food. Off on every visit; nothing here is ever remembered. */
+function PostTick({ on, onPress, disabled, label, sub, a11y }: { on: boolean; onPress: () => void; disabled: boolean; label: string; sub: string; a11y: string }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: on, disabled }}
+      accessibilityLabel={a11y}
+      style={[styles.tick, on ? styles.tickOn : null]}
+    >
+      <View style={[styles.tickBox, on ? styles.tickBoxOn : null]}>{on ? <EngravedIcon name="check" size={11} color={flColor.onBronze} /> : null}</View>
+      <View style={styles.tickText}>
+        <Text style={[styles.tickLabel, on ? styles.tickLabelOn : null]}>{label}</Text>
+        <Text style={styles.tickSub} numberOfLines={1}>
+          {sub}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/** The accomplishment card's glyph per hero kind — a trophy for a record, as the design draws it. */
+const MOMENT_GLYPHS: Record<CompletionHero['kind'], EngravedName> = {
+  honor: 'laurel',
+  pr: 'trophy',
+  milestone: 'medal',
+  consistency: 'flame',
+};
 
 function Stat({ n, label }: { n: string; label: string }) {
   return (
@@ -1840,19 +2037,6 @@ function Hero({ hero }: { hero: CompletionHero }) {
       </Text>
     </View>
   );
-}
-
-function CameraGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return <EngravedIcon name="camera" size={size} color={engravedTint(color)} />;
-}
-
-/** §5's music-note mark — the same glyph the chip and the ⋯ Options row use. */
-function BowlGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return <EngravedIcon name="bowl" size={size} color={engravedTint(color)} />;
-}
-
-function NoteGlyph({ size = 17, color = flColor.bronze300 }: { size?: number; color?: string }) {
-  return <EngravedIcon name="music" size={size} color={engravedTint(color)} />;
 }
 
 function TemplateGlyph({ size = 15, color = flColor.bronze400 }: { size?: number; color?: string }) {
@@ -1941,57 +2125,107 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
   err: { color: flColor.gray400, fontFamily: flFont.sans, fontSize: 15 },
 
-  /* ── capture stage ──
-     ⚠ EVERYTHING FLOWS FROM THE TOP. No `marginTop: 'auto'`, no space-between, no pinned footer: the
-     first draft pinned the buttons to the bottom and left a dead band under the rows on a tall phone,
-     which is the defect this layout exists to not have. `alignItems: center` + a 322px cap on each
-     block is what keeps it a column rather than a stretched form. */
-  capScroll: { paddingTop: 52, paddingHorizontal: 34, paddingBottom: 34, alignItems: 'center' },
-  capBlock: { width: '100%', alignItems: 'center' },
-  capName: { fontFamily: flFont.display, fontSize: 26, fontWeight: '700', lineHeight: 28, letterSpacing: 0.3, color: flColor.cream100, textAlign: 'center', marginTop: 15 },
-  capMeta: { fontFamily: flFont.sans, fontSize: 12.5, letterSpacing: 0.3, color: flColor.gray600, textAlign: 'center', marginTop: 6 },
-  capSection: { width: '100%', maxWidth: 322, marginTop: 30, gap: 7 },
-  capSectionLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 2.2, textTransform: 'uppercase', color: flColor.labelInk },
-  capSectionBody: { fontFamily: flFont.sans, fontSize: 13, lineHeight: 19.5, color: flColor.gray400, marginBottom: 4 },
-  capRows: {
-    width: '100%',
-    maxWidth: 322,
-    borderRadius: flRadius.lg,
-    borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.surfaceRecessed,
-    boxShadow: flShadow.borderInset,
-    overflow: 'hidden',
-  },
-  capRow: { height: 54, flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 15 },
-  // Between rows only — no rule above the first or below the last, or the group grows a double edge.
-  capRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
-  capRowPressed: { backgroundColor: flColor.charcoal900 },
-  capRowLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 14, color: flColor.gray400 },
-  capRowLabelFilled: { color: flColor.cream100 },
-  capShare: { width: '100%', maxWidth: 322, marginTop: 22 },
-  postedBox: {
+  /* ── capture stage (PO 2026-10-02: completed · accomplishment · add · share · finish) ──
+     ⚠ EVERYTHING FLOWS FROM THE TOP. No `marginTop: 'auto'`, no space-between, no pinned footer: a pinned
+     button leaves a dead band under the content on a tall phone. The sections are spaced by ONE rule
+     (`capSection`'s 18pt + its rule) so the screen reads as five steps rather than a stack of cards, and the 420pt cap
+     keeps it a column on a tablet or a wide browser. */
+  capScroll: { paddingHorizontal: 20, alignItems: 'center' },
+  capBlock: { width: '100%', maxWidth: 420, alignItems: 'center' },
+  capName: { fontFamily: flFont.display, fontSize: 30, fontWeight: '700', lineHeight: 34, letterSpacing: 0.2, color: flColor.cream100, textAlign: 'center', marginTop: 12 },
+  capEyebrow: { fontSize: 12, fontWeight: '700', letterSpacing: 3, textTransform: 'uppercase', color: flColor.labelInk, textAlign: 'center', marginTop: 6 },
+  capStats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16 },
+  capStat: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18 },
+  capStatN: { fontFamily: flFont.display, fontSize: 22, fontWeight: '600', color: flColor.cream100, fontVariant: ['tabular-nums'] },
+  capStatLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.gray400, marginTop: 1 },
+  capStatDiv: { width: 1, alignSelf: 'stretch', marginVertical: 2, backgroundColor: flColor.bronzeBorderSubtle },
+
+  /* The one accomplishment — the "featured" hero card's language (bronze tint + edge), one line tall. */
+  moment: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    minHeight: 52,
-    paddingHorizontal: 15,
-    borderRadius: flRadius.md,
+    gap: 13,
+    width: '100%',
+    minHeight: 58,
+    marginTop: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: flRadius.lg,
     borderWidth: 1,
     borderColor: flColor.accentBorder,
     backgroundColor: flColor.bronzeTint,
   },
-  postedText: { flex: 1, fontFamily: flFont.sans, fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
+  momentText: { flex: 1, minWidth: 0, gap: 2 },
+  momentTitle: { fontSize: 15, fontWeight: '700', color: flColor.cream100 },
+  momentSub: { fontSize: 12.5, color: flColor.gray400 },
+  pressed: { opacity: 0.82 },
+
+  capSection: { width: '100%', marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: flColor.divider },
+  sectionHead: { gap: 3, marginBottom: 10 },
+  sectionHeadTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 },
+  sectionTitle: { fontSize: 11.5, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.labelInk },
+  sectionAside: { fontSize: 13, color: flColor.gray400 },
+  sectionSub: { fontFamily: flFont.sans, fontSize: 14, lineHeight: 19, color: flColor.gray400 },
+
+  /* Four equal tiles — 72pt tall, the whole tile is the tap target. */
+  tiles: { flexDirection: 'row', gap: 8 },
+  tile: {
+    flex: 1,
+    minWidth: 0,
+    height: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  tileDone: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
+  tileLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400, paddingHorizontal: 4 },
+  tileLabelDone: { color: flColor.selectedInk },
+  tileCheck: { position: 'absolute', top: 6, right: 6, width: 15, height: 15, borderRadius: 8, backgroundColor: flColor.bronze300, alignItems: 'center', justifyContent: 'center' },
+
+  shareRows: { gap: 8 },
+  shareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    minHeight: 54,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+    backgroundColor: flColor.surfaceRecessed,
+  },
+  shareRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
+  shareRowText: { flex: 1, minWidth: 0, gap: 1 },
+  shareRowTitle: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  shareRowTitleOn: { color: flColor.selectedInk },
+  shareRowSub: { fontSize: 12.5, color: flColor.gray400 },
+  checkDisc: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: flColor.charcoal500, alignItems: 'center', justifyContent: 'center' },
+  checkDiscOn: { borderColor: flColor.bronze300, backgroundColor: flColor.bronze300 },
+
+  tick: { flexDirection: 'row', alignItems: 'center', gap: 11, marginTop: 8, paddingVertical: 9, paddingHorizontal: 13, borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.bronzeBorderSubtle },
+  tickOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.selectedFill },
+  tickBox: { width: 20, height: 20, borderRadius: 5, borderWidth: 1.5, borderColor: flColor.bronzeBorderSubtle, alignItems: 'center', justifyContent: 'center' },
+  tickBoxOn: { borderColor: flColor.bronze300, backgroundColor: flColor.bronze300 },
+  tickText: { flex: 1, minWidth: 0, gap: 1 },
+  tickLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.gray400 },
+  tickLabelOn: { color: flColor.selectedInk },
+  tickSub: { fontSize: 11.5, color: flColor.gray600 },
+  photoLook: { marginTop: 12, alignItems: 'center' },
+
+  postedLine: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10, paddingHorizontal: 2 },
+  postedText: { flex: 1, fontSize: 12.5, fontWeight: '600', lineHeight: 17, color: flColor.bronze300 },
   postedLink: { fontFamily: flFont.sans, fontSize: 13, fontWeight: '700', color: flColor.bronze300 },
-  postAgain: { alignSelf: 'center', minHeight: 40, justifyContent: 'center', paddingHorizontal: 12 },
-  postAgainText: { fontFamily: flFont.sans, fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
-  autoFail: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, paddingHorizontal: 4 },
-  autoFailText: { flex: 1, fontSize: 12, lineHeight: 17, color: flColor.gray400 },
-  autoRowWrap: { marginTop: 10 },
-  capExits: { marginTop: 10, gap: 6, alignItems: 'center' },
-  capExitBtn: { minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
-  capExit: { fontFamily: flFont.sans, fontSize: 14, fontWeight: '600', color: flColor.gray400 },
-  capExitSub: { fontFamily: flFont.sans, fontSize: 13.5, color: flColor.gray600 },
+
+  capCta: { width: '100%', marginTop: 22 },
+  postError: { marginTop: 10, fontSize: 12.5, lineHeight: 18, color: flColor.gray400, textAlign: 'center' },
+  detailsLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'center', minHeight: 44, marginTop: 6, paddingHorizontal: 14 },
+  detailsText: { fontFamily: flFont.sans, fontSize: 14.5, color: flColor.gray400 },
+  pickerSub: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400, marginBottom: 12 },
 
   eyebrow: { fontSize: 13, fontWeight: '600', letterSpacing: 2.6, textTransform: 'uppercase', color: flColor.gray400 },
 
@@ -2137,34 +2371,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     outlineWidth: 0,
   },
-
-  /* ── the share card preview ──
-     What they are about to send, above the destinations rather than behind them. 238px is the mockup's
-     width and it is deliberately narrow: this is a picture of a card, not a card. */
-  shareCard: {
-    width: 238,
-    alignSelf: 'center',
-    alignItems: 'center',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: flColor.bronzeBorder,
-    overflow: 'hidden',
-    paddingTop: 24,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    // `--fl-shadow-card-hero` — the same pair `Card variant="hero"` resolves to.
-    boxShadow: `${flShadow.elevated}, ${flShadow.glowSubtle}`,
-  },
-  shareSealed: { fontSize: 9, fontWeight: '700', letterSpacing: 2.4, textTransform: 'uppercase', color: flColor.bronzeInk, marginTop: 10 },
-  shareName: { fontFamily: flFont.display, fontSize: 22, fontWeight: '700', lineHeight: 25, color: flColor.cream100, textAlign: 'center', marginTop: 6 },
-  shareChapter: { fontFamily: flFont.sans, fontSize: 11, color: flColor.gray400, textAlign: 'center', marginTop: 4 },
-  shareRule: { width: 44, height: 1, backgroundColor: flColor.bronzeBorder, marginVertical: 14 },
-  shareStats: { flexDirection: 'row', alignItems: 'stretch' },
-  shareStatDiv: { width: 1, backgroundColor: flColor.bronzeBorderSubtle },
-  shareStat: { alignItems: 'center', gap: 3, paddingHorizontal: 14 },
-  shareStatN: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
-  shareStatLabel: { fontFamily: flFont.sans, fontSize: 8, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
-  shareWordmark: { fontFamily: flFont.display, fontSize: 12, fontWeight: '700', letterSpacing: 2.6, color: flColor.bronze300, marginTop: 16 },
 
   // hero ladder
   heroFeatured: { flexDirection: 'row', alignItems: 'center', gap: 14, width: '100%', maxWidth: 312, marginTop: 24, paddingVertical: 16, paddingHorizontal: 18, borderRadius: flRadius.lg, backgroundColor: flColor.bronzeTint, borderWidth: 1, borderColor: flColor.bronzeBorder, boxShadow: flShadow.glowSubtle },
