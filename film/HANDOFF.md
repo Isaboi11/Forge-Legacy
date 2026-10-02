@@ -4,19 +4,30 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
 current cut), then this file. Work only in the worktree `C:\Users\isaia\forge-film-wt` (branch `feat/hero-film`,
 outside OneDrive). Commit with explicit paths (`git commit -o`). Keep chat answers short and plain.
 
-## Where it stands
-- Engine: Remotion project in `film/` (`src/timeline.ts` = film clock + reading HOLDS + captions; `src/Film.tsx`;
-  `src/Screens.tsx` = recording playback with holds/skips/slow + bronze outlines; `src/recordings.json` = takes).
-- Generic phone (Apple bans 3D/spinning iPhone renders). Official App Store badge, cut in still.
-- Screens are REAL: Playwright drives forgelegacy.expo.app at 402×808 with a frozen clock (`capture/lib.mjs`,
-  `capture/shot-*.mjs`). Frames go to `film/public/rec/<shot>/` (git-ignored). Sign in first: `node capture/signin.mjs`
-  (password in git-ignored `capture/.auth/password`); the session dies after ~1 h — re-run signin before each take.
-- Shots 1–4 captured and cut. Latest render: `film/out/rough-v5-shots1234.mp4` (~25 s). PO: "much better", likes the pace.
-- Music is a placeholder (the mock-up's score, `capture/mock-score.mjs`). PO still to license a track (PLAN §5).
+## Where it stands (10-02, end of session)
+- ALL SIX SHOTS captured and cut. Latest render: `film/out/rough-v8.mp4` (~41 s, desktop). PO: "2 changes and then we're
+  good" — both made (opening held +1 s; space under the phone for shot 5's line). Treat the cut as LOCKED pending the PO.
+- Shots: 1 grey app (+1 s) · 2 one tap → NEW PERSONAL RECORD (lifted) · 3 Holt BUILDS a program: Jordan's message →
+  dissolve → Holt's reply over "Bench Strength Builder" card (lifted 1.35×), caption "helps you move forward" ·
+  4 calendar → Welcome back (lifted) · 5 Legacy scroll + chapter cards + 5 real medals + 3 accomplishment cards ·
+  6 end card.
+- Engine adds this session: `lifts` (one real piece per shot, raised ~2×, gated on its own shot's line), `dissolves`,
+  caption `read` time. Shot 5's floating pieces are 4× stills in `public/rec/story-lift/` (git-ignored, from shot-5.mjs).
+- Engine: Remotion project in `film/` (`src/timeline.ts` = film clock + HOLDS + captions; `src/Film.tsx`;
+  `src/Screens.tsx`; `src/recordings.json` = takes). Generic phone. Badge cut in still.
+- Capture: Playwright on forgelegacy.expo.app, 402×808, frozen clock. Run `node capture/signin.mjs` before EVERY take.
+  ⚠ Never freeze the clock LATER than the real time + ~1 h: the app refreshes the token and burns the saved sign-in
+  (shot 5 uses Oct 2 05:30 for this reason).
+- Music is still the placeholder. Next: phone 9:16 render check, <5 MB H.264 + WebM, poster, 15 s cut, site embed.
+- App bug found (not fixed): onboarding environment 'commercial_gym' isn't a Room to Holt's chat (`isRoom` =
+  full_gym/home/bodyweight, CoachChatSheet.tsx:683), so Holt assumes an EMPTY HOME GYM and builds push-ups. Real users
+  who chose commercial gym are affected. Film works around it ("…at the gym").
 
 ## Seed (demo athlete Jordan, production DB, PO pastes SQL)
 - Files: `supabase/apply/seed-demo-jordan-{0..4}*.sql`, `-1-REDO.sql`, `-REMOVE.sql`; notes `film/SEED-NOTES.md`.
-- Applied now: stage 4 (whole year). The May 12 ceremonies (RANK ASCENDED Craftsman I, HONOR EARNED 1,000 Pound Club)
+- Applied now: RESTORE-YEAR (stage 4 + 4b: 7 accomplishments, 6 pins). Ceremonies already dismissed. Shot 3 needs
+  `seed-demo-jordan-2-REDO.sql` first (Feb 9); after it, `seed-demo-jordan-RESTORE-YEAR.sql` (one paste). Older note:
+  stage 4 (whole year). The May 12 ceremonies (RANK ASCENDED Craftsman I, HONOR EARNED 1,000 Pound Club)
   were already dismissed in a look-around; they won't replay unless reset.
 - To re-film an earlier date, rewind: stage 1 REDO works only before stage 4. After stage 4 you need a new "stage 2
   REDO" that also undoes stage 4 (delete chapters 2/3, unseal chapter 1, un-graduate the program — copy stage 4's
