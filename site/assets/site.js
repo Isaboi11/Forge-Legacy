@@ -21,8 +21,9 @@
   };
   const R = p => { const id = 'r_' + p.replace(/^.*\//, '').replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/gi, '_'); return (window.__resources && window.__resources[id]) || p; };
 
-  const PAGES = ['training', 'nutrition', 'coach', 'legacy', 'squads'];
-  const ALIAS = { chapters: 'legacy', rank: 'legacy' };
+  // One scrolling page (PO 10-03): #training, #legacy … are sections of Home, reached by scrolling, never page switches.
+  const PAGES = [];
+  const ALIAS = { rank: 'comeback' };
   const $ = (s, el) => (el || document).querySelector(s);
   const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
 
@@ -155,7 +156,11 @@
       if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     mountIn(cur === 'home' ? $('#home') : document.getElementById(cur));
-    if (scroll) window.scrollTo(0, 0);
+    if (scroll) {
+      const t = h && document.getElementById(h);
+      if (t) t.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      else if (!h) window.scrollTo(0, 0);
+    }
     onScroll();
   }
   window.addEventListener('hashchange', () => { closeMenu(); sync(true); });
