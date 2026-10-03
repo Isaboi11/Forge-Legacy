@@ -25,6 +25,28 @@ Continue producing the forgelegacy.app homepage hero film. Read AGENTS.md, then 
 - Recordings: `film/public/rec/*` (git-ignored), captured at 2× by `capture/shot-12.mjs`, `shot-3.mjs` (live AI ~5¢),
   `shot-4.mjs`, `shot-5.mjs` (+ 4× stills in `public/rec/story-lift/`).
 
+## THE WEB LOOP — 2026-10-03 (PO: "that would be best")
+A simulated 1,000-visitor panel (5 AI personas — NOT real people) scored the 47.5 s film a wash vs a static screenshot
+(~29 vs ~29 sign-ups): the best line (Miss a week / Welcome back) came at 22 s, after most visitors left; runners and
+macro trackers never saw a run or food; the App Store badge contradicted TestFlight. Its "dead dark phone at 2.5 s" was
+a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stays.
+- **WebPhone** (cut `web`, `WEB` in `src/timeline.ts`, 25.8 s): film 0–11.08 → missed week (20.75–26.51) → ONE-APP shot
+  (real 27.97–33.73, the squad shot's slot/pose/light) → end card (44.27–47.47). Score: `python capture/score-moments.py web`.
+- **One-app shot**: `capture/shot-oneapp.mjs` (Sep 27 19:30): run detail (tiles lifted ×1.55) → dissolve → Nutrition
+  (ring + macros lifted ×1.15). Caption "Three apps." → "Lifting, running and food. *One app.*" Counter SEP 27 ·
+  DAY 270 · STILL HERE. Food data: `capture/seed-food-sep27.mjs` logged Jordan's Sep 27 THROUGH THE APP (manual targets
+  2,800 / P180 C330 F85 effective Sep 27; 8 foods = 2,061 kcal). It writes to production as Jordan — run once.
+- **PO 10-03 — zoom during the logging**: the web loop lifts the logger's set rows WHILE they are logged (`webLifts` on
+  the `tap` take, `onAt` = on-screen start so it can rise during a held frame) and the record card pops up inside the
+  lifted piece; taps landing on a lifted piece are drawn on it. The full film still lifts only the record card.
+- End card (web only): "Free on iPhone during the beta." — no App Store badge.
+- Deliver: `node capture/render.mjs WebPhone` → `WEB_ONLY=1 bash capture/deliver.sh` (1200 kbps, MP4 4.2 MB).
+- Preview: version `9185186c` → https://9185186c-forgelegacy.isaiahaltamirano.workers.dev (WebKit iPhone 13: plays).
+  Production still `64183374`. Go live ONLY on the PO's "go live":
+  `cd site && npx wrangler versions deploy 9185186c-069f-4beb-a172-d794bafebcf0@100%`
+  (rollback `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`).
+- Unchanged: the 47.5 s film, the 15 s ad and their social masters (they still carry the badge).
+
 ## THE FINAL — done 10-02 (evening session)
 - **3D phone** (`src/Phone3D.tsx`, PO approved the still): three.js body over the DOM screen — the screen opening is a
   depth-only mask, the glass adds studio reflections as light (additive). Studio = Poly Haven Studio Small 09 (CC0) as a
