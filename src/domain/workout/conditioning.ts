@@ -293,6 +293,23 @@ export function activityFromKey(k: string | null | undefined): CardioActivity | 
   return CARDIO_ACTIVITIES.some((a) => a.key === rest) ? (rest as CardioActivity) : null;
 }
 
+/**
+ * All seven, the ones this athlete has actually trained first (most recent leading), then the rest in
+ * list order — the order of the picker's cardio pill row.
+ *
+ * Kim, 10-03: building as you go she scrolled the picker for her bike and treadmill and found only her
+ * dumbbell lifts. Her recent cardio was in the data the whole time; My Exercises looked it up among the
+ * LIFTS and dropped it. So the row leads with what she did last time, and nothing is ever left out.
+ */
+export function cardioByRecency(recentKeys: readonly string[]): CardioActivity[] {
+  const recent: CardioActivity[] = [];
+  for (const k of recentKeys) {
+    const a = activityFromKey(k);
+    if (a && !recent.includes(a)) recent.push(a);
+  }
+  return [...recent, ...CARDIO_ACTIVITIES.map((c) => c.key).filter((a) => !recent.includes(a))];
+}
+
 /** A ride measures speed where a run measures pace — this flips strings and both step directions. */
 export const usesSpeed = (a: CardioActivity): boolean => RATE_KIND[a] === 'speed';
 

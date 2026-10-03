@@ -104,7 +104,7 @@ test('the back arrow pauses a session; a discard ends one', () => {
    * is held anyway, silencing the athlete's NEXT real workout for up to four hours.
    */
   const discards = w.match(/clearSession\(\);\s*(discardSession|leaveSession)\(\)/g) ?? [];
-  assert.equal(discards.length, 3, 'expected three discard sites — "Not today", the empty auto-Picker, and the ⋮ Discard for an empty shared session (social2-14)');
+  assert.equal(discards.length, 4, 'expected four discard sites — "Not today", the empty auto-Picker (its focus fallback AND the one-move exit the Picker runs, Kim 10-03), and the ⋮ Discard for an empty shared session (social2-14)');
   for (const d of discards) {
     assert.match(d, /discardSession/, 'a site that clears the autosave must END the session, never pause it');
   }

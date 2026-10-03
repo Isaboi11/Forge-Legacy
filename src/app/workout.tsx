@@ -97,6 +97,7 @@ import { useProfile } from '@/lib/profile';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
+import { setFreestyleAbandon } from '@/lib/freestyle-exit';
 import { publishLiveSession } from '@/data/live-session-live';
 import { liveSessionSnapshot } from '@/domain/workout/live-session';
 import { blockAt, breakBlock, endsSupersetRound, indexAfterRemoval, makeSuperset, nextInSuperset, nextPosition, removeExerciseAt, sessionToTemplateExercises, supersetRounds, syncSupersetRounds } from '@/domain/workout/session-core';
@@ -476,6 +477,8 @@ export default function WorkoutScreen() {
    * A ref, read only inside the focus callback, for the same react-compiler reason as `endedRef`.
    */
   const autoPickerRef = useRef(false);
+  /** Disarms the picker's one-move exit once the picker has come back any other way. */
+  const disarmFreestyleRef = useRef<(() => void) | null>(null);
   const endSession = useCallback(() => {
     endedRef.current = true;
     finishWorkout();
@@ -1330,6 +1333,13 @@ export default function WorkoutScreen() {
          * below, shows the empty state as before, because nobody just asked to pick an exercise.
          */
         autoPickerRef.current = true;
+        /* The picker's back arrow runs this and closes BOTH screens in one dismissal — two in a row could
+           strand the athlete on a black screen on iPhone (Kim, 10-03). See `freestyle-exit`. */
+        disarmFreestyleRef.current = setFreestyleAbandon(() => {
+          autoPickerRef.current = false;
+          void clearSession();
+          discardSession();
+        });
         router.push({ pathname: '/exercise-picker', params: { mode: 'add', start: 'freestyle' } });
         return;
       }
@@ -1567,6 +1577,12 @@ export default function WorkoutScreen() {
          the flag, and reading it inside the promise could mistake that first focus for a return. */
       const backFromAutoPicker = autoPickerRef.current;
       autoPickerRef.current = false;
+      /* Back on this screen = the picker did NOT take the one-move exit (Confirm, or Android's back key),
+         so a picker opened later mid-session must not find a discard still armed. */
+      if (backFromAutoPicker) {
+        disarmFreestyleRef.current?.();
+        disarmFreestyleRef.current = null;
+      }
       void readExerciseInbox().then((inbox) => {
         if (!active) return;
         /*

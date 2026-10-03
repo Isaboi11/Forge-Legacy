@@ -32,7 +32,8 @@ import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
 import { replaceTemplateExercise } from '@/data/templates-live';
 import { useToast } from '@/hooks/useCeremony';
 import { countOf } from '@/domain/text/plural';
-import { isCardioKey } from '@/domain/workout/conditioning';
+import { cardioByRecency, cardioKey, isCardioKey, type CardioActivity } from '@/domain/workout/conditioning';
+import { abandonFreestyle } from '@/lib/freestyle-exit';
 import { PERSIST_FAILED, usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import {
@@ -74,6 +75,10 @@ function toPicked(x: PickerItem): PickedExercise {
 
 /* Custom exercises store IDS, not labels (0128) — and their equipment ids come from the HOME GYM
    vocabulary, not the catalogue's, which is why this lookup is not `labelFor` below. */
+/* What the cardio pills say. Kim looked for a TREADMILL and a BIKE — the activity is named Run and Ride,
+   so those two pills say the word people actually use. The rest read as their names. */
+const CARDIO_PILL_LABEL: Partial<Record<CardioActivity, string>> = { run: 'Run / Treadmill', bike: 'Bike' };
+
 const EQUIP_LABEL = new Map(HOME_GYM_EQUIPMENT.map((e) => [e.id, e.label] as const));
 const MUSCLE_LABEL = new Map(MUSCLE_FILTER_GROUPS.flatMap((g) => g.muscles.map((m) => [m.id, m.name] as const)));
 const toCustomItem = (c: CustomExercise): PickerItem =>
@@ -286,7 +291,12 @@ export default function ExercisePickerScreen() {
 
   // The athlete's own signals — bookmarked first, then what they've actually logged.
   const { data: favData, refetch: refetchFavorites } = useQuery(fetchFavoriteKeys, []);
-  const { data: recentData } = useQuery(() => fetchRecentExerciseKeys(8), []);
+  /* Read deep enough to reach cardio behind a run of lift sessions, then split: My Exercises keeps its
+     eight LIFTS (a cardio key can never resolve there — it is not in the catalogue pool, and it used to
+     silently use up a slot), and the cardio row orders itself by the rest. */
+  const { data: recentAll } = useQuery(() => fetchRecentExerciseKeys(30), []);
+  const recentData = useMemo(() => (recentAll ?? []).filter((k) => !isCardioKey(k)).slice(0, 8), [recentAll]);
+  const cardioOrder = useMemo(() => cardioByRecency(recentAll ?? []), [recentAll]);
   const [favOverride, setFavOverride] = useState<Record<string, boolean>>({});
   const favorites = useMemo(() => {
     const base = favData ?? [];
@@ -389,6 +399,37 @@ export default function ExercisePickerScreen() {
   })();
   /** The screen has something to show if EITHER list does. */
   const hasAnything = sections.hasResults || cardioRows.length > 0;
+
+  /*
+   * ══ CARDIO AT THE TOP, AS ONE ROW OF PILLS (PO 10-03) ══
+   *
+   * Kim built as you go, scrolled for her bike and treadmill, saw only dumbbell lifts, and sealed the
+   * workout without the treadmill. Cardio was there — as the LAST of seven category tiles, below a
+   * shortlist of her lifts, looking like a heading rather than something to tap. A dropdown was
+   * considered and rejected: hiding it behind one more tap is the same failure, smaller.
+   *
+   * Browsing only (no search, no filter): searching already has the "Running & Cardio" section below,
+   * and a filter is a question a run cannot answer. Not in replace — a lift ⇄ cardio swap is refused
+   * downstream. A pill is the same tick as a row, so Confirm, supersets and sections all just work.
+   */
+  const showCardioPills = !isReplace && sections.browsing;
+  const cardioPills = cardioOrder
+    .map((a) => CONDITIONING_ROWS.find((r) => r.key === cardioKey(a)))
+    .filter((r): r is PickerItem => Boolean(r));
+
+  /*
+   * ══ BACKING OUT OF A FRESH "BUILD AS YOU GO" CLOSES BOTH SCREENS IN ONE MOVE ══
+   *
+   * Kim, 10-03: the back arrow here "went black", twice. The workout underneath used to notice the
+   * empty return on focus and close itself — a SECOND full-screen dismissal fired while this one was
+   * still animating, which iOS can drop, stranding her on an emptied workout. Now the workout discards
+   * its empty session first (`abandonFreestyle`) and both close as one `dismiss(2)`. The focus path in
+   * the workout stays as the fallback for Android's back key.
+   */
+  const goBack = () => {
+    if (params.start === 'freestyle' && abandonFreestyle()) router.dismiss(2);
+    else router.back();
+  };
 
 /**
  * Choosing an exercise puts the keyboard away.
@@ -643,7 +684,7 @@ export default function ExercisePickerScreen() {
         /* Same screen, two moments: opening a freestyle session says what is being made; once inside a
            workout it is just an add. */
         title={isReplace ? 'Replace Exercise' : params.start === 'freestyle' ? 'Build Freestyle Workout' : 'Add Exercise'}
-        onBack={() => router.back()}
+        onBack={goBack}
         actions={
           <Pressable onPress={openFilter} accessibilityRole="button" accessibilityLabel="Filter" hitSlop={6} style={styles.filterBtn}>
             <EngravedIcon name="filter" size={21} color={hasFilters ? flColor.bronze300 : flColor.gray400} />
@@ -847,6 +888,29 @@ export default function ExercisePickerScreen() {
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {hasAnything ? (
           <>
+            {showCardioPills ? (
+              <View style={styles.cardioPillsWrap}>
+                <Text style={styles.cardioPillsLabel}>Cardio</Text>
+                <ScrollView horizontal keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.cardioPills}>
+                  {cardioPills.map((x) => {
+                    const on = picked.includes(x.key);
+                    const label = CARDIO_PILL_LABEL[x.key.slice('cardio:'.length) as CardioActivity] ?? x.name;
+                    return (
+                      <Pressable
+                        key={x.key}
+                        onPress={() => choose(() => togglePicked(x.key))}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: on }}
+                        accessibilityLabel={`${label}, cardio`}
+                        style={[styles.sectionPick, on && styles.sectionPickOn]}
+                      >
+                        <Text style={[styles.sectionPickText, on && styles.sectionPickTextOn]}>{label}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
             {sections.best.length ? (
               <View style={styles.section}>
                 <SectionHeader label="Best replacements" />
@@ -1242,6 +1306,10 @@ const styles = StyleSheet.create({
      outlined pill that fills bronze is a choice you have made, and a second visual language for the
      same idea is how a screen stops reading as one screen. Tokens only, so it lands on both themes. */
   sectionPickRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7 },
+  /* Bleeds to the screen edge so the row reads as scrollable, not cut off. */
+  cardioPillsWrap: { marginHorizontal: -18, marginBottom: 20, gap: 8 },
+  cardioPillsLabel: { paddingHorizontal: 18, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
+  cardioPills: { paddingHorizontal: 18, gap: 7 },
   sectionPickLabel: {
     fontSize: 9.5,
     fontWeight: '700',

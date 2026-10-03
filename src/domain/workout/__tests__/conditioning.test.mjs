@@ -17,6 +17,7 @@ import {
   bumpDuration,
   bumpPace,
   bumpSpeed,
+  cardioByRecency,
   cardioKey,
   deriveEquip,
   deriveName,
@@ -700,4 +701,13 @@ test('the modality a toggle would be offered for is exactly the modality that re
     const twoWay = resolveModality(a.key, 'outdoor') !== resolveModality(a.key, 'indoor');
     assert.equal(twoWay, OUTDOOR_CAPABLE[a.key], a.key);
   }
+});
+
+test('cardioByRecency: recent cardio leads, lifts and junk ignored, all seven always present', () => {
+  const all = CARDIO_ACTIVITIES.map((a) => a.key);
+  assert.deepEqual(cardioByRecency([]), all);
+  const got = cardioByRecency(['db-bench-press', 'cardio:bike', 'cardio:run', 'cardio:bike', 'cardio:nope', 'custom:x']);
+  assert.deepEqual(got.slice(0, 2), ['bike', 'run']);
+  assert.equal(got.length, all.length);
+  assert.deepEqual([...got].sort(), [...all].sort());
 });
