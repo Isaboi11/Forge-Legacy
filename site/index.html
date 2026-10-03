@@ -167,7 +167,13 @@
   /* Never hidden (no opacity:0 until it plays): iPhone Safari won't autoplay a video it can't see, so the film sat on
      its poster forever (PO 10-02). The video shows the same poster itself until the first frame. */
   .film video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
-  .film-btn { position:absolute; right:14px; bottom:14px; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px;
+  /* The poster ON TOP of the video until the film is really moving past its fade-in (2026-10-03, PO: "it's a black
+     screen for about 2 seconds" — while iPhone fetched the first frames the video box was black). The video itself stays
+     visible underneath, so Safari still counts it as on screen for autoplay. */
+  .film-cover { position:absolute; inset:0; z-index:1; pointer-events:none; background:url(assets/film/poster-9x16.jpg) center/cover no-repeat;
+    transition:opacity .35s ease; }
+  .film-cover.off { opacity:0; }
+  .film-btn { position:absolute; z-index:2; right:14px; bottom:14px; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px;
     border-radius:999px; border:1px solid rgba(243,217,174,0.35); background:rgba(10,9,8,0.62); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
     color:#F4EFE6; font-size:14px; font-weight:600; cursor:pointer; }
   .film-btn:hover { border-color:rgba(243,217,174,0.7); }
@@ -247,6 +253,7 @@
                with or without JS; site.js attaches the video after load and keeps the poster for reduced motion. -->
           <div class="film" data-film>
             <video muted loop playsinline preload="none" aria-label="Forge Legacy in 30 seconds: one tap logs each set and a new personal record, a missed week keeps your progress, a run and a full day of food sit in the same app as the lifting, and the year becomes chapters you keep. Free on iPhone during the beta."></video>
+            <div class="film-cover" data-film-cover aria-hidden="true"></div>
             <button type="button" class="film-btn film-snd" data-film-sound aria-pressed="false" hidden><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="w" d="M16 9a4 4 0 0 1 0 6M18.6 6.5a7.5 7.5 0 0 1 0 11"/><path class="x" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg><span>Sound on</span></button>
             <button type="button" class="film-btn" data-film-play hidden><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12.5-7.5z"/></svg><span>Play the film</span></button>
           </div>

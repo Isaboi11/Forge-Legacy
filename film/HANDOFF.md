@@ -50,9 +50,13 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
   INVITE" confuses beginners/laptop/Android visitors (wording = PO); film below the fold on iPhone (PO).
 - site.js (10-03): the film plays once ≥50% on screen and from 0 the first time (it used to start at load while only its
   top edge showed). WebKit iPhone 13: paused at 0 at the top, plays from 0 when scrolled to, pauses when away.
-- Preview: version `e73dff45` (loop with Legacy + the start fix) → https://e73dff45-forgelegacy.isaiahaltamirano.workers.dev.
-  Superseded: `05fbd47a`, `9185186c`. Production still `64183374`. Go live ONLY on the PO's "go live":
-  `cd site && npx wrangler versions deploy e73dff45-a6ad-43ec-8681-5d0ca2e1c6c6@100%`
+- site (10-03, PO: "black screen for about 2 seconds" on his iPhone after the start fix): iPhone ignores preload, so the
+  film fetched only when played → black box. Now a poster COVER sits over the video (video stays visible underneath for
+  Safari's autoplay rule) until currentTime > 0.4, and the film is WARMED (muted play → pause at 0) the first time any
+  of it shows. WebKit + 2.5 s network delay: poster, never black, in both "scroll later" and "scroll at once".
+- Preview: version `d56110fd` (loop with Legacy + start fix + cover) → https://d56110fd-forgelegacy.isaiahaltamirano.workers.dev.
+  Superseded: `e73dff45`, `05fbd47a`, `9185186c`. Production still `64183374`. Go live ONLY on the PO's "go live":
+  `cd site && npx wrangler versions deploy d56110fd-2a43-4ae7-9a01-0624616c4fa2@100%`
 - ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
   the beta.", `END.web` in story.ts) and the page's TestFlight button/badge copy must change — re-render WebPhone
   (~5 min) + `WEB_ONLY=1 bash capture/deliver.sh`; the App Store badge may come back then (never animated).

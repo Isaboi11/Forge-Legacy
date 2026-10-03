@@ -260,7 +260,8 @@
   function film() {
     const box = $('[data-film]');
     if (!box) return;
-    const v = $('video', box), snd = $('[data-film-sound]', box), play = $('[data-film-play]', box);
+    const v = $('video', box), snd = $('[data-film-sound]', box), play = $('[data-film-play]', box), cover = $('[data-film-cover]', box);
+    const uncover = () => cover && cover.classList.add('off');
     const base = 'assets/film/hero-9x16';
     v.poster = 'assets/film/poster-9x16.jpg';
     v.setAttribute('webkit-playsinline', '');
@@ -270,32 +271,41 @@
     v.muted = true;
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Play and Sound share the corner: Sound shows once the film is actually playing.
-    v.addEventListener('playing', () => { play.hidden = true; if (!reduce) snd.hidden = false; });
+    // (`seen`: the warm-up's brief play must not bring the Sound button out over the poster.)
+    v.addEventListener('playing', () => { if (!reduce && !seen) return; play.hidden = true; if (!reduce) snd.hidden = false; });
     if (reduce) {
       play.hidden = false;
-      play.addEventListener('click', () => { play.hidden = true; v.loop = false; v.muted = false; v.controls = true; v.play(); });
+      play.addEventListener('click', () => { play.hidden = true; uncover(); v.loop = false; v.muted = false; v.controls = true; v.play(); });
       return;
     }
     v.preload = 'auto';
-    let soundOn = false, refused = false;
+    let soundOn = false, refused = false, seen = false, warmed = false;
     const tryPlay = () => v.play().catch(() => { refused = true; snd.hidden = true; play.hidden = false; });
-    play.addEventListener('click', () => { refused = false; play.hidden = true; v.play(); });
+    play.addEventListener('click', () => { seen = true; refused = false; play.hidden = true; v.play(); });
     // Play once at least half the film is on screen, and from the top the first time (2026-10-03: on a phone the box's
     // top edge peeks into the first screen, so it used to start at load and visitors scrolled in mid-loop, often on the
-    // dark spin — they missed the opening line). Until then the poster (the record card) shows. Fully off screen: pause.
-    let seen = false;
+    // dark spin — they missed the opening line). Fully off screen: pause.
+    // The first time any of it shows, WARM it: play muted and stop at once, so iPhone (which ignores preload) fetches and
+    // decodes the opening before the visitor gets there — started cold, the box sat black ~2 s (PO 10-03). The poster
+    // cover stays on top until the film is past its 0.35 s fade-in, then fades away.
+    v.addEventListener('timeupdate', () => { if (seen && v.currentTime > 0.4) uncover(); });
     const io = new IntersectionObserver(es => {
       const e = es[0];
       if (e.intersectionRatio >= 0.5) {
         if (!seen) { seen = true; v.currentTime = 0; }
         if (!refused) tryPlay();
-      } else if (!e.isIntersecting) v.pause();
+      } else if (e.isIntersecting) {
+        if (!warmed && !seen) {
+          warmed = true;
+          v.play().then(() => { if (!seen) { v.pause(); v.currentTime = 0; } }).catch(() => {});
+        }
+      } else v.pause();
     }, { threshold: [0, 0.5] });
     io.observe(box);
     snd.addEventListener('click', () => {
       soundOn = !soundOn;
       v.muted = !soundOn;
-      if (soundOn) { refused = false; play.hidden = true; v.currentTime = 0; v.play(); }
+      if (soundOn) { seen = true; refused = false; play.hidden = true; v.currentTime = 0; v.play(); }
       snd.setAttribute('aria-pressed', String(soundOn));
       $('span', snd).textContent = soundOn ? 'Sound off' : 'Sound on';
     });
