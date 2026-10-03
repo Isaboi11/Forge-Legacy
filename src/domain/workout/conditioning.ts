@@ -294,20 +294,61 @@ export function activityFromKey(k: string | null | undefined): CardioActivity | 
 }
 
 /**
- * All seven, the ones this athlete has actually trained first (most recent leading), then the rest in
- * list order — the order of the picker's cardio pill row.
+ * ══ THE CARDIO PILLS — ONE TAP, AND THE PILL ALREADY SAYS INDOOR OR OUTDOOR (PO 10-03) ══
+ *
+ * One row, shared by Home's Start a Workout sheet (tap = start) and the Exercise Picker (tap = tick). It
+ * replaced "Track cardio → Run → Outdoor/Indoor": the three activities that can go either way get a pill
+ * per side, so the question that menu asked is answered by which pill you press. Kim looked for a
+ * TREADMILL and a BIKE, so those are the words on them.
+ *
+ * All three outdoor-capable activities get both sides, walk included: the question exists because a
+ * tester's treadmill WALK was once filed as an outdoor one when nothing asked (Home's `cardioAsk` note,
+ * PO: "ask at the door"). A pill per side IS the door asking.
+ */
+export interface CardioPill {
+  /** `activity:modality` — unique, and what the picker ticks. */
+  id: string;
+  activity: CardioActivity;
+  modality: Modality;
+  label: string;
+}
+export const CARDIO_PILLS: readonly CardioPill[] = [
+  { id: 'run:outdoor', activity: 'run', modality: 'outdoor', label: 'Outdoor Run' },
+  { id: 'run:indoor', activity: 'run', modality: 'indoor', label: 'Treadmill' },
+  { id: 'bike:outdoor', activity: 'bike', modality: 'outdoor', label: 'Ride' },
+  { id: 'bike:indoor', activity: 'bike', modality: 'indoor', label: 'Indoor Bike' },
+  { id: 'walk:outdoor', activity: 'walk', modality: 'outdoor', label: 'Walk' },
+  { id: 'walk:indoor', activity: 'walk', modality: 'indoor', label: 'Treadmill Walk' },
+  { id: 'row:indoor', activity: 'row', modality: 'indoor', label: 'Row' },
+  { id: 'elliptical:indoor', activity: 'elliptical', modality: 'indoor', label: 'Elliptical' },
+  { id: 'stair:indoor', activity: 'stair', modality: 'indoor', label: 'Stair Climber' },
+  { id: 'swim:indoor', activity: 'swim', modality: 'indoor', label: 'Swim' },
+];
+
+/** The pill a logged bout belongs to. */
+function pillFor(activity: CardioActivity, modality: Modality | null | undefined): CardioPill | undefined {
+  const m = resolveModality(activity, modality);
+  return CARDIO_PILLS.find((p) => p.activity === activity && p.modality === m) ?? CARDIO_PILLS.find((p) => p.activity === activity);
+}
+
+/**
+ * Every pill, the ones this athlete has actually trained first (most recent leading), then the rest in
+ * list order.
  *
  * Kim, 10-03: building as you go she scrolled the picker for her bike and treadmill and found only her
  * dumbbell lifts. Her recent cardio was in the data the whole time; My Exercises looked it up among the
  * LIFTS and dropped it. So the row leads with what she did last time, and nothing is ever left out.
  */
-export function cardioByRecency(recentKeys: readonly string[]): CardioActivity[] {
-  const recent: CardioActivity[] = [];
-  for (const k of recentKeys) {
-    const a = activityFromKey(k);
-    if (a && !recent.includes(a)) recent.push(a);
+export function cardioPillsByRecency(recent: readonly { activity: string; modality?: string | null }[]): CardioPill[] {
+  const lead: CardioPill[] = [];
+  for (const r of recent) {
+    const a = activityFromKey(cardioKey(r.activity as CardioActivity));
+    if (!a) continue;
+    const m = r.modality === 'indoor' || r.modality === 'outdoor' ? r.modality : null;
+    const pill = pillFor(a, m);
+    if (pill && !lead.includes(pill)) lead.push(pill);
   }
-  return [...recent, ...CARDIO_ACTIVITIES.map((c) => c.key).filter((a) => !recent.includes(a))];
+  return [...lead, ...CARDIO_PILLS.filter((p) => !lead.includes(p))];
 }
 
 /** A ride measures speed where a run measures pace — this flips strings and both step directions. */

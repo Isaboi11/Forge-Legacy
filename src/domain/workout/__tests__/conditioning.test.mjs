@@ -17,7 +17,8 @@ import {
   bumpDuration,
   bumpPace,
   bumpSpeed,
-  cardioByRecency,
+  CARDIO_PILLS,
+  cardioPillsByRecency,
   cardioKey,
   deriveEquip,
   deriveName,
@@ -703,11 +704,26 @@ test('the modality a toggle would be offered for is exactly the modality that re
   }
 });
 
-test('cardioByRecency: recent cardio leads, lifts and junk ignored, all seven always present', () => {
-  const all = CARDIO_ACTIVITIES.map((a) => a.key);
-  assert.deepEqual(cardioByRecency([]), all);
-  const got = cardioByRecency(['db-bench-press', 'cardio:bike', 'cardio:run', 'cardio:bike', 'cardio:nope', 'custom:x']);
-  assert.deepEqual(got.slice(0, 2), ['bike', 'run']);
-  assert.equal(got.length, all.length);
-  assert.deepEqual([...got].sort(), [...all].sort());
+test('CARDIO_PILLS: every activity has a pill, ids are unique, and each pill names a real side', () => {
+  const ids = CARDIO_PILLS.map((p) => p.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const a of CARDIO_ACTIVITIES) assert.ok(CARDIO_PILLS.some((p) => p.activity === a.key), a.key);
+  for (const p of CARDIO_PILLS) assert.equal(resolveModality(p.activity, p.modality), p.modality, p.id);
+  assert.equal(CARDIO_PILLS.find((p) => p.id === 'run:indoor')?.label, 'Treadmill');
+  assert.equal(CARDIO_PILLS.find((p) => p.id === 'bike:indoor')?.label, 'Indoor Bike');
+});
+
+test('cardioPillsByRecency: the treadmill and indoor bike lead; junk ignored; every pill still there once', () => {
+  assert.deepEqual(cardioPillsByRecency([]), [...CARDIO_PILLS]);
+  const got = cardioPillsByRecency([
+    { activity: 'run', modality: 'indoor' },
+    { activity: 'bike', modality: 'indoor' },
+    { activity: 'run', modality: 'indoor' },
+    { activity: 'nope', modality: 'indoor' },
+    { activity: 'walk', modality: 'indoor' },
+    { activity: 'row', modality: null },
+  ]);
+  assert.deepEqual(got.slice(0, 4).map((p) => p.id), ['run:indoor', 'bike:indoor', 'walk:indoor', 'row:indoor']);
+  assert.equal(got.length, CARDIO_PILLS.length);
+  assert.equal(new Set(got.map((p) => p.id)).size, CARDIO_PILLS.length);
 });

@@ -19,7 +19,7 @@ import { fetchHomeGym } from '@/data/home-gym-live';
 import { canDoExercise, HOME_GYM_EQUIPMENT } from '@/domain/home-gym/equipment';
 import { dismissGearPrompt, getGearOnly, getGearPromptDismissed, setGearOnly } from '@/lib/gear-filter';
 import { writeBuilderInbox, type BuilderSection } from '@/lib/builder-inbox';
-import { addFavorite, fetchFavoriteKeys, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
+import { addFavorite, fetchFavoriteKeys, fetchRecentCardio, fetchRecentExerciseKeys, removeFavorite } from '@/data/exercise-prefs-live';
 import { createCustomExercise, fetchCustomExercise, fetchCustomExercises } from '@/data/custom-exercises-live';
 import {
   customKey,
@@ -32,7 +32,8 @@ import { takeCreatedCustom } from '@/lib/custom-exercise-inbox';
 import { replaceTemplateExercise } from '@/data/templates-live';
 import { useToast } from '@/hooks/useCeremony';
 import { countOf } from '@/domain/text/plural';
-import { cardioByRecency, cardioKey, isCardioKey, type CardioActivity } from '@/domain/workout/conditioning';
+import { cardioKey, cardioPillsByRecency, CARDIO_PILLS, deriveName, isCardioKey, type CardioPill } from '@/domain/workout/conditioning';
+import { CardioPillRow } from '@/components/forge/compositions/CardioPillRow';
 import { abandonFreestyle } from '@/lib/freestyle-exit';
 import { PERSIST_FAILED, usePersist } from '@/hooks/usePersist';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -59,6 +60,10 @@ import {
 } from '@/domain/exercise-picker/data';
 
 function toPicked(x: PickerItem): PickedExercise {
+  /* A cardio PILL travels as its activity's ordinary key plus the side it named — the session, the
+     builders and history all know `cardio:run`, never `pill:run:indoor`. */
+  const pill = PILL_BY_KEY.get(x.key);
+  if (pill) return { catalogKey: cardioKey(pill.activity), name: x.name, equip: x.equip, muscles: [], type: x.modality, modality: pill.modality };
   return {
     catalogKey: x.key,
     name: x.name,
@@ -75,9 +80,16 @@ function toPicked(x: PickerItem): PickedExercise {
 
 /* Custom exercises store IDS, not labels (0128) — and their equipment ids come from the HOME GYM
    vocabulary, not the catalogue's, which is why this lookup is not `labelFor` below. */
-/* What the cardio pills say. Kim looked for a TREADMILL and a BIKE — the activity is named Run and Ride,
-   so those two pills say the word people actually use. The rest read as their names. */
-const CARDIO_PILL_LABEL: Partial<Record<CardioActivity, string>> = { run: 'Run / Treadmill', bike: 'Bike' };
+/* The cardio pills as picker rows. Keyed `pill:<activity>:<modality>` so "Treadmill" and "Outdoor Run"
+   tick separately; `toPicked` turns one back into the plain `cardio:run` plus its side. */
+const pillKey = (p: CardioPill) => `pill:${p.id}`;
+const PILL_BY_KEY = new Map(CARDIO_PILLS.map((p) => [pillKey(p), p] as const));
+const PILL_ITEMS = new Map(
+  CARDIO_PILLS.map((p) => {
+    const base = CONDITIONING_ROWS.find((r) => r.key === cardioKey(p.activity));
+    return [pillKey(p), { ...(base as PickerItem), key: pillKey(p), name: deriveName(p.activity, p.modality) }] as const;
+  }),
+);
 
 const EQUIP_LABEL = new Map(HOME_GYM_EQUIPMENT.map((e) => [e.id, e.label] as const));
 const MUSCLE_LABEL = new Map(MUSCLE_FILTER_GROUPS.flatMap((g) => g.muscles.map((m) => [m.id, m.name] as const)));
@@ -296,7 +308,8 @@ export default function ExercisePickerScreen() {
      silently use up a slot), and the cardio row orders itself by the rest. */
   const { data: recentAll } = useQuery(() => fetchRecentExerciseKeys(30), []);
   const recentData = useMemo(() => (recentAll ?? []).filter((k) => !isCardioKey(k)).slice(0, 8), [recentAll]);
-  const cardioOrder = useMemo(() => cardioByRecency(recentAll ?? []), [recentAll]);
+  const { data: recentCardio } = useQuery(fetchRecentCardio, []);
+  const cardioPills = useMemo(() => cardioPillsByRecency(recentCardio ?? []), [recentCardio]);
   const [favOverride, setFavOverride] = useState<Record<string, boolean>>({});
   const favorites = useMemo(() => {
     const base = favData ?? [];
@@ -359,7 +372,7 @@ export default function ExercisePickerScreen() {
    * cannot resolve would be silently discarded at the moment the athlete pressed the button.
    */
   const resolveKey = (k: string): PickerItem | undefined =>
-    itemByKey(k) ?? CONDITIONING_ROWS.find((c) => c.key === k) ?? customItems.find((c) => c.key === k);
+    itemByKey(k) ?? CONDITIONING_ROWS.find((c) => c.key === k) ?? PILL_ITEMS.get(k) ?? customItems.find((c) => c.key === k);
 
   const sections = buildSections({
     search,
@@ -413,9 +426,6 @@ export default function ExercisePickerScreen() {
    * downstream. A pill is the same tick as a row, so Confirm, supersets and sections all just work.
    */
   const showCardioPills = !isReplace && sections.browsing;
-  const cardioPills = cardioOrder
-    .map((a) => CONDITIONING_ROWS.find((r) => r.key === cardioKey(a)))
-    .filter((r): r is PickerItem => Boolean(r));
 
   /*
    * ══ BACKING OUT OF A FRESH "BUILD AS YOU GO" CLOSES BOTH SCREENS IN ONE MOVE ══
@@ -683,7 +693,7 @@ export default function ExercisePickerScreen() {
       <AppBar
         /* Same screen, two moments: opening a freestyle session says what is being made; once inside a
            workout it is just an add. */
-        title={isReplace ? 'Replace Exercise' : params.start === 'freestyle' ? 'Build Freestyle Workout' : 'Add Exercise'}
+        title={isReplace ? 'Replace Exercise' : params.start === 'freestyle' ? 'Build Your Workout' : 'Add Exercise'}
         onBack={goBack}
         actions={
           <Pressable onPress={openFilter} accessibilityRole="button" accessibilityLabel="Filter" hitSlop={6} style={styles.filterBtn}>
@@ -890,25 +900,13 @@ export default function ExercisePickerScreen() {
           <>
             {showCardioPills ? (
               <View style={styles.cardioPillsWrap}>
-                <Text style={styles.cardioPillsLabel}>Cardio</Text>
-                <ScrollView horizontal keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.cardioPills}>
-                  {cardioPills.map((x) => {
-                    const on = picked.includes(x.key);
-                    const label = CARDIO_PILL_LABEL[x.key.slice('cardio:'.length) as CardioActivity] ?? x.name;
-                    return (
-                      <Pressable
-                        key={x.key}
-                        onPress={() => choose(() => togglePicked(x.key))}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: on }}
-                        accessibilityLabel={`${label}, cardio`}
-                        style={[styles.sectionPick, on && styles.sectionPickOn]}
-                      >
-                        <Text style={[styles.sectionPickText, on && styles.sectionPickTextOn]}>{label}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
+                <CardioPillRow
+                  label="Cardio"
+                  pills={cardioPills}
+                  gutter={18}
+                  selected={(p) => picked.includes(pillKey(p))}
+                  onPress={(p) => choose(() => togglePicked(pillKey(p)))}
+                />
               </View>
             ) : null}
             {sections.best.length ? (
@@ -1307,9 +1305,7 @@ const styles = StyleSheet.create({
      same idea is how a screen stops reading as one screen. Tokens only, so it lands on both themes. */
   sectionPickRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 7 },
   /* Bleeds to the screen edge so the row reads as scrollable, not cut off. */
-  cardioPillsWrap: { marginHorizontal: -18, marginBottom: 20, gap: 8 },
-  cardioPillsLabel: { paddingHorizontal: 18, fontSize: 11, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray600 },
-  cardioPills: { paddingHorizontal: 18, gap: 7 },
+  cardioPillsWrap: { marginBottom: 20 },
   sectionPickLabel: {
     fontSize: 9.5,
     fontWeight: '700',
