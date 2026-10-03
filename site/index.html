@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forge Legacy — Get stronger. Keep the proof.</title>
-<meta name="description" content="Lifting, running, food and a coach, all in one app. Log every set and every mile, hit your macros, ask Coach Holt what’s next, and keep a record of all of it for life. The last workout app you’ll need.">
+<title>Forge Legacy — The workout app that keeps your story</title>
+<meta name="description" content="Other workout apps keep your numbers. Forge keeps your story: progress photos, the chapters of your life, the programs you finished, your squads and your PRs, kept for life. One fast app for lifting, running, food and a coach.">
 <link rel="canonical" href="https://forgelegacy.app/">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/favicon.png">
@@ -13,15 +13,15 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Forge Legacy">
 <meta property="og:url" content="https://forgelegacy.app/">
-<meta property="og:title" content="Forge Legacy — Get stronger. Keep the proof.">
-<meta property="og:description" content="Lifting, running, food and a coach, all in one app. Log every set and every mile, hit your macros, ask Coach Holt what’s next, and keep a record of all of it for life. The last workout app you’ll need.">
+<meta property="og:title" content="Forge Legacy — Other workout apps keep your numbers. Forge keeps your story.">
+<meta property="og:description" content="Other workout apps keep your numbers. Forge keeps your story: progress photos, the chapters of your life, the programs you finished, your squads and your PRs, kept for life. One fast app for lifting, running, food and a coach.">
 <meta property="og:image" content="https://forgelegacy.app/assets/landing/og-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="The Forge Legacy mark over a bronze glow, above the line: A permanent record of what you built.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Forge Legacy — Get stronger. Keep the proof.">
-<meta name="twitter:description" content="Lifting, running, food and a coach, all in one app. Log every set and every mile, hit your macros, ask Coach Holt what’s next, and keep a record of all of it for life. The last workout app you’ll need.">
+<meta name="twitter:title" content="Forge Legacy — Other workout apps keep your numbers. Forge keeps your story.">
+<meta name="twitter:description" content="Other workout apps keep your numbers. Forge keeps your story: progress photos, the chapters of your life, the programs you finished, your squads and your PRs, kept for life. One fast app for lifting, running, food and a coach.">
 <meta name="twitter:image" content="https://forgelegacy.app/assets/landing/og-card.jpg">
 
 <script type="application/ld+json">
@@ -160,6 +160,13 @@
               mask-image:linear-gradient(to bottom, #000 calc(100% - 64px), transparent); }
   }
 
+  /* ── Hero: head + body on the left, the film on the right; on a phone head → film → body (PO 10-03) ── */
+  .hero-grid { max-width:1200px; margin:0 auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas:"head film" "body film"; column-gap:clamp(40px,6vw,80px); row-gap:22px; align-items:center; }
+  .hero-head { grid-area:head; align-self:end; }
+  .hero-body { grid-area:body; align-self:start; }
+  .hero-film { grid-area:film; min-width:0; }
+  @media (max-width:900px) { .hero-grid { grid-template-columns:minmax(0,1fr); grid-template-areas:"head" "film" "body"; row-gap:28px; } }
   /* ── Hero film: 9:16, as tall as the screen allows beside the headline ── */
   .film { position:relative; width:min(100%, 420px, calc((100vh - 170px) * 9 / 16)); min-width:min(100%, 300px); margin:0 auto; aspect-ratio:9/16;
     border-radius:28px; overflow:hidden; background:#030405 url(assets/film/poster-9x16.jpg) center/cover no-repeat;
@@ -231,12 +238,16 @@
 
   <main id="home" data-screen-label="Home">
     <section style="padding:clamp(40px,6vw,88px) clamp(20px,4vw,40px) clamp(48px,6vw,80px);">
-      <div style="max-width:1200px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:clamp(40px,6vw,80px);">
-        <div style="flex:1 1 440px; min-width:min(100%,300px);">
-          <span style="display:inline-flex; padding:6px 12px; border-radius:999px; background:rgba(164,122,61,0.10); font-size:12.5px; font-weight:600; color:var(--fl-bronze-600);">In TestFlight now · iPhone</span>
-          <h1 style="margin:22px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(40px,5.6vw,68px); line-height:1.04; letter-spacing:-0.02em; color:#1F1B16; text-wrap:balance;">Get stronger. <span style="color:var(--fl-bronze-600);">Keep the proof.</span></h1>
-          <p style="margin:18px 0 0; font-size:clamp(19px,1.8vw,23px); line-height:1.35; font-weight:600; color:#1F1B16;">Miss a week. Keep everything you built.</p>
-          <p style="margin:14px 0 0; max-width:30em; font-size:clamp(17px,1.5vw,20px); line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">Lifting, running, food and a coach, all in one app. Log every set and every mile, hit your macros, ask Coach Holt what’s next, and keep a record of all of it for life. The last workout app you’ll need.</p>
+      <!-- PO 10-03: the headline says what Forge is AND what no other workout app does (numbers vs a story); on a phone the
+           film comes straight after the headline (head → film → body), beside it on a wide screen. -->
+      <div class="hero-grid">
+        <div class="hero-head">
+          <span style="display:inline-flex; padding:6px 12px; border-radius:999px; background:rgba(164,122,61,0.10); font-size:12.5px; font-weight:600; color:var(--fl-bronze-600);">Workout app for iPhone · Free beta</span>
+          <h1 style="margin:22px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(36px,4.9vw,62px); line-height:1.06; letter-spacing:-0.02em; color:#1F1B16; text-wrap:balance;">Other workout apps keep your numbers. <span style="color:var(--fl-bronze-600);">Forge keeps your story.</span></h1>
+        </div>
+        <div class="hero-body">
+          <p style="margin:0; max-width:30em; font-size:clamp(18px,1.7vw,21px); line-height:1.45; font-weight:600; color:#1F1B16; text-wrap:pretty;">Your progress photos, the chapters of your life, the programs you finished, the squads you trained with and the PRs that mattered. All kept, for life.</p>
+          <p style="margin:14px 0 0; max-width:30em; font-size:clamp(17px,1.5vw,19px); line-height:1.55; color:var(--fl-text-secondary); text-wrap:pretty;">And it’s still one fast app for lifting, running, food and a coach. Miss a week and nothing you built is lost.</p>
           <div style="margin-top:30px; max-width:520px;">
             <form data-form="hero" novalidate class="tf">
               <input type="email" name="email" autocomplete="email" inputmode="email" placeholder="Your email" aria-label="Email" required>
@@ -247,7 +258,7 @@
             <p style="margin:12px 0 0; font-size:13.5px; line-height:1.5; color:var(--fl-gray-400);">It’s free during the beta. After that, your training history stays free to read.</p>
           </div>
         </div>
-        <div style="flex:1 1 420px; min-width:min(100%,300px);">
+        <div class="hero-film">
           <!-- The hero film (PO 10-02: "the first thing someone sees" — it replaces the animated reel here). Real app
                screens, a demo athlete's year, 9:16. The poster is the box's CSS background, so it shows at first paint
                with or without JS; site.js attaches the video after load and keeps the poster for reduced motion. -->
