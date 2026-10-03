@@ -62,9 +62,11 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
   beat last time → food → Coach Holt → miss a week → chapters → squads → FAQ → Brady → join. Old #training/#legacy…
   are anchors; #rank → #comeback. Panel: old page ~30 vs one page ~32.5 sign-ups/1,000 (runners preferred old) → reordered
   so the everyday app comes before the deep story; HoltChat prefilled.
-- Preview: version `f1cc2909` → https://f1cc2909-forgelegacy.isaiahaltamirano.workers.dev (one page, reordered).
-  Superseded: `df288407`, `13f937a9`, `b3e125c3`, `d56110fd`, `e73dff45`, `05fbd47a`, `9185186c`. Production still
-  `64183374`. Go live ONLY on the PO's "go live": `cd site && npx wrangler versions deploy f1cc2909-ca40-482f-a1c3-d8b3e263d521@100%`
+- Hero body = the PO's own description (photos, chapters, programs, squads, PRs kept for life; still one fast app for
+  lifting, running, food and a coach; miss a week and nothing is lost), under the film, then the form.
+- Preview: version `957ed3a3` → https://957ed3a3-forgelegacy.isaiahaltamirano.workers.dev (one page, reordered, PO copy).
+  Superseded: `f1cc2909` and earlier. Production still `64183374`. Go live ONLY on the PO's "go live":
+  `cd site && npx wrangler versions deploy 957ed3a3-af6a-412d-aaa5-656bbf33f6aa@100%`
 - ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
   the beta.", `END.web` in story.ts) and the page's TestFlight button/badge copy must change — re-render WebPhone
   (~5 min) + `WEB_ONLY=1 bash capture/deliver.sh`; the App Store badge may come back then (never animated).
