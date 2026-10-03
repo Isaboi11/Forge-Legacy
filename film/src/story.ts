@@ -33,6 +33,8 @@ export const END = {
   headline: ['Get stronger.', 'Keep the proof.'],
   one: 'Lifting, running and nutrition. One app.',
   url: 'forgelegacy.app',
+  // The web loop's line under the headline (no App Store badge there): what the visitor can do today.
+  web: 'Free on iPhone during the beta.',
 };
 
 // The soundtrack: "Moments (Instrumental Version)" by Ayoub (Epidemic Sound, licensed by the PO 10-02), cut to the film by
@@ -40,3 +42,4 @@ export const END = {
 // hit on the end card; -14 LUFS). The WAVs are git-ignored — regenerate with `python capture/score-moments.py`.
 export const SCORE: string | null = 'music/score-moments.wav';
 export const SCORE_AD15 = 'music/score-ad15.wav';
+export const SCORE_WEB = 'music/score-web.wav';

@@ -4,12 +4,12 @@ import { loadFont as loadPlayfair } from '@remotion/google-fonts/PlayfairDisplay
 import { loadFont as loadHanken } from '@remotion/google-fonts/HankenGrotesk';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
-import { CAPS, E, L, P, RDUR, adToFilm, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, win, type Pose } from './timeline';
+import { E, L, P, RDUR, WEB_ONEAPP, adToFilm, capsFor, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, webAt, win, type Cap, type Pose } from './timeline';
 import { Phone, PhoneFace, PhoneLift } from './Phone';
 import { PhoneBody3D } from './Phone3D';
 import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
 import { SCREEN_W } from './Phone';
-import { LEGACY_CARDS, MEDAL, MORE_MEDALS, ACCOMPLISHMENTS, END, SCORE, SCORE_AD15 } from './story';
+import { LEGACY_CARDS, MEDAL, MORE_MEDALS, ACCOMPLISHMENTS, END, SCORE, SCORE_AD15, SCORE_WEB } from './story';
 
 const display = loadPlayfair('normal', { weights: ['500', '600', '700'], subsets: ['latin'] }).fontFamily;
 loadPlayfair('italic', { weights: ['500', '600'], subsets: ['latin'] });
@@ -18,7 +18,7 @@ const mono = loadMono('normal', { weights: ['400', '500'], subsets: ['latin'] })
 loadInter('normal', { weights: ['400', '500', '600', '700'], subsets: ['latin'] });
 
 // `flatPhone`: the old CSS phone (quick drafts — the 3D phone renders several times slower).
-export type FilmProps = { portrait: boolean; cut?: 'full' | 'ad15'; flatPhone?: boolean };
+export type FilmProps = { portrait: boolean; cut?: 'full' | 'ad15' | 'web'; flatPhone?: boolean };
 
 // PO 10-02: "slight motion with the phones… slowly spinning, really slow and barely noticeable". A slow turn of a few
 // degrees and back (~14 s), a faint tilt and float, on REAL time — so the phone keeps breathing while a line is held.
@@ -90,7 +90,7 @@ const Background: React.FC<{ W: number; H: number; t: number; ph: Pose; amb: num
 };
 
 /* ---------- captions: problem line read for ~1.1 s, struck through in bronze, then the fix arrives word by word ---------- */
-const Caption: React.FC<{ c: (typeof CAPS)[number]; x: number; portrait: boolean }> = ({ c, x, portrait }) => {
+const Caption: React.FC<{ c: Cap; x: number; portrait: boolean }> = ({ c, x, portrait }) => {
   const A = realAt(c.a), B = realAt(c.b);
   if (!(x > A - 0.05 && x < B + 0.05)) return null;
   const out = E.inC(P(x, B - 0.4, B));
@@ -154,7 +154,11 @@ function tapsReal(): Tap[] {
 export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   const frame = useCurrentFrame();
   const { fps, width: W, height: H } = useVideoConfig();
-  const r = cut === 'ad15' ? adToFilm(frame / fps) : Math.min(RDUR, frame / fps);
+  // The web loop splices the film's real time; in its one-app segment the squad shot's slot shows the one-app take.
+  const web = cut === 'web' ? webAt(frame / fps) : null;
+  const oneApp = web?.seg === WEB_ONEAPP;
+  const caps = capsFor(oneApp);
+  const r = web ? web.r : cut === 'ad15' ? adToFilm(frame / fps) : Math.min(RDUR, frame / fps);
   const t = filmAt(r);
   const amb = r;
   const ph = drift(pose(t, portrait), r);
@@ -172,8 +176,8 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   const lift = Math.abs(ph.y) > 600 ? 0 : 1 - Math.min(1, Math.max(0, -ph.y) / 600);
 
   // dimmer + bronze outline (read, then watch)
-  let dimV = 0, spotV = 0, spotC: (typeof CAPS)[number]['spot'] | null = null;
-  for (const c of CAPS) {
+  let dimV = 0, spotV = 0, spotC: Cap['spot'] | null = null;
+  for (const c of caps) {
     if (!c.pain) continue;
     const A = realAt(c.a);
     const d = amb < A ? 0 : amb < A + readOf(c) + 0.2 ? E.outC(P(amb, A, A + 0.3)) : 1 - E.io(P(amb, A + readOf(c) + 0.2, A + readOf(c) + 0.65));
@@ -186,25 +190,29 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   let liftV = 0, lifted: { l: Lift; id: string } | null = null;
   for (const k in RECS) {
     const rec = RECS[k];
-    if (!rec.spots?.length && !rec.lifts?.length) continue;
+    // The web loop can lift a different piece of a take than the full film does (`webLifts`).
+    const recLifts = (cut === 'web' && rec.webLifts) || rec.lifts;
+    if (!rec.spots?.length && !recLifts?.length) continue;
+    // The squad and one-app takes share one slot: only the one on screen may lift (its lift would otherwise float).
+    if (k === (oneApp ? 'squad' : 'oneapp')) continue;
     const since = amb - realAt(rec.from);
     if (since < 0) continue;
     const rt = recTime(rec, since);
     // Only while this recording's screen is the one showing (a slowed take would otherwise outlive its shot).
     // …and only after this shot's problem line has been read (the phone is lit): read first, then watch.
     // This shot's own problem line (a later shot's caption must never switch this screen's lift off mid-air).
-    const ownPain = CAPS.find((c) => c.pain && realAt(c.a) >= realAt(rec.from) - 0.5 && c.a < screenEnd(k));
+    const ownPain = caps.find((c) => c.pain && realAt(c.a) >= realAt(rec.from) - 0.5 && c.a < screenEnd(k));
     const lit = ownPain ? E.outC(P(amb, realAt(ownPain.a) + readOf(ownPain) + 0.3, realAt(ownPain.a) + readOf(ownPain) + 0.65)) : 0;
-    const nextCap = CAPS.find((c) => ownPain && c.a > ownPain.a);
-    const shown = (screenStack(t).find(([id]) => id === k)?.[1] ?? 0) * lit;
+    const nextCap = caps.find((c) => ownPain && c.a > ownPain.a);
+    const shown = (screenStack(t, oneApp).find(([id]) => id === k)?.[1] ?? 0) * lit;
     for (const sp of rec.spots ?? []) {
       const v = shown * (rt < sp.at || rt > sp.until ? 0 : Math.min(E.outC(P(rt, sp.at, sp.at + 0.25)), 1 - E.inQ(P(rt, sp.until - 0.3, sp.until))));
       if (v > spotV) { spotV = v; spotC = { x: sp.x, y: sp.y, w: sp.w, h: sp.h }; }
     }
     // Lifts ramp on screen time, not recording time (a held frame would stall them half-way), and are set back down
     // before this screen fades: calm in, hold, calm out.
-    for (const l of rec.lifts ?? []) {
-      const a = onScreenTime(rec, l.at), b0 = onScreenTime(rec, l.until);
+    for (const l of recLifts ?? []) {
+      const a = l.onAt ?? onScreenTime(rec, l.at), b0 = onScreenTime(rec, l.until);
       if (a == null) continue;
       const out = Math.min(realAt(screenEnd(k)) - 0.25, nextCap ? realAt(nextCap.a) - 0.05 : Infinity) - realAt(rec.from);
       const b = Math.min(b0 ?? out, out);
@@ -215,8 +223,23 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
 
   // touches
   const taps = realTaps.length ? realTaps : MOCK_TAPS.map((k) => ({ ...k, t: realAt(k.t) }));
-  const onScreen = (id?: string) => !id || (screenStack(t).find(([sid]) => sid === id)?.[1] ?? 0) > 0.5;
+  const onScreen = (id?: string) => !id || (screenStack(t, oneApp).find(([sid]) => sid === id)?.[1] ?? 0) > 0.5;
   const tch = taps.find((k) => amb > k.t - 0.18 && amb < k.t + 0.55 && onScreen(k.id));
+
+  // The touch dot at (x, y) in screen coordinates — on the phone, or on a lifted piece when the tap lands inside it.
+  const touch = (x: number, y: number) => {
+    if (!tch) return null;
+    const d = amb - tch.t, rp = P(d, 0, 0.5);
+    return (
+      <>
+        <div style={{ position: 'absolute', left: x, top: y, width: 46, height: 46, margin: '-23px 0 0 -23px', borderRadius: '50%', zIndex: 20,
+          background: 'rgba(255,255,255,.55)', boxShadow: '0 0 20px rgba(255,255,255,.35)',
+          opacity: d < 0 ? (1 + d / 0.18) * 0.9 : Math.max(0, 0.9 - d * 4), transform: `scale(${d < 0 ? 1.15 : 0.9})` }} />
+        <div style={{ position: 'absolute', left: x, top: y, width: 46, height: 46, margin: '-23px 0 0 -23px', borderRadius: '50%', zIndex: 19,
+          border: '2px solid rgba(243,217,174,.9)', opacity: d > 0 ? (1 - rp) * 0.9 : 0, transform: `scale(${1 + rp * 1.8})` }} />
+      </>
+    );
+  };
 
   const overlay = (
     <>
@@ -228,18 +251,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
           opacity: spotV, transform: `scale(${1.04 - 0.04 * E.outC(Math.min(1, spotV * 1.4))})`,
         }} />
       )}
-      {tch && (() => {
-        const d = amb - tch.t, rp = P(d, 0, 0.5);
-        return (
-          <>
-            <div style={{ position: 'absolute', left: tch.x, top: tch.y, width: 46, height: 46, margin: '-23px 0 0 -23px', borderRadius: '50%', zIndex: 20,
-              background: 'rgba(255,255,255,.55)', boxShadow: '0 0 20px rgba(255,255,255,.35)',
-              opacity: d < 0 ? (1 + d / 0.18) * 0.9 : Math.max(0, 0.9 - d * 4), transform: `scale(${d < 0 ? 1.15 : 0.9})` }} />
-            <div style={{ position: 'absolute', left: tch.x, top: tch.y, width: 46, height: 46, margin: '-23px 0 0 -23px', borderRadius: '50%', zIndex: 19,
-              border: '2px solid rgba(243,217,174,.9)', opacity: d > 0 ? (1 - rp) * 0.9 : 0, transform: `scale(${1 + rp * 1.8})` }} />
-          </>
-        );
-      })()}
+      {tch && touch(tch.x, tch.y)}
       {/* glare (the CSS phone only — the 3D phone's glass reflects a real studio) */}
       {flatPhone && <div style={{ position: 'absolute', inset: 0, zIndex: 30, background: 'linear-gradient(115deg, rgba(255,255,255,0) 30%, rgba(255,255,255,.10) 45%, rgba(255,255,255,0) 60%)', backgroundSize: '300% 100%', backgroundPosition: `${50 + ph.ry * 2.2}% 0` }} />}
       {/* bronze sweep after the turn */}
@@ -263,6 +275,8 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
         opacity: Math.min(1, e * 5),
       }}>
         <Img src={frameSrc(RECS[id], r)} style={{ position: 'absolute', left: -l.x, top: STATUS_H - l.y, width: REC_W, height: REC_H }} />
+        {/* A tap that lands on the lifted piece is shown on it (the web loop lifts the set rows while they are logged). */}
+        {tch && tch.id === id && tch.x > l.x && tch.x < l.x + l.w && tch.y > l.y && tch.y < l.y + l.h && touch(tch.x - l.x, tch.y - l.y)}
       </div>
     );
   })();
@@ -279,10 +293,12 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   // PO 10-02 "keep it calm": the medal settles in from slightly larger, no spin, no shake.
   const m1 = E.outC(P(t, 15.3, 15.75)), mo = E.inQ(P(t, 17.2, 17.6));
 
-  const doy = doyAt(t);
+  // The one-app shot is Sun Sep 27 (day 270): the counter jumps there on the cut, well past the quit line.
+  const doy = oneApp ? 270 : doyAt(t);
   const pastQuit = doy >= 100;
   let tag = '', tagColor = '#A39C92', tagScale = 1;
-  if (t > 9.45 && t < 10.55) tag = 'MISSED WEEK';
+  if (oneApp) { tag = `DAY ${doy} · STILL HERE`; tagColor = '#E3B98A'; }
+  else if (t > 9.45 && t < 10.55) tag = 'MISSED WEEK';
   else if (pastQuit && t < 16.0) { tag = 'DAY 100 · STILL HERE'; tagColor = '#E3B98A'; tagScale = 1 + 0.18 * Math.exp(-Math.max(0, t - 14.9) * 5); }
 
   const ep = E.outC(P(t, 17.55, 18.4));
@@ -292,7 +308,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
 
   return (
     <AbsoluteFill style={{ background: '#030405', overflow: 'hidden', fontFamily: sans }}>
-      {cut === 'ad15' ? <Audio src={staticFile(SCORE_AD15)} /> : SCORE && <Audio src={staticFile(SCORE)} />}
+      {cut === 'web' ? <Audio src={staticFile(SCORE_WEB)} /> : cut === 'ad15' ? <Audio src={staticFile(SCORE_AD15)} /> : SCORE && <Audio src={staticFile(SCORE)} />}
       <Background W={W} H={H} t={t} ph={ph} amb={amb} portrait={portrait} />
       <AbsoluteFill style={{ transform: `translate(${shx}px,${shy}px)` }}>
         {/* Legacy cards */}
@@ -327,13 +343,13 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
         <AbsoluteFill style={{ perspective: 2400, filter: blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : undefined }}>
           {flatPhone ? (
             <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
-              <Phone pose={ph} overlay={overlay} lift={liftNode || undefined}><AppScreen t={t} r={r} /></Phone>
+              <Phone pose={ph} overlay={overlay} lift={liftNode || undefined}><AppScreen t={t} r={r} oneApp={oneApp} /></Phone>
             </div>
           ) : (
             <>
               <AbsoluteFill style={{ perspective: 2400 }}>
                 <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
-                  <PhoneFace pose={ph} overlay={overlay}><AppScreen t={t} r={r} /></PhoneFace>
+                  <PhoneFace pose={ph} overlay={overlay}><AppScreen t={t} r={r} oneApp={oneApp} /></PhoneFace>
                 </div>
               </AbsoluteFill>
               <PhoneBody3D W={W} H={H} pose={ph} />
@@ -409,7 +425,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
             <span style={{ position: 'absolute', left: '27.4%', top: 16, transform: 'translateX(-50%)', fontSize: 15, letterSpacing: '.2em', color: '#8B8377', whiteSpace: 'nowrap', opacity: pastQuit ? 0 : 1 }}>MOST PEOPLE QUIT BY HERE</span>
           </div>
         </div>
-        {CAPS.map((c, i) => <Caption key={i} c={c} x={amb} portrait={portrait} />)}
+        {caps.map((c, i) => <Caption key={i} c={c} x={amb} portrait={portrait} />)}
         {/* end card */}
         <div style={{ position: 'absolute', opacity: ep, transform: `translateY(${(1 - ep) * 30}px)`,
           ...(portrait ? { left: 70, right: 70, top: 170, textAlign: 'center' as const } : { left: 150, top: 290, width: 820 }) }}>
@@ -417,9 +433,10 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
           <div style={{ fontFamily: display, fontWeight: 600, fontSize: 104, lineHeight: 1, letterSpacing: '-.02em', marginTop: 28, color: '#F4EFE6' }}>
             {END.headline[0]}<br /><em style={{ fontStyle: 'italic', color: '#D9AB78' }}>{END.headline[1]}</em>
           </div>
-          <div style={{ fontSize: 34, fontWeight: 600, color: '#E3B98A', marginTop: 30, ...endItem(0) }}>{END.one}</div>
+          <div style={{ fontSize: 34, fontWeight: 600, color: '#E3B98A', marginTop: 30, ...endItem(0) }}>{cut === 'web' ? END.web : END.one}</div>
           <div style={{ display: 'flex', gap: 22, alignItems: 'center', marginTop: 44, justifyContent: portrait ? 'center' : undefined }}>
-            <Img src={staticFile('badge/download-on-the-app-store.svg')} style={{ height: 64, opacity: badgeOn ? 1 : 0 }} />
+            {/* Not on the web loop: the page offers a TestFlight beta, and the badge said App Store (panel, 10-03). */}
+            {cut !== 'web' && <Img src={staticFile('badge/download-on-the-app-store.svg')} style={{ height: 64, opacity: badgeOn ? 1 : 0 }} />}
             <div style={{ fontFamily: mono, fontSize: 24, color: '#E3B98A', letterSpacing: '.06em', ...endItem(1) }}>{END.url}</div>
           </div>
         </div>

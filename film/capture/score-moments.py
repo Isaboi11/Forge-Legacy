@@ -2,6 +2,7 @@
 # by the PO 10-02). The WAV lives in public/music/ (git-ignored) — never commit it.
 #   python capture/score-moments.py          → the film's score
 #   python capture/score-moments.py ad15     → the 15 s ad's score (shots 1, 4, 6 — src/timeline.ts AD15)
+#   python capture/score-moments.py web      → the homepage web loop's score (src/timeline.ts WEB)
 # 125 BPM exactly (beat 0.48 s, bar 1.92 s), kick grid phase 0.46 s, measured on the file. Each piece is spliced on a
 # beat with a short equal-power crossfade, placed on the film's real-time beats (src/timeline.ts realAt):
 #   1 · the intro's tail fading to the break's silence under the grey app → the DROP (beat 64, 31.18 s) on the turn
@@ -53,6 +54,14 @@ if sys.argv[1:] == ['ad15']:
     RAW, OUT, FILM = 'public/music/score-ad15-raw.wav', 'public/music/score-ad15.wav', 15.0
     a2 = TURN + 4 * BAR      # 11.08
     a1 = a2 - 6 * BEAT       # 8.20
+    pieces = [(D1 - TURN, 0.0, a1), *build_into(a1, a2), (HIT, a2, FILM)]
+if sys.argv[1:] == ['web']:
+    # The homepage loop (2026-10-03; WEB in src/timeline.ts): same shape as the ad — drop 1 from the turn through the
+    # record, the missed week and the one-app shot (its cuts at 11.08 and 16.84 sit on bar lines), the build's last five
+    # beats and the pickup → the FINAL HIT on the end card (22.60 = TURN + 10 bars).
+    RAW, OUT, FILM = 'public/music/score-web-raw.wav', 'public/music/score-web.wav', 25.8
+    a2 = TURN + 10 * BAR     # 22.60
+    a1 = a2 - 6 * BEAT       # 19.72
     pieces = [(D1 - TURN, 0.0, a1), *build_into(a1, a2), (HIT, a2, FILM)]
 
 sr, x = wavfile.read(SRC)

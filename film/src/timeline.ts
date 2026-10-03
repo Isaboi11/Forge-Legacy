@@ -152,7 +152,7 @@ export const doyAt = (t: number) => sample(DT, t).d;
 /* ---------- captions ---------- */
 export type Spot = { x: number; y: number; w: number; h: number };
 // `read`: seconds the problem line is read before the strike (default 1.1).
-export type Cap = { a: number; b: number; text: string; pain?: string; spot?: Spot; wide?: boolean; read?: number };
+export type Cap = { a: number; b: number; text: string; pain?: string; spot?: Spot; wide?: boolean; read?: number; id?: string };
 export const readOf = (c: Cap) => c.read ?? 1.1;
 export const CAPS: Cap[] = [
   // PO 10-01: generic to any time of year (research: a median 70% gone within 100 days — the notch on the counter),
@@ -162,11 +162,16 @@ export const CAPS: Cap[] = [
   { a: 2.85, b: 5.45, pain: 'Logging felt like homework.', text: 'One tap *per set.*' }, // outlines come from the take
   { a: 5.78, b: 8.95, pain: 'Stuck for weeks.', text: 'Your AI coach *helps you move forward.*' }, // PO 10-02
   { a: 9.35, b: 11.4, pain: 'Miss a week, start over.', text: 'Miss a week. *Keep your progress.*' },
-  { a: 11.52, b: 13.9, pain: 'Training alone.', text: 'Your squad *keeps you showing up.*' }, // PO 10-02: the squad shot
+  { a: 11.52, b: 13.9, pain: 'Training alone.', text: 'Your squad *keeps you showing up.*', id: 'squad' }, // PO 10-02: the squad shot
   // PO 10-02: "I can't see those words… it crosses them out without me knowing what it's saying" — the line now
   // waits for the pull-back (the phone small and centred, Day 100, the chapters out), is larger, and reads 1.8 s.
   { a: 14.92, b: 17.4, pain: 'Numbers nobody looks at.', text: 'A year that tells *your story.*', wide: true, read: 1.8 },
 ];
+// The web loop's one-app line, in the squad caption's place. It starts as the cut lands (realAt(11.72) = 28.03; the
+// segment opens at 27.97) and is gone before the cut to the end card (realAt(13.85) = 33.75). A two-word problem line,
+// read in 0.6 s, so the run's lift has time to be read.
+export const CAP_ONEAPP: Cap = { a: 11.72, b: 13.85, pain: 'Three apps.', text: 'Lifting, running and food. *One app.*', read: 0.6 };
+export const capsFor = (oneApp: boolean) => (oneApp ? CAPS.map((c) => (c.id === 'squad' ? CAP_ONEAPP : c)) : CAPS);
 
 /* ---------- the 15 s ad (PO 10-02: "whatever converts best") ----------
    Shots 1, 4 and 6 — the quit-by-day-100 opening and the turn, the missed week, the end card — hard cuts on the bar
@@ -174,10 +179,25 @@ export const CAPS: Cap[] = [
    seconds. The end card's last frame holds to 15.0. */
 export const AD15_DUR = 15;
 export const AD15: [number, number, number][] = [[0, 0, 5.32], [5.32, 20.75, 26.51], [11.08, 44.27, 47.47]];
-export const adToFilm = (a: number) => {
-  const [s0, from, to] = [...AD15].reverse().find(([s]) => a >= s)!;
-  return Math.min(to, from + a - s0);
+const splice = (segs: [number, number, number][], a: number) => {
+  let i = segs.length - 1;
+  while (i > 0 && a < segs[i][0]) i--;
+  const [s0, from, to] = segs[i];
+  return { r: Math.min(to, from + a - s0), seg: i };
 };
+export const adToFilm = (a: number) => splice(AD15, a).r;
+
+/* ---------- the web loop (2026-10-03) ----------
+   The homepage hero. A simulated 1,000-visitor panel (five AI personas, not real people) found the 47 s film's best line
+   (Miss a week / Welcome back) arriving at 22 s, after most visitors had left; runners and macro trackers never saw a run
+   or a food screen; and the end card's App Store badge contradicted the page's TestFlight button. So: shots 1–2 as they
+   are (to the record), the missed week, the ONE-APP shot (Jordan's Sep 27 run → that day's food; capture/shot-oneapp.mjs)
+   played in the squad shot's slot (its pose and light), then the end card without the badge. Hard cuts on bar lines of
+   its own score (`python capture/score-moments.py web`). [webStart, filmRealStart, filmRealEnd]. */
+export const WEB: [number, number, number][] = [[0, 0, 11.08], [11.08, 20.75, 26.51], [16.84, 27.97, 33.73], [22.6, 44.27, 47.47]];
+export const WEB_DUR = 25.8;
+export const WEB_ONEAPP = 2;   // the segment that shows the one-app shot instead of the squad
+export const webAt = (a: number) => splice(WEB, a);
 
 /* ---------- shots (film time) ---------- */
 export const SHOTS = [

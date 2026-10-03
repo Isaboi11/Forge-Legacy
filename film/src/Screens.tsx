@@ -62,10 +62,13 @@ export const OldApp: React.FC<{ t: number }> = ({ t }) => (
 // `lifts`: PO 10-02 zoom-outs — ONE key piece of the real screen per shot is lifted off the phone, ~2× (`k`), and set
 // back. Same timing and coordinates as a spot; `r` is the piece's own corner radius so the crop keeps its shape.
 export type Spot = { at: number; until: number; x: number; y: number; w: number; h: number };
-export type Lift = Spot & { k?: number; r?: number };
+// `onAt`: when the lift starts, in on-screen seconds since the take starts — for a lift that must rise while a held frame
+// is showing (a recording second can't name a moment inside a hold).
+export type Lift = Spot & { k?: number; r?: number; onAt?: number };
 export type Rec = {
   dir: string; frames: number; fps: number; from: number;
   pauses?: [number, number][]; taps?: { at: number; x: number; y: number }[]; spots?: Spot[]; lifts?: Lift[];
+  webLifts?: Lift[]; // the web loop's lifts for this take, in place of `lifts`
   // `slow`: [fromRec, toRec, factor] — play that stretch `factor`× slower. Used ONLY to undo a capture artefact:
   // the logger's rest countdown runs ~2× fast under the fake clock, so at 2× slow it reads as the app really runs.
   slow?: [number, number, number];
@@ -119,6 +122,7 @@ const LABELS: Record<string, [string, string]> = {
   coach: ['Coach Holt · Feb 10', '"Bench has been stuck at 225 for three weeks." → reply → Do it → Updated by Holt'],
   missed: ['Activity History · March', 'Mar 9–15 empty → Home: WELCOME BACK · Good to see you, Jordan.'],
   squad: ['Squads · Ironside', '6 / 6 trained today'],
+  oneapp: ['Run · Sep 27 → Nutrition', '7.5 mi · 9:11 /mi → 2,061 of 2,800'],
   story: ['Legacy · Oct', 'Sealed chapters · the two chapters float out · 1,000 Pound Club medal'],
 };
 
@@ -159,14 +163,15 @@ export const RecordingOrPlaceholder: React.FC<{ id: string; r: number }> = ({ id
   );
 };
 
-/* Which app screen is showing, film time → [id, opacity]. Same windows as the mock-up's scene() calls. */
-export function screenStack(t: number): [string, number][] {
+/* Which app screen is showing, film time → [id, opacity]. Same windows as the mock-up's scene() calls.
+   `oneApp`: the web loop's one-app take plays in the squad shot's window (src/timeline.ts WEB). */
+export function screenStack(t: number, oneApp = false): [string, number][] {
   const s = (a: number, b: number) => win(t, a, b, 0.28, 0.28);
   return [
     ['tap', s(1.75, 5.7)], // PO 10-01: no Home screen — the logger is what the phone turns into
     ['coach', s(5.6, 9.15)],
     ['missed', s(9.05, 11.7)],
-    ['squad', s(11.45, 14.25)], // PO 10-02
+    [oneApp ? 'oneapp' : 'squad', s(11.45, 14.25)], // PO 10-02
     ['story', s(14.05, 21)],
   ];
 }
@@ -174,14 +179,14 @@ export function screenStack(t: number): [string, number][] {
 /** Film time at which a screen's window closes (its fade-out ends). */
 export const screenEnd = (id: string) => ({ tap: 5.7, coach: 9.15, missed: 11.7, squad: 14.25, story: 21 } as Record<string, number>)[id] ?? 21;
 
-export const AppScreen: React.FC<{ t: number; r: number }> = ({ t, r }) => {
+export const AppScreen: React.FC<{ t: number; r: number; oneApp?: boolean }> = ({ t, r, oneApp }) => {
   return (
     <>
       {t < 1.75 && <OldApp t={t} />}
       {t >= 1.75 && (
         <>
           <StatusBar />
-          {screenStack(t).map(([id, v]) => v > 0 && (
+          {screenStack(t, oneApp).map(([id, v]) => v > 0 && (
             <div key={id} style={{ position: 'absolute', inset: 0, opacity: v, transform: `translateY(${(1 - E.outC(Math.min(1, v * 1.5))) * 30}px)` }}>
               <RecordingOrPlaceholder id={id} r={r} />
             </div>

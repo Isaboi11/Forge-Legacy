@@ -14,7 +14,7 @@ set -euo pipefail
 G="colorbalance=rs=0.015:gs=0.003:bs=-0.025:rm=0.005:bm=-0.005,curves=master='0/0 0.05/0.038 0.5/0.505 0.9/0.92 1/1',eq=saturation=1.04,scale=out_range=tv:out_color_matrix=bt709,format=yuv420p"
 TAGS="-colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv"
 WEB=../site/assets/film
-POSTER_AT=10.6   # NEW PERSONAL RECORD, lifted off the phone
+POSTER_AT=10.6   # NEW PERSONAL RECORD, lifted off the phone (same moment in the web loop: its first 11.08 s are the film's)
 mkdir -p out/final out/enc "$WEB"
 ff() { ffmpeg -hide_banner -loglevel error -y "$@"; }
 
@@ -44,6 +44,8 @@ web() { # master, shape, width, height, video kbps
   ff -ss $POSTER_AT -i "$src" -frames:v 1 -vf "$G,scale=$w:$h:flags=lanczos" -q:v 4 "$WEB/poster-$shape.jpg"
   ls -la "$WEB"/hero-$shape.* "$WEB"/poster-$shape.jpg
 }
-web out/master-HeroPhone.mp4 9x16 720 1280 ${KB9:-700}   # 47.5 s: 700 + 96 audio kbps ≈ 4.7 MB (5 MB cap)
+# 2026-10-03: the hero shows the 25.8 s WEB loop (WebPhone — src/timeline.ts WEB), not the 47.5 s film. Half the length
+# buys the bitrate back for the app's small text: 1200 + 96 kbps ≈ 4.2 MB (5 MB cap). The film was 700 kbps.
+web out/master-WebPhone.mp4 9x16 720 1280 ${KB9:-1200}
 # (a 16:9 web loop: web out/master-HeroDesktop.mp4 16x9 1920 1080 800 — 4.6 MB; not on the page since the film moved
 #  into the hero)
