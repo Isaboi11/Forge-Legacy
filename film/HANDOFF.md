@@ -68,8 +68,9 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
 - Progress photos section ("See how far you've come.") with the PO's own Transformation screenshots; Miss a week is text only.
 - Testimonials ("From the beta", after Coach Holt): Moses, Nate, Brady, verbatim, 5 stars (PO). Add one = copy a
   `<figure class="tq">`; phones swipe sideways. Once on the App Store, real ratings can replace these.
-- Preview: version `77fc47a7` → https://77fc47a7-forgelegacy.isaiahaltamirano.workers.dev. Superseded: `7078cd29` and
-  earlier. Production still `64183374`. Go live ONLY on the PO's "go live": `cd site && npx wrangler versions deploy 77fc47a7-426b-47ca-9d31-32debf963f21@100%`
+- Preview: version `8f9facd9` (testimonials signed Moses R., Nate W., Brady P.) → https://8f9facd9-forgelegacy.isaiahaltamirano.workers.dev.
+  Superseded: `77fc47a7` and earlier. Production still `64183374`. Go live ONLY on the PO's "go live":
+  `cd site && npx wrangler versions deploy 8f9facd9-1008-4181-ba7c-8bcd8198b99b@100%`
 - ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
   the beta.", `END.web` in story.ts) and the page's TestFlight button/badge copy must change — re-render WebPhone
   (~5 min) + `WEB_ONLY=1 bash capture/deliver.sh`; the App Store badge may come back then (never animated).
