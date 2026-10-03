@@ -44,8 +44,8 @@ web() { # master, shape, width, height, video kbps
   ff -ss $POSTER_AT -i "$src" -frames:v 1 -vf "$G,scale=$w:$h:flags=lanczos" -q:v 4 "$WEB/poster-$shape.jpg"
   ls -la "$WEB"/hero-$shape.* "$WEB"/poster-$shape.jpg
 }
-# 2026-10-03: the hero shows the 25.8 s WEB loop (WebPhone — src/timeline.ts WEB), not the 47.5 s film. Half the length
-# buys the bitrate back for the app's small text: 1200 + 96 kbps ≈ 4.2 MB (5 MB cap). The film was 700 kbps.
-web out/master-WebPhone.mp4 9x16 720 1280 ${KB9:-1200}
+# 2026-10-03: the hero shows the 31.6 s WEB loop (WebPhone — src/timeline.ts WEB), not the 47.5 s film. The shorter
+# length buys bitrate back for the app's small text: 1100 + 96 kbps ≈ 4.7 MB (5 MB cap). The film was 700 kbps.
+web out/master-WebPhone.mp4 9x16 720 1280 ${KB9:-1100}
 # (a 16:9 web loop: web out/master-HeroDesktop.mp4 16x9 1920 1080 800 — 4.6 MB; not on the page since the film moved
 #  into the hero)

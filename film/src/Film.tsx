@@ -4,7 +4,7 @@ import { loadFont as loadPlayfair } from '@remotion/google-fonts/PlayfairDisplay
 import { loadFont as loadHanken } from '@remotion/google-fonts/HankenGrotesk';
 import { loadFont as loadMono } from '@remotion/google-fonts/JetBrainsMono';
 import { loadFont as loadInter } from '@remotion/google-fonts/Inter';
-import { E, L, P, RDUR, WEB_ONEAPP, adToFilm, capsFor, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, webAt, win, type Cap, type Pose } from './timeline';
+import { E, L, P, RDUR, WEB_LEGACY, WEB_ONEAPP, adToFilm, capsFor, readOf, doyAt, doyLabel, filmAt, pose, realAt, rng, webAt, win, type Cap, type Pose } from './timeline';
 import { Phone, PhoneFace, PhoneLift } from './Phone';
 import { PhoneBody3D } from './Phone3D';
 import { AppScreen, RECS, REC_H, REC_W, STATUS_H, frameSrc, onScreenTime, recTime, screenEnd, screenStack, type Lift } from './Screens';
@@ -157,6 +157,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   // The web loop splices the film's real time; in its one-app segment the squad shot's slot shows the one-app take.
   const web = cut === 'web' ? webAt(frame / fps) : null;
   const oneApp = web?.seg === WEB_ONEAPP;
+  const legacyWeb = web?.seg === WEB_LEGACY;
   const caps = capsFor(oneApp);
   const r = web ? web.r : cut === 'ad15' ? adToFilm(frame / fps) : Math.min(RDUR, frame / fps);
   const t = filmAt(r);
@@ -294,10 +295,11 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   const m1 = E.outC(P(t, 15.3, 15.75)), mo = E.inQ(P(t, 17.2, 17.6));
 
   // The one-app shot is Sun Sep 27 (day 270): the counter jumps there on the cut, well past the quit line.
-  const doy = oneApp ? 270 : doyAt(t);
+  // The web loop's Legacy beat runs the year on from Sep 27 to Dec 31 (the film's own counter would go back to March).
+  const doy = oneApp ? 270 : legacyWeb ? 270 + 95 * E.io(P(amb, 35.2, 37.6)) : doyAt(t);
   const pastQuit = doy >= 100;
   let tag = '', tagColor = '#A39C92', tagScale = 1;
-  if (oneApp) { tag = `DAY ${doy} · STILL HERE`; tagColor = '#E3B98A'; }
+  if (oneApp || legacyWeb) { tag = `DAY ${Math.round(doy)} · STILL HERE`; tagColor = '#E3B98A'; }
   else if (t > 9.45 && t < 10.55) tag = 'MISSED WEEK';
   else if (pastQuit && t < 16.0) { tag = 'DAY 100 · STILL HERE'; tagColor = '#E3B98A'; tagScale = 1 + 0.18 * Math.exp(-Math.max(0, t - 14.9) * 5); }
 
@@ -314,7 +316,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
         {/* Legacy cards */}
         <AbsoluteFill style={{ perspective: 2400 }}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
-            {LEGACY_CARDS.map((card, i) => {
+            {cut !== 'web' && LEGACY_CARDS.map((card, i) => {
               const a = 14.2 + i * 0.14, p = E.outC(P(t, a, a + 0.7)), o = E.inQ(P(t, 17.25 + i * 0.05, 17.75 + i * 0.05));
               const c = CPOS[i], yOff = portrait ? 260 : 0;
               const x = L(ph.x, c.x, p), y = L(ph.y, c.y + yOff, p) + Math.sin(t * 1.2 + i) * 6 - o * 80, z = L(-300, c.z, p);
@@ -363,8 +365,28 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
             </>
           )}
         </AbsoluteFill>
-        {/* medal */}
         <AbsoluteFill style={{ perspective: 2400 }}>
+          <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
+            {/* The web loop: the two chapters only, large and stacked (portrait), out of the phone one after the other on
+                real time — the film's own fly-out runs into a reading hold and would crawl. In FRONT of the phone: the stacked
+                cards cross it. */}
+            {cut === 'web' && legacyWeb && LEGACY_CARDS.map((card, i) => {
+              const WCW = portrait ? 700 : 560;
+              const c = (portrait ? [{ x: -24, y: -495, ry: 6 }, { x: 24, y: -40, ry: -6 }] : [{ x: -560, y: -150, ry: 12 }, { x: 560, y: -150, ry: -12 }])[i];
+              const a = 34.35 + i * 0.3, p = E.outC(P(amb, a, a + 0.8));
+              const x = L(ph.x, c.x, p), y = L(ph.y, c.y, p) + Math.sin(amb * 1.2 + i) * 6, z = L(-300, 40, p);
+              return (
+                <Img key={i} src={staticFile(card.src)} style={{
+                  position: 'absolute', left: -WCW / 2, top: -(WCW * card.h) / card.w / 2, width: WCW, height: (WCW * card.h) / card.w,
+                  borderRadius: (16 * WCW) / card.w, boxShadow: '0 40px 90px rgba(0,0,0,.65), 0 0 0 1px rgba(186,134,84,.35)', opacity: P(amb, a, a + 0.2),
+                  transform: `translate3d(${x}px,${y}px,${z}px) rotateY(${c.ry * p}deg) scale(${0.45 + 0.55 * p})`,
+                }} />
+              );
+            })}
+          </div>
+        </AbsoluteFill>
+        {/* medal (not on the web loop: chapter cards only) */}
+        {cut !== 'web' && <AbsoluteFill style={{ perspective: 2400 }}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d',
             transform: `translate3d(${mpos.x}px,${mpos.y}px,${L(260, 60, m1)}px) scale(${L(1.25, 1, m1) * (1 - mo * 0.2)})` }}>
             <Img src={staticFile(MEDAL.src)} style={{
@@ -376,10 +398,10 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
               <div style={{ fontFamily: display, fontSize: 30, fontWeight: 600, color: '#F4EFE6', marginTop: 6 }}>{MEDAL.name}</div>
             </div>
           </div>
-        </AbsoluteFill>
+        </AbsoluteFill>}
         {/* PO 10-02: more of the year — four more real medals beside the chapters, then three accomplishment cards
             rise between the chapters and the phone. Calm: each settles in from slightly larger, one after another. */}
-        <AbsoluteFill style={{ perspective: 2400 }}>
+        {cut !== 'web' && <AbsoluteFill style={{ perspective: 2400 }}>
           <div style={{ position: 'absolute', left: '50%', top: '50%', transformStyle: 'preserve-3d' }}>
             {MORE_MEDALS.map((m, i) => {
               const a = 15.5 + i * 0.13, p = E.outC(P(t, a, a + 0.45)), o = E.inQ(P(t, 17.2, 17.6));
@@ -411,7 +433,7 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
               );
             })}
           </div>
-        </AbsoluteFill>
+        </AbsoluteFill>}
         {/* date counter */}
         <div style={{ position: 'absolute', fontFamily: mono, color: '#F2EEE7', opacity: win(t, 0.4, 17.3, 0.4, 0.4), ...(portrait ? { left: 84, top: 110 } : { left: 150, top: 120 }) }}>
           <div style={{ fontSize: 44, letterSpacing: '.06em', fontVariantNumeric: 'tabular-nums' }}>

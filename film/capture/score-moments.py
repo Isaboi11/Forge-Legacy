@@ -56,13 +56,15 @@ if sys.argv[1:] == ['ad15']:
     a1 = a2 - 6 * BEAT       # 8.20
     pieces = [(D1 - TURN, 0.0, a1), *build_into(a1, a2), (HIT, a2, FILM)]
 if sys.argv[1:] == ['web']:
-    # The homepage loop (2026-10-03; WEB in src/timeline.ts): same shape as the ad — drop 1 from the turn through the
-    # record, the missed week and the one-app shot (its cuts at 11.08 and 16.84 sit on bar lines), the build's last five
-    # beats and the pickup → the FINAL HIT on the end card (22.60 = TURN + 10 bars).
-    RAW, OUT, FILM = 'public/music/score-web-raw.wav', 'public/music/score-web.wav', 25.8
-    a2 = TURN + 10 * BAR     # 22.60
-    a1 = a2 - 6 * BEAT       # 19.72
-    pieces = [(D1 - TURN, 0.0, a1), *build_into(a1, a2), (HIT, a2, FILM)]
+    # The homepage loop (WEB in src/timeline.ts; 2026-10-03, Legacy back the same day): the film's own shape in miniature —
+    # drop 1 from the turn through the record, the missed week and the one-app shot (cuts at 11.08 and 16.84 on bar
+    # lines), the build's last five beats + the pickup → the SECOND DROP on the Legacy pull-back (22.60 = TURN + 10 bars),
+    # the FINAL HIT on the end card (28.36 = TURN + 13 bars).
+    RAW, OUT, FILM = 'public/music/score-web-raw.wav', 'public/music/score-web.wav', 31.56
+    w2 = TURN + 10 * BAR     # 22.60
+    w1 = w2 - 6 * BEAT       # 19.72
+    w3 = TURN + 13 * BAR     # 28.36
+    pieces = [(D1 - TURN, 0.0, w1), *build_into(w1, w2)[:1], (PICKUP, w2 - BEAT, w3), (HIT, w3, FILM)]
 
 sr, x = wavfile.read(SRC)
 x = x.astype(np.float64)

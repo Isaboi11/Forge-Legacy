@@ -192,11 +192,18 @@ export const adToFilm = (a: number) => splice(AD15, a).r;
    (Miss a week / Welcome back) arriving at 22 s, after most visitors had left; runners and macro trackers never saw a run
    or a food screen; and the end card's App Store badge contradicted the page's TestFlight button. So: shots 1–2 as they
    are (to the record), the missed week, the ONE-APP shot (Jordan's Sep 27 run → that day's food; capture/shot-oneapp.mjs)
-   played in the squad shot's slot (its pose and light), then the end card without the badge. Hard cuts on bar lines of
+   played in the squad shot's slot (its pose and light), then the Legacy pull-back, then the end card without the badge. Hard cuts on bar lines of
    its own score (`python capture/score-moments.py web`). [webStart, filmRealStart, filmRealEnd]. */
-export const WEB: [number, number, number][] = [[0, 0, 11.08], [11.08, 20.75, 26.51], [16.84, 27.97, 33.73], [22.6, 44.27, 47.47]];
-export const WEB_DUR = 25.8;
+// PO 10-03 (second pass): "is it bad we left out the legacy part… our header is Get stronger. Keep the proof." → the
+// Legacy pull-back is back (real 34.07–39.83, 3 bars), WITHOUT the medal wall and accomplishments (the panel: unreadable
+// at phone size, and "1,000 Pound Club" told beginners the app is for strong people) — only Jordan's two chapter cards,
+// large and stacked so their words read on a phone; the counter runs Sep 27 → Dec 31.
+export const WEB: [number, number, number][] = [
+  [0, 0, 11.08], [11.08, 20.75, 26.51], [16.84, 27.97, 33.73], [22.6, 34.07, 39.83], [28.36, 44.27, 47.47],
+];
+export const WEB_DUR = 31.56;
 export const WEB_ONEAPP = 2;   // the segment that shows the one-app shot instead of the squad
+export const WEB_LEGACY = 3;   // the Legacy pull-back: chapter cards only
 export const webAt = (a: number) => splice(WEB, a);
 
 /* ---------- shots (film time) ---------- */
