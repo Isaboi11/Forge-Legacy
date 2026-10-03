@@ -30,8 +30,8 @@ A simulated 1,000-visitor panel (5 AI personas — NOT real people) scored the 4
 (~29 vs ~29 sign-ups): the best line (Miss a week / Welcome back) came at 22 s, after most visitors left; runners and
 macro trackers never saw a run or food; the App Store badge contradicted TestFlight. Its "dead dark phone at 2.5 s" was
 a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stays.
-- **WebPhone** (cut `web`, `WEB` in `src/timeline.ts`, 25.8 s): film 0–11.08 → missed week (20.75–26.51) → ONE-APP shot
-  (real 27.97–33.73, the squad shot's slot/pose/light) → end card (44.27–47.47). Score: `python capture/score-moments.py web`.
+- **WebPhone** (cut `web`, `WEB` in `src/timeline.ts`, 31.56 s): film 0–11.08 → missed week (20.75–26.51) → ONE-APP shot
+  (real 27.97–33.73, the squad shot's slot/pose/light) → Legacy pull-back (34.07–39.83) → end card (44.27–47.47). Score: `python capture/score-moments.py web`.
 - **One-app shot**: `capture/shot-oneapp.mjs` (Sep 27 19:30): run detail (tiles lifted ×1.55) → dissolve → Nutrition
   (ring + macros lifted ×1.15). Caption "Three apps." → "Lifting, running and food. *One app.*" Counter SEP 27 ·
   DAY 270 · STILL HERE. Food data: `capture/seed-food-sep27.mjs` logged Jordan's Sep 27 THROUGH THE APP (manual targets
@@ -40,10 +40,14 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
   the `tap` take, `onAt` = on-screen start so it can rise during a held frame) and the record card pops up inside the
   lifted piece; taps landing on a lifted piece are drawn on it. The full film still lifts only the record card.
 - End card (web only): "Free on iPhone during the beta." — no App Store badge.
+- **PO 10-03 (later) — Legacy back** ("our header is Get stronger. Keep the proof."): segment 4 = the pull-back (real
+  34.07–39.83) with ONLY the two chapter cards, 700 px, stacked, IN FRONT of the phone, out on real time; no medals, no
+  accomplishments; counter Sep 27 → Dec 31 · DAY 365 · STILL HERE. Score: second drop on the pull-back (22.60), final
+  hit on the end card (28.36). Loop 31.56 s; web encode 1100 kbps (MP4 4.8 MB).
 - Deliver: `node capture/render.mjs WebPhone` → `WEB_ONLY=1 bash capture/deliver.sh` (1200 kbps, MP4 4.2 MB).
-- Preview: version `9185186c` → https://9185186c-forgelegacy.isaiahaltamirano.workers.dev (WebKit iPhone 13: plays).
-  Production still `64183374`. Go live ONLY on the PO's "go live":
-  `cd site && npx wrangler versions deploy 9185186c-069f-4beb-a172-d794bafebcf0@100%`
+- Preview: version `05fbd47a` (with Legacy) → https://05fbd47a-forgelegacy.isaiahaltamirano.workers.dev (WebKit
+  iPhone 13: plays). Superseded: `9185186c` (26 s, no Legacy). Production still `64183374`. Go live ONLY on the PO's
+  "go live": `cd site && npx wrangler versions deploy 05fbd47a-515f-42bb-bd4c-d251dc726ec0@100%`
   (rollback `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`).
 - Unchanged: the 47.5 s film, the 15 s ad and their social masters (they still carry the badge).
 
