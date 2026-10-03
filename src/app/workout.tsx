@@ -479,6 +479,12 @@ export default function WorkoutScreen() {
   const autoPickerRef = useRef(false);
   /** Disarms the picker's one-move exit once the picker has come back any other way. */
   const disarmFreestyleRef = useRef<(() => void) | null>(null);
+  /**
+   * A fresh "Build as you go" is on its way to the picker. While it is, the empty session draws only the
+   * background — the old FREESTYLE intro flashed for a beat before the picker covered it (PO 10-03), and
+   * the Shell's background is the picker's own, so the picker now slides in over the same picture.
+   */
+  const [pickerOpening, setPickerOpening] = useState(false);
   const endSession = useCallback(() => {
     endedRef.current = true;
     finishWorkout();
@@ -1317,6 +1323,8 @@ export default function WorkoutScreen() {
         // A one-off: no program, no prescription. Starts empty and is filled from the Picker as they go.
         await clearWorkoutLaunch();
         startSession({ workoutName: launch.workoutName ?? 'Freestyle Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
+        // Set in the SAME batch as the phase, so no frame ever draws the intro (see `pickerOpening`).
+        setPickerOpening(true);
         setPhase('active');
         /*
          * ══ STRAIGHT TO THE PICKER — THE INTRO WAS A GATE WITH ONE BUTTON ══
@@ -1599,6 +1607,9 @@ export default function WorkoutScreen() {
           else router.replace('/(tabs)');
           return;
         }
+        /* Staying on this screen, so it draws itself again — kept blank in the discard above, which is
+           on its way out and must not flash the intro either. */
+        setPickerOpening(false);
         if (!inbox) return;
         void clearExerciseInbox();
         const cur = sessionRef.current;
@@ -2792,6 +2803,7 @@ export default function WorkoutScreen() {
   // Guards the whole active render below, which indexes `exercises[exIdx]` and would crash on an empty
   // session. A one-off workout legitimately starts with nothing in it.
   if (session.exercises.length === 0) {
+    if (pickerOpening) return <Shell>{null}</Shell>;
     return (
       <Shell>
         <WorkoutEntry
