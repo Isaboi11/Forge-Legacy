@@ -65,9 +65,9 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
 - Hero body = the PO's own description (photos, chapters, programs, squads, PRs kept for life; still one fast app for
   lifting, running, food and a coach; miss a week and nothing is lost), under the film, then the form.
 - No menu (header = logo + Get access); the hero headline rises in word by word, the bronze line after a beat.
-- Preview: version `bba9fd3e` → https://bba9fd3e-forgelegacy.isaiahaltamirano.workers.dev (one page + PO copy + no menu +
-  headline motion). Superseded: `957ed3a3` and earlier. Production still `64183374`. Go live ONLY on the PO's "go live":
-  `cd site && npx wrangler versions deploy bba9fd3e-4802-4704-9f37-27551cefb0dd@100%`
+- Progress photos section ("See how far you've come.") with the PO's own Transformation screenshots; Miss a week is text only.
+- Preview: version `7078cd29` → https://7078cd29-forgelegacy.isaiahaltamirano.workers.dev. Superseded: `bba9fd3e` and
+  earlier. Production still `64183374`. Go live ONLY on the PO's "go live": `cd site && npx wrangler versions deploy 7078cd29-24d5-44e8-838a-5ecc3dc02594@100%`
 - ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
   the beta.", `END.web` in story.ts) and the page's TestFlight button/badge copy must change — re-render WebPhone
   (~5 min) + `WEB_ONLY=1 bash capture/deliver.sh`; the App Store badge may come back then (never animated).
