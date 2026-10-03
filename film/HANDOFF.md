@@ -68,7 +68,7 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
 - Progress photos section ("See how far you've come.") with the PO's own Transformation screenshots; Miss a week is text only.
 - Testimonials ("From the beta", after Coach Holt): Moses, Nate, Brady, verbatim, 5 stars (PO). Add one = copy a
   `<figure class="tq">`; phones swipe sideways. Once on the App Store, real ratings can replace these.
-- ✅ LIVE 2026-10-03 (PO: "Go live"): production = `8f9facd9-1008-4181-ba7c-8bcd8198b99b` (was `64183374`). Checked on
+- ✅ LIVE 2026-10-03: production = `eadb8fd0-2747-49fc-a9ee-7195df94b23c` (+ Benjamin P.'s testimonial); before it `8f9facd9` (PO "Go live"), and before that `64183374`. Checked on
   forgelegacy.app in WebKit iPhone 13: new hero, founder note, 3 testimonials, no menu, film plays (31.6 s), 206 ranges.
   Rollback: `cd site && npx wrangler versions deploy 64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`
 - ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
