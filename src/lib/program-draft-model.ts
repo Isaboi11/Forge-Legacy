@@ -3,7 +3,7 @@ import type { BuilderInbox, BuilderSection } from '@/lib/builder-inbox';
 // ⚠ RELATIVE AND EXTENSIONED, NOT `@/`. This is a RUNTIME import and `node --test` loads this file
 // directly, where the alias does not resolve — the type-only imports above survive only because they are
 // stripped before anything tries. The same rule `domain/program/prescription` states about its own.
-import { activityFromKey, newCardioBlock } from '../domain/workout/conditioning.ts';
+import { activityFromKey, deriveEquip, deriveName, newCardioBlock, resolveModality } from '../domain/workout/conditioning.ts';
 import { DEFAULT_HOLD_SEC } from '../domain/exercise-picker/catalog-core.ts';
 import { supersetLabelAt } from '../domain/program/prescription.ts';
 import { totalSessions } from '../domain/program/progress-core.ts';
@@ -355,7 +355,9 @@ export function applyDaysPerWeek(d: ProgramDraft, n: number): ProgramDraft {
 export function toDayRow(it: BuilderInbox['items'][number], section: BuilderSection): ProgramExercise {
   const activity = activityFromKey(it.catalogKey ?? '');
   if (activity) {
-    return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio', ...newCardioBlock(activity) };
+    /* A pill picked a side ("Treadmill"): the block takes it, and the name that goes with it. */
+    const modality = resolveModality(activity, it.modality);
+    return { id: newExerciseId(), catalogKey: it.catalogKey, kind: 'cardio', ...newCardioBlock(activity), modality, name: deriveName(activity, modality), equip: deriveEquip(activity, modality) };
   }
   return {
     id: newExerciseId(),

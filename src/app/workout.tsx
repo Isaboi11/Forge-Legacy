@@ -61,6 +61,7 @@ import {
   deriveName,
   isCardioKey,
   newCardioBlock,
+  resolveModality,
   type CardioActivity,
 } from '@/domain/workout/conditioning';
 import { buildSessionFromProgram } from '@/domain/workout/build-session';
@@ -6046,7 +6047,12 @@ function pickedToExercise(p: PickedExercise, position: number, section: SessionE
   // it like any other exercise, and this is where the two kinds diverge. Added ad hoc, so it carries no
   // target: nothing prescribed it.
   const picked = activityFromKey(p.catalogKey);
-  if (picked) return cardioExercise(picked, position, { section, targetMi: null, targetPaceSec: null, targetSpdMph: null });
+  if (picked) {
+    /* The pill said which side ("Treadmill" vs "Outdoor Run"); a pick without one takes the activity's
+       own default rather than `cardioExercise`'s blanket 'outdoor'. */
+    const modality = resolveModality(picked, p.modality);
+    return cardioExercise(picked, position, { section, modality, targetMi: null, targetPaceSec: null, targetSpdMph: null });
+  }
   /* Which side it is counted on, derived from the name. This is the add-as-you-go path — nothing
      prescribed this lift, so if it is not worked out here the athlete gets "3 × 8" on a single-arm row
      and does half the work the number implies. */

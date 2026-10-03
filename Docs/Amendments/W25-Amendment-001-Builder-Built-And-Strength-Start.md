@@ -5,7 +5,8 @@
 **Status:** 🔒 LOCKED
 **Date:** 2026-08-03 · **Addendum 2026-08-13** (Section 3, W25-A1-D8 — narrows W25-A1-D1: an *authoring*
 door opens the builder, not the chooser) · **Addendum 2026-09-10** (Section 4, W25-A1-D9 — on Home, the
-chooser folds into the activity sheet; the hero says "Start a Workout")
+chooser folds into the activity sheet; the hero says "Start a Workout") · **Addendum 2026-10-03** (Section 5, W25-A1-D11 — cardio becomes one row of pills, on the
+sheet and in the picker; "Track cardio" and its Where? question retire)
 **Design authority:** `Forge Strength Start.dc.html`, `Forge Free Workout Builder.dc.html`
 
 ---
@@ -185,3 +186,33 @@ shows it. Covers both doors: Home's sheet and the Workouts tab's Start Strength.
 
 **PO, 2026-09-10:** *"Does this screen contain a decision that cannot reasonably happen on the next
 screen? In this case, no."*
+
+---
+
+## Section 5 — Addendum, 2026-10-03: cardio is one row of pills, in both places
+
+### W25-A1-D11 — "Track cardio" retires; the sheet and the picker share one pill row
+
+**Supersedes:** the **Cardio** row of W25-A1-D9's sheet (*Track cardio → activity list → Where?*).
+
+**The report (Kim, 10-03):** building as you go she scrolled the picker for her bike and treadmill, saw
+only her dumbbell lifts, and sealed the workout without the treadmill. Cardio was there — the seventh
+and last category tile, under a shortlist of lifts that silently dropped her recent cardio.
+
+**Decision (PO, 10-03, after a mockup):**
+
+| Where | Before | Now |
+|---|---|---|
+| Home → Start a Workout | Strength label · Build as you go · template · import · Cardio label · *Track cardio* → activity → Outdoor/Indoor (3 taps) | Build as you go (*"Lift, run, ride — add anything as you train."*) · template · import · **Or start cardio** pill row — **one tap starts it** |
+| Exercise Picker (add / builder, browsing) | Cardio = last category tile | The same pill row at the top; a tap ticks it like any exercise. Not in replace (a lift ⇄ cardio swap is refused). Title on a fresh start: **Build Your Workout** |
+
+The pills (`CARDIO_PILLS`): Outdoor Run · Treadmill · Ride · Indoor Bike · Walk · Treadmill Walk · Row ·
+Elliptical · Stair Climber · Swim — **the athlete's own recent cardio first** (`cardioPillsByRecency`).
+The three outdoor-capable activities get a pill per side, so the *ask at the door* rule (Home's
+`cardioAsk`, after a tester's treadmill walk was filed as outdoor) still holds: the pill pressed IS the
+answer. A picked pill carries its side to the session and to both builders (`PickedExercise.modality`).
+
+Unchanged: the Cardio & Conditioning category tile, the "Running & Cardio" search section, and the card's
+own Outdoor/Treadmill toggle. Same release: bookmarks lead My Exercises and survive the My-gear filter;
+backing out of a fresh Build as you go closes both screens in one move; the freestyle intro no longer
+flashes before the picker.

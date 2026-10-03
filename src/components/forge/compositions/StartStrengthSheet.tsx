@@ -49,7 +49,7 @@ export const START_ICON: Record<'template' | 'buildFirst' | 'buildAsYouGo' | 'ca
 export const START_COPY = {
   template: { title: 'From a template', sub: 'Use a saved workout or one from Forge.' },
   buildFirst: { title: 'Build it first', sub: 'Plan every exercise, then start the session.' },
-  buildAsYouGo: { title: 'Build as you go', sub: 'Start lifting now. Add exercises as you train.' },
+  buildAsYouGo: { title: 'Build as you go', sub: 'Lift, run, ride — add anything as you train.' },
 };
 
 export function StartStrengthSheet({ open, onClose, onFreestyle }: StartStrengthSheetProps) {

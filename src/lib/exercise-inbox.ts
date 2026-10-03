@@ -30,6 +30,12 @@ export interface PickedExercise {
    * Optional, so an inbox written by an older build still drains.
    */
   unit?: 'reps' | 'time';
+  /**
+   * A cardio pick's side — "Treadmill" and "Outdoor Run" are both `cardio:run`, and this is what tells
+   * them apart (PO 10-03). Absent = the activity's default, exactly as before the pills existed, so an
+   * inbox from an older build drains unchanged.
+   */
+  modality?: 'outdoor' | 'indoor';
 }
 
 export type ExerciseInbox =

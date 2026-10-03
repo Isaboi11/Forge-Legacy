@@ -14,7 +14,7 @@ import { usePlansAfterOnboarding } from '@/hooks/usePlansAfterOnboarding';
 import { ChevronRightIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader/SectionHeader';
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
-import { EngravedIcon, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ChapterTitleBlock } from '@/components/forge/compositions/ChapterTitleBlock';
 import { TodaysWorkoutCard } from '@/components/forge/compositions/TodaysWorkoutCard';
 import { ProgramMissionGrid } from '@/components/forge/compositions/ProgramMissionGrid';
@@ -79,7 +79,9 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { getActiveProgramById } from '@/domain/training/active-program';
 import { resolveRecommendationId } from '@/domain/onboarding/recommend-core';
-import { CARDIO_ACTIVITIES, CARDIO_DEFAULTS, OUTDOOR_CAPABLE, deriveName, type CardioActivity, type Modality } from '@/domain/workout/conditioning';
+import { cardioPillsByRecency, deriveName, type CardioPill } from '@/domain/workout/conditioning';
+import { CardioPillRow } from '@/components/forge/compositions/CardioPillRow';
+import { fetchRecentCardio } from '@/data/exercise-prefs-live';
 import { loadSession, resumeSummary } from '@/domain/workout/autosave';
 import { composeHome, isHomeReady, selectHomePrograms, HOME_READY_CEILING_MS } from '@/domain/home/composition';
 import { ForgeSplash } from '@/components/forge-splash';
@@ -308,27 +310,14 @@ export default function HomeScreen() {
    * was to ask how — a tap that did nothing but unlock another menu. Its two answers now sit on the root
    * directly, so every strength start is one tap from the sheet.
    */
-  const [elseView, setElseView] = useState<'root' | 'cardio'>('root');
   /**
-   * WHICH ACTIVITY IS WAITING ON AN OUTDOOR/INDOOR ANSWER — null when nothing is.
-   *
-   * ══ "KIMJOVI DID A TREADMILL WALK BUT IT LOGGED AS AN OUTDOOR WALK" ══
-   *
-   * It was not a bug in the save; it was a default nobody was asked about. This sheet listed seven
-   * activities and started each on `CARDIO_DEFAULTS[activity].modality` — outdoors for a walk — with the
-   * only correction being a segmented toggle on the card, one screen later. Don't notice it and the app
-   * has already decided: the name says Outdoor Walk, the card offers GPS instead of a clock, and the
-   * saved bout agrees with all of it. Nothing looked wrong at any point.
-   *
-   * PO: *"I think ask at the door when you get to that exercise or choose that exercise."*
-   *
-   * ⚠ ONLY WHERE THERE IS A CHOICE. Run, walk and ride are the three `OUTDOOR_CAPABLE` activities; a
-   * rower, an elliptical, a pool swim and a stair climber have exactly one honest answer, and asking
-   * would be a step that cannot be got wrong — which is a step that should not exist. Those still start
-   * on one tap. The same gate the card's own toggle uses, so the two cannot disagree about what is
-   * askable.
+   * The cardio pills, the athlete's own recent cardio first (PO 10-03). They replaced "Track cardio" →
+   * activity → "Where?": each pill already names its side ("Treadmill Walk", "Outdoor Run"), so the
+   * outdoor/indoor question this sheet learned to ask at the door — after a tester's treadmill walk
+   * was filed as an outdoor one — is still asked, by which pill gets pressed, in one tap instead of three.
    */
-  const [cardioAsk, setCardioAsk] = useState<CardioActivity | null>(null);
+  const { data: recentCardio, settled: cardioSettled } = useQuery(fetchRecentCardio, []);
+  const cardioPills = useMemo(() => cardioPillsByRecency(recentCardio ?? []), [recentCardio]);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   // Once, right after onboarding, and only for a Free athlete — see the hook (ONB-A7-D2).
@@ -652,13 +641,10 @@ export default function HomeScreen() {
    * athlete plausibly means by it, and lifting is only one of them — the button used to answer for them.
    */
   const startFreestyleFromHome = () => {
-    setElseView('root'); // never reopen mid-drill: the sheet always starts at the question it asks
     setElseOpen(true);
   };
   const closeElse = () => {
     setElseOpen(false);
-    setElseView('root');
-    setCardioAsk(null);
   };
 
   /**
@@ -740,21 +726,7 @@ export default function HomeScreen() {
    * different controls, different ways to finish, and different places the numbers ended up. A run is
    * a run whether it's the whole workout or the last leg of one, and it is the same card either way.
    */
-  /**
-   * Tapping an activity. Where the answer is genuinely open, this ASKS; where it is not, it starts.
-   *
-   * ⚠ THE DEFAULT USED TO BE THE ANSWER. This read `CARDIO_DEFAULTS[activity].modality` and went, on the
-   * reasoning that "the toggle lives on the card, where it belongs — the athlete decides on the day".
-   * The toggle does belong there and still is there; what was wrong is that a silent guess stood in
-   * until it was touched, and a tester's treadmill walk was filed as an outdoor one because nothing ever
-   * put the question. See `cardioAsk`.
-   */
-  const pickCardio = (activity: CardioActivity) => {
-    if (OUTDOOR_CAPABLE[activity]) return setCardioAsk(activity);
-    return void startCardio(activity, CARDIO_DEFAULTS[activity].modality);
-  };
-
-  const startCardio = async (activity: CardioActivity, modality: Modality) => {
+  const startCardio = async ({ activity, modality }: CardioPill) => {
     closeElse();
     await writeWorkoutLaunch({ conditioning: { activity, modality } });
     startWorkout(deriveName(activity, modality), []);
@@ -1060,6 +1032,7 @@ export default function HomeScreen() {
       challengeSettled, // the Competitions badge — two round trips deep, so usually the last one in
       welcomeSettled, // ┐ "Welcome back" sits ABOVE the hero, so a late arrival would shove the whole
       closedBreak !== undefined, // ┘ screen down — the facts and this device's closed break both gate it
+      cardioSettled, // the Start sheet's cardio pill ORDER — a reshuffle under a thumb would start the wrong one
     ],
     ceilingReached,
   );
@@ -1486,99 +1459,34 @@ export default function HomeScreen() {
         open={elseOpen}
         onClose={closeElse}
         header={
-          elseView === 'root' ? (
-            <View style={styles.startHead}>
-              <View style={styles.startHeadText}>
-                <Text style={styles.startEyebrow}>Start a Workout</Text>
-                <Text style={styles.startTitle}>How are you training today?</Text>
-              </View>
-              <Pressable onPress={closeElse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={6} style={({ pressed }) => [styles.startClose, pressed ? styles.pathPressed : null]}>
-                <EngravedIcon name="close" size={16} color={flColor.gray400} />
-              </Pressable>
+          <View style={styles.startHead}>
+            <View style={styles.startHeadText}>
+              <Text style={styles.startEyebrow}>Start a Workout</Text>
+              <Text style={styles.startTitle}>How are you training today?</Text>
             </View>
-          ) : undefined
+            <Pressable onPress={closeElse} accessibilityRole="button" accessibilityLabel="Close" hitSlop={6} style={({ pressed }) => [styles.startClose, pressed ? styles.pathPressed : null]}>
+              <EngravedIcon name="close" size={16} color={flColor.gray400} />
+            </Pressable>
+          </View>
         }
-        title={elseView === 'root' ? undefined : cardioAsk ? 'Where?' : 'Cardio'}
         scroll
       >
         <View style={styles.elseList}>
-          {elseView === 'root' ? (
-            <>
-              {/*
-                ══ ORDERED BY WHAT SOMEBODY IS MOST LIKELY DOING RIGHT NOW (PO 2026-09-28) ══
-                "Build as you go" leads and wears the bronze edge: with no program, the lowest-friction
-                answer to Start a Workout is *just start training*. A template or an import both ask
-                that something already be prepared. One-line section labels, not headings with a
-                sentence under each — this is a quick launcher, not a settings page.
-              */}
-              <StartSectionLabel icon="barbell" label="Strength" />
-              <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} primary onPress={() => void buildAsYouGo()} />
-              <StartOptionRow {...START_COPY.template} icon={START_ICON.template} onPress={startFromTemplate} />
-              {/* "Import", not "Paste": it takes pasted text OR a picture, and "paste" undersold that. */}
-              <StartOptionRow title="Import a workout" sub="Paste a workout or add a photo." icon="image" onPress={pasteWorkout} />
-
-              <StartSectionLabel icon={START_ICON.cardio} label="Cardio" />
-              <StartOptionRow
-                title="Track cardio"
-                sub="Run, ride, row, swim and more."
-                icon={START_ICON.cardio}
-                onPress={() => setElseView('cardio')}
-              />
-            </>
-          ) : (
-            <>
-              <Pressable
-                /* One step back, not all the way out: from the modality question to the activity list,
-                   and only then to the root. Sending a mis-tap on "Walk" back to the top would make the
-                   question feel like a dead end rather than a step. */
-                onPress={() => (cardioAsk ? setCardioAsk(null) : setElseView('root'))}
-                accessibilityRole="button"
-                accessibilityLabel={cardioAsk ? 'Back to the cardio list' : 'Back to Start a Workout'}
-                style={({ pressed }) => [styles.elseBack, pressed ? styles.pathPressed : null]}
-              >
-                <Text style={styles.elseBackLabel}>← Back</Text>
-              </Pressable>
-              {/*
-                ══ THE MODALITY QUESTION, ASKED WHERE THE ACTIVITY IS CHOSEN ══
-
-                Replaces the activity list rather than sitting under it: one question on screen at a
-                time, and the Back row above already leads out of it. Two options only, because there
-                are only two — no "remember this", which would be a preference invented on a tester
-                report rather than asked for.
-              */}
-              {cardioAsk ? (
-                (['outdoor', 'indoor'] as Modality[]).map((m) => (
-                  <Pressable
-                    key={m}
-                    onPress={() => void startCardio(cardioAsk, m)}
-                    accessibilityRole="button"
-                    accessibilityLabel={deriveName(cardioAsk, m)}
-                    style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-                  >
-                    <Text style={styles.pathCardTitle}>{deriveName(cardioAsk, m)}</Text>
-                    {/* Says what the CARD will do, which is the part the athlete cannot see yet and the
-                        part that actually differs: one measures by GPS, the other hands you a clock. */}
-                    <Text style={styles.pathCardSub}>
-                      {m === 'outdoor' ? 'Measured by GPS as you go' : 'You enter the distance and time'}
-                    </Text>
-                  </Pressable>
-                ))
-              ) : (
-                CARDIO_ACTIVITIES.map((a) => (
-                  <Pressable
-                    key={a.key}
-                    onPress={() => pickCardio(a.key)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${a.name} — ${a.sub}`}
-                    style={({ pressed }) => [styles.elseRow, pressed ? styles.pathPressed : null]}
-                  >
-                    <Text style={styles.pathCardTitle}>{a.name}</Text>
-                    <Text style={styles.pathCardSub}>{a.sub}</Text>
-                  </Pressable>
-                ))
-              )}
-            </>
-          )}
+          {/*
+            ══ ORDERED BY WHAT SOMEBODY IS MOST LIKELY DOING RIGHT NOW (PO 2026-09-28) ══
+            "Build as you go" leads and wears the bronze edge: with no program, the lowest-friction
+            answer to Start a Workout is *just start training* — and since 10-03 it holds cardio too (the
+            picker opens on the same pills). A template or an import both ask that something already be
+            prepared.
+          */}
+          <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} primary onPress={() => void buildAsYouGo()} />
+          <StartOptionRow {...START_COPY.template} icon={START_ICON.template} onPress={startFromTemplate} />
+          {/* "Import", not "Paste": it takes pasted text OR a picture, and "paste" undersold that. */}
+          <StartOptionRow title="Import a workout" sub="Paste a workout or add a photo." icon="image" onPress={pasteWorkout} />
+          {/* One tap starts it — see `cardioPills`. Bleeds to the sheet's edge so it reads as scrolling. */}
+          <View style={styles.startCardio}>
+            <CardioPillRow label="Or start cardio" pills={cardioPills} gutter={22} large onPress={(p) => void startCardio(p)} />
+          </View>
         </View>
       </BottomSheet>
 
@@ -1710,19 +1618,10 @@ export default function HomeScreen() {
   );
 }
 
-/** "🏋 STRENGTH ────" — a label with a rule, not a heading with a sentence. Information gets a label. */
-function StartSectionLabel({ icon, label }: { icon: EngravedName; label: string }) {
-  return (
-    <View style={styles.startSection} accessibilityRole="header">
-      <EngravedIcon name={icon} size={16} />
-      <Text style={styles.startSectionLabel}>{label}</Text>
-      <View style={styles.startSectionRule} />
-    </View>
-  );
-}
 
 const styles = StyleSheet.create({
   elseList: { gap: 10 },
+  startCardio: { paddingTop: 8 },
   elseBack: { paddingVertical: 6, paddingHorizontal: 2, alignSelf: 'flex-start' },
   elseBackLabel: { fontSize: 14, fontWeight: '600', color: flColor.gray600 },
   /* The same edge as `StartOptionRow` on the page before it — a neutral hairline, warmed only when

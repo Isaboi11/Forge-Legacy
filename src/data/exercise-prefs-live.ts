@@ -47,28 +47,65 @@ export async function removeFavorite(catalogKey: string): Promise<void> {
  * PostgREST can't express. `limit` caps what's returned — W-23 §8.2 puts Recently Used at 8.
  */
 export async function fetchRecentExerciseKeys(limit = 8): Promise<string[]> {
+  const seen: string[] = [];
+  for (const w of await recentSavedWorkouts('catalog_key, position', false)) {
+    for (const ex of w.workout_exercises ?? []) {
+      const key = ex.catalog_key;
+      if (key && !seen.includes(key)) seen.push(key);
+      if (seen.length >= limit) return seen;
+    }
+  }
+  return seen;
+}
+
+type RecentWorkout = {
+  workout_exercises: { catalog_key: string | null; position: number | null; workout_sets?: { modality: string | null }[] | null }[] | null;
+};
+
+/**
+ * The athlete's last saved workouts, NEWEST FIRST, each with its exercises (only its cardio, when
+ * `cardioOnly` — Home reads this before its first paint, and the sets of every lift are not needed).
+ *
+ * ⚠ READ FROM `workouts`, NOT FROM `workout_exercises`. This used to select exercise rows and pass
+ * `order('started_at', { referencedTable: 'workouts' })` — which orders the EMBEDDED workout, one row
+ * per exercise, and so orders nothing: the 200 rows came back in table order, i.e. the athlete's OLDEST
+ * work, and "recently trained" was whatever they did first. Ordering the parent is the only order that
+ * means "most recent".
+ */
+async function recentSavedWorkouts(exerciseCols: string, cardioOnly: boolean): Promise<RecentWorkout[]> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('workout_exercises')
-    .select('catalog_key, workouts!inner(athlete_id, started_at, state)')
-    .eq('workouts.athlete_id', user.id)
-    .eq('workouts.state', 'saved')
-    .not('catalog_key', 'is', null)
-    .order('started_at', { referencedTable: 'workouts', ascending: false })
-    .limit(200);
+  let q = supabase
+    .from('workouts')
+    .select(`started_at, workout_exercises${cardioOnly ? '!inner' : ''}(${exerciseCols})`)
+    .eq('athlete_id', user.id)
+    .eq('state', 'saved');
+  // `!inner` above makes this filter the WORKOUTS too, so 40 lifting days in a row cannot hide the last run.
+  if (cardioOnly) q = q.like('workout_exercises.catalog_key', 'cardio:%');
+  const { data, error } = await q
+    .order('started_at', { ascending: false })
+    .order('position', { referencedTable: 'workout_exercises', ascending: true })
+    .limit(40);
   if (error) return [];
+  return (data ?? []) as unknown as RecentWorkout[];
+}
 
-  const seen: string[] = [];
-  for (const row of (data ?? []) as { catalog_key: string | null }[]) {
-    const key = row.catalog_key;
-    if (key && !seen.includes(key)) seen.push(key);
-    if (seen.length >= limit) break;
+/**
+ * The cardio the athlete has logged, most recent first, with the SIDE it was done on (a treadmill run
+ * is `run` + `indoor`) — what orders the cardio pills, so Kim's Treadmill leads and nobody's Outdoor Run
+ * is buried under a machine they never use. Not de-duplicated: `cardioPillsByRecency` does that.
+ */
+export async function fetchRecentCardio(): Promise<{ activity: string; modality: string | null }[]> {
+  const out: { activity: string; modality: string | null }[] = [];
+  for (const w of await recentSavedWorkouts('catalog_key, position, workout_sets(modality)', true)) {
+    for (const ex of w.workout_exercises ?? []) {
+      if (!ex.catalog_key?.startsWith('cardio:')) continue;
+      out.push({ activity: ex.catalog_key.slice('cardio:'.length), modality: ex.workout_sets?.[0]?.modality ?? null });
+    }
   }
-  return seen;
+  return out;
 }
 
 // ── The signal favourites never had (0138) ───────────────────────────────────
