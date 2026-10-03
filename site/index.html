@@ -161,6 +161,14 @@
   .hero-body { grid-area:body; align-self:start; }
   .hero-film { grid-area:film; min-width:0; }
   @media (max-width:900px) { .hero-grid { grid-template-columns:minmax(0,1fr); grid-template-areas:"head" "film" "body"; row-gap:28px; } }
+  /* Hero headline (PO 10-03): the words rise in like the film's captions, once (~1.4 s); "Forge keeps your story." after a
+     beat. Gated on html.js (set before first paint) so there is no flash; Reduce Motion and no-JS see it still. */
+  @media (prefers-reduced-motion: no-preference) {
+    html.js .hero-head h1 .w { display:inline-block; opacity:0; transform:translateY(0.42em); filter:blur(6px);
+      animation:fl-word .6s cubic-bezier(0.16,1,0.3,1) forwards; animation-delay:calc(120ms + var(--i) * 60ms); }
+    html.js .hero-head h1 .h1-b .w { animation-delay:calc(480ms + var(--i) * 60ms); }
+  }
+  @keyframes fl-word { to { opacity:1; transform:none; filter:none; } }
   /* ── Hero film: 9:16, as tall as the screen allows beside the headline ── */
   .film { position:relative; width:min(100%, 420px, calc((100vh - 170px) * 9 / 16)); min-width:min(100%, 300px); margin:0 auto; aspect-ratio:9/16;
     border-radius:28px; overflow:hidden; background:#030405 url(assets/film/poster-9x16.jpg) center/cover no-repeat;
@@ -235,7 +243,6 @@
 
   <header style="background:#FBF9F4; border-bottom:1px solid #E6DFD0;">
     <div class="hdr" style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:16px; padding:12px clamp(16px,4vw,40px);">
-      <button type="button" id="menu-open" class="burger" aria-label="Open menu" aria-controls="menu" aria-expanded="false"><span></span><span></span><span></span></button>
       <a href="/" data-nav="home" aria-label="Forge Legacy home" style="display:flex; align-items:center; gap:10px; color:#1F1B16;">
         <img src="assets/landing/logo-carved.webp" alt="" width="30" height="30" style="width:30px; height:30px; object-fit:contain; display:block;">
         <span style="font-family:var(--fl-font-display); font-size:15px; font-weight:600; letter-spacing:0.16em; white-space:nowrap;" class="wm">FORGE LEGACY</span>
@@ -245,28 +252,6 @@
     </div>
   </header>
 
-  <div id="menu" hidden style="position:fixed; inset:0; z-index:100; display:flex;">
-    <button type="button" data-close-menu aria-label="Close menu" tabindex="-1" style="position:absolute; inset:0; background:rgba(31,27,22,0.36); border:none; cursor:pointer;"></button>
-    <div role="dialog" aria-modal="true" aria-label="Menu" style="position:relative; width:min(86vw,340px); height:100%; overflow-y:auto; background:#FFFFFF; box-shadow:12px 0 40px rgba(31,27,22,0.18); display:flex; flex-direction:column;">
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px 14px 24px; border-bottom:1px solid #EDE7DA;">
-        <span style="font-family:var(--fl-font-display); font-size:14px; font-weight:600; letter-spacing:0.16em;">FORGE LEGACY</span>
-        <button type="button" data-close-menu aria-label="Close menu" style="width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:transparent; border:none; cursor:pointer; font-size:26px; line-height:1; color:#1F1B16;">×</button>
-      </div>
-      <nav aria-label="Site" style="display:flex; flex-direction:column; padding:8px 0;">
-        <a href="/" data-nav="home" class="mi on" aria-current="page"><span class="mic"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><defs><linearGradient id="fst1" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22"><stop offset="0" stop-color="#A47A3D"/><stop offset=".5" stop-color="#8C6B3C"/><stop offset="1" stop-color="#5C4726"/></linearGradient></defs><g stroke="url(#fst1)" stroke-width="1.44"><path d="M3 11.2L12 3.6l9 7.6"/><path d="M5.4 9.4v11h13.2v-11"/><path d="M10 20.4v-5.2h4v5.2"/></g><g stroke="url(#fst1)" stroke-width="0.75" opacity=".85"><path d="M8 10.9l4-3.4 4 3.4"/></g></svg></span><span>Home</span></a>
-        <a href="#training" data-nav="training" class="mi"><span class="mic"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><defs><linearGradient id="fst2" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22"><stop offset="0" stop-color="#A47A3D"/><stop offset=".5" stop-color="#8C6B3C"/><stop offset="1" stop-color="#5C4726"/></linearGradient></defs><g stroke="url(#fst2)" stroke-width="1.44"><path d="M1.2 12h2.8M7.2 12h9.6M20 12h2.8"/><rect x="5.4" y="6.4" width="1.8" height="11.2" rx=".6"/><rect x="16.8" y="6.4" width="1.8" height="11.2" rx=".6"/><rect x="4" y="8.8" width="1.4" height="6.4" rx=".5"/><rect x="18.6" y="8.8" width="1.4" height="6.4" rx=".5"/></g><g stroke="url(#fst2)" stroke-width="0.75" opacity=".85"></g></svg></span><span>Training</span></a>
-        <a href="#nutrition" data-nav="nutrition" class="mi"><span class="mic"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><defs><linearGradient id="fst3" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22"><stop offset="0" stop-color="#A47A3D"/><stop offset=".5" stop-color="#8C6B3C"/><stop offset="1" stop-color="#5C4726"/></linearGradient></defs><g stroke="url(#fst3)" stroke-width="1.44"><path d="M12 2.6c1.3 3.2 5.8 5.6 5.8 10.6a5.8 5.8 0 0 1-11.6 0c0-2.7 1.2-4.6 3-5.9.2 2 1.1 3.1 2.3 3.5-.6-3-.2-5.6.5-8.2z"/></g><g stroke="url(#fst3)" stroke-width="0.75" opacity=".85"><path d="M12 14.1c1 1 2 2 2 3.3a2 2 0 0 1-4 0c0-1.3 1-2.3 2-3.3z"/></g></svg></span><span>Nutrition</span></a>
-        <a href="#coach" data-nav="coach" class="mi"><span class="mic"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><defs><linearGradient id="fst4" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22"><stop offset="0" stop-color="#A47A3D"/><stop offset=".5" stop-color="#8C6B3C"/><stop offset="1" stop-color="#5C4726"/></linearGradient></defs><g stroke="url(#fst4)" stroke-width="1.44"><path d="M12 4.2c.5 4.8 3 7.3 7.8 7.8-4.8.5-7.3 3-7.8 7.8-.5-4.8-3-7.3-7.8-7.8 4.8-.5 7.3-3 7.8-7.8z"/><path d="M17.4 6.6l1.5-1.5M6.6 6.6 5.1 5.1M17.4 17.4l1.5 1.5M6.6 17.4l-1.5 1.5"/></g><g stroke="url(#fst4)" stroke-width="0.75" opacity=".85"><circle cx="12" cy="12" r="1" fill="url(#fst4)" stroke="none"/></g></svg></span><span>Coach Holt</span></a>
-        <a href="#legacy" data-nav="legacy" class="mi"><span class="mic"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><defs><linearGradient id="fst5" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22"><stop offset="0" stop-color="#A47A3D"/><stop offset=".5" stop-color="#8C6B3C"/><stop offset="1" stop-color="#5C4726"/></linearGradient></defs><g stroke="url(#fst5)" stroke-width="1.44"><path d="M12 6.4C9.8 4.9 6.8 4.5 3 4.9v13.3c3.8-.4 6.8 0 9 1.5 2.2-1.5 5.2-1.9 9-1.5V4.9c-3.8-.4-6.8 0-9 1.5z"/><path d="M12 6.4v13.3"/></g><g stroke="url(#fst5)" stroke-width="0.75" opacity=".85"><path d="M15.2 5.3v5.2l1.3-1 1.3 1V5"/><path d="M5.8 9h3.6M5.8 12h3.6M5.8 15h3.6"/></g></svg></span><span>Legacy</span></a>
-        <a href="#squads" data-nav="squads" class="mi"><span class="mic"><svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:none"><defs><linearGradient id="fst6" gradientUnits="userSpaceOnUse" x1="0" y1="2" x2="0" y2="22"><stop offset="0" stop-color="#A47A3D"/><stop offset=".5" stop-color="#8C6B3C"/><stop offset="1" stop-color="#5C4726"/></linearGradient></defs><g stroke="url(#fst6)" stroke-width="1.44"><circle cx="12" cy="8.2" r="3.1"/><path d="M6.2 20.5a5.8 5.8 0 0 1 11.6 0"/><circle cx="5.2" cy="9.8" r="2.2"/><circle cx="18.8" cy="9.8" r="2.2"/><path d="M1.8 18.4a3.6 3.6 0 0 1 4.8-3.6M22.2 18.4a3.6 3.6 0 0 0-4.8-3.6"/></g><g stroke="url(#fst6)" stroke-width="0.75" opacity=".85"><path d="M12 14.6v2.4"/></g></svg></span><span>Squads</span></a>
-      </nav>
-      <div style="margin-top:auto; padding:20px 24px 28px; border-top:1px solid #EDE7DA; display:flex; flex-direction:column; gap:10px;">
-        <a href="#join" data-join class="btn" style="width:100%;">Request TestFlight access</a>
-        <span style="font-size:12.5px; color:var(--fl-gray-400); text-align:center;">Free during the beta · iPhone</span>
-      </div>
-    </div>
-  </div>
-
   <main id="home" data-screen-label="Home">
     <section style="padding:clamp(40px,6vw,88px) clamp(20px,4vw,40px) clamp(48px,6vw,80px);">
       <!-- PO 10-03: the headline says what Forge is AND what no other workout app does (numbers vs a story); on a phone the
@@ -274,7 +259,7 @@
       <div class="hero-grid">
         <div class="hero-head">
           <span style="display:inline-flex; padding:6px 12px; border-radius:999px; background:rgba(164,122,61,0.10); font-size:12.5px; font-weight:600; color:var(--fl-bronze-600);">Workout app for iPhone · Free beta</span>
-          <h1 style="margin:22px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(36px,4.9vw,62px); line-height:1.06; letter-spacing:-0.02em; color:#1F1B16; text-wrap:balance;">Other workout apps keep your numbers. <span style="color:var(--fl-bronze-600);">Forge keeps your story.</span></h1>
+          <h1 style="margin:22px 0 0; font-family:var(--fl-font-display); font-weight:600; font-size:clamp(36px,4.9vw,62px); line-height:1.06; letter-spacing:-0.02em; color:#1F1B16; text-wrap:balance;"><span class="w" style="--i:0">Other</span> <span class="w" style="--i:1">workout</span> <span class="w" style="--i:2">apps</span> <span class="w" style="--i:3">keep</span> <span class="w" style="--i:4">your</span> <span class="w" style="--i:5">numbers.</span> <span class="h1-b" style="color:var(--fl-bronze-600);"><span class="w" style="--i:6">Forge</span> <span class="w" style="--i:7">keeps</span> <span class="w" style="--i:8">your</span> <span class="w" style="--i:9">story.</span></span></h1>
         </div>
         <div class="hero-body">
           <p style="margin:0; max-width:30em; font-size:clamp(18px,1.7vw,21px); line-height:1.45; font-weight:600; color:#1F1B16; text-wrap:pretty;">Your progress photos, the chapters of your life, the programs you finished, the squads you trained with, the PRs that mattered, all kept for life.</p>

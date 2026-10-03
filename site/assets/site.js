@@ -179,7 +179,9 @@
 
   /* ── Menu drawer ─────────────────────────────────────────────────────────── */
   const drawer = $('#menu'), opener = $('#menu-open');
+  // (The menu was removed 2026-10-03 — one scrolling page; these stay harmless if it is ever absent.)
   function openMenu() {
+    if (!drawer || !opener) return;
     drawer.hidden = false;
     document.body.style.overflow = 'hidden';
     opener.setAttribute('aria-expanded', 'true');
@@ -187,14 +189,14 @@
     if (first) first.focus();
   }
   function closeMenu() {
-    if (drawer.hidden) return;
+    if (!drawer || drawer.hidden) return;
     drawer.hidden = true;
     document.body.style.overflow = '';
     opener.setAttribute('aria-expanded', 'false');
   }
-  opener.addEventListener('click', openMenu);
+  if (opener) opener.addEventListener('click', openMenu);
   $$('[data-close-menu]').forEach(b => b.addEventListener('click', () => { closeMenu(); opener.focus(); }));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !drawer.hidden) { closeMenu(); opener.focus(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawer && !drawer.hidden) { closeMenu(); opener.focus(); } });
 
   /* ── "Get access" buttons scroll to the form without changing the page ──── */
   function toJoin(e) {
