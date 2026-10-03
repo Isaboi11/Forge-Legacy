@@ -56,9 +56,15 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
   of it shows. WebKit + 2.5 s network delay: poster, never black, in both "scroll later" and "scroll at once".
 - PO 10-03 (on his iPhone): the end card's phone was small under a big empty gap → in the portrait web loop it settles
   ×1.31 and higher (y 440 → 192; `webEnd` in Film.tsx), clear of the page's "Sound on" button. Film/ad unchanged.
-- Preview: version `b3e125c3` (loop with Legacy + start fix + cover + bigger end phone) →
-  https://b3e125c3-forgelegacy.isaiahaltamirano.workers.dev. Superseded: `d56110fd`, `e73dff45`, `05fbd47a`, `9185186c`.
-  Production still `64183374`. Go live ONLY on the PO's "go live": `cd site && npx wrangler versions deploy b3e125c3-3fa9-4e6f-8b07-1a289873f6ab@100%`
+- SITE (10-03, later): hero rewritten ("Other workout apps keep your numbers. Forge keeps your story."), then the whole
+  site made ONE scrolling page (PO: "most are going to see it on their phone"): hero → Why I built Forge (PO's quote +
+  `assets/landing/founder-isaiah.webp`, him + a friend — PO to confirm the friend's OK) → numbers vs story → log a set →
+  beat last time → food → Coach Holt → miss a week → chapters → squads → FAQ → Brady → join. Old #training/#legacy…
+  are anchors; #rank → #comeback. Panel: old page ~30 vs one page ~32.5 sign-ups/1,000 (runners preferred old) → reordered
+  so the everyday app comes before the deep story; HoltChat prefilled.
+- Preview: version `f1cc2909` → https://f1cc2909-forgelegacy.isaiahaltamirano.workers.dev (one page, reordered).
+  Superseded: `df288407`, `13f937a9`, `b3e125c3`, `d56110fd`, `e73dff45`, `05fbd47a`, `9185186c`. Production still
+  `64183374`. Go live ONLY on the PO's "go live": `cd site && npx wrangler versions deploy f1cc2909-ca40-482f-a1c3-d8b3e263d521@100%`
 - ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
   the beta.", `END.web` in story.ts) and the page's TestFlight button/badge copy must change — re-render WebPhone
   (~5 min) + `WEB_ONLY=1 bash capture/deliver.sh`; the App Store badge may come back then (never animated).
