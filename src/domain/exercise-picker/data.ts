@@ -286,15 +286,30 @@ export function buildSections(opts: {
   const bestKeys = new Set(best.map((b) => b.key));
 
   if (browsing) {
-    const mineKeys = [...favorites, ...recents.filter((k) => !favSet.has(k))];
+    const fromCatalogue = (k: string) => matched.find((x) => x.key === k);
+    /*
+     * ══ BOOKMARKS LEAD, AND THE GEAR FILTER DOES NOT HIDE THEM (PO 10-03) ══
+     *
+     * *"Make sure bookmarked exercises are at the top of the list."* They sat BELOW the athlete's own
+     * exercises, and a bookmark the "My gear" gate excluded vanished from here entirely — but a bookmark
+     * is the athlete saying "this one", which outranks a guess from their home equipment. So a bookmark
+     * falls back to the whole catalogue and to their own exercises before it is given up on.
+     */
+    const bookmarked = favorites
+      .map((k) => fromCatalogue(k) ?? (opts.customs ?? []).find((x) => x.key === k) ?? PICKER_DB.find((x) => x.key === k))
+      .filter((x): x is PickerItem => Boolean(x) && !bestKeys.has((x as PickerItem).key));
+    const shown = new Set(bookmarked.map((x) => x.key));
+    const ownUnbookmarked = matchedCustoms.filter((x) => !shown.has(x.key));
     const mine = [
-      /* THE ATHLETE'S OWN, FIRST AND WITHOUT BEING SEARCHED FOR. This is the only section that can show
-         them while browsing — the six tiles below are the catalogue's — so if they are not here, an
-         exercise the athlete wrote down themselves is reachable only by typing its name, which is the
-         bug this section closes. */
-      ...matchedCustoms.slice(0, MINE_CUSTOM_MAX),
-      ...mineKeys
-        .map((k) => matched.find((x) => x.key === k))
+      ...bookmarked,
+      /* THE ATHLETE'S OWN, WITHOUT BEING SEARCHED FOR. This is the only section that can show them while
+         browsing — the six tiles below are the catalogue's — so if they are not here, an exercise the
+         athlete wrote down themselves is reachable only by typing its name, which is the bug this
+         section closes. */
+      ...ownUnbookmarked.slice(0, MINE_CUSTOM_MAX),
+      ...recents
+        .filter((k) => !favSet.has(k))
+        .map(fromCatalogue)
         .filter((x): x is PickerItem => Boolean(x) && !bestKeys.has((x as PickerItem).key)),
     ];
     /*
@@ -319,7 +334,7 @@ export function buildSections(opts: {
       // `customOverflow` and shown above, not folded into a number about the six categories.
       total: matched.length,
       hasResults: categoryRows.length > 0 || mine.length > 0,
-      customOverflow: Math.max(0, matchedCustoms.length - MINE_CUSTOM_MAX),
+      customOverflow: Math.max(0, ownUnbookmarked.length - MINE_CUSTOM_MAX),
     };
   }
 
