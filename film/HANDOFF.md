@@ -45,9 +45,17 @@ a sampling artefact (stills every 2.5 s caught the 0.5 s spin) — the spin stay
   accomplishments; counter Sep 27 → Dec 31 · DAY 365 · STILL HERE. Score: second drop on the pull-back (22.60), final
   hit on the end card (28.36). Loop 31.56 s; web encode 1100 kbps (MP4 4.8 MB).
 - Deliver: `node capture/render.mjs WebPhone` → `WEB_ONLY=1 bash capture/deliver.sh` (1200 kbps, MP4 4.2 MB).
-- Preview: version `05fbd47a` (with Legacy) → https://05fbd47a-forgelegacy.isaiahaltamirano.workers.dev (WebKit
-  iPhone 13: plays). Superseded: `9185186c` (26 s, no Legacy). Production still `64183374`. Go live ONLY on the PO's
-  "go live": `cd site && npx wrangler versions deploy 05fbd47a-515f-42bb-bd4c-d251dc726ec0@100%`
+- Panel round 2 on the 31.6 s loop: ~+1.6 sign-ups / 1,000 vs a static shot (round 1: ~0); no segment negative.
+  Biggest levers left are the PAGE: visitors scrolled in mid-loop on the dark spin (fixed below); "GET TESTFLIGHT
+  INVITE" confuses beginners/laptop/Android visitors (wording = PO); film below the fold on iPhone (PO).
+- site.js (10-03): the film plays once ≥50% on screen and from 0 the first time (it used to start at load while only its
+  top edge showed). WebKit iPhone 13: paused at 0 at the top, plays from 0 when scrolled to, pauses when away.
+- Preview: version `e73dff45` (loop with Legacy + the start fix) → https://e73dff45-forgelegacy.isaiahaltamirano.workers.dev.
+  Superseded: `05fbd47a`, `9185186c`. Production still `64183374`. Go live ONLY on the PO's "go live":
+  `cd site && npx wrangler versions deploy e73dff45-a6ad-43ec-8681-5d0ca2e1c6c6@100%`
+- ⚠ App Store (PO 10-03: "in the next day or so"): when the app is live, the loop's end card line ("Free on iPhone during
+  the beta.", `END.web` in story.ts) and the page's TestFlight button/badge copy must change — re-render WebPhone
+  (~5 min) + `WEB_ONLY=1 bash capture/deliver.sh`; the App Store badge may come back then (never animated).
   (rollback `64183374-c481-4b3d-9fe0-fb68cdc5f833@100%`).
 - Unchanged: the 47.5 s film, the 15 s ad and their social masters (they still carry the badge).
 

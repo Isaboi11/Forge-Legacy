@@ -280,10 +280,17 @@
     let soundOn = false, refused = false;
     const tryPlay = () => v.play().catch(() => { refused = true; snd.hidden = true; play.hidden = false; });
     play.addEventListener('click', () => { refused = false; play.hidden = true; v.play(); });
+    // Play once at least half the film is on screen, and from the top the first time (2026-10-03: on a phone the box's
+    // top edge peeks into the first screen, so it used to start at load and visitors scrolled in mid-loop, often on the
+    // dark spin — they missed the opening line). Until then the poster (the record card) shows. Fully off screen: pause.
+    let seen = false;
     const io = new IntersectionObserver(es => {
-      if (es[0].isIntersecting) { if (!refused) tryPlay(); }
-      else v.pause();
-    }, { threshold: 0 });
+      const e = es[0];
+      if (e.intersectionRatio >= 0.5) {
+        if (!seen) { seen = true; v.currentTime = 0; }
+        if (!refused) tryPlay();
+      } else if (!e.isIntersecting) v.pause();
+    }, { threshold: [0, 0.5] });
     io.observe(box);
     snd.addEventListener('click', () => {
       soundOn = !soundOn;
