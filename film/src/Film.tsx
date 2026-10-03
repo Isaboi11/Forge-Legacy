@@ -162,7 +162,15 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   const r = web ? web.r : cut === 'ad15' ? adToFilm(frame / fps) : Math.min(RDUR, frame / fps);
   const t = filmAt(r);
   const amb = r;
-  const ph = drift(pose(t, portrait), r);
+  // PO 10-03 (on his iPhone): the web loop's end card left a big empty gap between the words and a small phone. In the
+  // portrait web loop the phone settles ~30% larger and higher, filling the space under "forgelegacy.app" and clear of
+  // the page's "Sound on" button (bottom right). 9:16 end pose: y 440 → 192, scale ×1.31.
+  const webEnd = (p: Pose, ft: number): Pose => {
+    if (cut !== 'web' || !portrait) return p;
+    const m = E.io(P(ft, 17.3, 18.15));
+    return { ...p, y: p.y + m * (192 - 440), s: p.s * L(1, 1.31, m) };
+  };
+  const ph = drift(webEnd(pose(t, portrait), t), r);
   const realTaps = useMemo(tapsReal, []);
 
   // shake on the turn and the medal
@@ -170,7 +178,8 @@ export const Film: React.FC<FilmProps> = ({ portrait, cut, flatPhone }) => {
   if (t > 1.4 && t < 2.0) { const a = 16 * Math.exp(-(t - 1.4) * 8); shx = Math.sin(t * 95) * a; shy = Math.cos(t * 80) * a * 0.7; }
 
   // motion blur from speed
-  const q = drift(pose(filmAt(Math.min(RDUR, r + 1 / 60)), portrait), r + 1 / 60);
+  const qt = filmAt(Math.min(RDUR, r + 1 / 60));
+  const q = drift(webEnd(pose(qt, portrait), qt), r + 1 / 60);
   const sp = Math.abs(q.ry - ph.ry) + Math.abs(q.rx - ph.rx) + Math.abs(q.y - ph.y) / 12 + Math.abs(q.x - ph.x) / 12 + Math.abs(q.s - ph.s) * 60;
   const blur = Math.min(6, sp * 0.55);
 
