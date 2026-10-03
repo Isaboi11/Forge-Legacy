@@ -45,17 +45,20 @@
     const h = React.createElement;
     const T = HC_T;
     const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const [t, setT] = React.useState(reduce ? T.FADE - 200 : 0);
+    // Until it plays, the chat shows the first exchange already answered (panel 10-03: an empty chat "looks broken"),
+    // and it plays on from there.
+    const POSTER = T.CARD + 900;
+    const [t, setT] = React.useState(reduce ? T.FADE - 200 : POSTER);
     const rootRef = React.useRef(null);
     React.useEffect(() => {
       if (reduce) return;
       let raf = 0, start = 0, on = false, wait = 0;
-      const f = now => { if (!start) start = now; setT((now - start) % T.LOOP); raf = requestAnimationFrame(f); };
+      const f = now => { if (!start) start = now - POSTER; setT((now - start) % T.LOOP); raf = requestAnimationFrame(f); };
       const io = new IntersectionObserver(es => {
         const en = es[0], hgt = en.boundingClientRect.height || 1;
         const need = Math.min(0.9, (window.innerHeight * 0.92) / hgt);
-        if (en.intersectionRatio >= need && !on) { on = true; start = 0; setT(0); wait = setTimeout(() => { raf = requestAnimationFrame(f); }, 600); }
-        else if (en.intersectionRatio < 0.12 && on) { on = false; clearTimeout(wait); cancelAnimationFrame(raf); setT(0); }
+        if (en.intersectionRatio >= need && !on) { on = true; start = 0; setT(POSTER); wait = setTimeout(() => { raf = requestAnimationFrame(f); }, 600); }
+        else if (en.intersectionRatio < 0.12 && on) { on = false; clearTimeout(wait); cancelAnimationFrame(raf); setT(POSTER); }
       }, { threshold: Array.from({ length: 41 }, (_, i) => i / 40) });
       if (rootRef.current) io.observe(rootRef.current);
       return () => { io.disconnect(); clearTimeout(wait); cancelAnimationFrame(raf); };
