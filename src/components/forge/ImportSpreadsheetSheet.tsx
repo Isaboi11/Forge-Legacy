@@ -522,6 +522,10 @@ export function ImportPreview({
                               [field === 'sets' ? 'setsAssumed' : 'repsAssumed']: false,
                               // Stepping the reps of a to-failure set gives it a count; its sets stay to failure.
                               ...(field === 'reps' ? { toFailure: false } : null),
+                              // Reps stepped up to a range's top ("12–15" → 15) leave no range — never "16–15".
+                              ...(field === 'reps' && it.rx?.repsMax != null && it.reps + delta >= it.rx.repsMax
+                                ? { rx: (({ repsMax: _m, ...rx }) => rx)(withoutScheme(it.rx)) }
+                                : null),
                             },
                       ),
                     },

@@ -325,6 +325,8 @@ function item(
   durationSec?: number,
   /** The text SAID to failure — only believed when it gave no rep count of its own. */
   toFailure = false,
+  /** A range's top — "3 x 12-15" — carried as `rx.repsMax`, which the preview shows and the program keeps. */
+  repsMax?: number,
 ): ParsedItem {
   if (durationSec != null) {
     // A timed set: the clock is what was prescribed, so there are no reps to assume. And when the source said
@@ -338,7 +340,53 @@ function item(
     setsAssumed: sets == null,
     repsAssumed: reps == null,
     ...(toFailure && reps == null ? { toFailure: true } : {}),
+    ...(reps != null && repsMax != null && repsMax > reps ? { rx: { repsMax } } : {}),
   };
+}
+
+/** A line that is nothing but a link — the how-to video a coach puts under the exercise it shows. */
+const LINK_ONLY = /^(?:https?:\/\/|www\.)\S+$/i;
+
+/**
+ * "Glute Bridges with barbell:" with its how-to on the lines under it, in a program whose days are NAMED
+ * ("Monday: Quads & Glutes"). It ends in a colon, so it read as a day heading: the exercise vanished into a
+ * day of its own and the next six lifts went with it (PO's aunt, 2026-10-06). When the days say what they
+ * are, a colon line that is not a day, a week, a section or a body part, and that has words (not work)
+ * under it, is an exercise described in those words.
+ */
+function describedExercise(line: string): string | null {
+  const t = line.trim();
+  if (!t.endsWith(':') || weekdayKey(t) != null || /^(?:day|session|workout|week)\b/i.test(t)) return null;
+  const head = t.replace(/\s*:\s*$/, '').trim();
+  if (!head || BODY_PART.test(head) || SECTION_WORD.test(head) || isSectionLabel(t) || sectionOf(t) != null) return null;
+  if (head === head.toUpperCase()) return null; // "UPPER BODY:" is shouted like a heading
+  return cleanExerciseName(head) || null;
+}
+
+/**
+ * "Bench Press: 3 x 5-8 @ 15lb plates" — the exercise is what comes BEFORE the colon, and everything after it is
+ * the prescription and its notes. Read as one string, every word after the numbers stayed in the name ("Bench
+ * Press: @ plates", "Lat Pullover: @, 3rd failure, drop @, then fail again"), and 33 of the aunt's 42 lifts
+ * matched nothing in the library (PO 2026-10-06). Only when the colon is followed by a NUMBER, so "Upper: Bench
+ * 3x8" keeps its lift, and only when the part before it has a word, so "A1: 3x8" is not a lift called "A1".
+ */
+const COLON_ENTRY = /^([^:]{2,80}?)\s*:\s*(\d.*)$/;
+
+function colonName(piece: string): string | null {
+  const m = piece.trim().match(COLON_ENTRY);
+  /* "Chest Fly 0:40" — a colon between digits is a clock, not the end of a name. */
+  if (!m || /\d$/.test(m[1]) || !/\p{L}{3,}/u.test(m[1]) || weekdayKey(m[1]) != null || /^(?:day|session|workout|week|set|round)\b/i.test(m[1].trim())) return null;
+  return cleanExerciseName(m[1]) || null;
+}
+
+/** "45 second rest between each set", "rest 90s between sets" — the rest between sets, said in words. */
+function restBetween(text: string): number | undefined {
+  const m =
+    text.match(/(?<![\d.])(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?)\s+rest\s+between\b/i) ??
+    text.match(/\brest\s+(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?)\s+between\b/i);
+  if (!m) return undefined;
+  const sec = Number(m[1]) * (/^m/i.test(m[2]) ? 60 : 1);
+  return sec > 0 && sec <= 600 ? sec : undefined;
 }
 
 /**
@@ -464,6 +512,27 @@ function parseFreeform(lines: string[]): ParseResult {
   /** Scheme-only lines already claimed by the exercise named above them. */
   const consumed = new Set<(typeof rows)[number]>();
 
+  /**
+   * DO THE DAYS SAY WHAT THEY ARE? Two or more lines that open with a weekday or "Day N" — "Monday: Quads &
+   * Glutes", "Tuesday: Back". Then those are the days, and a line that merely ends in a colon is not one
+   * (`describedExercise`).
+   */
+  const namedDays =
+    rows.filter((r) => r.labelled != null || (!r.isWork && r.wk == null && (weekdayKey(r.line) != null || /^(?:day|session|workout)\s*\d/i.test(r.line))))
+      .length >= 2;
+  /** The exercise whose how-to is on the lines under it — "Glute Bridges with barbell:" / "Pulses up, …". */
+  let describing: ParsedItem | null = null;
+  /** A line of just "OR" was read: the next lift is the other choice for the one above it, not a lift of its own. */
+  let orNext = false;
+  /** The day's own last exercise — never one from the day before. */
+  const lastInDay = (): ParsedItem | null => {
+    const items = b.itemsOf(week, `${dayOrdinal}`);
+    return items[items.length - 1] ?? null;
+  };
+  const addNote = (it: ParsedItem, text: string) => {
+    it.note = it.note ? `${it.note} — ${text}` : text;
+  };
+
   /** Open a day, noticing a weekday that has come round again (see `seenDays`). */
   /** Every day heading opened, so one that ends up holding nothing can be reported rather than vanish. */
   const opened: { week: number; key: string; line: string; label: string }[] = [];
@@ -492,6 +561,44 @@ function parseFreeform(lines: string[]): ParseResult {
 
   rows.forEach((row, i) => {
     if (consumed.has(row)) return;
+
+    /* The words under a described exercise are how to do it — its note, not "unread" lines (PO's aunt, 10-06). */
+    if (describing) {
+      if (!row.isWork && row.wk == null && row.labelled == null && row.note == null && !looksLikeDayHeading(row.line) && !/^or$/i.test(row.line)) {
+        addNote(describing, row.line);
+        return;
+      }
+      describing = null;
+    }
+
+    /*
+     * "Overhead press: 2 x 10-12" / "OR" / "Lateral Raise: 3 x 10" — one slot, two choices. "OR" was a day of its
+     * own (short and in capitals, so a heading) and the raise its only lift (PO's aunt, 2026-10-06). The first
+     * choice is the exercise; the other rides on it as a note, so the athlete sees both and can swap.
+     */
+    if (/^or$/i.test(row.line)) {
+      if (lastInDay()) orNext = true;
+      else skipped.push(row.line);
+      return;
+    }
+    if (orNext) {
+      orNext = false;
+      const first = lastInDay();
+      if (first && row.isWork && row.labelled == null && row.wk == null) {
+        addNote(first, `OR ${row.line}`);
+        return;
+      }
+    }
+
+    /* A link on its own line under an exercise is that exercise's video (an Instagram reel), kept on it. */
+    if (LINK_ONLY.test(row.line)) {
+      const above = rows[i - 1];
+      const it = lastInDay();
+      if (it && above?.isWork) {
+        addNote(it, row.line);
+        return;
+      }
+    }
 
     // Document furniture from a PDF paste. Nobody trained a page number.
     if (isPageFooter(row.line)) return;
@@ -582,7 +689,7 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (rest && progressionLift && !cleanExerciseName(extractScheme(rest).rest) && hasScheme(rest)) {
         const { scheme } = extractScheme(rest);
-        b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(progressionLift, scheme.sets, scheme.reps, scheme.durationSec));
+        b.add(week, `${dayOrdinal}`, day ?? 'Day 1', item(progressionLift, scheme.sets, scheme.reps, scheme.durationSec, false, scheme.repsMax));
         return;
       }
       if (rest && (hasScheme(rest) || (activityIn(rest) != null && cardioItems(rest) != null) || (!/\d/.test(rest) && !isChatter(rest) && !isRestEntry(rest) && !/\bdeload\b/i.test(rest)))) {
@@ -675,7 +782,7 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (next?.hasScheme && !next.rest) {
         const name = cleanExerciseName(row.line);
-        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', noted(item(name, next.scheme.sets, next.scheme.reps, next.scheme.durationSec, saysFailure(next.line)), next.line));
+        if (name) b.add(week, `${dayOrdinal}`, day ?? 'Day 1', noted(item(name, next.scheme.sets, next.scheme.reps, next.scheme.durationSec, saysFailure(next.line), next.scheme.repsMax), next.line));
         consumed.add(next);
         return;
       }
@@ -686,6 +793,17 @@ function parseFreeform(lines: string[]): ParseResult {
        */
       if (next != null && loadedSetReps(next.line) != null) {
         addWork(row.line, row.line);
+        return;
+      }
+
+      /* "Glute Bridges with barbell:" with words under it, in a program of named days — see `describedExercise`. */
+      const described = namedDays && day != null && next != null && !next.isWork && next.labelled == null && !looksLikeDayHeading(next.line)
+        ? describedExercise(row.line)
+        : null;
+      if (described) {
+        const it = item(described, undefined, undefined);
+        b.add(week, `${dayOrdinal}`, day ?? 'Day 1', currentSection ? { ...it, section: currentSection } : it);
+        describing = b.last;
         return;
       }
 
@@ -893,8 +1011,12 @@ function workItems(text: string, source: string, skipped: string[]): ParsedItem[
     .split(/\s*(?:[,;]|\s[/+&]\s|\s+and\s+|\s+then\s+)\s*/i)
     .map((p) => p.trim())
     .filter(Boolean);
-  /* …and every piece NAMES something: "Hollow Hold 3 sets, 20s each" is one hold, not a second lift called "each". */
-  const named = (p: string) => !/^(?:each|ea|per|per side|each side|total|hold)?$/i.test(cleanExerciseName(extractScheme(p).rest));
+  /* …and every piece NAMES something: "Hollow Hold 3 sets, 20s each" is one hold, not a second lift called "each",
+     and "Overhead press 2 x 10-12, then one set to 25" is one press, not a second lift called "then to 25". */
+  const named = (p: string) =>
+    cleanExerciseName(extractScheme(p).rest)
+      .split(/[^\p{L}]+/u)
+      .some((w) => w.length >= 3 && !NOT_A_NAME.test(w));
   const pieces = parts.length >= 2 && parts.every(hasWork) && parts.every(named) ? parts : [text];
 
   const out: ParsedItem[] = [];
@@ -906,6 +1028,16 @@ function workItems(text: string, source: string, skipped: string[]): ParsedItem[
     }
     const { scheme, rest } = extractScheme(piece);
     const hasNumbers = scheme.sets != null || scheme.reps != null || scheme.durationSec != null;
+    const before = hasNumbers && pieces.length === 1 ? colonName(piece) : null;
+    if (before) {
+      /* The name is what came before the colon; whatever else the line said is kept whole as its note. */
+      const it = item(before, scheme.sets, scheme.reps, scheme.durationSec, saysFailure(piece), scheme.repsMax);
+      const words = /\p{L}/u.test(cleanExerciseName(rest.slice(rest.indexOf(':') + 1)));
+      const restSec = restBetween(piece);
+      const withRest = restSec != null && it.durationSec == null ? { ...it, rx: { ...it.rx, restSec } } : it;
+      out.push(words || hasQualifier(source) ? { ...withRest, note: source.trim() } : withRest);
+      continue;
+    }
     const name = cleanExerciseName(hasNumbers ? rest : rest || piece);
     /*
      * A line that is NOTHING but a prescription has no exercise to give it to — "Week 1: 3x8" under a
@@ -916,10 +1048,13 @@ function workItems(text: string, source: string, skipped: string[]): ParsedItem[
       skipped.push(source);
       continue;
     }
-    out.push(noted(item(name, scheme.sets, scheme.reps, scheme.durationSec, saysFailure(piece)), pieces.length > 1 ? piece : source));
+    out.push(noted(item(name, scheme.sets, scheme.reps, scheme.durationSec, saysFailure(piece), scheme.repsMax), pieces.length > 1 ? piece : source));
   }
   return out;
 }
+
+/** Words left round the numbers that never name a lift — "then", "set", "last", "again". */
+const NOT_A_NAME = /^(?:then|and|the|set|sets|rep|reps|each|side|sides|per|total|hold|with|last|first|next|final|more|extra|plus|again|after|drop|heavy|light|same|weight|off)$/i;
 
 /** Keep the source line as the item's note when it said something the name and numbers cannot hold. */
 function noted(it: ParsedItem, source: string): ParsedItem {

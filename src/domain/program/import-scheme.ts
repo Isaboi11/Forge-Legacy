@@ -14,6 +14,11 @@ export interface Scheme {
   sets?: number;
   reps?: number;
   /**
+   * The TOP of a rep range — "3 x 12-15" is `reps: 12, repsMax: 15` (`ProgramExercise.repsMax`). It used to be read
+   * and thrown away, so every range a pasted program wrote reached the athlete as its floor (PO's aunt, 2026-10-06).
+   */
+  repsMax?: number;
+  /**
    * Performed for TIME — "0:40", "40s", "3 × 30s" (PO 2026-09-27: a 40-on/20-off circuit imported as 3 × 10,
    * and "Plank 3x30s" as THIRTY REPS). Set instead of `reps`, never beside it.
    */
@@ -150,10 +155,28 @@ function numberWordsToDigits(text: string): string {
  * in a Reps COLUMN, which never reaches here.
  */
 const SLASHED = /(?<![\d.\/])(\d{1,2})\s*\/\s*(\d{1,3})(?![\d.\/])/;
-/** "4 sets", "4 sets of 12", "3 sets x 10" — the label carries the meaning, wherever it sits. */
-const SETS_LABELLED = /(?<![\d.])(\d{1,2})\s*sets?\b(?:\s*(?:of|x|×)\s*(\d{1,3}))?/i;
-/** "8 reps", "6-8 reps", "12–15 reps", "8/8 reps" — ranges read as their floor. */
-const REPS_LABELLED = /(\d{1,3})(?:\s*[-–—/]\s*\d{1,3})?\s*reps?\b/gi;
+/**
+ * "4 sets", "4 sets of 12", "3 sets x 10" — the label carries the meaning, wherever it sits. And "3 sets 6-8",
+ * "3 sets x 12-15": the count straight after the label, with its range's top (PO's aunt, 2026-10-06 — "3 sets 6-8"
+ * read as an assumed 10 and left "6-8 @" in the name, "3 sets x 12-15" left "-15"). Never a load: "4 sets 135 lbs".
+ */
+const SETS_LABELLED =
+  /(?<![\d.])(\d{1,2})\s*sets?\b(?:\s*(?:of|x|×)?\s*(\d{1,3})(?:\s*[-–—]\s*(\d{1,3}))?(?![\d.]|\s*(?:lbs?|kgs?|kilos?|pounds?|%|[x×])(?![a-z])))?/i;
+/** "8 reps", "6-8 reps", "12–15 reps", "8/8 reps" — ranges read as their floor, with the top kept beside it. */
+const REPS_LABELLED = /(\d{1,3})(?:\s*([-–—/])\s*(\d{1,3}))?\s*reps?\b/gi;
+/**
+ * "Wall sits: 3 reps x 30 seconds" — the "reps" are how many times, and the clock is each one (PO's aunt,
+ * 2026-10-06). It read as three reps at an assumed three sets.
+ */
+const TIMES_X_CLOCK = /(?<![\d.])(\d{1,2})\s*(?:reps?|rounds?|times)\s*[x×]\s*(\d{1,3})\s*(secs?|seconds?|s|mins?|minutes?)\b/i;
+
+/** A range's top, only when it is one: "8-10" → 10; "8/8" (per side) and "4x8 - 90s" (a rest) → nothing. */
+function rangeTop(lo: string | undefined, hi: string | undefined, sep?: string): number | undefined {
+  if (!lo || !hi || sep === '/') return undefined;
+  const a = Number(lo);
+  const b = Number(hi);
+  return b > a && b <= a * 3 + 2 ? b : undefined;
+}
 /** A trailing load — "@135", "@ 225 lb", "@75%". Never part of the name. */
 const TRAILING_LOAD = /\s*@\s*[\d.]+\s*(?:lbs?|kgs?|%|kilos?)?\s*$/i;
 /**
@@ -340,7 +363,20 @@ function cut(text: string, spans: [number, number][]): string {
 export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
   const text = numberWordsToDigits(raw.replace(TRAILING_LOAD, ''));
 
-  const compact = compactMatch(text) ?? text.match(SLASHED);
+  const timesClock = text.match(TIMES_X_CLOCK);
+  if (timesClock?.index != null) {
+    const n = Number(timesClock[2]);
+    const sec = capped(timesClock[3].toLowerCase().startsWith('m') ? n * 60 : n);
+    if (sec != null) {
+      return {
+        scheme: { sets: num(timesClock[1]), durationSec: sec },
+        rest: cut(text, [[timesClock.index, timesClock.index + timesClock[0].length]]),
+      };
+    }
+  }
+
+  /* "3 sets 8/8 reps" — with the sets SAID, "8/8" is reps a side, not eight sets of eight. */
+  const compact = compactMatch(text) ?? (SETS_LABELLED.test(text) ? null : text.match(SLASHED));
   if (compact?.index != null) {
     const span: [number, number][] = [[compact.index, compact.index + compact[0].length]];
     /* "Plank 3x30s", "Hang 4 x 1 min" — the unit says the second number is a CLOCK, not reps. A bare "m" is
@@ -351,8 +387,9 @@ export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
       const sec = capped(unit.startsWith('m') ? n * 60 : n);
       if (sec != null) return { scheme: { sets: num(compact[1]), durationSec: sec }, rest: cut(text, span) };
     }
+    const top = rangeTop(compact[2], compact[3]);
     return {
-      scheme: { sets: num(compact[1]), reps: num(compact[2]) },
+      scheme: { sets: num(compact[1]), reps: num(compact[2]), ...(top != null ? { repsMax: top } : null) },
       rest: cut(text, span),
     };
   }
@@ -390,23 +427,27 @@ export function extractScheme(raw: string): { scheme: Scheme; rest: string } {
       return { scheme: { sets: num(setsM[1]), durationSec: clock.sec }, rest: cut(text, spans) };
     }
     let reps = num(setsM[2]);
+    let top = rangeTop(setsM[2], setsM[3]);
     if (reps == null && repsAll[0]?.index != null) {
       reps = num(repsAll[0][1]);
+      top = rangeTop(repsAll[0][1], repsAll[0][3], repsAll[0][2]);
       spans.push([repsAll[0].index, repsAll[0].index + repsAll[0][0].length]);
     }
-    return { scheme: { sets: num(setsM[1]), reps }, rest: cut(text, spans) };
+    return { scheme: { sets: num(setsM[1]), reps, ...(top != null ? { repsMax: top } : null) }, rest: cut(text, spans) };
   }
 
   if (repsAll.length >= 2 && repsAll[0].index != null && repsAll[1].index != null) {
     // Two rep phrases, no sets phrase — the first is a mislabelled set count.
     spans.push([repsAll[0].index, repsAll[0].index + repsAll[0][0].length]);
     spans.push([repsAll[1].index, repsAll[1].index + repsAll[1][0].length]);
-    return { scheme: { sets: num(repsAll[0][1]), reps: num(repsAll[1][1]) }, rest: cut(text, spans) };
+    const top = rangeTop(repsAll[1][1], repsAll[1][3], repsAll[1][2]);
+    return { scheme: { sets: num(repsAll[0][1]), reps: num(repsAll[1][1]), ...(top != null ? { repsMax: top } : null) }, rest: cut(text, spans) };
   }
 
   if (repsAll.length === 1 && repsAll[0].index != null) {
     spans.push([repsAll[0].index, repsAll[0].index + repsAll[0][0].length]);
-    return { scheme: { reps: num(repsAll[0][1]) }, rest: cut(text, spans) };
+    const top = rangeTop(repsAll[0][1], repsAll[0][3], repsAll[0][2]);
+    return { scheme: { reps: num(repsAll[0][1]), ...(top != null ? { repsMax: top } : null) }, rest: cut(text, spans) };
   }
 
   /*
