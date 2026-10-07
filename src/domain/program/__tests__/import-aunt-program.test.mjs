@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { parseProgramTable, toProgramStructure } from '../import-parse.ts';
+import { moreThanOneWorkout, parseProgramTable, toProgramStructure } from '../import-parse.ts';
 
 /*
  * ══ THE PO'S AUNT'S PROGRAM, PASTED INTO BUILD A PROGRAM (PO 2026-10-06) ══
@@ -138,4 +138,12 @@ test('"OR" with nothing above it is listed, not dropped', () => {
   const p = parseProgramTable('OR\nBench 3x8');
   assert.equal(p.ok, true);
   assert.ok(p.skipped.includes('OR'));
+});
+
+test('a whole week pasted into Build a Template is offered as a program — one workout is not', () => {
+  /* PO 2026-10-06: "should we just have that as a program sort of thing?" — her week, pasted as a template. */
+  assert.equal(moreThanOneWorkout(r.weeks), '5 days');
+  assert.equal(moreThanOneWorkout(parseProgramTable(['Push A', 'Bench Press 4x8', 'Dips 3x12'].join('\n')).weeks), null);
+  assert.equal(moreThanOneWorkout(parseProgramTable(['Week 1', 'Squat 5x5', 'Week 2', 'Squat 5x3'].join('\n')).weeks), '2 weeks');
+  assert.equal(moreThanOneWorkout([]), null);
 });
