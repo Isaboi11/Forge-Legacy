@@ -197,8 +197,22 @@ test('the handle refuses text selection, and the responder refuses to be taken',
  * ⚠ The react-compiler lint ERRORS on a ref read during render, and `rowStyle` is read during render —
  * the same trade `useSheetDrag` makes.
  */
-test('the animated values are held in state, not in a ref read during render', () => {
-  assert.match(hook, /useState\(\(\) => new Animated\.Value\(0\)\)/);
+test('the animated values are held in a memo, not in a ref read during render', () => {
+  assert.match(hook, /const offsets = useMemo\(\(\) => Array\.from\(\{ length: count \}, \(\) => new Animated\.Value\(0\)\), \[count\]\)/);
+  assert.doesNotMatch(hook, /useRef\([^)]*new Animated\.Value/);
+});
+
+/**
+ * ⚠ A row's transform once swapped between a shared `shift.interpolate(...)` and a plain `0`. A row that
+ * left the passed-over set swapped `0` for `0`, nothing redrew, and it stayed drawn one place up on top of
+ * its neighbour — a hole in All Exercises (PO 10-06). Every row keeps its OWN value for the whole drag.
+ */
+test('every row keeps its own animated offset - never a plain number swapped in mid-drag', () => {
+  const code = hook.replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, ''); // the hook's comments name the old code
+  assert.match(code, /const translateY = offsets\[i\] \?\? 0;/);
+  assert.doesNotMatch(code, /translateY: 0/, 'a literal 0 in a row transform is the stuck-row bug');
+  assert.doesNotMatch(code, /shift\.interpolate/);
+  assert.match(hook, /const goal = between \? \(next > start \? -h : h\) : 0;/, 'a row leaving the gap is sent home');
 });
 
 /**
@@ -228,7 +242,7 @@ test('the reorder sheet re-seeds on open, keyed on the transition and not on the
 /** A responder built in a `useMemo` would otherwise commit against the ordering it captured. */
 test('the drag reads live props through a ref rather than a stale closure', () => {
   assert.match(hook, /live\.current\.onMove\(start, end\)/);
-  assert.match(hook, /live\.current = \{ rowHeight, count, canMove, onMove, haptics \}/);
+  assert.match(hook, /live\.current = \{ rowHeight, count, canMove, onMove, haptics, offsets \}/);
 });
 
 test('chevrons exist beside the drag, and step over pinned rows exactly as it does', () => {
