@@ -49,11 +49,26 @@ export function useListReorder({
   onMove: (from: number, to: number) => void;
   haptics?: { light: () => void; medium: () => void };
 }) {
-  /* ⚠ `useState`, NOT `useRef(...).current`. The react-compiler lint ERRORS on a ref read during render
-     (`react-hooks/refs`), and `rowStyle` is read during render. The lazy initialiser gives the same
-     "created once" guarantee — the identical trade `useSheetDrag` makes, for the identical reason. */
-  const [lift] = useState(() => new Animated.Value(0));
-  const [shift] = useState(() => new Animated.Value(0));
+  /*
+   * ══ ONE OFFSET PER ROW, ATTACHED FOR AS LONG AS THE ROW IS ON SCREEN ══
+   *
+   * ⚠ A ROW'S TRANSFORM MUST NEVER SWAP BETWEEN AN ANIMATED VALUE AND A PLAIN NUMBER. It did: the rows
+   * being passed over took `shift.interpolate(...)` and every other row took `translateY: 0`. An animation
+   * writes to the view directly — React never sees the -1 row it drew — so when a row dropped OUT of the
+   * passed-over set (a finger that nudged one place and came back, or turned round past its origin), React
+   * swapped `0` in for `0` and changed nothing, and the row stayed drawn one place up, on top of its
+   * neighbour. The list then showed a hole where it should have been and hid the row under it, and it
+   * stayed that way until the sheet closed (All Exercises, PO 10-06: "moved a workout once then moved a
+   * second to the bottom" — Bench Press sat over the row above it, an empty slot below).
+   *
+   * Every row now keeps the SAME value in its transform from mount to unmount, and the drag only ever
+   * changes what that value holds. JS-driven, because the lifted row's value is written on every move
+   * event, and a value cannot be both natively animated and set from JS without the two disagreeing.
+   *
+   * `useMemo` on `count`, not a ref: `rowStyle` reads these during render (`react-hooks/refs`). A new count
+   * means a row was added or removed, which never happens mid-drag, so starting the set again at 0 is right.
+   */
+  const offsets = useMemo(() => Array.from({ length: count }, () => new Animated.Value(0)), [count]);
   const [dragging, setDragging] = useState<number | null>(null);
   const [target, setTarget] = useState<number | null>(null);
 
@@ -67,27 +82,30 @@ export function useListReorder({
    *
    * Reading them through a ref inside a CALLBACK is fine; only a read during RENDER trips the lint.
    */
-  const live = useRef({ rowHeight, count, canMove, onMove, haptics });
+  const live = useRef({ rowHeight, count, canMove, onMove, haptics, offsets });
   useEffect(() => {
-    live.current = { rowHeight, count, canMove, onMove, haptics };
+    live.current = { rowHeight, count, canMove, onMove, haptics, offsets };
   });
 
   const lastTarget = useRef<number | null>(null);
   const from = useRef<number | null>(null);
   /** True from grant to release. While it is set, no other row may claim the drag or rewrite `from`. */
   const held = useRef(false);
+  /** Where each non-lifted row is headed (px), so a target change only starts the rows that must move. */
+  const goals = useRef<number[]>([]);
 
   const reset = useMemo(
     () => () => {
-      lift.setValue(0);
-      shift.setValue(0);
+      // Every row home BEFORE the state clears — `setValue` stops any tween still running.
+      for (const v of live.current.offsets) v.setValue(0);
+      goals.current = [];
       held.current = false;
       from.current = null;
       lastTarget.current = null;
       setDragging(null);
       setTarget(null);
     },
-    [lift, shift],
+    [],
   );
 
   /*
@@ -140,8 +158,8 @@ export function useListReorder({
         onPanResponderMove: (_e, g) => {
           const start = from.current;
           if (start == null) return;
-          const { rowHeight: h, count: n, canMove: can } = live.current;
-          lift.setValue(g.dy);
+          const { rowHeight: h, count: n, canMove: can, offsets: rows } = live.current;
+          rows[start]?.setValue(g.dy);
 
           let next = Math.max(0, Math.min(n - 1, start + Math.round(g.dy / h)));
           // Step past a row that cannot move, the way the drag is going. Falling off the end means there
@@ -154,13 +172,16 @@ export function useListReorder({
             lastTarget.current = next;
             setTarget(next);
             live.current.haptics?.light();
-            // The rows between the row's origin and its target slide one place to make the gap. One
-            // shared value drives all of them; which rows it applies to is decided in `rowStyle`.
-            Animated.timing(shift, {
-              toValue: next > start ? -1 : next < start ? 1 : 0,
-              duration: 120,
-              useNativeDriver: true,
-            }).start();
+            // The rows between the row's origin and its target slide one place to make the gap; every
+            // other row goes home — including one that WAS in the gap a moment ago (see `offsets`).
+            rows.forEach((v, i) => {
+              if (i === start) return;
+              const between = next > start ? i > start && i <= next : i < start && i >= next;
+              const goal = between ? (next > start ? -h : h) : 0;
+              if ((goals.current[i] ?? 0) === goal) return;
+              goals.current[i] = goal;
+              Animated.timing(v, { toValue: goal, duration: 120, useNativeDriver: false }).start();
+            });
           }
         },
 
@@ -175,7 +196,7 @@ export function useListReorder({
         },
         onPanResponderTerminate: reset,
       }),
-    [lift, shift, reset],
+    [reset],
   );
 
   const responders = useMemo(
@@ -192,26 +213,13 @@ export function useListReorder({
      * aside by exactly one row height, so the list always shows the order a release would commit.
      */
     rowStyle: (i: number) => {
-      if (dragging == null) return { transform: [{ translateY: 0 }], zIndex: 0 };
-      if (i === dragging) return { transform: [{ translateY: lift }], zIndex: 2 };
-
+      // ⚠ Always this row's own value, never a plain number in its place — see `offsets`.
+      const translateY = offsets[i] ?? 0;
+      if (dragging == null) return { transform: [{ translateY }], zIndex: 0 };
+      if (i === dragging) return { transform: [{ translateY }], zIndex: 2 };
       const t = target ?? dragging;
       const between = t > dragging ? i > dragging && i <= t : i < dragging && i >= t;
-      if (!between) return { transform: [{ translateY: 0 }], zIndex: 0 };
-
-      /* Dragging DOWN (`shift` → -1) lifts the rows being passed over UP by one place, and vice versa —
-         so the list on screen always reads as the order a release would commit. */
-      return {
-        transform: [
-          {
-            translateY: shift.interpolate({
-              inputRange: [-1, 0, 1],
-              outputRange: [-rowHeight, 0, rowHeight],
-            }),
-          },
-        ],
-        zIndex: 1,
-      };
+      return { transform: [{ translateY }], zIndex: between ? 1 : 0 };
     },
 
     /** Which row is in the air, or null. The sheet uses it to lift the row visually. */
