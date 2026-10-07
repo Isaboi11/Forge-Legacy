@@ -18,10 +18,17 @@ test('Home offers "Import a workout", behind the imports cap, opening the today 
 });
 
 test('today mode STARTS the workout as a one-off, from the rows the builder would save', () => {
-  assert.match(IMPORT, /const isToday = forWhat === 'today';/);
+  /* …unless the paste held a week and the athlete chose "Make it a program" (PO 2026-10-06). */
+  assert.match(IMPORT, /const isToday = forWhat === 'today' && !asProgram;/);
   assert.match(IMPORT, /const rows = toTemplateExercises\(w\.draft\);/);
   assert.match(IMPORT, /await writeWorkoutLaunch\(\{ exercises: rows, workoutName: name \}\);\s*[\s\S]{0,120}router\.replace\('\/workout'\);/);
   assert.match(IMPORT, /\{isToday \? 'Start workout' :/);
+});
+
+test('a week pasted as one workout is offered as a program — every day it read, past the programs cap', () => {
+  assert.match(IMPORT, /const offer = isTemplate && preview && whole \? moreThanOneWorkout\(whole\) : null;/);
+  assert.match(IMPORT, /if \(!whole \|\| !guard\('programs'\)\) return;\s*setAsProgram\(true\);\s*setScopeNote\(null\);\s*setPreview\(whole\);/);
+  assert.match(IMPORT, /const fit = fitToScope\(weeks, scope\);\s*setWhole\(weeks\);/);
 });
 
 test('a template is saved ONLY when the box is ticked, and only past the templates cap', () => {

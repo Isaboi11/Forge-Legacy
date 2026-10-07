@@ -1897,6 +1897,19 @@ export function summarize(weeks: readonly ParsedWeek[], unit: 'program' | 'worko
   return `${countOf(weeks.length, 'week')} · ${days} · ${countOf(items, 'exercise')}`;
 }
 
+/**
+ * A read that holds MORE than one workout, said in a few words — "5 days", "4 weeks" — or null when it is one.
+ *
+ * A template is one workout, so a whole week pasted into Build a Template kept its first day and said so in small
+ * print; the other four days were gone unless the athlete knew to start again under Build a Program (PO 2026-10-06:
+ * "should we just have that as a program sort of thing?"). The template import offers the switch when this is set.
+ */
+export function moreThanOneWorkout(weeks: readonly ParsedWeek[]): string | null {
+  const days = weeks[0]?.days.filter((d) => d.items.length > 0).length ?? 0;
+  if (weeks.length > 1) return countOf(weeks.length, 'week');
+  return days > 1 ? countOf(days, 'day') : null;
+}
+
 /** True when every week holds the same days and the same work — so the program can repeat one week. */
 export function weeksAreIdentical(weeks: readonly ParsedWeek[]): boolean {
   if (weeks.length < 2) return true;

@@ -56,7 +56,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { type PhotoReadResult } from '@/data/program-photo-live';
 import { readImportPhoto } from '@/data/import-photo-read';
 import { resolveExerciseName, resolveImportedName } from '@/domain/exercise-picker/data';
-import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
+import { moreThanOneWorkout, parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import { mergeParsedWeeks } from '@/domain/program/import-merge';
 import { useToast } from '@/hooks/useCeremony';
 import { pickTextFile } from '@/lib/pick-text-file';
@@ -123,13 +123,18 @@ function ProgramImport() {
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const { m, for: forWhat, read } = useLocalSearchParams<{ m?: string; for?: string; read?: string }>();
+  /**
+   * "Make it a program" — a whole week pasted where one workout was asked for (PO 2026-10-06). From here the
+   * screen IS Build a Program: every day it read, Create program, the program slot checked.
+   */
+  const [asProgram, setAsProgram] = useState(false);
   /** Home's "Paste a workout": one day, started now (see the header). */
-  const isToday = forWhat === 'today';
+  const isToday = forWhat === 'today' && !asProgram;
   /**
    * Build a Template's import — and Home's, which reads exactly the same thing: one day, one photo, the
    * workout copy. `isTemplate` is "one workout, not a program"; only what Create does differs.
    */
-  const isTemplate = forWhat === 'template' || isToday;
+  const isTemplate = (forWhat === 'template' || forWhat === 'today') && !asProgram;
   const scope = isTemplate ? ('day' as const) : ('program' as const);
   const maxPhotos = isTemplate ? 1 : MAX_PHOTOS;
   const guard = usePremiumGate();
@@ -138,7 +143,7 @@ function ProgramImport() {
   /* Holt read the photo in the chat — taken ONCE, here, and fitted to this screen's scope. */
   const [seed] = useState(() => {
     const r = read === '1' ? takeImportRead() : null;
-    return r ? { ...fitToScope(r.weeks, isTemplate ? 'day' : 'program'), skipped: r.skipped, checks: r.checks ?? [] } : null;
+    return r ? { ...fitToScope(r.weeks, isTemplate ? 'day' : 'program'), all: r.weeks, skipped: r.skipped, checks: r.checks ?? [] } : null;
   });
   /*
    * ⚠ THE PHOTO READER IS PREMIUM AI ONLY (0203), AND A LINK IS NOT A CARD. Build a Program hides the
@@ -162,6 +167,10 @@ function ProgramImport() {
   const [checks, setChecks] = useState<string[]>(seed?.checks ?? []);
   /** What the paste called the program (`ParseResult.title`) — the draft's name, and said in the preview (QA programs-07). */
   const [title, setTitle] = useState<string | null>(null);
+  /** Everything the read held, before one day was kept — what "Make it a program" switches to. */
+  const [whole, setWhole] = useState<ParsedWeek[] | null>(seed?.all ?? null);
+  /** "5 days", "4 weeks" — set only on a one-workout screen whose read held more than one. */
+  const offer = isTemplate && preview && whole ? moreThanOneWorkout(whole) : null;
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
   const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[]; checks: string[] }>());
 
@@ -178,12 +187,22 @@ function ProgramImport() {
 
   const showPreview = (weeks: ParsedWeek[], notRead: string[] = [], toCheck: string[] = [], called: string | null = null) => {
     const fit = fitToScope(weeks, scope);
+    setWhole(weeks);
     setError(null);
     setTitle(called);
     setScopeNote(fit.note);
     setSkipped(notRead);
     setChecks(toCheck);
     setPreview(fit.weeks);
+  };
+
+  /* The template import read a week: take every day of it into Build a Program instead. A program spends a
+     program slot, so that cap is asked here (Create New asked only the template's on the way in). */
+  const makeProgram = () => {
+    if (!whole || !guard('programs')) return;
+    setAsProgram(true);
+    setScopeNote(null);
+    setPreview(whole);
   };
 
   // ── paste ────────────────────────────────────────────────────────────────────────────────────────
@@ -387,7 +406,26 @@ function ProgramImport() {
       >
         <View style={styles.column}>
           {preview ? (
-            <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={title} />
+            <>
+              {offer ? (
+                <View style={styles.infoCard}>
+                  <View style={styles.infoIcon}>
+                    <BulbGlyph />
+                  </View>
+                  <View style={styles.infoText}>
+                    <Text style={styles.infoLabel}>This has {offer}</Text>
+                    <Text style={styles.infoStrong}>Make it a program?</Text>
+                    <Text style={styles.infoSub}>A template is one workout. A program keeps all {offer} in order.</Text>
+                    <View style={styles.offerBtn}>
+                      <Button variant="secondary" fullWidth onPress={makeProgram}>
+                        Make it a program
+                      </Button>
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+              <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={title} />
+            </>
           ) : mode === 'paste' ? (
             <>
               <IconPlate>
@@ -670,6 +708,7 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: 13.5, fontWeight: '600', color: flColor.cream100 },
   infoStrong: { fontSize: 13.5, color: flColor.cream100 },
   infoSub: { fontSize: 12.5, color: flColor.gray400 },
+  offerBtn: { marginTop: 10 },
 
   pasteBox: {
     minHeight: 160,
