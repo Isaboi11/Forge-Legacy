@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -7,6 +7,7 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { ScreenBackground } from '@/components/screen-background';
+import { HeldText, type HeldTextHandle } from '@/components/HeldText';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
@@ -176,13 +177,23 @@ export default function WorkoutBuilderScreen() {
     }, [entryId]),
   );
 
-  /** Every mutation is a pure step plus an autosave; nothing writes state during render. */
+  /** Every mutation is a pure step plus an autosave; nothing writes state during render. FUNCTIONAL, so a
+      held name handed over in the same tap as another change is not dropped by it (see `HeldText`). */
   const mutate = (fn: (d: WorkoutDraft) => WorkoutDraft) => {
-    if (!draft) return;
-    const next = fn(draft);
-    setDraft(next);
-    void saveWorkoutDraft(next);
+    setDraft((d) => {
+      if (!d) return d;
+      const next = fn(d);
+      void saveWorkoutDraft(next);
+      return next;
+    });
   };
+
+  /* The name is held by its field while it is typed — every letter used to re-draw every row below it, and
+     on the phone that took the keyboard away (PO 10-08, see `HeldText`). Leaving or opening anything hands
+     it over first; Save and Back read it straight from the field. */
+  const nameField = useRef<HeldTextHandle>(null);
+  const flushName = () => nameField.current?.flush();
+  const typedName = () => nameField.current?.current() ?? draft?.name ?? '';
 
   const patch = (section: BuilderSection, fn: (list: ProgramExercise[]) => ProgramExercise[]) =>
     mutate((d) => ({ ...d, [section]: fn(d[section]) }));
@@ -203,6 +214,7 @@ export default function WorkoutBuilderScreen() {
   };
 
   const addExercise = (section: BuilderSection) => {
+    flushName();
     router.push({ pathname: '/exercise-picker', params: { mode: 'builder', dest: 'workout', vary: '0', week: '0', day: '0', section } });
   };
 
@@ -219,6 +231,7 @@ export default function WorkoutBuilderScreen() {
    * Program Builder), which this screen never creates.
    */
   const openImport = () => {
+    flushName();
     if (!guard('imports')) return;
     setImportOpen(true);
   };
@@ -268,7 +281,7 @@ export default function WorkoutBuilderScreen() {
   };
 
   const onBack = () => {
-    if (draft && workoutDraftIsDirty(draft)) setConfirmLeave(true);
+    if (draft && workoutDraftIsDirty({ ...draft, name: typedName() })) setConfirmLeave(true);
     else leave();
   };
 
@@ -276,7 +289,7 @@ export default function WorkoutBuilderScreen() {
     if (!draft || saving) return;
     setSaving(true);
     try {
-      const name = draft.name.trim() || 'Saved Workout';
+      const name = typedName().trim() || 'Saved Workout';
 
       /* Built for later: nothing enters the template library. "Save for later" parks it on the hero, and
          "Save & Start" just opens it — a session you are about to train has no reason to be saved twice.
@@ -340,21 +353,28 @@ export default function WorkoutBuilderScreen() {
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.head}>
           <Text style={styles.fieldLabel}>Workout name</Text>
-          <TextInput returnKeyType="done"
-            value={draft.name}
-            onChangeText={(v) => mutate((d) => ({ ...d, name: v }))}
-            placeholder="e.g. Push Day A"
-            placeholderTextColor={flColor.gray600}
-            style={styles.nameInput}
-            maxLength={WORKOUT_NAME_MAX}
-            accessibilityLabel="Workout name"
-          />
-          {/* The cap is never a silent cut (QA 09-26 library-23): the count shows as the name nears it. */}
-          {nameNearLimit(draft.name.length, WORKOUT_NAME_MAX) ? (
-            <Text style={styles.headMeta}>
-              {draft.name.length}/{WORKOUT_NAME_MAX}
-            </Text>
-          ) : null}
+          <HeldText value={draft.name} onCommit={(v) => mutate((d) => ({ ...d, name: v }))} handle={nameField}>
+            {(f) => (
+              <>
+                <TextInput returnKeyType="done"
+                  value={f.text}
+                  onChangeText={f.onChange}
+                  onBlur={f.onBlur}
+                  placeholder="e.g. Push Day A"
+                  placeholderTextColor={flColor.gray600}
+                  style={styles.nameInput}
+                  maxLength={WORKOUT_NAME_MAX}
+                  accessibilityLabel="Workout name"
+                />
+                {/* The cap is never a silent cut (QA 09-26 library-23): the count shows as the name nears it. */}
+                {nameNearLimit(f.text.length, WORKOUT_NAME_MAX) ? (
+                  <Text style={styles.headMeta}>
+                    {f.text.length}/{WORKOUT_NAME_MAX}
+                  </Text>
+                ) : null}
+              </>
+            )}
+          </HeldText>
           <Text style={styles.headMeta}>
             {total > 0 ? `${countOf(total, 'exercise')}${est > 0 ? ` · ~${est} min` : ''}` : 'Plan it here, then start it whenever you like.'}
           </Text>

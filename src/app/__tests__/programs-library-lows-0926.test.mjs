@@ -11,7 +11,8 @@ const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
 test('library-19: Back on an edited template compares against what was loaded', () => {
   const src = read('../workout-builder.tsx');
   assert.match(src, /withWorkoutBaseline\(hydrate\(/, 'the server read must stamp a baseline');
-  assert.match(src, /workoutDraftIsDirty\(draft\)\) setConfirmLeave\(true\)/, 'Back must ask only when something changed');
+  // The name as typed counts too: it is held by its field until it lets go (PO 10-08, `HeldText`).
+  assert.match(src, /workoutDraftIsDirty\(\{ \.\.\.draft, name: typedName\(\) \}\)\) setConfirmLeave\(true\)/, 'Back must ask only when something changed');
   assert.match(src, /editing \? 'Save changes' : 'Save for later'/);
 });
 

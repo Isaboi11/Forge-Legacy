@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { ScreenBoundary } from '@/components/screen-boundary';
@@ -10,6 +10,7 @@ import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
+import { HeldText, type HeldTextHandle } from '@/components/HeldText';
 import { ProgressBar } from '@/components/forge/composites/ProgressBar';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader';
 import { type ParsedWeek } from '@/domain/program/import-parse';
@@ -465,11 +466,16 @@ function ProgramBuilderScreen() {
   );
 
   // Every mutation is a pure draft→draft step plus an autosave; nothing writes state during render.
+  /* FUNCTIONAL, so two changes in one tap compose: the Day Builder hands over a held name (`HeldText`)
+     and then moves to the next day in the same handler — computed from the closure's draft, the second
+     would have been built without the name and dropped it. */
   const mutate = (fn: (d: ProgramDraft) => ProgramDraft) => {
-    if (!draft) return;
-    const next = fn(draft);
-    setDraft(next);
-    void saveProgramDraft(next, draftKind);
+    setDraft((d) => {
+      if (!d) return d;
+      const next = fn(d);
+      void saveProgramDraft(next, draftKind);
+      return next;
+    });
   };
 
   /** Sessions already trained, in builder space. Empty unless this is a live edit. */
@@ -2277,10 +2283,18 @@ function DayBuilder({
   // in either direction is safe regardless of which unmounts first.
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
+  /* The day's name is held by its field while it is typed (see `HeldText` — every letter used to re-draw this
+     whole day, and on the phone that took the keyboard away). Anything here that leaves the day or opens
+     something hands the name over FIRST, so it is never left behind in the field. */
+  const nameField = useRef<HeldTextHandle>(null);
+  const withName = <A extends unknown[]>(fn: (...a: A) => void) => (...a: A) => {
+    nameField.current?.flush();
+    fn(...a);
+  };
 
   return (
     <>
-      <AppBar title={dayName(day)} onBack={onBack} />
+      <AppBar title={dayName(day)} onBack={withName(onBack)} />
 
       <Animated.ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={tourScroller}
@@ -2292,14 +2306,19 @@ function DayBuilder({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.dayHead}>
-          <InputField
-            label="Workout name"
-            placeholder="Workout name"
-            value={day.name}
-            onChange={onName}
-            maxLength={WORKOUT_NAME_MAX}
-            showCount={nameNearLimit(day.name.length, WORKOUT_NAME_MAX)}
-          />
+          <HeldText value={day.name} onCommit={onName} handle={nameField}>
+            {(f) => (
+              <InputField
+                label="Workout name"
+                placeholder="Workout name"
+                value={f.text}
+                onChange={f.onChange}
+                onBlur={f.onBlur}
+                maxLength={WORKOUT_NAME_MAX}
+                showCount={nameNearLimit(f.text.length, WORKOUT_NAME_MAX)}
+              />
+            )}
+          </HeldText>
           {total > 0 ? (
             <Text style={styles.daySummary}>
               {countOf(total, 'exercise')}
@@ -2342,9 +2361,9 @@ function DayBuilder({
                     onSlotA={(dir) => onSlotA(sec.key, i, dir)}
                     onSlotB={(dir) => onSlotB(sec.key, i, dir)}
                     onSlotTime={(dir) => onSlotTime(sec.key, i, dir)}
-                    onTypeTime={() => onTypeTime(sec.key, i)}
-                    onTypeDistance={() => onTypeDistance(sec.key, i)}
-                    onEditNote={() => onEditNote(sec.key, i)}
+                    onTypeTime={withName(() => onTypeTime(sec.key, i))}
+                    onTypeDistance={withName(() => onTypeDistance(sec.key, i))}
+                    onEditNote={withName(() => onEditNote(sec.key, i))}
                     metric={metric}
                     onPair={() => onPair(sec.key, i)}
                     onUnpair={() => onUnpair(sec.key, i)}
@@ -2356,7 +2375,7 @@ function DayBuilder({
                 <View style={styles.addRow}>
                   <TourAnchor id={isMain ? 'day-add' : undefined} style={styles.addBtnGrow}>
                     <Pressable
-                      onPress={() => onAdd(sec.key)}
+                      onPress={withName(() => onAdd(sec.key))}
                       accessibilityRole="button"
                       accessibilityLabel={`Add ${sec.addLabel}`}
                       style={styles.addBtn}
@@ -2367,7 +2386,7 @@ function DayBuilder({
                   </TourAnchor>
                   <TourAnchor id={isMain ? 'day-cardio' : undefined}>
                     <Pressable
-                      onPress={() => onAddCardio(sec.key)}
+                      onPress={withName(() => onAddCardio(sec.key))}
                       accessibilityRole="button"
                       accessibilityLabel="Add a cardio block"
                       style={styles.addCardioBtn}
@@ -2389,7 +2408,7 @@ function DayBuilder({
           reading of the screen and this reads as the shortcut it is.
         */}
         <Pressable
-          onPress={onUseTemplate}
+          onPress={withName(onUseTemplate)}
           accessibilityRole="button"
           accessibilityLabel="Fill this day from a template"
           style={({ pressed }) => [styles.templateLink, pressed ? styles.pressed : null]}
@@ -2428,7 +2447,7 @@ function DayBuilder({
             <Button
               variant="primary"
               fullWidth
-              onPress={onNext}
+              onPress={withName(onNext)}
               accessibilityLabel={`Save and go to ${nextLabelFull ?? nextLabel}`}
               trailingIcon={<Glyph name="chevron-right" size={15} color="#F7F5F1" />}
             >
@@ -2436,12 +2455,12 @@ function DayBuilder({
                   screen reader still hears the whole destination. */}
               {compact ? 'Save & Next' : <>Save &amp; go to {nextLabel}</>}
             </Button>
-            <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Save workout and go back" style={styles.nextDay}>
+            <Pressable onPress={withName(onBack)} accessibilityRole="button" accessibilityLabel="Save workout and go back" style={styles.nextDay}>
               <Text style={styles.nextDayText}>Save workout</Text>
             </Pressable>
           </>
         ) : (
-          <Button variant="primary" fullWidth onPress={onBack} accessibilityLabel="Save workout">
+          <Button variant="primary" fullWidth onPress={withName(onBack)} accessibilityLabel="Save workout">
             Save Workout
           </Button>
         )}
