@@ -47,9 +47,22 @@ test('every file that uses the shared dismiss mode imports it', () => {
   assert.deepEqual(unimported, []);
 });
 
-test('the shared mode is interactive on iOS and on-drag everywhere else', () => {
+test('the shared mode is interactive on iOS, none on web, on-drag on Android', () => {
   const lib = fs.readFileSync(path.join(SRC, 'lib', 'keyboard-dismiss.ts'), 'utf8');
-  assert.match(lib, /Platform\.OS === 'ios' \? 'interactive' : 'on-drag'/);
+  assert.match(lib, /Platform\.OS === 'ios' \? 'interactive' : Platform\.OS === 'web' \? 'none' : 'on-drag'/);
+});
+
+// PO 2026-10-08: typing in the exercise picker's search closed the keyboard mid-word on web. react-native-web's
+// `on-drag` blurs on EVERY scroll event — and a list shortening under the search clamps the scroll position,
+// which is one. So web never hands the scroller that mode, and the finger-drag dismissal lives in the root
+// watcher instead.
+test('web: scrolling alone never closes the keyboard; a real finger drag does', () => {
+  const rnw = fs.readFileSync(path.resolve(SRC, '..', 'node_modules/react-native-web/dist/exports/ScrollView/index.js'), 'utf8');
+  assert.match(rnw, /keyboardDismissMode === 'on-drag'\) \{\s*dismissKeyboard\(\)/, 'react-native-web changed how on-drag works — re-check this fix');
+  const tap = fs.readFileSync(path.join(SRC, 'components/KeyboardTapAway.tsx'), 'utf8');
+  const move = tap.slice(tap.indexOf('const onTouchMove'), tap.indexOf('const onTouchEnd'));
+  assert.match(move, /Platform\.OS === 'web' && !t\.onField/);
+  assert.match(move, /focusedField\(\) === t\.field\) blur\(t\.field\)/);
 });
 
 // The other half of `interactive`: a panel pinned above the keyboard must follow it per frame on iOS,

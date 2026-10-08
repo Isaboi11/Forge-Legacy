@@ -27,8 +27,11 @@ import { Keyboard, Platform, StyleSheet, TextInput, View, type GestureResponderE
  *   between fields never flickers the keyboard down and up.
  * ⚠ NOT ON THE FIELD ITSELF. Placing the caret, or tapping a field's own padding, is inside the field (its
  *   rect plus `FIELD_SLOP`), so it never dismisses.
- * ⚠ NOT A DRAG. Scrolling is handled by `KEYBOARD_DISMISS_MODE`; a finger that moves further than `SLOP` is
- *   a scroll, not a tap.
+ * ⚠ NOT A DRAG — EXCEPT ON WEB. On native, scrolling is handled by `KEYBOARD_DISMISS_MODE`; a finger that
+ *   moves further than `SLOP` is a scroll, not a tap. On web that mode is `none` (react-native-web's
+ *   `on-drag` blurred on every scroll event, so typing in a search that shortened its list closed the
+ *   keyboard mid-word — PO 10-08), so the swipe-down lives here: a finger that really moves, from
+ *   somewhere that is not the field, closes it.
  * ⚠ A CONTROL THAT MUST KEEP THE KEYBOARD (a chat Send, a field's clear or show-password button) spreads
  *   `KEEP_KEYBOARD` on itself. Its `onTouchStart` runs before this root's touch-end (children first), and
  *   the flag is spent by that touch-end.
@@ -124,7 +127,17 @@ export function KeyboardTapAway({ children }: { children: ReactNode }) {
     const t = touch.current;
     if (!t) return;
     const p = point(e.nativeEvent);
-    if (Math.abs(p.x - t.x) > SLOP || Math.abs(p.y - t.y) > SLOP) t.moved = true;
+    if (t.moved || (Math.abs(p.x - t.x) <= SLOP && Math.abs(p.y - t.y) <= SLOP)) return;
+    t.moved = true;
+    // Web's swipe-down (see the header). Only a drag that started off the field: dragging inside it
+    // selects text.
+    if (Platform.OS === 'web' && !t.onField) {
+      try {
+        if (focusedField() === t.field) blur(t.field);
+      } catch {
+        /* a keyboard nicety must never take a screen down */
+      }
+    }
   };
 
   const onTouchEnd = () => {
