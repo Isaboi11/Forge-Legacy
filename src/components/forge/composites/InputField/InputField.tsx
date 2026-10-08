@@ -51,6 +51,8 @@ export function InputField({
   showCount = false,
   leadingIcon,
   disabled = false,
+  onFocus,
+  onBlur,
   ...rest
 }: InputFieldProps) {
   const [focus, setFocus] = useState(false)
@@ -82,8 +84,16 @@ export function InputField({
           onChangeText={onChange}
           maxLength={maxLength}
           editable={!disabled}
-          onFocus={() => setFocus(true)}
-          onBlur={() => setFocus(false)}
+          /* Chained, not replaced: a caller's onBlur (a held name committing, see `HeldText`) arriving through
+             `rest` would overwrite this one and leave the bronze focus edge lit after blur. */
+          onFocus={(e) => {
+            setFocus(true)
+            onFocus?.(e)
+          }}
+          onBlur={(e) => {
+            setFocus(false)
+            onBlur?.(e)
+          }}
           placeholderTextColor={flColor.gray600}
           accessibilityLabel={label}
           style={[styles.input, NO_WEB_OUTLINE]}
