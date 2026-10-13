@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
+import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { shareSummary, shareTargets, shareVerb } from '@/domain/share/fanout';
@@ -582,9 +583,9 @@ function Handle({ pan }: { pan?: GestureResponderHandlers }) {
 
 function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
   return (
-    <Pressable onPress={onToggle} accessibilityRole="switch" accessibilityState={{ checked: on }} accessibilityLabel={label} style={[styles.switch, on ? styles.switchOn : styles.switchOff]}>
-      <View style={[styles.switchKnob, on ? styles.switchKnobOn : styles.switchKnobOff]} />
-    </Pressable>
+    /* One switch for the whole app (settings-24): the Settings toggle, which also says on/off to a
+       screen reader on web (settings-18). */
+    <SettingsToggle value={on} onChange={onToggle} accessibilityLabel={label} />
   );
 }
 
@@ -694,12 +695,6 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 15 },
   detailRowDiv: { borderTopWidth: 1, borderTopColor: flColor.divider },
   detailLabel: { fontSize: 14, color: flColor.cream100 },
-  switch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-  switchOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
-  switchOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
-  switchKnob: { width: 18, height: 18, borderRadius: 9 },
-  switchKnobOn: { backgroundColor: flColor.bronze300 },
-  switchKnobOff: { backgroundColor: flColor.charcoal500 },
 
   destGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   destTile: { width: '47%', flexGrow: 1, alignItems: 'center', gap: 9, paddingVertical: 16, borderRadius: flRadius.lg, borderWidth: 1 },

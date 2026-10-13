@@ -867,6 +867,7 @@ function MyRecipesScreen() {
             {/* use in plans */}
             <Pressable
               accessibilityRole="switch"
+              aria-checked={form.usePlan}
               accessibilityState={{ checked: form.usePlan }}
               style={styles.switchRow}
               onPress={() => setForm({ ...form, usePlan: !form.usePlan })}

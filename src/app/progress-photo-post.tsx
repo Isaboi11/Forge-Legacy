@@ -454,6 +454,7 @@ export default function ProgressPhotoPostRoute() {
                 key={t.key}
                 onPress={() => setIncl((c) => ({ ...c, [t.key]: !c[t.key] }))}
                 accessibilityRole="switch"
+                aria-checked={on}
                 accessibilityState={{ checked: on }}
                 accessibilityLabel={t.label}
                 style={[styles.togglePill, on ? styles.chipOn : styles.chipOff]}

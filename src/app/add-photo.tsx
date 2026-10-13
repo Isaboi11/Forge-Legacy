@@ -381,6 +381,7 @@ export default function AddPhotoScreen() {
           <Pressable
             onPress={() => setStarred((v) => !v)}
             accessibilityRole="switch"
+            aria-checked={starred}
             accessibilityState={{ checked: starred }}
             accessibilityLabel="Mark as a highlight"
             style={({ pressed }) => [styles.starRow, starred ? styles.starRowOn : null, pressed ? styles.pressed : null, liftLabel ? styles.hidden : null]}
