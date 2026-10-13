@@ -493,18 +493,30 @@ export default function MealDetailScreen() {
 
         {/* correct a row that has no food behind it — a step of THIS sheet, like Clear below */}
         {sheet === 'edit' && targetEntry ? (
-          entryEditor(targetEntry) === 'servings' ? (
-            <ServingsForm key={targetEntry.id} entry={targetEntry} busy={busy} onSubmit={(patch) => saveEdit(targetEntry, patch)} />
-          ) : (
-            <QuickEntryForm
-              key={targetEntry.id}
-              initial={targetEntry}
-              action="Save"
-              verb="save"
-              busy={busy}
-              onSubmit={({ name, macros }) => saveEdit(targetEntry, numbersPatch(targetEntry, name, macros))}
-            />
-          )
+          <>
+            {entryEditor(targetEntry) === 'servings' ? (
+              <ServingsForm key={targetEntry.id} entry={targetEntry} busy={busy} onSubmit={(patch) => saveEdit(targetEntry, patch)} />
+            ) : (
+              <QuickEntryForm
+                key={targetEntry.id}
+                initial={targetEntry}
+                action="Save"
+                verb="save"
+                busy={busy}
+                onSubmit={({ name, macros }) => saveEdit(targetEntry, numbersPatch(targetEntry, name, macros))}
+              />
+            )}
+            {/* Delete on the sheet that corrects the row, as Food Detail has — with a mouse there was no swipe (N-26, QA 09-26). */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${targetEntry.name} from ${MEAL_LABELS[meal]}`}
+              disabled={busy}
+              onPress={() => deleteEntry(targetEntry)}
+              style={styles.sheetDelete}
+            >
+              <Text style={styles.sheetDeleteText}>{`Delete from ${MEAL_LABELS[meal]}`}</Text>
+            </Pressable>
+          </>
         ) : null}
 
         {/* move one row, or copy the whole meal */}
@@ -822,6 +834,8 @@ const styles = StyleSheet.create({
   actionLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
   actionDanger: { color: flColor.redMuted },
   actionNote: { fontSize: 13, color: flColor.gray600 },
+  sheetDelete: { alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, marginBottom: 8 },
+  sheetDeleteText: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
 
   moveBody: { gap: 16, paddingBottom: 8 },
   dayPills: {
