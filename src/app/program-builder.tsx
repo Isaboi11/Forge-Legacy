@@ -1895,7 +1895,7 @@ function SetupView({
             <View style={styles.progressHead}>
               <Text style={styles.progressLabel}>Program progress</Text>
               <Text style={styles.progressLink}>
-                {builtWeeks} of {draft.weeks} weeks built ›
+                {builtWeeks} of {countOf(draft.weeks, 'week')} built ›
               </Text>
             </View>
             <ProgressBar value={builtWeeks} max={draft.weeks} />
@@ -2139,7 +2139,7 @@ function WeekDaysView({
         <View style={styles.progressHead}>
           <Text style={styles.progressLabel}>Program progress</Text>
           <Text style={styles.progressLink}>
-            {built} of {draft.weeks} weeks built ›
+            {built} of {countOf(draft.weeks, 'week')} built ›
           </Text>
         </View>
         <ProgressBar value={built} max={draft.weeks} />

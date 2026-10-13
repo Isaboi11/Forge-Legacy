@@ -18,6 +18,7 @@ import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
 import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
 import { FitText } from '@/components/forge/FitText'
+import { countOf } from '@/domain/text/plural'
 
 export interface ProgramMissionGridProps {
   /**
@@ -114,7 +115,7 @@ export function ProgramMissionGrid({
         ref={missionRef}
         onPress={onMission}
         accessibilityRole="button"
-        accessibilityLabel={`Mission: ${missionTarget}. ${goalsRemaining} goals remaining.`}
+        accessibilityLabel={`Mission: ${missionTarget}. ${countOf(goalsRemaining, 'goal')} remaining.`}
         style={({ pressed }) => [styles.solo, pressed ? styles.soloPressed : null]}
       >
         <SectionHeader label="Mission" />
@@ -126,7 +127,7 @@ export function ProgramMissionGrid({
         <View style={styles.soloFoot}>
           <TargetIcon />
           <Text style={styles.goalsText}>
-            {goalsRemaining} {goalsRemaining === 1 ? 'goal' : 'goals'} remaining
+            {countOf(goalsRemaining, 'goal')} remaining
           </Text>
           <View style={styles.soloChevron}>
             <ChevronRightIcon size={16} color={flColor.gray600} />
@@ -201,7 +202,7 @@ export function ProgramMissionGrid({
         ref={missionRef}
         onPress={onMission}
         accessibilityRole="button"
-        accessibilityLabel={`Mission: ${missionTarget}. ${goalsRemaining} goals remaining.`}
+        accessibilityLabel={`Mission: ${missionTarget}. ${countOf(goalsRemaining, 'goal')} remaining.`}
         style={({ pressed }) => [styles.col, pressed ? styles.colPressed : null]}
       >
         <ColumnHeader label="Mission" />
@@ -213,7 +214,7 @@ export function ProgramMissionGrid({
         <View style={styles.goalsRow}>
           <TargetIcon />
           <Text style={styles.goalsText}>
-            {goalsRemaining} {goalsRemaining === 1 ? 'goal' : 'goals'} remaining
+            {countOf(goalsRemaining, 'goal')} remaining
           </Text>
         </View>
       </Pressable>

@@ -21,6 +21,7 @@ import { FitText } from '@/components/forge/FitText'
 import { flColor, flFont, flGradient, flRadius, flShadow, flType } from '@/constants/foundation'
 import type { ResolvedArtwork } from '@/domain/home-artwork/types'
 import { resolveArtworkSource } from '@/domain/home-artwork/artwork-source'
+import { countOf } from '@/domain/text/plural'
 import { Button } from '../../composites/Button'
 import { BarbellIcon, ChevronRightIcon, FlameIcon } from '../../primitives/icons/HomeIcons'
 
@@ -243,7 +244,7 @@ export function TodaysWorkoutCard({ resolved, title, focus, eyebrow, exerciseCou
           fullWidth
           onPress={onStart}
           icon={<FlameIcon />}
-          accessibilityLabel={resumeSets ? `Continue workout — ${resumeSets} sets already logged` : (startLabel ?? 'Start workout')}
+          accessibilityLabel={resumeSets ? `Continue workout — ${countOf(resumeSets, 'set')} already logged` : (startLabel ?? 'Start workout')}
         >
           {resumeSets ? 'Continue Workout' : (startLabel ?? 'Start Workout')}
         </Button>

@@ -121,7 +121,9 @@ export function schemeText(ex: ProgramExercise): string {
 
   if (isTimed(ex)) {
     const n = setCount(ex);
-    const d = durText(ex.durationSec);
+    /* Spelled out here (home-23, QA 09-26): "Row 10m" read as ten metres. The tight set-table cells keep
+       `durText`'s "10m"; a written prescription has the room for "10 min". */
+    const d = durText(ex.durationSec).replace(/^(\d+)m/, '$1 min');
     return (n > 1 ? `${n} × ${d}` : d) + perText(ex);
   }
 

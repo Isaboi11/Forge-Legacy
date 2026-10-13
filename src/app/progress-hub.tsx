@@ -487,7 +487,7 @@ function StrengthTile({ metric, onPress }: { metric: MetricSeries; onPress: () =
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${metric.name} — ${currentLabel(metric, units)}, ${metric.sessions} sessions`}
+      accessibilityLabel={`${metric.name} — ${currentLabel(metric, units)}, ${countOf(metric.sessions, 'session')}`}
       style={styles.strengthTile}
     >
       <Text style={styles.tileCat}>{metric.category}</Text>
