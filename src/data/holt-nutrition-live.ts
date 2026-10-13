@@ -1,3 +1,4 @@
+import { isPlausibleEatenKcal } from '@/domain/coach/kitchen';
 import { localToday, totals } from '@/domain/nutrition/day';
 import { summariseNutrition } from '@/domain/nutrition/holt-summary';
 import { buildWeek, summarise, weekDays, type DayTotals } from '@/domain/nutrition/week';
@@ -33,7 +34,9 @@ export async function fetchNutritionSummary(): Promise<string | null> {
 
     const week = buildWeek(days, new Map(range.map((d) => [d.iso, d])), history, today);
     const summary = summarise(week);
-    const todaySoFar = totals(day.entries).kcal;
+    /* A diary past what anybody could eat is a typo, not a day — left out, as "Left today" is (kitchen-19, QA 09-26). */
+    const eatenToday = totals(day.entries).kcal;
+    const todaySoFar = isPlausibleEatenKcal(eatenToday) ? eatenToday : null;
 
     return summariseNutrition({
       week,
