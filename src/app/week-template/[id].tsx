@@ -130,11 +130,8 @@ export default function WeekTemplateDetail() {
 
       <AppBar
         onBack={goBack}
-        title={
-          <Text style={styles.barTitle} numberOfLines={1}>
-            {week?.name ?? 'Week'}
-          </Text>
-        }
+        /* The shared bar's string title, like starter templates (legacy-28, QA 09-26). */
+        title={week?.name ?? 'Week'}
         actions={
           week ? (
             <Pressable
@@ -275,7 +272,6 @@ export default function WeekTemplateDetail() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: flColor.base },
-  barTitle: { fontFamily: flFont.display, fontSize: 16, fontWeight: '600', color: flColor.cream100 },
   barBtn: { paddingHorizontal: 10, paddingVertical: 6 },
   barBtnText: { fontSize: 15, color: flColor.gray400, letterSpacing: 1 },
 

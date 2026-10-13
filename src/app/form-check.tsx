@@ -20,7 +20,8 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { HoltMark } from '@/components/forge/HoltMark';
-import { CloseGlyph, FC, FcPrimary, FcSecondary, FormBar, FrameFill, HoltSays, MarkedFrame } from '@/components/forge/form-check/FormCheckParts';
+import { AppBar } from '@/components/forge/composites/AppBar';
+import { CloseGlyph, FC, FcPrimary, FcSecondary, FrameFill, HoltSays, MarkedFrame } from '@/components/forge/form-check/FormCheckParts';
 import { StopCalls } from '@/components/forge/StopCalls';
 import { ScreenBackground } from '@/components/screen-background';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -329,13 +330,11 @@ export default function FormCheckScreen() {
   const restart = () => setStage({ step: 'start' });
 
   // ── What to draw ─────────────────────────────────────────────────────────────
-  const top = { paddingTop: insets.top };
-
-  if (!canRead) return <NotOnDevice onClose={close} top={top} />;
+  if (!canRead) return <NotOnDevice onClose={close} />;
 
   if (entStatus === 'ready' && !premiumAi && stage.step === 'start') {
     return (
-      <Shell top={top} onClose={close}>
+      <Shell onClose={close}>
         <CreditsState notEntitled premiumAi={false} onPlans={() => router.push('/subscription')} />
       </Shell>
     );
@@ -343,7 +342,7 @@ export default function FormCheckScreen() {
 
   if (stage.step === 'trim') {
     return (
-      <Shell top={top} onClose={close}>
+      <Shell onClose={close}>
         <TrimStage
           clip={stage.clip}
           onSend={(a, b) => void send(stage.clip, a, b)}
@@ -359,7 +358,7 @@ export default function FormCheckScreen() {
 
   if (stage.step === 'watching') {
     return (
-      <Shell top={top}>
+      <Shell>
         <WatchingStage
           phase={stage.phase}
           lift={stage.lift.name}
@@ -376,7 +375,7 @@ export default function FormCheckScreen() {
   if (stage.step === 'read') {
     const r = stage.r;
     return (
-      <Shell top={top} onClose={close}>
+      <Shell onClose={close}>
         <ReadStage
           r={r}
           sessionActive={!!session}
@@ -406,7 +405,7 @@ export default function FormCheckScreen() {
 
   if (stage.step === 'unreadable' || stage.step === 'problem') {
     return (
-      <Shell top={top} onClose={close}>
+      <Shell onClose={close}>
         <View style={s.center}>
           <HoltSays text={stage.step === 'unreadable' ? FORM_NO_READ : stage.text} />
         </View>
@@ -420,7 +419,7 @@ export default function FormCheckScreen() {
 
   if (stage.step === 'stopped') {
     return (
-      <Shell top={top} onClose={close}>
+      <Shell onClose={close}>
         <View style={s.center}>
           <View style={s.stopBox}>
             <Text style={s.stopKicker}>{stage.kicker}</Text>
@@ -435,7 +434,7 @@ export default function FormCheckScreen() {
 
   if (stage.step === 'credits' || stage.step === 'not_entitled') {
     return (
-      <Shell top={top} onClose={close}>
+      <Shell onClose={close}>
         <CreditsState notEntitled={stage.step === 'not_entitled'} premiumAi={premiumAi} onPlans={() => router.push('/subscription')} />
       </Shell>
     );
@@ -443,7 +442,7 @@ export default function FormCheckScreen() {
 
   // ── 01 Start ─────────────────────────────────────────────────────────────────
   return (
-    <Shell top={top} onClose={close}>
+    <Shell onClose={close}>
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={s.flex} contentContainerStyle={s.startBody} keyboardShouldPersistTaps="handled">
         <HoltSays
           text="Show me a set. Any angle works. Get your whole body in frame and I'll tell you what I see."
@@ -573,20 +572,13 @@ export default function FormCheckScreen() {
 // Pieces
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-function Shell({ children, top, onClose, title = 'Form Check' }: { children: React.ReactNode; top: { paddingTop: number }; onClose?: () => void; title?: string }) {
+/** The shared AppBar (modal-native × on the leading edge) — it pads the safe-area top itself, so the
+ *  shell no longer does. It drew its own FormBar (legacy-28 / visualA-29, QA 09-26). */
+function Shell({ children, onClose, title = 'Form Check' }: { children: React.ReactNode; onClose?: () => void; title?: string }) {
   return (
-    <View style={[s.root, top]}>
+    <View style={s.root}>
       <ScreenBackground atmospheric overlay={null} />
-      <FormBar
-        title={title}
-        right={
-          onClose ? (
-            <Pressable onPress={onClose} style={s.barBtn} accessibilityRole="button" accessibilityLabel="Close" hitSlop={4}>
-              <CloseGlyph />
-            </Pressable>
-          ) : undefined
-        }
-      />
+      <AppBar title={title} onClose={onClose} />
       {children}
     </View>
   );
@@ -1048,11 +1040,11 @@ function CreditsState({ notEntitled, premiumAi, onPlans }: { notEntitled: boolea
   );
 }
 
-function NotOnDevice({ onClose, top }: { onClose: () => void; top: { paddingTop: number } }) {
+function NotOnDevice({ onClose }: { onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const web = Platform.OS === 'web';
   return (
-    <Shell top={top} onClose={onClose}>
+    <Shell onClose={onClose}>
       <View style={[s.center, s.needPad]}>
         <Text style={s.needTitle}>{web ? 'Form check needs a browser that can play video.' : 'Form check needs the latest version of the app.'}</Text>
         {web ? null : <Text style={s.needSub}>Build 8 and older.</Text>}

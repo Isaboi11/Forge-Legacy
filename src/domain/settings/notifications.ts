@@ -179,7 +179,7 @@ export const NOTIF_SECTIONS: NotifSection[] = [
   },
   {
     key: 'challenges',
-    label: 'Challenges',
+    label: 'Competitions', // one word for the feature, as every competition screen says (B9, QA 09-26)
     /*
      * 0164 replaced `challenge_updates` (off) with this (on), and it is a rename rather than a split.
      *
@@ -193,9 +193,9 @@ export const NOTIF_SECTIONS: NotifSection[] = [
      * Both directions ride one key, exactly as `friend_request` and `friend_accepted` have shared
      * `friend_requests` since 0073 — an invitation and its answer are one exchange.
      */
-    blurb: 'Being challenged, and being answered. On by default — a competition invite is aimed at you.',
+    blurb: 'Being invited to compete, and being answered. On by default — a competition invite is aimed at you.',
     toggles: [
-      { key: 'challenge_invites', label: 'Competition Invites', desc: 'When a friend challenges you, and when someone accepts', def: true, icon: 'trophy' },
+      { key: 'challenge_invites', label: 'Competition Invites', desc: 'When a friend invites you to a competition, and when someone accepts', def: true, icon: 'trophy' },
     ],
   },
   /*
