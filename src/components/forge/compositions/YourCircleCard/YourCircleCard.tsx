@@ -37,6 +37,7 @@ import { SectionHeader } from '../../composites/SectionHeader'
 import { ChevronRightIcon } from '../../primitives/icons/HomeIcons'
 import { EngravedIcon } from '../../primitives/icons/EngravedIcon'
 import { minutesTraining, othersLine, type TrainingAthlete } from '@/data/presence-live'
+import { countOf } from '@/domain/text/plural'
 
 export interface FriendActivity {
   name: string
@@ -141,7 +142,7 @@ export function YourCircleCard({ liveUsers, friendActivity, hasCircle = true, on
               <Pressable
                 onPress={() => onViewAthlete(live.userId)}
                 accessibilityRole="button"
-                accessibilityLabel={`${live.name} is training${live.label ? ` ${live.label}` : ''}, started ${minutesTraining(live.startedAt)} minutes ago`}
+                accessibilityLabel={`${live.name} is training${live.label ? ` ${live.label}` : ''}, started ${countOf(minutesTraining(live.startedAt), 'minute')} ago`}
                 style={styles.livePerson}
               >
                 <Avatar name={live.name} src={live.avatarUrl ?? undefined} size="listRow" presence />

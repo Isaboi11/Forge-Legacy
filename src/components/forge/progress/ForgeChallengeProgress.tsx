@@ -2,6 +2,7 @@ import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { color } from '@/constants/tokens'
+import { countOf } from '@/domain/text/plural'
 import { PROG } from './_progressTokens'
 import type { ForgeChallengeProgressProps } from './types'
 
@@ -42,7 +43,7 @@ export function ForgeChallengeProgress({
 
       {/* Footer row */}
       <View style={styles.footer}>
-        <Text style={styles.remaining}>{`${daysRemaining} days remaining`}</Text>
+        <Text style={styles.remaining}>{`${countOf(daysRemaining, 'day')} remaining`}</Text>
         <Text style={styles.pct}>{`${pct}% through`}</Text>
       </View>
     </View>

@@ -26,6 +26,7 @@ import {
   type FinalStanding,
 } from '@/data/challenges-live';
 import { useQuery } from '@/lib/useQuery';
+import { countOf, pluralWord } from '@/domain/text/plural';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { themeScrim } from '@/constants/theme-scrim';
 
@@ -446,9 +447,9 @@ function BadgeRow({ badge: b }: { badge: ChallengeBadge }) {
   const title = b.kind === 'MOST_CONSISTENT' ? 'Most Consistent' : b.kind === 'LONGEST_STREAK' ? 'Longest Streak' : 'Biggest Climb';
   const detail =
     b.kind === 'MOST_CONSISTENT'
-      ? `${b.value} days trained`
+      ? `${countOf(b.value, 'day')} trained`
       : b.kind === 'LONGEST_STREAK'
-        ? `${b.value} consecutive days`
+        ? `${b.value} consecutive ${pluralWord(b.value, 'day')}`
         : `Up ${b.value} ${b.value === 1 ? 'place' : 'places'} from halfway`;
   return (
     <View style={styles.badgeRow}>

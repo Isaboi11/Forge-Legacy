@@ -23,7 +23,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { UploadError } from '@/lib/storage-upload';
-import { fetchSquadInvite, GOAL_UNITS, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
+import { fetchSquadInvite, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
 import { CHALLENGE_TYPES, daysLeft, fetchSquadCompetitions, fetchSquadHall, formatScore, metricLabel, placeLabel } from '@/data/challenges-live';
 import { daysLeftLabel } from '@/domain/challenges/season';
 import {
@@ -127,7 +127,6 @@ const GOAL_TARGET_PLACEHOLDER: Record<SquadGoalMetric, string> = {
   time_total: '100',
   pr_count: '25',
 };
-const goalUnit = (kind: SquadGoalMetric): string => GOAL_UNITS[kind];
 const fmtProgress = (n: number): string => String(Number(n.toFixed(1)));
 /** Digits and the FIRST decimal point only — "10.5.5" becomes "10.55", never a value `Number()` reads as NaN. */
 const oneDecimalPoint = (v: string): string => {
@@ -467,7 +466,8 @@ function SquadDetailRoute() {
   const titleOk = goalTitle.trim().length > 0;
   const targetOk = Number(goalTargetText) >= 1;
   const goalValid = titleOk && targetOk && windowOk;
-  const titleError = goalTitleEdit != null && !titleOk ? 'Give the goal a name.' : undefined;
+  /* Also once a target is typed: on a brand-new goal, a number with no name left Save grey with no reason. */
+  const titleError = (goalTitleEdit != null || goalTargetEdit != null) && !titleOk ? 'Give the goal a name.' : undefined;
   const targetError = goalTargetEdit != null && goalTargetEdit !== '' && !targetOk ? 'Enter a number of at least 1.' : undefined;
   const windowError = windowOk ? null : 'The end date has to come after the start.';
   const pinnedPosts = pinnedData ?? [];
@@ -513,7 +513,9 @@ function SquadDetailRoute() {
         setSavingGoal(false);
         closeGoalEditor();
         refetch();
-        showToast(activeGoalMode === 'edit' ? 'Goal updated' : 'New goal set');
+        /* No success toast (social2-24, QA 09-26): it landed on top of SET THE NEXT GOAL / RAISE THE BAR
+           while the old card was still showing, and the card itself turning into the new goal is the
+           confirmation. A failure still says so below. */
       },
       (e: unknown) => {
         setSavingGoal(false);
@@ -729,7 +731,7 @@ function SquadDetailRoute() {
           </View>
 
           <TourAnchor id="squad-hero" style={styles.metaRow}>
-            <Pressable onPress={() => setView('members')} accessibilityRole="button" accessibilityLabel={`${members.length} members, view roster`} hitSlop={6} style={styles.metaBtn}>
+            <Pressable onPress={() => setView('members')} accessibilityRole="button" accessibilityLabel={`${members.length === 1 ? '1 member' : `${members.length} members`}, view roster`} hitSlop={6} style={styles.metaBtn}>
               <PeopleIcon size={14} color={flColor.gray400} />
               <Text style={styles.metaText}>{members.length === 1 ? '1 member' : `${members.length} members`}</Text>
             </Pressable>
@@ -802,8 +804,8 @@ function SquadDetailRoute() {
                 {goalPhase === 'closed'
                   ? `${fmtProgress(squad.goalProgress)} ${goalUnitOf(squad.goalMetricKind, Number(fmtProgress(squad.goalProgress)))} logged${closedOn(squad.goalState.closedAt ?? squad.goalEndsAt)}`
                   : goalPhase === 'met'
-                    ? `${fmtProgress(squad.goalTarget)} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${squad.goalState.closedAt ? `met ${shortDay(squad.goalState.closedAt)}` : 'goal met'}`
-                    : `${fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget} ${goalUnit(squad.goalMetricKind)} · ${goalPct}% complete`}
+                    ? `${fmtProgress(squad.goalTarget)} / ${squad.goalTarget} ${goalUnitOf(squad.goalMetricKind, squad.goalTarget)} · ${squad.goalState.closedAt ? `met ${shortDay(squad.goalState.closedAt)}` : 'goal met'}`
+                    : `${fmtProgress(Math.min(squad.goalProgress, squad.goalTarget))} / ${squad.goalTarget} ${goalUnitOf(squad.goalMetricKind, squad.goalTarget)} · ${goalPct}% complete`}
               </Text>
               {goalPhase === 'live' && squad.goalState.daysLeft != null ? (
                 <Text style={styles.goalWindow}>{squad.goalState.daysLeft === 1 ? 'Final day' : `${squad.goalState.daysLeft} days left`}</Text>

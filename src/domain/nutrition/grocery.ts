@@ -1,7 +1,7 @@
 import { AISLES, GROCERY, type Aisle, type BuyUnit } from './grocery-data.ts';
 import { DAY_NAMES, cooksOf, recipeView, type PlanDay } from './meal-planner.ts';
 import { INGREDIENTS, type PlanSlot } from './recipes-data.ts';
-import { pluralOf } from '../text/plural.ts';
+import { countOf, pluralOf } from '../text/plural.ts';
 
 /**
  * Grocery List — built from the week's COOKS, never from the meals shown (Recipe Schema and Planner
@@ -264,7 +264,7 @@ const usd = (n: number): string => `$${Math.round(n).toLocaleString('en-US')}`;
 
 /** Grocery List's footer line. Too few prices → "4 of 23 items priced: ≈ $45", never beside the budget. */
 export function estimateLine(e: Estimate, budget: number | null): string {
-  if (!estimateCoversList(e)) return `${e.priced} of ${e.priced + e.unpriced} items priced: ≈ ${usd(e.dollars)}`;
+  if (!estimateCoversList(e)) return `${e.priced} of ${countOf(e.priced + e.unpriced, 'item')} priced: ≈ ${usd(e.dollars)}`;
   const base = `≈ ${usd(e.dollars)} at average US prices`;
   const parts = [budget ? `${base} · budget ${usd(budget)}` : base];
   if (e.unpriced) parts.push(`${e.unpriced} ${e.unpriced === 1 ? 'item' : 'items'} not priced`);
@@ -273,7 +273,7 @@ export function estimateLine(e: Estimate, budget: number | null): string {
 
 /** Meal Plan's budget line. Too few prices → the same honest count, no "of your $80 budget" (QA N-11). */
 export function budgetLine(e: Estimate, budget: number): string {
-  if (!estimateCoversList(e)) return `${e.priced} of ${e.priced + e.unpriced} items priced: ≈ ${usd(e.dollars)}`;
+  if (!estimateCoversList(e)) return `${e.priced} of ${countOf(e.priced + e.unpriced, 'item')} priced: ≈ ${usd(e.dollars)}`;
   const line = `Estimated ${usd(e.dollars)} of your ${usd(budget)} budget`;
   return e.unpriced ? `${line} · ${e.unpriced} ${e.unpriced === 1 ? 'item' : 'items'} not priced` : line;
 }
