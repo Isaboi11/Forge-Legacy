@@ -8,6 +8,7 @@ import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SquadSelectList, selectedSquads } from '@/components/forge/SquadSelectList';
 import { flColor, flRadius } from '@/constants/foundation';
 import { useToast } from '@/hooks/useCeremony';
+import { shareOrCopy } from '@/lib/share-or-copy';
 import { buildWorkoutRecap, fetchWorkoutShares, fmtVolume, type WorkoutSummary } from '@/data/squad-feed-live';
 import { cardioMarkerLabel, foodLine, type RecapFood, type RecapLead } from '@/domain/share/recap-stats';
 import type { PostAudience } from '@/data/friends-feed-live';
@@ -403,9 +404,17 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     void callerModalGone().then(() => router.push({ pathname: '/share-story', params: photo ? { workoutId, photo } : { workoutId } }));
   };
 
+  /* On a browser with no share sheet, `Share.share` rejected and the tap did nothing (settings-13's bug, here
+     too) — the text is copied instead, and the toast says so. */
+  const shareOrCopyOut = (text: string) =>
+    void shareOrCopy(text).then((r) => {
+      if (r === 'copied') showToast('Copied — paste it wherever you want to share it.');
+      else if (r === 'failed') showToast('Couldn’t share or copy that here.');
+    });
+
   const shareOutside = () => {
     onClose();
-    void Share.share({ title: 'Forge Legacy', message: sentence() });
+    shareOrCopyOut(sentence());
   };
 
   /**
@@ -419,7 +428,7 @@ export function ShareSessionSheet({ open, onClose, workoutId, workoutName, summa
     onClose();
     const text = sentence();
     if (Platform.OS === 'web') {
-      void Share.share({ title: 'Forge Legacy', message: text });
+      shareOrCopyOut(text);
       return;
     }
     const url = `sms:${Platform.OS === 'ios' ? '&' : '?'}body=${encodeURIComponent(text)}`;

@@ -1,7 +1,7 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -49,6 +49,21 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
  * fetch-then-setState pass to race with typing — and none of the sync-setState-in-effect the strict
  * react-compiler lint rejects.
  */
+/** Unsaved edits ask before they go (QA 09-26 settings-23). */
+function confirmDiscard(discard: () => void) {
+  const msg = 'Your changes haven’t been saved.';
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.confirm(`Discard changes?
+
+${msg}`)) discard();
+    return;
+  }
+  Alert.alert('Discard changes?', msg, [
+    { text: 'Keep Editing', style: 'cancel' },
+    { text: 'Discard', style: 'destructive', onPress: discard },
+  ]);
+}
+
 export default function EditProfileScreen() {
   const router = useRouter();
   const { data, loading } = useQuery(fetchAccountIdentity, []);
@@ -205,7 +220,7 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
       // showing the old name and photo until the app is reloaded.
       refetchProfile();
       showToast('Profile updated');
-      onDone();
+      leave();
     } catch (e) {
       setSaving(false);
       if (e instanceof HandleTakenError) {
@@ -218,20 +233,33 @@ function Form({ initial, onDone }: { initial: AccountIdentity; onDone: () => voi
   };
 
   /* Back with unsaved edits asks first — it used to throw them away silently (QA 09-26 settings-23). */
-  const back = () => {
-    if (!dirty || saving) return onDone();
-    const msg = 'Your changes haven’t been saved.';
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && window.confirm(`Discard changes?
-
-${msg}`)) onDone();
-      return;
-    }
-    Alert.alert('Discard changes?', msg, [
-      { text: 'Keep Editing', style: 'cancel' },
-      { text: 'Discard', style: 'destructive', onPress: onDone },
-    ]);
+  /* Set once leaving is decided (saved, discarded, or nothing to lose), so the guard below lets it through. */
+  const leaving = useRef(false);
+  const leave = () => {
+    leaving.current = true;
+    onDone();
   };
+  const back = () => {
+    if (!dirty || saving) return leave();
+    confirmDiscard(leave);
+  };
+  /*
+   * …and so does every OTHER way out (settings-23): the iOS edge swipe and Android's back button removed
+   * the screen without passing through `back`, so the edits went anyway.
+   */
+  const navigation = useNavigation();
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', (e) => {
+        if (leaving.current || !dirty || saving) return;
+        e.preventDefault();
+        confirmDiscard(() => {
+          leaving.current = true;
+          navigation.dispatch(e.data.action);
+        });
+      }),
+    [navigation, dirty, saving],
+  );
 
   return (
     <>
