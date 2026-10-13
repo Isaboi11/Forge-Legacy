@@ -56,6 +56,7 @@ import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { useQuery } from '@/lib/useQuery';
 import { rememberExperience } from '@/lib/coach-memory';
+import { countOf } from '@/domain/text/plural';
 
 /**
  * Coach Holt.
@@ -370,7 +371,7 @@ export default function CoachScreen() {
         setBuilt({
           kind: 'program',
           title: structure.name,
-          stats: [`${structure.weeks} weeks`, `${structure.daysPerWeek} days`, `~${sessionMinutes} min`],
+          stats: [countOf(structure.weeks, 'week'), countOf(structure.daysPerWeek, 'day'), `~${sessionMinutes} min`], // programs-18
           tag: GOAL_LABEL[effGoal!],
           why: rationaleFor({
             goal: effGoal!,

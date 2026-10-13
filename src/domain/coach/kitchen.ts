@@ -167,12 +167,12 @@ export function replyOffersOnline(reply: string): boolean {
 
 /*
  * ══ THE KITCHEN'S NEW CHAT MENU ══ (kitchen-13, QA 09-26). It offered "Build something" and "Training
- * question" in the kitchen. These are the Kitchen Home doors instead — each goes where the card does.
+ * question" in the kitchen. Then it repeated the Kitchen Home's own cards (What can I make?, Grocery list),
+ * which "New conversation" already brings back (holt-22) — so it keeps only what Home has no card for. The
+ * sheet adds "Food question" beside it, the kitchen's twin of "Training question".
  */
 export const KITCHEN_MENU: readonly { label: string; goTo?: string; ask?: string }[] = [
-  { label: 'What can I make?', ask: KITCHEN_MAKE_SEED, goTo: '/my-recipes' },
   { label: 'Log food', goTo: '/log-food' },
-  { label: 'Grocery list', goTo: '/grocery-list' },
 ];
 
 /*
@@ -184,12 +184,16 @@ const PLAUSIBLE_EATEN_KCAL = 15000;
 const PLAUSIBLE_EATEN_PROTEIN_G = 1000;
 const PLAUSIBLE_TARGET_KCAL = 10000;
 
+/** A day's eaten kcal somebody could have eaten — the same line gates "Today so far" in the summary (kitchen-19). */
+export function isPlausibleEatenKcal(kcal: number): boolean {
+  return Number.isFinite(kcal) && kcal >= 0 && kcal <= PLAUSIBLE_EATEN_KCAL;
+}
+
 /** What's left today, from the app's own totals — so Holt quotes it rather than doing the subtraction. */
 export function leftTodayLine(eaten: { kcal: number; protein: number }, target: { kcal: number; protein: number } | null): string | null {
   if (!target || !(target.kcal > 0)) return null;
   const plausible =
-    Number.isFinite(eaten.kcal) && Number.isFinite(eaten.protein) && Number.isFinite(target.protein) &&
-    eaten.kcal >= 0 && eaten.kcal <= PLAUSIBLE_EATEN_KCAL &&
+    isPlausibleEatenKcal(eaten.kcal) && Number.isFinite(eaten.protein) && Number.isFinite(target.protein) &&
     eaten.protein >= 0 && eaten.protein <= PLAUSIBLE_EATEN_PROTEIN_G &&
     target.kcal <= PLAUSIBLE_TARGET_KCAL;
   if (!plausible) return null;

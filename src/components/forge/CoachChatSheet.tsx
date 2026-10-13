@@ -2738,8 +2738,8 @@ export function CoachChatSheet({
         /* A room typed in answer to "where?", or the first one they have ever named, is kept. Any other
            is this request's alone: "I'm at a hotel gym today" must not become where they train. */
         if (isRoom(patch.environment) && (q?.id === 'where' || room.current == null)) keepRoom(patch.environment);
-        if (r.say) say({ kind: 'holt', text: r.say });
         if (mode) {
+          if (r.say) say({ kind: 'holt', text: r.say });
           alsoSaid(text);
           return void advance({ ...constraints, ...patch }, m);
         }
@@ -2755,6 +2755,10 @@ export function CoachChatSheet({
            to be in state first, or a fully typed build comes back as "What's the goal?". */
         setConstraints(request);
         if (opens === 'program' && !(await guardActiveProgram(request))) return;
+        /* ⚠ THE MODEL'S LINE WAITS FOR THE GUARDS (QA holtai-22). Said first, "Let's replace that plan." sat
+           above "You've already got X running…" — Holt announcing a replacement nobody had agreed to — and
+           above the allowance stop it contradicted. It is only true once the build is actually going ahead. */
+        if (r.say) say({ kind: 'holt', text: r.say });
         return void advance(request, opens);
       }
     }
@@ -3167,27 +3171,34 @@ export function CoachChatSheet({
               />
               {/* kitchen-13 (QA 09-26): in the kitchen the rows are the kitchen's own doors, never training. */}
               {kitchen ? (
-                KITCHEN_MENU.map((d) => (
-                  <MenuRow
-                    key={d.label}
-                    divided
-                    label={d.label}
-                    onPress={() => {
-                      setMenu(false);
-                      kitchenDoor(d.label, d);
-                    }}
-                  />
-                ))
+                <>
+                  {canType ? (
+                    <MenuRow
+                      divided
+                      label="Food question"
+                      onPress={() => {
+                        setMenu(false);
+                        say({ kind: 'me', text: 'Food question' }, { kind: 'holt', text: 'Go ahead — ask me anything about what you eat.' });
+                        setTimeout(() => composerInput.current?.focus(), 80);
+                      }}
+                    />
+                  ) : null}
+                  {KITCHEN_MENU.map((d) => (
+                    <MenuRow
+                      key={d.label}
+                      divided
+                      label={d.label}
+                      onPress={() => {
+                        setMenu(false);
+                        kitchenDoor(d.label, d);
+                      }}
+                    />
+                  ))}
+                </>
               ) : (
                 <>
-                  <MenuRow
-                    divided
-                    label="Build something"
-                    onPress={() => {
-                      setMenu(false);
-                      tapChip({ label: 'Build me something', patch: {} });
-                    }}
-                  />
+                  {/* holt-22 (QA 09-26): "Build something" was Home's first door again — "New conversation"
+                      brings Home back, so the menu keeps only what Home has no door for. */}
                   {/* holt-22 (QA 09-26): "Training question" opened the app-help list. Where he can read a typed
                       question it now asks for one and puts the cursor in the box; where he can't, the row says
                       what it opens. */}

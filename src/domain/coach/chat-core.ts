@@ -56,6 +56,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
 import { schemeText } from '../program/prescription.ts';
 import { shiftYmd, todayYmd } from '../dates/local-date.ts';
 import { MEDICAL_CONTEXT } from './medical-routing.ts';
+import { pluralWord } from '../text/plural.ts';
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 import type { DishCard } from '../nutrition/kitchen-cards.ts';
 
@@ -2118,7 +2119,7 @@ export function refusalCardFor(goal: Goal, weeksAvailable: number, daysPerWeek: 
   const alt = RACE_SPEC[altGoal];
   return {
     title: capitalise(alt.label),
-    meta: `${weeksAvailable} weeks · ${daysPerWeek} days · race day intact`,
+    meta: `${weeksAvailable} ${pluralWord(weeksAvailable, 'week')} · ${daysPerWeek} ${pluralWord(daysPerWeek, 'day')} · race day intact`, // (N-22, QA 09-26)
     body: message,
     primary: `Build the ${alt.label}`,
     secondary: 'Pick another race',
