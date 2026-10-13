@@ -209,7 +209,7 @@ export const INGREDIENTS = {
   veg_broth: { fdcId: 171583, name: "Vegetable broth", kcal: 5, protein: 0.24, fat: 0.07, carb: 0.93, allergens: [], diet: "plant", us: { kind: 'cup', grams: 221 } },
   vinegar: { fdcId: 173469, name: "Cider vinegar", kcal: 21, protein: 0, fat: 0, carb: 0.93, allergens: [], diet: "plant", us: { kind: 'tsp', grams: 5 } },
   wheat_noodles: { fdcId: 168908, name: "Wheat noodles, dry", kcal: 356, protein: 11.35, fat: 0.81, carb: 74.1, allergens: ["gluten"], diet: "plant", us: { kind: 'oz' } },
-  whey: { fdcId: 173180, name: "Whey protein powder", kcal: 352, protein: 78.13, fat: 1.56, carb: 6.25, allergens: ["dairy"], diet: "animal", us: { kind: 'cup', grams: 97 } },
+  whey: { fdcId: 173180, name: "Whey protein powder", kcal: 352, protein: 78.13, fat: 1.56, carb: 6.25, allergens: ["dairy"], diet: "animal", us: { kind: 'each', grams: 30, one: "scoop", many: "scoops" } },
   white_beans: { fdcId: 175204, name: "White beans, canned, drained", kcal: 114, protein: 7.26, fat: 0.29, carb: 21.2, allergens: [], diet: "plant", us: { kind: 'cup', grams: 262 } },
   white_rice: { fdcId: 168877, name: "Long-grain white rice, dry", kcal: 365, protein: 7.13, fat: 0.66, carb: 79.95, allergens: [], diet: "plant", us: { kind: 'cup', grams: 185 } },
   wholewheat_bread: { fdcId: 172688, name: "Whole-wheat bread", kcal: 252, protein: 12.45, fat: 3.5, carb: 42.71, allergens: ["gluten"], diet: "plant", us: { kind: 'each', grams: 32, one: "slice", many: "slices" } },
