@@ -147,6 +147,7 @@ import { projectWatchState } from '@/domain/workout/watch-projection';
 import { pushWatchState, subscribeWatchCommands } from '@/lib/watch-bridge';
 import { activeTheme } from '@/constants/theme-choice';
 import { fitWordFontSize } from '@/domain/text/fit-word';
+import { countOf } from '@/domain/text/plural';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -3181,7 +3182,7 @@ export default function WorkoutScreen() {
      point there is no next set to compare and the strip says nothing. */
   const prevSet = currentSetIdx >= 0 ? liftHist?.sessions[0]?.sets[currentSetIdx] : undefined;
   const prevText =
-    prevSet?.reps == null ? null : prevSet.weight != null ? wxr(prevSet.weight, prevSet.reps) : `${prevSet.reps} reps`;
+    prevSet?.reps == null ? null : prevSet.weight != null ? wxr(prevSet.weight, prevSet.reps) : countOf(prevSet.reps, 'rep');
   /**
    * Every overlay this screen owns, and the bubble hides behind all of them.
    *
@@ -5054,6 +5055,9 @@ export default function WorkoutScreen() {
               }
             });
           }}
+          /* F10 (QA 09-26): a cue leaves on its own after six seconds instead of sitting over set 1 until it
+             is closed by hand. A squad-mate's message still waits to be read and answered. */
+          autoCloseMs={says?.source === 'cheer' ? undefined : 6000}
           openLabel="Ask Coach Holt about this exercise"
           /* Rides the bar's height so the coin keeps its distance from it on every phone — the single
              reason the inset was avoided here in the first place. */
@@ -5284,7 +5288,7 @@ export default function WorkoutScreen() {
                 <Text style={styles.pickerTitle} numberOfLines={1}>{sheetEx?.name ?? 'Set'}</Text>
                 <Text style={styles.setSheetSub}>
                   Set {sheet.setIdx + 1} of {sheetEx?.sets.length ?? 1}
-                  {sheetSet.toFailure ? ' · to failure' : sheetSet.targetSec != null ? ` · goal ${durText(sheetSet.targetSec)}` : ` · goal ${sheetSet.targetReps} reps`}
+                  {sheetSet.toFailure ? ' · to failure' : sheetSet.targetSec != null ? ` · goal ${durText(sheetSet.targetSec)}` : ` · goal ${countOf(sheetSet.targetReps, 'rep')}`}
                   {/* The sheet is where the number gets typed, so it is the last place the side can be
                       stated before it is too late to matter. */}
                   {sheetEx?.per ? ` per ${sheetEx.per}` : ''}
@@ -6247,7 +6251,7 @@ function SetTable({ exercise: ex, ei, units, soundOn, liftHist, flash, pop, show
     if (p?.reps == null) return null;
     /* No load on file is not no set: a band or an empty bar logged for twelve still did twelve
        (workout-12). A bodyweight movement arrives as `0` from the history read and says `BW × 12`. */
-    return p.weight != null ? prevFigure(p.weight, p.reps, units) : `${p.reps} reps`;
+    return p.weight != null ? prevFigure(p.weight, p.reps, units) : countOf(p.reps, 'rep');
   };
   /**
    * The same figure as `prevAtIndex`, as a NUMBER in the athlete's own units — what the live row's

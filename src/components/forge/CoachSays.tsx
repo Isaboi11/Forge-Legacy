@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -62,6 +63,13 @@ export interface CoachSaysProps {
    * `/workout` keys it on the text; a surface where the line is a one-shot event can key it on nothing.
    */
   onDismiss?: () => void;
+  /**
+   * Closes the line on its own after this long, as if the X were tapped (F10, QA 09-26). In a workout the
+   * line sat over set 1's weight, reps and check mark until it was closed by hand, on every exercise.
+   * Keyed on the TEXT: a new sentence gets its own full hold. Omit it for a line that must wait to be read
+   * (a squad-mate's message). Needs `onDismiss`, which is what it calls.
+   */
+  autoCloseMs?: number;
   /** What the sheet is called, for screen readers. */
   openLabel: string;
   /** Absolute placement, owned by the caller — the tab bar and the action bar sit at different heights. */
@@ -76,8 +84,20 @@ export interface CoachSaysProps {
   onReply?: (key: string) => void;
 }
 
-export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style, kitchen = false, replies, onReply }: CoachSaysProps) {
+export function CoachSays({ line, named = false, onPress, onDismiss, autoCloseMs, openLabel, style, kitchen = false, replies, onReply }: CoachSaysProps) {
   const said = line?.trim() || null;
+  /* The caller passes a fresh arrow every render (the workout screen re-renders every second), so the timer
+     reads the latest close through a ref instead of re-arming on each one. */
+  const dismissRef = useRef(onDismiss);
+  useEffect(() => {
+    dismissRef.current = onDismiss;
+  });
+  const canAutoClose = autoCloseMs != null && !!onDismiss;
+  useEffect(() => {
+    if (!said || !canAutoClose) return;
+    const t = setTimeout(() => dismissRef.current?.(), autoCloseMs);
+    return () => clearTimeout(t);
+  }, [said, canAutoClose, autoCloseMs]);
 
   return (
     /* `box-none` on the wrapper so the empty space around the mark stays tappable by whatever is under
