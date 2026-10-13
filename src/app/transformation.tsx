@@ -196,7 +196,7 @@ export default function TransformationRoute() {
               {!r.enabled ? 'Off' : blocked ? 'Notifications are off for Forge' : `On · ${FREQ_LABEL[r.freq]}`}
             </Text>
           </View>
-          <Pressable onPress={toggleRemind} accessibilityRole="switch" accessibilityState={{ checked: r.enabled }} accessibilityLabel="Toggle capture reminder" style={[styles.switch, r.enabled ? styles.switchOn : styles.switchOff]}>
+          <Pressable onPress={toggleRemind} accessibilityRole="switch" aria-checked={r.enabled} accessibilityState={{ checked: r.enabled }} accessibilityLabel="Toggle capture reminder" style={[styles.switch, r.enabled ? styles.switchOn : styles.switchOff]}>
             <View style={[styles.knob, r.enabled ? styles.knobOn : styles.knobOff]} />
           </Pressable>
         </View>

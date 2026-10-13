@@ -20,6 +20,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { Button } from '@/components/forge/composites/Button';
 import { ForgeSymbol, type SymbolName } from '@/components/forge/ForgeSymbol';
 import { ScreenBackground } from '@/components/screen-background';
@@ -766,16 +767,14 @@ export default function SubscriptionScreen() {
                     <Text style={styles.benefitTitle}>Premium AI</Text>
                     <Text style={styles.benefitDetail}>Admin switch for testing. No charge.</Text>
                   </View>
-                  <Pressable
-                    onPress={() => void onToggleAi()}
-                    disabled={aiPending != null}
-                    accessibilityRole="switch"
-                    accessibilityState={{ checked: aiOn }}
+                  {/* The Settings switch (settings-24/18) — one look, and its on/off reaches a screen reader on web. */}
+                  <SettingsToggle
+                    value={aiOn}
+                    onChange={() => {
+                      if (aiPending == null) void onToggleAi();
+                    }}
                     accessibilityLabel="Premium AI"
-                    style={[styles.aiSwitch, aiOn ? styles.aiSwitchOn : styles.aiSwitchOff]}
-                  >
-                    <View style={[styles.aiKnob, aiOn ? styles.aiKnobOn : styles.aiKnobOff]} />
-                  </Pressable>
+                  />
                 </View>
               </>
             ) : null}
@@ -1119,12 +1118,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.8 },
   aiRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 15 },
   aiText: { flex: 1 },
-  aiSwitch: { width: 44, height: 26, borderRadius: flRadius.pill, borderWidth: 1, justifyContent: 'center', paddingHorizontal: 2 },
-  aiSwitchOn: { backgroundColor: flColor.selectedFill, borderColor: flColor.accentBorder, alignItems: 'flex-end' },
-  aiSwitchOff: { backgroundColor: flColor.charcoal700, borderColor: flColor.charcoal600, alignItems: 'flex-start' },
-  aiKnob: { width: 18, height: 18, borderRadius: 9 },
-  aiKnobOn: { backgroundColor: flColor.bronze300 },
-  aiKnobOff: { backgroundColor: flColor.charcoal500 },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 16 },
   retryText: { fontSize: 13.5, lineHeight: 20, color: flColor.gray400, textAlign: 'center' },
   retryBtn: { minWidth: 140 },

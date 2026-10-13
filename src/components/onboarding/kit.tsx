@@ -209,9 +209,11 @@ const s = StyleSheet.create({
   fieldCount: { fontFamily: flFont.sans, fontSize: 11, fontWeight: '600', color: flColor.gray600 },
   input: {
     borderWidth: 1,
-    /* auth-18: Forge's `charcoal600` edge on `charcoal900` was ~1.2:1 — the field could not be found at
-       rest. `divider` is the role built for a visible quiet line; Alabaster keeps its taupe edge. */
-    borderColor: forgeOr<string>(flColor.divider, flColor.charcoal600),
+    /* auth-18: Forge's `charcoal600` edge on `charcoal900` was ~1.2:1 and `divider` only ~1.55:1 — the
+       field still could not be found at rest. #626269 measures ~3.1:1 on the field, clearing the 3:1
+       floor for a control's edge while staying quieter than the bronze focus edge. Alabaster keeps its
+       taupe edge. */
+    borderColor: forgeOr<string>('#626269', flColor.charcoal600),
     backgroundColor: flColor.charcoal900,
     borderRadius: flRadius.md,
     paddingHorizontal: 15,
