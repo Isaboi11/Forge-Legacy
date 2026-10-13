@@ -47,7 +47,7 @@ export function FriendActionSheet({ open, onClose, onTrainTogether, onChallenge 
       />
       <ActionRow
         icon={<SquadIcon size={20} />}
-        label="Challenge"
+        label="Compete" /* one word for the feature: Competitions (B9, QA 09-26) */
         onPress={() => {
           onClose()
           onChallenge?.()

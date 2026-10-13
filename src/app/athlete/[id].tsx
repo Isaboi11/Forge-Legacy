@@ -667,7 +667,8 @@ function Actions({
             way, and an action that will be rejected is worse than one that isn't shown. */}
         {isFriends ? (
           <>
-            <LiveAction glyph={<SwordsGlyph />} label="Challenge" onPress={onChallenge} />
+            {/* One word for the feature — "Compete", the verb of Competitions (B9, QA 09-26). */}
+            <LiveAction glyph={<SwordsGlyph />} label="Compete" onPress={onChallenge} />
             <LiveAction glyph={<PeopleGlyph />} label={live ? 'Join Workout' : 'Train With'} onPress={onTrainWith} />
           </>
         ) : action.kind === 'accept' ? (

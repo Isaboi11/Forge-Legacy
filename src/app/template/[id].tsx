@@ -230,14 +230,8 @@ function TemplateDetailScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.34)' }} />
 
-      <AppBar
-        onBack={goBack}
-        title={
-          <Text style={styles.barTitle} numberOfLines={1}>
-            {t?.name ?? 'Template'}
-          </Text>
-        }
-      />
+      {/* The shared bar's string title — mark + display font, like starter templates (legacy-28, QA 09-26). */}
+      <AppBar onBack={goBack} title={t?.name ?? 'Template'} />
 
       {loading ? (
         <View style={styles.status}>
@@ -618,7 +612,6 @@ function CoachCue({ note }: { note: string | null | undefined }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: flColor.base },
-  barTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100, letterSpacing: 0.2 },
 
   status: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 },
   statusText: { fontSize: 15, color: flColor.gray400, textAlign: 'center' },

@@ -226,7 +226,8 @@ export default function CompetitionHistoryScreen() {
           <View style={styles.emptyCrest}>
             <SwordsGlyph size={28} />
           </View>
-          <Text style={styles.emptyTitle}>No competitions yet</Text>
+          {/* Its own meaning, not Trophy Case's line (B9, QA 09-26). */}
+          <Text style={styles.emptyTitle}>No finished competitions yet</Text>
           <Text style={styles.emptyBody}>Every season you finish is recorded here for good.</Text>
         </View>
       ) : filtered.length === 0 ? (

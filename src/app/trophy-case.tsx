@@ -273,7 +273,8 @@ export default function TrophyCaseScreen() {
             <View style={styles.emptyCrest}>
               <SwordsGlyph size={26} />
             </View>
-            <Text style={styles.emptyTitle}>{data.isSelf ? 'No competitions yet' : 'Nothing here yet'}</Text>
+            {/* Trophies, not competitions — Competition History owns that line (B9, QA 09-26). */}
+            <Text style={styles.emptyTitle}>{data.isSelf ? 'No trophies yet' : 'Nothing here yet'}</Text>
             <Text style={styles.emptyBody}>
               {data.isSelf
                 ? 'Every championship and podium finish you earn is kept here for good.'
