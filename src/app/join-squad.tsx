@@ -42,7 +42,7 @@ export default function JoinSquadRoute() {
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
   const guard = usePremiumGate();
-  const { status: entitlement, refetch: refetchEntitlement } = useEntitlementState();
+  const { status: entitlement } = useEntitlementState();
 
   // Not while the entitlement is still being read: `guard` would answer "unable to verify" for a read
   // that simply has not landed yet (QA F6). The wait is one network round trip.
@@ -64,13 +64,9 @@ export default function JoinSquadRoute() {
    * before the write, not halfway through it.
    */
   const join = (accept: boolean, forCode: string = code) => {
-    if (!guard('squads')) {
-      // `guard` has shown "Unable to verify your subscription. Try again." — make the try-again real.
-      // The provider re-reads only when the uid changes, so without this a failed read stays failed and
-      // every retry tap gets the same toast until the screen is reopened (QA F6).
-      if (entitlement === 'unknown') refetchEntitlement();
-      return;
-    }
+    // On an unverifiable read `guard` shows "Unable to verify your subscription. Try again." and starts
+    // the re-read itself (QA F6), so the next tap has an answer.
+    if (!guard('squads')) return;
     setBusy(true);
     joinSquadByCode(forCode.trim(), accept).then(
       (res) => {

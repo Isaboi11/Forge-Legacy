@@ -14,6 +14,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { deleteTemplate, fetchTemplates, reorderTemplates, templateSummary, type WorkoutTemplate } from '@/data/templates-live';
 import { ReorderTemplatesSheet } from '@/components/forge/ReorderTemplatesSheet';
+import { NewTemplateSheet } from '@/components/forge/compositions/NewTemplateSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchWeekTemplates, weekSummary } from '@/data/week-templates-live';
 import { defaultAudiences, filterStarters, starterMeta, starterSummary, suggestedStarters } from '@/domain/workout/starter-templates';
@@ -38,7 +39,8 @@ import { forgeOr } from '@/constants/theme-scrim';
  *
  * But it answered only half the question. "I want to plan Thursday before Thursday" had no door at all,
  * which is the design's "Build it first". So **New Template now opens the Free Workout Builder (W-25,
- * `/workout-builder`)**, and the capture path is unchanged beside it.
+ * `/workout-builder`)**, and the capture path is unchanged beside it. Since 2026-10-15 it asks first —
+ * paste, a picture, or the builder (`NewTemplateSheet`) — the way Build a Program does.
  *
  * ── OTHER DELTAS ────────────────────────────────────────────────────────────
  *
@@ -97,9 +99,13 @@ export default function TemplatesScreen() {
      this — only athlete-authored rows in `workout_templates` do, which is why the count is a live read
      of that table and not of anything on this screen. */
   const guard = usePremiumGate();
+  /* "New" asks how to start — paste, a picture, or the builder — the way Build a Program does (PO 2026-10-15:
+     "paste text or paste a picture … just the same as a program. But for a templated day"). The cap is asked
+     here, before the chooser, because every answer in it ends in a new template. */
+  const [newOpen, setNewOpen] = useState(false);
   const newTemplate = () => {
     if (!guard('templates')) return;
-    router.push('/workout-builder');
+    setNewOpen(true);
   };
 
   /*
@@ -115,8 +121,8 @@ export default function TemplatesScreen() {
   /* ⚠ NO "BUILD A WEEK" DOOR HERE ANY MORE (Workouts restructure, PO 2026-09-22): this hub is reached
      from a card reading "Workout Templates — reusable individual workouts", and the model is Program →
      Weeks → Workouts. A week is built inside a program. Weeks the athlete ALREADY saved still list above
-     their templates and open W-29 — that is their data. The `+` therefore builds a template directly;
-     the chooser it used to open had only one other answer. */
+     their templates and open W-29 — that is their data. The `+` therefore makes a template — paste, a
+     picture or the builder (`newTemplate` above); the week chooser it used to open had only one other answer. */
   const onNew = () => newTemplate();
 
   const [reorderOpen, setReorderOpen] = useState(false);
@@ -204,8 +210,8 @@ export default function TemplatesScreen() {
             No program required either way.
           </Text>
           <View style={styles.primaryWrap}>
-            <Button variant="primary" onPress={newTemplate} accessibilityLabel="Build a template">
-              Build a Template
+            <Button variant="primary" onPress={newTemplate} accessibilityLabel="New template">
+              New Template
             </Button>
           </View>
         </View>
@@ -422,9 +428,9 @@ export default function TemplatesScreen() {
           </TourAnchor>
 
           <TourAnchor id="templates-new">
-            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="Build a template" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
+            <Pressable onPress={newTemplate} accessibilityRole="button" accessibilityLabel="New template" style={({ pressed }) => [styles.newRow, pressed ? styles.pressed : null]}>
               <PlusGlyph size={16} />
-              <Text style={styles.newRowText}>Build a template</Text>
+              <Text style={styles.newRowText}>New template</Text>
             </Pressable>
           </TourAnchor>
         </ScrollView>
@@ -433,6 +439,8 @@ export default function TemplatesScreen() {
       {/* The empty state already says, in full sentences, the one thing this tour teaches — so it only
           fires once there are templates to point at. */}
       <ScreenTour screenKey="templates" ready={list.length > 0} />
+
+      <NewTemplateSheet open={newOpen} onClose={() => setNewOpen(false)} />
 
       <ReorderTemplatesSheet
         open={reorderOpen}
