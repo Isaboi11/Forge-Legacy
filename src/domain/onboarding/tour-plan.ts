@@ -620,7 +620,7 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'tp-new',
       title: 'Build one, or keep one',
-      body: 'Build a template for a single session you can start any time. You can also keep a session after training it, from The Record.',
+      body: 'Build a template for a single session you can start any time, or paste one in. You can also keep a session after training it, from The Record.',
       anchor: 'templates-new',
       pad: 8,
       radius: 14,
