@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 
 import { m7Benefits, m7Content, type CapKey } from '@/domain/entitlement/caps-core';
-import { ENTITLEMENT_RETRY_MESSAGE, useCapGates } from '@/lib/entitlement';
+import { ENTITLEMENT_RETRY_MESSAGE, useCapGates, useEntitlementState } from '@/lib/entitlement';
 import { track } from '@/lib/analytics';
 import { useCeremony, useToast } from './useCeremony';
 import { useWorkoutSession } from './useWorkoutSession';
@@ -37,6 +37,7 @@ import { useWorkoutSession } from './useWorkoutSession';
  */
 export function usePremiumGate(): (key: CapKey) => boolean {
   const gates = useCapGates();
+  const { status, refetch } = useEntitlementState();
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
   const { session } = useWorkoutSession();
@@ -69,6 +70,10 @@ export function usePremiumGate(): (key: CapKey) => boolean {
         // ⚠ NOT AN UPSELL (M-7 §10). The action stays blocked and the athlete may retry immediately.
         // Firing M-7 here is how a paying athlete on a bad connection gets asked to pay again.
         showToast(ENTITLEMENT_RETRY_MESSAGE);
+        /* And make "Try again" true: read again now, so the next tap has an answer. Only after a read
+           has FAILED — while the first one is still in flight (`loading`), a refetch would throw its
+           answer away, and a slow network tapped twice would never get one (QA F6, Eva 2026-10-15). */
+        if (status === 'unknown') refetch();
         return false;
       }
 
@@ -105,6 +110,6 @@ export function usePremiumGate(): (key: CapKey) => boolean {
       });
       return false;
     },
-    [gates, enqueue, showToast, inWorkout],
+    [gates, status, refetch, enqueue, showToast, inWorkout],
   );
 }
