@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
+import { AppState } from 'react-native';
 
 import { fetchEntitlement, type EntitlementSnapshot } from '@/data/entitlement-live';
 import {
@@ -87,18 +88,40 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
       if (!uid) return { uid, snap: null };
       try {
         const snap = await fetchEntitlement();
-        if (snap) LAST_GOOD.set(uid, snap);
-        return { uid, snap };
-      } catch (e) {
-        /* A refresh that fails leaves the previous answer standing. Only a read that has NEVER
-           succeeded for this athlete is allowed to surface as `unknown`. */
-        const prev = LAST_GOOD.get(uid);
-        if (prev) return { uid, snap: prev };
-        throw e;
+        if (snap) {
+          LAST_GOOD.set(uid, snap);
+          return { uid, snap };
+        }
+      } catch {
+        /* Falls through to the last good answer, same as a null read. */
       }
+      /* A refresh that fails leaves the previous answer standing. Only a read that has NEVER
+         succeeded for this athlete is allowed to surface as `unknown`.
+
+         ⚠ THE FAILURE ARRIVES AS `null`, NOT AS A THROW. `fetchEntitlement` turns every error into
+         null, so this fallback used to sit in a `catch` that never ran, and one failed refresh wiped a
+         good answer (Eva, 2026-10-15: "Unable to verify your subscription" on Import a workout). */
+      return { uid, snap: LAST_GOOD.get(uid) ?? null };
     },
     [uid],
   );
+
+  /**
+   * ══ RE-READ ON EVERY RETURN TO THE APP ══
+   *
+   * The query above runs once per athlete. If that one read failed — a weak signal at the gym, a token
+   * mid-refresh — nothing ever asked again, so every gate said "Unable to verify your subscription" and
+   * the Nutrition tab stayed hidden until the app was killed. Coming back to the app is the natural
+   * moment to try again. A refresh of a good answer stays `ready` and keeps its snapshot
+   * (`entitlementReadStatus`), so this never blanks a screen.
+   */
+  useEffect(() => {
+    if (!uid) return;
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') refetch();
+    });
+    return () => sub.remove();
+  }, [uid, refetch]);
 
 
   /**
@@ -115,7 +138,7 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
    *   · the fetcher resolves `null` whenever `uid` is momentarily absent, which a token refresh can do
    *     without anything being wrong.
    *
-   * Nothing then retries — the query re-runs only when `uid` changes — so Holt vanished mid-session and
+   * Nothing then retried — the query re-ran only when `uid` changed — so Holt vanished mid-session and
    * stayed gone, with no message, no retry, and no way to tell it from a downgrade. That is the shape
    * the PO reported: there for the first half, absent for the second, regardless of resting.
    *
