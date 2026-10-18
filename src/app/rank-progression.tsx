@@ -251,14 +251,14 @@ function BadgeTile({
 const styles = StyleSheet.create({
   std: { marginTop: 18, borderTopWidth: 1, borderTopColor: forgeOr<string>('#1B1510', flColor.charcoal700), paddingTop: 16, gap: 13 },
   stdHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  stdTitle: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: '#7A5E38' },
+  stdTitle: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.8, textTransform: 'uppercase', color: flColor.bronze600 },
   stdEarned: { fontFamily: flFont.sans, fontSize: 9.5, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.greenMuted },
 
   req: { gap: 5 },
   reqTop: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
-  reqLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 13, color: '#B4AA9C' },
+  reqLabel: { flex: 1, fontFamily: flFont.sans, fontSize: 13, color: flColor.gray400 },
   reqLabelMet: { color: flColor.cream100 },
-  reqCount: { fontFamily: flFont.sans, fontSize: 12, color: '#8A7F70', fontVariant: ['tabular-nums'] },
+  reqCount: { fontFamily: flFont.sans, fontSize: 12, color: flColor.gray600, fontVariant: ['tabular-nums'] },
   reqCountMet: { color: flColor.bronze300 },
   reqTrack: { height: 3, borderRadius: 2, backgroundColor: flColor.progressTrack, overflow: 'hidden' },
   reqFill: { height: 3, backgroundColor: flColor.bronze400 },
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   reqDetail: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: '#6A6154' },
 
   subRow: { gap: 3, marginTop: 2 },
-  subLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: '#7A5E38' },
+  subLabel: { fontFamily: flFont.sans, fontSize: 10, fontWeight: '700', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.bronze600 },
   subText: { fontFamily: flFont.sans, fontSize: 12, lineHeight: 18, color: '#9A9084' },
 
   stdRule: { fontFamily: flFont.sans, fontSize: 11, lineHeight: 16, color: '#5F5648', fontStyle: 'italic' },

@@ -88,9 +88,8 @@ const EVENT_SYMBOL: Record<TimelineKind, SymbolName> = {
  * hold something — `legacyReveal` in `domain/legacy/reveal.ts` decides each one. The mature hub
  * described here is what an established athlete sees; a new one sees their chapter and one easy start.
  *
- * Rebuilt on the foundation tokens + committed composites to match Home/Workouts
- * (the pre-existing `components/legacy/*` are old `legacy-theme` and now bannered
- * legacy). Sections, top to bottom: the hero (identity + "My Standard" creed +
+ * Rebuilt on the foundation tokens + committed composites to match Home/Workouts.
+ * Sections, top to bottom: the hero (identity + "My Standard" creed +
  * current chapter & primary goal), Pinned Legacy (curated cross-type museum), Featured Legacy
  * Moment, My Story (chapter history + timeline preview), What Endures.
  * Pinned Legacy renders real pins (video pins open the fullscreen player); the L-13 pin manager
