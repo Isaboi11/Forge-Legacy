@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -209,6 +209,8 @@ export default function ExercisePickerScreen() {
   const templateOnly = templateRow != null && params.dest === 'template';
 
   const [search, setSearch] = useState('');
+  /** The field keeps its own text (see the search field below), so clearing the search clears it here. */
+  const searchRef = useRef<TextInput>(null);
   const [selected, setSelected] = useState<string | null>(null); // replace: single key
   const [picked, setPicked] = useState<string[]>([]); // add: many keys
   const [asSuperset, setAsSuperset] = useState(false); // add: group the picks into one block
@@ -515,6 +517,7 @@ export default function ExercisePickerScreen() {
         setJustCreated((l) => [...l, toCustomItem(draftCustom(id, name, createUnit))]);
         selectCreated(customKey(id));
         setSearch('');
+        searchRef.current?.clear();
         refetchCustoms();
         return;
       }
@@ -737,10 +740,20 @@ export default function ExercisePickerScreen() {
           <View style={styles.searchIcon}>
             <EngravedIcon name="search" size={17} color={flColor.gray600} />
           </View>
+          {/* ══ THE FIELD KEEPS ITS OWN LETTERS (PO 10-20) ══
+
+              PO: *"any time I search if i type too fast it leaves letters out and messes up the word."*
+
+              Every letter re-filters ~800 exercises and re-draws every matching row. With `value={search}`
+              the field was handed its text back after that re-draw — and on the phone a re-draw slower
+              than the gap between two keys handed back the OLDER text, erasing the letter typed in
+              between. No `value` now: the field owns what is typed and nothing overwrites it. The list
+              follows as a transition, so a fast typist's in-between words can be skipped rather than
+              queued. Clearing the search must also `clear()` the field through `searchRef`. */}
           <TextInput returnKeyType="search"
+            ref={searchRef}
             style={styles.search}
-            value={search}
-            onChangeText={setSearch}
+            onChangeText={(t) => startTransition(() => setSearch(t))}
             placeholder="Search exercises"
             placeholderTextColor={flColor.gray600}
             accessibilityLabel="Search exercises"
