@@ -27,14 +27,14 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 ## ⛔ BLOCKERS — fix before Release
 | # | Area | What the user sees | Where | Lane | Status |
 |---|---|---|---|---|---|
-| B1 | Privacy | Every new account's profile is public to everyone, including the live set-by-set view of a workout. Cause: `0189` "testing posture" (PO: "everyone public for right now") set the column default; nothing reverts it, and no launch list had it | `0189_testing_defaults_open.sql:146-182`; code defaults in `src/domain/settings/visibility.ts` | SQL, release day | ⏸ existing testers? |
-| B2 | Workout | "Continue this workout" past 60 minutes from the first save: every Finish fails ("closed more than an hour ago"), and there is no discard | `0253_continue_into_same_exercise.sql:70-71`; `workout.tsx:2493,2551,2582` | SQL+JS | ⬜ |
-| B3 | Cardio | End Walk → Cancel throws the walk away (GPS stopped and the saved run deleted before the form opens) | `CardioBlockCard.tsx:552-558,1156`; `useRunTracker.ts:593,451` | JS | ⬜ |
-| B4 | Cardio | ⋮ → "Discard workout · Nothing logged yet" deletes a live walk with one tap, no confirm | `workout.tsx:5819-5833` | JS | ⬜ |
-| B5 | Free tier | At the 3-program limit, a Free user gets a developer error ("The pre-action check that should have shown M-7 is missing…"), not the upgrade screen. Start, then cancelling the max-lift or end-current question, still uses up a lifetime slot, so 3 cancels lock them out | `program/[id].tsx:719-790,852-875`; `program-guided.tsx:291-298`; `CoachChatSheet.tsx:3054`; `week-template/[id].tsx:96-102`; `0158:147-150` | JS | ⬜ |
-| B6 | Account | The password-reset email link never reaches "Choose a new password" (`detectSessionInUrl: false`, no `redirectTo`) | `src/lib/supabase.ts:152`; `src/lib/auth.tsx:81,134-137` | JS (+ dashboard Site URL) | ⬜ |
-| B7 | Workout | Resume prompt → End workout saves an empty 0-set workout into history and the chapter count; a walk in progress is dropped | `workout.tsx:2827-2830,3974-3977` | JS | ⬜ |
-| B8 | Goals | A "lower is better" goal (lose weight to 180, a 5K under 25 min) is marked Achieved, with its ceremony, on its first progress update, and can't be undone | `src/data/goals-live.ts:222`; `chapter/new.tsx:124-131` | JS | ⬜ |
+| B1 | Privacy | Every new account's profile is public to everyone, including the live set-by-set view of a workout. Cause: `0189` "testing posture" (PO: "everyone public for right now") set the column default; nothing reverts it, and no launch list had it | `0189_testing_defaults_open.sql:146-182`; code defaults in `src/domain/settings/visibility.ts` | SQL, release day | 🔨 `0259` written (`b9aeb6c4`) — paste on RELEASE DAY; testers untouched (PO 11-08) |
+| B2 | Workout | "Continue this workout" past 60 minutes from the first save: every Finish fails ("closed more than an hour ago"), and there is no discard | `0253_continue_into_same_exercise.sql:70-71`; `workout.tsx:2493,2551,2582` | SQL+JS | ✅ fixed `a244ff24` — new sets save as their own workout; not yet published |
+| B3 | Cardio | End Walk → Cancel throws the walk away (GPS stopped and the saved run deleted before the form opens) | `CardioBlockCard.tsx:552-558,1156`; `useRunTracker.ts:593,451` | JS | ✅ fixed `d99b7aeb` — "Log walk"; not yet published |
+| B4 | Cardio | ⋮ → "Discard workout · Nothing logged yet" deletes a live walk with one tap, no confirm | `workout.tsx:5819-5833` | JS | ✅ fixed `d99b7aeb`; not yet published |
+| B5 | Free tier | At the 3-program limit, a Free user gets a developer error ("The pre-action check that should have shown M-7 is missing…"), not the upgrade screen. Start, then cancelling the max-lift or end-current question, still uses up a lifetime slot, so 3 cancels lock them out | `program/[id].tsx:719-790,852-875`; `program-guided.tsx:291-298`; `CoachChatSheet.tsx:3054`; `week-template/[id].tsx:96-102`; `0158:147-150` | JS | ✅ fixed `d94cb0b1` (guards + plain message); ⬜ slot refund on a backed-out Start needs SQL; not yet published |
+| B6 | Account | The password-reset email link never reaches "Choose a new password" (`detectSessionInUrl: false`, no `redirectTo`) | `src/lib/supabase.ts:152`; `src/lib/auth.tsx:81,134-137` | JS (+ dashboard Site URL) | ✅ fixed `99ef242c` — ⚠ works only after a WEB deploy, and the Supabase redirect allow-list must hold `https://forgelegacy.expo.app/sign-in` |
+| B7 | Workout | Resume prompt → End workout saves an empty 0-set workout into history and the chapter count; a walk in progress is dropped | `workout.tsx:2827-2830,3974-3977` | JS | ✅ fixed `d99b7aeb`; not yet published |
+| B8 | Goals | A "lower is better" goal (lose weight to 180, a 5K under 25 min) is marked Achieved, with its ceremony, on its first progress update, and can't be undone | `src/data/goals-live.ts:222`; `chapter/new.tsx:124-131` | JS | ✅ fixed `6776ba3b`; not yet published |
 
 ## 🔴 HIGH — fix before Release where possible
 **Train Together**
@@ -69,10 +69,10 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H23 ⬜ PRIVACY: a sent program shows the recipient the sender's own words to Holt ("You asked: my knee hurts"). `send-program.tsx:110`; `holt-marks.ts:95`.
 
 **Workout / Cardio**
-- H24 ⬜ The Outdoor/Treadmill switch still works mid-walk. A mis-tap saves 0 distance with no route. `CardioBlockCard.tsx:1018-1032`.
+- H24 ✅ `d99b7aeb` The Outdoor/Treadmill switch still works mid-walk. A mis-tap saves 0 distance with no route. `CardioBlockCard.tsx:1018-1032`.
 - H25 ⬜ Continuing a finished walk brings it back as a lift (sets table, no Start). `continue-workout-live.ts:126-141`.
 - H26 ⬜ "Log an activity you already did" has no date: yesterday's run is filed as today. `log-activity.tsx`; `save.ts:282`.
-- H27 ⬜ A treadmill bout loses its exit lock after the app is reopened, so Finish drops it. `CardioBlockCard.tsx:251`; `useWallClockTimer.ts:59-81`.
+- H27 ✅ `d99b7aeb` A treadmill bout loses its exit lock after the app is reopened, so Finish drops it. `CardioBlockCard.tsx:251`; `useWallClockTimer.ts:59-81`.
 
 **Legacy / Goals**
 - H28 ⬜ Lift, run, count, volume and PR goals only move while the Goals screen is open; a chapter sealed elsewhere records "In progress". `goals.tsx:121-141`; `chapter/[id].tsx:179-188`.
