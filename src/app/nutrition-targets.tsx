@@ -41,7 +41,7 @@ import {
   type Goal,
 } from '@/domain/nutrition/targets';
 import { addBodyEntry, fetchBodyEntries, latestBodyReading } from '@/data/body-metrics-live';
-import { fetchNutritionProfile, fetchTargetHistory, saveNutritionProfile, saveTargets } from '@/data/nutrition-live';
+import { fetchNutritionProfile, fetchTargetHistory, saveBirthYear, saveNutritionProfile, saveTargets } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
 import { useUnits } from '@/lib/settings';
@@ -215,6 +215,8 @@ export default function NutritionTargetsScreen() {
       if (mode === 'recommended' && profileComplete) {
         await saveNutritionProfile({ birthYear, heightIn, activityLevel: activity?.key ?? null });
       }
+      // A manual target keeps the year too: the planner's age rule reads it whichever mode set the target (H33).
+      else if (birthYear != null) await saveBirthYear(birthYear);
       /* The weight rides along so this target can be reviewed when the body moves (0209). */
       await saveTargets(proposed, mode === 'recommended' ? 'recommended' : 'manual', weightLb);
       setReloads((n) => n + 1);
@@ -370,7 +372,12 @@ export default function NutritionTargetsScreen() {
                       <InputField
                         label="Birth year"
                         value={by}
-                        onChange={(v) => setByText(v.replace(/[^0-9]/g, '').slice(0, 4))}
+                        onChange={(v) => {
+                          const next = v.replace(/[^0-9]/g, '').slice(0, 4);
+                          setByText(next);
+                          /* Kept as soon as it is a whole year — an under-18 never reaches Save (launch QA, H33). */
+                          if (/^\d{4}$/.test(next)) void saveBirthYear(Number(next)).catch(() => undefined);
+                        }}
                         placeholder="YYYY"
                         keyboardType="number-pad"
                         maxLength={4}
