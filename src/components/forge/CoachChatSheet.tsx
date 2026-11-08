@@ -79,7 +79,7 @@ import { buildAskContext } from '@/domain/coach/ask-context';
 import { otherProgramNamed, resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { resolveAvoid } from '@/domain/coach/avoid';
 import { useDictation } from '@/hooks/useDictation';
-import { launchRowsFor, templateRowsFor } from '@/domain/coach/save-shapes';
+import { toTemplateExercises } from '@/lib/workout-template-rows';
 import { saveTemplate } from '@/data/templates-live';
 import { saveWeekTemplate, startWeekTemplate } from '@/data/week-templates-live';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
@@ -2971,7 +2971,10 @@ export function CoachChatSheet({
           leaveFor(`/week-template/${id}`);
           return;
         }
-        const id = await saveTemplate(built.day.name, templateRowsFor(built.day));
+        /* The WHOLE day — warm-up, cool-down, supersets and cardio — through the one draft→template converter the Workout
+           Builder uses. `templateRowsFor` kept `main` and four fields, right for the rule-built days it was written for and
+           wrong for a day Holt writes from typed words, which has all of them (PO 11-08 launch QA, H20). */
+        const id = await saveTemplate(built.day.name, toTemplateExercises(dayAsDraft(built.day)));
         say({ kind: 'saved', text: `Saved as a template. It's under Your Templates whenever you want it.` });
         leaveFor(`/template/${id}`);
       } catch (e) {
@@ -2998,7 +3001,8 @@ export function CoachChatSheet({
       void (async () => {
         setHanding(true);
         try {
-          await writeWorkoutLaunch({ exercises: launchRowsFor(built.day), workoutName: built.day.name });
+          // The whole day, as Save does (H20) — the logger's shared-shape branch rebuilds sections, blocks and cardio.
+          await writeWorkoutLaunch({ exercises: toTemplateExercises(dayAsDraft(built.day)), workoutName: built.day.name });
           leaveFor('/workout');
         } catch (e) {
           say({ kind: 'error', text: "I couldn't open that.", sub: errorText(e), action: 'Try again in a moment.' });
@@ -3574,6 +3578,9 @@ const COMPOSER_COUNT_FROM = Math.round(COMPOSER_MAX * 0.8);
 /* The athlete's sentence, never a database refusal read aloud (PO 11-08 launch QA, B5) — `plainError` keeps the
    app's own thrown sentences and replaces Postgres / cap-trigger text with a line written for a person. */
 const errorText = (e: unknown): string => plainError(e);
+
+/** A built day in the Workout Builder's draft shape, so it saves and starts through `toTemplateExercises` (H20). */
+const dayAsDraft = (day: ProgramDay) => ({ name: day.name, warmup: day.warmup ?? [], main: day.main, cooldown: day.cooldown ?? [], editId: null });
 
 /**
  * §5.3 — a turn arrives: opacity 0→1 and 10px up, 280ms, ease-out.
