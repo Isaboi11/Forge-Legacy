@@ -114,6 +114,10 @@ function targetFrom(data: unknown): NotificationTarget | null {
  * follows the new athlete — matching `push_register_token`, which reassigns a token's owner on conflict
  * rather than refusing it. A shared phone must never deliver one athlete's notifications to another.
  */
+/** Notification taps already routed, by id — module-level so a re-run, a profile save or an account switch
+    can never route the same tap twice (launch QA, H14). */
+const handledTaps = new Set<string>();
+
 export function PushProvider({ children }: { children: React.ReactNode }) {
   const { session, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
@@ -182,12 +186,23 @@ export function PushProvider({ children }: { children: React.ReactNode }) {
     };
 
     // A tap that launched the app cold is not delivered to the listener — it is waiting here instead.
+    /* ⚠ ONCE PER TAP (PO 11-08 launch QA, H14). This effect re-runs whenever `ready`, the router or the athlete
+       changes, and the last response is never cleared — so a cold-start tap was held, fired when the tree became
+       ready, then fired AGAIN by the re-run (the screen stacked twice), and re-opened after a profile save or an
+       account switch. A tap is routed once, by its notification id. */
     let cancelled = false;
     void Notifications.getLastNotificationResponseAsync().then((r) => {
-      if (!cancelled) go(r);
+      if (cancelled || !r) return;
+      const tapId = r.notification.request.identifier;
+      if (handledTaps.has(tapId)) return;
+      handledTaps.add(tapId);
+      go(r);
     });
 
-    const sub = Notifications.addNotificationResponseReceivedListener(go);
+    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+      handledTaps.add(r.notification.request.identifier);
+      go(r);
+    });
     return () => {
       cancelled = true;
       sub.remove();

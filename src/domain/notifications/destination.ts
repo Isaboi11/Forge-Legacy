@@ -39,6 +39,7 @@ export type NotificationDestination =
   | { pathname: '/squad/[id]/goal'; params: { id: string } }
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/transformation'
+  | '/admin'
   | '/(tabs)/squads'
   | '/friends'
   | { pathname: '/friends'; params: { post: string } }
@@ -164,6 +165,16 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
      */
     case 'squad_deleted':
       return '/(tabs)/squads';
+    /*
+     * Push-only kinds — no feed row, so the `default` arm's Inbox could never contain them (PO 11-08 launch QA, H16).
+     * A reply to your cheer (0240) opens the person who replied, as its stored route says; the operator alerts
+     * (0137 sign-up, 0167 feedback) open `/admin`, whose own gate keeps everyone else out.
+     */
+    case 'workout_cheer_reply':
+      return n.actorId ? { pathname: '/athlete/[id]', params: { id: n.actorId } } : '/inbox';
+    case 'athlete_signup':
+    case 'feedback_filed':
+      return '/admin';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }
