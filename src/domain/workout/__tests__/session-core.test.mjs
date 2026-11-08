@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   blockAt,
   breakBlock,
@@ -336,7 +337,7 @@ const lift = (name, sets, targetReps = 8, catalogKey = null) => ({
 });
 const run = () => ({ name: 'Run', kind: 'cardio', activity: 'run', section: 'main', position: 0, sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false }] });
 
-test('a live session reduces to the four fields an invite carries', () => {
+test('a live session of plain lifts reduces to the four fields an invite carries', () => {
   const out = sessionToTemplateExercises([lift('Back Squat', 4, 5, 'back-squat'), lift('Leg Press', 3, 12)]);
   assert.deepEqual(out, [
     { catalogKey: 'back-squat', name: 'Back Squat', sets: 4, targetReps: 5 },
@@ -393,6 +394,38 @@ test('a host standing on a cardio leg lands the guest on the next real lift, not
   const startIndex = Math.min(sessionToTemplateExercises(session.slice(0, 1)).length, Math.max(0, shape.length - 1));
   assert.equal(startIndex, 0);
   assert.equal(shape[startIndex].name, 'Squat');
+});
+
+/* PO 10-07: *"When I added him to the workout, it didn't have it be a superset and it just did the
+   individual exercises as their own."* The snapshot dropped the block, so the guest got loose lifts. */
+const grouped = (name, groupId, extra = {}) => ({ ...lift(name, 3), groupId, groupName: 'A', groupKind: 'superset', ...extra });
+
+test('a superset travels to the person joining as a superset', () => {
+  const out = sessionToTemplateExercises([lift('Squat', 3), grouped('Bench', 'g1'), grouped('Row', 'g1')]);
+  assert.equal('groupId' in out[0], false, 'a lone lift stays plain');
+  assert.deepEqual(
+    out.slice(1).map((e) => [e.name, e.groupId, e.groupKind]),
+    [
+      ['Bench', 'g1', 'superset'],
+      ['Row', 'g1', 'superset'],
+    ],
+  );
+});
+
+test('a grouped row that never said its kind goes out as a circuit — the reading every layer takes', () => {
+  const out = sessionToTemplateExercises([grouped('Burpee', 'c1', { groupKind: undefined, groupRounds: 4 }), grouped('Swing', 'c1', { groupKind: undefined, groupRounds: 4 })]);
+  assert.deepEqual(out.map((e) => [e.groupKind, e.groupRounds]), [['circuit', 4], ['circuit', 4]]);
+});
+
+test('⚠ the guest READS the block back — the invite reader is the template whitelist, not a four-field copy', () => {
+  const src = readFileSync(new URL('../../../data/train-together-live.ts', import.meta.url), 'utf8');
+  assert.match(src, /exercises: \(\(d\.exercises \?\? \[\]\) as Record<string, unknown>\[\]\)\.map\(toExercise\)/);
+});
+
+test('a block left with one member after the drops goes out as a plain lift, not a superset of one', () => {
+  const out = sessionToTemplateExercises([grouped('Bench', 'g1'), { ...run(), groupId: 'g1' }]);
+  assert.equal(out.length, 1);
+  assert.equal('groupId' in out[0], false);
 });
 
 test('an exercise with no sets is not a thing to join at', () => {

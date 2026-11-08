@@ -295,9 +295,11 @@ function WorkoutJoinScreen() {
             <View style={styles.waitRow}>
               <ActivityIndicator color={flColor.bronze400} />
               <Text style={styles.body}>
+                {/* Not "they'll get a notification" (PO 10-05): a push needs their phone to allow one, and
+                    the web has none. What is always true is the ask on their workout screen. */}
                 {waited > PATIENCE_MS
                   ? 'No answer yet — they’re mid-set. The ask stays live while they’re training, so leave this open or check back.'
-                  : 'They’ll get a notification. The moment they say yes, your workout opens where they are.'}
+                  : 'Your ask pops up on their workout screen. The moment they say yes, your workout opens where they are.'}
               </Text>
             </View>
             <View style={styles.actions}>

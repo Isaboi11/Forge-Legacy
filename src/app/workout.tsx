@@ -2614,20 +2614,25 @@ export default function WorkoutScreen() {
   /**
    * Watch for someone asking to join, while a session is actually running.
    *
-   * ══ WHY POLLING, AND WHY TWENTY SECONDS ══
+   * ══ WHY POLLING, AND WHY EIGHT SECONDS ══
    *
    * There is no realtime transport anywhere in this app, and building one for a banner would be a
-   * subsystem to serve an event that happens rarely. Twenty seconds fits inside a rest interval, so the
-   * ask lands within one break of being made, and it costs a single indexed row read
+   * subsystem to serve an event that happens rarely. It was twenty seconds until PO 10-05 (*"It said it
+   * would notify them, but it didn't"*): the asker is standing in the gym watching a spinner, and twenty
+   * seconds of nothing reads as "it didn't work". Eight is still one indexed row read
    * (`workout_invites_to_kind`) per poll.
    *
-   * ⚠ ONLY WHILE `phase === 'active'`. Not on the resume prompt, not on the empty state, and not after
-   * finishing — a request to join a workout that has ended is not answerable, which is the same rule the
-   * union's own presence ceiling enforces server-side.
+   * ⚠ RE-READ ON RETURNING TO THE APP. A phone locked between sets pauses the timer; the ask has to be
+   *   there the moment the screen comes back, not up to one interval later.
    *
-   * Failure is silent by design: `fetchPendingJoinRequests` returns `[]` rather than throwing, because a
-   * banner that cannot appear is a missing feature and an error toast every twenty seconds during a
-   * workout is a broken app.
+   * ⚠ ONLY WHILE `phase === 'active'`. Not on the resume prompt and not after finishing — a request to
+   * join a workout that has ended is not answerable, which is the same rule the union's own presence
+   * ceiling enforces server-side. The EMPTY state counts as active: a host who has not added an exercise
+   * yet is still training, and still on this screen.
+   *
+   * Failure is quiet on screen: `fetchPendingJoinRequests` reports the error and returns `[]`, because a
+   * banner that cannot appear is a missing feature and an error toast every few seconds during a workout
+   * is a broken app.
    */
   useEffect(() => {
     if (phase !== 'active') return;
@@ -2637,11 +2642,15 @@ export default function WorkoutScreen() {
         if (live) setJoinRequests(rows);
       });
     };
-    const timer = setInterval(tick, 20_000);
+    const timer = setInterval(tick, 8_000);
     tick();
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') tick();
+    });
     return () => {
       live = false;
       clearInterval(timer);
+      sub.remove();
     };
   }, [phase]);
 
@@ -2661,19 +2670,19 @@ export default function WorkoutScreen() {
         await declineWorkoutInvite(req.id);
         showToast('Not this time');
       } else {
+        /* ⚠ AN EMPTY SHAPE IS STILL A YES (PO 10-05). Nothing added yet, or only cardio (which the snapshot
+           drops): the guest opens a blank workout of their own, the way `/workout-join` launches any
+           accepted ask with no exercises, and both are still credited. Refusing here put "Let them in" on
+           screen and then said no. */
         const shape = sessionToTemplateExercises(session.exercises);
-        if (shape.length === 0) {
-          showToast('Add an exercise first — there’s nothing to share yet.');
-          return;
-        }
-        const at = Math.min(Math.max(0, session.exerciseIndex ?? 0), session.exercises.length - 1);
+        const at = Math.min(Math.max(0, session.exerciseIndex ?? 0), Math.max(0, session.exercises.length - 1));
         // Counted over the SNAPSHOT, which drops cardio blocks — see the same note in `/workout-invite`.
-        const startIndex = Math.min(sessionToTemplateExercises(session.exercises.slice(0, at)).length, shape.length - 1);
+        const startIndex = Math.min(sessionToTemplateExercises(session.exercises.slice(0, at)).length, Math.max(0, shape.length - 1));
         await acceptJoinRequest(req.id, { workoutName: session.workoutName, exercises: shape, startIndex });
         if (!taggedPartners.includes(req.fromId) && taggedPartners.length < 3) {
           mutate((s) => ({ ...s, partnerIds: [...(s.partnerIds ?? []), req.fromId] }));
         }
-        showToast(`${req.fromName} is joining at ${shape[startIndex]?.name ?? 'your workout'}`);
+        showToast(shape[startIndex] ? `${req.fromName} is joining at ${shape[startIndex].name}` : `${req.fromName} is joining you`);
       }
       setJoinRequests((cur) => cur.filter((r) => r.id !== req.id));
     } catch (e) {
@@ -2682,6 +2691,24 @@ export default function WorkoutScreen() {
       setJoinBusy(false);
     }
   };
+
+  /*
+   * The ask, where the host is already looking (0121) — built once, mounted by BOTH the empty state and
+   * the active render. Only the active render had it, so a host who had not added an exercise yet never
+   * saw anyone ask (PO 10-05). Above the bottom bar so it cannot cover the set they are logging; only the
+   * oldest is shown — see `JoinRequestBanner`.
+   */
+  const joinBanner =
+    phase === 'active' && joinRequests.length > 0 ? (
+      <View style={styles.joinBannerWrap}>
+        <JoinRequestBanner
+          request={joinRequests[0]}
+          busy={joinBusy}
+          onAccept={() => void answerJoin(joinRequests[0], true)}
+          onDecline={() => void answerJoin(joinRequests[0], false)}
+        />
+      </View>
+    ) : null;
 
   /**
    * Ask someone to come and join this session.
@@ -2864,6 +2891,13 @@ export default function WorkoutScreen() {
             router.replace('/(tabs)');
           }}
         />
+        {/* Someone can ask to join before the first exercise is added — and the answer needs its toast. */}
+        {joinBanner}
+        {toast ? (
+          <View style={styles.toastWrap} pointerEvents="none">
+            <Toast key={toast.token} msg={toast.msg} />
+          </View>
+        ) : null}
       </Shell>
     );
   }
@@ -5903,21 +5937,8 @@ export default function WorkoutScreen() {
         </View>
       ) : null}
 
-      {/*
-        The ask, where the host is already looking (0121).
-        Mounted beside the toast rather than at the bottom of the file, and above the bottom bar so it
-        cannot cover the set they are logging. Only the oldest is shown — see `JoinRequestBanner`.
-      */}
-      {phase === 'active' && joinRequests.length > 0 ? (
-        <View style={styles.joinBannerWrap}>
-          <JoinRequestBanner
-            request={joinRequests[0]}
-            busy={joinBusy}
-            onAccept={() => void answerJoin(joinRequests[0], true)}
-            onDecline={() => void answerJoin(joinRequests[0], false)}
-          />
-        </View>
-      ) : null}
+      {/* The ask (0121) — mounted beside the toast; see `joinBanner`. */}
+      {joinBanner}
 
       {/* toast — brief status line above the bottom bar */}
       {toast ? (
