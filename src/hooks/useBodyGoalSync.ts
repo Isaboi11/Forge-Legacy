@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import { syncBodyGoals } from '@/data/goals-live';
+import { syncActiveChapterGoals } from '@/data/goals-live';
 import { useCeremony, useToast } from '@/hooks/useCeremony';
 
 /**
@@ -20,12 +20,13 @@ import { useCeremony, useToast } from '@/hooks/useCeremony';
  * If a goal is newly achieved by the sync, the same ceremony the Goals screen would have fired fires here,
  * because `updateProgress` consumes `newlyAchieved` and the Goals screen would otherwise never see it.
  */
-export function useBodyGoalSync(): () => Promise<boolean> {
+export function useBodyGoalSync(scope: 'body' | 'all' = 'body'): () => Promise<boolean> {
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
   return useCallback(async () => {
     try {
-      const res = await syncBodyGoals();
+      /* `all` from the Legacy tab's focus — every auto goal moves with the workouts behind it (launch QA, H28). */
+      const res = await syncActiveChapterGoals(scope);
       for (const g of res.achieved) {
         if (g.isPrimary) enqueue({ id: `goal-${g.id}`, kind: 'goalAchieved', goalName: g.name, chapterName: res.chapterName ?? undefined });
         else showToast('Goal achieved · recorded in your legacy');
@@ -34,5 +35,5 @@ export function useBodyGoalSync(): () => Promise<boolean> {
     } catch {
       return false; // a sync that fails leaves the stored number; the Goals screen will try again
     }
-  }, [enqueue, showToast]);
+  }, [enqueue, showToast, scope]);
 }

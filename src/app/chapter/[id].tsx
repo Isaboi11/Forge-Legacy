@@ -22,6 +22,7 @@ import { forgeOr } from '@/constants/theme-scrim';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
 import { fetchChapterDetail, renameChapter, sealChapter } from '@/data/chapter-detail-live';
+import { syncActiveChapterGoals } from '@/data/goals-live';
 import { fetchAlbum, photoCountLabel } from '@/data/photos-live';
 import { CHAPTER_TITLE_MAX, DEFAULT_CHAPTER_I_TITLE, isValidChapterTitle } from '@/domain/legacy/chapter-name';
 import { goalSections, goalStatusLine, isAchieved, isQuantifiable, progressLabel, progressPct, type Goal } from '@/domain/goals/goals';
@@ -181,6 +182,9 @@ export default function ChapterDetailScreen() {
     setSealing(true);
     setSealError(null);
     try {
+      /* The goal's number as of NOW, before the seal freezes it — a goal met by workouts but never synced was sealed
+         "In progress" (launch QA, H28). Best-effort: a failed sync must not stop the seal. */
+      await syncActiveChapterGoals('all').catch(() => null);
       await sealChapter(data.id);
       setSealOpen(false);
       // REPLACE, not push: once sealed there is no L-3 to go back to. A back gesture from L-6 lands on the

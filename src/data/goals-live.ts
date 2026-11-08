@@ -333,10 +333,23 @@ export async function syncAutoGoals(goals: Goal[]): Promise<{ changed: boolean; 
  * call each — so a weigh-in never pays for the cumulative kinds it cannot have changed.
  */
 export async function syncBodyGoals(): Promise<{ changed: boolean; achieved: Goal[]; chapterName: string | null }> {
+  return syncActiveChapterGoals('body');
+}
+
+/**
+ * The active chapter's auto-tracked goals, synced — `body` (weight and measurements, for a weigh-in) or `all`.
+ *
+ * ⚠ `all` EXISTS BECAUSE ONLY THE GOALS SCREEN EVER SYNCED THE REST (PO 11-08 launch QA, H28). Lift, run-distance,
+ * workout-count, volume, time and PR goals did not move on the Legacy chapter card or Chapter Detail after workouts —
+ * the ceremony waited for somebody to open Goals — and a chapter sealed without opening it recorded "In progress at
+ * sealing" for a goal that had been met. Legacy's focus and the seal now run it. One `goal_metric_value` call per
+ * open goal, the same cost the Goals screen pays on every open.
+ */
+export async function syncActiveChapterGoals(scope: 'body' | 'all'): Promise<{ changed: boolean; achieved: Goal[]; chapterName: string | null }> {
   const { goals, chapterName } = await fetchActiveChapterGoals();
-  const body = goals.filter((g) => usesBaseline(g.metricKind) && isAutoTracked(g) && g.achievedAt == null && g.target != null);
-  if (body.length === 0) return { changed: false, achieved: [], chapterName };
-  const res = await syncAutoGoals(body);
+  const open = goals.filter((g) => (scope === 'all' || usesBaseline(g.metricKind)) && isAutoTracked(g) && g.achievedAt == null && g.target != null);
+  if (open.length === 0) return { changed: false, achieved: [], chapterName };
+  const res = await syncAutoGoals(open);
   return { ...res, chapterName };
 }
 

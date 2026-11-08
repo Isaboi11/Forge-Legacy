@@ -54,7 +54,9 @@ test('a saved weigh-in syncs the body goals, and the Legacy tab syncs them on fo
 test('the sync is body-kind only, and a goal it achieves still gets its ceremony', () => {
   const d = strip(DATA);
   assert.match(d, /export async function syncBodyGoals\(\)/);
-  assert.match(d, /usesBaseline\(g\.metricKind\) && isAutoTracked\(g\) && g\.achievedAt == null && g\.target != null/, 'the body sync must filter to weight/measurement goals');
+  // syncBodyGoals is the 'body' scope of the one chapter sync (launch QA H28 added 'all' for Legacy's focus and the seal).
+  assert.match(d, /return syncActiveChapterGoals\('body'\);/);
+  assert.match(d, /\(scope === 'all' \|\| usesBaseline\(g\.metricKind\)\) && isAutoTracked\(g\) && g\.achievedAt == null && g\.target != null/, 'the body sync must filter to weight/measurement goals');
   const h = strip(HOOK);
   assert.match(h, /kind: 'goalAchieved'/, 'a primary goal achieved by a weigh-in must fire M-3');
   assert.match(h, /showToast\('Goal achieved · recorded in your legacy'\)/, 'a secondary goal achieved by a weigh-in must say so');
