@@ -67,8 +67,23 @@ test('⚠ the Legacy card reads the goal’s direction and baseline — or a cut
   // row selected neither `metric_dir` nor `metric_start_value`, so `progressPct` fell to `current / target`.
   const s = strip(LEGACY_DATA);
   assert.match(s, /select\('chapter_id, name, target, unit, current, achieved_at, metric_dir, metric_start_value'\)/, 'the Legacy goal select lost the direction / baseline');
-  assert.match(s, /metricDir: g\.metric_dir === 'down' \? \('down' as const\) : \('up' as const\),/, 'the direction is not mapped');
+  assert.match(s, /metricDir: g\.metric_dir === 'down' \? 'down' : 'up',/, 'the direction is not mapped');
   assert.match(s, /metricStartValue: g\.metric_start_value \?\? null,/, 'the baseline is not mapped');
+  assert.match(s, /return chapterGoal\(\{/, 'the Legacy card no longer maps through the shared chapterGoal');
+});
+
+test('⚠ the PUBLIC profile draws the goal with the same mapper — not its own current / target', () => {
+  // PO 10-20: a profile showed "176 / 160 lb" with a FULL bar on day 2 of a cut. `athlete/[id].tsx` kept
+  // its own `current / target` (110% → full) and the RPC never sent the direction to do better with.
+  const screen = strip(read('../../app/athlete/[id].tsx'));
+  assert.match(screen, /return g \? chapterGoal\(g\) : \{ kind: 'none' \};/, 'the profile goal no longer maps through chapterGoal');
+  assert.doesNotMatch(screen, /g\.current \/ g\.target/, 'the profile has its own progress ratio again');
+  const data = strip(read('../../data/athlete-profile-live.ts'));
+  assert.match(data, /metricDir: goalRaw\.metric_dir === 'down' \? 'down' : 'up',/, 'the profile read drops the direction');
+  assert.match(data, /metricStartValue: goalRaw\.metric_start_value == null \? null : Number\(goalRaw\.metric_start_value\),/, 'the profile read drops the baseline');
+  assert.match(data, /achievedAt: \(goalRaw\.achieved_at as string\) \?\? null,/, 'the profile read drops achievement');
+  const sql = read('../../../supabase/migrations/0260_launch_db_fixes.sql');
+  assert.match(sql, /'metric_dir', g\.metric_dir, 'metric_start_value', g\.metric_start_value,\s+'achieved_at', g\.achieved_at\)/, 'athlete_profile does not send the goal direction');
 });
 
 test('an existing goal switched to bodyweight measures from where it began, not from today', () => {

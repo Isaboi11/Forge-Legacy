@@ -10,6 +10,7 @@
  * Kept free of data/JSON imports so it runs under `node --test`.
  */
 import { toLocalDate } from '../dates/local-date.ts';
+import type { Goal as ChapterGoal } from '@/types/legacy';
 
 /** How a quantifiable goal's progress is tracked. 'manual' = the athlete types it (default); the rest are
  *  computed from workout data (Hybrid Progress Model). */
@@ -237,6 +238,23 @@ export function goalStatusLine(g: Pick<Goal, 'target' | 'current' | 'unit' | 'ac
   if (g.achievedAt != null) return `Achieved ${achievedDate(g.achievedAt)}`.trim();
   if (g.target == null) return 'In progress';
   return `${progressLabel(g)} · ${progressPct(g)}%`;
+}
+
+/**
+ * A goal → what a chapter card draws: the bar, the value line, and whether it is achieved.
+ *
+ * ONE mapper, for the Legacy tab (`legacy-live`) and the public profile (`athlete/[id]`). The profile used
+ * to keep its own copy — `current / target` — so a cut that had not started drew a FULL bar there (176 lb
+ * aiming at 160: 110%, clamped to 100) while the Legacy tab, on `progressPct`, drew it empty. A second
+ * copy of a progress rule keeps the bug the first copy was fixed for.
+ */
+export function chapterGoal(
+  g: Pick<Goal, 'name' | 'target' | 'current' | 'unit' | 'achievedAt'> & { metricDir?: MetricDir; metricStartValue?: number | null },
+): ChapterGoal {
+  const achieved = isAchieved(g);
+  return isQuantifiable(g)
+    ? { kind: 'quantifiable', name: g.name, progress: progressPct(g), achieved, valueLabel: progressLabel(g) }
+    : { kind: 'narrative', name: g.name, achieved };
 }
 
 export interface GoalSections {

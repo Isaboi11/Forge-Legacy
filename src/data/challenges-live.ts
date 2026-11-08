@@ -161,6 +161,8 @@ export interface ActiveChallenge {
   squadName: string | null;
   startAt: string;
   endAt: string;
+  /** 'ENROLLMENT' = joined, not begun yet (0260, launch QA H8). Absent before 0260, which read as underway. */
+  state: 'ENROLLMENT' | 'ACTIVE';
   roster: number;
   myScore: number;
   myPlace: number;
@@ -310,6 +312,7 @@ export async function fetchChallengeHub(): Promise<ChallengeHub> {
       squadName: (r.squad_name as string) ?? null,
       startAt: String(r.start_at),
       endAt: String(r.end_at),
+      state: r.state === 'ENROLLMENT' ? ('ENROLLMENT' as const) : ('ACTIVE' as const),
       roster: Number(r.roster ?? 0),
       myScore: Number(r.my_score ?? 0),
       myPlace: Number(r.my_place ?? 1),

@@ -31,7 +31,6 @@ import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { useUnits } from '@/lib/settings';
 import { logRecipeEaten } from '@/lib/log-recipe';
 import { errorMessage, useQuery } from '@/lib/useQuery';
-import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
 const SLOT_LABEL: Record<string, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snacks: 'Snack' };
@@ -559,11 +558,12 @@ const styles = StyleSheet.create({
 
 });
 
-/** Premium since 0244 (PO decision "B", 2026-09-29) — Free athletes meet `NutritionPlannerGate` instead. */
+/**
+ * ⚠ NOT BEHIND THE PLANNER GATE ANY MORE (PO 11-08 launch QA, H34). 0244 (decision "B") made BUILDING and EDITING recipes
+ * Premium — and reading one stays free, but this whole screen sat behind the planner gate, so a Free athlete tapping their
+ * own saved recipe in My Foods got "Editing recipes is part of Premium" and could not read or delete it. Reading is free
+ * here; the edit link goes to My Recipes, which keeps its own gate, and 0260 lets the delete through on the base gate.
+ */
 export default function RecipeScreenRoute() {
-  return (
-    <NutritionPlannerGate what="Editing recipes">
-      <RecipeScreen />
-    </NutritionPlannerGate>
-  );
+  return <RecipeScreen />;
 }

@@ -529,6 +529,17 @@ export async function endProgram(id: string, outcome: Extract<ProgramState, 'end
  * A sealed program cannot be deleted at all: the RLS policy refuses it (0104) and W-3 hides the action.
  * Amendment-001 §6 — graduated and ended programs are permanent legacy records.
  */
+/**
+ * Take back a program adopted moments ago and never started — and its slot (0260 `discard_unstarted_program`, launch QA
+ * B5). True when the server deleted and refunded it; false when it would not (not that fresh, started, or marked) or the
+ * RPC is not there yet — the caller then deletes it the plain way.
+ */
+export async function discardUnstartedProgram(id: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('discard_unstarted_program', { p_program: id });
+  if (error) return false;
+  return data === true;
+}
+
 export async function deleteProgram(id: string): Promise<void> {
   const { error } = await supabase.from('programs').delete().eq('id', id);
   if (error) throw error;

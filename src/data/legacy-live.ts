@@ -5,7 +5,7 @@ import { countHonorsByChapter, honorsInChapter } from '@/domain/legacy/chapter-t
 import { cap, dateRangeCompact, dateRangeFull, daysSince, fmtDate, fmtShort, roman } from '@/lib/format';
 import type { Chapter, FeaturedMoment, Goal as LegacyGoal, LegacyData, Pin, PinKind, TimelineEntry } from '@/types/legacy';
 import type { RankFamily, RankLevel } from '@/domain/rank-artwork/resolver';
-import { isAchieved, isQuantifiable, progressLabel, progressPct } from '@/domain/goals/goals';
+import { chapterGoal } from '@/domain/goals/goals';
 
 /** DB `honor_catalog.category` names → the code catalog's ids, for glyph resolution. */
 const CATEGORY_ID: Record<string, string> = {
@@ -98,21 +98,18 @@ interface GoalRow {
   metric_start_value: number | null;
 }
 
-/** A real primary goal row → the Legacy chapter card's display Goal (single-sourced via domain/goals). */
+/** A real primary goal row → the Legacy chapter card's display Goal (`chapterGoal` — the profile uses it too). */
 function toDisplayGoal(g: GoalRow | undefined): LegacyGoal {
   if (!g) return { kind: 'none' };
-  const dom = {
+  return chapterGoal({
+    name: g.name,
     target: g.target,
     current: g.current,
     unit: g.unit,
     achievedAt: g.achieved_at,
-    metricDir: g.metric_dir === 'down' ? ('down' as const) : ('up' as const),
+    metricDir: g.metric_dir === 'down' ? 'down' : 'up',
     metricStartValue: g.metric_start_value ?? null,
-  };
-  const achieved = isAchieved(dom);
-  return isQuantifiable(dom)
-    ? { kind: 'quantifiable', name: g.name, progress: progressPct(dom), achieved, valueLabel: progressLabel(dom) }
-    : { kind: 'narrative', name: g.name, achieved };
+  });
 }
 
 /**
