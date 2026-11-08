@@ -218,8 +218,32 @@ export async function updateProgress(goalId: string, current: number): Promise<{
   const id = await uid();
   if (!id) throw new Error('Not signed in');
   const before = await fetchGoal(goalId);
-  const patch: { current: number; achieved_at?: string } = { current };
-  const nowAchieved = before != null && before.achievedAt == null && meetsTarget({ target: before.target, current, metricDir: before.metricDir });
+  /*
+   * ⚠ A "LOWER IS BETTER" GOAL WAS ACHIEVED BY ITS FIRST NUMBER (PO 11-08 launch QA, B8).
+   *
+   * This passed `metricDir` alone, so `travelDir` never saw the baseline and fell back to the stored flag — 'up' for
+   * every manual goal, which never asks. "Get to 180 lb" updated to 195 read 195 ≥ 180: Achieved, ceremony, and no
+   * way back. Two fixes:
+   *  · the baseline is passed, so a goal that has one (every body goal) reads its own direction; and
+   *  · a MANUAL goal with no baseline whose number lands ABOVE its target is the ambiguous case — a cut not started,
+   *    or a climb already beaten. It records that number as its baseline and is NOT marked achieved; the next update
+   *    measures from there. A climb that really was beaten on its first entry is one "Mark as Achieved" away.
+   */
+  const seedBaseline =
+    before != null &&
+    before.achievedAt == null &&
+    before.metricKind === 'manual' &&
+    before.target != null &&
+    before.metricStartValue == null &&
+    before.metricDir !== 'down' &&
+    current > before.target;
+  const patch: { current: number; achieved_at?: string; metric_start_value?: number } = { current };
+  if (seedBaseline) patch.metric_start_value = current;
+  const nowAchieved =
+    before != null &&
+    before.achievedAt == null &&
+    !seedBaseline &&
+    meetsTarget({ target: before.target, current, metricDir: before.metricDir, metricStartValue: before.metricStartValue });
   if (nowAchieved) patch.achieved_at = new Date().toISOString();
 
   const { data, error } = await supabase.from('goals').update(patch).eq('id', goalId).eq('athlete_id', id).select(ROW).single();
