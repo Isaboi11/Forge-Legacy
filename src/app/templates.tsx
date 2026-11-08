@@ -89,7 +89,7 @@ export default function TemplatesScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/workouts'));
 
   const start = async (t: WorkoutTemplate) => {
-    await writeWorkoutLaunch({ templateId: t.id, workoutName: t.name });
+    await writeWorkoutLaunch({ templateId: t.id, workoutName: t.name, templateFallback: t.exercises });
     router.push('/workout');
   };
 

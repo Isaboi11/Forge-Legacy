@@ -54,6 +54,9 @@ export function toTemplateExercises(d: WorkoutDraft): TemplateExercise[] {
       groupKind: x.groupKind ?? null,
       groupRounds: x.groupRounds ?? null,
       targetMi: x.targetMi ?? null,
+      /* Where it is done — a Treadmill Run saved as a template came back as an Outdoor Run with GPS, because this
+         was never written and the logger defaulted every block to outdoor (PO 11-08 launch QA, H21). */
+      ...(x.kind === 'cardio' && x.modality ? { modality: x.modality } : null),
       targetDurationSec: x.kind === 'cardio' ? (x.targetSec ?? null) : (x.durationSec ?? null),
       restAfterSec: x.kind === 'cardio' ? null : (x.restAfterSec ?? null),
       coachNote: x.coachNote ?? null,

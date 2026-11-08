@@ -128,7 +128,7 @@ function TemplateDetailScreen() {
 
   const start = async () => {
     if (!t) return;
-    await writeWorkoutLaunch({ templateId: t.id, workoutName: t.name });
+    await writeWorkoutLaunch({ templateId: t.id, workoutName: t.name, templateFallback: t.exercises });
     router.push('/workout');
   };
 
