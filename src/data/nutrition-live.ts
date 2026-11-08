@@ -1420,6 +1420,18 @@ export async function fetchNutritionProfile(): Promise<NutritionProfile> {
   };
 }
 
+/**
+ * The birth year on its own (PO 11-08 launch QA, H33). The under-18 rules read it (`setupGate`: "Meal plans start at
+ * 18"), but it was written only beside a RECOMMENDED target — and an under-age year is itself a blocker, so a minor's
+ * year was never stored and the planner gate always saw null. Kept the moment a whole year is typed, whatever follows.
+ */
+export async function saveBirthYear(birthYear: number): Promise<void> {
+  const id = await athleteId();
+  if (!id) return;
+  const { error } = await supabase.from('profiles').update({ birth_year: birthYear }).eq('id', id);
+  if (error) throw error;
+}
+
 /** Saved alongside the target, because the athlete supplied them in order to get one. */
 export async function saveNutritionProfile(profile: NutritionProfile): Promise<void> {
   const id = await athleteId();
