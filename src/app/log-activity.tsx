@@ -63,6 +63,8 @@ export default function LogActivityScreen() {
   const { units, rowUnit } = useUnits();
 
   const [activity, setActivity] = useState<DistanceActivity>('running');
+  /* When it happened (launch QA, H26) — it is a log of something already done, so the day is the athlete's to say. */
+  const [daysAgo, setDaysAgo] = useState(0);
   const [distance, setDistance] = useState('');
   const [min, setMin] = useState('');
   const [sec, setSec] = useState('');
@@ -103,7 +105,7 @@ export default function LogActivityScreen() {
     if (!canSave || busy) return;
     setBusy(true);
     const durationSec = (parseInt(min || '0', 10) || 0) * 60 + (parseInt(sec || '0', 10) || 0);
-    saveActivity({ activityType: activity, distanceMi, durationSec: durationSec || undefined, notes }).then(
+    saveActivity({ activityType: activity, distanceMi, durationSec: durationSec || undefined, notes, daysAgo }).then(
       ({ workoutId }) => router.replace({ pathname: '/activity/[id]', params: { id: workoutId } }),
       (e: unknown) => {
         setBusy(false);
@@ -127,6 +129,23 @@ export default function LogActivityScreen() {
               return (
                 <Pressable key={a.key} onPress={() => pickActivity(a.key)} accessibilityRole="button" accessibilityState={{ selected: on }} style={[styles.chip, on ? styles.chipOn : null]}>
                   <Text style={[styles.chipLabel, on ? styles.chipLabelOn : null]}>{a.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* When — today, yesterday or the day before (H26). */}
+          <Text style={styles.sectionLabel}>When</Text>
+          <View style={styles.chips}>
+            {[
+              { d: 0, label: 'Today' },
+              { d: 1, label: 'Yesterday' },
+              { d: 2, label: '2 days ago' },
+            ].map((o) => {
+              const on = daysAgo === o.d;
+              return (
+                <Pressable key={o.d} onPress={() => setDaysAgo(o.d)} accessibilityRole="button" accessibilityState={{ selected: on }} style={[styles.chip, on ? styles.chipOn : null]}>
+                  <Text style={[styles.chipLabel, on ? styles.chipLabelOn : null]}>{o.label}</Text>
                 </Pressable>
               );
             })}

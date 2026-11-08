@@ -274,6 +274,11 @@ export interface ActivityInput {
   distanceMi: number;
   durationSec?: number;
   notes?: string | null;
+  /**
+   * How many days ago it happened — 0 today, 1 yesterday (PO 11-08 launch QA, H26). "Log an activity you already
+   * did" had no date, so yesterday's run was filed as today in history, the week and the chapter. Same time of day.
+   */
+  daysAgo?: number;
 }
 
 /**
@@ -288,7 +293,8 @@ export async function saveActivity(input: ActivityInput): Promise<{ workoutId: s
   if (!user) throw new Error('not signed in');
 
   const dur = input.durationSec ?? 0;
-  const startedAt = new Date(Date.now() - dur * 1000).toISOString();
+  const daysAgo = Math.max(0, Math.min(6, Math.floor(input.daysAgo ?? 0)));
+  const startedAt = new Date(Date.now() - daysAgo * 86_400_000 - dur * 1000).toISOString();
 
   const { data, error } = await supabase.rpc('save_workout', {
     p_workout_name: ACTIVITY_NAME[input.activityType],
