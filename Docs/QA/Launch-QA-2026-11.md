@@ -26,7 +26,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 
 ## ✅ Update #5 — OTA `01a1bd86-f78f-70b5…` (11-08, lane `f705f9d2`, served and checked)
 - H1, H3, H4, H5, H26, H30, plus the app side of 0260.
-- 🔨 `supabase/apply/pending-0260.sql` was put on the PO's clipboard 11-08 to paste now (not release-day).
+- ✅ **`pending-0260.sql` APPLIED 11-08 (PO).** §3 read `1 · 0 · 0 · true`, as predicted: 1 stale ask now hidden, 0 blocks, 0 joined-upcoming entries, refund callable. Because §3 rendered, §2 passed. The app side is already live (update #5). ⬜ Not yet seen working in the app.
 - Predicted §3: `stale_asks_now_hidden` ≥ 0 · `blocks_now_enforced_on_profiles` = today's block count · `joined_upcoming_entries_now_listed` ≥ 0 · `refund_callable_by_athletes` = true.
 - §2 must print "0260: all seven changes in place."
 
@@ -50,7 +50,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 | B2 | Workout | "Continue this workout" past 60 minutes from the first save: every Finish fails ("closed more than an hour ago"), and there is no discard | `0253_continue_into_same_exercise.sql:70-71`; `workout.tsx:2493,2551,2582` | SQL+JS | ✅ fixed `a244ff24` — new sets save as their own workout; not yet published |
 | B3 | Cardio | End Walk → Cancel throws the walk away (GPS stopped and the saved run deleted before the form opens) | `CardioBlockCard.tsx:552-558,1156`; `useRunTracker.ts:593,451` | JS | ✅ fixed `d99b7aeb` — "Log walk"; not yet published |
 | B4 | Cardio | ⋮ → "Discard workout · Nothing logged yet" deletes a live walk with one tap, no confirm | `workout.tsx:5819-5833` | JS | ✅ fixed `d99b7aeb`; not yet published |
-| B5 | Free tier | At the 3-program limit, a Free user gets a developer error ("The pre-action check that should have shown M-7 is missing…"), not the upgrade screen. Start, then cancelling the max-lift or end-current question, still uses up a lifetime slot, so 3 cancels lock them out | `program/[id].tsx:719-790,852-875`; `program-guided.tsx:291-298`; `CoachChatSheet.tsx:3054`; `week-template/[id].tsx:96-102`; `0158:147-150` | JS | ✅ `d94cb0b1` guards + plain message (update #2) · slot refund = `pending-0260.sql` |
+| B5 | Free tier | At the 3-program limit, a Free user gets a developer error ("The pre-action check that should have shown M-7 is missing…"), not the upgrade screen. Start, then cancelling the max-lift or end-current question, still uses up a lifetime slot, so 3 cancels lock them out | `program/[id].tsx:719-790,852-875`; `program-guided.tsx:291-298`; `CoachChatSheet.tsx:3054`; `week-template/[id].tsx:96-102`; `0158:147-150` | JS | ✅ `d94cb0b1` guards + plain message (update #2) · slot refund = 0260 ✅ applied 11-08 |
 | B6 | Account | The password-reset email link never reaches "Choose a new password" (`detectSessionInUrl: false`, no `redirectTo`) | `src/lib/supabase.ts:152`; `src/lib/auth.tsx:81,134-137` | JS (+ dashboard Site URL) | ✅ fixed `99ef242c` — ⚠ works only after a WEB deploy, and the Supabase redirect allow-list must hold `https://forgelegacy.expo.app/sign-in` |
 | B7 | Workout | Resume prompt → End workout saves an empty 0-set workout into history and the chapter count; a walk in progress is dropped | `workout.tsx:2827-2830,3974-3977` | JS | ✅ fixed `d99b7aeb`; not yet published |
 | B8 | Goals | A "lower is better" goal (lose weight to 180, a 5K under 25 min) is marked Achieved, with its ceremony, on its first progress update, and can't be undone | `src/data/goals-live.ts:222`; `chapter/new.tsx:124-131` | JS | ✅ fixed `6776ba3b`; not yet published |
@@ -58,7 +58,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 ## 🔴 HIGH — fix before Release where possible
 **Train Together**
 - H1 ✅ update #5 An accepted join reaches the asker only while their wait screen is open. Back out, and the host's "Let them in" never arrives; Join again makes a duplicate request. `workout-join.tsx:71,199-204`; no "accepted" notification for the asker in `0251`.
-- H2 🔨 needs `pending-0260.sql` pasted (app side in update #5) Unanswered join requests never expire. A days-old ask pops up during the host's next workout. `0225:739-762` (`pending_join_requests` has no time filter).
+- H2 ✅ 0260 applied + update #5 Unanswered join requests never expire. A days-old ask pops up during the host's next workout. `0225:739-762` (`pending_join_requests` has no time filter).
 - H3 ✅ update #5 A guest already in their own workout can only Resume (the join is silently dropped) or Discard (their sets are lost). `workout.tsx:1095-1106,2791-2855`.
 - H4 ✅ update #5 "Never Alone" doesn't award on the shared workout, only on the next one: partners are written after `save_workout` evaluates honors, and the failure is unreported (the try/catch is dead). `save.ts:186-198`; `0242:242`.
 - H5 ✅ update #5 One accepted ask credits every workout for 12 hours ("Trained with Sam" on a solo evening run). `partner-credit.ts:41`.
@@ -66,18 +66,18 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 
 **Squads / Challenges**
 - H7 ✅ update #2 Friends & Squad → Workout post says "Posted" but lands as an empty discussion with no workout. `squad-composer.tsx:566,461-476`; `friends-feed-live.ts:272`.
-- H8 🔨 needs `pending-0260.sql` pasted (app side in update #5) A competition that starts later disappears from Competitions and the squad page until it starts. `challenge_hub` in `0163:349+`.
+- H8 ✅ 0260 applied + update #5 A competition that starts later disappears from Competitions and the squad page until it starts. `challenge_hub` in `0163:349+`.
 - H9 ✅ update #4 Comments and check-in videos can't be reported, and nobody can delete a check-in video (guideline 1.2). `squad-post/[id].tsx:974-1005`; `squad/[id].tsx:1397+`.
 - H10 ✅ update #2 Request to Join skips the free 1-squad limit (join-by-code is gated). `discover-squads.tsx:114`; `squad-preview.tsx:184`.
 - H11 ⏸ after launch (Workout Complete, the main path, already works) · Squad composer → Workout Recap has no photo attach, and History → share passes no photo overlay, so neither can put the numbers on a photo. `squad-composer.tsx:664-706`; `activity/[id].tsx:161-173`.
 
 **Friends / Profile / Notifications**
 - H12 ✅ update #2 After sign-out, the phone keeps getting that account's pushes (`unregisterPushToken` is never called). `src/lib/auth.tsx:151-166`.
-- H13 🔨 needs `pending-0260.sql` pasted (app side in update #5) A blocked person can still search for you and open your profile (`athlete_profile` and `find_athletes` have no block check). `0098:64-173`; `0114`.
+- H13 ✅ 0260 applied + update #5 A blocked person can still search for you and open your profile (`athlete_profile` and `find_athletes` have no block check). `0098:64-173`; `0114`.
 - H14 ✅ update #2 Tapping a push with the app closed opens the screen twice, and later re-opens it (the last response is never cleared). `src/lib/push.tsx:168-205`.
 - H15 ✅ update #4 Edit Profile → Save / Remove photo flashes the splash and drops you on Home (a refetch re-enters boot loading). `edit-profile.tsx:204,221`; `useQuery.ts:77-79`. Confidence: medium.
 - H16 ✅ update #2 The "👊 Got it" cheer-reply push opens an Inbox that doesn't have it; the admin pushes do the same. `destination.ts:167-168`.
-- H17 🔨 needs `pending-0260.sql` pasted (app side in update #5) Accomplishments / Chapter History set to "Only me" still show under the profile's "Recent". `0098:154-164`.
+- H17 ✅ 0260 applied + update #5 Accomplishments / Chapter History set to "Only me" still show under the profile's "Recent". `0098:154-164`.
 
 **Programs / Templates / Holt**
 - H18 ✅ update #3 Holt's Free allowance is never used up (`consumeHoltAllowance` has no callers), so the paywall's "Basic Holt 1 program, 2 days/mo" isn't true. `entitlement-live.ts:153`.
@@ -97,12 +97,12 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H28 ✅ update #3 Lift, run, count, volume and PR goals only move while the Goals screen is open; a chapter sealed elsewhere records "In progress". `goals.tsx:121-141`; `chapter/[id].tsx:179-188`.
 - H29 ✅ update #3 Home doesn't re-read goals, the chapter line or the friend row on return ("Set a chapter goal" stays after you set one). `(tabs)/index.tsx:496-507`.
 - H30 ✅ update #5 "Featured Legacy Moment" and the timeline's Sealed / Achieved / Rank rows never appear (nothing writes them). `legacy-live.ts:148-160`.
-- H31 🔨 needs `pending-0260.sql` pasted (app side in update #5; was the parked 0257) · The public profile's weight-loss goal bar is full on day 1. Branch `wip/goal-direction` `371c066a`; its migration needs a new number (0257 is taken).
+- H31 ✅ 0260 applied + update #5 (was the parked 0257) · The public profile's weight-loss goal bar is full on day 1. Branch `wip/goal-direction` `371c066a`; its migration needs a new number (0257 is taken).
 
 **Nutrition**
 - H32 ✅ update #3 Workout Complete → Meal → log a food closes Workout Complete; unsent share choices are lost. `food-detail.tsx:243-244`; `create-food.tsx:355`; `meal-photo.tsx:141`.
 - H33 ✅ update #4 An under-18 with a manual target can use the meal planner (the birth year is never saved on that path). `nutrition-targets.tsx:213-217`; `nutrition-live.ts:1424`.
-- H34 🔨 needs `pending-0260.sql` pasted (app side in update #5) A Free user can't open their own saved recipe (the whole screen sits behind the planner gate); delete is gated too. `recipe.tsx:562-567`; `0244:91-94`.
+- H34 ✅ 0260 applied + update #5 A Free user can't open their own saved recipe (the whole screen sits behind the planner gate); delete is gated too. `recipe.tsx:562-567`; `0244:91-94`.
 - H35 ✅ update #3 A cold start with no signal hides the Nutrition tab, so offline logging can't be reached. `app-tabs.tsx:68-92`; `entitlement.tsx:76`.
 
 **Account / Paywall**
