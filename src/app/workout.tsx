@@ -2803,6 +2803,7 @@ export default function WorkoutScreen() {
             if (pendingLaunch) await clearWorkoutLaunch();
             setPendingLaunch(null);
             setSession(resumable);
+            setLiveBoutIdx(openBoutIndex(resumable));
             setPhase('active');
           }}
           dismissLabel={pendingLaunch ? 'Discard & start the new one' : 'End workout'}
@@ -2826,6 +2827,7 @@ export default function WorkoutScreen() {
               return;
             }
             setSession(resumable);
+            setLiveBoutIdx(openBoutIndex(resumable));
             setPhase('active');
             setEndConfirmOpen(true);
           }}
@@ -3973,6 +3975,20 @@ export default function WorkoutScreen() {
   };
   const confirmEnd = () => {
     setEndConfirmOpen(false);
+    /* ⚠ GUARDED HERE, NOT ONLY AT THE DOORS (PO 11-08 launch QA, B7). The resume prompt's "End workout"
+       opens this sheet straight after a reload, so a walk under way (`boutOpen`, nothing logged yet) went
+       through `finishToSeal` as an EMPTY workout — a 0-set row in history and the chapter count, and the
+       walk dropped. A bout under way must be ended on its card first; nothing logged has nothing to save. */
+    if (blockedByBout()) return;
+    const open = session.exercises.find((e) => e.boutOpen);
+    if (open) {
+      showToast(`End your ${VERB[open.activity ?? 'run'].toLowerCase()} first`);
+      return;
+    }
+    if (!hasLoggedSet(session)) {
+      showToast('Nothing logged yet — there’s nothing to save');
+      return;
+    }
     void finishToSeal();
   };
   /*
@@ -5816,20 +5832,25 @@ export default function WorkoutScreen() {
               {/* social2-14: with nothing logged, End and Finish were both disabled, so an empty session —
                   a shared one especially — had no way out but starting another over it. It can be left
                   instead: nothing is saved because there is nothing to save. */}
+              {/* ⚠ `hasLoggedWork`, NOT `hasLoggedSet` (PO 11-08 launch QA, B4). A walk under way has no completed
+                  set, so this read "Discard workout · Nothing logged yet" mid-walk and deleted the bout on one
+                  tap with no confirm. A bout under way is work: the row is "End workout", which the bout lock
+                  then holds until the walk is ended on its card. */}
               <OptionRow
                 onPress={
-                  hasLoggedSet(session)
+                  hasLoggedWork(session)
                     ? endFromOptions
                     : async () => {
                         setOptionsOpen(false);
+                        if (blockedByBout()) return;
                         await clearSession();
                         discardSession();
                         router.replace('/(tabs)');
                       }
                 }
                 danger
-                title={hasLoggedSet(session) ? 'End workout' : 'Discard workout'}
-                sub={hasLoggedSet(session) ? 'Finish and save your session' : 'Nothing logged yet — leave without saving'}
+                title={hasLoggedWork(session) ? 'End workout' : 'Discard workout'}
+                sub={hasLoggedWork(session) ? 'Finish and save your session' : 'Nothing logged yet — leave without saving'}
                 icon="stop"
               />
             </ScrollView>
@@ -6032,6 +6053,16 @@ function cardioExercise(
  * `SessionExercise.autoStart`. `at` is the launch's start index, clamped the way `startSession` clamps it;
  * null (no join), or a lift at that position, returns the list untouched.
  */
+/**
+ * The bout a reopened session left running, or null (PO 11-08 launch QA, H27). Only the GPS tracker reports
+ * itself live again when it is restored; a treadmill clock never did, so after a reopen its exits were open
+ * and Finish dropped the bout. Seeding the lock from the session's own `boutOpen` covers both.
+ */
+function openBoutIndex(s: ActiveSession): number | null {
+  const i = s.exercises.findIndex((e) => e.boutOpen === true);
+  return i >= 0 ? i : null;
+}
+
 function withAutoStart(exercises: SessionExercise[], at: number | null): SessionExercise[] {
   if (at == null) return exercises;
   const i = Math.min(Math.max(0, at), Math.max(0, exercises.length - 1));

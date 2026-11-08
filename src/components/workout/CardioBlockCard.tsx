@@ -133,6 +133,11 @@ interface Draft {
    * number somebody remembered.
    */
   source: 'tracked' | 'manual';
+  /**
+   * The form was opened by ENDING a bout — GPS (`gps`) or the treadmill clock (`clock`) — rather than to
+   * type one in or edit one. Cancel must not throw that bout away (PO 11-08 launch QA, B3).
+   */
+  fromBout?: 'gps' | 'clock' | null;
 }
 
 interface Props {
@@ -218,6 +223,12 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
   const loggedIndoors = logged && lm === 'indoor';
 
   const [draft, setDraft] = useState<Draft | null>(null);
+  /**
+   * An outdoor bout that was ENDED and then the form cancelled — its numbers, held so the card offers "Log
+   * walk" instead of "Start Walk" (which wipes the track). GPS is already stopped by then; this is the only
+   * place the walk still exists. See the Cancel button.
+   */
+  const [ended, setEnded] = useState<Draft | null>(null);
   const [distanceText, setDistanceText] = useState('');
 
   /**
@@ -535,6 +546,7 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
       hasIncline: formTreadmill && hasBelt,
       modality: formTreadmill ? 'indoor' : 'outdoor',
       source: gpsMeasured ? 'tracked' : (result?.source ?? 'manual'),
+      fromBout: logged ? null : bout != null ? 'gps' : timer.elapsedSec > 0 ? 'clock' : null,
     });
     setDistanceText(dText(distanceMi));
   };
@@ -1012,8 +1024,12 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
 
           Gating it here is also what makes that label correct without a second special case: only
           run, walk and ride reach it, and for them "Treadmill" (or "Indoor" for a bike) is true.
+
+          ⚠ AND ONLY BEFORE THE BOUT BEGINS (PO 11-08 launch QA, H24). Flipping it mid-walk hid Pause and End,
+          renamed the workout, and a bout ended from the treadmill controls saved 0 distance, typed, with no
+          route. Once a bout is under way, being ended, or held after a cancel, where it happened is decided.
         */}
-        {OUTDOOR_CAPABLE[activity] ? (
+        {OUTDOOR_CAPABLE[activity] && !(tracking || timer.running || timer.elapsedSec > 0 || ended || draft) ? (
         <View style={styles.segment}>
           {(['outdoor', 'indoor'] as Modality[]).map((m) => {
             const on = modality === m;
@@ -1153,7 +1169,21 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
             ) : null}
             <View style={styles.formActions}>
               <View style={styles.half}>
-                <Button variant="secondary" fullWidth onPress={() => setDraft(null)} accessibilityLabel="Cancel">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onPress={() => {
+                    /* ⚠ CANCEL KEEPS AN ENDED BOUT (PO 11-08 launch QA, B3). Ending stops GPS and deletes the
+                       saved run before this form opens, so a plain cancel left "Start Walk" — which wipes the
+                       track — and lifted the exit lock, so Finish saved the workout without the walk. Now the
+                       numbers are held (`ended`, outdoor) or stay on the paused clock (treadmill), and the bout
+                       is under way again as far as the screen's exits are concerned. */
+                    if (draft.fromBout === 'gps') setEnded(draft);
+                    if (draft.fromBout) onLiveChange?.(true);
+                    setDraft(null);
+                  }}
+                  accessibilityLabel="Cancel"
+                >
                   Cancel
                 </Button>
               </View>
@@ -1324,6 +1354,33 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
                     <Text style={styles.textBtnText}>Try GPS again</Text>
                   </Pressable>
                 ) : null}
+              </>
+            ) : ended ? (
+              <>
+                {/* An ended walk whose form was cancelled (B3): log it, or let it go on purpose. */}
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onPress={() => {
+                    setDraft(ended);
+                    setEnded(null);
+                    onLiveChange?.(false);
+                  }}
+                  accessibilityLabel={`Log your ${VERB[activity].toLowerCase()}`}
+                >
+                  {`Log ${VERB[activity]} · ${tracksDistance && ended.distanceMi > 0 ? `${d1(ended.distanceMi)} ${dU} · ` : ''}${fmtClock(ended.timeSec)}`}
+                </Button>
+                <Pressable
+                  onPress={() => {
+                    setEnded(null);
+                    onLiveChange?.(false);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Discard this ${VERB[activity].toLowerCase()}`}
+                  style={styles.textBtn}
+                >
+                  <Text style={styles.textBtnText}>{`Discard this ${VERB[activity].toLowerCase()}`}</Text>
+                </Pressable>
               </>
             ) : (
               <>
