@@ -1,6 +1,21 @@
 import { trackInvite } from '@/lib/analytics';
 import { supabase } from '@/lib/supabase';
 import type { ProgramStructure } from '@/data/programs-live';
+import { withoutNote } from '@/domain/coach/holt-marks';
+
+/**
+ * ⚠ A SENT PROGRAM CARRIES NONE OF HOLT'S NOTES (PO 11-08 launch QA, H23). Each changed day holds a `holtNote` —
+ * what Holt changed and the athlete's own words that asked for it ("You asked: my knee hurts") — and sending
+ * copied the structure as stored, so the recipient read the sender's message to Holt on their "Updated by Holt"
+ * line. Duplicate already strips them; a share now does too, from every day and every week plan.
+ */
+export function shareableStructure(structure: ProgramStructure): ProgramStructure {
+  return {
+    ...structure,
+    days: structure.days.map(withoutNote),
+    weekPlans: structure.weekPlans ? structure.weekPlans.map((w) => ({ ...w, days: w.days.map(withoutNote) })) : structure.weekPlans,
+  };
+}
 
 /**
  * Sending a program to someone who can run it (migration 0110).
@@ -47,7 +62,7 @@ export async function shareProgram(
   const { data, error } = await supabase.rpc('share_program', {
     p_to: toIds,
     p_name: name,
-    p_structure: structure,
+    p_structure: shareableStructure(structure),
     p_source: sourceDefinitionId ?? null,
   });
   if (error) throw new Error(isMissing(error) ? NOT_MIGRATED : error.message);

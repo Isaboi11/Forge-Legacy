@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Constants from 'expo-constants';
@@ -413,6 +413,19 @@ export default function AccountSettingsScreen() {
                 question an owner would otherwise have to guess at. */}
             <Text style={styles.confirmBody}>
               Any squad you own passes to its longest-standing member, so nobody else loses their work.
+            </Text>
+            {/* Apple's account-deletion guidance (PO 11-08 launch QA, H36): a subscription bought through the App Store is
+                Apple's to cancel, and deleting the account does not stop it. The hosted Terms say so; this dialog did not. */}
+            <Text style={styles.confirmBody}>
+              Subscribed through the App Store? Deleting your account doesn’t cancel it — cancel first in{' '}
+              <Text
+                style={styles.confirmWord}
+                accessibilityRole="link"
+                onPress={() => void Linking.openURL('https://apps.apple.com/account/subscriptions')}
+              >
+                Manage Subscriptions
+              </Text>
+              .
             </Text>
             <Text style={styles.confirmPrompt}>
               Type <Text style={styles.confirmWord}>DELETE</Text> to confirm
