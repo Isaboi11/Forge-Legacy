@@ -10,6 +10,7 @@ import type { ProgramExercise } from '@/data/programs-live';
 import { repTargets } from '../program/prescription.ts';
 import { contextMaxFor, percentTargets, resolveLoad, type LoadContext } from '../program/percent-max.ts';
 import type { GroupKind, SessionExercise, SessionSet } from './types.ts';
+import { cardioKey } from './conditioning.ts';
 
 /**
  * One `SessionSet` per prescribed set, carrying what that specific set asks for.
@@ -108,12 +109,20 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
  *
  * ══ WHAT IT DELIBERATELY DROPS ══
  *
- * Everything the guest should not inherit. LOGGED WEIGHT and completed reps, because those are yours and
- * they are not a prescription — sending them would put your working sets on somebody else's bar. And
- * CARDIO BLOCKS, because a leg is a distance and a clock, not a list of sets, and squeezing one into
- * this shape would mean inventing a rep count for a run. A session that is only cardio therefore
- * snapshots to nothing, which reads downstream as a freestyle session under a shared name — the honest
- * answer, and one `workout.tsx` already handles.
+ * Everything the guest should not inherit: LOGGED WEIGHT and completed reps, because those are yours and
+ * they are not a prescription — sending them would put your working sets on somebody else's bar.
+ *
+ * ══ A WALK TRAVELS AS A WALK (PO 11-08) ══
+ *
+ * *"She clicked join workout on my name, I clicked yes, and it took her to the choose exercise screen
+ * when it should've just started with where I was at."* This dropped CARDIO BLOCKS ("a leg is a distance
+ * and a clock, not a list of sets"), so a walk — an ordinary session holding one cardio block —
+ * snapshotted to NOTHING, and the guest's launch read an empty shape as Build as you go: the picker.
+ * A block goes out in the shape `TemplateExercise` has stored cardio in since 0097 — the activity in
+ * `catalogKey` (`cardioKey`), `kind`, `modality` and the two targets — which `templateToSessionExercises`
+ * already turns back into a GPS block on the guest's phone. No rep count is invented: one set, 0 reps,
+ * exactly what `toTemplateExercises` writes for a template's run. A cardio row carries no group fields
+ * (the guest's cardio block has none to read) and does not count as a block member.
  *
  * `targetReps` falls back to the FIRST set's target rather than an average: a 6-6-4-4 wave has no single
  * rep target, and the opening set is the one the guest starts on.
@@ -135,19 +144,38 @@ export function sessionToTemplateExercises(exercises: readonly SessionExercise[]
   groupName?: string | null;
   groupKind?: GroupKind;
   groupRounds?: number | null;
+  kind?: 'strength' | 'cardio';
+  modality?: 'outdoor' | 'indoor';
+  targetMi?: number | null;
+  targetDurationSec?: number | null;
 }[] {
-  const kept = exercises.filter((e) => e.kind !== 'cardio' && e.sets.length > 0);
+  const isBout = (e: SessionExercise) => e.kind === 'cardio' && !!e.activity;
+  const kept = exercises.filter((e) => (e.kind === 'cardio' ? isBout(e) : e.sets.length > 0));
   const members = new Map<string, number>();
-  for (const e of kept) if (e.groupId) members.set(e.groupId, (members.get(e.groupId) ?? 0) + 1);
-  return kept.map((e) => ({
-    catalogKey: e.catalogKey ?? null,
-    name: e.name,
-    sets: e.sets.length,
-    targetReps: e.sets[0]?.targetReps ?? 8,
-    ...(e.groupId && (members.get(e.groupId) ?? 0) > 1
-      ? { groupId: e.groupId, groupName: e.groupName ?? null, groupKind: groupKindOf(e), groupRounds: e.groupRounds ?? null }
-      : null),
-  }));
+  for (const e of kept) if (e.groupId && !isBout(e)) members.set(e.groupId, (members.get(e.groupId) ?? 0) + 1);
+  return kept.map((e) => {
+    if (isBout(e)) {
+      return {
+        catalogKey: cardioKey(e.activity!),
+        name: e.name,
+        sets: 1,
+        targetReps: 0,
+        kind: 'cardio' as const,
+        modality: e.modality ?? 'outdoor',
+        targetMi: e.targetMi ?? null,
+        targetDurationSec: e.targetSec ?? null,
+      };
+    }
+    return {
+      catalogKey: e.catalogKey ?? null,
+      name: e.name,
+      sets: e.sets.length,
+      targetReps: e.sets[0]?.targetReps ?? 8,
+      ...(e.groupId && (members.get(e.groupId) ?? 0) > 1
+        ? { groupId: e.groupId, groupName: e.groupName ?? null, groupKind: groupKindOf(e), groupRounds: e.groupRounds ?? null }
+        : null),
+    };
+  });
 }
 
 export function groupFieldsOf(ex: ProgramExercise) {

@@ -188,9 +188,15 @@ interface Props {
    * outright, and the handlers are the more precise signal anyway.
    */
   onLiveChange?: (live: boolean) => void;
+  /**
+   * Start the bout's GPS the moment this card appears (PO 11-08): a walk the athlete JOINED, where the host
+   * is already moving. See `SessionExercise.autoStart` — the screen clears it on the first
+   * `onLiveChange(true)`, so this fires once per bout.
+   */
+  autoStart?: boolean;
 }
 
-export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModality, onSave, onLiveChange }: Props) {
+export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModality, onSave, onLiveChange, autoStart }: Props) {
   const activity: CardioActivity = exercise.activity ?? 'run';
   /* `?? 'outdoor'` put every machine outdoors when no modality was stored — a rower, an elliptical,
      a pool swim and a stair climber. `resolveModality` is the model's own answer. */
@@ -273,6 +279,24 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
    */
   const live = tracker.phase === 'live';
   useKeepScreenAwake(timer.running || live);
+
+  /*
+   * ══ A JOINED WALK STARTS ITSELF (PO 11-08) ══
+   *
+   * *"It should've just started with where I was at."* The same two calls the Start button makes, once,
+   * and only for a road bout that has not begun: a restored bout is already live or paused, a logged one
+   * is finished, and a machine has no GPS side to start. Location is asked for here the first time; a "no"
+   * leaves the clock running with the card's own no-signal line, exactly as pressing Start would.
+   */
+  const autoStartedRef = useRef(false);
+  const canAutoStart = !!autoStart && !logged && modality === 'outdoor' && OUTDOOR_CAPABLE[activity] && tracker.phase === 'idle';
+  const startTracker = tracker.start;
+  useEffect(() => {
+    if (!canAutoStart || autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    startTracker();
+    onLiveChange?.(true);
+  }, [canAutoStart, startTracker, onLiveChange]);
 
   // Live measurements. Zero and null until GPS has actually accepted movement — never seeded, never
   // simulated: an empty track has nothing to say and says nothing.

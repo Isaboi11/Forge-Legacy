@@ -36,7 +36,7 @@ export function planRemainder(session: ActiveSession): RemainderExercise[] {
     if (open.length === 0) continue;
     const reset = open.map((s) => ({ ...s, done: false, saved: undefined, actualReps: null }));
     if (ex.kind === 'cardio' && !ex.sets.some((s) => s.done)) {
-      const { boutOpen: _open, cardio: _result, savedPosition: _saved, ...rest } = ex;
+      const { boutOpen: _open, autoStart: _auto, cardio: _result, savedPosition: _saved, ...rest } = ex;
       out.push({ position: ex.position, name: ex.name, sets: reset, whole: { ...rest, sets: reset } });
     } else {
       out.push({ position: ex.position, name: ex.name, sets: reset });

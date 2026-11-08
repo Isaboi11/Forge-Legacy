@@ -104,6 +104,12 @@ export interface WorkoutLaunch {
    * together, but nothing stops a shorter shape arriving from an older client.
    */
   startIndex?: number;
+  /**
+   * Start the GPS of the cardio block the guest opens on (PO 11-08) — set only by an accepted JOIN, where
+   * the host is training right now and the guest is beside them. An ordinary invitation leaves it off:
+   * accepting one is agreeing to train, not a starting gun. See `SessionExercise.autoStart`.
+   */
+  autoStartBout?: boolean;
 }
 
 const KEY = 'forge_workout_launch_context_v1';
