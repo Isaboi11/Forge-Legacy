@@ -268,7 +268,8 @@ export default function LegacyScreen() {
    * travels. Legacy keeps its own read below so the badge reflects a promotion the moment one lands.
    */
   useEarnedMoments({ onRankChanged: refetch });
-  const syncBodyGoals = useBodyGoalSync();
+  /* Every auto-tracked goal, not only body ones — lifts, distance, counts and PRs moved only on the Goals screen (H28). */
+  const syncBodyGoals = useBodyGoalSync('all');
 
   useFocusEffect(
     useCallback(() => {

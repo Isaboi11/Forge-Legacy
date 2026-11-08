@@ -370,7 +370,7 @@ export default function HomeScreen() {
     refetch: refetchAwaiting,
     settled: awaitingSettled,
   } = useQuery(fetchAwaitingChapter, []);
-  const { data: homeChapter, settled: chapterSettled } = useQuery(fetchHomeChapter, []);
+  const { data: homeChapter, refetch: refetchChapter, settled: chapterSettled } = useQuery(fetchHomeChapter, []);
   // The rank line under the chapter (B8, QA 09-26) — the one row on Home that reaches Rank, Progress and
   // Honors. The stored rank is a one-row read; no recompute happens here (Legacy focus owns that).
   const { data: storedRank, refetch: refetchRank, settled: rankSettled } = useQuery(fetchStoredRank, []);
@@ -444,7 +444,7 @@ export default function HomeScreen() {
      athlete's own, and for having something to say — so the row went blank whenever the newest post in
      the whole feed failed either test. A card reporting an empty circle because of what the athlete
      themselves had just posted. Ten is a doorway's worth of looking, not a second feed. */
-  const { data: circlePosts, settled: circleSettled } = useQuery(() => fetchFriendsFeed(10), []);
+  const { data: circlePosts, refetch: refetchCircle, settled: circleSettled } = useQuery(() => fetchFriendsFeed(10), []);
   /* The Competitions badge, real. It also advances any due challenge lifecycle transitions — there is no
      scheduler, so a season closes when someone opens a screen that reads it, and Home is the screen
      opened most. The badge is the cheap part; keeping every squad's competitions honest is the point. */
@@ -504,7 +504,9 @@ export default function HomeScreen() {
       refetchTrainingNow(); // somebody may have started while you were on another tab
       refetchRank(); // a promotion is persisted on Legacy focus — the line must not lag behind it
       refetchWelcome(); // a workout just saved ends the break — the greeting must go with it
-    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow, refetchRank, refetchWelcome]),
+      refetchChapter(); // a chapter just started or sealed elsewhere (launch QA, H29)
+      refetchCircle(); // a friend's new post — Your Circle read once at mount and stayed stale (H29)
+    }, [refetchAwaiting, refetchPrograms, refetchIntake, refetchBuiltDone, refetchPlanned, refetchTrainingNow, refetchRank, refetchWelcome, refetchChapter, refetchCircle]),
   );
 
   /*
@@ -621,7 +623,20 @@ export default function HomeScreen() {
 
   // The Mission tile shows the REAL chapter goal now (0025), not the HOME_DATA placeholder. Primary
   // preferred, else the newest goal; count = goals still in progress. No goals → an invite to set one.
-  const { data: goalData, settled: goalsSettled } = useQuery(fetchActiveChapterGoals, []);
+  const { data: goalData, refetch: refetchGoals, settled: goalsSettled } = useQuery(fetchActiveChapterGoals, []);
+  /* ⚠ RE-READ ON RETURN (PO 11-08 launch QA, H29). Set a goal from the Mission tile, come back, and it still said "Set a
+     chapter goal" — Home stays mounted, and this was read once. Its own focus effect because it is declared below the
+     main one, which cannot reference it. The first focus is the mount's own read. */
+  const firstGoalsFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstGoalsFocus.current) {
+        firstGoalsFocus.current = false;
+        return;
+      }
+      refetchGoals();
+    }, [refetchGoals]),
+  );
   const goalList = goalData?.goals ?? [];
   const { primary: primaryGoal, active: activeGoals } = goalSections(goalList);
   const missionTarget = (primaryGoal ?? activeGoals[0])?.name ?? 'Set a chapter goal';
