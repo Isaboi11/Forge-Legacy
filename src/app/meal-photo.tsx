@@ -33,6 +33,7 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
+import { finishFoodLog } from '@/lib/food-return';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -137,9 +138,11 @@ export default function MealPhotoScreen() {
       await addEntries(iso, entries);
       const kcal = mealTotals(rows).kcal;
       showToast(`${entries.length} ${entries.length === 1 ? 'food' : 'foods'} · ${kcal} cal added to ${MEAL_LABELS[meal]}`);
-      /* Back to the diary, as Food Detail does: the athlete came to log a meal and has logged it. */
-      router.dismissAll?.();
-      router.replace('/nutrition');
+      /* Back to the diary, as Food Detail does — or to Workout Complete if that is where Log Food was opened (H32). */
+      if (!finishFoodLog(router)) {
+        router.dismissAll?.();
+        router.replace('/nutrition');
+      }
     } finally {
       setLogging(false);
     }

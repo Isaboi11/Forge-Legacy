@@ -62,6 +62,7 @@ import {
 import { shareState, squadList } from '@/domain/share/fanout';
 import { foodLine } from '@/domain/share/recap-stats';
 import { plainError } from '@/lib/plain-error';
+import { returnFoodLogTo } from '@/lib/food-return';
 import { useAutoPost } from '@/hooks/useAutoPost';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { PriorShare } from '@/domain/share/fanout';
@@ -456,6 +457,8 @@ function WorkoutComplete() {
   const { width: windowW } = useWindowDimensions();
   useFocusEffect(
     useCallback(() => {
+      // Back in focus: no food log is under way from here, so nothing may return to it later (H32).
+      returnFoodLogTo(null);
       let alive = true;
       void fetchTodaysChapterPhotos().then(
         (p) => {
@@ -493,9 +496,18 @@ function WorkoutComplete() {
    */
   const mayUseNutrition = useNutritionAccess();
   const showFoodRow = mayUseNutrition && !review;
-  const { data: today } = useQuery(
+  const { data: today, refetch: refetchToday } = useQuery(
     useCallback(() => (showFoodRow ? fetchDay(localToday()) : Promise.resolve(null)), [showFoodRow]),
     [showFoodRow],
+  );
+  /* Re-read on the way back from Log Food, so the Meal tile and "Post what I ate?" show what was just logged
+     (launch QA, H32 — it was read once, at mount, and logging used to close this screen anyway). */
+  const cameBack = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (cameBack.current && showFoodRow) refetchToday();
+      cameBack.current = true;
+    }, [showFoodRow, refetchToday]),
   );
   const eatenToday = today ? totals(today.entries).kcal : 0;
 
@@ -1348,7 +1360,14 @@ function WorkoutComplete() {
                     done={eatenToday > 0}
                     a11y={eatenToday > 0 ? `${thousands(eatenToday)} calories logged today` : 'Log what you ate'}
                     /* Outside the Nutrition tab, so it asks for the Nutrition consent itself (MHMDA). */
-                    onPress={() => void consentForRoute('/log-food').then((ok) => ok && router.push('/log-food'))}
+                    onPress={() =>
+                      void consentForRoute('/log-food').then((ok) => {
+                        if (!ok) return;
+                        // Logging returns HERE, share choices intact — not to the diary (launch QA, H32).
+                        returnFoodLogTo({ pathname: '/workout-complete', params: { id: String(id), ...(reviewParam ? { review: String(reviewParam) } : {}) } });
+                        router.push('/log-food');
+                      })
+                    }
                   />
                 ) : null}
               </View>

@@ -47,6 +47,7 @@ import {
 import { leaveRecipeFood } from '@/lib/recipe-food-handoff';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
+import { finishFoodLog } from '@/lib/food-return';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -352,8 +353,11 @@ export default function CreateFoodScreen() {
           },
         ]);
         showToast(`${food.name} added to ${MEAL_LABELS[meal]}${shareNote}`);
-        router.dismissAll?.();
-        router.replace('/nutrition');
+        // Back where Log Food was opened from — Workout Complete, or the diary (launch QA, H32).
+        if (!finishFoodLog(router)) {
+          router.dismissAll?.();
+          router.replace('/nutrition');
+        }
         return;
       }
 
