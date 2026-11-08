@@ -23,6 +23,7 @@ import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import {
   adoptCatalogProgram,
   deleteProgram,
+  discardUnstartedProgram,
   endProgram,
   fetchActiveProgram,
   fetchProgram,
@@ -888,7 +889,10 @@ export default function ProgramDetailScreen() {
     if (!id) return;
     provisionalRef.current = null;
     try {
-      await deleteProgram(id);
+      /* The delete AND the slot back, in one call (0260, launch QA B5) — a backed-out Start used to burn one of a Free
+         athlete's three lifetime programs. Before 0260 is pasted the RPC is missing, and the plain delete runs. */
+      const refunded = await discardUnstartedProgram(id).catch(() => false);
+      if (!refunded) await deleteProgram(id);
       if (previewDef) setProgram(null); // back to the preview it was before Start
     } catch {
       // leave it — `supabase/maintenance/clear-unstarted-catalog-programs.sql` is the sweep for residue

@@ -348,6 +348,7 @@ function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOp
   const meta = CHALLENGE_TYPES[c.type];
   const share = shareOfLeader(c.myScore, c.leaderScore);
   const left = daysLeft(c.endAt);
+  const upcoming = c.state === 'ENROLLMENT';
 
   return (
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${c.name}`} style={({ pressed }) => [styles.activeCard, pressed ? styles.activeCardPressed : null]}>
@@ -357,8 +358,9 @@ function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOp
         <TypeGlyph type={c.type} size={15} />
         <Text style={styles.typeName}>{metricLabel(c.type, c.metricKey)}</Text>
         <View style={styles.liveWrapRight}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveTag}>LIVE</Text>
+          {/* Joined and not begun (0260, launch QA H8) — it used to vanish until it started. */}
+          {upcoming ? null : <View style={styles.liveDot} />}
+          <Text style={styles.liveTag}>{upcoming ? 'UPCOMING' : 'LIVE'}</Text>
         </View>
       </View>
 
@@ -387,7 +389,7 @@ function ActiveCard({ challenge: c, onOpen }: { challenge: ActiveChallenge; onOp
         <Text style={styles.standing}>
           {placeLabel(c.myPlace)} · {formatScore(c.type, c.myScore)} {meta.unit}
         </Text>
-        <Text style={styles.days}>{daysLeftLabel(left)}</Text>
+        <Text style={styles.days}>{upcoming ? `Starts ${new Date(c.startAt).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}` : daysLeftLabel(left)}</Text>
       </View>
     </Pressable>
   );

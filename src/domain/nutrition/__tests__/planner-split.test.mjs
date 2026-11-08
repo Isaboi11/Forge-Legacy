@@ -89,12 +89,15 @@ test('the app reads the flag fail-closed, falling back to 0237 only when the key
 });
 
 test('every planner screen is behind the gate, and the tab\'s doors ask the planner flag', () => {
-  for (const f of ['meal-plan', 'meal-plan-setup', 'grocery-list', 'my-recipes', 'recipe']) {
+  // `recipe` is NOT here since launch QA H34 (PO 11-08): READING a recipe is free under 0244 "B" — only building and
+  // editing are Premium, and those live in My Recipes, which keeps its gate.
+  for (const f of ['meal-plan', 'meal-plan-setup', 'grocery-list', 'my-recipes']) {
     const src = read(`src/app/${f}.tsx`);
     const exp = src.slice(src.indexOf('export default function'));
     assert.match(exp, /<NutritionPlannerGate what="[^"]+">/, `${f}: the default export must be wrapped`);
     assert.equal((src.match(/export default function/g) ?? []).length, 1, `${f}: one default export`);
   }
+  assert.doesNotMatch(read('src/app/recipe.tsx').slice(read('src/app/recipe.tsx').indexOf('export default function')), /NutritionPlannerGate/, 'recipe: reading stays free (H34)');
   const tab = read('src/app/(tabs)/nutrition.tsx');
   assert.match(tab, /if \(!planner\) \{ router\.push\('\/subscription'\); return; \}/);
   assert.match(tab, /planner \? addGo\(\{ pathname: '\/my-recipes'/);

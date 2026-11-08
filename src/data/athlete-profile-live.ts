@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import type { Clearance } from '@/domain/settings/visibility';
+import type { MetricDir } from '@/domain/goals/goals';
 import type { FriendState } from './friends-live';
 
 /**
@@ -16,6 +17,11 @@ export interface ProfileGoal {
   current: number;
   target: number | null;
   unit: string | null;
+  /** 0257. Without these a cut and a climb look the same: 176 aiming at 160 is either "not started" or
+   *  "beaten". Absent before 0257 is pasted — then it reads as 'up' with no baseline, the old behaviour. */
+  metricDir: MetricDir;
+  metricStartValue: number | null;
+  achievedAt: string | null;
 }
 
 export interface ProfileChapter {
@@ -133,6 +139,9 @@ export async function fetchAthleteProfile(athleteId: string): Promise<AthletePro
                 current: Number(goalRaw.current ?? 0),
                 target: goalRaw.target == null ? null : Number(goalRaw.target),
                 unit: (goalRaw.unit as string) ?? null,
+                metricDir: goalRaw.metric_dir === 'down' ? 'down' : 'up',
+                metricStartValue: goalRaw.metric_start_value == null ? null : Number(goalRaw.metric_start_value),
+                achievedAt: (goalRaw.achieved_at as string) ?? null,
               }
             : null,
         }

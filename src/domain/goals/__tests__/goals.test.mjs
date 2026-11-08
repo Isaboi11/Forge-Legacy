@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   achievedDate,
+  chapterGoal,
   bodyTargetProblem,
   bodyTargetSummary,
   directionLabels,
@@ -280,4 +281,38 @@ test('the achieved day is the local calendar day, and an unreadable stamp is bla
   assert.equal(achievedDate('2026-06-03'), 'Jun 3, 2026', 'a bare date is that calendar day, not UTC midnight');
   assert.equal(achievedDate(null), '');
   assert.equal(achievedDate('nope'), '');
+});
+
+// ── chapterGoal: the ONE chapter-card mapper (Legacy tab + public profile) ──
+// PO 10-20: the profile drew a FULL bar for 176 lb aiming at 160 — its own `current / target` copy.
+
+const cut = (current) => ({ name: 'Bodyweight', target: 160, unit: 'lb', current, achievedAt: null, metricDir: 'down', metricStartValue: 176 });
+
+test('chapterGoal: a cut that has not started is an EMPTY bar, not a full one', () => {
+  const d = chapterGoal(cut(176));
+  assert.equal(d.kind, 'quantifiable');
+  assert.equal(d.progress, 0);
+  assert.equal(d.achieved, false);
+});
+
+test('chapterGoal: 176 → 170 aiming at 160 is 6 of 16 lb — 38%, about a third', () => {
+  assert.equal(chapterGoal(cut(170)).progress, 38);
+  assert.equal(chapterGoal(cut(168)).progress, 50);
+  assert.equal(chapterGoal(cut(160)).progress, 100);
+});
+
+test('chapterGoal: a cut with a direction but no baseline is 0 until it arrives — never full on day one', () => {
+  assert.equal(chapterGoal({ ...cut(176), metricStartValue: null }).progress, 0);
+  assert.equal(chapterGoal({ ...cut(159), metricStartValue: null }).progress, 100);
+});
+
+test('chapterGoal: an ascending goal still fills as a ratio, and achieved reads achievedAt', () => {
+  const lift = { name: 'Squat 405', target: 405, unit: 'lb', current: 225, achievedAt: null };
+  assert.equal(chapterGoal(lift).progress, 56);
+  assert.equal(chapterGoal(lift).achieved, false);
+  assert.equal(chapterGoal({ ...lift, achievedAt: '2026-10-01' }).achieved, true);
+});
+
+test('chapterGoal: no target is a narrative goal', () => {
+  assert.deepEqual(chapterGoal({ name: 'Run a trail', target: null, unit: null, current: 0, achievedAt: null }), { kind: 'narrative', name: 'Run a trail', achieved: false });
 });

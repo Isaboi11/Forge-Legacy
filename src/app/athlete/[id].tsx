@@ -20,6 +20,7 @@ import {
   TimelineRow,
 } from '@/components/forge/profile-sections';
 import { fetchAthleteProfile, rankLabel, type AthleteProfile } from '@/data/athlete-profile-live';
+import { chapterGoal } from '@/domain/goals/goals';
 import { fetchAthleteTraining, minutesTraining } from '@/data/presence-live';
 import { acceptFriendRequest, friendAction, removeFriendship, requestFriend, type FriendState } from '@/data/friends-live';
 import type { Accomplishment, Chapter, Goal, TimelineEntry } from '@/types/legacy';
@@ -533,17 +534,10 @@ function OverflowButton({ onPress }: { onPress: () => void }) {
 
 type ProfileChapterT = NonNullable<AthleteProfile['chapter']>;
 
+/* The Legacy tab's own mapper, not a copy of it. This used to be `current / target`, which drew a FULL
+   bar for a cut that had not started (176 lb aiming at 160) while the Legacy tab drew it empty. */
 function goalOf(g: ProfileChapterT['goal']): Goal {
-  if (!g) return { kind: 'none' };
-  if (g.target == null) return { kind: 'narrative', name: g.name, achieved: false };
-  const progress = g.target > 0 ? Math.round(Math.min(1, g.current / g.target) * 100) : 0;
-  return {
-    kind: 'quantifiable',
-    name: g.name,
-    progress,
-    achieved: progress >= 100,
-    valueLabel: `${g.current.toLocaleString('en-US')} / ${g.target.toLocaleString('en-US')}${g.unit ? ` ${g.unit}` : ''}`,
-  };
+  return g ? chapterGoal(g) : { kind: 'none' };
 }
 
 function toChapter(c: ProfileChapterT): Chapter {
