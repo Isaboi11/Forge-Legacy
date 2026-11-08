@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 
 /*
  * ⚠ THE ONLY IMPORT THIS FILE MAY TAKE FROM `lib/`, AND IT IS DIRECTIONAL.
@@ -33,6 +34,21 @@ if (!url || !anonKey) {
 // the server give it a no-op storage and skip persistence; the real client (browser/native) gets full
 // AsyncStorage persistence. An environment guard, not a preview shim.
 const isServer = typeof window === 'undefined';
+
+/*
+ * ══ A PASSWORD-RESET LINK IS READ ON THE WEB (PO 11-08 launch QA, B6) ══
+ *
+ * The emailed reset link opens a BROWSER (the phone app cannot receive it), and lands with the recovery session in
+ * the URL hash. `detectSessionInUrl` was false everywhere, so nothing read it: the athlete landed on Welcome and the
+ * "Choose a new password" step never appeared — a forgotten password was a dead end. On the web the client now
+ * reads the hash; on the phone there is no URL to read, so it stays off there.
+ *
+ * `openedFromRecoveryLink` is read HERE, before the client consumes the hash, because the client's own
+ * PASSWORD_RECOVERY event fires once at start-up and can land before `AuthProvider` has subscribed.
+ */
+const onWeb = !isServer && Platform.OS === 'web';
+export const openedFromRecoveryLink: boolean =
+  onWeb && typeof window.location?.hash === 'string' && /(^|[#&])type=recovery(&|$)/.test(window.location.hash);
 const noopStorage = {
   getItem: async () => null,
   setItem: async () => undefined,
@@ -150,7 +166,7 @@ export const supabase = createClient(url, anonKey, {
     storage: isServer ? noopStorage : AsyncStorage,
     autoRefreshToken: !isServer,
     persistSession: !isServer,
-    detectSessionInUrl: false,
+    detectSessionInUrl: onWeb,
   },
   // Not `auth.fetch` — supabase-js reads the auth client's fetch from `global.fetch` and drops
   // `auth.fetch` on the floor (`_initSupabaseAuthClient` destructures a fixed option list). The URL
