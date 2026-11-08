@@ -316,6 +316,35 @@ export function withinContinueWindow(savedAtISO: string | null | undefined, now 
  * An exercise whose every logged set is already committed contributes nothing and is dropped entirely,
  * or continuing a session and doing nothing would append a row of empty exercises to it.
  */
+/**
+ * `continue_workout` refused because the workout's window has closed (0253: an hour from its first save).
+ * Matched on the server's own sentence, which is the only signal it sends.
+ */
+export function isContinueWindowClosed(e: unknown): boolean {
+  const m = (e as { message?: unknown } | null)?.message;
+  return typeof m === 'string' && /closed more than an hour ago/i.test(m);
+}
+
+/**
+ * ══ A CONTINUE THE SERVER WILL NOT TAKE, SAVED AS ITS OWN WORKOUT (PO 11-08 launch QA, B2) ══
+ *
+ * "Continue this workout" at minute 40, train 30 more, Finish: the append is refused ("closed more than an hour
+ * ago"), a continue never goes to the offline queue, and the ⋮ menu only offers End — so every Finish failed and
+ * the new sets could not be saved at all. The server is right that the old workout is closed; the sets are
+ * still real. This is the session to save instead: only the sets done since the reopen (`saved` marks the rest),
+ * starting when the reopen did, and claiming no program slot or template — the first save already did.
+ * Null when nothing new was done, which leaves the refusal to surface as it did.
+ */
+export function continuationAsOwnSession(session: ActiveSession, nowIso: string): ActiveSession | null {
+  const exercises = session.exercises
+    .map((e) => ({ ...e, savedPosition: undefined, sets: e.sets.filter((s) => s.done && !s.saved) }))
+    .filter((e) => e.sets.length > 0)
+    .map((e, i) => ({ ...e, position: i }));
+  if (exercises.length === 0) return null;
+  const { continuingWorkoutId: _c, continuedAt, programId: _p, programWeek: _w, programDay: _d, templateId: _t, ...rest } = session;
+  return { ...rest, startedAt: continuedAt ?? nowIso, exercises, exerciseIndex: 0 };
+}
+
 export function buildAppendExercises(session: ActiveSession) {
   // ⚠ `recordedExercises(session)`, NOT `session.exercises`. These two rows must describe the SAME
   //   exercise, and `buildSaveExercises` walks the filtered list — see the note on `recordedExercises`

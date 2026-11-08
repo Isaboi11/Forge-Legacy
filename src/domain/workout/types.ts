@@ -259,6 +259,11 @@ export interface ActiveSession {
    * second program slot.
    */
   continuingWorkoutId?: string;
+  /**
+   * When that reopen happened (PO 11-08 launch QA, B2). If the server refuses the append because the workout's
+   * hour has closed, the sets done since are saved as a workout of their own — and this is when it started.
+   */
+  continuedAt?: string;
   workoutName: string;
   /**
    * The author's words around the workout (PO 2026-09-27, a squad's posted day): `how` it runs — the warm-up,

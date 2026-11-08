@@ -149,5 +149,6 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
     ...(row.program_id ? { programId: row.program_id } : {}),
     ...(row.template_id ? { templateId: row.template_id } : {}),
     continuingWorkoutId: row.id,
+    continuedAt: new Date().toISOString(),
   } as ActiveSession, remainder);
 }
