@@ -45,6 +45,7 @@ import {
   type SplitStyle,
 } from '@/domain/coach/rulebook/skeletons';
 import { fetchLearnedPreferences } from '@/data/learned-preference-live';
+import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence, type LearnedPreferences } from '@/domain/coach/learned-preference';
 import { scheduleSlots } from '@/domain/program/progress-core';
@@ -321,6 +322,14 @@ export default function CoachScreen() {
   async function build() {
     setBusy(true);
     setError(null);
+    /* The Free allowance is spent when he builds, not when the door opens (launch QA, H18) — see the same note in
+       `CoachChatSheet`. A null is unreadable, and the door's check already passed. */
+    const spend = await consumeHoltAllowance(mode === 'day' ? 'day' : 'program');
+    if (spend && !spend.allowed) {
+      setBusy(false);
+      setError(mode === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
+      return;
+    }
     /* QA holt-31: a level answered here is THE level — the chat reads the same one and never asks again. */
     if (askExperience && experience) void rememberExperience({ lifting: experience, running: experience });
     try {

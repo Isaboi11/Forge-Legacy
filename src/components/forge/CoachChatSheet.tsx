@@ -34,7 +34,8 @@ import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forg
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
 import { consentForRoute } from '@/lib/consent';
-import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
@@ -297,6 +298,7 @@ export function CoachChatSheet({
   /* Typing to Holt is the Premium AI add-on — the PO only, for now (`coach_ai`, fails closed). Everyone
      else keeps the taps; `TYPING_ENABLED` stays the public switch. */
   const premiumAi = usePremiumAi();
+  const { status: entitlementStatus } = useEntitlementState();
   const nutritionAccess = useNutritionAccess();
   const { units } = useUnits();
   const canType = TYPING_ENABLED || premiumAi;
@@ -891,6 +893,22 @@ export function CoachChatSheet({
         }
 
         setBusy('building');
+        /*
+         * ⚠ THE FREE ALLOWANCE IS SPENT HERE, WHEN HE ACTUALLY BUILDS (PO 11-08 launch QA, H18). `consume_holt_allowance`
+         * is the only thing that moves the counters the doors' `guard` reads, and nothing called it — so a Free athlete's
+         * "1 program, 2 days a month" never ran out. Here and not at the door: walking away from the questions costs
+         * nothing. A refusal is the server's answer (another device spent the last one); a null is an unreadable answer,
+         * and the door's own check already passed, so it builds.
+         */
+        const spend = await consumeHoltAllowance(mode_ === 'day' ? 'day' : 'program');
+        if (spend && !spend.allowed) {
+          setBusy(null);
+          say(
+            { kind: 'holt', text: mode_ === 'day' ? 'You’ve used this month’s free days from me. Premium makes them unlimited.' : 'You’ve used the free program I can build on your plan. Premium makes them unlimited.' },
+            { kind: 'chips', chips: [{ label: 'See Premium', patch: {}, goTo: '/subscription?from=gate' }] },
+          );
+          return;
+        }
         await pause(650);
         const c = completeFor(merged, mode_);
         /* Resolved at the boundary and handed down — see the note on the same call in `coach.tsx`. The
@@ -1405,6 +1423,26 @@ export function CoachChatSheet({
    */
 
   const beginEdit = async () => {
+    /*
+     * ⚠ HOLT CHANGING YOUR PROGRAM FOR YOU IS PREMIUM AI (Monetization Amendment 008, MA8 work owed #1; PO 11-08
+     * launch QA, H19). Every chat door to it — "Change my program", Home's ADJUST card, "Change the one I have" —
+     * lands here. The edit runs on the phone with no AI call, so the server cannot refuse it: the gate has to be
+     * here. Changing it yourself stays free on every plan. An unverified read is not a "no".
+     */
+    if (!premiumAi) {
+      say(
+        entitlementStatus === 'ready'
+          ? {
+              kind: 'holt',
+              text: 'Changing your program for you is part of Premium AI. You can still change it yourself — open a session on your program and swap or edit it.',
+            }
+          : { kind: 'holt', text: 'I couldn’t check your plan just now. Try again in a moment.' },
+        ...(entitlementStatus === 'ready'
+          ? [{ kind: 'chips' as const, chips: [{ label: 'See Premium AI', patch: {}, goTo: '/subscription?from=gate' }] }]
+          : []),
+      );
+      return;
+    }
     setBusy('thinking');
     const active = await Promise.race([
       fetchActiveProgram().catch(() => null),
