@@ -28,6 +28,29 @@ export async function saveLastDestinations(d: { friends: boolean; squadIds: stri
   }
 }
 
+/**
+ * How this phone last chose to post a workout photo — numbers ON it or UNDER it (PO 11-08: *"on the photo,
+ * remembered"*). Device-local for the same reason as the destinations above; absent means on the photo.
+ */
+const LOOK_KEY = 'forge_post_photo_look_v1';
+
+export async function readPhotoLook(): Promise<'overlay' | 'strip' | null> {
+  try {
+    const v = await AsyncStorage.getItem(LOOK_KEY);
+    return v === 'overlay' || v === 'strip' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function savePhotoLook(v: 'overlay' | 'strip'): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LOOK_KEY, v);
+  } catch {
+    // best-effort — without it, the next post starts on the photo again
+  }
+}
+
 export async function clearLastDestinations(): Promise<void> {
   try {
     await AsyncStorage.removeItem(KEY);

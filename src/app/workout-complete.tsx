@@ -44,7 +44,8 @@ import { SquadSelectList } from '@/components/forge/SquadSelectList';
 import { fetchWorkoutPostId, fetchWorkoutSharesStrict, runAutoPost } from '@/data/auto-post-live';
 import { postWorkoutRecap } from '@/data/workout-post-live';
 import { clearAutoPostPending, markAutoPostPending } from '@/lib/auto-post-pending';
-import { readLastDestinations, saveLastDestinations } from '@/lib/post-destinations';
+import { readLastDestinations, readPhotoLook, saveLastDestinations, savePhotoLook } from '@/lib/post-destinations';
+import { reportError } from '@/lib/diagnostics';
 import { fetchMySquads } from '@/data/squad-live';
 import {
   NO_DESTINATIONS,
@@ -420,13 +421,36 @@ function WorkoutComplete() {
   const mediaCaption = addedPhotos.map((p) => p.caption?.trim() ?? '').find(Boolean) ?? '';
   /*
    * ══ STATS ON THE PHOTO, OR UNDER IT ══ (PO 2026-10-02) — offered once a photo was added here. The first
-   * PHOTO (not a clip) is the one the numbers go on; any others post beside it as they always have. The
-   * strip stays the default: a post looks the way it always has until the athlete picks the other.
+   * PHOTO (not a clip) is the one the numbers go on; any others post beside it as they always have.
+   *
+   * ⚠ ON THE PHOTO IS THE DEFAULT, AND THE LAST CHOICE IS KEPT (PO 11-08, SO-D1 as amended). *"When I go to
+   * post my workout on squads it wouldn't post the numbers on my picture."* The strip was the default and
+   * nothing remembered a change, so a post went out without its numbers unless the athlete found the tile
+   * under the share rows every single time.
    */
   const firstPhoto = addedPhotos.find((p) => !p.isVideo) ?? null;
-  const [photoLook, setPhotoLook] = useState<PhotoLook>('strip');
+  const [photoLook, setPhotoLook] = useState<PhotoLook>('overlay');
+  useEffect(() => {
+    let alive = true;
+    void readPhotoLook().then((v) => {
+      if (alive && v) setPhotoLook(v);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const choosePhotoLook = (v: PhotoLook) => {
+    setPhotoLook(v);
+    void savePhotoLook(v);
+  };
   const { data: pictureBits } = useQuery(
-    () => (firstPhoto ? postPictureBits(String(id), firstPhoto.url).catch(() => null) : Promise.resolve(null)),
+    () =>
+      firstPhoto
+        ? postPictureBits(String(id), firstPhoto.url).catch((e) => {
+            reportError(e, { screen: 'post.picture' });
+            return null;
+          })
+        : Promise.resolve(null),
     [id, firstPhoto?.url],
   );
   const { width: windowW } = useWindowDimensions();
@@ -1366,7 +1390,7 @@ function WorkoutComplete() {
                 <View style={styles.photoLook}>
                   <PhotoLookChoice
                     value={photoLook}
-                    onChange={setPhotoLook}
+                    onChange={choosePhotoLook}
                     overlay={postPicture ? postPicture(false) : null}
                     photoUrl={firstPhoto.url}
                     stats={workoutStats(postSummary, units, rowUnit)}

@@ -56,6 +56,8 @@ export function rasterizeStory(drawing: StoryDrawing, photo: string | null): Pro
 export function StoryCardHost() {
   const svgRef = useRef<Svg>(null);
   const [job, setJob] = useState<Job | null>(null);
+  /** The job whose photo has decoded — set by the photo's own load event, never guessed from a delay. */
+  const [loadedJob, setLoadedJob] = useState<Job | null>(null);
   const pending = useRef<Resolver | null>(null);
 
   useEffect(() => {
@@ -90,18 +92,23 @@ export function StoryCardHost() {
     );
   }, [job]);
 
+  /*
+   * ⚠ WAIT FOR THE PHOTO, NOT FOR A GUESS (PO 11-08). This was a flat 250 ms before the snapshot, and a
+   * phone photo that took longer to decode would have gone out as the numbers on an empty frame. Now the
+   * snapshot fires 60 ms after the photo's own load event; the 3-second line is only for a platform that
+   * never sends one, and is no worse than before.
+   */
   useEffect(() => {
     if (!job) return;
-    // Give a photo time to decode before the snapshot. A data URI decodes fast, but a 1080×1920 image
-    // composited behind text on an older phone has needed more than the share card's 48 ms.
-    const id = setTimeout(capture, job.photo ? 250 : 60);
+    const ready = !job.photo || loadedJob === job;
+    const id = setTimeout(capture, ready ? 60 : 3000);
     return () => clearTimeout(id);
-  }, [job, capture]);
+  }, [job, loadedJob, capture]);
 
   if (!job) return null;
   return (
     <View style={styles.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <StoryCanvas ref={svgRef} drawing={job.drawing} photoUri={job.photo} />
+      <StoryCanvas ref={svgRef} drawing={job.drawing} photoUri={job.photo} onPhotoLoad={() => setLoadedJob(job)} />
     </View>
   );
 }

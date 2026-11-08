@@ -2,6 +2,7 @@ import { createFriendPost, uploadFeedImageData } from '@/data/friends-feed-live'
 import { addSquadPost, type WorkoutSummary } from '@/data/squad-feed-live';
 import type { StoryDrawing } from '@/domain/share/story-card';
 import type { PriorShare, ShareTarget } from '@/domain/share/fanout';
+import { reportError } from '@/lib/diagnostics';
 import { renderStoryImage } from '@/lib/story-image';
 
 /**
@@ -77,8 +78,17 @@ export async function postWorkoutRecap(input: WorkoutPostInput): Promise<Workout
    */
   let sent = recap;
   if (photoOverlay && media.some((m) => m.url === photoOverlay.photoUri)) {
-    const pic = await renderStoryImage(photoOverlay.compose(withRoute), photoOverlay.photoUri).catch(() => null);
-    const url = pic ? await uploadFeedImageData(pic.base64, pic.mime).catch(() => null) : null;
+    /* Reported, not swallowed (PO 11-08): the renderer names its own nulls; a throw or a failed upload is named here. */
+    const pic = await renderStoryImage(photoOverlay.compose(withRoute), photoOverlay.photoUri).catch((e) => {
+      reportError(e, { screen: 'post.picture' });
+      return null;
+    });
+    const url = pic
+      ? await uploadFeedImageData(pic.base64, pic.mime).catch((e) => {
+          reportError(e, { screen: 'post.picture-upload' });
+          return null;
+        })
+      : null;
     if (url) {
       sent = {
         ...recap,
