@@ -61,6 +61,7 @@ import {
   earnsStructuredDevelopmentCredit,
 } from '@/domain/program/progress-core';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { usePremiumAi } from '@/lib/entitlement';
 import {
   reorderTargets,
   reorderWeek,
@@ -212,6 +213,8 @@ export default function ProgramDetailScreen() {
    * four declared weeks spends a short-program slot.
    */
   const guard = usePremiumGate();
+  /* "Ask Holt" on a session is Holt changing your program for you — Premium AI (MA8; launch QA, H19). */
+  const premiumAi = usePremiumAi();
   const programCap = (st: Parameters<typeof earnsStructuredDevelopmentCredit>[0]) =>
     earnsStructuredDevelopmentCredit(st) ? ('programs' as const) : ('short_programs' as const);
   /** The `?reorder=` link opens the sheet ONCE. A ref, because consuming it must not re-render. */
@@ -1196,7 +1199,11 @@ export default function ProgramDetailScreen() {
               onSkipDay={state === 'active' ? (di, name) => askSkip(wi, di, name) : undefined}
               onUnskipDay={state === 'active' ? (di) => void unskipDay(wi, di) : undefined}
               onSwapDay={state === 'active' ? (di, name) => openSwap(wi, di, name) : undefined}
-              onAskHolt={state === 'active' ? (di, name) => setAsking({ weekIndex: wi, dayIndex: di, name }) : undefined}
+              onAskHolt={
+                state === 'active'
+                  ? (di, name) => (premiumAi ? setAsking({ weekIndex: wi, dayIndex: di, name }) : router.push('/subscription?from=gate' as Parameters<typeof router.push>[0]))
+                  : undefined
+              }
               holtNoteFor={(di) => holtNoteAt(structure, wi, di)}
               onHoltNote={(di, name, note) => setHoltSheet({ note, weekIndex: wi, dayIndex: di, name })}
               /* Offered only where there is something to rearrange: at least two sessions in the week
