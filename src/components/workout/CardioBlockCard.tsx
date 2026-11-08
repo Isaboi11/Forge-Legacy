@@ -300,14 +300,19 @@ export function CardioBlockCard({ exercise, index, sessionKey, units, onSetModal
    * leaves the clock running with the card's own no-signal line, exactly as pressing Start would.
    */
   const autoStartedRef = useRef(false);
-  const canAutoStart = !!autoStart && !logged && modality === 'outdoor' && OUTDOOR_CAPABLE[activity] && tracker.phase === 'idle';
+  /* Outdoors that is GPS; indoors it is the clock, the same as tapping Start Timer — a joined treadmill walk sat
+     idle until H6 (launch QA 11-08). */
+  const onRoad = modality === 'outdoor' && OUTDOOR_CAPABLE[activity];
+  const canAutoStart = !!autoStart && !logged && tracker.phase === 'idle' && !timer.running && timer.elapsedSec === 0;
   const startTracker = tracker.start;
+  const startClock = timer.start;
   useEffect(() => {
     if (!canAutoStart || autoStartedRef.current) return;
     autoStartedRef.current = true;
-    startTracker();
+    if (onRoad) startTracker();
+    else startClock();
     onLiveChange?.(true);
-  }, [canAutoStart, startTracker, onLiveChange]);
+  }, [canAutoStart, onRoad, startTracker, startClock, onLiveChange]);
 
   // Live measurements. Zero and null until GPS has actually accepted movement — never seeded, never
   // simulated: an empty track has nothing to say and says nothing.

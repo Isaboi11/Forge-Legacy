@@ -31,9 +31,9 @@ test('⚠ one-shot: the first live report clears the flag, so a reopened session
   assert.match(logger, /i === exIdx \? \{ \.\.\.e, boutOpen: live \|\| undefined, autoStart: undefined \}/);
 });
 
-test('the card starts the same way its Start button does, only for an outdoor bout not yet begun', () => {
-  assert.match(card, /!!autoStart && !logged && modality === 'outdoor' && OUTDOOR_CAPABLE\[activity\] && tracker\.phase === 'idle'/);
-  assert.match(card, /autoStartedRef\.current = true;\s+startTracker\(\);\s+onLiveChange\?\.\(true\);/);
+test('the card starts the way its own Start does — GPS on the road, the clock indoors — only for a bout not yet begun', () => {
+  assert.match(card, /const canAutoStart = !!autoStart && !logged && tracker\.phase === 'idle' && !timer\.running && timer\.elapsedSec === 0;/);
+  assert.match(card, /autoStartedRef\.current = true;\s+if \(onRoad\) startTracker\(\);\s+else startClock\(\);\s+onLiveChange\?\.\(true\);/);
 });
 
 test('a walk somebody joined keeps Add Exercise — it is not a prescribed plan', () => {
