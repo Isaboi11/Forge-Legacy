@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 
 test('the year is kept as soon as it is a whole year, and with a manual target too', () => {
   const src = readFileSync(new URL('../nutrition-targets.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
-  assert.match(src, /if \(\/\^\d\{4\}\$\/\.test\(next\)\) void saveBirthYear\(Number\(next\)\)/);
+  assert.ok(src.includes('if (/^\\d{4}$/.test(next)) void saveBirthYear(Number(next))'), 'the year is saved on a whole year');
   assert.match(src, /else if \(birthYear != null\) await saveBirthYear\(birthYear\);/);
   const live = readFileSync(new URL('../../data/nutrition-live.ts', import.meta.url), 'utf8');
   assert.match(live, /update\(\{ birth_year: birthYear \}\)/);
