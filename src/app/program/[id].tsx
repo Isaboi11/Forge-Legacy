@@ -58,7 +58,9 @@ import {
   type ProgramState,
   type SessionMark,
   type SessionState,
+  earnsStructuredDevelopmentCredit,
 } from '@/domain/program/progress-core';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import {
   reorderTargets,
   reorderWeek,
@@ -202,6 +204,16 @@ export default function ProgramDetailScreen() {
    * this screen would delete the program they had just answered for.
    */
   const provisionalRef = useRef<string | null>(null);
+  /*
+   * ⚠ THE CAP IS ASKED BEFORE A ROW EXISTS (PO 11-08 launch QA, B5). Every door below that creates a program —
+   * Start and Add to Planned on a catalogue preview, Run it again — went straight to the insert, so a Free
+   * athlete at the limit got the database's own refusal ("The pre-action check that should have shown M-7
+   * is missing at this call site") instead of the upgrade sheet. Same split the server makes (0158): under
+   * four declared weeks spends a short-program slot.
+   */
+  const guard = usePremiumGate();
+  const programCap = (st: Parameters<typeof earnsStructuredDevelopmentCredit>[0]) =>
+    earnsStructuredDevelopmentCredit(st) ? ('programs' as const) : ('short_programs' as const);
   /** The `?reorder=` link opens the sheet ONCE. A ref, because consuming it must not re-render. */
   const reorderLinkUsed = useRef(false);
   const tourScroller = useTourScroller();
@@ -742,6 +754,7 @@ export default function ProgramDetailScreen() {
    */
   const onAddToPlanned = async () => {
     if (busy || program) return;
+    if (!guard(programCap(structure))) return;
     setBusy(true);
     setError(null);
     try {
@@ -755,6 +768,8 @@ export default function ProgramDetailScreen() {
 
   const onPrimary = async () => {
     if (busy) return;
+    // A preview's Start adopts (a new row) and Run it again creates one; a planned or active program does not.
+    if (state !== 'active' && (terminal || !program) && !guard(programCap(structure))) return;
     setBusy(true);
     setError(null);
     try {

@@ -30,6 +30,7 @@ export const PLAIN = {
   conflict: 'That already exists.',
   invalid: 'Something in that wasn’t valid. Check it and try again.',
   other: 'Something went wrong. Try again.',
+  capReached: 'You’ve reached the Free plan’s limit for this. Premium makes it unlimited — see Settings → Subscription.',
 } as const
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -139,6 +140,10 @@ export function plainError(e: unknown, fallback: string = PLAIN.other): string {
   const t = asThrown(e)
   const code = dbCode(t)
   // Our own SQL refuses with `raise exception '…'` (P0001): that text was written for the athlete.
+  // ⚠ EXCEPT THE CAP TRIGGERS (0145/0157/0158), whose refusal names a developer's missing check (PO 11-08
+  // launch QA, B5): "Program limit reached: 3 of 3 used. The pre-action check that should have shown M-7 is
+  // missing…". Every door now asks first; this is the line a door that still doesn't gets.
+  if (code === 'P0001' && /limit reached/i.test(String(t?.message ?? ''))) return PLAIN.capReached
   if (code === 'P0001') return reads(t?.message) ? asSentence(t.message) : fallback
   const kind = errorKind(e)
   if (code) return kind === 'other' ? fallback : BY_KIND[kind]

@@ -84,7 +84,7 @@ import {
   weekPresets,
   type GuidedStep,
 } from '@/domain/program/guided-steps';
-import { progressFromMarks } from '@/domain/program/progress-core';
+import { earnsStructuredDevelopmentCredit, progressFromMarks } from '@/domain/program/progress-core';
 import { switchProgramCopy, type SwitchProgramCopy } from '@/domain/program/switch-program';
 import { draftFromStructure, makeDays, newDraft } from '@/lib/program-draft-model';
 import { PHOTO_IMPORT_LIVE } from '@/components/forge/ImportSpreadsheetSheet';
@@ -289,6 +289,9 @@ function Guided() {
    */
   const save = async (start: boolean) => {
     if (!structure) return;
+    /* The cap, asked before the insert (PO 11-08 launch QA, B5) — the server refuses at the limit, and its text is not
+       written for an athlete. Under four declared weeks is a short program (0158). */
+    if (!guard(earnsStructuredDevelopmentCredit(structure) ? 'programs' : 'short_programs')) return;
     setSwitchCopy(null);
     setSaving(true);
     setError(null);
