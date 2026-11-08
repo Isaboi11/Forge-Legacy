@@ -197,7 +197,8 @@ import {
   type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
-import { dayLabel, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
+import { dayLabel, earnsStructuredDevelopmentCredit, nextOpenSlot, type SessionMark } from '@/domain/program/progress-core';
+import { plainError } from '@/lib/plain-error';
 import { contextFrom } from '@/domain/coach/candidates';
 import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
 import { markHoltChange } from '@/domain/coach/holt-marks';
@@ -2957,6 +2958,8 @@ export function CoachChatSheet({
   const startNow = () => {
     if (!built || handing) return;
     if (built.kind === 'week' && !guard('short_programs')) return;
+    /* A whole program creates a row too, and went to `createProgram` unasked (PO 11-08 launch QA, B5). */
+    if (built.kind === 'program' && !guard(earnsStructuredDevelopmentCredit(built.structure) ? 'programs' : 'short_programs')) return;
     if (built.kind === 'day') {
       void (async () => {
         setHanding(true);
@@ -3541,7 +3544,9 @@ const COMPACT_WIDTH = 360;
 const COMPOSER_MAX = ASK_QUESTION_CHARS;
 const COMPOSER_COUNT_FROM = Math.round(COMPOSER_MAX * 0.8);
 
-const errorText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
+/* The athlete's sentence, never a database refusal read aloud (PO 11-08 launch QA, B5) — `plainError` keeps the
+   app's own thrown sentences and replaces Postgres / cap-trigger text with a line written for a person. */
+const errorText = (e: unknown): string => plainError(e);
 
 /**
  * §5.3 — a turn arrives: opacity 0→1 and 10px up, 280ms, ease-out.

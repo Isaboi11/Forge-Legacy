@@ -12,6 +12,7 @@ import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import {
   deleteWeekTemplate,
   duplicateWeekTemplate,
@@ -50,6 +51,7 @@ export default function WeekTemplateDetail() {
   const barBottom = useBarBottom();
   const router = useRouter();
   const { showToast } = useToast();
+  const guard = usePremiumGate();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const load = useCallback(async () => {
@@ -96,6 +98,8 @@ export default function WeekTemplateDetail() {
   const doDuplicate = async () => {
     if (!week || busy) return;
     setMenuOpen(false);
+    // A copy is a new week template, which spends a short-program slot (0157) — asked first (launch QA, B5).
+    if (!guard('short_programs')) return;
     setBusy(true);
     try {
       const { id: copyId } = await duplicateWeekTemplate(week.id);
