@@ -24,6 +24,11 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - ✅ **The join ask reaches a host who hasn't added an exercise yet.** It lands within 8 s and re-reads on return to the app. Supersets travel as supersets. `8c5ddee4`, stranded since 10-07
 - ✅ **Exercise search keeps every letter when you type fast.** `77367054`, trunk-only since 10-20
 
+## ✅ Update #2 — OTA `01a1bd1d-38b2-7e9b…` (11-08, lane `cf9d7247`, served and checked) + WEB `index-7364a077…` (trunk `0148cfa1`)
+- B2–B8, H7, H10, H12, H14, H16, H23, H24, H27, H36. The web also carries the B6 password-reset fix.
+- ⚠ The web was deployed WITHOUT the Forge Coach demo (PO 11-08: "Deploy without the Coach demo"). Rollback: the previous web `index-f89995b2…` from `web/coach-pass1`.
+- ⬜ PO, in the Supabase dashboard: Authentication → URL Configuration. `https://forgelegacy.expo.app/sign-in` must be in Redirect URLs, and Site URL must be `https://forgelegacy.expo.app`. Then try "Forgot password" once.
+
 ## ⛔ BLOCKERS — fix before Release
 | # | Area | What the user sees | Where | Lane | Status |
 |---|---|---|---|---|---|
@@ -46,18 +51,18 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H6 ⬜ A joined TREADMILL walk doesn't start by itself (auto-start is outdoor only). `CardioBlockCard.tsx:292`.
 
 **Squads / Challenges**
-- H7 ⬜ Friends & Squad → Workout post says "Posted" but lands as an empty discussion with no workout. `squad-composer.tsx:566,461-476`; `friends-feed-live.ts:272`.
+- H7 ✅ update #2 Friends & Squad → Workout post says "Posted" but lands as an empty discussion with no workout. `squad-composer.tsx:566,461-476`; `friends-feed-live.ts:272`.
 - H8 ⬜ A competition that starts later disappears from Competitions and the squad page until it starts. `challenge_hub` in `0163:349+`.
 - H9 ⬜ Comments and check-in videos can't be reported, and nobody can delete a check-in video (guideline 1.2). `squad-post/[id].tsx:974-1005`; `squad/[id].tsx:1397+`.
-- H10 ⬜ Request to Join skips the free 1-squad limit (join-by-code is gated). `discover-squads.tsx:114`; `squad-preview.tsx:184`.
+- H10 ✅ update #2 Request to Join skips the free 1-squad limit (join-by-code is gated). `discover-squads.tsx:114`; `squad-preview.tsx:184`.
 - H11 ⬜ Squad composer → Workout Recap has no photo attach, and History → share passes no photo overlay, so neither can put the numbers on a photo. `squad-composer.tsx:664-706`; `activity/[id].tsx:161-173`.
 
 **Friends / Profile / Notifications**
-- H12 ⬜ After sign-out, the phone keeps getting that account's pushes (`unregisterPushToken` is never called). `src/lib/auth.tsx:151-166`.
+- H12 ✅ update #2 After sign-out, the phone keeps getting that account's pushes (`unregisterPushToken` is never called). `src/lib/auth.tsx:151-166`.
 - H13 ⬜ A blocked person can still search for you and open your profile (`athlete_profile` and `find_athletes` have no block check). `0098:64-173`; `0114`.
-- H14 ⬜ Tapping a push with the app closed opens the screen twice, and later re-opens it (the last response is never cleared). `src/lib/push.tsx:168-205`.
+- H14 ✅ update #2 Tapping a push with the app closed opens the screen twice, and later re-opens it (the last response is never cleared). `src/lib/push.tsx:168-205`.
 - H15 ⬜ Edit Profile → Save / Remove photo flashes the splash and drops you on Home (a refetch re-enters boot loading). `edit-profile.tsx:204,221`; `useQuery.ts:77-79`. Confidence: medium.
-- H16 ⬜ The "👊 Got it" cheer-reply push opens an Inbox that doesn't have it; the admin pushes do the same. `destination.ts:167-168`.
+- H16 ✅ update #2 The "👊 Got it" cheer-reply push opens an Inbox that doesn't have it; the admin pushes do the same. `destination.ts:167-168`.
 - H17 ⬜ Accomplishments / Chapter History set to "Only me" still show under the profile's "Recent". `0098:154-164`.
 
 **Programs / Templates / Holt**
@@ -66,7 +71,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H20 ⬜ A day Holt writes from typed words loses its warm-up, cool-down, supersets and cardio when started or saved. `CoachChatSheet.tsx:957-962,2939,2963`; `save-shapes.ts:82-120`.
 - H21 ⬜ Treadmill / indoor bike blocks in templates start as outdoor GPS runs. `workout-template-rows.ts:32-62`; `workout.tsx:6050`.
 - H22 ⬜ Starting a template or program day on weak signal opens an empty Freestyle session with no message. `workout.tsx:1277-1305,1366-1411`; `templates-live.ts:223`.
-- H23 ⬜ PRIVACY: a sent program shows the recipient the sender's own words to Holt ("You asked: my knee hurts"). `send-program.tsx:110`; `holt-marks.ts:95`.
+- H23 ✅ update #2 PRIVACY: a sent program shows the recipient the sender's own words to Holt ("You asked: my knee hurts"). `send-program.tsx:110`; `holt-marks.ts:95`.
 
 **Workout / Cardio**
 - H24 ✅ `d99b7aeb` The Outdoor/Treadmill switch still works mid-walk. A mis-tap saves 0 distance with no route. `CardioBlockCard.tsx:1018-1032`.
@@ -87,7 +92,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H35 ⬜ A cold start with no signal hides the Nutrition tab, so offline logging can't be reached. `app-tabs.tsx:68-92`; `entitlement.tsx:76`.
 
 **Account / Paywall**
-- H36 ⬜ Delete Account doesn't say an App Store subscription keeps billing (Apple's deletion guidance). `account-settings.tsx:413-422`.
+- H36 ✅ update #2 Delete Account doesn't say an App Store subscription keeps billing (Apple's deletion guidance). `account-settings.tsx:413-422`.
 
 ## 🟡 POLISH — after release unless trivial
 - **Train Together:**
