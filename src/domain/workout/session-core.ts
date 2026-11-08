@@ -117,18 +117,37 @@ export function sessionSetsFor(ex: ProgramExercise, load?: LoadContext): Session
  *
  * `targetReps` falls back to the FIRST set's target rather than an average: a 6-6-4-4 wave has no single
  * rep target, and the opening set is the one the guest starts on.
+ *
+ * ══ WHAT IT KEEPS: THE BLOCKS (PO 10-07) ══
+ *
+ * *"When I added him to the workout, it didn't have it be a superset and it just did the individual
+ * exercises as their own."* A superset is how the workout is DONE, not a log of it — the guest needs it
+ * as much as the names. The group fields ride along in the shape `TemplateExercise` already stores them
+ * (0106), which the guest's launch reads back into a block. A group left with ONE member after the drops
+ * above (its partner was a run, or had no sets) goes out as a plain lift: a block of one is not a superset.
  */
-export function sessionToTemplateExercises(
-  exercises: readonly SessionExercise[],
-): { catalogKey: string | null; name: string; sets: number; targetReps: number }[] {
-  return exercises
-    .filter((e) => e.kind !== 'cardio' && e.sets.length > 0)
-    .map((e) => ({
-      catalogKey: e.catalogKey ?? null,
-      name: e.name,
-      sets: e.sets.length,
-      targetReps: e.sets[0]?.targetReps ?? 8,
-    }));
+export function sessionToTemplateExercises(exercises: readonly SessionExercise[]): {
+  catalogKey: string | null;
+  name: string;
+  sets: number;
+  targetReps: number;
+  groupId?: string;
+  groupName?: string | null;
+  groupKind?: GroupKind;
+  groupRounds?: number | null;
+}[] {
+  const kept = exercises.filter((e) => e.kind !== 'cardio' && e.sets.length > 0);
+  const members = new Map<string, number>();
+  for (const e of kept) if (e.groupId) members.set(e.groupId, (members.get(e.groupId) ?? 0) + 1);
+  return kept.map((e) => ({
+    catalogKey: e.catalogKey ?? null,
+    name: e.name,
+    sets: e.sets.length,
+    targetReps: e.sets[0]?.targetReps ?? 8,
+    ...(e.groupId && (members.get(e.groupId) ?? 0) > 1
+      ? { groupId: e.groupId, groupName: e.groupName ?? null, groupKind: groupKindOf(e), groupRounds: e.groupRounds ?? null }
+      : null),
+  }));
 }
 
 export function groupFieldsOf(ex: ProgramExercise) {

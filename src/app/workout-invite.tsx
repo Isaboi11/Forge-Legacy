@@ -85,13 +85,15 @@ export default function WorkoutInviteScreen() {
     setBusy(true);
     try {
       const live = await loadSession();
-      if (!live || live.exercises.length === 0) {
+      if (!live) {
         showToast('You’re not in a workout right now.');
         setBusy(false);
         return;
       }
+      // An empty session is still a workout under way — the guest opens a blank one (PO 10-05, see the
+      // same note on `answerJoin` in the logger).
       const shape = sessionToTemplateExercises(live.exercises);
-      const at = Math.min(Math.max(0, live.exerciseIndex ?? 0), live.exercises.length - 1);
+      const at = Math.min(Math.max(0, live.exerciseIndex ?? 0), Math.max(0, live.exercises.length - 1));
       /*
        * ⚠ THE INDEX IS INTO THE SNAPSHOT, NOT INTO THE SESSION.
        *

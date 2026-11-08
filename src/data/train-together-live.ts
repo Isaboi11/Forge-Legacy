@@ -1,5 +1,6 @@
+import { reportError } from '@/lib/diagnostics';
 import { supabase } from '@/lib/supabase';
-import type { TemplateExercise } from './templates-live';
+import { toExercise, type TemplateExercise } from './templates-live';
 
 /**
  * Train Together (S-10) — migration 0092.
@@ -103,12 +104,11 @@ export async function fetchWorkoutInvite(inviteId: string): Promise<WorkoutInvit
     toAvatarUrl: (d.to_avatar_url as string) ?? null,
     workoutName: String(d.workout_name),
     templateId: (d.template_id as string) ?? null,
-    exercises: ((d.exercises ?? []) as Record<string, unknown>[]).map((e) => ({
-      catalogKey: (e.catalogKey as string) ?? null,
-      name: String(e.name ?? 'Exercise'),
-      sets: Number(e.sets ?? 0),
-      targetReps: Number(e.targetReps ?? 0),
-    })),
+    /* ⚠ THE TEMPLATE READER, NOT A FOUR-FIELD COPY OF IT (PO 10-07). *"When I added him to the workout, it
+       didn't have it be a superset and it just did the individual exercises as their own."* This read kept
+       name/sets/reps only, so a superset — and a template's sections, timed sets and cues — was stored and
+       then dropped on the guest's phone. The column holds `TemplateExercise` rows; read them as one. */
+    exercises: ((d.exercises ?? []) as Record<string, unknown>[]).map(toExercise),
     startIndex: Number(d.start_index ?? 0),
     templateSummary: t ? { lifts: Number(t.lifts ?? 0), sets: Number(t.sets ?? 0) } : null,
     note: (d.note as string) ?? null,
@@ -282,13 +282,20 @@ export async function inviteToLiveSession(input: {
 /**
  * Join requests waiting on me right now, for the in-workout banner.
  *
- * Polled while a session is active, so it fails QUIETLY: an unapplied 0121 reads as "nobody is asking",
- * which is the safe direction. A banner that cannot appear is a missing feature; an error toast every
- * twenty seconds during a workout is a broken app.
+ * Polled while a session is active, so it fails QUIETLY ON SCREEN: an unapplied 0121 reads as "nobody is
+ * asking", which is the safe direction. A banner that cannot appear is a missing feature; an error toast
+ * every few seconds during a workout is a broken app.
+ *
+ * ⚠ QUIET ON SCREEN, NOT SILENT (PO 10-05). *"It said it would notify them, but it didn't."* With the error
+ *   swallowed, a broken read and "nobody asked" were the same thing, and the miss could not be traced. It
+ *   is reported now — `reportError` de-duplicates per fingerprint, so a poll cannot flood it.
  */
 export async function fetchPendingJoinRequests(): Promise<PendingJoinRequest[]> {
   const { data, error } = await supabase.rpc('pending_join_requests');
-  if (error) return [];
+  if (error) {
+    reportError(error, { screen: 'workout.join-banner' });
+    return [];
+  }
   return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
     id: String(r.id),
     fromId: String(r.from_id),

@@ -114,7 +114,8 @@ export interface TemplateDetail extends WorkoutTemplate {
 const MISSING = 'Templates aren’t available yet — migration 0091 hasn’t been applied.';
 const DETAIL_MISSING = 'Template details aren’t available yet — migration 0095 hasn’t been applied.';
 
-const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
+/** Exported for `workout_invites.exercises`, which stores this same shape — one whitelist, not two (PO 10-07). */
+export const toExercise = (e: Record<string, unknown>): TemplateExercise => ({
   catalogKey: (e.catalogKey as string) ?? null,
   name: String(e.name ?? 'Exercise'),
   sets: Number(e.sets ?? 0),
