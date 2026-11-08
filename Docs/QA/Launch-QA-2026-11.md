@@ -48,7 +48,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H3 ⬜ A guest already in their own workout can only Resume (the join is silently dropped) or Discard (their sets are lost). `workout.tsx:1095-1106,2791-2855`.
 - H4 ⬜ "Never Alone" doesn't award on the shared workout, only on the next one: partners are written after `save_workout` evaluates honors, and the failure is unreported (the try/catch is dead). `save.ts:186-198`; `0242:242`.
 - H5 ⬜ One accepted ask credits every workout for 12 hours ("Trained with Sam" on a solo evening run). `partner-credit.ts:41`.
-- H6 ⬜ A joined TREADMILL walk doesn't start by itself (auto-start is outdoor only). `CardioBlockCard.tsx:292`.
+- H6 ✅ fixed (update #3) A joined TREADMILL walk doesn't start by itself (auto-start is outdoor only). `CardioBlockCard.tsx:292`.
 
 **Squads / Challenges**
 - H7 ✅ update #2 Friends & Squad → Workout post says "Posted" but lands as an empty discussion with no workout. `squad-composer.tsx:566,461-476`; `friends-feed-live.ts:272`.
@@ -66,30 +66,30 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H17 ⬜ Accomplishments / Chapter History set to "Only me" still show under the profile's "Recent". `0098:154-164`.
 
 **Programs / Templates / Holt**
-- H18 ⬜ Holt's Free allowance is never used up (`consumeHoltAllowance` has no callers), so the paywall's "Basic Holt 1 program, 2 days/mo" isn't true. `entitlement-live.ts:153`.
-- H19 ⬜ "Change my program" isn't gated on Premium AI (MA8 owed #1). `CoachChatSheet.tsx:1406,1846,2026`; `program/[id].tsx:1184,1543`.
+- H18 ✅ fixed (update #3) Holt's Free allowance is never used up (`consumeHoltAllowance` has no callers), so the paywall's "Basic Holt 1 program, 2 days/mo" isn't true. `entitlement-live.ts:153`.
+- H19 ✅ fixed (update #3) "Change my program" isn't gated on Premium AI (MA8 owed #1). `CoachChatSheet.tsx:1406,1846,2026`; `program/[id].tsx:1184,1543`.
 - H20 ⬜ A day Holt writes from typed words loses its warm-up, cool-down, supersets and cardio when started or saved. `CoachChatSheet.tsx:957-962,2939,2963`; `save-shapes.ts:82-120`.
-- H21 ⬜ Treadmill / indoor bike blocks in templates start as outdoor GPS runs. `workout-template-rows.ts:32-62`; `workout.tsx:6050`.
-- H22 ⬜ Starting a template or program day on weak signal opens an empty Freestyle session with no message. `workout.tsx:1277-1305,1366-1411`; `templates-live.ts:223`.
+- H21 ✅ fixed (update #3) Treadmill / indoor bike blocks in templates start as outdoor GPS runs. `workout-template-rows.ts:32-62`; `workout.tsx:6050`.
+- H22 ✅ fixed (update #3) Starting a template or program day on weak signal opens an empty Freestyle session with no message. `workout.tsx:1277-1305,1366-1411`; `templates-live.ts:223`.
 - H23 ✅ update #2 PRIVACY: a sent program shows the recipient the sender's own words to Holt ("You asked: my knee hurts"). `send-program.tsx:110`; `holt-marks.ts:95`.
 
 **Workout / Cardio**
 - H24 ✅ `d99b7aeb` The Outdoor/Treadmill switch still works mid-walk. A mis-tap saves 0 distance with no route. `CardioBlockCard.tsx:1018-1032`.
-- H25 ⬜ Continuing a finished walk brings it back as a lift (sets table, no Start). `continue-workout-live.ts:126-141`.
+- H25 ✅ fixed (update #3) Continuing a finished walk brings it back as a lift (sets table, no Start). `continue-workout-live.ts:126-141`.
 - H26 ⬜ "Log an activity you already did" has no date: yesterday's run is filed as today. `log-activity.tsx`; `save.ts:282`.
 - H27 ✅ `d99b7aeb` A treadmill bout loses its exit lock after the app is reopened, so Finish drops it. `CardioBlockCard.tsx:251`; `useWallClockTimer.ts:59-81`.
 
 **Legacy / Goals**
-- H28 ⬜ Lift, run, count, volume and PR goals only move while the Goals screen is open; a chapter sealed elsewhere records "In progress". `goals.tsx:121-141`; `chapter/[id].tsx:179-188`.
-- H29 ⬜ Home doesn't re-read goals, the chapter line or the friend row on return ("Set a chapter goal" stays after you set one). `(tabs)/index.tsx:496-507`.
+- H28 ✅ fixed (update #3) Lift, run, count, volume and PR goals only move while the Goals screen is open; a chapter sealed elsewhere records "In progress". `goals.tsx:121-141`; `chapter/[id].tsx:179-188`.
+- H29 ✅ fixed (update #3) Home doesn't re-read goals, the chapter line or the friend row on return ("Set a chapter goal" stays after you set one). `(tabs)/index.tsx:496-507`.
 - H30 ⬜ "Featured Legacy Moment" and the timeline's Sealed / Achieved / Rank rows never appear (nothing writes them). `legacy-live.ts:148-160`.
 - H31 ⬜ (parked) The public profile's weight-loss goal bar is full on day 1. Branch `wip/goal-direction` `371c066a`; its migration needs a new number (0257 is taken).
 
 **Nutrition**
-- H32 ⬜ Workout Complete → Meal → log a food closes Workout Complete; unsent share choices are lost. `food-detail.tsx:243-244`; `create-food.tsx:355`; `meal-photo.tsx:141`.
+- H32 ✅ fixed (update #3) Workout Complete → Meal → log a food closes Workout Complete; unsent share choices are lost. `food-detail.tsx:243-244`; `create-food.tsx:355`; `meal-photo.tsx:141`.
 - H33 ⬜ An under-18 with a manual target can use the meal planner (the birth year is never saved on that path). `nutrition-targets.tsx:213-217`; `nutrition-live.ts:1424`.
 - H34 ⬜ A Free user can't open their own saved recipe (the whole screen sits behind the planner gate); delete is gated too. `recipe.tsx:562-567`; `0244:91-94`.
-- H35 ⬜ A cold start with no signal hides the Nutrition tab, so offline logging can't be reached. `app-tabs.tsx:68-92`; `entitlement.tsx:76`.
+- H35 ✅ fixed (update #3) A cold start with no signal hides the Nutrition tab, so offline logging can't be reached. `app-tabs.tsx:68-92`; `entitlement.tsx:76`.
 
 **Account / Paywall**
 - H36 ✅ update #2 Delete Account doesn't say an App Store subscription keeps billing (Apple's deletion guidance). `account-settings.tsx:413-422`.
