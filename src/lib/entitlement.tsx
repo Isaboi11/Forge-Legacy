@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { AppState } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { fetchEntitlement, type EntitlementSnapshot } from '@/data/entitlement-live';
 import {
@@ -74,6 +75,26 @@ interface EntitlementState {
  * fallback when a live read has failed — which is the correct answer in that moment anyway.
  */
 const LAST_GOOD = new Map<string, EntitlementSnapshot>();
+/*
+ * …AND ON DISK, SO A COLD START WITH NO SIGNAL STILL KNOWS (PO 11-08 launch QA, H35). The map above lives in memory,
+ * so opening the app in a basement gym had NO good answer: every fail-closed gate read "no" — the Nutrition tab and
+ * Home's food card vanished and offline logging, which works, could not be reached. Same per-athlete key, same rule:
+ * only ever the fallback when a live read failed.
+ */
+const lastGoodKey = (uid: string) => `forge_entitlement_last_good_v1:${uid}`;
+async function readLastGood(uid: string): Promise<EntitlementSnapshot | null> {
+  const mem = LAST_GOOD.get(uid);
+  if (mem) return mem;
+  try {
+    const raw = await AsyncStorage.getItem(lastGoodKey(uid));
+    if (!raw) return null;
+    const snap = JSON.parse(raw) as EntitlementSnapshot;
+    LAST_GOOD.set(uid, snap);
+    return snap;
+  } catch {
+    return null;
+  }
+}
 
 const EntitlementContext = createContext<EntitlementState | undefined>(undefined);
 
@@ -90,6 +111,7 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
         const snap = await fetchEntitlement();
         if (snap) {
           LAST_GOOD.set(uid, snap);
+          void AsyncStorage.setItem(lastGoodKey(uid), JSON.stringify(snap)).catch(() => undefined);
           return { uid, snap };
         }
       } catch {
@@ -101,7 +123,7 @@ export function EntitlementProvider({ children }: { children: React.ReactNode })
          ⚠ THE FAILURE ARRIVES AS `null`, NOT AS A THROW. `fetchEntitlement` turns every error into
          null, so this fallback used to sit in a `catch` that never ran, and one failed refresh wiped a
          good answer (Eva, 2026-10-15: "Unable to verify your subscription" on Import a workout). */
-      return { uid, snap: LAST_GOOD.get(uid) ?? null };
+      return { uid, snap: await readLastGood(uid) };
     },
     [uid],
   );

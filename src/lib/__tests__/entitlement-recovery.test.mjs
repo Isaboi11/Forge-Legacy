@@ -18,8 +18,10 @@ const JOIN = read('../../app/join-squad.tsx');
 test('a failed read keeps the last good answer, and the failure it handles is the null one', () => {
   // `fetchEntitlement` reports failure as null, never a throw — the premise of the fallback's placement.
   assert.match(LIVE, /if \(error\) \{[\s\S]{0,400}?return null;\s*\}/);
-  assert.match(PROVIDER, /if \(snap\) \{\s*LAST_GOOD\.set\(uid, snap\);\s*return \{ uid, snap \};\s*\}/);
-  assert.match(PROVIDER, /return \{ uid, snap: LAST_GOOD\.get\(uid\) \?\? null \};/);
+  // …and is written to disk too, so a cold start with no signal still has it (launch QA 11-08, H35).
+  assert.match(PROVIDER, /if \(snap\) \{\s*LAST_GOOD\.set\(uid, snap\);\s*void AsyncStorage\.setItem\(lastGoodKey\(uid\), JSON\.stringify\(snap\)\)\.catch\(\(\) => undefined\);\s*return \{ uid, snap \};\s*\}/);
+  assert.match(PROVIDER, /return \{ uid, snap: await readLastGood\(uid\) \};/);
+  assert.match(PROVIDER, /const mem = LAST_GOOD\.get\(uid\);\n\s+if \(mem\) return mem;/, 'memory first, disk second');
   // The old shape — fallback only inside `catch`, null passed straight through — must not come back.
   assert.doesNotMatch(PROVIDER, /if \(snap\) LAST_GOOD\.set\(uid, snap\);\s*return \{ uid, snap \};/);
 });
