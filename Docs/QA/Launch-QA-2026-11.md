@@ -24,6 +24,12 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - ✅ **The join ask reaches a host who hasn't added an exercise yet.** It lands within 8 s and re-reads on return to the app. Supersets travel as supersets. `8c5ddee4`, stranded since 10-07
 - ✅ **Exercise search keeps every letter when you type fast.** `77367054`, trunk-only since 10-20
 
+## ✅ Update #5 — OTA `01a1bd86-f78f-70b5…` (11-08, lane `f705f9d2`, served and checked)
+- H1, H3, H4, H5, H26, H30, plus the app side of 0260.
+- 🔨 `supabase/apply/pending-0260.sql` was put on the PO's clipboard 11-08 to paste now (not release-day).
+- Predicted §3: `stale_asks_now_hidden` ≥ 0 · `blocks_now_enforced_on_profiles` = today's block count · `joined_upcoming_entries_now_listed` ≥ 0 · `refund_callable_by_athletes` = true.
+- §2 must print "0260: all seven changes in place."
+
 ## ✅ Update #4 — OTA `01a1bd58-ef02-722d…` (11-08, lane `5fb2ec96`, served and checked)
 - H9, H15, H20, H33.
 
@@ -51,11 +57,11 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 
 ## 🔴 HIGH — fix before Release where possible
 **Train Together**
-- H1 ✅ fixed (update #5, not yet published) An accepted join reaches the asker only while their wait screen is open. Back out, and the host's "Let them in" never arrives; Join again makes a duplicate request. `workout-join.tsx:71,199-204`; no "accepted" notification for the asker in `0251`.
+- H1 ✅ update #5 An accepted join reaches the asker only while their wait screen is open. Back out, and the host's "Let them in" never arrives; Join again makes a duplicate request. `workout-join.tsx:71,199-204`; no "accepted" notification for the asker in `0251`.
 - H2 🔨 needs `pending-0260.sql` pasted (app side in update #5) Unanswered join requests never expire. A days-old ask pops up during the host's next workout. `0225:739-762` (`pending_join_requests` has no time filter).
-- H3 ✅ fixed (update #5, not yet published) A guest already in their own workout can only Resume (the join is silently dropped) or Discard (their sets are lost). `workout.tsx:1095-1106,2791-2855`.
-- H4 ✅ fixed (update #5, not yet published) "Never Alone" doesn't award on the shared workout, only on the next one: partners are written after `save_workout` evaluates honors, and the failure is unreported (the try/catch is dead). `save.ts:186-198`; `0242:242`.
-- H5 ✅ fixed (update #5, not yet published) One accepted ask credits every workout for 12 hours ("Trained with Sam" on a solo evening run). `partner-credit.ts:41`.
+- H3 ✅ update #5 A guest already in their own workout can only Resume (the join is silently dropped) or Discard (their sets are lost). `workout.tsx:1095-1106,2791-2855`.
+- H4 ✅ update #5 "Never Alone" doesn't award on the shared workout, only on the next one: partners are written after `save_workout` evaluates honors, and the failure is unreported (the try/catch is dead). `save.ts:186-198`; `0242:242`.
+- H5 ✅ update #5 One accepted ask credits every workout for 12 hours ("Trained with Sam" on a solo evening run). `partner-credit.ts:41`.
 - H6 ✅ update #3 A joined TREADMILL walk doesn't start by itself (auto-start is outdoor only). `CardioBlockCard.tsx:292`.
 
 **Squads / Challenges**
@@ -84,13 +90,13 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 **Workout / Cardio**
 - H24 ✅ `d99b7aeb` The Outdoor/Treadmill switch still works mid-walk. A mis-tap saves 0 distance with no route. `CardioBlockCard.tsx:1018-1032`.
 - H25 ✅ update #3 Continuing a finished walk brings it back as a lift (sets table, no Start). `continue-workout-live.ts:126-141`.
-- H26 ✅ fixed (update #5, not yet published) "Log an activity you already did" has no date: yesterday's run is filed as today. `log-activity.tsx`; `save.ts:282`.
+- H26 ✅ update #5 "Log an activity you already did" has no date: yesterday's run is filed as today. `log-activity.tsx`; `save.ts:282`.
 - H27 ✅ `d99b7aeb` A treadmill bout loses its exit lock after the app is reopened, so Finish drops it. `CardioBlockCard.tsx:251`; `useWallClockTimer.ts:59-81`.
 
 **Legacy / Goals**
 - H28 ✅ update #3 Lift, run, count, volume and PR goals only move while the Goals screen is open; a chapter sealed elsewhere records "In progress". `goals.tsx:121-141`; `chapter/[id].tsx:179-188`.
 - H29 ✅ update #3 Home doesn't re-read goals, the chapter line or the friend row on return ("Set a chapter goal" stays after you set one). `(tabs)/index.tsx:496-507`.
-- H30 ✅ fixed (update #5, not yet published) "Featured Legacy Moment" and the timeline's Sealed / Achieved / Rank rows never appear (nothing writes them). `legacy-live.ts:148-160`.
+- H30 ✅ update #5 "Featured Legacy Moment" and the timeline's Sealed / Achieved / Rank rows never appear (nothing writes them). `legacy-live.ts:148-160`.
 - H31 🔨 needs `pending-0260.sql` pasted (app side in update #5; was the parked 0257) · The public profile's weight-loss goal bar is full on day 1. Branch `wip/goal-direction` `371c066a`; its migration needs a new number (0257 is taken).
 
 **Nutrition**
