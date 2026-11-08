@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { Platform } from 'react-native';
+import { openedFromRecoveryLink, supabase } from './supabase';
 import { lastAthleteId, rememberAthleteId, resetFirstRunFlags } from './first-run';
 import { isDeviceHandover, shouldRecordAthlete } from '@/domain/auth/device-handover';
 import { syncAthletePresence } from '@/data/honors-live';
@@ -38,7 +39,8 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [recovering, setRecovering] = useState(false);
+  /* Seeded from the URL the page opened on — see `openedFromRecoveryLink` (launch QA, B6). */
+  const [recovering, setRecovering] = useState(openedFromRecoveryLink);
   // Last-seen auth user id. `undefined` = not yet observed (boot); on any real change to a DIFFERENT id
   // (including → null on sign-out) we wipe the device-local first-run flags so a new account starts clean.
   const prevUserId = useRef<string | null | undefined>(undefined);
@@ -132,7 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
   // Forgot-password send. The screen that calls this is the `forgot` step of the auth route.
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    /* Where the emailed link lands (launch QA, B6): this web app's sign-in screen, which reads the recovery session
+       from the URL. From the phone, the link opens Safari on forgelegacy.expo.app. The URL must be on Supabase's
+       redirect allow-list (Authentication → URL Configuration); otherwise Supabase falls back to the Site URL. */
+    const redirectTo =
+      Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin
+        ? `${window.location.origin}/sign-in`
+        : 'https://forgelegacy.expo.app/sign-in';
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
     return { error: error?.message ?? null };
   };
   /**
