@@ -916,6 +916,8 @@ export default function WorkoutScreen() {
    * disable the bar above it.
    */
   const [liveBoutIdx, setLiveBoutIdx] = useState<number | null>(null);
+  /** Resume's "Save this one & start the new one" is writing (launch QA H3). */
+  const [savingResumable, setSavingResumable] = useState(false);
   // Walkthrough plumbing. Fires on the FIRST session and nothing after — a PO call: the six things this
   // screen doesn't explain about itself are worth one overlay, and "Skip" is one tap for anyone who is
   // genuinely under a bar.
@@ -2798,6 +2800,43 @@ export default function WorkoutScreen() {
             setLiveBoutIdx(openBoutIndex(resumable));
             setPhase('active');
           }}
+          /*
+           * ⚠ THE THIRD ANSWER (PO 11-08 launch QA, H3). Someone mid-workout who was let into a friend's could only
+           * Resume (the join the host was already told about, silently dropped) or Discard (their logged sets, gone).
+           * Saving it first keeps both: the open session saves as it stands, then the parked launch starts — the same
+           * re-entry the discard uses. A bout still under way has nothing saved for it yet, so that one says so.
+           */
+          secondaryLabel={pendingLaunch ? 'Save this one & start the new one' : undefined}
+          onSecondary={
+            pendingLaunch
+              ? () => {
+                  if (savingResumable) return;
+                  const open = resumable.exercises.find((e) => e.boutOpen);
+                  if (open) {
+                    showToast(`Resume it and end your ${VERB[open.activity ?? 'run'].toLowerCase()} first`);
+                    return;
+                  }
+                  setSavingResumable(true);
+                  void (async () => {
+                    try {
+                      if (resumable.continuingWorkoutId) await continueWorkout(resumable.continuingWorkoutId, resumable, units);
+                      else await saveWorkout(resumable, [], [], units);
+                      await clearSession();
+                      void bumpWorkoutsLogged();
+                      showToast(`${resumable.workoutName} saved`);
+                      setResumable(null);
+                      setPendingLaunch(null);
+                      setPhase('loading');
+                      setReloadKey((k) => k + 1);
+                    } catch (e) {
+                      showToast(errorMessage(e));
+                    } finally {
+                      setSavingResumable(false);
+                    }
+                  })();
+                }
+              : undefined
+          }
           dismissLabel={pendingLaunch ? 'Discard & start the new one' : 'End workout'}
           onDismiss={() => {
             /*

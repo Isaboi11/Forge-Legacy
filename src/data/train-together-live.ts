@@ -1,6 +1,7 @@
 import { reportError } from '@/lib/diagnostics';
 import { supabase } from '@/lib/supabase';
 import { toExercise, type TemplateExercise } from './templates-live';
+import { unspentCredits } from '@/domain/workout/partner-credit';
 
 /**
  * Train Together (S-10) — migration 0092.
@@ -183,11 +184,48 @@ const WORKOUT_NAME_MAX = 60;
  * `workoutName` is seeded from the host's presence label ("Pull Day B"), which is all the app knows
  * about their session from outside it — and enough for the ask to name the thing.
  */
+/**
+ * ══ MY ASK TO THIS HOST, IF ONE IS STILL OPEN (PO 11-08 launch QA, H1) ══
+ *
+ * The answer only ever reached the asker while their wait screen was open — it is the only thing polling — and
+ * nothing led back to it: tap Back, the host says yes, and the asker never arrives. Tapping Join again then
+ * inserted a SECOND request. So the join screen asks this first: a PENDING ask from the last few hours resumes
+ * the wait, and an ask the host ACCEPTED in the last 20 minutes (while they are still training) opens the workout.
+ * Reads my own rows only (`workout_invites_select`: from_id = me).
+ */
+export async function fetchMyOpenJoinRequest(hostId: string): Promise<{ id: string; status: 'PENDING' | 'ACCEPTED' } | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const since = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from('workout_invites')
+    .select('id, status, accepted_at')
+    .eq('from_id', user.id)
+    .eq('to_id', hostId)
+    .eq('kind', 'JOIN_REQUEST')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  const row = data as { id: string; status: string; accepted_at: string | null };
+  if (row.status === 'PENDING') return { id: row.id, status: 'PENDING' };
+  const acceptedMs = row.accepted_at ? Date.parse(row.accepted_at) : NaN;
+  if (row.status === 'ACCEPTED' && Number.isFinite(acceptedMs) && Date.now() - acceptedMs < 20 * 60 * 1000) return { id: row.id, status: 'ACCEPTED' };
+  return null;
+}
+
 export async function requestToJoinWorkout(input: { hostId: string; workoutName: string; note?: string | null }): Promise<string> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
+
+  /* One open ask per host (launch QA, H1): asking again resumes the one already waiting, never a duplicate. */
+  const open = await fetchMyOpenJoinRequest(input.hostId);
+  if (open?.status === 'PENDING') return open.id;
 
   const name = (input.workoutName.trim() || 'their workout').slice(0, WORKOUT_NAME_MAX);
   const { data, error } = await supabase
@@ -369,13 +407,27 @@ export async function fetchAcceptedTrainingCredits(sinceISO: string): Promise<Ac
     }
     if (!others.length) return [];
 
+    /* Spent accepts drop out (launch QA, H5): any workout I saved after an accept has already been the shared one. */
+    const earliest = others.reduce((m, o) => (o.acceptedAt < m ? o.acceptedAt : m), others[0].acceptedAt);
+    const { data: savedRows } = await supabase
+      .from('workouts')
+      .select('saved_at')
+      .eq('athlete_id', user.id)
+      .eq('state', 'saved')
+      .gte('saved_at', earliest);
+    const savedAtMs = ((savedRows ?? []) as { saved_at: string | null }[])
+      .map((r) => (r.saved_at ? Date.parse(r.saved_at) : NaN))
+      .filter((n) => Number.isFinite(n));
+    const unspent = unspentCredits(others, savedAtMs);
+    if (!unspent.length) return [];
+
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, name')
-      .in('id', others.map((o) => o.id));
+      .in('id', unspent.map((o) => o.id));
     const nameById = new Map(((profiles ?? []) as { id: string; name: string | null }[]).map((p) => [p.id, p.name ?? '']));
 
-    return others.map((o) => ({
+    return unspent.map((o) => ({
       athleteId: o.id,
       athleteName: nameById.get(o.id)?.trim() || 'Athlete',
       acceptedAt: o.acceptedAt,
