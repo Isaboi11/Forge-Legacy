@@ -311,7 +311,7 @@ export default function WorkoutBuilderScreen() {
       const id = await saveTemplate(name, toTemplateExercises(draft), draft.editId);
       await clearWorkoutDraft();
       if (thenStart) {
-        await writeWorkoutLaunch({ templateId: id, workoutName: name });
+        await writeWorkoutLaunch({ templateId: id, workoutName: name, templateFallback: toTemplateExercises(draft) });
         router.replace('/workout');
       } else {
         showToast(`“${name}” saved to your templates.`);
@@ -828,7 +828,8 @@ function hydrate(name: string, exercises: TemplateExercise[], editId: string): W
         ? {
             kind: 'cardio' as const,
             activity: activityFromKey(e.catalogKey) ?? 'run',
-            modality: resolveModality(activityFromKey(e.catalogKey) ?? 'run', null),
+            // The template's own choice, now that it is saved (launch QA, H21) — null only on rows saved before.
+            modality: resolveModality(activityFromKey(e.catalogKey) ?? 'run', e.modality ?? null),
             targetMi: e.targetMi ?? null,
             targetSec: e.targetDurationSec ?? null,
           }

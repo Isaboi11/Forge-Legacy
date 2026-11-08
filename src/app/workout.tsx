@@ -1278,7 +1278,13 @@ export default function WorkoutScreen() {
       if (launch?.templateId) {
         await clearWorkoutLaunch();
         try {
-          const t = (await fetchTemplates()).find((x) => x.id === launch.templateId);
+          /* The fresh read wins; the rows the launching screen already held are the fallback, so a dropped read on
+             gym signal still starts the template (launch QA, H22). */
+          const t =
+            (await fetchTemplates().catch(() => [] as Awaited<ReturnType<typeof fetchTemplates>>)).find((x) => x.id === launch.templateId) ??
+            (launch.templateFallback?.length
+              ? { id: launch.templateId, name: launch.workoutName ?? 'Workout', exercises: launch.templateFallback }
+              : null);
           if (t) {
             const prescribed = await prescribedStart(t.exercises);
             startSession({
@@ -1299,6 +1305,8 @@ export default function WorkoutScreen() {
         } catch {
           // a missing template must not block training — fall through to a freestyle session
         }
+        /* Nothing to build from: say so, rather than opening a blank session that looks like the template (H22). */
+        showToast('Couldn’t load that template — build today’s as you go, or go back and try again.');
         startSession({ workoutName: launch.workoutName ?? 'Shared Workout', activityType: 'strength', startedAt: new Date().toISOString(), exercises: [] });
         setPhase('active');
         return;
@@ -1414,6 +1422,9 @@ export default function WorkoutScreen() {
        * fallback. It is what an athlete actually landed in whenever anything upstream went wrong, and it
        * looked convincingly like a real workout they had never chosen.
        */
+      /* A program day that could not be read (gym signal) used to land here in silence — an empty "Freestyle
+         Workout" the athlete took for their program day, credited to nothing (launch QA, H22). Say so. */
+      if (!fresh && launch?.programId) showToast('Couldn’t load your program day — check your connection and go back to try again.');
       startSession(
         fresh
           ? { ...fresh, templated: true }
@@ -6094,7 +6105,9 @@ function templateToSessionExercises(rows: readonly TemplateExercise[], load?: Lo
     if (e.kind === 'cardio' && act) {
       return cardioExercise(act, i, {
         section: e.section ?? 'main',
-        modality: e.modality ?? 'outdoor',
+        /* The model's answer for an unsaid modality, not 'outdoor' for everything — a rower or a stair climber is
+           indoors by nature, and a block saved before H21 carried none (launch QA, H21). */
+        modality: resolveModality(act, e.modality),
         targetMi: e.targetMi ?? null,
         // The clock the template was saved with. Dropped here until now — see `cardioExercise`'s opts.
         targetSec: e.targetDurationSec ?? null,

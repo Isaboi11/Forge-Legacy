@@ -69,6 +69,13 @@ export interface WorkoutLaunch {
    */
   exercises?: TemplateExercise[];
   /**
+   * The TEMPLATE's own rows, carried beside `templateId` by a screen that already holds them (PO 11-08 launch QA,
+   * H22). The logger reads the template fresh and uses these only when that read fails — on gym signal it failed
+   * often, and a failed read used to open an empty Freestyle session under the template's name with no word said.
+   * Not `exercises`, which is a shared shape and is read BEFORE `templateId` (it would drop the attribution).
+   */
+  templateFallback?: TemplateExercise[];
+  /**
    * The author's words around a posted / planned workout (PO 2026-09-27): how it runs and what comes after.
    * Carried beside `exercises`, never inside it — it is about the day, not about any one lift.
    */
