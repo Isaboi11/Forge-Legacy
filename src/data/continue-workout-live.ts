@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
 import { planRemainder, withPlanRemainder, type RemainderExercise } from '@/domain/workout/plan-remainder';
+import { activityFromKey, resolveModality } from '@/domain/workout/conditioning';
 
 /**
  * The unfinished half of the LAST finished session on this device — see `plan-remainder.ts` (workout-05).
@@ -122,6 +123,40 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
           saved: true,
         }));
 
+      /*
+       * ⚠ A SAVED WALK COMES BACK AS A WALK (PO 11-08 launch QA, H25). This rebuilt every row as a lift, and the logger
+       * decides cardio by `kind === 'cardio'` — so after "Continue this workout" an Outdoor Walk was a sets table with
+       * no Start button, and Add Set put reps on it. The activity rides in `catalogKey` (`cardioKey`); the logged
+       * numbers become the block's result, so the card shows it as done, and its set stays `saved` (never re-sent).
+       */
+      const act = activityFromKey(ex.catalog_key);
+      if (act) {
+        const s0 = sets[0];
+        const modality = resolveModality(act, s0?.modality ?? null);
+        return {
+          name: ex.name,
+          catalogKey: ex.catalog_key ?? undefined,
+          kind: 'cardio',
+          activity: act,
+          modality,
+          targetMi: null,
+          targetPaceSec: null,
+          targetSpdMph: null,
+          targetSec: null,
+          cardio: {
+            distanceMi: s0?.distanceMi ?? null,
+            floors: s0?.floors ?? null,
+            timeSec: s0?.durationSec ?? null,
+            inclinePct: s0?.inclinePct ?? null,
+            loggedModality: modality,
+            source: null,
+          },
+          section: (['warmup', 'main', 'cooldown'].includes(ex.section) ? ex.section : 'main') as SessionExercise['section'],
+          position: ex.position,
+          savedPosition: ex.position,
+          sets,
+        } as SessionExercise;
+      }
       return {
         name: ex.name,
         catalogKey: ex.catalog_key ?? undefined,
