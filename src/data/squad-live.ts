@@ -478,6 +478,20 @@ export async function postCheckin(squadId: string, videoUrl: string, note?: stri
   if (error) throw error;
 }
 
+/**
+ * Take your own check-in down (launch QA 11-08, H9). RLS has always allowed the author (0049 `squad_checkins_delete`:
+ * `user_id = auth.uid()`); nothing in the app ever offered it, so a video posted by mistake stayed up for 24 hours.
+ * The `.eq('user_id')` makes the intent explicit; the policy is what enforces it.
+ */
+export async function deleteCheckin(checkinId: string): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { error } = await supabase.from('squad_checkins').delete().eq('id', checkinId).eq('user_id', user.id);
+  if (error) throw error;
+}
+
 /** Mark a check-in watched by me (idempotent). */
 export async function markCheckinViewed(checkinId: string): Promise<void> {
   const {

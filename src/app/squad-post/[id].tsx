@@ -74,6 +74,8 @@ export default function SquadPostRoute() {
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
   const [cardW, setCardW] = useState(0);
   const [reportOpen, setReportOpen] = useState(false);
+  /* A comment being reported (guideline 1.2; PO 11-08 launch QA, H9) — the post had Report, its comments did not. */
+  const [reportComment, setReportComment] = useState<{ id: string; authorId: string; authorName: string } | null>(null);
   /*
    * ══ YOUR OWN POST: NAME IT, OR TAKE IT DOWN (PO, 2026-08-31) ══
    *
@@ -557,6 +559,14 @@ export default function SquadPostRoute() {
         targetAthleteId={post.authorId}
         targetName={post.authorName}
       />
+      <ReportSheet
+        open={reportComment != null}
+        onClose={() => setReportComment(null)}
+        targetKind="comment"
+        targetId={reportComment?.id ?? ''}
+        targetAthleteId={reportComment?.authorId ?? null}
+        targetName={reportComment?.authorName}
+      />
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
@@ -739,6 +749,7 @@ export default function SquadPostRoute() {
                 canDelete={!!myId && (c.authorId === myId || isOwner)}
                 onEdit={() => setEditing({ id: c.id, body: c.body })}
                 onDelete={() => setRemoving({ id: c.id, mine: c.authorId === myId })}
+                onReport={() => setReportComment({ id: String(c.id), authorId: c.authorId, authorName: c.authorName })}
               />
             ))
           ) : (
@@ -971,7 +982,22 @@ function RecapStat({ n, label }: { n: string; label: string }) {
  * delete a comment, because removal is moderation; rewriting somebody's words while their name stays on
  * them is not, and RLS refuses it regardless of what this screen draws.
  */
-function CommentItem({ comment, isMine, canDelete, onEdit, onDelete }: { comment: SquadPostComment; isMine: boolean; canDelete: boolean; onEdit: () => void; onDelete: () => void }) {
+function CommentItem({
+  comment,
+  isMine,
+  canDelete,
+  onEdit,
+  onDelete,
+  onReport,
+}: {
+  comment: SquadPostComment;
+  isMine: boolean;
+  canDelete: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  /** Anybody else's comment can be reported (guideline 1.2, launch QA H9) — never your own. */
+  onReport: () => void;
+}) {
   return (
     <View style={styles.comment}>
       <Avatar src={comment.authorAvatar ?? undefined} name={comment.authorName} size="listRow" />
@@ -985,8 +1011,7 @@ function CommentItem({ comment, isMine, canDelete, onEdit, onDelete }: { comment
           {comment.editedAt ? <Text style={styles.commentEdited}>edited</Text> : null}
         </View>
         <Text style={styles.commentText}>{comment.body}</Text>
-        {isMine || canDelete ? (
-          <View style={styles.commentActions}>
+        <View style={styles.commentActions}>
             {isMine ? (
               <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit your comment" hitSlop={8} style={styles.commentEditBtn}>
                 <Text style={styles.commentEditText}>Edit</Text>
@@ -997,8 +1022,12 @@ function CommentItem({ comment, isMine, canDelete, onEdit, onDelete }: { comment
                 <Text style={[styles.commentEditText, styles.commentDeleteText]}>Delete</Text>
               </Pressable>
             ) : null}
-          </View>
-        ) : null}
+            {!isMine ? (
+              <Pressable onPress={onReport} accessibilityRole="button" accessibilityLabel={`Report ${comment.authorName}'s comment`} hitSlop={8} style={styles.commentEditBtn}>
+                <Text style={styles.commentEditText}>Report</Text>
+              </Pressable>
+            ) : null}
+        </View>
       </View>
     </View>
   );

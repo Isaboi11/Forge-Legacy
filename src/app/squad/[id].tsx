@@ -23,7 +23,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { UploadError } from '@/lib/storage-upload';
-import { fetchSquadInvite, GOAL_UNITS, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
+import { deleteCheckin, fetchSquadInvite, GOAL_UNITS, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
 import { CHALLENGE_TYPES, daysLeft, fetchSquadCompetitions, fetchSquadHall, formatScore, metricLabel, placeLabel } from '@/data/challenges-live';
 import { daysLeftLabel } from '@/domain/challenges/season';
 import {
@@ -63,6 +63,7 @@ import { openPlaylist } from '@/components/forge/composites/Playlist';
 import { useQuery } from '@/lib/useQuery';
 import { plainError } from '@/lib/plain-error';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
+import { ReportSheet } from '@/components/ReportSheet';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { fetchPlannedWorkout, takePostedWorkout } from '@/data/planned-workout-live';
 import { postedTally, usesMaxes } from '@/domain/workout/posted-workout-lines';
@@ -232,6 +233,10 @@ function SquadDetailRoute() {
   const canInvite = inviteInfo?.canInvite ?? false;
 
   const [checkinViewer, setCheckinViewer] = useState<SquadCheckin | null>(null);
+  /* Report someone else's check-in, or take down your own (guideline 1.2; launch QA H9). Opened only once the viewer
+     Modal is gone — a sheet presented over a Modal still on screen is dropped by iOS (see `callerModalGone`). */
+  const [reportCheckin, setReportCheckin] = useState<SquadCheckin | null>(null);
+  const [deletingCheckin, setDeletingCheckin] = useState<SquadCheckin | null>(null);
   const [uploadingCheckin, setUploadingCheckin] = useState(false);
   const [checkinPct, setCheckinPct] = useState(0);
   const checkinAbortRef = useRef<AbortController | null>(null);
@@ -1151,6 +1156,15 @@ function SquadDetailRoute() {
         <CheckinViewer
           checkin={checkinViewer}
           onClose={() => setCheckinViewer(null)}
+          onModerate={() => {
+            const c = checkinViewer;
+            setCheckinViewer(null);
+            void (async () => {
+              await callerModalGone();
+              if (c.isSelf) setDeletingCheckin(c);
+              else setReportCheckin(c);
+            })();
+          }}
           /* ⚠ THE VIEWER IS A `Modal`, AND `setCheckinViewer(null)` ONLY SCHEDULES ITS DISMISSAL.
              Calling `startCheckin()` in the same tick presented the camera over a modal still on
              screen, which iOS drops silently — so Replace did nothing and the screen read as frozen.
@@ -1168,6 +1182,34 @@ function SquadDetailRoute() {
           }
         />
       ) : null}
+      <ReportSheet
+        open={reportCheckin != null}
+        onClose={() => setReportCheckin(null)}
+        targetKind="checkin"
+        targetId={reportCheckin?.id ?? ''}
+        targetAthleteId={reportCheckin?.userId ?? null}
+        targetName={reportCheckin?.name}
+      />
+      <ConfirmSheet
+        open={deletingCheckin != null}
+        onClose={() => setDeletingCheckin(null)}
+        headline="Delete your check-in?"
+        body="It comes off the squad for everyone. You can post a new one any time."
+        confirmLabel="Delete"
+        cancelLabel="Keep it"
+        onConfirm={async () => {
+          const c = deletingCheckin;
+          setDeletingCheckin(null);
+          if (!c) return;
+          try {
+            await deleteCheckin(c.id);
+            showToast('Check-in deleted');
+            refetchCheckins();
+          } catch (e) {
+            showToast(plainError(e, 'Couldn’t delete that check-in.'));
+          }
+        }}
+      />
 
       {mediaPickerSheet}
 
@@ -1392,7 +1434,18 @@ function CheckinCta({ onPress, uploading, pct }: { onPress: () => void; uploadin
  * the close is now a LABELLED PILL — the same shape as "Post a new check-in" at the foot, which nobody
  * has ever failed to find. A word beats a glyph when the glyph has to compete with a video.
  */
-function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin; onClose: () => void; onReplace?: () => void }) {
+function CheckinViewer({
+  checkin,
+  onClose,
+  onReplace,
+  onModerate,
+}: {
+  checkin: SquadCheckin;
+  onClose: () => void;
+  onReplace?: () => void;
+  /** Delete (your own) or Report (anyone else's) — launch QA H9. */
+  onModerate: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const player = useVideoPlayer(checkin.videoUrl, (p) => {
     p.loop = false;
@@ -1420,6 +1473,15 @@ function CheckinViewer({ checkin, onClose, onReplace }: { checkin: SquadCheckin;
             </Text>
             <Text style={styles.viewerTime}>{timeAgo(checkin.createdAt)}</Text>
           </View>
+          <Pressable
+            onPress={onModerate}
+            accessibilityRole="button"
+            accessibilityLabel={checkin.isSelf ? 'Delete your check-in' : `Report ${checkin.name}'s check-in`}
+            hitSlop={12}
+            style={({ pressed }) => [styles.viewerClose, pressed ? styles.viewerClosePressed : null]}
+          >
+            <Text style={styles.viewerCloseText}>{checkin.isSelf ? 'Delete' : 'Report'}</Text>
+          </Pressable>
           <Pressable
             onPress={onClose}
             accessibilityRole="button"
