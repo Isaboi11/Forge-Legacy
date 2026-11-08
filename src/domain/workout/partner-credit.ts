@@ -48,6 +48,22 @@ export interface AcceptedTraining {
   acceptedAt: string;
 }
 
+/**
+ * ══ AN ACCEPTED ASK CREDITS ONE WORKOUT, NOT TWELVE HOURS OF THEM (PO 11-08 launch QA, H5) ══
+ *
+ * The window above was the only limit, so a morning session together named the partner on a solo evening run too —
+ * "Trained with Sam" on a workout Sam was nowhere near — and the asker who was accepted but never got in had their
+ * next unrelated workout tagged. The shared workout is the FIRST one saved after the accept; once this athlete has
+ * saved any workout after it, that accept has been spent. The session being finished is not saved yet, so it can
+ * still claim an accept that landed while it was under way.
+ */
+export function unspentCredits<T extends { acceptedAt: string }>(credits: readonly T[], savedAtMs: readonly number[]): T[] {
+  return credits.filter((c) => {
+    const at = Date.parse(c.acceptedAt);
+    return Number.isFinite(at) && !savedAtMs.some((s) => s > at);
+  });
+}
+
 /** How many people one workout may name — the cap the tagger has always enforced. */
 export const MAX_PARTNERS = 3;
 

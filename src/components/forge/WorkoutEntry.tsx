@@ -73,6 +73,9 @@ export interface WorkoutEntryProps {
   onCta: () => void;
   dismissLabel: string;
   onDismiss: () => void;
+  /** A second quiet way out, above the dismiss — Resume's "Save this one & start the new one" (launch QA H3). */
+  secondaryLabel?: string;
+  onSecondary?: () => void;
 }
 
 export function WorkoutEntry({
@@ -87,6 +90,8 @@ export function WorkoutEntry({
   onCta,
   dismissLabel,
   onDismiss,
+  secondaryLabel,
+  onSecondary,
 }: WorkoutEntryProps) {
   const source = art ? resolveArtworkSource(art.assetPath) : null;
   const { width } = useWindowDimensions();
@@ -201,6 +206,17 @@ export function WorkoutEntry({
           passes AA for body text; if it needs to be quieter, that is a size or spacing change, never a
           darker colour. `hitSlop` holds the 44pt target under 15px text.
         */}
+        {secondaryLabel && onSecondary ? (
+          <Pressable
+            onPress={onSecondary}
+            accessibilityRole="button"
+            accessibilityLabel={secondaryLabel}
+            hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
+            style={({ pressed }) => [styles.dismiss, pressed ? styles.dismissPressed : null]}
+          >
+            <Text style={styles.dismissText}>{secondaryLabel}</Text>
+          </Pressable>
+        ) : null}
         <Pressable
           onPress={onDismiss}
           accessibilityRole="button"

@@ -11,7 +11,7 @@ import { ScreenBackground } from '@/components/screen-background';
 import { EngravedIcon, engravedTint } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
-import { declineWorkoutInvite, fetchWorkoutInvite, requestToJoinWorkout, type WorkoutInvite } from '@/data/train-together-live';
+import { declineWorkoutInvite, fetchMyOpenJoinRequest, fetchWorkoutInvite, requestToJoinWorkout, type WorkoutInvite } from '@/data/train-together-live';
 import { fetchAthleteProfile } from '@/data/athlete-profile-live';
 import { fetchTrainingNow } from '@/data/presence-live';
 import { CHEER_MAX, fetchSentCheers, sendCheer } from '@/data/cheers-live';
@@ -102,6 +102,16 @@ function WorkoutJoinScreen() {
         if (found) {
           setHost({ name: found.name, avatarUrl: found.avatarUrl, label: found.label ?? '' });
           setTraining(true);
+          /* Coming back to them: my ask is still open, or they already said yes while I was elsewhere — resume it
+             rather than start over (launch QA, H1). Only while they are training, and only if I came in by athlete. */
+          if (!id) {
+            fetchMyOpenJoinRequest(hostId).then(
+              (open) => {
+                if (live && open) setRequestId((cur) => cur || open.id);
+              },
+              () => undefined,
+            );
+          }
           return;
         }
         setTraining(false);
@@ -120,7 +130,7 @@ function WorkoutJoinScreen() {
     return () => {
       live = false;
     };
-  }, [hostId]);
+  }, [hostId, id]);
 
   const send = async () => {
     if (sending || !hostId) return;

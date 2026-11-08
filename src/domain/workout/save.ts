@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { reportError } from '@/lib/diagnostics';
 import { writeBackWorkout } from '@/data/apple-health-sync-live';
 import { itemByKey } from '@/domain/exercise-picker/data';
 import { sessionActivityType } from './conditioning';
@@ -191,10 +192,18 @@ export async function saveWorkout(
   if (session.playlist) Object.assign(annotations, playlistToRow(session.playlist));
 
   if (Object.keys(annotations).length) {
-    try {
-      await supabase.from('workouts').update(annotations).eq('id', data.workout_id);
-    } catch {
-      // ignore — the workout is already saved
+    /* ⚠ supabase-js RETURNS `{ error }`, IT DOES NOT THROW (PO 11-08 launch QA, H4) — the try/catch that stood here
+       could never run, so a failed partner write vanished without a trace. Still best-effort, now reported. */
+    const { error: annotationError } = await supabase.from('workouts').update(annotations).eq('id', data.workout_id);
+    if (annotationError) reportError(annotationError, { screen: 'workout.save-annotations' });
+    /*
+     * …AND THE HONORS ARE ASKED AGAIN ONCE THE PARTNERS ARE ON THE ROW (H4). `save_workout` evaluates honors inside
+     * its own commit, before this write, so "Never Alone" could not see the partner it is about and appeared on the
+     * NEXT workout instead. `claim_earned_honors` re-runs the same evaluation for this athlete; best-effort.
+     */
+    else if (partners.length) {
+      const { error: honorError } = await supabase.rpc('claim_earned_honors');
+      if (honorError) reportError(honorError, { screen: 'workout.save-partner-honors' });
     }
   }
 
