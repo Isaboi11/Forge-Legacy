@@ -21,10 +21,12 @@ const ProfileContext = createContext<ProfileState | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
-  const { data, loading: rawLoading, error, refetch } = useQuery<UserProfile | null>(
-    async () => (uid ? fetchSelfProfile() : null),
+  /* Tagged with the athlete it was read FOR, the way the entitlement read is — see the loading note below. */
+  const { data: read, error, refetch } = useQuery<{ uid: string; profile: UserProfile | null } | null>(
+    async () => (uid ? { uid, profile: await fetchSelfProfile() } : null),
     [uid],
   );
+  const data = read != null && read.uid === uid ? read.profile : null;
   // Boot flash guard: when the session id settles null→uid, useQuery keeps the prior result
   // (data:null, loading:false) until the refetch lands — which the boot router read as "signed in ·
   // not onboarded" and flashed the onboarding screen for a beat before Home. Treat "have a uid but no
@@ -38,7 +40,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   // back through the first-time journey (PO, 2026-09-23: a tester reported exactly that). Only a row that
   // actually says `onboarded_at: null` may send anyone to onboarding; a failure holds the splash and
   // retries below until the read comes back.
-  const loading = rawLoading || (uid != null && data == null);
+  /*
+   * ⚠ NOT `rawLoading` ANY MORE (PO 11-08 launch QA, H15). `refetch()` sets the query's loading flag back to true, so
+   * every profile refresh — Save on Edit Profile, Remove photo — read as "booting": the boot router swapped the whole
+   * Stack for the splash and the athlete landed on Home, thrown out of the screen they were on. Only "no profile for
+   * the athlete signed in now" holds the splash; a refresh keeps the one in hand until the new one lands.
+   */
+  const loading = uid != null && data == null;
   useEffect(() => {
     if (uid == null || error == null) return;
     const t = setTimeout(refetch, 2000);
