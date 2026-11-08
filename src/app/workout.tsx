@@ -111,6 +111,7 @@ import { completionGap, completionGapMessage } from '@/domain/workout/set-comple
 import { doneSetCount, hasLoggedSet, PR_MAX_REPS } from '@/domain/workout/metrics';
 import { perSideFor } from '@/domain/workout/per-side-core';
 import { continueWorkout, fetchLastNotes, saveWorkout, type IntensitySignalRow, type LastNote } from '@/domain/workout/save';
+import { continuationAsOwnSession, isContinueWindowClosed } from '@/domain/workout/save-core';
 import { rememberPlanRemainder } from '@/data/continue-workout-live';
 import { isTransportFailure } from '@/domain/workout/pending-save';
 import { queueSave } from '@/data/pending-save-live';
@@ -2455,13 +2456,27 @@ export default function WorkoutScreen() {
         catalog_key: session.exercises[i]?.catalogKey ?? null,
         pattern: patternOf(session.exercises[i]),
       }));
-      const workoutId = session.continuingWorkoutId
-        /* ⚠ `units` TRAVELS WITH THE SESSION. The athlete types in their own system; storage is
-           canonical pounds. Omit it and a metric athlete's kilos go into the database labelled lb — the
-           defect `canonicalizeWeights` exists to close. Imperial is the identity, so this is a no-op for
-           everyone today and correct the moment somebody chooses Kgs. */
-        ? (await continueWorkout(session.continuingWorkoutId, session, units), session.continuingWorkoutId)
-        : (await saveWorkout(session, partnerNames, signals, units)).workoutId;
+      /* ⚠ `units` TRAVELS WITH THE SESSION. The athlete types in their own system; storage is
+         canonical pounds. Omit it and a metric athlete's kilos go into the database labelled lb — the
+         defect `canonicalizeWeights` exists to close. Imperial is the identity, so this is a no-op for
+         everyone today and correct the moment somebody chooses Kgs. */
+      let workoutId: string;
+      let savedApart = false;
+      if (session.continuingWorkoutId) {
+        try {
+          await continueWorkout(session.continuingWorkoutId, session, units);
+          workoutId = session.continuingWorkoutId;
+        } catch (e) {
+          /* The workout's hour closed while they trained (launch QA, B2): the new sets become a workout of
+             their own instead of a Finish that can never succeed. See `continuationAsOwnSession`. */
+          const apart = isContinueWindowClosed(e) ? continuationAsOwnSession(session, new Date().toISOString()) : null;
+          if (!apart) throw e;
+          workoutId = (await saveWorkout(apart, partnerNames, [], units)).workoutId;
+          savedApart = true;
+        }
+      } else {
+        workoutId = (await saveWorkout(session, partnerNames, signals, units)).workoutId;
+      }
       /* What was planned and not done, set aside for "Continue this workout" before the session that holds
          it is cleared — the server never had it (workout-05). */
       await rememberPlanRemainder(workoutId, session);
@@ -2492,6 +2507,7 @@ export default function WorkoutScreen() {
         duration_ms: Math.max(0, Date.now() - new Date(session.startedAt).getTime()),
       });
       endSession();
+      if (savedApart) ceremonyToast('That workout had closed, so these sets were saved as a workout of their own.');
       router.replace({ pathname: '/workout-complete', params: { id: workoutId } });
     } catch (e) {
       /*
