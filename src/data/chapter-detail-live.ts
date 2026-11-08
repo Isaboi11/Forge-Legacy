@@ -6,6 +6,7 @@ import { fetchMyPrograms, fetchProgramSessions } from './programs-live';
 import { nextOpenSlot, totalSessions, touchedCount } from '@/domain/program/progress-core';
 import { isAchieved, type Goal } from '@/domain/goals/goals';
 import type { Chapter, Honor, TimelineEntry } from '@/types/legacy';
+import { recordTimelineEvent } from '@/data/timeline-write-live';
 
 /**
  * L-3/L-4 Chapter Detail — the chapter overview. Composes what the app already reads (the Legacy spine
@@ -222,14 +223,21 @@ export async function sealChapter(chapterId: string, reflection?: string): Promi
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
-  const patch: { is_active: false; sealed_at: string; reflection?: string } = {
+  /* `end_date` too — nothing set it, so a sealed chapter showed no date range and Chapter Detail dropped its Duration
+     (launch QA polish). The athlete's own calendar day, as `start_date` is. */
+  const now = new Date();
+  const endDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const patch: { is_active: false; sealed_at: string; end_date: string; reflection?: string } = {
     is_active: false,
-    sealed_at: new Date().toISOString(),
+    sealed_at: now.toISOString(),
+    end_date: endDate,
   };
   const trimmed = reflection?.trim();
   if (trimmed) patch.reflection = trimmed;
-  const { error } = await supabase.from('chapters').update(patch).eq('id', chapterId).eq('athlete_id', user.id);
+  const { data, error } = await supabase.from('chapters').update(patch).eq('id', chapterId).eq('athlete_id', user.id).select('name').maybeSingle();
   if (error) throw error;
+  // The Featured Legacy Moment and the timeline's "Sealed…" row (launch QA, H30).
+  await recordTimelineEvent({ type: 'CHAPTER_SEALED', objectName: String((data as { name?: string } | null)?.name ?? 'Chapter'), chapterId, sourceType: 'chapter', sourceId: chapterId });
 }
 
 /**

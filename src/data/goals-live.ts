@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { isAutoTracked, isCumulativeMetric, meetsTarget, usesBaseline, type Goal, type MetricDir, type MetricKind, type ProgressEntry } from '@/domain/goals/goals';
+import { recordTimelineEvent } from '@/data/timeline-write-live';
 
 /**
  * Goals persistence (`goals`, 0025) — chapter-scoped, athlete-owned.
@@ -254,7 +255,10 @@ export async function updateProgress(goalId: string, current: number): Promise<{
   if (before && before.current !== current) {
     await supabase.from('goal_progress').insert({ goal_id: goalId, athlete_id: id, from_value: before.current, to_value: current });
   }
-  return { goal: toModel(data as Row), newlyAchieved: nowAchieved };
+  const saved = toModel(data as Row);
+  // "Achieved…" on the timeline (launch QA, H30) — once, on the crossing.
+  if (nowAchieved) await recordTimelineEvent({ type: 'GOAL_ACHIEVED', objectName: saved.name, chapterId: saved.chapterId, sourceType: 'goal', sourceId: saved.id });
+  return { goal: saved, newlyAchieved: nowAchieved };
 }
 
 /** The goal's progress log, newest first. Empty (never an error) before its migration lands. */
@@ -366,5 +370,8 @@ export async function markAchieved(goalId: string): Promise<{ goal: Goal; newlyA
     .select(ROW)
     .single();
   if (error) throw error;
-  return { goal: toModel(data as Row), newlyAchieved };
+  const goal = toModel(data as Row);
+  // "Achieved…" on the timeline (launch QA, H30) — once, on the crossing.
+  if (newlyAchieved) await recordTimelineEvent({ type: 'GOAL_ACHIEVED', objectName: goal.name, chapterId: goal.chapterId, sourceType: 'goal', sourceId: goal.id });
+  return { goal, newlyAchieved };
 }
