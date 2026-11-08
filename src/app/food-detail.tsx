@@ -40,6 +40,7 @@ import {
 } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { errorMessage, useQuery } from '@/lib/useQuery';
+import { finishFoodLog } from '@/lib/food-return';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -239,9 +240,12 @@ export default function FoodDetailScreen() {
       }
       await addEntries(iso, [entry]);
       showToast(`${food.name} added to ${MEAL_LABELS[meal]}`);
-      /* Back to the diary, not to the search: the athlete came here to log one thing and has logged it. */
-      router.dismissAll?.();
-      router.replace('/nutrition');
+      /* Back to the diary, not to the search: the athlete came here to log one thing and has logged it — unless
+         they came from Workout Complete, which they go back to (launch QA, H32). */
+      if (!finishFoodLog(router)) {
+        router.dismissAll?.();
+        router.replace('/nutrition');
+      }
     } catch (e) {
       /* A refused write is said, and the button comes back — it used to stay locked on a silent failure. */
       showToast(errorMessage(e));
