@@ -336,6 +336,7 @@ const lift = (name, sets, targetReps = 8, catalogKey = null) => ({
   sets: Array.from({ length: sets }, (_, i) => ({ setIndex: i, targetReps, weight: 185, actualReps: 8, done: true })),
 });
 const run = () => ({ name: 'Run', kind: 'cardio', activity: 'run', section: 'main', position: 0, sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false }] });
+const walk = (extra = {}) => ({ name: 'Outdoor Walk', kind: 'cardio', activity: 'walk', modality: 'outdoor', targetMi: null, targetSec: null, section: 'main', position: 0, sets: [{ setIndex: 0, targetReps: 0, weight: null, actualReps: null, done: false }], ...extra });
 
 test('a live session of plain lifts reduces to the four fields an invite carries', () => {
   const out = sessionToTemplateExercises([lift('Back Squat', 4, 5, 'back-squat'), lift('Leg Press', 3, 12)]);
@@ -362,25 +363,50 @@ test('a rep wave keeps its FIRST target, which is the set the guest starts on', 
   assert.equal(sessionToTemplateExercises([wave])[0].targetReps, 6);
 });
 
-test('cardio is dropped — a leg is a distance and a clock, not a list of sets', () => {
-  const out = sessionToTemplateExercises([lift('Row', 3), run(), lift('Pull-up', 4)]);
-  assert.deepEqual(out.map((e) => e.name), ['Row', 'Pull-up']);
+/* PO 11-08: *"She clicked join workout on my name, I clicked yes, and it took her to the choose exercise
+   screen when it should've just started with where I was at."* A walk snapshotted to nothing, and an empty
+   shape opens the picker. */
+test('⚠ a walk travels as a walk — never an empty shape, which the guest reads as Build as you go', () => {
+  assert.deepEqual(sessionToTemplateExercises([walk()]), [
+    { catalogKey: 'cardio:walk', name: 'Outdoor Walk', sets: 1, targetReps: 0, kind: 'cardio', modality: 'outdoor', targetMi: null, targetDurationSec: null },
+  ]);
 });
 
-test('a session that is only a run snapshots to nothing, which reads as a freestyle share', () => {
-  assert.deepEqual(sessionToTemplateExercises([run()]), []);
+test('a bout keeps its modality and both targets — a treadmill walk is not put on the road', () => {
+  const [out] = sessionToTemplateExercises([walk({ name: 'Treadmill Walk', modality: 'indoor', targetMi: 2, targetSec: 1800 })]);
+  assert.equal(out.modality, 'indoor');
+  assert.equal(out.targetMi, 2);
+  assert.equal(out.targetDurationSec, 1800);
+  assert.equal('weight' in out, false);
+});
+
+test('cardio keeps its place between the lifts', () => {
+  const out = sessionToTemplateExercises([lift('Row', 3), run(), lift('Pull-up', 4)]);
+  assert.deepEqual(out.map((e) => [e.name, e.kind ?? 'strength']), [['Row', 'strength'], ['Run', 'cardio'], ['Pull-up', 'strength']]);
+});
+
+test('the guest reads the bout back as a cardio block — the template reader keeps every field the snapshot wrote', async () => {
+  const src = readFileSync(new URL('../../../data/templates-live.ts', import.meta.url), 'utf8');
+  for (const f of ['kind:', 'modality:', 'targetMi:', 'targetDurationSec:']) assert.ok(src.includes(f), `toExercise reads ${f}`);
+  const { activityFromKey } = await import('../conditioning.ts');
+  assert.equal(activityFromKey(sessionToTemplateExercises([walk()])[0].catalogKey), 'walk');
+});
+
+test('a cardio row with no activity is not a thing to join at', () => {
+  assert.deepEqual(sessionToTemplateExercises([{ ...run(), activity: undefined }]), []);
 });
 
 /**
  * ⚠ THE POSITION IS INTO THE SNAPSHOT, NOT INTO THE SESSION.
  *
- * Because cardio is dropped, the two lists are different lengths the moment a session contains a run.
- * Handing the guest the session's own index would land them on the wrong lift — silently, and by exactly
- * the number of runs above the host's position. Both call sites compute it by snapshotting everything
- * BEFORE the current exercise and taking the length; this is that arithmetic.
+ * The snapshot still drops rows (an exercise with no sets), so the two lists can differ in length.
+ * Handing the guest the session's own index would land them on the wrong row — silently, and by exactly
+ * the number of dropped rows above the host's position. Both call sites compute it by snapshotting
+ * everything BEFORE the current exercise and taking the length; this is that arithmetic.
  */
 test('the joining position counts the snapshot, not the session', () => {
-  const session = [lift('Squat', 3), run(), lift('Bench', 3), lift('Row', 3)];
+  const empty = { name: 'Placeholder', catalogKey: null, section: 'main', position: 0, sets: [] };
+  const session = [lift('Squat', 3), empty, lift('Bench', 3), lift('Row', 3)];
   // Host is on 'Bench', which is index 2 of the session but index 1 of the snapshot.
   const at = 2;
   const startIndex = sessionToTemplateExercises(session.slice(0, at)).length;
@@ -388,12 +414,12 @@ test('the joining position counts the snapshot, not the session', () => {
   assert.equal(sessionToTemplateExercises(session)[startIndex].name, 'Bench');
 });
 
-test('a host standing on a cardio leg lands the guest on the next real lift, not past the end', () => {
-  const session = [lift('Squat', 3), run()];
+test('a host standing on a cardio leg lands the guest on that same leg', () => {
+  const session = [lift('Squat', 3), run(), lift('Bench', 3)];
   const shape = sessionToTemplateExercises(session);
   const startIndex = Math.min(sessionToTemplateExercises(session.slice(0, 1)).length, Math.max(0, shape.length - 1));
-  assert.equal(startIndex, 0);
-  assert.equal(shape[startIndex].name, 'Squat');
+  assert.equal(startIndex, 1);
+  assert.equal(shape[startIndex].name, 'Run');
 });
 
 /* PO 10-07: *"When I added him to the workout, it didn't have it be a superset and it just did the
@@ -422,10 +448,11 @@ test('⚠ the guest READS the block back — the invite reader is the template w
   assert.match(src, /exercises: \(\(d\.exercises \?\? \[\]\) as Record<string, unknown>\[\]\)\.map\(toExercise\)/);
 });
 
-test('a block left with one member after the drops goes out as a plain lift, not a superset of one', () => {
+test('a block whose only partner is a run goes out as a plain lift, not a superset of one', () => {
   const out = sessionToTemplateExercises([grouped('Bench', 'g1'), { ...run(), groupId: 'g1' }]);
-  assert.equal(out.length, 1);
+  assert.deepEqual(out.map((e) => e.name), ['Bench', 'Run']);
   assert.equal('groupId' in out[0], false);
+  assert.equal('groupId' in out[1], false, 'the guest cardio block has no group to read');
 });
 
 test('an exercise with no sets is not a thing to join at', () => {

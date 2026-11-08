@@ -154,6 +154,9 @@ function WorkoutJoinScreen() {
         workoutName: inv.workoutName,
         partnerId: inv.toId,
         startIndex: inv.startIndex,
+        /* The host said yes while training, so the guest is starting NOW: a walk they joined starts its GPS
+           by itself (PO 11-08, *"it should've just started with where I was at"*). */
+        autoStartBout: true,
       });
       router.replace('/workout');
     },

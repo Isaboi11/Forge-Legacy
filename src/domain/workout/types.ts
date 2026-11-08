@@ -199,6 +199,15 @@ export interface SessionExercise {
    */
   boutOpen?: boolean;
   /**
+   * Start this bout's GPS the moment its card appears (PO 11-08). Set only on the block a JOINED session
+   * opens on, so the person who was let into a walk is walking when the host is, without a second tap.
+   *
+   * ONE-SHOT: the card's first report that the bout is live clears it, and autosave carries the cleared
+   * flag, so a resumed or reopened session never starts a second bout. Never written to the database —
+   * `buildSaveExercises` names its columns.
+   */
+  autoStart?: boolean;
+  /**
    * The position this exercise was SAVED at, on a finished workout reopened by "Continue this workout"
    * (workout-05, 0253). Set only by `fetchWorkoutAsSession`, and sent back as `into_position` so a set
    * added to a lift that was already there lands under that lift's row, not under a second copy of it.

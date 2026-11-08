@@ -1218,7 +1218,9 @@ export default function WorkoutScreen() {
           workoutName: nm,
           activityType: 'strength',
           startedAt: new Date().toISOString(),
-          templated: true, // arrived with a prescribed shape — see `ActiveSession.templated`
+          /* A walk somebody joined is not a plan with an Add Exercise to hide: the host's own walk hides none
+             (the `conditioning` branch below). A lift anywhere in the shape still makes it one (PO 11-08). */
+          templated: shape.some((e) => e.kind !== 'cardio'), // arrived with a prescribed shape — see `ActiveSession.templated`
           ...(launch.brief && (launch.brief.how || launch.brief.after) ? { brief: launch.brief } : null),
           /* Both coordinates travel, which is the exception `workout-launch.ts` names: the server picks
              the first OPEN slot when it is sent none, and the slot this shape covers is not always that
@@ -1238,7 +1240,8 @@ export default function WorkoutScreen() {
            * the session they built before. The `starterId` field in `workout-launch.ts` names this very
            * failure as its reason for existing; the planned workout was walking into it regardless.
            */
-          exercises: templateToSessionExercises(shape, prescribed.load),
+          /* A walk the guest JOINED starts its GPS by itself (PO 11-08) — see `SessionExercise.autoStart`. */
+          exercises: withAutoStart(templateToSessionExercises(shape, prescribed.load), launch.autoStartBout ? launchStart : null),
         });
         setPhase('active');
         prescribed.ask();
@@ -2635,13 +2638,13 @@ export default function WorkoutScreen() {
         await declineWorkoutInvite(req.id);
         showToast('Not this time');
       } else {
-        /* ⚠ AN EMPTY SHAPE IS STILL A YES (PO 10-05). Nothing added yet, or only cardio (which the snapshot
-           drops): the guest opens a blank workout of their own, the way `/workout-join` launches any
+        /* ⚠ AN EMPTY SHAPE IS STILL A YES (PO 10-05). Nothing added yet: the guest opens a blank workout of their own, the way `/workout-join` launches any
            accepted ask with no exercises, and both are still credited. Refusing here put "Let them in" on
            screen and then said no. */
         const shape = sessionToTemplateExercises(session.exercises);
         const at = Math.min(Math.max(0, session.exerciseIndex ?? 0), Math.max(0, session.exercises.length - 1));
-        // Counted over the SNAPSHOT, which drops cardio blocks — see the same note in `/workout-invite`.
+        // Counted over the SNAPSHOT, which can drop rows — see the same note in `/workout-invite`. A walk is kept
+        // (PO 11-08): it travels as a cardio block, so the guest opens on the walk the host is on.
         const startIndex = Math.min(sessionToTemplateExercises(session.exercises.slice(0, at)).length, Math.max(0, shape.length - 1));
         await acceptJoinRequest(req.id, { workoutName: session.workoutName, exercises: shape, startIndex });
         if (!taggedPartners.includes(req.fromId) && taggedPartners.length < 3) {
@@ -4774,12 +4777,15 @@ export default function WorkoutScreen() {
                   units={units}
                   onSetModality={setCardioModality}
                   onSave={saveCardioLog}
+                  /* A walk the athlete JOINED starts itself (PO 11-08). Cleared below by the first live report, so it
+                     fires once — see `SessionExercise.autoStart`. */
+                  autoStart={!!ex.autoStart}
                   onLiveChange={(live) => {
                     setLiveBoutIdx(live ? exIdx : null);
                     /* On the session too, so autosave knows a bout is under way (workout-13) — see `boutOpen`. */
                     mutate((s) => ({
                       ...s,
-                      exercises: s.exercises.map((e, i) => (i === exIdx ? { ...e, boutOpen: live || undefined } : e.boutOpen ? { ...e, boutOpen: undefined } : e)),
+                      exercises: s.exercises.map((e, i) => (i === exIdx ? { ...e, boutOpen: live || undefined, autoStart: undefined } : e.boutOpen ? { ...e, boutOpen: undefined } : e)),
                     }));
                   }}
                 />
@@ -5983,6 +5989,17 @@ function cardioExercise(
  * feature at a time. `StarterTemplateDefinition.exercises` is `TemplateExercise[]` already, so there is
  * nothing to convert; the two callers differ only in where the rows came from.
  */
+/**
+ * Mark the cardio block a JOINED session opens on to start its GPS by itself (PO 11-08) — see
+ * `SessionExercise.autoStart`. `at` is the launch's start index, clamped the way `startSession` clamps it;
+ * null (no join), or a lift at that position, returns the list untouched.
+ */
+function withAutoStart(exercises: SessionExercise[], at: number | null): SessionExercise[] {
+  if (at == null) return exercises;
+  const i = Math.min(Math.max(0, at), Math.max(0, exercises.length - 1));
+  return exercises[i]?.kind === 'cardio' ? exercises.map((e, j) => (j === i ? { ...e, autoStart: true } : e)) : exercises;
+}
+
 function templateToSessionExercises(rows: readonly TemplateExercise[], load?: LoadContext): SessionExercise[] {
   return rows.map((e, i) => {
     // A template that ended in a run comes back as a cardio block, not as sets of it. The modality it

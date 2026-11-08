@@ -97,11 +97,11 @@ export default function WorkoutInviteScreen() {
       /*
        * ⚠ THE INDEX IS INTO THE SNAPSHOT, NOT INTO THE SESSION.
        *
-       * `sessionToTemplateExercises` drops cardio blocks — a run is a distance and a clock, not a list of
-       * sets — so the two lists are different lengths whenever a session has one. Passing the session's
-       * own index would point the guest at the wrong lift, silently and by exactly the number of runs
-       * above it. Counting the snapshot of everything BEFORE the current position gives the position
-       * within what actually ships.
+       * `sessionToTemplateExercises` drops rows that are not a thing to join at (no sets; a cardio row with
+       * no activity), so the two lists can differ in length. Passing the session's own index would point
+       * the guest at the wrong row, silently and by exactly the number of drops above it. Counting the
+       * snapshot of everything BEFORE the current position gives the position within what actually ships.
+       * (A walk or run is NOT dropped since PO 11-08 — it travels as a cardio block.)
        */
       const startIndex = Math.min(sessionToTemplateExercises(live.exercises.slice(0, at)).length, Math.max(0, shape.length - 1));
       await acceptJoinRequest(invite.id, { workoutName: live.workoutName, exercises: shape, startIndex });
