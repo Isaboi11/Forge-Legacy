@@ -1,6 +1,7 @@
 import { EncodingType, readAsStringAsync } from 'expo-file-system/legacy';
 
 import type { StoryDrawing } from '@/domain/share/story-card';
+import { reportError } from './diagnostics';
 import { handOffImage } from './save-image-file';
 import { rasterizeStory, storyHostReady } from './story-card-host';
 
@@ -56,18 +57,26 @@ async function toDataUri(uri: string): Promise<string> {
  * caller must never post a photo picture that went out without the photo.
  */
 export async function renderStoryImage(drawing: StoryDrawing, photoUri: string | null): Promise<RenderedStory | null> {
-  if (drawing.needsPhoto || !storyHostReady()) return null;
+  /* ⚠ EVERY NULL SAYS WHY (PO 11-08). The post falls back to the photo with its strip either way, but a
+     silent null made "never chose it" and "it broke on the phone" look the same, and the picture had never
+     been seen working on a device. `reportError` de-duplicates per fingerprint. */
+  const fail = (why: string, e?: unknown): null => {
+    reportError(e ?? new Error(`Post picture not built: ${why}`), { screen: 'post.picture' });
+    return null;
+  };
+  if (drawing.needsPhoto) return fail('the drawing needs a photo');
+  if (!storyHostReady()) return fail('no StoryCardHost mounted');
   let photo: string | null = null;
   if (drawing.ops.some((o) => o.kind === 'photo')) {
-    if (!photoUri) return null;
+    if (!photoUri) return fail('no photo uri');
     try {
       photo = await toDataUri(photoUri);
-    } catch {
-      return null;
+    } catch (e) {
+      return fail('photo unreadable', e);
     }
   }
   const base64 = await rasterizeStory(drawing, photo);
-  return base64 ? { base64, mime: 'image/png' } : null;
+  return base64 ? { base64, mime: 'image/png' } : fail('snapshot empty or timed out');
 }
 
 export async function exportStory(spec: StoryExportSpec): Promise<StoryExportResult> {

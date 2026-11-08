@@ -23,9 +23,15 @@ underneath."*
 
 ### SO-D1 — The choice appears on Workout Complete once a photo is added.
 
-Two tiles, each drawn as the feed will show it: **Stats on the photo** and **Stats under the photo**. Under is the
-default, so a post looks the way it always has until the athlete picks the other. The first photo (not a video)
+Two tiles, each drawn as the feed will show it: **Stats on the photo** and **Stats under the photo**. ~~Under is the
+default, so a post looks the way it always has until the athlete picks the other.~~ The first photo (not a video)
 gets the numbers; any others post beside it as before.
+
+**⚠ Amended 2026-11-08 (PO):** *"When I go to post my workout on squads it wouldn't post the numbers on my
+picture."* **On the photo is now the default, and the athlete's last choice is remembered on this phone**
+(`readPhotoLook` / `savePhotoLook`, `src/lib/post-destinations.ts`). Under stays one tap away. Every time the
+picture cannot be built or offered, the reason is reported (`post.picture`) as well as told to the athlete (SO-D3),
+and the phone's snapshot waits for the photo's own load event instead of a fixed 250 ms.
 
 ### SO-D2 — The feed picture is 4:5, not the story's 9:16.
 

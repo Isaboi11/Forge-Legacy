@@ -29,9 +29,14 @@ export interface StoryCanvasProps {
   photoUri: string | null;
   /** Rendered width in points. Height follows the 9:16 frame. Defaults to the full 1080 (the export). */
   width?: number;
+  /**
+   * The photo has decoded and is drawn — what the phone's snapshot waits for (`StoryCardHost`), so a picture
+   * is never taken with its photo still missing (PO 11-08).
+   */
+  onPhotoLoad?: () => void;
 }
 
-export const StoryCanvas = forwardRef<Svg, StoryCanvasProps>(function StoryCanvas({ drawing, photoUri, width }, ref) {
+export const StoryCanvas = forwardRef<Svg, StoryCanvasProps>(function StoryCanvas({ drawing, photoUri, width, onPhotoLoad }, ref) {
   // Gradient and clip ids are document-global on the web, and the share screen draws four of these at once.
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const w = width ?? drawing.width;
@@ -96,6 +101,7 @@ export const StoryCanvas = forwardRef<Svg, StoryCanvasProps>(function StoryCanva
                 preserveAspectRatio="none"
                 opacity={op.opacity}
                 clipPath={`url(#${uid}c${i})`}
+                onLoad={onPhotoLoad}
               />
             ) : null;
           case 'path':

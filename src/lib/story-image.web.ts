@@ -1,4 +1,5 @@
 import { ANVIL_PATH, ON_BRONZE, STORY_BRONZE, type StoryDrawing, type StoryOp } from '@/domain/share/story-card';
+import { reportError } from './diagnostics';
 import type { RenderedStory, StoryExportResult, StoryExportSpec } from './story-image';
 
 export type { RenderedStory, StoryExportResult, StoryExportSpec } from './story-image';
@@ -164,14 +165,20 @@ export function paintStory(drawing: StoryDrawing, img: HTMLImageElement | null):
 
 /** The browser's `renderStoryImage` — painted, then read back as a JPEG (a photo compresses ~10× smaller than PNG). */
 export async function renderStoryImage(drawing: StoryDrawing, photoUri: string | null): Promise<RenderedStory | null> {
-  if (typeof document === 'undefined' || drawing.needsPhoto) return null;
+  /* Every null says why — the same rule as the phone's (PO 11-08). */
+  const fail = (why: string, e?: unknown): null => {
+    reportError(e ?? new Error(`Post picture not built: ${why}`), { screen: 'post.picture' });
+    return null;
+  };
+  if (typeof document === 'undefined') return null;
+  if (drawing.needsPhoto) return fail('the drawing needs a photo');
   let img: HTMLImageElement | null = null;
   if (drawing.ops.some((o) => o.kind === 'photo')) {
-    if (!photoUri) return null;
+    if (!photoUri) return fail('no photo uri');
     try {
       img = await loadImage(photoUri);
-    } catch {
-      return null;
+    } catch (e) {
+      return fail('photo did not load', e);
     }
   }
   try {
@@ -182,13 +189,13 @@ export async function renderStoryImage(drawing: StoryDrawing, photoUri: string |
     /* no Font Loading API — still draws, with fallbacks */
   }
   const canvas = paintStory(drawing, img);
-  if (!canvas) return null;
+  if (!canvas) return fail('no 2D canvas');
   try {
     const url = canvas.toDataURL('image/jpeg', 0.9);
     const base64 = url.slice(url.indexOf(',') + 1);
-    return base64 ? { base64, mime: 'image/jpeg' } : null;
-  } catch {
-    return null; // tainted by a photo served without CORS headers
+    return base64 ? { base64, mime: 'image/jpeg' } : fail('empty canvas export');
+  } catch (e) {
+    return fail('canvas tainted by a photo served without CORS headers', e);
   }
 }
 
