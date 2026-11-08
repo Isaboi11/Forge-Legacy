@@ -24,6 +24,9 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - ✅ **The join ask reaches a host who hasn't added an exercise yet.** It lands within 8 s and re-reads on return to the app. Supersets travel as supersets. `8c5ddee4`, stranded since 10-07
 - ✅ **Exercise search keeps every letter when you type fast.** `77367054`, trunk-only since 10-20
 
+## ✅ Update #4 — OTA `01a1bd58-ef02-722d…` (11-08, lane `5fb2ec96`, served and checked)
+- H9, H15, H20, H33.
+
 ## ✅ Update #3 — OTA `01a1bd44-aeaf-7c23…` (11-08, lane `ed02462d`, served and checked)
 - H6, H18, H19, H21, H22, H25, H28, H29, H32, H35.
 - ⚠ From this update, "Holt, change my program" is Premium AI only (MA8; PO approved 11-08).
@@ -58,7 +61,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 **Squads / Challenges**
 - H7 ✅ update #2 Friends & Squad → Workout post says "Posted" but lands as an empty discussion with no workout. `squad-composer.tsx:566,461-476`; `friends-feed-live.ts:272`.
 - H8 ⬜ A competition that starts later disappears from Competitions and the squad page until it starts. `challenge_hub` in `0163:349+`.
-- H9 ✅ fixed (update #4, not yet published) Comments and check-in videos can't be reported, and nobody can delete a check-in video (guideline 1.2). `squad-post/[id].tsx:974-1005`; `squad/[id].tsx:1397+`.
+- H9 ✅ update #4 Comments and check-in videos can't be reported, and nobody can delete a check-in video (guideline 1.2). `squad-post/[id].tsx:974-1005`; `squad/[id].tsx:1397+`.
 - H10 ✅ update #2 Request to Join skips the free 1-squad limit (join-by-code is gated). `discover-squads.tsx:114`; `squad-preview.tsx:184`.
 - H11 ⬜ Squad composer → Workout Recap has no photo attach, and History → share passes no photo overlay, so neither can put the numbers on a photo. `squad-composer.tsx:664-706`; `activity/[id].tsx:161-173`.
 
@@ -66,14 +69,14 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - H12 ✅ update #2 After sign-out, the phone keeps getting that account's pushes (`unregisterPushToken` is never called). `src/lib/auth.tsx:151-166`.
 - H13 ⬜ A blocked person can still search for you and open your profile (`athlete_profile` and `find_athletes` have no block check). `0098:64-173`; `0114`.
 - H14 ✅ update #2 Tapping a push with the app closed opens the screen twice, and later re-opens it (the last response is never cleared). `src/lib/push.tsx:168-205`.
-- H15 ✅ fixed (update #4, not yet published) Edit Profile → Save / Remove photo flashes the splash and drops you on Home (a refetch re-enters boot loading). `edit-profile.tsx:204,221`; `useQuery.ts:77-79`. Confidence: medium.
+- H15 ✅ update #4 Edit Profile → Save / Remove photo flashes the splash and drops you on Home (a refetch re-enters boot loading). `edit-profile.tsx:204,221`; `useQuery.ts:77-79`. Confidence: medium.
 - H16 ✅ update #2 The "👊 Got it" cheer-reply push opens an Inbox that doesn't have it; the admin pushes do the same. `destination.ts:167-168`.
 - H17 ⬜ Accomplishments / Chapter History set to "Only me" still show under the profile's "Recent". `0098:154-164`.
 
 **Programs / Templates / Holt**
 - H18 ✅ update #3 Holt's Free allowance is never used up (`consumeHoltAllowance` has no callers), so the paywall's "Basic Holt 1 program, 2 days/mo" isn't true. `entitlement-live.ts:153`.
 - H19 ✅ update #3 "Change my program" isn't gated on Premium AI (MA8 owed #1). `CoachChatSheet.tsx:1406,1846,2026`; `program/[id].tsx:1184,1543`.
-- H20 ✅ fixed (update #4, not yet published) A day Holt writes from typed words loses its warm-up, cool-down, supersets and cardio when started or saved. `CoachChatSheet.tsx:957-962,2939,2963`; `save-shapes.ts:82-120`.
+- H20 ✅ update #4 A day Holt writes from typed words loses its warm-up, cool-down, supersets and cardio when started or saved. `CoachChatSheet.tsx:957-962,2939,2963`; `save-shapes.ts:82-120`.
 - H21 ✅ update #3 Treadmill / indoor bike blocks in templates start as outdoor GPS runs. `workout-template-rows.ts:32-62`; `workout.tsx:6050`.
 - H22 ✅ update #3 Starting a template or program day on weak signal opens an empty Freestyle session with no message. `workout.tsx:1277-1305,1366-1411`; `templates-live.ts:223`.
 - H23 ✅ update #2 PRIVACY: a sent program shows the recipient the sender's own words to Holt ("You asked: my knee hurts"). `send-program.tsx:110`; `holt-marks.ts:95`.
@@ -92,7 +95,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 
 **Nutrition**
 - H32 ✅ update #3 Workout Complete → Meal → log a food closes Workout Complete; unsent share choices are lost. `food-detail.tsx:243-244`; `create-food.tsx:355`; `meal-photo.tsx:141`.
-- H33 ✅ fixed (update #4, not yet published) An under-18 with a manual target can use the meal planner (the birth year is never saved on that path). `nutrition-targets.tsx:213-217`; `nutrition-live.ts:1424`.
+- H33 ✅ update #4 An under-18 with a manual target can use the meal planner (the birth year is never saved on that path). `nutrition-targets.tsx:213-217`; `nutrition-live.ts:1424`.
 - H34 ⬜ A Free user can't open their own saved recipe (the whole screen sits behind the planner gate); delete is gated too. `recipe.tsx:562-567`; `0244:91-94`.
 - H35 ✅ update #3 A cold start with no signal hides the Nutrition tab, so offline logging can't be reached. `app-tabs.tsx:68-92`; `entitlement.tsx:76`.
 
