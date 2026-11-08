@@ -23,6 +23,7 @@ import {
 } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr } from '@/constants/theme-scrim';
 
@@ -56,6 +57,9 @@ export default function DiscoverSquadsScreen() {
   const tourScroller = useTourScroller();
   const onTourScroll = useTourScrollTracker();
   const { showToast } = useToast();
+  /* Requesting is the door to a squad, so it is where the squad cap is asked — join-by-code already asks (MA3-D7;
+     PO 11-08 launch QA, H10). Approval had no tier check, so a Free athlete in one squad was let into a second. */
+  const guard = usePremiumGate();
   const { data, loading, error, refetch } = useQuery(fetchDiscoverSquads, []);
 
   const [query, setQuery] = useState('');
@@ -112,6 +116,7 @@ export default function DiscoverSquadsScreen() {
   };
 
   const onRequest = (s: DiscoverSquad) =>
+    guard('squads') &&
     runAction(
       s,
       async () => {

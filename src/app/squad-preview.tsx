@@ -30,6 +30,7 @@ import {
 } from '@/data/squad-discover-live';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useToast } from '@/hooks/useCeremony';
+import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 
@@ -98,6 +99,8 @@ function SquadPreviewScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { showToast } = useToast();
+  /* The squad cap, asked before the request sheet opens (MA3-D7; launch QA, H10) — the same gate join-by-code runs. */
+  const guard = usePremiumGate();
   const { data, loading, error, refetch } = useQuery(() => fetchSquadPreview(squadId), [squadId]);
 
   const [override, setOverride] = useState<SquadMembership | undefined>(undefined);
@@ -184,6 +187,7 @@ function SquadPreviewScreen() {
           label: 'Request to Join',
           filled: true,
           onPress: () => {
+            if (!guard('squads')) return;
             setNote('');
             setAccepted(false);
             setNoteOpen(true);

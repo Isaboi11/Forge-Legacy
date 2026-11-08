@@ -563,7 +563,10 @@ export default function SquadComposerRoute() {
           */}
           <View style={styles.grid}>
             {SQUAD_POST_TYPES.filter((t) => !t.ownerOnly)
-              .filter((t) => audience !== 'FRIENDS' || offeredToFriends(t.id))
+              /* ⚠ BOTH GOES THROUGH THE FRIENDS WRITER TOO (PO 11-08 launch QA, H7) — `createFriendPost`, which keeps only
+                 the types in its own map. This filtered on FRIENDS alone, so Friends & Squad → Workout said "Posted" and
+                 landed as an empty discussion with no workout. Only a squad-only post may offer the squad-only types. */
+              .filter((t) => audience === 'SQUAD' || offeredToFriends(t.id))
               .map((t) => (
                 <TypeCard key={t.id} label={t.label} icon={<TypeGlyph type={t.id} />} onPress={() => pick(t.id)} />
               ))}
