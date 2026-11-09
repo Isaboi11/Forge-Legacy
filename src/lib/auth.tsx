@@ -8,6 +8,7 @@ import { syncAthletePresence } from '@/data/honors-live';
 import { flushPendingReferral } from '@/data/referral-live';
 import { stopAnalytics } from './analytics';
 import { releaseThisDevicesPushToken } from '@/data/push-live';
+import { breadcrumb } from './diagnostics';
 
 /**
  * Auth session — the real identity the app runs on (Phase 1). `session.user.id` is `auth.uid()`,
@@ -47,8 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const prevUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
+    const t0 = Date.now();
+    breadcrumb('state', 'auth:getSession:start');
     supabase.auth.getSession().then(
       ({ data }) => {
+        breadcrumb('state', 'auth:getSession:done', `${Date.now() - t0}ms session=${data.session ? 'yes' : 'no'}`);
         setSession(data.session);
         setLoading(false);
         // Which clock this athlete lives by — the Hidden honors ask what the wall said, and a timestamptz
@@ -68,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
        * session afterwards it swaps the route without another launch.
        */
       (e: unknown) => {
+        breadcrumb('state', 'auth:getSession:rejected', `${Date.now() - t0}ms`);
         console.warn('[auth] could not read the stored session on boot', e);
         setSession(null);
         setLoading(false);

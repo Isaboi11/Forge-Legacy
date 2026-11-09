@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { breadcrumb } from '@/lib/diagnostics';
 import { cap } from '@/lib/format';
 import { uploadAvatar } from '@/lib/avatar';
 import { firstNameOf, initialsOf, type AthleteType } from '@/domain/onboarding/derive';
@@ -12,10 +13,15 @@ import type { PublicProfileView } from '@/data/athlete-profile-placeholder';
 
 /** The signed-in athlete's identity (was `getSelfProfile()`). */
 export async function fetchSelfProfile(): Promise<UserProfile> {
+  // Boot-stall trail (11-09): each step leaves a crumb, so a stall report says which one never came back.
+  const t0 = Date.now();
+  breadcrumb('state', 'profile:getUser:start');
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
-  if (!user) throw new Error('not signed in');
+  breadcrumb('state', 'profile:getUser:done', `${Date.now() - t0}ms user=${user ? 'yes' : 'no'}${userError ? ` err=${userError.message}` : ''}`);
+  if (!user) throw new Error(userError ? `not signed in (${userError.message})` : 'not signed in');
   /*
    * ⛔ BOUNDED (11-09). The boot router holds the splash until this read answers, and only `/auth/v1/` calls
    * carry the client's 10 s deadline (`lib/supabase.ts`). A REST request that never settled left the profile
@@ -33,6 +39,7 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
     .then(
       (res) => {
         clearTimeout(timer);
+        breadcrumb('state', 'profile:select:done', `${Date.now() - t0}ms ${res.error ? `err=${res.error.message}` : 'ok'}`);
         return res;
       },
       (e: unknown) => {

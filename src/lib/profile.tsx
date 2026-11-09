@@ -14,6 +14,8 @@ interface ProfileState {
   loading: boolean;
   /** Re-read the profile — e.g. after onboarding sets `onboarded_at`, so the boot router can swap. */
   refetch: () => void;
+  /** The last read's failure, if any — the boot hold's stall report names it (11-09). */
+  error: string | null;
 }
 
 const ProfileContext = createContext<ProfileState | undefined>(undefined);
@@ -52,7 +54,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const t = setTimeout(refetch, 2000);
     return () => clearTimeout(t);
   }, [uid, error, refetch]);
-  return <ProfileContext.Provider value={{ profile: data, loading, refetch }}>{children}</ProfileContext.Provider>;
+  return <ProfileContext.Provider value={{ profile: data, loading, refetch, error }}>{children}</ProfileContext.Provider>;
 }
 
 export function useProfile(): ProfileState {

@@ -2,7 +2,9 @@ import {
   PlayfairDisplay_500Medium,
   PlayfairDisplay_600SemiBold,
 } from '@expo-google-fonts/playfair-display';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '@/lib/supabase';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router, useNavigationContainerRef } from 'expo-router';
 import { flColor, flFont, flText, IS_PAPER } from '@/constants/foundation';
 import { useFonts } from 'expo-font';
@@ -529,20 +531,63 @@ function BootLoading() {
    * Try again (re-reads the profile at once instead of waiting for the next 2 s retry) and Sign out (the
    * escape from a session this phone can no longer use), and reports itself so we can see who hits it.
    */
-  const { signOut } = useAuth();
-  const { refetch } = useProfile();
+  const { signOut, loading: authLoading, session } = useAuth();
+  const { refetch, error: profileError } = useProfile();
   const insets = useSafeAreaInsets();
   const [slow, setSlow] = useState(false);
+  /*
+   * WHICH read is stuck, and on what (11-09: the first reports carried no failed request at all, so the stall is
+   * a wait, not a refusal). At 6 s, probe the three things a launch waits on — the phone's own storage, the
+   * auth client (its lock), and the network to the auth server — each on its own timeout, and send ONE report
+   * naming the boot state and all three results. The crumbs in `fetchSelfProfile` / `AuthProvider` ride along.
+   */
+  const bootState = `auth=${authLoading ? 'LOADING' : 'ready'} session=${session ? 'yes' : 'no'} profileErr=${profileError ?? '-'}`;
+  const [stateAtStall, setStateAtStall] = useState<string | null>(null);
+  // The boot state AT the 6 s mark, not at mount — auth may have resolved while the profile is the one stuck.
+  const latestBootState = useRef(bootState);
+  useEffect(() => {
+    latestBootState.current = bootState;
+  });
   useEffect(() => {
     const t = setTimeout(() => {
       setSlow(true);
-      reportError(new Error('Boot: still on the splash after 6 s (auth or profile read not resolving)'), {
-        source: 'manual',
-        screen: 'boot',
-      });
+      setStateAtStall(latestBootState.current);
     }, 6000);
     return () => clearTimeout(t);
   }, []);
+  useEffect(() => {
+    if (stateAtStall == null) return;
+    let cancelled = false;
+    const within = <T,>(p: Promise<T>, ms: number) =>
+      Promise.race([
+        p.then((v) => ({ ok: true as const, v }), (e: unknown) => ({ ok: false as const, why: String((e as Error)?.message ?? e) })),
+        new Promise<{ ok: false; why: string }>((r) => setTimeout(() => r({ ok: false, why: 'TIMEOUT' }), ms)),
+      ]);
+    void (async () => {
+      let t = Date.now();
+      const st = await within(AsyncStorage.getItem('fl_boot_probe'), 3000);
+      const storage = st.ok ? `${Date.now() - t}ms` : st.why;
+      t = Date.now();
+      const gs = await within(supabase.auth.getSession(), 3000);
+      const lock = gs.ok ? `${Date.now() - t}ms session=${gs.v.data.session ? 'yes' : 'no'}` : gs.why;
+      t = Date.now();
+      const hp = await within(
+        fetch(`${process.env.EXPO_PUBLIC_SUPABASE_URL}/auth/v1/health`, {
+          headers: { apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '' },
+        }).then((r) => r.status),
+        5000,
+      );
+      const net = hp.ok ? `${hp.v} ${Date.now() - t}ms` : hp.why;
+      if (cancelled) return;
+      reportError(new Error(`Boot stall · ${stateAtStall} · storage=${storage} · getSession=${lock} · authHealth=${net}`), {
+        source: 'manual',
+        screen: 'boot',
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [stateAtStall]);
   return (
     <View style={bootStyles.fill}>
       <ForgeSplash />
