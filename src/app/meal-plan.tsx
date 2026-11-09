@@ -80,6 +80,8 @@ import { recipeFrom } from '@/domain/nutrition/user-recipes';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 
 const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
+/* Every read this screen builds a week from throws on failure rather than answering "nothing" (B13 / UX-002). */
+const STRICT = { strict: true } as const;
 
 /**
  * Meal Plan — built to `Meal Plan.dc.html` (Claude Design b029488a), wired to `meal_plan_weeks` (0211)
@@ -140,28 +142,37 @@ function MealPlanScreen() {
     setPicked(next);
   };
 
-  /* The athlete's recipes go into the book BEFORE a week is resolved — a stored week naming one would
-     otherwise look unreadable and be rebuilt (`registerUserRecipes`). */
-  const mineQ = useQuery(fetchUserRecipes, [reloads]);
-  const prefsQ = useQuery(fetchMealPlanPrefs, [reloads]);
-  const profileQ = useQuery(fetchNutritionProfile, [reloads]);
-  const targetQ = useQuery(useCallback(() => fetchTargetsOn(todayIso), [todayIso]), [todayIso, reloads]);
-  const storedQ = useQuery(useCallback(() => fetchMealPlanWeek(monday), [monday]), [monday, reloads]);
-
-  const loaded = mineQ.settled && prefsQ.settled && profileQ.settled && targetQ.settled && storedQ.settled;
-  const prefs = prefsQ.data ?? null;
-  const target = targetQ.data ?? null;
-  const gate = loaded ? setupGate(profileQ.data?.birthYear ?? null, target, todayIso) : null;
-  const ready = loaded && !!prefs && gate == null && !!target;
+  /*
+   * ⛔ ONE READ, ALL OR NOTHING — AND A FAILED READ IS NEVER "NO WEEK" (launch QA B13 / UX-002). The week is
+   * resolved, and a new one built and SAVED, only from a read that came back whole: every part `strict`, so a
+   * blip throws instead of answering "nothing", and the five land together, so a re-read on focus never
+   * resolves a fresh setup against a stale week. A stored week was replaced — locks, logged meals and a
+   * cleared week lost — by one 500 on either read. Until a whole read lands nothing is built; if it fails the
+   * screen says so and saves nothing. The athlete's recipes go into the book BEFORE the week is resolved — a
+   * stored week naming one would otherwise look unreadable and be rebuilt (`registerUserRecipes`).
+   */
+  const planQ = useQuery(
+    () =>
+      Promise.all([
+        fetchUserRecipes(STRICT),
+        fetchMealPlanPrefs(STRICT),
+        fetchNutritionProfile(STRICT),
+        fetchTargetsOn(todayIso, STRICT),
+        fetchMealPlanWeek(monday, STRICT),
+      ]).then(([, prefs, profile, target, stored]) => ({ prefs, profile, target, stored })),
+    [todayIso, monday, reloads],
+  );
+  const plan = planQ.data;
+  /* No whole read to show. Never a reason to build a week, nor to send the athlete back to setup. */
+  const failed = !plan && planQ.error != null;
+  const prefs = plan?.prefs ?? null;
+  const target = plan?.target ?? null;
+  const gate = plan ? setupGate(plan.profile.birthYear, target, todayIso) : null;
+  const ready = !!plan && !!prefs && gate == null && !!target;
 
   const resolved = useMemo(
-    () =>
-      /* `mineQ.data` is read here on purpose: the athlete's recipes are registered into the book as that
-         query lands, and the week must re-resolve against them. */
-      ready && prefs && target && mineQ.data
-        ? resolveWeek(storedQ.data ?? null, prefs, prefs.updatedAt, target, monday)
-        : null,
-    [ready, prefs, target, storedQ.data, monday, mineQ.data],
+    () => (ready && plan && prefs && target ? resolveWeek(plan.stored, prefs, prefs.updatedAt, target, monday) : null),
+    [ready, plan, prefs, target, monday],
   );
 
   /* The athlete's edits this visit, tied to the week they were made on. When the week underneath is
@@ -171,7 +182,8 @@ function MealPlanScreen() {
   const week = edits && resolved && edits.base === resolved.week ? edits.week : (resolved?.week ?? null);
 
   /* A freshly built (or rebuilt) week is saved once, so reopening shows the same week. No state is set
-     here — the save is fire-and-forget and the screen is already drawing the built week. */
+     here — the save is fire-and-forget and the screen is already drawing the built week. `resolved` only
+     exists for a whole, successful read (above), so a failed or unfinished read can never get here. */
   useEffect(() => {
     if (resolved?.rebuilt) saveMealPlanWeek(resolved.week).catch(() => undefined);
   }, [resolved]);
@@ -184,7 +196,7 @@ function MealPlanScreen() {
   const premiumAi = usePremiumAi();
   const nutritionAccess = useNutritionAccess();
   /* "Only plan from my recipes" (0226) means Holt is never offered to write dishes into the week. */
-  const canHolt = premiumAi && nutritionAccess && !prefsQ.data?.ownRecipesOnly;
+  const canHolt = premiumAi && nutritionAccess && !prefs?.ownRecipesOnly;
   const [fill, setFill] = useState<
     { phase: 'writing' } | { phase: 'review'; picks: { slot: PlanSlotName; card: DishCard }[] } | { phase: 'saving' } | null
   >(null);
@@ -194,8 +206,9 @@ function MealPlanScreen() {
      would look done and refill on reopen. */
   const [clearing, setClearing] = useState<'ask' | 'saving' | null>(null);
 
-  /* ⛔ The doors. No saved setup, or a gate the setup would show — hand over, and let it explain. */
-  if (loaded && (!prefs || gate != null || !target)) return <Redirect href="/meal-plan-setup" />;
+  /* ⛔ The doors. No saved setup, or a gate the setup would show — hand over, and let it explain. Only on a
+     read that ANSWERED: a failed one is not "no setup" (B13 / UX-002). */
+  if (plan && (!prefs || gate != null || !target)) return <Redirect href="/meal-plan-setup" />;
 
   const commit = async (next: MealPlanWeek, toast?: string) => {
     if (resolved) setEdits({ base: resolved.week, week: next });
@@ -279,7 +292,9 @@ function MealPlanScreen() {
       /* TRIAL (0227): in this week, not in My Recipes — the athlete saves one from its Recipe screen once they've
          tried it (PO 09-27: "I don't want to save them all cause I haven't even tried them"). */
       for (const { slot, card } of picks) await saveUserRecipe({ ...recipeFrom(formForPlan(card, slot), '', now), id: null, trial: true });
-      await fetchUserRecipes(); // registers them in the book before the rebuild reads it
+      /* Registers them in the book before the rebuild reads it — strict, so a failed read stops here rather
+         than rebuilding (and saving) the week from a book that didn't load (B13 / UX-002). */
+      await fetchUserRecipes(STRICT);
       await commit(rebuildWeek(week, prefs, target), `Holt's dishes are in your week · open one to save it`);
       setReloads((n) => n + 1);
     } catch (e) {
@@ -566,6 +581,15 @@ function MealPlanScreen() {
           </View>
           {prefs && target ? (
             <Text style={styles.lede}>{`Built around ${grouped(target.kcal)} cal a day · cooking for ${prefs.household}.`}</Text>
+          ) : null}
+          {/* B13 / UX-002: a read that failed says so, and nothing is built or saved until one lands whole. */}
+          {failed ? (
+            <View style={styles.short}>
+              <Text style={styles.shortText}>Couldn’t load your meal plan. Nothing was changed.</Text>
+              <Pressable accessibilityRole="button" hitSlop={6} onPress={planQ.refetch}>
+                <Text style={styles.shortLink}>Try again</Text>
+              </Pressable>
+            </View>
           ) : null}
           {week && !weekEmpty ? (
             <Pressable accessibilityRole="button" hitSlop={6} style={styles.clearLink} onPress={() => setClearing('ask')}>
