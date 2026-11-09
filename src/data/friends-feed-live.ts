@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import type { PostLayout, WorkoutSummary } from './squad-feed-live';
 import { isMilestoneCard } from '@/domain/share/milestone-card';
+import { removeDeletedPostMedia, type DeletedPostRow, type MediaCleanup } from '@/data/media-cleanup-live';
 
 /**
  * The Friends Feed (migration 0074) — SOC-D9's intentional-sharing feed.
@@ -394,10 +395,16 @@ export async function uploadFeedImageData(base64: string, mime: 'image/png' | 'i
  * audience — this had no caller until the feed gained its manage menu (social2-15, QA 09-26).
  *
  * ⚠ ASKS FOR THE ROW BACK: a delete RLS does not admit matches nothing and reports success, so without
- * `select` the toast would say "deleted" over a post that is still there.
+ * `select` the toast would say "deleted" over a post that is still there. The row also names the post's
+ * own uploads, which go with it (launch QA B11 / UX-001) — see `deleteSquadPost` for which ones and why.
  */
-export async function deleteFriendPost(postId: string): Promise<void> {
-  const { data, error } = await supabase.from('squad_posts').delete().eq('id', postId).select('id');
+export async function deleteFriendPost(postId: string): Promise<MediaCleanup> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { data, error } = await supabase.from('squad_posts').delete().eq('id', postId).select('id, author_id, media');
   if (error) rethrow(error);
   if (!data || data.length === 0) throw new Error('That post could not be deleted. It may already be gone.');
+  return removeDeletedPostMedia(data as DeletedPostRow[], user.id);
 }

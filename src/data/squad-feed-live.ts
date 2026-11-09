@@ -12,6 +12,7 @@ import type { TemplateExercise } from '@/data/templates-live';
 import { isMilestoneCard, type MilestoneCard } from '@/domain/share/milestone-card';
 import { parseStoryFacts, type StoryFacts } from '@/domain/squad/week-story';
 import { timeAgoAt } from '@/domain/text/time-ago';
+import { removeDeletedPostMedia, type DeletedPostRow, type MediaCleanup } from '@/data/media-cleanup-live';
 
 /**
  * Squad Feed data (Social · Part 1) — training-only threaded posts (`squad_posts`), flat comments
@@ -1096,13 +1097,26 @@ export async function renameSquadPost(postId: string, title: string): Promise<st
  * entitled to matches no row and removes nothing, rather than being refused by a client that might have
  * a stale idea of who owns what.
  *
- * ⚠ THE PHOTOS ARE NOT DELETED. They live in storage under the athlete's own transformation archive and
- * are referenced by the entry the post was composed FROM — removing them here would delete the record
- * along with the announcement of it. Sharing a photo and keeping a photo are different decisions.
+ * ⚠ THE ARCHIVE'S PHOTOS ARE NOT DELETED. A progress post's photos live under the athlete's own
+ * transformation archive (and a session recap's under their chapter album), referenced by the entry the
+ * post was composed FROM — removing them here would delete the record along with the announcement of it.
+ * Sharing a photo and keeping a photo are different decisions.
+ *
+ * ⚠ BUT THE POST'S OWN UPLOADS ARE (launch QA B11 / UX-001). A photo or clip added in the composer lives in
+ * the public `squad-media` bucket and nowhere else; it used to stay at its public URL after the post was
+ * gone. The deleted row is asked for back so its files can follow it — the author's only, and only those no
+ * other post of theirs still shows (`removeDeletedPostMedia`). Best-effort: `left` counts what stayed, and
+ * a file that will not go never fails the delete. The athlete is read first, so a failed identity read
+ * fails before anything is deleted.
  */
-export async function deleteSquadPost(postId: string): Promise<void> {
-  const { error } = await supabase.from('squad_posts').delete().eq('id', postId);
+export async function deleteSquadPost(postId: string): Promise<MediaCleanup> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const { data, error } = await supabase.from('squad_posts').delete().eq('id', postId).select('author_id, media');
   if (error) throw error;
+  return removeDeletedPostMedia((data ?? []) as DeletedPostRow[], user.id);
 }
 
 export async function toggleSquadReaction(postId: string, reacted: boolean): Promise<boolean> {

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { storagePathOf } from '@/data/media-cleanup-live';
 
 /**
  * Deleting your account — the whole path, in the only order that is safe.
@@ -30,9 +31,9 @@ import { supabase } from '@/lib/supabase';
  * deletion does not — if the account itself cannot be deleted, the athlete is told, and nothing has been
  * half-destroyed because the media pass only ever removes things that were about to become orphans.
  *
- * Anything missed is an orphan of the same class the audit records for photos generally (there is no
- * `.remove(` anywhere else in `src/`). That gap is real and tracked; it does not belong in the path of
- * somebody trying to delete their account.
+ * Anything missed is an orphan of the same class the audit records for photos generally (deleting one
+ * progress set or post now removes its own files too — `media-cleanup-live.ts`, B11). That gap is real and
+ * tracked; it does not belong in the path of somebody trying to delete their account.
  */
 
 /** Buckets whose objects are keyed under the athlete's own id, and can be listed and removed by prefix. */
@@ -104,14 +105,9 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
  */
 async function removeMediaNamedByRows(athleteId: string): Promise<number> {
   let n = 0;
-
-  const pathOf = (url: string, bucket: string): string | null => {
-    // A public URL is `…/storage/v1/object/public/<bucket>/<path>?v=…`; take what follows the bucket.
-    const marker = `/${bucket}/`;
-    const i = url.indexOf(marker);
-    if (i < 0) return null;
-    return url.slice(i + marker.length).split('?')[0] || null;
-  };
+  // A public URL is `…/storage/v1/object/public/<bucket>/<path>?v=…` — `storagePathOf` takes what follows the
+  // bucket. Shared with the set and post deletes (B11), so the three cannot disagree about a path.
+  const pathOf = storagePathOf;
 
   try {
     const { data } = await supabase.from('chapter_photos').select('url').eq('athlete_id', athleteId);

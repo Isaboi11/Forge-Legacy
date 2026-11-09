@@ -8,6 +8,11 @@
  *                            held in the outbox and reads fall back to the cache.
  *  · `db.missing = Set`    — columns that do not exist yet (a migration not pasted): selecting, filtering
  *                            or writing one answers Postgres's 42703.
+ *
+ * Storage (B11): `db.objects` maps `<bucket>/<path>` → `{ owner }`. `remove` deletes only the athlete's own
+ * objects and answers with the ones it deleted — storage skips an object the caller does not own without
+ * an error, which is the shape the data layer has to count from. `db.storageDown = n` fails the next n
+ * storage requests in transport.
  */
 
 export const ATHLETE = '00000000-0000-4000-8000-000000000001';
@@ -20,6 +25,8 @@ export const db = {
   log: [],
   reset() {
     this.tables = new Map();
+    this.objects = new Map();
+    this.storageDown = 0;
     this.offline = false;
     this.missing = new Set();
     this.log = [];
@@ -73,6 +80,13 @@ class Query {
   gte(c, v) { this.filters.push((r) => r[c] >= v); this.cols = [...(this.cols ?? []), c]; return this; }
   lte(c, v) { this.filters.push((r) => r[c] <= v); this.cols = [...(this.cols ?? []), c]; return this; }
   in(c, vs) { this.filters.push((r) => vs.includes(r[c])); return this; }
+  /* jsonb containment (`@>`). supabase-js sends a STRING as-is, so a jsonb caller passes JSON text. */
+  contains(c, v) {
+    const want = typeof v === 'string' ? JSON.parse(v) : v;
+    this.filters.push((r) => jsonContains(r[c], want));
+    this.cols = [...(this.cols ?? []), c];
+    return this;
+  }
   not(c, op, v) {
     if (op === 'is' && v === null) this.filters.push((r) => r[c] != null);
     return this;
@@ -154,6 +168,12 @@ class Query {
   }
 }
 
+function jsonContains(have, want) {
+  if (Array.isArray(want)) return Array.isArray(have) && want.every((w) => have.some((h) => jsonContains(h, w)));
+  if (want && typeof want === 'object') return !!have && typeof have === 'object' && Object.entries(want).every(([k, w]) => jsonContains(have[k], w));
+  return have === want;
+}
+
 function defaults(table) {
   if (table === 'food_log_entries') {
     const d = { brand: null, serving_label: null, grams: null, micros: null, source_key: null, quantity: 1, protein: 0, carb: 0, fat: 0 };
@@ -183,6 +203,27 @@ export const supabase = {
     getUser: async () => ({ data: { user: { id: ATHLETE } }, error: null }),
   },
   functions: { invoke: async () => ({ data: null, error: { message: 'not in tests' } }) },
+  storage: {
+    from: (bucket) => ({
+      remove: async (paths) => {
+        if (db.offline || db.storageDown > 0) {
+          if (db.storageDown > 0) db.storageDown -= 1;
+          return { data: null, error: { name: 'StorageUnknownError', message: 'Failed to fetch' } };
+        }
+        const gone = [];
+        for (const path of paths) {
+          const key = `${bucket}/${path}`;
+          const o = db.objects.get(key);
+          if (o && o.owner === ATHLETE) {
+            db.objects.delete(key);
+            gone.push({ name: path, bucket_id: bucket });
+          }
+        }
+        db.log.push({ table: `storage:${bucket}`, mode: 'remove', paths: [...paths], n: gone.length });
+        return { data: gone, error: null };
+      },
+    }),
+  },
   /* An RPC the test registers on `db.rpcs` runs; any other answers the way a missing function does. */
   rpc: async (name, args) => {
     if (db.offline) return { data: null, error: TRANSPORT };

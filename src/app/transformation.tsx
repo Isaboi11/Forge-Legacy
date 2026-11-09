@@ -128,10 +128,12 @@ export default function TransformationRoute() {
     if (!confirmDelete || deleting) return;
     setDeleting(true);
     deleteTransformationEntry(confirmDelete.id).then(
-      () => {
+      ({ left }) => {
         setDeleting(false);
         setConfirmDelete(null);
         refetch();
+        // The set is gone either way; a file storage kept is said out loud, never left implied (B11).
+        if (left > 0) showToast('Entry deleted, but some of its photos couldn’t be removed.');
       },
       (e: unknown) => {
         setDeleting(false);
@@ -319,7 +321,7 @@ export default function TransformationRoute() {
         <View style={styles.confirmBackdrop}>
           <View style={styles.confirmCard}>
             <Text style={styles.confirmTitle}>Delete this entry?</Text>
-            <Text style={styles.confirmBody}>Its photos and saved details will be permanently removed. It will no longer be available for comparisons. This can’t be undone.</Text>
+            <Text style={styles.confirmBody}>Its photos and saved details will be deleted, including from any post you shared them to. It will no longer be available for comparisons. This can’t be undone.</Text>
             <View style={styles.confirmActions}>
               <Button variant="destructive" fullWidth disabled={deleting} onPress={doDelete} accessibilityLabel="Delete entry">
                 {deleting ? 'Deleting…' : 'Delete'}

@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import { syncPhotoReminder, type ReminderResult } from '@/lib/photo-reminder';
 import { sortByCapture } from '@/domain/legacy/capture-date';
+import { removeObjectsAt, type MediaCleanup } from '@/data/media-cleanup-live';
+import { reportError } from '@/lib/diagnostics';
 
 /**
  * Transformation gallery data (L-17) — a personal, owner-scoped progress-photo archive (migration 0044).
@@ -252,12 +254,37 @@ export async function updateTransformationEntry(entryId: string, patch: Partial<
   if (error) throw error;
 }
 
-/** Delete an entry. (Media objects are left in storage — orphaned but harmless.) */
-export async function deleteTransformationEntry(entryId: string): Promise<void> {
+/**
+ * Delete an entry AND its photos and posing clip (launch QA B11 / UX-001).
+ *
+ * ⚠ THIS USED TO DELETE THE ROW ONLY, under a comment calling the leftover objects "orphaned but harmless".
+ * They were neither: `transformation-media` is a public bucket, so every pose stayed downloadable at its URL
+ * after the athlete confirmed "Its photos… will be permanently removed… This can't be undone."
+ *
+ * The row goes first and is asked for back, so the files are named by what was actually deleted — a row
+ * delete that fails throws before any photo is touched. The files then go best-effort
+ * (`media-cleanup-live.ts`): a file that will not go never fails the delete the athlete confirmed; it comes
+ * back as `left` so the screen can say so honestly, and is reported (a count, never a path) so it is not
+ * silent. Any squad or friends post the athlete shared these photos to loses them too — the confirm says so.
+ */
+export async function deleteTransformationEntry(entryId: string): Promise<MediaCleanup> {
   const id = await uid();
   if (!id) throw new Error('Not signed in');
-  const { error } = await supabase.from('transformation_entries').delete().eq('id', entryId).eq('athlete_id', id);
+  const { data, error } = await supabase
+    .from('transformation_entries')
+    .delete()
+    .eq('id', entryId)
+    .eq('athlete_id', id)
+    .select('photos, video_url');
   if (error) throw error;
+  const urls: string[] = [];
+  for (const row of (data ?? []) as { photos: Record<string, unknown> | null; video_url: string | null }[]) {
+    for (const u of Object.values(row.photos ?? {})) if (typeof u === 'string') urls.push(u);
+    if (row.video_url) urls.push(row.video_url);
+  }
+  const cleanup = await removeObjectsAt('transformation-media', urls);
+  if (cleanup.left > 0) reportError(new Error(`Progress set deleted; ${cleanup.left} of its files could not be removed`), { screen: 'transformation.delete-media' });
+  return cleanup;
 }
 
 /**

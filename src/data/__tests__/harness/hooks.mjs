@@ -18,6 +18,7 @@ const FAKES = {
   '@/lib/diagnostics': STUBS,
   '@react-native-async-storage/async-storage': STUBS,
   '@/lib/storage-upload': STUBS,
+  '@/lib/photo-reminder': STUBS,
   'react-native': STUBS,
 };
 

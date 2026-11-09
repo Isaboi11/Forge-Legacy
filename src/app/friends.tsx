@@ -225,10 +225,11 @@ export default function FriendsFeedScreen() {
     if (working || !deleteFor) return;
     setWorking(true);
     try {
-      await deleteFriendPost(deleteFor.id);
+      const { left } = await deleteFriendPost(deleteFor.id);
       setDeleteFor(null);
       refetch();
-      showToast('Post deleted.');
+      // Its own uploads go with it (B11); if storage kept one, the toast says so.
+      showToast(left > 0 ? 'Post deleted, but some of its photos couldn’t be removed.' : 'Post deleted.');
     } catch (e) {
       showToast(errorMessage(e));
     } finally {
@@ -411,8 +412,8 @@ export default function FriendsFeedScreen() {
       <BottomSheet open={deleteFor != null} onClose={() => setDeleteFor(null)} title="Delete this post?">
         <Text style={styles.confirmBody}>
           {deleteFor?.audience === 'BOTH'
-            ? 'It comes off your friends’ feed and your squad’s, along with its comments. Your photos stay in your own archive — only the post goes.'
-            : 'It comes off the feed for everyone, along with its comments. Your photos stay in your own archive — only the post goes.'}
+            ? 'It comes off your friends’ feed and your squad’s, along with its comments and any photos you added only to this post. Photos from your own archive stay there.'
+            : 'It comes off the feed for everyone, along with its comments and any photos you added only to this post. Photos from your own archive stay there.'}
         </Text>
         <Pressable onPress={() => void commitDelete()} disabled={working} accessibilityRole="button" accessibilityLabel="Delete the post" style={[styles.menuRow, styles.menuDangerRow]}>
           <Text style={[styles.menuText, styles.menuDanger]}>{working ? 'Deleting…' : 'Delete'}</Text>

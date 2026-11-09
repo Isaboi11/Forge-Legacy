@@ -188,9 +188,10 @@ export default function SquadPostRoute() {
     if (working || !post) return;
     setWorking(true);
     try {
-      await deleteSquadPost(post.id);
+      const { left } = await deleteSquadPost(post.id);
       setConfirmDelete(false);
-      showToast('Post deleted.');
+      // Its own uploads go with it (B11); if storage kept one, the toast says so.
+      showToast(left > 0 ? 'Post deleted, but some of its photos couldn’t be removed.' : 'Post deleted.');
       /* Back, not a refetch: the row is gone and this screen is addressed by its id, so staying would
          render the "post not found" state over something the athlete just chose to remove. */
       router.back();
@@ -540,7 +541,7 @@ export default function SquadPostRoute() {
       <BottomSheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this post?">
         <Text style={styles.confirmBody}>
           {mine
-            ? 'It comes off the feed for everyone, along with its comments. Your photos stay in your own archive — only the post goes.'
+            ? 'It comes off the feed for everyone, along with its comments and any photos you added only to this post. Photos from your own archive stay there.'
             : 'It comes off the squad feed for everyone, along with its comments. As the squad’s owner, this is yours to take down.'}
         </Text>
         <Pressable onPress={() => void commitDelete()} disabled={working} accessibilityRole="button" style={[styles.menuRow, styles.menuDangerRow]}>

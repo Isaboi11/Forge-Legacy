@@ -30,3 +30,6 @@ export const uploadToBucket = async () => {
 
 /* react-native — only what a data module might touch at import time. */
 export const Platform = { OS: 'ios', select: (o) => o.ios ?? o.default };
+
+/* @/lib/photo-reminder — `transformation-live` schedules the capture reminder through it (expo-notifications). */
+export const syncPhotoReminder = async () => 'scheduled';
