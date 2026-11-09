@@ -158,6 +158,16 @@ async function athleteId(): Promise<string | null> {
 
 let lastAthlete: string | null = null;
 
+/**
+ * ⛔ **`strict`: A READ THAT FAILED THROWS — IT NEVER ANSWERS "NOTHING"** (launch QA B13 / UX-002). Most screens
+ * are fine drawing "nothing" on a blip. Meal Plan is not: told there is no week (or no recipe a week names), it
+ * builds a new week and SAVES it over the real one — locks, logged meals and a cleared week gone. So the reads it
+ * builds from are strict: null from a strict read means the server ANSWERED and there is none; anything else throws.
+ */
+export interface ReadOpts {
+  strict?: boolean;
+}
+
 /** This athlete's held writes, oldest first. */
 async function heldOps(id: string): Promise<OutboxOp[]> {
   return opsFor(await heldItems(), id);
@@ -425,9 +435,12 @@ export async function fetchTargetHistory(uptoIso: string): Promise<TargetHistory
  * The target in force on a date — the newest row at or before it (0205 §4). A target set today does not
  * rewrite last week, which is what makes an old day still readable against what was true then.
  */
-export async function fetchTargetsOn(iso: string): Promise<Targets | null> {
+export async function fetchTargetsOn(iso: string, opts: ReadOpts = {}): Promise<Targets | null> {
   const id = await athleteId();
-  if (!id) return null;
+  if (!id) {
+    if (opts.strict) throw new Error('Not signed in');
+    return null;
+  }
   const { data, error } = await supabase
     .from('nutrition_targets')
     .select('kcal, protein_g, carb_g, fat_g')
@@ -435,6 +448,7 @@ export async function fetchTargetsOn(iso: string): Promise<Targets | null> {
     .lte('effective_from', iso)
     .order('effective_from', { ascending: false })
     .limit(1);
+  if (error && opts.strict) throw error;
   if (error || !data?.length) return null;
   const t = data[0] as { kcal: number; protein_g: number; carb_g: number; fat_g: number };
   return { kcal: t.kcal, protein: t.protein_g, carb: t.carb_g, fat: t.fat_g };
@@ -1403,14 +1417,18 @@ export interface NutritionProfile {
   activityLevel: string | null;
 }
 
-export async function fetchNutritionProfile(): Promise<NutritionProfile> {
+export async function fetchNutritionProfile(opts: ReadOpts = {}): Promise<NutritionProfile> {
   const id = await athleteId();
-  if (!id) return { birthYear: null, heightIn: null, activityLevel: null };
+  if (!id) {
+    if (opts.strict) throw new Error('Not signed in');
+    return { birthYear: null, heightIn: null, activityLevel: null };
+  }
   const { data, error } = await supabase
     .from('profiles')
     .select('birth_year, height_in, activity_level')
     .eq('id', id)
     .maybeSingle();
+  if (error && opts.strict) throw error;
   if (error || !data) return { birthYear: null, heightIn: null, activityLevel: null };
   const r = data as Record<string, any>;
   return {
@@ -1511,9 +1529,12 @@ const PREFS_0226 = ', routine, share_ingredients, own_recipes_only';
  * The athlete's saved setup, or null when they have never completed it — or when `0210` is not pasted
  * yet, which reads the same way: the screen opens fresh, and saving is what surfaces the missing table.
  */
-export async function fetchMealPlanPrefs(): Promise<(MealPlanPrefs & { updatedAt: string | null }) | null> {
+export async function fetchMealPlanPrefs(opts: ReadOpts = {}): Promise<(MealPlanPrefs & { updatedAt: string | null }) | null> {
   const id = await athleteId();
-  if (!id) return null;
+  if (!id) {
+    if (opts.strict) throw new Error('Not signed in');
+    return null;
+  }
   const read = (with0226: boolean) =>
     supabase
       .from('meal_plan_prefs')
@@ -1525,6 +1546,7 @@ export async function fetchMealPlanPrefs(): Promise<(MealPlanPrefs & { updatedAt
     prefs0226 = false;
     ({ data, error } = await read(false));
   }
+  if (error && opts.strict) throw error;
   if (error || !data) return null;
   const r = data as Record<string, any>;
   return {
@@ -1582,10 +1604,18 @@ const CLEAR_NOT_LIVE = 'Clearing the week needs an app update that isn’t live 
 
 /* ── Meal Plan week (0211) ──────────────────────────────────────────────── */
 
-/** The stored week, or null when none is built yet (or `0211` is not pasted — the screen builds one). */
-export async function fetchMealPlanWeek(weekStart: string): Promise<MealPlanWeek | null> {
+/**
+ * The stored week, or null when none is built yet (or `0211` is not pasted — the screen builds one).
+ *
+ * ⛔ Meal Plan reads it `strict` (launch QA B13 / UX-002): a failed read here used to come back as "no week",
+ * and the screen built a new one and saved it over the real one.
+ */
+export async function fetchMealPlanWeek(weekStart: string, opts: ReadOpts = {}): Promise<MealPlanWeek | null> {
   const id = await athleteId();
-  if (!id) return null;
+  if (!id) {
+    if (opts.strict) throw new Error('Not signed in');
+    return null;
+  }
   const read = (withCleared: boolean) =>
     supabase
       .from('meal_plan_weeks')
@@ -1598,6 +1628,7 @@ export async function fetchMealPlanWeek(weekStart: string): Promise<MealPlanWeek
     weekCleared0226 = false;
     ({ data, error } = await read(false));
   }
+  if (error && opts.strict) throw error;
   if (error || !data) return null;
   const r = data as Record<string, any>;
   return {
@@ -1809,10 +1840,17 @@ const recipeColumns = (withTrial: boolean) => (withTrial ? `${RECIPE_COLUMNS}, t
  *
  * ⚠ ALL of them, Holt's unsaved `trial` dishes included — a week naming one must still resolve. Screens that
  * LIST the athlete's recipes pass this through `savedRecipes` (`domain/nutrition/user-recipes.ts`).
+ *
+ * ⛔ **A FAILED READ KEEPS THE LAST GOOD BOOK** (launch QA B13 / UX-002). It used to register an EMPTY list, which
+ * took the athlete's recipes out of the book for every screen — and a stored week naming one then read as
+ * unreadable and was rebuilt. `strict` (Meal Plan) also throws, so nothing is built from a book that didn't load.
  */
-export async function fetchUserRecipes(): Promise<UserRecipe[]> {
+export async function fetchUserRecipes(opts: ReadOpts = {}): Promise<UserRecipe[]> {
   const id = await athleteId();
-  if (!id) return [];
+  if (!id) {
+    if (opts.strict) throw new Error('Not signed in');
+    return [];
+  }
   const read = (withTrial: boolean) =>
     supabase.from('user_recipes').select(recipeColumns(withTrial)).eq('athlete_id', id).order('created_at', { ascending: false });
   let { data, error } = await read(recipeTrial0227 !== false);
@@ -1820,21 +1858,23 @@ export async function fetchUserRecipes(): Promise<UserRecipe[]> {
     recipeTrial0227 = false;
     ({ data, error } = await read(false));
   }
+  if (error && opts.strict) throw error;
   const list = error ? [] : ((data ?? []) as unknown as Record<string, any>[]).map(toUserRecipe);
-  registerAll(list);
+  if (!error) registerAll(list);
   /* Saved meals go in the same book at the same moment — every screen that reads a week calls this first. */
-  registerSavedMeals(await fetchPlanMeals(id));
+  registerSavedMeals(await fetchPlanMeals(id, opts));
   return list;
 }
 
 /** The athlete's saved meals with their foods' numbers — what a plan slot holding one reads. Remembered on
-    a failed read, so a blip can't make a stored week look unreadable and get rebuilt. */
-async function fetchPlanMeals(id: string): Promise<PlanMealSource[]> {
+    a failed read, so a blip can't make a stored week look unreadable and get rebuilt. A `strict` read throws. */
+async function fetchPlanMeals(id: string, opts: ReadOpts = {}): Promise<PlanMealSource[]> {
   const { data, error } = await supabase
     .from('saved_meals')
     .select('id, name, saved_meal_items(name, grams, serving_label, quantity, kcal, protein, carb, fat)')
     .eq('athlete_id', id)
     .order('name');
+  if (error && opts.strict) throw error;
   return remembered<PlanMealSource[]>(
     id,
     'planMeals',
