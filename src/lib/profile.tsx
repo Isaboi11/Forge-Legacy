@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useAuth } from './auth';
 import { useQuery } from './useQuery';
 import { fetchSelfProfile } from '@/domain/profile/live';
+import { breadcrumb } from './diagnostics';
 import type { UserProfile } from '@/domain/profile/schema';
 
 /**
@@ -16,6 +17,8 @@ interface ProfileState {
   refetch: () => void;
   /** The last read's failure, if any — the boot hold's stall report names it (11-09). */
   error: string | null;
+  /** One line for the boot-stall report: is there a uid, and what state is the read in. */
+  debug: string;
 }
 
 const ProfileContext = createContext<ProfileState | undefined>(undefined);
@@ -29,6 +32,13 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     [uid],
   );
   const data = read != null && read.uid === uid ? read.profile : null;
+  /* Boot-stall diagnostics (11-09): which of the three ways `data` can be null is it? Enum-shaped so the crumb
+     survives the report's sanitiser; one crumb per CHANGE, so a flip-flop shows as a sequence. */
+  const readState = read == null ? 'none' : read.uid !== uid ? 'mismatch' : read.profile ? 'loaded' : 'empty';
+  const debug = `uid=${uid ? 'yes' : 'no'} read=${readState}`;
+  useEffect(() => {
+    breadcrumb('state', `profile:read:${readState}`);
+  }, [readState]);
   // Boot flash guard: when the session id settles null→uid, useQuery keeps the prior result
   // (data:null, loading:false) until the refetch lands — which the boot router read as "signed in ·
   // not onboarded" and flashed the onboarding screen for a beat before Home. Treat "have a uid but no
@@ -54,7 +64,7 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
     const t = setTimeout(refetch, 2000);
     return () => clearTimeout(t);
   }, [uid, error, refetch]);
-  return <ProfileContext.Provider value={{ profile: data, loading, refetch, error }}>{children}</ProfileContext.Provider>;
+  return <ProfileContext.Provider value={{ profile: data, loading, refetch, error, debug }}>{children}</ProfileContext.Provider>;
 }
 
 export function useProfile(): ProfileState {

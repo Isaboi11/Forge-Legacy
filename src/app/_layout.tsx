@@ -33,7 +33,7 @@ import '@/lib/live-activity';
  */
 import '@/global.css';
 
-import { reportError, startDiagnostics } from '@/lib/diagnostics';
+import { breadcrumb, reportError, startDiagnostics } from '@/lib/diagnostics';
 import { startSentry, useSentryNavigation, useSentryUser, wrapRoot } from '@/lib/sentry';
 import { installErrorSink } from '@/data/errors-live';
 
@@ -298,6 +298,10 @@ function RootNavigator() {
   useStoreIdentity(session?.user?.id ?? null);
   // Sentry's user = the account UUID only (PO 09-28), cleared on sign-out. No-op unless Sentry is on.
   useSentryUser(session?.user?.id ?? null);
+  // Boot-stall diagnostics (11-09): every route change leaves a crumb, so a report shows splash → app → splash.
+  useEffect(() => {
+    breadcrumb('state', `boot:route:${route}`);
+  }, [route]);
 
   if (route === 'splash') return <BootLoading />;
   return (
@@ -532,7 +536,10 @@ function BootLoading() {
    * escape from a session this phone can no longer use), and reports itself so we can see who hits it.
    */
   const { signOut, loading: authLoading, session } = useAuth();
-  const { refetch, error: profileError } = useProfile();
+  const { refetch, error: profileError, loading: profileLoading, profile, debug: profileDebug } = useProfile();
+  useEffect(() => {
+    breadcrumb('state', 'boot:hold:mount');
+  }, []);
   const insets = useSafeAreaInsets();
   const [slow, setSlow] = useState(false);
   /*
@@ -541,7 +548,7 @@ function BootLoading() {
    * auth client (its lock), and the network to the auth server — each on its own timeout, and send ONE report
    * naming the boot state and all three results. The crumbs in `fetchSelfProfile` / `AuthProvider` ride along.
    */
-  const bootState = `auth=${authLoading ? 'LOADING' : 'ready'} session=${session ? 'yes' : 'no'} profileErr=${profileError ?? '-'}`;
+  const bootState = `auth=${authLoading ? 'LOADING' : 'ready'} session=${session ? 'yes' : 'no'} profileLoading=${profileLoading ? 'YES' : 'no'} profile=${profile ? (profile.onboardedAt ? 'onboarded' : 'not-onboarded') : 'null'} ${profileDebug} profileErr=${profileError ?? '-'}`;
   const [stateAtStall, setStateAtStall] = useState<string | null>(null);
   // The boot state AT the 6 s mark, not at mount — auth may have resolved while the profile is the one stuck.
   const latestBootState = useRef(bootState);
@@ -579,7 +586,7 @@ function BootLoading() {
       );
       const net = hp.ok ? `${hp.v} ${Date.now() - t}ms` : hp.why;
       if (cancelled) return;
-      reportError(new Error(`Boot stall · ${stateAtStall} · storage=${storage} · getSession=${lock} · authHealth=${net}`), {
+      reportError(new Error(`Boot stall · at6s: ${stateAtStall} · now: ${latestBootState.current} · storage=${storage} · getSession=${lock} · authHealth=${net}`), {
         source: 'manual',
         screen: 'boot',
       });
