@@ -24,6 +24,17 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - ✅ **The join ask reaches a host who hasn't added an exercise yet.** It lands within 8 s and re-reads on return to the app. Supersets travel as supersets. `8c5ddee4`, stranded since 10-07
 - ✅ **Exercise search keeps every letter when you type fast.** `77367054`, trunk-only since 10-20
 
+## ⛔→✅ B9 — Stuck on the launch splash on every open (11-09, found live by the PO and Kim; updates #6–#9)
+- **What happened:** the app sat on the pillars forever, and a force-quit didn't help.
+- **Cause:** the 11-08 fix H15 tagged the boot profile read with the phone's stored `session.user.id`. A phone that had held two accounts kept a stale identity, so every read was judged "someone else's" (`read=mismatch`) and thrown away. Web never shows it.
+- ✅ #6 `01a1c090` (`43b71a6e`): the launch covers leave on a timer. After 6 s the app says "Still connecting…" with Try again and Sign out. The profile read is time-boxed, and the Holt coin is off the boot screen.
+- ✅ #7 `01a1c0a1` (`fc4ce923`) + `d8b90fd9`: the stall reports itself in `client_errors` (`Boot stall · …`).
+- ✅ #8 `01a1c0b6` (`3da8f2bb`): **boot rescue.** At 6 s the app reads the profile itself and opens. This got the PO in.
+- ✅ #9 `01a1c0e3` (`5ffccf67`): **the fix.** The read is tagged with the server-confirmed account id; a mismatch refreshes the session and reads again (at most 3 times). A profile shows only when both ids agree.
+  - Tested on web: a mixed two-account session corrected itself in 2.6 s. The old build opened as the wrong account.
+- ⬜ PO and Kim to confirm a normal open on #9 (open twice).
+- 📱 Added to the phone script: sign out of A, sign in to B, then cold-start. It must open in under 3 s, as B.
+
 ## ✅ Update #5 — OTA `01a1bd86-f78f-70b5…` (11-08, lane `f705f9d2`, served and checked)
 - H1, H3, H4, H5, H26, H30, plus the app side of 0260.
 - ✅ **`pending-0260.sql` APPLIED 11-08 (PO).** §3 read `1 · 0 · 0 · true`, as predicted: 1 stale ask now hidden, 0 blocks, 0 joined-upcoming entries, refund callable. Because §3 rendered, §2 passed. The app side is already live (update #5). ⬜ Not yet seen working in the app.
