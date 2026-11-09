@@ -27,12 +27,12 @@ export const LEGAL: Record<LegalKey, LegalDocument> = {
   membership: {
     host: 'forgelegacy.app/membership',
     title: 'Membership',
-    updated: 'Forge Legacy · Free while testing',
+    updated: 'Forge Legacy · Plans',
     body: [
-      'Forge is free while we’re testing. There is no subscription, no billing, and nothing to cancel.',
+      'Forge has a Free plan and two paid plans, Premium and Premium AI. Settings → Subscription shows what each one includes, with its price and terms, before you buy.',
+      'Paid plans are subscriptions billed by Apple to your Apple ID. They renew until you cancel, which you can do in your iPhone’s Settings → your name → Subscriptions. Deleting your Forge account does not cancel an App Store subscription.',
       'Forge is not pay-to-win. Ranks, records, and honors are earned in the work and can never be purchased. Membership keeps the forge lit; it never buys a place on the podium.',
-      'Everything you log is yours and stays free — your history, your ranks, your records, your honors. That does not change when paid plans arrive.',
-      'When they do, we’ll say so in the app first, with the price and the terms, before anything changes.',
+      'Everything you log is yours and stays free on every plan — your history, your ranks, your records, your honors.',
     ],
   },
   terms: {

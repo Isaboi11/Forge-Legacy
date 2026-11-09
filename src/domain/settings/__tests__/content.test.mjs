@@ -241,15 +241,27 @@ test('the Subscription row names a tier only when one has been read', () => {
   assert.equal(row('PREMIUM').value, 'Premium');
 });
 
-test('the membership sheet claims no billing that does not exist', () => {
-  // Shipped design-comp copy told every tester they held a Founder plan that "renews yearly" and was
-  // "billed through your app store". There is no entitlement, no billing integration and no such tier —
-  // an inaccurate subscription disclosure (App Store 3.1.2) shown to the exact cohort we intend to charge.
+test('the membership sheet describes the plans that actually exist', () => {
+  // History: design-comp copy once told testers they held a Founder plan that "renews yearly"; then, while
+  // nothing could be bought, it said "free while we're testing… nothing to cancel". Since the public release
+  // (2026-11-09, default_tier FREE) paid plans exist, so that line became a false billing claim (App Store
+  // 3.1.2). The sheet must name the real plans, say Apple bills them, and say how to cancel.
   const text = LEGAL.membership.body.join(' ') + ' ' + LEGAL.membership.updated;
-  for (const claim of [/renews? yearly/i, /billing is handled/i, /next charge/i, /\bcancel at any time\b/i, /\bFounder\b/]) {
+  for (const claim of [
+    /free while (we’re|we're|we are) testing/i,
+    /no subscription/i,
+    /nothing to cancel/i,
+    /renews? yearly/i, // monthly plans exist too
+    /\bFounder\b/,
+    /\blifetime\b/i, // no lifetime plan (Monetization Amendment 007)
+  ]) {
     assert.ok(!claim.test(text), `membership copy still asserts: ${claim}`);
   }
-  assert.match(text, /free while we’re testing/i, 'says what is actually true');
+  assert.match(text, /Free plan/, 'names the Free plan');
+  assert.match(text, /Premium AI/, 'names the paid plans');
+  assert.match(text, /billed by Apple/i, 'says who bills');
+  assert.match(text, /cancel/i, 'says how to stop paying');
+  assert.match(text, /does not cancel an App Store subscription/i, 'Apple deletion guidance (H36)');
 });
 
 test('the home gym row round-trips back to settings', () => {
