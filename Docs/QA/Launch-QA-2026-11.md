@@ -32,7 +32,7 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - ✅ #8 `01a1c0b6` (`3da8f2bb`): **boot rescue.** At 6 s the app reads the profile itself and opens. This got the PO in.
 - ✅ #9 `01a1c0e3` (`5ffccf67`): **the fix.** The read is tagged with the server-confirmed account id; a mismatch refreshes the session and reads again (at most 3 times). A profile shows only when both ids agree.
   - Tested on web: a mixed two-account session corrected itself in 2.6 s. The old build opened as the wrong account.
-- ⬜ PO and Kim to confirm a normal open on #9 (open twice).
+- ✅ PO and Kim confirmed both phones open normally on #9 (11-09). GitHub `feat/build11` and `main` were fast-forwarded to `5ffccf67` the same day; they had been at `3b21a594` since 10-15.
 - 📱 Added to the phone script: sign out of A, sign in to B, then cold-start. It must open in under 3 s, as B.
 
 ## ✅ Update #5 — OTA `01a1bd86-f78f-70b5…` (11-08, lane `f705f9d2`, served and checked)
