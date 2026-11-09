@@ -2,11 +2,13 @@ import {
   PlayfairDisplay_500Medium,
   PlayfairDisplay_600SemiBold,
 } from '@expo-google-fonts/playfair-display';
+import { useEffect, useState } from 'react';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router, useNavigationContainerRef } from 'expo-router';
-import { flColor, IS_PAPER } from '@/constants/foundation';
+import { flColor, flFont, flText, IS_PAPER } from '@/constants/foundation';
 import { useFonts } from 'expo-font';
-import { useColorScheme } from 'react-native';
-import { SafeAreaProvider, initialWindowMetrics } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View, useColorScheme } from 'react-native';
+import { SafeAreaProvider, initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button } from '@/components/forge/composites/Button';
 
 /*
  * ⚠ IMPORTED FOR A SIDE EFFECT, AND IT HAS TO BE AT THE ROOT.
@@ -29,7 +31,7 @@ import '@/lib/live-activity';
  */
 import '@/global.css';
 
-import { startDiagnostics } from '@/lib/diagnostics';
+import { reportError, startDiagnostics } from '@/lib/diagnostics';
 import { startSentry, useSentryNavigation, useSentryUser, wrapRoot } from '@/lib/sentry';
 import { installErrorSink } from '@/data/errors-live';
 
@@ -520,8 +522,58 @@ function RootNavigator() {
  * opening looks like its splash screen.
  */
 function BootLoading() {
-  return <ForgeSplash />;
+  /*
+   * ⛔ BUT NEVER A DEAD END (11-09 — Kim, stuck on the splash on every launch, restarting did not help).
+   * This screen declares no routes, so if the "who are you / are you onboarded" reads keep failing there was
+   * no message, no retry and no way out — just the pillars, forever. After a few seconds it now says so, offers
+   * Try again (re-reads the profile at once instead of waiting for the next 2 s retry) and Sign out (the
+   * escape from a session this phone can no longer use), and reports itself so we can see who hits it.
+   */
+  const { signOut } = useAuth();
+  const { refetch } = useProfile();
+  const insets = useSafeAreaInsets();
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSlow(true);
+      reportError(new Error('Boot: still on the splash after 6 s (auth or profile read not resolving)'), {
+        source: 'manual',
+        screen: 'boot',
+      });
+    }, 6000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <View style={bootStyles.fill}>
+      <ForgeSplash />
+      {slow ? (
+        <View style={[bootStyles.panel, { bottom: insets.bottom + 40 }]}>
+          <Text style={bootStyles.title}>Still connecting…</Text>
+          <Text style={bootStyles.body}>Forge can’t reach your account right now. Check your signal, then try again.</Text>
+          <View style={bootStyles.actions}>
+            <Button variant="primary" fullWidth onPress={refetch} accessibilityLabel="Try again">
+              Try again
+            </Button>
+            <View style={bootStyles.centered}>
+              <Button variant="text" onPress={() => void signOut()} accessibilityLabel="Sign out">
+                Sign out
+              </Button>
+            </View>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
 }
+
+const bootStyles = StyleSheet.create({
+  fill: { flex: 1 },
+  panel: { position: 'absolute', left: 24, right: 24, alignItems: 'center' },
+  title: { fontFamily: flFont.display, fontSize: 20, lineHeight: 27, fontWeight: '600', textAlign: 'center', color: flText.primary },
+  body: { marginTop: 8, maxWidth: 320, fontSize: 15, lineHeight: 22, textAlign: 'center', color: flText.secondary },
+  actions: { marginTop: 20, alignSelf: 'stretch', gap: 6 },
+  centered: { alignSelf: 'center' },
+});
 
 /** Sentry's wrapper (profiler + touch boundary) when Sentry is on; the plain component when it is not. */
 export default wrapRoot(RootLayout);

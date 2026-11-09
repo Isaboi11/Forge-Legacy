@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ForgeSplash } from '@/components/forge-splash';
 import { IS_PAPER } from '@/constants/foundation';
+import { reportError } from '@/lib/diagnostics';
 
 /**
  * The hand-off from the NATIVE splash to the first painted frame.
@@ -69,8 +70,37 @@ const DURATION = 600;
 const DISSOLVE_START = 15; // ~90ms — long enough for the OS splash to be gone
 const DISSOLVE_END = 45; // ~270ms — the ground is the athlete's theme from here on
 
+/*
+ * ⛔ THE COVER NEVER DEPENDS ON THE ANIMATION TO LEAVE (11-09 — Kim, stuck on the splash, every launch).
+ *
+ * This overlay sits over the WHOLE app at zIndex 1000, and the only thing that ever took it away was the
+ * entering animation's callback reporting `finished`. Anything that stops that callback — iOS starting the
+ * app in the background (it has `location` + `audio` background modes), a layout animation the system skips,
+ * a worklet that never reaches the JS thread — left the pillars over a working app forever, with the Holt
+ * coin drawn on top: exactly the screenshot. Restarting did not help because whatever skips the animation
+ * skips it again.
+ *
+ * So a plain JS timer takes the cover away a little after the animation should have, whatever happened to
+ * it, and says so in a client error report — the only way we learn which phones hit it. And the cover never
+ * swallows a tap, so even while it is up the app beneath it stays usable.
+ */
+const FAILSAFE_MS = DURATION + 900;
+
 export function AnimatedSplashOverlay() {
   const [visible, setVisible] = useState(true);
+  // Armed only while the cover is up: when the animation's callback hides it first, the cleanup cancels the
+  // timer, so a report means exactly "the animation never let go".
+  useEffect(() => {
+    if (!visible) return;
+    const t = setTimeout(() => {
+      reportError(new Error('Launch cover: the entering animation never finished; removed by the failsafe'), {
+        source: 'manual',
+        screen: 'launch-cover',
+      });
+      setVisible(false);
+    }, FAILSAFE_MS);
+    return () => clearTimeout(t);
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -97,6 +127,7 @@ export function AnimatedSplashOverlay() {
         }
       })}
       style={styles.cover}
+      pointerEvents="none"
     >
       {IS_PAPER ? (
         <>

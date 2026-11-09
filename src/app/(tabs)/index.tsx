@@ -1107,6 +1107,18 @@ export default function HomeScreen() {
     if (ready) coverOpacity.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.ease) });
   }, [ready, coverOpacity]);
   const coverStyle = useAnimatedStyle(() => ({ opacity: coverOpacity.value }));
+  /*
+   * ⛔ …BUT THE COVER IS UNMOUNTED ONCE THE FADE IS OVER, BY A JS TIMER (11-09, Kim stuck on the splash).
+   * If the fade never runs on a phone (a skipped animation, an app woken in the background), opacity stays
+   * at 1 and the finished Home sits under a picture of the splash forever. Nothing is allowed to depend on
+   * an animation to stop covering the screen: 600ms after `ready` the cover is gone whatever the fade did.
+   */
+  const [coverGone, setCoverGone] = useState(false);
+  useEffect(() => {
+    if (!ready) return;
+    const t = setTimeout(() => setCoverGone(true), 600);
+    return () => clearTimeout(t);
+  }, [ready]);
 
   /*
    * Rank-ups and honours announce themselves on whichever main tab the athlete reaches first, so a day
@@ -1446,14 +1458,16 @@ export default function HomeScreen() {
           modals in their own window and cannot be open during a launch anyway. Same artwork, same
           background and same position as the native splash and the boot hold, so the athlete sees one
           continuous picture from the icon tap to the finished screen. */}
-      <Animated.View
-        style={[styles.cover, coverStyle]}
-        pointerEvents={ready ? 'none' : 'auto'}
-        accessibilityElementsHidden={ready}
-        importantForAccessibility={ready ? 'no-hide-descendants' : 'yes'}
-      >
-        <ForgeSplash />
-      </Animated.View>
+      {coverGone ? null : (
+        <Animated.View
+          style={[styles.cover, coverStyle]}
+          pointerEvents={ready ? 'none' : 'auto'}
+          accessibilityElementsHidden={ready}
+          importantForAccessibility={ready ? 'no-hide-descendants' : 'yes'}
+        >
+          <ForgeSplash />
+        </Animated.View>
+      )}
 
       {/*
         START A WORKOUT — the ways to start, then the cardio list (W25-A1-D9).

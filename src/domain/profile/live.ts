@@ -16,11 +16,30 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('not signed in');
+  /*
+   * ⛔ BOUNDED (11-09). The boot router holds the splash until this read answers, and only `/auth/v1/` calls
+   * carry the client's 10 s deadline (`lib/supabase.ts`). A REST request that never settled left the profile
+   * neither loaded nor failed — so no retry ever fired and the splash never lifted. Aborting turns a hang into
+   * an error, which `ProfileProvider` retries every 2 s.
+   */
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
   const { data, error } = await supabase
     .from('profiles')
     .select('name, first_name, handle, initials, sex, avatar_url, onboarded_at')
     .eq('id', user.id)
-    .maybeSingle();
+    .abortSignal(controller.signal)
+    .maybeSingle()
+    .then(
+      (res) => {
+        clearTimeout(timer);
+        return res;
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        throw e;
+      },
+    );
   if (error) throw error;
   // No row is a real answer, not a failure: the account has never been through onboarding, whose
   // finish mints the row (0199 `ensure_my_profile`). Anything that THREW above is a failure, and the

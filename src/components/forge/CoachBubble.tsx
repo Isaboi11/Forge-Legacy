@@ -21,6 +21,7 @@ import { capAllows } from '@/domain/entitlement/caps-core';
 import { track } from '@/lib/analytics';
 import { useEntitlementState } from '@/lib/entitlement';
 import { useAuth } from '@/lib/auth';
+import { useProfile } from '@/lib/profile';
 
 /**
  * The four surfaces the coach belongs on, and nowhere else.
@@ -211,6 +212,9 @@ export function CoachBubble() {
   /* Signed out, `/` is the Welcome screen and there is no athlete to read: the nudge read went out anyway
      and came back 401 on every visit (QA 09-26 auth-16, under B3). No session, no read. */
   const signedIn = !!useAuth().session;
+  /* The boot hold reads `/` too, so the coin used to float over the launch splash — and over its "Still
+     connecting…" buttons (11-09). Nothing of Holt's belongs on screen until the app has actually opened. */
+  const booting = useProfile().loading;
 
   useEffect(() => {
     if (!signedIn || !HOME_SURFACES.has(pathname) || kitchen) return;
@@ -441,6 +445,7 @@ export function CoachBubble() {
     setClosedLine(line);
   };
 
+  if (booting) return null;
   if (session) return null;
   if (ceremony) return null;
   if (tourStatus === 'running') return null;
