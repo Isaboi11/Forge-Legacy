@@ -26,8 +26,10 @@ import { rowMetresText } from '@/domain/workout/conditioning';
 import { displayWeight, exactWeight } from '@/domain/settings/units';
 import { WORKOUT_NAME_MAX, fetchCompletion, renameWorkout, savePlaylist, saveReflection, saveWorkoutNote, type CompletionCardio, type CompletionHero, type ExerciseDelta } from '@/data/workout-complete-live';
 import { fetchWorkoutAsSession } from '@/data/continue-workout-live';
-import { persistSession } from '@/domain/workout/autosave';
+import { hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
 import { withinContinueWindow } from '@/domain/workout/save';
+import { continueOverOpen } from '@/domain/workout/save-core';
+import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { markSessionSealed, unmarkSessionSealed, wasSessionSealed } from '@/lib/sealed-sessions';
 import { PlaylistSheet } from '@/components/forge/composites/Playlist';
 import { playlistLabel, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
@@ -1617,6 +1619,23 @@ function WorkoutComplete() {
                   /* In the athlete's units — the stored sets are pounds (UX-004, launch QA B15). */
                   const s = await fetchWorkoutAsSession(data.workoutId, units);
                   if (!s) return;
+                  /*
+                   * ⚠ NEVER OVER AN OPEN WORKOUT (UX-005, launch QA B16). Reached from Activity History this row
+                   * wrote straight over a second workout still open, and its logged sets were gone. Now: the same
+                   * workout already reopened is simply returned to, and a DIFFERENT one with work in it is parked
+                   * as a launch so the logger's resume prompt asks first (Resume / Save / Discard with the count).
+                   */
+                  const open = await loadSession();
+                  const verdict = continueOverOpen(open, hasLoggedWork(open), s);
+                  if (verdict === 'same') {
+                    router.replace('/workout');
+                    return;
+                  }
+                  if (verdict === 'ask') {
+                    await writeWorkoutLaunch({ continueSession: s });
+                    router.replace('/workout');
+                    return;
+                  }
                   await unmarkSessionSealed(data.workoutId);
                   await persistSession(s);
                   router.replace('/workout');

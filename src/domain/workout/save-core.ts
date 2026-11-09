@@ -338,6 +338,34 @@ export function withinContinueWindow(savedAtISO: string | null | undefined, now 
 }
 
 /**
+ * What "Continue this workout" may do with the session already open on this device (UX-005, launch QA B16).
+ *
+ * ⚠ THE DEFECT. The row is offered for an hour after any save — including on the summary reached from Activity
+ * History — and it wrote the reopened workout straight over the autosave. A SECOND workout still open, with its
+ * sets logged, was silently replaced and those sets were gone.
+ *
+ *   · `'replace'` — nothing open, nothing logged in it, or it is this very workout's own pre-save copy (same
+ *     `startedAt`, already committed): write the reopened workout over it, as before. Nothing is lost.
+ *   · `'same'`    — the open session IS this workout, already reopened: go back to it. A fresh copy from the
+ *     server would drop every set added since the first Continue.
+ *   · `'ask'`     — a DIFFERENT workout with work in it: never overwrite. The logger's own resume prompt
+ *     (Resume / Save this one & start the new one / Discard with the set count) asks instead.
+ *
+ * `openHasWork` is `hasLoggedWork(open)` from `autosave.ts`, passed in so there stays ONE definition of "work"
+ * (that module imports AsyncStorage and cannot be loaded here).
+ */
+export function continueOverOpen(
+  open: ActiveSession | null | undefined,
+  openHasWork: boolean,
+  reopened: ActiveSession,
+): 'replace' | 'same' | 'ask' {
+  if (!open || !openHasWork) return 'replace';
+  if (open.continuingWorkoutId && open.continuingWorkoutId === reopened.continuingWorkoutId) return 'same';
+  if (!open.continuingWorkoutId && open.startedAt === reopened.startedAt) return 'replace';
+  return 'ask';
+}
+
+/**
  * The work added since a finished workout was reopened — everything `saved` leaves out.
  *
  * An exercise whose every logged set is already committed contributes nothing and is dropped entirely,

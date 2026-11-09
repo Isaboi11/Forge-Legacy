@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { TemplateExercise } from '@/data/templates-live';
+import type { ActiveSession } from '@/domain/workout/types';
 
 /**
  * What the Active Workout was opened FROM — the RN analogue of the design's
@@ -117,6 +118,16 @@ export interface WorkoutLaunch {
    * accepting one is agreeing to train, not a starting gun. See `SessionExercise.autoStart`.
    */
   autoStartBout?: boolean;
+  /**
+   * A finished workout reopened by "Continue this workout" WHILE ANOTHER WORKOUT WAS STILL OPEN (UX-005, launch QA
+   * B16). It used to be written straight over the autosave, and the open workout's logged sets were gone with no
+   * word said. It is parked here instead, so the logger's resume prompt asks first — Resume the open one, save it,
+   * or discard it with the set count — exactly as for any other workout picked while one is open.
+   *
+   * The WHOLE session, already read and already in the athlete's units (`fetchWorkoutAsSession`), so the logger
+   * needs no network to start it after the athlete answers.
+   */
+  continueSession?: ActiveSession;
 }
 
 const KEY = 'forge_workout_launch_context_v1';
@@ -156,7 +167,8 @@ export async function readWorkoutLaunch(): Promise<WorkoutLaunch | null> {
       (typeof v.starterId === 'string' && !!v.starterId) ||
       !!v.conditioning ||
       (Array.isArray(v.exercises) && v.exercises.length > 0) ||
-      (typeof v.partnerId === 'string' && !!v.partnerId);
+      (typeof v.partnerId === 'string' && !!v.partnerId) ||
+      (!!v.continueSession && Array.isArray(v.continueSession.exercises) && !!v.continueSession.continuingWorkoutId);
     return carriesIntent ? v : null;
   } catch {
     return null;

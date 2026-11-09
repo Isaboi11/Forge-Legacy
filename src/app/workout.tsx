@@ -96,6 +96,7 @@ import { lastExerciseName, sessionStatLine } from '@/domain/workout/entry-summar
 import { resolveHomeWorkoutArtwork } from '@/domain/home-artwork/resolver';
 import { useProfile } from '@/lib/profile';
 import { clearWorkoutLaunch, readWorkoutLaunch } from '@/lib/workout-launch';
+import { unmarkSessionSealed } from '@/lib/sealed-sessions';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { clearSession, hasLoggedWork, loadSession, persistSession } from '@/domain/workout/autosave';
 import { setFreestyleAbandon } from '@/lib/freestyle-exit';
@@ -1093,7 +1094,13 @@ export default function WorkoutScreen() {
       const hasWork = hasLoggedWork(saved); // the same rule Home uses to offer "Continue" — see `autosave.ts`
       const wantsSomething =
         !!launch &&
-        (!!launch.conditioning || !!launch.templateId || !!launch.starterId || !!launch.freestyle || !!launch.programId || !!launch.exercises?.length);
+        (!!launch.conditioning ||
+          !!launch.templateId ||
+          !!launch.starterId ||
+          !!launch.freestyle ||
+          !!launch.programId ||
+          !!launch.exercises?.length ||
+          !!launch.continueSession); // "Continue this workout" picked while this one was open (UX-005, B16)
 
       if (hasWork) {
         setResumable(saved);
@@ -1124,6 +1131,24 @@ export default function WorkoutScreen() {
       }
       const droppedPartners = droppedSharedPartners(saved, hasWork, launch?.partnerId);
       if (droppedPartners.length) showToast('Your empty shared workout was closed');
+
+      /*
+       * "CONTINUE THIS WORKOUT", PARKED BECAUSE ANOTHER WORKOUT WAS OPEN (UX-005, launch QA B16).
+       *
+       * The open one has now been answered for — saved or discarded through the prompt above (Resume clears this
+       * launch) — so the reopened workout starts exactly as the direct path starts it: the session as read, in the
+       * athlete's units, with its seal mark taken off. Not through `startSession`: a continue is not a new start
+       * (no `workout_started`, no partner or position rewrite), and the direct path never went through it either.
+       */
+      if (launch?.continueSession) {
+        const reopened = launch.continueSession;
+        await clearWorkoutLaunch();
+        if (reopened.continuingWorkoutId) await unmarkSessionSealed(reopened.continuingWorkoutId);
+        setSession(reopened);
+        setLiveBoutIdx(openBoutIndex(reopened));
+        setPhase('active');
+        return;
+      }
       let fresh: ActiveSession | null = null;
 
       /* Invited (0092): whoever asked is pre-tagged, so accepting credits both athletes through the
