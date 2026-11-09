@@ -24,6 +24,13 @@ Status: ✅ shipped (OTA id) · 🔨 in progress · ⬜ open · ⏸ PO decision
 - ✅ **The join ask reaches a host who hasn't added an exercise yet.** It lands within 8 s and re-reads on return to the app. Supersets travel as supersets. `8c5ddee4`, stranded since 10-07
 - ✅ **Exercise search keeps every letter when you type fast.** `77367054`, trunk-only since 10-20
 
+## ✅ Update #10 — OTA `01a1c23b-1eb7-7261…` (11-09, lane `a5deda31`, published) + WEB `index-5d5ba04d…` (trunk `fba67086`, live 14:42)
+- ✅ **Deadlift and squat honor medals redrawn** (`dfa9cbb7` lane / `9e21415e` trunk). PO: *"This looks too much like a penis."* The old figures were a round head on one narrow centred column, with plate clusters that filled in as two lumps at its base. Deadlift is now a front view standing at lockout with the bar at the thighs (PO picked option 1 of 3). Squat is now a side view with the bar on the back, like the bench. Same 4 marks plus the × versions; nothing else changed.
+- ✅ **UX-123: Exercise Library search no longer stalls on every letter** (`a5deda31` lane / `fba67086` trunk). The rows were a component declared inside the screen, so every letter rebuilt every row, and the list was recomputed on every render. It now uses the Picker's pattern: `renderRow`, a memoised list, and an uncontrolled field with `startTransition`. Not re-timed in a browser.
+- ⚠ The web jump from `7364a077` also brings trunk's 17 launch-QA commits since `0148cfa1` to the web; they were already on phones as #2–#5. The boot fixes #6–#9 remain lane-only.
+- GitHub `feat/build11` and `main` are at `a5deda31`; `feat/route-map` is at `fba67086`.
+- 📱 ⬜ PO: on the phone, the Honors medals for deadlift and squat show the new figures, and typing fast in Exercise Library search keeps up.
+
 ## ⛔→✅ B9 — Stuck on the launch splash on every open (11-09, found live by the PO and Kim; updates #6–#9)
 - **What happened:** the app sat on the pillars forever, and a force-quit didn't help.
 - **Cause:** the 11-08 fix H15 tagged the boot profile read with the phone's stored `session.user.id`. A phone that had held two accounts kept a stale identity, so every read was judged "someone else's" (`read=mismatch`) and thrown away. Web never shows it.
