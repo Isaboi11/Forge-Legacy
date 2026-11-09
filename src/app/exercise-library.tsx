@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { startTransition, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -93,6 +93,9 @@ const LIBRARY_DB: readonly PickerItem[] = [...PICKER_DB, ...CONDITIONING_ROWS];
 const EQUIP_LABEL = new Map(HOME_GYM_EQUIPMENT.map((e) => [e.id, e.label] as const));
 const MUSCLE_LABEL = new Map(MUSCLE_FILTER_GROUPS.flatMap((g) => g.muscles.map((m) => [m.id, m.name] as const)));
 
+/** A category key → its label. Module-level so the memoised list below never rebuilds on its account. */
+const categoryLabel = (k: string) => EXERCISE_CATEGORIES.find((c) => c.key === k)?.label ?? '';
+
 export default function ExerciseLibraryScreen() {
   const persist = usePersist();
   const router = useRouter();
@@ -104,6 +107,8 @@ export default function ExerciseLibraryScreen() {
   const seeded: LibraryFilters = home === '1' ? { ...EMPTY_LIBRARY_FILTERS, env: ['Home Gym'] } : EMPTY_LIBRARY_FILTERS;
 
   const [query, setQuery] = useState('');
+  /** The field keeps its own text (see the search field), so clearing the search clears it here too. */
+  const searchRef = useRef<TextInput>(null);
   const [view, setView] = useState<LibraryView>(null);
   const [filters, setFilters] = useState<LibraryFilters>(seeded);
   const [draft, setDraft] = useState<LibraryFilters>(seeded);
@@ -151,10 +156,8 @@ export default function ExerciseLibraryScreen() {
     });
   };
 
-  const recents = recentData ?? [];
-  const state = { query, filters, view };
-  const flat = isFlatMode(state);
-  const categoryLabel = (k: string) => EXERCISE_CATEGORIES.find((c) => c.key === k)?.label ?? '';
+  const recents = useMemo(() => recentData ?? [], [recentData]);
+  const flat = isFlatMode({ query, filters, view });
   /* The athlete's own, in the shape search reads — the Picker's mapping, so the two find the same rows (B7). */
   const customItems = useMemo(
     () =>
@@ -163,7 +166,19 @@ export default function ExerciseLibraryScreen() {
       ),
     [customData],
   );
-  const result = buildLibrary(LIBRARY_DB, state, { favorites, recents, categoryLabel: (k) => categoryLabel(k), homeGym, customs: customItems });
+  /*
+   * ══ SEARCH MUST NOT STALL (UX-123, PO 11-09) ══
+   * This ran over ~740 rows on EVERY render — a star tap, a sheet opening, each letter — and the rows it
+   * fed were a component declared inside this one, so React saw a new type each render and rebuilt every
+   * row (poster image included) from scratch. ~0.46 s a letter on a slow phone; the Picker, which does
+   * neither, ~0.1 s. Now the list is computed only when what it depends on changes, rows are drawn by a
+   * plain function (`renderRow`, the Picker's way) so they update in place, and the field owns its own
+   * text with the list following as a transition (the Picker's 10-20 fix) — typing never waits on it.
+   */
+  const result = useMemo(
+    () => buildLibrary(LIBRARY_DB, { query, filters, view }, { favorites, recents, categoryLabel, homeGym, customs: customItems }),
+    [query, filters, view, favorites, recents, homeGym, customItems],
+  );
   const cards = useMemo(() => categoryCards(LIBRARY_DB, EXERCISE_CATEGORIES), []);
   const active = filtersActive(filters);
 
@@ -178,6 +193,7 @@ export default function ExerciseLibraryScreen() {
     if (view) return setView(null);
     if (query.trim() || active) {
       setQuery('');
+      searchRef.current?.clear(); // the field keeps its own text — clear it too
       setFilters(EMPTY_LIBRARY_FILTERS);
       return;
     }
@@ -206,12 +222,15 @@ export default function ExerciseLibraryScreen() {
     router.push({ pathname: '/exercise/[id]', params: { id: key } });
   };
 
-  const Row = ({ x }: { x: PickerItem }) => {
+  /* A plain function, not a component: `<Row/>` declared in here was a new type every render, so every
+     row was torn down and rebuilt on each letter (UX-123). Called as `renderRow(x)`, rows update in place. */
+  const renderRow = (x: PickerItem) => {
     const fav = isFav(x.key);
     const own = isCustomKey(x.key);
     const cardio = isCardioKey(x.key);
     return (
       <Pressable
+        key={x.key}
         onPress={() => openEx(x.key)}
         accessibilityRole="button"
         accessibilityLabel={own ? `${x.name}, your own exercise` : cardio ? `${x.name} — log one you did` : x.name}
@@ -255,13 +274,18 @@ export default function ExerciseLibraryScreen() {
           <View style={styles.searchIcon}>
             <EngravedIcon name="search" size={17} color={flColor.gray600} />
           </View>
+          {/* The field keeps its own letters (no `value`) and the list follows as a transition — the
+              Picker's 10-20 fix: a re-draw slower than the gap between two keys can neither erase a letter
+              nor hold the next one up. Anything that clears the search clears `searchRef` too. */}
           <TextInput returnKeyType="search"
+            ref={searchRef}
             style={styles.search}
-            value={query}
-            onChangeText={(t) => {
-              setQuery(t);
-              if (t.trim()) setView(null); // searching leaves any drill — one narrowing at a time
-            }}
+            onChangeText={(t) =>
+              startTransition(() => {
+                setQuery(t);
+                if (t.trim()) setView(null); // searching leaves any drill — one narrowing at a time
+              })
+            }
             placeholder="Search exercises"
             placeholderTextColor={flColor.gray600}
             accessibilityLabel="Search exercises"
@@ -324,9 +348,7 @@ export default function ExerciseLibraryScreen() {
                 </Text>
               </View>
               <View style={styles.rows}>
-                {result.rows.map((x) => (
-                  <Row key={x.key} x={x} />
-                ))}
+                {result.rows.map(renderRow)}
               </View>
             </>
           ) : (
@@ -414,17 +436,13 @@ export default function ExerciseLibraryScreen() {
                 title="Favorites"
                 onViewAll={favorites.length > 3 ? () => setView({ type: 'favorites' }) : undefined}
               >
-                {preview(LIBRARY_DB, favorites).map((x) => (
-                  <Row key={x.key} x={x} />
-                ))}
+                {preview(LIBRARY_DB, favorites).map(renderRow)}
               </HubSection>
             ) : null}
 
             {recents.length ? (
               <HubSection title="Recently Used" onViewAll={recents.length > 3 ? () => setView({ type: 'recent' }) : undefined}>
-                {preview(LIBRARY_DB, recents).map((x) => (
-                  <Row key={x.key} x={x} />
-                ))}
+                {preview(LIBRARY_DB, recents).map(renderRow)}
               </HubSection>
             ) : null}
 
