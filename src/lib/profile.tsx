@@ -35,7 +35,11 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   /* Boot-stall diagnostics (11-09): which of the three ways `data` can be null is it? Enum-shaped so the crumb
      survives the report's sanitiser; one crumb per CHANGE, so a flip-flop shows as a sequence. */
   const readState = read == null ? 'none' : read.uid !== uid ? 'mismatch' : read.profile ? 'loaded' : 'empty';
-  const debug = `uid=${uid ? 'yes' : 'no'} read=${readState}`;
+  /* The two values the comparison sees (last 6 chars only — an account id suffix, nothing personal) and the shape
+     of the stored read, so a mismatch report says exactly WHAT disagreed (11-09, read=mismatch on the PO's phone). */
+  const tail = (v: unknown) => (typeof v === 'string' ? v.slice(-6) : `<${typeof v}>`);
+  const readShape = read == null ? '-' : typeof read === 'object' ? Object.keys(read).join('+') : typeof read;
+  const debug = `uid=${uid ? 'yes' : 'no'} read=${readState} cur=${tail(uid)} got=${tail(read?.uid)} shape=${readShape}`;
   useEffect(() => {
     breadcrumb('state', `profile:read:${readState}`);
   }, [readState]);
