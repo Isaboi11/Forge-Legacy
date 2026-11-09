@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './auth';
 import { useQuery } from './useQuery';
-import { fetchSelfProfile } from '@/domain/profile/live';
+import { fetchSelfProfileWithId } from '@/domain/profile/live';
 import { breadcrumb } from './diagnostics';
+import { supabase } from './supabase';
 import type { UserProfile } from '@/domain/profile/schema';
 
 /**
@@ -26,9 +27,14 @@ const ProfileContext = createContext<ProfileState | undefined>(undefined);
 export function ProfileProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
-  /* Tagged with the athlete it was read FOR, the way the entitlement read is — see the loading note below. */
+  /*
+   * Tagged with the account the SERVER says the row belongs to (11-09). It used to be tagged with this phone's
+   * `session.user.id`; on a phone that had held two accounts, the read came back for the account the server knows
+   * while the gate compared it against a different id, so every launch threw the answer away and held the splash.
+   * A profile is shown only when the server's id and the signed-in id agree — never the other account's row.
+   */
   const { data: read, error, refetch } = useQuery<{ uid: string; profile: UserProfile | null } | null>(
-    async () => (uid ? { uid, profile: await fetchSelfProfile() } : null),
+    async () => (uid ? await fetchSelfProfileWithId().then((r) => ({ uid: r.id, profile: r.profile })) : null),
     [uid],
   );
   const data = read != null && read.uid === uid ? read.profile : null;
@@ -43,6 +49,28 @@ export function ProfileProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     breadcrumb('state', `profile:read:${readState}`);
   }, [readState]);
+  /*
+   * ⛔ A MISMATCH RESYNCS INSTEAD OF HOLDING FOREVER (11-09). The phone's idea of who is signed in disagrees with the
+   * server's. Refreshing the session replaces the phone's stored identity with the server's (auth-js emits
+   * TOKEN_REFRESHED; `AuthProvider` takes the new session, so `uid` becomes the server's id and the read matches).
+   * Then read again. At most 3 tries; past that the boot hold's rescue and its report take over. If the refresh is
+   * refused, auth-js signs the phone out and the athlete simply signs in again — consistent, not stuck.
+   */
+  const [resyncs, setResyncs] = useState(0);
+  useEffect(() => {
+    if (readState !== 'mismatch' || uid == null || resyncs >= 3) return;
+    const t = setTimeout(() => {
+      breadcrumb('state', 'profile:resync');
+      void supabase.auth
+        .refreshSession()
+        .catch(() => undefined)
+        .finally(() => {
+          setResyncs((n) => n + 1);
+          refetch();
+        });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [readState, uid, resyncs, refetch]);
   // Boot flash guard: when the session id settles null→uid, useQuery keeps the prior result
   // (data:null, loading:false) until the refetch lands — which the boot router read as "signed in ·
   // not onboarded" and flashed the onboarding screen for a beat before Home. Treat "have a uid but no

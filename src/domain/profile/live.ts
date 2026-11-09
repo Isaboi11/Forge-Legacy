@@ -13,6 +13,16 @@ import type { PublicProfileView } from '@/data/athlete-profile-placeholder';
 
 /** The signed-in athlete's identity (was `getSelfProfile()`). */
 export async function fetchSelfProfile(): Promise<UserProfile> {
+  return (await fetchSelfProfileWithId()).profile;
+}
+
+/**
+ * The profile AND the account id the SERVER says it belongs to (from `getUser`, i.e. the access token) — not the
+ * id the phone's stored session object claims. 11-09: a phone that had held two accounts kept a stale identity
+ * locally; the boot gate tagged the read with the phone's id, decided the answer belonged to someone else, and held
+ * the splash on every launch. The server's id is the only one that says whose row this is.
+ */
+export async function fetchSelfProfileWithId(): Promise<{ id: string; profile: UserProfile }> {
   // Boot-stall trail (11-09): each step leaves a crumb, so a stall report says which one never came back.
   const t0 = Date.now();
   breadcrumb('state', 'profile:getUser:start');
@@ -52,16 +62,22 @@ export async function fetchSelfProfile(): Promise<UserProfile> {
   // finish mints the row (0199 `ensure_my_profile`). Anything that THREW above is a failure, and the
   // provider retries it rather than reading it as "not onboarded".
   if (!data) {
-    return { name: '', firstName: '', handle: '', initials: '', avatarUrl: null, sex: 'unspecified', onboardedAt: null };
+    return {
+      id: user.id,
+      profile: { name: '', firstName: '', handle: '', initials: '', avatarUrl: null, sex: 'unspecified', onboardedAt: null },
+    };
   }
   return {
-    name: data.name,
-    firstName: data.first_name,
-    handle: data.handle ?? '', // nullable since 0009 (username skippable) — render nothing, not "null"
-    initials: data.initials,
-    avatarUrl: data.avatar_url ?? null,
-    sex: data.sex as Sex,
-    onboardedAt: data.onboarded_at ?? null,
+    id: user.id,
+    profile: {
+      name: data.name,
+      firstName: data.first_name,
+      handle: data.handle ?? '', // nullable since 0009 (username skippable) — render nothing, not "null"
+      initials: data.initials,
+      avatarUrl: data.avatar_url ?? null,
+      sex: data.sex as Sex,
+      onboardedAt: data.onboarded_at ?? null,
+    },
   };
 }
 
