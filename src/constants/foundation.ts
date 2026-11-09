@@ -1,10 +1,13 @@
 /**
  * Forge Legacy — Visual Foundation (v2)
  *
+ * Canonical live theme. Screens import `flColor` and the other `fl*` exports from here and get
+ * Forge (dark, the default) or Paper (light). `@/constants/tokens` is the older library layer for
+ * the pre-foundation card / input / modal / navigation / button generation. It is not the app theme,
+ * and the app is not dark-only.
+ *
  * RN bridge for the `--fl-*` tokens defined in the Claude Design "Forge Legacy Blueprint" project
- * (Visual Foundation, tokens/foundation.css). This is the approved material/atmosphere layer —
- * additive to `@/constants/tokens`, not a replacement. Existing LEGACY components keep consuming
- * `@/constants/tokens`; new compositions consume this file instead.
+ * (Visual Foundation, tokens/foundation.css).
  *
  * ══ THIS FILE IS NOW A SELECTOR, AND ITS PUBLIC SHAPE HAS NOT CHANGED ══
  *

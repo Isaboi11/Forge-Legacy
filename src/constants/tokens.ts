@@ -1,19 +1,18 @@
 /**
- * Forge Legacy Design System — Canonical Token Implementation
+ * Forge Legacy — legacy component-library tokens.
  *
- * This file is the authoritative "Branding Assets" layer referenced in
- * Component-Library-Architecture-v1.0.md §10 (Decision CLA-D11).
- * It binds hex values to the semantic token names defined in that document.
+ * Not the live theme. `@/constants/foundation` is the canonical source for screens:
+ * Forge (dark, the default) and Paper (light). This file is the older library layer
+ * still imported by the pre-foundation card, input, modal, navigation, and button
+ * generation. Exported names and values are unchanged.
  *
- * RULES (per CLA-D10 / CLA-D11):
- * - All component and screen styling flows through these tokens.
- * - Raw hex values, raw pixel sizes, and magic numbers are prohibited in
- *   component code. Reference only named exports from this file.
- * - The token names here match the CLA §10 semantic contract exactly.
+ * Historical: Component-Library-Architecture-v1.0.md §10 (CLA-D11) and CLA-D12 called
+ * this file the canonical, dark-only V1 palette. That predates the dual theme. Live
+ * screens read `flColor`. Do not treat "dark-only" or "canonical" in those clauses
+ * as the current rule.
  *
  * Architecture: Component-Library-Architecture-v1.0.md §10–12
  * Visual spec:  Docs/Forge-Legacy-Design-System-v1.0.md
- * Dark-only V1: CLA-D12 — no light/dark pairs; single values only.
  */
 
 import { IS_PAPER, flColor as _live } from './foundation'
@@ -39,7 +38,8 @@ const _forgePalette = {
   gray600:      '#666060',   // tertiary text: very muted; section labels, placeholders
 
   // Accent — bronze / warm gold system
-  // Anchor: #C8A97E — matches existing legacy-theme.ts LC.accent
+  // Anchor: #C8A97E — this library's bronze. Foundation's live accent is bronze400
+  // (#BA8654 Forge / #A47A3D Paper), not this value.
   bronze300:    '#DFC49A',   // highlight / pressed state on accent surfaces
   bronze400:    '#C8A97E',   // PRIMARY accent: earned, active, progress, legacy
   bronze600:    '#765B44',   // MUTED accent: progress track tint, ambient background
@@ -59,11 +59,12 @@ const _forgePalette = {
 /**
  * ══ ON ALABASTER, THIS PALETTE BORROWS THE LIVE ONE ══
  *
- * "Dark-only V1" above predates Alabaster, and this file never learned about it — so every component
- * still built on it (the legacy card/input/modal libraries) painted Forge's near-black on the light
- * theme. Two of them reach real screens: `SkeletonCard` (Squads, Weekly Review loading) and
- * `ForgeTextArea` (Log Activity, Squad Settings). PO, 2026-09-10: *"any other spots like this on the
- * light side."*
+ * The old header called this palette dark-only. It predates Paper, and every component
+ * still built on the Forge branch of `_palette` (the legacy card/input/modal libraries) used to
+ * paint Forge's near-black on the light theme. Paper now borrows `flColor` below. One of those
+ * components still reaches real screens: `ForgeTextArea` (Log Activity, Squad Settings).
+ * `SkeletonCard` (Squads, Weekly Review loading) reads `flColor` directly. PO, 2026-09-10:
+ * *"any other spots like this on the light side."*
  *
  * ⚠ FORGE IS UNTOUCHED, BY CONSTRUCTION. These values are NOT the same as `foundation.forge.ts` (this
  *   file is the older, stale palette — `bronze400` here is `#C8A97E`, there `#BA8654`), so pointing

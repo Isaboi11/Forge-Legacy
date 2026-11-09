@@ -6,6 +6,10 @@
  * Shimmer placeholders for loading states.
  * Uses opacity pulse animation — Animated.loop over Animated.sequence.
  * Variants: base · stat · media · feed · compact
+ *
+ * Colours are foundation (`flColor`), the same source as the Squads and Weekly
+ * Review screens that render this while loading. The 4 / 8 / 12 gaps are the old
+ * card-library spacing steps — foundation has no spacing ramp.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -14,7 +18,8 @@ import {
   StyleSheet,
   View,
 } from 'react-native'
-import { color, space } from '@/constants/tokens'
+import { flColor } from '@/constants/foundation'
+import { forgeOr } from '@/constants/theme-scrim'
 import { CARD } from './_cardTokens'
 import type { SkeletonVariant } from './types'
 
@@ -90,10 +95,10 @@ export function SkeletonCard({ variant = 'base' }: SkeletonCardProps) {
       <View style={styles.base}>
         <View style={styles.topHighlight} />
         <Bone width="40%" height={10} opacity={opacity} />
-        <View style={{ marginTop: space.sm }}>
+        <View style={{ marginTop: 8 }}>
           <Bone width="60%" height={28} opacity={opacity} />
         </View>
-        <View style={{ marginTop: space.xs }}>
+        <View style={{ marginTop: 4 }}>
           <Bone width="50%" height={11} opacity={opacity} />
         </View>
       </View>
@@ -162,23 +167,26 @@ export function SkeletonCard({ variant = 'base' }: SkeletonCardProps) {
   )
 }
 
+/** Bone fill. Forge: one step above the card (`charcoal700`). Paper: the recessed surface the loaded cards sit above. */
+const SHIMMER = forgeOr(flColor.charcoal700, flColor.surfaceRecessed)
+
 const styles = StyleSheet.create({
   base: {
     borderRadius: CARD.RADIUS,
     padding: CARD.PADDING,
-    backgroundColor: color.background.surface,
+    backgroundColor: flColor.charcoal800,
     borderWidth: 1,
-    borderColor: CARD.BORDER,
+    borderColor: flColor.charcoal600,
     minHeight: CARD.MIN_HEIGHT_BASE,
     overflow: 'hidden',
-    gap: space.sm,
+    gap: 8,
   },
   compactBase: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: CARD.MIN_HEIGHT_COMPACT,
-    paddingVertical: space.md,
-    gap: space.md,
+    paddingVertical: 12,
+    gap: 12,
   },
   topHighlight: {
     position: 'absolute',
@@ -189,7 +197,7 @@ const styles = StyleSheet.create({
     backgroundColor: CARD.INNER_HIGHLIGHT,
   },
   bone: {
-    backgroundColor: CARD.SHIMMER_BASE,
+    backgroundColor: SHIMMER,
   },
   // Compact
   compactContent: {
@@ -200,7 +208,7 @@ const styles = StyleSheet.create({
   // Media
   mediaSquare: {
     aspectRatio: 1,
-    backgroundColor: CARD.SHIMMER_BASE,
+    backgroundColor: SHIMMER,
     width: '100%',
   },
   mediaCaptionArea: {
@@ -211,8 +219,8 @@ const styles = StyleSheet.create({
   // Feed
   feedHeader: {
     flexDirection: 'row',
-    gap: space.md,
-    marginBottom: space.xs,
+    gap: 12,
+    marginBottom: 4,
   },
   feedMeta: {
     flex: 1,
@@ -223,13 +231,13 @@ const styles = StyleSheet.create({
   },
   feedReactions: {
     flexDirection: 'row',
-    gap: space.md,
-    marginTop: space.xs,
+    gap: 12,
+    marginTop: 4,
   },
   // Base
   baseHeader: {
     flexDirection: 'row',
-    gap: space.sm,
+    gap: 8,
   },
   baseHeaderText: {
     flex: 1,
@@ -238,6 +246,6 @@ const styles = StyleSheet.create({
   },
   baseBody: {
     gap: 5,
-    marginTop: space.xs,
+    marginTop: 4,
   },
 })
