@@ -34,6 +34,7 @@ import '@/lib/live-activity';
 import '@/global.css';
 
 import { breadcrumb, reportError, startDiagnostics } from '@/lib/diagnostics';
+import { fetchSelfProfile } from '@/domain/profile/live';
 import { startSentry, useSentryNavigation, useSentryUser, wrapRoot } from '@/lib/sentry';
 import { installErrorSink } from '@/data/errors-live';
 
@@ -272,7 +273,14 @@ function RootLayout() {
 function RootNavigator() {
   const { session, loading, recovering } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const route = routeFor({
+  /*
+   * ⛔ THE BOOT RESCUE (11-09 — PO and Kim held on the splash with auth ready, a session, and a profile read that
+   * COMPLETED: the shared profile state never reported it). When the hold has lasted 6 s, BootLoading reads the
+   * profile itself and hands the answer up here. A real answer — never a failure — decides the route: onboarded →
+   * the app, not onboarded → onboarding. Only ever applied while signed in, and only over 'splash'.
+   */
+  const [rescue, setRescue] = useState<'app' | 'onboarding' | null>(null);
+  const computed = routeFor({
     authLoading: loading,
     hasSession: !!session,
     profileLoading,
@@ -281,6 +289,7 @@ function RootNavigator() {
     // set-a-new-password step instead of on Home. See `routeFor`.
     recovering,
   });
+  const route = computed === 'splash' && rescue && session && !loading ? rescue : computed;
   // Hold the SPLASH while auth/profile resolve — never a flash of the wrong destination, and never a
   // second picture either. This used to be a bronze `ActivityIndicator` on `flColor.base`, which meant
   // the launch showed the carved pillars, then took them away, then showed a spinner on a slightly
@@ -303,7 +312,7 @@ function RootNavigator() {
     breadcrumb('state', `boot:route:${route}`);
   }, [route]);
 
-  if (route === 'splash') return <BootLoading />;
+  if (route === 'splash') return <BootLoading onRescue={setRescue} />;
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={route === 'app'}>
@@ -527,7 +536,20 @@ function RootNavigator() {
  * athlete is not waiting on a task they started, they are waiting on the app to open, and an app that is
  * opening looks like its splash screen.
  */
-function BootLoading() {
+/** The rescue read: the profile, fetched directly, bounded — `ok` only for a real answer, never for a failure. */
+async function readProfileForRescue(): Promise<{ ok: true; onboarded: boolean } | { ok: false; why: string }> {
+  try {
+    const p = await Promise.race([
+      fetchSelfProfile(),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error('TIMEOUT')), 12000)),
+    ]);
+    return { ok: true, onboarded: !!p.onboardedAt };
+  } catch (e) {
+    return { ok: false, why: String((e as Error)?.message ?? e) };
+  }
+}
+
+function BootLoading({ onRescue }: { onRescue: (route: 'app' | 'onboarding') => void }) {
   /*
    * ⛔ BUT NEVER A DEAD END (11-09 — Kim, stuck on the splash on every launch, restarting did not help).
    * This screen declares no routes, so if the "who are you / are you onboarded" reads keep failing there was
@@ -586,15 +608,27 @@ function BootLoading() {
       );
       const net = hp.ok ? `${hp.v} ${Date.now() - t}ms` : hp.why;
       if (cancelled) return;
-      reportError(new Error(`Boot stall · at6s: ${stateAtStall} · now: ${latestBootState.current} · storage=${storage} · getSession=${lock} · authHealth=${net}`), {
+      t = Date.now();
+      const rescue = latestBootState.current.startsWith('auth=ready session=yes') ? await readProfileForRescue() : null;
+      const rescueText = rescue == null ? 'skipped' : rescue.ok ? `ok ${Date.now() - t}ms onboarded=${rescue.onboarded}` : rescue.why;
+      if (cancelled) return;
+      reportError(new Error(`Boot stall · at6s: ${stateAtStall} · now: ${latestBootState.current} · storage=${storage} · getSession=${lock} · authHealth=${net} · rescue=${rescueText}`), {
         source: 'manual',
         screen: 'boot',
       });
+      if (rescue?.ok) onRescue(rescue.onboarded ? 'app' : 'onboarding');
     })();
     return () => {
       cancelled = true;
     };
-  }, [stateAtStall]);
+  }, [stateAtStall, onRescue]);
+  // Try again = the same direct read, now; and the shared query is nudged too.
+  const tryAgain = () => {
+    refetch();
+    void readProfileForRescue().then((r) => {
+      if (r.ok && session) onRescue(r.onboarded ? 'app' : 'onboarding');
+    });
+  };
   return (
     <View style={bootStyles.fill}>
       <ForgeSplash />
@@ -603,7 +637,7 @@ function BootLoading() {
           <Text style={bootStyles.title}>Still connecting…</Text>
           <Text style={bootStyles.body}>Forge can’t reach your account right now. Check your signal, then try again.</Text>
           <View style={bootStyles.actions}>
-            <Button variant="primary" fullWidth onPress={refetch} accessibilityLabel="Try again">
+            <Button variant="primary" fullWidth onPress={tryAgain} accessibilityLabel="Try again">
               Try again
             </Button>
             <View style={bootStyles.centered}>
