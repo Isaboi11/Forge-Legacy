@@ -6,7 +6,7 @@
  * arithmetic over a session and belong where a test can reach them.
  */
 
-import { toCanonicalLb, type UnitSystem } from '../settings/units.ts';
+import { exactWeight, toCanonicalLb, type UnitSystem } from '../settings/units.ts';
 import { CARDIO_ACTIVITIES, deriveName } from './conditioning.ts';
 import { sessionLabel } from './session-label.ts';
 import type { ActiveSession, SessionExercise } from './types.ts';
@@ -285,6 +285,33 @@ export function canonicalizeWeights(session: ActiveSession, system: UnitSystem):
     exercises: session.exercises.map((ex) => ({
       ...ex,
       sets: ex.sets.map((s) => (s.weight == null ? s : { ...s, weight: toCanonicalLb(s.weight, system) })),
+    })),
+  };
+}
+
+/**
+ * The inverse of `canonicalizeWeights`: a session READ BACK from storage (canonical pounds), in the units the
+ * athlete types in — so it can go back into the logger like any other session.
+ *
+ * ⚠ THE DEFECT (UX-004, launch QA B15). "Continue this workout" rebuilt the session straight from
+ * `workout_sets.weight`, which is pounds, and handed it to a logger that holds what the athlete TYPED. A metric
+ * athlete's 60 kg came back as "132.27735731092653" in the kg column; Finish canonicalised it a second time
+ * (291.62 lb) and `detectPRs` announced — and wrote — a record nobody lifted.
+ *
+ * ⚠ `exactWeight`, so the figure is quantised to two decimals: 60 kg is stored as 132.27735731092653 lb and comes
+ * back as 60.000000000000004 unrounded. Two decimals returns 60 exactly, and `canonicalizeWeights` then lands on the
+ * very same pound figure that is in the database — so a continued set round-trips unchanged and cannot beat itself.
+ *
+ * ⚠ IDENTITY ON IMPERIAL, exactly as `canonicalizeWeights` is: the stored pounds go back untouched (not even
+ * quantised), so nothing moves for an imperial athlete.
+ */
+export function fromCanonicalWeights(session: ActiveSession, system: UnitSystem): ActiveSession {
+  if (system !== 'metric') return session;
+  return {
+    ...session,
+    exercises: session.exercises.map((ex) => ({
+      ...ex,
+      sets: ex.sets.map((s) => (s.weight == null ? s : { ...s, weight: exactWeight(s.weight, system).value })),
     })),
   };
 }

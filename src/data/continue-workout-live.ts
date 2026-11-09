@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import type { ActiveSession, SessionExercise, SessionSet } from '@/domain/workout/types';
 import { planRemainder, withPlanRemainder, type RemainderExercise } from '@/domain/workout/plan-remainder';
 import { activityFromKey, resolveModality } from '@/domain/workout/conditioning';
+import { fromCanonicalWeights } from '@/domain/workout/save-core';
+import type { UnitSystem } from '@/domain/settings/units';
 
 /**
  * The unfinished half of the LAST finished session on this device — see `plan-remainder.ts` (workout-05).
@@ -46,8 +48,13 @@ async function readPlanRemainder(workoutId: string): Promise<RemainderExercise[]
  * ⚠ THE WINDOW IS THE SERVER'S CALL. `continue_workout` refuses anything older than an hour and says so.
  * This function will happily rehydrate a week-old workout; the write is what stops it. That order is
  * deliberate — a device clock is an input, not a fact.
+ *
+ * ⚠ `system` IS REQUIRED, NOT DEFAULTED (UX-004, launch QA B15). `workout_sets.weight` is canonical pounds and the
+ * logger holds what the athlete types, so the stored sets are converted back ONCE, here, by `fromCanonicalWeights`.
+ * Without it a kg athlete's 60 kg came back as 132.28 "kg" and Finish wrote a false record. The plan remainder is
+ * NOT converted: it was set aside from the live session at Finish, so it is already in the athlete's units.
  */
-export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSession | null> {
+export async function fetchWorkoutAsSession(workoutId: string, system: UnitSystem): Promise<ActiveSession | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -175,7 +182,7 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
 
   /* …and the sets that were planned and not done, which the server never had (workout-05). */
   const remainder = await readPlanRemainder(row.id);
-  return withPlanRemainder({
+  const stored = {
     workoutName: row.workout_name ?? 'Workout',
     activityType: row.activity_type ?? 'strength',
     startedAt: row.started_at,
@@ -185,5 +192,7 @@ export async function fetchWorkoutAsSession(workoutId: string): Promise<ActiveSe
     ...(row.template_id ? { templateId: row.template_id } : {}),
     continuingWorkoutId: row.id,
     continuedAt: new Date().toISOString(),
-  } as ActiveSession, remainder);
+  } as ActiveSession;
+  /* Pounds → the athlete's units BEFORE the remainder joins: the remainder is already in their units (see above). */
+  return withPlanRemainder(fromCanonicalWeights(stored, system), remainder);
 }

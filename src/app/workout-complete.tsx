@@ -1614,7 +1614,8 @@ function WorkoutComplete() {
             <Pressable
               onPress={() => {
                 void (async () => {
-                  const s = await fetchWorkoutAsSession(data.workoutId);
+                  /* In the athlete's units — the stored sets are pounds (UX-004, launch QA B15). */
+                  const s = await fetchWorkoutAsSession(data.workoutId, units);
                   if (!s) return;
                   await unmarkSessionSealed(data.workoutId);
                   await persistSession(s);
