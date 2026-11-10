@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { requireUserId } from '@/lib/require-user-id';
 import { prescriptionOf, type TemplatePrescription } from '@/domain/workout/template-prescription';
 import { fetchActiveProgram, fetchProgramSessions } from './programs-live';
 import { nextOpenSlot } from '@/domain/program/progress-core';
@@ -327,13 +328,12 @@ export async function saveTemplate(name: string, exercises: TemplateExercise[], 
     if (error) throw error;
     return id;
   }
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  /* Read on the phone (Holt's "Save for later" lands here): offline is "check your connection", never
+     "Not signed in" (UX-016, launch QA H42). */
+  const userId = await requireUserId();
   const { data, error } = await supabase
     .from('workout_templates')
-    .insert({ athlete_id: user.id, name: clean, exercises })
+    .insert({ athlete_id: userId, name: clean, exercises })
     .select('id')
     .single();
   if (error) throw error;

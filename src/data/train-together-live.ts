@@ -1,5 +1,6 @@
 import { reportError } from '@/lib/diagnostics';
 import { supabase } from '@/lib/supabase';
+import { requireUserId } from '@/lib/require-user-id';
 import { toExercise, type TemplateExercise } from './templates-live';
 import { unspentCredits } from '@/domain/workout/partner-credit';
 
@@ -130,15 +131,13 @@ export interface SendInviteInput {
 }
 
 export async function sendWorkoutInvite(input: SendInviteInput): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  // Read on the phone: offline is "check your connection", never "Not signed in" (UX-016, launch QA H42).
+  const userId = await requireUserId();
 
   const { data, error } = await supabase
     .from('workout_invites')
     .insert({
-      from_id: user.id,
+      from_id: userId,
       to_id: input.toId,
       workout_name: input.workoutName.trim(),
       /*
@@ -218,10 +217,8 @@ export async function fetchMyOpenJoinRequest(hostId: string): Promise<{ id: stri
 }
 
 export async function requestToJoinWorkout(input: { hostId: string; workoutName: string; note?: string | null }): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  // Read on the phone: offline is "check your connection", never "Not signed in" (UX-016, launch QA H42).
+  const userId = await requireUserId();
 
   /* One open ask per host (launch QA, H1): asking again resumes the one already waiting, never a duplicate. */
   const open = await fetchMyOpenJoinRequest(input.hostId);
@@ -231,7 +228,7 @@ export async function requestToJoinWorkout(input: { hostId: string; workoutName:
   const { data, error } = await supabase
     .from('workout_invites')
     .insert({
-      from_id: user.id,
+      from_id: userId,
       to_id: input.hostId,
       kind: 'JOIN_REQUEST',
       workout_name: name,
@@ -291,15 +288,13 @@ export async function inviteToLiveSession(input: {
   startIndex: number;
   note?: string | null;
 }): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  // Read on the phone: offline is "check your connection", never "Not signed in" (UX-016, launch QA H42).
+  const userId = await requireUserId();
 
   const { data, error } = await supabase
     .from('workout_invites')
     .insert({
-      from_id: user.id,
+      from_id: userId,
       to_id: input.toId,
       kind: 'INVITE',
       workout_name: (input.workoutName.trim() || 'Shared Workout').slice(0, WORKOUT_NAME_MAX),

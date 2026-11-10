@@ -110,9 +110,12 @@ export function isTransportFailure(e: unknown): boolean {
   if (!e || typeof e !== 'object') return false;
   const err = e as { name?: unknown; message?: unknown; code?: unknown };
 
-  /* Supabase Auth's own network failure, which it names on itself (`auth-js` errors.js:238). This is the
-     one that fires when `getUser()` cannot reach the server, and it is the FIRST await in `saveWorkout` —
-     so offline, it is the error the athlete actually gets. */
+  /* Supabase Auth's own network failure, which it names on itself (`auth-js` errors.js:238).
+     ⚠ THIS USED TO ASSUME `getUser()` THREW IT, AND IT DOES NOT (UX-016, launch QA H42): offline, `getUser()`
+     RETURNS `user: null`, `saveWorkout` turned that into a plain 'not signed in', and this guard — rightly —
+     refused it, so Finish never queued. `saveWorkout` now reads the id on the phone (`requireUserId`), which
+     re-throws THIS error when an expired token cannot be refreshed for want of a network; with a live token the
+     first network failure is `saveWorkout`'s `personal_records` read, caught by the `code === ''` arm below. */
   if (err.name === 'AuthRetryableFetchError') return true;
 
   /* postgrest-js's fetch-rejection shape. The empty-string code is the signal; see the note above. */

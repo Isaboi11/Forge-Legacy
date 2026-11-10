@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { requireUserId } from '@/lib/require-user-id';
 import { createProgram, startProgram, type ProgramStructure } from './programs-live';
 import { scheduleSlots, sessionsPerWeek } from '@/domain/program/progress-core';
 
@@ -87,10 +88,9 @@ export async function saveWeekTemplate(
   structure: ProgramStructure,
   id?: string | null,
 ): Promise<{ id: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in.');
+  /* Read on the phone (Holt's "Save for later" lands here for a week): offline is "check your connection", never
+     "Not signed in." (UX-016, launch QA H42). */
+  const userId = await requireUserId();
 
   const payload = { name: name.trim(), structure: asWeekStructure({ ...structure, name: name.trim() }) };
 
@@ -105,7 +105,7 @@ export async function saveWeekTemplate(
 
   const { data, error } = await supabase
     .from('week_templates')
-    .insert({ athlete_id: user.id, ...payload })
+    .insert({ athlete_id: userId, ...payload })
     .select('id')
     .single();
   if (error) throw error;

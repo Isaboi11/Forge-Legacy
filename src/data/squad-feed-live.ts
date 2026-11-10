@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { requireUserId } from '@/lib/require-user-id';
 import { annotateRecords } from '@/domain/workout/records-core';
 import { fetchLoadRecordRows } from '@/data/records-live';
 import type { PriorShare } from '@/domain/share/fanout';
@@ -661,15 +662,13 @@ const fallbackBody = (type: SquadPostType, body: string): string | null => body 
 
 /** Compose a post. Returns the new post id. RLS rejects an announcement from a non-owner. */
 export async function addSquadPost(input: NewSquadPost): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  // Read on the phone: offline is "check your connection", never "Not signed in" (UX-016, launch QA H42).
+  const userId = await requireUserId();
 
   const body = input.body.trim();
   const row = {
     squad_id: input.squadId,
-    author_id: user.id,
+    author_id: userId,
     type: input.type,
     body: fallbackBody(input.type, body),
     pr_value: input.type === 'pr' ? (input.prValue ?? '').trim() || null : null,
@@ -922,14 +921,11 @@ export function fmtDuration(sec: number): string {
  * timestamp, not post id. `uri` is a local file/blob/data URI from expo-image-picker.
  */
 export async function uploadPostMedia(squadId: string, uri: string, kind: SquadMediaKind, opts?: UploadOpts): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  const userId = await requireUserId(); // on the phone, not the network (UX-016, launch QA H42)
   const fallbackType = kind === 'video' ? 'video/mp4' : 'image/jpeg';
   const contentType = opts?.contentType ?? fallbackType;
   const ext = extensionFor(contentType, kind === 'video' ? 'mp4' : 'jpg');
-  const path = `${squadId}/${user.id}-${Date.now()}.${ext}`;
+  const path = `${squadId}/${userId}-${Date.now()}.${ext}`;
   /*
    * Same streamed path the check-in takes — this was the second copy of the heap-blob upload, and two
    * copies of one decision is how the first one went unfixed. A photo gets the smaller ceiling because
@@ -944,11 +940,8 @@ export async function uploadPostMedia(squadId: string, uri: string, kind: SquadM
 
 /** Add a comment to a post. */
 export async function addSquadComment(postId: string, body: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
-  const { error } = await supabase.from('squad_post_comments').insert({ post_id: postId, author_id: user.id, body: body.trim() });
+  const userId = await requireUserId(); // on the phone, not the network (UX-016, launch QA H42)
+  const { error } = await supabase.from('squad_post_comments').insert({ post_id: postId, author_id: userId, body: body.trim() });
   if (error) throw error;
 }
 

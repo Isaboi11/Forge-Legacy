@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { requireUserId } from '@/lib/require-user-id';
 import type { PostLayout, WorkoutSummary } from './squad-feed-live';
 import { isMilestoneCard } from '@/domain/share/milestone-card';
 import { removeDeletedPostMedia, type DeletedPostRow, type MediaCleanup } from '@/data/media-cleanup-live';
@@ -243,17 +244,15 @@ export interface NewPost {
 }
 
 export async function createFriendPost(input: NewPost): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  // Read on the phone: offline is "check your connection", never "Not signed in" (UX-016, launch QA H42).
+  const userId = await requireUserId();
 
   const isRecap = input.type === 'recap';
   const isPr = input.type === 'pr';
   const { data, error } = await supabase
     .from('squad_posts')
     .insert({
-      author_id: user.id,
+      author_id: userId,
       audience: input.audience,
       // The constraint is an equivalence: FRIENDS must have no squad, SQUAD/BOTH must have one.
       squad_id: input.audience === 'FRIENDS' ? null : input.squadId,
@@ -328,13 +327,10 @@ export async function fetchPostComments(postId: string): Promise<PostComment[]> 
  * "Comment sent", writing nothing. Its own store has `addComment()` that the screen never calls.
  */
 export async function addPostComment(postId: string, body: string): Promise<void> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  const userId = await requireUserId(); // on the phone, not the network (UX-016, launch QA H42)
   const text = body.trim();
   if (!text) return;
-  const { error } = await supabase.from('squad_post_comments').insert({ post_id: postId, author_id: user.id, body: text });
+  const { error } = await supabase.from('squad_post_comments').insert({ post_id: postId, author_id: userId, body: text });
   if (error) rethrow(error);
 }
 
@@ -346,10 +342,7 @@ export async function addPostComment(postId: string, body: string): Promise<void
  * Uploaded at compose time, before a post row exists, so the path is keyed by uploader + timestamp.
  */
 export async function uploadFeedMedia(uri: string, kind: 'image' | 'video'): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  const userId = await requireUserId(); // on the phone, not the network (UX-016, launch QA H42)
 
   const res = await fetch(uri);
   const blob = await res.blob();
@@ -363,7 +356,7 @@ export async function uploadFeedMedia(uri: string, kind: 'image' | 'video'): Pro
         : blob.type === 'image/webp'
           ? 'webp'
           : 'jpg';
-  const path = `friends/${user.id}-${Date.now()}-${Math.round(performance.now())}.${ext}`;
+  const path = `friends/${userId}-${Date.now()}-${Math.round(performance.now())}.${ext}`;
   const { error } = await supabase.storage
     .from('squad-media')
     .upload(path, blob, { contentType: blob.type || (kind === 'video' ? 'video/mp4' : 'image/jpeg'), upsert: true });
@@ -377,14 +370,11 @@ export async function uploadFeedMedia(uri: string, kind: 'image' | 'video'): Pro
  * the picture is the post's photo, uploaded once and referenced by every squad and friends row it goes to.
  */
 export async function uploadFeedImageData(base64: string, mime: 'image/png' | 'image/jpeg'): Promise<string> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not signed in');
+  const userId = await requireUserId(); // on the phone, not the network (UX-016, launch QA H42)
   const bin = atob(base64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
-  const path = `friends/${user.id}-${Date.now()}-${Math.round(performance.now())}.${mime === 'image/png' ? 'png' : 'jpg'}`;
+  const path = `friends/${userId}-${Date.now()}-${Math.round(performance.now())}.${mime === 'image/png' ? 'png' : 'jpg'}`;
   const { error } = await supabase.storage.from('squad-media').upload(path, bytes, { contentType: mime, upsert: true });
   if (error) throw error;
   return supabase.storage.from('squad-media').getPublicUrl(path).data.publicUrl;

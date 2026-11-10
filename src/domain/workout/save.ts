@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { requireUserId } from '@/lib/require-user-id';
 import { reportError } from '@/lib/diagnostics';
 import { writeBackWorkout } from '@/data/apple-health-sync-live';
 import { itemByKey } from '@/domain/exercise-picker/data';
@@ -57,10 +58,10 @@ export async function saveWorkout(
    * Both `detectPRs` and `buildSaveExercises` now take the same canonical session.
    */
   const session = canonicalizeWeights(sessionAsTyped, system);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('not signed in');
+  /* ⚠ READ ON THE PHONE, NOT ASKED OF THE SERVER (UX-016, launch QA H42). `getUser()` is a network call that
+     returns null offline, and that null was thrown as "not signed in" — an error the offline queue rightly
+     refuses, so Finish with no signal never queued. `requireUserId` re-throws a network failure AS one. */
+  const userId = await requireUserId();
 
   /*
    * The athlete's existing mark on each lift in this session — the heaviest weight they have logged for
@@ -79,7 +80,7 @@ export async function saveWorkout(
   const { data: prRows, error: pe } = await supabase
     .from('personal_records')
     .select('exercise, catalog_key, load_value, load_reps, achieved_on')
-    .eq('athlete_id', user.id)
+    .eq('athlete_id', userId)
     .eq('measure_kind', 'load')
     .lte('load_reps', PR_MAX_REPS);
   if (pe) throw pe;
@@ -165,7 +166,7 @@ export async function saveWorkout(
    * If it is not, the failure is real and is re-thrown untouched.
    */
   if (error) {
-    const recovered = await findCommittedWorkout(user.id, session.startedAt);
+    const recovered = await findCommittedWorkout(userId, session.startedAt);
     if (!recovered) throw error;
     void writeBackWorkout(recovered); // Apple Health write-back (§3.5) — fire and forget, never blocks a save
     return { workoutId: recovered, prs, volume: sessionVolume(session), sets: doneSetCount(session) };
@@ -287,10 +288,9 @@ export interface ActivityInput {
  * activity history like any session. Distance is stored as authored in miles (never unit-converted).
  */
 export async function saveActivity(input: ActivityInput): Promise<{ workoutId: string }> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('not signed in');
+  /* Signed in? Asked of the phone, not the network — offline is "check your connection", never "not signed in"
+     (UX-016, launch QA H42). The RPC itself names the athlete by `auth.uid()`. */
+  await requireUserId();
 
   const dur = input.durationSec ?? 0;
   const daysAgo = Math.max(0, Math.min(6, Math.floor(input.daysAgo ?? 0)));
@@ -415,10 +415,8 @@ export async function continueWorkout(
   // Canonicalise before anything reads a weight — the appended sets are stored, and the PRs below are
   // detected against `personal_records`, which is in pounds.
   const session = canonicalizeWeights(sessionAsTyped, system);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('not signed in');
+  // Read on the phone, not asked of the server — see `saveWorkout` (UX-016, launch QA H42).
+  const userId = await requireUserId();
 
   const exercises = buildAppendExercises(session);
   if (exercises.length === 0) return { setsAdded: 0, prs: [] };
@@ -431,7 +429,7 @@ export async function continueWorkout(
   const { data: prRows } = await supabase
     .from('personal_records')
     .select('exercise, catalog_key, load_value, load_reps, achieved_on')
-    .eq('athlete_id', user.id)
+    .eq('athlete_id', userId)
     .eq('measure_kind', 'load')
     .lte('load_reps', PR_MAX_REPS);
 
