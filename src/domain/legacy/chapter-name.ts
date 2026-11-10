@@ -46,10 +46,16 @@ export const CHAPTER_TITLE_MAX = 40;
 /**
  * Offered, not imposed. Four shapes rather than four synonyms — a beginning, a return, a span of time,
  * and a stated intention — so the list reads as a prompt for the athlete's own words rather than a menu
- * to pick from. The first is the old hard-coded default, kept because plenty of people will want it.
+ * to pick from.
+ *
+ * ⚠ THE DEFAULT TITLE IS NOT A SUGGESTION (PO 2026-11-09). A skipped chapter step writes
+ *   `DEFAULT_CHAPTER_I_TITLE`, and Legacy reads that untouched name as "skipped" (`reveal.ts`). The PO
+ *   picked "Building Your Foundation" from these chips on a new account and Legacy then told them to
+ *   "Start Your First Chapter". A tapped suggestion must never equal the skip value, so the beginning is
+ *   offered in its own words instead.
  */
 export const CHAPTER_SUGGESTIONS: readonly string[] = [
-  DEFAULT_CHAPTER_I_TITLE,
+  'Laying the Foundation',
   'The Comeback',
   'Year One',
   'Stronger Than Last Year',

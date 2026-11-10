@@ -16,7 +16,7 @@
  */
 import { pickFrom } from './rulebook/voice.ts';
 
-export type NudgeId = 'plan' | 'photos' | 'progress' | 'honors' | 'goals' | 'squads' | 'templates' | 'program' | 'metrics';
+export type NudgeId = 'upgrade' | 'plan' | 'photos' | 'progress' | 'honors' | 'goals' | 'squads' | 'templates' | 'program' | 'metrics';
 
 /** What the athlete has and has not done — `coach_nudge_signals()` (0179), counts only. */
 export interface NudgeSignals {
@@ -39,6 +39,12 @@ export interface NudgeSignals {
    * catalogue's rule is that Holt never invites anyone to a paywall (MA9-D1). Absent reads as true.
    */
   canBuildProgram?: boolean;
+  /**
+   * True only for a FREE athlete who has used the Holt program the free plan includes, or this month's
+   * Holt days. The one signal that lets Holt mention Premium (`upgrade`, Monetization Amendment 010).
+   * Absent reads as false.
+   */
+  holtUsedUp?: boolean;
 }
 
 /** How this athlete has answered one nudge so far. Absent means never offered. */
@@ -93,6 +99,13 @@ const daysSince = (iso: string | null | undefined, now: number): number =>
  * `{honors}`, `{honorWord}` and `{sessions}` are filled from the signals.
  */
 export const NUDGE_LINES: Record<NudgeId, readonly string[]> = {
+  /* MA10: says what ran out and what Premium keeps going. No price, no trial (MA6-D11) — the plan
+     screen carries those. */
+  upgrade: [
+    'You’ve used the free coaching I can give you. Premium keeps me building your plans. Want to see it?',
+    'That’s the free Holt coaching used. With Premium I keep building for you. Want a look at the plans?',
+    'You’ve put the free coaching to work. Premium is how I keep programming for you. Want to see what it covers?',
+  ],
   /* `{name}` and `{count}` come from `signals.repeat`. He names the thing they actually did — that is
      what separates this from the generic `program` ask further down. */
   plan: [
@@ -166,12 +179,29 @@ function nudgeLine(id: NudgeId, s: NudgeSignals): string {
  * athlete has actually earned some. A nudge that says "you've earned honors" to somebody with none is
  * the app manufacturing enthusiasm, and it teaches them the coin lies.
  *
- * ⚠ NOTHING BEHIND THE PAYWALL AND NOTHING SOCIALLY EXPOSING. An invitation to spend money is not an
- * invitation to explore, and it would poison a channel whose only asset is that it has never sold
- * anything. Challenges and friend requests are left out for the same reason in the other direction —
- * they put the athlete in front of other people, which is their call to make unprompted.
+ * ⚠ NOTHING BEHIND THE PAYWALL AND NOTHING SOCIALLY EXPOSING — WITH ONE NAMED EXCEPTION, `upgrade`
+ * (Monetization Amendment 010, PO 2026-11-09). An invitation to spend money is not an invitation to
+ * explore, and it would poison a channel whose only asset is that it has never sold anything. So the
+ * exception is narrow: it fires only once the athlete has USED the free Holt coaching, it is said ONCE
+ * EVER (`ONCE_ONLY`), and it names no price and no trial (MA6-D11). Challenges and friend requests are
+ * left out for the same reason in the other direction — they put the athlete in front of other people,
+ * which is their call to make unprompted.
  */
 export const NUDGES: readonly NudgeDef[] = [
+  {
+    /*
+     * ══ THE ONE NUDGE THAT OPENS THE PLAN SCREEN (MA10-D2) ══
+     *
+     * A Free athlete who has used the free Holt program, or this month's Holt days, has just felt what
+     * Holt does and hit its end. Today that meant silence (MA9-D1) until they tried again and met the
+     * limit. The PO chose (11-09) that Holt says so himself, once: "Show me" opens the plan screen.
+     * Never for a Premium athlete — `holtUsedUp` is only ever true on Free.
+     */
+    id: 'upgrade',
+    eligible: (s) => s.holtUsedUp === true,
+    line: (s) => nudgeLine('upgrade', s),
+    route: '/subscription?from=nudge',
+  },
   {
     /*
      * ══ THE ONE NUDGE THAT ANSWERS SOMETHING THEY JUST DID (MA9-D2) ══
@@ -267,6 +297,7 @@ export function chooseNudge(signals: NudgeSignals, history: NudgeHistory, now: n
     NUDGES.find((n) => {
       const r = history[n.id];
       if (r?.usedAt) return false;                                      // done — never again
+      if (r?.shownAt && ONCE_ONLY.has(n.id)) return false;              // said once, ever (MA10)
       if ((r?.dismissedCount ?? 0) >= MAX_DISMISSALS) return false;     // asked and answered, twice
       if (daysSince(r?.dismissedAt, now) < DISMISS_COOLDOWN_DAYS) return false;
       /* ⚠ ALREADY SHOWN AND NOT ACTED ON IS NOT A REFUSAL, but it is not a reason to repeat either. A
@@ -287,6 +318,12 @@ export function chooseNudge(signals: NudgeSignals, history: NudgeHistory, now: n
  * The other direction is allowed once — naming the workout they keep doing is new information.
  */
 const SAME_ASK: Partial<Record<NudgeId, NudgeId>> = { plan: 'program', program: 'plan' };
+
+/**
+ * Said once and never again, whatever the answer — not the usual "ask twice, rest 21 days". The PO's
+ * word was "once" (11-09), and a repeated sales line is exactly the nag this channel must never become.
+ */
+const ONCE_ONLY: ReadonlySet<NudgeId> = new Set<NudgeId>(['upgrade']);
 
 function sameAskAnswered(id: NudgeId, history: NudgeHistory, now: number): boolean {
   const twinId = SAME_ASK[id];

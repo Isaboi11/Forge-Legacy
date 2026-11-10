@@ -16,8 +16,8 @@
  * opens Chapter I (ONB-D14), and a skip only means it gets the default title. Nothing stores the skip.
  * So "skipped" is read as: the open chapter is Chapter I and still carries the untouched default name.
  * That chapter is real — it holds their workouts — so "Start Your First Chapter" NAMES it rather than
- * creating a second one. Someone who tapped the default suggestion on purpose reads the same way until
- * they rename it; the PO accepted that.
+ * creating a second one. Since 11-09 the default is no longer offered as a suggestion chip (the PO tapped
+ * it on a new account and Legacy told them to start a chapter), so only a real skip lands on it now.
  */
 import { chapterNameFrom } from './chapter-name.ts';
 

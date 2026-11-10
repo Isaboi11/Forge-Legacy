@@ -126,8 +126,10 @@ test('the suggestions are offerable as-is — none of them sanitises to somethin
   }
 });
 
-test('the first suggestion is the old default, so the previous behaviour is still one tap away', () => {
-  assert.equal(CHAPTER_SUGGESTIONS[0], DEFAULT_CHAPTER_I_TITLE);
+test('no suggestion equals the default title — a tapped chip must never read as a skipped chapter (PO 11-09)', () => {
+  for (const s of CHAPTER_SUGGESTIONS) {
+    assert.notEqual(sanitizeChapterTitle(s).toLowerCase(), DEFAULT_CHAPTER_I_TITLE.toLowerCase(), `"${s}" is the skip value`);
+  }
 });
 
 test('ordinals are roman, and a number past the table degrades rather than throwing', () => {

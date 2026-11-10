@@ -15,7 +15,6 @@ import {
   type NativeSyntheticEvent,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,28 +34,34 @@ import {
   CADENCE_COPY,
   PAYWALL_FAQ,
   REASSURANCE,
+  RECOMMENDED_BADGE,
+  TIER_CARD_COPY,
   TIER_COPY,
   TIER_DISCLOSURE,
   TIER_NOTE_SHORT,
   TRIAL_NOTE,
   cadenceOf,
+  cadencesOn,
   compactComparisonRows,
-  defaultSelection,
   premiumBenefitLines,
-  rowsFor,
+  rowForCadence,
+  tierCardLines,
   tierOf,
   tierSaving,
   tiersOn,
   trialLabel,
   usageIsNear,
   usageRows,
+  zeroPriceLabel,
   type BenefitLine,
+  type Cadence,
+  type CardTier,
   type CompactRow,
-  type PlanSlot,
   type PlanTier,
   type StorePlan,
   type UsageRow,
 } from '@/domain/billing/plans-core';
+import type { EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { CapKey, Caps } from '@/domain/entitlement/caps-core';
 import { LEGAL } from '@/domain/settings/content';
 import { billing, billingAvailable, MANAGE_ELSEWHERE_NOTE, manageSubscriptionsUrl, openManageSubscriptions } from '@/lib/billing';
@@ -120,25 +125,44 @@ import { forgeOr } from '@/constants/theme-scrim';
  *    locked promise instead — MA7-D3: the price holds for as long as they stay subscribed.
  */
 
-/** The Forge mark, filled — ported verbatim from the `.dc`'s hero and loading insignia. */
-const MARK = [
-  'M10.9 3.2H13.1V15H10.9Z',
-  'M7.6 7.1L9.6 5.8V15H7.6Z',
-  'M16.4 7.1L14.4 5.8V15H16.4Z',
-  'M6.8 15.4H17.2V16.2H6.8Z',
-  'M5.6 16.6H18.4V17.4H5.6Z',
-  'M4.4 17.8H19.6V18.6H4.4Z',
+/*
+ * ══ ⭐ THE PO'S SECOND REDESIGN, 2026-11-09 — CADENCE FIRST, THEN THREE PLAN CARDS ══
+ *
+ * Mountains behind the hero (the Legacy plate, both themes), "Everything you build, kept for life.",
+ * Yearly / Monthly, then Free · Premium · Premium AI as cards the athlete picks between, the button,
+ * the renewal terms, "Continue with Free", and a five-icon "What's included" row that scrolls to the
+ * details. Free is a card: choosing it makes the button "Continue with Free" and buys nothing.
+ *
+ * Deliberate deltas from the mockup:
+ *  · The Premium badge says "Recommended", not "Most popular" — nobody has bought yet (RECOMMENDED_BADGE).
+ *  · The Premium card keeps one small line, "Holt AI, the AI coach, is in Premium AI." — P8W-D4 needs what
+ *    Premium does NOT include above the buy button.
+ *  · The button says "Start 7-day free trial" only when the store says the selected plan carries one;
+ *    Monthly has none (MA6-D11), so it reads "Subscribe" there.
+ *  · "Founding price" stays on the Early Bird offering (MA7-D3), as one short line under the switch.
+ *  · Terms + Privacy stay beside the renewal terms (Apple 3.1.2).
+ */
+
+/** The five things every plan is built around, under "What's included". Tapping the row shows the details. */
+const INCLUDED: readonly { icon: EngravedName; label: string }[] = [
+  { icon: 'dumbbell', label: 'Training' },
+  { icon: 'book', label: 'Programs' },
+  { icon: 'lightbulb', label: 'Coach Holt' },
+  { icon: 'mountain', label: 'Transformation' },
+  { icon: 'people', label: 'Squads' },
 ];
 
-function ForgeMark({ size }: { size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={flColor.onBronze}>
-      {MARK.map((d) => (
-        <Path key={d} d={d} />
-      ))}
-    </Svg>
-  );
-}
+/**
+ * The card fill. Translucent so the mountain plate reads through, as in the mockup. A new surface, so it
+ * needs a value in each theme — one `forgeOr`, not a colour applied to both.
+ */
+const CARD_FILL = forgeOr('rgba(12,16,19,0.84)', 'rgba(249,246,239,0.92)');
+const CARD_FILL_ON = forgeOr('rgba(30,24,19,0.92)', 'rgba(251,247,238,0.97)');
+/** Selected edge: brighter bronze on Forge; Alabaster's earned bronze (`accentBorder`). */
+const CARD_EDGE_ON = forgeOr('rgba(201,151,103,0.78)', flColor.accentBorder);
+const BADGE_FILL = forgeOr('#2A2017', '#F3E8D3');
+/** Check marks: bronze on Forge; taupe on Alabaster, where bronze is kept for selection (PO 09-26). */
+const CHECK_INK = forgeOr(flColor.bronze300, flColor.labelInk);
 
 function Check({ size = 13, color = flColor.bronze300 }: { size?: number; color?: string }) {
   return <EngravedIcon name="check" size={size} color={color} />;
@@ -158,9 +182,6 @@ function InfinityMark({ size = 24, color = flColor.bronze300 }: { size?: number;
     </Svg>
   );
 }
-
-/** The bronze-metallic disc behind the mark — the design's hero insignia. */
-const BRONZE_DISC = [flColor.bronze300, flColor.bronze400, flColor.bronzeDark] as const;
 
 /**
  * The icon and supporting sentence for each benefit, keyed by the cap that makes it true.
@@ -196,26 +217,15 @@ const USAGE_ICON: Partial<Record<CapKey, SymbolName>> = {
 
 const AI_ICON: SymbolName[] = ['spark', 'target', 'eye', 'book'];
 
-/** The words above the tier switch. They change with it — the rest of the page keeps its shape. */
-function heroCopy(tier: PlanTier | null, paid: Caps | null): { eyebrow: string; title: string; body: string } {
-  if (tier === 'premium_ai') {
-    return {
-      eyebrow: 'Forge Premium AI',
-      title: 'Everything in Premium.\nPlus Holt AI.',
-      body: 'Your full AI coach for programming, training questions, photo analysis and plan adjustments.',
-    };
-  }
-  if (tier === 'ai_addon') {
-    return { eyebrow: 'Holt AI', title: 'Add the AI coach\nto your Premium.', body: TIER_DISCLOSURE.ai_addon };
-  }
-  // ⚠ Squads are NOT unlimited (M7-D15) — the count comes from config, and is left out rather than guessed.
-  const squads = paid && Number.isFinite(paid.squads) && paid.squads > 1 ? `, plus ${paid.squads} squads` : '';
-  return {
-    eyebrow: 'Forge Premium',
-    title: 'Everything you build,\nkept for life.',
-    body: `Unlimited programs, photos, imports and Basic Holt${squads}. Upgrade to Premium AI for the full AI coach.`,
-  };
-}
+/**
+ * The hero (PO mockup 11-09). One message for the whole page — the plan cards below carry each plan's
+ * specifics, so the hero no longer changes with the selection.
+ */
+const FREE_HERO = {
+  eyebrow: 'Forge Premium',
+  title: 'Everything you build,\nkept for life.',
+  body: 'More room to train. More tools to progress.\nA lasting legacy.',
+};
 
 const PURCHASE_FAILED = 'Couldn’t start the purchase. Try again.';
 
@@ -232,7 +242,8 @@ export default function SubscriptionScreen() {
    * its own limit, per M-7's contract.
    */
   const { from } = useLocalSearchParams<{ from?: string }>();
-  const viaGate = from === 'gate';
+  /* `nudge` = Holt's one upgrade line (Monetization Amendment 010). Unasked, so it closes like a gate. */
+  const viaGate = from === 'gate' || from === 'nudge';
   /** Shown once after onboarding, unasked (ONB-A7-D2) — so it closes like a gate AND offers Free by name. */
   const viaOnboarding = from === 'onboarding';
 
@@ -247,8 +258,10 @@ export default function SubscriptionScreen() {
   );
   const { data: admin } = useQuery(isAppAdmin, []);
 
-  const [chosenTier, setChosenTier] = useState<PlanTier | null>(null);
-  const [chosen, setChosen] = useState<PlanSlot | null>(null);
+  /** The card the athlete tapped. Null until they tap one; the derivation below picks the default. */
+  const [chosenTier, setChosenTier] = useState<CardTier | null>(null);
+  /** Yearly is pre-selected on every mount (MA6-D10). */
+  const [cadence, setCadence] = useState<Cadence>('annual');
   const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
   /** The inline messages §4 specifies for restore. Never an alert — the screen stays where it is. */
   const [notice, setNotice] = useState<string | null>(null);
@@ -262,7 +275,7 @@ export default function SubscriptionScreen() {
   const marks = useRef({ pricing: 0, ctaEnd: 0, included: 0 });
   /** The compact buy bar shows only once the main button has scrolled out of view. */
   const [showSticky, setShowSticky] = useState(false);
-  /** The bronze pill of the tier switch, gliding between segments (~200 ms, PO 09-25). */
+  /** The bronze pill of the Yearly / Monthly switch, gliding between segments (~200 ms, PO 09-25). */
   const [pill] = useState(() => new Animated.Value(0));
   const [switchWidth, setSwitchWidth] = useState(0);
 
@@ -302,25 +315,42 @@ export default function SubscriptionScreen() {
     isPremium ? t !== 'premium' && !coachAi : t !== 'ai_addon',
   );
   /**
-   * ⚠ DERIVED, NOT AN EFFECT. Yearly is pre-selected on every mount (MA6-D10), and a `setState` in an
-   * effect body is a react-compiler error in this repo besides. Falling back through the derivation also
-   * means a late-arriving offering lands pre-selected rather than empty.
+   * ⚠ DERIVED, NOT AN EFFECT. A `setState` in an effect body is a react-compiler error in this repo, and
+   * deriving means a late-arriving offering lands pre-selected rather than empty.
+   *
+   * The cards: Free (only for a Free athlete — never a "downgrade" offer to someone paying) and then every
+   * tier this offering sells. Premium starts selected when it is on sale; otherwise the first tier.
    */
-  const activeTier = chosenTier && tiers.includes(chosenTier) ? chosenTier : (tiers[0] ?? null);
-  const rows = activeTier ? rowsFor(plans, activeTier) : [];
-  const selected = chosen && rows.some((r) => r.slot === chosen) ? chosen : defaultSelection(rows);
-  const selectedPlan = rows.find((r) => r.slot === selected) ?? null;
+  const cadences = cadencesOn(plans.filter((p) => tiers.includes(tierOf(p.slot))));
+  const activeCadence: Cadence = cadences.includes(cadence) ? cadence : (cadences[0] ?? 'annual');
+  /*
+   * ⚠ NO STORE HERE (the web, a build without StoreKit): the plans are still worth comparing, so the three
+   * cards render WITHOUT prices and the button is replaced by where to buy. Nothing is invented — a card
+   * with no store row simply has no price. Never for a Premium athlete (nothing to compare).
+   */
+  const browseOnly = tiers.length === 0 && !isPremium && !billingAvailable();
+  const cardTiers: CardTier[] = !isPremium && tiers.length > 0 ? ['free', ...tiers] : browseOnly ? ['free', 'premium', 'premium_ai'] : tiers;
+  const defaultTier: CardTier | null = tiers.includes('premium') || browseOnly ? 'premium' : (tiers[0] ?? null);
+  const activeTier: CardTier | null = chosenTier && cardTiers.includes(chosenTier) ? chosenTier : defaultTier;
+  const paidTier: PlanTier | null = activeTier && activeTier !== 'free' ? activeTier : null;
+  const freeChosen = activeTier === 'free';
+  const selectedPlan = paidTier ? rowForCadence(plans, paidTier, activeCadence) : null;
+  const selected = selectedPlan?.slot ?? null;
   const canBuy = offering != null && selectedPlan != null;
   const trial = trialLabel(selectedPlan?.trialDays ?? null);
-  const ctaLabel = trial ? `Start ${trial}` : 'Continue';
+  const ctaLabel = freeChosen ? 'Continue with Free' : trial ? `Start ${trial}` : 'Subscribe';
   const aiSelected = activeTier === 'premium_ai' || activeTier === 'ai_addon';
 
-  /** Switch tiers. Every tier change comes through here, so the pill always glides to match. */
-  const selectTier = (t: PlanTier, reveal = false) => {
-    const index = tiers.indexOf(t);
+  /** Switch Yearly / Monthly. Every change comes through here, so the pill always glides to match. */
+  const selectCadence = (c: Cadence) => {
+    const index = cadences.indexOf(c);
     if (index >= 0) Animated.timing(pill, { toValue: index, duration: 200, useNativeDriver: true }).start();
+    setCadence(c);
+  };
+
+  /** Pick a plan card; `reveal` scrolls back up to the cards (the "Want the full AI coach?" door). */
+  const selectTier = (t: CardTier, reveal = false) => {
     setChosenTier(t);
-    setChosen(null);
     if (reveal) scrollRef.current?.scrollTo({ y: Math.max(0, marks.current.pricing - 16), animated: true });
   };
 
@@ -436,7 +466,7 @@ export default function SubscriptionScreen() {
 
   /** Why there is no picker, when there is none. Each answer is true; none invents a price. */
   const pickerEmpty: PickerEmpty | null =
-    rows.length > 0
+    tiers.length > 0
       ? null
       : !billingAvailable()
         ? 'unavailable'
@@ -454,18 +484,18 @@ export default function SubscriptionScreen() {
   const usage = usageRows(snapshot?.caps ?? null, snapshot?.usage ?? null);
   const usageNear = usageIsNear(usage);
   const comparison = compactComparisonRows(config?.free ?? null, paid);
-  const hero = heroCopy(activeTier, paid);
   /* A "couldn't start" that the store went on to complete is no longer true once Premium lands. */
   const shownNotice = notice && !(notice === PURCHASE_FAILED && isPremium) ? notice : null;
-  const segment = tiers.length > 0 && switchWidth > 0 ? (switchWidth - 8) / tiers.length : 0;
+  const segment = cadences.length > 0 && switchWidth > 0 ? (switchWidth - 8) / cadences.length : 0;
 
   /*
-   * ── THE DECISION ZONE ── tier → price → button → terms. Returned as a fragment so its landmarks are
-   * direct children of the scroll content, which is what makes their `onLayout` y a scroll position.
+   * ── THE DECISION ZONE ── Yearly/Monthly → plan cards → button → terms. Returned as a fragment so its
+   * landmarks are direct children of the scroll content, which is what makes their `onLayout` y a scroll
+   * position.
    */
   const decision = (
     <>
-      {tiers.length > 1 ? (
+      {cadences.length > 1 ? (
         <View
           style={styles.tabs}
           accessibilityRole="tablist"
@@ -483,18 +513,18 @@ export default function SubscriptionScreen() {
               ]}
             />
           ) : null}
-          {tiers.map((t) => {
-            const on = t === activeTier;
+          {cadences.map((c) => {
+            const on = c === activeCadence;
             return (
               <Pressable
-                key={t}
-                onPress={() => selectTier(t)}
+                key={c}
+                onPress={() => selectCadence(c)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: on }}
-                accessibilityLabel={TIER_COPY[t].title}
+                accessibilityLabel={CADENCE_COPY[c].title}
                 style={styles.tab}
               >
-                <Text style={[styles.tabText, on && styles.tabTextOn]}>{TIER_COPY[t].title}</Text>
+                <Text style={[styles.tabText, on && styles.tabTextOn]}>{CADENCE_COPY[c].title}</Text>
               </Pressable>
             );
           })}
@@ -504,26 +534,37 @@ export default function SubscriptionScreen() {
       <View onLayout={onPricingLayout} />
 
       {/* ⚠ STATES THE LOCKED PROMISE, NOT A COUNT (MA7-D3). Only on the Early Bird offering, where it is true. */}
-      {offering === 'early_bird' && rows.length > 0 ? (
-        <View style={styles.founding} accessible accessibilityLabel="Founding price. Keep this price for as long as you stay subscribed.">
-          <Text style={styles.foundingTitle}>Founding price</Text>
-          <Text style={styles.foundingLine}>Keep this price for as long as you stay subscribed.</Text>
-        </View>
+      {offering === 'early_bird' && tiers.length > 0 ? (
+        <Text style={styles.foundingLine} accessibilityLabel="Founding price. Keep this price for as long as you stay subscribed.">
+          <Text style={styles.foundingTitle}>Founding price</Text> · Keep it for as long as you stay subscribed.
+        </Text>
       ) : null}
 
-      <PlanRows
-        empty={pickerEmpty}
+      <TierCards
+        empty={browseOnly ? null : pickerEmpty}
         onRetry={retryPicker}
-        rows={rows}
+        cards={cardTiers}
         plans={plans}
-        activeTier={activeTier}
-        selected={selected}
-        onSelect={setChosen}
+        cadence={activeCadence}
+        active={activeTier}
+        recommended={cardTiers.length > 1 && cardTiers.includes('premium') ? 'premium' : null}
+        free={config?.free ?? null}
+        paid={paid}
+        onSelect={selectTier}
       />
+      {browseOnly && !freeChosen ? (
+        <Text style={styles.browseNote}>Plans are bought in the Forge Legacy app on iPhone.</Text>
+      ) : null}
 
-      {canBuy ? (
+      {canBuy || freeChosen ? (
         <View style={styles.cta}>
-          <Button variant="primary" fullWidth disabled={busy != null} onPress={onContinue} accessibilityLabel={ctaLabel}>
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={busy != null}
+            onPress={freeChosen ? back : onContinue}
+            accessibilityLabel={ctaLabel}
+          >
             {busy === 'purchase' ? 'Opening…' : ctaLabel}
           </Button>
         </View>
@@ -533,20 +574,19 @@ export default function SubscriptionScreen() {
           {shownNotice}
         </Text>
       ) : null}
-      {rows.length > 0 ? (
+      {tiers.length > 0 ? (
         <>
           {/* MA6-D11: the trial terms sit beside the button. Every plan renews (MA7-D1), so that line always shows. */}
-          {trial ? <Text style={styles.trialLine}>{trial}. Cancel anytime.</Text> : null}
           <Text style={styles.fineprint}>
-            {trial ? `${TRIAL_NOTE} ` : ''}
+            {trial ? `${trial}. ${TRIAL_NOTE} ` : 'Cancel anytime. '}
             {AUTO_RENEWAL_NOTE}
           </Text>
           {/* Apple 3.1.2: Terms + Privacy links in the purchase flow, beside the renewal terms — not only at the foot. */}
           <LegalLinks />
         </>
       ) : null}
-      {viaOnboarding && !isPremium ? (
-        /* Leaving an offer nobody asked for is a named, full-contrast choice — not a faint × alone. */
+      {!isPremium && !freeChosen ? (
+        /* Leaving is a named, full-contrast choice on every Free visit — not a faint × alone (ONB-A7-D2). */
         <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Continue with Free" style={styles.linkRow}>
           <Text style={styles.freeText}>Continue with Free</Text>
         </Pressable>
@@ -559,8 +599,18 @@ export default function SubscriptionScreen() {
 
   return (
     <View style={styles.root}>
-      <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
-      <AppBar title="Subscription" {...header} />
+      {/* The mountain plate behind the hero (PO mockup 11-09) — the Legacy screen's own, recoloured for
+          Alabaster by `scripts/paper-plates`, so both themes carry it. Reverses the 09-25 "no artwork". */}
+      <ScreenBackground
+        paperTexture="atmospheric"
+        image={SCREEN_BG.legacyMountains}
+        imagePosition="top"
+        imageOpacity={0.5}
+        imageOpacityPaper={0.7}
+        overlay={{ flat: 'rgba(5,5,5,0.30)' }}
+      />
+      <AppBar title="Subscription" transparent {...header} />
+      <View style={styles.headerRule} />
 
       {status === 'loading' ? (
         /* §3.1 — the one state where content is intentionally withheld. Nothing renders until the
@@ -594,21 +644,18 @@ export default function SubscriptionScreen() {
             onScroll={onScroll}
             scrollEventThrottle={32}
           >
-            {/* HERO — insignia, overline, the one serif line, and a concrete sentence. No artwork (PO 09-25). */}
+            {/* HERO — ruled eyebrow, the one serif line, a short sentence. The Forge mark lives in the header now. */}
             <View style={styles.hero}>
-              <LinearGradient colors={BRONZE_DISC} locations={[0, 0.52, 1]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} style={styles.heroDisc}>
-                <ForgeMark size={30} />
-              </LinearGradient>
               {isPremium ? (
                 <>
-                  <Text style={styles.overline}>{coachAi ? 'Forge Premium AI' : 'Forge Premium'}</Text>
+                  <RuledEyebrow>{coachAi ? 'Forge Premium AI' : 'Forge Premium'}</RuledEyebrow>
                   <Text style={styles.tagline}>Your legacy,{'\n'}preserved for life.</Text>
                 </>
               ) : (
                 <>
-                  <Text style={styles.overline}>{hero.eyebrow}</Text>
-                  <Text style={styles.tagline}>{hero.title}</Text>
-                  <Text style={styles.principle}>{hero.body}</Text>
+                  <RuledEyebrow>{FREE_HERO.eyebrow}</RuledEyebrow>
+                  <Text style={styles.tagline}>{FREE_HERO.title}</Text>
+                  <Text style={styles.principle}>{FREE_HERO.body}</Text>
                 </>
               )}
             </View>
@@ -628,7 +675,7 @@ export default function SubscriptionScreen() {
                 {!coachAi ? (
                   <>
                     <SectionLabel>Add Holt AI</SectionLabel>
-                    <Text style={styles.sectionLead}>{TIER_DISCLOSURE[activeTier ?? 'premium_ai']}</Text>
+                    <Text style={styles.sectionLead}>{TIER_DISCLOSURE[paidTier ?? 'premium_ai']}</Text>
                     {decision}
                     <AiBenefits />
                   </>
@@ -674,25 +721,36 @@ export default function SubscriptionScreen() {
                   </>
                 ) : null}
 
-                <Pressable onPress={toIncluded} accessibilityRole="button" accessibilityLabel="See what’s included" style={styles.seeMore}>
-                  <EngravedIcon name="chevron-down" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
-                  <View style={styles.seeMoreRow}>
-                    <View style={styles.seeMoreRule} />
-                    <Text style={styles.seeMoreText}>See what’s included</Text>
-                    <View style={styles.seeMoreRule} />
-                  </View>
+                {/* WHAT'S INCLUDED — five icons (PO mockup 11-09); tapping the row scrolls to the details. */}
+                <View style={styles.includedHead}>
+                  <RuledEyebrow>What’s included</RuledEyebrow>
+                </View>
+                <Pressable
+                  onPress={toIncluded}
+                  accessibilityRole="button"
+                  accessibilityLabel={`What’s included: ${INCLUDED.map((i) => i.label).join(', ')}. Shows the details.`}
+                  style={({ pressed }) => [styles.includedRow, pressed && styles.pressed]}
+                >
+                  {INCLUDED.map((i) => (
+                    <View key={i.label} style={styles.includedItem}>
+                      <EngravedIcon name={i.icon} size={26} color={CHECK_INK} />
+                      <Text style={styles.includedLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                        {i.label}
+                      </Text>
+                    </View>
+                  ))}
                 </Pressable>
 
                 <View onLayout={onIncludedLayout} />
                 {aiSelected ? (
                   <>
-                    <SectionLabel>What’s included</SectionLabel>
+                    <SectionLabel>What Premium AI adds</SectionLabel>
                     <Text style={styles.sectionLead}>Everything in Premium, plus:</Text>
                     <AiBenefits />
                   </>
                 ) : (
                   <>
-                    <SectionLabel>What’s included</SectionLabel>
+                    <SectionLabel>What Premium unlocks</SectionLabel>
                     <BenefitList benefits={benefits} />
                     {tiers.includes('premium_ai') ? (
                       <>
@@ -789,13 +847,13 @@ export default function SubscriptionScreen() {
             THE COMPACT BUY BAR — only once the main button has scrolled away (PO 09-25).
             ⚠ P8W-D4: what Premium does not include still sits above this button, in one short line.
           */}
-          {canBuy && showSticky && selectedPlan && activeTier ? (
+          {canBuy && showSticky && selectedPlan && paidTier ? (
             <View style={[styles.commitBar, { paddingBottom: 12 + insets.bottom }]}>
               {shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
               <Text style={styles.stickyPlan}>
-                {TIER_COPY[activeTier].title} · {selectedPlan.priceLabel}/{cadenceOf(selectedPlan.slot) === 'annual' ? 'year' : 'month'}
+                {TIER_COPY[paidTier].title} · {selectedPlan.priceLabel}/{CADENCE_COPY[cadenceOf(selectedPlan.slot)].per}
               </Text>
-              {TIER_NOTE_SHORT[activeTier] ? <Text style={styles.disclosure}>{TIER_NOTE_SHORT[activeTier]}</Text> : null}
+              {TIER_NOTE_SHORT[paidTier] ? <Text style={styles.disclosure}>{TIER_NOTE_SHORT[paidTier]}</Text> : null}
               <Button variant="primary" fullWidth disabled={busy != null} onPress={onContinue} accessibilityLabel={ctaLabel}>
                 {busy === 'purchase' ? 'Opening…' : ctaLabel}
               </Button>
@@ -888,26 +946,45 @@ function PlanCard({ kind, until, seat, coachAi }: { kind: string | null; until: 
 
 type PickerEmpty = 'loading' | 'unavailable' | 'offer-failed' | 'plans-failed';
 
+/** "——— FORGE PREMIUM ———": the mockup's eyebrow, ruled both sides. Labels are taupe on Alabaster. */
+function RuledEyebrow({ children }: { children: string }) {
+  return (
+    <View style={styles.ruledRow} accessibilityRole="header">
+      <View style={styles.ruledLine} />
+      <Text style={styles.overline}>{children}</Text>
+      <View style={styles.ruledLine} />
+    </View>
+  );
+}
+
 /**
- * The selected tier's yearly and monthly rows. Yearly leads and is the larger card (MA6-D10); monthly is
- * deliberately quieter. The billed amount is always the largest price on screen.
+ * One card per plan, priced at the chosen cadence (PO redesign 11-09).
+ *
+ * ⚠ THE BILLED AMOUNT IS THE LARGEST PRICE ON SCREEN (MA6-D10, Apple): the store's per-month figure for a
+ * yearly plan is small type under it, and only when the store supplied one.
  */
-function PlanRows({
+function TierCards({
   empty,
   onRetry,
-  rows,
+  cards,
   plans,
-  activeTier,
-  selected,
+  cadence,
+  active,
+  recommended,
+  free,
+  paid,
   onSelect,
 }: {
   empty: PickerEmpty | null;
   onRetry: () => void;
-  rows: StorePlan[];
+  cards: CardTier[];
   plans: StorePlan[];
-  activeTier: PlanTier | null;
-  selected: PlanSlot | null;
-  onSelect: (slot: PlanSlot) => void;
+  cadence: Cadence;
+  active: CardTier | null;
+  recommended: CardTier | null;
+  free: Caps | null;
+  paid: Caps | null;
+  onSelect: (tier: CardTier) => void;
 }) {
   if (empty) {
     /*
@@ -937,59 +1014,84 @@ function PlanRows({
     );
   }
 
-  const saving = activeTier ? tierSaving(plans, activeTier) : null;
+  const currency = plans[0]?.currency ?? null;
 
   return (
     <View style={styles.plans} accessibilityRole="radiogroup">
-      {rows.map((p) => {
-        const on = p.slot === selected;
-        const cadence = cadenceOf(p.slot);
-        const annual = cadence === 'annual';
-        const copy = CADENCE_COPY[cadence];
-        const showSaving = annual && saving != null;
-        const trial = trialLabel(p.trialDays);
+      {cards.map((t) => {
+        const on = t === active;
+        const copy = TIER_CARD_COPY[t];
+        const lines = tierCardLines(t, free, paid);
+        const row = t === 'free' ? null : rowForCadence(plans, t, cadence);
+        const annual = row != null && cadenceOf(row.slot) === 'annual';
+        const price = t === 'free' ? zeroPriceLabel(currency) : (row?.priceLabel ?? null);
+        const per = row ? CADENCE_COPY[cadenceOf(row.slot)].per : null;
+        const perMonth = annual ? (row?.pricePerMonthLabel ?? null) : null;
+        const saving = t !== 'free' && annual ? tierSaving(plans, t) : null;
+        const trial = row ? trialLabel(row.trialDays) : null;
+        const note = t === 'premium' ? TIER_NOTE_SHORT.premium : null;
+        const badge = t === recommended ? RECOMMENDED_BADGE : null;
         /*
-         * ⚠ THE SAVING AND THE TRIAL MUST RIDE ON THE ROW'S OWN LABEL (§11.5). The row is one accessible
+         * ⚠ THE PRICE, SAVING AND TRIAL MUST RIDE ON THE CARD'S OWN LABEL (§11.5). The card is one accessible
          * element, so anything inside it is never announced separately.
          */
         const spoken = [
-          activeTier ? TIER_COPY[activeTier].title : null,
           copy.title,
-          p.priceLabel,
-          showSaving ? `${saving} compared to monthly` : null,
+          badge,
+          price ? (per ? `${price} per ${per}` : price) : null,
+          saving ? `${saving} compared to monthly` : null,
           trial,
+          ...lines,
+          note,
           on ? 'selected' : 'not selected',
         ]
           .filter(Boolean)
           .join(', ');
         return (
           <Pressable
-            key={p.slot}
-            onPress={() => onSelect(p.slot)}
+            key={t}
+            onPress={() => onSelect(t)}
             accessibilityRole="radio"
             accessibilityState={{ checked: on }}
             accessibilityLabel={spoken}
-            style={[styles.planRow, annual ? styles.planRowLead : styles.planRowQuiet, on && styles.planRowOn]}
+            style={({ pressed }) => [styles.tierCard, on && styles.tierCardOn, badge != null && styles.tierCardBadged, pressed && styles.pressed]}
           >
-            {copy.badge && annual ? (
+            {badge ? (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{copy.badge}</Text>
+                <Text style={styles.badgeText}>{badge}</Text>
               </View>
             ) : null}
             <View style={[styles.radio, on && styles.radioOn]}>{on ? <Check size={12} color={flColor.onBronze} /> : null}</View>
-            <View style={styles.planText}>
-              <Text style={[styles.planTitle, !annual && styles.planTitleQuiet]}>{copy.title}</Text>
-              <Text style={styles.planCadence}>{copy.cadence}</Text>
-              {trial ? <Text style={styles.planTrial}>{trial}</Text> : null}
-            </View>
-            <View style={styles.planPrice}>
-              <Text style={[styles.priceText, !annual && styles.priceTextQuiet]}>{p.priceLabel}</Text>
-              {p.pricePerMonthLabel && annual ? <Text style={styles.perMonth}>{p.pricePerMonthLabel}/mo</Text> : null}
-              {showSaving ? (
-                <View style={styles.savePill}>
-                  <Text style={styles.saveText}>{saving}</Text>
+            <View style={styles.tierBody}>
+              <View style={styles.tierHead}>
+                <View style={styles.tierName}>
+                  <Text style={styles.tierTitle}>{copy.title}</Text>
+                  <Text style={styles.tierSub}>{copy.subtitle}</Text>
                 </View>
-              ) : null}
+                <View style={styles.tierPrice}>
+                  {price ? (
+                    <Text style={styles.priceLine}>
+                      <Text style={[styles.priceText, on && styles.priceTextOn]}>{price}</Text>
+                      {per ? <Text style={styles.pricePer}>{` / ${per}`}</Text> : null}
+                    </Text>
+                  ) : null}
+                  {perMonth ? <Text style={styles.perMonth}>{`${perMonth} / month`}</Text> : null}
+                  {saving ? (
+                    <View style={styles.savePill}>
+                      <Text style={styles.saveText}>{saving}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+              <View style={[styles.tierLines, t === 'free' && styles.tierLinesRuled]}>
+                {lines.map((l) => (
+                  <View key={l} style={styles.tierLine}>
+                    <Check size={13} color={CHECK_INK} />
+                    <Text style={styles.tierLineText}>{l}</Text>
+                  </View>
+                ))}
+                {note ? <Text style={styles.tierNote}>{note}</Text> : null}
+              </View>
             </View>
           </Pressable>
         );
@@ -1130,40 +1232,35 @@ const styles = StyleSheet.create({
   retryBtn: { minWidth: 140 },
   body: { paddingHorizontal: 20 },
 
+  headerRule: { height: 1, backgroundColor: flColor.bronzeBorderSubtle },
+
   // ── decision zone ──
-  hero: { alignItems: 'center', paddingTop: 2, paddingBottom: 18 },
-  heroDisc: {
-    width: 52,
-    height: 52,
-    borderRadius: flRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: flShadow.glowBadge,
-  },
+  hero: { alignItems: 'center', paddingTop: 26, paddingBottom: 22 },
+  ruledRow: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch', paddingHorizontal: 18 },
+  ruledLine: { flex: 1, height: 1, backgroundColor: flColor.bronzeBorder },
   overline: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    letterSpacing: 2.4,
+    letterSpacing: 3,
     textTransform: 'uppercase',
     color: flColor.labelInk,
-    marginTop: 13,
   },
   tagline: {
     fontFamily: flFont.display,
-    fontSize: 30,
+    fontSize: 36,
     fontWeight: '700',
-    lineHeight: 35,
+    lineHeight: 41,
     color: flColor.cream100,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 12,
   },
   principle: {
-    fontSize: 13.5,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
     color: flColor.gray400,
     textAlign: 'center',
-    marginTop: 10,
-    maxWidth: 320,
+    marginTop: 12,
+    maxWidth: 340,
   },
 
   tabs: {
@@ -1182,83 +1279,96 @@ const styles = StyleSheet.create({
     left: 4,
     borderRadius: flRadius.pill,
     backgroundColor: flColor.bronzeSolid,
+    borderWidth: 1,
+    borderColor: flColor.accentBorder,
+    boxShadow: flShadow.glowSubtle,
   },
-  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 40 },
-  tabText: { fontSize: 14, fontWeight: '600', color: flColor.gray400 },
+  tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 46 },
+  tabText: { fontSize: 15, fontWeight: '600', color: flColor.gray400 },
   tabTextOn: { color: flColor.onBronze },
 
-  founding: { alignItems: 'center', marginBottom: 12 },
-  foundingTitle: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.bronze300 },
-  foundingLine: { fontSize: 12, color: flColor.gray400, marginTop: 3 },
+  foundingLine: { fontSize: 12.5, color: flColor.gray400, textAlign: 'center', marginBottom: 14 },
+  foundingTitle: { fontWeight: '700', color: flColor.selectedInk },
 
   pickerLoading: { padding: 22, alignItems: 'center' },
-  plans: { gap: 10 },
-  planRow: {
+  plans: { gap: 12 },
+  tierCard: {
     position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
     borderRadius: flRadius.lg,
     borderWidth: 1,
-    borderColor: flColor.charcoal600,
-    backgroundColor: flColor.charcoal900,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: CARD_FILL,
+    boxShadow: flShadow.card,
   },
-  planRowLead: { paddingHorizontal: 16, paddingVertical: 18 },
-  planRowQuiet: { paddingHorizontal: 16, paddingVertical: 12 },
-  planRowOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.charcoal800, boxShadow: flShadow.card },
+  tierCardOn: { borderColor: CARD_EDGE_ON, backgroundColor: CARD_FILL_ON, boxShadow: flShadow.glowSubtle },
+  /** Room for the badge that sits on the card's top edge. */
+  tierCardBadged: { marginTop: 10, paddingTop: 22 },
   badge: {
     position: 'absolute',
-    top: -9,
-    right: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    top: -11,
+    left: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: flRadius.pill,
-    backgroundColor: flColor.bronzeSolid,
-    boxShadow: flShadow.glowSubtle,
-  },
-  badgeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase', color: flColor.onBronze },
-  radio: {
-    width: 22,
-    height: 22,
-    borderRadius: flRadius.round,
+    backgroundColor: BADGE_FILL,
     borderWidth: 1,
+    borderColor: flColor.accentBorder,
+  },
+  badgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.selectedInk },
+  radio: {
+    width: 26,
+    height: 26,
+    borderRadius: flRadius.round,
+    borderWidth: 1.5,
     borderColor: flColor.charcoal500,
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioOn: { borderColor: flColor.accentBorder, backgroundColor: flColor.bronzeSolid },
-  planText: { flex: 1 },
-  planTitle: { fontSize: 16, fontWeight: '600', color: flColor.cream100 },
-  planTitleQuiet: { fontSize: 15 },
-  planCadence: { fontSize: 12, color: flColor.gray600, marginTop: 2 },
-  planTrial: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk, marginTop: 4 },
-  planPrice: { alignItems: 'flex-end', gap: 3 },
+  tierBody: { flex: 1, minWidth: 0 },
+  tierHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  tierName: { flex: 1, minWidth: 0 },
+  tierTitle: { fontFamily: flFont.display, fontSize: 23, fontWeight: '700', color: flColor.cream100 },
+  tierSub: { fontSize: 13, lineHeight: 18, color: flColor.gray400, marginTop: 3 },
+  tierPrice: { alignItems: 'flex-end', gap: 4, flexShrink: 0 },
+  priceLine: { textAlign: 'right' },
   priceText: { fontFamily: flFont.display, fontSize: 24, fontWeight: '700', color: flColor.cream100 },
-  priceTextQuiet: { fontSize: 19 },
-  perMonth: { fontSize: 12, fontWeight: '600', color: flColor.gray400 },
+  priceTextOn: { color: flColor.selectedInk },
+  pricePer: { fontSize: 13, fontWeight: '400', color: flColor.gray400 },
+  perMonth: { fontSize: 13, color: flColor.gray400 },
   savePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: flRadius.pill,
     backgroundColor: flColor.bronzeTint,
     borderWidth: 1,
-    borderColor: flColor.bronzeBorderSubtle,
+    borderColor: flColor.accentBorder,
   },
-  saveText: { fontSize: 9.5, fontWeight: '700', letterSpacing: 0.4, color: flColor.bronze300 },
+  saveText: { fontSize: 12, fontWeight: '700', color: flColor.selectedInk },
+  tierLines: { gap: 7, marginTop: 12 },
+  tierLinesRuled: { borderTopWidth: 1, borderTopColor: flColor.divider, paddingTop: 12 },
+  tierLine: { flexDirection: 'row', alignItems: 'flex-start', gap: 9 },
+  tierLineText: { flex: 1, fontSize: 13.5, lineHeight: 19, color: flColor.cream100 },
+  tierNote: { fontSize: 12, lineHeight: 17, color: flColor.gray600, marginTop: 2 },
   emptyPlans: { fontSize: 13, lineHeight: 20, color: flColor.gray400, padding: 16, textAlign: 'center' },
   emptyRetry: { fontSize: 13, fontWeight: '700', color: flColor.bronzeInk, textAlign: 'center', paddingBottom: 16 },
 
-  cta: { marginTop: 16 },
+  cta: { marginTop: 18 },
+  browseNote: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400, textAlign: 'center', marginTop: 16 },
   notice: { fontSize: 12.5, color: flColor.bronzeInk, textAlign: 'center', marginTop: 10 },
-  trialLine: { fontSize: 12.5, color: flColor.gray400, textAlign: 'center', marginTop: 12 },
-  fineprint: { fontSize: 10.5, lineHeight: 15, color: flColor.gray600, textAlign: 'center', marginTop: 5, paddingHorizontal: 10 },
-  linkRow: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 36 },
-  freeText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
+  fineprint: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center', marginTop: 12, paddingHorizontal: 10 },
+  linkRow: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 40 },
+  freeText: { fontSize: 15, fontWeight: '600', color: flColor.cream100, textDecorationLine: 'underline' },
 
-  seeMore: { alignItems: 'center', marginTop: 22, gap: 4 },
-  seeMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 12, alignSelf: 'stretch' },
-  seeMoreRule: { flex: 1, height: 1, backgroundColor: flColor.bronzeBorderSubtle },
-  seeMoreText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
+  includedHead: { marginTop: 26 },
+  includedRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, gap: 4 },
+  includedItem: { flex: 1, alignItems: 'center', gap: 8, minWidth: 0 },
+  includedLabel: { fontSize: 12.5, color: flColor.gray400, textAlign: 'center' },
 
   // ── information zone ──
   sectionLabel: {

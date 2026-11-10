@@ -1000,7 +1000,9 @@ function CompactInvite({ icon, label, onPress }: { icon: EngravedName; label: st
       style={({ pressed }) => [styles.compactInvite, pressed ? styles.cardPressed : null]}
     >
       <EngravedIcon name={icon} size={22} color={flColor.bronze400} />
-      <Text style={styles.compactLabel} numberOfLines={2}>
+      {/* One line that shrinks to fit: "Accomplishment" is one long word, and two lines broke it as
+          "Accomplishmen / t" on a phone with larger text (PO screenshot, 11-09). */}
+      <Text style={styles.compactLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
         {label}
       </Text>
     </Pressable>
