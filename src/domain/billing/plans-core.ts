@@ -321,8 +321,8 @@ export function tierCardLines(tier: CardTier, free: Caps | null, paid: Caps | nu
     const squads = paid && Number.isFinite(paid.squads) && paid.squads > 0 ? capPhrase('squads', paid.squads) : null;
     return ['Unlimited programs, photos & imports', ['Unlimited Basic Holt', squads, 'Meal planner & recipes'].filter(Boolean).join(' · ')];
   }
-  if (tier === 'premium_ai') return ['Everything in Premium, plus Holt AI', 'Form check, smart program changes & more'];
-  return ['Ask Holt AI anything about your training', 'Form check, smart program changes & more'];
+  if (tier === 'premium_ai') return ['Everything in Premium, plus Holt AI', 'Form check & smart program changes'];
+  return ['Ask Holt AI anything about your training', 'Form check & smart program changes'];
 }
 
 /**

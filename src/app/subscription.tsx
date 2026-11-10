@@ -1247,9 +1247,10 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontFamily: flFont.display,
-    fontSize: 36,
+    /* 30, not 36: at 36 "Everything you build," broke onto two lines on a 390pt phone (render 11-09). */
+    fontSize: 30,
     fontWeight: '700',
-    lineHeight: 41,
+    lineHeight: 36,
     color: flColor.cream100,
     textAlign: 'center',
     marginTop: 12,
@@ -1366,9 +1367,11 @@ const styles = StyleSheet.create({
   freeText: { fontSize: 15, fontWeight: '600', color: flColor.cream100, textDecorationLine: 'underline' },
 
   includedHead: { marginTop: 26 },
-  includedRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, gap: 4 },
-  includedItem: { flex: 1, alignItems: 'center', gap: 8, minWidth: 0 },
-  includedLabel: { fontSize: 12.5, color: flColor.gray400, textAlign: 'center' },
+  /* Natural widths, spread evenly: equal fifths cut "Transformation" to "Transform…" on the web, where
+     `adjustsFontSizeToFit` does nothing (render 11-09). The five labels fit 335pt (iPhone SE) at 12. */
+  includedRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, paddingHorizontal: 2 },
+  includedItem: { alignItems: 'center', gap: 8 },
+  includedLabel: { fontSize: 12, color: flColor.gray400, textAlign: 'center' },
 
   // ── information zone ──
   sectionLabel: {
