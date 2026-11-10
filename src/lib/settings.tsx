@@ -38,7 +38,19 @@ const SettingsContext = createContext<SettingsState | undefined>(undefined);
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const { session } = useAuth();
   const uid = session?.user.id ?? null;
-  const { data, refetch } = useQuery<AppPrefs>(async () => (uid ? fetchAppPrefs() : APP_PREFS_DEFAULTS), [uid]);
+  const { data, error, refetch } = useQuery<AppPrefs>(async () => (uid ? fetchAppPrefs() : APP_PREFS_DEFAULTS), [uid]);
+
+  /*
+   * ⚠ A FAILED READ IS NOT "LOADED" (launch QA B12). `fetchAppPrefs` used to answer the defaults on any
+   * error, so a blip at launch set `loaded` over values the athlete never chose — and every writer that
+   * trusts `loaded` saved them back. It throws now: `loaded` stays false, those writers refuse, and the read
+   * is simply tried again (the same retry `ProfileProvider` makes) until it lands.
+   */
+  useEffect(() => {
+    if (uid == null || error == null) return;
+    const t = setTimeout(refetch, 4000);
+    return () => clearTimeout(t);
+  }, [uid, error, refetch]);
 
   /**
    * Reconcile the analytics opt-out from SERVER truth into the emitter's local mirror.

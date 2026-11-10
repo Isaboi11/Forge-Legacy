@@ -8,12 +8,13 @@ import { AppBar } from '@/components/forge/composites/AppBar';
 import { AutoPostRow } from '@/components/forge/AutoPostSheet';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
+import { NotFoundBody } from '@/components/forge/NotFound';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { Toast } from '@/components/forge/composites/Toast';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
-import { fetchAppPrefs, fetchVisibility, saveAppPrefs, saveVisibility } from '@/data/settings-live';
+import { fetchAppPrefs, fetchVisibility, patchAppPrefs, patchVisibility, saveVisibility } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS } from '@/domain/settings/preferences';
 import { useToast } from '@/hooks/useCeremony';
 import { usePersist } from '@/hooks/usePersist';
@@ -40,7 +41,13 @@ export default function ProfileVisibilityScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data, loading } = useQuery(fetchVisibility, []);
+  /*
+   * ⚠ A FAILED READ IS SHOWN AS ONE, NEVER AS DEFAULTS (launch QA B12 / UX-003). `fetchVisibility` used to
+   * answer the defaults on any error, so a blip drew Photos "Friends" over a real "Only me" — and the next
+   * tap on ANY row saved the whole map, making it true. The reads throw now; until both have landed the
+   * controls are not drawn at all (loading, or "Couldn't load your settings" with Try Again).
+   */
+  const { data, loading, error, refetch } = useQuery(fetchVisibility, []);
   const [override, setOverride] = useState<Partial<VisibilityMap>>({});
   const [toast, setToast] = useState(false);
   const persistWrite = usePersist();
@@ -51,7 +58,7 @@ export default function ProfileVisibilityScreen() {
      mirrors it to AsyncStorage so the emitter can check consent SYNCHRONOUSLY on the next launch,
      before anything can be queued. Both writes happen on tap — a toggle that only takes effect after a
      round trip would keep collecting for the rest of the session the athlete just declined. */
-  const { data: prefs, loading: prefsLoading, error: prefsError } = useQuery(fetchAppPrefs, []);
+  const { data: prefs, loading: prefsLoading, error: prefsError, refetch: refetchPrefs } = useQuery(fetchAppPrefs, []);
   const [optOutOverride, setOptOutOverride] = useState<boolean | null>(null);
   const analyticsOptOut = optOutOverride ?? prefs?.analyticsOptOut ?? APP_PREFS_DEFAULTS.analyticsOptOut;
 
@@ -85,7 +92,8 @@ export default function ProfileVisibilityScreen() {
     const before = optOutOverride;
     setOptOutOverride(!on);
     setAnalyticsEnabled(on);
-    persistWrite(() => saveAppPrefs({ ...APP_PREFS_DEFAULTS, ...prefs, analyticsOptOut: !on }), {
+    // One key, merged onto the column as the server holds it NOW — never onto this screen's copy (B12).
+    persistWrite(() => patchAppPrefs({ analyticsOptOut: !on }), {
       rollback: () => {
         setOptOutOverride(before);
         setAnalyticsEnabled(!on); // put the synchronous local mirror back too
@@ -98,9 +106,11 @@ export default function ProfileVisibilityScreen() {
    * rejected tells the athlete their sealed chapters are private when they are not.
    */
   const set = (k: VisibilityKey, id: AudienceId) => {
+    if (!data) return; // never a write over a map this screen has not read (B12)
     const before = override;
     setOverride((o) => ({ ...o, [k]: id }));
-    persistWrite(() => saveVisibility({ ...VISIBILITY_DEFAULTS, ...data, ...override, [k]: id }), {
+    // ONE key. It used to write the whole map — defaults included, when the read had failed.
+    persistWrite(() => patchVisibility({ [k]: id }), {
       rollback: () => setOverride(before),
     });
   };
@@ -138,16 +148,23 @@ ${msg}`)) return;
   };
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
+  const readError = error ?? prefsError;
+  const retry = () => {
+    if (error || !data) refetch();
+    if (prefsError || !prefs) refetchPrefs();
+  };
 
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Profile Visibility" onBack={back} />
 
-      {loading ? (
+      {loading || prefsLoading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
+      ) : readError || !data || !prefs ? (
+        <NotFoundBody title="Couldn’t load your settings." reason={readError ?? 'Try again in a moment.'} onRetry={retry} onBack={back} />
       ) : (
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           <Text style={styles.intro}>

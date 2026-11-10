@@ -6,12 +6,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { NotFoundBody } from '@/components/forge/NotFound';
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
-import { fetchBriefing, fetchNotifPrefs, saveBriefing, saveNotifPrefs } from '@/data/settings-live';
+import { fetchBriefing, fetchNotifPrefs, patchNotifPrefs, saveBriefing } from '@/data/settings-live';
 import {
   BRIEFING_DEFAULT,
   BRIEFING_HOURS,
@@ -63,7 +64,12 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data, loading } = useQuery(fetchNotifPrefs, []);
+  /*
+   * ⚠ A FAILED READ IS SHOWN AS ONE, NEVER AS DEFAULTS (launch QA B12 / UX-003). Both reads used to answer
+   * the defaults on any error, so a blip drew default switches and a default briefing schedule, and the next
+   * tap saved them over the athlete's own. They throw now; the controls appear only once both have landed.
+   */
+  const { data, loading, error, refetch } = useQuery(fetchNotifPrefs, []);
   const [override, setOverride] = useState<Partial<NotifMap>>({});
   const value = (k: NotifKey): boolean => override[k] ?? data?.[k] ?? NOTIF_DEFAULTS[k];
   const persist = usePersist();
@@ -71,7 +77,7 @@ export default function NotificationsScreen() {
 
   /* 0159. Read alongside the preferences; an absent row resolves to the default schedule rather than to
      silence, so the editor below always has something to draw. */
-  const { data: briefingRow } = useQuery(fetchBriefing, []);
+  const { data: briefingRow, loading: briefingLoading, error: briefingError, refetch: refetchBriefing } = useQuery(fetchBriefing, []);
   const [briefingOverride, setBriefingOverride] = useState<BriefingSchedule | null>(null);
   const briefing: BriefingSchedule = briefingOverride ?? briefingRow ?? BRIEFING_DEFAULT;
 
@@ -84,9 +90,11 @@ export default function NotificationsScreen() {
    * true, and that the app is ignoring them, which is worse than an error.
    */
   const toggle = (k: NotifKey, on: boolean) => {
+    if (!data || !briefingRow) return; // never a write over settings this screen has not read (B12)
     const before = override;
     setOverride((o) => ({ ...o, [k]: on })); // optimistic — the switch must not lag the tap
-    const next: NotifMap = { ...NOTIF_DEFAULTS, ...data, ...override, [k]: on };
+    // ONE key, merged onto the column as the server holds it — it used to write the whole map back.
+    const patch: Partial<NotifMap> = { [k]: on };
 
     /*
      * ⚠ SWITCHING THE BRIEFING ON HAS TO WRITE THE SCHEDULE ROW TOO.
@@ -99,15 +107,16 @@ export default function NotificationsScreen() {
     if (k === 'training_briefing' && on) {
       persist(async () => {
         await saveBriefing(briefing);
-        await saveNotifPrefs(next);
+        await patchNotifPrefs(patch);
       }, { rollback: () => setOverride(before) });
       return;
     }
 
-    persist(() => saveNotifPrefs(next), { rollback: () => setOverride(before) });
+    persist(() => patchNotifPrefs(patch), { rollback: () => setOverride(before) });
   };
 
   const writeBriefing = (nextSchedule: BriefingSchedule) => {
+    if (!briefingRow) return; // the schedule shown must be the one read, not the default (B12)
     const before = briefingOverride;
     setBriefingOverride(nextSchedule);
     persist(() => saveBriefing(nextSchedule), { rollback: () => setBriefingOverride(before) });
@@ -127,16 +136,23 @@ export default function NotificationsScreen() {
   };
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
+  const readError = error ?? briefingError;
+  const retry = () => {
+    if (error || !data) refetch();
+    if (briefingError || !briefingRow) refetchBriefing();
+  };
 
   return (
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.30)' }} />
       <AppBar title="Notifications" onBack={back} />
 
-      {loading ? (
+      {loading || briefingLoading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
+      ) : readError || !data || !briefingRow ? (
+        <NotFoundBody title="Couldn’t load your notification settings." reason={readError ?? 'Try again in a moment.'} onRetry={retry} onBack={back} />
       ) : (
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {/* A browser cannot receive these. The switches still save — they govern the phone (QA 09-26 B11). */}

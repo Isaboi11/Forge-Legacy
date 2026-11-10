@@ -6,11 +6,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ForgeSymbol } from '@/components/forge/ForgeSymbol';
+import { NotFoundBody } from '@/components/forge/NotFound';
 import { SettingsToggle } from '@/components/forge/SettingsToggle';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
-import { fetchAppPrefs, saveAppPrefs } from '@/data/settings-live';
+import { fetchAppPrefs, patchAppPrefs } from '@/data/settings-live';
 import { APP_PREFS_DEFAULTS, EXPERIENCE_TOGGLES, type AppPrefs, type ExperienceKey } from '@/domain/settings/preferences';
 import { INTENSITY_LEVELS, type IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { activeTheme, applyThemeAndReload, THEME_OPTIONS, type ThemeName } from '@/constants/theme-choice';
@@ -67,7 +68,12 @@ export default function PreferencesScreen() {
   const { refetch } = useAppPrefs();
   const { showToast } = useToast();
 
-  const { data, loading } = useQuery(fetchAppPrefs, []);
+  /*
+   * ⚠ A FAILED READ IS SHOWN AS ONE, NEVER AS DEFAULTS (launch QA B12 / UX-003). This screen used to draw the
+   * defaults when the read failed, and the next tap saved every one of them over the athlete's real units,
+   * coach and toggles. The read throws now; the controls appear only once it has landed.
+   */
+  const { data, loading, error, refetch: refetchHere } = useQuery(fetchAppPrefs, []);
   const [override, setOverride] = useState<Partial<AppPrefs>>({});
   /*
    * ⚠ THE THEME IS THE ONE THIS DEVICE IS SHOWING, NOT THE SERVER'S COPY (QA 09-26 B15).
@@ -92,10 +98,13 @@ export default function PreferencesScreen() {
    *
    * A settings screen that lies about what it saved is worse than one that fails loudly.
    */
-  const commit = (next: AppPrefs) => {
+  const commit = (patch: Partial<AppPrefs>) => {
+    if (!data) return; // never a write over preferences this screen has not read (B12)
     const before = prefs;
-    setOverride((o) => ({ ...o, ...next }));
-    void saveAppPrefs(next)
+    setOverride((o) => ({ ...o, ...patch }));
+    // Only the keys this tap changed (plus the running theme, which every save here has always carried),
+    // merged onto the column as the server holds it — it used to write the whole object back.
+    void patchAppPrefs({ ...patch, theme: activeTheme() })
       .then(() => refetch()) // refetch so useUnits updates every other screen
       .catch(() => {
         setOverride((o) => ({ ...o, ...before }));
@@ -103,16 +112,16 @@ export default function PreferencesScreen() {
       });
   };
 
-  const setUnits = (units: UnitSystem) => commit({ ...prefs, units });
-  const setRowUnit = (rowUnit: RowUnit) => commit({ ...prefs, rowUnit });
-  const setToggle = (key: ExperienceKey, on: boolean) => commit({ ...prefs, [key]: on });
+  const setUnits = (units: UnitSystem) => commit({ units });
+  const setRowUnit = (rowUnit: RowUnit) => commit({ rowUnit });
+  const setToggle = (key: ExperienceKey, on: boolean) => commit({ [key]: on });
   // Picking a level also turns Holt back on; picking Off leaves the level where it was, so coming back
   // lands on the dial the athlete had (see `AppPrefs.holtInWorkout`).
-  const setIntensity = (coachIntensity: IntensityLevel) => commit({ ...prefs, coachIntensity, holtInWorkout: 'on' });
-  const setHoltOff = () => commit({ ...prefs, holtInWorkout: 'off' });
+  const setIntensity = (coachIntensity: IntensityLevel) => commit({ coachIntensity, holtInWorkout: 'on' });
+  const setHoltOff = () => commit({ holtInWorkout: 'off' });
   const holtOff = prefs.holtInWorkout === 'off';
-  const setHoltTips = (on: boolean) => commit({ ...prefs, holtTips: on ? 'on' : 'off' });
-  const setRunVoice = (runVoice: boolean) => commit({ ...prefs, runVoice });
+  const setHoltTips = (on: boolean) => commit({ holtTips: on ? 'on' : 'off' });
+  const setRunVoice = (runVoice: boolean) => commit({ runVoice });
 
   /**
    * ⚠ THIS ONE DOES NOT USE `commit`, AND THE DIFFERENCE MATTERS.
@@ -127,9 +136,9 @@ export default function PreferencesScreen() {
    * theme the server rejected would flip straight back on the next launch with no explanation.
    */
   const setTheme = (theme: ThemeName) => {
-    if (theme === prefs.theme || choosing) return;
+    if (theme === prefs.theme || choosing || !data) return;
     setChoosing(theme);
-    void saveAppPrefs({ ...prefs, theme })
+    void patchAppPrefs({ theme })
       .then(() => applyThemeAndReload(theme))
       .catch(() => {
         setChoosing(null);
@@ -149,6 +158,8 @@ export default function PreferencesScreen() {
         <View style={styles.loading}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
+      ) : error || !data ? (
+        <NotFoundBody title="Couldn’t load your preferences." reason={error ?? 'Try again in a moment.'} onRetry={refetchHere} onBack={back} />
       ) : (
         <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]} showsVerticalScrollIndicator={false}>
           {/* display / units */}
