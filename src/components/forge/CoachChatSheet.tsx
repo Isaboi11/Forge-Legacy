@@ -176,7 +176,7 @@ import { fetchLearnedPreferences } from '@/data/learned-preference-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence } from '@/domain/coach/learned-preference';
 import { canDoExercise } from '@/domain/home-gym/equipment';
-import { fetchActiveProgram } from '@/data/programs-live';
+import { checkActiveProgram, fetchActiveProgram } from '@/data/programs-live';
 import { fetchCoachProfile } from '@/data/coach-profile-live';
 import { authorLive } from '@/data/coach-author-live';
 import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/domain/coach/author';
@@ -507,8 +507,11 @@ export function CoachChatSheet({
    * `workout_templates`, and neither can be reconstructed from a card that only carries strings.
    */
   const [built, setBuilt] = useState<Built | null>(null);
-  /** Naming what a Start is about to end (W-29). Null until there is genuinely something to lose. */
-  const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
+  /**
+   * Naming what a Start is about to end (W-29). Null until there is genuinely something to lose — or until it
+   * is UNKNOWN whether there is: `name: null` asks the same question without a name (B14 / UX-006).
+   */
+  const [confirmEnd, setConfirmEnd] = useState<{ name: string | null } | null>(null);
   const [handing, setHanding] = useState(false);
   /** The whole plan, read-only, before the Builder. Holds the last card so it can be redrawn in full. */
   const [preview, setPreview] = useState(false);
@@ -1263,9 +1266,10 @@ export function CoachChatSheet({
     /*
      * And it is BOUNDED. `fetchActiveProgram` already fell back to "no active program" when it threw;
      * a socket that hangs open is the same unknown arriving more slowly, and waiting forever on it is
-     * strictly worse than assuming. Safe to assume, because nothing is created here — `advance` writes
-     * a DRAFT and hands off to the Program Builder, where starting a block is a deliberate act and the
-     * one-active-program invariant is enforced for real.
+     * strictly worse than assuming. Safe to assume HERE ONLY because nothing is created or started here:
+     * this is the conversational nudge before a build. The door that ENDS a running program is START IT
+     * NOW (`startNow`), and that one fails CLOSED — an unknown asks there (`checkActiveProgram`, launch QA
+     * B14 / UX-006). Never copy this fail-open race into anything that starts a program.
      */
     const active = await Promise.race([
       fetchActiveProgram().catch(() => null),
@@ -3018,14 +3022,22 @@ export function CoachChatSheet({
     }
     void (async () => {
       setBusy('thinking');
-      const active = await Promise.race([
-        fetchActiveProgram().catch(() => null),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
-      ]);
+      /*
+       * ⛔ FAIL CLOSED (launch QA B14 / UX-006). This read used to swallow an error AND a >4 s answer to "no program",
+       * and start — which ended the running block for good, unasked (the harm of 09-26 F1, by a slower door). Now
+       * only a read that ANSWERED "nothing is running" starts without asking. Running → asked by name; unknown
+       * (failed, signed-out-looking, or still out at the timeout) → the same question without a name. The athlete
+       * decides; a slow signal never does.
+       */
+      const check = await checkActiveProgram(ACTIVE_LOOKUP_TIMEOUT_MS);
       setBusy(null);
+      if (!check.known) {
+        setConfirmEnd({ name: null });
+        return;
+      }
       // Only ask when there is genuinely something to lose — the same rule W-29 keeps.
-      if (active) {
-        setConfirmEnd(active.name);
+      if (check.program) {
+        setConfirmEnd({ name: check.program.name });
         return;
       }
       await reallyStart();
@@ -3548,13 +3560,18 @@ export function CoachChatSheet({
         ⚠ **STARTING THIS ENDS THE BLOCK THAT IS RUNNING**, and it is named (W-29 · Amendment 001 §2).
         `startProgram` and `startWeekTemplate` both do it server-side, atomically, without a word — the
         caller is responsible for having asked, and a silent swap is how an athlete finds out days later
-        that their twelve-week block stopped in week six.
+        that their twelve-week block stopped in week six. When the check could not answer (B14 / UX-006) it is
+        asked all the same, without a name.
       */}
       <ConfirmSheet
         open={confirmEnd != null}
         onClose={() => setConfirmEnd(null)}
-        headline="This ends your current program"
-        body={`${confirmEnd ?? 'Your program'} will end and anything you have already trained stays exactly as it happened. Only one program runs at a time.`}
+        headline={confirmEnd && confirmEnd.name == null ? 'This ends any program you’re running' : 'This ends your current program'}
+        body={
+          confirmEnd && confirmEnd.name == null
+            ? 'Couldn’t check your current program just now. If one is running, it will end, and anything you have already trained stays exactly as it happened. Only one program runs at a time.'
+            : `${confirmEnd?.name ?? 'Your program'} will end and anything you have already trained stays exactly as it happened. Only one program runs at a time.`
+        }
         confirmLabel="Start it anyway"
         cancelLabel="Keep what I've got"
         onConfirm={() => void reallyStart()}

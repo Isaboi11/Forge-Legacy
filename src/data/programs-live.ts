@@ -425,12 +425,21 @@ export async function fetchProgram(id: string): Promise<SavedProgram | null> {
   return data ? toProgram(data as ProgramRow) : null;
 }
 
-/** The athlete's currently-active program, if any. */
-export async function fetchActiveProgram(): Promise<SavedProgram | null> {
+/**
+ * The athlete's currently-active program, if any.
+ *
+ * `strict` (launch QA B14 / UX-006): no user is ALSO what a failed `getUser()` looks like — no signal answers
+ * `user: null` with an error — so a strict read throws there instead of answering "no program".
+ */
+export async function fetchActiveProgram(opts: { strict?: boolean } = {}): Promise<SavedProgram | null> {
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) {
+    if (opts.strict) throw authError ?? new Error('Not signed in');
+    return null;
+  }
   const { data, error } = await supabase
     .from('programs')
     .select(SELECT)
@@ -439,6 +448,32 @@ export async function fetchActiveProgram(): Promise<SavedProgram | null> {
     .maybeSingle();
   if (error) throw error;
   return data ? toProgram(data as ProgramRow) : null;
+}
+
+/** Whether a program is running: answered (`known`, with it or null), or UNKNOWN — never a guess. */
+export type ActiveProgramCheck = { known: true; program: SavedProgram | null } | { known: false };
+
+/**
+ * ⛔ **FOR A CALLER ABOUT TO END WHATEVER IS RUNNING** (`startProgram`, `startWeekTemplate` — launch QA B14 / UX-006).
+ * Holt's START IT NOW read "is a program running?" with errors and a 4 s timeout both swallowed to "no", so a slow
+ * or failed read started the new block and permanently ended the running one without asking (the harm of 09-26 F1).
+ * Here a failed read, a signed-out-looking `getUser()` and a read still out at `timeoutMs` all answer
+ * `{ known: false }`, and the caller must ask (or stop) — never start.
+ */
+export async function checkActiveProgram(timeoutMs: number): Promise<ActiveProgramCheck> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<ActiveProgramCheck>((resolve) => {
+    timer = setTimeout(() => resolve({ known: false }), timeoutMs);
+  });
+  const read = fetchActiveProgram({ strict: true }).then(
+    (program): ActiveProgramCheck => ({ known: true, program }),
+    (): ActiveProgramCheck => ({ known: false }),
+  );
+  try {
+    return await Promise.race([read, late]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
