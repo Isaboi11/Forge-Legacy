@@ -208,6 +208,13 @@ export function CoachBubble() {
    */
   const { snapshot: plan } = useEntitlementState();
   const canBuildProgram = !plan || (capAllows(plan.usage.programs, plan.caps.programs) && capAllows(plan.usage.holtPrograms, plan.caps.holt_programs));
+  /*
+   * MA10: a FREE athlete who has used the free Holt program or this month's Holt days. Unknown reads as
+   * false — never mention Premium to someone whose plan we can't see (M-7 §10).
+   */
+  const holtUsedUp =
+    plan?.tier === 'FREE' &&
+    (!capAllows(plan.usage.holtPrograms, plan.caps.holt_programs) || !capAllows(plan.usage.holtDays, plan.caps.holt_days_per_month));
 
   /* Signed out, `/` is the Welcome screen and there is no athlete to read: the nudge read went out anyway
      and came back 401 on every visit (QA 09-26 auth-16, under B3). No session, no read. */
@@ -224,14 +231,14 @@ export function CoachBubble() {
       /* Null signals means 0179 has not been applied, or the read failed. Either way: say nothing. */
       if (!alive || !signals) return;
       setSessions(signals.sessions);
-      const full = { ...signals, canBuildProgram };
+      const full = { ...signals, canBuildProgram, holtUsedUp };
       const chosen = chooseNudge(full, history, Date.now());
       setNudge(chosen ? { def: chosen, line: chosen.line(full) } : null);
     })();
     return () => {
       alive = false;
     };
-  }, [signedIn, pathname, kitchen, canBuildProgram]);
+  }, [signedIn, pathname, kitchen, canBuildProgram, holtUsedUp]);
 
   /*
    * RE-READ ON ARRIVAL, not once on mount. `usePathname` already re-renders this component on every
@@ -491,9 +498,10 @@ export function CoachBubble() {
                 track('nudge_accepted', { id: def.id });
                 router.push(def.route as never);
               }}
-              accessibilityLabel="Show me"
+              accessibilityLabel={nudge.def.id === 'upgrade' ? 'See plans' : 'Show me'}
             >
-              Show me
+              {/* The one nudge that opens the plan screen says so on its button (MA10) — no surprise. */}
+              {nudge.def.id === 'upgrade' ? 'See plans' : 'Show me'}
             </Button>
             <Button
               variant="text"

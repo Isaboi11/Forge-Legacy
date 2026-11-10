@@ -117,12 +117,32 @@ test('the honors count is filled in every wording', () => {
   }
 });
 
-test('the catalogue holds nothing that sells or exposes', () => {
-  /* Plan §3: no paywall, nothing that puts the athlete in front of other people uninvited. */
+test('the catalogue holds nothing that sells or exposes — except `upgrade`, by name (MA10)', () => {
+  /* Plan §3: no paywall, nothing that puts the athlete in front of other people uninvited. The ONE
+     exception is Monetization Amendment 010's `upgrade` (PO 11-09); any second seller fails here. */
   for (const n of NUDGES) {
-    assert.ok(!/subscription|paywall|upgrade|premium/i.test(n.route), `${n.id} routes at the paywall`);
+    if (n.id !== 'upgrade') assert.ok(!/subscription|paywall|upgrade|premium/i.test(n.route), `${n.id} routes at the paywall`);
     assert.ok(!/challenge|friend|add-friend/i.test(n.route), `${n.id} exposes the athlete socially`);
   }
+  assert.equal(NUDGES.filter((n) => /subscription/.test(n.route)).length, 1);
+});
+
+test('upgrade (MA10): only once Holt is used up, said once ever, and never names a price or trial', () => {
+  const up = NUDGES.find((n) => n.id === 'upgrade');
+  assert.equal(up.route, '/subscription?from=nudge');
+  assert.equal(up.eligible(fresh()), false, 'absent signal = never');
+  assert.equal(up.eligible(fresh({ holtUsedUp: false })), false);
+  assert.equal(up.eligible(fresh({ holtUsedUp: true })), true);
+  for (const line of NUDGE_LINES.upgrade) assert.doesNotMatch(line, /\$|\d|trial|price/i, line);
+
+  const s = fresh({ holtUsedUp: true });
+  assert.equal(chooseNudge(s, {}, NOW)?.id, 'upgrade');
+  // Shown once — never again, even a year later and even though it was never dismissed or used.
+  const later = NOW + 400 * 86_400_000;
+  assert.notEqual(chooseNudge(s, { upgrade: { shownAt: daysAgo(0) } }, later)?.id, 'upgrade');
+  // Dismissed once — also never again (not the usual 21-day rest).
+  const dismissed = { upgrade: { shownAt: daysAgo(0), dismissedCount: 1, dismissedAt: daysAgo(0) } };
+  assert.notEqual(chooseNudge(s, dismissed, later)?.id, 'upgrade');
 });
 
 test('ids are unique — a duplicate would share one history row and silence its twin', () => {

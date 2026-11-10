@@ -34,6 +34,12 @@ import {
   USAGE_NEAR,
   compactComparisonRows,
   usageIsNear,
+  RECOMMENDED_BADGE,
+  TIER_CARD_COPY,
+  cadencesOn,
+  rowForCadence,
+  tierCardLines,
+  zeroPriceLabel,
 } from '../plans-core.ts';
 
 /**
@@ -411,4 +417,58 @@ test('the FAQ quantifies nothing the server owns and promises nothing unbuilt', 
 
 test('P8W-D4 survives in the sticky bar: Premium says where Holt AI is', () => {
   assert.match(TIER_NOTE_SHORT.premium, /Premium AI/);
+});
+
+
+// ── the tier cards (PO redesign, 2026-11-09) ─────────────────────────────────
+
+test('tier cards: Free reads its numbers from config, never typed', () => {
+  assert.deepEqual(tierCardLines('free', FREE_CAPS, PAID_CAPS), ['3 programs · 75 photos · 1 squad', 'Basic Holt']);
+  assert.deepEqual(tierCardLines('free', { ...FREE_CAPS, programs: 4, squads: 2 }, PAID_CAPS)[0], '4 programs · 75 photos · 2 squads');
+  assert.deepEqual(tierCardLines('free', null, null), ['Basic Holt']);
+});
+
+test('tier cards: Premium states its squad ceiling (M7-D15) and never "unlimited squads"', () => {
+  const lines = tierCardLines('premium', FREE_CAPS, PAID_CAPS);
+  assert.match(lines.join(' '), /5 squads/);
+  assert.doesNotMatch(lines.join(' '), /unlimited squads/i);
+  // Unknown or unlimited config leaves squads out rather than guessing.
+  assert.doesNotMatch(tierCardLines('premium', FREE_CAPS, { ...PAID_CAPS, squads: -1 }).join(' '), /squad/i);
+  assert.doesNotMatch(tierCardLines('premium', FREE_CAPS, null).join(' '), /squad/i);
+});
+
+test('tier cards: Premium AI and the add-on name Holt AI; Premium names only Basic Holt', () => {
+  assert.match(tierCardLines('premium_ai', null, null).join(' '), /Holt AI/);
+  assert.match(tierCardLines('ai_addon', null, null).join(' '), /Holt AI/);
+  assert.doesNotMatch(tierCardLines('premium', FREE_CAPS, PAID_CAPS).join(' '), /Holt AI/);
+  assert.match(tierCardLines('premium', FREE_CAPS, PAID_CAPS).join(' '), /Basic Holt/);
+});
+
+test('tier cards: the Premium badge makes no popularity claim', () => {
+  assert.doesNotMatch(RECOMMENDED_BADGE, /popular|best.?sell|most/i);
+  assert.equal(TIER_CARD_COPY.free.title, 'Free');
+});
+
+test('zeroPriceLabel formats zero in the store currency, and gives up rather than guess', () => {
+  assert.match(zeroPriceLabel('USD'), /0/);
+  assert.match(zeroPriceLabel('USD'), /\$|US/);
+  assert.match(zeroPriceLabel('EUR'), /€|EUR/);
+  assert.doesNotMatch(zeroPriceLabel('USD'), /[.,]\d/, 'no decimals: "0", not "0.00"');
+  assert.equal(zeroPriceLabel(null), null);
+  assert.equal(zeroPriceLabel('NOT-A-CURRENCY'), null);
+});
+
+test('rowForCadence prices the chosen cadence, and falls back instead of leaving a card empty', () => {
+  const plans = [plan('premium_annual', 99.99), plan('premium_monthly', 12.99), plan('premium_ai_annual', 144.99)];
+  assert.equal(rowForCadence(plans, 'premium', 'monthly').slot, 'premium_monthly');
+  assert.equal(rowForCadence(plans, 'premium', 'annual').slot, 'premium_annual');
+  // Premium AI sold yearly only: the Monthly switch still shows its yearly price.
+  assert.equal(rowForCadence(plans, 'premium_ai', 'monthly').slot, 'premium_ai_annual');
+  assert.equal(rowForCadence(plans, 'ai_addon', 'annual'), null);
+});
+
+test('cadencesOn lists only cadences the offering sells, yearly first', () => {
+  assert.deepEqual(cadencesOn([plan('premium_monthly', 1), plan('premium_annual', 2)]), ['annual', 'monthly']);
+  assert.deepEqual(cadencesOn([plan('ai_addon_monthly', 1)]), ['monthly']);
+  assert.deepEqual(cadencesOn([]), []);
 });

@@ -272,10 +272,94 @@ export const TIER_COPY: Record<PlanTier, { title: string }> = {
   ai_addon: { title: 'Holt AI add-on' },
 };
 
-export const CADENCE_COPY: Record<Cadence, { title: string; cadence: string; badge?: string }> = {
-  annual: { title: 'Yearly', cadence: 'Billed yearly', badge: 'Best value' },
-  monthly: { title: 'Monthly', cadence: 'Billed monthly' },
+export const CADENCE_COPY: Record<Cadence, { title: string; cadence: string; per: string; badge?: string }> = {
+  annual: { title: 'Yearly', cadence: 'Billed yearly', per: 'year', badge: 'Best value' },
+  monthly: { title: 'Monthly', cadence: 'Billed monthly', per: 'month' },
 };
+
+// ── the tier cards (PO redesign, 2026-11-09) ─────────────────────────────────
+
+/**
+ * P-8 now reads cadence first (Yearly / Monthly), then one card per plan — Free, Premium, Premium AI —
+ * so the athlete compares the three plans side by side instead of flipping a tier switch.
+ *
+ * ⚠ FREE IS A CARD, NOT A PURCHASE. Choosing it turns the button into "Continue with Free"; nothing is
+ * bought and nothing is sent to the store.
+ */
+export type CardTier = PlanTier | 'free';
+
+export const TIER_CARD_COPY: Record<CardTier, { title: string; subtitle: string }> = {
+  free: { title: 'Free', subtitle: 'Start building. No subscription required.' },
+  premium: { title: 'Premium', subtitle: 'Unlock the full Forge experience.' },
+  premium_ai: { title: 'Premium AI', subtitle: 'Your personal AI training partner.' },
+  ai_addon: { title: 'Holt AI add-on', subtitle: 'Adds Holt AI to the Premium you already have.' },
+};
+
+/**
+ * The Premium card's badge. ⚠ NOT "MOST POPULAR" (the PO's mockup said so): on release day nobody has
+ * bought anything, and a popularity claim nobody can back is the same unverifiable social proof the
+ * 09-25 redesign dropped. "Recommended" is our own advice, which we can stand behind.
+ */
+export const RECOMMENDED_BADGE = 'Recommended';
+
+/**
+ * The check lines on each card. Every number is the configured cap (MA3-D16), never typed.
+ *
+ * ⚠ SQUADS STATE THEIR CEILING (M7-D15) and are left out when config cannot say what it is — never
+ * "unlimited squads". Programs, photos and imports are "unlimited" on purpose: their paid ceilings are
+ * abuse guards (see `premiumPhrase`).
+ */
+export function tierCardLines(tier: CardTier, free: Caps | null, paid: Caps | null): string[] {
+  if (tier === 'free') {
+    if (!free) return ['Basic Holt'];
+    const counts = [capPhrase('programs', free.programs), capPhrase('photos', free.photos), capPhrase('squads', free.squads)]
+      .filter(Boolean)
+      .join(' · ');
+    return [counts, 'Basic Holt'];
+  }
+  if (tier === 'premium') {
+    const squads = paid && Number.isFinite(paid.squads) && paid.squads > 0 ? capPhrase('squads', paid.squads) : null;
+    return ['Unlimited programs, photos & imports', ['Unlimited Basic Holt', squads, 'Meal planner & recipes'].filter(Boolean).join(' · ')];
+  }
+  if (tier === 'premium_ai') return ['Everything in Premium, plus Holt AI', 'Form check, smart program changes & more'];
+  return ['Ask Holt AI anything about your training', 'Form check, smart program changes & more'];
+}
+
+/**
+ * The Free card's "0" in the store's own currency ("$0", "€0", "£0").
+ *
+ * ⚠ FORMATTED, NEVER TYPED — the P-8 surface may not hold a currency literal (see the source guard in
+ * `plans-core.test.mjs`), and a "$" shown to a buyer charged in euros is wrong. Zero needs no exchange
+ * rate, only the symbol; null (render nothing) when there is no currency to name or the runtime can't.
+ */
+export function zeroPriceLabel(currency: string | null | undefined): string | null {
+  if (!currency) return null;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(0);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The row a tier card prices: the chosen cadence when the offering has it, else the tier's own default
+ * (yearly first). A tier sold monthly-only still shows its price under the Yearly switch, rather than
+ * vanishing — a card with no price is a door to nothing.
+ */
+export function rowForCadence(plans: readonly StorePlan[], tier: PlanTier, cadence: Cadence): StorePlan | null {
+  const rows = rowsFor(plans, tier);
+  return rows.find((p) => cadenceOf(p.slot) === cadence) ?? rows.find((p) => p.slot === defaultSelection(rows)) ?? null;
+}
+
+/** The cadences any sellable tier offers, yearly first. The Yearly / Monthly switch renders only these. */
+export function cadencesOn(plans: readonly StorePlan[]): Cadence[] {
+  return (['annual', 'monthly'] as const).filter((c) => plans.some((p) => cadenceOf(p.slot) === c));
+}
 
 /**
  * What Premium AI adds, as built today (P-8 §8: built features only). Holt AI answers from the athlete's
