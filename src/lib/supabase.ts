@@ -146,9 +146,66 @@ const withCrumb = (url: string, p: Promise<Response>): Promise<Response> =>
     },
   );
 
+/**
+ * ══ SIGNED IN, BUT ABOUT TO ASK AS NOBODY — HOLD THE REQUEST BACK (PO 11-11, Brady) ══
+ *
+ * "His squad was gone and the templates he built were deleted." Nothing was: the server still had both. His
+ * phone had lost signal at the gym, and the app drew the failure as "you have nothing".
+ *
+ * One road to that is here. supabase-js stamps every data request with the athlete's token — and when it
+ * has none to give, it sends the request with the PUBLIC key instead (`_getAccessToken` falls back to
+ * `supabaseKey`). That happens to a signed-in phone whenever the stored token has expired and the refresh
+ * fails, which is exactly a phone waking up somewhere with bad signal. The server then answers as if
+ * nobody were asking: every own-rows policy filters to nothing and `auth.uid()` is null, so "my squads" and
+ * "my templates" come back as EMPTY LISTS WITH NO ERROR. No screen can tell that from a brand-new account.
+ *
+ * So: a data request that would go out as nobody, while this device holds a session, is refused with a
+ * network error. The screen shows "Couldn't connect — try again", and the next try (after the refresh
+ * succeeds) carries the token. A device with no stored session is signed out for real and is untouched —
+ * sign-in, sign-up and the boot crash report all still go through as before.
+ *
+ * ⚠ The check costs one storage read, and ONLY on a request already headed out anonymously — the
+ *   healthy signed-in path never reaches it.
+ * ⚠ `report_client_error` is exempt: it accepts anonymous reports by design (0176), and a phone in this
+ *   state is exactly the one whose report we want.
+ */
+const authStorage = isServer ? noopStorage : AsyncStorage;
+/** supabase-js's own default key (`sb-<project ref>-auth-token`). Never pass `storageKey` — it would sign everyone out. */
+const SESSION_KEY = `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+const ANON_BEARER = `Bearer ${anonKey}`;
+
+/** The raw text is for diagnostics; `plainError` turns it into "Couldn't connect…" (it says "offline"). */
+export const HELD_SIGNED_OUT_REQUEST =
+  'Offline: this phone is signed in but its session could not be refreshed, so the request was held back instead of being sent signed-out.';
+
+const goesOutAsNobody = (init?: RequestInit): boolean => {
+  try {
+    const auth = new Headers(init?.headers).get('Authorization');
+    return !auth || auth === ANON_BEARER;
+  } catch {
+    return false;
+  }
+};
+
+const deviceHoldsASession = async (): Promise<boolean> => {
+  try {
+    const raw = await authStorage.getItem(SESSION_KEY);
+    return typeof raw === 'string' && raw.includes('refresh_token');
+  } catch {
+    return false;
+  }
+};
+
 const timedFetch: typeof fetch = (input, init) => {
   const url = urlOf(input);
-  if (!url.includes('/auth/v1/')) return withCrumb(url, fetch(input, init));
+  if (!url.includes('/auth/v1/')) {
+    if (url.includes('/rpc/report_client_error') || !goesOutAsNobody(init)) return withCrumb(url, fetch(input, init));
+    return deviceHoldsASession().then((signedIn) => {
+      if (!signedIn) return withCrumb(url, fetch(input, init));
+      noteFailure(url, 'nosession');
+      throw new Error(HELD_SIGNED_OUT_REQUEST);
+    });
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AUTH_TIMEOUT_MS);
@@ -163,7 +220,7 @@ const timedFetch: typeof fetch = (input, init) => {
 
 export const supabase = createClient(url, anonKey, {
   auth: {
-    storage: isServer ? noopStorage : AsyncStorage,
+    storage: authStorage,
     autoRefreshToken: !isServer,
     persistSession: !isServer,
     detectSessionInUrl: onWeb,
@@ -173,3 +230,22 @@ export const supabase = createClient(url, anonKey, {
   // check above is what keeps the deadline off the data and storage paths.
   global: { fetch: timedFetch },
 });
+
+/**
+ * The signed-in athlete's id for a "list MY things" read — `null` only when nobody is signed in.
+ *
+ * ⚠ A FAILED CHECK IS AN ERROR, NOT "NOBODY" (PO 11-11, Brady). `getUser()` is a NETWORK call. With no
+ * signal it answers `user: null` plus an error, and the old pattern — `if (!user) return []` — turned
+ * that into an empty list: the Squads tab told a member of a 7-person squad to create or join one. Here
+ * only "no session at all" (`AuthSessionMissingError`) means nobody; anything else is thrown, so the
+ * screen shows "Couldn't connect — try again" and the data is still there when it does.
+ */
+export async function signedInUserId(): Promise<string | null> {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (user) return user.id;
+  if (error && error.name !== 'AuthSessionMissingError') throw error;
+  return null;
+}

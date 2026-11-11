@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { trackInvite } from '@/lib/analytics';
-import { supabase } from '@/lib/supabase';
+import { signedInUserId, supabase } from '@/lib/supabase';
 import { extensionFor, MAX_CHECKIN_BYTES, uploadToBucket, type UploadOpts } from '@/lib/storage-upload';
 import { goalState, mergePastGoals, type GoalOutcome, type GoalState } from '@/domain/squad/goal-state';
 import { sanitizePrefs } from '@/domain/settings/preferences';
@@ -117,11 +117,10 @@ const SQUAD_COLS = 'id, name, motto, goal, goal_target, goal_started_at, goal_en
 
 /** The athlete's squads (newest first) with live member counts. */
 export async function fetchMySquads(): Promise<SquadSummary[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-  const uid = user.id;
+  // ⚠ No signal must THROW, not return [] — an empty list here is the Squads tab telling a member to
+  // create or join a squad (PO 11-11, Brady). See `signedInUserId`.
+  const uid = await signedInUserId();
+  if (!uid) return [];
 
   const { data, error } = await supabase.from('squad_members').select(`role, squads(${SQUAD_COLS})`).eq('user_id', uid);
   if (error) throw error;

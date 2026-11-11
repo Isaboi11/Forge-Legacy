@@ -45,7 +45,7 @@ export default function SquadsScreen() {
      the hook. The active workout is a pushed route, so it can never be interrupted by one. */
   useEarnedMoments();
   const router = useRouter();
-  const { data, loading, refetch } = useQuery(fetchMySquads, []);
+  const { data, loading, error, refetch } = useQuery(fetchMySquads, []);
   // Athletes waiting on you, per squad you own — the badge on the card tells you WHICH squad.
   const { data: pendingCounts, refetch: refetchPending } = useQuery(fetchOwnedPendingCounts, []);
   const { showToast } = useToast();
@@ -157,6 +157,11 @@ export default function SquadsScreen() {
             <SkeletonCard variant="base" />
             <SkeletonCard variant="base" />
           </View>
+        ) : error && !data ? (
+          /* ⚠ A FAILED READ IS NOT "NO SQUADS" (PO 11-11). Brady opened this tab at the gym with no signal and
+             was told to create or join a squad — he is a member of a 7-person one. `useQuery` drops `data` on
+             a failed refetch, so without this branch every dropped connection fell through to the pitch. */
+          <SquadsLoadError message={error} onRetry={refetch} />
         ) : squads.length === 0 ? (
           <SquadsEmptyState onCreate={goCreate} onJoin={goJoin} />
         ) : (
@@ -306,6 +311,24 @@ function SquadCard({
         ) : null}
       </View>
     </Pressable>
+  );
+}
+
+/** The read failed — say so, keep the athlete's squads out of doubt, and offer the retry. No Create / Join here. */
+function SquadsLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <View style={styles.emptyWrap}>
+      <View style={styles.emptyCrest}>
+        <PeopleGlyph size={38} color={flColor.bronze300} />
+      </View>
+      <Text style={styles.emptyHeadline}>Couldn’t load your squads.</Text>
+      <Text style={styles.emptyBody}>{message} Your squads haven’t gone anywhere.</Text>
+      <View style={styles.emptyCta}>
+        <Button variant="secondary" fullWidth onPress={onRetry} accessibilityLabel="Try loading your squads again">
+          Try Again
+        </Button>
+      </View>
+    </View>
   );
 }
 

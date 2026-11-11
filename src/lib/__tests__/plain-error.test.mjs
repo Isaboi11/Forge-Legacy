@@ -35,6 +35,10 @@ test('each failure gets the RIGHT reason — a bad link is not "check your conne
   assert.equal(errorKind(new TypeError('Failed to fetch')), 'network');
   assert.equal(errorKind(new TypeError('Network request failed')), 'network');
   assert.equal(plainError(new TypeError('Failed to fetch')), PLAIN.network);
+  // The iPhone's own words (PO 11-11, Brady at the gym) — a real client_errors row, verbatim.
+  assert.equal(errorKind(new Error('fetch failed: UnexpectedException: The network connection was lost. (at ExpoModulesCore/Promise.swift:56)')), 'network');
+  assert.equal(errorKind({ message: 'TypeError: fetch failed: UnexpectedException: The network connection was lost.', details: '', hint: '', code: '' }), 'network');
+  assert.equal(plainError(Object.assign(new Error('The Internet connection appears to be offline.'), { name: 'AuthRetryableFetchError', status: 0 })), PLAIN.network);
   // A server function that is not deployed (kitchen-02) is "not switched on", not a connection problem.
   const missingFn = Object.assign(new Error('Edge Function returned a non-2xx status code'), { name: 'FunctionsHttpError', context: { status: 404 } });
   assert.equal(plainError(missingFn), PLAIN.unavailable);
