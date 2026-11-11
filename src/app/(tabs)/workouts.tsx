@@ -113,8 +113,8 @@ export default function WorkoutsScreen() {
    * this bug in this codebase. The hub no longer lists either inline, but both still decide whether the
    * athlete owns anything at all (`hasOwnWork`), and the active program is read from the first.
    */
-  const { data: myPrograms, refetch: refetchMine, settled: mineSettled } = useQuery(fetchMyPrograms, []);
-  const { data: templateData, refetch: refetchTemplates, settled: templatesSettled } = useQuery(fetchTemplates, []);
+  const { data: myPrograms, error: mineError, refetch: refetchMine, settled: mineSettled } = useQuery(fetchMyPrograms, []);
+  const { data: templateData, error: templatesError, refetch: refetchTemplates, settled: templatesSettled } = useQuery(fetchTemplates, []);
   const { data: profileData } = useQuery(fetchCoachProfile, []);
   const { data: trainedRecently, error: trainedError, refetch: refetchTrained, settled: trainedSettled } = useQuery(fetchTrainedWithin, []);
   useFocusEffect(
@@ -151,8 +151,10 @@ export default function WorkoutsScreen() {
     /* ⚠ OR THEY TRAIN (PO, 2026-09-23): anyone who has saved a workout in the last 14 days gets the full
        tab — a tester logging every week with no program or template was still being shown the arrival view. */
     trainedRecently === true ||
-    /* A read that failed is unknown, and unknown gets the full tab, not the arrival view. */
-    trainedError != null;
+    /* A read that failed is unknown, and unknown gets the full tab, not the arrival view. ⚠ ALL THREE reads
+       (PO 11-11, Brady): with only `trainedError` here, a dropped connection on programs or templates could still
+       land a long-time athlete on "Build Your Training", which reads as "everything you built is gone". */
+    trainedError != null || mineError != null || templatesError != null;
   /**
    * The arrival view — `Onboarding-Amendment-006` ONB-A6-D3 (PO mockup, 2026-09-21). ⚠ ONLY ONCE BOTH
    * READS HAVE LANDED: `hasOwnWork` reads false while they are in flight, so keying on it alone would
@@ -420,6 +422,32 @@ export default function WorkoutsScreen() {
                     <ChevronRightIcon size={18} color={flColor.cream100} />
                   </View>
                 </Pressable>
+              ) : mineError && !myPrograms ? (
+                /* ⚠ THE PROGRAMS READ FAILED — that is not "No active program" (PO 11-11, Brady). Same slot, same
+                   type, one quiet retry; Build My Own is withheld because we do not know they need one. */
+                <View style={styles.hero}>
+                  <Text style={styles.kicker}>Couldn’t load</Text>
+                  <Text style={styles.heroTitle}>Your Programs</Text>
+                  <Text style={styles.heroBody}>{mineError} Nothing you built has been lost.</Text>
+                  <View style={styles.heroActions}>
+                    <View style={styles.heroAction}>
+                      <Pressable
+                        onPress={() => {
+                          refetchMine();
+                          refetchTemplates();
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Try loading your programs again"
+                        style={({ pressed }) => [styles.heroCta, styles.heroCtaQuiet, pressed ? styles.pressed : null]}
+                      >
+                        <Text style={styles.heroCtaQuietText} numberOfLines={1}>
+                          Try Again
+                        </Text>
+                        <ChevronRightIcon size={15} color={flColor.gray400} />
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
               ) : (
                 /* ══ NO ACTIVE PROGRAM — "BUILD WHAT'S NEXT" (PO mockup, 2026-09-23) ══
                    No "Active Program" header above it: the eyebrow already says there isn't one, and a

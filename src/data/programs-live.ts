@@ -1,6 +1,6 @@
 import type { HoltNote } from '@/domain/coach/holt-marks';
 import type { CardioActivity } from '@/domain/workout/conditioning';
-import { supabase } from '@/lib/supabase';
+import { signedInUserId, supabase } from '@/lib/supabase';
 import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
 import { matchSharedShapeToSlot, type SharedShapeExercise } from '@/domain/program/shared-session';
 import type { LiftMaxes } from '@/domain/program/percent-max';
@@ -405,14 +405,14 @@ export async function updateProgram(id: string, structure: ProgramStructure): Pr
 
 /** The athlete's authored programs, newest first. */
 export async function fetchMyPrograms(): Promise<SavedProgram[]> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  // ⚠ No signal must THROW, not return [] — an empty list here reads as "No active program" on the
+  // Workouts tab (PO 11-11, Brady). See `signedInUserId`.
+  const uid = await signedInUserId();
+  if (!uid) return [];
   const { data, error } = await supabase
     .from('programs')
     .select(SELECT)
-    .eq('athlete_id', user.id)
+    .eq('athlete_id', uid)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map((r) => toProgram(r as ProgramRow));

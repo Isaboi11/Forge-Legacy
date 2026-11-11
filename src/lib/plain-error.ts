@@ -67,7 +67,12 @@ const dbCode = (t: Thrown | null): string | null => {
   return c && (/^[0-9A-Z]{5}$/.test(c) || /^PGRST\d+$/.test(c)) ? c : null
 }
 
-const NETWORK = /failed to fetch|network request failed|networkerror|load failed|timed? ?out|aborted|failed to send a request|offline|econn|enotfound/i
+/*
+ * `fetch failed` + `connection was lost`: what the iPhone actually says (PO 11-11, Brady's phone at the gym —
+ * "fetch failed: UnexpectedException: The network connection was lost."). Neither matched, so a dropped
+ * connection read as "Something went wrong" instead of "Check your connection".
+ */
+const NETWORK = /failed to fetch|fetch failed|network request failed|networkerror|connection was lost|load failed|timed? ?out|aborted|failed to send a request|offline|econn|enotfound/i
 
 /** Words no hand-written sentence in this app contains, and every machine-written one does. */
 const MACHINE =
@@ -109,7 +114,8 @@ export function errorKind(e: unknown): ErrorKind {
   }
   const message = typeof e === 'string' ? e : typeof t?.message === 'string' ? t.message : ''
   const name = typeof t?.name === 'string' ? t.name : ''
-  if (name === 'AbortError' || name === 'FunctionsFetchError' || NETWORK.test(message)) return 'network'
+  // `AuthRetryableFetchError` = the sign-in server could not be reached (getUser / a token refresh with no signal).
+  if (name === 'AbortError' || name === 'FunctionsFetchError' || name === 'AuthRetryableFetchError' || NETWORK.test(message)) return 'network'
   const status = httpStatus(t)
   if (status === 401) return 'signed-out'
   if (status === 403) return 'forbidden'
