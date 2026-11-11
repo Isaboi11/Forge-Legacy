@@ -84,6 +84,7 @@ export type VoiceKey =
   | 'import_open'
   | 'allowance_program'
   | 'allowance_day'
+  | 'allowance_week'
   | 'rebuild_open'
   | 'ask_level_again'
   | 'level_saved'
@@ -557,6 +558,14 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
     "I'm out of sessions for this month — they reset when it rolls over.",
     "That's the month's sessions spent. New ones land when the month turns over.",
     "You've used this month's builds. They refill at the start of next month.",
+  ],
+  /* A week asked for by length, with the free training weeks used (MA4-D5). The one Holt program is untouched, so
+     nothing here says the block is gone. */
+  allowance_week: [
+    "That's the free training weeks used. Every week you saved is still yours.",
+    "I'd write you the week, but there's no free week left to keep it in.",
+    "You've kept all the weeks your plan gives you. They're still there.",
+    "The free weeks are spent. What you've already saved stays put.",
   ],
   /* ── asked to build it again ──────────────────────────────────────────────────────────────────────
    *

@@ -7,6 +7,7 @@ import {
   capAllows,
   entitlementReadStatus,
   gateFor,
+  holtBlockDoor,
   m7Benefits,
   m7Content,
   remaining,
@@ -176,6 +177,22 @@ test('the Holt lifetime program and the monthly days are separate counters', () 
   const outOfDays = usage({ holtPrograms: 0, holtDays: 2 });
   assert.equal(gateFor('holt_days_per_month', FREE, outOfDays).outcome, 'blocked');
   assert.equal(gateFor('holt_programs', FREE, outOfDays).outcome, 'allowed');
+});
+
+test('MA4-D5: a Holt block under four weeks asks for a training week, never the one Holt program (sweep P6)', () => {
+  const free = (over) => (key) => gateFor(key, FREE, usage(over));
+  // The length is known: the line is D-RCM-30's, the one the save doors draw.
+  assert.equal(holtBlockDoor(1, free({})), 'short_programs');
+  assert.equal(holtBlockDoor(3, free({})), 'short_programs');
+  assert.equal(holtBlockDoor(4, free({})), 'holt_programs');
+  assert.equal(holtBlockDoor(12, free({})), 'holt_programs');
+  // Not asked yet: a spent Holt program does not close the door while a week is still on offer…
+  assert.equal(holtBlockDoor(undefined, free({ holtPrograms: 1 })), null);
+  // …but with the weeks spent too, the door asks the Holt program (and M-7 fires on it).
+  assert.equal(holtBlockDoor(undefined, free({ holtPrograms: 1, shortPrograms: 3 })), 'holt_programs');
+  assert.equal(holtBlockDoor(null, free({})), 'holt_programs');
+  // An unread entitlement is never "a week is on offer" — it goes to the guard, which shows the retry.
+  assert.equal(holtBlockDoor(undefined, () => ({ outcome: 'unknown' })), 'holt_programs');
 });
 
 test('a received program consumes the same counter as a built one', () => {
