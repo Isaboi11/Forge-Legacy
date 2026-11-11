@@ -22,6 +22,8 @@
  * If you are about to add `const FREE_PHOTOS = 75` to this file: that is the thing the amendment forbids.
  */
 
+import { STRUCTURED_DEVELOPMENT_MIN_WEEKS } from '../rank/thresholds.ts';
+
 /** Every capped dimension. Named rather than stringly-typed so a typo is a compile error. */
 export type CapKey =
   | 'programs'
@@ -226,6 +228,22 @@ export function gateFor(key: CapKey, caps: Caps | null, usage: Usage | null): Ga
   return capAllows(used, cap)
     ? { outcome: 'allowed', cap, used }
     : { outcome: 'blocked', cap, used };
+}
+
+/**
+ * Which allowance the door to a Holt BLOCK checks, or null to let the athlete in (MA4-D5).
+ *
+ * A block under four weeks is a week of training: it spends `short_programs` when it is kept and leaves the one
+ * lifetime Holt program alone. The line is D-RCM-30's, the same one the save doors draw. `weeks` is usually not
+ * asked yet at the door (it comes after the goal, `sizeQuestion`) — then a spent Holt program is no reason to
+ * refuse while a week is still on offer, and the build checks the allowance that applies once the length is known.
+ */
+export function holtBlockDoor(weeks: number | null | undefined, gate: (key: CapKey) => Gate): CapKey | null {
+  if (typeof weeks === 'number' && Number.isFinite(weeks)) {
+    return Math.floor(weeks) < STRUCTURED_DEVELOPMENT_MIN_WEEKS ? 'short_programs' : 'holt_programs';
+  }
+  if (gate('holt_programs').outcome === 'blocked' && gate('short_programs').outcome === 'allowed') return null;
+  return 'holt_programs';
 }
 
 // ── what the athlete is shown ────────────────────────────────────────────────

@@ -54,7 +54,9 @@ test('⚠ a Premium AI sentence reaches the model, and the broad word list no lo
 
 test('⚠ a sentence that opens a build passes the same allowance gate as the door, from the athlete facts', () => {
   const understand = sheet.slice(sheet.indexOf('const respondTo = async'), sheet.indexOf('const process = (text'));
-  assert.match(understand, /guard\(opens === 'day' \? 'holt_days_per_month' : 'holt_programs'\)/);
+  assert.match(understand, /if \(opens === 'day' && !guard\('holt_days_per_month'\)\)/);
+  // A block asks by its length (MA4-D5): a typed one-week deload asks for a training week.
+  assert.match(understand, /if \(opens === 'program' && blockDoorRefuses\(patch\.weeks\)\) return;/);
   assert.match(understand, /const request: ChatState = \{ \.\.\.athleteFacts\(constraints\), \.\.\.patch \};/);
   assert.match(understand, /advance\(request, opens\)/);
 });
