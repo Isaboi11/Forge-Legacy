@@ -34,7 +34,8 @@ import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forg
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
 import { consentForRoute } from '@/lib/consent';
-import { useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
+import { holtBlockDoor, holtSpendVerdict } from '@/domain/entitlement/caps-core';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
@@ -274,6 +275,8 @@ const DECLINE_IMPORT = "I'll log as I go";
  * is only the fastest route when the thing is already in rows.
  */
 const BUILD_IT_OUT = 'Build it out';
+/** The plan could not be read: a retry, never a "no" and never an offer (M-7 §10). Said by every door that checks it. */
+const PLAN_UNCHECKED = 'I couldn’t check your plan just now. Try again in a moment.';
 
 export function CoachChatSheet({
   onClose,
@@ -295,6 +298,7 @@ export function CoachChatSheet({
    * possible order to do it in.
    */
   const guard = usePremiumGate();
+  const gates = useCapGates();
   /* Typing to Holt is the Premium AI add-on — the PO only, for now (`coach_ai`, fails closed). Everyone
      else keeps the taps; `TYPING_ENABLED` stays the public switch. */
   const premiumAi = usePremiumAi();
@@ -620,6 +624,18 @@ export function CoachChatSheet({
 
   const say = useCallback((...turns: Turn[]) => setThread((t) => [...t, ...stamped(turns)]), []);
 
+  /**
+   * The door to a Holt BLOCK (MA4-D5): a week spends `short_programs`, never the one lifetime Holt program, so a
+   * spent Holt program does not close the door while a week is still on offer (`holtBlockDoor`). True when it
+   * refused — the modal is up and he has answered, for the allowance that actually ran out.
+   */
+  const blockDoorRefuses = (weeks?: number | null): boolean => {
+    const key = holtBlockDoor(weeks, gates);
+    if (key == null || guard(key)) return false;
+    say({ kind: 'holt', text: pick(key === 'short_programs' ? 'allowance_week' : 'allowance_program') });
+    return true;
+  };
+
   /*
    * Follow the conversation to its newest line — but ONLY once there is a conversation.
    *
@@ -897,23 +913,43 @@ export function CoachChatSheet({
 
         setBusy('building');
         /*
-         * ⚠ THE FREE ALLOWANCE IS SPENT HERE, WHEN HE ACTUALLY BUILDS (PO 11-08 launch QA, H18). `consume_holt_allowance`
+         * ⚠ THE FREE ALLOWANCE IS SPENT WHEN HE ACTUALLY BUILDS (PO 11-08 launch QA, H18). `consume_holt_allowance`
          * is the only thing that moves the counters the doors' `guard` reads, and nothing called it — so a Free athlete's
          * "1 program, 2 days a month" never ran out. Here and not at the door: walking away from the questions costs
-         * nothing. A refusal is the server's answer (another device spent the last one); a null is an unreadable answer,
-         * and the door's own check already passed, so it builds.
+         * nothing. A refusal is the server's answer (another device spent the last one). A null is an unreadable answer,
+         * and it fails CLOSED (sweep G4): it builds only for an athlete with no ceiling on that allowance — anyone else
+         * is asked to try again, never sold anything (M-7 §10). See `holtSpendVerdict`.
+         *
+         * A day pays here. A block pays once its length is the engine's word (`payForBlock`), because a week is not the
+         * Holt program (MA4-D5, pricing sweep P6) — every non-day build used to spend it.
          */
-        const spend = await consumeHoltAllowance(mode_ === 'day' ? 'day' : 'program');
-        if (spend && !spend.allowed) {
+        const payHolt = async (kind: 'day' | 'program', offerWeek = false): Promise<boolean> => {
+          const spend = await consumeHoltAllowance(kind);
+          const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
+          if (verdict === 'build') return true;
           setBusy(null);
+          if (verdict === 'retry') {
+            say({ kind: 'holt', text: PLAN_UNCHECKED });
+            return false;
+          }
+          /* A full block refused while a week is still free: the week is the door that can help, with every answer kept. */
+          const week = offerWeek && gates('short_programs').ok ? [{ label: JUST_A_WEEK, patch: { weeks: 1 } }] : [];
           say(
-            { kind: 'holt', text: mode_ === 'day' ? 'You’ve used this month’s free days from me. Premium makes them unlimited.' : 'You’ve used the free program I can build on your plan. Premium makes them unlimited.' },
-            { kind: 'chips', chips: [{ label: 'See Premium', patch: {}, goTo: '/subscription?from=gate' }] },
+            { kind: 'holt', text: kind === 'day' ? 'You’ve used this month’s free days from me. Premium makes them unlimited.' : 'You’ve used the free program I can build on your plan. Premium makes them unlimited.' },
+            { kind: 'chips', chips: [...week, { label: 'See Premium', patch: {}, goTo: '/subscription?from=gate' }] },
           );
-          return;
-        }
+          return false;
+        };
+        if (mode_ === 'day' && !(await payHolt('day'))) return;
         await pause(650);
         const c = completeFor(merged, mode_);
+        /** Four weeks or more spends the Holt program; shorter spends `short_programs`, at the save (MA4-D5). */
+        const payForBlock = async (structure: ProgramStructure): Promise<boolean> => {
+          if (!earnsStructuredDevelopmentCredit(structure)) return true;
+          setBusy('building');
+          /* No week offered for a race: its length is the calendar's, not a choice. */
+          return payHolt('program', !isEnduranceGoal(c.goal));
+        };
         /* Resolved at the boundary and handed down — see the note on the same call in `coach.tsx`. The
            chat and the wizard must build the same program from the same answers, so both paths get it. */
         const [learned, recent] = await Promise.all([fetchLearnedPreferences(), fetchRecentWork()]);
@@ -999,6 +1035,7 @@ export function CoachChatSheet({
             days: written.valid.days,
             weekPlans: null,
           };
+          if (!(await payForBlock(structure))) return;
           setBusy(null);
           await saveProgramDraft(draftFromStructure(structure));
           setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
@@ -1127,6 +1164,9 @@ export function CoachChatSheet({
             raceLine = [raceLine, stopsShortLine(structure.weeks, builtWeeks)].filter(Boolean).join(' ');
           }
         }
+        /* After any cut to "the first N weeks", so what is charged is the block they are handed. */
+        if (!(await payForBlock(structure))) return;
+        setBusy(null);
         const chatDraft = draftFromStructure(structure);
         await saveProgramDraft(chatDraft);
         /* QA holt-13 / holtai-16: a plan he just showed in chat is not news — mark it told, so the bubble
@@ -1235,7 +1275,7 @@ export function CoachChatSheet({
         setBusy(null);
       }
     },
-    [say],
+    [say, gates],
   );
 
   /*
@@ -1440,7 +1480,7 @@ export function CoachChatSheet({
               kind: 'holt',
               text: 'Changing your program for you is part of Premium AI. You can still change it yourself — open a session on your program and swap or edit it.',
             }
-          : { kind: 'holt', text: 'I couldn’t check your plan just now. Try again in a moment.' },
+          : { kind: 'holt', text: PLAN_UNCHECKED },
         ...(entitlementStatus === 'ready'
           ? [{ kind: 'chips' as const, chips: [{ label: 'See Premium AI', patch: {}, goTo: '/subscription?from=gate' }] }]
           : []),
@@ -2000,10 +2040,7 @@ export function CoachChatSheet({
      */
     if (chip.startsBuild) {
       say({ kind: 'me', text: chip.label });
-      if (!guard('holt_programs')) {
-        say({ kind: 'holt', text: pick('allowance_program') });
-        return;
-      }
+      if (blockDoorRefuses(chip.patch.weeks)) return;
       setMode('program');
       beginRequest([]);
       void (async () => {
@@ -2108,11 +2145,14 @@ export function CoachChatSheet({
        *
        * The modal keeps the commercial half. This is only the conversational one, and it deliberately
        * does not repeat the offer — see `allowance_program` in `voice.ts`.
+       *
+       * A block's length is asked later, so its door is `blockDoorRefuses` — a week is not the Holt program (MA4-D5).
        */
-      if (!guard(opener.mode === 'day' ? 'holt_days_per_month' : 'holt_programs')) {
-        say({ kind: 'holt', text: pick(opener.mode === 'day' ? 'allowance_day' : 'allowance_program') });
+      if (opener.mode === 'day' && !guard('holt_days_per_month')) {
+        say({ kind: 'holt', text: pick('allowance_day') });
         return;
       }
+      if (opener.mode === 'program' && blockDoorRefuses(opener.patch.weeks)) return;
 
       setMode(opener.mode);
       /* A door is tapped, not typed: nothing has been said yet for Holt to read. */
@@ -2787,9 +2827,9 @@ export function CoachChatSheet({
           return void advance({ ...constraints, ...patch }, m);
         }
         const opens: ChatMode = focus ? 'day' : 'program';
-        if (!guard(opens === 'day' ? 'holt_days_per_month' : 'holt_programs')) {
-          return say({ kind: 'holt', text: pick(opens === 'day' ? 'allowance_day' : 'allowance_program') });
-        }
+        if (opens === 'day' && !guard('holt_days_per_month')) return say({ kind: 'holt', text: pick('allowance_day') });
+        /* "Build me a one-week deload" says its length, so it asks for the training week it will spend (MA4-D5). */
+        if (opens === 'program' && blockDoorRefuses(patch.weeks)) return;
         setMode(opens);
         beginRequest([text]);
         const request: ChatState = { ...athleteFacts(constraints), ...patch };

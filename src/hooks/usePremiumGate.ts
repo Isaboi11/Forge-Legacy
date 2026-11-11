@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useRouter } from 'expo-router';
 
 import { fetchCapConfig } from '@/data/entitlement-live';
 import { m7Benefits, m7Content, type CapKey } from '@/domain/entitlement/caps-core';
@@ -132,5 +133,43 @@ export function usePremiumGate(): (key: CapKey) => boolean {
       return false;
     },
     [gates, status, premium, refetch, enqueue, showToast, inWorkout],
+  );
+}
+
+/**
+ * The one way a tap opens the plan screen (P-8) directly — a PREMIUM tag, a locked screen's "See Premium", form
+ * check's plans link: the doors that are not a cap, so never pass through `usePremiumGate` (pricing sweep G5).
+ *
+ * The same two rules, because a push skipped both:
+ *   2. **Never during an active workout** (M7-D13). Said rather than silent — the athlete pressed a button, and a
+ *      button that does nothing reads as a frozen app. The line sells nothing.
+ *   3. **Never while the plan can't be verified** (M-7 §10). Loading or unknown is not "doesn't have it": the
+ *      retry line and a re-read, exactly as the gate does, never the offer.
+ *
+ * Returns true when it opened.
+ */
+export function usePlansDoor(): (href?: string) => boolean {
+  const router = useRouter();
+  const { status, refetch } = useEntitlementState();
+  const { showToast } = useToast();
+  const { session } = useWorkoutSession();
+  const inWorkout = session != null;
+
+  return useCallback(
+    (href = '/subscription'): boolean => {
+      if (inWorkout) {
+        showToast('Finish your workout first');
+        return false;
+      }
+      if (status !== 'ready') {
+        showToast(ENTITLEMENT_RETRY_MESSAGE);
+        // Only after a read has FAILED — a refetch while the first is in flight throws its answer away (QA F6).
+        if (status === 'unknown') refetch();
+        return false;
+      }
+      router.push(href as Parameters<typeof router.push>[0]);
+      return true;
+    },
+    [router, status, refetch, showToast, inWorkout],
   );
 }

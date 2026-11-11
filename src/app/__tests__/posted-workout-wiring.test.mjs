@@ -111,3 +111,14 @@ test('the write screen asks the gate before offering AI, tidies every photo, and
   assert.equal((WRITE.match(/setText\(r\.text\)/g) ?? []).length, 1);
   assert.match(read('../../data/workout-tidy-live.ts'), /const problems = checkAiRewrite\(card, d\.text, resolveKey\);\s*if \(problems\.length\) return \{ kind: 'unfaithful', problems \};/);
 });
+
+/* Pricing sweep C9 / MA10-D4: the photo read and "Fix it with AI" are Premium AI — hidden, not locked, from anyone
+   else (the server refuses them anyway). `usePremiumAi` fails closed. */
+test('the write screen shows its AI buttons to Premium AI only', () => {
+  const WRITE = read('../workout-write.tsx');
+  assert.match(WRITE, /const premiumAi = usePremiumAi\(\);/);
+  assert.match(WRITE, /\{premiumAi \? \(\s*<Pressable onPress=\{\(\) => void fromPhoto\(\)\}/);
+  assert.match(WRITE, /\{premiumAi \? \(\s*<Pressable onPress=\{\(\) => void tidy\(text\)\}/);
+  assert.match(WRITE, /aiCall\.kind === 'too_long' && premiumAi \?/, '"too long for AI" means nothing to someone never offered it');
+  assert.equal((WRITE.match(/void fromPhoto\(\)|void tidy\(text\)/g) ?? []).length, 2, 'no other door to the model');
+});

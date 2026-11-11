@@ -37,6 +37,7 @@
  * Home → Start a Workout → "Paste a workout". The same one-day read, but the button is Start workout: the rows
  * the builder WOULD save (`toTemplateExercises`) launch as a one-off (`writeWorkoutLaunch({ exercises })`, the
  * door "Build for later" uses), and "Also save as a template" keeps them — spending a template slot only then.
+ * Starting it spends the free import, as saving a pasted program or template does (MA8-D6, sweep G2).
  */
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRef, useState } from 'react';
@@ -70,6 +71,7 @@ import { loadWorkoutDraft, saveWorkoutDraft, workoutDraftHasContent } from '@/li
 import { toTemplateExercises } from '@/lib/workout-template-rows';
 import { writeWorkoutLaunch } from '@/lib/workout-launch';
 import { saveTemplate } from '@/data/templates-live';
+import { markFreeImportUsed } from '@/data/entitlement-live';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { errorMessage } from '@/lib/useQuery';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
@@ -344,6 +346,9 @@ function ProgramImport() {
     await writeWorkoutLaunch({ exercises: rows, workoutName: name });
     showToast(saveToo ? 'Saved to your templates — let’s go' : 'Let’s go');
     router.replace('/workout');
+    /* A workout now exists from the paste, so the free import is spent (MA8-D6: pasted text is the one free import,
+       a day as much as a program — sweep G2). Best-effort: a counter that fails to tick must not cost the session. */
+    void markFreeImportUsed().catch(() => {});
   };
 
   const writeDraft = async () => {
@@ -356,7 +361,8 @@ function ProgramImport() {
       }
       await saveWorkoutDraft(w.draft);
       showToast(w.toast);
-      router.replace('/workout-builder');
+      /* `o=imported`: the builder spends the free import when this day is saved, as `/program-builder?o=imported` does. */
+      router.replace({ pathname: '/workout-builder', params: { o: 'imported' } });
       return;
     }
     const r = draftFromImport(newDraft(), preview, {

@@ -12,9 +12,32 @@ const wizard = read('../coach.tsx');
 const detail = read('../program/[id].tsx');
 
 test('H18 — the allowance is spent when he builds, in the chat and in the wizard, and a refusal stops the build', () => {
-  assert.match(chat, /setBusy\('building'\);[\s\S]{0,900}const spend = await consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\);\n\s+if \(spend && !spend\.allowed\) \{/);
-  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 900);
-  assert.match(build, /const spend = await consumeHoltAllowance\(mode === 'day' \? 'day' : 'program'\);\n\s+if \(spend && !spend\.allowed\) \{\n\s+setBusy\(false\);/);
+  assert.match(chat, /setBusy\('building'\);[\s\S]{0,1400}const spend = await consumeHoltAllowance\(kind\);/);
+  assert.match(chat, /if \(mode_ === 'day' && !\(await payHolt\('day'\)\)\) return;/);
+  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
+  assert.match(build, /const spend = await consumeHoltAllowance\(kind\);/);
+  assert.match(build, /if \(mode === 'day' && !\(await pay\('day'\)\)\) \{\n\s+setBusy\(false\);/);
+});
+
+test('G4 — an unreadable spend answer stops a capped athlete with a retry, in the chat and in the wizard', () => {
+  const pay = chat.slice(chat.indexOf('const payHolt = async'), chat.indexOf('const payHolt = async') + 900);
+  assert.match(pay, /const verdict = holtSpendVerdict\(spend, gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;/);
+  assert.match(pay, /if \(verdict === 'retry'\) \{\n\s+say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return false;/);
+  assert.doesNotMatch(pay, /if \(!spend \|\| spend\.allowed\) return true;/, 'a null building anyway was the bug');
+  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
+  assert.match(build, /if \(verdict === 'retry'\) setError\(ENTITLEMENT_RETRY_MESSAGE\);/);
+  assert.doesNotMatch(build, /if \(!spend \|\| spend\.allowed\) return true;/);
+});
+
+test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more, in the chat and in the wizard', () => {
+  assert.match(chat, /const payForBlock = async \(structure: ProgramStructure\): Promise<boolean> => \{\n\s+if \(!earnsStructuredDevelopmentCredit\(structure\)\) return true;/);
+  // Both chat paths pay before the draft is saved: the block he wrote and the rulebook's.
+  assert.equal(chat.match(/if \(!\(await payForBlock\(structure\)\)\) return;/g)?.length, 2);
+  assert.doesNotMatch(chat, /consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\)/, 'every non-day build spending the program was the bug');
+  assert.match(wizard, /if \(earnsStructuredDevelopmentCredit\(structure\) && !\(await pay\('program'\)\)\) return;/);
+  // The three block doors ask by length, never the Holt program outright.
+  assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 3, 'its three doors');
+  assert.doesNotMatch(chat, /guard\('holt_programs'\)/);
 });
 
 test('H19 — every chat door to an edit lands in beginEdit, and beginEdit asks Premium AI first', () => {
@@ -24,6 +47,29 @@ test('H19 — every chat door to an edit lands in beginEdit, and beginEdit asks 
   assert.match(begin, /entitlementStatus === 'ready'/, 'an unverified read is not a no');
 });
 
-test('H19 — Program Detail\'s Ask Holt opens the plans without Premium AI', () => {
-  assert.match(detail, /premiumAi \? setAsking\(\{ weekIndex: wi, dayIndex: di, name \}\) : router\.push\('\/subscription\?from=gate'/);
+test('H19 — Program Detail\'s Ask Holt opens the plans without Premium AI — through the door that checks the read (G5)', () => {
+  assert.match(detail, /premiumAi \? setAsking\(\{ weekIndex: wi, dayIndex: di, name \}\) : void openPlans\('\/subscription\?from=gate'\)/);
+  assert.doesNotMatch(detail, /router\.push\('\/subscription/, 'a bare push upsells while the plan is still loading');
+});
+
+test('G5 — every direct plan-screen tap goes through usePlansDoor: verified plan only, never mid-workout', () => {
+  const gate = read('../../hooks/usePremiumGate.ts');
+  const door = gate.slice(gate.indexOf('export function usePlansDoor'));
+  assert.match(door, /const inWorkout = session != null;/);
+  // Mid-workout first, then the unread plan — and only then the push.
+  const workout = door.indexOf('if (inWorkout) {');
+  const unread = door.indexOf("if (status !== 'ready') {");
+  const push = door.indexOf('router.push(href');
+  assert.ok(workout > 0 && workout < unread && unread < push);
+  assert.match(door, /showToast\(ENTITLEMENT_RETRY_MESSAGE\);\s*\/\/[^\n]*\n\s*if \(status === 'unknown'\) refetch\(\);\s*return false;/);
+  for (const [file, uses] of [
+    ['../(tabs)/nutrition.tsx', 2],
+    ['../../components/forge/NutritionPlannerGate.tsx', 1],
+    ['../form-check.tsx', 2],
+  ]) {
+    const src = read(file);
+    assert.match(src, /const openPlans = usePlansDoor\(\);/, file);
+    assert.equal(src.match(/openPlans\(\)/g)?.length, uses, file);
+    assert.doesNotMatch(src, /'\/subscription'/, `${file} still pushes the plans directly`);
+  }
 });

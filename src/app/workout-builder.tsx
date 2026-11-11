@@ -13,6 +13,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
 import { fetchPlannedWorkout, savePlannedWorkout } from '@/data/planned-workout-live';
+import { markFreeImportUsed } from '@/data/entitlement-live';
 import type { ProgramExercise } from '@/data/programs-live';
 import {
   CARDIO_ACTIVITIES,
@@ -104,7 +105,7 @@ const SECTIONS: { key: BuilderSection; label: string; req: string; empty: string
 export default function WorkoutBuilderScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const params = useLocalSearchParams<{ id?: string; for?: string }>();
+  const params = useLocalSearchParams<{ id?: string; for?: string; o?: string }>();
   const entryId = params.id ?? null;
   /**
    * Home's "Build for later" (0136). The same builder, but what comes out of it is a ONE-OFF waiting on
@@ -139,6 +140,12 @@ export default function WorkoutBuilderScreen() {
   const guard = usePremiumGate();
   /** The spreadsheet import sheet — the Program Builder's, mounted here with the `day` scope. */
   const [importOpen, setImportOpen] = useState(false);
+  /**
+   * This draft came from a PASTE, so a successful save spends the free import (sweep G2) — the Program Builder's
+   * `fromImport`, for a day. `o=imported` is the import screen's template mode (`program-import?for=template`),
+   * which confirmed the read and wrote this draft before navigating here; the in-screen sheet sets it on confirm.
+   */
+  const [fromImport, setFromImport] = useState(params.o === 'imported');
 
   /*
    * Boot and the picker round-trip in one pass, on every focus — read the stored draft, absorb anything
@@ -234,9 +241,10 @@ export default function WorkoutBuilderScreen() {
    * with the `day` scope: a Day column is not needed, and a multi-day paste keeps its first day and says
    * which in the preview. Same parser, same preview, same corrections — one reader, three surfaces.
    *
-   * Only the import cap is checked here. A template is not a program, so no program slot is spent, and
-   * nothing marks the free import used — that is spent when a PROGRAM exists from a paste (see the
-   * Program Builder), which this screen never creates.
+   * Only the import cap is checked here. A template is not a program, so no program slot is spent. The free
+   * import IS spent, when the day is saved: pasted text is one import whether it holds a program or a day
+   * (MA8-D6 "Import from pasted text stays Premium (Free: 1)"; MA1 §8 "M-7 at any import entry point"). It used
+   * to wait for a PROGRAM, so day pastes were unlimited until one program import closed both (sweep G2).
    */
   const openImport = () => {
     flushName();
@@ -273,6 +281,7 @@ export default function WorkoutBuilderScreen() {
       name: d.name.trim() ? d.name : givenName,
       main: [...d.main, ...items],
     }));
+    setFromImport(true);
     const unmatched = unmatchedNames(weeks, resolveKey);
     const n = items.length;
     showToast(
@@ -303,6 +312,11 @@ export default function WorkoutBuilderScreen() {
     // Every other door to a NEW template checks the cap before opening this screen; this door didn't need to.
     if (forLater && keep === 'template' && !guard('templates')) return;
     setSaving(true);
+    /* The import is spent once something exists from it, as the Program Builder does — best-effort, never in the way
+       of the save, and only on a create: an edit rewrites a template that already exists. Backing out spends nothing. */
+    const spendImport = () => {
+      if (fromImport && (forLater || !draft.editId)) void markFreeImportUsed().catch(() => {});
+    };
     try {
       const name = typedName().trim() || 'Saved Workout';
 
@@ -315,9 +329,11 @@ export default function WorkoutBuilderScreen() {
         await clearWorkoutDraft();
         if (thenStart) {
           await writeWorkoutLaunch({ exercises, workoutName: name });
+          spendImport();
           router.replace('/workout');
         } else {
           await savePlannedWorkout(name, exercises);
+          spendImport();
           showToast(`“${name}” is waiting on your home screen.`);
           router.replace('/(tabs)');
         }
@@ -325,6 +341,7 @@ export default function WorkoutBuilderScreen() {
       }
 
       const id = await saveTemplate(name, toTemplateExercises(draft), forLater ? null : draft.editId);
+      spendImport();
       await clearWorkoutDraft();
       if (thenStart) {
         await writeWorkoutLaunch({ templateId: id, workoutName: name, templateFallback: toTemplateExercises(draft) });

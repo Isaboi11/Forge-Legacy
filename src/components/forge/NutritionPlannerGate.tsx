@@ -7,6 +7,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont } from '@/constants/foundation';
+import { usePlansDoor } from '@/hooks/usePremiumGate';
 import { useEntitlementState, useNutritionPlanner } from '@/lib/entitlement';
 
 /**
@@ -23,6 +24,8 @@ export function NutritionPlannerGate({ children, what }: { children: ReactNode; 
   const router = useRouter();
   const planner = useNutritionPlanner();
   const { status } = useEntitlementState();
+  /* Through the shared door so a tap mid-workout opens no paywall (M7-D13, sweep G5). */
+  const openPlans = usePlansDoor();
 
   if (planner) return <>{children}</>;
 
@@ -38,7 +41,7 @@ export function NutritionPlannerGate({ children, what }: { children: ReactNode; 
             Logging food, scanning barcodes and your calorie and macro targets are free. The meal planner, the
             grocery list and building recipes come with Premium.
           </Text>
-          <Button variant="primary" fullWidth onPress={() => router.push('/subscription')} accessibilityLabel="See Premium">
+          <Button variant="primary" fullWidth onPress={() => void openPlans()} accessibilityLabel="See Premium">
             See Premium
           </Button>
         </View>

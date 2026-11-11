@@ -24,6 +24,7 @@ import { putWrittenDraft } from '@/lib/written-workout-intent';
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
 import { readWorkoutCard } from '@/data/workout-card-read-live';
 import { whenToUseAi } from '@/domain/workout/workout-ai-gate';
+import { usePremiumAi } from '@/lib/entitlement';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 
 /**
@@ -57,6 +58,12 @@ const resolveKey = (n: string) => resolveExerciseName(n)?.key;
 export default function WorkoutWriteScreen() {
   const router = useRouter();
   const { showToast } = useToast();
+  /*
+   * Reading a photo and "Fix it with AI" both call the model, and both are Premium AI: hidden, not locked, from
+   * everyone else (MA10-D4 — photo import stays hidden; the server refuses them anyway). Fails closed, so a plan
+   * still loading shows the typing box only (pricing sweep C9).
+   */
+  const premiumAi = usePremiumAi();
   /*
    * ══ EDIT MODE (0230, PO 2026-09-28: "edit posts") ══ `?edit=<post id>` opens a posted workout back in this box as
    * words (`rowsToWrittenText`) — but only when those words read back to the IDENTICAL workout (`roundTrips`); a
@@ -243,10 +250,12 @@ export default function WorkoutWriteScreen() {
         </Text>
 
         <View style={styles.actions}>
-          <Pressable onPress={() => void fromPhoto()} disabled={!!busy} accessibilityRole="button" style={({ pressed }) => [styles.photoBtn, pressed && styles.pressed]}>
-            <EngravedIcon name="camera" size={16} color={flColor.cream100} />
-            <Text style={styles.photoText}>From a photo</Text>
-          </Pressable>
+          {premiumAi ? (
+            <Pressable onPress={() => void fromPhoto()} disabled={!!busy} accessibilityRole="button" style={({ pressed }) => [styles.photoBtn, pressed && styles.pressed]}>
+              <EngravedIcon name="camera" size={16} color={flColor.cream100} />
+              <Text style={styles.photoText}>From a photo</Text>
+            </Pressable>
+          ) : null}
           {text ? (
             <Pressable onPress={() => { setText(''); setName(null); setBeforeAi(null); setError(null); }} accessibilityRole="button" hitSlop={6}>
               <Text style={styles.clear}>Clear</Text>
@@ -276,13 +285,16 @@ export default function WorkoutWriteScreen() {
             </Pressable>
           </View>
         ) : aiCall.kind === 'ai' && !busy ? (
+          /* The sentence is for everyone — the lines below say which to fix. Only the AI fix is Premium AI's. */
           <View style={styles.aiBar}>
             <Text style={styles.aiText}>Part of this is written in a way the reader doesn’t know yet.</Text>
-            <Pressable onPress={() => void tidy(text)} accessibilityRole="button" style={({ pressed }) => [styles.aiBtn, pressed && styles.pressed]}>
-              <Text style={styles.aiBtnText}>Fix it with AI</Text>
-            </Pressable>
+            {premiumAi ? (
+              <Pressable onPress={() => void tidy(text)} accessibilityRole="button" style={({ pressed }) => [styles.aiBtn, pressed && styles.pressed]}>
+                <Text style={styles.aiBtnText}>Fix it with AI</Text>
+              </Pressable>
+            ) : null}
           </View>
-        ) : aiCall.kind === 'too_long' ? (
+        ) : aiCall.kind === 'too_long' && premiumAi ? (
           <Text style={styles.warn}>That’s too long for AI to fix in one go. Fix the lines below by hand, or post it as two workouts.</Text>
         ) : null}
 
