@@ -55,6 +55,8 @@ import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { holtSpendVerdict } from '@/domain/entitlement/caps-core';
+import { ENTITLEMENT_RETRY_MESSAGE, useCapGates } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { rememberExperience } from '@/lib/coach-memory';
 import { countOf } from '@/domain/text/plural';
@@ -188,6 +190,7 @@ export default function CoachScreen() {
   }, []);
 
   const guard = usePremiumGate();
+  const gates = useCapGates();
   const [mode, setMode] = useState<Mode | null>(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [ack, setAck] = useState<{ label: string; line: string } | null>(null);
@@ -324,12 +327,15 @@ export default function CoachScreen() {
     setBusy(true);
     setError(null);
     /* The Free allowance is spent when he builds, not when the door opens (launch QA, H18) — see the same note in
-       `CoachChatSheet`. A null is unreadable, and the door's check already passed. A day pays here; a block pays once
-       the engine has said how long it is, because under four weeks it is a week, not the Holt program (MA4-D5). */
+       `CoachChatSheet`. A null is unreadable and fails closed for anyone with a ceiling — a retry, never an offer
+       (sweep G4, `holtSpendVerdict`). A day pays here; a block pays once the engine has said how long it is, because
+       under four weeks it is a week, not the Holt program (MA4-D5). */
     const pay = async (kind: 'day' | 'program'): Promise<boolean> => {
       const spend = await consumeHoltAllowance(kind);
-      if (!spend || spend.allowed) return true;
-      setError(kind === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
+      const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
+      if (verdict === 'build') return true;
+      if (verdict === 'retry') setError(ENTITLEMENT_RETRY_MESSAGE);
+      else setError(kind === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
       return false;
     };
     if (mode === 'day' && !(await pay('day'))) {

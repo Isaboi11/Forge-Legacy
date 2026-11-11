@@ -8,6 +8,7 @@ import {
   entitlementReadStatus,
   gateFor,
   holtBlockDoor,
+  holtSpendVerdict,
   m7Benefits,
   m7Content,
   remaining,
@@ -193,6 +194,21 @@ test('MA4-D5: a Holt block under four weeks asks for a training week, never the 
   assert.equal(holtBlockDoor(null, free({})), 'holt_programs');
   // An unread entitlement is never "a week is on offer" — it goes to the guard, which shows the retry.
   assert.equal(holtBlockDoor(undefined, () => ({ outcome: 'unknown' })), 'holt_programs');
+});
+
+test('G4: an unreadable Holt spend fails closed for Free and never stops an athlete with no ceiling', () => {
+  const free = gateFor('holt_days_per_month', FREE, usage());
+  const paid = gateFor('holt_days_per_month', PAID, usage());
+  // The server's answer is the answer, on any tier.
+  assert.equal(holtSpendVerdict({ allowed: true }, free), 'build');
+  assert.equal(holtSpendVerdict({ allowed: false }, free), 'used_up');
+  // Null (offline, an error): Free retries — it never builds, and never reads as "used up" (no upsell, M-7 §10).
+  assert.equal(holtSpendVerdict(null, free), 'retry');
+  assert.equal(holtSpendVerdict(null, gateFor('holt_days_per_month', FREE, usage({ holtDays: 2 }))), 'retry');
+  // Premium never needed the allowance, so its silence cannot stop them.
+  assert.equal(holtSpendVerdict(null, paid), 'build');
+  // An unread entitlement is not "no ceiling".
+  assert.equal(holtSpendVerdict(null, { outcome: 'unknown' }), 'retry');
 });
 
 test('a received program consumes the same counter as a built one', () => {

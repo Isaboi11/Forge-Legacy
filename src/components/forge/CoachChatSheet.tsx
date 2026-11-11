@@ -35,7 +35,7 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
 import { consentForRoute } from '@/lib/consent';
 import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
-import { holtBlockDoor } from '@/domain/entitlement/caps-core';
+import { holtBlockDoor, holtSpendVerdict } from '@/domain/entitlement/caps-core';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
@@ -275,6 +275,8 @@ const DECLINE_IMPORT = "I'll log as I go";
  * is only the fastest route when the thing is already in rows.
  */
 const BUILD_IT_OUT = 'Build it out';
+/** The plan could not be read: a retry, never a "no" and never an offer (M-7 §10). Said by every door that checks it. */
+const PLAN_UNCHECKED = 'I couldn’t check your plan just now. Try again in a moment.';
 
 export function CoachChatSheet({
   onClose,
@@ -914,16 +916,22 @@ export function CoachChatSheet({
          * ⚠ THE FREE ALLOWANCE IS SPENT WHEN HE ACTUALLY BUILDS (PO 11-08 launch QA, H18). `consume_holt_allowance`
          * is the only thing that moves the counters the doors' `guard` reads, and nothing called it — so a Free athlete's
          * "1 program, 2 days a month" never ran out. Here and not at the door: walking away from the questions costs
-         * nothing. A refusal is the server's answer (another device spent the last one); a null is an unreadable answer,
-         * and the door's own check already passed, so it builds.
+         * nothing. A refusal is the server's answer (another device spent the last one). A null is an unreadable answer,
+         * and it fails CLOSED (sweep G4): it builds only for an athlete with no ceiling on that allowance — anyone else
+         * is asked to try again, never sold anything (M-7 §10). See `holtSpendVerdict`.
          *
          * A day pays here. A block pays once its length is the engine's word (`payForBlock`), because a week is not the
          * Holt program (MA4-D5, pricing sweep P6) — every non-day build used to spend it.
          */
         const payHolt = async (kind: 'day' | 'program', offerWeek = false): Promise<boolean> => {
           const spend = await consumeHoltAllowance(kind);
-          if (!spend || spend.allowed) return true;
+          const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
+          if (verdict === 'build') return true;
           setBusy(null);
+          if (verdict === 'retry') {
+            say({ kind: 'holt', text: PLAN_UNCHECKED });
+            return false;
+          }
           /* A full block refused while a week is still free: the week is the door that can help, with every answer kept. */
           const week = offerWeek && gates('short_programs').ok ? [{ label: JUST_A_WEEK, patch: { weeks: 1 } }] : [];
           say(
@@ -1472,7 +1480,7 @@ export function CoachChatSheet({
               kind: 'holt',
               text: 'Changing your program for you is part of Premium AI. You can still change it yourself — open a session on your program and swap or edit it.',
             }
-          : { kind: 'holt', text: 'I couldn’t check your plan just now. Try again in a moment.' },
+          : { kind: 'holt', text: PLAN_UNCHECKED },
         ...(entitlementStatus === 'ready'
           ? [{ kind: 'chips' as const, chips: [{ label: 'See Premium AI', patch: {}, goTo: '/subscription?from=gate' }] }]
           : []),
