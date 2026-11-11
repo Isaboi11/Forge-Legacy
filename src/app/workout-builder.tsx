@@ -12,7 +12,7 @@ import { SCREEN_GUTTER, useBarBottom } from '@/lib/screen-insets';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flShadow } from '@/constants/foundation';
 import { fetchTemplateDetail, saveTemplate, type TemplateExercise } from '@/data/templates-live';
-import { savePlannedWorkout } from '@/data/planned-workout-live';
+import { fetchPlannedWorkout, savePlannedWorkout } from '@/data/planned-workout-live';
 import type { ProgramExercise } from '@/data/programs-live';
 import {
   CARDIO_ACTIVITIES,
@@ -117,6 +117,14 @@ export default function WorkoutBuilderScreen() {
   const [draft, setDraft] = useState<WorkoutDraft | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  /**
+   * The name of the planned workout "Save for later" is about to REPLACE — null when nothing is waiting.
+   *
+   * ⚠ ONE SLOT (0136: `athlete_id` is the primary key). Brady built Push Day A/B, Pull Day A/B and Leg Day A/B
+   * here on a screen titled "Build a Template"; each "Save for later" silently replaced the one before, and he
+   * believed he had six templates (PO 11-11). Now the replace is asked, and keeping both is the first answer.
+   */
+  const [replacing, setReplacing] = useState<string | null>(null);
   const [cardioSheet, setCardioSheet] = useState<BuilderSection | null>(null);
   /**
    * WHICH exercise's coaching cue is being written — W-25 §3.5 / §5.3, specified with the screen and
@@ -285,16 +293,24 @@ export default function WorkoutBuilderScreen() {
     else leave();
   };
 
-  const save = async (thenStart: boolean) => {
+  /**
+   * `keep` — where a plain save goes. Every entrance but Home's writes a template. Home's "Build for later" parks a
+   * ONE-OFF on the hero ('plan') unless the athlete asks for "Save to my templates" ('template'), which takes the
+   * ordinary template path — same insert, same cap, same landing on the template's page (PO 11-11).
+   */
+  const save = async (thenStart: boolean, keep: 'plan' | 'template' = forLater ? 'plan' : 'template') => {
     if (!draft || saving) return;
+    // Every other door to a NEW template checks the cap before opening this screen; this door didn't need to.
+    if (forLater && keep === 'template' && !guard('templates')) return;
     setSaving(true);
     try {
       const name = typedName().trim() || 'Saved Workout';
 
       /* Built for later: nothing enters the template library. "Save for later" parks it on the hero, and
          "Save & Start" just opens it — a session you are about to train has no reason to be saved twice.
-         Keeping it is offered at the END of the workout, once it has been done. */
-      if (forLater) {
+         Keeping it is offered at the END of the workout, once it has been done — and, since 11-11, right here
+         as "Save to my templates" for the athlete who already knows. */
+      if (forLater && keep === 'plan') {
         const exercises = toTemplateExercises(draft);
         await clearWorkoutDraft();
         if (thenStart) {
@@ -308,7 +324,7 @@ export default function WorkoutBuilderScreen() {
         return;
       }
 
-      const id = await saveTemplate(name, toTemplateExercises(draft), draft.editId);
+      const id = await saveTemplate(name, toTemplateExercises(draft), forLater ? null : draft.editId);
       await clearWorkoutDraft();
       if (thenStart) {
         await writeWorkoutLaunch({ templateId: id, workoutName: name, templateFallback: toTemplateExercises(draft) });
@@ -323,11 +339,26 @@ export default function WorkoutBuilderScreen() {
     }
   };
 
+  /** "Save for later" on Home's door: ask before replacing what is already waiting. Elsewhere it is a plain save. */
+  const onSaveForLater = async () => {
+    if (!forLater) return void save(false);
+    if (!draft || saving) return;
+    setSaving(true);
+    // A failed read cannot warn, but it cannot strand the athlete either — the save below says what happened.
+    const waiting = await fetchPlannedWorkout().catch(() => null);
+    setSaving(false);
+    if (waiting) setReplacing(waiting.name);
+    else void save(false);
+  };
+
+  /* Home's one-off door says what it makes — the template title on it is how six "templates" became one (PO 11-11). */
+  const title = forLater ? 'Plan a Workout' : draft?.editId ? 'Edit Template' : 'Build a Template';
+
   if (!draft) {
     return (
       <View style={styles.root}>
         <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
-        <AppBar title="Build a Template" onBack={onBack} />
+        <AppBar title={title} onBack={onBack} />
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
         </View>
@@ -347,8 +378,9 @@ export default function WorkoutBuilderScreen() {
     <View style={styles.root}>
       <ScreenBackground image={SCREEN_BG.bg2} base="#060708" overlay={{ flat: 'rgba(6,7,8,0.32)' }} />
       {/* "Template", not "Workout" — PO call 2026-08-13. The screen saves a template; naming it after
-          the activity made every door into it read as "start training now". */}
-      <AppBar title={draft.editId ? 'Edit Template' : 'Build a Template'} onBack={onBack} />
+          the activity made every door into it read as "start training now". ⚠ EXCEPT Home's "Build for later",
+          which saves a one-off plan, not a template — "Plan a Workout" there (PO 11-11). */}
+      <AppBar title={title} onBack={onBack} />
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.head}>
@@ -488,16 +520,30 @@ export default function WorkoutBuilderScreen() {
         <Button variant="primary" fullWidth disabled={!canSave || saving} onPress={() => void save(true)} accessibilityLabel="Save and start this workout">
           {saving ? 'Saving…' : 'Save & Start'}
         </Button>
-        <Pressable
-          onPress={() => void save(false)}
-          disabled={!canSave || saving}
-          accessibilityRole="button"
-          accessibilityLabel={editing ? 'Save changes' : 'Save for later'}
-          style={styles.laterBtn}
-        >
-          {/* Editing a saved template is not "for later" - it already exists (QA 09-26 library-19). */}
-          <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>{editing ? 'Save changes' : 'Save for later'}</Text>
-        </Pressable>
+        <View style={styles.laterRow}>
+          <Pressable
+            onPress={() => void onSaveForLater()}
+            disabled={!canSave || saving}
+            accessibilityRole="button"
+            accessibilityLabel={editing ? 'Save changes' : 'Save for later'}
+            style={styles.laterBtn}
+          >
+            {/* Editing a saved template is not "for later" - it already exists (QA 09-26 library-19). */}
+            <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>{editing ? 'Save changes' : 'Save for later'}</Text>
+          </Pressable>
+          {/* Only on Home's one-off door: the other doors already save to templates, so a second link would repeat the first. */}
+          {forLater ? (
+            <Pressable
+              onPress={() => void save(false, 'template')}
+              disabled={!canSave || saving}
+              accessibilityRole="button"
+              accessibilityLabel="Save to my templates"
+              style={styles.laterBtn}
+            >
+              <Text style={[styles.laterText, (!canSave || saving) && styles.laterTextOff]}>Save to my templates</Text>
+            </Pressable>
+          ) : null}
+        </View>
         {!canSave ? <Text style={styles.gate}>Add at least one Main exercise to save.</Text> : null}
       </View>
 
@@ -586,6 +632,38 @@ export default function WorkoutBuilderScreen() {
         cta="Add to workout"
         onConfirm={confirmImport}
       />
+
+      {/* "Save for later" would replace the workout already waiting on Home. Keeping both is the first button. */}
+      <BottomSheet open={replacing != null} onClose={() => setReplacing(null)} title={`Replace “${replacing ?? ''}”?`}>
+        <Text style={styles.cardioIntro}>
+          “{replacing ?? ''}” is already waiting on your Home screen, and you can plan one workout at a time. Save this one
+          to your templates to keep both.
+        </Text>
+        <View style={styles.noteActions}>
+          <Button
+            variant="primary"
+            fullWidth
+            onPress={() => {
+              setReplacing(null);
+              void save(false, 'template');
+            }}
+            accessibilityLabel="Save to my templates and keep both"
+          >
+            Save to My Templates
+          </Button>
+          <Button
+            variant="secondary"
+            fullWidth
+            onPress={() => {
+              setReplacing(null);
+              void save(false, 'plan');
+            }}
+            accessibilityLabel={`Replace ${replacing ?? 'the waiting workout'}`}
+          >
+            Replace It
+          </Button>
+        </View>
+      </BottomSheet>
 
       <ConfirmSheet
         open={confirmLeave}
@@ -965,6 +1043,7 @@ const styles = StyleSheet.create({
   /* `paddingBottom` comes from `useBarBottom` — see `lib/screen-insets`. It was a hand-picked 26,
      which was generous on a home-button phone and still under the home indicator on a modern one. */
   footer: { paddingHorizontal: SCREEN_GUTTER, paddingTop: 12, gap: 8, borderTopWidth: 1, borderTopColor: flColor.divider, backgroundColor: flColor.charcoal900 },
+  laterRow: { flexDirection: 'row', justifyContent: 'center', columnGap: 24, flexWrap: 'wrap' },
   laterBtn: { alignItems: 'center', paddingVertical: 8 },
   laterText: { fontSize: 12.5, fontWeight: '600', color: flColor.bronzeInk },
   laterTextOff: { color: flColor.gray600 },
