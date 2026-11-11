@@ -12,9 +12,22 @@ const wizard = read('../coach.tsx');
 const detail = read('../program/[id].tsx');
 
 test('H18 — the allowance is spent when he builds, in the chat and in the wizard, and a refusal stops the build', () => {
-  assert.match(chat, /setBusy\('building'\);[\s\S]{0,900}const spend = await consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\);\n\s+if \(spend && !spend\.allowed\) \{/);
-  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 900);
-  assert.match(build, /const spend = await consumeHoltAllowance\(mode === 'day' \? 'day' : 'program'\);\n\s+if \(spend && !spend\.allowed\) \{\n\s+setBusy\(false\);/);
+  assert.match(chat, /setBusy\('building'\);[\s\S]{0,1400}const spend = await consumeHoltAllowance\(kind\);/);
+  assert.match(chat, /if \(mode_ === 'day' && !\(await payHolt\('day'\)\)\) return;/);
+  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
+  assert.match(build, /const spend = await consumeHoltAllowance\(kind\);/);
+  assert.match(build, /if \(mode === 'day' && !\(await pay\('day'\)\)\) \{\n\s+setBusy\(false\);/);
+});
+
+test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more, in the chat and in the wizard', () => {
+  assert.match(chat, /const payForBlock = async \(structure: ProgramStructure\): Promise<boolean> => \{\n\s+if \(!earnsStructuredDevelopmentCredit\(structure\)\) return true;/);
+  // Both chat paths pay before the draft is saved: the block he wrote and the rulebook's.
+  assert.equal(chat.match(/if \(!\(await payForBlock\(structure\)\)\) return;/g)?.length, 2);
+  assert.doesNotMatch(chat, /consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\)/, 'every non-day build spending the program was the bug');
+  assert.match(wizard, /if \(earnsStructuredDevelopmentCredit\(structure\) && !\(await pay\('program'\)\)\) return;/);
+  // The three block doors ask by length, never the Holt program outright.
+  assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 3, 'its three doors');
+  assert.doesNotMatch(chat, /guard\('holt_programs'\)/);
 });
 
 test('H19 — every chat door to an edit lands in beginEdit, and beginEdit asks Premium AI first', () => {

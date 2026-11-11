@@ -48,7 +48,7 @@ import { fetchLearnedPreferences } from '@/data/learned-preference-live';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence, type LearnedPreferences } from '@/domain/coach/learned-preference';
-import { scheduleSlots } from '@/domain/program/progress-core';
+import { earnsStructuredDevelopmentCredit, scheduleSlots } from '@/domain/program/progress-core';
 import type { ProgramStructure } from '@/data/programs-live';
 import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
@@ -324,11 +324,16 @@ export default function CoachScreen() {
     setBusy(true);
     setError(null);
     /* The Free allowance is spent when he builds, not when the door opens (launch QA, H18) — see the same note in
-       `CoachChatSheet`. A null is unreadable, and the door's check already passed. */
-    const spend = await consumeHoltAllowance(mode === 'day' ? 'day' : 'program');
-    if (spend && !spend.allowed) {
+       `CoachChatSheet`. A null is unreadable, and the door's check already passed. A day pays here; a block pays once
+       the engine has said how long it is, because under four weeks it is a week, not the Holt program (MA4-D5). */
+    const pay = async (kind: 'day' | 'program'): Promise<boolean> => {
+      const spend = await consumeHoltAllowance(kind);
+      if (!spend || spend.allowed) return true;
+      setError(kind === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
+      return false;
+    };
+    if (mode === 'day' && !(await pay('day'))) {
       setBusy(false);
-      setError(mode === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
       return;
     }
     /* QA holt-31: a level answered here is THE level — the chat reads the same one and never asks again. */
@@ -376,6 +381,7 @@ export default function CoachScreen() {
           return;
         }
         const { structure, notes, deloadWeeks, restructured } = res.assembly;
+        if (earnsStructuredDevelopmentCredit(structure) && !(await pay('program'))) return;
         const week1 = structure.weekPlans?.[0]?.days ?? structure.days;
         setBuilt({
           kind: 'program',
