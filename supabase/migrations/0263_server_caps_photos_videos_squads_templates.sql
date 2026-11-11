@@ -100,8 +100,9 @@
 --     templates never count. 0145's comment says the starters "have never been rows", but 0115 (earlier) had
 --     already made an adopted starter a row. The adoption door is left ungated here; the count stays as the app
 --     shows it.
---   · PLAIN.capReached says "Premium makes it unlimited". Premium squads are 5 and paid photos/videos are a
---     config number. Free only ever sees it; the Premium refusal here is a separate sentence.
+--   · PLAIN.capReached said "Premium makes it unlimited" — false for squads (5) and the paid photo/video caps.
+--     Fixed on the app side in the same pricing pass ("Premium gives you more room"); the Premium refusal here
+--     is a separate sentence.
 --
 -- ══ GRANTS ══
 --
