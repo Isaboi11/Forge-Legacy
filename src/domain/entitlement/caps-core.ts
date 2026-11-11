@@ -249,40 +249,58 @@ export interface M7Content {
  * templates. The triggered feature moves to first; the next three in canonical order follow. Exactly four
  * render, because §4 forbids scrolling content.
  */
-const CANONICAL: { key: CapKey; label: string }[] = [
-  { key: 'programs', label: 'Unlimited programs' },
-  { key: 'photos', label: 'Unlimited photos' },
-  // ⚠ NOT "Unlimited squads" (M7-D15). Premium's squad ceiling is genuinely 5, and a benefits row on a
-  // purchase surface promising something the tier does not deliver is a false claim, not loose copy.
-  { key: 'squads', label: '5 squads' },
-  { key: 'imports', label: 'Unlimited imports' },
-  { key: 'holt_programs', label: 'Unlimited Coach Holt' },
-  { key: 'templates', label: 'Unlimited day templates' },
-];
+const CANONICAL: readonly CapKey[] = ['programs', 'photos', 'squads', 'imports', 'holt_programs', 'templates'];
 
 /**
- * Triggers that are not themselves a canonical row borrow one — video has no row of its own.
+ * Triggers that are not themselves a canonical row borrow one.
  *
  * ⚠ `short_programs` borrows `programs` rather than adding a seventh CANONICAL row: M-7 §6.2 v1.1 locks
- * the list at six and renders four, so a seventh would push a locked row off the modal. "Unlimited
- * programs" is also the honest benefit — Premium removes both ceilings.
+ * the list at six and renders four, so a seventh would push a locked row off the modal.
  */
 const ROW_FOR: Partial<Record<CapKey, CapKey>> = {
   short_programs: 'programs',
-  holt_days_per_month: 'holt_programs',
   holt_in_workout: 'holt_programs',
 };
 
-export function m7Content(key: CapKey, cap: number): M7Content {
-  const row = ROW_FOR[key] ?? key;
-  const feature =
-    key === 'videos'
-      ? 'Unlimited video'
-      : key === 'holt_days_per_month'
-        ? 'Unlimited Coach Holt workouts'
-        : (CANONICAL.find((c) => c.key === row)?.label ?? 'Unlock premium features');
+const PAID_NOUN: Partial<Record<CapKey, string>> = {
+  programs: 'programs',
+  photos: 'photos',
+  videos: 'videos',
+  squads: 'squads',
+  imports: 'imports',
+  templates: 'day templates',
+  // "Basic Holt", never "Coach Holt" alone, on a Premium row — so nobody reads Premium as buying the AI
+  // coach, which is Premium AI (MA6-D7a; P-8 already says it this way).
+  holt_programs: 'Basic Holt programs',
+  holt_days_per_month: 'Basic Holt days',
+};
 
-  return { reason: reasonFor(key, cap), feature };
+/** "1,000" — a cap is a whole number, and four digits without a separator read as a typo. */
+export function capNumber(n: number): string {
+  return String(Math.trunc(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * One Premium row, from the CONFIGURED paid ceiling (pricing sweep C2, PO 2026-11-11).
+ *
+ * ⚠ "UNLIMITED" ONLY WHEN CONFIG SAYS SO. These rows used to be typed — "Unlimited photos" over a paid
+ * ceiling of 1,000, "5 squads" as a literal. A purchase surface that says unlimited and stops at 1,001 is
+ * a false claim, and a typed number drifts the first time the config changes (M7-D14). So the row states
+ * the real number, says "Unlimited" when the cap is -1, and — when config could not be read — makes no
+ * number claim at all ("More photos").
+ */
+export function paidRow(key: CapKey, paid: Caps | null): string {
+  const noun = PAID_NOUN[key];
+  if (!noun) return 'Unlock premium features';
+  const cap = paid?.[key];
+  if (cap == null || !Number.isFinite(cap)) return `More ${noun}`;
+  if (cap === UNLIMITED || cap < 0) return `Unlimited ${noun}`;
+  return `${capNumber(cap)} ${noun}${key === 'holt_days_per_month' ? ' a month' : ''}`;
+}
+
+/** `paid` = Premium's configured caps (`fetchCapConfig().paid`); null renders the rows without numbers. */
+export function m7Content(key: CapKey, cap: number, paid: Caps | null = null): M7Content {
+  return { reason: reasonFor(key, cap), feature: paidRow(ROW_FOR[key] ?? key, paid) };
 }
 
 function reasonFor(key: CapKey, cap: number): string {
@@ -305,7 +323,7 @@ function reasonFor(key: CapKey, cap: number): string {
     case 'templates':
       return `You've reached your ${cap}-template limit.`;
     case 'imports':
-      return "You've used your one free import.";
+      return cap === 1 ? "You've used your free import." : `You've used your ${cap} free imports.`;
     case 'holt_programs':
       return "You've used your free Coach Holt program.";
     case 'holt_days_per_month':
@@ -320,9 +338,9 @@ function reasonFor(key: CapKey, cap: number): string {
 }
 
 /** The four rows M-7 renders, triggered feature first (M-7 §6.2). */
-export function m7Benefits(key: CapKey): string[] {
-  const { feature } = m7Content(key, 0);
-  const rest = CANONICAL.map((c) => c.label).filter((l) => l !== feature);
+export function m7Benefits(key: CapKey, paid: Caps | null = null): string[] {
+  const { feature } = m7Content(key, 0, paid);
+  const rest = CANONICAL.map((k) => paidRow(k, paid)).filter((l) => l !== feature);
   return [feature, ...rest].slice(0, 4);
 }
 

@@ -23,7 +23,7 @@
  * naive grep of the P-8 surface has to come back empty for the check to mean anything.
  */
 
-import { UNLIMITED, usageLabel, type CapKey, type Caps, type Usage } from '../entitlement/caps-core.ts';
+import { UNLIMITED, capNumber, usageLabel, type CapKey, type Caps, type Usage } from '../entitlement/caps-core.ts';
 
 // ── the plans ────────────────────────────────────────────────────────────────
 
@@ -116,9 +116,9 @@ export interface StorePlan {
   /** ISO-4217. Two plans in different currencies cannot be compared, so they are not. */
   currency: string;
   /**
-   * The free-trial length in days when the store says this product carries one (MA6-D11, MA7-D4), else
-   * null. Read from the store's introductory offer, never assumed from the cadence: a trial the store
-   * does not actually grant is a false claim beside the buy button.
+   * The free-trial length in days when the store says THIS BUYER gets one (MA6-D11, MA7-D4), else null.
+   * Read from the store's introductory offer AND its eligibility check, never assumed from the cadence: a
+   * trial this Apple ID has already used is a false claim beside the buy button (pricing sweep P1).
    */
   trialDays: number | null;
 }
@@ -252,8 +252,13 @@ export const REASSURANCE = 'Everything you’ve already built is yours — forev
 export const AUTO_RENEWAL_NOTE =
   'Subscriptions renew automatically until you cancel them in your App Store account.';
 
-/** Beside the buy button when the selected plan carries a trial (MA6-D11: the terms sit next to it). */
-export const TRIAL_NOTE = 'Cancel before the trial ends and you won’t be charged.';
+/**
+ * Beside the buy button when the selected plan carries a trial (MA6-D11: the terms sit next to it).
+ * ⚠ "AT LEAST 24 HOURS" (pricing sweep P3): Apple charges within the 24 hours before a trial ends, so
+ * "cancel before it ends" was not true for someone cancelling on the last evening — and our own Terms §6
+ * already say 24 hours.
+ */
+export const TRIAL_NOTE = 'Cancel at least 24 hours before the trial ends and you won’t be charged.';
 
 /**
  * P8W-D4 in the fewest words, for the sticky buy bar (PO redesign 09-25 asked for the full sentence to go).
@@ -305,9 +310,9 @@ export const RECOMMENDED_BADGE = 'Recommended';
 /**
  * The check lines on each card. Every number is the configured cap (MA3-D16), never typed.
  *
- * ⚠ SQUADS STATE THEIR CEILING (M7-D15) and are left out when config cannot say what it is — never
- * "unlimited squads". Programs, photos and imports are "unlimited" on purpose: their paid ceilings are
- * abuse guards (see `premiumPhrase`).
+ * ⚠ PREMIUM STATES ITS REAL CEILINGS (pricing sweep C2, PO 2026-11-11) — "1,000 photos", "Unlimited"
+ * only where config says -1, and no number at all when config cannot be read. Squads are left out when
+ * config cannot say what they are — never "unlimited squads" (M7-D15).
  */
 export function tierCardLines(tier: CardTier, free: Caps | null, paid: Caps | null): string[] {
   if (tier === 'free') {
@@ -319,7 +324,10 @@ export function tierCardLines(tier: CardTier, free: Caps | null, paid: Caps | nu
   }
   if (tier === 'premium') {
     const squads = paid && Number.isFinite(paid.squads) && paid.squads > 0 ? capPhrase('squads', paid.squads) : null;
-    return ['Unlimited programs, photos & imports', ['Unlimited Basic Holt', squads, 'Meal planner & recipes'].filter(Boolean).join(' · ')];
+    const room = paid
+      ? [premiumPhrase('programs', paid.programs), premiumPhrase('photos', paid.photos), premiumPhrase('imports', paid.imports)].join(' · ')
+      : 'More programs, photos & imports';
+    return [room, ['Unlimited Basic Holt', squads, 'Meal planner & recipes'].filter(Boolean).join(' · ')];
   }
   if (tier === 'premium_ai') return ['Everything in Premium, plus Holt AI', 'Form check & smart program changes'];
   return ['Ask Holt AI anything about your training', 'Form check & smart program changes'];
@@ -363,15 +371,16 @@ export function cadencesOn(plans: readonly StorePlan[]): Cadence[] {
 
 /**
  * What Premium AI adds, as built today (P-8 §8: built features only). Holt AI answers from the athlete's
- * own data, changes a program from any message (Coach-AI-Amendment-002), reads a set on video (form check,
- * build 9 — the build that goes to review) and reads a program from a photo. Photo food logging is unbuilt,
- * so it is not listed. MA6-D4: an allowance, never "unlimited".
+ * own data, changes a program from any message (Coach-AI-Amendment-002), reads a set on video (form check),
+ * reads a program from a photo, and logs a meal from a photo (`meal-photo`, live since 09-26 — this list
+ * said it was unbuilt until the 11-11 pricing sweep, C4). MA6-D4: an allowance, never "unlimited".
  */
 export const AI_BENEFITS: readonly { title: string; detail: string }[] = [
   { title: 'Holt AI', detail: 'Ask your coach anything in plain words. It knows your training and answers from it.' },
   { title: 'Smart program changes', detail: 'Ask Holt to change your program around your goals, schedule, equipment or recovery.' },
   { title: 'Form check', detail: 'Film a set and Holt AI reads your form: what’s working, what to fix, and a cue for the next set.' },
   { title: 'Import from a photo', detail: 'Snap a coach’s program and Holt AI reads it into the builder.' },
+  { title: 'Log a meal from a photo', detail: 'Snap your plate and Holt AI fills in the food log for you to check.' },
 ];
 export const AI_ALLOWANCE_NOTE = 'Includes a generous monthly AI allowance.';
 
@@ -420,29 +429,21 @@ export function capPhrase(key: CapKey, cap: number): string {
   const noun = NOUN[key];
   if (!noun) return '';
   if (cap === UNLIMITED || cap < 0) return `Unlimited ${noun.unlimited ?? noun.many}`;
-  return `${cap} ${cap === 1 ? noun.one : noun.many}`;
+  return `${capNumber(cap)} ${cap === 1 ? noun.one : noun.many}`;
 }
 
 /**
- * The Premium cell.
+ * The Premium cell — the CONFIGURED paid ceiling, stated as it is.
  *
- * ⚠ `paid_caps` MIXES TWO DIFFERENT KINDS OF NUMBER, AND ONLY ONE OF THEM IS TOLD TO THE ATHLETE.
- *
- * Most paid ceilings (500 programs, 1,000 photos, 100 videos) are abuse guards set so no legitimate
- * athlete reaches one — 0145 says so in as many words. The product promise is genuinely "no limits on
- * anything you build", so rendering "500 programs" would understate the tier and invite the question
- * of what happens at 501.
- *
- * Squads is the exception and the reason this function exists: **Premium's squad ceiling is really 5**
- * (MA3-D7), it is stated to the athlete on purpose, and M7-D15 forbids promising "unlimited squads" on
- * a purchase surface because the tier does not deliver it. A benefit row that claims something the tier
- * cannot honour is a false claim, not loose copy.
+ * ⚠ REVERSED 2026-11-11 (pricing sweep C2, PO: "keep the limits and make the plan screen show the real
+ * number"). This used to render every paid ceiling except squads as "Unlimited", on the reasoning that
+ * 500 programs / 1,000 photos / 100 videos are abuse guards nobody reaches. But a purchase screen that
+ * says "Unlimited photos" and refuses the 1,001st is a false claim, whoever reaches it. So Premium now
+ * reads exactly like Free — the number when there is one, "Unlimited" only when config says -1 — and
+ * squads (M7-D15, never "unlimited squads") needs no special case any more.
  */
-const PREMIUM_STATES_ITS_CEILING: ReadonlySet<CapKey> = new Set<CapKey>(['squads']);
-
 export function premiumPhrase(key: CapKey, cap: number): string {
-  if (PREMIUM_STATES_ITS_CEILING.has(key)) return capPhrase(key, cap);
-  return capPhrase(key, UNLIMITED);
+  return capPhrase(key, cap);
 }
 
 export interface ComparisonRow {
@@ -573,11 +574,10 @@ export function usageIsNear(rows: readonly UsageRow[]): boolean {
 // ── the compact comparison (PO redesign 09-25) ───────────────────────────────
 
 /**
- * The same six rows as `comparisonRows`, as a label and two bare values — "3" against "Unlimited".
+ * The same six rows as `comparisonRows`, as a label and two bare values — "75" against "1,000".
  *
  * The numbers carry the difference, so the noun moves into the row label and the cells stay short. Built
- * from the same `premiumPhrase` rule: Premium's squad ceiling is stated (M7-D15), every other paid ceiling
- * is an abuse guard and reads "Unlimited".
+ * from the same rule as `premiumPhrase`: both columns state the configured number, "Unlimited" only at -1.
  */
 const COMPACT_LABEL: Partial<Record<CapKey, string>> = {
   programs: 'Programs',
@@ -597,7 +597,7 @@ export interface CompactRow {
 
 function compactValue(key: CapKey, cap: number): string {
   if (cap === UNLIMITED || cap < 0) return 'Unlimited';
-  return key === 'holt_days_per_month' ? `${cap}/mo` : String(cap);
+  return key === 'holt_days_per_month' ? `${capNumber(cap)}/mo` : capNumber(cap);
 }
 
 export function compactComparisonRows(free: Caps | null, paid: Caps | null): CompactRow[] {
@@ -606,7 +606,7 @@ export function compactComparisonRows(free: Caps | null, paid: Caps | null): Com
     key,
     label: COMPACT_LABEL[key] ?? key,
     free: compactValue(key, free[key]),
-    premium: PREMIUM_STATES_ITS_CEILING.has(key) ? compactValue(key, paid[key]) : 'Unlimited',
+    premium: compactValue(key, paid[key]),
   }));
 }
 
@@ -626,7 +626,7 @@ export const PAYWALL_FAQ: readonly { q: string; a: string }[] = [
   },
   {
     q: 'What happens after my free trial?',
-    a: 'When the trial ends, your subscription starts and your App Store account is charged. Cancel before it ends and you won’t be charged.',
+    a: 'When the trial ends, your subscription starts and your App Store account is charged. Cancel at least 24 hours before it ends and you won’t be charged.',
   },
   {
     q: 'Can I cancel anytime?',

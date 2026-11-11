@@ -195,8 +195,10 @@ function InfinityMark({ size = 24, color = flColor.bronze300 }: { size?: number;
  * the rulebook coach — and the numbers live in the comparison table.
  */
 const BENEFIT_META: Partial<Record<CapKey, { icon: SymbolName; detail: string; title?: string; note?: string }>> = {
-  photos: { icon: 'book', detail: 'Every progress photo and video kept, with no ceiling to work around.' },
-  programs: { icon: 'dumbbell', detail: 'Build, generate and receive as many programs as your training asks for.' },
+  /* ⚠ No "no ceiling" claims (pricing sweep C2): the row's title is the configured number, and this
+     sentence must stay true under it. */
+  photos: { icon: 'book', detail: 'Room for your progress photos and video, far beyond the Free plan.' },
+  programs: { icon: 'dumbbell', detail: 'Build, generate and receive programs far beyond the Free plan.' },
   squads: { icon: 'squad', detail: 'Lead more than one squad at a time.' },
   imports: { icon: 'spark', detail: 'Bring a coach’s spreadsheet across whenever you need to.' },
   holt_programs: {
@@ -216,7 +218,7 @@ const USAGE_ICON: Partial<Record<CapKey, SymbolName>> = {
   holt_days_per_month: 'medal',
 };
 
-const AI_ICON: SymbolName[] = ['spark', 'target', 'eye', 'book'];
+const AI_ICON: SymbolName[] = ['spark', 'target', 'eye', 'book', 'scale'];
 
 /**
  * The hero (PO mockup 11-09). One message for the whole page — the plan cards below carry each plan's
@@ -384,7 +386,9 @@ export default function SubscriptionScreen() {
 
     // Cancelling is not an error and produces no message (§5.1.3).
     if (outcome === 'purchased') {
-      setNotice(`Welcome to ${tierOf(selected) === 'premium' ? 'Forge Premium' : 'Holt AI'}.`);
+      // The plan's own name (pricing sweep C3) — "Holt AI" is the coach inside Premium AI, not the plan.
+      const t = tierOf(selected);
+      setNotice(`Welcome to ${t === 'premium' ? 'Forge Premium' : t === 'premium_ai' ? 'Premium AI' : 'Holt AI'}.`);
       settle();
     } else if (outcome === 'pending') {
       setNotice('Waiting for approval. You’ll have access as soon as it’s approved.');
@@ -673,7 +677,11 @@ export default function SubscriptionScreen() {
                     ⚠ SHOWN EVEN WITH NO PLANS TO READ (QA holt-16): "See Premium AI" from Form Check landed
                     here, and with no store (the web) or a failed read the section vanished — no AI plan, no
                     price, no reason. The picker's own empty state now says why, under what AI adds. */}
-                {!coachAi ? (
+                {/* ⚠ NOT when the server has deliberately offered nothing (pricing sweep C8): a granted Premium
+                    outside the testers' add-on would read "Plans aren't available on this device yet" — a
+                    store problem that isn't one. A real store with a settled, empty offer means "nothing to
+                    sell this account"; the web and a failed read still show the section and say why. */}
+                {!coachAi && !(billingAvailable() && offerSettled && offer != null && offering == null) ? (
                   <>
                     <SectionLabel>Add Holt AI</SectionLabel>
                     <Text style={styles.sectionLead}>{TIER_DISCLOSURE[paidTier ?? 'premium_ai']}</Text>

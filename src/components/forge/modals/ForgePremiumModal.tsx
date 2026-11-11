@@ -23,12 +23,9 @@ import { MODAL } from './_modalTokens'
 import { useOverlayTransition } from './_useOverlayTransition'
 import type { ForgePremiumModalProps } from './types'
 
-const DEFAULT_BENEFITS = [
-  { key: 'b1', label: 'Unlimited active programs' },
-  { key: 'b2', label: 'Unlimited photo storage' },
-  { key: 'b3', label: 'Unlimited squad memberships' },
-  { key: 'b4', label: 'Import training history' },
-]
+/* No default claims (pricing sweep C7): the old defaults promised "Unlimited squad memberships" — Premium's
+   ceiling is 5 (M7-D15) — and unlimited storage. A caller passes the configured rows or gets none. */
+const DEFAULT_BENEFITS: { key: string; label: string }[] = []
 
 export function ForgePremiumModal({
   visible,

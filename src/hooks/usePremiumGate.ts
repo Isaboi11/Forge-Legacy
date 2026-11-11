@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 
+import { fetchCapConfig } from '@/data/entitlement-live';
 import { m7Benefits, m7Content, type CapKey } from '@/domain/entitlement/caps-core';
 import { ENTITLEMENT_RETRY_MESSAGE, useCapGates, useEntitlementState } from '@/lib/entitlement';
 import { track } from '@/lib/analytics';
@@ -37,7 +38,8 @@ import { useWorkoutSession } from './useWorkoutSession';
  */
 export function usePremiumGate(): (key: CapKey) => boolean {
   const gates = useCapGates();
-  const { status, refetch } = useEntitlementState();
+  const { snapshot, status, refetch } = useEntitlementState();
+  const premium = status === 'ready' && snapshot?.tier === 'PREMIUM';
   const { enqueue } = useCeremony();
   const { showToast } = useToast();
   const { session } = useWorkoutSession();
@@ -95,21 +97,40 @@ export function usePremiumGate(): (key: CapKey) => boolean {
       }
 
       const { reason } = m7Content(key, gate.cap ?? 0);
+
+      if (premium) {
+        /*
+         * ⚠ A PREMIUM ATHLETE AT A PAID CEILING IS NOT SOLD ANYTHING (pricing sweep P4; MA3 §4.2, M7-D16).
+         * Premium's ceilings (the 5th squad, say) are the top of the ladder for that thing — Premium AI does
+         * not raise them. M-7's "Build more. Keep everything." → Upgrade → P-8 offered AI as the answer to
+         * a squad limit, which is selling them something that does not do what the pop-up implied. They
+         * get the plain fact instead.
+         */
+        showToast(reason);
+        return false;
+      }
+
       /* The upsell is about to be SHOWN. Separate from `cap_attempt` above because a blocked crossing and
          a displayed modal are not the same event — the in-workout branch above blocks without showing
          one, and conflating them would report an upsell the athlete never saw. */
       track('paywall_shown', { cap: key, source: 'gate' });
-      enqueue({
-        // Keyed by the cap so a double tap is the same trigger rather than two stacked modals —
-        // `mergeCeremonies` dedupes on id. Distinct trigger events still evaluate independently, which is
-        // what §12's "never auto-reopen" actually requires.
-        id: `m7-${key}`,
-        kind: 'premiumUpsell',
-        reason,
-        benefits: m7Benefits(key),
-      });
+      /* Premium's rows state the CONFIGURED paid ceilings (pricing sweep C2), so they are read first; an
+         unreadable config renders the same rows without numbers rather than holding the modal back. */
+      void fetchCapConfig()
+        .catch(() => null)
+        .then((config) =>
+          enqueue({
+            // Keyed by the cap so a double tap is the same trigger rather than two stacked modals —
+            // `mergeCeremonies` dedupes on id. Distinct trigger events still evaluate independently, which
+            // is what §12's "never auto-reopen" actually requires.
+            id: `m7-${key}`,
+            kind: 'premiumUpsell',
+            reason,
+            benefits: m7Benefits(key, config?.paid ?? null),
+          }),
+        );
       return false;
     },
-    [gates, status, refetch, enqueue, showToast, inWorkout],
+    [gates, status, premium, refetch, enqueue, showToast, inWorkout],
   );
 }

@@ -218,16 +218,20 @@ test('in-workout Holt is a capability, not a quantity', () => {
   assert.equal(capPhrase('holt_in_workout', -1), 'Basic Holt in your workout');
 });
 
-test('Premium never claims unlimited squads (M7-D15)', () => {
+test('Premium states its configured ceilings, and never claims unlimited over one (M7-D15, pricing sweep C2)', () => {
   /*
-   * `paid_caps` mixes abuse guards with a real product ceiling. 500 programs is a backstop no legitimate
-   * athlete reaches, so the honest claim is "Unlimited programs". 5 squads is genuinely the ceiling, it is
-   * stated to the athlete on purpose, and promising "unlimited" on a purchase surface would be a false
-   * claim about what the tier delivers.
+   * REVERSED 2026-11-11 (PO): 500 programs / 1,000 photos used to read "Unlimited" as abuse guards. A
+   * purchase screen that says unlimited and refuses the 1,001st is a false claim, so the number is stated;
+   * "Unlimited" only where config says -1.
    */
   assert.equal(premiumPhrase('squads', 5), '5 squads');
-  assert.equal(premiumPhrase('programs', 500), 'Unlimited programs');
-  assert.equal(premiumPhrase('photos', 1000), 'Unlimited photos');
+  assert.equal(premiumPhrase('programs', 500), '500 programs');
+  assert.equal(premiumPhrase('photos', 1000), '1,000 photos');
+  assert.equal(premiumPhrase('programs', -1), 'Unlimited programs');
+  const card = tierCardLines('premium', FREE_CAPS, PAID_CAPS).join(' ');
+  assert.ok(!/unlimited (programs|photos)/i.test(card), card);
+  assert.ok(/1,000 photos/.test(card), card);
+  assert.ok(!/\d/.test(tierCardLines('premium', FREE_CAPS, null)[0]), 'no config, no number claimed');
 
   const premium = comparisonRows(FREE_CAPS, PAID_CAPS).map((r) => r.premium).join(' ');
   assert.ok(!/unlimited squads/i.test(premium));
@@ -238,7 +242,7 @@ test('the comparison is the six locked rows, both columns from config', () => {
   const rows = comparisonRows(FREE_CAPS, PAID_CAPS);
   assert.deepEqual(rows.map((r) => r.key), [...COMPARISON_KEYS]);
   assert.equal(rows.length, 6);
-  assert.deepEqual(rows[0], { key: 'programs', free: '3 programs', premium: 'Unlimited programs' });
+  assert.deepEqual(rows[0], { key: 'programs', free: '3 programs', premium: '500 programs' });
   assert.deepEqual(rows[2], { key: 'squads', free: '1 squad', premium: '5 squads' });
 });
 
@@ -324,8 +328,8 @@ test('each tier says what it does NOT include, above the buy button (P8W-D4 unde
 test('Premium AI never promises unlimited AI, or a feature that is not built (MA6-D4, P-8 §8)', () => {
   const text = [...AI_BENEFITS.map((b) => `${b.title} ${b.detail}`), AI_ALLOWANCE_NOTE].join(' ');
   assert.ok(!/unlimited/i.test(text));
-  // Form check shipped in build 9 (the review build); photo food logging is still unbuilt.
-  assert.ok(!/meal from a photo|food/i.test(text));
+  // Form check shipped in build 9; photo meal logging shipped 09-26 and is listed now (pricing sweep C4).
+  assert.match(text, /meal from a photo/i);
 });
 
 test('Never Charge For History is restated identically, not paraphrased', () => {
@@ -389,7 +393,8 @@ test('the compact table states numbers, and never promises unlimited squads (M7-
   const by = Object.fromEntries(rows.map((r) => [r.key, r]));
   assert.deepEqual(rows.map((r) => r.key), ['programs', 'photos', 'squads', 'imports', 'holt_programs', 'holt_days_per_month']);
   assert.equal(by.programs.free, '3');
-  assert.equal(by.programs.premium, 'Unlimited'); // 500 is an abuse guard, not the promise
+  assert.equal(by.programs.premium, '500'); // the configured ceiling, stated (pricing sweep C2)
+  assert.equal(by.photos.premium, '1,000');
   assert.equal(by.squads.premium, '5');
   assert.equal(by.holt_days_per_month.free, '2/mo');
   assert.deepEqual(compactComparisonRows(null, PAID_CAPS), []);

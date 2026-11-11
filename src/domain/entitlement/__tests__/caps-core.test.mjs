@@ -9,6 +9,7 @@ import {
   gateFor,
   m7Benefits,
   m7Content,
+  paidRow,
   remaining,
   usageLabel,
 } from '../caps-core.ts';
@@ -145,8 +146,8 @@ test('⚠ a week and a program spend DIFFERENT allowances', () => {
 
 test('the week wall borrows the Programs row rather than inventing a seventh', () => {
   // M-7 §6.2 v1.1 locks CANONICAL at six and renders four; a seventh row would push a locked one off.
-  const { feature, reason } = m7Content('short_programs', 3);
-  assert.equal(feature, 'Unlimited programs');
+  const { feature, reason } = m7Content('short_programs', 3, PAID);
+  assert.equal(feature, paidRow('programs', PAID));
   assert.match(reason, /3 free training weeks/, 'the number is interpolated from config, never a literal');
   assert.match(m7Content('short_programs', 1).reason, /1 free training week\b/, 'singular at one');
 });
@@ -196,9 +197,27 @@ test('M-7 renders the cap from config, never a literal', () => {
 test('the squad benefit row promises 5 squads, not unlimited', () => {
   // M7-D15. Premium's squad ceiling is genuinely 5, and a benefits row on a purchase surface promising
   // something the tier does not deliver is a false claim, not loose copy.
-  const rows = m7Benefits('squads');
+  const rows = m7Benefits('squads', PAID);
   assert.equal(rows[0], '5 squads');
   assert.ok(!rows.some((r) => /unlimited squads/i.test(r)));
+  // The 5 comes from config: a different ceiling, different copy; no config, no number at all.
+  assert.equal(m7Benefits('squads', { ...PAID, squads: 8 })[0], '8 squads');
+  assert.equal(m7Benefits('squads', null)[0], 'More squads');
+});
+
+test('a Premium row says "Unlimited" only when config does (pricing sweep C2, PO 2026-11-11)', () => {
+  // "Unlimited photos" over a 1,000-photo ceiling was a false claim on a purchase surface.
+  assert.equal(paidRow('photos', PAID), '1,000 photos');
+  assert.equal(paidRow('programs', PAID), '500 programs');
+  assert.equal(paidRow('videos', PAID), '100 videos');
+  assert.equal(paidRow('templates', PAID), 'Unlimited day templates');
+  assert.equal(paidRow('photos', null), 'More photos');
+  for (const key of CAP_KEYS) {
+    for (const row of m7Benefits(key, PAID)) {
+      const capped = Object.entries(PAID).some(([k, v]) => v > 0 && row.toLowerCase().includes(`unlimited ${k}`));
+      assert.ok(!capped, `${key}: "${row}" claims unlimited over a real ceiling`);
+    }
+  }
 });
 
 test('M-7 shows exactly four rows, triggered feature first, for every trigger', () => {
@@ -221,9 +240,10 @@ test('Coach AI appears nowhere on M-7', () => {
   }
 });
 
-test('the Holt rows say Coach Holt, never AI, because Holt is a rules engine', () => {
-  assert.match(m7Content('holt_programs', 1).feature, /Coach Holt/);
-  assert.match(m7Content('holt_days_per_month', 2).feature, /Coach Holt/);
+test('the Holt rows say Basic Holt, never AI, because Premium buys the rulebook coach (MA6-D7a)', () => {
+  assert.equal(m7Content('holt_programs', 1, PAID).feature, 'Unlimited Basic Holt programs');
+  assert.equal(m7Content('holt_days_per_month', 2, PAID).feature, 'Unlimited Basic Holt days');
+  assert.equal(m7Content('holt_days_per_month', 2, { ...PAID, holt_days_per_month: 30 }).feature, '30 Basic Holt days a month');
 });
 
 test('the usage label reads "n of cap", and never exposes the -1 sentinel', () => {
