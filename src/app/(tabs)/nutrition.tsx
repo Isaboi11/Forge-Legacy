@@ -50,6 +50,7 @@ import {
 import { applyChecks, checklistByMeal, checklistCount, mayCheck, plannedKcal, type ChecklistRow } from '@/domain/nutrition/plan-ahead';
 import { useEarnedMoments } from '@/hooks/useEarnedMoments';
 import { useToast } from '@/hooks/useCeremony';
+import { usePlansDoor } from '@/hooks/usePremiumGate';
 import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/consent';
 import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
 import { useEntitlementState, useNutritionAccess, useNutritionPlanner } from '@/lib/entitlement';
@@ -152,6 +153,9 @@ export default function NutritionScreen() {
   const mayUseNutrition = useNutritionAccess();
   /* 0244: the meal planner, grocery list and building recipes are Premium; logging stays free. */
   const planner = useNutritionPlanner();
+  /* `planner` is false while loading too: the plan screen opens only for a plan that has been read, and never
+     mid-workout (M-7 §10, M7-D13 — sweep G5). */
+  const openPlans = usePlansDoor();
   const { status: entitlementStatus } = useEntitlementState();
   useEarnedMoments();
 
@@ -286,6 +290,11 @@ export default function NutritionScreen() {
   const addGo = (to: Parameters<typeof router.push>[0]) => {
     setAddOpen(false);
     router.push(to);
+  };
+  /** …or for the plan screen, through the door that checks the read and the workout (sweep G5). */
+  const addPlans = () => {
+    setAddOpen(false);
+    openPlans();
   };
 
   /*
@@ -532,7 +541,7 @@ export default function NutritionScreen() {
                   /* Premium (MA6 §4). A Free athlete is told what the button is, not refused: the tag
                      says PREMIUM and the tap opens the plan screen. Premium lands on the week (0211),
                      which hands to Meal Plan Setup (0210) until the setup is saved. */
-                  if (!planner) { router.push('/subscription'); return; }
+                  if (!planner) { openPlans(); return; }
                   router.push('/meal-plan');
                 }}
               >
@@ -626,7 +635,7 @@ export default function NutritionScreen() {
             icon="book"
             title="Recipe"
             sub={planner ? 'Type it in, or add a picture of one.' : 'Premium — build your own recipes.'}
-            onPress={() => (planner ? addGo({ pathname: '/my-recipes', params: { add: '1' } }) : addGo('/subscription'))}
+            onPress={() => (planner ? addGo({ pathname: '/my-recipes', params: { add: '1' } }) : addPlans())}
           />
           <AddRow
             icon="list-plus"

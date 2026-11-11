@@ -61,7 +61,7 @@ import {
   type SessionState,
   earnsStructuredDevelopmentCredit,
 } from '@/domain/program/progress-core';
-import { usePremiumGate } from '@/hooks/usePremiumGate';
+import { usePlansDoor, usePremiumGate } from '@/hooks/usePremiumGate';
 import { usePremiumAi } from '@/lib/entitlement';
 import {
   reorderTargets,
@@ -214,8 +214,11 @@ export default function ProgramDetailScreen() {
    * four declared weeks spends a short-program slot.
    */
   const guard = usePremiumGate();
-  /* "Ask Holt" on a session is Holt changing your program for you — Premium AI (MA8; launch QA, H19). */
+  /* "Ask Holt" on a session is Holt changing your program for you — Premium AI (MA8; launch QA, H19). `premiumAi` is
+     false while the plan is loading or unread too, so the plans open only through `usePlansDoor`, which offers them
+     only to a plan it has read (M-7 §10, sweep G5). */
   const premiumAi = usePremiumAi();
+  const openPlans = usePlansDoor();
   const programCap = (st: Parameters<typeof earnsStructuredDevelopmentCredit>[0]) =>
     earnsStructuredDevelopmentCredit(st) ? ('programs' as const) : ('short_programs' as const);
   /** The `?reorder=` link opens the sheet ONCE. A ref, because consuming it must not re-render. */
@@ -1205,7 +1208,7 @@ export default function ProgramDetailScreen() {
               onSwapDay={state === 'active' ? (di, name) => openSwap(wi, di, name) : undefined}
               onAskHolt={
                 state === 'active'
-                  ? (di, name) => (premiumAi ? setAsking({ weekIndex: wi, dayIndex: di, name }) : router.push('/subscription?from=gate' as Parameters<typeof router.push>[0]))
+                  ? (di, name) => (premiumAi ? setAsking({ weekIndex: wi, dayIndex: di, name }) : void openPlans('/subscription?from=gate'))
                   : undefined
               }
               holtNoteFor={(di) => holtNoteAt(structure, wi, di)}
