@@ -19,6 +19,16 @@ test('H18 — the allowance is spent when he builds, in the chat and in the wiza
   assert.match(build, /if \(mode === 'day' && !\(await pay\('day'\)\)\) \{\n\s+setBusy\(false\);/);
 });
 
+test('G4 — an unreadable spend answer stops a capped athlete with a retry, in the chat and in the wizard', () => {
+  const pay = chat.slice(chat.indexOf('const payHolt = async'), chat.indexOf('const payHolt = async') + 900);
+  assert.match(pay, /const verdict = holtSpendVerdict\(spend, gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;/);
+  assert.match(pay, /if \(verdict === 'retry'\) \{\n\s+say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return false;/);
+  assert.doesNotMatch(pay, /if \(!spend \|\| spend\.allowed\) return true;/, 'a null building anyway was the bug');
+  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
+  assert.match(build, /if \(verdict === 'retry'\) setError\(ENTITLEMENT_RETRY_MESSAGE\);/);
+  assert.doesNotMatch(build, /if \(!spend \|\| spend\.allowed\) return true;/);
+});
+
 test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more, in the chat and in the wizard', () => {
   assert.match(chat, /const payForBlock = async \(structure: ProgramStructure\): Promise<boolean> => \{\n\s+if \(!earnsStructuredDevelopmentCredit\(structure\)\) return true;/);
   // Both chat paths pay before the draft is saved: the block he wrote and the rulebook's.
