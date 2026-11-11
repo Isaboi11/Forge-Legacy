@@ -246,6 +246,19 @@ export function holtBlockDoor(weeks: number | null | undefined, gate: (key: CapK
   return 'holt_programs';
 }
 
+/**
+ * What a build does with `consume_holt_allowance`'s answer (pricing sweep G4).
+ *
+ * ⚠ A NULL FAILS CLOSED FOR ANYONE WITH A CEILING. Null is an unreadable answer (offline, an error), and a cap that
+ * builds on one runs out only while the network works — Holt days have no other server check at all. It is a retry,
+ * never an upsell (M-7 §10): what failed is the read, not the athlete's plan. `gate` is the snapshot's own answer for
+ * that allowance; an athlete with no ceiling on it never needed the spend, so its silence cannot stop them.
+ */
+export function holtSpendVerdict(spend: { allowed: boolean } | null, gate: Gate): 'build' | 'used_up' | 'retry' {
+  if (spend) return spend.allowed ? 'build' : 'used_up';
+  return gate.outcome === 'allowed' && typeof gate.cap === 'number' && gate.cap < 0 ? 'build' : 'retry';
+}
+
 // ── what the athlete is shown ────────────────────────────────────────────────
 
 /**
