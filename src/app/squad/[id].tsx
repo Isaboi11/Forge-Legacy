@@ -1747,8 +1747,12 @@ function FeedCard({
          cutoff would end it mid-sentence — and the friends feed, which passes `post.body` straight
          through, would show the same post in full. Other types keep `detailFor`: their bodies are
          stand-ins it exists to suppress. */
-      /* A posted workout's comment is the poster's own words, whole — never the 90-character excerpt. */
-      caption={post.type === 'discussion' || summary || posted ? post.body : detail || null}
+      /* A posted workout's comment is the poster's own words, whole — never the 90-character excerpt.
+
+         ⚠ SO IS AN ANNOUNCEMENT (PO 2026-11-12: "it makes you click on it to see the whole thing"). An
+         announcement is nothing BUT the owner's words, and it is the one post a member most needs to read
+         in full from the feed. `detailFor` cut it at 90 characters and flattened its line breaks. */
+      caption={post.type === 'discussion' || post.type === 'announcement' || summary || posted ? post.body : detail || null}
       media={media}
       mediaDisplay={displayOf(post.media)}
       customMedia={
