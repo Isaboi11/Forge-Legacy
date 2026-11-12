@@ -13,6 +13,7 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   addSquadPost,
   buildWorkoutRecap,
+  pinAsAnnouncement,
   fetchRecentPRs,
   fetchRecentWorkouts,
   fmtDuration,
@@ -426,10 +427,10 @@ export default function SquadComposerRoute() {
      * only produce a SQUAD row; `BOTH` is one row carrying one comment thread and one set of
      * acknowledgements, and only `createFriendPost` can write it.
      */
-    const done = () => {
+    const done = (message?: string) => {
       setPosting(false);
       clearWrittenDraft();
-      showToast(audience === 'SQUAD' ? 'Posted to your squad' : audience === 'BOTH' ? 'Posted to your friends and squad' : 'Posted to your friends');
+      showToast(message ?? (audience === 'SQUAD' ? 'Posted to your squad' : audience === 'BOTH' ? 'Posted to your friends and squad' : 'Posted to your friends'));
       router.back();
     };
     const failed = (e: unknown) => {
@@ -449,7 +450,19 @@ export default function SquadComposerRoute() {
         workoutId: recap?.workoutId ?? null,
         workoutSummary: recap?.summary ?? null,
         layout,
-      }).then(done, failed);
+      }).then(async (postId) => {
+        if (type !== 'announcement') return done();
+        /* The promise this screen makes ("Pins to the top"), now kept. See `pinAsAnnouncement`. A failed pin
+           still reports the post: it went out, it just is not on top. */
+        const pin = await pinAsAnnouncement(squadId, postId);
+        done(
+          pin === 'pinned'
+            ? 'Announcement posted to the top of your squad'
+            : pin === 'full'
+              ? 'Posted. You already have 3 pinned posts, so unpin one to put this on top.'
+              : 'Posted, but it couldn’t be pinned to the top.',
+        );
+      }, failed);
       return;
     }
 
@@ -473,7 +486,7 @@ export default function SquadComposerRoute() {
       prValue: form.prValue,
       prExercise: form.prExercise,
       prLabel: form.prLabel,
-    }).then(done, failed);
+    }).then(() => done(), failed);
   };
 
   // ── Step 1: pick a type ──
@@ -573,8 +586,12 @@ export default function SquadComposerRoute() {
           </View>
 
           {/* An announcement is a squad instrument — owner-only, and RLS rejects it regardless. On a
-              friends-only post there is nobody to announce to, so the section is absent, not locked. */}
-          {audience === 'FRIENDS' ? null : (
+              friends-only post there is nobody to announce to, so the section is absent, not locked.
+
+              ⚠ AND NOT ON FRIENDS & SQUAD EITHER (PO 11-12). BOTH is written by `createFriendPost`, whose map
+              has no announcement (`friendsTypeFor` → 'discussion'), so it went out as a plain discussion: no
+              Announcement mark, never pinned, never on top. The same trap H7 closed for the grid above. */}
+          {audience !== 'SQUAD' ? null : (
             <>
               <Text style={[styles.groupLabel, styles.groupLabelGap]}>Owner only</Text>
               <View style={styles.grid}>
@@ -826,11 +843,11 @@ export default function SquadComposerRoute() {
           </>
         ) : (
           <>
-            <Area label="Announcement" value={form.body} onChange={(v) => set('body', v)} placeholder="Pins to the top of the squad feed…" rows={4} />
+            <Area label="Announcement" value={form.body} onChange={(v) => set('body', v)} placeholder="Pins to the top of your squad…" rows={4} />
             <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
             <View style={styles.gateNote}>
               <ShieldIcon />
-              <Text style={styles.gateNoteText}>You’re posting a squad announcement as the owner — every member sees it at the top of the feed.</Text>
+              <Text style={styles.gateNoteText}>You’re posting a squad announcement as the owner. It stays at the top of the squad until you take it down or post a new one.</Text>
             </View>
           </>
         )}

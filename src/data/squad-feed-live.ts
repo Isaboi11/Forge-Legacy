@@ -1070,6 +1070,52 @@ export async function pinSquadPost(postId: string, pin: boolean): Promise<boolea
 }
 
 /**
+ * Put a just-posted announcement at the top of the squad, under its header (PO 2026-11-12).
+ *
+ * ══ THE COMPOSER PROMISED THIS AND NOTHING DID IT ══
+ *
+ * The announcement composer says "Pins to the top of the squad feed" and "every member sees it at the top of
+ * the feed". No code pinned it, so an announcement landed in the feed under check-ins, the goal, the
+ * competition and the Hall of Champions, and the next post pushed it down. It is now pinned with the owner's
+ * own 0230 pin, which is why the squad page can lift it out of the feed and draw it under the header.
+ *
+ * ONE ANNOUNCEMENT AT A TIME. Any announcement already pinned is unpinned FIRST, which also frees its slot
+ * against 0230's three-pin cap, so a new one replaces the last instead of stacking up.
+ *
+ * Never throws: the post already exists, and failing to pin must not read as failing to post.
+ *   'pinned' · it is on top
+ *   'full'   · three other posts are pinned (0230 refused). The owner unpins one.
+ *   'failed' · anything else, including a database without 0230
+ */
+export async function pinAsAnnouncement(squadId: string, postId: string): Promise<'pinned' | 'full' | 'failed'> {
+  if (pinEdit0230 === false) return 'failed';
+  const { data, error } = await supabase
+    .from('squad_posts')
+    .select('id')
+    .eq('squad_id', squadId)
+    .eq('type', 'announcement')
+    .not('pinned_at', 'is', null)
+    .neq('id', postId);
+  if (error) {
+    if (isMissing(error)) pinEdit0230 = false;
+    return 'failed';
+  }
+  for (const r of (data ?? []) as { id: string }[]) {
+    try {
+      await pinSquadPost(r.id, false);
+    } catch {
+      // Left pinned. The new one still goes on top, because the page draws the most recently pinned.
+    }
+  }
+  try {
+    await pinSquadPost(postId, true);
+    return 'pinned';
+  } catch (e) {
+    return /up to 3/i.test(e instanceof Error ? e.message : '') ? 'full' : 'failed';
+  }
+}
+
+/**
  * Edit a post the athlete wrote: its words, and — on a posted workout — the workout (`layout`; null leaves it). A copy
  * somebody already took is untouched (SQ-A5-D1.1). Returns when it was edited. Throws with the database's reason.
  */
