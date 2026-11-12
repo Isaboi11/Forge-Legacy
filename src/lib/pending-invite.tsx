@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+import { useNavigationContainerRef, useRouter } from 'expo-router';
 
 import { inviteCodeFromUrl } from '@/domain/squad/invite-link';
 import { referralCodeFromUrl, referralSourceFromUrl } from '@/domain/referral/referral-link';
@@ -49,9 +49,36 @@ export { clearPendingInvite, stashPendingInvite, takePendingInvite } from './pen
  *   tapped); the listener is the warm one (it was). Handling only the first is the classic half-fix, and
  *   on web the cold path is the ONLY one, because a pasted URL is a fresh document.
  */
+/*
+ * ══ ⚠ NOT FOR AN ATHLETE WHO IS ALREADY IN (PO 2026-11-12) ══
+ *
+ * When the app is signed in, expo-router opens `join-squad` from the link by itself — the route is
+ * declared, so nothing strips it. The stash then opened it a SECOND time on top (two joins racing,
+ * "You're already in this squad", two squad screens to back out of). And a link that arrived WARM was
+ * never redeemed that session, because the redeem below only runs when the route changes — so it sat in
+ * storage and ambushed the next launch with a join screen nobody asked for.
+ *
+ * It mattered little while invites mostly went to strangers. The web page's "Open in Forge Legacy"
+ * button (`components/squad/OpenInAppInvite.web.tsx`) now sends exactly the signed-in athlete here.
+ *
+ *   · WARM, signed in → not stashed at all. expo-router navigates on a `url` event; that is certain.
+ *   · COLD → stashed as before (the route is still `'splash'`, nobody knows yet), and the redeem looks
+ *     at what is ON SCREEN before pushing: if `join-squad` is already focused, the launch URL was
+ *     honoured and the stash is dropped. Checked rather than assumed, so a cold start that expo-router
+ *     did NOT route still gets its invite.
+ */
 export function usePendingInvite(route: 'splash' | 'auth' | 'onboarding' | 'app'): void {
   const router = useRouter();
+  const navigation = useNavigationContainerRef();
   const redeemed = useRef(false);
+  const routeNow = useRef(route);
+  // The redeem reads AFTER the write, never racing it — a read that wins would leave the code stored,
+  // unredeemed, for the next launch to trip over.
+  const stashing = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    routeNow.current = route;
+  }, [route]);
 
   // ── capture ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -60,7 +87,8 @@ export function usePendingInvite(route: 'splash' | 'auth' | 'onboarding' | 'app'
     const capture = (url: string | null) => {
       if (!alive) return;
       const code = inviteCodeFromUrl(url);
-      if (code) void stashPendingInvite(code);
+      // `'app'`: expo-router is already opening join-squad from this very URL — see the note above.
+      if (code && routeNow.current !== 'app') stashing.current = stashPendingInvite(code);
       /*
        * The referral rides on the SAME link and is captured in the same breath (0170, MA3-D21).
        *
@@ -91,9 +119,14 @@ export function usePendingInvite(route: 'splash' | 'auth' | 'onboarding' | 'app'
     // that, so navigating earlier would be the same silent no-op this hook exists to fix.
     if (route !== 'app' || redeemed.current) return;
     let alive = true;
-    void takePendingInvite().then((code) => {
+    void stashing.current.then(takePendingInvite).then((code) => {
       if (!alive || !code) return;
       redeemed.current = true;
+      // A signed-in cold start: expo-router already opened the invite from the launch URL. Pushing it
+      // again would race two joins for the same squad.
+      // (Cast: with no typed root param list, react-navigation types the current route as `never`.)
+      const onScreen = navigation.isReady() ? (navigation.getCurrentRoute() as { name?: string } | undefined) : undefined;
+      if (onScreen?.name === 'join-squad') return;
       /*
        * `push`, not `replace`. The athlete lands on Home first and is then taken to the invite, so
        * backing out of it leaves them somewhere that exists — and a squad they chose not to join does not
@@ -104,5 +137,5 @@ export function usePendingInvite(route: 'splash' | 'auth' | 'onboarding' | 'app'
     return () => {
       alive = false;
     };
-  }, [route, router]);
+  }, [route, router, navigation]);
 }

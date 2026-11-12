@@ -33,6 +33,7 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ForgeSplash } from '@/components/forge-splash';
 import { AnalyticsTracker } from '@/components/analytics-tracker';
 import { PendingSaveDrain } from '@/components/pending-save-drain';
+import { OpenInAppInvite } from '@/components/squad/OpenInAppInvite';
 import { CoachBubble } from '@/components/forge/CoachBubble';
 import { ConsentHost } from '@/components/forge/ConsentSheet';
 import { AutoPostCatchUp } from '@/components/forge/AutoPostCatchUp';
@@ -224,6 +225,13 @@ export default function RootLayout() {
                       {/* Replays workouts held offline (W-9 §13.4). Same boundary, same reason: a thing
                           mounted on every screen must never be able to take the app down. */}
                       <PendingSaveDrain />
+                    </OverlayBoundary>
+                    {/* "Open in Forge Legacy" for a squad invite opened in an iPhone's browser (PO 2026-11-12).
+                        Web only — the native twin renders nothing. Out here, last, so it covers whichever
+                        route the boot router chose (sign-in for a stranger, join-squad for a signed-in
+                        visitor), and inside a boundary for the same reason as everything above it. */}
+                    <OverlayBoundary>
+                      <OpenInAppInvite />
                     </OverlayBoundary>
                     </CoachDoorProvider>
                   </TourProvider>
