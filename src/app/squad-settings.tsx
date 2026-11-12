@@ -100,6 +100,7 @@ export default function SquadSettingsScreen() {
   const [draftPhotoCleared, setDraftPhotoCleared] = useState(false);
   const [draftCrest, setDraftCrest] = useState('swords');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
 
   const [privacyOverride, setPrivacyOverride] = useState<SquadPrivacy | null>(null);
   const [savingPrivacy, setSavingPrivacy] = useState(false);
@@ -182,6 +183,35 @@ export default function SquadSettingsScreen() {
     if (asset?.uri) {
       setDraftPhotoUri(asset.uri);
       setDraftPhotoCleared(false);
+    }
+  };
+
+  /**
+   * ══ THE PHOTO HAS ITS OWN DOOR, AT THE TOP (PO 2026-11-12) ══
+   *
+   * "I don't think there is a place in the squad settings to add a photo." There was one, inside the Edit
+   * Identity sheet, behind a card that reads Squad Name · Motto · Description and never says "photo". The
+   * squad's own picture at the top of this screen was not tappable at all.
+   *
+   * So the picture IS the control: tap it, or the link under it, choose a photo, and it saves. No sheet
+   * and no Save button, because a photo is one decision. The sheet keeps its own photo row for Remove.
+   *
+   * No `callerModalGone` here, unlike `pickPhoto`: nothing is open over this screen when it is tapped.
+   */
+  const changePhoto = async () => {
+    if (savingPhoto) return;
+    const asset = await pick({ kind: 'images', title: 'Squad photo', allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+    if (!asset?.uri) return;
+    setSavingPhoto(true);
+    try {
+      const url = await uploadSquadPhoto(squad.id, asset.uri);
+      await updateSquad(squad.id, { photoUrl: url });
+      refetch();
+      showToast('Squad photo saved');
+    } catch (e) {
+      showToast(plainError(e, 'Couldn’t save the photo.'));
+    } finally {
+      setSavingPhoto(false);
     }
   };
 
@@ -294,9 +324,23 @@ export default function SquadSettingsScreen() {
       >
         {/* header */}
         <View style={styles.header}>
-          <View style={styles.headerCrest}>
-            {squad.photoUrl ? <Image source={{ uri: squad.photoUrl }} style={styles.headerCrestPhoto} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={30} />}
-          </View>
+          <Pressable
+            onPress={() => void changePhoto()}
+            disabled={savingPhoto}
+            accessibilityRole="button"
+            accessibilityLabel={squad.photoUrl ? 'Change squad photo' : 'Add squad photo'}
+            style={styles.headerPhotoBtn}
+          >
+            <View style={styles.headerCrest}>
+              {squad.photoUrl ? <Image source={{ uri: squad.photoUrl }} style={styles.headerCrestPhoto} contentFit="cover" /> : <SquadCrest crest={squad.crest} size={30} />}
+              {savingPhoto ? (
+                <View style={styles.headerCrestBusy}>
+                  <ActivityIndicator size="small" color={flColor.onMedia} />
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.editLink}>{savingPhoto ? 'Saving…' : squad.photoUrl ? 'Change Photo' : 'Add Photo'}</Text>
+          </Pressable>
           <Text style={styles.headerName}>{squad.name}</Text>
           <View style={styles.headerMetaRow}>
             <CrownGlyph />
@@ -1051,6 +1095,8 @@ const styles = StyleSheet.create({
     boxShadow: flShadow.glowSubtle,
   },
   headerCrestPhoto: { width: '100%', height: '100%', borderRadius: flRadius.round },
+  headerPhotoBtn: { alignItems: 'center', gap: 7 },
+  headerCrestBusy: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(5,5,5,0.55)' },
   headerName: { marginTop: 9, fontFamily: flFont.display, fontSize: 19, fontWeight: '600', letterSpacing: -0.2, color: flColor.cream100 },
   headerMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   headerMeta: { fontSize: 10, fontWeight: '600', letterSpacing: 1, textTransform: 'uppercase', color: flColor.gray600 },
