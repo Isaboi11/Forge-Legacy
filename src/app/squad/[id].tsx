@@ -31,6 +31,7 @@ import {
   ensureWeeklyRecap,
   fetchSquadFeed,
   fetchPinnedSquadPosts,
+  pinSquadPost,
   fetchMyReactionKinds,
   setSquadReactionKind,
   ACK_KINDS,
@@ -476,8 +477,33 @@ function SquadDetailRoute() {
   const targetError = goalTargetEdit != null && goalTargetEdit !== '' && !targetOk ? 'Enter a number of at least 1.' : undefined;
   const windowError = windowOk ? null : 'The end date has to come after the start.';
   const pinnedPosts = pinnedData ?? [];
+  /*
+   * ══ THE ANNOUNCEMENT SITS UNDER THE HEADER, NOT IN THE FEED (PO 2026-11-12) ══
+   *
+   * The squad's standing word from its owner outranks everything below it. It goes above check-ins and the goal,
+   * and it is not one of the "Pinned" strip: on a Monday that strip opens with the week's summary (24 h), which
+   * used to sit ABOVE the owner's announcement. The summary is temporary and the announcement is not, so they
+   * no longer share a place or a look.
+   *
+   * The most recently pinned announcement (`fetchOwnerPinnedPosts` orders by pin time). `pinAsAnnouncement`
+   * keeps it to one, and an older announcement pinned by hand from the post menu stays in the strip.
+   */
+  const announcement = pinnedPosts.find((p) => p.type === 'announcement') ?? null;
+  const stripPosts = announcement ? pinnedPosts.filter((p) => p.id !== announcement.id) : pinnedPosts;
   /* A pinned post is drawn once, at the top — never again further down where it would read as a duplicate. */
   const feedPosts = (feedData ?? []).filter((p) => !pinnedPosts.some((q) => q.id === p.id));
+
+  /** Owner only. The post stays in the feed as history; only its place at the top goes. */
+  const takeDownAnnouncement = async (postId: string) => {
+    try {
+      await pinSquadPost(postId, false);
+      refetchPinned();
+      refetchFeed();
+      showToast('Announcement taken down');
+    } catch (e) {
+      showToast(plainError(e, 'Couldn’t take that down.'));
+    }
+  };
 
   const canLoadMore = (feedData ?? []).length === feedLimit;
   const checkinPeople = checkinsData?.members ?? [];
@@ -637,10 +663,11 @@ function SquadDetailRoute() {
   };
 
   /** One feed row — the same card for a pinned post and the feed, so the two cannot drift. */
-  const feedCard = (p: SquadFeedPost, i: number) => (
+  const feedCard = (p: SquadFeedPost, i: number, opts?: { noMarker?: boolean }) => (
     <FeedCard
       key={p.id}
       post={p}
+      noMarker={opts?.noMarker}
       units={units}
       squadName={squad.name}
       alt={i % 2 === 1}
@@ -748,6 +775,23 @@ function SquadDetailRoute() {
           </TourAnchor>
 
           <View style={styles.heroDivider} />
+
+          {/* ANNOUNCEMENT — the owner's standing word, above everything else (PO 2026-11-12). The same row the
+              feed draws (full text, media, respect, comments), under a section label rather than inside a card. */}
+          {announcement ? (
+            <View style={styles.announceSection}>
+              <View style={styles.announceHead}>
+                <Text style={styles.feedLabel}>Announcement</Text>
+                {squad.isOwner ? (
+                  <Pressable onPress={() => void takeDownAnnouncement(announcement.id)} accessibilityRole="button" accessibilityLabel="Take down announcement" hitSlop={8}>
+                    <Text style={styles.announceTakeDown}>Take down</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {/* No row marker: the section label already says "Announcement". */}
+              {feedCard(announcement, 0, { noMarker: true })}
+            </View>
+          ) : null}
 
           {/* CHECK-INS — ephemeral video stories (latest per member, <24h) */}
           <TourAnchor id="squad-checkins" style={styles.checkinsSection}>
@@ -1015,9 +1059,9 @@ function SquadDetailRoute() {
             </Pressable>
           </View>
 
-          {pinnedPosts.length ? (
+          {stripPosts.length ? (
             <View style={styles.pinnedList}>
-              {pinnedPosts.map((p, i) => (
+              {stripPosts.map((p, i) => (
                 <View key={`pin-${p.id}`}>
                   <Text style={styles.pinnedLabel}>Pinned</Text>
                   {feedCard(p, i)}
@@ -1600,6 +1644,7 @@ const SQUAD_MARKER: Partial<Record<SquadPostType, { kind: LedgerMarker; label: s
  */
 function FeedCard({
   post,
+  noMarker = false,
   units,
   squadName,
   squadPhotoUrl,
@@ -1618,6 +1663,8 @@ function FeedCard({
   onTake,
 }: {
   post: SquadFeedPost;
+  /** The announcement under the header: its section label already names it. */
+  noMarker?: boolean;
   units: ReturnType<typeof useUnits>['units'];
   squadName: string;
   /** Heads a post the squad wrote itself (`isSquadVoice`). */
@@ -1731,7 +1778,7 @@ function FeedCard({
       /* A recap derives its marker from the snapshot — shoe for a cardio lead, barbell otherwise —
          through the same helper the friends feed uses, so the two cards cannot drift over which sport
          a post is. Non-recap types keep the static map. */
-      marker={summary ? recapMarker(summary) : hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
+      marker={noMarker ? null : summary ? recapMarker(summary) : hasMedia ? null : SQUAD_MARKER[post.type] ?? null}
       title={summary ? summary.name ?? recapMarker(summary).label : post.type === 'pr' ? post.prExercise ?? 'A new best' : null}
       context={summary ? summary.context ?? null : post.type === 'pr' ? [post.prValue, post.prLabel].filter(Boolean).join(' · ') || null : null}
       /* Who else was there — off the snapshot, so it says what the session looked like when it was
@@ -2199,6 +2246,10 @@ const styles = StyleSheet.create({
   feedList: { gap: 0 },
   /* Pinned (0230): the same rows, above the feed, each with a quiet label — information, not a card around it. */
   pinnedList: { gap: 0, marginBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  /* The announcement under the header: a section with a hairline below, the same rule `heroDivider` draws. */
+  announceSection: { marginBottom: 6, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: flColor.bronzeBorderSubtle },
+  announceHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  announceTakeDown: { fontSize: 12, fontWeight: '600', color: flColor.bronzeInk },
   pinnedLabel: { fontSize: 10.5, fontWeight: '700', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.labelInk, paddingHorizontal: 20, paddingTop: 10 },
   weeklyCard: { borderColor: flColor.bronzeBorder },
   weeklyIcon: {
