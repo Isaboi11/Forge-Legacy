@@ -173,6 +173,22 @@ function project(table, r, cols, embeds) {
   return o;
 }
 
+/**
+ * The real `signedInUserId` (`lib/supabase.ts`, PO 11-11 Brady), mirrored because this file stands in for that
+ * whole module. Without it every suite whose code imports `programs-live` or `squad-live` failed to LOAD, which
+ * shows up as one failing file and no failing test. Same rule as the real one: no session is nobody (null),
+ * any other failure is thrown.
+ */
+export async function signedInUserId() {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (user) return user.id;
+  if (error && error.name !== 'AuthSessionMissingError') throw error;
+  return null;
+}
+
 export const supabase = {
   from: (t) => new Query(t),
   auth: {
