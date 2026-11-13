@@ -202,6 +202,7 @@ export default function HoltAiOfferScreen() {
     body = (
       <ScrollView
         keyboardDismissMode={KEYBOARD_DISMISS_MODE}
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={[styles.body, { paddingBottom: 40 + insets.bottom }]}
         showsVerticalScrollIndicator={false}
       >
