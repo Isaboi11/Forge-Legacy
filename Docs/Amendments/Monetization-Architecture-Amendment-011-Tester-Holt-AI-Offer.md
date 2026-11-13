@@ -65,4 +65,4 @@ without this they could never see it.
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0 | 2026-11-13 | Shipped in OTA #16 (lane `34ec6754`); G1 migration renumbered 0263 → 0264. Built Built on `feat/holt-ai-offer` (off `fix/pricing-sweep`, which carries P1 trial eligibility, the C4 benefit list and the P8 SQL this depends on). |
+| 1.0 | 2026-11-13 | Shipped in OTA #16 (lane `34ec6754`); G1 migration renumbered 0263 → 0264. Built on `feat/holt-ai-offer` (off `fix/pricing-sweep`, which carries P1 trial eligibility, the C4 benefit list and the P8 SQL this depends on). |
