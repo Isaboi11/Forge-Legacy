@@ -39,7 +39,7 @@ test('the retry toast starts a re-read, but never cancels a first read still in 
     GATE,
     /showToast\(ENTITLEMENT_RETRY_MESSAGE\);[\s\S]{0,500}?if \(status === 'unknown'\) refetch\(\);\s*return false;/,
   );
-  assert.match(GATE, /\[gates, status, refetch, enqueue, showToast, inWorkout\]/);
+  assert.match(GATE, /\[gates, status, premium, refetch, enqueue, showToast, inWorkout\]/);
 });
 
 test('join-squad leans on the gate for the retry instead of a second copy of it', () => {

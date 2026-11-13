@@ -67,6 +67,7 @@ import {
 } from '@/data/form-check-live';
 import { formLiftKey, insertFormCheck, lastSavedForm, saveFormCheck, setFormUseful, shortDate } from '@/data/form-history-live';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
+import { usePlansDoor } from '@/hooks/usePremiumGate';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { setCoachAskSeed } from '@/lib/coach-ask-seed';
 import { useEntitlementState, usePremiumAi } from '@/lib/entitlement';
@@ -201,6 +202,9 @@ export default function FormCheckScreen() {
   const premiumAi = usePremiumAi();
   const { status: entStatus } = useEntitlementState();
   const { session } = useWorkoutSession();
+  /* Form check is reachable from a workout, so the plans open only through the door that refuses mid-session
+     (M7-D13, sweep G5). */
+  const openPlans = usePlansDoor();
   const { openCoach } = useCoachDoor();
   const { pick, mediaPickerSheet } = useMediaPicker();
 
@@ -359,7 +363,7 @@ export default function FormCheckScreen() {
   if (entStatus === 'ready' && !premiumAi && stage.step === 'start') {
     return (
       <Shell onClose={close}>
-        <CreditsState notEntitled premiumAi={false} onPlans={() => router.push('/subscription')} />
+        <CreditsState notEntitled premiumAi={false} onPlans={() => void openPlans()} />
       </Shell>
     );
   }
@@ -460,7 +464,7 @@ export default function FormCheckScreen() {
   if (stage.step === 'credits' || stage.step === 'not_entitled') {
     return (
       <Shell onClose={close}>
-        <CreditsState notEntitled={stage.step === 'not_entitled'} premiumAi={premiumAi} onPlans={() => router.push('/subscription')} />
+        <CreditsState notEntitled={stage.step === 'not_entitled'} premiumAi={premiumAi} onPlans={() => void openPlans()} />
       </Shell>
     );
   }

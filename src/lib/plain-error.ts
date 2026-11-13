@@ -30,7 +30,8 @@ export const PLAIN = {
   conflict: 'That already exists.',
   invalid: 'Something in that wasn’t valid. Check it and try again.',
   other: 'Something went wrong. Try again.',
-  capReached: 'You’ve reached the Free plan’s limit for this. Premium makes it unlimited — see Settings → Subscription.',
+  // Not "unlimited" (pricing sweep C2): Premium squads stop at 5 and paid photos / videos at a configured number.
+  capReached: 'You’ve reached the Free plan’s limit for this. Premium gives you more room — see Settings → Subscription.',
 } as const
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

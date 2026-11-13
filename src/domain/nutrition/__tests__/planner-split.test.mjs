@@ -99,8 +99,9 @@ test('every planner screen is behind the gate, and the tab\'s doors ask the plan
   }
   assert.doesNotMatch(read('src/app/recipe.tsx').slice(read('src/app/recipe.tsx').indexOf('export default function')), /NutritionPlannerGate/, 'recipe: reading stays free (H34)');
   const tab = read('src/app/(tabs)/nutrition.tsx');
-  assert.match(tab, /if \(!planner\) \{ router\.push\('\/subscription'\); return; \}/);
-  assert.match(tab, /planner \? addGo\(\{ pathname: '\/my-recipes'/);
+  // The plans open through `usePlansDoor` — a verified plan only, never mid-workout (sweep G5).
+  assert.match(tab, /if \(!planner\) \{ openPlans\(\); return; \}/);
+  assert.match(tab, /planner \? addGo\(\{ pathname: '\/my-recipes', params: \{ add: '1' \} \}\) : addPlans\(\)/);
 });
 
 test('importing a recipe from a link is Premium on the server too', () => {

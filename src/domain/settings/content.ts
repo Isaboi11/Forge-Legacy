@@ -253,6 +253,8 @@ export function settingsSections(opts: {
    * importing `Tier`, so this module stays free of runtime imports outside its own folder.
    */
   tier?: 'FREE' | 'PREMIUM';
+  /** Premium AI is held (pricing sweep C5) — the row then names that plan, not just "Premium". */
+  premiumAi?: boolean;
   /**
    * "How do I…?" — opens Coach Holt on his app-help topics, the closest thing the app has to a help
    * centre (QA 09-26 firstuser-21). Flag-gated like the rows above so an undefined flag keeps the exact
@@ -329,7 +331,8 @@ export function settingsSections(opts: {
       {
         key: 'sub',
         label: 'Subscription',
-        value: opts.tier === 'PREMIUM' ? 'Premium' : opts.tier === 'FREE' ? 'Free' : undefined,
+        value:
+          opts.tier === 'PREMIUM' ? (opts.premiumAi ? 'Premium AI' : 'Premium') : opts.tier === 'FREE' ? 'Free' : undefined,
         action: { type: 'route', path: '/subscription' },
       },
     ],

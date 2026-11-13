@@ -40,3 +40,15 @@ test('one conversion, shared: the builder and the paste import both use workout-
   assert.match(BUILDER, /import \{ prescriptionOfRow, toTemplateExercises \} from '@\/lib\/workout-template-rows';/);
   assert.doesNotMatch(BUILDER, /function toTemplateExercises\(/);
 });
+
+test('G2 (MA8-D6) — a pasted DAY spends the one free import once it exists, at every day door', () => {
+  // Today: the workout started from the paste.
+  assert.match(IMPORT, /router\.replace\('\/workout'\);\s*\/\*[\s\S]{0,260}\*\/\s*void markFreeImportUsed\(\)\.catch\(\(\) => \{\}\);/);
+  // Template (Create New, New Template, Holt's photo read): the builder is told the draft came from a paste…
+  assert.match(IMPORT, /router\.replace\(\{ pathname: '\/workout-builder', params: \{ o: 'imported' \} \}\);/);
+  assert.match(BUILDER, /const \[fromImport, setFromImport\] = useState\(params\.o === 'imported'\);/);
+  // …as is its own paste sheet, and a create spends it — never an edit, never a back-out.
+  assert.match(BUILDER, /main: \[\.\.\.d\.main, \.\.\.items\],\s*\}\)\);\s*setFromImport\(true\);/);
+  assert.match(BUILDER, /if \(fromImport && \(forLater \|\| !draft\.editId\)\) void markFreeImportUsed\(\)\.catch\(\(\) => \{\}\);/);
+  assert.equal(BUILDER.match(/spendImport\(\);/g)?.length, 3, 'start now, plan for later, and a template save');
+});

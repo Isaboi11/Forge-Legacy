@@ -40,7 +40,30 @@ function trialDays(product: PurchasesStoreProduct): number | null {
   return unit * intro.periodNumberOfUnits * Math.max(1, intro.cycles || 1);
 }
 
-function toPlan(pkg: PurchasesPackage): StorePlan | null {
+/**
+ * ⚠ A PRODUCT HAVING A TRIAL IS NOT THIS BUYER GETTING ONE (pricing sweep P1, launch QA H68).
+ *
+ * `introPrice` is the product's metadata — every Apple ID sees it. Apple gives one intro offer per
+ * subscription GROUP per Apple ID, so a lapsed trialer, or a Premium member stepping up to Premium AI in
+ * the same group, is charged the moment they confirm. Promising them "7-day free trial" is a false claim
+ * on a purchase button. So the trial is named only when the store says ELIGIBLE; unknown, ineligible, or
+ * a failed check → no trial wording (RevenueCat's own advice for unknown). Apple's sheet still shows a
+ * real trial to anyone who has one — we just never promise one we can't stand behind.
+ */
+async function eligibleForTrial(pkgs: PurchasesPackage[]): Promise<Set<string>> {
+  const ids = pkgs.filter((p) => trialDays(p.product) != null).map((p) => p.product.identifier);
+  if (ids.length === 0) return new Set();
+  try {
+    const answers = await Purchases.checkTrialOrIntroductoryPriceEligibility(ids);
+    return new Set(
+      ids.filter((id) => answers[id]?.status === Purchases.INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function toPlan(pkg: PurchasesPackage, trialOk: ReadonlySet<string>): StorePlan | null {
   if (!isPlanSlot(pkg.identifier)) return null; // e.g. RevenueCat's own `$rc_*` defaults — never ours
   const p = pkg.product;
   return {
@@ -49,7 +72,7 @@ function toPlan(pkg: PurchasesPackage): StorePlan | null {
     pricePerMonthLabel: pkg.identifier.endsWith('_annual') ? p.pricePerMonthString ?? null : null,
     amount: p.price,
     currency: p.currencyCode,
-    trialDays: trialDays(p),
+    trialDays: trialOk.has(p.identifier) ? trialDays(p) : null,
   };
 }
 
@@ -57,6 +80,11 @@ export function createStoreBilling(): BillingAdapter | null {
   if (Platform.OS !== 'ios' || !NativeModules.RNPurchases) return null;
 
   let configured = false;
+  /**
+   * The athlete the app last said is signed in — what the store's id MUST be before anything is bought.
+   * `undefined` until the first `identify`.
+   */
+  let wanted: string | null | undefined;
   /**
    * ⚠ ONE QUEUE FOR IDENTITY. Sign-in, sign-out and a purchase can all arrive inside the same second on
    * launch; RevenueCat's logIn/logOut are not safe to interleave, and a purchase that starts before the
@@ -80,9 +108,30 @@ export function createStoreBilling(): BillingAdapter | null {
     return o.availablePackages;
   }
 
+  /**
+   * ⚠ THE STORE MUST BE SIGNED IN AS THE ATHLETE WHO IS PAYING (pricing sweep P2).
+   *
+   * `identify` runs once per sign-in and a failed `logIn` (no signal at the gym) leaves the PREVIOUS
+   * account's id in place. Refusing only an anonymous id was not enough: on a phone two people share, B's
+   * purchase would be bought as A, and the webhook would make A Premium for B's money. So every purchase
+   * and restore first checks the id against the athlete the app says is signed in, tries the `logIn`
+   * once more, and refuses rather than buy under anyone else.
+   */
+  async function signedInAsWanted(): Promise<boolean> {
+    if (!wanted) return false;
+    try {
+      if ((await Purchases.getAppUserID()) === wanted) return true;
+      await Purchases.logIn(wanted);
+      return (await Purchases.getAppUserID()) === wanted;
+    } catch {
+      return false;
+    }
+  }
+
   return {
     identify: (userId) =>
       serial(async () => {
+        wanted = userId;
         try {
           if (!configured) {
             if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.WARN);
@@ -107,7 +156,8 @@ export function createStoreBilling(): BillingAdapter | null {
         try {
           const pkgs = await packagesOf(offering);
           if (pkgs == null) return null;
-          return pkgs.map(toPlan).filter((p): p is StorePlan => p != null);
+          const trialOk = await eligibleForTrial(pkgs);
+          return pkgs.map((pkg) => toPlan(pkg, trialOk)).filter((p): p is StorePlan => p != null);
         } catch {
           return null;
         }
@@ -117,8 +167,8 @@ export function createStoreBilling(): BillingAdapter | null {
       serial(async (): Promise<PurchaseOutcome> => {
         if (!configured) return 'unavailable';
         try {
-          // ⚠ Never buy as an anonymous id: the webhook could not tell whose Premium it was.
-          if (isAnonymous(await Purchases.getAppUserID())) return 'failed';
+          // ⚠ Never buy as an anonymous id, or as anyone but the signed-in athlete (see `signedInAsWanted`).
+          if (!(await signedInAsWanted())) return 'failed';
           const pkg = shown.get(`${offering}:${slot}`) ?? (await packagesOf(offering))?.find((p) => p.identifier === slot);
           if (!pkg) return 'failed';
           await Purchases.purchasePackage(pkg);
@@ -136,6 +186,8 @@ export function createStoreBilling(): BillingAdapter | null {
       serial(async (): Promise<RestoreOutcome> => {
         if (!configured) return 'unavailable';
         try {
+          // A restore under the wrong id would move the purchase onto that account (a TRANSFER).
+          if (!(await signedInAsWanted())) return 'failed';
           const info = await Purchases.restorePurchases();
           return Object.keys(info.entitlements.active).length > 0 ? 'restored' : 'none';
         } catch {

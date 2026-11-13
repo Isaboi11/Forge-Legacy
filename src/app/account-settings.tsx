@@ -36,7 +36,7 @@ import {
   type LegalKey,
 } from '@/domain/settings/content';
 import { useAuth } from '@/lib/auth';
-import { useTier } from '@/lib/entitlement';
+import { usePremiumAi, useTier } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { fetchExportNutrition, fetchExportWorkouts } from '@/data/export-live';
 import { RECIPE_BY_ID } from '@/domain/nutrition/meal-planner';
@@ -222,6 +222,7 @@ export default function AccountSettingsScreen() {
     isAdmin: isAdmin === true,
     /* `null` while entitlement is loading or unverifiable, which the row reads as "say nothing". */
     tier: useTier() ?? undefined,
+    premiumAi: usePremiumAi(),
   });
 
   const buildNo = Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode ?? null;

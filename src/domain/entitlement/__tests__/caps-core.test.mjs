@@ -7,8 +7,11 @@ import {
   capAllows,
   entitlementReadStatus,
   gateFor,
+  holtBlockDoor,
+  holtSpendVerdict,
   m7Benefits,
   m7Content,
+  paidRow,
   remaining,
   usageLabel,
 } from '../caps-core.ts';
@@ -145,8 +148,8 @@ test('⚠ a week and a program spend DIFFERENT allowances', () => {
 
 test('the week wall borrows the Programs row rather than inventing a seventh', () => {
   // M-7 §6.2 v1.1 locks CANONICAL at six and renders four; a seventh row would push a locked one off.
-  const { feature, reason } = m7Content('short_programs', 3);
-  assert.equal(feature, 'Unlimited programs');
+  const { feature, reason } = m7Content('short_programs', 3, PAID);
+  assert.equal(feature, paidRow('programs', PAID));
   assert.match(reason, /3 free training weeks/, 'the number is interpolated from config, never a literal');
   assert.match(m7Content('short_programs', 1).reason, /1 free training week\b/, 'singular at one');
 });
@@ -178,6 +181,37 @@ test('the Holt lifetime program and the monthly days are separate counters', () 
   assert.equal(gateFor('holt_programs', FREE, outOfDays).outcome, 'allowed');
 });
 
+test('MA4-D5: a Holt block under four weeks asks for a training week, never the one Holt program (sweep P6)', () => {
+  const free = (over) => (key) => gateFor(key, FREE, usage(over));
+  // The length is known: the line is D-RCM-30's, the one the save doors draw.
+  assert.equal(holtBlockDoor(1, free({})), 'short_programs');
+  assert.equal(holtBlockDoor(3, free({})), 'short_programs');
+  assert.equal(holtBlockDoor(4, free({})), 'holt_programs');
+  assert.equal(holtBlockDoor(12, free({})), 'holt_programs');
+  // Not asked yet: a spent Holt program does not close the door while a week is still on offer…
+  assert.equal(holtBlockDoor(undefined, free({ holtPrograms: 1 })), null);
+  // …but with the weeks spent too, the door asks the Holt program (and M-7 fires on it).
+  assert.equal(holtBlockDoor(undefined, free({ holtPrograms: 1, shortPrograms: 3 })), 'holt_programs');
+  assert.equal(holtBlockDoor(null, free({})), 'holt_programs');
+  // An unread entitlement is never "a week is on offer" — it goes to the guard, which shows the retry.
+  assert.equal(holtBlockDoor(undefined, () => ({ outcome: 'unknown' })), 'holt_programs');
+});
+
+test('G4: an unreadable Holt spend fails closed for Free and never stops an athlete with no ceiling', () => {
+  const free = gateFor('holt_days_per_month', FREE, usage());
+  const paid = gateFor('holt_days_per_month', PAID, usage());
+  // The server's answer is the answer, on any tier.
+  assert.equal(holtSpendVerdict({ allowed: true }, free), 'build');
+  assert.equal(holtSpendVerdict({ allowed: false }, free), 'used_up');
+  // Null (offline, an error): Free retries — it never builds, and never reads as "used up" (no upsell, M-7 §10).
+  assert.equal(holtSpendVerdict(null, free), 'retry');
+  assert.equal(holtSpendVerdict(null, gateFor('holt_days_per_month', FREE, usage({ holtDays: 2 }))), 'retry');
+  // Premium never needed the allowance, so its silence cannot stop them.
+  assert.equal(holtSpendVerdict(null, paid), 'build');
+  // An unread entitlement is not "no ceiling".
+  assert.equal(holtSpendVerdict(null, { outcome: 'unknown' }), 'retry');
+});
+
 test('a received program consumes the same counter as a built one', () => {
   // MA3-D10. Two built and one received is three, and the fourth is refused whatever its origin — the
   // counter has no notion of where a program came from, which is what makes that true.
@@ -196,9 +230,27 @@ test('M-7 renders the cap from config, never a literal', () => {
 test('the squad benefit row promises 5 squads, not unlimited', () => {
   // M7-D15. Premium's squad ceiling is genuinely 5, and a benefits row on a purchase surface promising
   // something the tier does not deliver is a false claim, not loose copy.
-  const rows = m7Benefits('squads');
+  const rows = m7Benefits('squads', PAID);
   assert.equal(rows[0], '5 squads');
   assert.ok(!rows.some((r) => /unlimited squads/i.test(r)));
+  // The 5 comes from config: a different ceiling, different copy; no config, no number at all.
+  assert.equal(m7Benefits('squads', { ...PAID, squads: 8 })[0], '8 squads');
+  assert.equal(m7Benefits('squads', null)[0], 'More squads');
+});
+
+test('a Premium row says "Unlimited" only when config does (pricing sweep C2, PO 2026-11-11)', () => {
+  // "Unlimited photos" over a 1,000-photo ceiling was a false claim on a purchase surface.
+  assert.equal(paidRow('photos', PAID), '1,000 photos');
+  assert.equal(paidRow('programs', PAID), '500 programs');
+  assert.equal(paidRow('videos', PAID), '100 videos');
+  assert.equal(paidRow('templates', PAID), 'Unlimited day templates');
+  assert.equal(paidRow('photos', null), 'More photos');
+  for (const key of CAP_KEYS) {
+    for (const row of m7Benefits(key, PAID)) {
+      const capped = Object.entries(PAID).some(([k, v]) => v > 0 && row.toLowerCase().includes(`unlimited ${k}`));
+      assert.ok(!capped, `${key}: "${row}" claims unlimited over a real ceiling`);
+    }
+  }
 });
 
 test('M-7 shows exactly four rows, triggered feature first, for every trigger', () => {
@@ -221,9 +273,10 @@ test('Coach AI appears nowhere on M-7', () => {
   }
 });
 
-test('the Holt rows say Coach Holt, never AI, because Holt is a rules engine', () => {
-  assert.match(m7Content('holt_programs', 1).feature, /Coach Holt/);
-  assert.match(m7Content('holt_days_per_month', 2).feature, /Coach Holt/);
+test('the Holt rows say Basic Holt, never AI, because Premium buys the rulebook coach (MA6-D7a)', () => {
+  assert.equal(m7Content('holt_programs', 1, PAID).feature, 'Unlimited Basic Holt programs');
+  assert.equal(m7Content('holt_days_per_month', 2, PAID).feature, 'Unlimited Basic Holt days');
+  assert.equal(m7Content('holt_days_per_month', 2, { ...PAID, holt_days_per_month: 30 }).feature, '30 Basic Holt days a month');
 });
 
 test('the usage label reads "n of cap", and never exposes the -1 sentinel', () => {
