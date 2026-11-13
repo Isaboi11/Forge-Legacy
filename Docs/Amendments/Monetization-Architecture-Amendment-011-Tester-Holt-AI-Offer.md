@@ -1,6 +1,6 @@
 # Monetization Architecture Amendment 011 — The Testers' Holt AI Offer
 
-**Status:** DRAFT (built, awaiting the PO's look before publish)
+**Status:** LOCKED · SHIPPED 2026-11-13 (OTA #16 `01a1d6c2` to build 11, PO "I approve the publish")
 **Date:** 2026-11-13
 **Owner:** Product (PO, in chat)
 **Amends:** MA10-D2 (three paywall moments → four; the fourth reaches comped testers only, once)
@@ -65,4 +65,4 @@ without this they could never see it.
 
 | Version | Date | Change |
 |---|---|---|
-| 1.0-draft | 2026-11-13 | Built on `feat/holt-ai-offer` (off `fix/pricing-sweep`, which carries P1 trial eligibility, the C4 benefit list and the P8 SQL this depends on). |
+| 1.0 | 2026-11-13 | Shipped in OTA #16 (lane `34ec6754`); G1 migration renumbered 0263 → 0264. Built Built on `feat/holt-ai-offer` (off `fix/pricing-sweep`, which carries P1 trial eligibility, the C4 benefit list and the P8 SQL this depends on). |
