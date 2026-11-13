@@ -100,7 +100,7 @@ test('Home opens it once, only when the server answers tester_ai, marking it see
   assert.match(layout, /<Stack\.Screen name="holt-ai-offer" \/>/);
   assert.match(hook, /offer\?\.offering !== 'tester_ai'\) return;/);
   const mark = hook.indexOf('await markHoltAiOfferSeen(userId);');
-  const push = hook.indexOf("router.push('/holt-ai-offer?from=announce');");
+  const push = hook.indexOf("router.push('/holt-ai-offer?from=announce'");
   assert.ok(mark > 0 && push > mark, 'mark, then push');
   assert.match(hook, /status === 'ready'/, 'never on an unknown tier (M-7 §10)');
   assert.match(store, /PREFIX \+ userId/, 'seen is per account, not per device');

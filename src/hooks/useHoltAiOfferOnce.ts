@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 
 import { fetchPaywallOffer } from '@/data/entitlement-live';
 import { holtAiOfferCandidate } from '@/domain/billing/holt-ai-offer';
@@ -47,7 +47,8 @@ export function useHoltAiOfferOnce(): void {
       const offer = await fetchPaywallOffer();
       if (offer?.offering !== 'tester_ai') return;
       await markHoltAiOfferSeen(userId);
-      router.push('/holt-ai-offer?from=announce');
+      // `as Href`: the generated route list (`.expo/types`, git-ignored) lags new screens — TourOverlay's pattern.
+      router.push('/holt-ai-offer?from=announce' as Href);
     })();
   }, [userId, tier, coachAi, router]);
 }
