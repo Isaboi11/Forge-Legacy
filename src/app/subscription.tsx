@@ -265,6 +265,13 @@ export default function SubscriptionScreen() {
   const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
   /** The inline messages §4 specifies for restore. Never an alert — the screen stays where it is. */
   const [notice, setNotice] = useState<string | null>(null);
+  /**
+   * ⚠ THE STORE SAID YES — THE BUY BUTTON IS GONE (Quan, 11-13). The webhook lands seconds after Apple's
+   * sheet closes; until then the screen still read "Free" with an armed Subscribe button and a one-line
+   * notice, and a new subscriber nearly paid twice. Once bought, the decision zone becomes a confirmation
+   * with a way forward, whatever the server says yet.
+   */
+  const [bought, setBought] = useState<PlanTier | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   /**
@@ -383,7 +390,9 @@ export default function SubscriptionScreen() {
 
     // Cancelling is not an error and produces no message (§5.1.3).
     if (outcome === 'purchased') {
-      setNotice(`Welcome to ${tierOf(selected) === 'premium' ? 'Forge Premium' : 'Holt AI'}.`);
+      setBought(tierOf(selected));
+      // From the sticky bar the confirmation would be off-screen — bring it into view.
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
       settle();
     } else if (outcome === 'pending') {
       setNotice('Waiting for approval. You’ll have access as soon as it’s approved.');
@@ -660,6 +669,22 @@ export default function SubscriptionScreen() {
               )}
             </View>
 
+            {bought ? (
+              <View style={[styles.card, styles.boughtCard]} accessibilityLiveRegion="polite">
+                <Text style={styles.boughtTitle}>
+                  Welcome to {bought === 'premium' ? 'Forge Premium' : bought === 'ai_addon' ? 'Holt AI' : 'Premium AI'}.
+                </Text>
+                <Text style={styles.benefitDetail}>
+                  Your purchase went through. You don’t need to buy again — it can take a few seconds to show across the app.
+                </Text>
+                <View style={styles.cta}>
+                  <Button variant="primary" fullWidth onPress={back} accessibilityLabel="Continue">
+                    Continue
+                  </Button>
+                </View>
+              </View>
+            ) : null}
+
             {isPremium ? (
               <>
                 <PlanCard
@@ -672,7 +697,7 @@ export default function SubscriptionScreen() {
                     ⚠ SHOWN EVEN WITH NO PLANS TO READ (QA holt-16): "See Premium AI" from Form Check landed
                     here, and with no store (the web) or a failed read the section vanished — no AI plan, no
                     price, no reason. The picker's own empty state now says why, under what AI adds. */}
-                {!coachAi ? (
+                {!coachAi && !bought ? (
                   <>
                     <SectionLabel>Add Holt AI</SectionLabel>
                     <Text style={styles.sectionLead}>{TIER_DISCLOSURE[paidTier ?? 'premium_ai']}</Text>
@@ -711,7 +736,7 @@ export default function SubscriptionScreen() {
               </>
             ) : (
               <>
-                {decision}
+                {bought ? null : decision}
 
                 {/* Near a limit, usage is this athlete's reason to buy — so it moves up beside the price. */}
                 {usageNear ? (
@@ -847,7 +872,7 @@ export default function SubscriptionScreen() {
             THE COMPACT BUY BAR — only once the main button has scrolled away (PO 09-25).
             ⚠ P8W-D4: what Premium does not include still sits above this button, in one short line.
           */}
-          {canBuy && showSticky && selectedPlan && paidTier ? (
+          {canBuy && !bought && showSticky && selectedPlan && paidTier ? (
             <View style={[styles.commitBar, { paddingBottom: 12 + insets.bottom }]}>
               {shownNotice ? <Text style={styles.notice}>{shownNotice}</Text> : null}
               <Text style={styles.stickyPlan}>
@@ -1361,6 +1386,8 @@ const styles = StyleSheet.create({
 
   cta: { marginTop: 18 },
   browseNote: { fontSize: 13.5, lineHeight: 19, color: flColor.gray400, textAlign: 'center', marginTop: 16 },
+  boughtCard: { padding: 18, marginBottom: 8, borderColor: flColor.accentBorder },
+  boughtTitle: { fontFamily: flFont.display, fontSize: 20, fontWeight: '700', color: flColor.cream100, marginBottom: 6 },
   notice: { fontSize: 12.5, color: flColor.bronzeInk, textAlign: 'center', marginTop: 10 },
   fineprint: { fontSize: 12, lineHeight: 17, color: flColor.gray400, textAlign: 'center', marginTop: 12, paddingHorizontal: 10 },
   linkRow: { alignItems: 'center', justifyContent: 'center', paddingVertical: 8, minHeight: 40 },
