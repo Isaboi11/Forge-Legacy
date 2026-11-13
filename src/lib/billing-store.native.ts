@@ -175,6 +175,19 @@ export function createStoreBilling(): BillingAdapter | null {
           return 'purchased';
         } catch (e) {
           const err = e as { userCancelled?: boolean | null; code?: string };
+          /*
+           * ⚠ ASK THE STORE BEFORE SAYING NO (Quan, 11-13). An Apple ID password prompt can hand back an
+           *   error and still complete the transaction; "try again" then sells the same plan twice. If an
+           *   entitlement is active right now, the purchase happened.
+           */
+          if (!err.userCancelled) {
+            try {
+              const info = await Purchases.getCustomerInfo();
+              if (Object.keys(info.entitlements.active).length > 0) return 'purchased';
+            } catch {
+              // Fall through to the honest outcome below.
+            }
+          }
           if (err.userCancelled || err.code === Purchases.PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) return 'cancelled';
           if (err.code === Purchases.PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR) return 'pending';
           if (err.code === Purchases.PURCHASES_ERROR_CODE.PURCHASE_NOT_ALLOWED_ERROR) return 'unavailable';
