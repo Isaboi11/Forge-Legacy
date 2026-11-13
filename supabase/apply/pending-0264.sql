@@ -1,5 +1,5 @@
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
--- PENDING — 0263: the database enforces the photo, video, squad and day-template caps (pricing sweep G1)
+-- PENDING — 0264: the database enforces the photo, video, squad and day-template caps (pricing sweep G1)
 --
 -- PASTE THIS WHOLE FILE into the Supabase SQL editor and run it once.
 -- Safe to run twice: §0 and §2 only raise, §1 is create-or-replace / drop-if-exists + create, §3 is read-only.
@@ -17,7 +17,7 @@
 --
 -- §0  PREFLIGHT — RAISES, changing nothing, unless 0145's counting functions and the four tables are as expected
 -- §1  four BEFORE triggers + one shared check (verbatim from
---     supabase/migrations/0263_server_caps_photos_videos_squads_templates.sql)
+--     supabase/migrations/0264_server_caps_photos_videos_squads_templates.sql)
 -- §2  RAISES unless every trigger is live, every function is server-only, and the check counts with
 --     athlete_live_counts() — the same function that gives the app its "38 of 75"
 -- §3  one row: what landed, the caps in force, and how many Free athletes are at / over each cap today
@@ -50,7 +50,7 @@ declare
   v_missing text := '';
 begin
   if to_regclass('public.entitlement_config') is null then
-    raise exception '0263 PREFLIGHT: public.entitlement_config does not exist — 0145 has not been applied. Nothing was changed.';
+    raise exception '0264 PREFLIGHT: public.entitlement_config does not exist — 0145 has not been applied. Nothing was changed.';
   end if;
   if not exists (select 1 from public.entitlement_config c where c.id) then
     v_missing := v_missing || ' entitlement_config row';
@@ -89,13 +89,13 @@ begin
   end if;
 
   if v_missing <> '' then
-    raise exception '0263 PREFLIGHT: missing —%. Nothing was changed.', v_missing;
+    raise exception '0264 PREFLIGHT: missing —%. Nothing was changed.', v_missing;
   end if;
 end $$;
 
 
 -- ═════════════════════════════════════════════════════════════════════════════
--- §1 — THE TRIGGERS (verbatim from supabase/migrations/0263_server_caps_photos_videos_squads_templates.sql)
+-- §1 — THE TRIGGERS (verbatim from supabase/migrations/0264_server_caps_photos_videos_squads_templates.sql)
 -- ═════════════════════════════════════════════════════════════════════════════
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ end;
 $$;
 
 comment on function public.live_cap_check(uuid, text) is
-  '0263. Refuses (P0001) unless the athlete has room for one more photo / video / squad / day template, counted by athlete_live_counts() — the number my_entitlement() shows the app — against athlete_caps(). cap_allows() decides; -1 or a missing key is unlimited. No auth.uid() (SQL editor, service role) is never refused. Called only by the 0263 cap guards; not callable by clients.';
+  '0264. Refuses (P0001) unless the athlete has room for one more photo / video / squad / day template, counted by athlete_live_counts() — the number my_entitlement() shows the app — against athlete_caps(). cap_allows() decides; -1 or a missing key is unlimited. No auth.uid() (SQL editor, service role) is never refused. Called only by the 0264 cap guards; not callable by clients.';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
 -- 2. PHOTOS AND VIDEOS IN A CHAPTER
@@ -353,7 +353,7 @@ begin
     'squad_members_cap_guard_trg', 'workout_templates_cap_guard_trg'
   ] loop
     if not exists (select 1 from pg_trigger t where t.tgname = v_trg and not t.tgisinternal and t.tgenabled <> 'D') then
-      raise exception '0263 self-check: trigger % is missing or disabled', v_trg;
+      raise exception '0264 self-check: trigger % is missing or disabled', v_trg;
     end if;
   end loop;
 
@@ -365,19 +365,19 @@ begin
     'public.workout_templates_cap_guard()'
   ] loop
     if to_regprocedure(v_fn) is null then
-      raise exception '0263 self-check: % was not created', v_fn;
+      raise exception '0264 self-check: % was not created', v_fn;
     end if;
     if has_function_privilege('anon', v_fn, 'execute') or has_function_privilege('authenticated', v_fn, 'execute') then
-      raise exception '0263 self-check: % is executable by a client role', v_fn;
+      raise exception '0264 self-check: % is executable by a client role', v_fn;
     end if;
   end loop;
 
   -- The count must be the app's: the check reads athlete_live_counts(), not a copy of it.
   if position('athlete_live_counts' in pg_get_functiondef('public.live_cap_check(uuid, text)'::regprocedure)) = 0 then
-    raise exception '0263 self-check: live_cap_check does not read athlete_live_counts()';
+    raise exception '0264 self-check: live_cap_check does not read athlete_live_counts()';
   end if;
 
-  raise notice '0263 OK: four cap triggers live, five functions server-side only.';
+  raise notice '0264 OK: four cap triggers live, five functions server-side only.';
 end;
 $$;
 
@@ -410,7 +410,7 @@ begin
          and pg_get_triggerdef(t.oid) like '%BEFORE INSERT%'
          and pg_get_triggerdef(t.oid) like '%FOR EACH ROW%'
     ) then
-      raise exception '0263 FAILED: % is missing, disabled, not BEFORE INSERT, or not on %', v_trg, v_def;
+      raise exception '0264 FAILED: % is missing, disabled, not BEFORE INSERT, or not on %', v_trg, v_def;
     end if;
   end loop;
 
@@ -423,10 +423,10 @@ begin
     'public.workout_templates_cap_guard()'
   ] loop
     if to_regprocedure(v_fn) is null then
-      raise exception '0263 FAILED: % does not exist', v_fn;
+      raise exception '0264 FAILED: % does not exist', v_fn;
     end if;
     if has_function_privilege('anon', v_fn, 'execute') or has_function_privilege('authenticated', v_fn, 'execute') then
-      raise exception '0263 FAILED: % is executable by a client role', v_fn;
+      raise exception '0264 FAILED: % is executable by a client role', v_fn;
     end if;
   end loop;
 
@@ -436,7 +436,7 @@ begin
   foreach v_need in array array['athlete_live_counts', 'athlete_caps', 'cap_allows', 'athlete_tier',
                                 'pg_advisory_xact_lock', 'limit reached', 'auth.uid()'] loop
     if position(v_need in v_def) = 0 then
-      raise exception '0263 FAILED: the installed live_cap_check() is missing %', v_need;
+      raise exception '0264 FAILED: the installed live_cap_check() is missing %', v_need;
     end if;
   end loop;
 
@@ -446,19 +446,19 @@ begin
     'public.squad_members_cap_guard()', 'public.workout_templates_cap_guard()'
   ] loop
     if position('live_cap_check' in pg_get_functiondef(v_fn::regprocedure)) = 0 then
-      raise exception '0263 FAILED: % does not call live_cap_check()', v_fn;
+      raise exception '0264 FAILED: % does not call live_cap_check()', v_fn;
     end if;
   end loop;
 
   -- The Forge-starter exemption is in place (MA3 §5), or adopting a starter at the cap would be refused.
   if position('source_definition_id' in pg_get_functiondef('public.workout_templates_cap_guard()'::regprocedure)) = 0 then
-    raise exception '0263 FAILED: workout_templates_cap_guard has no Forge-starter exemption';
+    raise exception '0264 FAILED: workout_templates_cap_guard has no Forge-starter exemption';
   end if;
 
   -- Approve is covered by the membership trigger only if it still inserts into squad_members itself.
   if position('insert into public.squad_members'
               in pg_get_functiondef('public.approve_squad_join_request(uuid, uuid)'::regprocedure)) = 0 then
-    raise exception '0263 FAILED: approve_squad_join_request no longer inserts into squad_members — check what it calls';
+    raise exception '0264 FAILED: approve_squad_join_request no longer inserts into squad_members — check what it calls';
   end if;
 end $$;
 

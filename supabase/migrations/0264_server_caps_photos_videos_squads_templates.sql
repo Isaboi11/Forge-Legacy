@@ -1,4 +1,4 @@
--- Forge Legacy — 0263: the database enforces the photo, video, squad and day-template caps (pricing sweep G1)
+-- Forge Legacy — 0264: the database enforces the photo, video, squad and day-template caps (pricing sweep G1)
 --
 -- ══ WHAT THIS IS ══
 --
@@ -210,7 +210,7 @@ end;
 $$;
 
 comment on function public.live_cap_check(uuid, text) is
-  '0263. Refuses (P0001) unless the athlete has room for one more photo / video / squad / day template, counted by athlete_live_counts() — the number my_entitlement() shows the app — against athlete_caps(). cap_allows() decides; -1 or a missing key is unlimited. No auth.uid() (SQL editor, service role) is never refused. Called only by the 0263 cap guards; not callable by clients.';
+  '0264. Refuses (P0001) unless the athlete has room for one more photo / video / squad / day template, counted by athlete_live_counts() — the number my_entitlement() shows the app — against athlete_caps(). cap_allows() decides; -1 or a missing key is unlimited. No auth.uid() (SQL editor, service role) is never refused. Called only by the 0264 cap guards; not callable by clients.';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────
 -- 2. PHOTOS AND VIDEOS IN A CHAPTER
@@ -377,7 +377,7 @@ begin
     'squad_members_cap_guard_trg', 'workout_templates_cap_guard_trg'
   ] loop
     if not exists (select 1 from pg_trigger t where t.tgname = v_trg and not t.tgisinternal and t.tgenabled <> 'D') then
-      raise exception '0263 self-check: trigger % is missing or disabled', v_trg;
+      raise exception '0264 self-check: trigger % is missing or disabled', v_trg;
     end if;
   end loop;
 
@@ -389,19 +389,19 @@ begin
     'public.workout_templates_cap_guard()'
   ] loop
     if to_regprocedure(v_fn) is null then
-      raise exception '0263 self-check: % was not created', v_fn;
+      raise exception '0264 self-check: % was not created', v_fn;
     end if;
     if has_function_privilege('anon', v_fn, 'execute') or has_function_privilege('authenticated', v_fn, 'execute') then
-      raise exception '0263 self-check: % is executable by a client role', v_fn;
+      raise exception '0264 self-check: % is executable by a client role', v_fn;
     end if;
   end loop;
 
   -- The count must be the app's: the check reads athlete_live_counts(), not a copy of it.
   if position('athlete_live_counts' in pg_get_functiondef('public.live_cap_check(uuid, text)'::regprocedure)) = 0 then
-    raise exception '0263 self-check: live_cap_check does not read athlete_live_counts()';
+    raise exception '0264 self-check: live_cap_check does not read athlete_live_counts()';
   end if;
 
-  raise notice '0263 OK: four cap triggers live, five functions server-side only.';
+  raise notice '0264 OK: four cap triggers live, five functions server-side only.';
 end;
 $$;
 
@@ -416,7 +416,7 @@ commit;
 --     · an owner approving a requester already in 1 squad     → "They're already in as many squads…"
 --   and a Premium account doing the same at Free numbers goes straight through.
 --
--- From the editor, by source and catalog only: supabase/apply/pending-0263.sql §2–§3.
+-- From the editor, by source and catalog only: supabase/apply/pending-0264.sql §2–§3.
 --
 -- ══ UNDO (keeps every row; puts the caps back to app-only) ══
 --

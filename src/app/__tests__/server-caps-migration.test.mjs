@@ -6,7 +6,7 @@ import { dirname, resolve } from 'node:path';
 import { PLAIN, plainError } from '../../lib/plain-error.ts';
 
 /**
- * 0263 — the database enforces the photo, video, squad and day-template caps (pricing sweep G1, PO 11-11).
+ * 0264 — the database enforces the photo, video, squad and day-template caps (pricing sweep G1, PO 11-11).
  *
  * The behaviour was proven against the real DDL in PGlite (Free refused at cap+1, Premium through, over-cap rows
  * untouched, no-uid context exempt, approve refused with the request left pending). This file is the rail that
@@ -23,9 +23,9 @@ import { PLAIN, plainError } from '../../lib/plain-error.ts';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const read = (p) => readFileSync(resolve(ROOT, p), 'utf8').replace(/\r\n/g, '\n');
 
-const MIG_FILE = 'supabase/migrations/0263_server_caps_photos_videos_squads_templates.sql';
+const MIG_FILE = 'supabase/migrations/0264_server_caps_photos_videos_squads_templates.sql';
 const MIG = read(MIG_FILE);
-const BUNDLE = read('supabase/apply/pending-0263.sql');
+const BUNDLE = read('supabase/apply/pending-0264.sql');
 
 const NEW_FNS = [
   'live_cap_check',
@@ -44,7 +44,7 @@ const TRIGGERS = [
 /** `create or replace function public.<name>(` … `$$;` */
 function fnDef(sql, name) {
   const all = sql.match(new RegExp('create or replace function public\\.' + name + '\\([\\s\\S]*?\\n\\$\\$;', 'g'));
-  assert.ok(all, `${name} is not defined in 0263`);
+  assert.ok(all, `${name} is not defined in 0264`);
   assert.equal(all.length, 1, `${name} is defined more than once`);
   return all[0];
 }
@@ -55,13 +55,13 @@ const code = (s) => s.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/--[^\n]*/g, ' '
 function migrationBody() {
   const a = MIG.indexOf('\nbegin;\n');
   const b = MIG.lastIndexOf('\ncommit;\n');
-  assert.ok(a > 0 && b > a, '0263 is wrapped in begin; … commit;');
+  assert.ok(a > 0 && b > a, '0264 is wrapped in begin; … commit;');
   return MIG.slice(a + '\nbegin;\n'.length, b + 1).replace(/^\n+/, '');
 }
 
 test('the paste bundle carries the migration verbatim, after a preflight and before its assertion', () => {
   const body = migrationBody();
-  assert.ok(BUNDLE.includes(body), 'pending-0263.sql §1 is not byte-for-byte the migration body — regenerate it');
+  assert.ok(BUNDLE.includes(body), 'pending-0264.sql §1 is not byte-for-byte the migration body — regenerate it');
 
   const counts = {
     'create or replace function': 5,
@@ -94,14 +94,14 @@ test('verification never calls an app (my_*) function — the editor has no auth
 });
 
 test('no existing function is restated — the doors keep their own bodies', () => {
-  const files = readdirSync(resolve(ROOT, 'supabase/migrations')).filter((f) => f.endsWith('.sql') && f < '0263');
+  const files = readdirSync(resolve(ROOT, 'supabase/migrations')).filter((f) => f.endsWith('.sql') && f < '0264');
   const defined = new Set();
   for (const f of files) {
     for (const m of read('supabase/migrations/' + f).matchAll(/create or replace function public\.(\w+)\s*\(/g)) defined.add(m[1]);
   }
   const here = [...code(MIG).matchAll(/create or replace function public\.(\w+)\s*\(/g)].map((m) => m[1]);
-  assert.deepEqual(here.sort(), [...NEW_FNS].sort(), '0263 defines exactly its five new functions');
-  for (const fn of here) assert.ok(!defined.has(fn), `${fn} already exists — 0263 must not retype it`);
+  assert.deepEqual(here.sort(), [...NEW_FNS].sort(), '0264 defines exactly its five new functions');
+  for (const fn of here) assert.ok(!defined.has(fn), `${fn} already exists — 0264 must not retype it`);
   for (const door of ['approve_squad_join_request', 'create_squad', 'join_squad_by_code', 'athlete_live_counts', 'my_entitlement']) {
     assert.ok(!code(MIG).includes(`function public.${door}(`), `${door} is not restated`);
   }
@@ -123,7 +123,7 @@ test('the count is the app’s count: athlete_live_counts(), never a copy of its
     assert.doesNotMatch(body, /count\(\*\) from public\.(chapter_photos|transformation_entries|workout_templates)/, `${fn} does not re-count`);
   }
   // No cap number anywhere in the code — only the sentinel lives in cap_allows().
-  assert.doesNotMatch(all.replace(/'[^']*'/g, "''"), /\b(75|1000|100|500)\b|[<>]=?\s*[1-9]\d*\b/, 'no literal cap in 0263');
+  assert.doesNotMatch(all.replace(/'[^']*'/g, "''"), /\b(75|1000|100|500)\b|[<>]=?\s*[1-9]\d*\b/, 'no literal cap in 0264');
 });
 
 test('each door is the right one: what counts as a write that ADDS', () => {
