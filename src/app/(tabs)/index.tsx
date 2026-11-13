@@ -11,6 +11,7 @@ import { Avatar } from '@/components/forge/composites/Avatar';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { usePlansAfterOnboarding } from '@/hooks/usePlansAfterOnboarding';
+import { useHoltAiOfferOnce } from '@/hooks/useHoltAiOfferOnce';
 import { ChevronRightIcon, ForgeMarkIcon } from '@/components/forge/primitives/icons/HomeIcons';
 import { SectionHeader } from '@/components/forge/composites/SectionHeader/SectionHeader';
 import { LegacyTabIcon } from '@/components/forge/primitives/icons/NavIcons';
@@ -322,6 +323,8 @@ export default function HomeScreen() {
   const { startWorkout } = useWorkoutSession();
   // Once, right after onboarding, and only for a Free athlete — see the hook (ONB-A7-D2).
   usePlansAfterOnboarding();
+  // Once, for a comped tester the server offers the Holt AI add-on to (Monetization Amendment 011).
+  useHoltAiOfferOnce();
   const { requestPrompt, requestTour, startTour } = useTour();
   /* Holt is mounted outside the navigator, so opening him is a context call rather than a route
      push — the sheet grows out of the bubble instead of taking Home off the screen. */

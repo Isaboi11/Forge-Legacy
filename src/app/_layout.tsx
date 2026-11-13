@@ -470,6 +470,8 @@ function RootNavigator() {
             so the push lands over the triggering surface and back returns to it, exactly as §6 requires.
             A `fullScreenModal` here would be wrong from Account Settings, and there is one route. */}
         <Stack.Screen name="subscription" />
+        {/* The testers' Holt AI offer (Monetization Amendment 011) — opened once by Home for a comped tester. */}
+        <Stack.Screen name="holt-ai-offer" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="preferences" />
         {/* What Holt Remembers (0204, CA-D2). Account Settings → Training — Holt's notes, each editable
