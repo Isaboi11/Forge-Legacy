@@ -941,14 +941,23 @@ export async function uploadPostMedia(squadId: string, uri: string, kind: SquadM
   });
 }
 
-/** Add a comment to a post. */
-export async function addSquadComment(postId: string, body: string): Promise<void> {
+/**
+ * Add a comment to a post. Returns the new comment's id — the tag picker (0265) needs it to say WHERE the
+ * tag was. The author can always read their own comment back (`can_read_post`), so the returning select
+ * cannot refuse a row the insert just accepted.
+ */
+export async function addSquadComment(postId: string, body: string): Promise<string | null> {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
-  const { error } = await supabase.from('squad_post_comments').insert({ post_id: postId, author_id: user.id, body: body.trim() });
+  const { data, error } = await supabase
+    .from('squad_post_comments')
+    .insert({ post_id: postId, author_id: user.id, body: body.trim() })
+    .select('id')
+    .maybeSingle();
   if (error) throw error;
+  return (data as { id: string } | null)?.id ?? null;
 }
 
 /**
