@@ -183,7 +183,9 @@ function NotificationRow({ notification: n, divided, onPress }: { notification: 
     n.kind === 'squad_training_started' ||
     n.kind === 'squad_training_finished' ||
     // 0251. A squad-mate opened a competition — the row is their invitation, so it wears their face.
-    n.kind === 'squad_challenge_open';
+    n.kind === 'squad_challenge_open' ||
+    // 0265. A squad-mate tagged you — the row is about who did it.
+    n.kind === 'post_mention';
 
   return (
     <Animated.View style={{ opacity: v, transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }] }}>
@@ -322,6 +324,18 @@ function bodyFor(n: ForgeNotification, actor: string) {
           <Text style={styles.strong}>{actor}</Text> {n.reactionKind ? `gave your post ${ACK_LABEL[n.reactionKind]}` : 'reacted to your post'}
         </>
       );
+    // 0265. The squad is named — an athlete in three squads should know which one is talking about them.
+    case 'post_mention':
+      return (
+        <>
+          <Text style={styles.strong}>{actor}</Text> tagged you in {n.mentionInComment ? 'a comment' : 'a post'}
+          {n.squadName ? (
+            <>
+              {' '}in <Text style={styles.strong}>{n.squadName}</Text>
+            </>
+          ) : null}
+        </>
+      );
     /* Present tense, and the squad named, because both are load-bearing. "is training" is the only
        sentence in this list describing something still happening — the row is an invitation, and the
        tense is what says so. And an athlete in three squads is told which one this came from, since
@@ -415,6 +429,8 @@ function subFor(n: ForgeNotification): string {
       return 'Read it and reply';
     case 'post_reaction':
       return 'Open your post';
+    case 'post_mention':
+      return 'See what they said';
     // The only sub-line in this list that is an offer rather than a description of where the tap goes.
     case 'squad_training_started':
       return 'Send a message or ask to join';
@@ -474,6 +490,8 @@ function accessibilityLabelFor(n: ForgeNotification, actor: string): string {
       return `${actor} commented on your post, ${when}. Read it and reply.`;
     case 'post_reaction':
       return `${actor} ${n.reactionKind ? `gave your post ${ACK_LABEL[n.reactionKind]}` : 'reacted to your post'}, ${when}. Open your post.`;
+    case 'post_mention':
+      return `${actor} tagged you in ${n.mentionInComment ? 'a comment' : 'a post'}${n.squadName ? ` in ${n.squadName}` : ''}, ${when}. See what they said.`;
     case 'squad_training_started':
       return `${actor} is training in ${n.squadName}, started ${when}. Send them a message or ask to join.`;
     case 'squad_training_finished':
@@ -530,6 +548,8 @@ function glyphFor(kind: ForgeNotification['kind']) {
       return <SpeechGlyph size={11} color={flColor.bronze300} />;
     case 'post_reaction':
       return <HeartGlyph size={11} color={flColor.bronze300} />;
+    case 'post_mention':
+      return <SpeechGlyph size={11} color={flColor.bronze300} />;
     /* The play glyph for a start — the same mark `squad_checkin` uses for something live and expiring,
        which is exactly what this is. A finish takes the check, because it is done. */
     case 'squad_training_started':
