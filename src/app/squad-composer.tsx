@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type NativeSyntheticEvent, type TextInputSelectionChangeEventData } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -30,6 +30,8 @@ import {
   type WorkoutSummary,
 } from '@/data/squad-feed-live';
 import { createFriendPost, uploadFeedMedia, type PostAudience } from '@/data/friends-feed-live';
+import { fetchSquadMentionables, tagMentions } from '@/data/mentions-live';
+import { MentionSuggestions, useMentions } from '@/components/forge/compositions/MentionPicker';
 import { friendsTypeFor, offeredToFriends } from '@/domain/squad/post-audience';
 import { fetchMySquads } from '@/data/squad-live';
 import { fetchFriendLists } from '@/data/friends-live';
@@ -174,6 +176,21 @@ export default function SquadComposerRoute() {
   const [nowId, setNowId] = useState<string | null>(null);
 
   const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  /*
+   * ══ TAG SQUAD-MATES (0265, PO 2026-11-13) ══ "@" — or a capitalised name — opens the squad's members under
+   * the box; a tap writes "@Full Name". Only when the post reaches a squad: a Friends-only post has nobody
+   * the server would let it tag. The people are whoever is in the squad picked right now.
+   */
+  const tagSquadId = audience !== 'FRIENDS' ? squadId : '';
+  const { data: mentionables } = useQuery(() => (tagSquadId ? fetchSquadMentionables(tagSquadId) : Promise.resolve([])), [tagSquadId]);
+  const mentions = useMentions(form.body, (v) => set('body', v), mentionables);
+  const bodyField = {
+    value: form.body,
+    onChange: mentions.onChangeText,
+    onSelectionChange: mentions.onSelectionChange,
+    below: <MentionSuggestions matches={mentions.matches} onPick={mentions.pick} />,
+  };
 
   /*
    * The library IS the authoring surface for a posted workout (0192). A template is exactly "a workout
@@ -451,6 +468,8 @@ export default function SquadComposerRoute() {
         workoutSummary: recap?.summary ?? null,
         layout,
       }).then(async (postId) => {
+        // After the save, never instead of it: a tag that fails costs nothing but the notice.
+        void tagMentions(postId, null, mentions.taggedIds());
         if (type !== 'announcement') return done();
         /* The promise this screen makes ("Pins to the top"), now kept. See `pinAsAnnouncement`. A failed pin
            still reports the post: it went out, it just is not on top. */
@@ -486,7 +505,10 @@ export default function SquadComposerRoute() {
       prValue: form.prValue,
       prExercise: form.prExercise,
       prLabel: form.prLabel,
-    }).then(() => done(), failed);
+    }).then((postId) => {
+      if (audience === 'BOTH') void tagMentions(postId, null, mentions.taggedIds());
+      done();
+    }, failed);
   };
 
   // ── Step 1: pick a type ──
@@ -673,13 +695,13 @@ export default function SquadComposerRoute() {
               <EntryStrip label="Then" entries={entries ?? []} selectedId={thenId} otherId={nowId} onSelect={setThenId} />
               <EntryStrip label="Now" entries={entries ?? []} selectedId={nowId} otherId={thenId} onSelect={setNowId} />
               <PickPreview pick={xform} />
-              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="What changed?…" rows={2} />
+              <Area label="Say something (optional)" {...bodyField} placeholder="What changed?…" rows={2} />
             </>
           )
         ) : type === 'formcheck' ? (
           <>
             <MediaAttach media={media} uploading={uploading} pct={mediaPct} videoOnly onPick={() => pickMedia(true)} onRemove={() => setMedia([])} />
-            <Area label="What should the squad look at? (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="e.g. Does my hip rise look early?" rows={3} />
+            <Area label="What should the squad look at? (optional)" {...bodyField} placeholder="e.g. Does my hip rise look early?" rows={3} />
           </>
         ) : type === 'recap' ? (
           recap ? (
@@ -696,7 +718,7 @@ export default function SquadComposerRoute() {
                   <Text style={styles.recapChangeText}>Choose a different workout</Text>
                 </Pressable>
               </View>
-              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="How did it go?…" rows={2} />
+              <Area label="Say something (optional)" {...bodyField} placeholder="How did it go?…" rows={2} />
             </>
           ) : (
             <View style={styles.pickerWrap}>
@@ -749,7 +771,7 @@ export default function SquadComposerRoute() {
             <Field label="Lift / movement" value={form.prExercise} onChange={(v) => set('prExercise', v)} placeholder="Bench Press" />
             <Field label="Result" value={form.prValue} onChange={(v) => set('prValue', v)} placeholder="315 lb" />
             <Field label="Label" value={form.prLabel} onChange={(v) => set('prLabel', v)} placeholder="Squad PR" />
-            <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="Bar speed felt easy…" rows={2} />
+            <Area label="Say something (optional)" {...bodyField} placeholder="Bar speed felt easy…" rows={2} />
             <View style={styles.preview}>
               <Text style={styles.previewLabel}>Preview</Text>
               <View style={styles.previewCard}>
@@ -785,7 +807,7 @@ export default function SquadComposerRoute() {
                   <Text style={styles.recapChangeText}>Choose a different workout</Text>
                 </Pressable>
               </View>
-              <Area label="Say something (optional)" value={form.body} onChange={(v) => set('body', v)} placeholder="Tomorrow's session…" rows={3} />
+              <Area label="Say something (optional)" {...bodyField} placeholder="Tomorrow's session…" rows={3} />
               {/* The card itself, photographed, or anything else worth showing with it (PO 2026-09-30: "post a
                   picture with the workout and any extra comment I want on it"). */}
               <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
@@ -838,12 +860,12 @@ export default function SquadComposerRoute() {
         ) : type === 'discussion' ? (
           <>
             {/* Named for where it's going (social2-16, QA 09-26): a Friends-only note was headed "Note to the squad". */}
-            <Area label={audience === 'FRIENDS' ? 'Note to your friends' : audience === 'BOTH' ? 'Note to your friends & squad' : 'Note to the squad'} value={form.body} onChange={(v) => set('body', v)} placeholder="Keep it short…" rows={4} />
+            <Area label={audience === 'FRIENDS' ? 'Note to your friends' : audience === 'BOTH' ? 'Note to your friends & squad' : 'Note to the squad'} {...bodyField} placeholder="Keep it short…" rows={4} />
             <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
           </>
         ) : (
           <>
-            <Area label="Announcement" value={form.body} onChange={(v) => set('body', v)} placeholder="Pins to the top of your squad…" rows={4} />
+            <Area label="Announcement" {...bodyField} placeholder="Pins to the top of your squad…" rows={4} />
             <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
             <View style={styles.gateNote}>
               <ShieldIcon />
@@ -1039,7 +1061,25 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
   );
 }
 
-function Area({ label, value, onChange, placeholder, rows }: { label: string; value: string; onChange: (v: string) => void; placeholder: string; rows: number }) {
+function Area({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows,
+  onSelectionChange,
+  below,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  rows: number;
+  /** The tag picker reads the cursor (0265). */
+  onSelectionChange?: (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => void;
+  /** Drawn under the box — the tag picker's list. */
+  below?: ReactNode;
+}) {
   const [focus, setFocus] = useState(false);
   return (
     <View style={styles.fieldWrap}>
@@ -1056,7 +1096,9 @@ function Area({ label, value, onChange, placeholder, rows }: { label: string; va
         maxLength={1000}
         style={[styles.input, styles.area, { minHeight: rows * 22 + 24 }, focus ? styles.inputFocus : null]}
         accessibilityLabel={label}
+        onSelectionChange={onSelectionChange}
       />
+      {below}
     </View>
   );
 }

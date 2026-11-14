@@ -37,7 +37,12 @@ test('only the owner gets "Take down", and it unpins rather than deletes', () =>
 test('the composer pins an announcement after posting it, and never fails the post over the pin', () => {
   assert.match(COMPOSER, /if \(type !== 'announcement'\) return done\(\);/);
   assert.match(COMPOSER, /const pin = await pinAsAnnouncement\(squadId, postId\);/);
-  assert.match(COMPOSER, /\}\)\.then\(\(\) => done\(\), failed\);/, 'the friends writer does not pass its post id as the toast');
+  // 0265: the friends writer's post id goes to the tag call (Friends & Squad) — never to `done` as the toast.
+  assert.match(
+    COMPOSER,
+    /\}\)\.then\(\(postId\) => \{\s*if \(audience === 'BOTH'\) void tagMentions\(postId, null, mentions\.taggedIds\(\)\);\s*done\(\);\s*\}, failed\);/,
+    'the friends writer does not pass its post id as the toast',
+  );
 });
 
 test('Announcement is offered on a squad-only post only (Friends & Squad would write it as a discussion)', () => {

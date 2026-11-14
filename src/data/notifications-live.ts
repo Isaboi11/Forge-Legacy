@@ -94,7 +94,13 @@ export type NotificationKind =
    */
   | 'squad_owner_changed'
   | 'squad_deleted'
-  | 'squad_challenge_open';
+  | 'squad_challenge_open'
+  /**
+   * A squad-mate tagged you in a post or a comment (0265, SQ-D9 Rule 4 / SQ-D12). From `mention_notices()`,
+   * merged like the 0251 kinds — never from `notification_feed`, never through `KINDS`. Not fan-out: only the
+   * person tagged. The push rides `squad_reactions` ("Reactions & Mentions"); the inbox row always shows.
+   */
+  | 'post_mention';
 
 export interface ForgeNotification {
   kind: NotificationKind;
@@ -124,6 +130,8 @@ export interface ForgeNotification {
   actorAvatarUrl: string | null;
   /** The goal kinds only: "412 workouts logged together", worded by the server at close (0200). */
   detail: string | null;
+  /** `post_mention` only (0265): tagged in a comment (true) or in the post itself (false). */
+  mentionInComment?: boolean;
   /** `post_reaction` only: which of the four acknowledgements it was (social2-28). Read from
    *  `squad_post_reactions` by the client — the union row carries the post and the actor, not the kind.
    *  Null when it can't be read (RLS, or changed since), and the inbox then draws the plain heart. */
@@ -285,18 +293,68 @@ async function fetchSocialNotices(): Promise<ForgeNotification[]> {
     }));
 }
 
+interface MentionNoticeRow {
+  kind: string;
+  at: string;
+  unread: boolean;
+  squad_id: string | null;
+  squad_name: string | null;
+  squad_crest: string | null;
+  squad_photo_url: string | null;
+  post_id: string | null;
+  post_audience: string | null;
+  in_comment: boolean | null;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_avatar_url: string | null;
+}
+
+/**
+ * The "tagged you" rows (0265). Resolves [] on ANY error, for `fetchSocialNotices`' reason: the app ships
+ * before the migration is pasted, and a side-feed that does not exist yet must never cost the main one.
+ */
+async function fetchMentionNotices(): Promise<ForgeNotification[]> {
+  const { data, error } = await supabase.rpc('mention_notices');
+  if (error || !data) return [];
+  return (data as MentionNoticeRow[])
+    .filter((r) => r.kind === 'post_mention' && !!r.post_id)
+    .map((r) => ({
+      kind: 'post_mention' as const,
+      at: r.at,
+      unread: !!r.unread,
+      squadId: r.squad_id ?? '',
+      squadName: r.squad_name ?? '',
+      squadCrest: r.squad_crest ?? '',
+      squadPhotoUrl: r.squad_photo_url ?? null,
+      challengeId: null,
+      challengeName: null,
+      inviteId: null,
+      inviteName: null,
+      shareId: null,
+      shareName: null,
+      postId: r.post_id ?? null,
+      postAudience: r.post_audience ?? null,
+      actorId: r.actor_id ?? null,
+      actorName: r.actor_name ?? null,
+      actorAvatarUrl: r.actor_avatar_url ?? null,
+      detail: null,
+      mentionInComment: !!r.in_comment,
+    }));
+}
+
 /** Everything that has happened to you, newest first. Unknown kinds are dropped, never rendered raw. */
 export async function fetchNotifications(limit = 50): Promise<ForgeNotification[]> {
-  const [{ data, error }, goals, notices] = await Promise.all([
+  const [{ data, error }, goals, notices, mentions] = await Promise.all([
     supabase.rpc('notification_feed', { p_limit: limit }),
     fetchGoalNotifications(),
     fetchSocialNotices(),
+    fetchMentionNotices(),
   ]);
   if (error) {
     if (isMissingFn(error)) throw new Error('Notifications aren’t available yet — migration 0054 hasn’t been applied.');
     throw error;
   }
-  const out: ForgeNotification[] = [...goals, ...notices];
+  const out: ForgeNotification[] = [...goals, ...notices, ...mentions];
   for (const r of (data ?? []) as FeedRow[]) {
     const kind = asKind(r.kind);
     if (!kind) continue; // a kind this build doesn't know how to word is worse than silence
@@ -354,13 +412,14 @@ async function attachReactionKinds(rows: ForgeNotification[]): Promise<void> {
  * anything else.
  */
 export async function fetchUnreadNotificationCount(): Promise<number> {
-  const [{ data, error }, goals, notices] = await Promise.all([
+  const [{ data, error }, goals, notices, mentions] = await Promise.all([
     supabase.rpc('notification_unread_count'),
     fetchGoalNotifications(),
     fetchSocialNotices(),
+    fetchMentionNotices(),
   ]);
   const base = error ? 0 : Number(data ?? 0);
-  return base + goals.filter((g) => g.unread).length + notices.filter((g) => g.unread).length;
+  return base + goals.filter((g) => g.unread).length + notices.filter((g) => g.unread).length + mentions.filter((g) => g.unread).length;
 }
 
 /** Move the read line to now. Called when the feed is opened, after its items have already resolved. */

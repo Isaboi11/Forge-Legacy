@@ -90,6 +90,10 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
      * shut, so "somebody commented" landed the athlete on a list to go hunting in. `?post=<id>` opens that
      * post's comments on arrival. An acknowledgement has no thread to open and keeps the bare feed.
      */
+    /* 0265 — tagged in a squad post or comment. Always a squad post (a tag needs a squad), so always the
+       thread — where the tag is drawn and a reply is one tap away. */
+    case 'post_mention':
+      return n.postId ? { pathname: '/squad-post/[id]', params: { id: n.postId } } : '/inbox';
     case 'post_comment':
     case 'post_reaction':
       if (n.postAudience === 'FRIENDS') {

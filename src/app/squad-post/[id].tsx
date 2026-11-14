@@ -35,6 +35,9 @@ import { openPlaylist, PlaylistChip } from '@/components/forge/composites/Playli
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { playlistFromRow } from '@/domain/workout/playlist';
 import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
+import { fetchPostMentions, fetchPostSquadId, fetchSquadMentionables, tagMentions } from '@/data/mentions-live';
+import { MentionSuggestions, MentionText, useMentions } from '@/components/forge/compositions/MentionPicker';
+import type { PickedMention } from '@/domain/squad/mentions';
 
 /**
  * Squad Post Detail — the real, squad-backed thread (built to `Post Detail.dc.html`'s squad chrome).
@@ -71,6 +74,18 @@ export default function SquadPostRoute() {
   const [removing, setRemoving] = useState<{ id: string; mine: boolean } | null>(null);
   const [commentText, setCommentText] = useState('');
   const [sending, setSending] = useState(false);
+  /*
+   * ══ TAG SQUAD-MATES IN A COMMENT (0265, PO 2026-11-13) ══ "@" or a capitalised name opens the post's squad
+   * above the comment bar. A friends-only post has no squad, so no list. `tagsTick` re-reads who the thread
+   * tagged once a send has finished tagging, so the new comment draws its names in the accent ink.
+   */
+  const { data: mentionables } = useQuery(async () => {
+    const squadId = await fetchPostSquadId(postId);
+    return squadId ? fetchSquadMentionables(squadId) : [];
+  }, [postId]);
+  const mentions = useMentions(commentText, setCommentText, mentionables);
+  const [tagsTick, setTagsTick] = useState(0);
+  const { data: tags } = useQuery(() => fetchPostMentions(postId), [postId, tagsTick]);
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
   const [cardW, setCardW] = useState(0);
   const [reportOpen, setReportOpen] = useState(false);
@@ -279,11 +294,15 @@ export default function SquadPostRoute() {
     const body = commentText.trim();
     if (!post || !body || sending) return;
     setSending(true);
+    const tagged = mentions.taggedIds();
     addSquadComment(post.id, body).then(
-      () => {
+      (commentId) => {
         setSending(false);
         setCommentText('');
+        mentions.reset();
         refetch();
+        // After the save, never instead of it — then re-read the thread's tags so the names draw.
+        if (tagged.length && commentId) void tagMentions(post.id, commentId, tagged).then(() => setTagsTick((n) => n + 1));
       },
       (e: unknown) => {
         setSending(false);
@@ -620,7 +639,7 @@ export default function SquadPostRoute() {
             </View>
           ) : null}
 
-          {post.body ? <Text style={styles.bodyText}>{post.body}</Text> : null}
+          {post.body ? <MentionText text={post.body} tagged={tags?.post} style={styles.bodyText} /> : null}
 
           {/* A recap's photos lead, as they do on the feed card. Drawn after the session block they sat
               below a screen of stats, and the one thing the athlete tapped to see was the last on the page. */}
@@ -751,6 +770,7 @@ export default function SquadPostRoute() {
                 onEdit={() => setEditing({ id: c.id, body: c.body })}
                 onDelete={() => setRemoving({ id: c.id, mine: c.authorId === myId })}
                 onReport={() => setReportComment({ id: String(c.id), authorId: c.authorId, authorName: c.authorName })}
+                tagged={tags?.byComment[c.id]}
               />
             ))
           ) : (
@@ -786,6 +806,8 @@ export default function SquadPostRoute() {
         reports `endCoordinates.height` from the bottom of the SCREEN, so it already contains the
         indicator's space; adding the inset on top would leave a 34pt gap under a raised keyboard.
       */}
+      {/* The tag list sits ON the comment bar, in flow — it pushes the thread up rather than covering it. */}
+      <MentionSuggestions matches={mentions.matches} onPick={mentions.pick} style={styles.mentionPanel} />
       <Reanimated.View
         style={[styles.composer, FOLLOWS_KEYBOARD_PER_FRAME ? composerLift : { paddingBottom: 16 + (keyboardInset > 0 ? keyboardInset : insets.bottom) }]}
         {...kbTouch}
@@ -793,7 +815,8 @@ export default function SquadPostRoute() {
         <TextInput
           ref={composerRef}
           value={commentText}
-          onChangeText={setCommentText}
+          onChangeText={mentions.onChangeText}
+          onSelectionChange={mentions.onSelectionChange}
           placeholder="Add a comment…"
           placeholderTextColor={flColor.gray400}
           style={styles.composerInput}
@@ -985,6 +1008,7 @@ function RecapStat({ n, label }: { n: string; label: string }) {
  */
 function CommentItem({
   comment,
+  tagged,
   isMine,
   canDelete,
   onEdit,
@@ -992,6 +1016,8 @@ function CommentItem({
   onReport,
 }: {
   comment: SquadPostComment;
+  /** Who this comment tagged (0265) — drawn in the accent ink. */
+  tagged?: readonly PickedMention[];
   isMine: boolean;
   canDelete: boolean;
   onEdit: () => void;
@@ -1011,7 +1037,7 @@ function CommentItem({
               marking; `edited_at` is the only thing that can tell them. Null on every older row. */}
           {comment.editedAt ? <Text style={styles.commentEdited}>edited</Text> : null}
         </View>
-        <Text style={styles.commentText}>{comment.body}</Text>
+        <MentionText text={comment.body} tagged={tagged} style={styles.commentText} />
         <View style={styles.commentActions}>
             {isMine ? (
               <Pressable onPress={onEdit} accessibilityRole="button" accessibilityLabel="Edit your comment" hitSlop={8} style={styles.commentEditBtn}>
@@ -1231,6 +1257,7 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     color: flColor.cream100,
   },
+  mentionPanel: { marginHorizontal: 14, marginBottom: 8 },
   sendBtn: { width: 42, height: 42, borderRadius: flRadius.round, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   sendBtnOn: { backgroundColor: forgeOr<string>('#3D2F1A', flColor.bronzeSolid), borderColor: flColor.accentBorder },
   sendBtnOff: { backgroundColor: flColor.charcoal800, borderColor: flColor.charcoal600 },
