@@ -13,10 +13,12 @@ import type { Mentionable, PickedMention } from '@/domain/squad/mentions';
 export async function fetchSquadMentionables(squadId: string): Promise<Mentionable[]> {
   if (!squadId) return [];
   try {
+    // The session on the phone, not `getUser()` over the network — a gym with one bar of signal must not
+    // turn into "you can tag yourself" (UX-016's rule for writers; here it only filters the list).
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const uid = user?.id ?? '';
+      data: { session },
+    } = await supabase.auth.getSession();
+    const uid = session?.user?.id ?? '';
     const { data, error } = await supabase.from('squad_members').select('user_id, profiles(name, avatar_url)').eq('squad_id', squadId);
     if (error || !data) return [];
     return ((data as unknown as { user_id: string; profiles: { name: string | null; avatar_url: string | null } | null }[]) ?? [])
