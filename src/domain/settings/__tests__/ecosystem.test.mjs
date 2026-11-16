@@ -261,7 +261,19 @@ test('app prefs default to imperial, haptics/sound on, reduce-motion off, analyt
     autoPost: { friends: false, squadIds: [], asked: false },
     // Holt talks during workouts unless the athlete turns him off. Absence (every stored blob) = on.
     holtInWorkout: 'on',
+    // Nutrition Amendment 007: nothing hidden. Absence (every stored blob) keeps all three macro rings.
+    hiddenMacros: [],
   });
+});
+
+test('hiddenMacros: known keys survive once each, in order; anything else means none hidden', () => {
+  assert.deepEqual(sanitizePrefs({ hiddenMacros: ['fat', 'carb'] }).hiddenMacros, ['carb', 'fat']);
+  assert.deepEqual(sanitizePrefs({ hiddenMacros: ['carb', 'carb', 'fiber', 7] }).hiddenMacros, ['carb']);
+  assert.deepEqual(sanitizePrefs({ hiddenMacros: ['protein', 'carb', 'fat'] }).hiddenMacros, ['protein', 'carb', 'fat']);
+  assert.deepEqual(sanitizePrefs({ hiddenMacros: 'carb' }).hiddenMacros, []);
+  assert.deepEqual(sanitizePrefs({}).hiddenMacros, []);
+  // Its own key: hiding macros never touches another preference.
+  assert.equal(sanitizePrefs({ hiddenMacros: ['fat'], holtTips: 'off' }).holtTips, 'off');
 });
 
 test('holtInWorkout: only on/off survive, and absence is on', () => {
@@ -289,7 +301,7 @@ test('exactly the toggles with a real consumer today are marked live', () => {
 
 test('sanitizePrefs coerces each field and survives a malformed blob', () => {
   const p = sanitizePrefs({ units: 'metric', haptics: false, sound: 'loud', reduceMotion: true });
-  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false }, holtInWorkout: 'on' });
+  assert.deepEqual(p, { units: 'metric', haptics: false, sound: true, reduceMotion: true, analyticsOptOut: false, coachIntensity: 'steady', theme: 'forge', rowUnit: 'm', holtTips: 'ask', careLineUntil: null, autoPost: { friends: false, squadIds: [], asked: false }, holtInWorkout: 'on', hiddenMacros: [] });
   assert.deepEqual(sanitizePrefs('nope'), APP_PREFS_DEFAULTS);
   assert.equal(sanitizePrefs({ units: 'stones' }).units, 'imperial', 'an unknown system falls back');
 });
