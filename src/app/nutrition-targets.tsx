@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -44,7 +44,17 @@ import { addBodyEntry, fetchBodyEntries, latestBodyReading } from '@/data/body-m
 import { fetchNutritionProfile, fetchTargetHistory, saveBirthYear, saveNutritionProfile, saveTargets } from '@/data/nutrition-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useProfile } from '@/lib/profile';
-import { useUnits } from '@/lib/settings';
+import { useAppPrefs, useUnits } from '@/lib/settings';
+import { saveAppPrefs } from '@/data/settings-live';
+import { ToggleTrack } from '@/components/forge/SettingsToggle';
+import {
+  isMacroShown,
+  MACRO_DISPLAY_NOTE,
+  MACRO_KEYS,
+  MACRO_LABEL,
+  setMacroShown,
+  type MacroKey,
+} from '@/domain/nutrition/macro-display';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 
@@ -75,6 +85,11 @@ export default function NutritionTargetsScreen() {
   const { showToast } = useToast();
   const { profile } = useProfile();
   const { units } = useUnits();
+  const { prefs, loaded: prefsLoaded, refetch: refetchPrefs } = useAppPrefs();
+  /* The switches answer at once; null = nothing tapped this visit, so the account's choice shows. */
+  const [hiddenNow, setHiddenNow] = useState<MacroKey[] | null>(null);
+  const hiddenMacros = hiddenNow ?? prefs.hiddenMacros;
+  const macroWrites = useRef<Promise<void>>(Promise.resolve());
 
   const [todayIso] = useState(() => localToday());
   const [reloads, setReloads] = useState(0);
@@ -231,6 +246,25 @@ export default function NutritionTargetsScreen() {
   };
 
   const age = ageFrom(birthYear, todayIso);
+
+  /*
+   * ══ SHOW ON NUTRITION (Amendment 007) ══ Drawn at once, written behind, and a failed write puts the switch
+   * back and says why. ⚠ Writes only once prefs have loaded: before that `prefs` is the DEFAULTS, and spreading
+   * them would overwrite every other preference the athlete has (`SettingsState.loaded`). Writes are chained so
+   * two quick taps can never land out of order.
+   */
+  const toggleMacro = (key: MacroKey, show: boolean) => {
+    if (!prefsLoaded) return;
+    const next = setMacroShown(hiddenMacros, key, show);
+    setHiddenNow(next);
+    macroWrites.current = macroWrites.current
+      .then(() => saveAppPrefs({ ...prefs, hiddenMacros: next }))
+      .then(() => refetchPrefs())
+      .catch((e: unknown) => {
+        setHiddenNow(null);
+        showToast(errorMessage(e));
+      });
+  };
 
   return (
     <View style={styles.screen}>
@@ -590,6 +624,33 @@ export default function NutritionTargetsScreen() {
           </View>
         )}
 
+        {/* what the tracking screens show (Amendment 007) — saved on the tap, not by the footer, which is
+            for targets. Every row is the switch, so the whole width is the target. */}
+        <View style={styles.historyHead}>
+          <Text style={styles.sectionLabel}>Show on Nutrition</Text>
+          <Text style={styles.historyIntro}>{MACRO_DISPLAY_NOTE}</Text>
+        </View>
+        <View>
+          {MACRO_KEYS.map((key) => {
+            const on = isMacroShown(hiddenMacros, key);
+            return (
+              <Pressable
+                key={key}
+                accessibilityRole="switch"
+                aria-checked={on}
+                accessibilityState={{ checked: on }}
+                accessibilityLabel={`Show ${MACRO_LABEL[key].toLowerCase()} on Nutrition`}
+                onPress={() => toggleMacro(key, !on)}
+                style={({ pressed }) => [styles.showRow, pressed && styles.showRowPressed]}
+              >
+                <View style={[styles.showDot, { backgroundColor: SHOW_DOT[key] }]} />
+                <Text style={styles.showLabel}>{MACRO_LABEL[key]}</Text>
+                <ToggleTrack value={on} />
+              </Pressable>
+            );
+          })}
+        </View>
+
         {/* history */}
         <View style={styles.historyHead}>
           <Text style={styles.sectionLabel}>Target history</Text>
@@ -691,6 +752,9 @@ export default function NutritionTargetsScreen() {
 /* ── pieces ──────────────────────────────────────────────────────────────── */
 
 const LB_PER_KG = 0.45359237;
+
+/** The Nutrition tab's ring colours, so each switch reads as the ring it controls. */
+const SHOW_DOT: Record<MacroKey, string> = { protein: flColor.macroProtein, carb: flColor.macroCarb, fat: flColor.macroFat };
 
 /** "What do you weigh?" — the no-weigh-in gate, answered in place (kitchen-21). */
 function WeighInCard({ metric, onSaved, onError }: { metric: boolean; onSaved: () => void; onError: (message: string) => void }) {
@@ -968,6 +1032,10 @@ const styles = StyleSheet.create({
   macroSumOff: { color: flColor.gray400 },
 
   historyHead: { gap: 6, paddingTop: 38, paddingBottom: 12, paddingHorizontal: 2 },
+  showRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 54, paddingVertical: 8, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  showRowPressed: { opacity: 0.85 },
+  showDot: { width: 8, height: 8, borderRadius: flRadius.round },
+  showLabel: { flex: 1, minWidth: 0, fontSize: 15, color: flColor.cream100 },
   historyIntro: { fontSize: 12.5, lineHeight: 18, color: flColor.gray600 },
   historyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingVertical: 10, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: flColor.divider },
   historyText: { flex: 1, minWidth: 0, gap: 3 },

@@ -55,9 +55,11 @@ import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
 import { useEntitlementState, useNutritionAccess, useNutritionPlanner } from '@/lib/entitlement';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { useProfile } from '@/lib/profile';
+import { useShownMacros } from '@/lib/settings';
 import { TAB_SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { fitWordSize } from '@/domain/text/fit-word';
+import { MACRO_LABEL, macroRowInset, type MacroKey } from '@/domain/nutrition/macro-display';
 
 /**
  * Nutrition tab root — built to `Nutrition Home.dc.html` (Claude Design), wired to the real diary (0205).
@@ -108,6 +110,8 @@ function heroFitScaled(fitted: { fontSize: number; lineHeight: number } | null, 
   return size === 52 ? null : { fontSize: size, lineHeight: size + 2 };
 }
 const MACRO_RING = { box: 94, r: 40, stroke: 9 } as const;
+/* protein green · carbs purple · fat blue (see the header). */
+const MACRO_RING_COLOR: Record<MacroKey, string> = { protein: flColor.macroProtein, carb: flColor.macroCarb, fat: flColor.macroFat };
 
 /*
  * How big the rings may be on THIS screen (QA N-14). At full size the tab needs 537 pt above Log Food's lower
@@ -123,13 +127,20 @@ const RINGS_FULL = 537;
 const RINGS_COMPACT_FIXED = 193;
 const COIN_BAND = 76;
 const CAPTION_OUT = 21;
-function ringFit(viewport: number): { scale: number; compact: boolean; captionOut: boolean } {
+/* The macro row's share of the two figures above: 179 at full size (its 94 ring + 85 of labels and padding),
+   of which `macroRowCompact` takes 14. With every macro hidden (Amendment 007) the row is not drawn, so the
+   calorie ring gets that room back on a short screen. */
+const MACRO_ROW_FULL = 179;
+const MACRO_ROW_COMPACT_FIXED = MACRO_ROW_FULL - MACRO_RING.box - 14;
+function ringFit(viewport: number, macroRow = true): { scale: number; compact: boolean; captionOut: boolean } {
   const room = viewport - COIN_BAND;
-  if (room >= RINGS_FULL) return { scale: 1, compact: false, captionOut: false };
-  const boxes = RING.box + MACRO_RING.box;
-  const inside = (room - RINGS_COMPACT_FIXED) / boxes;
+  const full = macroRow ? RINGS_FULL : RINGS_FULL - MACRO_ROW_FULL;
+  const fixed = macroRow ? RINGS_COMPACT_FIXED : RINGS_COMPACT_FIXED - MACRO_ROW_COMPACT_FIXED;
+  if (room >= full) return { scale: 1, compact: false, captionOut: false };
+  const boxes = RING.box + (macroRow ? MACRO_RING.box : 0);
+  const inside = (room - fixed) / boxes;
   if (inside >= 0.75) return { scale: Math.min(1, inside), compact: true, captionOut: false };
-  return { scale: Math.max(0.62, Math.min(0.75, (room - RINGS_COMPACT_FIXED - CAPTION_OUT) / boxes)), compact: true, captionOut: true };
+  return { scale: Math.max(0.62, Math.min(0.75, (room - fixed - CAPTION_OUT) / boxes)), compact: true, captionOut: true };
 }
 
 export default function NutritionScreen() {
@@ -141,7 +152,9 @@ export default function NutritionScreen() {
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
-  const fit = ringFit(viewportHeight ?? windowHeight - insets.top - insets.bottom - 136);
+  /* The macros the athlete chose on Daily targets (Amendment 007). Calories always show. */
+  const macrosShown = useShownMacros();
+  const fit = ringFit(viewportHeight ?? windowHeight - insets.top - insets.bottom - 136, macrosShown.length > 0);
   const ringBox = Math.round(RING.box * fit.scale);
   const macroBox = Math.round(MACRO_RING.box * fit.scale);
   /* Who may open the tab: `my_entitlement().nutrition` — any signed-in athlete since 0244 (0206 → 0237 →
@@ -501,16 +514,27 @@ export default function NutritionScreen() {
         </Pressable>
 
         {/* ── macro rings ───────────────────────────────────────────────── */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Edit macro targets"
-          onPress={() => router.push('/nutrition-targets')}
-          style={[styles.macroRow, fit.compact && styles.macroRowCompact]}
-        >
-          <MacroRing box={macroBox} label="Protein" value={eaten.protein} target={targets?.protein ?? null} color={flColor.macroProtein} />
-          <MacroRing box={macroBox} label="Carbs" value={eaten.carb} target={targets?.carb ?? null} color={flColor.macroCarb} />
-          <MacroRing box={macroBox} label="Fat" value={eaten.fat} target={targets?.fat ?? null} color={flColor.macroFat} />
-        </Pressable>
+        {/* Only the ones the athlete chose (Amendment 007). One or two keep their three-up width, centred
+            (`macroRowInset`); none and the row is not drawn — the calorie ring is the whole read. */}
+        {macrosShown.length ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit macro targets"
+            onPress={() => router.push('/nutrition-targets')}
+            style={[styles.macroRow, fit.compact && styles.macroRowCompact, { paddingHorizontal: macroRowInset(macrosShown.length) }]}
+          >
+            {macrosShown.map((key) => (
+              <MacroRing
+                key={key}
+                box={macroBox}
+                label={MACRO_LABEL[key]}
+                value={eaten[key]}
+                target={targets?.[key] ?? null}
+                color={MACRO_RING_COLOR[key]}
+              />
+            ))}
+          </Pressable>
+        ) : null}
 
         {/* ── actions ───────────────────────────────────────────────────── */}
         <View style={styles.actions}>
