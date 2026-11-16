@@ -11,6 +11,7 @@
 
 import React, { useEffect } from 'react'
 import { Modal, Platform, StyleSheet, Text, View } from 'react-native'
+import { FullWindowOverlay } from 'react-native-screens'
 import { flColor, flRadius, flShadow } from '@/constants/foundation'
 
 export interface ToastProps {
@@ -29,6 +30,34 @@ export function Toast({ open, message, icon, onDismiss, durationMs = 3000 }: Toa
   }, [open, durationMs, onDismiss])
 
   if (!open) return null
+
+  const pill = (
+    <View pointerEvents="box-none" style={styles.wrap}>
+      <View style={styles.pill} accessibilityLiveRegion="polite" accessibilityRole="alert">
+        {icon ? <View style={styles.icon}>{icon}</View> : null}
+        <Text style={styles.message} numberOfLines={2}>
+          {message}
+        </Text>
+      </View>
+    </View>
+  )
+
+  /*
+    ⛔ iOS: NEVER A `Modal` (PO 11-16 — "the screen freezes whenever I finish a workout and it takes me
+    back to Legacy. It never unfreezes. Nothing moves. No popup.").
+
+    On iOS a `Modal` is a PRESENTED VIEW CONTROLLER, and it takes every touch on the screen whatever
+    `pointerEvents` says inside it — `box-none` only works within RN's own view tree. So every toast froze
+    the app for its 3 s. Worse: "Save & Share" toasts "Posted to …" and then dismisses Workout Complete (a
+    fullScreenModal). When the toast is presented while that dismissal is still running, iOS attaches it to
+    the controller being torn down: it never shows (no popup), and it never goes away (never unfreezes).
+    The app is alive underneath — the logs kept recording — it just cannot be touched.
+
+    `FullWindowOverlay` is react-native-screens' own window above everything (sheets and modals included)
+    whose hit-test returns nil outside its children, so touches reach the app. It is in every native build
+    that has react-native-screens, so this ships over the air.
+  */
+  if (Platform.OS === 'ios') return <FullWindowOverlay>{pill}</FullWindowOverlay>
 
   return (
     /*
@@ -65,14 +94,7 @@ export function Toast({ open, message, icon, onDismiss, durationMs = 3000 }: Toa
       // otherwise has no handler on a visible Modal.
       onRequestClose={onDismiss}
     >
-      <View pointerEvents="box-none" style={styles.wrap}>
-        <View style={styles.pill} accessibilityLiveRegion="polite" accessibilityRole="alert">
-          {icon ? <View style={styles.icon}>{icon}</View> : null}
-          <Text style={styles.message} numberOfLines={2}>
-            {message}
-          </Text>
-        </View>
-      </View>
+      {pill}
     </Modal>
   )
 }
