@@ -68,6 +68,14 @@ export type TourAnchorId =
   | 'workout-addset'
   | 'workout-rest'
   | 'workout-options'
+  // Workout Complete — the seal, the capture stage, the record
+  | 'complete-seal'
+  | 'complete-details'
+  | 'complete-record'
+  | 'complete-share'
+  | 'complete-finish'
+  | 'record-improved'
+  | 'record-note'
   // Program Detail
   | 'program-progress'
   | 'program-schedule'
@@ -328,6 +336,9 @@ export type ScreenTourKey =
   | 'program-builder'
   | 'day-builder'
   | 'workout'
+  | 'workout-seal'
+  | 'workout-capture'
+  | 'workout-record'
   | 'program-detail'
   | 'exercise-library'
   | 'templates'
@@ -541,6 +552,85 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
       anchor: 'workout-options',
       pad: 6,
       radius: 999,
+    },
+  ],
+
+  /*
+   * ══ AFTER THE FIRST FINISH — THE THREE STAGES OF WORKOUT COMPLETE (PO 2026-11-16) ══
+   *
+   * PO: *"after someone finishes a workout for the first time, they should have highlights on buttons on
+   * the next few screens to know what they are doing. So what sealing the workout means. What details
+   * are. What posting is and being able to add a picture."*
+   *
+   * ⚠ WHOLE ON THE FIRST VISIT — see `WHOLE_ON_FIRST_VISIT`. These are the screens a brand-new athlete
+   * meets at exactly the moment they first need them, so phasing them would hold back the "what does
+   * posting do" step until workout three, which is two workouts after it mattered.
+   *
+   * ⚠ COPY DESCRIBES THE CODE (rule 3). The workout is committed BEFORE this screen draws — the hold
+   * writes nothing to the server (`markSessionSealed` is a device mark) — so the seal step must not claim
+   * the hold is what saves it. Nothing on the capture stage posts until the button is pressed, and the
+   * button's own label changes from SAVE TO LEGACY to SAVE & SHARE when a destination is picked.
+   */
+  'workout-seal': [
+    {
+      key: 'ws-seal',
+      title: 'Seal it',
+      body: 'Your workout is already saved. Hold until the bar fills to seal it into your chapter.',
+      anchor: 'complete-seal',
+      pad: 6,
+      radius: 999,
+    },
+    {
+      key: 'ws-details',
+      title: 'The details',
+      body: 'Every lift and set from today, plus a spot for a note. Optional, and still here after you seal.',
+      anchor: 'complete-details',
+      pad: 6,
+      radius: 12,
+    },
+  ],
+  'workout-capture': [
+    {
+      key: 'wc-record',
+      title: 'Add to your record',
+      body: 'Add a photo, a note or your playlist. It stays with this workout. All optional.',
+      anchor: 'complete-record',
+      pad: 8,
+      radius: 14,
+    },
+    {
+      key: 'wc-share',
+      title: 'Posting is your choice',
+      body: 'Post to Friends, pick Squads, or Share outside Forge to Instagram or Messages. Pick none and it stays private.',
+      anchor: 'complete-share',
+      pad: 8,
+      radius: 14,
+    },
+    {
+      key: 'wc-finish',
+      title: 'Finish here',
+      body: 'Nothing is posted until you press this. It says Save to Legacy, or Save & Share once you’ve picked where to post.',
+      anchor: 'complete-finish',
+      pad: 6,
+      radius: 14,
+    },
+  ],
+  'workout-record': [
+    {
+      key: 'wr-improved',
+      title: 'How you improved',
+      body: 'Each lift and your top set. Once you’ve done a lift before, it shows how you compare to last time.',
+      anchor: 'record-improved',
+      pad: 8,
+      radius: 14,
+    },
+    {
+      key: 'wr-note',
+      title: 'How did it go?',
+      body: 'A quick line on how it felt. It’s saved with this workout for next time.',
+      anchor: 'record-note',
+      pad: 8,
+      radius: 14,
     },
   ],
 
@@ -1308,6 +1398,21 @@ export const PHASE_2_STEPS = 2;
 /** How much of the Home leg fires on the very first run. The rest waits for phase 2. */
 export const HOME_PHASE_1_STEPS = 3;
 
+/**
+ * ⭐ THE SURFACES THAT ARE NOT PHASED — shown whole, once, the first time (PO 2026-11-16).
+ *
+ * The three stages after Finish. A new athlete reaches them at the exact moment they are new — the first
+ * finished workout — so the thin-first-visit rule would teach them "hold to seal" and then hold back what
+ * posting and photos are until workout three. They have ONE phase: `surfacePhase` pins them to 1, so the
+ * seen-set records them once and phase 2 never makes them owed again.
+ */
+export const WHOLE_ON_FIRST_VISIT: readonly ScreenTourKey[] = ['workout-seal', 'workout-capture', 'workout-record'];
+
+/** The phase a surface's seen-set entry is recorded under. Unphased surfaces are always phase 1. */
+export function surfacePhase(key: ScreenTourKey, workoutsLogged: number): TourPhase {
+  return WHOLE_ON_FIRST_VISIT.includes(key) ? 1 : phaseFor(workoutsLogged);
+}
+
 /** Which phase an athlete is in. Monotonic — it never goes backwards. */
 export function phaseFor(workoutsLogged: number): TourPhase {
   const n = Math.max(0, Math.floor(workoutsLogged || 0));
@@ -1338,6 +1443,7 @@ export function phaseOfStep(index: number): TourPhase {
  * saw eight sessions ago. The seen-set is what stops a phase being re-shown, not this function.
  */
 export function stepsFor(key: ScreenTourKey, workoutsLogged: number): readonly ScreenTourStep[] {
+  if (WHOLE_ON_FIRST_VISIT.includes(key)) return SCREEN_TOURS[key];
   const phase = phaseFor(workoutsLogged);
   return SCREEN_TOURS[key].filter((_s, i) => phaseOfStep(i) <= phase);
 }
