@@ -168,7 +168,7 @@ const SECTION_META: { key: BuilderSection; label: string; addLabel: string; req:
  * answering two questions from two copies is how the builder's subtitle and the logger's saved name
  * would come to disagree about what a Chest & Back day is called. This is the adapter, not the rule.
  */
-const inferLabel = (items: ProgramExercise[]): string => groupLabel(items.map((it) => it.muscles));
+const inferLabel = (items: ProgramExercise[]): string => groupLabel(items.map((it) => it?.muscles ?? []));
 
 const dayName = (day: ProgramDay) => (day.name.trim() ? day.name : `Day ${day.letter || '?'}`);
 /** Everything a day holds — what a copy or a clear would throw away. */

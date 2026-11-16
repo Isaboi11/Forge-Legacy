@@ -48,11 +48,12 @@ export function useKeepScreenAwake(active: boolean): void {
       }
       // Releasing matters as much as taking it: a lock that outlives the run holds the screen on for
       // whatever the athlete does next.
-      try {
-        deactivateKeepAwake(TAG);
-      } catch {
-        // Already released, or never acquired — nothing to undo either way.
-      }
+      // ⚠ `deactivateKeepAwake` returns a PROMISE: a try/catch never saw its rejection, and on the web it
+      // rejects "has not activated yet" when the run ends before the lock was granted (FORGE-LEGACY-9).
+      // Already released, or never acquired — nothing to undo either way.
+      void Promise.resolve()
+        .then(() => deactivateKeepAwake(TAG))
+        .catch(() => {});
     };
   }, [active]);
 }
