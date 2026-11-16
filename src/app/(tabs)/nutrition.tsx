@@ -133,10 +133,14 @@ const CAPTION_OUT = 21;
    calorie ring gets that room back on a short screen. */
 const MACRO_ROW_FULL = 179;
 const MACRO_ROW_COMPACT_FIXED = MACRO_ROW_FULL - MACRO_RING.box - 14;
+/* Without the row, the ring keeps the row's bottom gap (22, or 14 compact) so Log Food doesn't sit on it
+   (PO 11-16: "make sure spacing is good"). `heroWrapAlone` draws it; these two count it. */
+const ALONE_GAP = 22;
+const ALONE_GAP_COMPACT = 14;
 function ringFit(viewport: number, macroRow = true): { scale: number; compact: boolean; captionOut: boolean } {
   const room = viewport - COIN_BAND;
-  const full = macroRow ? RINGS_FULL : RINGS_FULL - MACRO_ROW_FULL;
-  const fixed = macroRow ? RINGS_COMPACT_FIXED : RINGS_COMPACT_FIXED - MACRO_ROW_COMPACT_FIXED;
+  const full = macroRow ? RINGS_FULL : RINGS_FULL - MACRO_ROW_FULL + ALONE_GAP;
+  const fixed = macroRow ? RINGS_COMPACT_FIXED : RINGS_COMPACT_FIXED - MACRO_ROW_COMPACT_FIXED + ALONE_GAP_COMPACT;
   if (room >= full) return { scale: 1, compact: false, captionOut: false };
   const boxes = RING.box + (macroRow ? MACRO_RING.box : 0);
   const inside = (room - fixed) / boxes;
@@ -479,7 +483,11 @@ export default function NutritionScreen() {
           accessibilityRole="button"
           accessibilityLabel="Edit daily targets"
           onPress={() => router.push('/nutrition-targets')}
-          style={styles.heroWrap}
+          style={[
+            styles.heroWrap,
+            /* heroWrap's own 4, plus the gap the macro row would have left */
+            macrosShown.length === 0 && { paddingBottom: 4 + (fit.compact ? ALONE_GAP_COMPACT : ALONE_GAP) },
+          ]}
         >
           <View
             style={[styles.heroGlow, fit.scale < 1 && { width: 250 * fit.scale, height: 250 * fit.scale }]}
