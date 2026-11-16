@@ -890,9 +890,11 @@ export function normalizeDraft(d: ProgramDraft): ProgramDraft {
       ...day,
       letter: day.letter || DAY_LETTERS[i] || String(i + 1),
       name: /^Day [A-F]$/.test(day.name ?? '') ? '' : (day.name ?? ''),
-      warmup: day.warmup ?? [],
-      main: day.main ?? [],
-      cooldown: day.cooldown ?? [],
+      // ⚠ `filter(Boolean)`: a stored draft was seen carrying a NULL row, which took the day list down on
+      // render ("null is not an object (evaluating 'e.muscles')", Sentry FORGE-LEGACY-8, 11-09).
+      warmup: (day.warmup ?? []).filter(Boolean),
+      main: (day.main ?? []).filter(Boolean),
+      cooldown: (day.cooldown ?? []).filter(Boolean),
     }));
   const next: ProgramDraft = { ...d, days: fix(d.days ?? []), live: d.live ?? null };
   // ⚠ `padWeeks`, NOT `ensureWeeks`. This runs on EVERY focus — every return trip from the Picker — and
