@@ -9,6 +9,7 @@ import { APP_PREFS_DEFAULTS, type AppPrefs } from '@/domain/settings/preferences
 import type { IntensityLevel } from '@/domain/coach/rulebook/intensity';
 import { convertMeasure, formatLoad, type UnitSystem } from '@/domain/settings/units';
 import type { RowUnit } from '@/domain/workout/conditioning';
+import { shownMacros, type MacroKey } from '@/domain/nutrition/macro-display';
 
 /**
  * App-wide experience preferences (units, haptics, sound, reduce-motion), fetched once and shared so a
@@ -97,6 +98,16 @@ export function useUnits(): {
   const fmt = useCallback((formatted: string) => convertMeasure(formatted, prefs.units), [prefs.units]);
   const load = useCallback((lb: number, reps?: number | null) => formatLoad(lb, prefs.units, reps), [prefs.units]);
   return { units: prefs.units, fmt, load, rowUnit: prefs.rowUnit };
+}
+
+/**
+ * The macros the athlete chose to see (Nutrition Amendment 007), in the one order — possibly none (calories
+ * only). The Nutrition tab, the Home card and Details all read this, so they can never disagree. Serves all
+ * three while prefs are in flight, which is what absence means anyway.
+ */
+export function useShownMacros(): MacroKey[] {
+  const hidden = useAppPrefs().prefs.hiddenMacros;
+  return useMemo(() => shownMacros(hidden), [hidden]);
 }
 
 /** Whether to simplify animation — the athlete's preference (the OS setting is honoured separately). */

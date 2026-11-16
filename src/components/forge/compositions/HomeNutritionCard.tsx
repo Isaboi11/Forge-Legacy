@@ -13,7 +13,7 @@ import { groceryList, planSignature, stateFor } from '@/domain/nutrition/grocery
 import { mondayOf, planIsReadable } from '@/domain/nutrition/meal-planner';
 import { homeNutritionView, type MacroKey } from '@/domain/nutrition/home-card';
 import { useNutritionAccess } from '@/lib/entitlement';
-import { useAppPrefs } from '@/lib/settings';
+import { useAppPrefs, useShownMacros } from '@/lib/settings';
 import { saveAppPrefs } from '@/data/settings-live';
 import type { HoltTips } from '@/domain/settings/preferences';
 import { useQuery } from '@/lib/useQuery';
@@ -64,6 +64,8 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
      time and ask if it's helpful and if they want that for the future." The answer is saved to prefs, so
      it holds on every device, and Preferences shows the same switch. */
   const { prefs, loaded, refetch } = useAppPrefs();
+  /* The macros the athlete chose on Daily targets (Amendment 007); calories always show. */
+  const shownMacros = useShownMacros();
   const [answered, setAnswered] = useState<HoltTips | null>(null);
   const tips = answered ?? prefs.holtTips;
   const answer = (choice: 'on' | 'off') => {
@@ -81,14 +83,16 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
   /* ⚠ SILENT WHILE THE CARE LINE IS ON. `gapLine` already goes quiet under half of TODAY's target, but a week
      of very low days can end in one ordinary day, and a snack nudge on it would talk past the care line. */
   const care = useCareLine(reloads);
-  const wantGap = loaded && care.known && !care.active && tips !== 'off' && !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
+  /* The gap line is about PROTEIN (`gap-line.ts`), so it goes quiet for someone who hid protein: hidden means
+     hidden everywhere, including Holt's tip about it. */
+  const wantGap = loaded && care.known && !care.active && tips !== 'off' && shownMacros.includes('protein') && !!data?.targets && (data?.entries.length ?? 0) > 0 && hour >= GAP_LINE_FROM_HOUR;
   const { data: pantry } = useQuery(async () => (wantGap ? loadPantry(localToday()) : null), [wantGap, reloads]);
   /* No macro goals, no card (PO, 2026-09-26): an athlete who has not set targets has not taken up Nutrition,
      and Home is not the place to invite them. */
   if (!mayUseNutrition || !data?.targets) return null;
 
   const eaten = totals(data.entries);
-  const v = homeNutritionView(eaten, data.entries.length > 0, data.targets);
+  const v = homeNutritionView(eaten, data.entries.length > 0, data.targets, shownMacros);
   const gap = pantry && !care.active ? gapLine({ eaten, logged: data.entries.length > 0, target: data.targets, hour, pantry }) : null;
   return (
     <Pressable
@@ -110,29 +114,32 @@ export function HomeNutritionCard({ onOpen }: { onOpen: () => void }) {
         <ChevronRightIcon size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
       </View>
 
-      <View style={styles.macros}>
-        {v.macros.map((m) => (
-          <View key={m.key} style={styles.macro}>
-            <View style={styles.macroText}>
-              <View style={[styles.dot, { backgroundColor: MACRO_COLOR[m.key] }]} />
-              <Text style={styles.macroLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                {`${m.label} `}
-                <Text style={styles.macroValue}>{m.value}</Text>
-                {` ${m.of}`}
-              </Text>
-            </View>
-            {v.bars ? (
-              <View style={styles.track}>
-                {m.fraction > 0 ? (
-                  /* A width PERCENTAGE of a track that has a real width (a flex child of the macro column).
-                     A sliver (min 4%) so "some" never reads as "none". */
-                  <View style={[styles.fill, { width: `${Math.max(4, Math.round(m.fraction * 100))}%`, backgroundColor: MACRO_COLOR[m.key] }]} />
-                ) : null}
+      {/* Calories only (every macro hidden): the first line is the whole card. */}
+      {v.macros.length ? (
+        <View style={styles.macros}>
+          {v.macros.map((m) => (
+            <View key={m.key} style={styles.macro}>
+              <View style={styles.macroText}>
+                <View style={[styles.dot, { backgroundColor: MACRO_COLOR[m.key] }]} />
+                <Text style={styles.macroLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                  {`${m.label} `}
+                  <Text style={styles.macroValue}>{m.value}</Text>
+                  {` ${m.of}`}
+                </Text>
               </View>
-            ) : null}
-          </View>
-        ))}
-      </View>
+              {v.bars ? (
+                <View style={styles.track}>
+                  {m.fraction > 0 ? (
+                    /* A width PERCENTAGE of a track that has a real width (a flex child of the macro column).
+                       A sliver (min 4%) so "some" never reads as "none". */
+                    <View style={[styles.fill, { width: `${Math.max(4, Math.round(m.fraction * 100))}%`, backgroundColor: MACRO_COLOR[m.key] }]} />
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       {gap ? (
         <Text style={styles.gap}>

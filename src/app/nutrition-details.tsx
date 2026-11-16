@@ -32,6 +32,7 @@ import {
 } from '@/domain/nutrition/week';
 import { fetchRangeTotals, fetchTargetHistory } from '@/data/nutrition-live';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { useShownMacros } from '@/lib/settings';
 import { useQuery } from '@/lib/useQuery';
 
 /**
@@ -82,7 +83,13 @@ export default function NutritionDetailsScreen() {
   }, [days, totals, history, todayIso]);
 
   const summary = useMemo(() => summarise(week), [week]);
-  const macros = useMemo(() => macroSummaries(week, summary.average), [week, summary]);
+  /* Only the macros the athlete chose on Daily targets (Amendment 007). The closing line reads the same list,
+     so it never names a macro the athlete hid. */
+  const macrosShown = useShownMacros();
+  const macros = useMemo(
+    () => macroSummaries(week, summary.average).filter((m) => macrosShown.includes(m.key)),
+    [week, summary, macrosShown],
+  );
   const scale = chartScale(week, summary.band);
   const gap = weekGapLine(macros, summary);
 
@@ -246,35 +253,39 @@ export default function NutritionDetailsScreen() {
           </Text>
         ) : null}
 
-        {/* macros */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionLabel}>Macros · daily average</Text>
-          <Text style={styles.sectionNote}>
-            {offset === 0
-              ? `${countOf(summary.counted, 'full day')} · today excluded`
-              : countOf(summary.counted, 'logged day')}
-          </Text>
-        </View>
-        <View style={styles.macroList}>
-          {macros.map((m) => (
-            <Pressable
-              key={m.key}
-              accessibilityRole="button"
-              accessibilityLabel={`${m.label}: ${m.average} of ${m.target ?? 0} grams daily average. Open daily history.`}
-              style={styles.macroRow}
-              onPress={() => setMacro(m)}
-            >
-              <View style={styles.macroHead}>
-                <Text style={styles.macroLabel}>{m.label}</Text>
-                <Text style={styles.macroAvg}>{`${m.average} g`}</Text>
-                <Text style={styles.macroTarget}>{m.target ? `/ ${m.target} g` : ''}</Text>
-                <Arrow direction="right" color={flColor.gray600} size={12} />
-              </View>
-              <ProgressBar value={m.target ? Math.min(m.average, m.target) : 0} max={m.target ?? 100} label={m.label} />
-              <Text style={[styles.macroNote, m.clean && styles.macroNoteGood]}>{m.note}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* macros — none at all when the athlete tracks calories only */}
+        {macros.length ? (
+          <>
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionLabel}>Macros · daily average</Text>
+              <Text style={styles.sectionNote}>
+                {offset === 0
+                  ? `${countOf(summary.counted, 'full day')} · today excluded`
+                  : countOf(summary.counted, 'logged day')}
+              </Text>
+            </View>
+            <View style={styles.macroList}>
+              {macros.map((m) => (
+                <Pressable
+                  key={m.key}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${m.label}: ${m.average} of ${m.target ?? 0} grams daily average. Open daily history.`}
+                  style={styles.macroRow}
+                  onPress={() => setMacro(m)}
+                >
+                  <View style={styles.macroHead}>
+                    <Text style={styles.macroLabel}>{m.label}</Text>
+                    <Text style={styles.macroAvg}>{`${m.average} g`}</Text>
+                    <Text style={styles.macroTarget}>{m.target ? `/ ${m.target} g` : ''}</Text>
+                    <Arrow direction="right" color={flColor.gray600} size={12} />
+                  </View>
+                  <ProgressBar value={m.target ? Math.min(m.average, m.target) : 0} max={m.target ?? 100} label={m.label} />
+                  <Text style={[styles.macroNote, m.clean && styles.macroNoteGood]}>{m.note}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : null}
 
         {/* the closing line */}
         {gap ? (

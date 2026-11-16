@@ -1,4 +1,5 @@
 import { grouped, type Macros, type Targets } from './day.ts';
+import { MACRO_KEYS, MACRO_LABEL, type MacroKey } from './macro-display.ts';
 
 /**
  * The Nutrition card on Home: TWO LINES (Nutrition-Architecture-Amendment-003 NUT-A3-D1). PO, 2026-09-24:
@@ -13,7 +14,7 @@ import { grouped, type Macros, type Targets } from './day.ts';
  *
  * ⚠ FACTS, NEVER A VERDICT. Past a target it says "Target reached", never "over".
  */
-export type MacroKey = 'protein' | 'carb' | 'fat';
+export type { MacroKey };
 
 export interface HomeNutritionView {
   /** Line one, bold: "190". */
@@ -29,16 +30,20 @@ export interface HomeNutritionView {
   a11y: string;
 }
 
-const MACROS: { key: MacroKey; label: string }[] = [
-  { key: 'protein', label: 'Protein' },
-  { key: 'carb', label: 'Carbs' },
-  { key: 'fat', label: 'Fat' },
-];
+/** The macros the athlete chose to see (Amendment 007), in the one order. Calories always show. */
+const pick = (shown: readonly MacroKey[]): { key: MacroKey; label: string }[] =>
+  MACRO_KEYS.filter((k) => shown.includes(k)).map((key) => ({ key, label: MACRO_LABEL[key] }));
 
 const fill = (eaten: number, target: number): number => (target > 0 ? Math.max(0, Math.min(1, eaten / target)) : 0);
 const r = Math.round;
 
-export function homeNutritionView(eaten: Macros, logged: boolean, target: Targets | null): HomeNutritionView {
+export function homeNutritionView(
+  eaten: Macros,
+  logged: boolean,
+  target: Targets | null,
+  shown: readonly MacroKey[] = MACRO_KEYS,
+): HomeNutritionView {
+  const MACROS = pick(shown);
   if (!target) {
     return {
       kcal: grouped(r(eaten.kcal)),
@@ -57,7 +62,8 @@ export function homeNutritionView(eaten: Macros, logged: boolean, target: Target
       right: 'Tap to log',
       macros: MACROS.map((m) => ({ ...m, value: String(r(target[m.key])), of: 'g', fraction: 0 })),
       bars: true,
-      a11y: `Nutrition. Today's target is ${grouped(target.kcal)} calories and ${r(target.protein)} grams of protein. Nothing logged yet.`,
+      /* Names the first macro the athlete tracks (protein, by default), never a hidden one. */
+      a11y: `Nutrition. Today's target is ${grouped(target.kcal)} calories${MACROS[0] ? ` and ${r(target[MACROS[0].key])} grams of ${MACROS[0].label.toLowerCase()}` : ''}. Nothing logged yet.`,
     };
   }
 
@@ -75,8 +81,7 @@ export function homeNutritionView(eaten: Macros, logged: boolean, target: Target
     macros,
     bars: true,
     a11y:
-      `Nutrition. ${grouped(r(eaten.kcal))} of ${grouped(target.kcal)} calories, ${left > 0 ? `${grouped(left)} left` : 'target reached'}. ` +
-      macros.map((m) => `${m.label} ${m.value} of ${r(target[m.key])} grams`).join(', ') +
-      '.',
+      `Nutrition. ${grouped(r(eaten.kcal))} of ${grouped(target.kcal)} calories, ${left > 0 ? `${grouped(left)} left` : 'target reached'}.` +
+      (macros.length ? ` ${macros.map((m) => `${m.label} ${m.value} of ${r(target[m.key])} grams`).join(', ')}.` : ''),
   };
 }

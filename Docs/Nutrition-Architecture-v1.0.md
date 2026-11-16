@@ -75,6 +75,8 @@ recommendation. **MA6-D8 holds:** barcode is free because the barcode path is fr
   deletion covering nutrition.
 - **Nutrition Home:** "Today" + See Details → · calorie ring (consumed and **remaining**) · three macro
   indicators (rings or bars — the `.dc` decides) · **+ LOG FOOD** · quick actions · Today's Meals.
+  ⚠ **Amendment 007 (2026-11-16):** the athlete chooses which of the three macros show (Daily targets → Show on
+  Nutrition); calories always show. See `Amendments/Nutrition-Architecture-Amendment-007-Choose-Your-Macros.md`.
   Barcode lives **inside** the Log Food search field. Over target never turns the screen red.
 - **Imagery:** typographic category marks for logged foods in V1; photos only for Forge's own recipes and
   (credited) Open Food Facts packaged goods.

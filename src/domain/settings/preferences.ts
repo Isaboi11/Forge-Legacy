@@ -25,6 +25,8 @@ import type { SymbolName } from '@/components/forge/ForgeSymbol';
 import type { RowUnit } from '../workout/conditioning.ts';
 // Relative and extensioned for the same reason as the intensity import above: `sanitizeAutoPost` is a runtime value.
 import { AUTO_POST_DEFAULT, sanitizeAutoPost, type AutoPostPref } from '../share/auto-post.ts';
+// Relative and extensioned: `sanitizeHiddenMacros` is a runtime value.
+import { sanitizeHiddenMacros, type MacroKey } from '../nutrition/macro-display.ts';
 
 export interface AppPrefs {
   units: UnitSystem;
@@ -129,6 +131,13 @@ export interface AppPrefs {
    * on purpose. The picker says so. A squad-mate's message still shows: it is a person, not Holt.
    */
   holtInWorkout: 'on' | 'off';
+  /**
+   * The macros the athlete turned OFF on Daily targets (`domain/nutrition/macro-display.ts`, Nutrition
+   * Amendment 007). Calories always show. The HIDDEN list, not the shown one, so absence (every blob written
+   * before this key) keeps all three rings. A display choice only: everything is still logged. No migration:
+   * one more key in the `app_prefs` blob.
+   */
+  hiddenMacros: MacroKey[];
 }
 
 export const APP_PREFS_DEFAULTS: AppPrefs = {
@@ -145,6 +154,7 @@ export const APP_PREFS_DEFAULTS: AppPrefs = {
   autoPost: AUTO_POST_DEFAULT,
   runVoice: true,
   holtInWorkout: 'on',
+  hiddenMacros: [],
 };
 
 export type HoltTips = 'ask' | 'on' | 'off';
@@ -189,6 +199,7 @@ export function sanitizePrefs(raw: unknown): AppPrefs {
     out.autoPost = sanitizeAutoPost(r.autoPost);
     if (typeof r.runVoice === 'boolean') out.runVoice = r.runVoice;
     if (r.holtInWorkout === 'on' || r.holtInWorkout === 'off') out.holtInWorkout = r.holtInWorkout;
+    out.hiddenMacros = sanitizeHiddenMacros(r.hiddenMacros);
   }
   return out;
 }
