@@ -14,6 +14,8 @@ import {
   planTour,
   tourMayStart,
   stepsFor,
+  surfacePhase,
+  WHOLE_ON_FIRST_VISIT,
 } from '../tour-plan.ts';
 
 const SURFACES = Object.keys(SCREEN_TOURS).filter((k) => SCREEN_TOURS[k].length > 0);
@@ -61,7 +63,7 @@ test('⚠ EVERY surface teaches something on the very first visit', () => {
 });
 
 test('the first visit is thin — no surface opens with more than two steps', () => {
-  for (const key of SURFACES) {
+  for (const key of SURFACES.filter((k) => !WHOLE_ON_FIRST_VISIT.includes(k))) {
     assert.ok(stepsFor(key, 0).length <= PHASE_1_STEPS, `${key} shows ${stepsFor(key, 0).length} on day one`);
   }
 });
@@ -168,4 +170,34 @@ test('the gate governs TIMING only — every step still exists to be shown', () 
   // Guards the "moved, not cut" claim: nothing about the gate may shrink the plan itself.
   assert.equal(TAB_STEPS.length, 4, 'the tabs leg still has all four cards');
   assert.ok(HOME_STEPS.length >= 7, 'the home leg still has its steps');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE FIRST FINISH — shown whole, once (PO 2026-11-16)
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('⭐ the three stages after Finish teach everything on the first workout', () => {
+  assert.deepEqual([...WHOLE_ON_FIRST_VISIT].sort(), ['workout-capture', 'workout-record', 'workout-seal']);
+  for (const key of WHOLE_ON_FIRST_VISIT) {
+    assert.ok(SCREEN_TOURS[key].length > 0, key);
+    assert.deepEqual(stepsFor(key, 0), SCREEN_TOURS[key], key + ' is cut on the first workout');
+  }
+});
+
+test('⚠ they have ONE phase, so phase 2 never makes them owed again', () => {
+  for (const key of WHOLE_ON_FIRST_VISIT) {
+    for (const n of [0, 2, 3, 9, 10, 500]) assert.equal(surfacePhase(key, n), 1, key + ' at ' + n);
+  }
+  assert.equal(surfacePhase('workout', 10), 3, 'every other surface still phases');
+});
+
+test('the first finish teaches sealing, details, the photo, and that posting waits for the button', () => {
+  const said = (k, key) => { const s = SCREEN_TOURS[k].find((x) => x.key === key); return s.title + ' ' + s.body; };
+  assert.match(said('workout-seal', 'ws-seal'), /already saved/i, 'the hold is not what saves it');
+  assert.match(said('workout-seal', 'ws-seal'), /hold/i);
+  assert.match(said('workout-seal', 'ws-details'), /optional/i);
+  assert.match(said('workout-capture', 'wc-record'), /photo/i);
+  assert.match(said('workout-capture', 'wc-share'), /Friends[\s\S]*Squads[\s\S]*outside Forge/);
+  assert.match(said('workout-capture', 'wc-finish'), /Nothing is posted until you press/i);
+  assert.match(said('workout-capture', 'wc-finish'), /Save to Legacy[\s\S]*Save & Share/);
 });
