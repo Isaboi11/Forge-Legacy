@@ -64,6 +64,9 @@ import { foodLine } from '@/domain/share/recap-stats';
 import { plainError } from '@/lib/plain-error';
 import { returnFoodLogTo } from '@/lib/food-return';
 import { useAutoPost } from '@/hooks/useAutoPost';
+import { ScreenTour } from '@/components/tour/ScreenTour';
+import { TourAnchor } from '@/components/tour/TourAnchor';
+import { useTourAnchor, useTourScroller, useTourScrollTracker } from '@/hooks/useTourAnchors';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import type { PriorShare } from '@/domain/share/fanout';
 import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
@@ -245,6 +248,16 @@ function WorkoutComplete() {
     setFrom(stage === 'capture' ? 'capture' : 'seal');
     setStage('record');
   };
+  /*
+   * ══ FIRST-FINISH WALKTHROUGHS (PO 2026-11-16) ══ — seal, capture and the record each ring their own
+   * buttons the first time ANY athlete reaches them — new or veteran, however many workouts they have
+   * logged (PO 2026-11-16: "live for every single person, no matter how many they have done"). Each is
+   * shown once per device via the seen-set. Never on a reviewed session — that is history, not a finish.
+   */
+  const tourScroller = useTourScroller();
+  const onTourScroll = useTourScrollTracker();
+  const sealAnchor = useTourAnchor('complete-seal');
+  const sealDetailsAnchor = useTourAnchor('complete-details');
   /** The one sheet the capture stage has open, if any. */
   const [sheet, setSheet] = useState<'note' | 'playlist' | 'squads' | null>(null);
   /* Saving the day as a template. Offered on The Record and nowhere else — it belongs beside the shape it
@@ -1054,8 +1067,13 @@ function WorkoutComplete() {
    * Unreachable in review: a reviewed session opens on `capture` and there is no path back here, which
    * is why the `|| review` guards this branch used to carry are gone rather than left reading as live.
    */
+  /* See FIRST-FINISH WALKTHROUGHS above — everyone, once; never on a reviewed session. */
+  const newcomer = !review;
+
   if (stage === 'seal') {
     const fillW = hold.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+    /* Not once a hold has begun — a walkthrough that lands mid-press would swallow the release. */
+    const sealTour = <ScreenTour screenKey="workout-seal" ready={newcomer && !sealed && holdPct === 0} />;
     /*
      * "Up next" comes from the program this workout actually belonged to, and from nowhere else.
      *
@@ -1090,7 +1108,7 @@ function WorkoutComplete() {
               <Stat n={vol(data.volume)} label="Volume" />
             </View>
             {data.hero ? <Hero hero={data.hero} /> : null}
-            <Pressable style={[styles.holdBtn, noCallout]} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
+            <Pressable ref={sealAnchor} style={[styles.holdBtn, noCallout]} onPressIn={startHold} onPressOut={cancelHold} accessibilityRole="button" accessibilityLabel="Press and hold to seal">
               <AnimatedGradient
               colors={flGradient.bronzeMetallic.colors}
               locations={flGradient.bronzeMetallic.locations}
@@ -1100,10 +1118,11 @@ function WorkoutComplete() {
             />
               <Text selectable={false} style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
-            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
+            <Pressable ref={sealDetailsAnchor} onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
               <Text style={styles.textLinkText}>View details</Text>
             </Pressable>
           </View>
+          {sealTour}
         </Shell>
       );
     }
@@ -1184,6 +1203,7 @@ function WorkoutComplete() {
                 offering it again would be theatre over a settled fact, so a reviewed session opens on
                 the capture stage instead of on a ceremony with its ceremony taken out. */}
             <Pressable
+              ref={sealAnchor}
               style={[styles.holdBtn, styles.holdBtnInSection, noCallout]}
               onPressIn={startHold}
               onPressOut={cancelHold}
@@ -1199,11 +1219,12 @@ function WorkoutComplete() {
               />
               <Text selectable={false} style={[styles.holdText, (sealed || holdPct > 0.55) && styles.holdTextDark]}>{sealed ? 'Sealed' : holdPct > 0 ? 'Keep holding…' : 'Hold to Seal'}</Text>
             </Pressable>
-            <Pressable onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
+            <Pressable ref={sealDetailsAnchor} onPress={openRecord} accessibilityRole="button" accessibilityLabel="View workout details" style={styles.textLink}>
               <Text style={styles.textLinkText}>View details</Text>
             </Pressable>
           </View>
         </View>
+        {sealTour}
       </Shell>
     );
   }
@@ -1291,6 +1312,9 @@ function WorkoutComplete() {
     return (
       <Shell>
         <ScrollView
+          ref={tourScroller}
+          onScroll={onTourScroll}
+          scrollEventThrottle={16}
           keyboardDismissMode={KEYBOARD_DISMISS_MODE}
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={[styles.capScroll, { paddingTop: insets.top + 18, paddingBottom: insets.bottom + 18 }]}
@@ -1337,7 +1361,7 @@ function WorkoutComplete() {
             {/* ── 3 · add to the record ── four offers, never a checklist: an attached one reads as attached. */}
             <View style={styles.capSection}>
               <SectionHead title="Add to your record" sub="Add something worth remembering." />
-              <View style={styles.tiles}>
+              <TourAnchor id="complete-record" style={styles.tiles}>
                 <RecordTile icon="edit" label="Note" done={noteFilled} a11y={noteFilled ? `Note added: ${reflection}` : 'Add a note'} onPress={openNote} />
                 <RecordTile
                   icon="camera"
@@ -1370,13 +1394,13 @@ function WorkoutComplete() {
                     }
                   />
                 ) : null}
-              </View>
+              </TourAnchor>
             </View>
 
             {/* ── 4 · where it appears ── POST inside Forge (Friends, Squads); SHARE leaves it. */}
             <View style={styles.capSection}>
               <SectionHead title="Share this workout" sub="Choose where it appears." aside="Optional" />
-              <View style={styles.shareRows}>
+              <TourAnchor id="complete-share" style={styles.shareRows}>
                 <ShareRow
                   icon="partners"
                   title="Friends"
@@ -1388,7 +1412,7 @@ function WorkoutComplete() {
                 />
                 <ShareRow icon="people" title={squadRow.title} sub={squadRow.sub} mode="open" disabled={squadRow.disabled} onPress={() => setSheet('squads')} />
                 <ShareRow icon="share" title="Share outside Forge" sub="Instagram, Stories, Messages + More" mode="open" onPress={shareOutside} />
-              </View>
+              </TourAnchor>
 
               {/* Per-post ticks, asked only when there is something to ask and somewhere in Forge to post it. */}
               {forgeSelected && canShareRoute ? (
@@ -1434,17 +1458,19 @@ function WorkoutComplete() {
 
             {/* ── 5 · finish ── The workout is already saved; this button only decides whether it is also posted. */}
             <View style={styles.capCta}>
-              <Button
-                variant="primary"
-                fullWidth
-                icon={<ForgeMarkGlyph size={20} color={flColor.onBronze} />}
-                /* Not mid-save: a post built while the note or playlist is still writing is the session without it. */
-                disabled={posting || savingNote || savingPlaylist || savingName}
-                onPress={() => void finish()}
-                accessibilityLabel={forgeSelected ? 'Save and share' : review ? 'Done' : 'Save to Legacy'}
-              >
-                {posting ? 'POSTING…' : ctaLabel}
-              </Button>
+              <TourAnchor id="complete-finish">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  icon={<ForgeMarkGlyph size={20} color={flColor.onBronze} />}
+                  /* Not mid-save: a post built while the note or playlist is still writing is the session without it. */
+                  disabled={posting || savingNote || savingPlaylist || savingName}
+                  onPress={() => void finish()}
+                  accessibilityLabel={forgeSelected ? 'Save and share' : review ? 'Done' : 'Save to Legacy'}
+                >
+                  {posting ? 'POSTING…' : ctaLabel}
+                </Button>
+              </TourAnchor>
               {postError ? (
                 <Text style={styles.postError} accessibilityRole="alert">
                   {postError}
@@ -1463,6 +1489,9 @@ function WorkoutComplete() {
         {squadSheet}
         {/* The phone draws the stats-on-the-photo picture here when the post is sent (`renderStoryImage`). */}
         <StoryCardHost />
+        {/* Held until the share rows have settled (auto-post can pre-pick a destination, which adds rows
+            above the button) and while no sheet is open over the screen. */}
+        <ScreenTour screenKey="workout-capture" ready={newcomer && shares !== null && autoPost.loaded && sheet === null && !posting} />
       </Shell>
     );
   }
@@ -1485,7 +1514,7 @@ function WorkoutComplete() {
           <EngravedIcon name="book" size={20} />
           <Text style={styles.recHeaderTitle}>The Record</Text>
         </View>
-        <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={tourScroller} onScroll={onTourScroll} scrollEventThrottle={16} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={styles.recScroll} showsVerticalScrollIndicator={false}>
           {/* NAME IT HERE, WHERE YOU ALREADY KNOW WHAT IT WAS. The eyebrow has always shown the
               session's name; it was simply not a control, and nothing anywhere else was either — the
               app could name a workout and the athlete could not. Tapping opens the same sheet the
@@ -1555,7 +1584,7 @@ function WorkoutComplete() {
           ) : null}
 
           <Text style={styles.recHeading}>How You Improved</Text>
-          <View style={styles.recTable}>
+          <TourAnchor id="record-improved" style={styles.recTable}>
             {data.exercises.map((ex) =>
               /* A run gets the whole row. "1 set · top —" is true of it and says nothing; the distance,
                  the clock, the pace, the grade and WHERE it was done are the record of what happened,
@@ -1584,7 +1613,7 @@ function WorkoutComplete() {
                 </View>
               ),
             )}
-          </View>
+          </TourAnchor>
 
           {/* Quiet, and only here. A program day is already reusable BY its program; this is for the
               sessions with no home — one built as you went, or one reshaped past its program. */}
@@ -1631,7 +1660,7 @@ function WorkoutComplete() {
 
           {/* Training note. Best-effort like every other annotation on this screen — the session is
               already durably committed, so a failed write costs a note and never the workout. */}
-          <View style={styles.sessNoteWrap}>
+          <TourAnchor id="record-note" style={styles.sessNoteWrap}>
             <Text style={styles.sessNoteLabel}>HOW DID IT GO?</Text>
             <TextInput
               style={styles.sessNoteInput}
@@ -1661,7 +1690,7 @@ function WorkoutComplete() {
             </Text>
             {/* …and this box knows about the sealed one, so the two never read as the same question twice. */}
             {reflection ? <Text style={styles.sessNoteHint}>Your note for future you: “{reflection}”</Text> : null}
-          </View>
+          </TourAnchor>
 
           <View style={styles.longGameWrap}>
             <Text style={styles.longGameLabel}>The Long Game</Text>
@@ -1695,6 +1724,7 @@ function WorkoutComplete() {
             own both sheets too — see the note where `templateNameSheet` is built. */}
         {templateNameSheet}
         {renameSheet}
+        <ScreenTour screenKey="workout-record" ready={newcomer && !nameOpen && !renameOpen} />
       </Shell>
     );
   }

@@ -52,7 +52,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { flColor, flFont } from '@/constants/foundation';
 import {
   legsIn,
-  phaseFor,
+  surfacePhase,
   planTour,
   stepsFor,
   tourMayStart,
@@ -645,7 +645,7 @@ export function useScreenPrompt(key: ScreenKey): {
    * three workouts. It also means an athlete never re-reads a step they have already been shown — the
    * earlier phases stay marked.
    */
-  const phase = phaseFor(workoutsLogged ?? Number.MAX_SAFE_INTEGER);
+  const phase = surfacePhase(key, workoutsLogged ?? Number.MAX_SAFE_INTEGER);
   const steps = useMemo(() => stepsFor(key, workoutsLogged ?? Number.MAX_SAFE_INTEGER), [key, workoutsLogged]);
 
   const shouldShow = tipsEnabled && seenLoaded && !blocking && steps.length > 0 && !seen.includes(promptKeyFor(key, phase));
