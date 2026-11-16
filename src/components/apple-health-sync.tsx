@@ -17,7 +17,11 @@ import { syncAppleHealth } from '@/data/apple-health-sync-live';
  */
 export function AppleHealthSync() {
   useEffect(() => {
-    void syncAppleHealth();
+    // ⚠ Only while the app is on screen. iOS can launch the app in the BACKGROUND (a push, a Live
+    // Activity) with the phone locked, and Health data is unreadable while locked — both the anchored
+    // read and its fallback fail, which reached Sentry as the hk_anchor_invalid + hk_query_failed pair
+    // (FORGE-LEGACY-4/5/F/G/M/N/P/Q, 11-16). The 'active' listener below catches the real open.
+    if (AppState.currentState === 'active') void syncAppleHealth();
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'active') void syncAppleHealth();
     });

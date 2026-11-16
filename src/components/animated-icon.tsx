@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { AppState, StyleSheet, View } from 'react-native';
 import Animated, { Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -93,7 +93,10 @@ export function AnimatedSplashOverlay() {
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(() => {
-      reportError(new Error('Launch cover: the entering animation never finished; removed by the failsafe'), {
+      // Reported only when the athlete could have SEEN it stuck. A background launch (push, location,
+      // Live Activity) skips the animation every time and is the case this failsafe exists for, not a
+      // bug — it was most of Sentry's FORGE-LEGACY-H/K/R (11-16).
+      if (AppState.currentState === 'active') reportError(new Error('Launch cover: the entering animation never finished; removed by the failsafe'), {
         source: 'manual',
         screen: 'launch-cover',
       });
