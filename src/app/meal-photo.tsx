@@ -34,6 +34,7 @@ import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { finishFoodLog } from '@/lib/food-return';
+import { errorMessage } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
 
 /**
@@ -101,8 +102,14 @@ export default function MealPhotoScreen() {
     if (busy.current) return;
     busy.current = true;
     try {
-      /* Asked BEFORE the camera, so nobody takes a photo that then cannot be sent (MHMDA consent). */
-      if (!(await ensureConsent('ai_sharing'))) return;
+      /* Asked BEFORE the camera, so nobody takes a photo that then cannot be sent (MHMDA consent). A "Not now" is
+         said, never silent (AI audit 11-16, N-D5): the screen used to sit there as if the tap hadn't landed. On the
+         review it's a toast, so the rows already checked stay on screen. */
+      if (!(await ensureConsent('ai_sharing'))) {
+        if (stage.step === 'review') showToast(AI_DECLINED_LINE);
+        else setStage({ step: 'problem', text: AI_DECLINED_LINE });
+        return;
+      }
       const asset = await pick({
         kind: 'images',
         title: 'Photo of your meal',
@@ -143,6 +150,10 @@ export default function MealPhotoScreen() {
         router.dismissAll?.();
         router.replace('/nutrition');
       }
+    } catch (e) {
+      /* A refused write is said, and the rows stay for another try (AI audit 11-16, N-D5) — as Food Detail does.
+         It used to be an unhandled rejection: the button came back and nothing said the meal wasn't logged. */
+      showToast(errorMessage(e));
     } finally {
       setLogging(false);
     }
