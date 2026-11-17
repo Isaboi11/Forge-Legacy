@@ -17,6 +17,12 @@ test('Home offers "Import a workout", behind the imports cap, opening the today 
   assert.match(HOME, /if \(!guardImport\('imports'\)\) return;\s*router\.push\(\{ pathname: '\/program-import', params: \{ for: 'today', m: 'paste' \} \}\);/);
 });
 
+test('Home only says "photo" to Premium AI (fails closed); everyone else is told to paste or type (AI audit 11-16, V-D7)', () => {
+  assert.match(HOME, /const photoImport = usePremiumAi\(\);/);
+  assert.match(HOME, /title="Import a workout"\s*sub=\{photoImport \? 'Paste a workout or add a photo\.' : 'Paste or type a workout\.'\}/);
+  assert.doesNotMatch(HOME, /sub="Paste a workout or add a photo\."/);
+});
+
 test('today mode STARTS the workout as a one-off, from the rows the builder would save', () => {
   /* …unless the paste held a week and the athlete chose "Make it a program" (PO 2026-10-06). */
   assert.match(IMPORT, /const isToday = forWhat === 'today' && !asProgram;/);
