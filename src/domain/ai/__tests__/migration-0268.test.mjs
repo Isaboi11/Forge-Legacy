@@ -187,15 +187,15 @@ test('settle is once-only, own-only, inside 30 minutes, and refunds to the reser
   assert.match(MIG, /create unique index if not exists coach_ai_spend_reservation_uniq\s+on public\.coach_ai_spend \(reservation_id\)\s+where reservation_id is not null;/);
 });
 
-test('the outcome vocabulary is the one meter-server.ts settles with', () => {
+test('the outcome vocabulary is the one meter-server.ts settles with (settle adds `guarded`; the admin line does not)', () => {
   const ts = read('src/domain/ai/meter-server.ts');
   const union = ts.slice(ts.indexOf('export type SettleOutcome'), ts.indexOf(';', ts.indexOf('export type SettleOutcome')));
   const tsList = [...union.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
-  for (const name of ['coach_ai_settle', 'coach_ai_record_admin_usage']) {
-    const f = fnDef(MIG, name);
-    const sqlList = [...f.match(/when p_outcome in \(([^)]*)\)/)[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
-    assert.deepEqual(sqlList, tsList, `${name}'s outcome list`);
-  }
+  const sqlList = (name) => [...fnDef(MIG, name).match(/when p_outcome in \(([^)]*)\)/)[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort();
+  assert.ok(tsList.includes('guarded'), 'contract addition: coach-ask settles a server-guarded minor as `guarded`');
+  assert.deepEqual(sqlList('coach_ai_settle'), tsList, "coach_ai_settle's outcome list");
+  // An operator tool has no reservation and no guard after one, so its list is the settle list without `guarded`.
+  assert.deepEqual(sqlList('coach_ai_record_admin_usage'), tsList.filter((o) => o !== 'guarded'), "coach_ai_record_admin_usage's outcome list");
 });
 
 test('record_usage keeps its signature and is hardened (P-D7); the admin tools get their own line (P-G10)', () => {

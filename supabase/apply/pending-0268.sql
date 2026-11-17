@@ -85,7 +85,7 @@ create unique index if not exists coach_ai_spend_reservation_uniq
 comment on column public.coach_ai_spend.fn is
   'The Edge Function that made the call (0268), its deployed slug; ''other'' for an unknown one. Null on rows written before 0268 or by coach_ai_record_usage.';
 comment on column public.coach_ai_spend.outcome is
-  'How the call ended (0268): ok · upstream_error · upstream_unreachable · timeout · refusal · truncated · not_a_program · unreadable · bad_output · cancelled · other. Every value but ok was refunded.';
+  'How the call ended (0268): ok · upstream_error · upstream_unreachable · timeout · refusal · truncated · not_a_program · unreadable · bad_output · cancelled · guarded (a server guard stopped it after the reserve) · other. On a reserve/settle row every value but ok was refunded.';
 comment on column public.coach_ai_spend.latency_ms is
   'The model round trip in milliseconds, as the function measured it (0268), 0…600,000.';
 comment on column public.coach_ai_spend.reservation_id is
@@ -359,9 +359,10 @@ begin
     raise exception 'coach_ai_settle: no authenticated athlete' using errcode = '28000';
   end if;
 
+  -- `guarded`: a server guard stopped the call after the reserve (coach-ask: a server-derived minor), refunded.
   v_outcome := case
     when p_outcome in ('ok', 'upstream_error', 'upstream_unreachable', 'timeout', 'refusal', 'truncated',
-                       'not_a_program', 'unreadable', 'bad_output', 'cancelled') then p_outcome
+                       'not_a_program', 'unreadable', 'bad_output', 'cancelled', 'guarded') then p_outcome
     else 'other'
   end;
 
