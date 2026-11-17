@@ -163,6 +163,22 @@ Server: `coach_ai_spend.outcome` + `latency_ms` (§1) are what the AI health pag
 
 ---
 
+## 4b. ▶ RESUME HERE (if the session stopped — e.g. out of credits)
+
+State at 2026-11-17 00:25 MST: four branch agents launched off `84da4c7d` (one per row of §0). Nothing deployed,
+applied, published or spent. Baseline on the base: 6,331 tests / 4 known failures.
+
+1. For each branch, `git -C C:/Users/isaia/ai-s1-<name>-wt log --oneline 84da4c7d..HEAD` and `git status --short`.
+   A branch whose agent stopped mid-way: commit nothing of its dirt blindly. Read the diff, then re-launch ONE agent
+   for that branch with: its §0 row, "continue from the commits already on your branch", and the rules in §5.
+2. When all four are done: check `feat/build11`'s CURRENT head (other sessions commit to it); if it moved past
+   `b87a2511`, merge it into `ai/sprint1` first. Then merge `ai/s1-money` → `-ask` → `-client` → `-observe` into
+   `ai/sprint1` (worktree `C:\Users\isaia\ai-s1-int-wt`), regenerate every paste bundle, run the full suite, `npx tsc
+   --noEmit`, eslint on changed files. Gate: 4 known failures, none added.
+3. Then ask the PO ONCE to release (cost quote for the canary; SQL 0268 → 0269 → 0270; which functions deploy, in
+   what order; OTA to build 11 from `C:/Users/isaia/forge-build11-wt`). Add PO-only steps as ⬜ lines in
+   `Docs/App-Store-Submission-Checklist.md` → "💻 PO laptop work".
+
 ## 5. What each branch reports back
 
 Files changed · tests added (count) · the full-suite numbers from its worktree · tsc · eslint on changed files ·
