@@ -62,7 +62,7 @@ export function outOfAiCreditsLine(
   const back = aiCreditsBackOnLabel(aiCreditsBackOn(o.period, now));
   const left = Math.max(0, Math.floor(o.remaining));
   if (left === 0) return `${pick('out_of_ai_credits', choose)} They come back on ${back}. ${WITHOUT_AI_CREDITS}`;
-  const credits = `You have ${left} Holt AI ${left === 1 ? 'credit' : 'credits'} left this month`;
+  const credits = `You have ${left} Premium AI ${left === 1 ? 'credit' : 'credits'} left this month`;
   /* An online search is weighted above an ordinary question (MA3-D16) — so the question still fits. */
   if (o.web) return `${credits}, and an online search takes more than that. An ordinary question still fits, and they all come back on ${back}.`;
   return `${credits}, and that one takes more. They come back on ${back}. ${WITHOUT_AI_CREDITS}`;

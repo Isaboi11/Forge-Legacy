@@ -78,9 +78,9 @@ test('⛔ never the Free plan’s "one block I write for free" line, in any cred
 
 test('an online search with a few credits left says so — the search costs more, a question still fits', () => {
   const line = outOfAiCreditsLine({ remaining: 2, allowance: 150, web: true, period: NOV }, MID_NOV);
-  assert.match(line, /^You have 2 Holt AI credits left this month, and an online search takes more than that\./);
+  assert.match(line, /^You have 2 Premium AI credits left this month, and an online search takes more than that\./);
   assert.match(line, /An ordinary question still fits, and they all come back on December 1\.$/);
-  assert.match(outOfAiCreditsLine({ remaining: 1, allowance: 150, web: true, period: NOV }, MID_NOV), /You have 1 Holt AI credit left/);
+  assert.match(outOfAiCreditsLine({ remaining: 1, allowance: 150, web: true, period: NOV }, MID_NOV), /You have 1 Premium AI credit left/);
 });
 
 test('no allowance at all is Premium AI not being on — not "used", and no reset date', () => {
