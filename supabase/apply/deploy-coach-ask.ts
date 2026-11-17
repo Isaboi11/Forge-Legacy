@@ -224,8 +224,18 @@ export function cleanContext(ctx: unknown): AskContext {
         nutrition: str(c.nutrition, ASK_NUTRITION_CHARS),
     };
 }
-export function askUserTurn(question: string, context: AskContext, todayISO: string): string {
+export interface AskAbout {
+    ageYears?: number | null;
+    minor?: boolean | null;
+}
+export function askUserTurn(question: string, context: AskContext, todayISO: string, about: AskAbout = {}): string {
     const lines: string[] = [`Today is ${todayISO}.`];
+    const age = typeof about.ageYears === 'number' && Number.isFinite(about.ageYears) ? Math.floor(about.ageYears) : null;
+    if (age != null && age > 0 && age < 120)
+        lines.push(`The athlete's age, from their profile: ${age}.`);
+    if (about.minor === true) {
+        lines.push('The athlete is under 18, so never a calorie or macro target, a diet, or a weight-loss or weight-gain plan. Training answers as normal.');
+    }
     if (context.program)
         lines.push(`The athlete's program: ${context.program}`);
     for (const r of context.coaching ?? [])
@@ -283,6 +293,30 @@ export function parseSse(chunk: string, carry: string): {
     return { events, carry: rest + held };
 }
 export const sseLine = (payload: unknown): string => `data: ${JSON.stringify(payload)}\n\n`;
+export const ASK_STATUS_PHRASES: Readonly<Record<string, string>> = {
+    get_lift_history: 'Checking your lift log…',
+    get_training_summary: 'Looking over your training…',
+    get_recent_workouts: 'Checking your recent workouts…',
+    get_workout_detail: 'Opening that workout…',
+    get_personal_records: 'Checking your records…',
+    get_cardio_history: 'Checking your cardio log…',
+    get_program_status: 'Checking your program…',
+    get_goals: 'Checking your goals…',
+    get_honors_and_rank: 'Checking your honors and rank…',
+    get_athlete_profile: 'Checking your settings…',
+    get_nutrition_log: 'Checking your food log…',
+    get_body_metrics: 'Checking your measurements…',
+    get_past_chats: 'Looking back at our last chats…',
+    get_recipes: 'Looking through the recipes…',
+    web_search: 'Searching online…',
+};
+export function askStatusFor(toolName: unknown): string | null {
+    if (typeof toolName !== 'string' || !Object.prototype.hasOwnProperty.call(ASK_STATUS_PHRASES, toolName))
+        return null;
+    return ASK_STATUS_PHRASES[toolName];
+}
+export const isAskStatus = (s: unknown): s is string => typeof s === 'string' && Object.values(ASK_STATUS_PHRASES).includes(s);
+export const ASK_KEEPALIVE = ': ka\n\n';
 export type AskStreamEvent = {
     t: string;
 } | {
@@ -296,14 +330,19 @@ export type AskStreamEvent = {
     };
     remaining: number | null;
     stop?: string | null;
+    refunded?: true;
 } | {
     error: string;
-    detail?: string | null;
+    refunded?: true;
+    remaining?: number;
+    upstream?: 'timeout';
 } | {
     action: {
         name: string;
         input: unknown;
     };
+} | {
+    status: string;
 };
 export function readAskEvent(data: string): AskStreamEvent | null {
     let v: unknown;
@@ -318,12 +357,20 @@ export function readAskEvent(data: string): AskStreamEvent | null {
     const o = v as Record<string, unknown>;
     if (typeof o.t === 'string')
         return { t: o.t };
-    if (typeof o.error === 'string')
-        return { error: o.error, detail: typeof o.detail === 'string' ? o.detail : null };
+    if (typeof o.error === 'string') {
+        return {
+            error: o.error,
+            ...(o.refunded === true ? { refunded: true as const } : {}),
+            ...(typeof o.remaining === 'number' && Number.isFinite(o.remaining) ? { remaining: o.remaining } : {}),
+            ...(o.upstream === 'timeout' ? { upstream: 'timeout' as const } : {}),
+        };
+    }
     if (o.action && typeof o.action === 'object') {
         const a = o.action as Record<string, unknown>;
         return typeof a.name === 'string' ? { action: { name: a.name, input: a.input ?? {} } } : null;
     }
+    if (typeof o.status === 'string')
+        return isAskStatus(o.status) ? { status: o.status } : null;
     if (o.done === true) {
         const u = (o.usage ?? {}) as Record<string, unknown>;
         const n = (x: unknown) => (typeof x === 'number' ? x : 0);
@@ -338,6 +385,7 @@ export function readAskEvent(data: string): AskStreamEvent | null {
             },
             remaining: typeof o.remaining === 'number' ? o.remaining : null,
             stop: typeof o.stop === 'string' ? o.stop : null,
+            ...(o.refunded === true ? { refunded: true as const } : {}),
         };
     }
     return null;
@@ -1749,6 +1797,172 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
         return { text: `The read failed: ${String((e as Error)?.message ?? e).slice(0, 160)}. Tell the athlete you couldn't pull it just now.`, isError: true };
     }
 }
+export const ASK_SERVER_TURN_MS = 60000;
+export const ASK_SERVER_WEB_TURN_MS = 90000;
+export const ASK_SERVER_IDLE_MS = 30000;
+export const ASK_KEEPALIVE_MS = 10000;
+export const SUMMARY_UPSTREAM_MS = 20000;
+export const askTurnMs = (allowWeb: boolean): number => (allowWeb ? ASK_SERVER_WEB_TURN_MS : ASK_SERVER_TURN_MS);
+export function askModel(requested: unknown, allowWeb: boolean, allowed: readonly string[], fallback: string): string {
+    if (allowWeb)
+        return fallback;
+    return typeof requested === 'string' && allowed.includes(requested) ? requested : fallback;
+}
+export const RETRY_AFTER_CAP_MS = 3000;
+export const RETRY_DEFAULT_MS = 1000;
+export const isRetryableStatus = (status: number | null | undefined): boolean => typeof status === 'number' && (status === 429 || status === 529 || (status >= 500 && status <= 599));
+export function retryDelayMs(retryAfter: string | null | undefined, now: number = Date.now()): number {
+    const raw = typeof retryAfter === 'string' ? retryAfter.trim() : '';
+    if (!raw)
+        return RETRY_DEFAULT_MS;
+    const seconds = Number(raw);
+    if (Number.isFinite(seconds))
+        return Math.min(Math.max(0, seconds * 1000), RETRY_AFTER_CAP_MS);
+    const at = Date.parse(raw);
+    if (Number.isFinite(at))
+        return Math.min(Math.max(0, at - now), RETRY_AFTER_CAP_MS);
+    return RETRY_DEFAULT_MS;
+}
+export interface UpstreamReply {
+    ok: boolean;
+    status: number;
+    body: unknown;
+    headers: {
+        get(name: string): string | null;
+    };
+}
+export type UpstreamResult<R extends UpstreamReply> = {
+    ok: true;
+    response: R;
+    attempts: number;
+} | {
+    ok: false;
+    failure: 'upstream_error' | 'upstream_unreachable';
+    status: number | null;
+    attempts: number;
+};
+export async function upstreamWithRetry<R extends UpstreamReply>(call: () => Promise<R>, opts: {
+    canRetry: () => boolean;
+    wait: (ms: number) => Promise<void>;
+    failed?: (attempt: {
+        status: number | null;
+        reply: R | null;
+        error: unknown;
+    }) => void | Promise<void>;
+}): Promise<UpstreamResult<R>> {
+    for (let attempt = 1;; attempt += 1) {
+        let reply: R | null = null;
+        let error: unknown = null;
+        try {
+            reply = await call();
+        }
+        catch (e) {
+            error = e;
+        }
+        if (reply && reply.ok && reply.body)
+            return { ok: true, response: reply, attempts: attempt };
+        const status = reply ? reply.status : null;
+        await opts.failed?.({ status, reply, error });
+        const retryable = reply ? isRetryableStatus(status) && reply.headers.get('x-should-retry') !== 'false' : true;
+        if (attempt === 1 && retryable && opts.canRetry()) {
+            await opts.wait(retryDelayMs(reply?.headers.get('retry-after') ?? null));
+            if (opts.canRetry())
+                continue;
+        }
+        return { ok: false, failure: reply ? 'upstream_error' : 'upstream_unreachable', status, attempts: attempt };
+    }
+}
+export function waitUnlessAborted(ms: number, signal?: AbortSignal | null): Promise<void> {
+    return new Promise<void>((resolve) => {
+        if (signal?.aborted)
+            return resolve();
+        const finish = () => {
+            clearTimeout(timer);
+            signal?.removeEventListener('abort', finish);
+            resolve();
+        };
+        const timer = setTimeout(finish, Math.max(0, ms));
+        signal?.addEventListener('abort', finish);
+    });
+}
+export interface AskReservation {
+    allowed: boolean;
+    reason: string | null;
+    reservation_id: string | null;
+    credits_spent: number | null;
+    remaining: number | null;
+    allowance: number | null;
+    age_years: number | null;
+    minor: boolean | null;
+}
+export interface AskSettleRow {
+    settled: boolean;
+    refunded: boolean;
+    cost_usd: number | null;
+    remaining: number | null;
+}
+const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+export function reserveRefusal(row: unknown): {
+    status: number;
+    body: Record<string, unknown>;
+} | null {
+    const r = (row && typeof row === 'object' ? row : null) as Partial<AskReservation> | null;
+    if (!r)
+        return { status: 503, body: { route: 'error', reason: 'meter_unavailable' } };
+    if (r.allowed === true) {
+        return typeof r.reservation_id === 'string' && r.reservation_id
+            ? null
+            : { status: 503, body: { route: 'error', reason: 'meter_unavailable' } };
+    }
+    if (r.reason === 'no_consent')
+        return { status: 403, body: { route: 'error', reason: 'no_consent' } };
+    return { status: 200, body: { route: 'out_of_credits', remaining: num(r.remaining), allowance: num(r.allowance) } };
+}
+export type AskTurnFailure = 'timeout' | 'upstream_error' | 'upstream_unreachable' | 'upstream_dropped';
+export type AskOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'bad_output' | 'cancelled' | 'guarded' | 'other';
+export const ASK_CUT_STOPS: readonly string[] = ['max_tokens', 'model_context_window_exceeded'];
+export function askSettlement(t: {
+    failure: AskTurnFailure | null;
+    stop: string | null;
+    delivered: boolean;
+    cancelled?: boolean;
+}): {
+    outcome: AskOutcome;
+    refund: boolean;
+} {
+    if (t.cancelled)
+        return { outcome: 'cancelled', refund: false };
+    if (t.failure === 'timeout')
+        return { outcome: 'timeout', refund: true };
+    if (t.failure === 'upstream_unreachable')
+        return { outcome: 'upstream_unreachable', refund: true };
+    if (t.failure)
+        return { outcome: 'upstream_error', refund: true };
+    if (t.stop === 'refusal')
+        return { outcome: 'refusal', refund: true };
+    if (t.stop != null && ASK_CUT_STOPS.includes(t.stop))
+        return { outcome: 'truncated', refund: !t.delivered };
+    if (!t.delivered)
+        return { outcome: 'bad_output', refund: true };
+    return { outcome: 'ok', refund: false };
+}
+export function askFailureEvent(failure: AskTurnFailure, settled: {
+    refunded: boolean;
+    remaining: number | null;
+}): {
+    error: string;
+    upstream?: 'timeout';
+    refunded?: true;
+    remaining?: number;
+} {
+    return {
+        error: failure === 'timeout' ? 'upstream_error' : failure,
+        ...(failure === 'timeout' ? { upstream: 'timeout' as const } : {}),
+        ...(settled.refunded ? { refunded: true as const } : {}),
+        ...(typeof settled.remaining === 'number' && Number.isFinite(settled.remaining) ? { remaining: settled.remaining } : {}),
+    };
+}
+export const meterInt = (v: unknown, max: number): number => Math.min(max, Math.max(0, Math.round(num(v))));
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -1875,18 +2089,54 @@ interface Body {
 const SUMMARY_MODEL = HAIKU;
 const SUMMARY_TURNS = 40;
 const WEB_SEARCH = { type: 'web_search_20260209', name: 'web_search', max_uses: 2 };
+type Usage = {
+    input: number;
+    output: number;
+    cacheRead: number;
+    cacheWrite: number;
+};
+const NO_USAGE: Usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+function settler(supabase: ReturnType<typeof createClient>, reservation: string, startedAt: number) {
+    let once: Promise<AskSettleRow | null> | null = null;
+    return (outcome: AskOutcome, refund: boolean, model: string, u: Usage): Promise<AskSettleRow | null> => (once ??= supabase
+        .rpc('coach_ai_settle', {
+        p_reservation: reservation,
+        p_outcome: outcome,
+        p_model: model,
+        p_input_tokens: meterInt(u.input, 5000000),
+        p_output_tokens: meterInt(u.output, 5000000),
+        p_cache_read_input_tokens: meterInt(u.cacheRead, 5000000),
+        p_cache_creation_input_tokens: meterInt(u.cacheWrite, 5000000),
+        p_latency_ms: meterInt(Date.now() - startedAt, 600000),
+        p_refund: refund,
+    })
+        .maybeSingle()
+        .then(({ data, error }: {
+        data: unknown;
+        error: unknown;
+    }) => (error ? null : ((data as AskSettleRow | null) ?? null)), () => null));
+}
+const reservationIdOf = (row: unknown): string | null => {
+    const r = row as Partial<AskReservation> | null;
+    return r?.allowed === true && typeof r.reservation_id === 'string' && r.reservation_id ? r.reservation_id : null;
+};
 async function summarize(body: Body, authorization: string): Promise<Response> {
     const turns = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
     if (turns.filter((t) => t.role === 'athlete').length < 2)
         return json({ ok: true, saved: false, reason: 'too_short' });
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
-    const { data: spend, error } = await supabase.rpc('coach_ai_spend_credits', { p_action: 'summary' }).maybeSingle();
-    if (error || !(spend as {
-        allowed?: boolean;
-    } | null)?.allowed)
+    const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
+    const reservation = error ? null : reservationIdOf(row);
+    if (!reservation)
         return json({ ok: true, saved: false, reason: 'not_allowed' });
+    const settle = settler(supabase, reservation, Date.now());
+    const upstream = new AbortController();
+    const timer = setTimeout(() => upstream.abort(), SUMMARY_UPSTREAM_MS);
+    let res: Response | null = null;
+    let out: any = null;
+    let failure: AskTurnFailure | null = null;
     try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        res = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: { 'x-api-key': ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
             body: JSON.stringify({
@@ -1895,21 +2145,36 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
                 system: [{ type: 'text', text: SUMMARY_SYSTEM, cache_control: { type: 'ephemeral' } }],
                 messages: [{ role: 'user', content: transcriptOf(turns) }],
             }),
+            signal: upstream.signal,
         });
-        const out = await res.json().catch(() => null);
-        const u = (out?.usage ?? {}) as Record<string, number>;
-        await supabase.rpc('coach_ai_record_usage', {
-            p_action: 'summary',
-            p_credits: 0,
-            p_model: SUMMARY_MODEL,
-            p_input_tokens: u.input_tokens ?? 0,
-            p_output_tokens: u.output_tokens ?? 0,
-            p_cache_read_input_tokens: u.cache_read_input_tokens ?? 0,
-            p_cache_creation_input_tokens: u.cache_creation_input_tokens ?? 0,
-            p_uncharged: !res.ok,
-        }).then(() => undefined, () => undefined);
-        if (!res.ok)
-            return json({ ok: true, saved: false, reason: 'upstream_error' });
+        out = await res.json().catch(() => null);
+        if (!res.ok) {
+            console.error('anthropic summary', res.status, JSON.stringify(out ?? {}).slice(0, 800));
+            failure = 'upstream_error';
+        }
+    }
+    catch (e) {
+        failure = upstream.signal.aborted ? 'timeout' : 'upstream_unreachable';
+        console.error('anthropic summary', failure, String((e as Error)?.message ?? e).slice(0, 300));
+    }
+    finally {
+        clearTimeout(timer);
+    }
+    const u = (out?.usage ?? {}) as Record<string, number>;
+    const usage: Usage = {
+        input: u.input_tokens ?? 0,
+        output: u.output_tokens ?? 0,
+        cacheRead: u.cache_read_input_tokens ?? 0,
+        cacheWrite: u.cache_creation_input_tokens ?? 0,
+    };
+    const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
+    const settled = await settle(outcome, refund, SUMMARY_MODEL, usage);
+    const refunded = settled?.refunded === true ? { refunded: true } : {};
+    if (failure)
+        return json({ ok: true, saved: false, reason: failure === 'timeout' ? 'upstream_error' : failure, ...(failure === 'timeout' ? { upstream: 'timeout' } : {}), ...refunded });
+    if (outcome !== 'ok')
+        return json({ ok: true, saved: false, reason: outcome, ...refunded });
+    try {
         const text = ((out?.content ?? []) as {
             type: string;
             text?: string;
@@ -1924,13 +2189,24 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
         return json({ ok: true, saved: false, reason: 'failed' });
     }
 }
-function guardRoute(text: string): 'crisis' | 'urgent' | 'care' | 'medical_stop' | null {
+function guardRoute(text: string, minor = false): 'crisis' | 'urgent' | 'care' | 'medical_stop' | null {
     const r = medicalRoute(text);
-    if (r === 'clear')
-        return null;
     if (r === 'crisis' || r === 'urgent' || r === 'care')
         return r;
+    if (minor && minorTopic(text))
+        return 'care';
+    if (r === 'clear')
+        return null;
     return 'medical_stop';
+}
+function minorTopic(text: string): boolean {
+    const t = (text ?? '').replace(/[‘’ʼ]/g, "'").trim();
+    if (!t)
+        return false;
+    if (MINOR_TOPIC.test(t))
+        return true;
+    const fixed = correctedForStops(t);
+    return fixed != null && MINOR_TOPIC.test(fixed);
 }
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
     status,
@@ -1942,15 +2218,11 @@ const SSE_HEADERS = {
     'Cache-Control': 'no-cache',
     'X-Accel-Buffering': 'no',
 };
-function upstreamReason(raw: string): string {
-    try {
-        const e = JSON.parse(raw)?.error;
-        if (e?.type || e?.message)
-            return `${e.type ?? 'error'}: ${e.message ?? ''}`.slice(0, 300);
-    }
-    catch {
-    }
-    return raw.slice(0, 300);
+async function logUpstream(where: string, status: number | null, reply: Response | null, error: unknown): Promise<void> {
+    if (reply)
+        console.error(where, status, (await reply.text().catch(() => '')).slice(0, 800));
+    else
+        console.error(where, 'unreachable', String((error as Error)?.message ?? error).slice(0, 300));
 }
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS')
@@ -1979,25 +2251,27 @@ Deno.serve(async (req) => {
     });
     const allowWeb = body.allowWeb === true;
     const action = allowWeb ? 'web' : 'message';
-    const { data: spend, error: spendError } = await supabase
-        .rpc('coach_ai_spend_credits', { p_action: action })
+    const { data: reserveRow, error: reserveError } = await supabase
+        .rpc('coach_ai_reserve', { p_action: action, p_fn: 'coach-ask' })
         .maybeSingle();
-    if (spendError)
+    if (reserveError)
         return json({ route: 'error', reason: 'meter_unavailable' }, 503);
-    const reserved = spend as {
-        allowed: boolean;
-        credits_spent: number;
-        remaining: number;
-        allowance: number;
-    } | null;
-    if (!reserved?.allowed) {
-        return json({
-            route: 'out_of_credits',
-            remaining: reserved?.remaining ?? 0,
-            allowance: reserved?.allowance ?? 0,
-        });
+    const refusal = reserveRefusal(reserveRow);
+    if (refusal)
+        return json(refusal.body, refusal.status);
+    const reserved = reserveRow as AskReservation;
+    const settle = settler(supabase, reserved.reservation_id as string, Date.now());
+    const model = askModel(body.model, allowWeb, ALLOWED_MODELS, MODEL);
+    const minor = reserved.minor === true;
+    if (minor) {
+        const stopped = guardRoute(question, true);
+        if (stopped) {
+            await settle('guarded', true, model, NO_USAGE);
+            return json({ route: stopped });
+        }
     }
-    const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4)).slice(-ASK_HISTORY_MAX);
+    const stops = (t: string) => guardRoute(t, minor) !== null;
+    const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4), stops).slice(-ASK_HISTORY_MAX);
     const context = cleanContext(body.context);
     const today = new Date().toISOString().slice(0, 10);
     const messages: {
@@ -2010,11 +2284,10 @@ Deno.serve(async (req) => {
     if (messages.length && messages[0].role === 'assistant') {
         messages.unshift({ role: 'user', content: '(The athlete opened the chat with Holt.)' });
     }
-    messages.push({ role: 'user', content: askUserTurn(question, context, today) });
-    if (body.allowWeb === true) {
+    messages.push({ role: 'user', content: askUserTurn(question, context, today, { ageYears: reserved.age_years, minor }) });
+    if (allowWeb) {
         messages[messages.length - 1].content += '\n\n(The athlete tapped "Find one online" — you have web search for this message.)';
     }
-    const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
     const tz = typeof body.tz === 'number' && Number.isInteger(body.tz) && Math.abs(body.tz) <= 840 ? body.tz : 0;
     const recipes = narrowRecipes(body.recipes);
     const jwt = authorization.replace(/^Bearer\s+/i, '');
@@ -2026,25 +2299,31 @@ Deno.serve(async (req) => {
             } | null;
         };
     }) => r.data.user?.id ?? null, () => null));
-    const record = (u: {
-        input: number;
-        output: number;
-        cacheRead: number;
-        cacheWrite: number;
-    }, m: string, uncharged: boolean) => supabase.rpc('coach_ai_record_usage', {
-        p_action: action,
-        p_credits: reserved.credits_spent,
-        p_model: m,
-        p_input_tokens: u.input,
-        p_output_tokens: u.output,
-        p_cache_read_input_tokens: u.cacheRead,
-        p_cache_creation_input_tokens: u.cacheWrite,
-        p_uncharged: uncharged,
-    }).then(() => undefined, () => undefined);
     const convo: {
         role: 'user' | 'assistant';
         content: any;
     }[] = messages;
+    const upstreamCtl = new AbortController();
+    let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+    let gaveUp: 'timeout' | 'cancelled' | null = null;
+    const giveUp = (why: 'timeout' | 'cancelled') => {
+        if (gaveUp)
+            return;
+        gaveUp = why;
+        upstreamCtl.abort();
+        reader?.cancel().catch(() => undefined);
+    };
+    const aborted = new Promise<'aborted'>((resolve) => upstreamCtl.signal.addEventListener('abort', () => resolve('aborted')));
+    let idleTimer: ReturnType<typeof setTimeout> | null = null;
+    const quiet = () => {
+        if (idleTimer != null)
+            clearTimeout(idleTimer);
+        idleTimer = null;
+    };
+    const heard = () => {
+        quiet();
+        idleTimer = setTimeout(() => giveUp('timeout'), ASK_SERVER_IDLE_MS);
+    };
     const callModel = (last: boolean) => fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -2062,52 +2341,82 @@ Deno.serve(async (req) => {
             system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
             messages: convo,
         }),
+        signal: upstreamCtl.signal,
     });
-    let upstream: Response;
-    try {
-        upstream = await callModel(false);
-    }
-    catch {
-        await record({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, model, true);
-        return new Response(sseLine({ error: 'upstream_unreachable', detail: null }), { headers: SSE_HEADERS });
-    }
-    if (!upstream.ok || !upstream.body) {
-        const raw = await upstream.text().catch(() => '');
-        console.error('anthropic', upstream.status, raw.slice(0, 800));
-        await record({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, model, true);
-        return new Response(sseLine({ error: 'upstream_error', detail: `${upstream.status} ${upstreamReason(raw)}`.slice(0, 300) }), { headers: SSE_HEADERS });
-    }
-    const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+    const usage: Usage = { ...NO_USAGE };
+    let ru: Usage = { ...NO_USAGE };
+    const spent = (): Usage => ({
+        input: usage.input + ru.input,
+        output: usage.output + ru.output,
+        cacheRead: usage.cacheRead + ru.cacheRead,
+        cacheWrite: usage.cacheWrite + ru.cacheWrite,
+    });
     let servedBy = model;
     let stop: string | null = null;
-    let recorded = false;
-    const finish = async (uncharged: boolean) => {
-        if (recorded)
-            return;
-        recorded = true;
-        await record(usage, servedBy, uncharged);
-    };
-    let reader = upstream.body.getReader();
+    let sawText = false;
+    let delivered = false;
+    let finished = false;
+    let keepAlive: ReturnType<typeof setInterval> | null = null;
+    let turnTimer: ReturnType<typeof setTimeout> | null = null;
     const encoder = new TextEncoder();
+    const open = (last: boolean) => {
+        heard();
+        return upstreamWithRetry(() => callModel(last), {
+            canRetry: () => !sawText && !gaveUp,
+            wait: (ms) => waitUnlessAborted(ms, upstreamCtl.signal),
+            failed: ({ status, reply, error }) => (reply || !gaveUp ? logUpstream('anthropic', status, reply, error) : undefined),
+        });
+    };
+    const leave = async () => {
+        if (finished || gaveUp)
+            return;
+        giveUp('cancelled');
+        if (keepAlive != null)
+            clearInterval(keepAlive);
+        await settle('cancelled', false, servedBy, spent());
+    };
+    req.signal?.addEventListener('abort', () => void leave());
     const stream = new ReadableStream<Uint8Array>({
         async start(controller) {
-            const send = (payload: unknown) => {
+            let lastWrite = 0;
+            const write = (chunk: string) => {
+                if (gaveUp === 'cancelled')
+                    return;
                 try {
-                    controller.enqueue(encoder.encode(sseLine(payload)));
+                    controller.enqueue(encoder.encode(chunk));
+                    lastWrite = Date.now();
                 }
                 catch {
                 }
             };
+            const send = (payload: unknown) => write(sseLine(payload));
+            let lastStatus: string | null = null;
+            const status = (toolName: unknown) => {
+                const s = askStatusFor(toolName);
+                if (s && s !== lastStatus) {
+                    lastStatus = s;
+                    send({ status: s });
+                }
+            };
+            write(ASK_KEEPALIVE);
+            keepAlive = setInterval(() => {
+                if (Date.now() - lastWrite >= ASK_KEEPALIVE_MS / 2)
+                    write(ASK_KEEPALIVE);
+            }, ASK_KEEPALIVE_MS);
+            turnTimer = setTimeout(() => giveUp('timeout'), askTurnMs(allowWeb));
             const decoder = utf8Decoder();
-            let failed: {
-                error: string;
-                detail: string | null;
-            } | null = null;
-            let sawText = false;
+            let failure: AskTurnFailure | null = null;
             let rounds = 0;
             try {
+                let opened = await open(false);
                 turn: while (true) {
-                    const ru = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+                    if (!opened.ok) {
+                        failure = opened.failure;
+                        break turn;
+                    }
+                    const rd = opened.response.body!.getReader();
+                    reader = rd;
+                    ru = { ...NO_USAGE };
                     const takeUsage = (u: Record<string, unknown> | undefined) => {
                         if (!u)
                             return;
@@ -2132,9 +2441,10 @@ Deno.serve(async (req) => {
                     let roundText = false;
                     let carry = '';
                     read: while (true) {
-                        const { done, value } = await reader.read();
+                        const { done, value } = await rd.read();
                         if (done)
                             break;
+                        heard();
                         const parsed = parseSse(decoder.decode(value), carry);
                         carry = parsed.carry;
                         for (const ev of parsed.events) {
@@ -2171,6 +2481,8 @@ Deno.serve(async (req) => {
                                             json: '',
                                             ...(b.type !== 'text' && b.type !== 'tool_use' ? { raw: b as Record<string, unknown> } : {}),
                                         };
+                                        if (b.type === 'tool_use' || b.type === 'server_tool_use')
+                                            status(b.name);
                                     }
                                     break;
                                 }
@@ -2185,6 +2497,7 @@ Deno.serve(async (req) => {
                                         if (!roundText && sawText)
                                             send({ t: ' ' });
                                         sawText = true;
+                                        delivered = true;
                                         roundText = true;
                                         if (at)
                                             at.text += d.text;
@@ -2209,7 +2522,8 @@ Deno.serve(async (req) => {
                                         type?: string;
                                         message?: string;
                                     } | undefined;
-                                    failed = { error: 'upstream_error', detail: `${e?.type ?? 'error'}: ${e?.message ?? ''}`.slice(0, 300) };
+                                    console.error('anthropic stream error', e?.type ?? 'error', String(e?.message ?? '').slice(0, 300));
+                                    failure = 'upstream_error';
                                     break read;
                                 }
                                 default:
@@ -2217,12 +2531,14 @@ Deno.serve(async (req) => {
                             }
                         }
                     }
+                    quiet();
                     usage.input += ru.input;
                     usage.output += ru.output;
                     usage.cacheRead += ru.cacheRead;
                     usage.cacheWrite += ru.cacheWrite;
+                    ru = { ...NO_USAGE };
                     stop = roundStop;
-                    if (failed || (roundStop !== 'tool_use' && roundStop !== 'pause_turn'))
+                    if (failure || gaveUp || (roundStop !== 'tool_use' && roundStop !== 'pause_turn'))
                         break turn;
                     rounds += 1;
                     const inputOf = (json: string): unknown => {
@@ -2244,55 +2560,66 @@ Deno.serve(async (req) => {
                                 : { ...b.raw, ...(b.type === 'server_tool_use' ? { input: inputOf(b.json) ?? {} } : {}) }),
                     });
                     if (roundStop === 'tool_use') {
-                        const uid = await uidOf();
-                        const calls = blocks.filter((b) => b && b.type === 'tool_use' && b.id && b.name);
-                        const results = await Promise.all(calls.map(async (c) => {
-                            const input = inputOf(c.json);
-                            if (input === null)
-                                return { type: 'tool_result', tool_use_id: c.id, content: 'The tool input was not valid JSON.', is_error: true };
-                            if (ASK_ACTION_NAMES.includes(c.name as string)) {
-                                send({ action: { name: c.name, input } });
-                                return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };
-                            }
-                            if (!uid)
-                                return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
-                            const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes });
-                            return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
-                        }));
+                        const runRound = async () => {
+                            const uid = await uidOf();
+                            const calls = blocks.filter((b) => b && b.type === 'tool_use' && b.id && b.name);
+                            return Promise.all(calls.map(async (c) => {
+                                const input = inputOf(c.json);
+                                if (input === null)
+                                    return { type: 'tool_result', tool_use_id: c.id, content: 'The tool input was not valid JSON.', is_error: true };
+                                if (ASK_ACTION_NAMES.includes(c.name as string)) {
+                                    send({ action: { name: c.name, input } });
+                                    delivered = true;
+                                    return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };
+                                }
+                                if (!uid)
+                                    return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
+                                const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes });
+                                return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
+                            }));
+                        };
+                        const results = await Promise.race([runRound(), aborted]);
+                        if (results === 'aborted')
+                            break turn;
                         convo.push({ role: 'user', content: results });
                     }
-                    let next: Response;
-                    try {
-                        next = await callModel(rounds >= ASK_TOOL_ROUNDS);
-                    }
-                    catch (e) {
-                        failed = { error: 'upstream_unreachable', detail: String((e as Error)?.message ?? e).slice(0, 300) };
+                    if (gaveUp)
                         break turn;
-                    }
-                    if (!next.ok || !next.body) {
-                        const raw = await next.text().catch(() => '');
-                        console.error('anthropic round', rounds, next.status, raw.slice(0, 800));
-                        failed = { error: 'upstream_error', detail: `${next.status} ${upstreamReason(raw)}`.slice(0, 300) };
-                        break turn;
-                    }
-                    reader = next.body.getReader();
+                    opened = await open(rounds >= ASK_TOOL_ROUNDS);
                 }
             }
             catch (e) {
-                failed = { error: 'upstream_dropped', detail: String((e as Error)?.message ?? e).slice(0, 300) };
+                if (!gaveUp) {
+                    failure = 'upstream_dropped';
+                    console.error('anthropic stream', String((e as Error)?.message ?? e).slice(0, 300));
+                }
             }
-            if (failed) {
-                console.error('anthropic stream', failed.detail);
-                await finish(!sawText && usage.output === 0);
-                send(failed);
+            finally {
+                if (turnTimer != null)
+                    clearTimeout(turnTimer);
+                if (keepAlive != null)
+                    clearInterval(keepAlive);
+                quiet();
+            }
+            if (gaveUp === 'cancelled')
+                return;
+            finished = true;
+            if (gaveUp === 'timeout')
+                failure = 'timeout';
+            const { outcome, refund } = askSettlement({ failure, stop, delivered });
+            const settled = await settle(outcome, refund, servedBy, spent());
+            const refunded = settled?.refunded === true;
+            const remaining = typeof settled?.remaining === 'number' ? settled.remaining : null;
+            if (failure) {
+                send(askFailureEvent(failure, { refunded, remaining }));
             }
             else {
-                await finish(false);
                 send({
                     done: true,
-                    usage: { model: servedBy, ...usage },
-                    remaining: reserved.remaining,
+                    usage: { model: servedBy, ...spent() },
+                    remaining: remaining ?? reserved.remaining,
                     stop,
+                    ...(refunded ? { refunded: true } : {}),
                 });
             }
             try {
@@ -2301,10 +2628,7 @@ Deno.serve(async (req) => {
             catch {
             }
         },
-        async cancel() {
-            await reader.cancel().catch(() => undefined);
-            await finish(false);
-        },
+        cancel: () => leave(),
     });
     return new Response(stream, { headers: SSE_HEADERS });
 });

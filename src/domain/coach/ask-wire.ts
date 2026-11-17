@@ -17,6 +17,9 @@
  *     HERE and never in the system block: the system block is cached, and a byte that varies per request
  *     there multiplies the cost of the product by ~10 (CA-D5).
  *   · `utf8Decoder` — streamed bytes to text without splitting a multi-byte character across chunks.
+ *   · `ASK_STATUS_PHRASES` / `ASK_KEEPALIVE` — what the function says during a tool round, and the comment
+ *     line that keeps a quiet stream open (Sprint 1, C-G5). Both are invisible to every app already shipped:
+ *     their `readAskEvent` returns null for `{status}`, and `parseSse` drops a `:` line (ask-wire-old-client.test.mjs).
  */
 
 /** CA-D1: the last N turns of this `ask` conversation, and nothing from any other job. */
@@ -140,12 +143,32 @@ export function cleanContext(ctx: unknown): AskContext {
 }
 
 /**
+ * What the SERVER knows about the athlete, from their profile — never from the client (AI Road to 10 Sprint 1,
+ * audit P-G8). `coach_ai_reserve` derives it from `profiles.birth_year`; a client cannot send it, so
+ * `cleanContext` has no field for it.
+ */
+export interface AskAbout {
+  /** This year minus the birth year; null when unknown. */
+  ageYears?: number | null;
+  /** The app's own under-18 rule (`isUnderAge`), decided on the server. */
+  minor?: boolean | null;
+}
+
+/**
  * The final user turn: the app's context, labelled as the app's and not the athlete's, then the question.
  *
- * ⚠ THIS IS THE ONLY PLACE PER-REQUEST CONTEXT ENTERS THE PROMPT. Never the system block (cache).
+ * ⚠ THIS IS THE ONLY PLACE PER-REQUEST CONTEXT ENTERS THE PROMPT. Never the system block (cache). The athlete's
+ * age is per-request too, so it is here and nowhere else: the system block stays byte-identical for everyone.
  */
-export function askUserTurn(question: string, context: AskContext, todayISO: string): string {
+export function askUserTurn(question: string, context: AskContext, todayISO: string, about: AskAbout = {}): string {
   const lines: string[] = [`Today is ${todayISO}.`];
+  const age = typeof about.ageYears === 'number' && Number.isFinite(about.ageYears) ? Math.floor(about.ageYears) : null;
+  if (age != null && age > 0 && age < 120) lines.push(`The athlete's age, from their profile: ${age}.`);
+  /* NUT-D5 on every ask, not only the kitchen's: the code guard has already stopped the diet topics for a minor;
+     this is the line the model reads for whatever the guard cannot see. Training answers are unchanged. */
+  if (about.minor === true) {
+    lines.push('The athlete is under 18, so never a calorie or macro target, a diet, or a weight-loss or weight-gain plan. Training answers as normal.');
+  }
   if (context.program) lines.push(`The athlete's program: ${context.program}`);
   for (const r of context.coaching ?? []) lines.push(`Coaching record — ${r.name}: ${r.text}`);
   if (context.rationale) lines.push(`Why the plan is built this way: ${context.rationale}`);
@@ -210,6 +233,53 @@ export function parseSse(chunk: string, carry: string): { events: SseEvent[]; ca
 /** One line of the function's own stream to the app. */
 export const sseLine = (payload: unknown): string => `data: ${JSON.stringify(payload)}\n\n`;
 
+/**
+ * ══ WHILE HE LOOKS THINGS UP (AI Road to 10 Sprint 1, audit C-G5 / C-D2) ══
+ *
+ * A tool round used to be silence on the wire: the function relayed only words, so "what's my bench progress"
+ * showed three dots for as long as the lookups took. Now the function says what it is doing, in a phrase from
+ * THIS table and nothing else.
+ *
+ * ⛔ NEVER THE MODEL'S WORDS. The phrase is chosen by the tool's NAME, which is ours; the tool's input (the
+ * model's) never reaches it — no "Checking your bench log" built from `{"exercise":"bench"}`. The app shows a
+ * status only if it is in this table too (`readAskEvent`), so not even a misbehaving server can put text there.
+ *
+ * Every read tool in `ASK_TOOLS` has a line (ask-turn.test.mjs pins it); the two actions have none — they are
+ * cards, not waits. `web_search` is Anthropic's server tool, on a tapped online search.
+ */
+export const ASK_STATUS_PHRASES: Readonly<Record<string, string>> = {
+  get_lift_history: 'Checking your lift log…',
+  get_training_summary: 'Looking over your training…',
+  get_recent_workouts: 'Checking your recent workouts…',
+  get_workout_detail: 'Opening that workout…',
+  get_personal_records: 'Checking your records…',
+  get_cardio_history: 'Checking your cardio log…',
+  get_program_status: 'Checking your program…',
+  get_goals: 'Checking your goals…',
+  get_honors_and_rank: 'Checking your honors and rank…',
+  get_athlete_profile: 'Checking your settings…',
+  get_nutrition_log: 'Checking your food log…',
+  get_body_metrics: 'Checking your measurements…',
+  get_past_chats: 'Looking back at our last chats…',
+  get_recipes: 'Looking through the recipes…',
+  web_search: 'Searching online…',
+};
+
+/** The status line for a tool, by its name. Null for an action, an unknown tool, or anything that is not a name. */
+export function askStatusFor(toolName: unknown): string | null {
+  if (typeof toolName !== 'string' || !Object.prototype.hasOwnProperty.call(ASK_STATUS_PHRASES, toolName)) return null;
+  return ASK_STATUS_PHRASES[toolName];
+}
+
+/** Is this one of the table's lines, exactly? The app's half of "never the model's words". */
+export const isAskStatus = (s: unknown): s is string => typeof s === 'string' && Object.values(ASK_STATUS_PHRASES).includes(s);
+
+/**
+ * The keep-alive: an SSE COMMENT line. Every parser this app has ever shipped (`parseSse`) skips a `:` line and
+ * emits no event for it, so an old phone reads nothing — but its clock (`askClock.heard`) sees bytes arrive.
+ */
+export const ASK_KEEPALIVE = ': ka\n\n';
+
 /** What the function sends the app, one per `data:` line. */
 export type AskStreamEvent =
   | { t: string }
@@ -218,13 +288,22 @@ export type AskStreamEvent =
       usage: { model: string; input: number; cacheRead: number; cacheWrite: number; output: number };
       remaining: number | null;
       stop?: string | null;
+      /** The function gave the credit back (a refusal, a cut-off before any word, an empty reply). */
+      refunded?: true;
     }
-  | { error: string; detail?: string | null }
+  /**
+   * The function's failure line. Fixed reason codes only (`upstream_error`, `upstream_unreachable`,
+   * `upstream_dropped`) — ⛔ never the upstream's own text (P-D8). An older function also sent `detail`
+   * (Anthropic's status and message); it is dropped here, so it never enters the app at all.
+   */
+  | { error: string; refunded?: true; remaining?: number; upstream?: 'timeout' }
   /**
    * Something Holt asked the APP to do (`ask-tools.ts` `ASK_ACTIONS`) — a program change to confirm, or
    * the "Find one online" offer. The input is the model's and is narrowed again on the device.
    */
-  | { action: { name: string; input: unknown } };
+  | { action: { name: string; input: unknown } }
+  /** What the function is doing during a tool round — one of {@link ASK_STATUS_PHRASES}, never anything else. */
+  | { status: string };
 
 /** A `data:` payload from the function, narrowed; null for anything unrecognised. */
 export function readAskEvent(data: string): AskStreamEvent | null {
@@ -237,11 +316,19 @@ export function readAskEvent(data: string): AskStreamEvent | null {
   if (!v || typeof v !== 'object') return null;
   const o = v as Record<string, unknown>;
   if (typeof o.t === 'string') return { t: o.t };
-  if (typeof o.error === 'string') return { error: o.error, detail: typeof o.detail === 'string' ? o.detail : null };
+  if (typeof o.error === 'string') {
+    return {
+      error: o.error,
+      ...(o.refunded === true ? { refunded: true as const } : {}),
+      ...(typeof o.remaining === 'number' && Number.isFinite(o.remaining) ? { remaining: o.remaining } : {}),
+      ...(o.upstream === 'timeout' ? { upstream: 'timeout' as const } : {}),
+    };
+  }
   if (o.action && typeof o.action === 'object') {
     const a = o.action as Record<string, unknown>;
     return typeof a.name === 'string' ? { action: { name: a.name, input: a.input ?? {} } } : null;
   }
+  if (typeof o.status === 'string') return isAskStatus(o.status) ? { status: o.status } : null;
   if (o.done === true) {
     const u = (o.usage ?? {}) as Record<string, unknown>;
     const n = (x: unknown) => (typeof x === 'number' ? x : 0);
@@ -256,6 +343,7 @@ export function readAskEvent(data: string): AskStreamEvent | null {
       },
       remaining: typeof o.remaining === 'number' ? o.remaining : null,
       stop: typeof o.stop === 'string' ? o.stop : null,
+      ...(o.refunded === true ? { refunded: true as const } : {}),
     };
   }
   return null;
