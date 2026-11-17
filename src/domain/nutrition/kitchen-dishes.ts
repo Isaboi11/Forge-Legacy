@@ -306,49 +306,72 @@ export function withSafeTemps(d: KitchenDish): KitchenDish {
 /* ── allergens: the app's check, not the model's (NUT-D6) ───────────────────── */
 
 /**
- * The words an ingredient line gives away an allergen by, for lines the catalogue did NOT match (a matched
- * line carries the catalogue's own allergen tags). Kitchen Scope §4: an option containing one is DROPPED,
+ * The words an ingredient line gives away an allergen by. Checked on EVERY line, matched or not (a matched
+ * line also carries the catalogue's own allergen tags). Kitchen Scope §4: an option containing one is DROPPED,
  * never shown with a warning.
+ *
+ * ⚠ AI AUDIT 11-16 (N-D1): the list named the plain foods and missed the dishes and sauces that hide them —
+ * basil pesto, buttermilk, kefir, creamer, penne, naan, Worcestershire, sea bass, aioli, calamari and soybean
+ * oil were all SHOWN to someone avoiding them (11 of 14 probes). So each list covers the foods an allergy
+ * covers AND the everyday dishes and sauces made from them. Erring wide is the point: a dish wrongly dropped
+ * costs a card; a dish wrongly shown is what this list exists to stop. It is the second layer — `dishCards`
+ * also drops any dish with an unmatched line once the athlete avoids anything. `allergensByWord` folds
+ * accents first ("crème fraîche" reads as "creme fraiche").
  */
 export const ALLERGEN_WORDS: Record<string, RegExp> = {
-  peanuts: /\bpeanuts?\b|\bsatay\b/i,
-  tree_nuts: /\b(almonds?|cashews?|walnuts?|pecans?|pistachios?|hazelnuts?|macadamias?|pine\s+nuts?|nut\s+butter)\b/i,
-  dairy: /\b(milk|cheese|feta|parmesan|mozzarella|cheddar|yogh?urt|butter|cream|ghee|whey|ricotta|paneer|queso)\b/i,
-  eggs: /\beggs?\b|\bmayo(nnaise)?\b/i,
-  gluten: /\b(wheat|flour|bread|pasta|noodles?|tortillas?|couscous|barley|rye|soy\s+sauce|breadcrumbs?|panko|pita|bagels?|seitan)\b/i,
-  soy: /\b(soy|tofu|tempeh|edamame|miso|tamari)\b/i,
-  fish: /\b(fish|salmon|tuna|cod|tilapia|anchov\w*|sardines?|halibut|trout|fish\s+sauce)\b/i,
-  shellfish: /\b(shrimp|prawns?|crab|lobster|scallops?|clams?|mussels?|oysters?|shellfish)\b/i,
-  sesame: /\b(sesame|tahini)\b/i,
+  peanuts: /\b(peanuts?|groundnuts?|arachis|satay|mixed\s+nuts|trail\s+mix|nut\s+spread)\b/i,
+  tree_nuts:
+    /\b(nuts?|almonds?|cashews?|walnuts?|pecans?|pistachios?|hazelnuts?|filberts?|macadamias?|chestnuts?|pignoli|pesto|pralines?|marzipan|frangipane|nougat|gianduja|nutella|amaretti|baklava|romesco|dukkah|granola|trail\s+mix)\b/i,
+  dairy:
+    /\b(milk|buttermilk|cheeses?|feta|parmesan|parmigiano|pecorino|mozzarella|cheddar|brie|camembert|gouda|gruyere|provolone|mascarpone|burrata|halloumi|paneer|ricotta|queso|labneh|skyr|kefir|yogh?urts?|butter|cream|creamers?|creme\s+fraiche|half[\s-]+and[\s-]+half|ghee|whey|casein\w*|lactose|custard|gelato|alfredo|bechamel|tzatziki|raita|lassi|ranch|caesar|pesto|naan|brioche|croissants?|doughnuts?|donuts?|chocolate\s+chips?|dulce\s+de\s+leche|eggnog)\b/i,
+  eggs: /\b(eggs?|egg\s+(whites?|yolks?|wash|noodles)|yolks?|albumen|mayo|mayonnaise|aioli|remoulade|tartar\s+sauce|meringues?|pavlova|custard|hollandaise|bearnaise|carbonara|frittatas?|omelett?e?s?|quiches?|tiramisu|mousse|eggnog|brioche|challah|naan|doughnuts?|donuts?|marshmallows?|caesar|ranch)\b/i,
+  gluten:
+    /\b(wheat|flour|\w*breads?|breadcrumbs?|crumbs|panko|croutons?|pasta|noodles?|spaghetti|penne|linguine|fettuccine|rigatoni|fusilli|farfalle|macaroni|lasagnas?|lasagne|orzo|ravioli|tortellini|gnocchi|ramen|udon|soba|couscous|bulgh?ur|farro|spelt|semolina|durum|freekeh|kamut|barley|rye|malt(ed)?|seitan|tortillas?|pitas?|naan|bagels?|buns?|croissants?|brioche|challah|crackers?|pretzels?|biscuits?|muffins?|pastry|pastries|phyllo|filo|wontons?|dumplings?|gyoza|matzo\w*|tempura|roux|gravy|stuffing|dough|crust|cookies?|brownies?|pancakes?|waffles?|graham|doughnuts?|donuts?|oats?|oatmeal|granola|jerky|wraps?|beer|soy\s+sauce|teriyaki|hoisin|carbonara|tiramisu|quiches?)\b/i,
+  soy: /\b(soy\w*|tofu|tempeh|edamame|miso|tamari|shoyu|natto|yuba|okara|tvp|textured\s+vegetable\s+protein|teriyaki|hoisin|ponzu|gochujang|doenjang|lecithin|jerky|chocolate\s+chips?|milk\s+chocolate)\b/i,
+  fish: /\b(fish|catfish|swordfish|monkfish|whitefish|bluefish|redfish|stockfish|salmon|lox|gravlax|tuna|ahi|albacore|bonito|cod|haddock|pollock|hake|halibut|tilapia|trout|bass|branzino|snapper|grouper|mahi(\s*-?\s*mahi)?|mackerel|herring|kippers?|sardines?|anchov\w*|sole|flounder|plaice|perch|pike|carp|eel|unagi|barramundi|yellowtail|hamachi|roe|caviar|surimi|dashi|furikake|nam\s+pla|worcester\w*|caesar|sashimi|seafood)\b/i,
+  shellfish:
+    /\b(shellfish|shrimps?|prawns?|crabs?|crabmeat|lobsters?|langoustines?|scampi|crayfish|crawfish|krill|scallops?|clams?|mussels?|oysters?|cockles?|whelks?|abalone|squid|calamari|octopus|cuttlefish|bisque|xo\s+sauce|seafood)\b/i,
+  sesame: /\b(sesame|tahini|hummus|houmous|halva|halvah|gomasio|furikake|za.?atar|dukkah|benne|baba\s+gh?anoush|bagels?|everything\s+(bagel\s+)?seasoning)\b/i,
 };
 
-/** A diet's avoided groups (`dietAvoid`), by word — so a vegetarian's chicken is never sent as "on hand". */
+/**
+ * A diet's avoided groups (`dietAvoid`), by word — so a vegetarian's chicken is never sent as "on hand", and the
+ * device's diet check (`breaksDiet`) reads the same list. Gelatin, lard and bone broth are meat to a vegetarian.
+ */
 export const DIET_WORDS: Record<string, RegExp> = {
-  meat: /\b(beef|pork|steak|bacon|ham|sausage|lamb|veal|jerky|pepperoni|salami|chorizo|meatballs?)\b/i,
-  poultry: /\b(chicken|turkey|duck)\b/i,
+  meat: /\b(meat|beef|pork|steak|bacon|ham|sausages?|lamb|mutton|veal|venison|bison|brisket|mince|jerky|pepperoni|salami|chorizo|prosciutto|pancetta|guanciale|pastrami|mortadella|kielbasa|bratwurst|andouille|hot\s*dogs?|meatballs?|lard|tallow|suet|gelatine?|bone\s+broth)\b/i,
+  poultry: /\b(chicken|turkey|duck|goose|quail|poultry)\b/i,
   honey: /\bhoney\b/i,
 };
 
 /** What each allergy covers, spelled out for the model (the app's own check is `ALLERGEN_WORDS`). */
 export const ALLERGEN_COVERS: Record<string, string> = {
-  peanuts: 'peanuts, peanut butter, peanut oil, satay',
-  tree_nuts: 'almonds, cashews, walnuts, pecans, pistachios, hazelnuts, nut butters and nut milks',
-  dairy: 'milk, cheese, yogurt, butter, cream, ghee, whey',
-  eggs: 'eggs, mayonnaise, egg noodles',
-  gluten: 'wheat, flour, bread, regular pasta and noodles, tortillas, couscous, barley, soy sauce (tamari is fine)',
-  soy: 'soy sauce, tamari, tofu, tempeh, edamame, miso',
-  fish: 'salmon, tuna, cod, tilapia, anchovies, fish sauce',
-  shellfish: 'shrimp, prawns, crab, lobster, scallops, clams, mussels, oysters',
-  sesame: 'sesame oil, sesame seeds, tahini',
+  peanuts: 'peanuts, peanut butter, peanut oil, satay, mixed nuts',
+  tree_nuts: 'almonds, cashews, walnuts, pecans, pistachios, hazelnuts, pine nuts, pesto, marzipan, nut butters and nut milks',
+  dairy: 'milk, buttermilk, kefir, cheese, yogurt, butter, cream, creamer, ghee, whey, casein, pesto',
+  eggs: 'eggs, mayonnaise, aioli, meringue, custard, egg noodles',
+  gluten: 'wheat, flour, bread, naan, pita, regular pasta and noodles (penne, spaghetti), tortillas, couscous, bulgur, farro, barley, rye, panko and breadcrumbs, seitan, soy sauce (tamari is fine)',
+  soy: 'soy sauce, tamari, soybean oil, soy milk, tofu, tempeh, edamame, miso',
+  fish: 'salmon, tuna, cod, tilapia, sea bass, anchovies, fish sauce, Worcestershire sauce, Caesar dressing',
+  shellfish: 'shrimp, prawns, crab, lobster, scallops, clams, mussels, oysters, squid, calamari, octopus',
+  sesame: 'sesame oil, sesame seeds, tahini, hummus',
 };
+
+/** "Crème fraîche" → "creme fraiche", so the plain-ASCII word lists read it. A map rather than `normalize`, on
+    purpose: the same code runs in Hermes and in Deno. */
+const ACCENTS: Record<string, string> = { à: 'a', á: 'a', â: 'a', ä: 'a', è: 'e', é: 'e', ê: 'e', ë: 'e', ì: 'i', í: 'i', î: 'i', ï: 'i', ò: 'o', ó: 'o', ô: 'o', ö: 'o', ù: 'u', ú: 'u', û: 'u', ü: 'u', ñ: 'n', ç: 'c' };
+export const foldAccents = (s: string): string => s.replace(/[àáâäèéêëìíîïòóôöùúûüñç]/gi, (c) => ACCENTS[c.toLowerCase()] ?? c);
 
 /** Allergens a dish's own lines name, by word. The catalogue's tags are added on the device. */
 export function allergensByWord(d: KitchenDish): string[] {
-  // "Peanut butter" is not dairy: a nut or seed butter is renamed before the dairy word can match "butter".
-  const text = d.ingredients
-    .map((i) => `${i.food} ${i.text}`)
-    .join(' | ')
-    .replace(/\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy)\s+butter\b/gi, '$1 spread');
+  // "Peanut butter" is not dairy: a nut or seed butter is renamed before the dairy word can match "butter" (the
+  // nut itself still reads as its allergen). Water chestnuts and chestnut mushrooms are not tree nuts, and a
+  // lettuce or rice-paper wrap is not a flour one.
+  const text = foldAccents(d.ingredients.map((i) => `${i.food} ${i.text}`).join(' | '))
+    .replace(/\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy)\s+butter\b/gi, '$1 spread')
+    .replace(/\bwater\s+chestnuts?\b/gi, 'water caltrop')
+    .replace(/\bchestnut\s+mushrooms?\b/gi, 'brown mushrooms')
+    .replace(/\b(lettuce|collard|cabbage|nori|rice\s+paper)\s+wraps?\b/gi, '$1 cups');
   return Object.entries(ALLERGEN_WORDS)
     .filter(([, re]) => re.test(text))
     .map(([k]) => k);
