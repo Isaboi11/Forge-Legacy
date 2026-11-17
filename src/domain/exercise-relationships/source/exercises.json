@@ -4080,7 +4080,7 @@
     "aliases": [],
     "family": "Handstand Push-Up",
     "equipmentId": "bodyweight",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Vertical Push",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -5284,7 +5284,7 @@
     "aliases": [],
     "family": "Triceps Dip",
     "equipmentId": "selectorized_machine",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Elbow Extension",
     "difficulty": "Beginner",
     "modality": "Strength"
   },
@@ -5757,7 +5757,7 @@
     "aliases": [],
     "family": "Pike Push-Up",
     "equipmentId": "bodyweight",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Vertical Push",
     "difficulty": "Intermediate",
     "modality": "Strength"
   },
@@ -7941,7 +7941,7 @@
     "aliases": [],
     "family": "Wall Handstand Push-Up",
     "equipmentId": "bodyweight",
-    "movementPattern": "Horizontal Push",
+    "movementPattern": "Vertical Push",
     "difficulty": "Beginner",
     "modality": "Strength"
   },

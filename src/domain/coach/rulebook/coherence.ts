@@ -113,10 +113,11 @@ export const POLICED_PATTERNS: readonly string[] = Object.keys(PLAUSIBLE_PRIMARY
  * nobody re-reads. `catalogueTagProblems` runs over every visible row in `muscle-tags.test.mjs`, and the
  * fixes are logged in `SOURCE-CORRECTIONS.csv` like every other correction to the source catalogue.
  *
- * ⚠ THE FIXES ONLY ADD OR REMOVE SECONDARY LINKS. A primary or a pattern is what `author-catalogue.ts`
- * prints into coach-author's SYSTEM prompt, so changing one changes the prompt and stales its eval. An RDL
- * is arguably hamstrings-PRIMARY; it is hamstrings-secondary here on purpose, and that is a follow-up for
- * the next time the author suite is recorded, not a thing to slip in under a volume fix.
+ * ⚠ A PRIMARY OR A PATTERN IS WHAT `author-catalogue.ts` PRINTS INTO COACH-AUTHOR'S SYSTEM PROMPT, so the
+ * first pass changed only secondary links. The PO then approved the primary fixes (2026-11-17): every Romanian,
+ * stiff-leg and good-morning row is HAMSTRINGS-primary, glutes secondary; the head-down push-ups (pike, handstand)
+ * are overhead presses, front-delt primary; the machine triceps dip is an elbow extension, not a chest slot. Those
+ * changed the prompt on purpose (the author suite hashes the catalogue) and the rules below now hold them.
  */
 
 /** Muscles no row of a pattern may credit in ANY role — "a press tagged with a pull muscle". */
@@ -190,6 +191,26 @@ export const FORBIDDEN_CREDIT: readonly { pattern: string; family: RegExp; muscl
   },
 ];
 
+/** A movement family whose primary mover — and, where it says, pattern — is fixed (PO 2026-11-17). */
+export const FAMILY_PRIMARY: readonly { family: RegExp; pattern?: string; primary: readonly string[]; why: string }[] = [
+  {
+    family: /romanian deadlift|stiff-leg deadlift|good morning/i,
+    primary: ['hamstrings'],
+    why: 'a straight-leg hinge is a hamstring lift first',
+  },
+  {
+    family: /pike push-up|handstand push-up/i,
+    pattern: 'Vertical Push',
+    primary: ['front_deltoids'],
+    why: 'a head-down push-up presses overhead',
+  },
+];
+
+/** Patterns whose every row names this muscle as a PRIMARY mover — a horizontal push is chest work. */
+export const PRIMARY_REQUIRED: Readonly<Record<string, readonly string[]>> = {
+  'Horizontal Push': ['chest'],
+};
+
 /**
  * Everything wrong with one row's muscle tags, as sentences — empty when it is coherent.
  *
@@ -222,6 +243,16 @@ export function catalogueTagProblems(ex: {
     for (const m of r.muscles) {
       if (ex.muscleIds.includes(m)) out.push(`${ex.key}: ${r.why} — it credits ${m}`);
     }
+  }
+  for (const r of FAMILY_PRIMARY) {
+    if (!r.family.test(family)) continue;
+    if (r.pattern && ex.pattern !== r.pattern) out.push(`${ex.key}: ${r.why} — it is filed under ${ex.pattern}`);
+    for (const m of r.primary) {
+      if (!ex.primaryMuscleIds.includes(m)) out.push(`${ex.key}: ${r.why} — ${m} is not its primary mover`);
+    }
+  }
+  for (const m of PRIMARY_REQUIRED[ex.pattern] ?? []) {
+    if (!ex.primaryMuscleIds.includes(m)) out.push(`${ex.key}: a ${ex.pattern} row must train ${m} first — its primary is ${ex.primaryMuscleIds.join(', ')}`);
   }
   return out;
 }
