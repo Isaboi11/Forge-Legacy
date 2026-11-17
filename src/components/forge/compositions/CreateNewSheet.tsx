@@ -103,9 +103,10 @@ export function CreateNewSheet({ open, onClose, onFreestyle }: CreateNewSheetPro
               if (guard('templates')) router.push('/workout-builder');
             })}
           />
+          {/* The picture is Premium AI's (`photoOn`), so only they are told about it (AI audit 11-16, V-D7). */}
           <StartOptionRow
             title="Import Workout Template"
-            sub="Paste a workout, or upload a picture of one."
+            sub={photoOn ? 'Paste a workout, or upload a picture of one.' : 'Paste or type a workout.'}
             icon={ICON.importProgram}
             onPress={() => (photoOn ? setStep('importTemplate') : openTemplateImport('paste'))}
           />

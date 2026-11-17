@@ -33,7 +33,7 @@ import { closeBreak, getClosedBreak } from '@/lib/welcome-back-seen';
 import { fetchWeeklyReview, type WeeklyReview } from '@/data/weekly-review-live';
 import { reviewWindowOpen } from '@/domain/coach/rulebook/review';
 import { getRetiredReviewWeeks, isWeekRetired, retireReviewWeek } from '@/lib/weekly-review-seen';
-import { useEntitlement } from '@/lib/entitlement';
+import { useEntitlement, usePremiumAi } from '@/lib/entitlement';
 import { HomeNutritionCard } from '@/components/forge/compositions/HomeNutritionCard';
 import { QuickActionsRow } from '@/components/forge/compositions/QuickActionsRow';
 import { TrainingNowSheet } from '@/components/forge/TrainingNowSheet';
@@ -681,8 +681,13 @@ export default function HomeScreen() {
    * "Paste a workout" (PO 2026-09-27: *"a spot when you start a workout to paste the day that you want"*). The
    * import screen in its `today` mode: paste or a picture, check it, Start workout — saved as a template only
    * if they tick the box. Gated on the imports cap, the one every import door checks first.
+   *
+   * A picture is offered there only to Premium AI (`photoOn` in `program-import.tsx`; photo reads are that tier's,
+   * 0203), so the row only says "photo" to them (AI audit 11-16, V-D7). Fails closed: loading reads as no photo.
+   * (Not `PHOTO_IMPORT_LIVE` too: it is a constant `true`, and its module would load the exercise catalogue here.)
    */
   const guardImport = usePremiumGate();
+  const photoImport = usePremiumAi();
   const pasteWorkout = () => {
     closeElse();
     if (!guardImport('imports')) return;
@@ -1513,8 +1518,14 @@ export default function HomeScreen() {
           */}
           <StartOptionRow {...START_COPY.buildAsYouGo} icon={START_ICON.buildAsYouGo} primary onPress={() => void buildAsYouGo()} />
           <StartOptionRow {...START_COPY.template} icon={START_ICON.template} onPress={startFromTemplate} />
-          {/* "Import", not "Paste": it takes pasted text OR a picture, and "paste" undersold that. */}
-          <StartOptionRow title="Import a workout" sub="Paste a workout or add a photo." icon="image" onPress={pasteWorkout} />
+          {/* "Import", not "Paste": it takes pasted text OR a picture, and "paste" undersold that. The picture is
+              Premium AI's, so only they are told about it (`photoImport`). */}
+          <StartOptionRow
+            title="Import a workout"
+            sub={photoImport ? 'Paste a workout or add a photo.' : 'Paste or type a workout.'}
+            icon="image"
+            onPress={pasteWorkout}
+          />
           {/* One tap starts it — see `cardioPills`. Bleeds to the sheet's edge so it reads as scrolling. */}
           <View style={styles.startCardio}>
             <CardioPillRow label="Or start cardio" pills={cardioPills} gutter={22} large onPress={(p) => void startCardio(p)} />

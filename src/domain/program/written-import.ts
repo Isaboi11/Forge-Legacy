@@ -137,12 +137,120 @@ export function canEditAsWords(day: ParsedDay, resolveKey: (name: string) => str
 
 const WEEKDAY =/^(?:mon|tues?|wed(?:nes)?|thu(?:rs?)?|fri|sat(?:ur)?|sun)(?:day)?\b/i;
 
+/* ── A TABLE, COPIED OFF A PHOTO AS LINES OF TEXT (AI audit 2026-11-16, V-D2) ─────────────────────────────────────
+ *
+ * The card reader (`workout-card-read`) copies a photo line by line. When the photo is a program SHEET, a line is a
+ * row of the table, and its cells come back between tabs, between pipes ("Day | Exercise | Sets", with or without
+ * the outer pipes of a markdown table), or as columns lined up with spaces. `parseProgramTable` reads only tabs and
+ * markdown, and `isMultiDaySheet` looked for a Day/Week column only in the table reader's TSV, so a 3-week sheet read
+ * by the card reader went down the one-workout path. `tableIn` finds the table in the text; `cardTableTsv` hands it
+ * to `parseProgramTable` as the TSV the table reader would have written.
+ *
+ * ⚠ IT NEVER GUESSES A CELL. A row of spaced columns is read by the header's own column positions when every cell
+ * lines up under a header cell; failing that, by runs of 2+ spaces only when that gives exactly the header's number
+ * of cells (a blank cell between runs of spaces is lost, and then which column moved is unknowable). One row that
+ * fits neither means there is no table here, and the card takes the one-workout path, as it did before.
+ */
+
+const DAY_COLUMNS = ['day', 'week', 'session'];
+const KNOWN_COLUMN = /^(?:exercises?|movements?|lifts?|sets?|reps?|workout|weight|load|rest)$/;
+/** "**Day**", "Day:", "SETS" → "day", "sets". */
+const columnLabel = (cell: string) => cell.toLowerCase().replace(/^[\s*_#]+|[\s*_#:.]+$/g, '');
+/** A markdown or drawn rule under a header: "|---|:--:|", "------  ----". */
+const isRule = (line: string) => /^[\s|:+=-]+$/.test(line) && /-{2,}|={2,}/.test(line);
+
+type Cut = { cells: string[]; starts: number[] | null };
+
+/** A line's cells. Tabs and pipes keep a blank cell; spaced columns keep where each cell starts. */
+function cut(line: string): Cut {
+  if (line.includes('\t')) return { cells: line.split('\t').map((c) => c.trim()), starts: null };
+  const t = line.trim();
+  if (t.includes('|')) return { cells: t.replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim()), starts: null };
+  const found = [...line.matchAll(/\S+(?: \S+)*/g)];
+  return { cells: found.map((m) => m[0]), starts: found.map((m) => m.index ?? 0) };
+}
+
+/** A header row: two or more cells, either a Day/Week/Session column beside a known one, or two known ones. */
+function isHeader(cells: string[]): boolean {
+  if (cells.length < 2) return false;
+  const labels = cells.map(columnLabel);
+  const known = labels.filter((l) => KNOWN_COLUMN.test(l)).length;
+  return known >= 2 || (known >= 1 && labels.some((l) => DAY_COLUMNS.includes(l)));
+}
+
+/**
+ * One row under `head`, cell for cell, or null when it cannot be placed without guessing. `lined` = the whole table
+ * is spaced columns lined up under the header: each cell starts exactly where a header cell starts, and a blank cell
+ * stays blank. Decided for the TABLE, never a row: in ragged text one short row's cell can land on a header's column
+ * by chance (photo-18 rendered ragged put an exercise under Reps).
+ */
+function rowUnder(head: Cut, line: Cut, lined: boolean): string[] | null {
+  const n = head.cells.length;
+  if (!line.starts) return [...line.cells, ...Array<string>(Math.max(0, n - line.cells.length)).fill('')];
+  if (!lined || !head.starts) return line.cells.length === n ? line.cells : null;
+  const out = Array<string>(n).fill('');
+  const placed = line.starts.every((s, k) => {
+    const col = head.starts!.indexOf(s);
+    if (col < 0 || out[col]) return false;
+    out[col] = line.cells[k];
+    return true;
+  });
+  return placed ? out : null;
+}
+
+/** The table in a card's text: where its header is, the header, and each line below it cut into cells (null = not a row). */
+function tableIn(text: string): { lines: string[]; at: number; head: string[]; rows: (string[] | null)[] } | null {
+  const lines = text.replace(/\r/g, '').replace(/ /g, ' ').split('\n').filter((l) => l.trim());
+  const cuts = lines.map(cut);
+  const at = cuts.findIndex((c) => isHeader(c.cells));
+  if (at < 0) return null;
+  const read = (lined: boolean): (string[] | null)[] | null => {
+    const rows: (string[] | null)[] = [];
+    for (let k = at + 1; k < lines.length; k++) {
+      if (isRule(lines[k]) || cuts[k].cells.length < 2) {
+        rows.push(null);
+        continue;
+      }
+      const row = rowUnder(cuts[at], cuts[k], lined);
+      if (!row) return null;
+      rows.push(row);
+    }
+    return rows;
+  };
+  const rows = read(true) ?? read(false);
+  return rows ? { lines, at, head: cuts[at].cells, rows } : null;
+}
+
+/**
+ * A table copied off a photo as text → the TSV the table reader writes, for `parseProgramTable`. Lines that are not
+ * rows (a title above, a "Week 2" between blocks) stay as written; rules are dropped. Null when there is no table.
+ */
+export function cardTableTsv(text: string): string | null {
+  const t = tableIn(text);
+  if (!t) return null;
+  const below = t.lines.slice(t.at + 1).flatMap((l, k) => (t.rows[k] ? [t.rows[k]!.join('\t')] : isRule(l) ? [] : [l.trim()]));
+  return [...t.lines.slice(0, t.at).map((l) => l.trim()), t.head.join('\t'), ...below].join('\n');
+}
+
+/** Two or more different values in the Day, Week or Session column. */
+function dayColumnVaries(head: readonly string[], rows: readonly string[][]): boolean {
+  const labels = head.map(columnLabel);
+  for (const col of DAY_COLUMNS) {
+    const i = labels.indexOf(col);
+    if (i < 0) continue;
+    const values = new Set(rows.map((r) => (r[i] ?? '').toLowerCase()).filter((v) => v && columnLabel(v) !== col));
+    if (values.size >= 2) return true;
+  }
+  return false;
+}
+
 /**
  * Is this photo a PROGRAM SHEET — several days or weeks — rather than one workout? Only then does the table reader
  * take it (`readImportPhoto`). ⚠ NOT "does `parseProgramTable` find two days": it read the PO's single Squatober
  * card as TWO days (2026-09-30), which would have sent the very card this path exists for around the AI check.
  *
- *   · the table read's Day or Week column holds two or more different values; or
+ *   · the table's Day or Week column holds two or more different values — the table read's TSV, or, when the card
+ *     reader copied the sheet as text, the table in that text (`tableIn`); or
  *   · the words have two or more DIFFERENT day headings ("Day 1 – Upper" … "Day 2 – Lower", "Monday" … "Wednesday")
  *     or two or more week headings ("Week 1" … "Week 2"), each at the start of its own line.
  */
@@ -154,6 +262,9 @@ export function isMultiDaySheet(text: string, tsv: string | null): boolean {
       const i = head.indexOf(col);
       if (i >= 0 && new Set(rows.slice(1).map((r) => r[i]).filter(Boolean)).size >= 2) return true;
     }
+  } else {
+    const t = tableIn(text);
+    if (t && dayColumnVaries(t.head, t.rows.filter((r): r is string[] => !!r))) return true;
   }
   const days = new Set<string>();
   const weeks = new Set<string>();
