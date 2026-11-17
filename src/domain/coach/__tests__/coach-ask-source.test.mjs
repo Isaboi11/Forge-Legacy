@@ -21,14 +21,19 @@ const at = (needle) => {
   return i;
 };
 
-test('guard → credit → model, in that order', () => {
+test('guard → reserve → model → settle, in that order (Sprint 1 contract §1)', () => {
   const guard = at('const guarded = guardRoute(question)');
-  const spend = at("rpc('coach_ai_spend_credits', { p_action: action })");
+  const reserve = at(".rpc('coach_ai_reserve', { p_action: action, p_fn: 'coach-ask' })");
   // The ask's model call — the end-of-chat summary has its own, earlier in the file, behind its own meter.
-  const model = SRC.indexOf("fetch('https://api.anthropic.com/v1/messages'", spend);
-  assert.ok(guard < spend && spend < model);
-  const sumSpend = at("rpc('coach_ai_spend_credits', { p_action: 'summary' })");
-  assert.ok(sumSpend < SRC.indexOf("fetch('https://api.anthropic.com/v1/messages'", sumSpend));
+  const model = SRC.indexOf("fetch('https://api.anthropic.com/v1/messages'", reserve);
+  assert.ok(guard < reserve && reserve < model);
+  const sumReserve = at("rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' })");
+  assert.ok(sumReserve < SRC.indexOf("fetch('https://api.anthropic.com/v1/messages'", sumReserve));
+  // ⛔ The old meter is gone from this function: a credit that can't be given back, and a usage row anyone can forge.
+  assert.doesNotMatch(SRC, /coach_ai_spend_credits|coach_ai_record_usage/);
+  // Settle is the one way out, and it is called once per reservation (`settler` keeps the first promise).
+  assert.equal(SRC.match(/\.rpc\('coach_ai_settle'/g).length, 1);
+  assert.match(SRC, /\(once \?\?= supabase\s*\.rpc\('coach_ai_settle'/);
   // An ask meters 'message'; only an ask the athlete TAPPED for online search meters 'web' (0218).
   assert.ok(SRC.includes("const action = allowWeb ? 'web' : 'message';"));
   assert.ok(SRC.includes('const allowWeb = body.allowWeb === true;'));
@@ -37,8 +42,10 @@ test('guard → credit → model, in that order', () => {
 });
 
 test('history is never sent beyond 8 turns — trimmed on the server, from the wire module', () => {
-  // ⛔ …and every turn through the medical guard first (QA R2-F1), then cut to the window.
-  assert.match(SRC, /const history = withoutStoppedTurns\(trimHistory\(body\.history, ASK_HISTORY_MAX \* 4\)\)\.slice\(-ASK_HISTORY_MAX\);/);
+  // ⛔ …and every turn through the medical guard first (QA R2-F1) — the minor's guard for a profile minor
+  // (P-G8) — then cut to the window.
+  assert.match(SRC, /const stops = \(t: string\) => guardRoute\(t, minor\) !== null;/);
+  assert.match(SRC, /const history = withoutStoppedTurns\(trimHistory\(body\.history, ASK_HISTORY_MAX \* 4\), stops\)\.slice\(-ASK_HISTORY_MAX\);/);
   // The raw body history is only ever read through a trim: the ask's (8 turns) and the end-of-chat
   // summary's (0218) — never handed to the model as the client sent it.
   assert.equal(SRC.match(/body\.history/g).length, 2);
@@ -47,9 +54,18 @@ test('history is never sent beyond 8 turns — trimmed on the server, from the w
   assert.match(LIVE, /history: trimHistory\(history, ASK_HISTORY_MAX\)/);
 });
 
+test('⛔ Sprint 1 left the cached SYSTEM block byte-identical — the cache key did not move', async () => {
+  const { createHash } = await import('node:crypto');
+  const system = SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;', SRC.indexOf('const SYSTEM = `')));
+  // sha256 of the block as it stood at b87a2511 (Sprint 0, OTA #24). Change it only on purpose, with a cache plan.
+  assert.equal(createHash('sha256').update(system).digest('hex'), 'b3cb1ee88eea110ef7769bf461e7d6ec9db670dc301ec756f5dc01c735c41dab');
+});
+
 test('the context goes in the final USER turn, never the system block', () => {
-  assert.match(SRC, /messages\.push\(\{ role: 'user', content: askUserTurn\(question, context, today\) \}\);/);
+  // The server's age (P-G8) rides there too — from the reservation, never from the client.
+  assert.match(SRC, /messages\.push\(\{ role: 'user', content: askUserTurn\(question, context, today, \{ ageYears: reserved\.age_years, minor \}\) \}\);/);
   assert.equal(SRC.match(/body\.context/g).length, 1);
+  assert.doesNotMatch(SRC, /body\.(age|minor|birth)/, 'a client cannot claim an age');
   // The system block is one cached constant with nothing interpolated into it.
   assert.match(SRC, /system: \[\{ type: 'text', text: SYSTEM, cache_control: \{ type: 'ephemeral' \} \}\]/);
   const system = SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;', SRC.indexOf('const SYSTEM = `')));
@@ -87,20 +103,38 @@ test('streamed, capped, low effort, no thinking — as coach-interpret', () => {
   assert.match(SRC, /const MODEL = 'claude-sonnet-5';/);
 });
 
-test('usage is recorded with all four token counts, however the stream ends', () => {
-  for (const p of ['p_input_tokens: u.input', 'p_output_tokens: u.output', 'p_cache_read_input_tokens: u.cacheRead', 'p_cache_creation_input_tokens: u.cacheWrite']) {
+test('settle carries all four token counts, the latency and the outcome — however the stream ends', () => {
+  for (const p of [
+    'p_input_tokens: meterInt(u.input',
+    'p_output_tokens: meterInt(u.output',
+    'p_cache_read_input_tokens: meterInt(u.cacheRead',
+    'p_cache_creation_input_tokens: meterInt(u.cacheWrite',
+    'p_latency_ms: meterInt(Date.now() - startedAt',
+    'p_outcome: outcome',
+    'p_refund: refund',
+  ]) {
     assert.ok(SRC.includes(p), p);
   }
-  // Success, failure mid-stream, and the client going away all record.
-  assert.ok(SRC.includes('await finish(false);\n        send({\n          done: true'));
-  assert.match(SRC, /async cancel\(\) \{[\s\S]*?await finish\(false\);/);
-  assert.match(SRC, /await finish\(!sawText && usage\.output === 0\);/);
+  // The end of the turn settles BEFORE its last line (contract §1.3); the athlete leaving settles as cancelled,
+  // never refunded.
+  const end = SRC.slice(at('const { outcome, refund } = askSettlement({ failure, stop, delivered });'));
+  const settled = end.indexOf('await settle(outcome, refund, servedBy, spent())');
+  assert.ok(settled > 0 && settled < end.indexOf('send(askFailureEvent(') && settled < end.indexOf('done: true'));
+  assert.match(SRC, /await settle\('cancelled', false, servedBy, spent\(\)\);/);
+  assert.match(SRC, /cancel: \(\) => leave\(\),/);
 });
 
-test('the SSE the app reads: {t}, then {done, usage, remaining}, or {error, detail}', () => {
+test('the SSE the app reads: {t}, {status}, then {done, usage, remaining} or {error} — fixed codes, never detail', () => {
   assert.ok(SRC.includes('send({ t: d.text })'));
-  assert.ok(SRC.includes('remaining: reserved.remaining'));
+  assert.ok(SRC.includes('send({ status: s })'));
+  assert.ok(SRC.includes('remaining: remaining ?? reserved.remaining'));
   assert.ok(SRC.includes("'Content-Type': 'text/event-stream; charset=utf-8'"));
+  // ⛔ P-D8: no client event carries the upstream's words. The failure line is built in one place.
+  assert.doesNotMatch(SRC, /\bdetail:/);
+  assert.match(SRC, /send\(askFailureEvent\(failure, \{ refunded, remaining \}\)\);/);
+  // C-D8: the model is chosen in one place, and a web search is always the default (Sonnet).
+  assert.match(SRC, /const model = askModel\(body\.model, allowWeb, ALLOWED_MODELS, MODEL\);/);
+  assert.doesNotMatch(SRC, /body\.model && ALLOWED_MODELS\.includes/);
 });
 
 test('the dashboard paste copy is current', () => {
