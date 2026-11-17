@@ -55,7 +55,7 @@ import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
-import { holtSpendVerdict } from '@/domain/entitlement/caps-core';
+import { holtKeepLedger, holtSpendVerdict } from '@/domain/entitlement/caps-core';
 import { ENTITLEMENT_RETRY_MESSAGE, useCapGates } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { rememberExperience } from '@/lib/coach-memory';
@@ -205,6 +205,8 @@ export default function CoachScreen() {
   const [goal, setGoal] = useState<Goal | null>(null);
   const [daysPerWeek, setDaysPerWeek] = useState<number | null>(null);
   const [style, setStyle] = useState<SplitStyle | null>(null);
+  /** Which builds have been paid for at their keep — once each (B-D1). */
+  const [keepLedger] = useState(() => holtKeepLedger());
   const [focusKind, setFocusKind] = useState<'split' | 'body_parts' | null>(null);
   const [split, setSplit] = useState<SplitName | null>(null);
   const [parts, setParts] = useState<BodyPart[]>([]);
@@ -316,6 +318,7 @@ export default function CoachScreen() {
   const back = () => {
     if (built) {
       setBuilt(null);
+      setError(null);
       setStepIndex(Math.max(0, steps.length - 1));
       return;
     }
@@ -326,10 +329,10 @@ export default function CoachScreen() {
   async function build() {
     setBusy(true);
     setError(null);
-    /* The Free allowance is spent when he builds, not when the door opens (launch QA, H18) — see the same note in
+    /* The Free allowance is spent on what he hands over, never at the door (launch QA, H18) — see `payHolt` in
        `CoachChatSheet`. A null is unreadable and fails closed for anyone with a ceiling — a retry, never an offer
-       (sweep G4, `holtSpendVerdict`). A day pays here; a block pays once the engine has said how long it is, because
-       under four weeks it is a week, not the Holt program (MA4-D5). */
+       (sweep G4, `holtSpendVerdict`). A day pays here; a block pays when it is KEPT (`apply`, B-D1), and only at four
+       weeks or more, because under four weeks it is a week, not the Holt program (MA4-D5). */
     const pay = async (kind: 'day' | 'program'): Promise<boolean> => {
       const spend = await consumeHoltAllowance(kind);
       const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
@@ -387,7 +390,6 @@ export default function CoachScreen() {
           return;
         }
         const { structure, notes, deloadWeeks, restructured } = res.assembly;
-        if (earnsStructuredDevelopmentCredit(structure) && !(await pay('program'))) return;
         const week1 = structure.weekPlans?.[0]?.days ?? structure.days;
         setBuilt({
           kind: 'program',
@@ -414,6 +416,12 @@ export default function CoachScreen() {
           /* …and what a body-part answer took out (QA holt-02) — the chat says it; this screen did not. */
           notes: [...droppedLine(notes), ...stretchedLine(notes), ...learnedLine(learned, structure), ...limitationsLeftOut(limitations)],
           apply: async () => {
+            /* Paid for when it is KEPT, once (AI audit 11-16, B-D1) — going back and building again costs nothing.
+               Four weeks or more is the Holt program; shorter spends `short_programs` where it is saved (MA4-D5). */
+            if (earnsStructuredDevelopmentCredit(structure) && !(await keepLedger(structure, () => pay('program')))) {
+              setBusy(false);
+              return;
+            }
             await saveProgramDraft(draftFromStructure(structure));
             router.replace('/program-builder');
           },
@@ -500,6 +508,7 @@ export default function CoachScreen() {
   const onApply = async () => {
     if (!built || busy) return;
     setBusy(true);
+    setError(null);
     try {
       await built.apply();
     } catch {
@@ -546,7 +555,7 @@ export default function CoachScreen() {
           }}
         />
       ) : built ? (
-        <Reveal built={built} busy={busy} onApply={onApply} onAdjust={back} onRestart={restart} />
+        <Reveal built={built} busy={busy} error={error} onApply={onApply} onAdjust={back} onRestart={restart} />
       ) : busy ? (
         <View style={styles.center}>
           <ActivityIndicator color={flColor.bronze400} />
@@ -1266,12 +1275,15 @@ interface Built {
 function Reveal({
   built,
   busy,
+  error,
   onApply,
   onAdjust,
   onRestart,
 }: {
   built: Built;
   busy: boolean;
+  /** Why the hand-over didn't happen (an allowance refused at the keep, a failed save) — said above the buttons. */
+  error: string | null;
   onApply: () => void;
   onAdjust: () => void;
   onRestart: () => void;
@@ -1334,6 +1346,7 @@ function Reveal({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: barBottom }]}>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
         <Button variant="primary" fullWidth disabled={busy} onPress={onApply}>
           Final touches
         </Button>
