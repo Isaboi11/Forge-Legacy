@@ -58,7 +58,7 @@ test('both files say APPLY AFTER 0268, and the first statement refuses without 0
   assert.match(BUNDLE.slice(0, 600), /APPLY AFTER 0268/);
   const first = splitSqlStatements(MIGRATION)[0].code;
   assert.match(first, /^do \$\$/);
-  for (const col of ["'coach_ai_spend', 'fn'", "'coach_ai_spend', 'outcome'", "'coach_ai_spend', 'latency_ms'", "'coach_ai_spend', 'reservation_id'", "'coach_ai_reservation', 'created_at'", "'coach_ai_reservation', 'settled_at'"]) {
+  for (const col of ["'coach_ai_spend', 'fn'", "'coach_ai_spend', 'outcome'", "'coach_ai_spend', 'latency_ms'", "'coach_ai_spend', 'reservation_id'", "'coach_ai_reservation', 'reserved_at'", "'coach_ai_reservation', 'settled_at'"]) {
     assert.ok(first.includes(col), `the 0268 guard checks ${col}`);
   }
   assert.match(first, /raise exception '0269 needs 0268 first/);
@@ -160,7 +160,8 @@ test('admin_ai_health: the guard first, the secret never in the payload, legacy 
 
 test('"failed" excludes the athlete’s own cancel; old rows fall back to their uncharged flag', () => {
   const f = FNS.get('ai_spend_failed');
-  assert.match(f, /when p_outcome is not null then p_outcome not in \('ok', 'cancelled'\)/);
+  // 'guarded' (0268): a server guard stopped the call on purpose after the reserve, refunded — not a fault.
+  assert.match(f, /when p_outcome is not null then p_outcome not in \('ok', 'cancelled', 'guarded'\)/);
   assert.match(f, /else coalesce\(p_uncharged, false\)/);
 });
 
@@ -170,7 +171,10 @@ test('the alert: the four checks, the 24 h rule, the cooldown and the stamp only
   assert.match(state, /if v_calls >= v_cfg\.fail_min_calls and v_fail::numeric \/ v_calls > v_cfg\.fail_rate then/);
   assert.match(state, /interval '26 hours'/);
   assert.match(state, /limit v_cfg\.drain_streak/);
-  assert.match(state, /r\.settled_at is null\s+and r\.created_at < now\(\) - make_interval\(mins => v_cfg\.unsettled_minutes\)/);
+  // 0268's column is reserved_at (coach_ai_reservation has no created_at).
+  assert.match(state, /r\.settled_at is null\s+and r\.reserved_at < now\(\) - make_interval\(mins => v_cfg\.unsettled_minutes\)/);
+  assert.match(FNS.get('admin_ai_health'), /min\(r\.reserved_at\)/);
+  assert.doesNotMatch(MIGRATION, /\br\.created_at\b/);
   const tick = FNS.get('ai_health_alert_tick');
   assert.match(tick, /where c\.id for update;/, 'locked against the canary report racing it');
   assert.match(tick, /< v_now - make_interval\(hours => v_cfg\.alert_cooldown_hours\)/);
