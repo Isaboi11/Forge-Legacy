@@ -3,8 +3,10 @@
  *
  * ══ WHAT THIS IS ══
  *
- * The one model call in Forge Legacy. It turns a sentence an athlete typed into the same
- * `Partial<CoachConstraints>` the chips already produce, and hands it back. Phase D · D1 of the Pricing
+ * Holt's typed-line interpreter (once the only model call in Forge Legacy — no longer: `coach-ask` answers questions,
+ * `coach-author` writes typed builds, and the kitchen, the photo readers and form check have their own functions; AI
+ * audit C-I7). It turns a sentence an athlete typed into the same `Partial<CoachConstraints>` the chips already
+ * produce, and hands it back. Phase D · D1 of the Pricing
  * Structure & Monetization Build Plan (locked 2026-08-12).
  *
  * ⚠ **THE MODEL DOES NOT WRITE TRAINING.** `Coach-Chat-Design-Brief-v1.0` §0: *"Holt does not write
