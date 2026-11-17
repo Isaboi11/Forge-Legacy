@@ -16,6 +16,16 @@
  *
  * RESULT: the old parsers drop all of it (`readAskEvent` → null for `{status}`; `parseSse` emits no event for a
  * `:` line; extra fields are ignored). So the server sends them to every app, with no flag.
+ *
+ * ══ SPRINT 2: THE `retract` LINE (CH-2) ══
+ *
+ * OTA #25 (`fixtures/ota25-*.ts`, verbatim from a6b88e79) joins the old parsers. Every one of them ignores `retract`
+ * without breaking — proved by the same as-sent / stripped comparison. What each one SHOWS for a taken-back reply:
+ *
+ *   · OTA #24 and #25 — the words go: the `done` line after a retract says `stop: 'refusal'`, which both already
+ *     take back ("That's one I'll leave alone…"). Not the stop card, but nothing unsafe stays on screen.
+ *   · Any bundle before OTA #24 — the words STAY (it never read a stop reason). ⛔ So the app ships first (the new
+ *     client shows the medical stop card), and the function deploys after: CLIENT FIRST.
  */
 
 import test from 'node:test';
@@ -24,6 +34,9 @@ import assert from 'node:assert/strict';
 import { answerEvents, answerRound, errorReply, fakeAnthropic, loadFunction, newLog, request, sse, stalledSse, toolRound } from './coach-ask-harness.mjs';
 import { askClock, readAskStream, settleAskRead } from './fixtures/ota24-ask-stream.ts';
 import { parseSse, readAskEvent, utf8Decoder } from './fixtures/ota24-ask-wire.ts';
+// Sprint 2: OTA #25 (the Sprint 1 merge, a6b88e79) is on phones too — frozen the same way.
+import { readAskStream as readAskStream25, settleAskRead as settleAskRead25 } from './fixtures/ota25-ask-stream.ts';
+import { readAskStream as readAskStreamNow, settleAskRead as settleAskReadNow } from '../ask-stream.ts';
 
 const enc = new TextEncoder();
 
@@ -37,11 +50,11 @@ function chunked(raw, size) {
   };
 }
 
-/** The wire with every Sprint 1 addition taken out: keep-alive comments and status lines. */
+/** The wire with every Sprint 1 and Sprint 2 addition taken out: keep-alive comments, status lines, retract lines. */
 const withoutNewLines = (raw) =>
   raw
     .split('\n\n')
-    .filter((b) => b !== ': ka' && !b.startsWith('data: {"status":'))
+    .filter((b) => b !== ': ka' && !b.startsWith('data: {"status":') && !b.startsWith('data: {"retract":'))
     .join('\n\n');
 
 /** The pre-Sprint 0 read loop, verbatim from `askHolt` at df40491c~1 (only wrapped in a function). */
@@ -121,9 +134,12 @@ async function readOld(raw) {
     const ota24Plain = settleAskRead(await readAskStream(chunked(withoutNewLines(raw), size), () => {}));
     const pre = await preSprint0Read(chunked(raw, size), (x) => wordsPre.push(x));
     const prePlain = await preSprint0Read(chunked(withoutNewLines(raw), size), () => {});
+    const ota25 = settleAskRead25(await readAskStream25(chunked(raw, size), () => {}));
+    const ota25Plain = settleAskRead25(await readAskStream25(chunked(withoutNewLines(raw), size), () => {}));
     assert.deepEqual(ota24, ota24Plain, `OTA #24 read the new lines as something (chunk ${size})`);
     assert.deepEqual(pre, prePlain, `a pre-Sprint 0 build read the new lines as something (chunk ${size})`);
-    out.push({ ota24, pre, words24, wordsPre });
+    assert.deepEqual(ota25, ota25Plain, `OTA #25 read the retract line as something (chunk ${size})`);
+    out.push({ ota24, ota25, pre, words24, wordsPre });
   }
   return out[0];
 }
@@ -206,4 +222,29 @@ test('old phones: the JSON replies — a profile minor’s stop is their care ca
   assert.deepEqual(oldFromRoute(JSON.parse(consent.raw)), { kind: 'offline', detail: 'no_consent' });
   const credits = await wireFrom(t, { reply: () => assert.fail('no model'), meter: { reserve: { allowed: false, reason: 'not_entitled', reservation_id: null, remaining: 0, allowance: 0 } } });
   assert.deepEqual(oldFromRoute(JSON.parse(credits.raw)), { kind: 'out_of_credits', remaining: 0, allowance: 0 });
+});
+
+test('old phones and Sprint 2: a retracted reply — OTA #24/#25 take the words back, a pre-Sprint 0 build keeps them (CLIENT FIRST)', async (t) => {
+  const { raw } = await wireFrom(t, { reply: () => answerRound('Take 400 mg of ibuprofen before bed and see how it feels.') });
+  assert.match(raw, /data: \{"retract":\{"card":"medical_stop"\}\}/, 'the retract line is really on the wire');
+  assert.match(raw, /"stop":"refusal"/);
+  const { ota24, ota25, pre } = await readOld(raw);
+  // The two OTAs already out: the refusal takes the words back — the unsafe sentence does not stay on screen.
+  assert.deepEqual(ota24, { kind: 'refused' }, 'OTA #24 predates `refunded`');
+  assert.deepEqual(ota25, { kind: 'refused', refunded: true });
+  // ⛔ A bundle from before OTA #24 never read a stop reason: the words stay. This is why the app ships first.
+  assert.equal(pre.kind, 'answer');
+  assert.match(pre.text, /400 mg/);
+  // This build: the medical stop card.
+  assert.deepEqual(settleAskReadNow(await readAskStreamNow(chunked(raw, 7), () => {})), { kind: 'retracted', refunded: true });
+});
+
+test('old phones and Sprint 2: an ordinary answer reads exactly as before on every parser — the scan adds nothing to it', async (t) => {
+  const { raw } = await wireFrom(t, { reply: () => answerRound('Rest 90 seconds between sets.') });
+  assert.doesNotMatch(raw, /retract/);
+  const { ota24, ota25, pre } = await readOld(raw);
+  const answer = { kind: 'answer', text: 'Rest 90 seconds between sets.', remaining: 41, complete: true, cut: false, actions: [] };
+  assert.deepEqual(ota24, answer);
+  assert.deepEqual(ota25, answer);
+  assert.deepEqual(pre, { kind: 'answer', text: 'Rest 90 seconds between sets.', remaining: 41, complete: true, actions: [] });
 });

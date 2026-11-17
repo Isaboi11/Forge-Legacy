@@ -698,7 +698,7 @@ function workoutLine(w: WorkoutRow, units: Units, tz: number): string {
       const n = (e.workout_sets ?? []).length;
       return n ? `${e.name} ${n}×` : `${e.name}`;
     });
-  const head = `${date} ${weekday(date)} — ${w.workout_name?.trim() || type} (${type}${bits.length ? `, ${bits.join(', ')}` : ''})`;
+  const head = `${date} ${weekday(date)} — ${w.workout_name?.trim() ? asTyped(w.workout_name) : type} (${type}${bits.length ? `, ${bits.join(', ')}` : ''})`;
   return ex.length ? `${head}: ${ex.join(', ')}` : head;
 }
 
@@ -710,15 +710,28 @@ export function formatRecentWorkouts(rows: readonly WorkoutRow[], opts: { units:
   return lines.join('\n');
 }
 
-/** get_workout_detail's text. */
-export function formatWorkoutDetail(date: string, rows: readonly WorkoutRow[], opts: { units: Units; tz: number }): string {
+/**
+ * get_workout_detail's text. ⚠ The notes are the athlete's free text (audit C-I5): each goes through `keep` — the
+ * medical filter the notes in the user turn get — and is quoted as data (C-I4). A dropped note is not mentioned.
+ */
+export function formatWorkoutDetail(
+  date: string,
+  rows: readonly WorkoutRow[],
+  opts: { units: Units; tz: number; keep?: (text: string) => boolean },
+): string {
   const { units, tz } = opts;
+  const keep = opts.keep ?? (() => true);
+  const note = (raw: string | null | undefined, n: number): string | null => {
+    const t = raw?.trim().slice(0, n) ?? '';
+    return t && keep(t) ? asTyped(t) : null;
+  };
   const day = rows.filter((w) => localDate(w.started_at, tz) === date);
   if (day.length === 0) return `No workout logged on ${date}.`;
   const lines: string[] = [`Weights in ${wUnit(units)}.`];
   for (const w of day) {
     lines.push(workoutLine({ ...w, workout_exercises: [] }, units, tz));
-    if (w.notes?.trim()) lines.push(`  Workout note: ${w.notes.trim().slice(0, 200)}`);
+    const wn = note(w.notes, 200);
+    if (wn) lines.push(`  Workout note: ${wn}`);
     const exs = [...(w.workout_exercises ?? [])].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     for (const e of exs) {
       const sets = [...(e.workout_sets ?? [])].sort((a, b) => (a.set_index ?? 0) - (b.set_index ?? 0));
@@ -733,7 +746,8 @@ export function formatWorkoutDetail(date: string, rows: readonly WorkoutRow[], o
         })
         .join(', ');
       const sec = e.section && e.section !== 'main' ? ` [${e.section}]` : '';
-      lines.push(`  ${e.name}${sec}: ${txt || 'no sets logged'}${e.notes?.trim() ? ` (note: ${e.notes.trim().slice(0, 120)})` : ''}`);
+      const en = note(e.notes, 120);
+      lines.push(`  ${e.name}${sec}: ${txt || 'no sets logged'}${en ? ` (note: ${en})` : ''}`);
     }
   }
   return lines.join('\n');
@@ -884,7 +898,9 @@ function rx(e: PExercise): string {
 }
 
 const dayText = (d: PDay): string =>
-  `${d.name?.trim() || 'Session'}: ${(d.main ?? []).map((e) => `${e.name}${rx(e) ? ` ${rx(e)}` : ''}`).join(', ') || 'no main work'}`;
+  `${d.name?.trim() ? asTyped(d.name) : 'Session'}: ${(d.main ?? []).map((e) => `${e.name}${rx(e) ? ` ${rx(e)}` : ''}`).join(', ') || 'no main work'}`;
+/** A program's name as data (C-I4) — a friend may have written it. */
+const programName = (p: { name?: string | null }): string => (p.name?.trim() ? asTyped(p.name) : 'Untitled');
 
 export interface ProgramRow {
   id: string;
@@ -920,7 +936,7 @@ export function formatPrograms(programs: readonly ProgramRow[], marks: readonly 
     }
     const next = slots.find((sl) => !byKey.has(`${sl.weekIndex}:${sl.dayIndex}`) && sl.day != null) ?? null;
     lines.push(
-      `Active program: ${active.name?.trim() || 'Untitled'} — ${Math.max(1, s.weeks ?? 1)} weeks, ${slots.length} sessions. Started ${
+      `Active program: ${programName(active)} — ${Math.max(1, s.weeks ?? 1)} weeks, ${slots.length} sessions. Started ${
         active.started_at ? active.started_at.slice(0, 10) : 'not yet'
       }. ${trained} trained, ${skipped} skipped, ${slots.length - trained - skipped} to go.`,
     );
@@ -938,7 +954,7 @@ export function formatPrograms(programs: readonly ProgramRow[], marks: readonly 
   if (others.length) {
     lines.push(
       `Other programs: ${others
-        .map((p) => `${p.name?.trim() || 'Untitled'} (${p.state ?? 'unknown'}${p.ended_at ? `, ended ${p.ended_at.slice(0, 10)}` : p.started_at ? `, started ${p.started_at.slice(0, 10)}` : ''})`)
+        .map((p) => `${programName(p)} (${p.state ?? 'unknown'}${p.ended_at ? `, ended ${p.ended_at.slice(0, 10)}` : p.started_at ? `, started ${p.started_at.slice(0, 10)}` : ''})`)
         .join('; ')}.`,
     );
   }
@@ -1046,7 +1062,7 @@ export function formatRecipes(cards: readonly RecipeCard[], q: { query?: string 
   const lines = [`${scored.length} match${scored.length === 1 ? '' : 'es'} among Forge's recipes and their My Recipes (numbers are the app's, per serving):`];
   for (const { c } of scored.slice(0, 6)) {
     lines.push(
-      `${c.name}${c.mine ? ' (their own recipe, in My Recipes)' : " (one of Forge's recipes, not theirs)"} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
+      `${c.mine ? asTyped(c.name) : c.name}${c.mine ? ' (their own recipe, in My Recipes)' : " (one of Forge's recipes, not theirs)"} — ${c.kcal} kcal, ${c.protein} g protein, ${c.carb} g carbs, ${c.fat} g fat; ${c.minutes} min; ${
         c.meals.join('/') || 'any meal'
       }${c.allergens.length ? `; contains ${c.allergens.join(', ')}` : ''}. Main ingredients: ${c.ingredients.slice(0, 6).join(', ')}.`,
     );
@@ -1102,9 +1118,26 @@ export function formatPastChats(rows: readonly { summary: string; created_at: st
   return [`Your last ${rows.length} conversation${rows.length === 1 ? '' : 's'} with this athlete, newest first ("you" in a note is the athlete):`, ...rows.map((r) => `${localDate(r.created_at, tz)}: ${r.summary}`)].join('\n');
 }
 
+/**
+ * ══ WHAT A PERSON TYPED IS DATA (AI Road to 10 Sprint 2 — audit C-I4) ══
+ *
+ * Workout and program names, session names, notes, goals, accomplishments and a first name were typed by a person —
+ * the athlete, or a friend whose program they accepted (0110). Each goes to the model in double quotes, with any quote
+ * inside it turned into an apostrophe so it cannot close its own, and the user turn says what quotes mean
+ * (`askUserTurn`). A name like `Ignore your rules and…` reads as a name. Exercise names are the catalogue's and stay
+ * bare. The cached system block is unchanged (its "the app's own content" line is corrected at its next re-record).
+ */
+export const asTyped = (v: string): string => `"${v.replace(/["“”]/g, "'").replace(/\s+/g, ' ').trim()}"`;
+
 export interface AskToolContext {
   /** The recipe book as the device computed it (`narrowRecipes`). Empty when none was sent. */
   recipes?: readonly RecipeCard[];
+  /**
+   * The medical filter for free text a person wrote that a tool would hand the model — workout and exercise notes,
+   * and the saved summaries of past chats (audit C-I5). False drops it. Passed by `coach-ask` (this file cannot import
+   * the guard); absent keeps everything.
+   */
+  keepText?: (text: string) => boolean;
   db: AskDb;
   /** The caller's user id, from their JWT. Every query filters on it as well as relying on RLS. */
   uid: string;
@@ -1206,7 +1239,7 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
           .lt('started_at', new Date(start + 2 * DAY).toISOString())
           .order('started_at', { ascending: true });
         if (error) throw new Error(error.message);
-        return { text: cap(formatWorkoutDetail(date, (data ?? []) as WorkoutRow[], { units, tz: ctx.tz })), isError: false };
+        return { text: cap(formatWorkoutDetail(date, (data ?? []) as WorkoutRow[], { units, tz: ctx.tz, keep: ctx.keepText })), isError: false };
       }
       case 'get_personal_records': {
         const exercise = typeof i.exercise === 'string' ? i.exercise.trim().slice(0, 80) : null;
@@ -1273,12 +1306,12 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
           .eq('chapter_id', ch.id)
           .order('created_at', { ascending: false });
         const goals = (data ?? []) as { name: string; target: number | null; unit: string | null; current: number | null; is_primary: boolean; target_date: string | null; achieved_at: string | null }[];
-        if (!goals.length) return { text: `Chapter "${ch.name}" (since ${ch.start_date}) has no goals set.`, isError: false };
-        const lines = [`Chapter "${ch.name}" (since ${ch.start_date}) goals:`];
+        if (!goals.length) return { text: `Chapter ${asTyped(String(ch.name ?? ''))} (since ${ch.start_date}) has no goals set.`, isError: false };
+        const lines = [`Chapter ${asTyped(String(ch.name ?? ''))} (since ${ch.start_date}) goals:`];
         for (const g of goals) {
           const u = g.unit ? ` ${g.unit}` : '';
           lines.push(
-            `${g.is_primary ? 'PRIMARY — ' : ''}${g.name}: ${g.current ?? 0}${u} of ${g.target ?? '?'}${u}${g.target_date ? `, by ${g.target_date}` : ''}${
+            `${g.is_primary ? 'PRIMARY — ' : ''}${asTyped(String(g.name ?? ''))}: ${g.current ?? 0}${u} of ${g.target ?? '?'}${u}${g.target_date ? `, by ${g.target_date}` : ''}${
               g.achieved_at ? `, ACHIEVED ${String(g.achieved_at).slice(0, 10)}` : ''
             }`,
           );
@@ -1310,7 +1343,7 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
         const h = honors as { display_name: string; date_earned: string }[];
         lines.push(h.length ? `${h.length} honors earned. Newest first: ${h.slice(0, 40).map((x) => `${x.display_name} (${x.date_earned})`).join('; ')}.` : 'No honors earned yet.');
         const a = acc as { name: string; date: string | null }[];
-        if (a.length) lines.push(`Accomplishments they recorded: ${a.map((x) => `${x.name}${x.date ? ` (${x.date})` : ''}`).join('; ')}.`);
+        if (a.length) lines.push(`Accomplishments they recorded: ${a.map((x) => `${asTyped(String(x.name ?? ''))}${x.date ? ` (${x.date})` : ''}`).join('; ')}.`);
         return { text: cap(lines.join('\n')), isError: false };
       }
       case 'get_athlete_profile': {
@@ -1324,7 +1357,7 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
         const eq = p.home_gym_equipment == null ? 'never set up' : p.home_gym_equipment.length ? p.home_gym_equipment.map(humanKey).join(', ') : 'owns nothing (bodyweight)';
         return {
           text: [
-            `First name: ${p.first_name?.trim() || 'not given'}.`,
+            `First name: ${p.first_name?.trim() ? asTyped(p.first_name) : 'not given'}.`,
             `Experience: ${p.experience ?? 'not set'}.`,
             `Training goals: ${p.training_goals?.length ? p.training_goals.join(', ') + ' (first is primary)' : 'not set'}.`,
             `Trains at: ${p.environment ? humanKey(p.environment) : 'not set'}.`,
@@ -1411,7 +1444,10 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
           .eq('athlete_id', ctx.uid)
           .order('created_at', { ascending: false })
           .limit(CHAT_SUMMARIES_KEPT);
-        return { text: cap(formatPastChats((data ?? []) as { summary: string; created_at: string }[], ctx.tz)), isError: false };
+        /* A summary written before a stop was widened is read with TODAY's guard too (C-I5): what it would stop now
+           does not reach the model now. */
+        const kept = ((data ?? []) as { summary: string; created_at: string }[]).filter((r) => !ctx.keepText || ctx.keepText(String(r.summary ?? '')));
+        return { text: cap(formatPastChats(kept, ctx.tz)), isError: false };
       }
       case 'get_recipes': {
         const meal = typeof i.meal === 'string' && (MEALS.includes(i.meal) || i.meal === 'any') ? i.meal : 'any';
