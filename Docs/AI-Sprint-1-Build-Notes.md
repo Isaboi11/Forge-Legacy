@@ -70,7 +70,10 @@ coach_ai_settle(
 - Reservations never settled (the platform killed the function) stay visible as "unsettled" on the AI health page; there
   is no automatic sweeper this sprint (a sweeper would also refund a streamed chat answer whose settle was cut off).
 - `p_outcome` vocabulary (anything else is stored as `'other'`): `ok` · `upstream_error` · `upstream_unreachable` ·
-  `timeout` · `refusal` · `truncated` · `not_a_program` · `unreadable` · `bad_output` · `cancelled`.
+  `timeout` · `refusal` · `truncated` · `not_a_program` · `unreadable` · `bad_output` · `cancelled` · `guarded`
+  (a server-side guard stopped the turn after the reserve, e.g. coach-ask's profile-minor stop — refunded).
+- Chat (integrator 11-17): a `max_tokens` cut-off whose words were SHOWN is charged (`truncated`, no refund) —
+  refunding it would make long asks free. A cut-off with nothing delivered refunds.
 
 ### 1.1 When a function refunds (P-D2, V-D5)
 
