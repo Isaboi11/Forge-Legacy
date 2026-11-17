@@ -6,8 +6,8 @@
  * An athlete films a set. The app pulls 3 to 40 stills out of the clip (about three a second, PO 09-29), in time
  * order, and sends them here with the name of the lift. Holt answers about the TECHNIQUE and nothing else: bar path, brace,
  * depth, knee and hip timing, bar position, tempo. Output is capped at 900 tokens — `CA-D5`'s figure for
- * this job — and the read is 6 credits, the weight `form_check` has carried in `coach_ai_config` since
- * migration `0144`.
+ * this job — and the read is 3 credits, the weight `form_check` has carried in `coach_ai_config` since
+ * migration `0272` (MA12; it was 6 from `0144`).
  *
  * ══ ⛔ WHY THIS FUNCTION IS WRITTEN THE WAY IT IS ══
  *

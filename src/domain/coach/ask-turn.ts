@@ -71,7 +71,7 @@ export const askTurnMs = (allowWeb: boolean): number => (allowWeb ? ASK_SERVER_W
  *
  * ⛔ A TAPPED ONLINE SEARCH IS ALWAYS `fallback` (Sonnet). Anthropic's `web_search_20260209` tool is not
  * offered on Haiku 4.5, so a `model: 'claude-haiku-4-5'` request with `allowWeb` was a latent 400 — on the one
- * ask that costs three credits (audit C-D8).
+ * ask that costs more than a question (two credits since 0272 / MA12; three before) (audit C-D8).
  */
 export function askModel(requested: unknown, allowWeb: boolean, allowed: readonly string[], fallback: string): string {
   if (allowWeb) return fallback;

@@ -9,7 +9,7 @@
  *   | `marks`   | athlete found, no clean reps (a single, an isometric, odd lift)  | even frames, joint snapping only  |
  *   | `off`     | no track, ambiguous people, athlete in < 60%, no torso to measure by | exactly today's read   |
  *
- * All three cost the same (6 credits). Partial views narrow the FACTS, not the read: legs cut off means no
+ * All three cost the same (3 credits since 0272 / MA12; 6 before). Partial views narrow the FACTS, not the read: legs cut off means no
  * depth or knee facts, and the rest still goes.
  *
  * `measureFacts()` then turns the reps into the wire shape (`pose-facts.ts`). Each fact is computed only
