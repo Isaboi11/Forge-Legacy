@@ -422,7 +422,7 @@ async function fatsecretToken(): Promise<string | null> {
 const OZ_GRAMS = 28.3495;
 
 /** Grams per unit. A millilitre is taken as a gram, as the metric_serving_amount path always has. */
-const WEIGHT_UNITS: ReadonlyArray<{ re: RegExp; grams: number; metric: boolean }> = [
+const WEIGHT_UNITS: readonly { re: RegExp; grams: number; metric: boolean }[] = [
   { re: /^(?:fl\.?\s*oz|fluid\s+ounces?)$/i, grams: 29.5735, metric: false },
   { re: /^(?:oz|ounces?)$/i, grams: OZ_GRAMS, metric: false },
   { re: /^(?:lbs?|pounds?)$/i, grams: 453.592, metric: false },
