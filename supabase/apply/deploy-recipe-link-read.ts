@@ -1,4 +1,4 @@
-// ===============================================================================================
+// ===
 // DASHBOARD PASTE COPY of supabase/functions/recipe-link-read/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/nutrition/recipe-text-read.ts, which the Supabase dashboard
@@ -8,7 +8,7 @@
 // Supabase dashboard -> Edge Functions -> Deploy a new function -> "Via Editor" -> name it
 // recipe-link-read -> replace the editor contents with this whole file -> Deploy.
 // No secrets and no migration: no model, no credit. It reads a recipe page's schema.org Recipe block.
-// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ===
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export interface PastedIngredient {
@@ -165,11 +165,11 @@ export function resolvedVerdict(addresses: readonly string[]): 'ok' | 'private' 
         return 'unresolved';
     return addresses.some(isBlockedAddress) ? 'private' : 'ok';
 }
-const FRACTIONS: Record<string, number> = { '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75, '⅕': 0.2, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
+const FRACTIONS: Record<string, number> = { '\u00bd': 0.5, '\u2153': 1 / 3, '\u2154': 2 / 3, '\u00bc': 0.25, '\u00be': 0.75, '\u2155': 0.2, '\u215b': 0.125, '\u215c': 0.375, '\u215d': 0.625, '\u215e': 0.875 };
 const FRACTION_CHARS = Object.keys(FRACTIONS).join('');
 const NAMED: Record<string, string> = {
-    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', frac12: '½', frac14: '¼', frac34: '¾', frac13: '⅓', frac23: '⅔',
-    frac18: '⅛', deg: '°', ndash: '–', mdash: '—', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', hellip: '…', eacute: 'é', egrave: 'è',
+    amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', frac12: '\u00bd', frac14: '\u00bc', frac34: '\u00be', frac13: '\u2153', frac23: '\u2154',
+    frac18: '\u215b', deg: '\u00b0', ndash: '\u2013', mdash: '\u2014', rsquo: '\u2019', lsquo: '\u2018', rdquo: '\u201d', ldquo: '\u201c', hellip: '\u2026', eacute: '\u00e9', egrave: '\u00e8',
 };
 export function decodeEntities(s: string): string {
     return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z0-9]+);/gi, (m, e: string) => {
@@ -223,11 +223,11 @@ export function leadingAmount(line: string): {
     }
     let rest = s.slice(used);
     if (q != null)
-        rest = rest.replace(new RegExp(`^\\s*(?:-|–|to)\\s*[\\d${FRACTION_CHARS}./]+`), '');
+        rest = rest.replace(new RegExp(`^\\s*(?:-|\u2013|to)\\s*[\\d${FRACTION_CHARS}./]+`), '');
     return { quantity: q != null && Number.isFinite(q) && q > 0 ? Math.round(q * 1000) / 1000 : null, rest: rest.trim() };
 }
 export function parseIngredientLine(raw: string): PastedIngredient | null {
-    const text = clean(raw).replace(/^[-–•*·▪►✓✔☐□]+\s*/, '');
+    const text = clean(raw).replace(/^[-\u2013\u2022*\u00b7\u25aa\u25ba\u2713\u2714\u2610\u25a1]+\s*/, '');
     if (!text || text.length > 160 || /:$/.test(text))
         return null;
     let { quantity, rest } = leadingAmount(text);
@@ -255,7 +255,7 @@ export function parseIngredientLine(raw: string): PastedIngredient | null {
     const food = unbracket(rest)
         .replace(/^of\s+/i, '')
         .replace(/\b(boneless|skinless|bone-in|skin-on)\b\s*,?\s*/gi, '')
-        .split(/,|;|\s[-–—]\s/)[0]
+        .split(/,|;|\s[-\u2013\u2014]\s/)[0]
         .replace(/\b(to taste|as needed|optional|for serving|for garnish|divided)\b/gi, ' ')
         .replace(/\s+/g, ' ')
         .trim();
@@ -301,7 +301,7 @@ function mealOf(category: unknown): PastedRecipe['mealType'] {
         return 'breakfast';
     if (/lunch|salad|sandwich/.test(s))
         return 'lunch';
-    if (/dinner|main|entr[eé]e|supper/.test(s))
+    if (/dinner|main|entr[e\u00e9]e|supper/.test(s))
         return 'dinner';
     if (/snack|appetizer|dessert/.test(s))
         return 'snacks';
@@ -394,7 +394,7 @@ export function recipeFromHtml(html: string): PastedRecipe | null {
     const steps = [...page.matchAll(/itemprop\s*=\s*["']recipeInstructions["'][^>]*>([\s\S]*?)<\/(?:li|p|div|ol)>/gi)].flatMap((m) => stepsOf(m[1]));
     return { name: clean(title).slice(0, 40), servings: null, minutes: null, mealType: null, ingredients: ingredients.slice(0, 40), steps: steps.slice(0, 20) };
 }
-const ING_HEAD = /^(ingredients?|what you('|’)?ll need|you('|’)?ll need|shopping list)\b[\s:]*$/i;
+const ING_HEAD = /^(ingredients?|what you('|\u2019)?ll need|you('|\u2019)?ll need|shopping list)\b[\s:]*$/i;
 const STEP_HEAD = /^(instructions?|directions?|method|steps?|preparation|how to make( it)?|to make)\b[\s:]*$/i;
 const META = /^(serves|servings?|yield|makes|prep|cook|total|ready in|calories|nutrition|protein|carbs?|fat)\b/i;
 const LEAD = new RegExp(`^[^\\p{L}\\p{N}${FRACTION_CHARS}]+`, 'u');
@@ -449,7 +449,7 @@ export function recipeFromText(raw: string): PastedRecipe | null {
         .slice(0, 20);
     const top = lines
         .slice(0, ingAt >= 0 ? ingAt : Math.min(lines.length, 3))
-        .map((l) => l.replace(LEAD, '').split(/[\p{Extended_Pictographic}!|•]/u)[0].trim());
+        .map((l) => l.replace(LEAD, '').split(/[\p{Extended_Pictographic}!|\u{2022}]/u)[0].trim());
     const name = top.find((l) => l && l.length <= 60 && !META.test(l) && !ING_HEAD.test(l) && leadingAmount(l).quantity == null) ?? '';
     return {
         name: name.slice(0, 40),
@@ -477,7 +477,7 @@ async function checkAddresses(host: string): Promise<'ok' | 'private' | 'unresol
     }).resolveDns;
     const unchecked = () => {
         if (!saidNoDns)
-            console.warn('[recipe-link-read] Deno.resolveDns unavailable — the hostname filter is the only SSRF check (P-G7)');
+            console.warn('[recipe-link-read] Deno.resolveDns unavailable \u2014 the hostname filter is the only SSRF check (P-G7)');
         saidNoDns = true;
         return 'unchecked' as const;
     };

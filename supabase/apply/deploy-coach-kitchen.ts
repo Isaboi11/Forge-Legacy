@@ -1,4 +1,4 @@
-// ===============================================================================================
+// ===
 // DASHBOARD PASTE COPY of supabase/functions/coach-kitchen/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/nutrition/kitchen-dishes.ts and src/domain/coach/medical-routing.ts,
@@ -12,7 +12,7 @@
 // "the kitchen's not working".
 // ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
 // this copy also inlines, src/domain/ai/meter-server.ts); until then every ask answers "meter unavailable".
-// ===============================================================================================
+// ===
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export const KITCHEN_ACTION = 'kitchen';
@@ -73,13 +73,13 @@ export function kitchenUserTurn(r: KitchenRequest): string {
         lines.push(`What the athlete said: "${r.ask}"`);
     const keys = r.avoid.map((a) => a.toLowerCase().replace(/\s+/g, '_')).filter((k) => ALLERGEN_WORDS[k] || DIET_WORDS[k]);
     const have = r.have.filter((h) => !keys.some((k) => (ALLERGEN_WORDS[k] ?? DIET_WORDS[k]).test(h)));
-    lines.push(have.length ? `On hand: ${have.join(', ')}.` : 'On hand: not given — assume a normal pantry and ask nothing.');
+    lines.push(have.length ? `On hand: ${have.join(', ')}.` : 'On hand: not given \u2014 assume a normal pantry and ask nothing.');
     if (r.avoid.length) {
         const spelled = r.avoid.map((a) => {
             const k = a.toLowerCase().replace(/\s+/g, '_');
             return ALLERGEN_COVERS[k] ? `${a} (${ALLERGEN_COVERS[k]})` : a;
         });
-        lines.push(`Hard rules — never use, in any form: ${spelled.join('; ')}.`);
+        lines.push(`Hard rules \u2014 never use, in any form: ${spelled.join('; ')}.`);
     }
     if (r.exclude.length)
         lines.push(`Already suggested, do not repeat or lightly rename: ${r.exclude.join('; ')}.`);
@@ -87,9 +87,9 @@ export function kitchenUserTurn(r: KitchenRequest): string {
         lines.push(`Lean toward, if it fits: ${[r.lean.cuisine, r.lean.method].filter(Boolean).join(', ')}.`);
     const nudge: Record<KitchenNudge, string> = {
         more: 'They want different ideas from the ones above.',
-        quicker: 'They want quicker dishes — 15 minutes or less where possible.',
-        protein: 'They want more protein — build each dish around a bigger protein portion.',
-        style: 'They want a different style — new cuisines and methods from the ones above.',
+        quicker: 'They want quicker dishes \u2014 15 minutes or less where possible.',
+        protein: 'They want more protein \u2014 build each dish around a bigger protein portion.',
+        style: 'They want a different style \u2014 new cuisines and methods from the ones above.',
     };
     if (r.nudge)
         lines.push(nudge[r.nudge]);
@@ -243,15 +243,15 @@ const SAFE_TEMPS: readonly {
     re: RegExp;
     line: string;
 }[] = [
-    { re: /\b(chicken|turkey|duck|poultry)\b/i, line: 'Cook the poultry to 165°F inside (USDA).' },
-    { re: /\bground\s+(beef|pork|lamb|veal)|\b(burger|meatballs?|sausage)\b/i, line: 'Cook ground meat to 160°F inside (USDA).' },
-    { re: /\b(beef|steak|pork|lamb|veal|chops?)\b/i, line: 'Cook beef, pork or lamb to 145°F inside, then rest 3 minutes (USDA).' },
-    { re: /\b(salmon|tuna steak|cod|tilapia|fish|shrimp|prawns?|scallops?)\b/i, line: 'Cook fish and shellfish to 145°F, until opaque and it flakes (USDA).' },
-    { re: /\beggs?\b/i, line: 'Cook eggs until the yolk and white are firm; egg dishes to 160°F (USDA).' },
+    { re: /\b(chicken|turkey|duck|poultry)\b/i, line: 'Cook the poultry to 165\u00b0F inside (USDA).' },
+    { re: /\bground\s+(beef|pork|lamb|veal)|\b(burger|meatballs?|sausage)\b/i, line: 'Cook ground meat to 160\u00b0F inside (USDA).' },
+    { re: /\b(beef|steak|pork|lamb|veal|chops?)\b/i, line: 'Cook beef, pork or lamb to 145\u00b0F inside, then rest 3 minutes (USDA).' },
+    { re: /\b(salmon|tuna steak|cod|tilapia|fish|shrimp|prawns?|scallops?)\b/i, line: 'Cook fish and shellfish to 145\u00b0F, until opaque and it flakes (USDA).' },
+    { re: /\beggs?\b/i, line: 'Cook eggs until the yolk and white are firm; egg dishes to 160\u00b0F (USDA).' },
 ];
 const NO_COOK_SAFE = /\b(canned|tinned|smoked|deli|rotisserie|cooked|leftover|jerky)\b/i;
 export function withSafeTemps(d: KitchenDish): KitchenDish {
-    if (d.steps.some((s) => /\d\s*°\s*F/i.test(s)))
+    if (d.steps.some((s) => /\d\s*\u00b0\s*F/i.test(s)))
         return d;
     const add: string[] = [];
     for (const t of SAFE_TEMPS) {
@@ -289,8 +289,8 @@ export const ALLERGEN_COVERS: Record<string, string> = {
     shellfish: 'shrimp, prawns, crab, lobster, scallops, clams, mussels, oysters, squid, calamari, octopus',
     sesame: 'sesame oil, sesame seeds, tahini, hummus',
 };
-const ACCENTS: Record<string, string> = { à: 'a', á: 'a', â: 'a', ä: 'a', è: 'e', é: 'e', ê: 'e', ë: 'e', ì: 'i', í: 'i', î: 'i', ï: 'i', ò: 'o', ó: 'o', ô: 'o', ö: 'o', ù: 'u', ú: 'u', û: 'u', ü: 'u', ñ: 'n', ç: 'c' };
-export const foldAccents = (s: string): string => s.replace(/[àáâäèéêëìíîïòóôöùúûüñç]/gi, (c) => ACCENTS[c.toLowerCase()] ?? c);
+const ACCENTS: Record<string, string> = { \u00e0: 'a', \u00e1: 'a', \u00e2: 'a', \u00e4: 'a', \u00e8: 'e', \u00e9: 'e', \u00ea: 'e', \u00eb: 'e', \u00ec: 'i', \u00ed: 'i', \u00ee: 'i', \u00ef: 'i', \u00f2: 'o', \u00f3: 'o', \u00f4: 'o', \u00f6: 'o', \u00f9: 'u', \u00fa: 'u', \u00fb: 'u', \u00fc: 'u', \u00f1: 'n', \u00e7: 'c' };
+export const foldAccents = (s: string): string => s.replace(/[\u00e0\u00e1\u00e2\u00e4\u00e8\u00e9\u00ea\u00eb\u00ec\u00ed\u00ee\u00ef\u00f2\u00f3\u00f4\u00f6\u00f9\u00fa\u00fb\u00fc\u00f1\u00e7]/gi, (c) => ACCENTS[c.toLowerCase()] ?? c);
 export function allergensByWord(d: KitchenDish): string[] {
     const text = foldAccents(d.ingredients.map((i) => `${i.food} ${i.text}`).join(' | '))
         .replace(/\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy)\s+butter\b/gi, '$1 spread')
@@ -392,7 +392,7 @@ export function kitchenError(r: Exclude<KitchenResult, {
         case 'none':
             return "I couldn't put together anything I'd stand behind from that. Tell me a bit more of what you've got.";
         case 'daily_limit':
-            return "That's a lot of ideas for one day. My Recipes is still there — try again tomorrow.";
+            return "That's a lot of ideas for one day. My Recipes is still there \u2014 try again tomorrow.";
         case 'out_of_credits':
             return "You're out of Premium AI credits for this month. My Recipes still works.";
         case 'not_entitled':
@@ -476,7 +476,7 @@ const SYMPTOM_QUESTION = new RegExp(SYMPTOM_QUESTION_SOURCE(), 'i');
 export const mentionsDiscomfort = (text: string): boolean => /\b(hurt\w*|pain\w*|ach(e|es|ing|y)|sore\w*|injur\w*|tweak(ed|ing)?|strain\w*|niggl\w*|uncomfortable|discomfort|stiff\w*|flare[-\s]?up|twinge)\b/i.test(text ?? '');
 export type MedicalRoute = 'clear' | 'crisis' | 'urgent' | 'care' | 'acute' | 'advice';
 export function medicalRoute(text: string): MedicalRoute {
-    const t = (text ?? '').replace(/[‘’ʼ]/g, "'").trim();
+    const t = (text ?? '').replace(/[\u2018\u2019\u02bc]/g, "'").trim();
     if (!t)
         return 'clear';
     const r = routeOnce(t);
@@ -733,7 +733,7 @@ Write exactly the number of options asked for, as JSON in the fixed shape. Each 
 # The fields
 
 - "name": the dish.
-- "why": one short line on why this one, in Holt's voice — "uses the most of what you have", "fastest of the three", "closest to your protein for the day", "no stove needed". Never a number.
+- "why": one short line on why this one, in Holt's voice \u2014 "uses the most of what you have", "fastest of the three", "closest to your protein for the day", "no stove needed". Never a number.
 - "cuisine": one or two words ("Mexican", "Korean", "American").
 - "method": one of the methods above.
 - "minutes": realistic total time, prep plus cook.
@@ -743,14 +743,14 @@ Write exactly the number of options asked for, as JSON in the fixed shape. Each 
   - "text": the line as a recipe would print it ("6 oz boneless chicken thighs, sliced").
   - "quantity": the amount as a number, or null for "to taste".
   - "unit": "g" (see Amounts); "large" for eggs; "" when the quantity is null.
-  - "food": the food, without amount, unit, brand or preparation. **Use one of the app's food names below, written exactly, whenever one fits** — "rice" is "white rice" or "brown rice", "spinach" is "baby spinach", "oil" is "olive oil", "beans" is "black beans". This is what the app matches to its food database; a name it doesn't know leaves the dish's numbers incomplete. Only when nothing on the list is close, write the plain food in everyday words.
-- "steps": 3 to 8 short steps in plain words. Every step a home cook can follow. Include the doneness cue and the safe internal temperature whenever meat, poultry, fish or eggs are cooked (USDA: poultry 165°F, ground meat 160°F, whole cuts of beef, pork and lamb 145°F then rest 3 minutes, fish 145°F).
+  - "food": the food, without amount, unit, brand or preparation. **Use one of the app's food names below, written exactly, whenever one fits** \u2014 "rice" is "white rice" or "brown rice", "spinach" is "baby spinach", "oil" is "olive oil", "beans" is "black beans". This is what the app matches to its food database; a name it doesn't know leaves the dish's numbers incomplete. Only when nothing on the list is close, write the plain food in everyday words.
+- "steps": 3 to 8 short steps in plain words. Every step a home cook can follow. Include the doneness cue and the safe internal temperature whenever meat, poultry, fish or eggs are cooked (USDA: poultry 165\u00b0F, ground meat 160\u00b0F, whole cuts of beef, pork and lamb 145\u00b0F then rest 3 minutes, fish 145\u00b0F).
 
 # Amounts
 
 **Give every amount by weight: "quantity" in grams and "unit" "g".** The app converts grams exactly; cans, handfuls, pieces and cups often can't be converted. The "text" line can say it the way a cook would ("6 oz chicken thighs"), but "quantity" and "unit" are grams. The only exceptions: eggs are a count (quantity 2, unit "large"), and salt, pepper, dried herbs and spices used "to taste" have quantity null.
 
-**Weigh rice, pasta, noodles, quinoa, couscous, bulgur, barley, lentils and oats DRY (uncooked)** — that is how the app's food data counts them. A serving of rice or pasta is 50 to 90 g dry; oats 40 to 60 g dry.
+**Weigh rice, pasta, noodles, quinoa, couscous, bulgur, barley, lentils and oats DRY (uncooked)** \u2014 that is how the app's food data counts them. A serving of rice or pasta is 50 to 90 g dry; oats 40 to 60 g dry.
 
 Real amounts for the servings you give: a portion of meat or fish is usually 110 to 225 g raw, oil 5 to 30 g for the whole dish. Never an amount no one cooks.
 
@@ -760,7 +760,7 @@ ${KITCHEN_FOODS}
 
 # Hard rules
 
-**Never write a nutrition number** — no calories, protein, carbs, fat or grams-of-protein, anywhere, including "why" and "steps". There is no field for them. The app calculates every number itself from the ingredients.
+**Never write a nutrition number** \u2014 no calories, protein, carbs, fat or grams-of-protein, anywhere, including "why" and "steps". There is no field for them. The app calculates every number itself from the ingredients.
 
 **A food on the "never use" line is never in any dish,** not as an ingredient, a garnish, a sauce or an option. That includes foods that contain it: peanut means no peanut butter or satay; dairy means no butter, cheese, yogurt, cream or milk; gluten means no regular pasta, bread, flour, tortillas or soy sauce (tamari is fine); shellfish means no shrimp, crab, lobster or scallops; eggs means no mayonnaise. If you are not sure whether something contains it, leave it out.
 

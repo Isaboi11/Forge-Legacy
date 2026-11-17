@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compactForPaste } from './compact-deploy.mjs';
+import { normalizeBundle } from './lib/bundle-normalize.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUNCTION = 'supabase/functions/meal-photo-read/index.ts';
@@ -51,7 +52,7 @@ export function buildMealPhotoReadDeploy() {
   });
   if (inlined.includes("'../../../src/")) throw new Error('an import from src/ was not inlined');
   // Comments stripped and types erased — the paste only needs the code (see compact-deploy.mjs).
-  return compactForPaste(HEADER, inlined);
+  return normalizeBundle(compactForPaste(HEADER, inlined));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
