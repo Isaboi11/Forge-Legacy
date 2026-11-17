@@ -186,7 +186,7 @@ import { authorLive } from '@/data/coach-author-live';
 import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/domain/coach/author';
 import { authoredLine, authorFacts, validateAuthored, type ValidatedPlan } from '@/domain/coach/author-validate';
 import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
-import { endsOnRace, firstWeeksOf, RACE_WEEK_LINE, raceWeekShape, spliceLiftDays, stopsShortLine } from '@/domain/coach/author-race';
+import { endsOnRace, firstWeeksOf, placeWrittenLifts, RACE_WEEK_LINE, raceWeekShape, stopsShortLine } from '@/domain/coach/author-race';
 import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
@@ -1162,8 +1162,15 @@ export function CoachChatSheet({
             setBusy(null);
             const wrote = holt.written;
             if (wrote) {
-              structure = spliceLiftDays(structure, wrote.valid.days);
-              raceLine = [authoredLine(wrote.plan, wrote.valid), shape.liftDays > 1 && endsOnRace(structure) ? RACE_WEEK_LINE : null].filter(Boolean).join(' ');
+              /* Placed by what each day asks of the legs against the rulebook's week, deloads kept (B-D3). */
+              const { weekShape, racePlacing } = res.assembly;
+              const placed = placeWrittenLifts(
+                structure,
+                wrote.valid.days,
+                weekShape && racePlacing ? { shape: weekShape, ...racePlacing, patternOf: (k) => itemByKey(k)?.pattern } : null,
+              );
+              structure = placed.structure;
+              raceLine = [authoredLine(wrote.plan, wrote.valid), placed.clash, shape.liftDays > 1 && endsOnRace(structure) ? RACE_WEEK_LINE : null].filter(Boolean).join(' ');
             }
           }
           /* "A 7 week program" for a race further off is the first seven weeks of its build. */
