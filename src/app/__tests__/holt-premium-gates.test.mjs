@@ -22,11 +22,28 @@ const fn = (head) => {
 
 test('H18 — the allowance is spent by one payer, in the chat and in the wizard, and a refusal stops the build', () => {
   assert.match(chat, /const payHolt = useCallback\(\n\s+async \(kind: 'day' \| 'program', offerWeek = false\): Promise<boolean> => \{\n\s+const spend = await consumeHoltAllowance\(kind\);/);
-  assert.match(advance, /if \(mode_ === 'day' && !\(await payHolt\('day'\)\)\) return;/);
   assert.equal(chat.match(/consumeHoltAllowance\(/g)?.length, 1, 'one spend in the chat, through payHolt');
   const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
   assert.match(build, /const spend = await consumeHoltAllowance\(kind\);/);
-  assert.match(build, /if \(mode === 'day' && !\(await pay\('day'\)\)\) \{\n\s+setBusy\(false\);/);
+});
+
+test('B-D4 — a day pays once it EXISTS: never before the build, never for one he could not put together', () => {
+  // The chat: both day paths — the one he wrote from their words and the rulebook's — pay before the draft.
+  assert.equal(advance.match(/if \(!\(await payHolt\('day'\)\)\) return;/g)?.length, 2);
+  assert.doesNotMatch(advance, /mode_ === 'day' && !\(await payHolt\('day'\)\)/, 'paying before the build was the bug');
+  const written = advance.slice(advance.indexOf("if (written && mode_ === 'day') {"));
+  assert.ok(written.indexOf("if (!(await payHolt('day'))) return;") < written.indexOf('await saveWorkoutDraft('));
+  const rulebook = advance.slice(advance.indexOf('const r = buildDayWorkout(dayReq'));
+  const thin = rulebook.indexOf('if (thin) {');
+  const pays = rulebook.indexOf("if (!(await payHolt('day'))) return;");
+  assert.ok(thin > 0 && thin < pays, 'a thin day is answered before anything is spent');
+  assert.ok(pays < rulebook.indexOf('await saveWorkoutDraft('));
+  // The wizard: after the empty-day refusal, before the card.
+  const wbuild = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('const onApply = async'));
+  assert.doesNotMatch(wbuild, /mode === 'day' && !\(await pay\('day'\)\)/);
+  const day = wbuild.slice(wbuild.indexOf('const res = buildDayWorkout('));
+  assert.ok(day.indexOf('if (res.day.main.length === 0) {') < day.indexOf("if (!(await pay('day'))) return;"));
+  assert.ok(day.indexOf("if (!(await pay('day'))) return;") < day.indexOf("kind: 'day',"));
 });
 
 test('G4 — an unreadable spend answer stops a capped athlete with a retry, in the chat and in the wizard', () => {
