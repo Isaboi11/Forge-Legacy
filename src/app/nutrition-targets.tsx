@@ -94,7 +94,13 @@ export default function NutritionTargetsScreen() {
   const [todayIso] = useState(() => localToday());
   const [reloads, setReloads] = useState(0);
 
-  const { data: nutritionProfile } = useQuery(fetchNutritionProfile, [reloads]);
+  /* ⛔ READ STRICT (AI audit 11-16, N-D2). A profile that didn't load used to read exactly like one never filled in
+     — blank birth year, blank height — so the screen asked again and nothing told the two apart. Now a failed read
+     is its own state: no recommendation is offered until the saved birth year has loaded (Manual still works). A
+     year that was never entered is asked for, as before. */
+  const profileQ = useQuery(() => fetchNutritionProfile({ strict: true }), [reloads]);
+  const nutritionProfile = profileQ.data;
+  const profileFailed = profileQ.error != null && profileQ.data == null;
   const { data: history } = useQuery(useCallback(() => fetchTargetHistory(todayIso), [todayIso]), [todayIso, reloads]);
   const { data: bodyEntries } = useQuery(fetchBodyEntries, [reloads]);
 
@@ -147,7 +153,7 @@ export default function NutritionTargetsScreen() {
   const facts: AthleteFacts = { sex, weightLb, birthYear, heightIn, activity };
   const blocker = blockerFor(facts, todayIso);
   const burn = burnFor(facts, todayIso);
-  const rec = burn ? recommend(facts, burn, goal, pace, todayIso) : null;
+  const rec = burn && !profileFailed ? recommend(facts, burn, goal, pace, todayIso) : null;
 
   const rows = useMemo(() => historyRows(history ?? [], todayIso), [history, todayIso]);
   const currentRow = history?.length ? history[history.length - 1] : null;
@@ -189,7 +195,8 @@ export default function NutritionTargetsScreen() {
   let proposed: Targets | null = null;
   let blocked: string | null = null;
   if (mode === 'recommended') {
-    if (blocker?.kind === 'under-age') blocked = 'Recommended targets start at 18.';
+    if (profileFailed) blocked = 'Your details didn’t load.';
+    else if (blocker?.kind === 'under-age') blocked = 'Recommended targets start at 18.';
     else if (blocker) blocked = 'Add the details above to see a target.';
     else if (rec) proposed = { kcal: rec.kcal, protein: rec.protein, carb: rec.carb, fat: rec.fat };
   } else if (!manKcal) blocked = 'Enter a calorie target.';
@@ -327,8 +334,16 @@ export default function NutritionTargetsScreen() {
         {mode === 'recommended' ? (
           <>
             {/* ⛔ THE GATE. Nothing else renders under it — an offer to complete a profile below this
-                card would read as a way around a door that does not open. */}
-            {blocker?.kind === 'under-age' ? (
+                card would read as a way around a door that does not open. A profile that didn't load comes
+                first (AI audit 11-16, N-D2): until the saved birth year is known, nothing is calculated. */}
+            {profileFailed ? (
+              <MissingCard
+                headline="Your details didn’t load"
+                body="Forge needs your saved birth year and height before it recommends a target, so nothing is calculated until they load. Check your connection and try again. Manual still works."
+                action="Try again"
+                onPress={profileQ.refetch}
+              />
+            ) : blocker?.kind === 'under-age' ? (
               <View style={styles.gateCard}>
                 {blocker.unlockYear ? <Text style={styles.eyebrow}>{`From ${blocker.unlockYear}`}</Text> : null}
                 <Text style={styles.gateHeadline}>Recommended targets start at 18.</Text>
@@ -674,9 +689,9 @@ export default function NutritionTargetsScreen() {
         )}
       </ScrollView>
 
-      {/* commit — not on a gate (under 18, no sex, no weigh-in): there is no target to use, and a greyed
-          USE THESE TARGETS only repeated the card's own message (QA 09-26 N-42). */}
-      {mode === 'recommended' && blocker && blocker.kind !== 'incomplete' ? null : (
+      {/* commit — not on a gate (under 18, no sex, no weigh-in, details that didn't load): there is no target to
+          use, and a greyed USE THESE TARGETS only repeated the card's own message (QA 09-26 N-42). */}
+      {mode === 'recommended' && (profileFailed || (blocker && blocker.kind !== 'incomplete')) ? null : (
         <View style={[styles.footer, { paddingBottom: barBottom }]}>
           {macroWarn ? (
             <Text style={styles.footerWarn} accessibilityLiveRegion="polite">
