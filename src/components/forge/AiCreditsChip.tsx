@@ -20,14 +20,15 @@ import { usePremiumAi } from '@/lib/entitlement';
  *
  * `busy` — Holt's chat passes whether a turn is in progress; the chip reads the meter again when it ends.
  * `short` — Holt's header, ~150pt wide on a 320pt phone: the month abbreviated ("resets Dec 1"). VoiceOver still
- *   hears the whole sentence.
+ *   hears the whole sentence. ⚠ There it is a LINE of the header, so for Premium AI its height is held empty until
+ *   the first read lands — the thread must not jump down under a thumb ("needs two taps" = a layout shift).
  */
 export function AiCreditsChip({ busy = false, short = false, style }: { busy?: boolean; short?: boolean; style?: StyleProp<ViewStyle> }) {
   const premiumAi = usePremiumAi();
   const { session } = useAuth();
   const read = useAiCredits(premiumAi ? (session?.user.id ?? null) : null, premiumAi, busy);
   const chip = premiumAi ? aiCreditsChip(read) : null;
-  if (!chip) return null;
+  if (!chip) return short && premiumAi && read == null ? <View style={styles.held} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden /> : null;
   return (
     <View accessible accessibilityRole="text" accessibilityLabel={chip.a11y} style={[styles.chip, EDGE[chip.kind], style]}>
       <Text style={[styles.label, short && styles.labelShort, INK[chip.kind]]} numberOfLines={1}>
@@ -37,17 +38,23 @@ export function AiCreditsChip({ busy = false, short = false, style }: { busy?: b
   );
 }
 
+/** One line of 11pt type in a pill — the height the header keeps for it while the first read is out. */
+const CHIP_HEIGHT = 20;
+
 const styles = StyleSheet.create({
   chip: {
     flexShrink: 1,
     minWidth: 0,
     alignSelf: 'flex-start',
+    minHeight: CHIP_HEIGHT,
+    justifyContent: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 2,
     borderRadius: flRadius.pill,
     borderWidth: 1,
     borderColor: flColor.divider,
   },
+  held: { height: CHIP_HEIGHT },
   label: { fontSize: 11, fontWeight: '600', letterSpacing: 0.2, color: flText.secondary },
   labelShort: { fontSize: 10.5 },
   normal: {},
