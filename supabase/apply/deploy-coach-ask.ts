@@ -1919,7 +1919,7 @@ export function reserveRefusal(row: unknown): {
     return { status: 200, body: { route: 'out_of_credits', remaining: num(r.remaining), allowance: num(r.allowance) } };
 }
 export type AskTurnFailure = 'timeout' | 'upstream_error' | 'upstream_unreachable' | 'upstream_dropped';
-export type AskOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'bad_output' | 'cancelled' | 'other';
+export type AskOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'bad_output' | 'cancelled' | 'guarded' | 'other';
 export const ASK_CUT_STOPS: readonly string[] = ['max_tokens', 'model_context_window_exceeded'];
 export function askSettlement(t: {
     failure: AskTurnFailure | null;
@@ -1941,7 +1941,7 @@ export function askSettlement(t: {
     if (t.stop === 'refusal')
         return { outcome: 'refusal', refund: true };
     if (t.stop != null && ASK_CUT_STOPS.includes(t.stop))
-        return { outcome: 'truncated', refund: true };
+        return { outcome: 'truncated', refund: !t.delivered };
     if (!t.delivered)
         return { outcome: 'bad_output', refund: true };
     return { outcome: 'ok', refund: false };
@@ -2266,7 +2266,7 @@ Deno.serve(async (req) => {
     if (minor) {
         const stopped = guardRoute(question, true);
         if (stopped) {
-            await settle('other', true, model, NO_USAGE);
+            await settle('guarded', true, model, NO_USAGE);
             return json({ route: stopped });
         }
     }

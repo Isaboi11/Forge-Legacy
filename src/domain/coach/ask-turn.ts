@@ -13,7 +13,9 @@
  *
  * The credit is RESERVED before the model (`coach_ai_reserve`) and SETTLED after it (`coach_ai_settle`), and
  * settle gives it back on every failure that is ours or the model's: the upstream errored or was unreachable,
- * our own clock ran out, the model refused, the reply was cut at the cap, or nothing usable came back. It is
+ * our own clock ran out, the model refused, it was cut at the cap before anything reached the app, or nothing
+ * usable came back. A cut-off whose words WERE shown is charged (integrator, Sprint 1: refunding it would make a
+ * long ask free). It is
  * NOT given back when the athlete closed the sheet: that is their decision, the model ran for them, and a
  * refund there would make "ask, read, close" free.
  *
@@ -223,8 +225,21 @@ export function reserveRefusal(row: unknown): { status: number; body: Record<str
 /** How a turn failed on OUR side of the wire. `upstream_dropped` — the stream broke partway. */
 export type AskTurnFailure = 'timeout' | 'upstream_error' | 'upstream_unreachable' | 'upstream_dropped';
 
-/** The settle vocabulary this function uses (contract §1 `p_outcome`). */
-export type AskOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'bad_output' | 'cancelled' | 'other';
+/**
+ * The settle vocabulary this function uses (contract §1 `p_outcome`). `guarded` — the code guard stopped the ask
+ * AFTER the reserve (a profile minor, P-G8), refunded; ai/s1-money's 0268 adds it to the vocabulary.
+ */
+export type AskOutcome =
+  | 'ok'
+  | 'upstream_error'
+  | 'upstream_unreachable'
+  | 'timeout'
+  | 'refusal'
+  | 'truncated'
+  | 'bad_output'
+  | 'cancelled'
+  | 'guarded'
+  | 'other';
 
 /** A reply stopped at the length cap (or the context window). Mirrors `CUT_STOPS` in `ask-stream.ts`. */
 export const ASK_CUT_STOPS: readonly string[] = ['max_tokens', 'model_context_window_exceeded'];
@@ -235,7 +250,9 @@ export const ASK_CUT_STOPS: readonly string[] = ['max_tokens', 'model_context_wi
  *
  *   · `delivered` — a word or an action reached the app. A turn that ended cleanly with neither showed the
  *     athlete an outage card, so it is refunded as `bad_output`.
- *   · A cut-off is refunded too (audit C-D4: the words stand, but he says they are not all of it).
+ *   · A cut-off (`truncated`) is CHARGED when anything was delivered — the words stand and he says they are not all
+ *     of it (C-D4); refunding it would make "write me an essay" free. A cut-off before anything reached the app
+ *     is refunded (integrator decision, Sprint 1).
  */
 export function askSettlement(t: {
   failure: AskTurnFailure | null;
@@ -248,7 +265,7 @@ export function askSettlement(t: {
   if (t.failure === 'upstream_unreachable') return { outcome: 'upstream_unreachable', refund: true };
   if (t.failure) return { outcome: 'upstream_error', refund: true };
   if (t.stop === 'refusal') return { outcome: 'refusal', refund: true };
-  if (t.stop != null && ASK_CUT_STOPS.includes(t.stop)) return { outcome: 'truncated', refund: true };
+  if (t.stop != null && ASK_CUT_STOPS.includes(t.stop)) return { outcome: 'truncated', refund: !t.delivered };
   if (!t.delivered) return { outcome: 'bad_output', refund: true };
   return { outcome: 'ok', refund: false };
 }

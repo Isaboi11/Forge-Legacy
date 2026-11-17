@@ -288,7 +288,7 @@ export type AskStreamEvent =
       usage: { model: string; input: number; cacheRead: number; cacheWrite: number; output: number };
       remaining: number | null;
       stop?: string | null;
-      /** The function gave the credit back (a refusal, a cut-off, an empty reply). */
+      /** The function gave the credit back (a refusal, a cut-off before any word, an empty reply). */
       refunded?: true;
     }
   /**
