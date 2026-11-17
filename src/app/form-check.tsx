@@ -75,6 +75,7 @@ import { ensureConsent } from '@/lib/consent';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { withNotCharged } from '@/domain/ai/ai-call';
 import { useCloseSignal } from '@/lib/useCloseSignal';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 
 /**
  * FORM CHECK — built to `design_reference/Forge Modal Library Design (8)/Coach Holt Form Check.dc.html`
@@ -589,14 +590,18 @@ function Shell({ children, top, onClose, title = 'Form Check' }: { children: Rea
   return (
     <View style={[s.root, top]}>
       <ScreenBackground atmospheric overlay={null} />
+      {/* This line's bar is FormBar (build 11's is the shared AppBar): the credits chip sits before the close. */}
       <FormBar
         title={title}
         right={
-          onClose ? (
-            <Pressable onPress={onClose} style={s.barBtn} accessibilityRole="button" accessibilityLabel="Close" hitSlop={4}>
-              <CloseGlyph />
-            </Pressable>
-          ) : undefined
+          <View style={s.barRight}>
+            <AiCreditsChip style={s.barChip} />
+            {onClose ? (
+              <Pressable onPress={onClose} style={s.barBtn} accessibilityRole="button" accessibilityLabel="Close" hitSlop={4}>
+                <CloseGlyph />
+              </Pressable>
+            ) : null}
+          </View>
         }
       />
       {children}
@@ -1090,6 +1095,8 @@ const s = StyleSheet.create({
   gap22: { gap: 22 },
   gap4: { gap: 4 },
   barBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  barRight: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 1, minWidth: 0 },
+  barChip: { alignSelf: 'center' },
 
   bubble: { alignSelf: 'flex-start', paddingVertical: 11, paddingHorizontal: 14, borderRadius: 16, backgroundColor: C.bub, color: C.ink, fontSize: 15, lineHeight: 22, overflow: 'hidden' },
 
