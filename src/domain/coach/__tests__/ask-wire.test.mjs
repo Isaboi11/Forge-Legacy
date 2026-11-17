@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   ASK_HISTORY_MAX,
+  ASK_KEEPALIVE,
   ASK_NOTE_CHARS,
   ASK_NOTES_MAX,
   ASK_OUTPUT_CAP,
@@ -94,12 +95,49 @@ test('the function-to-app stream round-trips through sseLine / parseSse / readAs
   assert.equal(events[2].done, true);
   assert.equal(events[2].remaining, 142);
   assert.equal(events[2].usage.cacheRead, 1650);
+  // ⛔ P-D8: an older function still sends Anthropic's words as `detail` — the app drops them on the way in.
   assert.deepEqual(readAskEvent(JSON.stringify({ error: 'upstream_error', detail: '529 overloaded_error: Overloaded' })), {
     error: 'upstream_error',
-    detail: '529 overloaded_error: Overloaded',
   });
+  // Sprint 1: the failure line says whether the credit came back, the balance, and our own timeout.
+  assert.deepEqual(readAskEvent(JSON.stringify({ error: 'upstream_error', upstream: 'timeout', refunded: true, remaining: 141 })), {
+    error: 'upstream_error',
+    upstream: 'timeout',
+    refunded: true,
+    remaining: 141,
+  });
+  assert.deepEqual(readAskEvent(JSON.stringify({ error: 'upstream_error', refunded: 'yes', upstream: 'anthropic said so', remaining: 'x' })), {
+    error: 'upstream_error',
+  }, 'only the exact shapes are read');
+  assert.equal(readAskEvent(JSON.stringify({ done: true, usage: {}, remaining: 1, stop: 'refusal', refunded: true })).refunded, true);
+  assert.equal('refunded' in readAskEvent(JSON.stringify({ done: true, usage: {}, remaining: 1, stop: 'end_turn' })), false);
   assert.equal(readAskEvent('not json'), null);
   assert.equal(readAskEvent('{"something":"else"}'), null);
+});
+
+test('status lines: read only when they are the fixed table’s own words (C-G5)', () => {
+  assert.deepEqual(readAskEvent(JSON.stringify({ status: 'Checking your lift log…' })), { status: 'Checking your lift log…' });
+  // ⛔ Anything else is dropped — even a plausible phrase, and certainly a model's words.
+  assert.equal(readAskEvent(JSON.stringify({ status: 'Checking your bench log…' })), null);
+  assert.equal(readAskEvent(JSON.stringify({ status: 'Sure! Your squat is weak because' })), null);
+  assert.equal(readAskEvent(JSON.stringify({ status: 7 })), null);
+  // A keep-alive is a comment: it parses to no event at all.
+  assert.deepEqual(parseSse(ASK_KEEPALIVE, '').events, []);
+});
+
+test('askUserTurn: the server’s age rides in the user turn, and a minor gets the NUT-D5 line (P-G8)', () => {
+  const adult = askUserTurn('how heavy should I squat?', {}, '2026-11-17', { ageYears: 34, minor: false });
+  assert.ok(adult.includes("The athlete's age, from their profile: 34."));
+  assert.ok(!/under 18/.test(adult));
+  const teen = askUserTurn('how heavy should I squat?', {}, '2026-11-17', { ageYears: 16, minor: true });
+  assert.ok(teen.includes("The athlete's age, from their profile: 16."));
+  assert.ok(teen.includes('The athlete is under 18, so never a calorie or macro target'));
+  assert.ok(teen.endsWith('The athlete asks: "how heavy should I squat?"'));
+  // Unknown age: nothing said; nonsense: nothing said. Without `about` the turn is exactly as before.
+  assert.equal(askUserTurn('hi', {}, '2026-09-21', { ageYears: null, minor: false }), 'Today is 2026-09-21.\n\nThe athlete asks: "hi"');
+  assert.equal(askUserTurn('hi', {}, '2026-09-21', { ageYears: 400 }), 'Today is 2026-09-21.\n\nThe athlete asks: "hi"');
+  // ⛔ The CLIENT cannot claim an age: `cleanContext` has no field for it.
+  assert.ok(!askUserTurn('hi', cleanContext({ age: 40, ageYears: 40, minor: false }), '2026-09-21').includes('age'));
 });
 
 test('trimHistory: the last 8 turns, well-formed ones only (CA-D1)', () => {

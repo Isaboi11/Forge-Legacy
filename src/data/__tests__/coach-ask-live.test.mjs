@@ -9,15 +9,25 @@ import assert from 'node:assert/strict';
  * deployed function or a model.
  */
 
-/* `expo/fetch` → whatever the test installed as `globalThis.__askFetch`. */
+/* `expo/fetch` → whatever the test installed as `globalThis.__askFetch`. `@/lib/ai-telemetry` → a recorder, so each
+   test can read exactly what the ask reported (Sprint 1, PL-4) — and so the shared stubs need no `breadcrumb`. */
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === 'expo/fetch') {
       return { url: 'data:text/javascript,export const fetch = (...a) => globalThis.__askFetch(...a);', shortCircuit: true };
     }
+    if (specifier === '@/lib/ai-telemetry') {
+      return {
+        url:
+          'data:text/javascript,export const elapsedMs = (s) => Math.max(0, Date.now() - s); ' +
+          'export const reportAiFailure = (f) => void (globalThis.__aiReports ??= []).push(f);',
+        shortCircuit: true,
+      };
+    }
     return next(specifier, context);
   },
 });
+const reports = () => globalThis.__aiReports ?? [];
 
 const { supabase, db, ATHLETE } = await import('@/lib/supabase');
 const { CONSENT_POLICY_VERSION } = await import('@/domain/consent/consent');
@@ -63,6 +73,7 @@ const ask = (opts = {}, onText = () => {}) =>
   askHolt('how should I warm up for squats?', [], CONTEXT, onText, { firstByteMs: 5000, idleMs: 5000, ...opts });
 
 test.beforeEach(async () => {
+  globalThis.__aiReports = [];
   db.reset();
   db.rows('health_consents').push({ athlete_id: ATHLETE, kind: 'ai_sharing', action: 'granted', policy_version: CONSENT_POLICY_VERSION.ai_sharing, created_at: new Date().toISOString() });
   await refreshConsents();
@@ -170,4 +181,132 @@ test('the code guard and consent still come first — no request for a stopped l
   const r = await askHolt('I TORE MY ACL', [], CONTEXT, () => {});
   assert.equal(r.kind, 'medical');
   assert.equal(seen.calls, 0);
+  assert.deepEqual(reports(), [], 'a medical stop is not a failure');
+});
+
+// ── AI Road to 10 Sprint 1 — status lines, the wall, "Not charged", and every failure reported ───────────
+
+const ka = enc.encode(': ka\n\n');
+
+test('C-G5: status lines reach onStatus in order — only the fixed table’s; keep-alives are invisible', async () => {
+  streamWith([
+    ka,
+    line({ status: 'Checking your lift log…' }),
+    ka,
+    line({ status: 'Sure, your squat is weak because' }),
+    line({ status: 'Checking your records…' }),
+    line({ t: 'Up 20 lb.' }),
+    line({ done: true, usage: {}, remaining: 148, stop: 'end_turn' }),
+  ]);
+  const statuses = [];
+  const heard = [];
+  const r = await ask({ onStatus: (s) => statuses.push(s) }, (t) => heard.push(t));
+  assert.deepEqual(statuses, ['Checking your lift log…', 'Checking your records…'], 'the model’s words never become a status');
+  assert.deepEqual(heard, ['Up 20 lb.']);
+  assert.equal(r.kind, 'answer');
+  assert.equal(r.complete, true);
+  assert.deepEqual(reports(), [], 'a whole answer reports nothing');
+});
+
+test('the wall: keep-alives forever no longer hold an ask open — totalMs ends it as a timeout', async () => {
+  const seen = streamWith(Array.from({ length: 400 }, () => ka), { gap: 10 });
+  const t0 = Date.now();
+  const r = await ask({ firstByteMs: 5000, idleMs: 5000, totalMs: 150 });
+  assert.ok(Date.now() - t0 < 2000);
+  assert.deepEqual(r, { kind: 'offline', detail: 'timeout', timedOut: true, aborted: false });
+  assert.equal(seen.signal.aborted, true);
+  assert.equal(reports().length, 1);
+  assert.equal(reports()[0].kind, 'timeout');
+  assert.equal(reports()[0].reason, 'timeout');
+});
+
+test('P-D2: a refunded failure says refunded; the function’s own timeout reads as timed out — and both are reported', async () => {
+  streamWith([ka, line({ error: 'upstream_error', refunded: true, remaining: 149 })]);
+  const r = await ask();
+  assert.deepEqual(r, { kind: 'offline', detail: 'upstream_error', timedOut: false, aborted: false, refunded: true });
+  const [f] = reports();
+  assert.equal(f.fn, 'coach-ask');
+  assert.equal(f.kind, 'upstream');
+  assert.equal(f.reason, 'upstream_error');
+  assert.equal(f.status, 200);
+  assert.equal(f.refunded, true);
+  assert.ok(Number.isFinite(f.latencyMs) && f.latencyMs >= 0);
+
+  globalThis.__aiReports = [];
+  streamWith([line({ error: 'upstream_error', upstream: 'timeout', refunded: true })]);
+  const t = await ask();
+  assert.deepEqual(t, { kind: 'offline', detail: 'upstream_error', timedOut: true, aborted: false, refunded: true });
+  assert.equal(reports()[0].kind, 'timeout');
+});
+
+test('P-D2: words then a refunded failure keep the words, marked refunded; a refused or cut reply carries it too', async () => {
+  streamWith([line({ t: 'Squat first, ' }), line({ error: 'upstream_dropped', refunded: true })]);
+  const partial = await ask();
+  assert.equal(partial.kind, 'answer');
+  assert.equal(partial.complete, false);
+  assert.equal(partial.refunded, true);
+  assert.equal(reports()[0].kind, 'upstream');
+  assert.equal(reports()[0].reason, 'upstream_dropped');
+
+  globalThis.__aiReports = [];
+  streamWith([line({ done: true, usage: {}, remaining: 150, stop: 'refusal', refunded: true })]);
+  assert.deepEqual(await ask(), { kind: 'refused', refunded: true });
+  assert.deepEqual([reports()[0].kind, reports()[0].reason, reports()[0].refunded], ['unreadable', 'refusal', true]);
+
+  globalThis.__aiReports = [];
+  streamWith([line({ t: 'Week one builds ' }), line({ done: true, usage: {}, remaining: 150, stop: 'max_tokens', refunded: true })]);
+  const cut = await ask();
+  assert.equal(cut.cut, true);
+  assert.equal(cut.refunded, true);
+  assert.deepEqual([reports()[0].kind, reports()[0].reason], ['unreadable', 'truncated']);
+});
+
+test('⛔ P-D8: an older function’s upstream words never reach the result or the report', async () => {
+  streamWith([line({ error: 'upstream_error', detail: '400 invalid_request_error: Your credit balance is too low' })]);
+  const r = await ask();
+  assert.equal(r.detail, 'upstream_error');
+  assert.ok(!JSON.stringify(r).includes('credit balance'));
+  assert.ok(!JSON.stringify(reports()).includes('credit balance'));
+});
+
+test('every other ending is reported once, with our reason — never the platform’s message', async () => {
+  globalThis.__askFetch = async () => {
+    throw new Error('Network request failed: https://xyz.supabase.co/functions/v1/coach-ask');
+  };
+  await ask();
+  assert.deepEqual([reports()[0].kind, reports()[0].reason, reports()[0].status], ['offline', 'fetch_failed', null]);
+  assert.ok(!JSON.stringify(reports()).includes('supabase.co'));
+
+  // The server's consent check (P-G9): an outage card here, reported as the bug it is.
+  globalThis.__aiReports = [];
+  globalThis.__askFetch = async () => new Response(JSON.stringify({ route: 'error', reason: 'no_consent' }), { status: 403, headers: { 'content-type': 'application/json' } });
+  assert.deepEqual(await ask(), { kind: 'offline', detail: 'no_consent', timedOut: false, aborted: false });
+  assert.deepEqual([reports()[0].kind, reports()[0].status], ['no_consent', 403]);
+
+  // The meter down, and out of credits (a breadcrumb, not an error — `reportAiFailure` decides).
+  globalThis.__aiReports = [];
+  globalThis.__askFetch = async () => new Response(JSON.stringify({ route: 'error', reason: 'meter_unavailable' }), { status: 503, headers: { 'content-type': 'application/json' } });
+  await ask();
+  assert.equal(reports()[0].kind, 'meter');
+  globalThis.__aiReports = [];
+  globalThis.__askFetch = async () => new Response(JSON.stringify({ route: 'out_of_credits', remaining: 0, allowance: 150 }), { headers: { 'content-type': 'application/json' } });
+  await ask();
+  assert.equal(reports()[0].kind, 'out_of_credits');
+
+  // The sheet closing: reported as the athlete's own cancel.
+  globalThis.__aiReports = [];
+  streamWith([line({ t: 'Your ' })], { hang: true });
+  const sheet = new AbortController();
+  const p = askHolt('q?', [], CONTEXT, () => {}, { firstByteMs: 2000, idleMs: 2000, signal: sheet.signal });
+  setTimeout(() => sheet.abort(), 30);
+  await p;
+  assert.equal(reports().length, 1);
+  assert.equal(reports()[0].kind, 'cancelled');
+});
+
+test('the athlete’s "Not now" and a medical stop are not failures — nothing reported', async () => {
+  const seen = streamWith([]);
+  await askHolt('I want to hurt myself', [], CONTEXT, () => {});
+  assert.equal(seen.calls, 0);
+  assert.deepEqual(reports(), []);
 });

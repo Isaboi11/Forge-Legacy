@@ -12,13 +12,17 @@ import {
 import {
   ASK_FIRST_BYTE_MS,
   ASK_IDLE_MS,
+  ASK_TOTAL_MS,
   ASK_WEB_FIRST_BYTE_MS,
+  ASK_WEB_TOTAL_MS,
   askClock,
+  askFailureReport,
   readAskStream,
   settleAskRead,
   type AskRead,
   type AskSettled,
 } from '@/domain/coach/ask-stream';
+import { elapsedMs, reportAiFailure } from '@/lib/ai-telemetry';
 import type { AskSources } from '@/domain/coach/ask-context';
 import type { RecipeCard } from '@/domain/coach/ask-tools';
 import { catalogForMatching } from '@/domain/exercise-picker/data';
@@ -44,6 +48,12 @@ export type { AskContext, AskTurn } from '@/domain/coach/ask-wire';
  *
  * Same rule as `coach-interpret-live.ts` (Brief §6): every failure resolves `offline`, never a coaching
  * answer, so the caller can say "the app failed" rather than making Holt look arbitrary.
+ *
+ * ══ AND EVERY FAILURE IS SEEN (AI Road to 10 Sprint 1, PL-4 / audit C-G7) ══
+ *
+ * Each ask that does not end in a whole answer is reported once, through `reportAiFailure` (`client_errors` +
+ * Sentry): the kind, our reason code, the HTTP status, the latency from the request going out, and whether the
+ * function gave the credit back (`askFailureReport` in `domain/coach/ask-stream.ts` decides what counts).
  */
 
 /** Something Holt asked the app to do, still in the model's words — the sheet narrows and confirms it. */
@@ -78,9 +88,15 @@ const offline = (detail: string): AskResult => ({ kind: 'offline', detail, timed
 export interface AskOptions {
   /** Abort when the athlete closes the sheet; the promise then resolves `offline` with `aborted`. */
   signal?: AbortSignal;
+  /**
+   * Each status line while he looks something up ("Checking your lift log…" — `ASK_STATUS_PHRASES`, never the
+   * model's words), for the waiting bubble. Only before the first word matters; the sheet ignores the rest.
+   */
+  onStatus?: (status: string) => void;
   /** Override the clock (`ask-stream.ts`) — for a test, never the sheet. */
   firstByteMs?: number;
   idleMs?: number;
+  totalMs?: number;
   /** One of the function's ALLOWED_MODELS, for the routing benchmark (CA-D7). */
   model?: string;
   /** The athlete TAPPED "Find one online" — only then does the function carry web search (and meter 'web'). */
@@ -92,9 +108,15 @@ export interface AskOptions {
 const FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/coach-ask`;
 const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-/** A JSON reply from the function — the guard, the meter, or an error before any streaming began. */
+/**
+ * A JSON reply from the function — the guard, the meter, or an error before any streaming began.
+ *
+ * `{ route: 'error', reason: 'no_consent' }` (Sprint 1, P-G9) is the SERVER saying it holds no AI-sharing yes
+ * for this account although the phone thought it had one (an answer it could not store is kept for the session
+ * only — `consent/gate.ts`). Nothing was sent to the model; it is an outage card here, and reported as a bug.
+ */
 function fromRoute(data: unknown): AskResult {
-  const d = (data ?? {}) as { route?: string; remaining?: number; allowance?: number; reason?: string; detail?: string };
+  const d = (data ?? {}) as { route?: string; remaining?: number; allowance?: number; reason?: string };
   switch (d.route) {
     case 'crisis':
     case 'urgent':
@@ -105,7 +127,7 @@ function fromRoute(data: unknown): AskResult {
     case 'out_of_credits':
       return { kind: 'out_of_credits', remaining: d.remaining ?? 0, allowance: d.allowance ?? 0 };
     default:
-      return offline(d.reason ?? d.detail ?? 'unknown_route');
+      return offline(typeof d.reason === 'string' ? d.reason.slice(0, 40) : 'unknown_route');
   }
 }
 
@@ -138,14 +160,34 @@ export async function askHolt(
   /*
    * ⚠ THE CLOCK STARTS HERE, AFTER CONSENT (AI audit C-D2). The consent sheet waits on a person; everything
    * from now on waits on the network, and is bounded — the first byte, then the gaps between events, then
-   * the sheet closing (`options.signal`). Every await below is raced against it.
+   * the wall (Sprint 1 — `coach-ask` keeps the line alive, so only the wall ends a turn that never finishes),
+   * then the sheet closing (`options.signal`). Every await below is raced against it.
    */
+  const startedAt = Date.now();
   const clock = askClock({
     firstByteMs: options.firstByteMs ?? (options.allowWeb ? ASK_WEB_FIRST_BYTE_MS : ASK_FIRST_BYTE_MS),
     idleMs: options.idleMs ?? ASK_IDLE_MS,
+    totalMs: options.totalMs ?? (options.allowWeb ? ASK_WEB_TOTAL_MS : ASK_TOTAL_MS),
     signal: options.signal,
   });
-  let read: AskRead | null = null;
+  const seen: { read: AskRead | null; status: number | null } = { read: null, status: null };
+  const result = await askOnce(q, history, context, onText, options, clock, seen);
+  /* One report per failed ask (PL-4). Never throws; the athlete's own state is only a breadcrumb. */
+  const failure = askFailureReport({ result, read: seen.read, early: clock.why(), status: seen.status, latencyMs: elapsedMs(startedAt) });
+  if (failure) reportAiFailure(failure);
+  return result;
+}
+
+/** The request and the read, against the clock. `seen` keeps what the report needs: the read and the HTTP status. */
+async function askOnce(
+  q: string,
+  history: readonly AskTurn[],
+  context: AskContext,
+  onText: (text: string) => void,
+  options: AskOptions,
+  clock: ReturnType<typeof askClock>,
+  seen: { read: AskRead | null; status: number | null },
+): Promise<AskResult> {
   try {
     const { data: auth } = await clock.race(supabase.auth.getSession());
     const jwt = auth.session?.access_token;
@@ -171,6 +213,7 @@ export async function askHolt(
       }),
       signal: clock.signal,
     }));
+    seen.status = res.status;
 
     const type = res.headers.get('content-type') ?? '';
     if (!type.includes('text/event-stream')) {
@@ -182,11 +225,11 @@ export async function askHolt(
     if (!res.body) return offline('no_body');
 
     // The words, the actions and how it ended — read against the clock (`domain/coach/ask-stream.ts`).
-    read = await readAskStream(res.body.getReader(), onText, clock);
-    return settleAskRead(read, clock.why());
+    seen.read = await readAskStream(res.body.getReader(), onText, clock, options.onStatus);
+    return settleAskRead(seen.read, clock.why());
   } catch (e) {
     // Before the stream (the session, the request itself): nothing was said yet.
-    return settleAskRead(read ?? brokeRead(String((e as Error)?.message ?? e)), clock.why());
+    return settleAskRead(seen.read ?? brokeRead(String((e as Error)?.message ?? e)), clock.why());
   } finally {
     clock.done();
   }
@@ -201,6 +244,9 @@ const brokeRead = (why: string): AskRead => ({
   failure: null,
   actions: [],
   broke: why.slice(0, 200),
+  refunded: false,
+  upstream: null,
+  status: null,
 });
 
 /**

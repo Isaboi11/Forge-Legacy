@@ -69,9 +69,10 @@ test('an action with no words is still an answer — the card is the reply', asy
 });
 
 test('the function’s error line: words keep as a cut-off answer, none is an outage with the reason', async () => {
+  // ⛔ P-D8: an older function's `detail` (Anthropic's own words) never reaches the result — the code alone does.
   assert.deepEqual(await settle([line({ error: 'upstream_error', detail: '529 overloaded' })]), {
     kind: 'offline',
-    detail: 'upstream_error: 529 overloaded',
+    detail: 'upstream_error',
     timedOut: false,
     aborted: false,
   });
