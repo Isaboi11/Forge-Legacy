@@ -485,8 +485,9 @@ function SquadDetailRoute() {
    * used to sit ABOVE the owner's announcement. The summary is temporary and the announcement is not, so they
    * no longer share a place or a look.
    *
-   * The most recently pinned announcement (`fetchOwnerPinnedPosts` orders by pin time). `pinAsAnnouncement`
-   * keeps it to one, and an older announcement pinned by hand from the post menu stays in the strip.
+   * The most recently pinned announcement (`fetchOwnerPinnedPosts` orders by pin time). It is here only because
+   * the owner pinned it: posting an announcement never pins it (PO 11-16, SQ-A7-D9). A second pinned
+   * announcement stays in the strip.
    */
   const announcement = pinnedPosts.find((p) => p.type === 'announcement') ?? null;
   const stripPosts = announcement ? pinnedPosts.filter((p) => p.id !== announcement.id) : pinnedPosts;

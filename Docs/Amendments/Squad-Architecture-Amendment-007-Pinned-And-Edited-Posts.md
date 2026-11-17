@@ -1,6 +1,6 @@
 # Squad Architecture — Amendment 007: Pinned and Edited Posts
 
-**Status:** Accepted — PO, 2026-09-28
+**Status:** Accepted — PO, 2026-09-28 · D9 added 2026-11-16
 **Amends:** `Social-System-Architecture-v1.0.md` SOC-D10 (reverse-chronological feed) *for squads*; SOC-D7 (posts are permanent, archivable, deletable) — adds *editable by the author*.
 **Implements:** migration `0230_squad_post_pin_edit.sql` · `src/data/squad-feed-live.ts` (pin/edit calls) · `src/app/squad/[id].tsx` (pinned section) · `src/app/squad-post/[id].tsx` (menu) · `src/app/workout-write.tsx` (edit a posted workout)
 
@@ -25,3 +25,5 @@ PO, 2026-09-28, during Squatober: *"we need to be able to pin posts to the top o
 **SQ-A7-D7 — A posted workout is edited as words, in the box it was written in**, and only when those words read back to the *identical* workout (`roundTrips`, tested on every Squatober card). A workout posted from a saved template may hold something the words cannot express. Such a post is not reopened as words (its caption can still be edited), so opening and saving it can never quietly change it.
 
 **SQ-A7-D8 — A discussion or announcement cannot be edited down to nothing.** An empty note is a delete, and delete has its own door, with its own confirmation.
+
+**SQ-A7-D9 — Only the owner's own pin puts a post on top. Posting an announcement never pins it** (PO, 2026-11-16). *"Only if I pin should it be at the top like that."* A pinned announcement is drawn under the squad header (11-12); one that is not pinned sits in the feed by its date like any other post. Posting an announcement never pins it and never unpins another post. From 11-12 to 11-16 the composer pinned each new announcement and quietly unpinned the previous one. In Til' Valhalla the owner then took the new one down, and the Welcome announcement they had pinned looked deleted. It was still in the feed, five days down (re-pinned by hand 11-16). The composer no longer promises a pin ("Pins to the top" is gone) and says how to pin instead.

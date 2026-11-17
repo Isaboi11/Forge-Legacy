@@ -421,7 +421,7 @@ export const SQUAD_POST_TYPES: SquadPostTypeDef[] = [
   { id: 'transformation', label: 'Transformation', ownerOnly: false, blurb: 'Compare two of your progress captures.' },
   { id: 'workout', label: 'Workout', ownerOnly: false, blurb: 'Post a session for the squad to run.' },
   { id: 'discussion', label: 'Discussion', ownerOnly: false, blurb: 'A short note to the squad.' },
-  { id: 'announcement', label: 'Squad Announcement', ownerOnly: true, blurb: 'Owner note pinned for the squad.' },
+  { id: 'announcement', label: 'Squad Announcement', ownerOnly: true, blurb: 'Owner note to the whole squad.' },
 ];
 
 /**
@@ -1072,51 +1072,12 @@ export async function pinSquadPost(postId: string, pin: boolean): Promise<boolea
   return data === true;
 }
 
-/**
- * Put a just-posted announcement at the top of the squad, under its header (PO 2026-11-12).
- *
- * ══ THE COMPOSER PROMISED THIS AND NOTHING DID IT ══
- *
- * The announcement composer says "Pins to the top of the squad feed" and "every member sees it at the top of
- * the feed". No code pinned it, so an announcement landed in the feed under check-ins, the goal, the
- * competition and the Hall of Champions, and the next post pushed it down. It is now pinned with the owner's
- * own 0230 pin, which is why the squad page can lift it out of the feed and draw it under the header.
- *
- * ONE ANNOUNCEMENT AT A TIME. Any announcement already pinned is unpinned FIRST, which also frees its slot
- * against 0230's three-pin cap, so a new one replaces the last instead of stacking up.
- *
- * Never throws: the post already exists, and failing to pin must not read as failing to post.
- *   'pinned' · it is on top
- *   'full'   · three other posts are pinned (0230 refused). The owner unpins one.
- *   'failed' · anything else, including a database without 0230
+/*
+ * ⛔ POSTING AN ANNOUNCEMENT NEVER PINS IT (PO 2026-11-16, SQ-A7-D9). Only the owner's own "Pin to the top"
+ * puts a post on top. From 11-12 to 11-16 `pinAsAnnouncement` pinned every new announcement and quietly
+ * unpinned the one before it. In Til' Valhalla the owner then took the new one down, and the Welcome post they
+ * had pinned looked deleted: it was in the feed, five days down. Do not bring an auto-pin back.
  */
-export async function pinAsAnnouncement(squadId: string, postId: string): Promise<'pinned' | 'full' | 'failed'> {
-  if (pinEdit0230 === false) return 'failed';
-  const { data, error } = await supabase
-    .from('squad_posts')
-    .select('id')
-    .eq('squad_id', squadId)
-    .eq('type', 'announcement')
-    .not('pinned_at', 'is', null)
-    .neq('id', postId);
-  if (error) {
-    if (isMissing(error)) pinEdit0230 = false;
-    return 'failed';
-  }
-  for (const r of (data ?? []) as { id: string }[]) {
-    try {
-      await pinSquadPost(r.id, false);
-    } catch {
-      // Left pinned. The new one still goes on top, because the page draws the most recently pinned.
-    }
-  }
-  try {
-    await pinSquadPost(postId, true);
-    return 'pinned';
-  } catch (e) {
-    return /up to 3/i.test(e instanceof Error ? e.message : '') ? 'full' : 'failed';
-  }
-}
 
 /**
  * Edit a post the athlete wrote: its words, and — on a posted workout — the workout (`layout`; null leaves it). A copy

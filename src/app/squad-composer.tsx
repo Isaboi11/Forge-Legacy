@@ -13,7 +13,6 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import {
   addSquadPost,
   buildWorkoutRecap,
-  pinAsAnnouncement,
   fetchRecentPRs,
   fetchRecentWorkouts,
   fmtDuration,
@@ -467,20 +466,12 @@ export default function SquadComposerRoute() {
         workoutId: recap?.workoutId ?? null,
         workoutSummary: recap?.summary ?? null,
         layout,
-      }).then(async (postId) => {
+      }).then((postId) => {
         // After the save, never instead of it: a tag that fails costs nothing but the notice.
         void tagMentions(postId, null, mentions.taggedIds());
-        if (type !== 'announcement') return done();
-        /* The promise this screen makes ("Pins to the top"), now kept. See `pinAsAnnouncement`. A failed pin
-           still reports the post: it went out, it just is not on top. */
-        const pin = await pinAsAnnouncement(squadId, postId);
-        done(
-          pin === 'pinned'
-            ? 'Announcement posted to the top of your squad'
-            : pin === 'full'
-              ? 'Posted. You already have 3 pinned posts, so unpin one to put this on top.'
-              : 'Posted, but it couldn’t be pinned to the top.',
-        );
+        /* ⛔ An announcement is NOT pinned here (PO 11-16, SQ-A7-D9). Only the owner's "Pin to the top" puts it
+           there, and posting one never takes another down. */
+        done(type === 'announcement' ? 'Announcement posted' : undefined);
       }, failed);
       return;
     }
@@ -612,7 +603,7 @@ export default function SquadComposerRoute() {
 
               ⚠ AND NOT ON FRIENDS & SQUAD EITHER (PO 11-12). BOTH is written by `createFriendPost`, whose map
               has no announcement (`friendsTypeFor` → 'discussion'), so it went out as a plain discussion: no
-              Announcement mark, never pinned, never on top. The same trap H7 closed for the grid above. */}
+              Announcement mark, and it could never be pinned as one. The same trap H7 closed for the grid above. */}
           {audience !== 'SQUAD' ? null : (
             <>
               <Text style={[styles.groupLabel, styles.groupLabelGap]}>Owner only</Text>
@@ -865,11 +856,11 @@ export default function SquadComposerRoute() {
           </>
         ) : (
           <>
-            <Area label="Announcement" {...bodyField} placeholder="Pins to the top of your squad…" rows={4} />
+            <Area label="Announcement" {...bodyField} placeholder="Tell your whole squad…" rows={4} />
             <MediaAttach media={media} display={display} onDisplay={setDisplay} uploading={uploading} pct={mediaPct} onPick={() => pickMedia(false)} onRemove={(i) => setMedia((cur) => cur.filter((_, j) => j !== i))} />
             <View style={styles.gateNote}>
               <ShieldIcon />
-              <Text style={styles.gateNoteText}>You’re posting a squad announcement as the owner. It stays at the top of the squad until you take it down or post a new one.</Text>
+              <Text style={styles.gateNoteText}>You’re posting a squad announcement as the owner. To keep it at the top, open it and choose Pin to the top of the squad.</Text>
             </View>
           </>
         )}
