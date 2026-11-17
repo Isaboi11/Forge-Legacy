@@ -202,7 +202,8 @@ test('the thresholds are one set of numbers: 0269’s column defaults == the pag
 
 test('the vote table: one per athlete per output, the feature list is the app’s, refs bounded', () => {
   const list = MIGRATION.match(/check \(feature in \(([^)]*)\)\)/)[1].split(',').map((s) => s.trim().replace(/'/g, ''));
-  assert.deepEqual(list, [...AI_FEEDBACK_FEATURES]);
+  // 0272 adds `workout_tidy` (its own test, migration-0272, holds the full list against the app's).
+  assert.deepEqual(list, AI_FEEDBACK_FEATURES.filter((f) => f !== 'workout_tidy'));
   assert.match(MIGRATION, /constraint ai_feedback_one_vote unique \(athlete_id, feature, ref\)/);
   assert.match(MIGRATION, /athlete_id  uuid not null default auth\.uid\(\) references public\.profiles \(id\) on delete cascade/);
   assert.match(MIGRATION, /check \(rating in \(-1, 1\)\)/);
