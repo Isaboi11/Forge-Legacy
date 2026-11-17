@@ -48,18 +48,24 @@ test('B-D4 — a day pays once it EXISTS: never before the build, never for one 
 
 test('G4 — an unreadable spend answer stops a capped athlete with a retry, in the chat and in the wizard', () => {
   const pay = chat.slice(chat.indexOf('const payHolt = useCallback('), chat.indexOf('const payHolt = useCallback(') + 900);
-  assert.match(pay, /const verdict = holtSpendVerdict\(spend, gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;/);
-  assert.match(pay, /if \(verdict === 'retry'\) \{\n\s+say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return false;/);
+  assert.match(pay, /const verdict = holtSpendVerdict\(spend, gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;\n\s+sayHoltRefused\(kind, verdict, offerWeek\);\n\s+return false;/);
+  assert.match(fn('const sayHoltRefused = '), /if \(verdict === 'retry'\) \{\n\s+say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return;/);
   assert.doesNotMatch(pay, /if \(!spend \|\| spend\.allowed\) return true;/, 'a null building anyway was the bug');
+  // A block's keep (0270) reads its answer through the same rule, and says the same lines.
+  const keep = fn('const keepAsProgram = ');
+  assert.match(keep, /const verdict = holtKeepVerdict\(keep, gates\('holt_programs'\)\);/);
+  assert.match(keep, /sayHoltRefused\('program', verdict === 'used_up' \? 'used_up' : 'retry', offerWeek\);\n\s+return null;/);
   const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
   assert.match(build, /if \(verdict === 'retry'\) setError\(ENTITLEMENT_RETRY_MESSAGE\);/);
   assert.doesNotMatch(build, /if \(!spend \|\| spend\.allowed\) return true;/);
 });
 
 test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more, in the chat and in the wizard', () => {
-  assert.match(fn('const payToKeep = '), /if \(built\?\.kind !== 'program' \|\| !earnsStructuredDevelopmentCredit\(built\.structure\)\) return Promise\.resolve\(true\);/);
+  // Only four weeks or more is KEPT as the Holt program; shorter is written as before and spends short_programs.
+  assert.match(fn('const keepInBuilder = '), /if \(!earnsStructuredDevelopmentCredit\(built\.structure\)\) \{\n\s+const draft = draftFromStructure\(built\.structure\);/);
+  assert.match(fn('const reallyStart = '), /const id = earnsStructuredDevelopmentCredit\(built\.structure\) \? await keepAsProgram\(\) : \(await createProgram\(built\.structure\)\)\.id;/);
   assert.doesNotMatch(chat, /consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\)/, 'every non-day build spending the program was the bug');
-  assert.match(wizard, /if \(earnsStructuredDevelopmentCredit\(structure\) && !\(await keepLedger\(structure, \(\) => pay\('program'\)\)\)\) \{/);
+  assert.match(wizard, /if \(!earnsStructuredDevelopmentCredit\(structure\)\) \{\n\s+await saveProgramDraft\(draftFromStructure\(structure\)\);\n\s+router\.replace\('\/program-builder'\);\n\s+return;/);
   // The three block doors ask by length, never the Holt program outright.
   assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 3, 'its three doors');
   assert.doesNotMatch(chat, /guard\('holt_programs'\)/);
@@ -69,27 +75,40 @@ test('B-D1 — a Holt block is paid for when it is KEPT, before anything is writ
   // Building spends nothing — so "Ask me again", which only builds again, spends nothing either.
   assert.doesNotMatch(advance, /payHolt\('program'/, 'a build that spends the program is how a rebuild burned it');
   assert.doesNotMatch(advance, /payForBlock/);
-  assert.doesNotMatch(fn('const rebuild = '), /payHolt|payToKeep|consumeHoltAllowance/);
+  assert.doesNotMatch(fn('const rebuild = '), /payHolt|keepAsProgram|keepHoltProgram|consumeHoltAllowance/);
   // At the build, the Builder draft is written only when keeping it owes nothing more (else it was a free copy).
   assert.equal(advance.match(/saveProgramDraft\(/g)?.length, 2);
   assert.equal(advance.match(/if \(draftNow\(structure\)\)/g)?.length, 2, 'both build paths stage the draft through draftNow');
   assert.match(advance, /const draftNow = \(structure: ProgramStructure\): boolean =>\n\s+!earnsStructuredDevelopmentCredit\(structure\) \|\| holtUncapped\(gates\('holt_programs'\)\);/);
-  // Every keep pays first, through the ledger, so the same build never pays twice.
-  assert.match(fn('const payToKeep = '), /return keepLedger\(built\.structure, \(\) => payHolt\('program', offerWeek\)\);/);
+  // 0270: every keep of a 4+-week block is ONE server step — the spend and the row together — through the ledger,
+  // so the same build is kept once, as one program.
+  const keep = fn('const keepAsProgram = ');
+  assert.match(keep, /return keepOnce\(structure, async \(\) => \{\n\s+const keep = await keepHoltProgram\(structure\);/);
+  assert.match(keep, /if \(keep\.kind === 'kept'\) return keep\.programId;/);
+  assert.doesNotMatch(keep, /consumeHoltAllowance|payHolt/, 'never a separate spend before the write');
   const start = fn('const reallyStart = ');
-  assert.ok(start.indexOf('if (!(await payToKeep())) return;') > 0, 'Start pays');
-  assert.ok(start.indexOf('if (!(await payToKeep())) return;') < start.indexOf('await createProgram(built.structure)'), 'Start pays BEFORE the row exists');
+  assert.ok(start.indexOf('await keepAsProgram()') > 0, 'Start keeps');
+  assert.ok(start.indexOf('if (!id) return;') < start.indexOf('await startProgram(id)'), 'and starts only what was kept');
+  assert.doesNotMatch(start, /payToKeep/);
   const builder = fn('const keepInBuilder = ');
-  assert.ok(builder.indexOf('if (!(await payToKeep())) return;') > 0, 'Save to the Builder pays');
-  assert.ok(builder.indexOf('if (!(await payToKeep())) return;') < builder.indexOf('await saveProgramDraft(draft)'), 'and before the draft is written');
-  assert.match(fn('const saveForLater = '), /if \(built\.kind === 'program'\) \{\n\s+await keepInBuilder\(\);/);
+  assert.ok(builder.indexOf('const kept = await keepAsProgram();') > 0, 'Save to the Builder keeps');
+  assert.ok(builder.indexOf('if (!kept) return;') < builder.indexOf("mode: 'edit' as const, editId: kept, srcId: kept"), 'and opens the Builder ON the kept program');
+  assert.match(builder, /openBuilder\(kept\);/);
+  assert.match(fn('const openBuilder = '), /router\.push\(\{ pathname: '\/program-builder', params: \{ o: 'edit', id: kept \} \}\);/);
+  const later = fn('const saveForLater = ');
+  assert.match(later, /if \(built\.kind === 'program' && earnsStructuredDevelopmentCredit\(built\.structure\) && !guard\('programs'\)\) return;/, 'a kept block is a row: the slot is asked first');
+  assert.match(later, /if \(built\.kind === 'program'\) \{\n\s+await keepInBuilder\(\);/);
   // The preview's "Final touches" is the same keep, not a second door straight into the Builder.
   assert.match(chat, /if \(built\?\.kind === 'program'\) \{\n\s+saveForLater\(\);\n\s+return;\n\s+\}\n\s+handOff\(\);\n\s+router\.push\(built\?\.kind === 'day' \? '\/workout-builder' : '\/program-builder'\);/);
-  // The wizard: back-and-build costs nothing; Final touches pays, then writes the draft.
+  // The wizard: back-and-build costs nothing; Final touches keeps (one step), then opens the Builder on the program.
   const wbuild = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('const onApply = async'));
-  assert.doesNotMatch(wbuild.replace(/apply: async \(\) => \{[\s\S]*?\n {10}\},/g, ''), /pay\('program'\)/, 'only `apply` pays for a block');
+  assert.doesNotMatch(wbuild.replace(/apply: async \(\) => \{[\s\S]*?\n {10}\},/g, ''), /keepHoltProgram|pay\('program'\)/, 'only `apply` keeps a block');
+  assert.doesNotMatch(wbuild, /pay\('program'\)/, 'never a separate spend for a block');
   const apply = wbuild.slice(wbuild.indexOf("kind: 'program',"));
-  assert.ok(apply.indexOf("keepLedger(structure, () => pay('program'))") < apply.indexOf('await saveProgramDraft('));
+  assert.ok(apply.indexOf("if (!guard('programs')) {") < apply.indexOf('await keepOnce(structure'), 'the slot is asked first');
+  assert.ok(apply.indexOf('const keep = await keepHoltProgram(structure);') > 0);
+  assert.ok(apply.indexOf('if (!kept) {') < apply.indexOf("await saveProgramDraft({ ...draftFromStructure(structure), mode: 'edit', editId: kept, srcId: kept });"));
+  assert.match(apply, /router\.replace\(\{ pathname: '\/program-builder', params: \{ o: 'edit', id: kept \} \}\);/);
 });
 
 test('H19 — every chat door to an edit lands in beginEdit, and beginEdit asks Premium AI first', () => {

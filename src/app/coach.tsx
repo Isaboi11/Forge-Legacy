@@ -49,13 +49,13 @@ import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
 import { appliedSentence, type LearnedPreferences } from '@/domain/coach/learned-preference';
 import { earnsStructuredDevelopmentCredit, scheduleSlots } from '@/domain/program/progress-core';
-import type { ProgramStructure } from '@/data/programs-live';
+import { createProgram, keepHoltProgram, type ProgramStructure } from '@/data/programs-live';
 import { canDoExercise, HOME_GYM_EQUIPMENT, HOME_GYM_GROUPS } from '@/domain/home-gym/equipment';
 import { itemByKey, PICKER_DB } from '@/domain/exercise-picker/data';
 import { draftFromStructure, saveProgramDraft } from '@/lib/program-draft';
 import { saveWorkoutDraft } from '@/lib/workout-builder-draft';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
-import { holtKeepLedger, holtSpendVerdict } from '@/domain/entitlement/caps-core';
+import { holtKeepOnce, holtKeepVerdict, holtSpendVerdict } from '@/domain/entitlement/caps-core';
 import { ENTITLEMENT_RETRY_MESSAGE, useCapGates } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
 import { rememberExperience } from '@/lib/coach-memory';
@@ -204,8 +204,8 @@ export default function CoachScreen() {
   const [goal, setGoal] = useState<Goal | null>(null);
   const [daysPerWeek, setDaysPerWeek] = useState<number | null>(null);
   const [style, setStyle] = useState<SplitStyle | null>(null);
-  /** Which builds have been paid for at their keep — once each (B-D1). */
-  const [keepLedger] = useState(() => holtKeepLedger());
+  /** Which builds have been kept, and as which program — once each (B-D1, 0270). */
+  const [keepOnce] = useState(() => holtKeepOnce<string>());
   const [focusKind, setFocusKind] = useState<'split' | 'body_parts' | null>(null);
   const [split, setSplit] = useState<SplitName | null>(null);
   const [parts, setParts] = useState<BodyPart[]>([]);
@@ -332,12 +332,15 @@ export default function CoachScreen() {
        `CoachChatSheet`. A null is unreadable and fails closed for anyone with a ceiling — a retry, never an offer
        (sweep G4, `holtSpendVerdict`). A day pays here; a block pays when it is KEPT (`apply`, B-D1), and only at four
        weeks or more, because under four weeks it is a week, not the Holt program (MA4-D5). */
+    const refused = (kind: 'day' | 'program', verdict: 'used_up' | 'retry') => {
+      if (verdict === 'retry') setError(ENTITLEMENT_RETRY_MESSAGE);
+      else setError(kind === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
+    };
     const pay = async (kind: 'day' | 'program'): Promise<boolean> => {
       const spend = await consumeHoltAllowance(kind);
       const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
       if (verdict === 'build') return true;
-      if (verdict === 'retry') setError(ENTITLEMENT_RETRY_MESSAGE);
-      else setError(kind === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
+      refused(kind, verdict);
       return false;
     };
     /* QA holt-31: a level answered here is THE level — the chat reads the same one and never asks again. */
@@ -420,14 +423,36 @@ export default function CoachScreen() {
             ...limitationsLeftOut(limitations),
           ],
           apply: async () => {
-            /* Paid for when it is KEPT, once (AI audit 11-16, B-D1) — going back and building again costs nothing.
-               Four weeks or more is the Holt program; shorter spends `short_programs` where it is saved (MA4-D5). */
-            if (earnsStructuredDevelopmentCredit(structure) && !(await keepLedger(structure, () => pay('program')))) {
+            /* Shorter than four weeks is a training week, not the Holt program: the Builder's draft, as before — its save
+               spends `short_programs` (MA4-D5). */
+            if (!earnsStructuredDevelopmentCredit(structure)) {
+              await saveProgramDraft(draftFromStructure(structure));
+              router.replace('/program-builder');
+              return;
+            }
+            /* KEPT, once (AI audit 11-16, B-D1) — going back and building again costs nothing. Charged and SAVED in one
+               server step (0270 `keep_holt_program`), so neither happens without the other; the Builder then opens ON
+               the kept program (edit mode), so its Save writes back over it instead of making a second one. The row
+               takes a programs slot, so the slot is asked first, as every other door that creates a program does. */
+            if (!guard('programs')) {
               setBusy(false);
               return;
             }
-            await saveProgramDraft(draftFromStructure(structure));
-            router.replace('/program-builder');
+            const kept = await keepOnce(structure, async () => {
+              const keep = await keepHoltProgram(structure);
+              const verdict = holtKeepVerdict(keep, gates('holt_programs'));
+              if (keep.kind === 'kept') return keep.programId;
+              /* No ceiling, and the answer was unreadable: there was never anything to spend. */
+              if (verdict === 'write') return (await createProgram(structure)).id;
+              refused('program', verdict === 'used_up' ? 'used_up' : 'retry');
+              return null;
+            });
+            if (!kept) {
+              setBusy(false);
+              return;
+            }
+            await saveProgramDraft({ ...draftFromStructure(structure), mode: 'edit', editId: kept, srcId: kept });
+            router.replace({ pathname: '/program-builder', params: { o: 'edit', id: kept } });
           },
         });
       } else {
