@@ -62,6 +62,8 @@ import {
   type FormQuote,
 } from '@/data/form-check-live';
 import { formLiftKey, insertFormCheck, lastSavedForm, saveFormCheck, setFormUseful, shortDate } from '@/data/form-history-live';
+import { rateAiOutput } from '@/data/ai-feedback-live';
+import { uuid } from '@/lib/app-session';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { setCoachAskSeed } from '@/lib/coach-ask-seed';
@@ -172,6 +174,9 @@ type ReadState = {
   uris: string[];
   times: number[];
   id: string | null;
+  /** This read's id for the Useful vote in `ai_feedback` (0269): the `form_checks` row id, or — when that insert
+      failed — one made once here, never per render. */
+  ref: string;
   at: string;
 };
 
@@ -300,7 +305,7 @@ export default function FormCheckScreen() {
         if (cancelRef.current) return;
         setStage({
           step: 'read',
-          r: { read: res.read, lift: chosen, uris: got.uris, times: got.times, id, at: shortDate(new Date().toISOString()) },
+          r: { read: res.read, lift: chosen, uris: got.uris, times: got.times, id, ref: id ?? uuid(), at: shortDate(new Date().toISOString()) },
         });
         return;
       }
@@ -867,6 +872,10 @@ function ReadStage({
     const next = useful === v ? null : v;
     setUseful(next);
     if (r.id) void setFormUseful(r.id, next);
+    /* 0269 — the same vote in `ai_feedback`, where every AI answer's votes are counted for /admin → AI health.
+       This screen keeps its own designed Useful / Not useful (no second control). A vote taken back here stays
+       as it was there: that table has no delete, by design — a changed vote is a change, an empty one is not. */
+    if (next != null) void rateAiOutput({ feature: 'form_check', ref: r.ref, rating: next ? 1 : -1 });
   };
 
   const save = async () => {
