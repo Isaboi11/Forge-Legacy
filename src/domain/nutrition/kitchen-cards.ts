@@ -7,10 +7,17 @@
  * nothing and makes the card say so ("≈"), per §3.4.
  *
  * ⛔ ALLERGENS: a dish is DROPPED, never shown with a warning (§4), when the catalogue's tags on its matched
- * lines OR the words on any line (`allergensByWord`, which covers unmatched lines) name one the athlete avoids.
+ * lines OR the words on any line (`allergensByWord`) name one the athlete avoids.
+ *
+ * ⛔ AND AN UNKNOWN LINE IS AN EXCLUDED LINE (NUT-D6, AI audit 11-16 N-D1). Once the athlete avoids anything — an
+ * allergen or a diet — a dish with a line the catalogue couldn't match (and that carries an amount) is dropped
+ * too: nobody knows what is in it, and a word list can never name every sauce. The audit's probe showed 11 of
+ * 14 hidden-allergen foods ("basil pesto", "buttermilk", "naan", "calamari"…) shown to someone avoiding them.
+ * The same rule Meal Plan's fill already keeps (`plannable` in `holt-fill.ts`). "Salt to taste" carries no
+ * amount and stays, as it does for the "≈".
  */
 import { draftFromRead } from './recipe-import.ts';
-import { allergensByWord, type KitchenDish } from './kitchen-dishes.ts';
+import { ALLERGEN_WORDS, allergensByWord, DIET_WORDS, foldAccents, type KitchenDish } from './kitchen-dishes.ts';
 import { detectAllergens, totalsOf } from './user-recipes.ts';
 import { INGREDIENTS } from './recipes-data.ts';
 import type { RecipeRead } from './recipe-photo-read.ts';
@@ -38,12 +45,14 @@ export function dishAsRead(d: KitchenDish): RecipeRead {
 
 /*
  * Diets, checked by the app (live check 09-26: a vegan got cheese, a vegetarian got chicken — the prompt alone
- * doesn't hold it). By the catalogue's own `diet` on matched lines, and by word on every line. A nut or seed
- * butter is renamed first so "peanut butter" isn't read as dairy.
+ * doesn't hold it). By the catalogue's own `diet` on matched lines, and by word on every line — the SAME word
+ * lists the allergy check reads (`kitchen-dishes.ts`), so a word added there (Worcestershire, gelatin, kefir)
+ * holds for a diet too. A nut, seed or plant butter or milk is renamed first so "peanut butter" isn't dairy.
  */
-const MEAT_WORDS = /\b(chicken|beef|turkey|pork|steak|bacon|ham|sausage|lamb|veal|duck|jerky|pepperoni|prosciutto|salami|chorizo|meatballs?|ground\s+meat)\b/i;
-const SEA_WORDS = /\b(salmon|tuna|cod|tilapia|fish|anchov\w*|sardines?|shrimp|prawns?|crab|lobster|scallops?|clams?|mussels?|oysters?)\b/i;
-const ANIMAL_WORDS = /\b(eggs?|cheese|feta|parmesan|mozzarella|cheddar|milk|yogh?urt|butter|cream|ghee|whey|honey|mayo(nnaise)?|gelatin)\b/i;
+const isMeat = (t: string) => DIET_WORDS.meat.test(t) || DIET_WORDS.poultry.test(t);
+const isSea = (t: string) => ALLERGEN_WORDS.fish.test(t) || ALLERGEN_WORDS.shellfish.test(t);
+const OTHER_ANIMAL = /\b(beeswax|royal\s+jelly|bee\s+pollen|carmine|cochineal)\b/i;
+const isAnimal = (t: string) => ALLERGEN_WORDS.dairy.test(t) || ALLERGEN_WORDS.eggs.test(t) || DIET_WORDS.honey.test(t) || OTHER_ANIMAL.test(t);
 const BLOCKED_DIETS: Record<string, readonly string[]> = {
   vegan: ['meat', 'fish', 'shellfish', 'animal'],
   vegetarian: ['meat', 'fish', 'shellfish'],
@@ -54,22 +63,35 @@ export function breaksDiet(d: KitchenDish, keys: readonly string[], diet: string
   const blocked = BLOCKED_DIETS[diet ?? ''];
   if (!blocked) return false;
   if (keys.some((k) => blocked.includes((INGREDIENTS as Record<string, { diet: string }>)[k]?.diet))) return true;
-  const text = d.ingredients.map((i) => i.food).join(' | ').replace(/\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy|coconut)\s+(butter|milk|yogh?urt|cream)\b/gi, '$1 spread');
-  if (MEAT_WORDS.test(text)) return true;
-  if (diet !== 'pescatarian' && SEA_WORDS.test(text)) return true;
-  return diet === 'vegan' && ANIMAL_WORDS.test(text);
+  const text = foldAccents(d.ingredients.map((i) => `${i.food} ${i.text}`).join(' | ')).replace(
+    /\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy|coconut)\s+(butter|milk|yogh?urt|cream)\b/gi,
+    '$1 spread',
+  );
+  if (isMeat(text)) return true;
+  if (diet !== 'pescatarian' && isSea(text)) return true;
+  return diet === 'vegan' && isAnimal(text);
 }
+
+/** Does this athlete avoid anything at all? Then a line nobody can identify is a line they can't eat. */
+const avoidsAnything = (banned: ReadonlySet<string>, diet: string | null | undefined): boolean => banned.size > 0 || !!BLOCKED_DIETS[diet ?? ''];
 
 /** Dishes → cards, with anything the athlete avoids removed (allergens and diet). Order is kept. */
 export function dishCards(dishes: readonly KitchenDish[], avoid: readonly string[], diet: string | null = null): DishCard[] {
   const banned = new Set(avoid);
+  const strict = avoidsAnything(banned, diet);
   const out: DishCard[] = [];
   for (const d of dishes) {
     const read = dishAsRead(d);
     const draft = draftFromRead(read);
-    const tagged = [...detectAllergens(draft.form.ingredients), ...allergensByWord(d)];
+    /* ⛔ NUT-D6 (AI audit 11-16, N-D1): unknown counts as excluded — see the header. */
+    if (strict && draft.unmatched.some((u) => u.quantity != null)) continue;
+    /* A line whose FOOD matched but whose amount didn't ("a splash of teriyaki sauce") is still that food: its
+       catalogue tags and diet count, even though it adds nothing to the numbers. */
+    const amountOnly = draft.unmatched.flatMap((u) => (u.reason === 'amount' && u.candidates.length === 1 ? [{ key: u.candidates[0] }] : []));
+    const keys = [...draft.form.ingredients, ...amountOnly].flatMap((i) => (i.key ? [i.key] : []));
+    const tagged = [...detectAllergens([...draft.form.ingredients, ...amountOnly]), ...allergensByWord(d)];
     if (tagged.some((a) => banned.has(a))) continue;
-    if (breaksDiet(d, draft.form.ingredients.flatMap((i) => (i.key ? [i.key] : [])), diet)) continue;
+    if (breaksDiet(d, keys, diet)) continue;
     const t = totalsOf(draft.form.ingredients);
     const y = Math.max(1, d.servings);
     out.push({
