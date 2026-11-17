@@ -78,6 +78,8 @@ import { kitchenError, rotationLeanToday } from '@/domain/nutrition/kitchen-dish
 import { allergenLine, dayHasEmptySlot, emptySlots, fillAsk, fillAvoid, formForPlan, plannable } from '@/domain/nutrition/holt-fill';
 import { recipeFrom } from '@/domain/nutrition/user-recipes';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
+import { AiFeedback } from '@/components/forge/AiFeedback';
+import { uuid } from '@/lib/app-session';
 
 const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
 /* Every read this screen builds a week from throws on failure rather than answering "nothing" (B13 / UX-002). */
@@ -197,8 +199,9 @@ function MealPlanScreen() {
   const nutritionAccess = useNutritionAccess();
   /* "Only plan from my recipes" (0226) means Holt is never offered to write dishes into the week. */
   const canHolt = premiumAi && nutritionAccess && !prefs?.ownRecipesOnly;
+  /* `ref` — this set of dishes, made once when it arrives: the "Was this helpful?" vote under them (0269). */
   const [fill, setFill] = useState<
-    { phase: 'writing' } | { phase: 'review'; picks: { slot: PlanSlotName; card: DishCard }[] } | { phase: 'saving' } | null
+    { phase: 'writing' } | { phase: 'review'; picks: { slot: PlanSlotName; card: DishCard }[]; ref: string } | { phase: 'saving' } | null
   >(null);
   const [active, setActive] = useState(todayIdx);
   const [busy, setBusy] = useState(false);
@@ -280,7 +283,7 @@ function MealPlanScreen() {
       showToast(failure ?? "Holt couldn't write dishes that fit your setup. Try loosening the cook time.");
       return;
     }
-    setFill({ phase: 'review', picks });
+    setFill({ phase: 'review', picks, ref: uuid() });
   };
 
   /* The athlete's tap on the list that showed every dish's allergens — the confirmation `formForPlan` relies on. */
@@ -881,6 +884,7 @@ function MealPlanScreen() {
                 </View>
               ))
             : null}
+          {fill?.phase === 'review' ? <AiFeedback feature="kitchen" aiRef={fill.ref} /> : null}
           <View style={styles.actions}>
             <Button
               variant="primary"
