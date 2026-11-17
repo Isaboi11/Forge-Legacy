@@ -115,7 +115,9 @@ const N = String.raw`\d+(?:\.\d+)?(?:\s*(?:½|1\/2))?|½`;
  */
 function numbersOf(text: string): { plain: Set<number>; secs: Set<number> } {
   const secs = new Set<number>();
-  let t = text.replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b/g, ' ');
+  /* ⚠ "12-12-12 reps" is a ladder, not 12 Dec 2012 (IM-1, 11-17): a "date" followed by reps or another rung is kept,
+     or the 12s vanished from the card and a faithful "3 sets of 12 reps" was thrown away as made up. */
+  let t = text.replace(/\b\d{1,2}[-/]\d{1,2}[-/]\d{2,4}\b(?!\s*(?:[-/]\s*\d|reps?\b))/g, ' ');
   t = t.replace(/\b(\d{1,2}):(\d{2})\b/g, (_, m, s) => (secs.add(Number(m) * 60 + Number(s)), ' '));
   t = t.replace(new RegExp(String.raw`(${N})\s*(minutes?|mins?|min|m|seconds?|secs?|sec|s)\b`, 'gi'), (_, n, u) => {
     const v = num(n);
@@ -125,6 +127,17 @@ function numbersOf(text: string): { plain: Set<number>; secs: Set<number> } {
   const plain = new Set<number>();
   for (const m of t.matchAll(new RegExp(N, 'g'))) plain.add(num(m[0]));
   return { plain, secs };
+}
+
+/**
+ * How many rungs each rep ladder on the card has — "6-6-4-4 reps" is 4, "F-F-F reps" is 3 (IM-1, 11-17). The layout
+ * writes that as "4 sets", which is READ off the card, not made up; 30 of the corpus's 57 AI layouts were thrown away
+ * over exactly this. Only a ladder followed by "reps" counts, and only with three rungs or more ("8-12 reps" is a range).
+ */
+function ladderLengths(text: string): Set<number> {
+  const out = new Set<number>();
+  for (const m of text.matchAll(/(?:\b\d{1,3}|\bF)(?:\s*[-–]\s*(?:\d{1,3}|F)\b){2,19}(?=\s*reps?\b)/gi)) out.add(m[0].split(/[-–]/).length);
+  return out;
 }
 
 /** A lift's label at the start of a line ("1.", "4. a.", "super set b.", "3a.") — the layout's, not the card's. */
@@ -163,7 +176,8 @@ export function checkAiRewrite(source: string, tidied: string, resolveKey: (name
     .map((l) => l.replace(LABEL, ' ').replace(/\b1 set\b/gi, ' '))
     .join('\n');
   const out = numbersOf(body);
-  const madeUp = [...out.plain].filter((n) => !src.plain.has(n) && !src.secs.has(n));
+  const counted = ladderLengths(source);
+  const madeUp = [...out.plain].filter((n) => !src.plain.has(n) && !src.secs.has(n) && !counted.has(n));
   const madeUpRest = [...out.secs].filter((s) => !allowedSecs.has(s));
   if (madeUp.length) problems.push(`It wrote ${madeUp.join(', ')}, which isn’t on the card.`);
   if (madeUpRest.length) problems.push(`It wrote a rest of ${madeUpRest.map((s) => `${s}s`).join(', ')}, which isn’t on the card.`);
