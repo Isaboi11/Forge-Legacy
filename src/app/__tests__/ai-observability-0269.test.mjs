@@ -117,7 +117,9 @@ test('grants: revoked from public, anon AND authenticated; the app calls only ad
 
 test('never retypes a live function: every name here is new to the ledger', () => {
   const dir = new URL('../../../supabase/migrations/', import.meta.url);
-  for (const f of readdirSync(dir).filter((x) => x.endsWith('.sql') && !x.startsWith('0269_'))) {
+  // New to the ledger = no migration BEFORE 0269 defines it. A later one may re-create one from its live source
+  // (0272 re-creates admin_ai_health; migration-0272.test.mjs holds that it keeps every 0269 line).
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.sql') && x.slice(0, 4) < '0269')) {
     const sql = readFileSync(new URL(f, dir), 'utf8');
     for (const name of NEW_FUNCTIONS) assert.doesNotMatch(sql, new RegExp(`function public\\.${name}\\s*\\(`), `${name} already exists in ${f}`);
   }
