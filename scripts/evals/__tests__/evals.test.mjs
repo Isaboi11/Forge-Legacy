@@ -153,6 +153,46 @@ test('live: refuses without a budget, over the estimate, without a key; stops at
   assert.equal(ratesFor('mystery').in, 2);
 });
 
+test('live: an API failure stops the run and is never recorded; a busy answer waits and retries twice', async () => {
+  const root = tempRoot();
+  const quiet = () => {};
+  const sleeps = [];
+  const sleep = async (ms) => { sleeps.push(ms); };
+  const ok = { reply: { text: 'fine' }, usage: { input_tokens: 10, output_tokens: 10 } };
+  const many = async () => [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
+
+  // Out of credit (400) on the 2nd case: stops there, records only the 1st, no retry.
+  let recordings = fs.mkdtempSync(path.join(os.tmpdir(), 'rec-'));
+  let n = 0;
+  const drained = fakeSuite({ cases: many, callLive: async () => (n++ === 0 ? ok : { reply: { error: 'http_400' }, usage: null }) });
+  let r = await runLive(drained, { root, apiKey: 'k', budget: 1, record: true, recordings, log: quiet, sleep });
+  assert.equal(r.stoppedOn, 'http_400');
+  assert.equal(r.done, 1);
+  assert.equal(n, 2, 'never knocks again on a drained account');
+  assert.equal(state(recordings, 'fake', r.hash).current.size, 1, 'the error is not a recording');
+  assert.deepEqual(sleeps, []);
+
+  // 529 twice then fine: waits 15 s then 30 s, and goes on.
+  recordings = fs.mkdtempSync(path.join(os.tmpdir(), 'rec-'));
+  n = 0;
+  const busy = fakeSuite({ cases: async () => [{ id: 'a' }], callLive: async () => (n++ < 2 ? { reply: { error: 'http_529' }, usage: null } : ok) });
+  r = await runLive(busy, { root, apiKey: 'k', budget: 1, record: true, recordings, log: quiet, sleep });
+  assert.equal(r.stoppedOn, null);
+  assert.equal(r.done, 1);
+  assert.deepEqual(sleeps, [15_000, 30_000]);
+
+  // Still busy after two waits: stops. The app's own path (import-corpus) says upstream_error: stops too.
+  n = 0;
+  const stuck = fakeSuite({ cases: many, callLive: async () => (n++, { reply: { error: 'http_429' }, usage: null }) });
+  r = await runLive(stuck, { root, apiKey: 'k', budget: 1, log: quiet, sleep });
+  assert.equal(r.stoppedOn, 'http_429');
+  assert.equal(n, 3);
+  const app = fakeSuite({ cases: many, callLive: async () => ({ reply: { bodies: { 'workout-card-read': { status: 503, body: { ok: false, reason: 'upstream_error' } } } }, usage: {} }) });
+  r = await runLive(app, { root, apiKey: 'k', budget: 1, log: quiet, sleep });
+  assert.equal(r.stoppedOn, 'workout-card-read: upstream_error');
+  assert.equal(r.done, 0);
+});
+
 test('run.mjs: --record needs --live, and --live runs one suite at a time', () => {
   assert.throws(() => parseArgs(['--suite', 'a', '--record']), /--record only makes sense with --live/);
   assert.throws(() => parseArgs(['--suite', 'all', '--live', '--budget', '5']), /one suite at a time/);
