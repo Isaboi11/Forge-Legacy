@@ -30,6 +30,7 @@ import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
 import { STRENGTH_GOALS } from '../constraints.ts';
 import { assemble } from '../assemble.ts';
+import { restFor } from '../prescribe.ts';
 import { validateProgram } from '../validate-program.ts';
 import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays, stylesForDaysSuggestedFirst } from '../rulebook/skeletons.ts';
 
@@ -136,6 +137,37 @@ test('a built program tells you how to lift it, not just how much', () => {
   const strong = build(constraintsFor('strength', 'intermediate', 4, 'full_gym', 'none'));
   assert.ok(strong.ok);
   assert.doesNotMatch(strong.assembly.structure.weekPlans[0].days[0].main[0].coachNote ?? '', /seconds down/i);
+});
+
+/**
+ * B-D6 (AI audit 11-16) — a heavy triple and a pushdown no longer get the same rest. `restSec` existed and the
+ * logger starts its timer on it; the coach set it on no row at all.
+ */
+test('a built program says how long to rest — by category and role, and per PAS §10.3 for a beginner', () => {
+  // The table.
+  assert.deepEqual(['primary', 'secondary', 'accessory'].map((r) => restFor('STRENGTH', r, 'intermediate')), [180, 120, 75]);
+  assert.deepEqual(['primary', 'secondary', 'accessory'].map((r) => restFor('HYPERTROPHY', r, 'advanced')), [120, 90, 60]);
+  assert.deepEqual(['primary', 'secondary', 'accessory'].map((r) => restFor('CONDITIONING', r, 'intermediate')), [60, 45, 45]);
+  assert.equal(restFor('MOBILITY', 'primary', 'advanced'), null);
+  assert.equal(restFor('RUNNING', 'primary', 'advanced'), null);
+  // PAS §10.3: a beginner self-regulates — compounds at most 90 s, accessory rest omitted.
+  assert.deepEqual(['primary', 'secondary', 'accessory'].map((r) => restFor('STRENGTH', r, 'beginner')), [90, 90, null]);
+
+  // The wiring: on a real block, the opening lift rests longest and an arm finisher least.
+  const day = build(constraintsFor('strength', 'intermediate', 4, 'full_gym', 'none')).assembly.structure.weekPlans[0].days[0];
+  assert.equal(day.main[0].restSec, 180, `${day.main[0].name} opens the day`);
+  const curl = day.main.find((e) => patternOf(e.catalogKey) === 'Elbow Flexion');
+  assert.equal(curl?.restSec, 75);
+  const muscle = build(constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'none')).assembly.structure.weekPlans[0].days[0];
+  assert.equal(muscle.main[0].restSec, 120);
+  // A single day carries it too — both of its fill strategies end in the same row.
+  for (const focus of [{ kind: 'split', split: 'upper' }, { kind: 'body_parts', parts: ['chest'] }]) {
+    const one = buildDayWorkout({ focus, goal: 'strength', sessionMinutes: 60, experience: 'intermediate', environment: 'full_gym', ownedEquipment: [], limitations: [] }, POOL, canDoExercise);
+    assert.equal(one.day.main[0].restSec, 180, `${focus.kind}: ${one.day.main[0].name}`);
+  }
+  // A mobility block is holds: no set rest is invented for it.
+  const mobility = build(constraintsFor('mobility', 'intermediate', 3, 'full_gym', 'none')).assembly.structure.weekPlans[0].days[0];
+  assert.ok(mobility.main.every((e) => e.restSec == null));
 });
 
 test('a dumbbell room reaches for the dumbbell version of the same movement', () => {
