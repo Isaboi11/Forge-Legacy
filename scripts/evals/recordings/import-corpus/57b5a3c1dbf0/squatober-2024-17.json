@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-17",
+  "promptHash": "57b5a3c1dbf0988c729a4383d8c7dfbaba15df45d65a11e8c575a11331cab486",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:10:57.215Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"ReGroup and ReLoad\"\nDay:17 Thursday 10-17-24\nWarm Up: Light KB Swings 5 sets of 10reps\n* 75 sec rest between sets\n\n1. BACK SQUAT \"unbroken\" 1 set of 10reps\ne 55%\n2. FRONT SQUAT \"unbroken\" 1 set of 8 reps\ne 35-40% of\nBack Squat max\n3. BB Bulgarian Split Squats\n\"Unbroken\"\n1 set of 5 reps each leg\n* 90 sec rest between each exercise\n\n4. DEADlift 4 reps e 65%, 70%, 75%, 75%\n* 2 min rest between sets * No Bouncing\n\nCardio\nsuper\nset a. KB Swings 5 x 10reps\nset b. DB Laterals 5 x 15 reps\n* 75 sec rest between\neach super set\n\nRecovery\nMeat Lover's\nPizza\n* Eat an extra slice\n30 min Walk\n8-9 hrs Sleep\n\n* This Strength session should take 30-35\nminutes to complete."
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"ReGroup and ReLoad\"\nWarm up: Light KB Swings 5 sets of 10 reps\n* 75 sec rest between sets\n\n1. Back Squat 1 set of 10 reps @ 55%\n* \"unbroken\"\n2. Front Squat 1 set of 8 reps @ 35-40% of back squat max\n* \"unbroken\"\n3. BB Bulgarian Split Squats 1 set of 5 reps each leg\n* \"Unbroken\"\n* 90 sec rest between each exercise\n4. Deadlift 4 reps @ 65%, 4 reps @ 70%, 4 reps @ 75%, 4 reps @ 75%\n* 2 min rest between sets, No Bouncing\n\nCardio\n5. a. KB Swings 5 sets of 10 reps\nsuper set b. DB Laterals 5 sets of 15 reps\n* 75 sec rest between each super set\n\nRecovery: Meat Lover's Pizza · Eat an extra slice · 30 min Walk · 8-9 hrs Sleep\n* This Strength session should take 30-35 minutes to complete."
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 364,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 387,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1838,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 370,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

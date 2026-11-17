@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-1",
+  "promptHash": "9b3b6fbc218f118dc1753ef530b56c685464acfe03eec9be7f8f1815f8325dd6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:07:13.974Z",
+  "reply": {
+    "text": "```json\n{\n  \"options\": [\n    {\n      \"name\": \"No-Cook Mediterranean Mezze Plate\",\n      \"why\": \"fastest of the three, no stove needed\",\n      \"cuisine\": \"Mediterranean\",\n      \"method\": \"no-cook\",\n      \"minutes\": 15,\n      \"servings\": 2,\n      \"mealType\": \"lunch\",\n      \"ingredients\": [\n        {\"text\": \"1 cucumber, sliced\", \"quantity\": 150, \"unit\": \"g\", \"food\": \"cucumber\"},\n        {\"text\": \"1 cup tomatoes, diced\", \"quantity\": 150, \"unit\": \"g\", \"food\": \"tomatoes\"},\n        {\"text\": \"3.5 oz feta, sliced\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"feta\"},\n        {\"text\": \"1 cup white beans, drained and tossed\", \"quantity\": 150, \"unit\": \"g\", \"food\": \"white beans\"},\n        {\"text\": \"1 tbsp olive oil, drizzled\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"olive oil\"},\n        {\"text\": \"1 tbsp lemon juice\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"lemon juice\"},\n        {\"text\": \"fresh parsley, chopped\", \"quantity\": 5, \"unit\": \"g\", \"food\": \"fresh parsley\"},\n        {\"text\": \"1 small clove garlic, minced\", \"quantity\": 5, \"unit\": \"g\", \"food\": \"garlic\"},\n        {\"text\": \"1 pita, cut into wedges\", \"quantity\": 60, \"unit\": \"g\", \"food\": \"pita\"},\n        {\"text\": \"dried oregano, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"dried oregano\"},\n        {\"text\": \"salt, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"salt\"},\n        {\"text\": \"black pepper, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"black pepper\"}\n      ],\n      \"steps\": [\n        \"Toss white beans with minced garlic, lemon juice, half the olive oil, oregano, salt and pepper.\",\n        \"Arrange cucumber, tomatoes and feta on a plate.\",\n        \"Spoon the bean mixture alongside the vegetables.\",\n        \"Drizzle everything with the remaining olive oil.\",\n        \"Cut pita into wedges and serve on the side with parsley scattered over the top.\"\n      ]\n    },\n    {\n      \"name\": \"Seared Halloumi Mezze Plate\",\n      \"why\": \"uses the most of what you have, quick pan work\",\n      \"cuisine\": \"Greek\",\n      \"method\": \"pan\",\n      \"minutes\": 20,\n      \"servings\": 2,\n      \"mealType\": \"lunch\",\n      \"ingredients\": [\n        {\"text\": \"5.3 oz halloumi, sliced\", \"quantity\": 150, \"unit\": \"g\", \"food\": \"halloumi\"},\n        {\"text\": \"1 red bell pepper, sliced\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"red bell pepper\"},\n        {\"text\": \"1 cucumber, sliced\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"cucumber\"},\n        {\"text\": \"1 small tomato, diced\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"tomatoes\"},\n        {\"text\": \"1 tbsp olive oil\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"olive oil\"},\n        {\"text\": \"2 tsp lemon juice\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"lemon juice\"},\n        {\"text\": \"fresh mint, torn\", \"quantity\": 5, \"unit\": \"g\", \"food\": \"fresh mint\"},\n        {\"text\": \"1 pita,",
+    "stop_reason": "max_tokens"
+  },
+  "usage": {
+    "input_tokens": 2809,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 2600,
+    "output_tokens_details": {
+      "thinking_tokens": 1374
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

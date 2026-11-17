@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-2",
+  "promptHash": "9b3b6fbc218f118dc1753ef530b56c685464acfe03eec9be7f8f1815f8325dd6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T19:59:37.966Z",
+  "reply": {
+    "text": "```json\n{\n  \"options\": [\n    {\n      \"name\": \"Turkey Hummus Sandwich\",\n      \"why\": \"fastest of the three, no cooking needed\",\n      \"cuisine\": \"American\",\n      \"method\": \"no-cook\",\n      \"minutes\": 5,\n      \"servings\": 1,\n      \"mealType\": \"lunch\",\n      \"ingredients\": [\n        { \"text\": \"2 slices whole-wheat bread\", \"quantity\": 70, \"unit\": \"g\", \"food\": \"whole-wheat bread\" },\n        { \"text\": \"3 oz sliced turkey breast\", \"quantity\": 80, \"unit\": \"g\", \"food\": \"sliced turkey breast\" },\n        { \"text\": \"2 tbsp hummus\", \"quantity\": 30, \"unit\": \"g\", \"food\": \"hummus\" },\n        { \"text\": \"small handful baby spinach\", \"quantity\": 20, \"unit\": \"g\", \"food\": \"baby spinach\" },\n        { \"text\": \"a few slices tomato\", \"quantity\": 50, \"unit\": \"g\", \"food\": \"tomatoes\" },\n        { \"text\": \"a few slices cucumber\", \"quantity\": 30, \"unit\": \"g\", \"food\": \"cucumber\" }\n      ],\n      \"steps\": [\n        \"Lay out the bread slices and spread hummus on each.\",\n        \"Layer turkey, spinach, tomato and cucumber on one slice.\",\n        \"Top with the second slice, press gently and slice in half.\",\n        \"Serve right away.\"\n      ]\n    },\n    {\n      \"name\": \"Pan-Grilled Turkey Bacon Cheddar Sandwich\",\n      \"why\": \"warm and filling, uses the stove for a quick melt\",\n      \"cuisine\": \"American\",\n      \"method\": \"pan\",\n      \"minutes\": 10,\n      \"servings\": 1,\n      \"mealType\": \"lunch\",\n      \"ingredients\": [\n        { \"text\": \"2 slices whole-wheat bread\", \"quantity\": 70, \"unit\": \"g\", \"food\": \"whole-wheat bread\" },\n        { \"text\": \"1.5 oz cheddar, sliced\", \"quantity\": 40, \"unit\": \"g\", \"food\": \"cheddar\" },\n        { \"text\": \"2 strips turkey bacon\", \"quantity\": 40, \"unit\": \"g\", \"food\": \"turkey bacon\" },\n        { \"text\": \"1 tsp butter, for the pan\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"butter\" }\n      ],\n      \"steps\": [\n        \"Heat a pan over medium and cook the turkey bacon until crisp and heated through to 165°F, about 4 minutes, then set aside.\",\n        \"Wipe the pan, add the butter and let it melt.\",\n        \"Build the sandwich with cheddar and turkey bacon between the bread slices.\",\n        \"Grill in the pan 2 to 3 minutes per side, pressing lightly, until the bread is golden and the cheese is melted.\",\n        \"Slice and serve.\"\n      ]\n    },\n    {\n      \"name\": \"Air-Fryer Halloumi Pita Melt\",\n      \"why\": \"a different cuisine twist, crisped quickly in the air fryer\",\n      \"cuisine\": \"Mediterranean\",\n      \"method\": \"air-fryer\",\n      \"minutes\": 10,\n      \"servings\": 1,\n      \"mealType\": \"lunch\",\n      \"ingredients\": [\n        { \"text\": \"1 pita bread\", \"quantity\": 60, \"unit\": \"g\", \"food\": \"pita\" },\n        { \"text\": \"3 oz halloumi, sliced\", \"quantity\": 80, \"unit\": \"g\", \"food\": \"halloumi\" },\n        { \"text\": \"a few slices tomato\", \"quantity\": 50, \"unit\": \"g\", \"food\": \"tomatoes\" },\n        { \"text\": \"1 tsp olive oil\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"olive oil\" },\n        { \"text\": \"dried oregano, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"dried oregano\" }\n      ],\n      \"steps\": [\n        \"Brush the halloumi slices lightly with olive oil.\",\n        \"Air-fry the halloumi at 375°F for 4 to 5 minutes, flipping once, until golden.\",\n        \"Split the pita and tuck in the halloumi and tomato slices.\",\n        \"Sprinkle with oregano and warm the stuffed pita in the air fryer 1 to 2 minutes.\",\n        \"Serve warm.\"\n      ]\n    }\n  ]\n}\n```",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 2820,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 2286,
+    "output_tokens_details": {
+      "thinking_tokens": 831
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

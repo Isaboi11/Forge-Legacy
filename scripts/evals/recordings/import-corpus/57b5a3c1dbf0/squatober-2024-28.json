@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-28",
+  "promptHash": "57b5a3c1dbf0988c729a4383d8c7dfbaba15df45d65a11e8c575a11331cab486",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:12:16.368Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"SNAPPY STRONG\"\nDay: 28  Monday  10-28-24\n\nWarm Up: Make up your mind and tell\nyourself that you're gonna move\nthe weights Fast and SNAPPY today.\n\nsuper set\n1. a. Snappy BACK Squat 5 sets of 2 reps\n@ 70%\nb. Slow Strict Chin Ups 5 sets of 3-6 reps\n2 min rest between each superset\n\nsuper set\n2. a. BENCH PRESS 5 sets of 3 reps @ 70%\n\"Be Snappy\"\nb. 1 Arm DB Rows 5 sets of 5 reps\n2 min rest between each superset\n\nCardio\nsuper set\na. Ez Bar/or BB Skullcrushers 3x 15 reps\nb. KB Swings 3x 10 reps\n60 sec rest between each super set\n\nRecovery\nMeat loaf\nGreen Beans\nMac & Cheese\n30 min Walk\nHeavy Sleep\n\n* This session should take 30-35 minutes"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"SNAPPY STRONG\"\nWarm up: Make up your mind and tell yourself that you're gonna move the weights Fast and SNAPPY today.\n1. a. Snappy Back Squat 5 sets of 2 reps @ 70%\nsuper set b. Slow Strict Chin Ups 5 sets of 3-6 reps\nrest 2:00 between each super set\n2. a. Bench Press 5 sets of 3 reps @ 70%\n* Be Snappy\nsuper set b. 1 Arm Dumbbell Rows 5 sets of 5 reps\nrest 2:00 between each super set\nCardio\n3. a. Ez Bar/or BB Skullcrushers 3 sets of 15 reps\nsuper set b. KB Swings 3 sets of 10 reps\nrest 1:00 between each super set\nRecovery: Meat loaf · Green Beans · Mac & Cheese · 30 min Walk · Heavy Sleep\n* This session should take 30-35 minutes"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 342,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 365,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1838,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 332,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

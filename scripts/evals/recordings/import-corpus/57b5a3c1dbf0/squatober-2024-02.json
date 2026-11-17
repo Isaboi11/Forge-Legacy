@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-02",
+  "promptHash": "57b5a3c1dbf0988c729a4383d8c7dfbaba15df45d65a11e8c575a11331cab486",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:09:15.390Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE SEESAW\"\nDay: 2 Wednesday 10-02-24\n\nWarm Up: Caffeinate and crack the Knuckles\n\n1. BACK SQUAT \"Ride the SeeSaw\"\n5/65% 5/70%\n10/50% 10/55% 10/60%\n5 total sets, 40 total reps, 2 min rest between sets\n\nsuper\nset\n2. a. BENCH PRESS 5 sets of 8 reps @ 67%\nb. DB REAR LATERALS 5 sets of 15 reps\n2½ min rest between each superset\n\n3. Ez Bar [or BB] Skullcrushers\n5 sets of 15 reps\n90 seconds rest between each set\n\nCardio\nKB Swings\n10 sets of 10 reps\n60 seconds rest between each set\n\nRecovery\n30 min Walk\nChicken & Dumpling extra chicken\n8-9 hrs Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE SEESAW\"\nWarm up: Caffeinate and crack the Knuckles\n1. Back Squat 5 reps @ 65%, 5 reps @ 70%, 10 reps @ 50%, 10 reps @ 55%, 10 reps @ 60%\n* \"Ride the SeeSaw\", 5 total sets, 40 total reps\nrest 2:00\n2. a. Bench Press 5 sets of 8 reps @ 67%\nsuper set b. DB Rear Laterals 5 sets of 15 reps\nrest 2:30 between each super set\n3. Ez Bar or BB Skullcrushers 5 sets of 15 reps\nrest 1:30\n4. KB Swings 10 sets of 10 reps\n* Cardio\nrest 1:00\nRecovery: 30 min Walk · Chicken & Dumpling extra chicken · 8-9 hrs Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 306,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 329,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1838,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 419,
+      "output_tokens_details": {
+        "thinking_tokens": 118
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}
