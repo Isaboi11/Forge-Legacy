@@ -116,6 +116,38 @@ export const PATTERN_PREFERENCES: Record<string, readonly string[]> = {
 export const ALL_PREFERRED_KEYS: readonly string[] = Object.values(PATTERN_PREFERENCES).flat();
 
 /**
+ * ══ WHICH EXERCISE A MUSCLE GETS WHEN THE WEEK NEEDS MORE OF IT (PB-2) ══
+ *
+ * `volume-balance.ts` adds or swaps in direct work for a group the week under-doses. A pattern's list above
+ * cannot answer that for every group: Shoulder Isolation's list is lateral raises, which is no answer for a
+ * rear delt, and Hinge's is deadlifts, which is no answer for hamstrings already loaded by one. So each such
+ * group names its own canonical direct work, best first across rooms, like the pattern lists. Every key must
+ * exist AND be a PRIMARY mover for its group (`matrix.test.mjs`). A group not listed falls back to its
+ * pattern's list, which already leads with the right movement (chest → bench press, lats → pull-up).
+ */
+export const GROUP_PREFERENCES: Readonly<Record<string, readonly string[]>> = {
+  rear_deltoids: [
+    'dumbbell-rear-delt-fly',
+    'reverse-pec-deck',
+    'cable-face-pull',
+    'cable-rear-delt-fly',
+    'band-face-pull',
+    'band-pull-apart',
+  ],
+  lateral_deltoids: ['dumbbell-lateral-raise', 'cable-lateral-raise', 'machine-lateral-raise', 'band-lateral-raise'],
+  hamstrings: [
+    'lying-leg-curl-machine',
+    'seated-leg-curl-machine',
+    'cable-standing-leg-curl',
+    'band-leg-curl',
+    'sliding-hamstring-curl',
+    'suspension-trainer-hamstring-curl',
+  ],
+  glutes: ['barbell-hip-thrust', 'dumbbell-hip-thrust', 'glute-bridge', 'cable-glute-kickback', 'frog-pump'],
+  front_deltoids: ['barbell-overhead-press', 'dumbbell-overhead-press', 'seated-dumbbell-shoulder-press'],
+};
+
+/**
  * Where an exercise sits in its pattern's preference list. Lower is better; unlisted sorts last.
  *
  * `Infinity` rather than a large number so the ranker's arithmetic cannot accidentally make an unlisted
