@@ -83,6 +83,7 @@ test('⚠ QA F14 — a race concern is said BEFORE the card with the Start butto
   assert.ok(at > 0);
   const said = sheet.slice(at, sheet.indexOf('const asm = res.assembly;', at));
   const concernAt = said.indexOf('text: concern.message');
-  const cardAt = said.indexOf("{ kind: 'program', card: programCard }");
+  // The card's prefix: it may carry `authored` when Holt wrote the race's lifting days (0269, the thumbs).
+  const cardAt = said.indexOf("{ kind: 'program', card: programCard");
   assert.ok(concernAt > 0 && cardAt > concernAt, 'the concern line precedes the program card in the same say()');
 });

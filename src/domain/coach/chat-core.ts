@@ -77,10 +77,12 @@ export type Turn =
   /** `ctl` is how they are DRAWN (v2 layer 2). Absent → the 2-col chip grid, which is what every
    *  answer used to be. The openers and the help menu carry none, and correctly render as chips. */
   | { kind: 'chips'; chips: Chip[]; ctl?: QuestionControl }
-  | { kind: 'program'; card: ProgramCard }
+  /** `authored` — Holt (coach-author, the model) wrote this one, not the rulebook: it carries the "Was this
+   *  helpful?" controls (AI Road to 10 Sprint 1, 0269). Absent on every rulebook card and on older threads. */
+  | { kind: 'program'; card: ProgramCard; authored?: boolean }
   /** A program off the shelf — somebody else's work, offered with reasons AND reservations. */
   | { kind: 'pick'; card: PickCard }
-  | { kind: 'day'; card: DayCard }
+  | { kind: 'day'; card: DayCard; authored?: boolean }
   | { kind: 'edit'; card: EditCard }
   | { kind: 'refusal'; card: RefusalCard }
   | { kind: 'explain'; name: string; catalogKey: string | null }

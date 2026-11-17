@@ -38,6 +38,8 @@ import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { finishFoodLog } from '@/lib/food-return';
 import { errorMessage } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
+import { AiFeedback } from '@/components/forge/AiFeedback';
+import { uuid } from '@/lib/app-session';
 
 /**
  * Log from a Photo — Nutrition Architecture §2 "Log a meal from a photo" (Premium AI, credits).
@@ -95,6 +97,8 @@ export default function MealPhotoScreen() {
   const [editing, setEditing] = useState<string | null>(null);
   const [logging, setLogging] = useState(false);
   const [addCount, setAddCount] = useState(0);
+  /** This read, for "Was this helpful?" (0269) — made once when the model's answer arrives. */
+  const [readRef, setReadRef] = useState<string | null>(null);
   /* ⚠ ONE READ AT A TIME, HELD BY A REF — a fast double tap would otherwise pay for two reads before the
      busy state renders (the same guard as `my-recipes.tsx` and `program-import.tsx`). */
   const busy = useRef(false);
@@ -131,6 +135,7 @@ export default function MealPhotoScreen() {
         setStage({ step: 'problem', text: withNotCharged(mealPhotoError(r), r.refunded) });
         return;
       }
+      setReadRef(uuid());
       setStage({ step: 'matching' });
       const matched = await matchMealItems(r.read.items);
       setRows(matched.rows);
@@ -234,6 +239,7 @@ export default function MealPhotoScreen() {
               </Text>
             ) : null}
             <Text style={styles.fine}>Portions are estimates from the photo. Calories come from the matched food.</Text>
+            {readRef ? <AiFeedback feature="meal_photo" aiRef={readRef} style={styles.feedback} /> : null}
           </>
         ) : null}
       </ScrollView>
@@ -542,6 +548,7 @@ const styles = StyleSheet.create({
   more: { alignItems: 'center', paddingVertical: 16 },
   note: { fontSize: 13, lineHeight: 19, color: flColor.gray400, paddingTop: 4 },
   fine: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, paddingTop: 10 },
+  feedback: { paddingTop: 12 },
   status: { fontSize: 12.5, color: flColor.gray600, paddingVertical: 10 },
 
   footer: {
