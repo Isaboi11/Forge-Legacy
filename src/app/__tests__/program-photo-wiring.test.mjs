@@ -113,23 +113,40 @@ test('the model is never asked to interpret — the prompt forbids inventing a v
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 test('⚠ the credit is reserved BEFORE the model call, not after', () => {
-  const spend = FUNCTION.indexOf('coach_ai_spend_credits');
-  const call = FUNCTION.indexOf('api.anthropic.com');
+  // AI Sprint 1 (0268): reserved here, settled once after the guard — refunded on any failure.
+  const spend = FUNCTION.indexOf(".rpc('coach_ai_reserve', { p_action: ACTION, p_fn: FN })");
+  const call = FUNCTION.indexOf("fetch('https://api.anthropic.com/v1/messages'");
   assert.ok(spend > 0, 'the function does not meter at all');
   assert.ok(call > 0, 'the function does not call the model');
   assert.ok(spend < call, 'the meter runs after the model — an athlete would be billed then refused');
+  assert.ok(!/coach_ai_spend_credits|coach_ai_record_usage/.test(FUNCTION), 'the old meter is gone from this function');
 });
 
 test('usage is recorded with all four token counts', () => {
-  // Collapsing these loses the cache signal, which is the single biggest cost lever in the product.
+  // Collapsing these loses the cache signal, which is the single biggest cost lever in the product. The settle
+  // takes the call's own usage block; `settleArgs` (meter-server.ts, inlined into the paste copy) maps all four.
+  assert.match(FUNCTION, /rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, MODEL\)\)\)/);
+  const COPY = read('../../../supabase/apply/deploy-program-photo-read.ts');
   for (const field of [
     'p_input_tokens',
     'p_output_tokens',
     'p_cache_read_input_tokens',
     'p_cache_creation_input_tokens',
   ]) {
-    assert.ok(FUNCTION.includes(field), `usage recording is missing ${field}`);
+    assert.ok(COPY.includes(field), `usage recording is missing ${field}`);
   }
+});
+
+test('the dashboard paste copy is GENERATED and current (it was hand-kept, and went 7 weeks stale — P-D3)', async () => {
+  const { buildProgramPhotoReadDeploy } = await import('../../../scripts/build-program-photo-read-deploy.mjs');
+  const COPY = read('../../../supabase/apply/deploy-program-photo-read.ts').replace(/\r\n/g, '\n');
+  assert.equal(COPY, buildProgramPhotoReadDeploy(), 'run `node scripts/build-program-photo-read-deploy.mjs`');
+  assert.ok(!COPY.includes("from '../../../src/"), 'the paste copy cannot import from src/');
+  assert.ok(COPY.includes('function sanitizeTranscript'), 'the guard is in the paste');
+  assert.ok(COPY.includes('function timedModelCall'), 'the meter is in the paste');
+  assert.ok(COPY.includes("'Time'") || COPY.includes('Time column'), 'the d715090f Time vocabulary is in the paste');
+  assert.ok(COPY.includes('pending-0268.sql FIRST'));
+  assert.ok(COPY.length < 40_000, `paste is ${COPY.length} chars — the editor cuts off near 40 KB`);
 });
 
 test('⚠ the meter action matches the one migration 0174 registers', () => {

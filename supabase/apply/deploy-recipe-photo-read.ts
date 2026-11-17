@@ -10,6 +10,8 @@
 // ANTHROPIC_API_KEY is already set (coach-interpret, coach-ask and program-photo-read use the same secret).
 // ! Apply supabase/apply/pending-0220.sql FIRST - it prices `recipe_photo`; until then every read answers
 // "meter unavailable".
+// ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
+// this copy also inlines, src/domain/ai/meter-server.ts); until then every read answers "meter unavailable".
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -244,9 +246,186 @@ export function recipePhotoError(r: Exclude<RecipePhotoResult, {
             return 'Couldn’t reach Forge. Check your connection and try again.';
     }
 }
+export type SettleOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'not_a_program' | 'unreadable' | 'bad_output' | 'cancelled' | 'guarded';
+export const UPSTREAM_ABORT_MS: Readonly<Record<string, number>> = {
+    'meal-photo-read': 75000,
+    'recipe-photo-read': 75000,
+    'program-photo-read': 75000,
+    'workout-card-read': 75000,
+    'coach-form-check': 75000,
+    'coach-kitchen': 45000,
+    'coach-interpret': 45000,
+    'workout-tidy': 45000,
+    'coach-author': 25000,
+};
+export interface ModelUsage {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+}
+export interface ModelPayload {
+    content?: {
+        type: string;
+        text: string;
+    }[];
+    stop_reason?: string;
+    model?: string;
+    usage?: ModelUsage;
+}
+export type ModelCall = {
+    kind: 'ok';
+    payload: ModelPayload;
+    latencyMs: number;
+} | {
+    kind: 'upstream_error';
+    status: number;
+    latencyMs: number;
+} | {
+    kind: 'upstream_unreachable';
+    latencyMs: number;
+} | {
+    kind: 'timeout';
+    latencyMs: number;
+};
+export type MeterReserve = {
+    ok: true;
+    id: string;
+    credits: number;
+    remaining: number;
+    allowance: number;
+    ageYears: number | null;
+    minor: boolean;
+} | {
+    ok: false;
+    reason: 'not_entitled' | 'no_consent' | 'out_of_credits' | 'meter_unavailable';
+    remaining: number;
+    allowance: number;
+};
+export interface Settled {
+    settled: boolean;
+    refunded: boolean;
+    remaining: number | null;
+}
+export interface CallFacts {
+    model: string;
+    usage?: ModelUsage | null;
+    latencyMs?: number | null;
+}
+const meterInt = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0);
+export function reserveFrom(data: unknown, error: unknown): MeterReserve {
+    if (error || !data || typeof data !== 'object')
+        return { ok: false, reason: 'meter_unavailable', remaining: 0, allowance: 0 };
+    const d = data as Record<string, unknown>;
+    if (d.allowed === true) {
+        if (typeof d.reservation_id !== 'string' || !d.reservation_id)
+            return { ok: false, reason: 'meter_unavailable', remaining: 0, allowance: 0 };
+        return {
+            ok: true,
+            id: d.reservation_id,
+            credits: meterInt(d.credits_spent),
+            remaining: meterInt(d.remaining),
+            allowance: meterInt(d.allowance),
+            ageYears: typeof d.age_years === 'number' && Number.isFinite(d.age_years) ? d.age_years : null,
+            minor: d.minor === true,
+        };
+    }
+    const reason = d.reason === 'not_entitled' || d.reason === 'no_consent' ? d.reason : 'out_of_credits';
+    return { ok: false, reason, remaining: meterInt(d.remaining), allowance: meterInt(d.allowance) };
+}
+export async function timedModelCall(send: (signal: AbortSignal) => Promise<Response>, abortMs: number): Promise<ModelCall> {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+    }, Math.max(0, abortMs));
+    const started = Date.now();
+    const took = () => Date.now() - started;
+    try {
+        const response = await send(controller.signal);
+        if (!response.ok) {
+            const said = await response.text().catch(() => '');
+            console.error('anthropic', response.status, said.slice(0, 800));
+            return { kind: 'upstream_error', status: response.status, latencyMs: took() };
+        }
+        try {
+            return { kind: 'ok', payload: (await response.json()) as ModelPayload, latencyMs: took() };
+        }
+        catch {
+            return timedOut ? { kind: 'timeout', latencyMs: took() } : { kind: 'upstream_error', status: response.status, latencyMs: took() };
+        }
+    }
+    catch {
+        return timedOut ? { kind: 'timeout', latencyMs: took() } : { kind: 'upstream_unreachable', latencyMs: took() };
+    }
+    finally {
+        clearTimeout(timer);
+    }
+}
+export function failedCallReply(kind: 'upstream_error' | 'upstream_unreachable' | 'timeout'): {
+    reason: 'upstream_error' | 'upstream_unreachable';
+    upstream?: 'timeout';
+} {
+    if (kind === 'timeout')
+        return { reason: 'upstream_error', upstream: 'timeout' };
+    return { reason: kind };
+}
+export function callFacts(call: ModelCall, fallbackModel: string): CallFacts {
+    if (call.kind !== 'ok')
+        return { model: fallbackModel, usage: null, latencyMs: call.latencyMs };
+    return {
+        model: typeof call.payload.model === 'string' && call.payload.model ? call.payload.model : fallbackModel,
+        usage: call.payload.usage ?? null,
+        latencyMs: call.latencyMs,
+    };
+}
+export function settleArgs(reservation: string, outcome: SettleOutcome, facts: CallFacts): Record<string, unknown> {
+    const u = facts.usage ?? {};
+    return {
+        p_reservation: reservation,
+        p_outcome: outcome,
+        p_model: facts.model,
+        p_input_tokens: meterInt(u.input_tokens),
+        p_output_tokens: meterInt(u.output_tokens),
+        p_cache_read_input_tokens: meterInt(u.cache_read_input_tokens),
+        p_cache_creation_input_tokens: meterInt(u.cache_creation_input_tokens),
+        p_latency_ms: facts.latencyMs == null ? null : meterInt(facts.latencyMs),
+        p_refund: outcome !== 'ok',
+    };
+}
+export function settledFrom(data: unknown, error: unknown): Settled {
+    if (error || !data || typeof data !== 'object')
+        return { settled: false, refunded: false, remaining: null };
+    const d = data as Record<string, unknown>;
+    return {
+        settled: d.settled === true,
+        refunded: d.settled === true && d.refunded === true,
+        remaining: typeof d.remaining === 'number' && Number.isFinite(d.remaining) ? d.remaining : null,
+    };
+}
+export function settledTail(s: Settled, reservedRemaining: number): {
+    remaining: number;
+    refunded?: true;
+} {
+    const remaining = s.remaining ?? reservedRemaining;
+    return s.refunded ? { remaining, refunded: true } : { remaining };
+}
+export function ageLine(ageYears: number | null, minor: boolean): string | null {
+    if (minor) {
+        const age = ageYears != null && ageYears <= 18 ? `${ageYears}, under 18` : 'under 18';
+        return `Athlete's age, from their profile: ${age}. Keep every suggestion conservative and right for supervised training: no maximal-effort sets or max attempts, and nothing about losing weight.`;
+    }
+    return ageYears == null ? null : `Athlete's age, from their profile: ${ageYears}.`;
+}
+export function withAgeLine(turn: string, ageYears: number | null, minor: boolean): string {
+    const line = ageLine(ageYears, minor);
+    return line ? `${turn}\n\n${line}` : turn;
+}
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const FN = 'recipe-photo-read';
 const MODEL = 'claude-sonnet-5';
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -353,79 +532,52 @@ Deno.serve(async (req) => {
     if (!countError && (count ?? 0) >= RECIPE_PHOTO_PER_DAY) {
         return json({ ok: false, reason: 'daily_limit', limit: RECIPE_PHOTO_PER_DAY }, 429);
     }
-    const { data: spend, error: spendError } = await supabase
-        .rpc('coach_ai_spend_credits', { p_action: RECIPE_PHOTO_ACTION })
+    const { data: reservedRow, error: reserveError } = await supabase
+        .rpc('coach_ai_reserve', { p_action: RECIPE_PHOTO_ACTION, p_fn: FN })
         .maybeSingle();
-    if (spendError)
-        return json({ ok: false, reason: 'meter_unavailable' }, 503);
-    const reserved = spend as {
-        allowed: boolean;
-        credits_spent: number;
-        remaining: number;
-        allowance: number;
-    } | null;
-    if (!reserved?.allowed) {
-        return json({
-            ok: false,
-            reason: 'out_of_credits',
-            remaining: reserved?.remaining ?? 0,
-            allowance: reserved?.allowance ?? 0,
-        });
+    const meter = reserveFrom(reservedRow, reserveError);
+    if (!meter.ok) {
+        if (meter.reason === 'meter_unavailable')
+            return json({ ok: false, reason: 'meter_unavailable' }, 503);
+        if (meter.reason === 'no_consent')
+            return json({ ok: false, reason: 'no_consent' }, 403);
+        return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
     }
-    let response: Response;
-    try {
-        response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                max_tokens: RECIPE_PHOTO_OUTPUT_CAP,
-                thinking: { type: 'disabled' },
-                output_config: { effort: 'low', format: { type: 'json_schema', schema: RECIPE_READ_SCHEMA } },
-                system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-                messages: [
-                    {
-                        role: 'user',
-                        content: [
-                            { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-                            { type: 'text', text: 'Read this recipe.' },
-                        ],
-                    },
-                ],
-            }),
-        });
+    const settle = async (outcome: SettleOutcome, call: ModelCall) => {
+        const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
+        return settledTail(settledFrom(data, error), meter.remaining);
+    };
+    const call = await timedModelCall((signal) => fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: {
+            'x-api-key': ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: MODEL,
+            max_tokens: RECIPE_PHOTO_OUTPUT_CAP,
+            thinking: { type: 'disabled' },
+            output_config: { effort: 'low', format: { type: 'json_schema', schema: RECIPE_READ_SCHEMA } },
+            system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
+                        { type: 'text', text: 'Read this recipe.' },
+                    ],
+                },
+            ],
+        }),
+    }), UPSTREAM_ABORT_MS[FN]);
+    if (call.kind !== 'ok') {
+        return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind, call)) }, 503);
     }
-    catch {
-        return json({ ok: false, reason: 'upstream_unreachable' }, 503);
-    }
-    if (!response.ok) {
-        console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
-        await supabase.rpc('coach_ai_record_usage', {
-            p_action: RECIPE_PHOTO_ACTION, p_credits: reserved.credits_spent, p_model: MODEL,
-            p_input_tokens: 0, p_output_tokens: 0,
-            p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-            p_uncharged: true,
-        });
-        return json({ ok: false, reason: 'upstream_error' }, 503);
-    }
-    const payload = await response.json();
-    const usage = payload?.usage ?? {};
-    await supabase.rpc('coach_ai_record_usage', {
-        p_action: RECIPE_PHOTO_ACTION,
-        p_credits: reserved.credits_spent,
-        p_model: payload?.model ?? MODEL,
-        p_input_tokens: usage.input_tokens ?? 0,
-        p_output_tokens: usage.output_tokens ?? 0,
-        p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-        p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-        p_uncharged: false,
-    });
+    const payload = call.payload;
     if (payload?.stop_reason === 'refusal') {
-        return json({ ok: false, reason: 'unreadable', remaining: reserved.remaining });
+        return json({ ok: false, reason: 'unreadable', ...(await settle('refusal', call)) });
     }
     const text: string = (payload?.content ?? [])
         .filter((b: {
@@ -436,7 +588,9 @@ Deno.serve(async (req) => {
     }) => b.text)
         .join('');
     const verdict = readFromModelText(text);
-    if (!verdict.ok)
-        return json({ ok: false, reason: verdict.reason, remaining: reserved.remaining });
-    return json({ ok: true, read: verdict.read, remaining: reserved.remaining });
+    if (!verdict.ok) {
+        const outcome: SettleOutcome = verdict.reason === 'not_a_recipe' ? 'not_a_program' : payload?.stop_reason === 'max_tokens' ? 'truncated' : 'unreadable';
+        return json({ ok: false, reason: verdict.reason, ...(await settle(outcome, call)) });
+    }
+    return json({ ok: true, read: verdict.read, ...(await settle('ok', call)) });
 });

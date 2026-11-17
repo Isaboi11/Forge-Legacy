@@ -29,6 +29,8 @@ const HEADER = `// ════════════════════�
 // Supabase dashboard → Edge Functions → Deploy a new function → "Via Editor" → name it
 // coach-interpret → replace the editor contents with this whole file → Deploy.
 // ANTHROPIC_API_KEY is already set (program-photo-read uses the same secret).
+// ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
+// this copy also inlines, src/domain/ai/meter-server.ts); until then every call answers "meter unavailable".
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 `;

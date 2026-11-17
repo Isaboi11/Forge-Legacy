@@ -100,8 +100,11 @@ test('the dashboard paste copy is current, self-contained, and small enough to p
 
 test('⛔ the function guards before it spends, answers the browser preflight, and caches the catalogue', () => {
   const fn = read('supabase/functions/coach-author/index.ts');
-  assert.ok(fn.indexOf('medicalRoute(line)') < fn.indexOf("rpc('coach_ai_spend_credits'"), 'the medical guard runs before the credit');
-  assert.ok(fn.indexOf("rpc('coach_ai_spend_credits'") < fn.indexOf('api.anthropic.com'), 'the credit is reserved before the model is called');
+  // AI Sprint 1 (0268): the credit is RESERVED here and settled after the shape check (refunded on a failure).
+  const reserve = fn.indexOf("rpc('coach_ai_reserve', { p_action: action, p_fn: FN })");
+  assert.ok(reserve > 0, 'the function reserves through the 0268 meter');
+  assert.ok(fn.indexOf('medicalRoute(line)') < reserve, 'the medical guard runs before the credit');
+  assert.ok(reserve < fn.indexOf('api.anthropic.com'), 'the credit is reserved before the model is called');
   assert.match(fn, /req\.method === 'OPTIONS'/);
   assert.match(fn, /cache_control: \{ type: 'ephemeral' \}/);
   assert.match(fn, /\$\{AUTHOR_CATALOGUE\}/);
@@ -479,7 +482,10 @@ test('a plan that stops after one movement is not whole, and the function asks o
   assert.equal(authoredIsWhole(sanitizeAuthored(ASKED, 'day')), true);
   const fn = read('supabase/functions/coach-author/index.ts');
   assert.match(fn, /attempt < 2 && !authoredIsWhole\(plan\)/);
-  assert.match(fn, /p_credits: attempt === 0 \? reserved\.credits_spent : 0/, 'the second ask rides on the credit already reserved');
+  // The second ask rides on the credit already reserved: one reservation, ONE settle for both asks' tokens.
+  assert.equal(fn.match(/rpc\('coach_ai_reserve'/g).length, 1);
+  assert.equal(fn.match(/rpc\('coach_ai_settle'/g).length, 1);
+  assert.match(fn, /total\.input \+= usage\.input_tokens \?\? 0;/);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

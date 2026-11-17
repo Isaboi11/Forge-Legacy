@@ -41,20 +41,32 @@
  *   0. `medicalRoute` on the lift + note, BEFORE the credit and the model.
  *   1. Validate and cap the frames (`capFrames`) — refused before the model, because the cheapest request
  *      is the one not made.
- *   2. QUOTE the credit (`coach_ai_quote`, 0221) — refuse here if it would not be allowed.
- *   3. One vision call, the frames in time order, each labelled with its position and second.
- *   4. The guard. Only a readable read SPENDS (`coach_ai_spend_credits`); an unreadable one is free.
- *   5. Record what it actually cost — all four token counts — then the answer.
+ *   2. The day's ceiling (`FORM_PER_DAY`, P-D6) — a read was free when unreadable and had no cap at all.
+ *   3. RESERVE the credit (`coach_ai_reserve`, 0268) — the Premium AI gate, the AI-sharing consent check and
+ *      the server's age. Refused here if it would not be allowed.
+ *   4. One vision call, the frames in time order, each labelled with its position and second, under this
+ *      function's own 75 s abort (AI Sprint 1 contract §3; the app waits 90 s).
+ *   5. The guard, then SETTLE once (`coach_ai_settle`, all four token counts): a readable read is charged; an
+ *      unreadable one, a refusal, an upstream failure or our timeout is refunded — "Not charged." still holds,
+ *      without the quote's month-end race (P-D6). Then the answer.
+ *
+ * The server's age goes in the user turn as one line (P-G8, `ageLine`); the cached system block is unchanged.
  *
  * ══ THE WIRE (to the app) ══
  *
  *   Guarded before the model:  { route: 'crisis' | 'urgent' | 'care' | 'medical_stop' }
  *   Refused:                   { ok: false, reason: 'bad_request' | 'too_large' }                    400
+ *                              { ok: false, reason: 'no_consent' }                                   403
+ *                              { ok: false, reason: 'daily_limit', limit }                           429
  *                              { ok: false, reason: 'out_of_credits', remaining, allowance }         200
- *                              { ok: false, reason: 'unconfigured' | 'meter_unavailable' |
- *                                                   'upstream_error' | 'upstream_unreachable' }      503
- *                              { ok: false, reason: 'unreadable', remaining }                        200
+ *                              { ok: false, reason: 'unconfigured' | 'meter_unavailable' }           503
+ *                              { ok: false, reason: 'upstream_error' | 'upstream_unreachable',
+ *                                upstream?: 'timeout', remaining, refunded: true }                   503
+ *                              { ok: false, reason: 'unreadable', remaining, charged: false,
+ *                                refunded: true }                                                    200
  *   Read:                      { ok: true, read: { lift, looksGood[], fix[], cue }, remaining }      200
+ *
+ * ⛔ No reply carries the upstream's words (P-D8) or the reservation id.
  *
  * `ANTHROPIC_API_KEY` is an Edge Function secret and lives nowhere else — the same note at the top of
  * `coach-interpret`, `coach-ask` and `program-photo-read`. Expo inlines `EXPO_PUBLIC_*` into the bundle, so
@@ -76,13 +88,31 @@ import {
   FORM_LIFT_CHARS,
   FORM_NOTE_CHARS,
   FORM_OUTPUT_CAP,
+  FORM_PER_DAY,
   frameLabel,
   parseFormRead,
 } from '../../../src/domain/coach/form-check.ts';
+// ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
+import {
+  ageLine,
+  callFacts,
+  failedCallReply,
+  type ModelCall,
+  reserveFrom,
+  settleArgs,
+  settledFrom,
+  settledTail,
+  type SettleOutcome,
+  timedModelCall,
+  UPSTREAM_ABORT_MS,
+} from '../../../src/domain/ai/meter-server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+/** This function's deployed slug — the meter's `fn` (0268). */
+const FN = 'coach-form-check';
 
 /** The same model `program-photo-read` uses. One model is one set of numbers. */
 const MODEL = 'claude-sonnet-5';
@@ -304,29 +334,43 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authorization } },
   });
 
-  // ── 2. QUOTE the credit before the model call — spend it only after a readable read ──
+  // ── 2. The day's ceiling (P-D6), read before a credit is reserved ───────────
+  //
+  // Counted under the caller's own JWT, so RLS means it can only ever see that athlete's rows. A counter that
+  // cannot be read must not block the feature — the monthly meter still bounds the spend.
+  const since = new Date();
+  since.setUTCHours(0, 0, 0, 0);
+  const { count, error: countError } = await supabase
+    .from('coach_ai_spend')
+    .select('id', { count: 'exact', head: true })
+    .eq('action', FORM_ACTION)
+    .gte('occurred_at', since.toISOString());
+  if (!countError && (count ?? 0) >= FORM_PER_DAY) return json({ ok: false, reason: 'daily_limit', limit: FORM_PER_DAY }, 429);
+
+  // ── 3. RESERVE the credit before the model call — settle it after the guard ──
   //
   // ⚠ "NOT CHARGED." IS A PROMISE THE DESIGN MAKES (`Coach Holt Form Check.dc.html` 06a, Plan §9.3), so
-  // an unreadable clip must not cost a credit. `coach_ai_quote` (0221) answers "would this be allowed,
-  // and what does it cost" WITHOUT spending; `coach_ai_spend_credits` runs after the guard has a read.
-  // The weight still lives only in `coach_ai_config` (MA3-D16), and the entitlement test is the same one.
-  const { data: quoteRow, error: quoteError } = await supabase
-    .rpc('coach_ai_quote', { p_action: FORM_ACTION })
+  // an unreadable clip must not cost a credit. The credit is HELD now (`coach_ai_reserve`, 0268: Premium AI,
+  // the AI-sharing consent, the balance) and the settle in step 5 refunds it unless the guard has a read — the
+  // same promise as the old quote → spend, without its month-end race (P-D6). The weight still lives only in
+  // `coach_ai_config` (MA3-D16). ⛔ `meter.id` (the reservation) stays in this function — no reply carries it.
+  const { data: reservedRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: FORM_ACTION, p_fn: FN })
     .maybeSingle();
-
-  if (quoteError) return json({ ok: false, reason: 'meter_unavailable' }, 503);
-
-  const quote = quoteRow as { allowed: boolean; cost: number; remaining: number; allowance: number } | null;
-  if (!quote?.allowed) {
-    return json({
-      ok: false,
-      reason: 'out_of_credits',
-      remaining: quote?.remaining ?? 0,
-      allowance: quote?.allowance ?? 0,
-    });
+  const meter = reserveFrom(reservedRow, reserveError);
+  if (!meter.ok) {
+    if (meter.reason === 'meter_unavailable') return json({ ok: false, reason: 'meter_unavailable' }, 503);
+    if (meter.reason === 'no_consent') return json({ ok: false, reason: 'no_consent' }, 403);
+    // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
+    return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
+  /** Settled ONCE, before the answer is returned (contract §1.3). Every outcome but `ok` refunds. */
+  const settle = async (outcome: SettleOutcome, call: ModelCall) => {
+    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
+    return settledTail(settledFrom(data, error), meter.remaining);
+  };
 
-  // ── 3. The model call ───────────────────────────────────────────────────────
+  // ── 4. The model call ───────────────────────────────────────────────────────
   //
   // The frames go in one user turn, each preceded by its position and (when the app sent it) the second
   // it was taken at, because the ORDER is the information: a bar moving up and a bar moving down are the
@@ -339,94 +383,69 @@ Deno.serve(async (req) => {
   const focus = capFocus(body.focus);
   const known = capKnown(body.known);
   const last = capLast(body.last);
+  // P-G8: the server's age, from the profile — per request, so in the user turn and never the cached block.
+  const profile = ageLine(meter.ageYears, meter.minor);
   content.push({
     type: 'text',
     text: `Those frames are one set of: ${lift}. They are in time order.${
       focus.length ? `\n\nLook especially at: ${focus.join(', ')}.` : ''
     }${note ? `\n\nThe athlete says: "${note}"` : ''}${
       known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${known}` : ''
-    }${last ? `\n\nLast saved read of this lift (${last.date}): ${last.fix}` : ''}\n\nAnswer with the JSON object only.`,
+    }${last ? `\n\nLast saved read of this lift (${last.date}): ${last.fix}` : ''}${profile ? `\n\n${profile}` : ''}\n\nAnswer with the JSON object only.`,
   });
 
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        // CA-D5: the form-check cap. A ceiling, not a target — the answer is four short sentences.
-        max_tokens: FORM_OUTPUT_CAP,
-        // Observation, not reasoning — and the guard is code, so the model is not the only thing standing
-        // between an athlete and a bad read. Same settings as `coach-interpret` and `program-photo-read`.
-        thinking: { type: 'disabled' },
-        output_config: { effort: 'low' },
-        system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        messages: [{ role: 'user', content }],
+  const call = await timedModelCall(
+    (signal) =>
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          // CA-D5: the form-check cap. A ceiling, not a target — the answer is four short sentences.
+          max_tokens: FORM_OUTPUT_CAP,
+          // Observation, not reasoning — and the guard is code, so the model is not the only thing standing
+          // between an athlete and a bad read. Same settings as `coach-interpret` and `program-photo-read`.
+          thinking: { type: 'disabled' },
+          output_config: { effort: 'low' },
+          system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+          messages: [{ role: 'user', content }],
+        }),
       }),
-    });
-  } catch {
-    return json({ ok: false, reason: 'upstream_unreachable' }, 503);
-  }
+    UPSTREAM_ABORT_MS[FN],
+  );
 
-  if (!response.ok) {
-    console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
-    // Record the failed attempt so the 60-day run does not under-count what the product costs to operate.
-    // Nothing was spent — the credit is only taken after a readable read.
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: FORM_ACTION, p_credits: 0, p_model: MODEL,
-      p_input_tokens: 0, p_output_tokens: 0,
-      p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-      p_uncharged: true,
-    });
-    return json({ ok: false, reason: 'upstream_error' }, 503);
+  // Unreachable, a non-2xx, or our own abort: refunded. The upstream's words are in this function's log only (P-D8).
+  if (call.kind !== 'ok') {
+    return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind, call)) }, 503);
   }
-
-  const payload = await response.json();
-  const usage = payload?.usage ?? {};
+  const payload = call.payload;
 
   const text: string = (payload?.content ?? [])
     .filter((b: { type: string }) => b.type === 'text')
     .map((b: { text: string }) => b.text)
     .join('\n');
 
-  // ── 5. THE BOUNDARY ─────────────────────────────────────────────────────────
+  // ── 5. THE BOUNDARY, then the settle ────────────────────────────────────────
   //
   // ⚠ RUNS AFTER THE MODEL AND OVERRULES IT. Every sentence about pain, an injury, a diagnosis, the
   // athlete's body, whether the lift is safe, or a number for a load is dropped here — see the long note
   // in `src/domain/coach/form-check.ts`. `lift` comes from the REQUEST, so a model that renames the
   // exercise cannot put words in the athlete's mouth about what they were doing.
   // A safety refusal is the model declining, not the app failing, and not a verdict on the athlete — it
-  // reads as an unreadable clip. Either way nothing is spent: the design says "Not charged."
-  const read = payload?.stop_reason === 'refusal' ? null : parseFormRead(text, lift, frames.length, sizes);
+  // reads as an unreadable clip. Either way it is refunded: the design says "Not charged."
+  const refused = payload?.stop_reason === 'refusal';
+  const read = refused ? null : parseFormRead(text, lift, frames.length, sizes);
 
-  // ── 4. Spend ONLY for a read, then record what it actually cost ────────────
-  //
-  // All four token counts separately — the cache read is the one that matters. An unreadable read is
-  // recorded `p_uncharged: true` so the 60-day run still sees what the product costs to operate.
-  let spent: { allowed: boolean; credits_spent: number; remaining: number } | null = null;
-  if (read) {
-    const { data } = await supabase.rpc('coach_ai_spend_credits', { p_action: FORM_ACTION }).maybeSingle();
-    spent = data as typeof spent;
+  if (!read) {
+    const outcome: SettleOutcome = refused ? 'refusal' : payload?.stop_reason === 'max_tokens' ? 'truncated' : 'unreadable';
+    return json({ ok: false, reason: 'unreadable', ...(await settle(outcome, call)), charged: false });
   }
-  await supabase.rpc('coach_ai_record_usage', {
-    p_action: FORM_ACTION,
-    p_credits: spent?.allowed ? spent.credits_spent : 0,
-    p_model: payload?.model ?? MODEL,
-    p_input_tokens: usage.input_tokens ?? 0,
-    p_output_tokens: usage.output_tokens ?? 0,
-    p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-    p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-    p_uncharged: !spent?.allowed,
-  });
 
-  if (!read) return json({ ok: false, reason: 'unreadable', remaining: quote.remaining, charged: false });
-
-  // ⚠ A spend refused HERE (a race with another read at the very end of the month) still returns the
-  // read: the model has already been paid for, and withholding the answer would waste it twice.
-  return json({ ok: true, read, remaining: spent?.remaining ?? quote.remaining });
+  // A readable read is the one thing charged — all four token counts recorded, the cache read the one that matters.
+  return json({ ok: true, read, ...(await settle('ok', call)) });
 });
