@@ -367,13 +367,65 @@ export function balanceWeek(input: readonly BalanceDay[], opts: BalanceOptions):
     const limit = d.maxSets == null ? r.sets : d.maxSets - others;
     const sets = Math.min(rowCap(ex, opts.newRowSets, opts.experience), r.sets, limit);
     if (sets < ROW_MIN_SETS) return false;
-    if (!safe(t, (h) => sets * creditOf(ex, h) - r.sets * credit(old, h), except)) return false;
+    const delta = (h: VolumeGroup) => sets * creditOf(ex, h) - r.sets * credit(old, h);
+    let raises: WorkRow[] = [];
+    if (!safe(t, delta, except)) {
+      const plan = compensate(t, delta, r, d, sets - r.sets, except);
+      if (!plan) return false;
+      raises = plan;
+    }
     r.ex = ex;
     r.sets = sets;
     r.base = sets;
     r.swapped = true;
+    for (const x of raises) x.sets += 1;
     moves++;
     return true;
+  };
+
+  /**
+   * ══ A SWAP THAT PAYS FOR ITSELF ══
+   *
+   * Sometimes the only row a group can take feeds another group that sits right at its floor — on a two-day,
+   * five-exercise home week, swapping the frog pump for a rear-delt fly leaves the glutes half a set short,
+   * though one more set of the Romanian deadlift (glutes secondary) would cover it. A coach makes both moves at
+   * once; this finds those extra sets: +1 at a time on rows that feed the short group, never the row being
+   * swapped, never past a row's cap or a session's ceiling, never pushing a group over ITS ceiling. All of it
+   * or none of it — the swap is refused when the shortfall cannot be covered.
+   */
+  const compensate = (
+    t: Record<VolumeGroup, number>,
+    delta: (h: VolumeGroup) => number,
+    swapped: WorkRow,
+    swapDay: (typeof days)[number],
+    swapDaySetChange: number,
+    except?: VolumeGroup,
+  ): WorkRow[] | null => {
+    const after = Object.fromEntries(groups.map((h) => [h, t[h] + delta(h)])) as Record<VolumeGroup, number>;
+    // A swap that breaks a CEILING cannot be paid for with more sets.
+    if (groups.some((h) => h !== except && delta(h) > 0 && after[h] > band(h).max + 1e-9)) return null;
+    const extra = new Map<WorkRow, number>();
+    const daySetsAfter = (d: (typeof days)[number]) =>
+      daySets(d) + (d === swapDay ? swapDaySetChange : 0) + d.rows.reduce((n, x) => n + (extra.get(x) ?? 0), 0);
+    for (let guard = 0; guard < 12; guard++) {
+      const short = groups.find((h) => h !== except && delta(h) < 0 && after[h] < floorOf(h) - 1e-9);
+      if (!short) return [...extra.entries()].flatMap(([x, n]) => Array.from({ length: n }, () => x));
+      let best: { x: WorkRow; c: number } | null = null;
+      for (const d of days) {
+        if (d.maxSets != null && daySetsAfter(d) + 1 > d.maxSets) continue;
+        for (const x of d.rows) {
+          if (x === swapped || x.locked || !x.ex) continue;
+          const c = creditOf(x.ex, short);
+          if (c === 0 || x.sets + (extra.get(x) ?? 0) >= rowCap(x.ex, x.base, opts.experience)) continue;
+          if (groups.some((h) => after[h] + creditOf(x.ex as CatalogExercise, h) > band(h).max + 1e-9 && creditOf(x.ex as CatalogExercise, h) > 0)) continue;
+          if (!best || c > best.c) best = { x, c };
+        }
+      }
+      if (!best) return null;
+      extra.set(best.x, (extra.get(best.x) ?? 0) + 1);
+      for (const h of groups) after[h] += creditOf(best.x.ex as CatalogExercise, h);
+    }
+    return null;
   };
 
   /** A group under its floor takes the row that costs the week least. */
