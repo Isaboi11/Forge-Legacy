@@ -14,8 +14,8 @@
  *
  * ══ ⚠ THE MODEL STILL SETS NO NUMBER AND DESCRIBES NOTHING ══
  *
- * It copies characters. The guards, in order: the prompt below; the rule at the bottom of this file (no sets or
- * reps in the answer = not a workout, so a description of a photograph is refused, and the answer is capped);
+ * It copies characters. The guards, in order: the prompt below; the rule `LIFTY` (no training written in the answer
+ * = not a workout, so a description of a photograph is refused, and the answer is capped);
  * `cleanCardTranscript` on the device, which is the same rule and the one that decides; and then nothing is posted
  * as it stands — the text goes in the poster's own box and through the reader.
  *
@@ -58,6 +58,35 @@ const MAX_READS_PER_DAY = 60;
 /** Same ceilings as `cleanCardTranscript` on the device. */
 const MAX_CARD_CHARS = 6000;
 const MAX_CARD_LINES = 120;
+
+/*
+ * IS THERE TRAINING WRITTEN HERE — a COPY of `LIFTY` in `src/domain/workout/card-transcript.ts`, which explains each
+ * line (AI audit 2026-11-16, V-D1: the first rule refused "4×6-8", "15 Push-ups", "Run 5 km" and Sets/Reps sheets,
+ * and kept their credits). ⚠ Change both, character for character: `card-rule.test.mjs` fails when they differ.
+ */
+// ── LIFTY: begin ──
+const LIFT_MOVE = String.raw`\b(?:push[ -]?ups?|pull[ -]?ups?|chin[ -]?ups?|sit[ -]?ups?|squats?|lunges?|burpees?|planks?|rows?|rowing|run|jog|sprints?|jumps?|jumping|crunch(?:es)?|swim|bike|swings?|wall[ -]?sits?|dead[ -]?hangs?|mountain[ -]?climbers?)\b`;
+const LIFT_TIME = String.raw`(?:\d+(?:\.\d+)?[ \t]*(?:s|secs?|seconds?|mins?|minutes?)\b|\b\d{1,2}:\d{2}\b)`;
+const LIFT_DISTANCE = String.raw`\d+(?:\.\d+)?[ \t]*(?:m|km|k|mi|miles?|meters?|metres?|yds?|yards?|cals?)\b`;
+const LIFT_AMOUNT = `(?:${LIFT_TIME}|${LIFT_DISTANCE})`;
+const LIFTY = new RegExp(
+  [
+    String.raw`\d[ \t]*[x×][ \t]*(?!\d*[.,]\d\d(?!\d))\d`,
+    String.raw`${LIFT_AMOUNT}[ \t]*[x×][ \t]*\d`,
+    String.raw`\d[ \t]*(?:sets?|reps?)\b`,
+    String.raw`\b(?:sets?|reps?)[ \t]*[:=][ \t]*\d`,
+    String.raw`@[ \t]*\d{1,3}(?:\.\d+)?[ \t]*%`,
+    String.raw`\d[ \t]*%[ \t]*(?:of[ \t]+)?(?:your[ \t]+)?(?:e?1[ \t]*rm|rm|max|tm)\b`,
+    String.raw`\d[ \t]*%[^\n]*\d[ \t]*%`,
+    String.raw`\b(?:sets?\b[^\n]*\breps?|reps?\b[^\n]*\b(?:sets?|weight|load|lbs?|kgs?)|(?:weight|load)\b[^\n]*\breps?)\b[^\n]*\n[\s\S]*?\d`,
+    String.raw`^[ \t]*(?:[-*•·]|\d{1,2}[.)])?[ \t]*\d{1,3}[ \t]+(?:[a-z]+[ \t]+)?${LIFT_MOVE}`,
+    String.raw`${LIFT_MOVE}(?:[ \t]+[a-z]+)?[ \t]*[:\-–—]?[ \t]*(?:for[ \t]+)?${LIFT_AMOUNT}`,
+    String.raw`${LIFT_AMOUNT}[ \t]+(?:of[ \t]+)?(?:[a-z]+[ \t]+)?${LIFT_MOVE}`,
+    String.raw`\b(?:emom|amrap|tabata)\b`,
+  ].join('|'),
+  'im',
+);
+// ── LIFTY: end ──
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // THE SYSTEM PROMPT — one stable block. No per-request value in it, ever: the image is the user turn.
@@ -189,8 +218,8 @@ Deno.serve(async (req) => {
   }
 
   // ── 3. THE BOUNDARY ────────────────────────────────────────────────────────
-  // ⚠ RUNS AFTER THE MODEL AND OVERRULES IT. No sets or reps in the answer means it is not a workout, whatever
-  // else it says — so a description of a photograph, or of anyone in it, never leaves this function.
+  // ⚠ RUNS AFTER THE MODEL AND OVERRULES IT. No training written in the answer (`LIFTY`) means it is not a workout,
+  // whatever else it says — so a description of a photograph, or of anyone in it, never leaves this function.
   const text: string = (payload?.content ?? [])
     .filter((b: { type: string }) => b.type === 'text')
     .map((b: { text: string }) => b.text)
@@ -206,7 +235,7 @@ Deno.serve(async (req) => {
     .slice(0, MAX_CARD_CHARS);
 
   if (!text) return json({ ok: false, reason: 'unreadable', remaining: reserved.remaining });
-  if (/^NOT_A_WORKOUT\b/.test(text) || !/\d\s*(?:x\s*\d|sets?\b|reps?\b|%)/i.test(text)) {
+  if (/^NOT_A_WORKOUT\b/.test(text) || !LIFTY.test(text)) {
     return json({ ok: false, reason: 'not_a_program', remaining: reserved.remaining });
   }
   return json({ ok: true, text, remaining: reserved.remaining });

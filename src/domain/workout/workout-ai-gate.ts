@@ -1,3 +1,4 @@
+import { LIFTY } from './card-transcript.ts';
 import { readWrittenWorkout, setsLeftInNote, tallyMismatch, writtenToTemplate, type WrittenTemplateRow, type WrittenWorkout } from './written-workout.ts';
 
 /**
@@ -32,8 +33,12 @@ export type AiCall =
   | { kind: 'too_long' }
   | { kind: 'ai'; reasons: string[] };
 
-/** Sets and reps written as sets and reps: "5 sets", "4x10", "8 reps", "@ 75%". A rest day has none of these. */
-const LIFTY = /\d\s*(?:x\s*\d|sets?\b|reps?\b|%)/i;
+/*
+ * "Is there training written here" is `LIFTY`, the card reader's own rule (`card-transcript.ts`), imported rather than
+ * copied: "5 sets", "4×10", "8 reps", "@ 75%", "15 Push-ups", "Run 5 km", a Sets / Reps header. A rest day ("30 min
+ * walk", "Sleep 9 hrs") has none of these. One rule, so the card reader and this gate can never disagree (AI audit
+ * 11-16, V-D1).
+ */
 
 /** "70%", "70-75%", "70 to 75%" — every percentage on the card, both ends of a range. */
 function percentsIn(text: string): number[] {
