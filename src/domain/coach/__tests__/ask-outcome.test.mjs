@@ -165,6 +165,31 @@ test('the sub-line matches what happened: dropped mid-reply, never got through, 
   assert.equal(askOfflineCard({ started: false, timedOut: true }).sub, 'Nothing came back in time, so I stopped waiting.');
 });
 
+test('Sprint 1 (P-D2): "Not charged." only when coach-ask SAID it refunded — never on a guess', () => {
+  assert.equal(askOfflineCard({ started: false, timedOut: false, refunded: true }).notCharged, true);
+  assert.equal(askOfflineCard({ started: true, timedOut: false, refunded: true }).notCharged, true);
+  for (const refunded of [false, undefined]) {
+    assert.equal('notCharged' in askOfflineCard({ started: false, timedOut: true, refunded }), false);
+  }
+  // Both outage cards in askAloud pass the server's word through; the card renders NOT_CHARGED under itself.
+  const ask = between('const askAloud = async', 'const onChip = (chip');
+  assert.equal((ask.match(/askOfflineCard\(\{[^)]*refunded: r\.refunded \}\)/g) ?? []).length, 2);
+  assert.match(sheet, /\{turn\.notCharged \? <Text style=\{styles\.errorFoot\}>\{NOT_CHARGED\}<\/Text> : null\}/);
+  assert.match(sheet, /import \{ NOT_CHARGED \} from '@\/domain\/ai\/ai-failure';/);
+});
+
+test('Sprint 1 (C-G5): the waiting bubble says the lookup — only before the first word, only this ask’s', () => {
+  const ask = between('const askAloud = async', 'const onChip = (chip');
+  assert.match(ask, /onStatus: \(line\) => \{\s*if \(!started\) setAskStatus\(\{ sid, text: line \}\);\s*\}/);
+  // The first word clears it; the ask ending clears it only if it is still this ask's line.
+  assert.match(ask, /setBusy\(null\);\s*setAskStatus\(null\);\s*say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\);/);
+  assert.match(ask, /setAskStatus\(\(s\) => \(s\?\.sid === sid \? null : s\)\);/);
+  assert.match(sheet, /<Waiting kind=\{waiting\} status=\{waiting === 'thinking' \? askStatus\?\.text \?\? null : null\} \/>/);
+  // Secondary ink from the theme tokens, never bronze (Alabaster: bronze is earned).
+  assert.match(sheet, /typingStatus: \{[^}]*color: flColor\.gray400 \}/);
+  assert.doesNotMatch(sheet, /typingStatus: \{[^}]*bronze/);
+});
+
 test('⚠ every outage card in askAloud carries Try again; the sheet closing says nothing', () => {
   const ask = between('const askAloud = async', 'const onChip = (chip');
   const cards = ask.match(/say\(\{ kind: 'error', \.\.\.askOfflineCard\([^)]*\) \}, retryChip\(\{ text, history, q, opts \}\)\)/g) ?? [];
@@ -198,7 +223,7 @@ test('a used Try again reads as answered — a chip row under a card takes the r
 test('⚠ every ask has a controller, the sheet going away aborts it, and busy always lets go', () => {
   const ask = between('const askAloud = async', 'const onChip = (chip');
   assert.match(ask, /const ctl = new AbortController\(\);\s*asking\.current\.add\(ctl\);/);
-  assert.match(ask, /\{ allowWeb: opts\.allowWeb, recipes, signal: ctl\.signal \}/);
+  assert.match(ask, /\{\s*allowWeb: opts\.allowWeb,\s*recipes,\s*signal: ctl\.signal,/);
   // Released, then busy cleared, then this stream's flag — before any ending is handled.
   const after = ask.slice(ask.indexOf('asking.current.delete(ctl);'));
   assert.ok(after.indexOf('setBusy(null);') < after.indexOf('switch (r.kind)'));

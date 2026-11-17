@@ -76,14 +76,25 @@ export const ASK_RETRY_LABEL = 'Try again';
  *
  * ⚠ THE SUB-LINE SAYS WHAT HAPPENED (C-D5). It always read "The connection dropped before I finished",
  * including when nothing had started — a request that never got through, or a wait that ran out.
+ *
+ * `refunded` — coach-ask gave the credit back (AI Road to 10 Sprint 1, P-D2). The card then carries
+ * `notCharged`, and the sheet says `NOT_CHARGED` ("Not charged.") under it — only when the SERVER said so,
+ * never on a guess: an ask that died on the phone's side may well have been charged.
  */
-export function askOfflineCard(o: { started: boolean; timedOut: boolean }): { text: string; sub: string; action: string } {
+export function askOfflineCard(o: { started: boolean; timedOut: boolean; refunded?: boolean }): {
+  text: string;
+  sub: string;
+  action: string;
+  notCharged?: true;
+} {
   const action = 'Ask me again in a moment.';
-  if (o.started) return { text: 'I lost the line partway through.', sub: 'The connection dropped before I finished.', action };
+  const charge = o.refunded === true ? { notCharged: true as const } : {};
+  if (o.started) return { text: 'I lost the line partway through.', sub: 'The connection dropped before I finished.', action, ...charge };
   return {
     text: "I couldn't reach my notes just then.",
     sub: o.timedOut ? 'Nothing came back in time, so I stopped waiting.' : "Your question didn't get through.",
     action,
+    ...charge,
   };
 }
 
