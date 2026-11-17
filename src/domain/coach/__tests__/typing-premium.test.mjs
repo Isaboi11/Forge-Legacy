@@ -127,7 +127,8 @@ test('⚠ conversation memory is this conversation, eight turns, into both AI jo
 
 test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — never saved on its own', () => {
   const edit = sheet.slice(sheet.indexOf('const editByWords = async'), sheet.indexOf('const finishTypedEdit = async'));
-  assert.match(edit, /resolveEditIntent\(intent, active\.structure, marks, PICKER_DB/);
+  // `wanted` since Sprint 2 (C-I7): the sheet's `intent` prop is in scope, and no name shadows another.
+  assert.match(edit, /resolveEditIntent\(wanted, active\.structure, marks, PICKER_DB/);
   assert.doesNotMatch(edit, /updateProgram\(/, 'resolving must not save');
   const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
   assert.match(finish, /pe\.plan\.apply\(scope\)/);
