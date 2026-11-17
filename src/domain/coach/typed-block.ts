@@ -18,7 +18,17 @@
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
 
 import { nameForWeek } from './prescribe.ts';
-import { deloadSets, deloadWeeks, SHORT_BLOCK_WEEKS } from './rulebook/volume.ts';
+import {
+  deloadSets,
+  deloadWeeks,
+  GOAL_CATEGORY,
+  SHORT_BLOCK_WEEKS,
+  VOLUME_GROUPS,
+  weeklyBandFor,
+  weeklyMuscleSets,
+  type PasCategory,
+  type VolumeGroup,
+} from './rulebook/volume.ts';
 
 /** One written row in week `weekIndex` of a `totalWeeks` block. */
 export function rowForWeek(e: ProgramExercise, weekIndex: number, totalWeeks: number, isDeload: boolean): ProgramExercise {
@@ -69,4 +79,66 @@ export function typedBlockLine(structure: ProgramStructure, deloads: readonly nu
   const deload = deloads.length ? `Week${deloads.length > 1 ? 's' : ''} ${deloads.map((w) => w + 1).join(' and ')} ${deloads.length > 1 ? 'are' : 'is a'} lighter${deloads.length > 1 ? ' weeks' : ' week'} — fewer sets, so you come back fresh.` : null;
   const wave = waves ? 'Where I gave you a rep range, add a rep each week until you hit the top, then add weight and start over.' : null;
   return [wave, deload].filter(Boolean).join(' ') || null;
+}
+
+/*
+ * ══ THE SAME VOLUME BANDS, CHECKED — NOT ENFORCED (PB-4, second half) ══
+ *
+ * The rulebook HOLDS its own builds to `WEEKLY_SET_BANDS` (PB-2). A typed program is what the athlete asked for
+ * (Amendment 003), so it is not rebalanced: an arms day with no legs is what they wanted, and a floor would nag.
+ * The CEILING is different — it is the recoverable limit, "held in every week" — so a group a typed week takes past
+ * it is said once, plainly, with the offer to trim. Counted PAS-A4-D1 (1 per primary, 0.5 per secondary muscle).
+ */
+export interface OverCeiling {
+  group: VolumeGroup;
+  sets: number;
+  max: number;
+}
+
+type MuscleLookup = (key: string) => { primaryMuscleIds: readonly string[]; muscleIds: readonly string[] } | null | undefined;
+
+export function typedOverCeiling(
+  days: readonly ProgramDay[],
+  goal: string,
+  experience: 'beginner' | 'intermediate' | 'advanced',
+  muscles: MuscleLookup,
+): OverCeiling[] {
+  const category = GOAL_CATEGORY[goal as keyof typeof GOAL_CATEGORY] as PasCategory | undefined;
+  if (!category) return [];
+  const rows = days.flatMap((d) =>
+    d.main.flatMap((e) => {
+      const m = e.kind !== 'cardio' && e.catalogKey && typeof e.sets === 'number' ? muscles(e.catalogKey) : null;
+      return m ? [{ sets: e.sets as number, primaryMuscleIds: m.primaryMuscleIds, muscleIds: m.muscleIds }] : [];
+    }),
+  );
+  const trained = days.filter((d) => d.main.length > 0).length;
+  const sets = weeklyMuscleSets(rows);
+  return VOLUME_GROUPS.flatMap((group) => {
+    const band = weeklyBandFor(category, experience, group, trained);
+    return band && sets[group] > band.max ? [{ group, sets: sets[group], max: band.max }] : [];
+  });
+}
+
+const GROUP_WORDS: Record<VolumeGroup, string> = {
+  chest: 'chest',
+  lats: 'lats',
+  upper_back: 'upper back',
+  front_deltoids: 'front delts',
+  lateral_deltoids: 'side delts',
+  rear_deltoids: 'rear delts',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  quadriceps: 'quads',
+  hamstrings: 'hamstrings',
+  glutes: 'glutes',
+  calves: 'calves',
+};
+
+/** Holt's one line about it, or null. Names at most two groups, the worst first. */
+export function overCeilingLine(over: readonly OverCeiling[]): string | null {
+  if (!over.length) return null;
+  const worst = [...over].sort((a, b) => b.sets - b.max - (a.sets - a.max)).slice(0, 2);
+  const parts = worst.map((o) => `about ${Math.round(o.sets)} sets of ${GROUP_WORDS[o.group]}`);
+  const max = Math.max(...worst.map((o) => o.max));
+  return `Heads up: that's ${parts.join(' and ')} a week — past the ${max} most people recover from. Say the word and I'll trim it.`;
 }
