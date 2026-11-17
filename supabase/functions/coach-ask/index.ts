@@ -58,7 +58,7 @@
  *                                               holt_chat_summaries (0218) as the athlete, on Haiku, 0 credits
  *                                               but behind the Premium AI gate. Nothing streams.
  *   allowWeb (the athlete TAPPED it):     the same stream, with Anthropic web search in the tool list and
- *                                               the credit metered as 'web' (3). Never on the model's say-so.
+ *                                               the credit metered as 'web' (2 since 0272). Never on the model's say-so.
  *                                               Always Sonnet (C-D8).
  *
  * ══ ⚠ THE CACHE IS THE COST MODEL ══
@@ -281,7 +281,7 @@ interface Body {
   mode?: string;
   /**
    * The athlete TAPPED "Find one online" (Coach-AI-Amendment-002): only then does this call carry the web
-   * search tool, and it is metered as 'web' (3 credits), not 'message'. The model cannot switch it on.
+   * search tool, and it is metered as 'web' (2 credits since 0272 / MA12), not 'message'. The model cannot switch it on.
    */
   allowWeb?: boolean;
   /** The recipe book as the device computed it (`RecipeCard[]`), for `get_recipes`. Narrowed here. */
