@@ -27,7 +27,12 @@ Migration numbers are ASSIGNED (verified free 2026-11-17 across trunk, the build
 
 ## 1. The meter: reserve → model → settle (replaces spend_credits + record_usage in every function we redeploy)
 
-### `coach_ai_reserve(p_action text)` → one row
+### `coach_ai_reserve(p_action text, p_fn text)` → one row
+
+`p_fn` is the calling function's deployed slug (`coach-ask`, `coach-interpret`, … — the `AiFunction` list in
+`src/domain/ai/ai-failure.ts`; anything else is stored as `'other'`). It is kept on the reservation and written to
+`coach_ai_spend.fn` by settle, because the action keys are shared (`day`/`program` by interpret AND author, `message`
+by ask AND interpret) and the AI health page is per function. Old rows have `fn` null.
 
 | column | type | meaning |
 |---|---|---|
@@ -60,8 +65,10 @@ coach_ai_settle(
   write (idempotent; a second settle is a no-op).
 - `p_refund=true` → `coach_ai_period.spent -= credits` (floor 0) on THE RESERVATION'S period row; `refunded=true`.
 - Always writes ONE `coach_ai_spend` row: action, credits = the reserved credits, model, tokens (clamped 0…5,000,000),
-  `cost_usd` from the per-model rate map (§2), `uncharged = p_refund`, plus new columns `outcome`, `latency_ms`
+  `cost_usd` from the per-model rate map (§2), `uncharged = p_refund`, plus new columns `fn`, `outcome`, `latency_ms`
   (clamped 0…600,000), `reservation_id`.
+- Reservations never settled (the platform killed the function) stay visible as "unsettled" on the AI health page; there
+  is no automatic sweeper this sprint (a sweeper would also refund a streamed chat answer whose settle was cut off).
 - `p_outcome` vocabulary (anything else is stored as `'other'`): `ok` · `upstream_error` · `upstream_unreachable` ·
   `timeout` · `refusal` · `truncated` · `not_a_program` · `unreadable` · `bad_output` · `cancelled`.
 
