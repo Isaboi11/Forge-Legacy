@@ -110,7 +110,8 @@ const CLOSERS = [
   ['src/app/workout-write.tsx', /tidyWrittenWorkout\(card, resolveKey, closeSignal\(\)\)/],
   ['src/app/workout-write.tsx', /readWorkoutCard\(picked\[0\], closeSignal\(\)\)/],
   ['src/app/meal-plan.tsx', /askKitchenLive\(\{[^}]*\}, signal\)/],
-  ['src/app/form-check.tsx', /pose: got\.pose\?\.facts \}, closeSignal\(\)\)/],
+  // Web / trunk: no body tracking on this line (build 11's `pose: got.pose?.facts` is native-only), so the call ends at `last`.
+  ['src/app/form-check.tsx', /focus, known, last \}, closeSignal\(\)\)/],
   ['src/components/forge/CoachChatSheet.tsx', /readRecipePhoto\(uri, closeSignal\(\)\)/],
   ['src/components/forge/CoachChatSheet.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, closeSignal\(\)\)/],
   ['src/components/forge/CoachChatSheet.tsx', /await loadNotes\(\), closeSignal\(\)\)/],
