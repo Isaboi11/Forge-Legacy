@@ -5,6 +5,7 @@ import { cardReadFallsBack, readWorkoutCard } from '@/data/workout-card-read-liv
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
 import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import type { PhotoReadResult } from '@/domain/program/photo-read-result';
+import type { ImportPhase } from '@/domain/ai/ai-status';
 import { cardTableTsv, isMultiDaySheet, writtenToWeeks } from '@/domain/program/written-import';
 import { checkBeforePosting, readWrittenWorkout, tsvToWrittenText, writtenToTemplate } from '@/domain/workout/written-workout';
 
@@ -53,8 +54,15 @@ function aiMissLine(kind: string): string {
 }
 
 /** `signal`: the screen or sheet closed — every AI call below it stops (Sprint 1, P-G3). */
-export async function readImportPhoto(uri: string, resolveKey: (name: string) => string | undefined, signal?: AbortSignal): Promise<ImportPhotoRead> {
+export async function readImportPhoto(
+  uri: string,
+  resolveKey: (name: string) => string | undefined,
+  signal?: AbortSignal,
+  /** IM-4: which step this photo is on, for the screen's progress (`importProgress`). Optional; never awaited. */
+  onStep?: (phase: ImportPhase) => void,
+): Promise<ImportPhotoRead> {
   /* ── 1. The words on the photo ── */
+  onStep?.('card');
   const card = await readWorkoutCard(uri, signal);
   let text: string;
   let tsv: string | null = null;
@@ -81,6 +89,7 @@ export async function readImportPhoto(uri: string, resolveKey: (name: string) =>
   /* ── 3. One workout: AI lays it out, the code reads it ── */
   const checks: string[] = [];
   let words = text;
+  onStep?.('layout');
   const tidy = await tidyWrittenWorkout(text, resolveKey, signal);
   if (tidy.kind === 'ok') words = tidy.text;
   else if (tidy.kind === 'no_consent') return tidy;

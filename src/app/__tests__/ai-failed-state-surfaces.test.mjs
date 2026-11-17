@@ -106,7 +106,8 @@ const CLOSERS = [
   ['src/app/meal-photo.tsx', /readMealPhoto\(asset\.uri, closeSignal\(\)\)/],
   ['src/app/my-recipes.tsx', /readRecipePhoto\(uri, closeSignal\(\)\)/],
   ['src/app/my-recipes.tsx', /readRecipeLink\(pasteText, closeSignal\(\)\)/],
-  ['src/app/program-import.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, closeSignal\(\)\)/],
+  // IM-4: the progress callback rides after the signal — the signal is still the third argument.
+  ['src/app/program-import.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, closeSignal\(\)[,)]/],
   ['src/app/workout-write.tsx', /tidyWrittenWorkout\(card, resolveKey, closeSignal\(\)\)/],
   ['src/app/workout-write.tsx', /readWorkoutCard\(picked\[0\], closeSignal\(\)\)/],
   ['src/app/meal-plan.tsx', /askKitchenLive\(\{[^}]*\}, signal\)/],
