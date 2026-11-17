@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import {
   READABLE_MEDIA,
   photoResultFrom,
@@ -94,7 +95,8 @@ function fingerprint(base64: string): string {
   return `${base64.length}:${(h >>> 0).toString(36)}`;
 }
 
-export async function readProgramPhoto(uri: string): Promise<PhotoReadResult | NoAiConsent> {
+/** ⏱ 90 s (contract §3), aborted when `signal` fires. Failures are reported (P-G1); a refund rides on the result. */
+export async function readProgramPhoto(uri: string, signal?: AbortSignal): Promise<Refundable<PhotoReadResult> | NoAiConsent> {
   const file = await readAsBase64(uri);
   // A uri we could not read is the app failing, not the photograph being bad. The athlete would
   // otherwise be told to retake a picture that was never looked at.
@@ -110,34 +112,26 @@ export async function readProgramPhoto(uri: string): Promise<PhotoReadResult | N
 
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('program-photo-read', {
-      body: { image: file.data, mediaType: file.mediaType },
-    });
-
-    /*
-     * ⚠ A NON-2xx IS NOT "OFFLINE". The function answers `too_large` and `bad_request` with a 400 and
-     * `unconfigured` / `meter_unavailable` / `upstream_error` with a 503 — and `functions.invoke` hands
-     * every one of those back as an `error` with `data` null. Treated as offline, a photo that was too big
-     * told the athlete to check their connection (stress test, 2026-09-21). The body is still there, on
-     * the error's `context` (the Response); only a request that never got an answer is offline.
-     */
-    let body: unknown = data;
-    if (error) {
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
-    }
-    if (!body) return { kind: 'offline' };
-
-    const result = photoResultFrom(body);
-    if (result.kind === 'ok') {
-      if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
-      readByContent.set(key, result);
-    }
+  /*
+   * ⚠ A NON-2xx IS NOT "OFFLINE". The function answers `too_large` and `bad_request` with a 400 and
+   * `unconfigured` / `meter_unavailable` / `upstream_error` with a 503 — and `functions.invoke` hands
+   * every one of those back as an `error` with `data` null. Treated as offline, a photo that was too big
+   * told the athlete to check their connection (stress test, 2026-09-21). The body is still there, on
+   * the error's `context` (the Response) — `invokeAi` reads it; only a request that never got an answer is offline.
+   */
+  const a = await invokeAi('program-photo-read', { image: file.data, mediaType: file.mediaType }, { signal });
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
+  const result = ((): PhotoReadResult => {
+    if (a.offline || a.cancelled) return { kind: 'offline' };
+    if (a.timedOut) return { kind: 'unavailable' };
+    if (!a.body) return a.status === 200 ? { kind: 'offline' } : { kind: 'unavailable' };
+    return photoResultFrom(a.body);
+  })();
+  if (result.kind === 'ok') {
+    if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
+    readByContent.set(key, result);
     return result;
-  } catch {
-    return { kind: 'offline' };
   }
+  reportAiCall(a, result.kind);
+  return refundedResult(result, a);
 }
