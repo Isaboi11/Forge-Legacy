@@ -261,6 +261,11 @@ export interface Chip {
    * Carries what to look for. Tapping it is the athlete's consent: only that ask carries web search.
    */
   webSearch?: string;
+  /**
+   * "Try again" under an outage card — sends that ask again (AI audit 11-16, C-D5). Names the ask; the ask
+   * itself waits in the sheet, so a chip restored after a reload finds nothing and does nothing. Used once.
+   */
+  retryAsk?: number;
   /** Holt's Kitchen: cook from the list ('go'), or ask again a different way (Kitchen Scope §1.3). */
   kitchen?: 'go' | 'more' | 'quicker' | 'protein' | 'style';
   /**
