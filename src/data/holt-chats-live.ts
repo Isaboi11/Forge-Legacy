@@ -3,6 +3,9 @@ import { fetch } from 'expo/fetch';
 import { supabase } from '@/lib/supabase';
 import { consentAllowsNow } from '@/lib/consent';
 import type { AskTurn } from '@/domain/coach/ask-wire';
+import { askClock, SUMMARY_TIMEOUT_MS } from '@/domain/coach/ask-stream';
+import { classifyAiFailure, wasRefunded } from '@/domain/ai/ai-failure';
+import { elapsedMs, reportAiFailure } from '@/lib/ai-telemetry';
 
 /**
  * HOLT REMEMBERS PAST CHATS — the app end (Coach-AI-Amendment-002, migration 0218).
@@ -24,22 +27,68 @@ const ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 /** Fewer athlete turns than this is a greeting or a tap, not a conversation — nothing is sent. */
 export const SUMMARY_MIN_ATHLETE_TURNS = 2;
 
-export async function summarizeChat(turns: readonly AskTurn[]): Promise<void> {
+/*
+ * How long the summary may take, end to end, is `SUMMARY_TIMEOUT_MS` (ask-stream.ts, 30 s — AI Road to 10 Sprint 1,
+ * PL-3). `coach-ask` cuts its own model call off at 20 s, so on a working function it never fires; before Sprint 1
+ * the call had no clock at all and could hang on a dead line for as long as the phone allowed.
+ */
+export { SUMMARY_TIMEOUT_MS };
+
+/** The function's own reasons that mean the summary FAILED (not "nothing worth keeping", not "no Premium AI"). */
+const SUMMARY_FAILED = new Set(['upstream_error', 'upstream_unreachable', 'failed', 'refusal', 'bad_output']);
+
+/**
+ * `options.signal` — abort it (the chat is gone with the app, say) and the call stops; `timeoutMs` is for tests.
+ * Never throws, and never shows anything: a failure is reported to `client_errors` / Sentry (PL-4) and that is all.
+ */
+export async function summarizeChat(turns: readonly AskTurn[], options: { signal?: AbortSignal; timeoutMs?: number } = {}): Promise<void> {
   if (turns.filter((t) => t.role === 'athlete').length < SUMMARY_MIN_ATHLETE_TURNS) return;
   /* A summary is written by the model, so it is sharing too — but nobody tapped anything, so it never asks:
      without a yes already given, the chat simply is not remembered (MHMDA / Nevada SB 370). */
   if (!consentAllowsNow('ai_sharing')) return;
+  const ms = options.timeoutMs ?? SUMMARY_TIMEOUT_MS;
+  /* One wall for the whole call: the session, the request and the reply (`askClock`, the ask's own clock). */
+  const clock = askClock({ firstByteMs: ms, idleMs: ms, totalMs: ms, signal: options.signal });
+  const startedAt = Date.now();
+  let status: number | null = null;
   try {
-    const { data: auth } = await supabase.auth.getSession();
+    const { data: auth } = await clock.race(supabase.auth.getSession());
     const jwt = auth.session?.access_token;
     if (!jwt) return;
-    await fetch(FUNCTION_URL, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${jwt}`, apikey: ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mode: 'summarize', question: '', history: turns.slice(-40) }),
+    const res = await clock.race(
+      fetch(FUNCTION_URL, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${jwt}`, apikey: ANON_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'summarize', question: '', history: turns.slice(-40) }),
+        signal: clock.signal,
+      }),
+    );
+    status = res.status;
+    const body = (await clock.race(res.json()).catch(() => null)) as { reason?: unknown; upstream?: unknown } | null;
+    const reason = typeof body?.reason === 'string' ? body.reason : null;
+    if (res.ok && !(reason && SUMMARY_FAILED.has(reason))) return;
+    const why = reason ?? `http_${res.status}`;
+    reportAiFailure({
+      fn: 'coach-ask',
+      kind: classifyAiFailure({ reason: why, upstream: typeof body?.upstream === 'string' ? body.upstream : null, status }),
+      reason: `summary_${why}`.slice(0, 40),
+      status,
+      latencyMs: elapsedMs(startedAt),
+      refunded: wasRefunded(body),
     });
   } catch {
-    // Offline or signed out — the chat simply is not remembered.
+    // Offline, signed out, or out of time — the chat simply is not remembered. Reported, never shown.
+    const early = clock.why();
+    reportAiFailure({
+      fn: 'coach-ask',
+      kind: classifyAiFailure({ timedOut: early === 'timeout', cancelled: early === 'aborted', offline: status == null && !early }),
+      reason: early === 'timeout' ? 'summary_timeout' : early === 'aborted' ? 'summary_aborted' : 'summary_fetch_failed',
+      status,
+      latencyMs: elapsedMs(startedAt),
+      refunded: false,
+    });
+  } finally {
+    clock.done();
   }
 }
 
