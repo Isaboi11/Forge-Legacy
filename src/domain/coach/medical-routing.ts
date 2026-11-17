@@ -37,8 +37,12 @@
  * Same rule `entitlement.ts` states about itself — the gate belongs in the layer that cannot be talked
  * out of it.
  *
- * Pure, dependency-free, and imported by BOTH the app and the `coach-interpret` Edge Function so the two
- * can never drift. Relative imports only — `@/` is type-only in domain code and breaks `node --test`.
+ * Pure, dependency-free, and imported by the app AND every Edge Function that reads what an athlete typed
+ * (`coach-ask`, `coach-interpret`, `coach-author`, `coach-kitchen`, `coach-form-check`, `program-photo-read`), so
+ * they can never drift. Relative imports only — `@/` is type-only in domain code and breaks `node --test`.
+ *
+ * ⚠ THIS IS THE WAY IN. What the MODEL says on the way out is `src/domain/ai/output-scan.ts` (Sprint 2, CH-2) — a
+ * separate list on purpose: it is tuned for a model's sentences ("that's normal" beside a symptom), not an athlete's.
  */
 
 /**
