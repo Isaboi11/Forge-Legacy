@@ -140,7 +140,7 @@ test('import-free, and no private name collides with the modules it is inlined b
     'src/domain/coach/ask-tools.ts',
     'src/domain/coach/ask-turn.ts',
     'src/domain/coach/form-check.ts',
-    'src/domain/coach/pose/pose-facts.ts',
+    // 'src/domain/coach/pose/pose-facts.ts' — build 11 only (body tracking); not on the web / trunk line.
     'src/domain/coach/interpret-narrow.ts',
     'src/domain/ai/meter-server.ts',
     'src/domain/nutrition/kitchen-dishes.ts',

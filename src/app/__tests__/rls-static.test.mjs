@@ -156,7 +156,9 @@ const ANON_CALLABLE = {
 const DEFINERS = checkDefinerGrants(ALL);
 
 test('every SECURITY DEFINER function ends closed to public AND anon, except the four meant for strangers', () => {
-  assert.ok(DEFINERS.definers >= 270, `the replay saw ${DEFINERS.definers} definer functions — a parser that finds none passes trivially`);
+  // Web / trunk: 269 here — build 11's 0264 (server caps, its definer functions) is not in this line's migrations
+  // folder. The floor only proves the parser found them; 265 still does.
+  assert.ok(DEFINERS.definers >= 265, `the replay saw ${DEFINERS.definers} definer functions — a parser that finds none passes trivially`);
   assert.deepEqual(DEFINERS.dynamic, [], 'no grant built at run time that could not be expanded');
   const unexpected = DEFINERS.open.filter((o) => !Object.hasOwn(ANON_CALLABLE, o.key.slice(0, o.key.indexOf('('))));
   assert.deepEqual(

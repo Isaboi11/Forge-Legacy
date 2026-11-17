@@ -78,7 +78,7 @@ test('the lift AND the note are both classified, as one piece of text', () => {
   assert.match(SRC, /guardRoute\(said\)/);
   // The note reaches the model only in the user turn, and only after the guard — through the ONE builder (Sprint 2),
   // which labels it as the athlete's own words.
-  assert.ok(at('guardRoute(') < at('formUserText({ lift, focus, note, known, last, measured, profile, times })'));
+  assert.ok(at('guardRoute(') < at('formUserText({ lift, focus, note, known, last, profile, times })'));
   assert.ok(DOMAIN.includes('The athlete says: "${p.note}"'));
 });
 
@@ -122,7 +122,7 @@ test('the frames go in the user turn, in order, each labelled with its position'
   assert.match(SRC, /type: 'image', source: \{ type: 'base64', media_type: MEDIA_TYPE, data \}/);
   assert.match(SRC, /messages: \[\{ role: 'user', content \}\]/);
   assert.ok(DOMAIN.includes('They are in time order.'), 'the model is told the order is information');
-  assert.match(SRC, /content\.push\(\{ type: 'text', text: formUserText\(\{ lift, focus, note, known, last, measured, profile, times \}\) \}\);/);
+  assert.match(SRC, /content\.push\(\{ type: 'text', text: formUserText\(\{ lift, focus, note, known, last, profile, times \}\) \}\);/);
 });
 
 test('usage is recorded with all four token counts, on success and on failure', () => {
