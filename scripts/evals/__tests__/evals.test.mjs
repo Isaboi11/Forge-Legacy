@@ -185,16 +185,16 @@ test('gate: a missing suite fails, a noSuite reason passes, an unknown slug fail
   assert.equal((await gateSlug('nope', { root, suites: [], functions })).ok, false);
 });
 
-test('the real suites: each validates, gates functions that exist, and every suite the map names exists (bar the builder’s)', async () => {
+test('the real suites: each validates, gates functions that exist, and every suite the map names exists', async () => {
   const suites = await loadSuites(ROOT);
   const names = new Set(suites.map((s) => s.name));
-  for (const s of ['chat-safety', 'chat-answers', 'author', 'kitchen-allergens', 'meal-photo', 'form-check']) assert.ok(names.has(s), s);
+  for (const s of ['chat-safety', 'chat-answers', 'author', 'kitchen-allergens', 'meal-photo', 'form-check', 'import-corpus']) assert.ok(names.has(s), s);
   for (const s of suites) {
     for (const f of s.functions) assert.ok(FUNCTIONS[f], `${s.name} gates ${f}, which is not in functions.mjs`);
     assert.match(promptHash(s, ROOT), /^[0-9a-f]{64}$/);
     for (const f of s.functions) assert.ok(FUNCTIONS[f].suites.includes(s.name), `functions.mjs['${f}'].suites lists ${s.name}`);
   }
   for (const [slug, m] of Object.entries(FUNCTIONS)) {
-    for (const n of m.suites) if (n !== 'import-corpus') assert.ok(names.has(n), `${slug} expects suite ${n}`);
+    for (const n of m.suites) assert.ok(names.has(n), `${slug} expects suite ${n}`);
   }
 });
