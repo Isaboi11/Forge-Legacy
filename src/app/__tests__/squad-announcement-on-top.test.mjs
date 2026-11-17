@@ -1,5 +1,6 @@
-// PO 2026-11-12: the squad announcement sits under the header, above check-ins and the goal, and stays there
-// until the owner takes it down or posts a new one. The weekly summary stays a 24-hour pin inside the feed.
+// PO 2026-11-12: a PINNED squad announcement sits under the header, above check-ins and the goal, until the owner
+// takes it down. The weekly summary stays a 24-hour pin inside the feed.
+// ⛔ PO 2026-11-16 (SQ-A7-D9): posting an announcement never pins it. Only the owner's "Pin to the top" does.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -34,9 +35,10 @@ test('only the owner gets "Take down", and it unpins rather than deletes', () =>
   assert.match(fn.slice(0, 400), /pinSquadPost\(postId, false\)/);
 });
 
-test('the composer pins an announcement after posting it, and never fails the post over the pin', () => {
-  assert.match(COMPOSER, /if \(type !== 'announcement'\) return done\(\);/);
-  assert.match(COMPOSER, /const pin = await pinAsAnnouncement\(squadId, postId\);/);
+test('⛔ the composer never pins an announcement, and never unpins another one (PO 11-16)', () => {
+  assert.doesNotMatch(COMPOSER, /pinAsAnnouncement|pinSquadPost/, 'posting must not touch any pin');
+  assert.doesNotMatch(COMPOSER, /Pins to the top|stays at the top of the squad until/, 'the screen must not promise a pin');
+  assert.match(COMPOSER, /done\(type === 'announcement' \? 'Announcement posted' : undefined\);/);
   // 0265: the friends writer's post id goes to the tag call (Friends & Squad) — never to `done` as the toast.
   assert.match(
     COMPOSER,
