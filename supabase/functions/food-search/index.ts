@@ -413,6 +413,103 @@ async function fatsecretToken(): Promise<string | null> {
   return fsToken.value;
 }
 
+/*
+ * NU-2 / AI audit 11-16 N-D6: a FatSecret serving with no weighed amount reads its weight from its own
+ * text, or, for a bare "1 serving", from the end of the food's name. The block below is a byte-for-byte
+ * copy of src/domain/nutrition/serving-weight.ts (serving-weight.test.mjs checks). Edit both, or neither.
+ */
+// ── SERVING WEIGHT: begin ──────────────────────────────────────────────────────────────────────────
+const OZ_GRAMS = 28.3495;
+
+/** Grams per unit. A millilitre is taken as a gram, as the metric_serving_amount path always has. */
+const WEIGHT_UNITS: ReadonlyArray<{ re: RegExp; grams: number; metric: boolean }> = [
+  { re: /^(?:fl\.?\s*oz|fluid\s+ounces?)$/i, grams: 29.5735, metric: false },
+  { re: /^(?:oz|ounces?)$/i, grams: OZ_GRAMS, metric: false },
+  { re: /^(?:lbs?|pounds?)$/i, grams: 453.592, metric: false },
+  { re: /^(?:kg|kilograms?)$/i, grams: 1000, metric: true },
+  { re: /^(?:g|grams?)$/i, grams: 1, metric: true },
+  { re: /^(?:ml|millilit(?:er|re)s?)$/i, grams: 1, metric: true },
+  { re: /^(?:l|lit(?:er|re)s?)$/i, grams: 1000, metric: true },
+];
+
+/** "2 oz", "2 fl oz", "85 g", "240 ml", "1 1/2 oz", "12-oz". The unit may not run on into a word ("2 large"). */
+const WEIGHT_RE =
+  /(?<![\w./])(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?|\.\d+)\s*-?\s*(fl\.?\s*oz|fluid\s+ounces?|ounces?|oz|pounds?|lbs?|kilograms?|kg|grams?|g|millilit(?:er|re)s?|ml|lit(?:er|re)s?|l)(?![a-z])/gi;
+
+/** "85 g each", "per 2 oz", "2 x 4 oz" — the number weighs something other than this serving. */
+const NOT_THIS_SERVING_RE = /\b(?:each|ea|per)\b|\d\s*[x×]\s*\d/i;
+
+/** A serving that says nothing about itself, so the food's name may say the weight instead. */
+const GENERIC_SERVING_RE = /^\s*(?:1\s+)?(?:serving)?\s*$/i;
+
+function weightNumber(raw: string): number {
+  const mixed = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3]);
+  const fraction = raw.match(/^(\d+)\/(\d+)$/);
+  if (fraction) return Number(fraction[1]) / Number(fraction[2]);
+  return Number(raw);
+}
+
+interface WeightHit {
+  grams: number;
+  metric: boolean;
+  end: number;
+}
+
+function weightHits(text: string): WeightHit[] {
+  const hits: WeightHit[] = [];
+  for (const m of text.matchAll(WEIGHT_RE)) {
+    const unit = WEIGHT_UNITS.find((u) => u.re.test(m[2]));
+    const n = weightNumber(m[1]);
+    if (!unit || !Number.isFinite(n) || n <= 0) continue;
+    hits.push({ grams: n * unit.grams, metric: unit.metric, end: (m.index ?? 0) + m[0].length });
+  }
+  return hits;
+}
+
+/** One weight, or null. Metric wins over ounces ("1 cup (8 fl oz / 240 ml)" → 240); two different metric weights → null. */
+function oneWeight(hits: WeightHit[]): number | null {
+  const metric = hits.filter((h) => h.metric);
+  const pool = metric.length ? metric : hits;
+  const distinct = [...new Set(pool.map((h) => Math.round(h.grams * 10) / 10))];
+  return distinct.length === 1 ? distinct[0] : null;
+}
+
+/** The weight written in a serving's own text: "2 oz", "1 cup (240 ml)", "1 serving (85 g)". */
+function servingTextGrams(text: string): number | null {
+  if (!text || NOT_THIS_SERVING_RE.test(text)) return null;
+  return oneWeight(weightHits(text));
+}
+
+/**
+ * The weight at the END of a food's name: "Tomatillo Ranch Dressing - 2 oz", "Kids Burrito (8 oz)".
+ * Exactly one weight, last thing in the name — "Salad with 2 oz Dressing" is the dressing, not the salad.
+ */
+function foodNameGrams(name: string): number | null {
+  if (!name || NOT_THIS_SERVING_RE.test(name)) return null;
+  const hits = weightHits(name);
+  if (hits.length !== 1) return null;
+  if (!/^[\s)\]]*$/.test(name.slice(hits[0].end))) return null;
+  return hits[0].grams;
+}
+
+/**
+ * Grams in one FatSecret serving: the weighed amount first; then the serving's own text; then — only
+ * for a bare "1 serving" — the food's name. Null when none of them says a weight.
+ */
+function fsServingGrams(serving: Record<string, unknown>, foodName: unknown): number | null {
+  const amount = Number(serving.metric_serving_amount ?? NaN);
+  if (Number.isFinite(amount) && amount > 0) {
+    return /^oz$/i.test(String(serving.metric_serving_unit ?? '')) ? amount * OZ_GRAMS : amount;
+  }
+  const text = String(serving.serving_description ?? '').trim();
+  const fromText = servingTextGrams(text);
+  if (fromText != null) return fromText;
+  if (!GENERIC_SERVING_RE.test(text)) return null;
+  return foodNameGrams(String(foodName ?? '').trim());
+}
+// ── SERVING WEIGHT: end ────────────────────────────────────────────────────────────────────────────
+
 function fsFood(food: Record<string, any>): Food | null {
   const id = String(food.food_id ?? '');
   // `food.get` returns every serving; `foods.search` returns a summary line instead. Prefer real servings.
@@ -427,11 +524,9 @@ function fsFood(food: Record<string, any>): Food | null {
    * calories-per-gram; and a food with no calories anywhere is not offered at all. A 0-calorie Big Mac
    * logs a lie.
    */
-  const weight = (s: Record<string, any>): number | null => {
-    const n = num(s.metric_serving_amount);
-    if (n == null || n <= 0) return null;
-    return /^oz$/i.test(String(s.metric_serving_unit ?? '')) ? n * 28.3495 : n;
-  };
+  // The weighed amount first; then "2 oz" / "1 cup (240 ml)" in the serving; then "- 2 oz" at the end of
+  // the name for a bare "1 serving" (NU-2). Still null when nothing says a weight: never invented.
+  const weight = (s: Record<string, any>): number | null => fsServingGrams(s, food.food_name);
   const basis = all.find((s) => num(s.calories) != null && weight(s) != null);
   if (!id || !food.food_name || !basis) return null;
   const grams = weight(basis)!;
@@ -727,8 +822,9 @@ const fsExpiry = () => new Date(Date.now() - FS_TTL_MS).toISOString();
  * Cached rows older than this hold grams-only or sibling-product servings (2026-09-24), or were fetched by
  * the stale 09-25 deploy that lacked the GRM/MLT serving fix (a45c50b0; AI audit 11-16, N-D3: 220 USDA rows
  * fetched after 09-29 still had a weightless serving). They are re-fetched, so the catalogue heals as people search.
+ * Bumped 11-17 (NU-2): restaurant foods weighed from "2 oz" in the serving or the name now come back.
  */
-const SERVINGS_SINCE = '2026-11-17T06:00:00Z';
+const SERVINGS_SINCE = '2026-11-17T22:00:00Z';
 
 /** Drop every FatSecret row we are no longer licensed to hold. Cheap, indexed, and safe to over-call. */
 async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Promise<void> {
