@@ -4,7 +4,7 @@ import { readWorkoutCard } from '@/data/workout-card-read-live';
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
 import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import type { PhotoReadResult } from '@/domain/program/photo-read-result';
-import { isMultiDaySheet, writtenToWeeks } from '@/domain/program/written-import';
+import { cardTableTsv, isMultiDaySheet, writtenToWeeks } from '@/domain/program/written-import';
 import { checkBeforePosting, readWrittenWorkout, tsvToWrittenText, writtenToTemplate } from '@/domain/workout/written-workout';
 
 /**
@@ -65,10 +65,13 @@ export async function readImportPhoto(uri: string, resolveKey: (name: string) =>
   } else return card;
 
   /* ── 2. A sheet of several days or weeks is a program table (`isMultiDaySheet` says why that is its own test) ── */
-  const table = parseProgramTable(tsv ?? text);
+  /* The card reader copies a sheet as lines of text — tabs, pipes or spaced columns. `cardTableTsv` cuts them back
+     into the table reader's TSV, which `parseProgramTable` reads (it reads tabs and markdown only). */
+  const sheet = tsv ?? cardTableTsv(text);
+  const table = parseProgramTable(sheet ?? text);
   const dayCount = table.ok ? table.weeks.reduce((n, w) => n + w.days.length, 0) : 0;
   if (table.ok && isMultiDaySheet(text, tsv)) {
-    return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks: [], via: 'table', text: tsv ?? text };
+    return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks: [], via: 'table', text: sheet ?? text };
   }
 
   /* ── 3. One workout: AI lays it out, the code reads it ── */
@@ -83,7 +86,7 @@ export async function readImportPhoto(uri: string, resolveKey: (name: string) =>
   const rows = writtenToTemplate(w, resolveKey);
   if (!rows.length) {
     /* Nothing the written reader could make a lift of: the table reader's reading, if it had one. */
-    if (table.ok && dayCount) return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks, via: 'table', text: tsv ?? text };
+    if (table.ok && dayCount) return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks, via: 'table', text: sheet ?? text };
     return { kind: 'unparsed', error: 'No exercises could be read from that photo. Try a closer, straighter shot.' };
   }
   /* The preview already says which names the library doesn't know, with its own "Did you mean". */
