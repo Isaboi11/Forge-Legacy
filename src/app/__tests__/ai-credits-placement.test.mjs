@@ -62,7 +62,8 @@ test('every AI screen carries the chip in its app bar', () => {
     'meal-plan.tsx': /<AppBar title="" transparent onBack=\{\(\) => router\.back\(\)\} actions=\{<AiCreditsChip \/>\} \/>/,
     'program-import.tsx': /\{mode === 'photo' \? <AiCreditsChip \/> : null\}/,
     'workout-write.tsx': /transparent onBack=\{\(\) => router\.back\(\)\} actions=\{<AiCreditsChip \/>\} \/>/,
-    'form-check.tsx': /<AppBar title=\{title\} onClose=\{onClose\} actions=\{<AiCreditsChip \/>\} \/>/,
+    // Web / trunk: form check's bar is FormBar, not build 11's AppBar — the chip sits in its right slot, before the close.
+    'form-check.tsx': /right=\{\n\s+<View style=\{s\.barRight\}>\n\s+<AiCreditsChip style=\{s\.barChip\} \/>/,
     'my-recipes.tsx': /onBack=\{\(\) => \(form \? closeForm\(\) : router\.back\(\)\)\} actions=\{<AiCreditsChip \/>\} \/>/,
   };
   for (const [file, re] of Object.entries(screens)) {

@@ -21,7 +21,8 @@ import { buildCoachFormCheckDeploy } from '../../../../scripts/build-coach-form-
 import { fakeModel, loadJsonFunction, newLog, post, settled } from './json-fn-harness.mjs';
 import { formReadTexts, formSpacingLine, formUserText, sanitizeFormRead } from '../form-check.ts';
 import { FORM_AGE_UNKNOWN_LINE, formAgeGate, formBirthYear, formResultFrom } from '../form-check-view.ts';
-import { densePoseFrames } from '../pose/pose-frames.ts';
+// Web / trunk: no body tracking on this line (`src/domain/coach/pose/` is build 11's native half), so the two
+// `densePoseFrames` tests below are build-11-only and live there. The web sends even frames with their real times.
 
 const read = (rel) => fs.readFileSync(rel, 'utf8').replace(/\r\n/g, '\n');
 const FRAME = 'A'.repeat(400);
@@ -137,33 +138,6 @@ test('formReadTexts: every line a person sees, and nothing else', () => {
     'Film the next heavy set and we will see the bar path tighten up.',
     'bottom of the squat',
   ]);
-});
-
-// ── Dense frames + rep tags (V-D4) ────────────────────────────────────────────
-
-const rep = (startMs, turnMs, midMs, endMs, edge = false) => ({ start: 0, turn: 0, end: 0, startMs, turnMs, midMs, endMs, down: 1, pause: 0, up: 1, edge });
-
-test('densePoseFrames: the dense frames stay, the nearest is moved onto each rep’s moment and tagged, order kept', () => {
-  const times = Array.from({ length: 24 }, (_, i) => Math.round(167 + i * 333)); // ~3 a second over 8 s
-  const reps = [rep(300, 1400, 2000, 2600), rep(2700, 3900, 4500, 5100), rep(5200, 6400, 7000, 7600)];
-  const d = densePoseFrames(times, reps);
-  assert.equal(d.times.length, times.length, 'every dense frame is still sent');
-  assert.deepEqual(d.times, [...d.times].sort((a, b) => a - b));
-  assert.ok(d.times.every((t, i) => i === 0 || t > d.times[i - 1]), 'strictly ascending (capFrameTimes drops anything else)');
-  for (let r = 1; r <= 3; r += 1) {
-    const bottom = d.tags.findIndex((t) => t && t.rep === r && t.at === 'turn');
-    assert.ok(bottom >= 0, `rep ${r} has its bottom`);
-    assert.equal(d.times[bottom], reps[r - 1].turnMs, 'moved exactly onto the moment');
-  }
-  assert.ok(d.tags.filter(Boolean).length >= 9);
-  assert.ok(d.times.every((t, i) => Math.abs(t - times[i]) <= 167), 'no frame moved more than half a gap');
-});
-
-test('densePoseFrames: an edge rep has no start; no reps tags nothing', () => {
-  const times = [100, 433, 767, 1100, 1433, 1767, 2100];
-  const d = densePoseFrames(times, [rep(0, 0, 900, 1800, true)]);
-  assert.ok(!d.tags.some((t) => t && t.at === 'start'));
-  assert.deepEqual(densePoseFrames(times, []), { times, tags: times.map(() => null) });
 });
 
 // ── Birth year ────────────────────────────────────────────────────────────────
