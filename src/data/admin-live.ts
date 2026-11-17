@@ -61,6 +61,8 @@ const FROM_MIGRATION: Record<string, string> = {
   ),
   // 0239 — the Bugs page's four sources.
   ...Object.fromEntries(['admin_bug_sources', 'admin_reports_inbox', 'admin_report_dismiss', 'admin_crashes', 'admin_report_track', 'admin_bug_links'].map((fn) => [fn, '0239'])),
+  // 0269 — /admin → AI health (AI Road to 10, Sprint 1).
+  admin_ai_health: '0269',
 };
 
 function rpcError(e: unknown, fn: string): Error {
