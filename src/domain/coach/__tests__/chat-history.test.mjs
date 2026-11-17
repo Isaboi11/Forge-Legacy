@@ -127,7 +127,8 @@ test('every stop card in the sheet goes through stopOn, which marks the line', (
 
 test('the Edge Functions guard every history turn, and the paste bundles carry it', () => {
   const ask = read('supabase/functions/coach-ask/index.ts');
-  assert.match(ask, /withoutStoppedTurns\(trimHistory\(body\.history, ASK_HISTORY_MAX \* 4\)\)/);
+  // Sprint 1 (P-G8): the guard it passes is the minor-aware one for a profile minor; for anyone else, the same stop.
+  assert.match(ask, /withoutStoppedTurns\(trimHistory\(body\.history, ASK_HISTORY_MAX \* 4\), stops\)/);
   const interp = read('supabase/functions/coach-interpret/index.ts');
   assert.match(interp, /const history = withoutStoppedTurns\(narrowHistory\(body\.history\)\);/);
   for (const b of ['supabase/apply/deploy-coach-ask.ts', 'supabase/apply/deploy-coach-interpret.ts']) {

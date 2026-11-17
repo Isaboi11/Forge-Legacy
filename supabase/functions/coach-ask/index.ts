@@ -17,32 +17,41 @@
  *   0. The code guard (`medicalRoute`), BEFORE the credit and the model. Crisis, urgent, care and medical
  *      return a route as JSON and nothing is charged or called — a person in danger must not wait on a
  *      model, and must not be billed for saying so.
- *   1. Reserve the credit (`coach_ai_spend_credits`, p_action 'message' — CA-D8: an `ask` message is one
- *      credit) BEFORE the model call.
+ *   1. RESERVE the credit (`coach_ai_reserve`, p_action 'message' — CA-D8: an `ask` message is one credit)
+ *      BEFORE the model call. The reservation also carries the athlete's age from their profile (P-G8): a
+ *      minor takes the same stop a self-disclosed minor takes (`MINOR_TOPIC` → care), refunded.
  *   2. Stream the model's reply to the client as SSE. When he needs the athlete's data he calls a read
  *      tool (`ask-tools.ts`: lift history, workouts, records, cardio, program, goals, honors, profile,
  *      food log, and body metrics only when asked); the function runs it AS THE ATHLETE (their JWT, RLS,
  *      and an explicit own-id filter), hands back the result, and streams the next round — at most
  *      `ASK_TOOL_ROUNDS`, then he must answer with what he has. CA-D10 / CA-D11 `training_history`.
- *   3. Record what it actually cost (`coach_ai_record_usage`, all four token counts) when the stream ends —
- *      however it ends, including the athlete closing the sheet mid-reply.
+ *      A 429 / 529 / 5xx or a network error is retried ONCE, only while nothing has reached the app (C-I2).
+ *   3. SETTLE (`coach_ai_settle`, all four token counts, the outcome, the latency) BEFORE the last line —
+ *      refunded on every failure that is ours or the model's, never on the athlete's own cancel
+ *      (`ask-turn.ts` `askSettlement`; Sprint 1 contract §1).
  *
  * ══ THE WIRE (to the app) ══
  *
  *   Guarded / refused before the model:  JSON  { route: 'crisis'|'urgent'|'care'|'medical_stop' }
  *                                         JSON  { route: 'out_of_credits', remaining, allowance }
- *                                         JSON  { route: 'error', reason }  (503/400)
- *   Otherwise `text/event-stream`:        data: {"t":"<text chunk>"}          per delta
- *                                         data: {"done":true,"usage":{...},"remaining":N,"stop":"end_turn"}
- *                                         data: {"error":"...","detail":"<upstream short reason>"}  on failure
+ *                                         JSON  { route: 'error', reason }  (503/403/400)
+ *   Otherwise `text/event-stream`:        : ka                                 a keep-alive comment, at once and
+ *                                               at least every 10 s (invisible to every shipped parser)
+ *                                         data: {"status":"Checking your lift log…"}  during a tool round — a
+ *                                               phrase from ASK_STATUS_PHRASES, chosen by the tool's NAME
+ *                                         data: {"t":"<text chunk>"}          per delta
+ *                                         data: {"done":true,"usage":{...},"remaining":N,"stop":"end_turn","refunded"?:true}
+ *                                         data: {"error":"<code>","upstream"?:"timeout","refunded"?:true,"remaining"?:N}
+ *                                               ⛔ fixed codes only, never upstream text (P-D8)
  *                                         data: {"action":{"name":"...","input":{...}}}  something for the
  *                                               APP to do (a program change to confirm, the "Find one
  *                                               online" offer) — never performed here (Amendment-002)
- *   mode 'summarize' (chat ended):        JSON  { ok, saved, reason? } — a 2–3 line summary written to
+ *   mode 'summarize' (chat ended):        JSON  { ok, saved, reason?, refunded? } — a 2–3 line summary written to
  *                                               holt_chat_summaries (0218) as the athlete, on Haiku, 0 credits
  *                                               but behind the Premium AI gate. Nothing streams.
  *   allowWeb (the athlete TAPPED it):     the same stream, with Anthropic web search in the tool list and
  *                                               the credit metered as 'web' (3). Never on the model's say-so.
+ *                                               Always Sonnet (C-D8).
  *
  * ══ ⚠ THE CACHE IS THE COST MODEL ══
  *
@@ -56,12 +65,20 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ⚠ ONE SOURCE FOR THE GUARD — the same classifier `coach-interpret` and the app run.
-import { medicalRoute, mentionsDiscomfort, withoutStoppedTurns } from '../../../src/domain/coach/medical-routing.ts';
+import {
+  correctedForStops,
+  medicalRoute,
+  mentionsDiscomfort,
+  MINOR_TOPIC,
+  withoutStoppedTurns,
+} from '../../../src/domain/coach/medical-routing.ts';
 // ⚠ ONE SOURCE FOR THE WIRE — the app parses this function's stream with the same module.
 import {
   ASK_HISTORY_MAX,
+  ASK_KEEPALIVE,
   ASK_OUTPUT_CAP,
   ASK_QUESTION_CHARS,
+  askStatusFor,
   askUserTurn,
   cleanContext,
   parseSse,
@@ -82,6 +99,24 @@ import {
   SUMMARY_SYSTEM,
   transcriptOf,
 } from '../../../src/domain/coach/ask-tools.ts';
+// ⚠ THE TURN'S RULES — reserve/settle, the one retry, the clock (Sprint 1). Pure, so node --test walks them.
+import {
+  ASK_KEEPALIVE_MS,
+  ASK_SERVER_IDLE_MS,
+  askFailureEvent,
+  askModel,
+  askSettlement,
+  askTurnMs,
+  meterInt,
+  reserveRefusal,
+  SUMMARY_UPSTREAM_MS,
+  upstreamWithRetry,
+  waitUnlessAborted,
+  type AskOutcome,
+  type AskReservation,
+  type AskSettleRow,
+  type AskTurnFailure,
+} from '../../../src/domain/coach/ask-turn.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -223,7 +258,7 @@ interface Body {
    * narrowed here by `cleanContext`, and all of it goes in the user turn.
    */
   context?: unknown;
-  /** Optional, one of ALLOWED_MODELS. Anything else runs the default. */
+  /** Optional, one of ALLOWED_MODELS. Anything else runs the default — and a web search always does (C-D8). */
   model?: string;
   /** The device's `getTimezoneOffset()`, so the tools speak in the athlete's own dates. Absent reads as UTC. */
   tz?: number;
@@ -253,6 +288,44 @@ const SUMMARY_TURNS = 40;
  */
 const WEB_SEARCH = { type: 'web_search_20260209', name: 'web_search', max_uses: 2 };
 
+/** Usage as Anthropic reports it, read whole — any missing count is 0. */
+type Usage = { input: number; output: number; cacheRead: number; cacheWrite: number };
+const NO_USAGE: Usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+
+/**
+ * Settle one reservation (Sprint 1 contract §1) — once. A second call returns the first call's promise, so the
+ * athlete closing the sheet and the stream ending in the same instant can never settle twice (the SQL is
+ * idempotent too). Never throws: a settle that fails leaves the reservation "unsettled" on the AI health page,
+ * and the app is simply not told it was refunded.
+ */
+function settler(supabase: ReturnType<typeof createClient>, reservation: string, startedAt: number) {
+  let once: Promise<AskSettleRow | null> | null = null;
+  return (outcome: AskOutcome, refund: boolean, model: string, u: Usage): Promise<AskSettleRow | null> =>
+    (once ??= supabase
+      .rpc('coach_ai_settle', {
+        p_reservation: reservation,
+        p_outcome: outcome,
+        p_model: model,
+        p_input_tokens: meterInt(u.input, 5_000_000),
+        p_output_tokens: meterInt(u.output, 5_000_000),
+        p_cache_read_input_tokens: meterInt(u.cacheRead, 5_000_000),
+        p_cache_creation_input_tokens: meterInt(u.cacheWrite, 5_000_000),
+        p_latency_ms: meterInt(Date.now() - startedAt, 600_000),
+        p_refund: refund,
+      })
+      .maybeSingle()
+      .then(
+        ({ data, error }: { data: unknown; error: unknown }) => (error ? null : ((data as AskSettleRow | null) ?? null)),
+        () => null,
+      ));
+}
+
+/** The reservation id, or null when the meter refused. ⛔ It lives in this function's memory and nowhere else. */
+const reservationIdOf = (row: unknown): string | null => {
+  const r = row as Partial<AskReservation> | null;
+  return r?.allowed === true && typeof r.reservation_id === 'string' && r.reservation_id ? r.reservation_id : null;
+};
+
 /**
  * The chat ended: summarise it and store the summary as the athlete (RLS). Never streams, never throws
  * to the caller — a missed summary is a smaller memory, not an error the athlete should see.
@@ -263,10 +336,19 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
   if (turns.filter((t) => t.role === 'athlete').length < 2) return json({ ok: true, saved: false, reason: 'too_short' });
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
   // 'summary' costs 0 credits but still passes the Premium AI gate (0203) — the gate is the point.
-  const { data: spend, error } = await supabase.rpc('coach_ai_spend_credits', { p_action: 'summary' }).maybeSingle();
-  if (error || !(spend as { allowed?: boolean } | null)?.allowed) return json({ ok: true, saved: false, reason: 'not_allowed' });
+  const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
+  const reservation = error ? null : reservationIdOf(row);
+  if (!reservation) return json({ ok: true, saved: false, reason: 'not_allowed' });
+  const settle = settler(supabase, reservation, Date.now());
+  // Its own clock (Sprint 1 contract §3): the app stops waiting at 30 s, so the model is cut off at 20.
+  const upstream = new AbortController();
+  const timer = setTimeout(() => upstream.abort(), SUMMARY_UPSTREAM_MS);
+  let res: Response | null = null;
+  // deno-lint-ignore no-explicit-any
+  let out: any = null;
+  let failure: AskTurnFailure | null = null;
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -275,20 +357,34 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
         system: [{ type: 'text', text: SUMMARY_SYSTEM, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: transcriptOf(turns) }],
       }),
+      signal: upstream.signal,
     });
-    const out = await res.json().catch(() => null);
-    const u = (out?.usage ?? {}) as Record<string, number>;
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: 'summary',
-      p_credits: 0,
-      p_model: SUMMARY_MODEL,
-      p_input_tokens: u.input_tokens ?? 0,
-      p_output_tokens: u.output_tokens ?? 0,
-      p_cache_read_input_tokens: u.cache_read_input_tokens ?? 0,
-      p_cache_creation_input_tokens: u.cache_creation_input_tokens ?? 0,
-      p_uncharged: !res.ok,
-    }).then(() => undefined, () => undefined);
-    if (!res.ok) return json({ ok: true, saved: false, reason: 'upstream_error' });
+    out = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.error('anthropic summary', res.status, JSON.stringify(out ?? {}).slice(0, 800));
+      failure = 'upstream_error';
+    }
+  } catch (e) {
+    failure = upstream.signal.aborted ? 'timeout' : 'upstream_unreachable';
+    console.error('anthropic summary', failure, String((e as Error)?.message ?? e).slice(0, 300));
+  } finally {
+    clearTimeout(timer);
+  }
+  const u = (out?.usage ?? {}) as Record<string, number>;
+  const usage: Usage = {
+    input: u.input_tokens ?? 0,
+    output: u.output_tokens ?? 0,
+    cacheRead: u.cache_read_input_tokens ?? 0,
+    cacheWrite: u.cache_creation_input_tokens ?? 0,
+  };
+  // A summary cut at its 200-token cap is still a summary (`cleanSummary` trims it) — only a refusal is not.
+  const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
+  const settled = await settle(outcome, refund, SUMMARY_MODEL, usage);
+  const refunded = settled?.refunded === true ? { refunded: true } : {};
+  // ⛔ The reason is ours, never Anthropic's words (P-D8). A timeout is `upstream_error` + `upstream` (contract §1.2).
+  if (failure) return json({ ok: true, saved: false, reason: failure === 'timeout' ? 'upstream_error' : failure, ...(failure === 'timeout' ? { upstream: 'timeout' } : {}), ...refunded });
+  if (outcome !== 'ok') return json({ ok: true, saved: false, reason: outcome, ...refunded });
+  try {
     const text = ((out?.content ?? []) as { type: string; text?: string }[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
     // Stricter than a question's guard: a stored memory keeps nothing about the body at all — not even the
     // "it hurts, swap it" a live question is allowed (medical-routing.ts), so `mentionsDiscomfort` too.
@@ -301,12 +397,29 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
   }
 }
 
-/** The code guard's verdict as a route the app has copy for, or null to carry on. */
-function guardRoute(text: string): 'crisis' | 'urgent' | 'care' | 'medical_stop' | null {
+/**
+ * The code guard's verdict as a route the app has copy for, or null to carry on.
+ *
+ * `minor` is the SERVER's under-18 (P-G8, from `coach_ai_reserve`). A minor takes the path a SELF-DISCLOSED
+ * minor takes today — `routeOnce` in medical-routing.ts stops `MINOR_AGE` + `MINOR_TOPIC` as `care` — with the
+ * profile standing in for "I'm 16". Same topic list, same typo correction, same route. It only ever ADDS a
+ * stop: with `minor` false this is exactly the guard as it was.
+ */
+function guardRoute(text: string, minor = false): 'crisis' | 'urgent' | 'care' | 'medical_stop' | null {
   const r = medicalRoute(text);
-  if (r === 'clear') return null;
   if (r === 'crisis' || r === 'urgent' || r === 'care') return r;
+  if (minor && minorTopic(text)) return 'care';
+  if (r === 'clear') return null;
   return 'medical_stop';
+}
+
+/** `MINOR_TOPIC` as `medicalRoute` reads it: curly apostrophes straightened, then once more with typos corrected. */
+function minorTopic(text: string): boolean {
+  const t = (text ?? '').replace(/[‘’ʼ]/g, "'").trim();
+  if (!t) return false;
+  if (MINOR_TOPIC.test(t)) return true;
+  const fixed = correctedForStops(t);
+  return fixed != null && MINOR_TOPIC.test(fixed);
 }
 
 const json = (body: unknown, status = 200) =>
@@ -322,15 +435,14 @@ const SSE_HEADERS = {
   'X-Accel-Buffering': 'no',
 };
 
-/** The upstream's own words, short — its error type and message, never our key or prompt. */
-function upstreamReason(raw: string): string {
-  try {
-    const e = JSON.parse(raw)?.error;
-    if (e?.type || e?.message) return `${e.type ?? 'error'}: ${e.message ?? ''}`.slice(0, 300);
-  } catch {
-    // not JSON — fall through to the raw text
-  }
-  return raw.slice(0, 300);
+/**
+ * A failed upstream attempt, for the FUNCTION'S log only. ⛔ Anthropic's status line and error body used to go to
+ * the app as `detail` (audit P-D8: "credit balance too low" is not the athlete's business). They stay here now.
+ * Reading the body also releases it.
+ */
+async function logUpstream(where: string, status: number | null, reply: Response | null, error: unknown): Promise<void> {
+  if (reply) console.error(where, status, (await reply.text().catch(() => '')).slice(0, 800));
+  else console.error(where, 'unreachable', String((error as Error)?.message ?? error).slice(0, 300));
 }
 
 Deno.serve(async (req) => {
@@ -367,19 +479,33 @@ Deno.serve(async (req) => {
   // An online search was TAPPED for (never chosen by the model) and costs more, so it meters as 'web'.
   const allowWeb = body.allowWeb === true;
   const action = allowWeb ? 'web' : 'message';
-  const { data: spend, error: spendError } = await supabase
-    .rpc('coach_ai_spend_credits', { p_action: action })
+  const { data: reserveRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: action, p_fn: 'coach-ask' })
     .maybeSingle();
 
-  if (spendError) return json({ route: 'error', reason: 'meter_unavailable' }, 503);
+  if (reserveError) return json({ route: 'error', reason: 'meter_unavailable' }, 503);
+  // No Premium AI, no credits, no consent — each as the route the app already reads (ask-turn.ts).
+  const refusal = reserveRefusal(reserveRow);
+  if (refusal) return json(refusal.body, refusal.status);
+  const reserved = reserveRow as AskReservation;
+  // ⛔ THE RESERVATION ID STAYS IN THIS FUNCTION (contract §1.3). Only `settle` holds it; nothing sends `reserved`.
+  const settle = settler(supabase, reserved.reservation_id as string, Date.now());
 
-  const reserved = spend as { allowed: boolean; credits_spent: number; remaining: number; allowance: number } | null;
-  if (!reserved?.allowed) {
-    return json({
-      route: 'out_of_credits',
-      remaining: reserved?.remaining ?? 0,
-      allowance: reserved?.allowance ?? 0,
-    });
+  // C-D8: a tapped online search is always Sonnet — Haiku 4.5 has no web search tool.
+  const model = askModel(body.model, allowWeb, ALLOWED_MODELS, MODEL);
+
+  // ── 1b. The server's own age (P-G8) ─────────────────────────────────────────
+  //
+  // `MINOR_AGE` only catches a minor who SAYS so. The profile's birth year is the server's answer, and a minor
+  // takes the self-disclosed minor's stop. It comes after the reserve because the reserve is what reads the
+  // profile — so the credit goes straight back. ⛔ The medical guard above still runs before any reserve.
+  const minor = reserved.minor === true;
+  if (minor) {
+    const stopped = guardRoute(question, true);
+    if (stopped) {
+      await settle('other', true, model, NO_USAGE);
+      return json({ route: stopped });
+    }
   }
 
   // ── 2. The prompt ───────────────────────────────────────────────────────────
@@ -390,7 +516,9 @@ Deno.serve(async (req) => {
   // ⛔ QA R2-F1: the question is guarded above, and so is EVERY history turn. A stopped message used to ride
   // along with the next ordinary question and Holt answered it. Any turn the code guard would stop is dropped
   // (with Holt's reply to it) — never answered. Dropped BEFORE the window is cut, so the window stays full.
-  const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4)).slice(-ASK_HISTORY_MAX);
+  // A minor's history goes through the minor's guard too: "how many calories should I eat" never rides along.
+  const stops = (t: string) => guardRoute(t, minor) !== null;
+  const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4), stops).slice(-ASK_HISTORY_MAX);
   const context = cleanContext(body.context);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -402,12 +530,11 @@ Deno.serve(async (req) => {
   if (messages.length && messages[0].role === 'assistant') {
     messages.unshift({ role: 'user', content: '(The athlete opened the chat with Holt.)' });
   }
-  messages.push({ role: 'user', content: askUserTurn(question, context, today) });
-  if (body.allowWeb === true) {
+  // The age is per-athlete, so it rides in the user turn; the cached SYSTEM block stays byte-identical (P-G8).
+  messages.push({ role: 'user', content: askUserTurn(question, context, today, { ageYears: reserved.age_years, minor }) });
+  if (allowWeb) {
     messages[messages.length - 1].content += '\n\n(The athlete tapped "Find one online" — you have web search for this message.)';
   }
-
-  const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
 
   // The athlete's clock, so a tool's "2026-09-22" is THEIR Monday (`getTimezoneOffset()`, minutes).
   const tz = typeof body.tz === 'number' && Number.isInteger(body.tz) && Math.abs(body.tz) <= 840 ? body.tz : 0;
@@ -422,21 +549,38 @@ Deno.serve(async (req) => {
       () => null,
     ));
 
-  const record = (u: { input: number; output: number; cacheRead: number; cacheWrite: number }, m: string, uncharged: boolean) =>
-    supabase.rpc('coach_ai_record_usage', {
-      p_action: action,
-      p_credits: reserved.credits_spent,
-      p_model: m,
-      p_input_tokens: u.input,
-      p_output_tokens: u.output,
-      p_cache_read_input_tokens: u.cacheRead,
-      p_cache_creation_input_tokens: u.cacheWrite,
-      p_uncharged: uncharged,
-    }).then(() => undefined, () => undefined);
-
   // The conversation as the model sees it, grown by each tool round (assistant tool calls, then results).
   // deno-lint-ignore no-explicit-any
   const convo: { role: 'user' | 'assistant'; content: any }[] = messages;
+
+  // ── 3. The clock (Sprint 1 contract §3) ─────────────────────────────────────
+  //
+  // ONE controller for every upstream request of this turn. It aborts when the turn's budget runs out
+  // (`askTurnMs`), when Anthropic goes quiet for `ASK_SERVER_IDLE_MS`, or when the athlete leaves. Both clocks
+  // sit ≥ 10 s inside the app's own, so a slow model ends as a refunded outage the app can say, never as a
+  // charge for an answer nobody saw.
+  const upstreamCtl = new AbortController();
+  /** The upstream reply being read right now, if any. */
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  let gaveUp: 'timeout' | 'cancelled' | null = null;
+  const giveUp = (why: 'timeout' | 'cancelled') => {
+    if (gaveUp) return;
+    gaveUp = why;
+    upstreamCtl.abort();
+    // Belt and braces: a pending read ends now even where the platform does not error a body on abort.
+    reader?.cancel().catch(() => undefined);
+  };
+  const aborted = new Promise<'aborted'>((resolve) => upstreamCtl.signal.addEventListener('abort', () => resolve('aborted')));
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  const quiet = () => {
+    if (idleTimer != null) clearTimeout(idleTimer);
+    idleTimer = null;
+  };
+  /** Anthropic just said something (or is about to be asked): its silence clock starts again. */
+  const heard = () => {
+    quiet();
+    idleTimer = setTimeout(() => giveUp('timeout'), ASK_SERVER_IDLE_MS);
+  };
 
   /**
    * One model call. `ASK_TOOLS` render BEFORE the system block, so the system block's `cache_control`
@@ -465,64 +609,104 @@ Deno.serve(async (req) => {
         system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
         messages: convo,
       }),
+      signal: upstreamCtl.signal,
     });
 
-  let upstream: Response;
-  try {
-    upstream = await callModel(false);
-  } catch {
-    await record({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, model, true);
-    return new Response(sseLine({ error: 'upstream_unreachable', detail: null }), { headers: SSE_HEADERS });
-  }
-
-  if (!upstream.ok || !upstream.body) {
-    const raw = await upstream.text().catch(() => '');
-    console.error('anthropic', upstream.status, raw.slice(0, 800));
-    // Record the failed attempt so the 60-day run does not under-count cost. The credit stays spent —
-    // see the refund note at the foot of `coach-interpret`.
-    await record({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, model, true);
-    return new Response(
-      sseLine({ error: 'upstream_error', detail: `${upstream.status} ${upstreamReason(raw)}`.slice(0, 300) }),
-      { headers: SSE_HEADERS },
-    );
-  }
-
-  // ── 3. Relay the stream — through any tool rounds — and record what it cost however it ends ─────
+  // ── 4. Relay the stream — through any tool rounds — and settle what it cost however it ends ─────
   //
   // Usage is SUMMED across rounds: each round is a billed call, and the meter must see all of them. The
   // credit is still one (CA-D8: an `ask` message is one credit, however many reads it took).
-  const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+  const usage: Usage = { ...NO_USAGE };
+  /** The round in flight — added to `usage` when it ends, and counted too if the athlete leaves mid-round. */
+  let ru: Usage = { ...NO_USAGE };
+  const spent = (): Usage => ({
+    input: usage.input + ru.input,
+    output: usage.output + ru.output,
+    cacheRead: usage.cacheRead + ru.cacheRead,
+    cacheWrite: usage.cacheWrite + ru.cacheWrite,
+  });
   let servedBy = model;
   let stop: string | null = null;
-  let recorded = false;
-  const finish = async (uncharged: boolean) => {
-    if (recorded) return;
-    recorded = true;
-    await record(usage, servedBy, uncharged);
+  /** A word went to the app in this turn — from then on nothing is retried (C-I2). */
+  let sawText = false;
+  /** A word or an action reached the app; a clean ending with neither is refunded (`bad_output`). */
+  let delivered = false;
+  /** The loop is over and settling as itself; a late disconnect changes nothing. */
+  let finished = false;
+  let keepAlive: ReturnType<typeof setInterval> | null = null;
+  let turnTimer: ReturnType<typeof setTimeout> | null = null;
+  const encoder = new TextEncoder();
+
+  /** One upstream request, retried once while nothing has reached the app (C-I2 — `ask-turn.ts`). */
+  const open = (last: boolean) => {
+    heard();
+    return upstreamWithRetry(() => callModel(last), {
+      canRetry: () => !sawText && !gaveUp,
+      wait: (ms) => waitUnlessAborted(ms, upstreamCtl.signal),
+      // Our own abort is not an outage worth a log line; a reply that came back is always read (and released).
+      failed: ({ status, reply, error }) => (reply || !gaveUp ? logUpstream('anthropic', status, reply, error) : undefined),
+    });
   };
 
-  let reader = upstream.body.getReader();
-  const encoder = new TextEncoder();
+  /**
+   * The athlete left (closed the sheet, lost the line). Stop paying for words nobody will read, and settle what
+   * was generated up to here as `cancelled` — ⛔ NOT refunded: the model ran for them (contract, Sprint 1 brief).
+   * If the function had already given up (its own timeout), that settles as itself and this does nothing.
+   */
+  const leave = async () => {
+    if (finished || gaveUp) return;
+    giveUp('cancelled');
+    if (keepAlive != null) clearInterval(keepAlive);
+    await settle('cancelled', false, servedBy, spent());
+  };
+  req.signal?.addEventListener('abort', () => void leave());
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (payload: unknown) => {
+      let lastWrite = 0;
+      const write = (chunk: string) => {
+        if (gaveUp === 'cancelled') return;
         try {
-          controller.enqueue(encoder.encode(sseLine(payload)));
+          controller.enqueue(encoder.encode(chunk));
+          lastWrite = Date.now();
         } catch {
-          // The client went away; `cancel` below records the cost.
+          // The client went away; `cancel` below settles.
         }
       };
+      const send = (payload: unknown) => write(sseLine(payload));
+      /* C-G5 — what he is doing, by the tool's NAME (`ASK_STATUS_PHRASES`). ⛔ Never the tool's input, which is the
+         model's: the phrase cannot carry a word he wrote. */
+      let lastStatus: string | null = null;
+      const status = (toolName: unknown) => {
+        const s = askStatusFor(toolName);
+        if (s && s !== lastStatus) {
+          lastStatus = s;
+          send({ status: s });
+        }
+      };
+      // The first byte NOW, before the model has said anything — every app's clock sees the function is alive
+      // (OTA #24 gives up after 20 s with nothing). Then one at least every `ASK_KEEPALIVE_MS` of quiet.
+      write(ASK_KEEPALIVE);
+      keepAlive = setInterval(() => {
+        if (Date.now() - lastWrite >= ASK_KEEPALIVE_MS / 2) write(ASK_KEEPALIVE);
+      }, ASK_KEEPALIVE_MS);
+      turnTimer = setTimeout(() => giveUp('timeout'), askTurnMs(allowWeb));
       const decoder = utf8Decoder();
-      let failed: { error: string; detail: string | null } | null = null;
-      let sawText = false;
+      let failure: AskTurnFailure | null = null;
       let rounds = 0;
 
       try {
+        let opened = await open(false);
         turn: while (true) {
+          if (!opened.ok) {
+            failure = opened.failure;
+            break turn;
+          }
+          const rd = opened.response.body!.getReader();
+          reader = rd;
           // This round's usage. `message_delta` reports the message's cumulative output, so a round is
           // taken whole and then added — never added event by event.
-          const ru = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
+          ru = { ...NO_USAGE };
           const takeUsage = (u: Record<string, unknown> | undefined) => {
             if (!u) return;
             if (typeof u.input_tokens === 'number') ru.input = u.input_tokens;
@@ -540,8 +724,9 @@ Deno.serve(async (req) => {
           let carry = '';
 
           read: while (true) {
-            const { done, value } = await reader.read();
+            const { done, value } = await rd.read();
             if (done) break;
+            heard();
             const parsed = parseSse(decoder.decode(value), carry);
             carry = parsed.carry;
             for (const ev of parsed.events) {
@@ -569,6 +754,8 @@ Deno.serve(async (req) => {
                       json: '',
                       ...(b.type !== 'text' && b.type !== 'tool_use' ? { raw: b as Record<string, unknown> } : {}),
                     };
+                    // A lookup (or a tapped web search) is starting: say which, from the fixed table.
+                    if (b.type === 'tool_use' || b.type === 'server_tool_use') status(b.name);
                   }
                   break;
                 }
@@ -579,6 +766,7 @@ Deno.serve(async (req) => {
                     // A reply that resumes after a tool round must not run into the words before it.
                     if (!roundText && sawText) send({ t: ' ' });
                     sawText = true;
+                    delivered = true;
                     roundText = true;
                     if (at) at.text += d.text;
                     send({ t: d.text });
@@ -594,8 +782,10 @@ Deno.serve(async (req) => {
                   break;
                 }
                 case 'error': {
+                  // ⛔ Its words go to OUR log, never to the app (P-D8).
                   const e = msg.error as { type?: string; message?: string } | undefined;
-                  failed = { error: 'upstream_error', detail: `${e?.type ?? 'error'}: ${e?.message ?? ''}`.slice(0, 300) };
+                  console.error('anthropic stream error', e?.type ?? 'error', String(e?.message ?? '').slice(0, 300));
+                  failure = 'upstream_error';
                   break read;
                 }
                 default:
@@ -605,12 +795,15 @@ Deno.serve(async (req) => {
             }
           }
 
+          // The lookups below are not the upstream: its silence clock waits for the next request.
+          quiet();
           usage.input += ru.input;
           usage.output += ru.output;
           usage.cacheRead += ru.cacheRead;
           usage.cacheWrite += ru.cacheWrite;
+          ru = { ...NO_USAGE };
           stop = roundStop;
-          if (failed || (roundStop !== 'tool_use' && roundStop !== 'pause_turn')) break turn;
+          if (failure || gaveUp || (roundStop !== 'tool_use' && roundStop !== 'pause_turn')) break turn;
 
           // ── A tool round: run the reads as THIS athlete, hand back the results, and go again ───────
           rounds += 1;
@@ -637,56 +830,67 @@ Deno.serve(async (req) => {
 
           // `pause_turn`: the web search paused a long turn. Hand the turn back unchanged to let it finish.
           if (roundStop === 'tool_use') {
-            const uid = await uidOf();
-            const calls = blocks.filter((b) => b && b.type === 'tool_use' && b.id && b.name);
-            const results = await Promise.all(
-              calls.map(async (c) => {
-                const input = inputOf(c.json);
-                if (input === null) return { type: 'tool_result', tool_use_id: c.id, content: 'The tool input was not valid JSON.', is_error: true };
-                // An ACTION is the app's to perform, after the athlete confirms — forward it, never run it.
-                if (ASK_ACTION_NAMES.includes(c.name as string)) {
-                  send({ action: { name: c.name, input } });
-                  return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };
-                }
-                if (!uid) return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
-                const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes });
-                return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
-              }),
-            );
+            const runRound = async () => {
+              const uid = await uidOf();
+              const calls = blocks.filter((b) => b && b.type === 'tool_use' && b.id && b.name);
+              return Promise.all(
+                calls.map(async (c) => {
+                  const input = inputOf(c.json);
+                  if (input === null) return { type: 'tool_result', tool_use_id: c.id, content: 'The tool input was not valid JSON.', is_error: true };
+                  // An ACTION is the app's to perform, after the athlete confirms — forward it, never run it.
+                  if (ASK_ACTION_NAMES.includes(c.name as string)) {
+                    send({ action: { name: c.name, input } });
+                    delivered = true;
+                    return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };
+                  }
+                  if (!uid) return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
+                  const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes });
+                  return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
+                }),
+              );
+            };
+            // The lookups have no deadline of their own; the turn's clock (or the athlete leaving) still ends them.
+            const results = await Promise.race([runRound(), aborted]);
+            if (results === 'aborted') break turn;
             convo.push({ role: 'user', content: results });
           }
+          if (gaveUp) break turn;
 
-          let next: Response;
-          try {
-            next = await callModel(rounds >= ASK_TOOL_ROUNDS);
-          } catch (e) {
-            failed = { error: 'upstream_unreachable', detail: String((e as Error)?.message ?? e).slice(0, 300) };
-            break turn;
-          }
-          if (!next.ok || !next.body) {
-            const raw = await next.text().catch(() => '');
-            console.error('anthropic round', rounds, next.status, raw.slice(0, 800));
-            failed = { error: 'upstream_error', detail: `${next.status} ${upstreamReason(raw)}`.slice(0, 300) };
-            break turn;
-          }
-          reader = next.body.getReader();
+          opened = await open(rounds >= ASK_TOOL_ROUNDS);
         }
       } catch (e) {
-        failed = { error: 'upstream_dropped', detail: String((e as Error)?.message ?? e).slice(0, 300) };
+        // Our own abort lands here too (a read rejects when the controller fires) — that is not a dropped line.
+        if (!gaveUp) {
+          failure = 'upstream_dropped';
+          console.error('anthropic stream', String((e as Error)?.message ?? e).slice(0, 300));
+        }
+      } finally {
+        if (turnTimer != null) clearTimeout(turnTimer);
+        if (keepAlive != null) clearInterval(keepAlive);
+        quiet();
       }
 
-      if (failed) {
-        console.error('anthropic stream', failed.detail);
-        // Tokens already generated are real cost; a stream that produced nothing is recorded uncharged.
-        await finish(!sawText && usage.output === 0);
-        send(failed);
+      // The athlete left: `leave` settles it as cancelled, and there is nobody to tell.
+      if (gaveUp === 'cancelled') return;
+      finished = true;
+      if (gaveUp === 'timeout') failure = 'timeout';
+
+      // ── 5. Settle, THEN the last line (contract §1.3) ─────────────────────────────────────────────
+      // Refunded on every failure that is ours or the model's (`askSettlement`); the app is told it was
+      // refunded only when the meter says it was.
+      const { outcome, refund } = askSettlement({ failure, stop, delivered });
+      const settled = await settle(outcome, refund, servedBy, spent());
+      const refunded = settled?.refunded === true;
+      const remaining = typeof settled?.remaining === 'number' ? settled.remaining : null;
+      if (failure) {
+        send(askFailureEvent(failure, { refunded, remaining }));
       } else {
-        await finish(false);
         send({
           done: true,
-          usage: { model: servedBy, ...usage },
-          remaining: reserved.remaining,
+          usage: { model: servedBy, ...spent() },
+          remaining: remaining ?? reserved.remaining,
           stop,
+          ...(refunded ? { refunded: true } : {}),
         });
       }
       try {
@@ -695,12 +899,8 @@ Deno.serve(async (req) => {
         // already closed by a cancel
       }
     },
-    async cancel() {
-      // The athlete closed the sheet mid-reply. Stop paying for words nobody will read, and record what
-      // was generated up to here.
-      await reader.cancel().catch(() => undefined);
-      await finish(false);
-    },
+    // The athlete closed the sheet mid-reply (the app's abort reaches here).
+    cancel: () => leave(),
   });
 
   return new Response(stream, { headers: SSE_HEADERS });
