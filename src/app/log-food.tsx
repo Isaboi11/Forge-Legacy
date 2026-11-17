@@ -13,6 +13,7 @@ import { BarcodeSheet } from '@/components/forge/BarcodeSheet';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
+import { FOOD_SEARCH_PAUSE_MS, localWhileSearching, narrowEarlierSearch } from '@/domain/nutrition/food-search-local';
 import { dayLabel, diaryDayParam, grouped, isAhead, localToday, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
 import { draftEntry, repeatDraft } from '@/domain/nutrition/logging';
 import { countOf } from '@/domain/text/plural';
@@ -149,7 +150,8 @@ export default function LogFoodScreen() {
   };
 
   /* Debounced so a paid or rate-limited source is never called per keystroke (Architecture §5). The
-     cleanup cancels a pending search, so an abandoned query cannot land on top of a newer one. */
+     cleanup cancels a pending search, so an abandoned query cannot land on top of a newer one. NU-2: the
+     services are asked on a PAUSE in typing; until then the list is filled from the phone (`localFor` below). */
   useEffect(() => {
     const q = query.trim();
     if (q.length < 2) return;
@@ -159,7 +161,7 @@ export default function LogFoodScreen() {
     const timer = setTimeout(async () => {
       const found = await searchFoods(q);
       if (live) setSearch({ q, foods: found.foods.filter(looksSane), failed: found.failed });
-    }, 350);
+    }, FOOD_SEARCH_PAUSE_MS);
     return () => {
       live = false;
       clearTimeout(timer);
@@ -262,12 +264,13 @@ export default function LogFoodScreen() {
 
   const barBottom = useBarBottom(SCREEN_BOTTOM_GAP);
 
-  /* While the search service is out (1.7–4.9 s), your own foods that match are already listed (N-25). */
+  /* While the search service is out (1.7–4.9 s), your own foods that match are already listed (N-25) — My Foods,
+     Recent and Favourites — and then a shorter query's answer, narrowed to what is typed now (NU-2). */
   const localFor = searching ? trimmed : null;
-  const rows = useMemo(
-    () => buildRows({ results, filter, recents, favorites, myFoods, localFor }),
-    [results, filter, recents, favorites, myFoods, localFor],
-  );
+  const rows = useMemo(() => {
+    const earlier = localFor ? (narrowEarlierSearch(localFor, peekFoodSearch)?.filter(looksSane) ?? null) : null;
+    return buildRows({ results, filter, recents, favorites, myFoods, localFor, earlier });
+  }, [results, filter, recents, favorites, myFoods, localFor]);
   /* A search shows its best ten; "Show more" opens the rest for THAT query only, so the next one starts short again. */
   const [moreFor, setMoreFor] = useState<string | null>(null);
   const capped = results != null && moreFor !== trimmed && rows.length > SEARCH_PAGE;
@@ -544,38 +547,24 @@ function buildRows({
   favorites,
   myFoods,
   localFor,
+  earlier,
 }: {
   results: CatalogFood[] | null;
   filter: Filter;
   recents: RecentFood[] | null | undefined;
   favorites: Awaited<ReturnType<typeof fetchFavorites>> | null | undefined;
   myFoods: CatalogFood[] | null | undefined;
-  /** The query still out at the search service: only the athlete's own matching foods, for now. */
+  /** The query still out at the search service: what the phone already holds that matches it, for now. */
   localFor?: string | null;
+  /** A shorter query's answer, narrowed to `localFor` (NU-2). */
+  earlier?: CatalogFood[] | null;
 }): Row[] {
   if (localFor) {
-    const words = localFor.toLowerCase().split(/\s+/).filter(Boolean);
-    return (myFoods ?? [])
-      .filter((food) => {
-        const text = `${food.name} ${food.brand ?? ''}`.toLowerCase();
-        return words.every((w) => text.includes(w));
-      })
-      .slice(0, 5)
-      .map((food) => ({ key: food.key, food, meta: [calorieMeta(food), food.brand, SOURCE_LABEL[food.source]].filter(Boolean).join(' · ') }));
+    return localWhileSearching(localFor, { mine: myFoods, recents, favorites, earlier }).map((h) =>
+      h.from === 'recent' ? recentRow(h.item) : h.from === 'favorite' ? favoriteRow(h.item) : foodRow(h.item),
+    );
   }
-  if (results) {
-    return results.map((food) => ({
-      key: food.key,
-      food,
-      meta: [
-        calorieMeta(food),
-        food.brand,
-        SOURCE_LABEL[food.source],
-      ]
-        .filter(Boolean)
-        .join(' · '),
-    }));
-  }
+  if (results) return results.map(foodRow);
 
   if (filter === 'mine') {
     return (myFoods ?? []).map((food) => ({
@@ -590,21 +579,29 @@ function buildRows({
   if (filter === 'favorites') {
     /* A favourite is a pointer. Until it is opened, only the name and brand are known — the numbers come
        from the source when the portion sheet needs them, which is also why the row has no calorie line. */
-    return (favorites ?? []).map((f) => ({
-      key: f.key,
-      food: pointerFood(f.key, f.name, f.brand),
-      meta: f.brand ?? 'Saved',
-      pointer: true,
-    }));
+    return (favorites ?? []).map(favoriteRow);
   }
 
-  return (recents ?? []).map((r) => ({
+  return (recents ?? []).map(recentRow);
+}
+
+/** A food with its numbers: a search result, or one of My Foods. */
+function foodRow(food: CatalogFood): Row {
+  return { key: food.key, food, meta: [calorieMeta(food), food.brand, SOURCE_LABEL[food.source]].filter(Boolean).join(' · ') };
+}
+
+function favoriteRow(f: { key: string; name: string; brand: string | null }): Row {
+  return { key: f.key, food: pointerFood(f.key, f.name, f.brand), meta: f.brand ?? 'Saved', pointer: true };
+}
+
+function recentRow(r: RecentFood): Row {
+  return {
     key: r.key,
     food: pointerFood(r.key, r.name, r.brand),
     meta: [`${Math.round(r.kcal)} cal`, r.servingLabel, r.brand].filter(Boolean).join(' · '),
     pointer: true,
     repeat: r,
-  }));
+  };
 }
 
 /**
