@@ -175,7 +175,7 @@ export const FUNCTIONS = {
     verifyJwt: true,
     ai: false,
     probe: { options: 200, post: 401 },
-    tests: ['src/domain/nutrition/__tests__/preview-gate.test.mjs'],
+    tests: ['src/domain/nutrition/__tests__/preview-gate.test.mjs', 'src/domain/nutrition/__tests__/serving-weight.test.mjs'],
     suites: [],
     noSuite: 'No model: USDA / Open Food Facts / FatSecret lookups.',
   },
