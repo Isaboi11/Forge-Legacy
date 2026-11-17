@@ -5,6 +5,7 @@
 // a fake fetch and a fake database: a stranger without the secret gets a 401 and Anthropic is never called.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 
