@@ -578,11 +578,11 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
    * `outOfAiCreditsLine` (`ask-outcome.ts`) adds when they come back and what still works, from the
    * server's own month. Same rule as above — he answers, he does not sell. */
   out_of_ai_credits: [
-    "That's this month's Holt AI credits used.",
-    "You've used this month's Holt AI credits.",
-    "That's the month's Holt AI credits spent.",
-    'Your Holt AI credits for this month are used up.',
-    "This month's Holt AI credits are all used.",
+    "That's this month's Premium AI credits used.",
+    "You've used this month's Premium AI credits.",
+    "That's the month's Premium AI credits spent.",
+    'Your Premium AI credits for this month are used up.',
+    "This month's Premium AI credits are all used.",
   ],
   /* The meter answered "no allowance at all" — Premium AI is not on for this account (it lapsed, or the app
      still thinks it is). Not "used": there was nothing to use. */
