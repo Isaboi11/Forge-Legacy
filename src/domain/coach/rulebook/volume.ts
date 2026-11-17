@@ -235,7 +235,7 @@ const levelOf = (parts: Partial<Record<VolumeGroup, WeeklyBand>>[]): Record<Volu
  *     hamstrings, glutes). PAS §11.2 / PAS-A4-D4 make 10–20 the governing band, and Schoenfeld, Ogborn &
  *     Krieger (2017, J Sports Sci) found 10+ weekly sets beat fewer.
  *   · ⚠ THE ARMS (8) AND THE LATERAL DELT, REAR DELT AND CALF (6) SIT BELOW 10 — A WRITTEN DEVIATION
- *     (PAS §10.1), NOT A TRANSCRIPTION, AND THE PO'S TO CONFIRM. The Muscle Building Intermediate program
+ *     (PAS §10.1), NOT A TRANSCRIPTION. ✅ PO approved 2026-11-17 (with the frequency scaling below). The Muscle Building Intermediate program
  *     already needed one for the same three small groups (its test's BAND_EXEMPT: 8 / 9 / 8 — reaching 10
  *     "took six sets of raises a session, which no coach would prescribe"), and that program runs up to
  *     eight movements a session. Holt's hour is six: twelve groups at 10 do not fit six-exercise upper
@@ -306,7 +306,7 @@ export const WEEKLY_SET_BANDS: Partial<Record<PasCategory, CategoryVolume>> = {
  * twelve groups (the session ceiling is 30), so a two-day week owes half the four-day floor: each group is
  * still trained every week at a dose the evidence calls effective (Schoenfeld 2017's lowest bracket still
  * grew muscle). Rounded down to the whole set — a 4.5 calf floor at three days would demand a fifth set
- * of the only calf raise in the week. Open for the PO, exactly as the old three-set low-frequency floor was.
+ * of the only calf raise in the week. ✅ PO approved 2026-11-17, as part of the PAS §10.1 deviation above.
  */
 export function weeklyBandFor(
   category: PasCategory,
