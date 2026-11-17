@@ -13,9 +13,9 @@ report and the integrator decides. Nothing here is live until the PO approves th
 
 | Branch | Worktree | Owns (only this branch edits these) |
 |---|---|---|
-| `ai/s2-gates` | `C:\Users\isaia\ai-s2-gates-wt` | **PL-5 + PL-6 + IM-2.** New `.claude/skills/deploy-ai/**` · new `scripts/deploy-ai/**` · new `scripts/evals/**` (runner, suites, recordings, the import corpus) · new `.github/workflows/**` · `supabase/migrations/0271_*` + `supabase/apply/pending-0271.sql` (+ its builder if any) · the drift card on `src/app/admin-ai.tsx` + its data module · `src/app/__tests__/rls-static.test.mjs` + `supabase/apply/check-rls.sql` (the definer-revoke half) · the bundle normaliser (§1.5) and the one-line hook into each `scripts/build-*-deploy.mjs` |
+| `ai/s2-gates` | `C:\Users\isaia\ai-s2-gates-wt` | **PL-5 + PL-6.** New `.claude/skills/deploy-ai/**` · new `scripts/deploy-ai/**` · new `scripts/evals/**` (runner, gate, record/replay, every suite EXCEPT the import corpus) · new `.github/workflows/**` · `supabase/migrations/0271_*` + `supabase/apply/pending-0271.sql` (+ its builder if any) · the drift card on `src/app/admin-ai.tsx` + its data module · `src/app/__tests__/rls-static.test.mjs` + `supabase/apply/check-rls.sql` (the definer-revoke half) · the bundle normaliser (§1.5) and the one-line hook into each `scripts/build-*-deploy.mjs` |
 | `ai/s2-safety` | `C:\Users\isaia\ai-s2-safety-wt` | **CH-2 + FC-1 + C-I7.** `supabase/functions/coach-ask/**`, `coach-interpret/**`, `coach-form-check/**`, and the output-scan wiring in `coach-kitchen/**` · new `src/domain/ai/output-scan.ts` · `src/domain/coach/{chat-core,medical-routing,ask-*,holt-notes,form-check,form-check-view}.ts` + `src/domain/coach/pose/**` · `src/app/form-check.tsx` and the form-check components/data module (INCLUDING form check's thumbs, UX-4) · `src/components/forge/CoachChatSheet.tsx` (the rename + the retract event) · `src/data/coach-ask-live.ts` · the safety corpora under their `__tests__` |
-| `ai/s2-builder` | `C:\Users\isaia\ai-s2-builder-wt` | **PB-2.** The builder domain: `src/domain/coach/{rulebook/**,candidates,day,assemble,prescribe,author*,validate-program,constraints,session-suggest,training-gaps}.ts` (whatever the day-fill paths are) · the exercise catalogue data + its muscle tags · the program-matrix test · `supabase/functions/coach-author/**` |
+| `ai/s2-builder` | `C:\Users\isaia\ai-s2-builder-wt` | **PB-2 + IM-2.** The builder domain: `src/domain/coach/{rulebook/**,candidates,day,assemble,prescribe,author*,validate-program,constraints,session-suggest,training-gaps}.ts` (whatever the day-fill paths are) · the exercise catalogue data + its muscle tags · the program-matrix test · `supabase/functions/coach-author/**` · **IM-2:** new `scripts/evals/corpus/import/**` (items + answer keys) and `scripts/evals/suites/import-corpus.mjs`, built to the §1.4 suite interface |
 | `ai/s2-credits` | `C:\Users\isaia\ai-s2-credits-wt` | **UX-2 + UX-4 (not form check).** `supabase/migrations/0272_*` + `supabase/apply/pending-0272.sql` · new `src/domain/ai/credits*.ts` · new `src/components/forge/AiCreditsChip.tsx` and its placement on every AI screen · `src/components/forge/AiFeedback.tsx` (only if it must change) · thumbs on Kitchen, workout tidy, card read · new `Docs/Amendments/Monetization-Architecture-Amendment-012-*.md` · any copy that states a credit cost (one-line edits anywhere; list each in the report) |
 
 **Integrator (this session):** merges, regenerates every bundle, the gate, the canary turn-on, the web + trunk port of
@@ -79,11 +79,31 @@ from `public` AND `anon`, and a §3 verification block that predicts its own res
 - Suites: chat answers · chat safety · author · kitchen allergens · meal photo · import corpus (IM-2) · form check.
   A suite names the functions it gates and the prompt sources it hashes. A recording is keyed by that prompt hash: a
   changed prompt makes its recordings STALE, and a stale suite fails the gate ("re-record: ~$X live").
+- **The suite interface (fixed now, so `ai/s2-builder` can write the import suite in parallel):**
+  ```js
+  // scripts/evals/suites/<name>.mjs — plain ESM, runs under node --experimental-strip-types
+  export const suite = {
+    name: 'import-corpus',
+    functions: ['program-photo-read', 'workout-card-read'],     // the slugs this suite gates
+    promptSources: [{ file: 'supabase/functions/workout-card-read/index.ts', exportName: 'SYSTEM' }], // hashed: text + model + tool defs
+    model: 'claude-sonnet-5',
+    cases: async () => [/* { id, input, expect } */],
+    deterministic: async () => [/* { id, pass, notes } — checks that need no model (optional) */],
+    grade: async (testCase, recorded) => ({ pass: true, score: 1, notes: '' }), // recorded = { reply, usage }; runs the REAL parser/guard
+    callLive: async (testCase, { apiKey, signal }) => ({ reply: {}, usage: {} }), // only ever called by run.mjs --live --budget
+    estimateUsd: (cases) => 0,
+    threshold: { metric: 'pass_rate', min: 0.95 },
+  };
+  ```
+  Recordings: `scripts/evals/recordings/<suite>/<promptHash12>/<caseId>.json` =
+  `{ caseId, promptHash, model, recordedAt, reply, usage }`. Gate policy: recordings under the CURRENT hash → graded,
+  must meet `threshold` · recordings only under an OLDER hash → **STALE = fail** · no recordings ever (bootstrap) →
+  deterministic checks only, passes with a loud "UNRECORDED — record on the next live run (~$X)" warning.
 - `node scripts/evals/gate.mjs <function-slug>` = the deploy gate (the `deploy-ai` skill calls it; CI calls it for every
   function whose source changed).
 - Suites read their corpora from where the owning branch keeps them (e.g. the safety corpus under
   `src/domain/coach/__tests__/`); `ai/s2-gates` never edits those files — it imports them.
-- IM-2: 60 real items (the 19 existing photos + whatever real material exists; list the gap for the PO as a ⬜ line),
+- IM-2 (`ai/s2-builder`): 60 real items (the 19 existing photos + whatever real material exists; list the gap for the PO as a ⬜ line),
   gate ≥ 95% structure-correct. Recording them is live → quote first; the integrator asks.
 
 ### 1.5 Deploys (PL-5) — owned by `ai/s2-gates`
