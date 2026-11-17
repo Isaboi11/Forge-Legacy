@@ -19,11 +19,14 @@
  *   0. Validate the image — refused before anything is spent.
  *   1. Nutrition access (`has_nutrition_access()`, as the caller) — 403 otherwise, before the credit.
  *   2. The day's ceiling.
- *   3. Reserve the credit (`coach_ai_spend_credits`, `p_action` 'meal_photo', 0223) — which is also the
- *      Premium AI gate (0203): no add-on, `allowed` false with an allowance of 0.
- *   4. One vision call — Sonnet 5, thinking off, effort low, cached system block, structured output.
- *   5. Record what it cost — all four token counts.
- *   6. The guard, then the answer.
+ *   3. Reserve the credit (`coach_ai_reserve`, `p_action` 'meal_photo', 0268) — which is also the Premium AI
+ *      gate (0203: no add-on, out_of_credits with an allowance of 0) and the AI-sharing consent check.
+ *   4. One vision call — Sonnet 5, thinking off, effort low, cached system block, structured output — under
+ *      this function's own 75 s abort (AI Sprint 1 contract §3; the app waits 90 s).
+ *   5. The guard, then settle ONCE (`coach_ai_settle`, all four token counts), then the answer. Every failure
+ *      after the reservation — upstream, timeout, refusal, not food, unreadable — gives the credit back (P-D2).
+ *
+ * No age line (P-G8): the model returns names and amounts, never advice, so the age could not change the answer.
  *
  * There is no `medicalRoute` step because there are no athlete words: the request is an image and nothing
  * else. The answer carries no sentence about a person — only foods and amounts.
@@ -35,12 +38,16 @@
  *
  *   Refused:  { ok: false, reason: 'bad_request' | 'too_large' }                                  400
  *             { ok: false, reason: 'no_nutrition' }                                               403
+ *             { ok: false, reason: 'no_consent' }                                                 403
  *             { ok: false, reason: 'daily_limit', limit }                                         429
  *             { ok: false, reason: 'out_of_credits', remaining, allowance }                        200
- *             { ok: false, reason: 'unconfigured' | 'meter_unavailable' | 'upstream_error' |
- *                                  'upstream_unreachable' }                                        503
- *             { ok: false, reason: 'not_food' | 'unreadable', remaining }                          200
+ *             { ok: false, reason: 'unconfigured' | 'meter_unavailable' }                          503
+ *             { ok: false, reason: 'upstream_error' | 'upstream_unreachable', upstream?: 'timeout',
+ *               remaining, refunded: true }                                                       503
+ *             { ok: false, reason: 'not_food' | 'unreadable', remaining, refunded: true }          200
  *   Read:     { ok: true, read: { items: [{ name, search, amount, unit, grams, confidence }] }, remaining }
+ *
+ * ⛔ No reply carries the upstream's words (P-D8) or the reservation id.
  *
  * `ANTHROPIC_API_KEY` is an Edge Function secret and lives nowhere else — the same note at the top of
  * `program-photo-read`. Expo inlines `EXPO_PUBLIC_*` into the bundle.
@@ -57,10 +64,26 @@ import {
   MEAL_READ_SCHEMA,
   readFromModelText,
 } from '../../../src/domain/nutrition/meal-photo-read.ts';
+// ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, and what a failure returns (AI Sprint 1).
+import {
+  callFacts,
+  failedCallReply,
+  type ModelCall,
+  reserveFrom,
+  settleArgs,
+  settledFrom,
+  settledTail,
+  type SettleOutcome,
+  timedModelCall,
+  UPSTREAM_ABORT_MS,
+} from '../../../src/domain/ai/meter-server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+/** This function's deployed slug — the meter's `fn` (0268). */
+const FN = 'meal-photo-read';
 
 /** The same model `recipe-photo-read` and `program-photo-read` use — Architecture §5: "Sonnet 5 for photos". */
 const MODEL = 'claude-sonnet-5';
@@ -197,88 +220,68 @@ Deno.serve(async (req) => {
     return json({ ok: false, reason: 'daily_limit', limit: MEAL_PHOTO_PER_DAY }, 429);
   }
 
-  // ── 3. Reserve the credit BEFORE the model call — and the Premium AI gate (0203) ──
-  const { data: spend, error: spendError } = await supabase
-    .rpc('coach_ai_spend_credits', { p_action: MEAL_PHOTO_ACTION })
+  // ── 3. Reserve the credit BEFORE the model call — the Premium AI gate (0203) and the consent check (0268) ──
+  //
+  // The credit is HELD until step 5 settles it; every failure from here on gives it back (P-D2).
+  // ⛔ `meter.id` (the reservation) stays in this function — no reply carries it.
+  const { data: reservedRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: MEAL_PHOTO_ACTION, p_fn: FN })
     .maybeSingle();
-
-  if (spendError) return json({ ok: false, reason: 'meter_unavailable' }, 503);
-
-  const reserved = spend as
-    | { allowed: boolean; credits_spent: number; remaining: number; allowance: number }
-    | null;
-  if (!reserved?.allowed) {
-    return json({
-      ok: false,
-      reason: 'out_of_credits',
-      remaining: reserved?.remaining ?? 0,
-      allowance: reserved?.allowance ?? 0,
-    });
+  const meter = reserveFrom(reservedRow, reserveError);
+  if (!meter.ok) {
+    if (meter.reason === 'meter_unavailable') return json({ ok: false, reason: 'meter_unavailable' }, 503);
+    if (meter.reason === 'no_consent') return json({ ok: false, reason: 'no_consent' }, 403);
+    // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
+    return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
+  /** Settled ONCE, before the answer is returned (contract §1.3). Every outcome but `ok` refunds. */
+  const settle = async (outcome: SettleOutcome, call: ModelCall) => {
+    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
+    return settledTail(settledFrom(data, error), meter.remaining);
+  };
 
-  // ── 4. The model call ───────────────────────────────────────────────────────
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: MEAL_PHOTO_OUTPUT_CAP,
-        // Looking, not reasoning — and the guard is code. Same settings as `recipe-photo-read`.
-        thinking: { type: 'disabled' },
-        // ⛔ The schema is the NUT-D4 wall: it has no field for a nutrition number.
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: MEAL_READ_SCHEMA } },
-        system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-              { type: 'text', text: 'List the foods in this meal.' },
-            ],
-          },
-        ],
+  // ── 4. The model call, under this function's own abort (contract §3) ────────
+  const call = await timedModelCall(
+    (signal) =>
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: MEAL_PHOTO_OUTPUT_CAP,
+          // Looking, not reasoning — and the guard is code. Same settings as `recipe-photo-read`.
+          thinking: { type: 'disabled' },
+          // ⛔ The schema is the NUT-D4 wall: it has no field for a nutrition number.
+          output_config: { effort: 'low', format: { type: 'json_schema', schema: MEAL_READ_SCHEMA } },
+          system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
+                { type: 'text', text: 'List the foods in this meal.' },
+              ],
+            },
+          ],
+        }),
       }),
-    });
-  } catch {
-    return json({ ok: false, reason: 'upstream_unreachable' }, 503);
+    UPSTREAM_ABORT_MS[FN],
+  );
+
+  // Unreachable, a non-2xx, or our own abort: refunded. The upstream's words are in this function's log only (P-D8).
+  if (call.kind !== 'ok') {
+    return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind, call)) }, 503);
   }
+  const payload = call.payload;
 
-  if (!response.ok) {
-    console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
-    // Recorded so the 60-day run does not under-count; credits stay spent (see `coach-interpret`).
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: MEAL_PHOTO_ACTION, p_credits: reserved.credits_spent, p_model: MODEL,
-      p_input_tokens: 0, p_output_tokens: 0,
-      p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-      p_uncharged: true,
-    });
-    return json({ ok: false, reason: 'upstream_error' }, 503);
-  }
-
-  const payload = await response.json();
-  const usage = payload?.usage ?? {};
-
-  // ── 5. Record what it actually cost — all four counts separately ────────────
-  await supabase.rpc('coach_ai_record_usage', {
-    p_action: MEAL_PHOTO_ACTION,
-    p_credits: reserved.credits_spent,
-    p_model: payload?.model ?? MODEL,
-    p_input_tokens: usage.input_tokens ?? 0,
-    p_output_tokens: usage.output_tokens ?? 0,
-    p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-    p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-    p_uncharged: false,
-  });
-
-  // A safety refusal is the model declining, not the app failing — the same copy as an unreadable photo.
+  // A safety refusal is the model declining, not the app failing — the same copy as an unreadable photo. Refunded.
   if (payload?.stop_reason === 'refusal') {
-    return json({ ok: false, reason: 'unreadable', remaining: reserved.remaining });
+    return json({ ok: false, reason: 'unreadable', ...(await settle('refusal', call)) });
   }
 
   const text: string = (payload?.content ?? [])
@@ -286,12 +289,17 @@ Deno.serve(async (req) => {
     .map((b: { text: string }) => b.text)
     .join('');
 
-  // ── 6. THE BOUNDARY ─────────────────────────────────────────────────────────
+  // ── 5. THE BOUNDARY, then the settle ────────────────────────────────────────
   //
   // ⚠ RUNS AFTER THE MODEL AND OVERRULES IT. Only the whitelisted fields survive; any nutrition number,
   // any extra key, is dropped here (NUT-D4). The app runs the same guard again on what arrives.
+  // Not food, or nothing readable: refunded — the athlete pays only for a read they can use.
   const verdict = readFromModelText(text);
-  if (!verdict.ok) return json({ ok: false, reason: verdict.reason, remaining: reserved.remaining });
+  if (!verdict.ok) {
+    const outcome: SettleOutcome =
+      verdict.reason === 'not_food' ? 'not_a_program' : payload?.stop_reason === 'max_tokens' ? 'truncated' : 'unreadable';
+    return json({ ok: false, reason: verdict.reason, ...(await settle(outcome, call)) });
+  }
 
-  return json({ ok: true, read: verdict.read, remaining: reserved.remaining });
+  return json({ ok: true, read: verdict.read, ...(await settle('ok', call)) });
 });

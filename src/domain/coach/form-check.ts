@@ -152,6 +152,14 @@ export const FORM_GOOD_MAX = 3;
  */
 export const FORM_ACTION = 'form_check';
 
+/**
+ * A day's ceiling of form checks, per athlete (AI audit P-D6, AI Road to 10 Sprint 1). Counted on
+ * `coach_ai_spend` for the UTC day, the way `workout-tidy` and the photo reads count theirs — the same kind of
+ * blast-radius cap as `KITCHEN_PER_DAY`, not an allowance (the monthly credits are the budget). Twenty is far past
+ * any real training day, and a read at the frame cap is ~64k image tokens.
+ */
+export const FORM_PER_DAY = 20;
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // What the athlete (and the app) add to the request
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────

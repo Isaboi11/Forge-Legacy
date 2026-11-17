@@ -38,6 +38,19 @@
  * (capability A4, 3 credits, four binding rules, and an age floor the Decision Queue still lists as
  * open) is a different product that looks at a person on purpose. This one looks at a table and is
  * structurally incapable of the other job. Do not merge them.
+ *
+ * ══ THE METER (AI Road to 10, Sprint 1) ══
+ *
+ * `coach_ai_reserve` holds the credits (Premium AI, the AI-sharing consent, the balance — 0268), the model runs
+ * under this function's own 75 s abort (the app waits 90 s), and `coach_ai_settle` runs ONCE before the answer:
+ * every failure after the reservation — upstream, timeout, refusal, not a program, unreadable — gives the
+ * credits back (P-D2). No reply carries the upstream's words (P-D8) or the reservation id.
+ *
+ * No age line (P-G8): this is a transcription. The age cannot change what the table says, and one more line in
+ * the request is one more way to corrupt a copy.
+ *
+ * The dashboard paste copy is `supabase/apply/deploy-program-photo-read.ts`, built by
+ * `scripts/build-program-photo-read-deploy.mjs`.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -45,10 +58,26 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 // module so `node --test` can prove it separates real transcripts from prose, and so the function and
 // the app can never drift on where the line is.
 import { sanitizeTranscript } from '../../../src/domain/program/photo-transcript.ts';
+// ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, and what a failure returns (AI Sprint 1).
+import {
+  callFacts,
+  failedCallReply,
+  type ModelCall,
+  reserveFrom,
+  settleArgs,
+  settledFrom,
+  settledTail,
+  type SettleOutcome,
+  timedModelCall,
+  UPSTREAM_ABORT_MS,
+} from '../../../src/domain/ai/meter-server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+/** This function's deployed slug — the meter's `fn` (0268). */
+const FN = 'program-photo-read';
 
 /** Same model as `coach-interpret` — locked in the pricing plan, and one model is one set of numbers. */
 const MODEL = 'claude-sonnet-5';
@@ -203,100 +232,75 @@ Deno.serve(async (req) => {
     return json({ ok: false, reason: 'daily_limit', limit: MAX_READS_PER_DAY }, 429);
   }
 
-  // ── 1. Reserve the credit BEFORE the model call ────────────────────────────
+  // ── 1. Reserve the credit BEFORE the model call — the Premium AI gate (0203) and the consent check (0268) ──
   //
-  // `coach_ai_config.metering_only` is TRUE today, so this records the spend and never refuses — the
-  // metered-tester posture the plan requires. When it flips, this line starts gating with no code
-  // change, which is the entire point of the reservation living in SQL.
-  const { data: spend, error: spendError } = await supabase
-    .rpc('coach_ai_spend_credits', { p_action: ACTION })
+  // The credits are HELD until step 3 settles them; every failure from here on gives them back (P-D2).
+  // ⛔ `meter.id` (the reservation) stays in this function — no reply carries it.
+  const { data: reservedRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: ACTION, p_fn: FN })
     .maybeSingle();
-
-  if (spendError) return json({ ok: false, reason: 'meter_unavailable' }, 503);
-
-  const reserved = spend as
-    | { allowed: boolean; credits_spent: number; remaining: number; allowance: number }
-    | null;
-  if (!reserved?.allowed) {
-    return json({
-      ok: false,
-      reason: 'out_of_credits',
-      remaining: reserved?.remaining ?? 0,
-      allowance: reserved?.allowance ?? 0,
-    });
+  const meter = reserveFrom(reservedRow, reserveError);
+  if (!meter.ok) {
+    if (meter.reason === 'meter_unavailable') return json({ ok: false, reason: 'meter_unavailable' }, 503);
+    if (meter.reason === 'no_consent') return json({ ok: false, reason: 'no_consent' }, 403);
+    // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
+    return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
+  /**
+   * Settled ONCE, before the answer is returned (contract §1.3), with all four token counts — the cache read is
+   * the one that matters. Every outcome but `ok` refunds.
+   */
+  const settle = async (outcome: SettleOutcome, call: ModelCall) => {
+    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
+    return settledTail(settledFrom(data, error), meter.remaining);
+  };
 
-  // ── 2. The model call ──────────────────────────────────────────────────────
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        // A 12-week sheet is a lot of rows, and a transcript cut off at the cap is a program that
-        // silently loses its last weeks. `sanitizeTranscript` caps the rows that reach the parser;
-        // this only has to be big enough that the model is not the thing truncating.
-        max_tokens: 8192,
-        // Transcription, not reasoning — and the guard is code, so the model is not the only thing
-        // standing between an athlete and a bad read. Same posture as `coach-interpret`.
-        thinking: { type: 'disabled' },
-        output_config: { effort: 'low' },
-        system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
-              { type: 'text', text: 'Transcribe this training table as TSV.' },
-            ],
-          },
-        ],
+  // ── 2. The model call, under this function's own abort (contract §3) ───────
+  const call = await timedModelCall(
+    (signal) =>
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          // A 12-week sheet is a lot of rows, and a transcript cut off at the cap is a program that
+          // silently loses its last weeks. `sanitizeTranscript` caps the rows that reach the parser;
+          // this only has to be big enough that the model is not the thing truncating.
+          max_tokens: 8192,
+          // Transcription, not reasoning — and the guard is code, so the model is not the only thing
+          // standing between an athlete and a bad read. Same posture as `coach-interpret`.
+          thinking: { type: 'disabled' },
+          output_config: { effort: 'low' },
+          system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
+                { type: 'text', text: 'Transcribe this training table as TSV.' },
+              ],
+            },
+          ],
+        }),
       }),
-    });
-  } catch {
-    return json({ ok: false, reason: 'upstream_unreachable' }, 503);
+    UPSTREAM_ABORT_MS[FN],
+  );
+
+  // Unreachable, a non-2xx, or our own abort: refunded. The upstream's words are in this function's log only (P-D8).
+  if (call.kind !== 'ok') {
+    return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind, call)) }, 503);
   }
-
-  if (!response.ok) {
-    // Record the failed attempt so the 60-day run does not under-count what the product costs to
-    // operate. Credits stay spent — `coach-interpret`'s closing note explains why there is no refund
-    // path, and a second meter with different rules would be worse than the rounding error it fixes.
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: ACTION, p_credits: reserved.credits_spent, p_model: MODEL,
-      p_input_tokens: 0, p_output_tokens: 0,
-      p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-      p_uncharged: true,
-    });
-    return json({ ok: false, reason: 'upstream_error' }, 503);
-  }
-
-  const payload = await response.json();
-  const usage = payload?.usage ?? {};
-
-  // ── 3. Record what it actually cost ────────────────────────────────────────
-  //
-  // All four counts separately. The cache read is the one that matters — collapsing them into "input
-  // tokens" is how a product convinces itself it is 10× more expensive than it is.
-  await supabase.rpc('coach_ai_record_usage', {
-    p_action: ACTION,
-    p_credits: reserved.credits_spent,
-    p_model: payload?.model ?? MODEL,
-    p_input_tokens: usage.input_tokens ?? 0,
-    p_output_tokens: usage.output_tokens ?? 0,
-    p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-    p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-    p_uncharged: false,
-  });
+  const payload = call.payload;
 
   // A safety refusal is the model declining, not the app failing, and not a verdict on the photo. It
-  // gets the same copy as an unreadable image rather than inventing a third state for the athlete.
+  // gets the same copy as an unreadable image rather than inventing a third state for the athlete. Refunded.
   if (payload?.stop_reason === 'refusal') {
-    return json({ ok: false, reason: 'unreadable', remaining: reserved.remaining });
+    return json({ ok: false, reason: 'unreadable', ...(await settle('refusal', call)) });
   }
 
   const text: string = (payload?.content ?? [])
@@ -304,15 +308,17 @@ Deno.serve(async (req) => {
     .map((b: { text: string }) => b.text)
     .join('\n');
 
-  // ── 4. THE BOUNDARY ────────────────────────────────────────────────────────
+  // ── 3. THE BOUNDARY, then the settle ───────────────────────────────────────
   //
   // ⚠ RUNS AFTER THE MODEL AND OVERRULES IT. Everything the model wrote that is not a tab-separated row
   // is dropped here, including the `NOT_A_PROGRAM` token itself — which needs no special case, because
-  // it has no tab in it either.
+  // it has no tab in it either. Not a program, or too little to read: refunded.
   const clean = sanitizeTranscript(text);
   if (!clean.ok) {
-    return json({ ok: false, reason: clean.reason, remaining: reserved.remaining });
+    const outcome: SettleOutcome =
+      clean.reason === 'not_a_program' ? 'not_a_program' : payload?.stop_reason === 'max_tokens' ? 'truncated' : 'unreadable';
+    return json({ ok: false, reason: clean.reason, ...(await settle(outcome, call)) });
   }
 
-  return json({ ok: true, tsv: clean.tsv, rows: clean.rows, remaining: reserved.remaining });
+  return json({ ok: true, tsv: clean.tsv, rows: clean.rows, ...(await settle('ok', call)) });
 });

@@ -140,8 +140,10 @@ test('the wire: stops, credits and entitlement read right', () => {
 test('the function guards the athlete\'s words BEFORE the credit, and the paste copy is current', () => {
   const SRC = read('supabase/functions/coach-kitchen/index.ts');
   const guard = SRC.indexOf('medicalRoute(`');
-  const spend = SRC.indexOf("rpc('coach_ai_spend_credits'");
+  // AI Sprint 1 (0268): reserved here, settled after the guard — refunded on any failure.
+  const spend = SRC.indexOf(".rpc('coach_ai_reserve', { p_action: KITCHEN_ACTION, p_fn: FN })");
   assert.ok(guard > 0 && spend > guard, 'medicalRoute runs before the credit is reserved');
+  assert.ok(!/coach_ai_spend_credits|coach_ai_record_usage/.test(SRC), 'the old meter is gone from this function');
   assert.ok(SRC.indexOf("rpc('has_nutrition_access')") < spend);
   assert.match(SRC, /'Access-Control-Allow-Origin': '\*'/);
   assert.match(SRC, /if \(req\.method === 'OPTIONS'\)/);

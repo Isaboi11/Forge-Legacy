@@ -8,7 +8,9 @@
 // Supabase dashboard -> Edge Functions -> Deploy a new function -> "Via Editor" -> name it
 // coach-author -> replace the editor contents with this whole file -> Deploy.
 // ANTHROPIC_API_KEY is already set (coach-interpret, coach-ask and coach-kitchen use the same secret).
-// No migration: it charges the `day` and `program` actions coach-interpret already uses (0203).
+// It charges the `day` and `program` actions coach-interpret already uses (0203).
+// ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
+// this copy also inlines, src/domain/ai/meter-server.ts); until then every build answers "meter unavailable".
 // ===============================================================================================
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -427,9 +429,186 @@ export function withoutStoppedTurns<T extends {
 }
 export const AUTHOR_CATALOGUE_COUNT = 733;
 export const AUTHOR_CATALOGUE = "## Calf / Ankle\nbarbell|calves: barbell-calf-raise\nbodyweight|calves: calf-raise calf-wall-stretch* single-leg-calf-raise\nbodyweight|tibialis_anterior: tibialis-raise\ncable|calves: cable-calf-raise\ndumbbell|calves: dumbbell-calf-raise single-leg-dumbbell-calf-raise\ndumbbell|tibialis_anterior: dumbbell-tibialis-raise\nresistance_band|calves: band-calf-raise\nselectorized_machine|calves: donkey-calf-raise-machine seated-calf-raise-machine standing-calf-raise-machine\nselectorized_machine|tibialis_anterior: tibialis-raise-machine\nsmith_machine|calves: smith-machine-calf-raise\n\n## Cardio / Locomotion\nbodyweight|cardiovascular: bear-crawl* crab-walk* wall-walk\ncardio|cardiovascular: arc-trainer boxing-mitt-work double-under heavy-bag-boxing hike jump-rope jump-rope-intervals kickboxing-bag-work ruck shadow-boxing ski-erg ski-erg-intervals\nselectorized_machine|cardiovascular: arm-ergometer jacobs-ladder versaclimber\nsled|cardiovascular: light-sled-sprint sled-bear-crawl-drag\n\n## Carry\nbarbell|forearms,traps: barbell-front-rack-carry* barbell-overhead-carry* trap-bar-farmer-carry*\ncable|forearms,traps: cable-bear-hug-carry*\ndumbbell|forearms,traps: dumbbell-farmer-carry* dumbbell-front-rack-carry* dumbbell-overhead-carry* dumbbell-suitcase-carry* dumbbell-waiter-carry* farmer-carry* suitcase-carry*\nkettlebell|forearms,traps: cross-body-carry* front-rack-carry* kettlebell-bottoms-up-carry* kettlebell-farmer-carry* kettlebell-front-rack-carry* kettlebell-overhead-carry* kettlebell-suitcase-carry* overhead-carry*\nmedicine_ball|forearms,traps: slam-ball-bear-hug-carry*\nsandbag|forearms,traps: sandbag-bear-hug-carry* sandbag-front-carry* sandbag-shoulder-carry*\n\n## Core\nbarbell|obliques: barbell-russian-twist\nbarbell|rectus_abdominis: barbell-rollout\nbodyweight|adductors,obliques: copenhagen-plank*\nbodyweight|obliques: bicycle-crunch cross-body-mountain-climber windshield-wiper\nbodyweight|rectus_abdominis: ab-wheel-rollout bird-dog bird-dog-mobility crunch dead-bug dragon-flag^ forearm-plank* hanging-knee-raise hanging-leg-raise hollow-body-hold* hollow-rock l-sit* mcgill-curl-up modified-side-plank* mountain-climber open-book-rotation plank* plank-shoulder-tap reverse-crunch reverse-plank* rkc-plank* side-plank* sit-up toes-to-bar v-sit v-up\ncable|obliques: cable-chop cable-lift cable-press-around cable-side-bend\ncable|rectus_abdominis: cable-anti-rotation-hold* cable-crunch cable-dead-bug cable-pallof-press cable-reverse-crunch cable-rotation cable-wood-chop half-kneeling-pallof-press high-to-low-cable-wood-chop kneeling-cable-crunch low-to-high-cable-wood-chop tall-kneeling-pallof-press\ndumbbell|obliques: dumbbell-russian-twist dumbbell-side-bend\ndumbbell|rectus_abdominis: dumbbell-dead-bug\nkettlebell|obliques: kettlebell-russian-twist\nmedicine_ball|obliques: medicine-ball-russian-twist\nmedicine_ball|rectus_abdominis: medicine-ball-dead-bug medicine-ball-mountain-climber medicine-ball-v-up-pass\nresistance_band|rectus_abdominis: band-anti-rotation-hold* band-dead-bug band-pallof-press band-wood-chop\nselectorized_machine|obliques: machine-rotary-torso\nselectorized_machine|rectus_abdominis: machine-abdominal-crunch\nsuspension_trainer|rectus_abdominis: suspension-trainer-fallout suspension-trainer-knee-tuck suspension-trainer-mountain-climber suspension-trainer-pike suspension-trainer-side-plank*\n\n## Elbow Extension\nbarbell|triceps: barbell-jm-press barbell-overhead-triceps-extension barbell-skull-crusher\nbodyweight|triceps: triceps-stretch*\ncable|triceps: cable-cross-body-triceps-extension cable-overhead-triceps-extension cable-rope-pushdown cable-skull-crusher cable-triceps-pushdown single-arm-cable-overhead-triceps-extension single-arm-cable-pushdown\ndumbbell|triceps: dumbbell-jm-press dumbbell-skull-crusher dumbbell-tate-press dumbbell-triceps-kickback single-arm-dumbbell-overhead-triceps-extension two-hand-dumbbell-overhead-triceps-extension\nez_bar|triceps: ez-bar-jm-press^ ez-bar-overhead-triceps-extension ez-bar-skull-crusher\nresistance_band|triceps: band-overhead-triceps-extension band-triceps-kickback band-triceps-pushdown\nselectorized_machine|triceps: machine-triceps-extension machine-triceps-press\nsuspension_trainer|triceps: suspension-trainer-triceps-extension\n\n## Elbow Flexion\nbarbell|biceps: barbell-biceps-curl barbell-drag-curl barbell-preacher-curl barbell-reverse-curl\ncable|biceps: bayesian-cable-curl cable-biceps-curl cable-preacher-curl cable-reverse-curl cable-rope-hammer-curl cable-straight-bar-curl high-cable-curl single-arm-cable-curl\ndumbbell|biceps: alternating-dumbbell-curl cross-body-hammer-curl dumbbell-bayesian-curl dumbbell-biceps-curl dumbbell-concentration-curl dumbbell-drag-curl dumbbell-hammer-curl dumbbell-incline-curl dumbbell-preacher-curl dumbbell-reverse-curl dumbbell-spider-curl dumbbell-zottman-curl\nez_bar|biceps: ez-bar-biceps-curl ez-bar-drag-curl ez-bar-preacher-curl ez-bar-spider-curl\nez_bar|forearms: ez-bar-reverse-curl ez-bar-reverse-wrist-curl ez-bar-wrist-curl\nresistance_band|biceps: band-biceps-curl band-hammer-curl band-reverse-curl\nselectorized_machine|biceps: machine-biceps-curl machine-preacher-curl\nsuspension_trainer|biceps: suspension-trainer-biceps-curl\n\n## Hinge / Hip Dominant\nbarbell|glutes: axle-deadlift barbell-block-pull barbell-deadlift barbell-deficit-deadlift barbell-glute-bridge barbell-good-morning barbell-hip-thrust barbell-pause-deadlift barbell-rack-pull barbell-romanian-deadlift barbell-seated-good-morning barbell-snatch-grip-deadlift^ barbell-stiff-leg-deadlift barbell-sumo-deadlift barbell-tempo-deadlift\nbodyweight|erector_spinae: back-extension superman-hold*\nbodyweight|glutes: bodyweight-good-morning glute-bridge glute-bridge-iso-hold* single-leg-glute-bridge\nbodyweight|hamstrings: assisted-nordic-curl^ nordic-hamstring-curl^ sliding-hamstring-curl\ncable|glutes: cable-hip-thrust cable-pull-through cable-romanian-deadlift\ncable|hamstrings: cable-assisted-nordic-curl^ cable-standing-leg-curl\ndumbbell|glutes: dumbbell-burpee-deadlift dumbbell-glute-bridge dumbbell-hip-thrust dumbbell-romanian-deadlift dumbbell-stiff-leg-deadlift dumbbell-sumo-deadlift dumbbell-swing single-leg-dumbbell-romanian-deadlift\nkettlebell|glutes: double-kettlebell-swing kettlebell-deadlift kettlebell-romanian-deadlift kettlebell-sumo-deadlift kettlebell-swing single-arm-kettlebell-swing single-leg-kettlebell-romanian-deadlift\nresistance_band|glutes: band-glute-bridge band-good-morning band-hip-thrust band-romanian-deadlift\nresistance_band|hamstrings: band-leg-curl\nselectorized_machine|erector_spinae: machine-back-extension roman-chair-back-extension\nselectorized_machine|glutes: hip-thrust-machine\nselectorized_machine|hamstrings: lying-leg-curl-machine nordic-curl-machine^ seated-leg-curl-machine single-leg-seated-leg-curl standing-leg-curl-machine\nselectorized_machine|hamstrings,glutes: glute-ham-developer-raise\nsmith_machine|glutes: smith-machine-deadlift smith-machine-hip-thrust smith-machine-romanian-deadlift\nsuspension_trainer|glutes: suspension-trainer-glute-bridge\nsuspension_trainer|hamstrings: suspension-trainer-hamstring-curl\n\n## Hip Isolation\nbodyweight|adductors: adductor-rock-back\nbodyweight|glutes: frog-pump\ncable|abductors: cable-hip-abduction\ncable|adductors: cable-hip-adduction\ncable|glutes: cable-donkey-kick cable-glute-kickback\nresistance_band|abductors: band-clamshell band-hip-abduction band-lateral-walk band-monster-walk\nresistance_band|adductors: band-hip-adduction\nresistance_band|glutes: band-glute-kickback\nselectorized_machine|abductors: multi-hip-abduction-machine\nselectorized_machine|adductors: hip-adductor-machine multi-hip-adduction-machine\nselectorized_machine|glutes: glute-drive-machine glute-kickback-machine hip-abductor-machine multi-hip-extension-machine\nselectorized_machine|hip_flexors: multi-hip-flexion-machine\nsuspension_trainer|glutes: suspension-trainer-hip-press\n\n## Horizontal Pull\nbarbell|upper_back: barbell-bent-over-row barbell-meadows-row barbell-pendlay-row barbell-seal-row barbell-yates-row\nbodyweight|upper_back: bodyweight-row feet-elevated-inverted-row inverted-row underhand-inverted-row\ncable|rear_deltoids: cable-face-pull\ncable|upper_back: cable-seated-row close-grip-cable-seated-row high-cable-row low-cable-row single-arm-cable-row wide-grip-cable-seated-row\ndumbbell|lats: dumbbell-pullover-row\ndumbbell|upper_back: dumbbell-bent-over-row dumbbell-chest-supported-row dumbbell-gorilla-row dumbbell-incline-bench-row dumbbell-renegade-row dumbbell-seal-row single-arm-dumbbell-row\nkettlebell|upper_back: kettlebell-gorilla-row kettlebell-row renegade-kettlebell-row single-arm-kettlebell-row\nresistance_band|rear_deltoids: band-face-pull\nresistance_band|upper_back: band-seated-row single-arm-band-row\nselectorized_machine|upper_back: chest-supported-row-machine iso-lateral-row machine-high-row machine-low-row machine-seated-row machine-t-bar-row plate-loaded-seated-row\nsled|upper_back: sled-row\nsmith_machine|upper_back: smith-machine-bent-over-row\nsuspension_trainer|rear_deltoids: suspension-trainer-face-pull\nsuspension_trainer|upper_back: suspension-trainer-high-row suspension-trainer-low-row suspension-trainer-row suspension-trainer-single-arm-row\n\n## Horizontal Push\nbarbell|chest: barbell-bench-press barbell-board-press barbell-close-grip-bench-press barbell-decline-bench-press barbell-floor-press barbell-guillotine-press barbell-incline-bench-press barbell-larsen-press barbell-pin-press barbell-spoto-press\nbodyweight|chest: archer-push-up bench-dip clap-push-up close-grip-push-up decline-push-up deficit-push-up diamond-push-up dive-bomber-push-up explosive-push-up hindu-push-up incline-push-up knee-push-up parallel-bar-dip pike-push-up push-up ring-push-up scapular-push-up straight-bar-dip wide-push-up\ncable|chest: cable-chest-fly cable-chest-press cable-crossover cable-decline-chest-press cable-incline-chest-press high-to-low-cable-fly low-to-high-cable-fly single-arm-cable-chest-press single-arm-cable-fly\ndumbbell|chest: alternating-dumbbell-bench-press dumbbell-bench-press dumbbell-chest-fly dumbbell-decline-bench-press dumbbell-decline-chest-fly dumbbell-floor-press dumbbell-incline-bench-press dumbbell-incline-chest-fly dumbbell-neutral-grip-bench-press dumbbell-squeeze-press single-arm-dumbbell-bench-press single-arm-dumbbell-floor-press single-arm-dumbbell-incline-press\nkettlebell|chest: kettlebell-floor-press single-arm-kettlebell-floor-press\nresistance_band|chest: band-assisted-dip band-chest-fly band-chest-press band-push-up single-arm-band-chest-press\nselectorized_machine|chest: assisted-dip-machine converging-chest-press machine-chest-fly machine-chest-press machine-decline-chest-press machine-incline-chest-press pec-deck-fly plate-loaded-chest-press plate-loaded-incline-chest-press\nselectorized_machine|triceps: machine-triceps-dip\nsled|chest: sled-chest-press\nsmith_machine|chest: smith-machine-bench-press smith-machine-decline-bench-press smith-machine-incline-bench-press\nsuspension_trainer|chest: suspension-trainer-atomic-push-up suspension-trainer-chest-press suspension-trainer-push-up\n\n## Mobility\nbodyweight|hamstrings: foam-roll-hamstrings* hamstring-stretch* seated-hamstring-stretch*\nbodyweight|mobility: 90-90-hip-stretch* 90-90-hip-switch active-hang* ankle-car ankle-dorsiflexion-mobilization arm-circles breathing-drill-90-90* cartwheel cat-cow child-s-pose* cossack-mobility-drill couch-stretch* crocodile-breathing* cross-body-shoulder-stretch* dead-hang* dead-hang-mobility* doorway-chest-stretch* figure-four-stretch* foam-roll-calves* foam-roll-glutes* foam-roll-lats* foam-roll-quadriceps* foam-roll-upper-back* frog-stretch* half-kneeling-hip-flexor-stretch* hip-car inchworm knee-to-wall-ankle-mobilization lacrosse-ball-glute-release* lacrosse-ball-pec-release* lat-stretch-on-bench* neck-car pigeon-stretch* shoulder-car shoulder-rolls sleeper-stretch* standing-hip-flexor-stretch* standing-quad-stretch* supine-diaphragmatic-breathing* thoracic-extension-on-bench* thoracic-extension-on-foam-roller* thread-the-needle toe-touch wall-angel world-s-greatest-stretch wrist-car\nkettlebell|mobility: kettlebell-windmill\nresistance_band|mobility: band-shoulder-dislocate\n\n## Neck Isolation\nselectorized_machine|neck: machine-neck-lateral-flexion neck-extension-machine neck-flexion-machine\n\n## Other\nbodyweight|full_body: hip-airplane rope-climb sprawl\ncable|full_body: cable-sled-drag\ndumbbell|full_body: dumbbell-turkish-get-up^\nkettlebell|full_body: kettlebell-around-the-world kettlebell-figure-eight kettlebell-halo kettlebell-turkish-get-up^\nplyo_box|full_body: snap-down\nselectorized_machine|full_body: grip-machine\nsled|full_body: backward-sled-drag forward-sled-drag hand-over-hand-rope-pull heavy-sled-push lateral-sled-drag prowler-push sled-push sled-rope-pull\n\n## Power / Plyometric\nbarbell|front_deltoids: barbell-push-jerk barbell-split-jerk\nbarbell|glutes,front_deltoids: axle-clean-and-press barbell-clean-and-jerk^\nbarbell|glutes,traps: barbell-clean barbell-clean-pull barbell-hang-clean barbell-hang-snatch^ barbell-power-clean barbell-power-snatch^ barbell-snatch^ barbell-snatch-pull^\nbattle_rope|forearms: battle-rope-alternating-waves battle-rope-circles battle-rope-double-waves battle-rope-lateral-waves battle-rope-slams\nbodyweight|quadriceps: burpee\nbodyweight|quadriceps,glutes: bounding broad-jump countermovement-jump lateral-bound pogo-jump power-skip single-leg-broad-jump single-leg-hop single-leg-pogo-jump skater-jump standing-long-jump triple-hop tuck-jump\ndumbbell|glutes,traps: dumbbell-clean dumbbell-hang-clean single-arm-dumbbell-snatch^\ndumbbell|quadriceps: dumbbell-man-maker\nkettlebell|front_deltoids: kettlebell-jerk\nkettlebell|glutes,front_deltoids: kettlebell-clean-and-press\nkettlebell|glutes,traps: double-kettlebell-clean kettlebell-clean kettlebell-goblet-clean kettlebell-high-pull kettlebell-snatch^\nmedicine_ball|chest,triceps: medicine-ball-chest-pass\nmedicine_ball|glutes,hamstrings: slam-ball-over-shoulder-throw\nmedicine_ball|obliques: medicine-ball-rotational-throw\nmedicine_ball|obliques,front_deltoids: medicine-ball-shot-put-throw\nmedicine_ball|quadriceps: medicine-ball-burpee\nmedicine_ball|quadriceps,glutes: medicine-ball-wall-ball\nmedicine_ball|rectus_abdominis: medicine-ball-rainbow-slam medicine-ball-scoop-toss medicine-ball-side-slam medicine-ball-sit-up-throw medicine-ball-slam slam-ball-ground-to-shoulder\nmedicine_ball|rectus_abdominis,lats: medicine-ball-overhead-throw\nplyo_box|quadriceps,glutes: box-jump box-jump-over box-step-off-landing burpee-box-jump depth-drop depth-jump^ drop-to-sprint forward-hurdle-hop hurdle-jump lateral-hurdle-hop reactive-box-jump seated-box-jump\nsandbag|glutes,traps: sandbag-clean\nstrongman_implement|glutes,front_deltoids: log-clean-and-press\n\n## Shoulder Isolation\nbarbell|lateral_deltoids,traps: barbell-upright-row\nbarbell|traps: barbell-shrug\nbodyweight|rear_deltoids: scapular-wall-slide\ncable|front_deltoids: single-arm-cable-front-raise\ncable|lateral_deltoids: behind-the-back-cable-lateral-raise cable-lateral-raise\ncable|lateral_deltoids,traps: cable-upright-row\ncable|rear_deltoids: cable-rear-delt-fly cable-y-raise\ncable|rotator_cuff: cable-external-rotation cable-internal-rotation\ncable|traps: cable-shrug\ndumbbell|front_deltoids: dumbbell-front-raise\ndumbbell|lateral_deltoids: dumbbell-lateral-raise leaning-dumbbell-lateral-raise single-arm-dumbbell-lateral-raise\ndumbbell|lateral_deltoids,traps: dumbbell-upright-row\ndumbbell|rear_deltoids: dumbbell-rear-delt-fly incline-dumbbell-rear-delt-fly\ndumbbell|traps: dumbbell-shrug\nez_bar|lateral_deltoids,traps: ez-bar-upright-row\nresistance_band|front_deltoids: band-front-raise\nresistance_band|lateral_deltoids: band-lateral-raise\nresistance_band|lateral_deltoids,traps: band-upright-row\nresistance_band|rear_deltoids: band-pull-apart band-rear-delt-fly\nresistance_band|rotator_cuff: band-shoulder-external-rotation band-shoulder-internal-rotation\nresistance_band|traps: band-shrug\nselectorized_machine|lateral_deltoids: machine-lateral-raise\nselectorized_machine|lateral_deltoids,traps: machine-upright-row\nselectorized_machine|rear_deltoids: machine-rear-delt-fly reverse-pec-deck\nselectorized_machine|traps: machine-shrug\nsuspension_trainer|rear_deltoids: suspension-trainer-t-raise suspension-trainer-y-raise\n\n## Squat / Knee Dominant\nbarbell|quadriceps: barbell-back-squat barbell-box-squat barbell-bulgarian-split-squat barbell-front-squat barbell-hack-squat barbell-high-bar-back-squat barbell-low-bar-back-squat barbell-overhead-squat^ barbell-pause-squat barbell-pin-squat barbell-reverse-lunge barbell-split-squat barbell-step-up barbell-tempo-squat barbell-walking-lunge barbell-zercher-squat\nbodyweight|quadriceps: alternating-lunge-jump assisted-pistol-squat^ bodyweight-squat box-squat-to-bench bulgarian-split-squat cossack-squat curtsy-lunge deep-squat-hold* forward-lunge jump-squat lateral-lunge pistol-squat^ prisoner-squat reverse-lunge reverse-nordic-curl^ shrimp-squat single-leg-sit-to-stand sissy-squat split-squat split-squat-jump step-down step-up walking-lunge wall-sit*\ncable|quadriceps: cable-belt-squat cable-bulgarian-split-squat cable-front-squat cable-goblet-squat cable-leg-extension cable-reverse-lunge cable-split-squat cable-squat cable-step-up\ndumbbell|quadriceps: dumbbell-box-step-down dumbbell-bulgarian-split-squat dumbbell-curtsy-lunge dumbbell-forward-lunge dumbbell-front-squat dumbbell-goblet-squat dumbbell-lateral-lunge dumbbell-reverse-lunge dumbbell-split-squat dumbbell-step-up dumbbell-sumo-squat dumbbell-walking-lunge\nkettlebell|quadriceps: double-kettlebell-front-squat kettlebell-bulgarian-split-squat kettlebell-goblet-squat kettlebell-reverse-lunge kettlebell-split-squat kettlebell-step-up kettlebell-sumo-squat kettlebell-tactical-lunge kettlebell-walking-lunge\nmedicine_ball|quadriceps: medicine-ball-lunge-with-rotation\nmedicine_ball|quadriceps,glutes: medicine-ball-squat-to-throw\nplyo_box|quadriceps: step-up-box-jump\nresistance_band|quadriceps: band-front-squat band-goblet-squat band-lateral-lunge band-leg-extension band-reverse-lunge band-split-squat band-squat\nsandbag|quadriceps: sandbag-lunge sandbag-squat\nselectorized_machine|quadriceps: 45-degree-leg-press belt-squat-machine hack-squat-machine horizontal-leg-press leg-extension-machine leverage-squat-machine machine-leg-press machine-squat pendulum-squat reverse-hack-squat single-leg-leg-extension single-leg-leg-press sissy-squat-machine v-squat-machine vertical-leg-press\nsmith_machine|quadriceps: smith-machine-back-squat smith-machine-box-squat smith-machine-bulgarian-split-squat smith-machine-front-squat smith-machine-reverse-lunge smith-machine-split-squat\nsuspension_trainer|quadriceps: suspension-trainer-lateral-lunge suspension-trainer-reverse-lunge suspension-trainer-single-leg-squat suspension-trainer-split-squat suspension-trainer-squat\n\n## Vertical Pull\nbarbell|lats: barbell-pullover\nbodyweight|lats: archer-pull-up assisted-pull-up chest-to-bar-pull-up chin-up commando-pull-up negative-pull-up neutral-grip-pull-up one-arm-pull-up^ pull-up scapular-pull-up wide-grip-pull-up\ncable|lats: cable-lat-pulldown cable-pullover close-grip-cable-lat-pulldown half-kneeling-single-arm-lat-pulldown neutral-grip-cable-lat-pulldown single-arm-cable-lat-pulldown straight-arm-cable-pulldown wide-grip-cable-lat-pulldown\ndumbbell|lats: dumbbell-pullover\nez_bar|lats: ez-bar-pullover\nkettlebell|lats: kettlebell-pullover\nresistance_band|lats: band-assisted-pull-up band-lat-pulldown band-straight-arm-pulldown\nselectorized_machine|lats: assisted-pull-up-machine iso-lateral-lat-pulldown machine-lat-pulldown machine-pullover plate-loaded-lat-pulldown\n\n## Vertical Push\nbarbell|front_deltoids: barbell-behind-the-neck-press barbell-bradford-press barbell-overhead-press barbell-push-press barbell-seated-overhead-press\nbarbell|quadriceps,front_deltoids: barbell-thruster\ndumbbell|front_deltoids: dumbbell-arnold-press dumbbell-cuban-press dumbbell-overhead-press dumbbell-push-press dumbbell-z-press seated-dumbbell-shoulder-press single-arm-dumbbell-overhead-press\ndumbbell|quadriceps,front_deltoids: dumbbell-thruster\nkettlebell|front_deltoids: double-kettlebell-press kettlebell-press kettlebell-push-press single-arm-kettlebell-press\nkettlebell|quadriceps,front_deltoids: kettlebell-thruster\nresistance_band|front_deltoids: band-overhead-press single-arm-band-overhead-press\nselectorized_machine|front_deltoids: machine-shoulder-press plate-loaded-shoulder-press\nsmith_machine|front_deltoids: smith-machine-shoulder-press";
+export type SettleOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'not_a_program' | 'unreadable' | 'bad_output' | 'cancelled' | 'guarded';
+export const UPSTREAM_ABORT_MS: Readonly<Record<string, number>> = {
+    'meal-photo-read': 75000,
+    'recipe-photo-read': 75000,
+    'program-photo-read': 75000,
+    'workout-card-read': 75000,
+    'coach-form-check': 75000,
+    'coach-kitchen': 45000,
+    'coach-interpret': 45000,
+    'workout-tidy': 45000,
+    'coach-author': 25000,
+};
+export interface ModelUsage {
+    input_tokens?: number;
+    output_tokens?: number;
+    cache_read_input_tokens?: number;
+    cache_creation_input_tokens?: number;
+}
+export interface ModelPayload {
+    content?: {
+        type: string;
+        text: string;
+    }[];
+    stop_reason?: string;
+    model?: string;
+    usage?: ModelUsage;
+}
+export type ModelCall = {
+    kind: 'ok';
+    payload: ModelPayload;
+    latencyMs: number;
+} | {
+    kind: 'upstream_error';
+    status: number;
+    latencyMs: number;
+} | {
+    kind: 'upstream_unreachable';
+    latencyMs: number;
+} | {
+    kind: 'timeout';
+    latencyMs: number;
+};
+export type MeterReserve = {
+    ok: true;
+    id: string;
+    credits: number;
+    remaining: number;
+    allowance: number;
+    ageYears: number | null;
+    minor: boolean;
+} | {
+    ok: false;
+    reason: 'not_entitled' | 'no_consent' | 'out_of_credits' | 'meter_unavailable';
+    remaining: number;
+    allowance: number;
+};
+export interface Settled {
+    settled: boolean;
+    refunded: boolean;
+    remaining: number | null;
+}
+export interface CallFacts {
+    model: string;
+    usage?: ModelUsage | null;
+    latencyMs?: number | null;
+}
+const meterInt = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0);
+export function reserveFrom(data: unknown, error: unknown): MeterReserve {
+    if (error || !data || typeof data !== 'object')
+        return { ok: false, reason: 'meter_unavailable', remaining: 0, allowance: 0 };
+    const d = data as Record<string, unknown>;
+    if (d.allowed === true) {
+        if (typeof d.reservation_id !== 'string' || !d.reservation_id)
+            return { ok: false, reason: 'meter_unavailable', remaining: 0, allowance: 0 };
+        return {
+            ok: true,
+            id: d.reservation_id,
+            credits: meterInt(d.credits_spent),
+            remaining: meterInt(d.remaining),
+            allowance: meterInt(d.allowance),
+            ageYears: typeof d.age_years === 'number' && Number.isFinite(d.age_years) ? d.age_years : null,
+            minor: d.minor === true,
+        };
+    }
+    const reason = d.reason === 'not_entitled' || d.reason === 'no_consent' ? d.reason : 'out_of_credits';
+    return { ok: false, reason, remaining: meterInt(d.remaining), allowance: meterInt(d.allowance) };
+}
+export async function timedModelCall(send: (signal: AbortSignal) => Promise<Response>, abortMs: number): Promise<ModelCall> {
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+    }, Math.max(0, abortMs));
+    const started = Date.now();
+    const took = () => Date.now() - started;
+    try {
+        const response = await send(controller.signal);
+        if (!response.ok) {
+            const said = await response.text().catch(() => '');
+            console.error('anthropic', response.status, said.slice(0, 800));
+            return { kind: 'upstream_error', status: response.status, latencyMs: took() };
+        }
+        try {
+            return { kind: 'ok', payload: (await response.json()) as ModelPayload, latencyMs: took() };
+        }
+        catch {
+            return timedOut ? { kind: 'timeout', latencyMs: took() } : { kind: 'upstream_error', status: response.status, latencyMs: took() };
+        }
+    }
+    catch {
+        return timedOut ? { kind: 'timeout', latencyMs: took() } : { kind: 'upstream_unreachable', latencyMs: took() };
+    }
+    finally {
+        clearTimeout(timer);
+    }
+}
+export function failedCallReply(kind: 'upstream_error' | 'upstream_unreachable' | 'timeout'): {
+    reason: 'upstream_error' | 'upstream_unreachable';
+    upstream?: 'timeout';
+} {
+    if (kind === 'timeout')
+        return { reason: 'upstream_error', upstream: 'timeout' };
+    return { reason: kind };
+}
+export function callFacts(call: ModelCall, fallbackModel: string): CallFacts {
+    if (call.kind !== 'ok')
+        return { model: fallbackModel, usage: null, latencyMs: call.latencyMs };
+    return {
+        model: typeof call.payload.model === 'string' && call.payload.model ? call.payload.model : fallbackModel,
+        usage: call.payload.usage ?? null,
+        latencyMs: call.latencyMs,
+    };
+}
+export function settleArgs(reservation: string, outcome: SettleOutcome, facts: CallFacts): Record<string, unknown> {
+    const u = facts.usage ?? {};
+    return {
+        p_reservation: reservation,
+        p_outcome: outcome,
+        p_model: facts.model,
+        p_input_tokens: meterInt(u.input_tokens),
+        p_output_tokens: meterInt(u.output_tokens),
+        p_cache_read_input_tokens: meterInt(u.cache_read_input_tokens),
+        p_cache_creation_input_tokens: meterInt(u.cache_creation_input_tokens),
+        p_latency_ms: facts.latencyMs == null ? null : meterInt(facts.latencyMs),
+        p_refund: outcome !== 'ok',
+    };
+}
+export function settledFrom(data: unknown, error: unknown): Settled {
+    if (error || !data || typeof data !== 'object')
+        return { settled: false, refunded: false, remaining: null };
+    const d = data as Record<string, unknown>;
+    return {
+        settled: d.settled === true,
+        refunded: d.settled === true && d.refunded === true,
+        remaining: typeof d.remaining === 'number' && Number.isFinite(d.remaining) ? d.remaining : null,
+    };
+}
+export function settledTail(s: Settled, reservedRemaining: number): {
+    remaining: number;
+    refunded?: true;
+} {
+    const remaining = s.remaining ?? reservedRemaining;
+    return s.refunded ? { remaining, refunded: true } : { remaining };
+}
+export function ageLine(ageYears: number | null, minor: boolean): string | null {
+    if (minor) {
+        const age = ageYears != null && ageYears <= 18 ? `${ageYears}, under 18` : 'under 18';
+        return `Athlete's age, from their profile: ${age}. Keep every suggestion conservative and right for supervised training: no maximal-effort sets or max attempts, and nothing about losing weight.`;
+    }
+    return ageYears == null ? null : `Athlete's age, from their profile: ${ageYears}.`;
+}
+export function withAgeLine(turn: string, ageYears: number | null, minor: boolean): string {
+    const line = ageLine(ageYears, minor);
+    return line ? `${turn}\n\n${line}` : turn;
+}
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+const FN = 'coach-author';
 const MODEL = 'claude-sonnet-5';
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -549,72 +728,69 @@ Deno.serve(async (req) => {
     const authorization = req.headers.get('Authorization') ?? '';
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
     const action = AUTHOR_ACTION[request.kind];
-    const { data: spend, error: spendError } = await supabase.rpc('coach_ai_spend_credits', { p_action: action }).maybeSingle();
-    if (spendError)
-        return json({ ok: false, reason: 'meter_unavailable' }, 503);
-    const reserved = spend as {
-        allowed: boolean;
-        credits_spent: number;
-        remaining: number;
-        allowance: number;
-    } | null;
-    if (!reserved?.allowed) {
-        return json({ ok: false, reason: 'out_of_credits', remaining: reserved?.remaining ?? 0, allowance: reserved?.allowance ?? 0 });
+    const { data: reservedRow, error: reserveError } = await supabase
+        .rpc('coach_ai_reserve', { p_action: action, p_fn: FN })
+        .maybeSingle();
+    const meter = reserveFrom(reservedRow, reserveError);
+    if (!meter.ok) {
+        if (meter.reason === 'meter_unavailable')
+            return json({ ok: false, reason: 'meter_unavailable' }, 503);
+        if (meter.reason === 'no_consent')
+            return json({ ok: false, reason: 'no_consent' }, 403);
+        return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
     }
     let plan: ReturnType<typeof authoredFromModelText> = null;
     const total = { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
     let modelUsed = MODEL;
+    let latencyMs = 0;
+    let lastStop: string | undefined;
+    const settle = async (outcome: SettleOutcome) => {
+        const usage = {
+            input_tokens: total.input,
+            output_tokens: total.output,
+            cache_read_input_tokens: total.cacheRead,
+            cache_creation_input_tokens: total.cacheWrite,
+        };
+        const { data, error } = await supabase
+            .rpc('coach_ai_settle', settleArgs(meter.id, outcome, { model: modelUsed, usage, latencyMs }))
+            .maybeSingle();
+        return settledTail(settledFrom(data, error), meter.remaining);
+    };
+    const turn = withAgeLine(authorUserTurn(request), meter.ageYears, meter.minor);
+    const deadline = Date.now() + UPSTREAM_ABORT_MS[FN];
     for (let attempt = 0; attempt < 2 && !authoredIsWhole(plan); attempt += 1) {
-        let response: Response;
-        try {
-            response = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-                body: JSON.stringify({
-                    model: MODEL,
-                    max_tokens: AUTHOR_OUTPUT_CAP[request.kind],
-                    thinking: { type: 'disabled' },
-                    output_config: { effort: 'low', format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },
-                    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-                    messages: [{ role: 'user', content: authorUserTurn(request) }],
-                }),
-            });
-        }
-        catch {
+        const left = deadline - Date.now();
+        if (left <= 0)
+            break;
+        const call = await timedModelCall((signal) => fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            signal,
+            headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+            body: JSON.stringify({
+                model: MODEL,
+                max_tokens: AUTHOR_OUTPUT_CAP[request.kind],
+                thinking: { type: 'disabled' },
+                output_config: { effort: 'low', format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },
+                system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+                messages: [{ role: 'user', content: turn }],
+            }),
+        }), left);
+        latencyMs += call.latencyMs;
+        if (call.kind !== 'ok') {
             if (attempt > 0)
                 break;
-            return json({ ok: false, reason: 'upstream_unreachable' }, 503);
+            return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind)) }, 503);
         }
-        if (!response.ok) {
-            console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
-            if (attempt > 0)
-                break;
-            await supabase.rpc('coach_ai_record_usage', {
-                p_action: action, p_credits: reserved.credits_spent, p_model: MODEL,
-                p_input_tokens: 0, p_output_tokens: 0, p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-                p_uncharged: true,
-            });
-            return json({ ok: false, reason: 'upstream_error' }, 503);
-        }
-        const payload = await response.json();
+        const payload = call.payload;
         const usage = payload?.usage ?? {};
         modelUsed = payload?.model ?? MODEL;
         total.input += usage.input_tokens ?? 0;
         total.output += usage.output_tokens ?? 0;
         total.cacheRead += usage.cache_read_input_tokens ?? 0;
         total.cacheWrite += usage.cache_creation_input_tokens ?? 0;
-        await supabase.rpc('coach_ai_record_usage', {
-            p_action: action,
-            p_credits: attempt === 0 ? reserved.credits_spent : 0,
-            p_model: modelUsed,
-            p_input_tokens: usage.input_tokens ?? 0,
-            p_output_tokens: usage.output_tokens ?? 0,
-            p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-            p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-            p_uncharged: attempt > 0,
-        });
         if (payload?.stop_reason === 'refusal')
-            return json({ ok: false, reason: 'none', remaining: reserved.remaining });
+            return json({ ok: false, reason: 'none', ...(await settle('refusal')) });
+        lastStop = payload?.stop_reason;
         const text: string = (payload?.content ?? [])
             .filter((b: {
             type: string;
@@ -626,11 +802,11 @@ Deno.serve(async (req) => {
         plan = authoredFromModelText(text, request.kind) ?? plan;
     }
     if (!plan)
-        return json({ ok: false, reason: 'none', remaining: reserved.remaining });
+        return json({ ok: false, reason: 'none', ...(await settle(lastStop === 'max_tokens' ? 'truncated' : 'bad_output')) });
     return json({
         ok: true,
         plan,
-        remaining: reserved.remaining,
+        ...(await settle('ok')),
         usage: { model: modelUsed, ...total },
     });
 });

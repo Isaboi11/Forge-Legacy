@@ -39,9 +39,11 @@ test('image → nutrition access → daily ceiling → credit (Premium AI) → m
   const image = at('image.length > MEAL_PHOTO_MAX_BASE64');
   const nutrition = at(".rpc('has_nutrition_access')");
   const daily = at(".eq('action', MEAL_PHOTO_ACTION)");
-  const spend = at(".rpc('coach_ai_spend_credits', { p_action: MEAL_PHOTO_ACTION })");
+  // AI Sprint 1 (0268): the credit is RESERVED, then settled after the guard — refunded on any failure.
+  const spend = at(".rpc('coach_ai_reserve', { p_action: MEAL_PHOTO_ACTION, p_fn: FN })");
   const model = at("fetch('https://api.anthropic.com/v1/messages'");
   assert.ok(image < nutrition && nutrition < daily && daily < spend && spend < model);
+  assert.ok(!/coach_ai_spend_credits|coach_ai_record_usage/.test(SRC), 'the old meter is gone from this function');
 });
 
 test('no nutrition access is a 403 that spends nothing', () => {
@@ -49,8 +51,8 @@ test('no nutrition access is a 403 that spends nothing', () => {
 });
 
 test('Premium AI is the meter’s gate (0203): not allowed → out_of_credits with the allowance, before the model', () => {
-  assert.match(SRC, /if \(!reserved\?\.allowed\) \{[\s\S]{0,80}reason: 'out_of_credits'/);
-  assert.ok(at('if (!reserved?.allowed)') < at("fetch('https://api.anthropic.com/v1/messages'"));
+  assert.match(SRC, /if \(!meter\.ok\) \{[\s\S]{0,400}reason: 'out_of_credits', remaining: meter\.remaining, allowance: meter\.allowance/);
+  assert.ok(at('if (!meter.ok)') < at("fetch('https://api.anthropic.com/v1/messages'"));
 });
 
 test('CORS: the preflight is answered first, and every response carries the headers', () => {
@@ -85,15 +87,15 @@ test('the system block is ONE cached constant, nothing interpolated, long enough
 });
 
 test('usage is recorded with all four counts, on success and on failure', () => {
-  for (const p of [
-    'p_input_tokens: usage.input_tokens',
-    'p_output_tokens: usage.output_tokens',
-    'p_cache_read_input_tokens: usage.cache_read_input_tokens',
-    'p_cache_creation_input_tokens: usage.cache_creation_input_tokens',
-  ]) assert.ok(SRC.includes(p), p);
-  assert.equal(SRC.match(/coach_ai_record_usage/g).length, 2);
-  assert.match(SRC, /p_uncharged: true,/);
-  assert.match(SRC, /p_uncharged: false,/);
+  // One settle per call, with the call's own usage (all four counts are mapped in meter-server.ts `settleArgs`).
+  assert.equal(SRC.match(/rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, MODEL\)\)\)/g).length, 1);
+  for (const outcome of ['settle(call.kind, call)', "settle('refusal', call)", 'settle(outcome, call)', "settle('ok', call)"]) {
+    assert.ok(SRC.includes(outcome), `missing ${outcome}`);
+  }
+  const copy = read(DEPLOY_COPY);
+  for (const p of ['p_input_tokens', 'p_output_tokens', 'p_cache_read_input_tokens', 'p_cache_creation_input_tokens']) {
+    assert.ok(copy.includes(p), `the paste copy's settle sends ${p}`);
+  }
 });
 
 test('the weight lives in SQL, never in code', () => {
@@ -118,7 +120,7 @@ test('⛔ the prompt forbids nutrition numbers, invented foods, judging the meal
 
 test('⛔ the LAST thing before the answer is the code guard, and the raw text is never the answer', () => {
   const guard = at('const verdict = readFromModelText(text);');
-  const answer = at('return json({ ok: true, read: verdict.read, remaining: reserved.remaining });');
+  const answer = at("return json({ ok: true, read: verdict.read, ...(await settle('ok', call)) });");
   assert.ok(guard < answer);
   assert.ok(!/read: text|read: payload|read: JSON\.parse/.test(SRC));
   assert.match(SRC, /if \(payload\?\.stop_reason === 'refusal'\)[\s\S]{0,120}reason: 'unreadable'/);
