@@ -9,7 +9,16 @@ import { RangeControl, SectionCard, StatLine } from '@/components/forge/admin/ch
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flText } from '@/constants/foundation';
 import { dashboardTz, isAppAdmin } from '@/data/admin-live';
-import { fetchAiHealth } from '@/data/ai-health-live';
+import { fetchAiDeploys, fetchAiHealth } from '@/data/ai-health-live';
+import {
+  DRIFT_ALARM,
+  driftRowLine,
+  driftVerdict,
+  latestDeploys,
+  type AiDeploys,
+  type DriftRow,
+  type DriftVerdict,
+} from '@/domain/admin/ai-drift-core';
 import {
   AI_ALERT_KINDS,
   AI_ALERT_LABEL,
@@ -198,6 +207,9 @@ function Loaded({ h }: { h: AiHealth }) {
         ) : null}
       </SectionCard>
 
+      {/* ── Deployed code (0271): the nightly deployed-vs-repo check ──────────── */}
+      <DeployedCodeCard />
+
       {/* ── By function ──────────────────────────────────────────────────────── */}
       <SectionCard title="By function" subtitle={`${span} · bucketed in ${h.tz}`}>
         <StatLine label="Calls" value={h.totals.calls} />
@@ -300,6 +312,93 @@ function FnRowView({ r }: { r: AiFnRow }) {
       <Text style={styles.slug}>{r.fn ?? `action: ${r.action ?? 'unknown'} · before the new meter`}</Text>
     </View>
   );
+}
+
+/**
+ * "Deployed code" — every function whose deployed file is not the repo's (0271, scripts/deploy-ai/drift.mjs).
+ * Its own read: a database without 0271 fails this card alone, and says so — never an "all clear".
+ */
+function DeployedCodeCard() {
+  const q = useQuery(() => fetchAiDeploys(), []);
+  const d = q.data;
+  return (
+    <SectionCard
+      title="Deployed code"
+      subtitle="Each night every function's deployed file is compared with the repo (main, which mirrors build 11). Anything that is not the same is listed."
+    >
+      {q.loading && !d ? (
+        <ActivityIndicator color={flColor.bronze400} />
+      ) : q.error || !d ? (
+        <>
+          <Text style={styles.failText}>{q.error ?? 'Nothing came back.'}</Text>
+          <Text style={styles.failSub}>Not known until it loads — this is not an all clear.</Text>
+          <Pressable
+            onPress={q.refetch}
+            accessibilityRole="button"
+            accessibilityLabel="Try loading deployed code again"
+            style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
+          >
+            <Text style={styles.actionLabel}>Try again</Text>
+          </Pressable>
+        </>
+      ) : (
+        <DeployedCode d={d} />
+      )}
+    </SectionCard>
+  );
+}
+
+function DeployedCode({ d }: { d: AiDeploys }) {
+  const v = driftVerdict(d, Date.parse(d.generatedAt));
+  const rows = v.state === 'never' ? [] : v.flagged;
+  const recent = latestDeploys(d.deploys);
+  return (
+    <>
+      <Text style={v.state === 'clean' ? styles.clearLine : v.state === 'never' ? styles.quietLine : styles.trippedLine}>{driftLine(v)}</Text>
+      {rows.length ? (
+        <View style={styles.list}>
+          {rows.map((r) => (
+            <DriftRowView key={r.slug} r={r} />
+          ))}
+        </View>
+      ) : null}
+      <View style={styles.rule} />
+      {recent.length ? (
+        recent.map((x) => <StatLine key={x.slug} label={x.slug} value={`v${x.version} · ${x.method} · ${when(x.deployedAt)}`} />)
+      ) : (
+        <Text style={styles.footnote}>No deploy recorded yet — the deploy-ai skill records each one (slug, version, hash, commit).</Text>
+      )}
+      {d.runs7d ? <Text style={styles.footnote}>{d.runs7d} nightly check{d.runs7d === 1 ? '' : 's'} in the last 7 days.</Text> : null}
+    </>
+  );
+}
+
+function DriftRowView({ r }: { r: DriftRow }) {
+  const alarm = DRIFT_ALARM.includes(r.status);
+  return (
+    <View style={styles.fnRow}>
+      <View style={styles.fnHead}>
+        <Text style={[styles.fnLabel, !alarm && styles.fnLegacy]} numberOfLines={1}>
+          {r.slug}
+        </Text>
+        <Text style={alarm ? styles.trippedLine : styles.quietLine}>{driftRowLine(r)}</Text>
+      </View>
+      {r.detail ? <Text style={styles.meta}>{r.detail}</Text> : null}
+    </View>
+  );
+}
+
+function driftLine(v: DriftVerdict): string {
+  switch (v.state) {
+    case 'never':
+      return 'No check has run yet — the nightly job starts once its GitHub secret is set.';
+    case 'stale':
+      return `✕ No check for ${v.hours} h — the nightly job missed. Last ran ${when(v.at)}.`;
+    case 'clean':
+      return `✓ Every deployed function matches the repo · checked ${when(v.at)}`;
+    case 'alarm':
+      return `✕ ${v.alarms.length} of ${v.count} function${v.count === 1 ? '' : 's'} not matching the repo · checked ${when(v.at)}`;
+  }
 }
 
 function verdictLine(v: CanaryVerdict): string {
