@@ -112,84 +112,229 @@ export const HIGH_FREQUENCY_DAYS = 5;
 export const SHORT_BLOCK_WEEKS = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
-// WEEKLY SETS PER MUSCLE — PAS §11.2, as amended by PAS-A4 (LOCKED)
+// WEEKLY SETS PER MUSCLE — the PB-2 volume model (PAS §11.2, PAS-A4 LOCKED, and the evidence base)
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/**
- * PAS §11.2 / PAS-A4-D4 — the governing weekly band per muscle group, for a block's WORKING weeks (a
- * deload sits under it on purpose, PAS-A4-D3). Only HYPERTROPHY states one.
+/*
+ * ══ WHY A WEEKLY MODEL, AND WHY IT IS A TABLE ══
  *
- * ⚠ NOTHING HELD THE COACH TO THIS UNTIL 2026-11-16, and that is how a four-day "Muscle Block" shipped
- * chest at 3–7 sets a week (AI audit, B-D2). The per-session band above cannot see it: every session was
- * inside 18–30 while one muscle group was missing from half of them.
+ * PAS-D11 above is per SESSION, and a four-day "Muscle Block" shipped chest at 3–7 sets a week with every
+ * session inside 18–30 (AI audit 11-16, B-D2), because one muscle was missing from half the sessions. The
+ * per-session band cannot see that; only a weekly count per muscle can (B-G3).
+ *
+ * The bands are DATA, one row per goal category × experience × muscle — no goal has a code branch. The
+ * builder (`volume-balance.ts`) reads this table, and `matrix.test.mjs` holds every build it can make to it.
+ * Change a number here and both move.
+ *
+ * ══ HOW A SET COUNTS — PAS-A4-D1 (LOCKED) ══
+ *
+ * 1.0 for each PRIMARY muscle of the exercise, 0.5 for each SECONDARY, from `exercise_muscles.json`. It is
+ * also the counting that fit the evidence best: Pelland et al. (2024, "The Resistance Training Dose
+ * Response", meta-regression of ~67 studies) compared direct-only, total and fractional (indirect = 0.5)
+ * set counts and found the fractional count predicted hypertrophy and strength best. The tags it reads are
+ * held to `coherence.ts`'s muscle-tag rules, because a wrong tag is now a wrong dose.
+ *
+ * ══ THE TWELVE GROUPS — PAS-A4-D2 (LOCKED) ══
+ *
+ * The twelve the Muscle Building Intermediate Blueprint calls major (and its test asserts), with the delts as
+ * three heads, never one "Shoulders" row: pressing feeds the front head whatever you do, and nothing but
+ * direct work feeds the lateral or rear head. Back is two groups — lats (vertical pulling) and upper back
+ * (rows) — for the same reason: one total hides a program that only ever pulls down.
  */
-export const WEEKLY_SETS_PER_MUSCLE: Partial<Record<PasCategory, { min: number; max: number }>> = {
-  HYPERTROPHY: { min: 10, max: 20 },
+
+/** A muscle the weekly model counts. Each is a catalogue muscle id (`muscles.json`). */
+export type VolumeGroup =
+  | 'chest'
+  | 'lats'
+  | 'upper_back'
+  | 'front_deltoids'
+  | 'lateral_deltoids'
+  | 'rear_deltoids'
+  | 'biceps'
+  | 'triceps'
+  | 'quadriceps'
+  | 'hamstrings'
+  | 'glutes'
+  | 'calves';
+
+export const VOLUME_GROUPS: readonly VolumeGroup[] = [
+  'chest',
+  'lats',
+  'upper_back',
+  'front_deltoids',
+  'lateral_deltoids',
+  'rear_deltoids',
+  'biceps',
+  'triceps',
+  'quadriceps',
+  'hamstrings',
+  'glutes',
+  'calves',
+];
+
+/**
+ * The movement patterns that train a group DIRECTLY — where the builder looks when a group needs another
+ * exercise, and how it decides a group is trainable in this room at all (a primary mover exists in one of
+ * them). An upper group is never fed from a leg pattern, so a lateral raise can never be the answer for a
+ * hamstring.
+ */
+export const GROUP_PATTERNS: Readonly<Record<VolumeGroup, readonly string[]>> = {
+  chest: ['Horizontal Push'],
+  lats: ['Vertical Pull'],
+  upper_back: ['Horizontal Pull'],
+  front_deltoids: ['Vertical Push', 'Shoulder Isolation'],
+  lateral_deltoids: ['Shoulder Isolation'],
+  rear_deltoids: ['Shoulder Isolation', 'Horizontal Pull'],
+  biceps: ['Elbow Flexion'],
+  triceps: ['Elbow Extension'],
+  quadriceps: ['Squat / Knee Dominant'],
+  hamstrings: ['Hinge / Hip Dominant'],
+  glutes: ['Hinge / Hip Dominant', 'Hip Isolation'],
+  calves: ['Calf / Ankle'],
 };
 
 /** PAS-A4-D1 — a set counts 1.0 for the exercise's PRIMARY muscles and 0.5 for each SECONDARY. */
 export const PRIMARY_SET_WEIGHT = 1;
 export const SECONDARY_SET_WEIGHT = 0.5;
 
+export interface WeeklyBand {
+  /** Sets a WORKING week must give the group (PAS-A4-D3: a deload sits under it on purpose). */
+  min: number;
+  /** Sets no week may exceed — recoverable volume, held in every week. */
+  max: number;
+}
+
+type Level = 'beginner' | 'intermediate' | 'advanced';
+
+export interface CategoryVolume {
+  /**
+   * The weekly frequency the floors are written for. Below it, a floor scales with the days actually
+   * trained (`weeklyBandFor`); the ceiling never does.
+   */
+  referenceDays: number;
+  bands: Readonly<Record<Level, Readonly<Record<VolumeGroup, WeeklyBand>>>>;
+}
+
+/** One band for a list of groups — the table below is written group by group through this. */
+const bandRows = (groups: readonly VolumeGroup[], band: WeeklyBand): Partial<Record<VolumeGroup, WeeklyBand>> =>
+  Object.fromEntries(groups.map((g) => [g, band]));
+
+const LARGE: readonly VolumeGroup[] = ['chest', 'lats', 'upper_back', 'front_deltoids', 'quadriceps', 'hamstrings', 'glutes'];
+const ARMS: readonly VolumeGroup[] = ['biceps', 'triceps'];
+const SMALL: readonly VolumeGroup[] = ['lateral_deltoids', 'rear_deltoids', 'calves'];
+const ALL = VOLUME_GROUPS;
+
+const levelOf = (parts: Partial<Record<VolumeGroup, WeeklyBand>>[]): Record<VolumeGroup, WeeklyBand> =>
+  Object.assign({}, ...parts) as Record<VolumeGroup, WeeklyBand>;
+
 /**
- * The major groups the weekly floor is held on, as catalogue muscle ids (`muscles.json`).
+ * ══ THE BANDS — sets per muscle per working week, PAS-A4-D1 counting ══
  *
- * ⚠ THE DELTS ARE THE FRONT HEAD ONLY, AND THAT IS A KNOWN GAP, NOT AN OVERSIGHT. PAS-A4-D2 makes the
- * delts three groups and forbids one "Shoulders" row, because pressing hides an untrained rear delt. The
- * front head is what pressing feeds, which is what a dropped press slot takes away — the failure this
- * floor exists for. The lateral and rear heads need direct isolation work that a 60-minute session's six
- * movements do not reach today; they are left out rather than summed into a total that would pass.
+ * HYPERTROPHY (the `muscle` goal) — written for 4 days, PAS §11.2's default frequency:
+ *   · intermediate / advanced: 10–20 for the seven large groups (chest, lats, upper back, front delt, quads,
+ *     hamstrings, glutes). PAS §11.2 / PAS-A4-D4 make 10–20 the governing band, and Schoenfeld, Ogborn &
+ *     Krieger (2017, J Sports Sci) found 10+ weekly sets beat fewer.
+ *   · ⚠ THE ARMS (8) AND THE LATERAL DELT, REAR DELT AND CALF (6) SIT BELOW 10 — A WRITTEN DEVIATION
+ *     (PAS §10.1), NOT A TRANSCRIPTION, AND THE PO'S TO CONFIRM. The Muscle Building Intermediate program
+ *     already needed one for the same three small groups (its test's BAND_EXEMPT: 8 / 9 / 8 — reaching 10
+ *     "took six sets of raises a session, which no coach would prescribe"), and that program runs up to
+ *     eight movements a session. Holt's hour is six: twelve groups at 10 do not fit six-exercise upper
+ *     days, measured over the whole matrix. 8 for the arms holds because every press and pull already feeds
+ *     them half a set; 6 for the small three is the Foundation Blueprint's own floor for calves and the arms
+ *     (6–10) and the practitioner minimum-effective dose for those heads (Israetel et al., RP volume
+ *     landmarks). A 75-minute session reaches higher on its own.
+ *   · advanced keeps the same band. PAS-D11 lets an ADVANCED session run to its ceiling; the weekly ceiling
+ *     stays 20 because above ~20 the returns flatten sharply (Pelland et al. 2024) while the recovery bill
+ *     does not.
+ *   · beginner: 8 for the large groups, 6 for the arms, 4 for the small three, ceiling 16 — the Muscle
+ *     Building Foundation Blueprint §4 ("the low end of each band": chest 8–12, biceps / triceps 6–10,
+ *     shoulders 8–12 for all three heads together). A novice grows on less (ACSM 2009 progression position
+ *     stand: 1–3 sets per exercise), so the ceiling sits below the intermediate one.
+ *
+ * STRENGTH (`strength`, `health`) — written for 3 days, PAS §11.1's Foundation frequency:
+ *   · the seven large groups 6–20 (beginner 4–16). Strength is built by the main lifts at low reps;
+ *     Ralston et al. (2017, Sports Med) found useful strength gains from as little as ~5 weekly sets, with
+ *     more helping only modestly. The arms, lateral and rear delts and calves are accessories in a strength
+ *     block: floor 0 (no direct work is owed), ceiling held.
+ *
+ * CONDITIONING (`conditioning`, `weight_loss`) — written for 3 days:
+ *   · the six large movers other than the front delt 4–16 (beginner 3–16), everything else 0–16. The goal is
+ *     the conditioning; the lifting is there to keep the muscle while the weight comes off, and maintenance
+ *     needs about a third of the volume that built it (Bickel, Cross & Bamman 2011, MSSE). The ceiling is
+ *     16, not 20, for the reason PAS-D11 caps a conditioning session at 24 sets against hypertrophy's 30 —
+ *     someone in a deficit recovers from less (`skeletons.ts`, "the hypertrophy SHAPE at the conditioning
+ *     DOSE").
+ *
+ * MOBILITY and RUNNING have no row: their work is holds and miles, not sets of a muscle.
+ *
+ * ⚠ A FLOOR IS OWED ONLY WHERE THE GROUP CAN BE TRAINED. A bodyweight room with no bar has no vertical
+ * pull, and a shoulders limitation removes the raises — `trainableGroups` in `volume-balance.ts` decides,
+ * with the same gates every slot fill uses, and Holt already says what a limitation took out.
  */
-export const MAJOR_MUSCLE_GROUPS: Readonly<Record<string, readonly string[]>> = {
-  chest: ['chest'],
-  back: ['lats', 'upper_back'],
-  quads: ['quadriceps'],
-  hamstrings_glutes: ['hamstrings', 'glutes'],
-  front_delts: ['front_deltoids'],
+export const WEEKLY_SET_BANDS: Partial<Record<PasCategory, CategoryVolume>> = {
+  HYPERTROPHY: {
+    referenceDays: 4,
+    bands: {
+      beginner: levelOf([bandRows(LARGE, { min: 8, max: 16 }), bandRows(ARMS, { min: 6, max: 16 }), bandRows(SMALL, { min: 4, max: 16 })]),
+      intermediate: levelOf([bandRows(LARGE, { min: 10, max: 20 }), bandRows(ARMS, { min: 8, max: 20 }), bandRows(SMALL, { min: 6, max: 20 })]),
+      advanced: levelOf([bandRows(LARGE, { min: 10, max: 20 }), bandRows(ARMS, { min: 8, max: 20 }), bandRows(SMALL, { min: 6, max: 20 })]),
+    },
+  },
+  STRENGTH: {
+    referenceDays: 3,
+    bands: {
+      beginner: levelOf([bandRows(ALL, { min: 0, max: 16 }), bandRows(LARGE, { min: 4, max: 16 })]),
+      intermediate: levelOf([bandRows(ALL, { min: 0, max: 20 }), bandRows(LARGE, { min: 6, max: 20 })]),
+      advanced: levelOf([bandRows(ALL, { min: 0, max: 20 }), bandRows(LARGE, { min: 6, max: 20 })]),
+    },
+  },
+  CONDITIONING: {
+    referenceDays: 3,
+    bands: {
+      beginner: levelOf([bandRows(ALL, { min: 0, max: 16 }), bandRows(LARGE.filter((g) => g !== 'front_deltoids'), { min: 3, max: 16 })]),
+      intermediate: levelOf([bandRows(ALL, { min: 0, max: 16 }), bandRows(LARGE.filter((g) => g !== 'front_deltoids'), { min: 4, max: 16 })]),
+      advanced: levelOf([bandRows(ALL, { min: 0, max: 16 }), bandRows(LARGE.filter((g) => g !== 'front_deltoids'), { min: 4, max: 16 })]),
+    },
+  },
 };
 
 /**
- * PAS §11.2's default hypertrophy frequency — "4 days/week at BEGINNER and INTERMEDIATE". The band is
- * authored against it, and the Foundation and Intermediate Blueprints both reach it with two exposures
- * per group across four sessions.
- */
-export const WEEKLY_BAND_FROM_DAYS = 4;
-
-/**
- * ⚠ THE COACH'S OWN FLOOR BELOW FOUR DAYS — CHOSEN, NOT TRANSCRIBED, AND OPEN FOR THE PO.
+ * The band one group is held to this week, or null where the category states none.
  *
- * PAS gives no band for two or three days. Holt's two-day week is Full Body A/B (squat on one day, hinge
- * on the other) and his three-day week is push/pull/legs, so each group meets the work once a week and
- * lands at 3–10 sets — under 10 by construction, not by a dropped slot. Raising that is a rulebook
- * decision (full-body days that each carry squat AND hinge, or full body at three days), not a fix.
- *
- * Until then the floor is one full working exercise for every major group, every week: the dose an
- * exercise carries at its lightest (three sets). It does not claim the week is well dosed. It guarantees
- * no group has fallen out of the week altogether, which is the D2 failure.
+ * ⚠ THE FLOOR SCALES WITH FREQUENCY BELOW THE REFERENCE, AND THAT IS A CHOICE, NOT A TRANSCRIPTION. PAS
+ * states no band for a two- or three-day hypertrophy week. Two full-body sessions cannot carry ten sets for
+ * twelve groups (the session ceiling is 30), so a two-day week owes half the four-day floor: each group is
+ * still trained every week at a dose the evidence calls effective (Schoenfeld 2017's lowest bracket still
+ * grew muscle). Rounded down to the whole set — a 4.5 calf floor at three days would demand a fifth set
+ * of the only calf raise in the week. Open for the PO, exactly as the old three-set low-frequency floor was.
  */
-export const LOW_FREQUENCY_WEEKLY_FLOOR = 3;
-
-/** The weekly sets each major group must reach in a working week, or null where PAS states no band. */
-export function weeklyMuscleFloor(category: PasCategory, daysPerWeek: number): number | null {
-  const band = WEEKLY_SETS_PER_MUSCLE[category];
-  if (!band) return null;
-  return daysPerWeek >= WEEKLY_BAND_FROM_DAYS ? band.min : LOW_FREQUENCY_WEEKLY_FLOOR;
+export function weeklyBandFor(
+  category: PasCategory,
+  experience: Level,
+  group: VolumeGroup,
+  daysPerWeek: number,
+): WeeklyBand | null {
+  const table = WEEKLY_SET_BANDS[category];
+  if (!table) return null;
+  const band = table.bands[experience][group];
+  const share = Math.min(1, daysPerWeek / table.referenceDays);
+  return { min: Math.floor(band.min * share), max: band.max };
 }
 
-/**
- * A week's sets for one group, counted by PAS-A4-D1. A set counts ONCE per group, at its best role — a
- * row is `upper_back` primary and `lats` secondary, and it is one set of back work, not one and a half.
- */
-export function weeklyGroupSets(
+/** What one set of an exercise credits each group — 1 primary, 0.5 secondary, nothing otherwise. */
+export function creditOf(ex: { primaryMuscleIds: readonly string[]; muscleIds: readonly string[] }, group: VolumeGroup): number {
+  if (ex.primaryMuscleIds.includes(group)) return PRIMARY_SET_WEIGHT;
+  if (ex.muscleIds.includes(group)) return SECONDARY_SET_WEIGHT;
+  return 0;
+}
+
+/** A week's sets per group, PAS-A4-D1 counting. Rows without muscles (cardio, an unknown key) count nothing. */
+export function weeklyMuscleSets(
   rows: readonly { sets: number; primaryMuscleIds: readonly string[]; muscleIds: readonly string[] }[],
-  group: readonly string[],
-): number {
-  let total = 0;
-  for (const r of rows) {
-    if (r.primaryMuscleIds.some((m) => group.includes(m))) total += r.sets * PRIMARY_SET_WEIGHT;
-    else if (r.muscleIds.some((m) => group.includes(m))) total += r.sets * SECONDARY_SET_WEIGHT;
-  }
-  return total;
+): Record<VolumeGroup, number> {
+  const out = Object.fromEntries(VOLUME_GROUPS.map((g) => [g, 0])) as Record<VolumeGroup, number>;
+  for (const r of rows) for (const g of VOLUME_GROUPS) out[g] += r.sets * creditOf(r, g);
+  return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
