@@ -93,3 +93,135 @@ const SYSTEM_DESCRIPTORS = new Set(['full_body', 'cardiovascular', 'grip', 'mobi
 
 /** Exposed so the test can report per-pattern rejection rates rather than just pass or fail. */
 export const POLICED_PATTERNS: readonly string[] = Object.keys(PLAUSIBLE_PRIMARY);
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE MUSCLE TAGS THEMSELVES — the data the weekly volume model counts (AI Road to 10, PB-2)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/*
+ * ══ WHY THE SECONDARY TAGS NOW MATTER ══
+ *
+ * Until the weekly volume model, a secondary muscle was a line on the exercise page. Now it is half a set
+ * (PAS-A4-D1), summed across a week and held against a band — so a wrong tag is a wrong dose. Measured over
+ * the visible catalogue on 2026-11-17, before the fix: every barbell, dumbbell, kettlebell and Smith
+ * deadlift, Romanian deadlift, stiff-leg deadlift, good morning and swing credited the glutes and NOT the
+ * hamstrings (32 rows) — a whole block of RDLs counted zero hamstring work; seven presses credited only the
+ * chest, so a Spoto or Larsen press did no triceps work; seven overhead presses had no triceps; and ten
+ * chest flies credited the triceps, a muscle a fly never shortens.
+ *
+ * These are rules, not a list, for the reason the primary check above is: the next import adds a row
+ * nobody re-reads. `catalogueTagProblems` runs over every visible row in `muscle-tags.test.mjs`, and the
+ * fixes are logged in `SOURCE-CORRECTIONS.csv` like every other correction to the source catalogue.
+ *
+ * ⚠ THE FIXES ONLY ADD OR REMOVE SECONDARY LINKS. A primary or a pattern is what `author-catalogue.ts`
+ * prints into coach-author's SYSTEM prompt, so changing one changes the prompt and stales its eval. An RDL
+ * is arguably hamstrings-PRIMARY; it is hamstrings-secondary here on purpose, and that is a follow-up for
+ * the next time the author suite is recorded, not a thing to slip in under a volume fix.
+ */
+
+/** Muscles no row of a pattern may credit in ANY role — "a press tagged with a pull muscle". */
+export const IMPLAUSIBLE_ANY_ROLE: Readonly<Record<string, readonly string[]>> = {
+  'Horizontal Push': ['lats', 'upper_back', 'biceps', 'rear_deltoids', 'quadriceps', 'hamstrings', 'glutes', 'calves'],
+  // Thrusters are filed here and squat on the way up, so the legs are allowed; a pull muscle never is.
+  'Vertical Push': ['lats', 'upper_back', 'biceps', 'rear_deltoids', 'hamstrings', 'calves'],
+  'Elbow Extension': ['lats', 'upper_back', 'biceps', 'rear_deltoids', 'quadriceps', 'hamstrings', 'glutes', 'calves'],
+  'Horizontal Pull': ['chest', 'triceps', 'front_deltoids', 'quadriceps', 'hamstrings', 'glutes', 'calves'],
+  // A pullover and a straight-arm pulldown really do use the chest and the long head of the triceps (QA F11).
+  'Vertical Pull': ['front_deltoids', 'quadriceps', 'hamstrings', 'glutes', 'calves'],
+  'Elbow Flexion': ['chest', 'triceps', 'front_deltoids', 'quadriceps', 'hamstrings', 'glutes', 'calves'],
+  'Shoulder Isolation': ['chest', 'triceps', 'quadriceps', 'hamstrings', 'glutes', 'calves'],
+  'Squat / Knee Dominant': ['lats', 'upper_back', 'biceps', 'rear_deltoids', 'chest'],
+  'Hinge / Hip Dominant': ['chest', 'triceps', 'front_deltoids', 'lats', 'biceps', 'rear_deltoids'],
+  'Hip Isolation': ['chest', 'triceps', 'front_deltoids', 'lats', 'upper_back', 'biceps', 'rear_deltoids'],
+};
+
+/** A movement family that must credit these muscles, in some role — "a deadlift that never names the hamstrings". */
+export interface RequiredCredit {
+  pattern: string;
+  /** Matched against the catalogue's `family` (or the name, when a row has no family). */
+  family: RegExp;
+  unless?: RegExp;
+  muscles: readonly string[];
+  why: string;
+}
+
+export const REQUIRED_CREDIT: readonly RequiredCredit[] = [
+  {
+    pattern: 'Hinge / Hip Dominant',
+    family: /deadlift|good morning|swing|pull-through|block pull|rack pull/i,
+    unless: /hamstring curl|nordic|leg curl|bridge|thrust/i,
+    muscles: ['hamstrings'],
+    why: 'a hip hinge loads the hamstrings through their length',
+  },
+  {
+    pattern: 'Horizontal Push',
+    family: /press|push-up/i,
+    muscles: ['triceps', 'front_deltoids'],
+    why: 'a press extends the elbow and flexes the shoulder',
+  },
+  {
+    pattern: 'Vertical Push',
+    family: /press|jerk/i,
+    muscles: ['triceps'],
+    why: 'an overhead press locks out with the triceps',
+  },
+  {
+    pattern: 'Vertical Pull',
+    family: /pull-up|chin-up|pulldown/i,
+    unless: /straight-arm/i,
+    muscles: ['biceps'],
+    why: 'a bent-arm vertical pull flexes the elbow',
+  },
+  {
+    pattern: 'Horizontal Pull',
+    family: /row/i,
+    muscles: ['biceps'],
+    why: 'a row flexes the elbow',
+  },
+];
+
+/** A single-joint movement credits nothing across a joint it does not move — "a fly that trains the triceps". */
+export const FORBIDDEN_CREDIT: readonly { pattern: string; family: RegExp; muscles: readonly string[]; why: string }[] = [
+  {
+    pattern: 'Horizontal Push',
+    family: /\bfly\b|crossover|pec deck/i,
+    muscles: ['triceps'],
+    why: 'a fly holds the elbow still, so it never trains the triceps',
+  },
+];
+
+/**
+ * Everything wrong with one row's muscle tags, as sentences — empty when it is coherent.
+ *
+ * ⚠ READ BY THE CATALOGUE TEST, NOT BY THE BUILDER. The builder still trusts the data (and `isCoherent`
+ * still keeps a misfiled PRIMARY out of a slot); this is the check that stops a wrong tag reaching the data.
+ */
+export function catalogueTagProblems(ex: {
+  key: string;
+  name: string;
+  family?: string;
+  pattern: string;
+  modality?: string;
+  primaryMuscleIds: readonly string[];
+  muscleIds: readonly string[];
+}): string[] {
+  if (ex.modality === 'Mobility' || ex.pattern === 'Mobility') return [];
+  const out: string[] = [];
+  const family = ex.family || ex.name;
+  for (const m of IMPLAUSIBLE_ANY_ROLE[ex.pattern] ?? []) {
+    if (ex.muscleIds.includes(m)) out.push(`${ex.key}: a ${ex.pattern} row credits ${m}`);
+  }
+  for (const r of REQUIRED_CREDIT) {
+    if (r.pattern !== ex.pattern || !r.family.test(family) || r.unless?.test(family)) continue;
+    for (const m of r.muscles) {
+      if (!ex.muscleIds.includes(m)) out.push(`${ex.key}: ${r.why} — it does not credit ${m}`);
+    }
+  }
+  for (const r of FORBIDDEN_CREDIT) {
+    if (r.pattern !== ex.pattern || !r.family.test(family)) continue;
+    for (const m of r.muscles) {
+      if (ex.muscleIds.includes(m)) out.push(`${ex.key}: ${r.why} — it credits ${m}`);
+    }
+  }
+  return out;
+}

@@ -234,6 +234,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "axle-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "back-lever-hold",
     "muscleId": "full_body",
     "role": "Primary",
@@ -319,15 +325,9 @@
   },
   {
     "exerciseId": "band-chest-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "band-chest-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "band-chest-press",
@@ -478,6 +478,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "band-good-morning",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "band-hammer-curl",
@@ -682,6 +688,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "band-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "band-seated-row",
@@ -1008,6 +1020,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "barbell-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "barbell-decline-bench-press",
     "muscleId": "chest",
     "role": "Primary",
@@ -1048,6 +1066,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "barbell-deficit-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "barbell-drag-curl",
@@ -1126,6 +1150,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "barbell-good-morning",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "barbell-hack-squat",
@@ -1338,6 +1368,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "barbell-pause-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "barbell-pause-squat",
     "muscleId": "quadriceps",
     "role": "Primary",
@@ -1506,6 +1542,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "barbell-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "barbell-seal-row",
     "muscleId": "upper_back",
     "role": "Primary",
@@ -1552,6 +1594,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "barbell-seated-good-morning",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "barbell-seated-overhead-press",
@@ -1602,6 +1650,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "barbell-snatch-grip-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "barbell-split-squat",
     "muscleId": "quadriceps",
     "role": "Primary",
@@ -1674,6 +1728,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "barbell-stiff-leg-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "barbell-sumo-deadlift",
     "muscleId": "glutes",
     "role": "Primary",
@@ -1698,6 +1758,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "barbell-sumo-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "barbell-tempo-deadlift",
     "muscleId": "glutes",
     "role": "Primary",
@@ -1720,6 +1786,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "barbell-tempo-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "barbell-tempo-squat",
@@ -1918,6 +1990,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "bodyweight-good-morning",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "bodyweight-row",
@@ -2119,15 +2197,9 @@
   },
   {
     "exerciseId": "cable-chest-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "cable-chest-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "cable-chest-press",
@@ -2382,6 +2454,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "cable-pull-through",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "cable-pullover",
     "muscleId": "lats",
     "role": "Primary",
@@ -2476,6 +2554,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "cable-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "cable-rope-hammer-curl",
@@ -3096,6 +3180,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "double-kettlebell-swing",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "dumbbell-arnold-press",
     "muscleId": "front_deltoids",
     "role": "Primary",
@@ -3216,6 +3306,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "dumbbell-burpee-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "dumbbell-calf-raise",
     "muscleId": "calves",
     "role": "Primary",
@@ -3229,15 +3325,9 @@
   },
   {
     "exerciseId": "dumbbell-chest-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "dumbbell-chest-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-chest-supported-row",
@@ -3337,15 +3427,9 @@
   },
   {
     "exerciseId": "dumbbell-decline-chest-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "dumbbell-decline-chest-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-drag-curl",
@@ -3553,15 +3637,9 @@
   },
   {
     "exerciseId": "dumbbell-incline-chest-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "dumbbell-incline-chest-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-incline-curl",
@@ -3780,6 +3858,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "dumbbell-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "dumbbell-seal-row",
     "muscleId": "upper_back",
     "role": "Primary",
@@ -3888,6 +3972,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "dumbbell-stiff-leg-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "dumbbell-sumo-deadlift",
     "muscleId": "glutes",
     "role": "Primary",
@@ -3910,6 +4000,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "dumbbell-sumo-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "dumbbell-sumo-squat",
@@ -3958,6 +4054,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "dumbbell-swing",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "dumbbell-triceps-kickback",
@@ -4363,15 +4465,9 @@
   },
   {
     "exerciseId": "high-to-low-cable-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "high-to-low-cable-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "high-to-low-cable-wood-chop",
@@ -4716,6 +4812,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "kettlebell-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "kettlebell-figure-eight",
     "muscleId": "full_body",
     "role": "Primary",
@@ -4860,6 +4962,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "kettlebell-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "kettlebell-row",
     "muscleId": "upper_back",
     "role": "Primary",
@@ -4956,6 +5064,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "kettlebell-sumo-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "kettlebell-sumo-squat",
     "muscleId": "quadriceps",
     "role": "Primary",
@@ -5002,6 +5116,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "kettlebell-swing",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "kettlebell-tactical-lunge",
@@ -5173,15 +5293,9 @@
   },
   {
     "exerciseId": "low-to-high-cable-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "low-to-high-cable-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "low-to-high-cable-wood-chop",
@@ -5221,15 +5335,9 @@
   },
   {
     "exerciseId": "machine-chest-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "machine-chest-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "machine-chest-press",
@@ -5869,15 +5977,9 @@
   },
   {
     "exerciseId": "pec-deck-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "pec-deck-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "pendulum-squat",
@@ -6643,15 +6745,9 @@
   },
   {
     "exerciseId": "single-arm-cable-fly",
-    "muscleId": "triceps",
-    "role": "Secondary",
-    "displayOrder": 1
-  },
-  {
-    "exerciseId": "single-arm-cable-fly",
     "muscleId": "front_deltoids",
     "role": "Secondary",
-    "displayOrder": 2
+    "displayOrder": 1
   },
   {
     "exerciseId": "single-arm-cable-lat-pulldown",
@@ -6822,6 +6918,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "single-arm-kettlebell-swing",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "single-leg-calf-raise",
     "muscleId": "calves",
     "role": "Primary",
@@ -6858,6 +6960,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "single-leg-dumbbell-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "single-leg-glute-bridge",
     "muscleId": "glutes",
     "role": "Primary",
@@ -6904,6 +7012,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "single-leg-kettlebell-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "single-leg-leg-press",
@@ -7236,6 +7350,12 @@
     "displayOrder": 3
   },
   {
+    "exerciseId": "smith-machine-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
+  },
+  {
     "exerciseId": "smith-machine-decline-bench-press",
     "muscleId": "chest",
     "role": "Primary",
@@ -7366,6 +7486,12 @@
     "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 3
+  },
+  {
+    "exerciseId": "smith-machine-romanian-deadlift",
+    "muscleId": "hamstrings",
+    "role": "Secondary",
+    "displayOrder": 4
   },
   {
     "exerciseId": "smith-machine-shoulder-press",
@@ -8184,6 +8310,12 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "barbell-behind-the-neck-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
     "exerciseId": "barbell-block-pull",
     "muscleId": "glutes",
     "role": "Primary",
@@ -8208,9 +8340,27 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "barbell-board-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-board-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
+  },
+  {
     "exerciseId": "barbell-bradford-press",
     "muscleId": "front_deltoids",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-bradford-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
@@ -8328,6 +8478,18 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "barbell-guillotine-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-guillotine-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
+  },
+  {
     "exerciseId": "barbell-hang-clean",
     "muscleId": "glutes",
     "role": "Primary",
@@ -8388,6 +8550,18 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "barbell-larsen-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-larsen-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
+  },
+  {
     "exerciseId": "barbell-overhead-carry",
     "muscleId": "forearms",
     "role": "Primary",
@@ -8410,6 +8584,18 @@
     "muscleId": "chest",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-pin-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-pin-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-power-clean",
@@ -8584,6 +8770,18 @@
     "muscleId": "chest",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-spoto-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-spoto-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-thruster",
@@ -9798,6 +9996,12 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "dumbbell-cuban-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
     "exerciseId": "dumbbell-farmer-carry",
     "muscleId": "forearms",
     "role": "Primary",
@@ -9948,6 +10152,18 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "dumbbell-squeeze-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "dumbbell-squeeze-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
+  },
+  {
     "exerciseId": "dumbbell-suitcase-carry",
     "muscleId": "forearms",
     "role": "Primary",
@@ -10044,6 +10260,12 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "dumbbell-z-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
     "exerciseId": "leaning-dumbbell-lateral-raise",
     "muscleId": "lateral_deltoids",
     "role": "Primary",
@@ -10072,6 +10294,18 @@
     "muscleId": "chest",
     "role": "Primary",
     "displayOrder": 1
+  },
+  {
+    "exerciseId": "single-arm-dumbbell-incline-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "single-arm-dumbbell-incline-press",
+    "muscleId": "front_deltoids",
+    "role": "Secondary",
+    "displayOrder": 2
   },
   {
     "exerciseId": "single-arm-dumbbell-lateral-raise",
@@ -10131,6 +10365,12 @@
     "exerciseId": "double-kettlebell-press",
     "muscleId": "front_deltoids",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "double-kettlebell-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
@@ -10344,6 +10584,12 @@
     "displayOrder": 1
   },
   {
+    "exerciseId": "kettlebell-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
+    "displayOrder": 1
+  },
+  {
     "exerciseId": "kettlebell-russian-twist",
     "muscleId": "obliques",
     "role": "Primary",
@@ -10461,6 +10707,12 @@
     "exerciseId": "single-arm-kettlebell-press",
     "muscleId": "front_deltoids",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "single-arm-kettlebell-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
@@ -11487,6 +11739,12 @@
     "exerciseId": "viking-press",
     "muscleId": "front_deltoids",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "viking-press",
+    "muscleId": "triceps",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
