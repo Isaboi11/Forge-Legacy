@@ -164,10 +164,10 @@ test('C-G5: the keep-alive comment keeps a long lookup from looking like a dead 
 // P-D2 — REFUNDED ON EVERY SERVER-SIDE FAILURE, AND SAID SO
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('P-D2: a refusal, a cut-off and an empty reply are each refunded, and the done line says so', async (t) => {
+test('P-D2: a refusal, an empty reply and a cut-off with nothing shown are refunded, and the done line says so', async (t) => {
   for (const [stop, text, outcome] of [
     ['refusal', '', 'refusal'],
-    ['max_tokens', 'Week one builds the base and week two', 'truncated'],
+    ['max_tokens', '', 'truncated'],
     ['end_turn', '', 'bad_output'],
   ]) {
     const log = newLog();
@@ -179,6 +179,17 @@ test('P-D2: a refusal, a cut-off and an empty reply are each refunded, and the d
     assert.equal(done.remaining, 42, 'the balance after the refund');
     assert.deepEqual(settles(log).map((s) => [s.p_outcome, s.p_refund]), [[outcome, true]], stop);
   }
+});
+
+test('P-D2: ⛔ a cut-off whose words were shown is CHARGED — refunding it would make a long ask free', async (t) => {
+  const log = newLog();
+  fakeAnthropic(t, log, () => answerRound('Week one builds the base and week two', 'max_tokens'));
+  const { events } = await askRaw(await loadFunction(log), ASK);
+  const done = events.find((e) => e.done);
+  assert.equal(done.stop, 'max_tokens', 'the app still says it ran long');
+  assert.equal(done.refunded, undefined);
+  assert.equal(done.remaining, 41);
+  assert.deepEqual(settles(log).map((s) => [s.p_outcome, s.p_refund]), [['truncated', false]]);
 });
 
 test('P-D2: a failure MID-STREAM is refunded — the words already sent stay, the line says refunded', async (t) => {
@@ -385,7 +396,7 @@ test('P-G8: a profile minor asking a diet question gets the care stop a self-dis
     fakeAnthropic(t, log, () => assert.fail(`the model was called for a minor's "${question}"`));
     const r = await askRaw(await loadFunction(log), { question });
     assert.deepEqual(r.json, { route: 'care' }, question);
-    assert.deepEqual(settles(log).map((s) => [s.p_outcome, s.p_refund]), [['other', true]], question);
+    assert.deepEqual(settles(log).map((s) => [s.p_outcome, s.p_refund]), [['guarded', true]], question);
   }
   // …the very path "I'm 16" takes today, before any reserve:
   const said16 = newLog();

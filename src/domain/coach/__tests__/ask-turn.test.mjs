@@ -164,7 +164,12 @@ test('settlement: every server-side failure is refunded, with its outcome', () =
   assert.deepEqual(s({ failure: 'upstream_unreachable' }), { outcome: 'upstream_unreachable', refund: true });
   assert.deepEqual(s({ failure: 'timeout' }), { outcome: 'timeout', refund: true });
   assert.deepEqual(s({ stop: 'refusal' }), { outcome: 'refusal', refund: true });
-  for (const stop of ASK_CUT_STOPS) assert.deepEqual(s({ stop }), { outcome: 'truncated', refund: true });
+  // A cut-off whose words were shown is CHARGED (they stand; refunding would make a long ask free). Before any
+  // word or action reached the app, it is refunded (integrator decision, Sprint 1).
+  for (const stop of ASK_CUT_STOPS) {
+    assert.deepEqual(s({ stop }), { outcome: 'truncated', refund: false }, `${stop} with words shown`);
+    assert.deepEqual(s({ stop, delivered: false }), { outcome: 'truncated', refund: true }, `${stop} with nothing shown`);
+  }
   assert.deepEqual(s({ delivered: false }), { outcome: 'bad_output', refund: true }, 'a clean ending with nothing in it');
   assert.deepEqual(s({ stop: null }), { outcome: 'ok', refund: false }, 'an older stream with no stop reason, delivered');
 });
