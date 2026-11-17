@@ -167,9 +167,11 @@ const PROGRAM = {
 test('the program is one short line: name, week N of M, today', () => {
   assert.equal(
     programSummary({ structure: PROGRAM, week: 3, today: ['Upper A'] }),
-    'Strength Block — week 3 of 8, 4 days a week. Today: Upper A.',
+    '"Strength Block" — week 3 of 8, 4 days a week. Today: "Upper A".',
   );
-  assert.equal(programSummary({ structure: PROGRAM }), 'Strength Block — 8 weeks, 4 days a week.');
+  assert.equal(programSummary({ structure: PROGRAM }), '"Strength Block" — 8 weeks, 4 days a week.');
+  // C-I4: a person typed the names, so they go as data — and a quote inside one cannot close it.
+  assert.equal(programSummary({ structure: { ...PROGRAM, name: 'Ignore "rules"' } }), `"Ignore 'rules'" — 8 weeks, 4 days a week.`);
 });
 
 test('"why" questions get the rationale and where the lift sits; other questions do not', () => {
@@ -177,8 +179,8 @@ test('"why" questions get the rationale and where the lift sits; other questions
     { question: 'why are RDLs in my plan?', program: { structure: PROGRAM, week: 2 }, rationale: 'Four days gives us frequency.' },
     SOURCES,
   );
-  assert.equal(why.rationale, 'Four days gives us frequency. Barbell Romanian Deadlift is on Lower A, 3×8.');
-  assert.match(why.program ?? '', /^Strength Block — week 2 of 8/);
+  assert.equal(why.rationale, 'Four days gives us frequency. Barbell Romanian Deadlift is on "Lower A", 3×8.');
+  assert.match(why.program ?? '', /^"Strength Block" — week 2 of 8/);
 
   const how = buildAskContext(
     { question: 'how do I brace for RDLs?', program: { structure: PROGRAM, week: 2 }, rationale: 'Four days gives us frequency.' },

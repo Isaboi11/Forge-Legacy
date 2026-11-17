@@ -33,6 +33,7 @@ import { rationaleFor, type RationaleInput } from './rulebook/rationale.ts';
 import { isTrainingQuestion } from './training-summary.ts';
 import { isNutritionQuestion, withoutLoggingGaps } from '../nutrition/holt-summary.ts';
 import { ASK_NOTES_MAX, type AskContext, type AskTurn } from './ask-wire.ts';
+import { asTyped } from './ask-tools.ts';
 
 export type { AskContext, AskTurn } from './ask-wire.ts';
 
@@ -271,14 +272,17 @@ export const isWhyQuestion = (q: string): boolean => WHY.test(q);
 const daysOfWeek = (s: AskProgramStructure, weekIndex: number): AskProgramDay[] =>
   s.vary && s.weekPlans && s.weekPlans[weekIndex] ? s.weekPlans[weekIndex].days : s.days;
 
-/** "Strength Block — week 3 of 8, 4 days a week. Today: Upper A." */
+/**
+ * `"Strength Block" — week 3 of 8, 4 days a week. Today: "Upper A".` The program and session names are quoted: a
+ * person typed them — the athlete, or a friend who shared the program (AI Road to 10 Sprint 2, audit C-I4).
+ */
 export function programSummary(p: NonNullable<AskContextInput['program']>): string {
   const s = p.structure;
   const weeks = Math.max(1, s.weeks);
   const week = p.week && p.week >= 1 ? `week ${Math.min(p.week, weeks)} of ${weeks}` : `${weeks} week${weeks === 1 ? '' : 's'}`;
   const today = (p.today ?? []).filter(Boolean);
-  return `${s.name.trim() || 'Untitled program'} — ${week}, ${s.daysPerWeek} day${s.daysPerWeek === 1 ? '' : 's'} a week.${
-    today.length ? ` Today: ${today.join(', ')}.` : ''
+  return `${s.name.trim() ? asTyped(s.name) : 'Untitled program'} — ${week}, ${s.daysPerWeek} day${s.daysPerWeek === 1 ? '' : 's'} a week.${
+    today.length ? ` Today: ${today.map(asTyped).join(', ')}.` : ''
   }`;
 }
 
@@ -291,7 +295,7 @@ function placementOf(m: ExerciseMention, p: NonNullable<AskContextInput['program
       const same = x.catalogKey ? x.catalogKey === m.key : x.name.trim().toLowerCase() === m.name.toLowerCase();
       if (!same) continue;
       const rx = x.sets && x.reps ? `, ${x.sets}×${x.reps}` : x.sets ? `, ${x.sets} sets` : '';
-      places.push(`${d.name}${rx}`);
+      places.push(`${asTyped(d.name)}${rx}`);
       break;
     }
   }

@@ -47,7 +47,7 @@ import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
-import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
+import { streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
@@ -993,7 +993,8 @@ export function CoachChatSheet({
            one TypeScript still believes is null out here. */
         const holt: { written: { plan: AuthoredPlan; valid: ValidatedPlan } | null; fellBack: string | null } = { written: null, fellBack: null };
         /** Ask Holt to write it (`coach-author`). `false` means a stop card went up and nothing more should be said.
-            ⚠ Not `askHolt` — that is the imported coach-ask stream, and this used to shadow it (AI audit C-I7). */
+            ⚠ It used to be a local `askHolt` that shadowed the imported coach-ask stream (AI audit C-I7); that import
+            is `streamCoachAsk` now, so neither name can stand for the other. */
         const holtWrites = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
           const athlete = {
             experience: c.experience.lifting,
@@ -2288,7 +2289,7 @@ export function CoachChatSheet({
    * ⚠ EVERY ASK STILL RUNNING, AND EVERY ASK A "TRY AGAIN" CAN SEND (AI audit 11-16, C-D2 · C-D5).
    *
    * One controller per ask, aborted if the sheet goes away mid-reply: nobody is left to read the words, and
-   * the abort is what reaches coach-ask's `cancel()`, so the model stops writing (and costing). `askHolt`'s
+   * the abort is what reaches coach-ask's `cancel()`, so the model stops writing (and costing). `streamCoachAsk`'s
    * own clock ends a stalled ask either way, so `busy` always lets go and the queue drains.
    *
    * A failed ask leaves what it was asked with here, under the id its Try again chip carries — sent at most
@@ -2695,10 +2696,10 @@ export function CoachChatSheet({
     /* ⚠ THIS stream's turn, by id — never "the last streaming turn", which may be another answer's (R2-F5). */
     streamSeq.current += 1;
     const sid = streamSeq.current;
-    /* One controller per ask: the sheet going away aborts it (`asking`); `askHolt`'s own clock ends a stall (C-D2). */
+    /* One controller per ask: the sheet going away aborts it (`asking`); `streamCoachAsk`'s own clock ends a stall (C-D2). */
     const ctl = new AbortController();
     asking.current.add(ctl);
-    const r = await askHolt(
+    const r = await streamCoachAsk(
       text,
       history,
       context,
@@ -2785,6 +2786,15 @@ export function CoachChatSheet({
          */
         setThread((t) => markStopped(takeBackReply(t, sid), text));
         return say({ kind: 'holt', text: pick('declined_question') });
+      case 'retracted':
+        /*
+         * ⛔ TAKEN BACK (AI Road to 10 Sprint 2, CH-2). The output scanner stopped his finished reply — the function's
+         * (`retract`) or this app's own (`withOutputScan`, for an older function): a dose, a reassurance about a
+         * symptom, a diagnosis. The words go, and the medical stop card stands in their place — `medicalStop` also
+         * marks the athlete's line so it never rides along with the next question. Any card he forwarded goes too.
+         */
+        setThread((t) => takeBackReply(t, sid));
+        return medicalStop(text);
       case 'offline':
         /* The sheet went away mid-ask (`asking` aborted it) — there is nobody left to tell. */
         if (r.aborted) return;
