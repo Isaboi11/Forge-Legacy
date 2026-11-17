@@ -24,7 +24,7 @@ Recorded so nobody re-opens them from this document:
 | Coach AI is a **$9.99/mo · $89.99/yr add-on requiring Premium** | Plan § *The structure* |
 | **Model: `claude-sonnet-5`**, rulebook system prompt cached | Plan § Economics, § Phase D |
 | **Metered in credits, not per-feature counters** — 150/month | Plan § Coach AI |
-| Credit weights: message 1 · program/day 1 · photo read 3 · form check 6 | Plan § Coach AI |
+| Credit weights: message 1 · program/day 1 · photo read 3 · form check 6 (form check 3 since MA12, 2026-11-17 — see Monetization-Architecture-Amendment-012) | Plan § Coach AI |
 | Photo coaching **ships**, under four binding rules, **18+** | Plan § *Photo reads* |
 | Form check = **8–20 sampled frames**, not a video upload | Plan § Coach AI |
 | Edge Function holds the key; engine stays client-side | Plan § Phase D · Brief §10 |
@@ -44,7 +44,7 @@ Everything below is one credit unless noted. Weights are the plan's, not this do
 | A2 | **Programs from a description** | 1 | Model parses intent → `assemble()` builds. *"The engine still builds the program"* |
 | A3 | **In-depth single days** | 1 | Same path, day mode |
 | A4 | **Photo coaching** | 3 | Four binding rules — plan § *Photo reads* |
-| A5 | **Form check from video** | 6 | Three liability rules — plan § Coach AI |
+| A5 | **Form check from video** | 6 (3 since MA12) | Three liability rules — plan § Coach AI |
 
 ### Tier B — free to add, and it makes A1–A3 much better
 

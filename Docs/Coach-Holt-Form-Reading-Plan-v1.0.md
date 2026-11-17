@@ -12,7 +12,7 @@
 |---|---|
 | Screen `/form-check` (from Holt's chat) | Built. Pick a lift, film or choose a clip, get a read |
 | Frames | App pulls stills on the phone (`expo-video-thumbnails`, build 9 only; web can't) |
-| The read | `coach-form-check` Edge Function, Sonnet 5, 6 credits, 900-token cap |
+| The read | `coach-form-check` Edge Function, Sonnet 5, 6 credits (3 since MA12, 2026-11-17), 900-token cap |
 | Safety | Medical words in the note stop it before any charge; a code filter deletes banned sentences from the answer |
 | **Angle fix (09-25, not deployed)** | Prompt now reads ANY angle and says "From the front…"; 10 small frames 1 s apart instead of 5 large 2 s apart; each frame labelled with its second. Tests 959/959, tsc 0. Needs: function paste + OTA |
 

@@ -57,7 +57,7 @@ PO: *"First search our database and then ask if they want him to find one online
 1. `get_recipes` searches Forge's book and the athlete's own recipes, with the **app's** per-serving numbers
    (computed on the device from USDA ingredient data; sent with the ask, read only if the tool is called).
 2. Nothing fits → `offer_online_recipe_search` → a **Find one online** chip. Only the ask that tap sends carries
-   Anthropic web search (`max_uses` 2), metered as **'web' = 3 credits** (~$0.02–0.05 a search).
+   Anthropic web search (`max_uses` 2), metered as **'web' = 3 credits** (~$0.02–0.05 a search; 2 credits since MA12, 2026-11-17).
 3. Online recipes are described **in Holt's own words** with the site named and linked — never copied, and **never
    with calories or macros**: the athlete adds it to My Recipes and the app computes the numbers (NUT-D4 holds).
 4. Nutrition-gated (0206): no recipe book and no chip without nutrition access.
