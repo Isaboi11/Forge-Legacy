@@ -61,6 +61,14 @@ test('⚠ a race the athlete asked for is built, and the concern is said once wi
   assert.match(sheet, /label: `Build the \$\{RACE_SPEC\[alt\]\.label\} instead`, patch: \{ goal: alt \}/);
 });
 
+test('⚠ B-D10 (AI audit 11-16) — the wizard builds the race the chat builds, and says the concern', () => {
+  const wizard = readFileSync(path.join(here, '../../../app/coach.tsx'), 'utf8').replace(/\r\n/g, '\n');
+  const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('const onApply = async'));
+  assert.match(build, /\.\.\.\(isEnduranceGoal\(effGoal!\) \? \{ buildAnyway: true \} : \{\}\),\n\s+\},\n\s+PICKER_DB,/);
+  assert.match(build, /const \{ structure, notes, deloadWeeks, restructured, concern \} = res\.assembly;/);
+  assert.match(build, /notes: \[\n\s+\.\.\.\(concern \? \[concern\.message\] : \[\]\),/);
+});
+
 test('⚠ QA R2-F8 — a request interrupted by the active-program question is kept for "Replace it"', () => {
   // Each build path that can stop at `guardActiveProgram` puts the request in state FIRST, because the
   // "Replace it" chip continues from `constraints` — a typed build used to come back as "What's the goal?".
