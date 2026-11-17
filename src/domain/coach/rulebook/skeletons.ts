@@ -118,6 +118,31 @@ const UPPER: DaySkeleton = {
   requires: [['Horizontal Push', 'Vertical Push'], ['Vertical Pull', 'Horizontal Pull']],
 };
 
+/**
+ * ⚠ A MUSCLE BLOCK'S UPPER DAY PRESSES TWICE, BOTH INSIDE AN HOUR (AI audit 11-16, B-D2).
+ *
+ * Upper is the only chest day an upper/lower week has, and one press per session left a four-day muscle
+ * block's chest at 9 sets a week for a beginner (PAS-A4-D1 counting) against PAS §11.2's floor of 10 —
+ * and that was AFTER the A/B rotation stopped dropping the press altogether. The second press sits fifth,
+ * inside a 60-minute session's six, so the triceps isolation moves behind it (the three presses still
+ * give triceps their half-sets) and Core, which only a 75-minute session ever reached, goes (Lower keeps
+ * it). Strength keeps the plain `UPPER`: nobody reported its bench volume, and a second press there would
+ * change every strength block for a reason this fix doesn't have. Swapped in by name — `GOAL_DAYS`.
+ */
+const UPPER_HYPERTROPHY: DaySkeleton = {
+  ...UPPER,
+  slots: [
+    'Horizontal Push',
+    'Vertical Pull',
+    'Vertical Push',
+    'Horizontal Pull',
+    'Horizontal Push',
+    'Elbow Flexion',
+    'Elbow Extension',
+    'Shoulder Isolation',
+  ],
+};
+
 const LOWER: DaySkeleton = {
   name: 'Lower',
   slots: [
@@ -503,6 +528,25 @@ const GOAL_STYLE_USE: Partial<Record<Goal, StyleUse>> = {
 export const honoursSplitStyle = (goal: Goal): boolean => (GOAL_STYLE_USE[goal] ?? 'as_chosen') !== 'ignored';
 
 /**
+ * Days a goal writes its own way, by day NAME — swapped in wherever that day lands in the goal's week:
+ * its default split, the split style the athlete chose, or a day they named ("upper Monday").
+ *
+ * ⚠ BY NAME, AND ON THE CHOSEN STYLE TOO. The guided build always sends a style (four days → Upper /
+ * Lower), so a row that only reached `MUSCLE_SPLITS` would have missed nearly every real build. The
+ * substitute keeps the name, so "Upper A" / "Upper B" and every edit that finds a day by name still work.
+ */
+const GOAL_DAYS: Partial<Record<Goal, Readonly<Record<string, DaySkeleton>>>> = {
+  muscle: { Upper: UPPER_HYPERTROPHY },
+};
+
+/** `day` as `goal` writes it — the goal's own version of that day, keeping any finisher already on it. */
+const asGoalDay = (goal: Goal | null | undefined, day: DaySkeleton): DaySkeleton => {
+  const own = goal ? GOAL_DAYS[goal]?.[day.name] : undefined;
+  if (!own) return day;
+  return day.cardioFinisher ? { ...own, cardioFinisher: day.cardioFinisher } : own;
+};
+
+/**
  * The week's plan, or null when this goal has no authored rulebook yet.
  *
  * A `style` the athlete chose wins over the goal's default, in whatever sense `GOAL_STYLE_USE` gives it
@@ -513,10 +557,11 @@ export function skeletonFor(goal: Goal, daysPerWeek: number, style?: SplitStyle 
   if (style && use !== 'ignored') {
     const chosen = STYLE_SPLITS[style]?.[daysPerWeek];
     if (chosen) {
-      return use === 'with_finisher' ? chosen.map((d, i) => cond(d, i === chosen.length - 1 ? 25 : 15)) : chosen;
+      const week = use === 'with_finisher' ? chosen.map((d, i) => cond(d, i === chosen.length - 1 ? 25 : 15)) : chosen;
+      return week.map((d) => asGoalDay(goal, d));
     }
   }
-  return SPLITS[goal]?.[daysPerWeek] ?? null;
+  return SPLITS[goal]?.[daysPerWeek]?.map((d) => asGoalDay(goal, d)) ?? null;
 }
 
 /**
@@ -583,9 +628,14 @@ export const DAY_FOR_FOCUS: Readonly<Record<string, DaySkeleton>> = {
   stretch: MOBILITY_A,
 };
 
-/** The authored day for a focus word, or null when the word names nothing in the table. */
-export const dayForFocus = (focus: string | null | undefined): DaySkeleton | null =>
-  focus ? (DAY_FOR_FOCUS[focus.toLowerCase().replace(/[^a-z]/g, '')] ?? null) : null;
+/**
+ * The authored day for a focus word, or null when the word names nothing in the table. With `goal`, the
+ * goal's own version of that day (`GOAL_DAYS`) — a muscle athlete's "upper Monday" presses twice.
+ */
+export const dayForFocus = (focus: string | null | undefined, goal?: Goal | null): DaySkeleton | null => {
+  const day = focus ? (DAY_FOR_FOCUS[focus.toLowerCase().replace(/[^a-z]/g, '')] ?? null) : null;
+  return day ? asGoalDay(goal, day) : null;
+};
 
 /**
  * Can this week actually be trained in this room?

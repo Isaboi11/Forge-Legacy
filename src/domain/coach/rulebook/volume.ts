@@ -112,6 +112,87 @@ export const HIGH_FREQUENCY_DAYS = 5;
 export const SHORT_BLOCK_WEEKS = 3;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// WEEKLY SETS PER MUSCLE — PAS §11.2, as amended by PAS-A4 (LOCKED)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * PAS §11.2 / PAS-A4-D4 — the governing weekly band per muscle group, for a block's WORKING weeks (a
+ * deload sits under it on purpose, PAS-A4-D3). Only HYPERTROPHY states one.
+ *
+ * ⚠ NOTHING HELD THE COACH TO THIS UNTIL 2026-11-16, and that is how a four-day "Muscle Block" shipped
+ * chest at 3–7 sets a week (AI audit, B-D2). The per-session band above cannot see it: every session was
+ * inside 18–30 while one muscle group was missing from half of them.
+ */
+export const WEEKLY_SETS_PER_MUSCLE: Partial<Record<PasCategory, { min: number; max: number }>> = {
+  HYPERTROPHY: { min: 10, max: 20 },
+};
+
+/** PAS-A4-D1 — a set counts 1.0 for the exercise's PRIMARY muscles and 0.5 for each SECONDARY. */
+export const PRIMARY_SET_WEIGHT = 1;
+export const SECONDARY_SET_WEIGHT = 0.5;
+
+/**
+ * The major groups the weekly floor is held on, as catalogue muscle ids (`muscles.json`).
+ *
+ * ⚠ THE DELTS ARE THE FRONT HEAD ONLY, AND THAT IS A KNOWN GAP, NOT AN OVERSIGHT. PAS-A4-D2 makes the
+ * delts three groups and forbids one "Shoulders" row, because pressing hides an untrained rear delt. The
+ * front head is what pressing feeds, which is what a dropped press slot takes away — the failure this
+ * floor exists for. The lateral and rear heads need direct isolation work that a 60-minute session's six
+ * movements do not reach today; they are left out rather than summed into a total that would pass.
+ */
+export const MAJOR_MUSCLE_GROUPS: Readonly<Record<string, readonly string[]>> = {
+  chest: ['chest'],
+  back: ['lats', 'upper_back'],
+  quads: ['quadriceps'],
+  hamstrings_glutes: ['hamstrings', 'glutes'],
+  front_delts: ['front_deltoids'],
+};
+
+/**
+ * PAS §11.2's default hypertrophy frequency — "4 days/week at BEGINNER and INTERMEDIATE". The band is
+ * authored against it, and the Foundation and Intermediate Blueprints both reach it with two exposures
+ * per group across four sessions.
+ */
+export const WEEKLY_BAND_FROM_DAYS = 4;
+
+/**
+ * ⚠ THE COACH'S OWN FLOOR BELOW FOUR DAYS — CHOSEN, NOT TRANSCRIBED, AND OPEN FOR THE PO.
+ *
+ * PAS gives no band for two or three days. Holt's two-day week is Full Body A/B (squat on one day, hinge
+ * on the other) and his three-day week is push/pull/legs, so each group meets the work once a week and
+ * lands at 3–10 sets — under 10 by construction, not by a dropped slot. Raising that is a rulebook
+ * decision (full-body days that each carry squat AND hinge, or full body at three days), not a fix.
+ *
+ * Until then the floor is one full working exercise for every major group, every week: the dose an
+ * exercise carries at its lightest (three sets). It does not claim the week is well dosed. It guarantees
+ * no group has fallen out of the week altogether, which is the D2 failure.
+ */
+export const LOW_FREQUENCY_WEEKLY_FLOOR = 3;
+
+/** The weekly sets each major group must reach in a working week, or null where PAS states no band. */
+export function weeklyMuscleFloor(category: PasCategory, daysPerWeek: number): number | null {
+  const band = WEEKLY_SETS_PER_MUSCLE[category];
+  if (!band) return null;
+  return daysPerWeek >= WEEKLY_BAND_FROM_DAYS ? band.min : LOW_FREQUENCY_WEEKLY_FLOOR;
+}
+
+/**
+ * A week's sets for one group, counted by PAS-A4-D1. A set counts ONCE per group, at its best role — a
+ * row is `upper_back` primary and `lats` secondary, and it is one set of back work, not one and a half.
+ */
+export function weeklyGroupSets(
+  rows: readonly { sets: number; primaryMuscleIds: readonly string[]; muscleIds: readonly string[] }[],
+  group: readonly string[],
+): number {
+  let total = 0;
+  for (const r of rows) {
+    if (r.primaryMuscleIds.some((m) => group.includes(m))) total += r.sets * PRIMARY_SET_WEIGHT;
+    else if (r.muscleIds.some((m) => group.includes(m))) total += r.sets * SECONDARY_SET_WEIGHT;
+  }
+  return total;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // DELOADS — PAS-D7 and PAS-D8
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 

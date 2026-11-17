@@ -20,6 +20,7 @@ import path from 'node:path';
 
 import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
+import { AUTHOR_TIMEOUT_MS, authorWithin } from '../author-deadline.ts';
 import {
   AUTHOR_SCHEMA,
   authoredIsWhole,
@@ -31,7 +32,7 @@ import {
   sanitizeAuthored,
 } from '../author.ts';
 import { AUTHOR_CATALOGUE, AUTHOR_CATALOGUE_COUNT } from '../author-catalogue.ts';
-import { authoredLine, authorFacts, droppedLine, validateAuthored } from '../author-validate.ts';
+import { authoredLine, authorFacts, droppedLine, SESSION_SET_ENVELOPE, validateAuthored, volumeLine } from '../author-validate.ts';
 import { writtenDayCardFor } from '../chat-core.ts';
 import { authorCatalogueSource, OUT } from '../../../../scripts/build-author-catalogue.mjs';
 import { buildCoachAuthorDeploy, DEPLOY_COPY } from '../../../../scripts/build-coach-author-deploy.mjs';
@@ -266,7 +267,9 @@ test('numbers out of range are replaced by the plain default, a hold is held, a 
   );
   const [bench, plank, side, push] = v.days[0].main;
   assert.equal(v.days[0].main.length, 4, 'the second bench press is the same movement');
-  assert.deepEqual([bench.sets, bench.reps], [3, 10]);
+  // Too many sets is held to the prompt's six and said (B-D9) — it used to become three, silently.
+  assert.deepEqual([bench.sets, bench.reps], [6, 10]);
+  assert.deepEqual(v.capped, ['Barbell Bench Press']);
   assert.deepEqual([plank.sets, plank.durationSec, plank.reps], [3, 45, undefined]);
   assert.equal(side.durationSec, 30);
   assert.deepEqual([push.sets, push.reps], [3, 10]);
@@ -279,7 +282,53 @@ test('⛔ a cue or a line of his that reads as medical is cut', () => {
   });
   const v = validateAuthored(p, PO, POOL, canDoExercise);
   assert.equal('coachNote' in v.days[0].main[0], false);
-  assert.equal(authoredLine(p, v), "Here's what I wrote for that. What I couldn't do: no landmine press.");
+  // (11 sets — under every lifting band, so that is said too, B-D9.)
+  assert.equal(
+    authoredLine(p, v),
+    "Here's what I wrote for that. This one is 11 sets, light for a full session. That's fine if short is what you wanted. What I couldn't do: no landmine press.",
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B-D9 (AI audit 11-16) — HOW MUCH HE WROTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('B-D9: the session band is PAS-D11 across the lifting categories, read from the table', () => {
+  assert.deepEqual(SESSION_SET_ENVELOPE, { min: 12, max: 30 });
+});
+
+test('B-D9: "10 sets of squats" is held to six, and he says so', () => {
+  const p = plan([ex('barbell-back-squat', 10, 10), ex('barbell-romanian-deadlift', 3, 8), ex('walking-lunge', 3, 12), ex('barbell-calf-raise', 3, 15)]);
+  const v = validateAuthored(p, PO, POOL, canDoExercise);
+  assert.equal(v.days[0].main[0].sets, 6);
+  assert.deepEqual(v.capped, ['Barbell Back Squat']);
+  assert.equal(volumeLine(v), 'I capped Barbell Back Squat at 6 sets.');
+  assert.match(authoredLine(p, v), /I capped Barbell Back Squat at 6 sets\./);
+});
+
+test('B-D9: a session past every lifting band is said, never trimmed — and one inside it says nothing', () => {
+  const six = ['barbell-bench-press', 'dumbbell-bench-press', 'barbell-incline-bench-press', 'cable-crossover', 'push-up', 'cable-triceps-pushdown'];
+  const big = validateAuthored(plan(six.map((k) => ex(k, 6, 10))), PO, POOL, canDoExercise);
+  assert.equal(big.days[0].main.reduce((n, e) => n + e.sets, 0), 36, 'what he wrote stands');
+  assert.deepEqual(big.offBand, [{ day: 'Session', sets: 36, over: true }]);
+  assert.equal(volumeLine(big), 'This one comes to 36 sets, more than one session should hold. If it runs long, drop the last movement.');
+  const fine = validateAuthored(plan(six.map((k) => ex(k, 4, 10))), PO, POOL, canDoExercise);
+  assert.equal(fine.offBand, undefined);
+  assert.equal(volumeLine(fine), null);
+});
+
+test('B-D9: a week names the days that sit outside it; a stretch routine has no set band', () => {
+  const day = (name, sets) => ({ name, exercises: ['barbell-bench-press', 'pull-up', 'barbell-overhead-press', 'barbell-bent-over-row', 'barbell-biceps-curl', 'cable-triceps-pushdown'].map((k) => ex(k, sets, 10)) });
+  const week = validateAuthored({ say: 'x', title: 'Week', days: [day('Upper A', 6), day('Upper B', 6), day('Upper C', 3)], unmet: [] }, PO, POOL, canDoExercise);
+  assert.equal(
+    volumeLine(week),
+    'Upper A and Upper B each come to more than 30 sets, more than one session should hold. If they run long, drop the last movement.',
+  );
+  const holds = ['90-90-hip-stretch', 'child-s-pose', 'couch-stretch', 'side-plank'];
+  const stretch = validateAuthored(plan(holds.map((k) => ex(k, 1, 0, { seconds: 30 }))), PO, POOL, canDoExercise);
+  assert.equal(stretch.days[0].main.length, 4);
+  assert.ok(stretch.days[0].main.every((e) => e.durationSec === 30), 'every one of them is a hold');
+  assert.equal(stretch.offBand, undefined, 'four sets of holds is a stretch routine, not a light lifting session');
 });
 
 test('a week: each day is checked, lettered and named', () => {
@@ -431,4 +480,38 @@ test('a plan that stops after one movement is not whole, and the function asks o
   const fn = read('supabase/functions/coach-author/index.ts');
   assert.match(fn, /attempt < 2 && !authoredIsWhole\(plan\)/);
   assert.match(fn, /p_credits: attempt === 0 \? reserved\.credits_spent : 0/, 'the second ask rides on the credit already reserved');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B-D8 (AI audit 11-16) — HOW LONG HE MAY TAKE
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('B-D8: a write that takes too long gives way to the rulebook, and the request is cancelled', async () => {
+  assert.equal(AUTHOR_TIMEOUT_MS, 30_000);
+  let seen = null;
+  // A server that never answers — and a fetch that, like a real one, rejects once it is aborted.
+  const hung = (signal) => {
+    seen = signal;
+    return new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted'))));
+  };
+  const r = await authorWithin(20, hung);
+  assert.deepEqual(r, { kind: 'unavailable' });
+  assert.equal(seen.aborted, true, 'the request is aborted, not left running');
+  // The rulebook builds it and he says so, in the line every other failure already uses.
+  assert.equal(authorFallbackLine(r), "I couldn't write that one out just now, so I built it from the rulebook. It follows the focus, not every word.");
+  // A fetch that ignores the abort altogether (React Native's polyfill) cannot hold the answer either.
+  assert.deepEqual(await authorWithin(20, () => new Promise(() => {})), { kind: 'unavailable' });
+});
+
+test('B-D8: an answer inside the time is the answer, and nothing is aborted', async () => {
+  const plan = { say: 'x', title: 'x', days: [], unmet: [] };
+  let seen = null;
+  const r = await authorWithin(1000, async (signal) => {
+    seen = signal;
+    return { kind: 'ok', plan, remaining: 3 };
+  });
+  assert.deepEqual(r, { kind: 'ok', plan, remaining: 3 });
+  assert.equal(seen.aborted, false);
+  // A failure that is not the deadline keeps its own meaning.
+  assert.deepEqual(await authorWithin(1000, async () => Promise.reject(new Error('dns'))), { kind: 'offline' });
 });

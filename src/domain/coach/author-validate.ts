@@ -28,6 +28,7 @@ import { contextFrom, difficultyAllows, type CatalogExercise, type EquipmentGate
 import { equipmentForEnvironment, type Environment, type Experience, type Limitation } from './constraints.ts';
 import { MIN_DAY_MOVEMENTS } from './day.ts';
 import { medicalRoute, mentionsDiscomfort } from './medical-routing.ts';
+import { VOLUME_BANDS } from './rulebook/volume.ts';
 import { resolveAgainstCatalog } from '../exercise-picker/aliases.ts';
 import { CARDIO_ACTIVITIES, cardioKey, type CardioActivity } from '../workout/conditioning.ts';
 import {
@@ -57,7 +58,28 @@ export interface ValidatedPlan {
   title: string;
   days: ProgramDay[];
   dropped: Dropped[];
+  /** Movements he gave more than `AUTHOR_MAX_SETS` sets, held to it — said, never silent (`volumeLine`). */
+  capped?: string[];
+  /** Lifting sessions whose MAIN work falls outside every PAS-D11 lifting band — said, never fixed (`volumeLine`). */
+  offBand?: { day: string; sets: number; over: boolean }[];
 }
+
+/**
+ * The most sets a written movement may carry — the prompt's own "sets is 1 to 6" (coach-author). The validator
+ * used to allow 8 and turn anything past it into 3, so "10 sets of squats" came back as three (AI audit 11-16, B-D9).
+ */
+export const AUTHOR_MAX_SETS = 6;
+
+/**
+ * PAS-D11's per-session set band, as wide as it is across the four lifting categories (12–30, `VOLUME_BANDS`). A
+ * written session has no category of its own — the model is not told one it must keep to — so a session outside
+ * EVERY lifting band is the one worth a sentence. Read from the table, so it moves when the Standard does.
+ */
+const LIFTING_BANDS = (['STRENGTH', 'HYPERTROPHY', 'CONDITIONING', 'FULL_BODY'] as const).map((c) => VOLUME_BANDS[c]);
+export const SESSION_SET_ENVELOPE = {
+  min: Math.min(...LIFTING_BANDS.map((b) => b.minSets ?? Infinity)),
+  max: Math.max(...LIFTING_BANDS.map((b) => b.maxSets ?? 0)),
+};
 
 /** What this athlete's kit resolves to once the room and the limitations have had their say. */
 const ownedFor = (a: AuthorAthlete): readonly string[] =>
@@ -192,6 +214,8 @@ export function validateAuthored(
   const drop = (name: string, why: DropReason) => {
     if (!dropped.some((d) => d.name === name)) dropped.push({ name, why });
   };
+  const capped: string[] = [];
+  const offBand: NonNullable<ValidatedPlan['offBand']> = [];
 
   const find = (key: string): CatalogExercise | undefined => {
     const exact = byKey.get(key);
@@ -248,7 +272,10 @@ export function validateAuthored(
       }
       used.add(ex.key);
 
-      const sets = e.sets >= 1 && e.sets <= 8 ? e.sets : 3;
+      /* Held to the prompt's ceiling, and said (B-D9); a count that is not one at all still falls back to 3. */
+      const over = e.sets > AUTHOR_MAX_SETS;
+      if (over && !capped.includes(ex.name)) capped.push(ex.name);
+      const sets = over ? AUTHOR_MAX_SETS : e.sets >= 1 ? e.sets : 3;
       // A cue is Holt talking. Anything that reads as medical is cut, exactly as a saved note would be.
       const note = e.note && plain(e.note) ? { coachNote: e.note } : {};
       let row: ProgramExercise;
@@ -263,6 +290,15 @@ export function validateAuthored(
       (parts[e.part] ?? parts.main).push({ ex: row, group: e.group ?? '' });
     }
     if (parts.main.length < MIN_DAY_MOVEMENTS) return null;
+    /* PAS-D11, MAIN only (§10.1) — and only for a LIFTING session: a stretch routine is holds, with no set band. */
+    const lifts = parts.main.filter((p) => p.ex.kind !== 'cardio' && p.ex.durationSec == null);
+    if (lifts.length >= MIN_DAY_MOVEMENTS) {
+      const total = parts.main.filter((p) => p.ex.kind !== 'cardio').reduce((n, p) => n + (p.ex.sets ?? 0), 0);
+      const dayName = day.name || (plan.days.length === 1 ? plan.title : '') || `Day ${i + 1}`;
+      if (total > SESSION_SET_ENVELOPE.max || total < SESSION_SET_ENVELOPE.min) {
+        offBand.push({ day: dayName, sets: total, over: total > SESSION_SET_ENVELOPE.max });
+      }
+    }
     days.push({
       letter: LETTERS[i] ?? String(i + 1),
       name: day.name || (plan.days.length === 1 ? plan.title : '') || `Day ${i + 1}`,
@@ -273,7 +309,7 @@ export function validateAuthored(
     });
   }
   if (!days.length) return null;
-  return { title: plan.title || days[0].name, days, dropped };
+  return { title: plan.title || days[0].name, days, dropped, ...(capped.length ? { capped } : {}), ...(offBand.length ? { offBand } : {}) };
 }
 
 const listed = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
@@ -291,6 +327,30 @@ export function droppedLine(dropped: readonly Dropped[]): string | null {
   for (const why of ['limit', 'gear', 'level', 'unknown'] as DropReason[]) {
     const names = dropped.filter((d) => d.why === why).map((d) => d.name);
     if (names.length) lines.push(WHY[why](listed(names), names.length > 1));
+  }
+  return lines.length ? lines.join(' ') : null;
+}
+
+/**
+ * What he wrote that sits outside the numbers, in his voice (B-D9): a movement held to `AUTHOR_MAX_SETS`, and a
+ * lifting session past — or short of — every PAS-D11 lifting band. Said, never fixed: trimming his session would be
+ * the code writing training, and the athlete may have asked for exactly this. Null when there is nothing to say.
+ */
+export function volumeLine(v: ValidatedPlan): string | null {
+  const lines: string[] = [];
+  if (v.capped?.length) lines.push(`I capped ${listed(v.capped)} at ${AUTHOR_MAX_SETS} sets.`);
+  const one = v.days.length === 1;
+  const over = (v.offBand ?? []).filter((d) => d.over);
+  const under = (v.offBand ?? []).filter((d) => !d.over);
+  if (over.length === 1) {
+    lines.push(`${one ? 'This one' : over[0].day} comes to ${Math.round(over[0].sets)} sets, more than one session should hold. If it runs long, drop the last movement.`);
+  } else if (over.length > 1) {
+    lines.push(`${listed(over.map((d) => d.day))} each come to more than ${SESSION_SET_ENVELOPE.max} sets, more than one session should hold. If they run long, drop the last movement.`);
+  }
+  if (under.length === 1) {
+    lines.push(`${one ? 'This one' : under[0].day} is ${Math.round(under[0].sets)} sets, light for a full session. That's fine if short is what you wanted.`);
+  } else if (under.length > 1) {
+    lines.push(`${listed(under.map((d) => d.day))} are each under ${SESSION_SET_ENVELOPE.min} sets, light for a full session. That's fine if short is what you wanted.`);
   }
   return lines.length ? lines.join(' ') : null;
 }
@@ -316,5 +376,5 @@ export function authoredLine(plan: AuthoredPlan, v: ValidatedPlan): string {
     .filter((u) => plain(u) && !INTERNAL.test(u))
     .map((u) => u.replace(/[.\s]+$/, ''))
     .filter((u) => u && !said.includes(u.toLowerCase().slice(0, 32)));
-  return [lead, droppedLine(v.dropped), unmet.length ? `What I couldn't do: ${unmet.join('; ')}.` : null].filter(Boolean).join(' ');
+  return [lead, droppedLine(v.dropped), volumeLine(v), unmet.length ? `What I couldn't do: ${unmet.join('; ')}.` : null].filter(Boolean).join(' ');
 }
