@@ -256,7 +256,39 @@ export function holtBlockDoor(weeks: number | null | undefined, gate: (key: CapK
  */
 export function holtSpendVerdict(spend: { allowed: boolean } | null, gate: Gate): 'build' | 'used_up' | 'retry' {
   if (spend) return spend.allowed ? 'build' : 'used_up';
-  return gate.outcome === 'allowed' && typeof gate.cap === 'number' && gate.cap < 0 ? 'build' : 'retry';
+  return holtUncapped(gate) ? 'build' : 'retry';
+}
+
+/** No ceiling on this allowance at all (`-1`), so nothing an athlete keeps can run it out. */
+export const holtUncapped = (gate: Gate): boolean =>
+  gate.outcome === 'allowed' && typeof gate.cap === 'number' && gate.cap < 0;
+
+/**
+ * ══ A HOLT PROGRAM IS PAID FOR WHEN IT IS KEPT, ONCE (AI audit 11-16, B-D1) ══
+ *
+ * It used to be spent when he BUILT it, so a rebuild spent it again: a Free beginner who tapped "Ask me again" (or
+ * went back and rebuilt in the wizard) was told the free program was used before they had kept anything. Building
+ * is now free; the spend happens at the keep — Start, or Save to the Builder — and must succeed before anything is
+ * written, because `programs` cannot tell a Holt block from a hand-built one and nothing on the server would stop it.
+ *
+ * One ledger per screen, keyed by the build object. `pay` is the spend-or-say-why-not (true = paid). A keep of a
+ * build already paid for — Start after a save that failed, a second tap while the first is in flight — answers from
+ * the ledger and never spends again. A refused or unreadable spend is forgotten, so trying again asks the server.
+ */
+export type HoltKeepLedger = (build: object, pay: () => Promise<boolean>) => Promise<boolean>;
+
+export function holtKeepLedger(): HoltKeepLedger {
+  const paid = new WeakMap<object, Promise<boolean>>();
+  return (build, pay) => {
+    const prior = paid.get(build);
+    if (prior) return prior;
+    const attempt = pay().catch(() => false);
+    paid.set(build, attempt);
+    void attempt.then((ok) => {
+      if (!ok) paid.delete(build);
+    });
+    return attempt;
+  };
 }
 
 // ── what the athlete is shown ────────────────────────────────────────────────

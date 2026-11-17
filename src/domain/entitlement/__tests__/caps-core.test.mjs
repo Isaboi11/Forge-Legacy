@@ -8,7 +8,9 @@ import {
   entitlementReadStatus,
   gateFor,
   holtBlockDoor,
+  holtKeepLedger,
   holtSpendVerdict,
+  holtUncapped,
   m7Benefits,
   m7Content,
   remaining,
@@ -209,6 +211,94 @@ test('G4: an unreadable Holt spend fails closed for Free and never stops an athl
   assert.equal(holtSpendVerdict(null, paid), 'build');
   // An unread entitlement is not "no ceiling".
   assert.equal(holtSpendVerdict(null, { outcome: 'unknown' }), 'retry');
+  assert.equal(holtUncapped(paid), true);
+  assert.equal(holtUncapped(free), false);
+  assert.equal(holtUncapped({ outcome: 'unknown' }), false);
+});
+
+/**
+ * B-D1 (AI audit 11-16) — the Holt program is paid for at the KEEP, once per build.
+ *
+ * Driven the way the chat and the wizard drive it: building makes a build object and spends nothing; a keep
+ * runs `pay` through the ledger and writes only on a yes. `consume` stands in for `consume_holt_allowance` on
+ * a Free account (1 for life), so a second spend is refused the way the RPC refuses it.
+ */
+const holtFlow = ({ answer } = {}) => {
+  const gate = gateFor('holt_programs', FREE, usage());
+  const said = [];
+  const saved = [];
+  let used = 0;
+  let calls = 0;
+  const consume = async () => {
+    calls += 1;
+    if (answer === 'unreadable') return null;
+    if (used >= 1) return { allowed: false };
+    used += 1;
+    return { allowed: true };
+  };
+  /* The chat's `payHolt`: the verdict, and the line he says when it is not a yes. */
+  const pay = async () => {
+    const verdict = holtSpendVerdict(await consume(), gate);
+    if (verdict === 'retry') said.push('PLAN_UNCHECKED');
+    if (verdict === 'used_up') said.push('used_up');
+    return verdict === 'build';
+  };
+  const ledger = holtKeepLedger();
+  const build = () => ({ weeks: 8 });
+  const keep = async (b) => {
+    if (!(await ledger(b, pay))) return false;
+    saved.push(b);
+    return true;
+  };
+  return { build, keep, said, saved, calls: () => calls };
+};
+
+test('B-D1: build → "Ask me again" → keep spends the Holt program ONCE', async () => {
+  const f = holtFlow();
+  f.build(); // the first block — not kept
+  const second = f.build(); // "Ask me again" builds again
+  assert.equal(f.calls(), 0, 'building and rebuilding spend nothing');
+  assert.equal(await f.keep(second), true);
+  assert.equal(f.calls(), 1);
+  assert.deepEqual(f.saved, [second]);
+  // Keeping the same build again (Start after Save to the Builder, a retried save) answers from the ledger.
+  assert.equal(await f.keep(second), true);
+  assert.equal(f.calls(), 1, 'one build is paid for once');
+  assert.deepEqual(f.said, []);
+});
+
+test('B-D1: building and closing without keeping spends nothing', async () => {
+  const f = holtFlow();
+  f.build();
+  f.build();
+  assert.equal(f.calls(), 0);
+  assert.deepEqual(f.saved, []);
+});
+
+test('B-D1: a spend that fails saves nothing and says why — and the next keep asks the server again', async () => {
+  const offline = holtFlow({ answer: 'unreadable' });
+  const b = offline.build();
+  assert.equal(await offline.keep(b), false);
+  assert.deepEqual(offline.saved, [], 'a null fails closed: nothing is written (sweep G4)');
+  assert.deepEqual(offline.said, ['PLAN_UNCHECKED'], 'a retry, never an upsell');
+  assert.equal(await offline.keep(b), false);
+  assert.equal(offline.calls(), 2, 'a refusal is not remembered as paid');
+
+  // The one Free program already kept: the next block is refused at its keep, with the used-up line.
+  const f = holtFlow();
+  assert.equal(await f.keep(f.build()), true);
+  const next = f.build();
+  assert.equal(await f.keep(next), false);
+  assert.equal(f.saved.length, 1);
+  assert.deepEqual(f.said, ['used_up']);
+});
+
+test('B-D1: two taps on one keep while the first is in flight spend once', async () => {
+  const f = holtFlow();
+  const b = f.build();
+  const [one, two] = await Promise.all([f.keep(b), f.keep(b)]);
+  assert.equal(one && two, true);
+  assert.equal(f.calls(), 1);
 });
 
 test('a received program consumes the same counter as a built one', () => {
