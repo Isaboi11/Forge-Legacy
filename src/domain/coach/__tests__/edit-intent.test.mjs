@@ -86,10 +86,22 @@ test('swap by name — "swap bench for dumbbell press on Upper A"', () => {
 });
 
 test('no day named — the one session this week that holds the lift is the one', () => {
-  const s = program();
+  /* ⚠ Upper B benches too since the A/B rotation stopped dropping its press (AI audit 11-16, B-D2) —
+     this test used to lean on that defect. So Upper B's bench is swapped out first, leaving one. */
+  const s0 = program();
+  const first = resolveEditIntent({ op: 'swap', exercise: 'bench', to: 'machine chest press', day: 'Upper B' }, s0, [], POOL);
+  assert.ok(first.ok, first.ok ? '' : first.message);
+  const s = applyOk(s0, first.plan);
   const r = resolveEditIntent({ op: 'swap', exercise: 'bench', to: 'dumbbell press' }, s, [], POOL);
   assert.ok(r.ok, r.ok ? '' : r.message);
   assert.deepEqual(r.plan.at, { weekIndex: 0, dayIndex: 0, exerciseIndex: 0 });
+});
+
+test('no day named, and the lift is on two sessions — ask which', () => {
+  const r = resolveEditIntent({ op: 'swap', exercise: 'bench', to: 'dumbbell press' }, program(), [], POOL);
+  assert.equal(r.ok, false);
+  assert.equal(r.ask, 'which_day');
+  assert.deepEqual(r.options, ['Week 1, Upper A', 'Week 1, Upper B']);
 });
 
 test('sets change — "5 sets of pull-ups on Upper B"', () => {

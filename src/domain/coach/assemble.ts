@@ -321,6 +321,14 @@ export function refusalFor(c: CoachConstraints): CoachRefusal | null {
  * which changes what gets the athlete's freshest effort — the difference between a heavy day and a volume
  * day, expressed in the one dimension this model has. Naming them A and B is then truthful rather than
  * decorative.
+ *
+ * ⚠ ONLY THE LEAD ROTATES — the opening run of compound patterns — never the whole list (AI audit
+ * 11-16, B-D2). Rotating all eight slots by one sent Upper's Horizontal Push to the BACK of the list, and
+ * a 60-minute session's budget is six, so Upper B had no press at all: every four-day muscle block gave
+ * chest 3–7 sets a week. The slot list is a priority order — that is the coaching — so the patterns a
+ * day trains have to be the same on A and B; only which of them gets the fresh effort changes. Rotating
+ * inside the compound run keeps every one of them inside the budget, and keeps compounds ahead of the
+ * isolation tail.
  */
 function variantFor(day: DaySkeleton, occurrence: number, total: number): DaySkeleton {
   if (total < 2) return day;
@@ -332,7 +340,11 @@ function variantFor(day: DaySkeleton, occurrence: number, total: number): DaySke
    */
   if (/\s[A-Z]$/.test(day.name)) return day;
   const letter = String.fromCharCode(65 + occurrence);
-  const slots = [...day.slots.slice(occurrence), ...day.slots.slice(0, occurrence)];
+  let leadEnd = 0;
+  while (leadEnd < day.slots.length && isCompound(day.slots[leadEnd])) leadEnd++;
+  const lead = day.slots.slice(0, leadEnd);
+  const k = lead.length > 0 ? occurrence % lead.length : 0;
+  const slots = [...lead.slice(k), ...lead.slice(0, k), ...day.slots.slice(leadEnd)];
   return { ...day, name: `${day.name} ${letter}`, slots };
 }
 
@@ -1615,7 +1627,7 @@ function raceLiftWeek(c: CoachConstraints, liftGoal: Goal, liftDays: number): Da
   const base = weekForAnyDays(liftGoal, liftDays, c.splitStyle ?? null) ?? [];
   const named = (c.days ?? []).filter((d) => d.kind === 'lift');
   return base.map((day, i) => {
-    const want = dayForFocus(named[i]?.focus);
+    const want = dayForFocus(named[i]?.focus, liftGoal);
     if (!want) return day;
     // A named day still inherits the goal's finisher, so a conditioning lift day stays conditioning.
     return day.cardioFinisher ? { ...want, cardioFinisher: day.cardioFinisher } : want;
@@ -1700,7 +1712,7 @@ function assembleHybrid(c: CoachConstraints, pool: readonly CatalogExercise[], c
     .filter((e) => e.lift != null)
     .map((e, k) => {
       const base = goalWeek[k] ?? goalWeek[0];
-      const named = dayForFocus(e.intent.focus);
+      const named = dayForFocus(e.intent.focus, liftGoal);
       if (!named) return base;
       return base?.cardioFinisher ? { ...named, cardioFinisher: base.cardioFinisher } : named;
     })
