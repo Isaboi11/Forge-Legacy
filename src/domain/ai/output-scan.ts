@@ -124,7 +124,7 @@ const SCAN_BODY =
 
 /** A named condition or injury — Holt naming one is a diagnosis, whatever the sentence around it says. */
 const SCAN_CONDITION =
-  /\b(tendinitis|tendonitis|tendinopathy|tendinosis|bursitis|(osteo)?arthritis|fasciitis|plantar\s+fasci\w*|epicondyl\w*|tennis\s+elbow|golfer'?s\s+elbow|jumper'?s\s+knee|runner'?s\s+knee|shin\s+splints?|it\s?band\s+syndrome|itbs|piriformis\s+syndrome|carpal\s+tunnel|frozen\s+shoulder|adhesive\s+capsulitis|costochondritis|compartment\s+syndrome|osgood[-\s]schlatter\w*|sever'?s\s+disease|si\s+joint\s+dysfunction|sacroiliac\s+\w+|facet\s+(joint\s+)?(syndrome|irritation|arthropathy)|degenerative\s+disc|(herniated|bulging|slipped|ruptured)\s+discs?|herniat\w*|sciatica|stress\s+fractures?|fractur\w*|dislocat(ed|ion\w*|ing)|(?<!(shoulder|band|pvc|stick|dowel)[-\s])dislocates?|subluxat\w*|labral\s+tears?|slap\s+tears?|(meniscus|meniscal)\s+tears?|(acl|mcl|pcl|lcl)\s+(tears?|sprains?|injur\w*)|rotator\s+cuff\s+(tears?|injur\w*|tendin\w*|strain\w*)|torn\s+(\w+\s+)?(acl|mcl|meniscus|labrum|rotator\s+cuff|ligament|tendon|muscle|hamstring|bicep|pec|achilles|calf|quad|groin)|pulled\s+(a\s+)?(muscle|hamstring|groin|calf|quad|hammy|lat|pec)|pinched\s+nerve|nerve\s+(pain|irritation|impingement|entrapment|damage|compression)|sprain\w*|concussion\w*|whiplash|hernia\w*|rhabdo\w*|muscle\s+(knots?|spasms?|strains?|tears?|pulls?)|trigger\s+points?|overuse\s+injur\w*|repetitive\s+strain|patell\w+\s+(tendin\w*|pain\s+syndrome)|patellofemoral|chondromalacia|achilles\s+(tendin\w*|rupture|tear)|(hamstring|groin|calf|quad|lat|pec|oblique|adductor)\s+(strain|tear|pull)s?)\b/i;
+  /\b(tendinitis|tendonitis|tendinopathy|tendinosis|bursitis|(osteo)?arthritis|fasciitis|plantar\s+fasci\w*|epicondyl\w*|tennis\s+elbow|golfer'?s\s+elbow|jumper'?s\s+knee|runner'?s\s+knee|shin\s+splints?|it\s?band\s+syndrome|itbs|piriformis\s+syndrome|carpal\s+tunnel|frozen\s+shoulder|adhesive\s+capsulitis|costochondritis|compartment\s+syndrome|osgood[-\s]schlatter\w*|sever'?s\s+disease|si\s+joint\s+dysfunction|sacroiliac\s+\w+|facet\s+(joint\s+)?(syndrome|irritation|arthropathy)|degenerative\s+disc|(herniated|bulging|slipped|ruptured)\s+discs?|herniat\w*|sciatica|stress\s+fractures?|fractur\w*|dislocat\w*|subluxat\w*|labral\s+tears?|slap\s+tears?|(meniscus|meniscal)\s+tears?|(acl|mcl|pcl|lcl)\s+(tears?|sprains?|injur\w*)|rotator\s+cuff\s+(tears?|injur\w*|tendin\w*|strain\w*)|torn\s+(\w+\s+)?(acl|mcl|meniscus|labrum|rotator\s+cuff|ligament|tendon|muscle|hamstring|bicep|pec|achilles|calf|quad|groin)|pulled\s+(a\s+)?(muscle|hamstring|groin|calf|quad|hammy|lat|pec)|pinched\s+nerve|nerve\s+(pain|irritation|impingement|entrapment|damage|compression)|sprain\w*|concussion\w*|whiplash|hernia\w*|rhabdo\w*|muscle\s+(knots?|spasms?|strains?|tears?|pulls?)|trigger\s+points?|overuse\s+injur\w*|repetitive\s+strain|patell\w+\s+(tendin\w*|pain\s+syndrome)|patellofemoral|chondromalacia|achilles\s+(tendin\w*|rupture|tear)|(hamstring|groin|calf|quad|lat|pec|oblique|adductor)\s+(strain|tear|pull)s?)\b/i;
 
 /** The injury nouns a diagnosis is made of — never a stop alone ("less strain on your elbows" is coaching). */
 const SCAN_INJURY_NOUN = String.raw`(?:strain|sprain|tear|impingement|inflammation|irritation|injur\w*|knot|spasm|nerve(?:\s+\w+)?|tendon\w*|ligament|cartilage|disc|bruise|contusion)`;
@@ -174,7 +174,7 @@ const SCAN_REASSURE_SOFT =
 
 /** A symptom in view. ⚠ "stiff-leg", "tweak your grip", "chest up" and "the burn of a hard set" are not here. */
 const SCAN_SYMPTOM = new RegExp(
-  String.raw`\b(?:pain(?:s|ful|fully)?|(?<!(?:won'?t|wouldn'?t|doesn'?t|didn'?t|can'?t|couldn'?t|never|not)\s)hurt\w*(?!\s+(?:to\b|your\s+(?:progress|gains|chances|numbers)))|ach(?:e|es|ed|ing|y)|sore\w*|doms|stiff(?:ness|er)?\b(?!-leg|\s+leg(?:ged)?\s+(?:dead|rdl|good))|tightness|cramp\w*|spasm\w*|twinge\w*|tweaked|strained|sprain\w*|swell\w*|swollen|bruis\w*|numb(?!er)\w*|tingl\w*|pins\s+and\s+needles|dizz\w*|light[-\s]?headed\w*|faint\w*|wooz\w*|nause\w*|(?:feel|feels|feeling|felt)\s+(?:a\s+bit\s+|kind\s+of\s+|really\s+|so\s+)?(?:sick|ill|unwell|faint)|queas\w*|vomit\w*|throw(?:ing)?\s+up|threw\s+up|puk(?:e|ed|ing)|headaches?|migraines?|palpitations?|heart\s+(?:is\s+)?(?:racing|pounding|skipping|fluttering)|racing\s+heart|chest\s+(?:pain|tightness|pressure)|tight\s+chest|short(?:ness)?\s+of\s+breath|breathless\w*|burning\s+sensation|shooting\s+(?:pain|sensation)|throbb\w*|tenderness|tender\s+to\s+(?:the\s+)?touch|inflam\w*|bleed\w*|blood\s+in|rash\w*|itchy|itchiness|hives|shaky|trembl\w*|tremors?|injur\w*|discomfort|uncomfortable|niggl\w*|flare[-\s]?ups?|symptoms?)\b` +
+  String.raw`\b(?:pain(?:s|ful|fully)?|hurt\w*(?!\s+(?:to\b|your\s+(?:progress|gains|chances|numbers)))|ach(?:e|es|ed|ing|y)|sore\w*|doms|stiff(?:ness|er)?\b(?!-leg|\s+leg(?:ged)?\s+(?:dead|rdl|good))|tightness|cramp\w*|spasm\w*|twinge\w*|tweaked|strained|sprain\w*|swell\w*|swollen|bruis\w*|numb(?!er)\w*|tingl\w*|pins\s+and\s+needles|dizz\w*|light[-\s]?headed\w*|faint\w*|wooz\w*|nause\w*|(?:feel|feels|feeling|felt)\s+(?:a\s+bit\s+|kind\s+of\s+|really\s+|so\s+)?(?:sick|ill|unwell|faint)|queas\w*|vomit\w*|throw(?:ing)?\s+up|threw\s+up|puk(?:e|ed|ing)|headaches?|migraines?|palpitations?|heart\s+(?:is\s+)?(?:racing|pounding|skipping|fluttering)|racing\s+heart|chest\s+(?:pain|tightness|pressure)|tight\s+chest|short(?:ness)?\s+of\s+breath|breathless\w*|burning\s+sensation|shooting\s+(?:pain|sensation)|throbb\w*|tenderness|tender\s+to\s+(?:the\s+)?touch|inflam\w*|bleed\w*|blood\s+in|rash\w*|itchy|itchiness|hives|shaky|trembl\w*|tremors?|injur\w*|discomfort|uncomfortable|niggl\w*|flare[-\s]?ups?|symptoms?)\b` +
     '|' +
     // "Cracking in my knee" — but not the cue "pop your hips through", so a preposition is required.
     String.raw`\b(?:crack\w*|pop(?:s|ping|ped)?|click\w*|grind\w*|clunk\w*|crunch\w*|burn(?:s|ing)?)\s+(?:in|from|of|at|around)\s+(?:the\s+|your\s+|my\s+|their\s+)?(?:[\w'-]+\s+)?${scanSrc(SCAN_BODY)}\b` +
@@ -202,19 +202,32 @@ const scanWords = (s: string): number => s.split(/\s+/).filter(Boolean).length;
 /** Curly quotes and apostrophes straightened, so "that’s normal" reads as "that's normal" (phone keyboards). */
 const scanNormal = (text: string): string => text.replace(/[‘’ʼ`´]/g, "'").replace(/[“”]/g, '"');
 
+/**
+ * Phrases that LOOK like a stop word and are not one, taken out before the lists are read. Done as text, not as a
+ * lookbehind: the phone runs Hermes, and a variable-length lookbehind is not worth betting a module load on.
+ *   · "won't hurt to add a rest day" — an idiom, not a symptom;
+ *   · "band shoulder dislocates" — a catalogue warm-up (`band-shoulder-dislocate`), not a dislocation.
+ */
+const scanIdiomsOut = (text: string): string =>
+  text
+    .replace(/\b(?:won'?t|wouldn'?t|doesn'?t|didn'?t|can'?t|couldn'?t|never|not)\s+hurt\b/gi, ' ')
+    .replace(/\b(?:(?:band|pvc|stick|dowel)[-\s]+)?shoulder[-\s]+dislocates?\b/gi, 'shoulder pass-throughs');
+
+const scanHasSymptom = (s: string): boolean => SCAN_SYMPTOM.test(s);
+
 function scanReassurance(text: string, asked: string): string | null {
   const hard = SCAN_REASSURE_HARD.exec(text);
   if (hard) return hard[0];
   const said = scanSentences(text);
-  const askedSymptom = !!asked && SCAN_SYMPTOM.test(asked);
+  const askedSymptom = !!asked && scanHasSymptom(asked);
   for (let i = 0; i < said.length; i += 1) {
     const soft = SCAN_REASSURE_SOFT.exec(said[i]);
     if (!soft) continue;
-    if (SCAN_SYMPTOM.test(said[i])) return soft[0];
+    if (scanHasSymptom(said[i])) return soft[0];
     const pointsBack = SCAN_POINTS_BACK.test(said[i]) || scanWords(said[i]) <= 4;
     if (!pointsBack) continue;
     if (askedSymptom) return soft[0];
-    if ((i > 0 && SCAN_SYMPTOM.test(said[i - 1])) || (i + 1 < said.length && SCAN_SYMPTOM.test(said[i + 1]))) return soft[0];
+    if ((i > 0 && scanHasSymptom(said[i - 1])) || (i + 1 < said.length && scanHasSymptom(said[i + 1]))) return soft[0];
   }
   return null;
 }
@@ -231,7 +244,7 @@ function scanReassurance(text: string, asked: string): string | null {
  * ⚠ `match` is the model's words: for logs and tests, never shown to the athlete and never sent to the app.
  */
 export function scanReply(text: string, asked?: string | null): ScanResult {
-  const t = scanNormal(typeof text === 'string' ? text : '').trim();
+  const t = scanIdiomsOut(scanNormal(typeof text === 'string' ? text : '')).trim();
   if (!t) return SCAN_CLEAR;
   for (const re of SCAN_DOSE) {
     const m = re.exec(t);
@@ -243,7 +256,7 @@ export function scanReply(text: string, asked?: string | null): ScanResult {
   }
   const clinical = CLINICAL_TERMS.exec(t);
   if (clinical) return { hit: true, kind: 'clinical', match: clinical[0] };
-  const reassured = scanReassurance(t, scanNormal(typeof asked === 'string' ? asked : ''));
+  const reassured = scanReassurance(t, scanIdiomsOut(scanNormal(typeof asked === 'string' ? asked : '')));
   if (reassured) return { hit: true, kind: 'reassurance', match: reassured };
   return SCAN_CLEAR;
 }

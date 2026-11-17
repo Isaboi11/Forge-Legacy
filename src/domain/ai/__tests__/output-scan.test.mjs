@@ -116,6 +116,19 @@ test('⚠ ONE clinical list: form check’s sentence guard holds a byte-identica
   }
 });
 
+test('⚠ no lookbehind anywhere — the phone runs Hermes, and a regex that fails to compile breaks the chat at load', () => {
+  const src = read('src/domain/ai/output-scan.ts');
+  // The one lookbehind allowed is a single character class — the sentence splitter form-check.ts already ships on
+  // build 11 (`(?<=[.!?])`). Anything longer is taken out as text (`scanIdiomsOut`).
+  const behinds = [...src.matchAll(/\(\?<[!=]/g)].map((m) => src.slice(m.index, src.indexOf(')', m.index) + 1));
+  assert.deepEqual(behinds.filter((b) => !/^\(\?<[!=]\[[^\]]+\]\)$/.test(b)), [], 'idioms are taken out as text, never with a long lookbehind');
+  // …and the idioms still flow, and the injuries still stop.
+  assert.equal(scanReply("It won't hurt to take an extra rest day — that's normal.").hit, false);
+  assert.equal(scanReply('Band shoulder dislocates are a normal warm-up.').hit, false);
+  assert.equal(scanReply('It sounds like you dislocated your shoulder.').hit, true);
+  assert.equal(scanReply('That hurt in your knee is normal.').hit, true);
+});
+
 test('import-free, and no private name collides with the modules it is inlined beside', () => {
   const src = read('src/domain/ai/output-scan.ts');
   assert.ok(!/^import /m.test(src), 'the paste builders refuse a module with imports');
