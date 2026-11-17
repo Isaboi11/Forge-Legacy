@@ -19,7 +19,15 @@
 import { deepStrictEqual } from 'node:assert';
 
 import { narrowReply, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
-import { callAnthropic, readJsonl, systemOf } from '../lib/suite-kit.mjs';
+import { VOICE } from '../../../src/domain/coach/rulebook/voice.ts';
+import { FUNCTION_KNOBS, callAnthropic, interpretTurn, readJsonl, systemOf } from '../lib/suite-kit.mjs';
+
+/**
+ * Holt's question for a corpus `qid`, as the app sends it (`ask`, from his own line catalogue — the first line, so a
+ * recording is repeatable). Sprint 3 harness fix: it used to be `(Answering Holt's "size" question.)`, which the
+ * function never sends. The offered chips are not sent (the suite has no constraints to build them from).
+ */
+const askFor = (qid) => VOICE[`ask_${qid}`]?.[0] ?? null;
 
 const TODAY = '2026-11-17';
 const META = new Set(['ambiguous', 'best', 'defer']);
@@ -106,8 +114,15 @@ export const suite = {
       signal,
       model: 'claude-sonnet-5',
       system: systemOf('coach-interpret'),
-      messages: [{ role: 'user', content: `(Answering Holt's "${c.input.qid}" question.) ${c.input.text}` }],
+      cacheSystem: true,
+      messages: [
+        {
+          role: 'user',
+          content: interpretTurn({ today: TODAY, ask: askFor(c.input.qid), mode: c.input.qid === 'day_focus' ? 'day' : 'program', text: c.input.text }),
+        },
+      ],
       maxTokens: 1024,
+      extra: FUNCTION_KNOBS['coach-interpret'],
     }),
   estimateUsd: (cases) => cases.length * 0.0016 * 1.2,
   threshold: { metric: 'pass_rate', min: 0.95 },

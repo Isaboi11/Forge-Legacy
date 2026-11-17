@@ -14,10 +14,10 @@
  */
 
 import { AUTHOR_CATALOGUE } from '../../../src/domain/coach/author-catalogue.ts';
-import { authoredFromModelText, authoredIsWhole, authorUserTurn, narrowAuthorRequest } from '../../../src/domain/coach/author.ts';
+import { AUTHOR_OUTPUT_CAP, AUTHOR_SCHEMA, authoredFromModelText, authoredIsWhole, authorUserTurn, narrowAuthorRequest } from '../../../src/domain/coach/author.ts';
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
 import { DAY_CASES, PROGRAM_CASES } from '../../holt-corpus/corpus-author.mjs';
-import { callAnthropic, templateOf } from '../lib/suite-kit.mjs';
+import { FUNCTION_KNOBS, SKIPPED_CODE_STOP, callAnthropic, templateOf } from '../lib/suite-kit.mjs';
 
 const all = () => [...DAY_CASES.map((c) => ({ ...c, kind: 'day' })), ...PROGRAM_CASES.map((c) => ({ ...c, kind: 'program' }))];
 const stoppedInCode = (c) => c.said.some((line) => medicalRoute(line) !== 'clear');
@@ -37,6 +37,8 @@ export const suite = {
     // fix (PO 2026-11-17) changes what the model is shown, and must stale these recordings.
     { file: 'src/domain/coach/author-catalogue.ts', exportName: 'AUTHOR_CATALOGUE' },
     { file: 'src/domain/coach/author.ts', exportName: 'AUTHOR_SCHEMA' },
+    { file: 'src/domain/coach/author.ts', exportName: 'AUTHOR_OUTPUT_CAP' },
+    { file: 'scripts/evals/lib/suite-kit.mjs', exportName: 'FUNCTION_KNOBS' },
   ],
   model: 'claude-sonnet-5',
   cases: async () => all().map((c) => ({ id: c.id, input: { kind: c.kind, said: c.said, a: c.a ?? {} }, expect: { stopped: stoppedInCode(c) } })),
@@ -66,16 +68,26 @@ export const suite = {
     const pass = !!plan && authoredIsWhole(plan);
     return { pass, score: pass ? 1 : 0, notes: pass ? '' : plan ? 'parsed but not whole' : 'did not parse' };
   },
+  /* Sprint 3 harness fix: coach-author's own request — thinking off, effort low, its JSON schema, its output cap, the
+     cached SYSTEM block (13k tokens: uncached, every call paid all of it). A case the code guard stops is never sent. */
   callLive: async (c, { apiKey, signal }) =>
-    callAnthropic({
-      apiKey,
-      signal,
-      model: 'claude-sonnet-5',
-      system: templateOf('coach-author', 'SYSTEM', { AUTHOR_CATALOGUE }),
-      messages: [{ role: 'user', content: authorUserTurn(requestFor(c.input)) }],
-      maxTokens: c.input.kind === 'program' ? 4500 : 1400,
-    }),
+    c.expect?.stopped || c.input.said.some((line) => medicalRoute(line) !== 'clear')
+      ? SKIPPED_CODE_STOP
+      : callAnthropic({
+          apiKey,
+          signal,
+          model: 'claude-sonnet-5',
+          system: templateOf('coach-author', 'SYSTEM', { AUTHOR_CATALOGUE }),
+          cacheSystem: true,
+          messages: [{ role: 'user', content: authorUserTurn(requestFor(c.input)) }],
+          maxTokens: AUTHOR_OUTPUT_CAP[c.input.kind],
+          extra: {
+            ...FUNCTION_KNOBS['coach-author'],
+            output_config: { ...FUNCTION_KNOBS['coach-author'].output_config, format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },
+          },
+        }),
   // scripts/holt-corpus/README.md: the whole author corpus live is "about $1.45" (2026-09-30). Plus 20%.
-  estimateUsd: (cases) => (cases.length / 126) * 1.45 * 1.2,
+  // Only cases the code guard lets through are sent (Sprint 3 harness fix).
+  estimateUsd: (cases) => (cases.filter((c) => !c.expect.stopped).length / 126) * 1.45 * 1.2,
   threshold: { metric: 'pass_rate', min: 0.95 },
 };
