@@ -52,7 +52,8 @@ test('chat: only a finished coach-ask reply, the kitchen’s dishes and a Holt-w
   assert.match(CHAT, /attached\.some\(\(x\) => \(x\.kind === 'program' \|\| x\.kind === 'day'\) && x\.authored === true\)/);
   assert.match(CHAT, /feedback: feedbackFor\(t, attached\)/);
   assert.match(CHAT, /feedback=\{b\.feedback\}/);
-  assert.match(CHAT, /\{feedback\?\.after === 'words' \? <AiFeedback feature=\{feedback\.feature\} aiRef=\{feedback\.ref\} compact \/> : null\}/);
+  // CH-6 (Sprint 3a): the thumbs share a row with Copy / Regenerate / Edit under a chat reply.
+  assert.match(CHAT, /\{feedback\?\.after === 'words' \? \(\s*<View style=\{styles\.replyTools\}>\s*<ReplyTools[\s\S]{0,300}?<AiFeedback feature=\{feedback\.feature\} aiRef=\{feedback\.ref\} compact \/>\s*<\/View>\s*\) : null\}/);
   assert.match(CHAT, /\{feedback\?\.after === 'attached' \? <AiFeedback/);
   // Authored is said where Holt's own plan is put on the table — the day, the program, and a race's lifting days.
   assert.match(CHAT, /\{ kind: 'day', card: dayCard, authored: true \}/);

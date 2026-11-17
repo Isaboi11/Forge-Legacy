@@ -388,7 +388,7 @@ test('⚠ the local gap answer reaches a follow-up through ordinary thread histo
 
   // The filter moved to `askHistory` (chat-history.ts, QA R2-F1) — the sheet's history must still be built
   // there, and that builder must still admit `holt` turns.
-  assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(t\);/);
+  assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(rewound\.current \?\? t\);/);
   const said = askHistory([
     { kind: 'me', text: 'What do I need to work on?' },
     { kind: 'holt', text: 'No calf sets in 24 sessions.' },
