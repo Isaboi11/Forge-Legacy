@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-4",
+  "promptHash": "9b3b6fbc218f118dc1753ef530b56c685464acfe03eec9be7f8f1815f8325dd6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T19:57:22.279Z",
+  "reply": {
+    "text": "```json\n[\n  {\n    \"name\": \"Crunchy Tuna Cabbage Salad\",\n    \"why\": \"no stove needed and the sesame and peanut crunch holds up well\",\n    \"cuisine\": \"Asian\",\n    \"method\": \"no-cook\",\n    \"minutes\": 10,\n    \"servings\": 1,\n    \"mealType\": \"lunch\",\n    \"ingredients\": [\n      { \"text\": \"2 cups shredded cabbage (150 g)\", \"quantity\": 150, \"unit\": \"g\", \"food\": \"cabbage\" },\n      { \"text\": \"1/2 cup julienned carrot (50 g)\", \"quantity\": 50, \"unit\": \"g\", \"food\": \"carrot\" },\n      { \"text\": \"1/2 cucumber, sliced (80 g)\", \"quantity\": 80, \"unit\": \"g\", \"food\": \"cucumber\" },\n      { \"text\": \"4 oz tuna in water, drained (120 g)\", \"quantity\": 120, \"unit\": \"g\", \"food\": \"tuna in water\" },\n      { \"text\": \"2 tbsp sesame seeds (10 g)\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"sesame seeds\" },\n      { \"text\": \"2 tbsp dry-roasted peanuts, chopped (20 g)\", \"quantity\": 20, \"unit\": \"g\", \"food\": \"dry-roasted peanuts\" },\n      { \"text\": \"1 tbsp lemon juice (15 g)\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"lemon juice\" },\n      { \"text\": \"2 tsp soy sauce (10 g)\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"soy sauce\" },\n      { \"text\": \"2 tsp olive oil (10 g)\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"olive oil\" },\n      { \"text\": \"salt to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"salt\" },\n      { \"text\": \"black pepper to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"black pepper\" }\n    ],\n    \"steps\": [\n      \"Shred the cabbage and carrot into a large bowl.\",\n      \"Add the sliced cucumber and flaked tuna.\",\n      \"Whisk the lemon juice, soy sauce and olive oil together and pour over the salad.\",\n      \"Toss everything well so the dressing coats the vegetables.\",\n      \"Top with sesame seeds and chopped peanuts, season with salt and pepper, and serve right away for the most crunch.\"\n    ]\n  },\n  {\n    \"name",
+    "stop_reason": "max_tokens"
+  },
+  "usage": {
+    "input_tokens": 2846,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 2600,
+    "output_tokens_details": {
+      "thinking_tokens": 1774
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

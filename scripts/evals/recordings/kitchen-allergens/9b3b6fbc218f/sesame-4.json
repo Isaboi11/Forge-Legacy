@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-4",
+  "promptHash": "9b3b6fbc218f118dc1753ef530b56c685464acfe03eec9be7f8f1815f8325dd6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:08:19.911Z",
+  "reply": {
+    "text": "```json\n{\n  \"options\": [\n    {\n      \"name\": \"Herbed Greek Yogurt Veggie Dip\",\n      \"why\": \"fastest of the three, no cooking needed\",\n      \"cuisine\": \"American\",\n      \"method\": \"no-cook\",\n      \"minutes\": 5,\n      \"servings\": 2,\n      \"mealType\": \"snacks\",\n      \"ingredients\": [\n        { \"text\": \"200 g plain yogurt\", \"quantity\": 200, \"unit\": \"g\", \"food\": \"plain yogurt\" },\n        { \"text\": \"1 clove garlic, minced\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"garlic\" },\n        { \"text\": \"1 tbsp lemon juice\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"lemon juice\" },\n        { \"text\": \"1 tsp dried parsley\", \"quantity\": 1, \"unit\": \"g\", \"food\": \"dried parsley\" },\n        { \"text\": \"1/2 tsp onion powder\", \"quantity\": 1, \"unit\": \"g\", \"food\": \"onion powder\" },\n        { \"text\": \"salt to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"salt\" },\n        { \"text\": \"black pepper to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"black pepper\" }\n      ],\n      \"steps\": [\n        \"Spoon the yogurt into a bowl.\",\n        \"Stir in the garlic, lemon juice, dried parsley and onion powder.\",\n        \"Season with salt and pepper to taste.\",\n        \"Chill a few minutes if you have time, then serve with cut veggies.\"\n      ]\n    },\n    {\n      \"name\": \"Smoky Black Bean Dip\",\n      \"why\": \"uses pantry staples to add some protein to your snack\",\n      \"cuisine\": \"Mexican\",\n      \"method\": \"pot\",\n      \"minutes\": 10,\n      \"servings\": 2,\n      \"mealType\": \"snacks\",\n      \"ingredients\": [\n        { \"text\": \"1 can black beans, drained\", \"quantity\": 240, \"unit\": \"g\", \"food\": \"black beans\" },\n        { \"text\": \"2 tbsp olive oil\", \"quantity\": 25, \"unit\": \"g\", \"food\": \"olive oil\" },\n        { \"text\": \"1 clove garlic, minced\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"garlic\" },\n        { \"text\": \"1/2 tsp cumin\", \"quantity\": 1, \"unit\": \"g\", \"food\": \"cumin\" },\n        { \"text\": \"1/2 tsp chilli powder\", \"quantity\": 1, \"unit\": \"g\", \"food\": \"chilli powder\" },\n        { \"text\": \"2 tbsp salsa\", \"quantity\": 30, \"unit\": \"g\", \"food\": \"salsa\" },\n        { \"text\": \"salt to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"salt\" }\n      ],\n      \"steps\": [\n        \"Warm the olive oil in a small pot over medium heat.\",\n        \"Add the garlic and cook 30 seconds until fragrant.\",\n        \"Stir in the black beans, cumin and chilli powder, cook 3-4 minutes until heated through.\",\n        \"Mash the beans roughly with a fork or spoon right in the pot.\",\n        \"Stir in the salsa and salt to taste, cook 1 more minute.\",\n        \"Cool slightly, then serve with veggies.\"\n      ]\n    },\n    {\n      \"name\": \"Melty Spinach Parmesan Dip\",\n      \"why\": \"warm and cheesy, ready quickly with no stove needed\",\n      \"cuisine\": \"Italian\",\n      \"method\": \"microwave\",\n      \"minutes\": 8,\n      \"servings\": 2,\n      \"mealType\": \"snacks\",\n      \"ingredients\": [\n        { \"text\": \"100 g baby spinach, chopped\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"baby spinach\" },\n        { \"text\": \"100 g cream cheese\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"cream cheese\" },\n        { \"text\": \"50 g plain yogurt\", \"quantity\": 50, \"unit\": \"g\", \"food\": \"plain yogurt\" },\n        { \"text\": \"30 g parmesan, grated\", \"quantity\": 30, \"unit\": \"g\", \"food\": \"parmesan\" },\n        { \"text\": \"1 clove garlic, minced\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"garlic\" },\n        { \"text\": \"black pepper to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"black pepper\" }\n      ],\n      \"steps\": [\n        \"Place the chopped spinach in a microwave-safe bowl and microwave 1 minute until wilted.\",\n        \"Add the cream cheese, yogurt, parmesan and garlic to the bowl.\",\n        \"Microwave in 30-second bursts, stirring each time, until smooth and warm, about 1-2 minutes total.\",\n        \"Season with black pepper and stir well.\",\n        \"Let cool slightly before serving with veggies.\"\n      ]\n    }\n  ]\n}\n```",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 2810,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1895,
+    "output_tokens_details": {
+      "thinking_tokens": 255
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}
