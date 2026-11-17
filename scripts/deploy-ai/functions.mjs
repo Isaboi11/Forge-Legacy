@@ -108,7 +108,9 @@ export const FUNCTIONS = {
     ai: true,
     probe: { options: 200, post: 401 },
     tests: ['src/app/__tests__/program-photo-wiring.test.mjs', ...META],
-    suites: ['import-corpus'],
+    suites: [],
+    noSuite:
+      'Only the fallback when the card reader fails. IM-2 (import-corpus) records the card reader + the tidy layout pass, not this read — recording it too would double the corpus cost. Add program-photo-read cases to import-corpus before a prompt change here.',
   },
   'recipe-link-read': {
     builder: 'scripts/build-recipe-link-read-deploy.mjs',
@@ -138,8 +140,8 @@ export const FUNCTIONS = {
     ai: true,
     probe: { options: 200, post: 401 },
     tests: ['src/domain/workout/__tests__/workout-tidy-prompt.test.mjs', ...META],
-    suites: [],
-    noSuite: 'No tidy corpus yet; workout-tidy-prompt.test.mjs holds its prompt and parser. Add a suite before a prompt change.',
+    // IM-2: the import corpus runs every photo through the card reader AND this layout pass (the real import path).
+    suites: ['import-corpus'],
   },
   'ai-canary': {
     builder: null,
