@@ -484,6 +484,8 @@ function RootNavigator() {
             additionally redirects on a failed `isAppAdmin()` so a curious athlete gets Home rather than
             seven error states. See Docs/Admin-Analytics-Architecture-v1.0.md §4. */}
         <Stack.Screen name="admin" />
+        {/* /admin → AI health (0269). Same gate as /admin: admin_guard() in Postgres; this keeps signed-out visitors off. */}
+        <Stack.Screen name="admin-ai" />
         {/* Dev harnesses. Inside the guard so a signed-out visitor meets sign-in, not a blank grey page
             (QA 09-26 auth-15); each still redirects home on `!__DEV__` for a signed-in one. */}
         <Stack.Screen name="ceremony-harness" />
