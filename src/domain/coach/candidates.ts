@@ -254,13 +254,39 @@ export function candidatesFor(
 ): CatalogExercise[] {
   /* A banned pattern with a carve-out is not a banned pattern — `lower_back` takes the hinge and gives
      back the glute bridge. Bailing out here was what made the carve-out unexpressible. */
-  const patternExcluded = ctx.excludePatterns.has(pattern);
-  if (patternExcluded && !ctx.keepKeys?.size) return [];
+  if (ctx.excludePatterns.has(pattern) && !ctx.keepKeys?.size) return [];
+  return collectRanked((ex) => ex.pattern === pattern, pool, ctx, stretch).get(pattern) ?? [];
+}
 
-  const scored: { ex: CatalogExercise; pref: number; fit: number; breadth: number }[] = [];
+/**
+ * ══ THE ONE RANKED COLLECTOR — every exercise a day may hold, gated and ranked in ONE place ══
+ *
+ * Holt fills a day two ways, because the two questions have different shapes (`day.ts`): a SPLIT day walks
+ * a pattern list one slot at a time (`fillSlot`), and a BODY-PART day ("chest and triceps") takes every
+ * primary mover for the muscles named and spreads across their patterns. Both used to collect and rank
+ * their own candidates, and they drifted: the body-part path never ran `isCoherent` (so a Triceps Stretch
+ * was a triceps exercise there), never read the athlete's own swaps when ranking, and never ranked on
+ * difficulty fit — three fixes that had landed in one filler and not the other (AI audit 11-16, PB-2).
+ *
+ * Now both ask this function, which is the only place the gates and the order live:
+ *
+ *   gates — `wanted` · the limitation's pattern ban (with its keep-key carve-out) · coherence · the
+ *           athlete's and the limitation's excluded keys · already used today · the equipment gate · the
+ *           difficulty ceiling (strict, or `STRETCH_CEILING` on the second pass)
+ *   order — the athlete's own swaps · the rulebook's preference list · difficulty fit · muscle breadth · key
+ *
+ * Returned by pattern, each list best first, in the order the patterns first appear in the pool.
+ */
+export function collectRanked(
+  wanted: (ex: CatalogExercise) => boolean,
+  pool: readonly CatalogExercise[],
+  ctx: CandidateContext,
+  stretch = false,
+): Map<string, CatalogExercise[]> {
+  const scored = new Map<string, { ex: CatalogExercise; pref: number; fit: number; breadth: number }[]>();
   for (const ex of pool) {
-    if (ex.pattern !== pattern) continue;
-    if (patternExcluded && !ctx.keepKeys?.has(ex.key)) continue;
+    if (!wanted(ex)) continue;
+    if (ctx.excludePatterns.has(ex.pattern) && !ctx.keepKeys?.has(ex.key)) continue;
     // The pattern says one thing and the primary mover says another — a leg curl filed under Elbow
     // Flexion is not a biceps exercise, whatever the tag says. See `rulebook/coherence.ts`.
     if (!isCoherent(ex)) continue;
@@ -271,12 +297,15 @@ export function candidatesFor(
     /* The athlete's own ranking wins when they have one, and it is negative by construction so it
        sorts ahead of the rulebook's canonical order without a second sort key. Nobody with no swaps on
        record is affected in any way. */
-    const own = ctx.learned ? learnedRank(ctx.learned, pattern, ex.key) : null;
-    scored.push({ ex, pref: own ?? preferenceRank(pattern, ex.key), fit, breadth: ex.muscleIds.length });
+    const own = ctx.learned ? learnedRank(ctx.learned, ex.pattern, ex.key) : null;
+    const list = scored.get(ex.pattern) ?? [];
+    list.push({ ex, pref: own ?? preferenceRank(ex.pattern, ex.key), fit, breadth: ex.muscleIds.length });
+    scored.set(ex.pattern, list);
   }
 
-  return scored
-    .sort(
+  const out = new Map<string, CatalogExercise[]>();
+  for (const [pattern, list] of scored) {
+    list.sort(
       (a, b) =>
         // ⚠ PREFERENCE FIRST, and it outranks everything. Without it the ranker fell through to
         // difficulty-then-breadth-then-alphabetical, which is how a full-gym strength block came to open
@@ -292,8 +321,10 @@ export function candidatesFor(
         // for an isolation slot the field is narrow enough that it rarely decides anything.
         b.breadth - a.breadth ||
         a.ex.key.localeCompare(b.ex.key),
-    )
-    .map((s) => s.ex);
+    );
+    out.set(pattern, list.map((s) => s.ex));
+  }
+  return out;
 }
 
 /**
