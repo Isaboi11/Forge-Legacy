@@ -60,7 +60,7 @@ import { EMPHASIS, EMPHASIS_SHARE, type EmphasisId } from './rulebook/emphasis.t
 import type { LearnedPreferences } from './learned-preference.ts';
 import { leastRecent, type RecentWork } from './recent-work.ts';
 import { bandFor, type PasCategory } from './rulebook/volume.ts';
-import { fillSlot, promoteLeastRecent } from './candidates.ts';
+import { fillRepeatSlot, fillSlot, promoteLeastRecent } from './candidates.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WHAT ARE YOU TRAINING?
@@ -500,9 +500,12 @@ export function buildDayWorkout(
     const skeleton = skeletonFor(splitGoalFor(req.focus.split), splitDaysFor(req.focus.split));
     const slots = skeleton ? skeletonSlotsFor(req.focus.split, skeleton) : [];
     const used = new Set<string>();
+    /* B-D7: a pattern's second slot today is accessory work, not a second heavy barbell lift (`fillRepeatSlot`). */
+    const done = new Set<string>();
     for (const pattern of slots) {
       if (chosen.length >= budget) break;
-      const found = fillSlot(pattern, pool, { ...ctx, used });
+      const found = category !== 'STRENGTH' && done.has(pattern) ? fillRepeatSlot(pattern, pool, { ...ctx, used }) : fillSlot(pattern, pool, { ...ctx, used });
+      done.add(pattern);
       if (!found) {
         missing.push(pattern);
         continue;

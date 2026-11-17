@@ -44,6 +44,7 @@ import {
   candidatesFor,
   canStretch,
   contextFrom,
+  fillRepeatSlot,
   fillSlot,
   isCompound,
   trainablePatterns,
@@ -429,6 +430,8 @@ function buildDay(
 ): ProgramDay {
   const main: ProgramExercise[] = [];
   const used = new Set<string>(baseCtx.used);
+  /* The patterns this day has already filled — a repeat is accessory work (B-D7). */
+  const patternsToday = new Set<string>();
   const cardioSlots = skeleton.cardioFinisher ? 1 : 0;
   const focus = opts.focus ?? NO_FOCUS;
   let sets = 0;
@@ -553,7 +556,9 @@ function buildDay(
       // A focus slot the room cannot fill is not a gap in the plan the athlete was promised — no note.
       if (!found) continue;
     } else {
-      found = fillSlot(pattern, pool, { ...baseCtx, used });
+      /* B-D7: the pattern's second slot today is accessory work — not a second heavy barbell lift (`fillRepeatSlot`). */
+      const repeat = opts.category !== 'STRENGTH' && patternsToday.has(pattern);
+      found = repeat ? fillRepeatSlot(pattern, pool, { ...baseCtx, used }) : fillSlot(pattern, pool, { ...baseCtx, used });
     }
     if (!found) {
       // Only worth telling the athlete about once, and only on the first week — the same gap repeats
@@ -572,6 +577,7 @@ function buildDay(
     }
 
     used.add(found.exercise.key);
+    patternsToday.add(pattern);
     const role = roleFor(main.length, isCompound(found.pattern));
     const pctx = pctxFor();
 
