@@ -360,6 +360,32 @@ export function fillSlot(
 }
 
 /**
+ * ══ A PATTERN'S SECOND SLOT ON A DAY IS ACCESSORY WORK (AI audit 11-16, B-D7 · Sprint 3 PB-3) ══
+ *
+ * A lower day leads with a barbell back squat and a deadlift; its second squat and hinge slots used to take the
+ * next names on the list — a barbell FRONT squat and a barbell RDL, at 12–15 reps after both. No coach writes a
+ * second heavy barbell lift of the same pattern as an accessory: the second one goes to a dumbbell, machine or
+ * single-leg variant the athlete can push for reps. So a repeat of a pattern prefers anything but a two-legged barbell
+ * lift (a barbell step-up or lunge is single-leg work and stays welcome), still in THAT pattern (`relaxed` is not
+ * accepted for it); only when the room has nothing else does the barbell stay.
+ * Not for a strength block — a barbell front squat or RDL as the secondary lift at low reps IS strength
+ * programming (the callers pass `category`).
+ */
+const SINGLE_LEG = /step[- ]?up|lunge|split[- ]squat|single[- ]leg|bulgarian|pistol|one[- ]leg/i;
+export const isBarbellLift = (ex: { key: string; equipId: string; name?: string }): boolean =>
+  (ex.equipId === 'barbell' || ex.key.startsWith('barbell-')) && !SINGLE_LEG.test(`${ex.key} ${ex.name ?? ''}`);
+
+export function fillRepeatSlot(
+  pattern: string,
+  pool: readonly CatalogExercise[],
+  ctx: CandidateContext,
+): ReturnType<typeof fillSlot> {
+  const light = fillSlot(pattern, pool.filter((e) => !isBarbellLift(e)), ctx);
+  if (light && !light.relaxed) return light;
+  return fillSlot(pattern, pool, ctx);
+}
+
+/**
  * How many of the ranked candidates count as "the shortlist a coach would accept for this slot".
  *
  * Three. `PATTERN_PREFERENCES` lists five or six per pattern running best-first ACROSS equipment tiers,
