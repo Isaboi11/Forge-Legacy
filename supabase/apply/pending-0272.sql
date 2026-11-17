@@ -34,11 +34,11 @@
 -- §2  RAISES if any of that did not land, if a weight was not moved (it held something other than its old
 --     value — then it was hand-set: decide it and set it by SQL), if a return shape changed, or if anon / PUBLIC
 --     can call the meter, or the old path (spend_credits / quote / balance / record_usage) is not callable.
--- §3  one table, expected beside actual. Rows 1–9 read the database. Rows 10–19 are a REHEARSAL, run as two real
+-- §3  one table, expected beside actual. Rows 1–9 read the database. Rows 10–20 are a REHEARSAL, run as two real
 --     accounts and ROLLED BACK before it ends (a plpgsql sub-block that raises its own sentinel): an operator with
 --     Premium AI and the AI consent, and an account without Premium AI. It reserves and settles through the real
---     functions, then every write it made — reservations, ledger rows, the month's balance — is undone. Row 19
---     proves nothing it did is left.
+--     functions, then every write it made — reservations, ledger rows, the month's balance — is undone. Row 20
+--     proves nothing it did is left (a real AI call landing in the same instant would also move its counts).
 --
 -- ⚠ LIVE FOR EVERY INSTALLED PHONE THE MOMENT IT LANDS (server only — no deploy, no OTA needed for the money):
 --   the deployed functions charge the new weights, waive the typed build's write and the photo's tidy, and give
