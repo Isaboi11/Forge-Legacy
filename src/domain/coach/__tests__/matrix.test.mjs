@@ -31,9 +31,15 @@ import { canDoExercise } from '../../home-gym/equipment.ts';
 import { STRENGTH_GOALS } from '../constraints.ts';
 import { assemble } from '../assemble.ts';
 import { validateProgram } from '../validate-program.ts';
-import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays } from '../rulebook/skeletons.ts';
+import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays, stylesForDaysSuggestedFirst } from '../rulebook/skeletons.ts';
 
-import { GOAL_CATEGORY } from '../rulebook/volume.ts';
+import {
+  DELOAD_MARKER,
+  GOAL_CATEGORY,
+  MAJOR_MUSCLE_GROUPS,
+  weeklyGroupSets,
+  weeklyMuscleFloor,
+} from '../rulebook/volume.ts';
 import { PATTERN_PREFERENCES } from '../rulebook/preferences.ts';
 import { LIMITATION_KEEP_KEYS } from '../rulebook/limitations.ts';
 import { buildDayWorkout, BODY_PARTS, SPLITS } from '../day.ts';
@@ -471,6 +477,95 @@ test('a deload is actually lighter than the week before it', () => {
       0,
     );
   assert.ok(setsIn(6) < setsIn(5), 'PAS-D8 (2): primary compound sets cut 40–50%');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEEKLY VOLUME PER MUSCLE — PAS §11.2 / PAS-A4 (AI audit 11-16, B-D2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const BY_KEY = new Map(POOL.map((e) => [e.key, e]));
+
+/** One week's sets for each major group, counted the PAS-A4-D1 way. */
+const weeklyVolume = (weekPlan) => {
+  const rows = weekPlan.days
+    .flatMap((d) => d.main)
+    .map((r) => ({ ex: BY_KEY.get(r.catalogKey), sets: r.sets ?? 0 }))
+    .filter((r) => r.ex)
+    .map((r) => ({ sets: r.sets, primaryMuscleIds: r.ex.primaryMuscleIds, muscleIds: r.ex.muscleIds }));
+  return Object.fromEntries(
+    Object.entries(MAJOR_MUSCLE_GROUPS).map(([g, muscles]) => [g, weeklyGroupSets(rows, muscles)]),
+  );
+};
+
+/**
+ * ⚠ THE MATRIX ABOVE CHECKS VALIDITY, AND A FOUR-DAY MUSCLE BLOCK THAT BARELY TRAINED CHEST PASSED IT.
+ *
+ * Every session sat inside PAS-D11's 18–30, so every program was "valid" — while Upper B, rotated so its
+ * press fell off the end of a six-exercise hour, had no horizontal press at all (3–7 chest sets a week
+ * across all twelve four-day builds, AI audit 11-16). Nothing asserted the week. This does.
+ *
+ * Both ways a muscle block gets its week: the goal's own split (the chat and the wizard, no style) and
+ * the style the guided build suggests and always sends. Every working week, not just the first.
+ *
+ * ⚠ 45 MINUTES UP. A 30-minute session is four movements, already under PAS-D11's five-exercise
+ * HYPERTROPHY floor and recorded as a deviation by the validator; the weekly floor cannot be owed by a
+ * session the per-session floor has already excused.
+ */
+test('a muscle block gives every major group its weekly floor, in every working week', () => {
+  const short = [];
+  let checked = 0;
+  for (const sessionMinutes of [45, 60, 75]) {
+    for (const experience of EXPERIENCES) {
+      for (const daysPerWeek of DAYS) {
+        for (const room of ['full_gym', 'home']) {
+          for (const splitStyle of [null, stylesForDaysSuggestedFirst(daysPerWeek)[0]]) {
+            const c = { ...constraintsFor('muscle', experience, daysPerWeek, room, 'none', sessionMinutes), splitStyle };
+            const res = build(c);
+            assert.ok(res.ok, `muscle/${experience}/${daysPerWeek}d/${room} refused`);
+            const floor = weeklyMuscleFloor(GOAL_CATEGORY.muscle, daysPerWeek);
+            res.assembly.structure.weekPlans.forEach((wp, w) => {
+              if (wp.days.some((d) => d.name.includes(DELOAD_MARKER))) return; // PAS-A4-D3
+              checked++;
+              for (const [group, n] of Object.entries(weeklyVolume(wp))) {
+                if (n < floor) {
+                  short.push(`${experience}/${daysPerWeek}d/${room}/${sessionMinutes}min/${splitStyle ?? 'default'} wk${w + 1}: ${group} ${n} < ${floor}`);
+                }
+              }
+            });
+          }
+        }
+      }
+    }
+  }
+  assert.ok(checked > 0);
+  const unique = [...new Set(short.map((s) => s.replace(/ wk\d+:/, ':')))];
+  assert.deepEqual(unique, [], `${unique.length} muscle builds leave a major group under its weekly floor:\n  ${unique.slice(0, 15).join('\n  ')}`);
+});
+
+test('a four-day muscle block presses on BOTH upper days', () => {
+  // The D2 defect itself: rotating every slot sent Upper B's press past the budget.
+  for (const splitStyle of [null, 'upper_lower']) {
+    const res = build({ ...constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'none'), splitStyle });
+    assert.ok(res.ok);
+    const uppers = res.assembly.structure.weekPlans[0].days.filter((d) => /^Upper/.test(d.name));
+    assert.equal(uppers.length, 2);
+    for (const d of uppers) {
+      const presses = d.main.filter((e) => patternOf(e.catalogKey) === 'Horizontal Push');
+      assert.ok(presses.length >= 2, `${d.name} (${splitStyle ?? 'default'}) presses ${presses.length} times: ${d.main.map((e) => e.name).join(', ')}`);
+    }
+    // B still leads differently from A — the reason it is a B.
+    assert.notEqual(uppers[0].main[0].catalogKey, uppers[1].main[0].catalogKey);
+  }
+});
+
+test('a repeated day rotates only its lead, so A and B train the same patterns', () => {
+  // A strength block keeps the one-press Upper; what changed is that B no longer loses a pattern to A.
+  const res = build(constraintsFor('strength', 'intermediate', 4, 'full_gym', 'none'));
+  assert.ok(res.ok);
+  const days = res.assembly.structure.weekPlans[0].days;
+  const patternsOf = (name) => days.find((d) => d.name === name).main.map((e) => patternOf(e.catalogKey)).sort();
+  assert.deepEqual(patternsOf('Upper B'), patternsOf('Upper A'));
+  assert.deepEqual(patternsOf('Lower B'), patternsOf('Lower A'));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
