@@ -30,11 +30,14 @@
 --       · coach_ai_reserve — the LIVE source + the profile's tz + step 3a (a waived call rides on the paid one
 --         before it: coach-author after coach-interpret, workout-tidy after a photo read) + step 3b (the floor)
 --       · coach_ai_settle — the LIVE source + the waiver on the ledger row
---       · coach_ai_credits() — the chip's read; ai_feedback feature + 'workout_tidy'; grants
+--       · coach_ai_credits() — the chip's read; ai_feedback feature + 'workout_tidy'
+--       · admin_ai_health — the LIVE source (= 0269's, md5 de03285c…; 0271 leaves it alone) + the waived counts:
+--         totals.waivers {floor, typed_build, photo_tidy}, and floor_uses / typed_build / photo_tidy per function
+--         and per day (delivered calls only). Same signature, admin_guard() first; grants restated
 -- §2  RAISES if any of that did not land, if a weight was not moved (it held something other than its old
 --     value — then it was hand-set: decide it and set it by SQL), if a return shape changed, or if anon / PUBLIC
 --     can call the meter, or the old path (spend_credits / quote / balance / record_usage) is not callable.
--- §3  one table, expected beside actual. Rows 1–9 read the database. Rows 10–20 are a REHEARSAL, run as two real
+-- §3  one table, expected beside actual. Rows 1–9 read the database. Rows 10–21 are a REHEARSAL, run as two real
 --     accounts and ROLLED BACK before it ends (a plpgsql sub-block that raises its own sentinel): an operator with
 --     Premium AI and the AI consent, and an account without Premium AI. It reserves and settles through the real
 --     functions, then every write it made — reservations, ledger rows, the month's balance — is undone. Row 20
@@ -75,7 +78,10 @@
 --   18 the chip on the floor .......... remaining 0 · on_floor true · used 5 · left 0 · resets <first of next month>
 --   19 a refunded floor call .......... spent unchanged · used 4 · the next chat goes through at 0
 --   20 the rehearsal left nothing ..... reservations, ledger rows and the balance as before
---   A row 10–20 reading "skipped" means no operator account has Premium AI + the AI consent (prod has one).
+--   21 AI health counts what rode free  floor +4 (coach-ask +2 · coach-interpret +1 · meal-photo-read +1) ·
+--                                        typed_build +1 (coach-author +1) · photo_tidy +1 (workout-tidy +1)
+--                                        (the 5th floor call was refunded in row 19, so it is not a use)
+--   A row 10–21 reading "skipped" means no operator account has Premium AI + the AI consent (prod has one).
 -- ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 
@@ -571,8 +577,163 @@ alter table public.ai_feedback add constraint ai_feedback_feature_check
   check (feature in ('chat', 'kitchen', 'meal_photo', 'form_check', 'import', 'author', 'interpret', 'recipe_photo', 'workout_tidy'));
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- 8 · Grants — Supabase grants EXECUTE on a new function to anon and authenticated directly, so the new one is
---     revoked from public AND anon, then granted to authenticated. Replaced functions keep their grants.
+-- 8 · admin_ai_health — the LIVE source (pg_get_functiondef 2026-11-17 = 0269's text, md5 de03285c…); the ONE
+--     change: the waived calls are counted (marked 0272), so /admin-ai can say how many free daily uses the soft
+--     floor gave, and how many typed builds and photo tidies rode on a paid call.
+-- ══════════════════════════════════════════════════════════════════════════════
+
+create or replace function public.admin_ai_health(p_days integer default 7, p_tz text default 'UTC')
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_days  int  := least(greatest(coalesce(p_days, 7), 1), 90);
+  v_tz    text := coalesce(nullif(p_tz, ''), 'UTC');
+  v_since timestamptz;
+  v_cfg   public.ai_ops_config%rowtype;
+  v_out   jsonb;
+begin
+  perform public.admin_guard();
+
+  -- An unknown zone would raise inside every bucket below; the dashboard's clock falls back to UTC instead.
+  if not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = v_tz) then
+    v_tz := 'UTC';
+  end if;
+  -- The first local midnight of the window, so the oldest day is a whole day like the others.
+  v_since := (((now() at time zone v_tz)::date - (v_days - 1))::timestamp) at time zone v_tz;
+
+  select * into v_cfg from public.ai_ops_config c where c.id;
+
+  with s as (
+    select x.fn,
+           x.action,
+           coalesce(x.fn, 'legacy:' || x.action)                  as grp,
+           x.credits,
+           x.cost_usd,
+           x.latency_ms,
+           x.waiver,                                              -- 0272
+           (x.reservation_id is not null and x.uncharged)         as refunded,
+           public.ai_spend_failed(x.outcome, x.uncharged)         as failed,
+           coalesce(x.outcome = 'cancelled', false)               as cancelled,
+           (x.occurred_at at time zone v_tz)::date                as d
+      from public.coach_ai_spend x
+     where x.occurred_at >= v_since
+  ),
+  f as (
+    select fb.feature, fb.rating, (fb.created_at at time zone v_tz)::date as d
+      from public.ai_feedback fb
+     where fb.created_at >= v_since
+  )
+  select jsonb_build_object(
+    'days',         v_days,
+    'tz',           v_tz,
+    'since',        v_since,
+    'generated_at', now(),
+    'totals', jsonb_build_object(
+      'calls',        (select count(*) from s),
+      'failures',     (select count(*) from s where s.failed),
+      'cancelled',    (select count(*) from s where s.cancelled),
+      'refunds',      (select count(*) from s where s.refunded),
+      'credits',      coalesce((select sum(s.credits) from s where not s.refunded), 0),
+      'cost_usd',     coalesce((select round(sum(s.cost_usd), 4) from s), 0),
+      'legacy_calls', (select count(*) from s where s.fn is null),
+      -- 0272: calls that held 0 credits on purpose, delivered (a refunded one gave nothing): the soft floor's free daily
+      -- uses, a typed build's write riding on its paid turn, a photo's tidy pass riding on its paid read.
+      'waivers', jsonb_build_object(
+        'floor',       (select count(*) from s where s.waiver = 'floor' and not s.refunded),
+        'typed_build', (select count(*) from s where s.waiver = 'typed_build' and not s.refunded),
+        'photo_tidy',  (select count(*) from s where s.waiver = 'photo_tidy' and not s.refunded))),
+    'last_24h', (select jsonb_build_object(
+                          'calls',    count(*),
+                          'failures', count(*) filter (where public.ai_spend_failed(y.outcome, y.uncharged)))
+                   from public.coach_ai_spend y
+                  where y.occurred_at > now() - interval '24 hours'),
+    'by_fn', coalesce((select jsonb_agg(r order by r.calls desc, r.grp) from (
+        select s.grp,
+               max(s.fn)                                                   as fn,
+               case when max(s.fn) is null then max(s.action) end          as action,
+               count(*)                                                    as calls,
+               count(*) filter (where s.failed)                            as failures,
+               count(*) filter (where s.cancelled)                         as cancelled,
+               count(*) filter (where s.refunded)                          as refunds,
+               coalesce(sum(s.credits) filter (where not s.refunded), 0)   as credits,
+               count(*) filter (where s.waiver = 'floor' and not s.refunded)       as floor_uses,   -- 0272
+               count(*) filter (where s.waiver = 'typed_build' and not s.refunded) as typed_build,  -- 0272
+               count(*) filter (where s.waiver = 'photo_tidy' and not s.refunded)  as photo_tidy,   -- 0272
+               round(coalesce(sum(s.cost_usd), 0), 4)                      as cost_usd,
+               count(s.latency_ms)                                         as timed,
+               round(percentile_cont(0.5)  within group (order by s.latency_ms))::int as p50_ms,
+               round(percentile_cont(0.95) within group (order by s.latency_ms))::int as p95_ms
+          from s
+         group by s.grp) r), '[]'::jsonb),
+    'by_fn_day', coalesce((select jsonb_agg(r order by r.d desc, r.calls desc, r.grp) from (
+        select s.d,
+               s.grp,
+               max(s.fn)                                                   as fn,
+               case when max(s.fn) is null then max(s.action) end          as action,
+               count(*)                                                    as calls,
+               count(*) filter (where s.failed)                            as failures,
+               count(*) filter (where s.cancelled)                         as cancelled,
+               count(*) filter (where s.refunded)                          as refunds,
+               coalesce(sum(s.credits) filter (where not s.refunded), 0)   as credits,
+               count(*) filter (where s.waiver = 'floor' and not s.refunded)       as floor_uses,   -- 0272
+               count(*) filter (where s.waiver = 'typed_build' and not s.refunded) as typed_build,  -- 0272
+               count(*) filter (where s.waiver = 'photo_tidy' and not s.refunded)  as photo_tidy,   -- 0272
+               round(coalesce(sum(s.cost_usd), 0), 4)                      as cost_usd,
+               count(s.latency_ms)                                         as timed,
+               round(percentile_cont(0.5)  within group (order by s.latency_ms))::int as p50_ms,
+               round(percentile_cont(0.95) within group (order by s.latency_ms))::int as p95_ms
+          from s
+         group by s.d, s.grp) r), '[]'::jsonb),
+    'feedback', coalesce((select jsonb_agg(r order by r.d desc, r.feature) from (
+        select f.d, f.feature,
+               count(*) filter (where f.rating = 1)  as up,
+               count(*) filter (where f.rating = -1) as down
+          from f
+         group by f.d, f.feature) r), '[]'::jsonb),
+    'feedback_totals', coalesce((select jsonb_agg(r order by r.feature) from (
+        select f.feature,
+               count(*) filter (where f.rating = 1)  as up,
+               count(*) filter (where f.rating = -1) as down
+          from f
+         group by f.feature) r), '[]'::jsonb),
+    'canary', jsonb_build_object(
+      'configured', coalesce(v_cfg.canary_url is not null, false),
+      'last',       (select jsonb_build_object('ran_at', r.ran_at, 'ok', r.ok, 'failed', r.failed, 'results', r.results)
+                       from public.ai_canary_runs r order by r.ran_at desc limit 1),
+      'last_ok_at', (select max(r.ran_at) from public.ai_canary_runs r where r.ok),
+      'recent',     coalesce((select jsonb_agg(jsonb_build_object('ran_at', r.ran_at, 'ok', r.ok, 'failed', r.failed)
+                                               order by r.ran_at desc)
+                                from (select * from public.ai_canary_runs order by ran_at desc limit 14) r), '[]'::jsonb)),
+    'unsettled', (select jsonb_build_object('count', count(*), 'oldest_at', min(r.reserved_at))
+                    from public.coach_ai_reservation r
+                   where r.settled_at is null
+                     and r.reserved_at < now() - make_interval(mins => coalesce(v_cfg.unsettled_minutes, 30))),
+    'alerts', jsonb_build_object(
+      'tripped',            public.ai_health_alert_state(),
+      'last_sent',          coalesce(v_cfg.last_alert_at, '{}'::jsonb),
+      'admins_with_device', (select count(*) from public.app_admins a
+                              where exists (select 1 from public.push_tokens t
+                                             where t.user_id = a.user_id and t.disabled_at is null))),
+    'thresholds', jsonb_build_object(
+      'fail_rate',            v_cfg.fail_rate,
+      'fail_min_calls',       v_cfg.fail_min_calls,
+      'drain_streak',         v_cfg.drain_streak,
+      'unsettled_minutes',    v_cfg.unsettled_minutes,
+      'alert_cooldown_hours', v_cfg.alert_cooldown_hours,
+      'canary_min_gap_hours', v_cfg.canary_min_gap_hours)
+  ) into v_out;
+
+  return v_out;
+end;
+$$;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 9 · Grants — Supabase grants EXECUTE on a new function to anon and authenticated directly, so the new one is
+--     revoked from public AND anon, then granted to authenticated. Replaced functions keep their grants; restated.
 -- ══════════════════════════════════════════════════════════════════════════════
 
 revoke all on function public.coach_ai_credits() from public, anon;
@@ -583,6 +744,9 @@ grant execute on function public.coach_ai_reserve(text, text) to authenticated;
 
 revoke all on function public.coach_ai_settle(uuid, text, text, integer, integer, integer, integer, integer, boolean) from public, anon;
 grant execute on function public.coach_ai_settle(uuid, text, text, integer, integer, integer, integer, integer, boolean) to authenticated;
+
+revoke all on function public.admin_ai_health(integer, text) from public, anon;
+grant execute on function public.admin_ai_health(integer, text) to authenticated;
 
 commit;
 
@@ -659,6 +823,14 @@ begin
     raise exception '0272: coach_ai_settle is not 0272''s (the waiver on the ledger; a 0-credit refund moves no balance)';
   end if;
 
+  -- The AI health read: 0269's, counting the waived calls; still behind admin_guard().
+  v_fn := to_regprocedure('public.admin_ai_health(integer, text)');
+  select p.prosrc into v_src from pg_proc p where p.oid = v_fn and p.prosecdef;
+  if v_src is null or position('''waivers''' in v_src) = 0 or position('as floor_uses' in v_src) = 0
+     or position('perform public.admin_guard();' in v_src) = 0 or pg_get_function_result(v_fn) is distinct from 'jsonb' then
+    raise exception '0272: admin_ai_health is not 0272''s (the waived counts, admin_guard first, jsonb)';
+  end if;
+
   -- The chip's read.
   v_fn := to_regprocedure('public.coach_ai_credits()');
   if v_fn is null or not exists (select 1 from pg_proc p where p.oid = v_fn and p.prosecdef) then
@@ -669,7 +841,8 @@ begin
   foreach v_src in array array[
     'public.coach_ai_reserve(text, text)',
     'public.coach_ai_settle(uuid, text, text, integer, integer, integer, integer, integer, boolean)',
-    'public.coach_ai_credits()'
+    'public.coach_ai_credits()',
+    'public.admin_ai_health(integer, text)'
   ] loop
     v_fn := to_regprocedure(v_src);
     if has_function_privilege('anon', v_fn, 'EXECUTE') then
@@ -730,6 +903,8 @@ declare
   v_spent   integer;
   v_kept    integer;
   v_floor   integer;
+  v_h0      jsonb;
+  v_h1      jsonb;
 begin
   select * into v_cfg from public.coach_ai_config c where c.id;
   v_floor := v_cfg.floor_per_day;
@@ -831,6 +1006,7 @@ begin
 
       -- The operator, a clean slate: a full month, nothing recent to ride on, no floor used today.
       perform set_config('request.jwt.claims', json_build_object('sub', v_ops, 'role', 'authenticated')::text, true);
+      v_h0 := public.admin_ai_health(7, 'UTC');   -- row 21 counts what the rehearsal adds to it
       update public.coach_ai_reservation x set refunded = true, settled_at = coalesce(x.settled_at, now())
        where x.athlete_id = v_ops and x.reserved_at > now() - interval '2 days';
       insert into public.coach_ai_period (athlete_id, period, spent, allowance)
@@ -924,6 +1100,31 @@ begin
         'e', format('spent unchanged · used %s · the next chat goes through at 0', v_floor - 1),
         'a', format('%s · used %s · the next chat %s', case when v_kept = v_spent then 'spent unchanged' else format('spent %s → %s', v_spent, v_kept) end,
                     s.floor_used_today, case when t.allowed and t.credits_spent = 0 then 'goes through at 0' else 'REFUSED ' || t.reason end));
+
+      -- 21. The AI health page counts what rode free: the floor's delivered uses (the refunded one gave nothing),
+      --     the typed build's write, the photo's tidy pass — overall and per function.
+      v_h1 := public.admin_ai_health(7, 'UTC');
+      with h(k, j) as (values (0, v_h0), (1, v_h1)),
+      per as (select h.k, b.v ->> 'fn' as fn, coalesce((b.v ->> 'floor_uses')::integer, 0) as fu,
+                     coalesce((b.v ->> 'typed_build')::integer, 0) as tb, coalesce((b.v ->> 'photo_tidy')::integer, 0) as pt
+                from h, jsonb_array_elements(h.j -> 'by_fn') as b(v)),
+      tot as (select h.k, coalesce((h.j -> 'totals' -> 'waivers' ->> 'floor')::integer, 0) as fu,
+                     coalesce((h.j -> 'totals' -> 'waivers' ->> 'typed_build')::integer, 0) as tb,
+                     coalesce((h.j -> 'totals' -> 'waivers' ->> 'photo_tidy')::integer, 0) as pt
+                from h)
+      select format('floor +%s (coach-ask +%s · coach-interpret +%s · meal-photo-read +%s) · typed_build +%s (coach-author +%s) · photo_tidy +%s (workout-tidy +%s)',
+               (select sum(case when k = 1 then fu else -fu end) from tot),
+               coalesce((select sum(case when k = 1 then fu else -fu end) from per where per.fn = 'coach-ask'), 0),
+               coalesce((select sum(case when k = 1 then fu else -fu end) from per where per.fn = 'coach-interpret'), 0),
+               coalesce((select sum(case when k = 1 then fu else -fu end) from per where per.fn = 'meal-photo-read'), 0),
+               (select sum(case when k = 1 then tb else -tb end) from tot),
+               coalesce((select sum(case when k = 1 then tb else -tb end) from per where per.fn = 'coach-author'), 0),
+               (select sum(case when k = 1 then pt else -pt end) from tot),
+               coalesce((select sum(case when k = 1 then pt else -pt end) from per where per.fn = 'workout-tidy'), 0))
+        into v_txt;
+      v_rows := v_rows || jsonb_build_object('n', 21, 'c', 'AI health counts what rode free',
+        'e', 'floor +4 (coach-ask +2 · coach-interpret +1 · meal-photo-read +1) · typed_build +1 (coach-author +1) · photo_tidy +1 (workout-tidy +1)',
+        'a', v_txt);
 
       raise exception using errcode = 'P0001', message = 'r0272 rehearsal rolled back';
     exception when others then
