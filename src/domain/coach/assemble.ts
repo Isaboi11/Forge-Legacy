@@ -204,6 +204,12 @@ export interface Assembly {
    * there. This is the only place it survives, for a surface that wants to say "Monday lift, Tuesday run".
    */
   weekShape?: readonly ('run' | 'lift' | 'rest')[];
+  /**
+   * What a lift day placed into `weekShape` has to respect: what each running day asks of the legs, in run order
+   * (off the shape week, as the rulebook arranged it), and whether the seven days are the athlete's own order.
+   * A typed race block's written lifting days are placed against it (`placeWrittenLifts`, AI audit 11-16 B-D3).
+   */
+  racePlacing?: { demands: readonly RunDemand[]; asGiven: boolean };
 }
 
 export interface PinHeld {
@@ -1245,7 +1251,7 @@ function withUnplacedPins(res: AssembleResult, c: CoachConstraints, pool: readon
  */
 
 /** One day of the week beside a race: which rulebook fills it, or nothing. */
-type RaceSlot = 'run' | 'lift' | 'rest';
+export type RaceSlot = 'run' | 'lift' | 'rest';
 
 /** The week the athlete laid out themselves — a `days` week with a race date on it. */
 interface GivenOrder {
@@ -1424,6 +1430,65 @@ function raceWeekCost(slots: readonly RaceSlot[], demands: readonly RunDemand[],
   return total;
 }
 
+/** Every order of `0..n-1`, the written order first — so a tie keeps it. Above six, just the written order. */
+function ordersOf(n: number): number[][] {
+  const identity = Array.from({ length: n }, (_, i) => i);
+  if (n > 6) return [identity];
+  const out: number[][] = [];
+  const walk = (left: number[], taken: number[]): void => {
+    if (left.length === 0) {
+      out.push(taken);
+      return;
+    }
+    left.forEach((x, i) => walk([...left.slice(0, i), ...left.slice(i + 1)], [...taken, x]));
+  };
+  walk(identity, []);
+  return out;
+}
+
+/** What Holt says about an interference that stands — the same choice `assembleRaceAndLift` makes. */
+const clashLine = (clash: Interference | null, asGiven: boolean): string | null =>
+  !clash
+    ? null
+    : !asGiven && clash.rule.where === 'day_before' && clash.rule.of === 'long'
+      ? CONCERN.heavyLegsUnavoidable()
+      : clash.rule.say(clash.liftDay);
+
+/**
+ * ══ LIFT DAYS THE RULEBOOK DID NOT WRITE, PLACED THE WAY IT PLACES ITS OWN (AI audit 11-16, B-D3) ══
+ *
+ * A typed race block's lifting days are Holt's to write (`author-race.ts`), and they used to drop into the rulebook's
+ * lift slots by position — so a squat day he wrote first landed wherever the rulebook had put an upper day, the day
+ * after the long run included. Here every order of the written days is scored by the same `raceWeekCost` and
+ * `INTERFERENCE_RULES` on the rulebook's own week, and the best wins (the written order on a tie).
+ *
+ * ⚠ THE WEEK ITSELF IS NOT LAID OUT AGAIN. A program stores sessions, not rest days — `weekShape` is the only place
+ * a rest day exists, and nothing persists it — so a new layout that only moved a rest day would change nothing the
+ * athlete is handed while letting this claim the rule was kept. What cannot be placed clear of the long run is said
+ * instead, in the same words the rulebook path uses (`clashLine`).
+ *
+ * `order[j]` is the written day for the j-th lift slot of `shape`; `clash` is the one sentence still owed, if any.
+ */
+export function placeRaceLifts(opts: {
+  shape: readonly RaceSlot[];
+  demands: readonly RunDemand[];
+  loads: readonly LiftLoad[];
+  names: readonly string[];
+  asGiven: boolean;
+}): { order: number[]; clash: string | null } {
+  const shape = padWeek(opts.shape);
+  const k = shape.filter((s) => s === 'lift').length;
+  const m = opts.loads.length;
+  if (k === 0 || m === 0) return { order: [], clash: null };
+  const loadsOf = (order: readonly number[]) => order.map((i) => opts.loads[i]);
+  const best = ordersOf(m)
+    .map((p) => Array.from({ length: k }, (_, j) => p[j % m]))
+    .map((order) => ({ order, cost: raceWeekCost(shape, opts.demands, loadsOf(order)) }))
+    .reduce((a, b) => (b.cost < a.cost ? b : a));
+  const clash = firstInterference(shape, opts.demands, loadsOf(best.order), best.order.map((i) => opts.names[i] ?? ''));
+  return { order: best.order, clash: clashLine(clash, opts.asGiven) };
+}
+
 /**
  * The athlete's own week, made to fit the block that was actually built.
  *
@@ -1527,16 +1592,10 @@ function assembleRaceAndLift(
   const names = plan.variants.map((v) => v.name);
   const slots = given?.asGiven ? fitGiven(given.slots, runDays, liftDays) : arrangeRaceWeek({ demands, loads });
 
-  const clash = firstInterference(slots, demands, loads, names);
-  if (clash) {
-    /* The athlete's order is kept and named (CA-D12). Holt's own is the cheapest arrangement there was, so
-       the only thing left to say about the long run is that there was nowhere else to put it. */
-    concerns.push(
-      !given?.asGiven && clash.rule.where === 'day_before' && clash.rule.of === 'long'
-        ? CONCERN.heavyLegsUnavoidable()
-        : clash.rule.say(clash.liftDay),
-    );
-  }
+  /* The athlete's order is kept and named (CA-D12). Holt's own is the cheapest arrangement there was, so
+     the only thing left to say about the long run is that there was nowhere else to put it (`clashLine`). */
+  const clash = clashLine(firstInterference(slots, demands, loads, names), given?.asGiven === true);
+  if (clash) concerns.push(clash);
 
   const sessions = sessionsIn(slots);
   const notes: AssemblyNote[] = [];
@@ -1604,6 +1663,7 @@ function assembleRaceAndLift(
       chosen: plan.chosen,
       concerns: [...new Set(concerns)],
       weekShape: slots,
+      racePlacing: { demands, asGiven: given?.asGiven === true },
       ...(enduranceConcernOf(block, c) ? { concern: enduranceConcernOf(block, c) } : {}),
     },
   };
