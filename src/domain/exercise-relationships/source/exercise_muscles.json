@@ -457,31 +457,31 @@
   },
   {
     "exerciseId": "band-good-morning",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "band-good-morning",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "band-good-morning",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "band-good-morning",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "band-good-morning",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "band-good-morning",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -667,31 +667,31 @@
   },
   {
     "exerciseId": "band-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "band-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "band-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "band-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "band-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "band-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -1129,31 +1129,31 @@
   },
   {
     "exerciseId": "barbell-good-morning",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-good-morning",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "barbell-good-morning",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-good-morning",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "barbell-good-morning",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "barbell-good-morning",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -1519,31 +1519,31 @@
   },
   {
     "exerciseId": "barbell-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "barbell-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "barbell-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "barbell-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -1573,31 +1573,31 @@
   },
   {
     "exerciseId": "barbell-seated-good-morning",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-seated-good-morning",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "barbell-seated-good-morning",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-seated-good-morning",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "barbell-seated-good-morning",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "barbell-seated-good-morning",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -1705,31 +1705,31 @@
   },
   {
     "exerciseId": "barbell-stiff-leg-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "barbell-stiff-leg-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "barbell-stiff-leg-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "barbell-stiff-leg-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "barbell-stiff-leg-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "barbell-stiff-leg-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -1969,31 +1969,31 @@
   },
   {
     "exerciseId": "bodyweight-good-morning",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "bodyweight-good-morning",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "bodyweight-good-morning",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "bodyweight-good-morning",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "bodyweight-good-morning",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "bodyweight-good-morning",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -2533,31 +2533,31 @@
   },
   {
     "exerciseId": "cable-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "cable-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "cable-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "cable-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "cable-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "cable-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -3835,31 +3835,31 @@
   },
   {
     "exerciseId": "dumbbell-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "dumbbell-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "dumbbell-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "dumbbell-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "dumbbell-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -3949,31 +3949,31 @@
   },
   {
     "exerciseId": "dumbbell-stiff-leg-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "dumbbell-stiff-leg-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "dumbbell-stiff-leg-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "dumbbell-stiff-leg-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "dumbbell-stiff-leg-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "dumbbell-stiff-leg-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -4375,7 +4375,7 @@
   },
   {
     "exerciseId": "handstand-push-up",
-    "muscleId": "chest",
+    "muscleId": "front_deltoids",
     "role": "Primary",
     "displayOrder": 1
   },
@@ -4387,7 +4387,7 @@
   },
   {
     "exerciseId": "handstand-push-up",
-    "muscleId": "front_deltoids",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -4939,31 +4939,31 @@
   },
   {
     "exerciseId": "kettlebell-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "kettlebell-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "kettlebell-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "kettlebell-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "kettlebell-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "kettlebell-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -6007,7 +6007,7 @@
   },
   {
     "exerciseId": "pike-push-up",
-    "muscleId": "chest",
+    "muscleId": "front_deltoids",
     "role": "Primary",
     "displayOrder": 1
   },
@@ -6019,7 +6019,7 @@
   },
   {
     "exerciseId": "pike-push-up",
-    "muscleId": "front_deltoids",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 2
   },
@@ -6937,31 +6937,31 @@
   },
   {
     "exerciseId": "single-leg-dumbbell-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "single-leg-dumbbell-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "single-leg-dumbbell-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "single-leg-dumbbell-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "single-leg-dumbbell-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "single-leg-dumbbell-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -6991,31 +6991,31 @@
   },
   {
     "exerciseId": "single-leg-kettlebell-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "single-leg-kettlebell-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "single-leg-kettlebell-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "single-leg-kettlebell-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "single-leg-kettlebell-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "single-leg-kettlebell-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -7465,31 +7465,31 @@
   },
   {
     "exerciseId": "smith-machine-romanian-deadlift",
-    "muscleId": "glutes",
+    "muscleId": "hamstrings",
     "role": "Primary",
+    "displayOrder": 1
+  },
+  {
+    "exerciseId": "smith-machine-romanian-deadlift",
+    "muscleId": "glutes",
+    "role": "Secondary",
     "displayOrder": 1
   },
   {
     "exerciseId": "smith-machine-romanian-deadlift",
     "muscleId": "erector_spinae",
     "role": "Secondary",
-    "displayOrder": 1
+    "displayOrder": 2
   },
   {
     "exerciseId": "smith-machine-romanian-deadlift",
     "muscleId": "rectus_abdominis",
     "role": "Secondary",
-    "displayOrder": 2
-  },
-  {
-    "exerciseId": "smith-machine-romanian-deadlift",
-    "muscleId": "adductors",
-    "role": "Secondary",
     "displayOrder": 3
   },
   {
     "exerciseId": "smith-machine-romanian-deadlift",
-    "muscleId": "hamstrings",
+    "muscleId": "adductors",
     "role": "Secondary",
     "displayOrder": 4
   },
@@ -8185,7 +8185,7 @@
   },
   {
     "exerciseId": "wall-handstand-push-up",
-    "muscleId": "chest",
+    "muscleId": "front_deltoids",
     "role": "Primary",
     "displayOrder": 1
   },
@@ -8197,7 +8197,7 @@
   },
   {
     "exerciseId": "wall-handstand-push-up",
-    "muscleId": "front_deltoids",
+    "muscleId": "chest",
     "role": "Secondary",
     "displayOrder": 2
   },

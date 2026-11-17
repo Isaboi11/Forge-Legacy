@@ -33,6 +33,9 @@ export const suite = {
   promptSources: [
     { file: 'supabase/functions/coach-author/index.ts', exportName: 'SYSTEM' },
     { file: 'supabase/functions/coach-author/index.ts', exportName: 'MODEL' },
+    // The SYSTEM text inlines ${AUTHOR_CATALOGUE}, so the hash must read the catalogue itself — a primary-muscle
+    // fix (PO 2026-11-17) changes what the model is shown, and must stale these recordings.
+    { file: 'src/domain/coach/author-catalogue.ts', exportName: 'AUTHOR_CATALOGUE' },
     { file: 'src/domain/coach/author.ts', exportName: 'AUTHOR_SCHEMA' },
   ],
   model: 'claude-sonnet-5',
