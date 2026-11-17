@@ -1,4 +1,5 @@
-import { EncodingType, readAsStringAsync } from 'expo-file-system/legacy';
+import { cacheDirectory, deleteAsync, EncodingType, readAsStringAsync, writeAsStringAsync } from 'expo-file-system/legacy';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 
 import type { StoryDrawing } from '@/domain/share/story-card';
 import { reportError } from './diagnostics';
@@ -51,6 +52,33 @@ async function toDataUri(uri: string): Promise<string> {
   });
 }
 
+/** JPEG quality for the post picture — the browser's number for the same picture (`story-image.web.ts`). */
+const POST_PICTURE_JPEG = 0.9;
+
+/**
+ * ⚠ THE POST PICTURE UPLOADS AS A JPEG AT ITS OWN SIZE (11-17). It went up as the snapshot's PNG: a photo
+ * compresses about 10× worse as PNG, and the iPhone drew it at 3× and 16 bits a channel (`snapshotSize` in
+ * `story-card-host.tsx`), so a post photo reached 50 MB and never appeared in Da Bois. The re-encode is the
+ * same `expo-image-manipulator` every picked photo already goes through (`useMediaPicker`); the resize is a
+ * no-op when the snapshot already came back at size, and pins the size when it did not.
+ */
+async function toPostJpeg(pngBase64: string, width: number, height: number): Promise<string> {
+  if (!cacheDirectory) throw new Error('no cache directory');
+  const src = `${cacheDirectory}post-picture-${Date.now()}.png`;
+  let out: string | null = null;
+  try {
+    await writeAsStringAsync(src, pngBase64.replace(/\s+/g, ''), { encoding: EncodingType.Base64 });
+    const rendered = await ImageManipulator.manipulate(src).resize({ width, height }).renderAsync();
+    const saved = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: POST_PICTURE_JPEG, base64: true });
+    out = saved.uri;
+    if (!saved.base64) throw new Error('no JPEG data');
+    return saved.base64;
+  } finally {
+    await deleteAsync(src, { idempotent: true }).catch(() => undefined);
+    if (out) await deleteAsync(out, { idempotent: true }).catch(() => undefined);
+  }
+}
+
 /**
  * The picture as image data — the feed post's overlay (PO 2026-10-02). Same path as `exportStory` up to the
  * snapshot, then returned instead of handed off. Null whenever it could not be built WITH its photo: a
@@ -75,8 +103,13 @@ export async function renderStoryImage(drawing: StoryDrawing, photoUri: string |
       return fail('photo unreadable', e);
     }
   }
-  const base64 = await rasterizeStory(drawing, photo);
-  return base64 ? { base64, mime: 'image/png' } : fail('snapshot empty or timed out');
+  const png = await rasterizeStory(drawing, photo, { trueSize: true });
+  if (!png) return fail('snapshot empty or timed out');
+  try {
+    return { base64: await toPostJpeg(png, drawing.width, drawing.height), mime: 'image/jpeg' };
+  } catch (e) {
+    return fail('JPEG re-encode failed', e);
+  }
 }
 
 export async function exportStory(spec: StoryExportSpec): Promise<StoryExportResult> {

@@ -189,6 +189,12 @@ export const TYPED_STOP = [
   { text: 'how much caffeine is too much pre-workout' },
   { text: 'I’m 20 weeks pregnant, what should I change' },
   { text: 'chest pain on the treadmill' },
+  // PO 2026-11-17 narrowed two words (numbers ≠ numb; the band warm-up ≠ a dislocation) — the real ones still stop.
+  { text: 'my fingers go numb when I deadlift' },
+  { text: 'numbness down my arm after bench' },
+  { text: 'my shoulder dislocates sometimes when I press' },
+  { text: 'I dislocated my shoulder doing band dislocates' },
+  { text: 'I think I dislocated my finger' },
 ];
 
 /** The athlete typed it, and it must go through (`medicalRoute` is `clear`). */
@@ -207,4 +213,9 @@ export const TYPED_PASS = [
   { text: 'my knees cave on squats, what cue helps?' },
   { text: 'can you add more pull days?' },
   { text: 'How much protein should I eat?' },
+  // PO 2026-11-17: false alarms before Sprint 2 (the injury card answered these).
+  { text: 'what are my bench numbers', why: '"numbers" is not "numb"' },
+  { text: 'show me my squat numbers from last month' },
+  { text: 'add band shoulder dislocates to my warm-up', why: 'a catalogue warm-up (band-shoulder-dislocate)' },
+  { text: 'can I do PVC dislocates before overhead press?' },
 ];
