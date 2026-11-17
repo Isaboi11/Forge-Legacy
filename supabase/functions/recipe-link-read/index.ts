@@ -17,19 +17,65 @@
  * So it will only reach the public web:
  *   · the caller must be signed in AND have Nutrition (`has_nutrition_access`, through their own JWT);
  *   · `linkTarget` refuses anything but http(s) on the default port, IP literals, and local names;
- *   · redirects are followed BY HAND, at most 4, and every hop is checked by `linkTarget` again;
- *   · 8 s per request, 3 MB read at most, HTML only.
+ *   · ⚠ THE ADDRESS, NOT JUST THE NAME (AI audit 11-16, P-G7): before the first fetch and before EVERY redirect hop,
+ *     the name is resolved (A and AAAA, `Deno.resolveDns`) and refused if ANY address is private, reserved, loopback,
+ *     link-local, CGNAT, multicast, unspecified, IPv4-mapped/compatible IPv6, ULA… (`resolvedVerdict` /
+ *     `isBlockedAddress` in the domain module — pure and tested). A name that does not resolve is not fetched;
+ *   · redirects are followed BY HAND, at most 4, and every hop is checked by `linkTarget` and the resolver again;
+ *   · 8 s per request and 20 s for the whole run (inside the app's 30 s, contract §3), 3 MB read at most, HTML only.
+ *
+ * ⚠ IF THIS RUNTIME HAS NO `Deno.resolveDns` (the API missing, or denied by the platform — not a name that fails to
+ *   resolve), the hostname filter is the only check, as before, and the function logs that once per instance:
+ *   "[recipe-link-read] Deno.resolveDns unavailable". Check the function's logs after deploying.
+ * ⚠ Resolve-then-fetch leaves a DNS-rebinding window (a TTL-0 name that answers public to the check and private to the
+ *   fetch). What bounds it: the page must be HTML, only a schema.org Recipe block is read back (never the page), 3 MB,
+ *   8 s, 4 hops.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-import { MAX_PAGE_BYTES, linkTarget, recipeFromHtml } from '../../../src/domain/nutrition/recipe-text-read.ts';
+import { MAX_PAGE_BYTES, linkTarget, recipeFromHtml, resolvedVerdict } from '../../../src/domain/nutrition/recipe-text-read.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 const FETCH_MS = 8000;
+/** The whole run — every resolve and fetch — ends ≥ 10 s inside the app's 30 s (AI Sprint 1 contract §3). */
+const TOTAL_MS = 20_000;
+const DNS_MS = 3000;
 const MAX_HOPS = 4;
+
+type DnsRecord = 'A' | 'AAAA';
+type ResolveDns = (query: string, type: DnsRecord, options?: { signal?: AbortSignal }) => Promise<string[]>;
+let saidNoDns = false;
+
+/**
+ * Every address `host` resolves to, judged (P-G7). `unchecked` ONLY when the runtime has no resolver at all or the
+ * platform denies it — never because of the name — so no request can switch the check off for the next one.
+ */
+async function checkAddresses(host: string): Promise<'ok' | 'private' | 'unresolved' | 'unchecked'> {
+  const resolve = (Deno as unknown as { resolveDns?: ResolveDns }).resolveDns;
+  const unchecked = () => {
+    if (!saidNoDns) console.warn('[recipe-link-read] Deno.resolveDns unavailable — the hostname filter is the only SSRF check (P-G7)');
+    saidNoDns = true;
+    return 'unchecked' as const;
+  };
+  if (typeof resolve !== 'function') return unchecked();
+  const lookup = async (type: DnsRecord): Promise<string[] | 'denied'> => {
+    try {
+      return await resolve.call(Deno, host, type, { signal: AbortSignal.timeout(DNS_MS) });
+    } catch (e) {
+      const name = (e as { name?: unknown } | null)?.name;
+      // The API refused to run at all: a platform policy, the same for every name.
+      if (name === 'PermissionDenied' || name === 'NotSupported') return 'denied';
+      // No such record (NotFound), a timeout, a resolver error: nothing from this record type.
+      return [];
+    }
+  };
+  const [a, aaaa] = await Promise.all([lookup('A'), lookup('AAAA')]);
+  if (a === 'denied' && aaaa === 'denied') return unchecked();
+  return resolvedVerdict([...(a === 'denied' ? [] : a), ...(aaaa === 'denied' ? [] : aaaa)]);
+}
 /** A real browser's name. Several recipe sites answer an unknown agent with a bot page and no recipe. */
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 
@@ -42,16 +88,23 @@ const CORS = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } });
 
-/** The page's HTML, or why not. Redirects by hand so every hop is re-checked. */
+/** The page's HTML, or why not. Redirects by hand so every hop is re-checked — the name AND what it resolves to. */
 async function fetchPage(start: string): Promise<{ ok: true; html: string } | { ok: false; reason: 'unreachable' | 'bad_url' | 'social' }> {
+  const deadline = Date.now() + TOTAL_MS;
   let url = start;
   for (let hop = 0; hop <= MAX_HOPS; hop++) {
+    /* P-G7: the first URL and every hop. A private address is a bad link; a name with no address is not opened. */
+    const addresses = await checkAddresses(new URL(url).hostname);
+    if (addresses === 'private') return { ok: false, reason: 'bad_url' };
+    if (addresses === 'unresolved') return { ok: false, reason: 'unreachable' };
+    const left = deadline - Date.now();
+    if (left <= 0) return { ok: false, reason: 'unreachable' };
     let res: Response;
     try {
       res = await fetch(url, {
         redirect: 'manual',
         headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.9' },
-        signal: AbortSignal.timeout(FETCH_MS),
+        signal: AbortSignal.timeout(Math.min(FETCH_MS, left)),
       });
     } catch {
       return { ok: false, reason: 'unreachable' };
