@@ -140,7 +140,23 @@ export async function evaluateSuite(suite, { root, recordings = recordingsRoot(r
  * The live run. ⛔ Spends money. Refuses without a budget, and when the estimate is over it; stops when the
  * measured spend passes it. `record` writes the recordings the offline replay grades.
  */
-export async function runLive(suite, { root, apiKey, budget, record = false, recordings = recordingsRoot(root), log = console.log, now = () => new Date() }) {
+/** Worth one wait and a retry: rate limits, overload, a passing 5xx. Anything else (401 key, 400 credit) stops at once. */
+const RETRYABLE = /^http_(429|500|502|503|529)$/;
+
+/**
+ * The upstream failure inside a live answer, or null. `callAnthropic` returns `{ error: 'http_<status>' }`; a suite
+ * that runs the app's own path (import-corpus) returns the function's `upstream_error` body instead.
+ */
+export function liveError(out) {
+  const r = out?.reply;
+  if (r && typeof r.error === 'string' && /^http_\d{3}$/.test(r.error)) return r.error;
+  if (r?.bodies && typeof r.bodies === 'object') {
+    for (const [fn, a] of Object.entries(r.bodies)) if (a?.body?.reason === 'upstream_error') return `${fn}: upstream_error`;
+  }
+  return null;
+}
+
+export async function runLive(suite, { root, apiKey, budget, record = false, recordings = recordingsRoot(root), log = console.log, now = () => new Date(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   const cases = await suite.cases();
   const estimate = Number(suite.estimateUsd(cases)) || 0;
   log(`${suite.name}: ${cases.length} case(s), estimated ${usd(estimate)} on ${suite.model}`);
@@ -150,25 +166,40 @@ export async function runLive(suite, { root, apiKey, budget, record = false, rec
   const hash = promptHash(suite, root);
   let spent = 0;
   let done = 0;
+  let stoppedOn = null;
   for (const c of cases) {
     if (spent >= Number(budget)) {
       log(`stopped: measured spend ${usd(spent)} reached the budget after ${done} case(s)`);
       break;
     }
-    const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), 120_000);
     let out;
-    try {
-      out = await suite.callLive(c, { apiKey, signal: ctl.signal });
-    } finally {
-      clearTimeout(t);
+    for (let tries = 0; ; tries++) {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 120_000);
+      try {
+        out = await suite.callLive(c, { apiKey, signal: ctl.signal });
+      } finally {
+        clearTimeout(t);
+      }
+      const busy = liveError(out);
+      if (!busy || !RETRYABLE.test(busy) || tries >= 2) break;
+      await sleep(15_000 * (tries + 1));
     }
     spent += costOf(out?.usage, suite.model);
+    // ⛔ An API failure (out of credit, a bad key, still busy after two waits) STOPS the run and is never recorded:
+    // one key serves every AI feature, so a run must not keep knocking on a drained account, and an error saved as a
+    // "recording" would later grade as the model's answer (Sprint 2 integrator, 11-17).
+    const err = liveError(out);
+    if (err) {
+      stoppedOn = err;
+      log(`stopped: ${err} on case ${c.id} after ${done} case(s) — nothing recorded for it`);
+      break;
+    }
     done++;
     if (record) writeRecording(recordings, { suite: suite.name, hash, model: suite.model, caseId: c.id, reply: out?.reply ?? null, usage: out?.usage ?? null, now: now() });
   }
   log(`${suite.name}: ${done} live call(s), measured ${usd(spent)}${record ? `, recorded under ${hash.slice(0, 12)}` : ''}`);
-  return { done, spent, hash };
+  return { done, spent, hash, stoppedOn };
 }
 
 /** One line per result, for people. */
