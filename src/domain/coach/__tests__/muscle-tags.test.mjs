@@ -90,8 +90,39 @@ test('every correction is on the record in SOURCE-CORRECTIONS.csv', () => {
   }
 });
 
-test('the fixes touched no primary muscle — the list coach-author prints into its SYSTEM prompt', () => {
-  // An RDL stays glutes-primary on purpose (see `coherence.ts`): a primary change would change the prompt.
-  assert.deepEqual(row('barbell-romanian-deadlift').primaryMuscleIds, ['glutes']);
+/* ── the primary fixes the PO approved (2026-11-17) — they change coach-author's prompt on purpose ── */
+
+const STRAIGHT_LEG_HINGES = [
+  'band-good-morning', 'barbell-good-morning', 'barbell-seated-good-morning', 'bodyweight-good-morning',
+  'band-romanian-deadlift', 'barbell-romanian-deadlift', 'cable-romanian-deadlift', 'dumbbell-romanian-deadlift',
+  'kettlebell-romanian-deadlift', 'single-leg-dumbbell-romanian-deadlift', 'single-leg-kettlebell-romanian-deadlift',
+  'smith-machine-romanian-deadlift', 'barbell-stiff-leg-deadlift', 'dumbbell-stiff-leg-deadlift',
+];
+
+test('every Romanian, stiff-leg and good-morning row is hamstrings-primary, glutes secondary — and a glute-primary one is caught', () => {
+  for (const key of STRAIGHT_LEG_HINGES) {
+    assert.deepEqual(row(key).primaryMuscleIds, ['hamstrings'], key);
+    assert.ok(row(key).muscleIds.includes('glutes'), `${key} still credits the glutes`);
+  }
+  // A hip-dominant pull from the floor keeps the glutes: the deadlift and the hip thrust are not this family.
+  assert.deepEqual(row('barbell-deadlift').primaryMuscleIds, ['glutes']);
+  assert.deepEqual(row('barbell-hip-thrust').primaryMuscleIds, ['glutes']);
+  const old = { ...row('barbell-romanian-deadlift'), primaryMuscleIds: ['glutes'] };
+  assert.match(catalogueTagProblems(old).join(' '), /hamstrings is not its primary mover/);
+});
+
+test('a head-down push-up is an overhead press and a triceps dip is not a chest slot — and the old filing is caught', () => {
+  assert.equal(row('pike-push-up').pattern, 'Vertical Push');
+  assert.deepEqual(row('pike-push-up').primaryMuscleIds, ['front_deltoids']);
+  assert.equal(row('machine-triceps-dip').pattern, 'Elbow Extension');
+  assert.match(
+    catalogueTagProblems({ ...row('pike-push-up'), pattern: 'Horizontal Push', primaryMuscleIds: ['chest'] }).join(' '),
+    /presses overhead — it is filed under Horizontal Push/,
+  );
+  assert.match(
+    catalogueTagProblems({ ...row('machine-triceps-dip'), pattern: 'Horizontal Push' }).join(' '),
+    /must train chest first/,
+  );
+  // Every other horizontal push still trains the chest first.
   assert.deepEqual(row('barbell-spoto-press').primaryMuscleIds, ['chest']);
 });
