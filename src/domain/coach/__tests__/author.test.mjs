@@ -31,7 +31,7 @@ import {
   sanitizeAuthored,
 } from '../author.ts';
 import { AUTHOR_CATALOGUE, AUTHOR_CATALOGUE_COUNT } from '../author-catalogue.ts';
-import { authoredLine, authorFacts, droppedLine, validateAuthored } from '../author-validate.ts';
+import { authoredLine, authorFacts, droppedLine, SESSION_SET_ENVELOPE, validateAuthored, volumeLine } from '../author-validate.ts';
 import { writtenDayCardFor } from '../chat-core.ts';
 import { authorCatalogueSource, OUT } from '../../../../scripts/build-author-catalogue.mjs';
 import { buildCoachAuthorDeploy, DEPLOY_COPY } from '../../../../scripts/build-coach-author-deploy.mjs';
@@ -266,7 +266,9 @@ test('numbers out of range are replaced by the plain default, a hold is held, a 
   );
   const [bench, plank, side, push] = v.days[0].main;
   assert.equal(v.days[0].main.length, 4, 'the second bench press is the same movement');
-  assert.deepEqual([bench.sets, bench.reps], [3, 10]);
+  // Too many sets is held to the prompt's six and said (B-D9) — it used to become three, silently.
+  assert.deepEqual([bench.sets, bench.reps], [6, 10]);
+  assert.deepEqual(v.capped, ['Barbell Bench Press']);
   assert.deepEqual([plank.sets, plank.durationSec, plank.reps], [3, 45, undefined]);
   assert.equal(side.durationSec, 30);
   assert.deepEqual([push.sets, push.reps], [3, 10]);
@@ -279,7 +281,53 @@ test('⛔ a cue or a line of his that reads as medical is cut', () => {
   });
   const v = validateAuthored(p, PO, POOL, canDoExercise);
   assert.equal('coachNote' in v.days[0].main[0], false);
-  assert.equal(authoredLine(p, v), "Here's what I wrote for that. What I couldn't do: no landmine press.");
+  // (11 sets — under every lifting band, so that is said too, B-D9.)
+  assert.equal(
+    authoredLine(p, v),
+    "Here's what I wrote for that. This one is 11 sets, light for a full session. That's fine if short is what you wanted. What I couldn't do: no landmine press.",
+  );
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B-D9 (AI audit 11-16) — HOW MUCH HE WROTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('B-D9: the session band is PAS-D11 across the lifting categories, read from the table', () => {
+  assert.deepEqual(SESSION_SET_ENVELOPE, { min: 12, max: 30 });
+});
+
+test('B-D9: "10 sets of squats" is held to six, and he says so', () => {
+  const p = plan([ex('barbell-back-squat', 10, 10), ex('barbell-romanian-deadlift', 3, 8), ex('walking-lunge', 3, 12), ex('barbell-calf-raise', 3, 15)]);
+  const v = validateAuthored(p, PO, POOL, canDoExercise);
+  assert.equal(v.days[0].main[0].sets, 6);
+  assert.deepEqual(v.capped, ['Barbell Back Squat']);
+  assert.equal(volumeLine(v), 'I capped Barbell Back Squat at 6 sets.');
+  assert.match(authoredLine(p, v), /I capped Barbell Back Squat at 6 sets\./);
+});
+
+test('B-D9: a session past every lifting band is said, never trimmed — and one inside it says nothing', () => {
+  const six = ['barbell-bench-press', 'dumbbell-bench-press', 'barbell-incline-bench-press', 'cable-crossover', 'push-up', 'cable-triceps-pushdown'];
+  const big = validateAuthored(plan(six.map((k) => ex(k, 6, 10))), PO, POOL, canDoExercise);
+  assert.equal(big.days[0].main.reduce((n, e) => n + e.sets, 0), 36, 'what he wrote stands');
+  assert.deepEqual(big.offBand, [{ day: 'Session', sets: 36, over: true }]);
+  assert.equal(volumeLine(big), 'This one comes to 36 sets, more than one session should hold. If it runs long, drop the last movement.');
+  const fine = validateAuthored(plan(six.map((k) => ex(k, 4, 10))), PO, POOL, canDoExercise);
+  assert.equal(fine.offBand, undefined);
+  assert.equal(volumeLine(fine), null);
+});
+
+test('B-D9: a week names the days that sit outside it; a stretch routine has no set band', () => {
+  const day = (name, sets) => ({ name, exercises: ['barbell-bench-press', 'pull-up', 'barbell-overhead-press', 'barbell-bent-over-row', 'barbell-biceps-curl', 'cable-triceps-pushdown'].map((k) => ex(k, sets, 10)) });
+  const week = validateAuthored({ say: 'x', title: 'Week', days: [day('Upper A', 6), day('Upper B', 6), day('Upper C', 3)], unmet: [] }, PO, POOL, canDoExercise);
+  assert.equal(
+    volumeLine(week),
+    'Upper A and Upper B each come to more than 30 sets, more than one session should hold. If they run long, drop the last movement.',
+  );
+  const holds = ['90-90-hip-stretch', 'child-s-pose', 'couch-stretch', 'side-plank'];
+  const stretch = validateAuthored(plan(holds.map((k) => ex(k, 1, 0, { seconds: 30 }))), PO, POOL, canDoExercise);
+  assert.equal(stretch.days[0].main.length, 4);
+  assert.ok(stretch.days[0].main.every((e) => e.durationSec === 30), 'every one of them is a hold');
+  assert.equal(stretch.offBand, undefined, 'four sets of holds is a stretch routine, not a light lifting session');
 });
 
 test('a week: each day is checked, lettered and named', () => {
