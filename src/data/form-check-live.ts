@@ -295,6 +295,8 @@ export async function formCheck(req: FormRequest, signal?: AbortSignal): Promise
   })();
   /* A code-guard stop is the guard working, not a failure. */
   if (r.kind === 'ok' || r.kind === 'stopped') return r;
+  /* So are the age floor and the output scan (Sprint 2): not reported, and their refund rides on the result. */
+  if (r.kind === 'held' || r.kind === 'under_18' || r.kind === 'age_unknown') return refundedResult(r, a);
   reportAiCall(a, r.kind);
   return refundedResult(r, a);
 }

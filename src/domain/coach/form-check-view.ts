@@ -14,16 +14,20 @@
 
 import {
   capKnown,
+  FORM_AGE_UNKNOWN,
   FORM_CLIP_MS,
   FORM_CLIP_SECONDS,
   FORM_FRAMES_DEFAULT,
   FORM_FRAMES_MAX,
   FORM_FRAMES_MIN,
   FORM_FRAMES_PER_SECOND,
+  FORM_UNDER_18,
+  formReadTexts,
   sanitizeFormRead,
   type FormRead,
   type FormView,
 } from './form-check.ts';
+import { scanTexts } from '../ai/output-scan.ts';
 
 /** A coaching record, as much of it as a form read needs. Field names are the library's own. */
 export interface CoachingNotes {
@@ -171,6 +175,44 @@ export const FORM_MEDICAL_STOP =
   'Pain is outside what a form check can look at. Have a doctor or physiotherapist check it before you load this lift again.';
 
 /**
+ * The read was HELD BACK (Sprint 2, CH-2): the output scanner stopped what Holt wrote — the function's (`held: true`)
+ * or this app's own re-check. Not the pain line above: the athlete said nothing about pain; the read strayed. It says
+ * what happened and what to do, and the screen adds "Not charged." when the server refunded.
+ */
+export const FORM_HELD =
+  "I've held that read back — it strayed outside technique. Film the set again and I'll keep it to the lift.";
+
+/**
+ * 18+ (Sprint 2, FC-1). Form check reads a video of a person, so it is for adults (Plan §1, legal caution). The
+ * birth year is asked for right here — it is the same `profiles.birth_year` Nutrition → Targets keeps ("used for
+ * your age, never shown on your profile"), and that screen hides the field until sex and a weigh-in are set, so
+ * pointing there would not be true for most people.
+ */
+export const FORM_UNDER_18_LINE = "Form check is for athletes 18 and over, so I won't read this one.";
+export const FORM_AGE_UNKNOWN_LINE = "Form check is for athletes 18 and over. Add your birth year and I'll read your set.";
+export const FORM_BIRTH_YEAR_HELP = 'Used for your age. Never shown on your profile.';
+
+/**
+ * The birth year as typed, narrowed: four digits, a year a living person was born in. Null for anything else.
+ * `nowYear` is injected for tests.
+ */
+export function formBirthYear(text: string, nowYear: number = new Date().getFullYear()): number | null {
+  const t = (text ?? '').trim();
+  if (!/^\d{4}$/.test(t)) return null;
+  const y = Number(t);
+  return y >= nowYear - 110 && y <= nowYear ? y : null;
+}
+
+/**
+ * Who this birth year is, for form check, by the SERVER's rule (`coach_ai_reserve`: this year minus the birth year;
+ * the year you turn 18 still counts as under 18 — `isUnderAge`): 'adult', 'minor', or 'unknown' with no year.
+ */
+export function formAgeGate(birthYear: number | null | undefined, nowYear: number = new Date().getFullYear()): 'adult' | 'minor' | 'unknown' {
+  if (typeof birthYear !== 'number' || !Number.isFinite(birthYear)) return 'unknown';
+  return nowYear - birthYear <= 18 ? 'minor' : 'adult';
+}
+
+/**
  * The closing lines Holt falls back on when the model's `encourage` was missing or the guard dropped it.
  *
  * ⚠ SCRIPTED, FIXED, AND HELD TO THE SAME GUARD BY A TEST — this is not the guard writing a sentence (it
@@ -289,6 +331,14 @@ export type FormCheckResult =
   | { kind: 'out_of_credits'; remaining: number; allowance: number }
   /** No Premium AI on this account — 0203's gate answers with an allowance of 0, which is not a used-up month. */
   | { kind: 'not_entitled' }
+  /**
+   * 18+ (Sprint 2, FC-1): the server's age says under 18 (`under_18`), or there is no birth year to tell
+   * (`age_unknown` — fail closed). Refused before the model and refunded. Not a failure of the app or the clip.
+   */
+  | { kind: 'under_18' }
+  | { kind: 'age_unknown' }
+  /** The output scanner held the read back (Sprint 2, CH-2) — the server's or this app's. Refunded on the server. */
+  | { kind: 'held' }
   /** This build cannot pull frames out of a video (see `form-check-live.ts`). Not a failure of the clip. */
   | { kind: 'unavailable_here' }
   /** We reached the server and IT failed — no key, meter down, model error. Not the athlete's connection. */
@@ -310,6 +360,9 @@ export function formResultFrom(body: unknown, lift?: string, frameCount?: number
     refunded?: boolean;
   };
 
+  // The output scan stopped the read AFTER the model (Sprint 2): the function marks it `held`. An app before Sprint 2
+  // reads the same reply as `medical_stop` and shows its pain line — safe, if not the right words.
+  if (d.route === 'medical_stop' && (body as { held?: unknown }).held === true) return { kind: 'held' };
   if (d.route === 'crisis' || d.route === 'urgent' || d.route === 'care' || d.route === 'medical_stop') {
     return { kind: 'stopped', route: d.route };
   }
@@ -320,10 +373,17 @@ export function formResultFrom(body: unknown, lift?: string, frameCount?: number
     // build. Same reason `coach-ask` re-trims history the app already trimmed: a peer is not a boundary.
     const read = sanitizeFormRead(d.read, lift, frameCount);
     if (!read) return { kind: 'unreadable', charged: true };
+    // ⛔ And the output scan (Sprint 2, CH-2), on this end too: the web and build 11 talk to a function deployed
+    // before it scanned (v23) until the deploy. Here it is the shared clinical list and the rest of the scanner.
+    if (scanTexts(formReadTexts(read)).hit) return { kind: 'held' };
     return { kind: 'ok', read, remaining: typeof d.remaining === 'number' ? d.remaining : null };
   }
 
   switch (d.reason) {
+    case FORM_UNDER_18:
+      return { kind: 'under_18' };
+    case FORM_AGE_UNKNOWN:
+      return { kind: 'age_unknown' };
     case 'unreadable':
       return { kind: 'unreadable', charged: d.charged !== false && d.refunded !== true };
     case 'bad_request':
