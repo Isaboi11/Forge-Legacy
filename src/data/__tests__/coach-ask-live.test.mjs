@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 /*
- * `askHolt` against a FAKE coach-ask stream (AI audit 2026-11-16, C-D2 · C-D4). The request and the stream are
+ * `streamCoachAsk` against a FAKE coach-ask stream (AI audit 2026-11-16, C-D2 · C-D4). The request and the stream are
  * faked through `expo/fetch`; the clock, the reader and the endings are the real ones. Nothing here reaches a
  * deployed function or a model.
  */
@@ -32,7 +32,7 @@ const reports = () => globalThis.__aiReports ?? [];
 const { supabase, db, ATHLETE } = await import('@/lib/supabase');
 const { CONSENT_POLICY_VERSION } = await import('@/domain/consent/consent');
 const { refreshConsents } = await import('@/lib/consent');
-const { askHolt } = await import('@/data/coach-ask-live');
+const { streamCoachAsk } = await import('@/data/coach-ask-live');
 
 const enc = new TextEncoder();
 const line = (o) => enc.encode(`data: ${JSON.stringify(o)}\n\n`);
@@ -70,7 +70,7 @@ function streamWith(chunks, { gap = 0, hang = false } = {}) {
 /* A short clock only where a test WANTS it to run out; everywhere else a long one, so a busy machine cannot flake it. */
 const FAST = { firstByteMs: 60, idleMs: 60 };
 const ask = (opts = {}, onText = () => {}) =>
-  askHolt('how should I warm up for squats?', [], CONTEXT, onText, { firstByteMs: 5000, idleMs: 5000, ...opts });
+  streamCoachAsk('how should I warm up for squats?', [], CONTEXT, onText, { firstByteMs: 5000, idleMs: 5000, ...opts });
 
 test.beforeEach(async () => {
   globalThis.__aiReports = [];
@@ -126,7 +126,7 @@ test('⚠ words, then silence: the idle clock keeps the words as a cut-off answe
 
 test('a slow but steady reply is never cut by the idle clock', async () => {
   streamWith([line({ t: 'a' }), line({ t: 'b' }), line({ t: 'c' }), line({ done: true, usage: {}, remaining: 1, stop: 'end_turn' })], { gap: 20 });
-  const r = await askHolt('q?', [], CONTEXT, () => {}, { firstByteMs: 200, idleMs: 200 });
+  const r = await streamCoachAsk('q?', [], CONTEXT, () => {}, { firstByteMs: 200, idleMs: 200 });
   assert.equal(r.kind, 'answer');
   assert.equal(r.complete, true);
   assert.equal(r.text, 'abc');
@@ -135,7 +135,7 @@ test('a slow but steady reply is never cut by the idle clock', async () => {
 test('⚠ the sheet closing mid-reply aborts the request and resolves quietly (aborted, not an outage to show)', async () => {
   const seen = streamWith([line({ t: 'Your squat ' })], { hang: true });
   const sheet = new AbortController();
-  const pending = askHolt('q?', [], CONTEXT, () => {}, { firstByteMs: 2000, idleMs: 2000, signal: sheet.signal });
+  const pending = streamCoachAsk('q?', [], CONTEXT, () => {}, { firstByteMs: 2000, idleMs: 2000, signal: sheet.signal });
   setTimeout(() => sheet.abort(), 30);
   const r = await pending;
   assert.deepEqual(r, { kind: 'offline', detail: 'aborted', timedOut: false, aborted: true });
@@ -178,7 +178,7 @@ test('a request that fails outright is an outage that never started — not a ti
 test('the code guard and consent still come first — no request for a stopped line', async () => {
   const seen = streamWith([]);
   /* "I TORE MY ACL" is `acute` in medical-routing's own tests — a stop, whatever the clock. */
-  const r = await askHolt('I TORE MY ACL', [], CONTEXT, () => {});
+  const r = await streamCoachAsk('I TORE MY ACL', [], CONTEXT, () => {});
   assert.equal(r.kind, 'medical');
   assert.equal(seen.calls, 0);
   assert.deepEqual(reports(), [], 'a medical stop is not a failure');
@@ -297,7 +297,7 @@ test('every other ending is reported once, with our reason — never the platfor
   globalThis.__aiReports = [];
   streamWith([line({ t: 'Your ' })], { hang: true });
   const sheet = new AbortController();
-  const p = askHolt('q?', [], CONTEXT, () => {}, { firstByteMs: 2000, idleMs: 2000, signal: sheet.signal });
+  const p = streamCoachAsk('q?', [], CONTEXT, () => {}, { firstByteMs: 2000, idleMs: 2000, signal: sheet.signal });
   setTimeout(() => sheet.abort(), 30);
   await p;
   assert.equal(reports().length, 1);
@@ -306,7 +306,7 @@ test('every other ending is reported once, with our reason — never the platfor
 
 test('the athlete’s "Not now" and a medical stop are not failures — nothing reported', async () => {
   const seen = streamWith([]);
-  await askHolt('I want to hurt myself', [], CONTEXT, () => {});
+  await streamCoachAsk('I want to hurt myself', [], CONTEXT, () => {});
   assert.equal(seen.calls, 0);
   assert.deepEqual(reports(), []);
 });

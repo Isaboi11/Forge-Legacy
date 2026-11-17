@@ -152,8 +152,11 @@ test('the app calls the function with expo/fetch and the athlete\'s JWT, and nev
 
 test('CA-D2 notes and the training summary reach the model ONLY through the user turn', () => {
   const WIRE = read('src/domain/coach/ask-wire.ts');
-  // The function never touches the notes or the summary itself — only `cleanContext` → `askUserTurn`.
-  assert.ok(!/context\.notes|context\.training|body\.context\.notes/.test(SRC), 'the function must not route notes anywhere else');
+  // The function never routes the notes or the summary anywhere else — only `cleanContext` → `askUserTurn`. Its one
+  // touch of the notes is the C-D7 filter (Sprint 2), which can only DROP a note: the guard coach-interpret runs.
+  assert.ok(!/context\.training|body\.context\.notes/.test(SRC), 'the function must not route notes anywhere else');
+  assert.equal((SRC.match(/context\.notes/g) ?? []).length, 2, 'one touch: the filter');
+  assert.match(SRC, /context\.notes = \(context\.notes \?\? \[\]\)\.filter\(\(n\) => !stops\(n\) && !scanReply\(n\)\.hit\);/);
   const system = SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;', SRC.indexOf('const SYSTEM = `')));
   assert.ok(!system.includes('${'), 'nothing per-athlete is interpolated into the cached block');
   // …and the wire puts them in the user turn, with the notes labelled as what Holt knows.

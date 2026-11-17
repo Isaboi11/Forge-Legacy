@@ -19,6 +19,7 @@ import {
   askFailureReport,
   readAskStream,
   settleAskRead,
+  withOutputScan,
   type AskRead,
   type AskSettled,
 } from '@/domain/coach/ask-stream';
@@ -54,6 +55,15 @@ export type { AskContext, AskTurn } from '@/domain/coach/ask-wire';
  * Each ask that does not end in a whole answer is reported once, through `reportAiFailure` (`client_errors` +
  * Sentry): the kind, our reason code, the HTTP status, the latency from the request going out, and whether the
  * function gave the credit back (`askFailureReport` in `domain/coach/ask-stream.ts` decides what counts).
+ *
+ * ══ ⛔ AND WHAT HOLT SAID IS CHECKED BEFORE IT STAYS (AI Road to 10 Sprint 2, CH-2) ══
+ *
+ * The function's output scanner can take a finished reply back (`retract`); this end runs the same scanner on the
+ * settled answer as well (`withOutputScan`), so a phone with this code is covered while the function it talks to is
+ * still an older one. Either way the result is `retracted` and the sheet shows the medical stop card.
+ *
+ * Named `streamCoachAsk` (was `askHolt`, AI audit C-I7): "ask Holt" also described the sheet's coach-author call,
+ * which once shadowed this import. The name now says which function it streams.
  */
 
 /** Something Holt asked the app to do, still in the model's words — the sheet narrows and confirms it. */
@@ -138,7 +148,7 @@ function fromRoute(data: unknown): AskResult {
  * `buildAskContext` (domain/coach/ask-context.ts). `onText` receives the ACCUMULATED reply each time more
  * arrives — render it as-is.
  */
-export async function askHolt(
+export async function streamCoachAsk(
   question: string,
   history: readonly AskTurn[],
   context: AskContext,
@@ -224,12 +234,13 @@ async function askOnce(
     }
     if (!res.body) return offline('no_body');
 
-    // The words, the actions and how it ended — read against the clock (`domain/coach/ask-stream.ts`).
+    // The words, the actions and how it ended — read against the clock (`domain/coach/ask-stream.ts`) — then the
+    // output scan on this end too (Sprint 2): an answer it stops is `retracted`, whatever the server said.
     seen.read = await readAskStream(res.body.getReader(), onText, clock, options.onStatus);
-    return settleAskRead(seen.read, clock.why());
+    return withOutputScan(settleAskRead(seen.read, clock.why()), q);
   } catch (e) {
-    // Before the stream (the session, the request itself): nothing was said yet.
-    return settleAskRead(seen.read ?? brokeRead(String((e as Error)?.message ?? e)), clock.why());
+    // Before the stream (the session, the request itself): nothing was said yet — unless the read had begun.
+    return withOutputScan(settleAskRead(seen.read ?? brokeRead(String((e as Error)?.message ?? e)), clock.why()), q);
   } finally {
     clock.done();
   }

@@ -26,7 +26,11 @@
  *      and an explicit own-id filter), hands back the result, and streams the next round — at most
  *      `ASK_TOOL_ROUNDS`, then he must answer with what he has. CA-D10 / CA-D11 `training_history`.
  *      A 429 / 529 / 5xx or a network error is retried ONCE, only while nothing has reached the app (C-I2).
- *   3. SETTLE (`coach_ai_settle`, all four token counts, the outcome, the latency) BEFORE the last line —
+ *   3. THE OUTPUT SCAN (Sprint 2, CH-2): everything that reached the app is read by `scanReply` — a dose, a
+ *      reassurance about a symptom, a diagnosis, a clinical word. A hit takes the turn back (`retract`) and settles
+ *      it `guarded`, refunded. The notes in the user turn (C-D7) and the free text a lookup returns (C-I5) get the
+ *      guard too, and a person's words go to the model quoted, as data (C-I4).
+ *   4. SETTLE (`coach_ai_settle`, all four token counts, the outcome, the latency) BEFORE the last line —
  *      refunded on every failure that is ours or the model's, never on the athlete's own cancel
  *      (`ask-turn.ts` `askSettlement`; Sprint 1 contract §1).
  *
@@ -46,6 +50,10 @@
  *                                         data: {"action":{"name":"...","input":{...}}}  something for the
  *                                               APP to do (a program change to confirm, the "Find one
  *                                               online" offer) — never performed here (Amendment-002)
+ *                                         data: {"retract":{"card":"medical_stop"}}  the output scan stopped
+ *                                               the reply: take the words back, show the stop card. Always
+ *                                               followed by a `done` with "stop":"refusal" and "refunded":true
+ *                                               (an app before Sprint 2 takes the words back on the refusal)
  *   mode 'summarize' (chat ended):        JSON  { ok, saved, reason?, refunded? } — a 2–3 line summary written to
  *                                               holt_chat_summaries (0218) as the athlete, on Haiku, 0 credits
  *                                               but behind the Premium AI gate. Nothing streams.
@@ -72,12 +80,16 @@ import {
   MINOR_TOPIC,
   withoutStoppedTurns,
 } from '../../../src/domain/coach/medical-routing.ts';
+// ⚠ WHAT HOLT SAID, CHECKED BEFORE THE ATHLETE KEEPS IT (Sprint 2, CH-2) — the same scanner the app runs.
+import { scanReply, scanStringsOf, scanTexts } from '../../../src/domain/ai/output-scan.ts';
 // ⚠ ONE SOURCE FOR THE WIRE — the app parses this function's stream with the same module.
 import {
   ASK_HISTORY_MAX,
   ASK_KEEPALIVE,
   ASK_OUTPUT_CAP,
   ASK_QUESTION_CHARS,
+  ASK_RETRACT_STOP,
+  askRetractEvent,
   askStatusFor,
   askUserTurn,
   cleanContext,
@@ -388,7 +400,7 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
     const text = ((out?.content ?? []) as { type: string; text?: string }[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
     // Stricter than a question's guard: a stored memory keeps nothing about the body at all — not even the
     // "it hurts, swap it" a live question is allowed (medical-routing.ts), so `mentionsDiscomfort` too.
-    const summary = cleanSummary(text, (s) => medicalRoute(s) !== 'clear' || mentionsDiscomfort(s));
+    const summary = cleanSummary(text, (s) => medicalRoute(s) !== 'clear' || mentionsDiscomfort(s) || scanReply(s).hit);
     if (!summary) return json({ ok: true, saved: false, reason: 'nothing_to_keep' });
     const { error: insertError } = await supabase.from('holt_chat_summaries').insert({ summary });
     return json({ ok: true, saved: !insertError });
@@ -520,6 +532,13 @@ Deno.serve(async (req) => {
   const stops = (t: string) => guardRoute(t, minor) !== null;
   const history = withoutStoppedTurns(trimHistory(body.history, ASK_HISTORY_MAX * 4), stops).slice(-ASK_HISTORY_MAX);
   const context = cleanContext(body.context);
+  // ⛔ C-D7 (Sprint 2): Holt's notes get the question's guard too — the filter coach-interpret has always run on them —
+  // and the output scan, because a note is a person's words ("takes 2 advil before long runs" is an amount whoever
+  // typed it). Notes are hand-editable in What Holt Remembers, so the server decides, not the app.
+  context.notes = (context.notes ?? []).filter((n) => !stops(n) && !scanReply(n).hit);
+  // C-I5: free text a lookup hands the model — workout and exercise notes, saved chat summaries — gets the summary's
+  // stricter line: nothing the guard stops, nothing about discomfort, nothing the scanner stops.
+  const keepText = (t: string) => !stops(t) && !mentionsDiscomfort(t) && !scanReply(t).hit;
   const today = new Date().toISOString().slice(0, 10);
 
   const messages: { role: 'user' | 'assistant'; content: string }[] = history.map((t) => ({
@@ -631,6 +650,9 @@ Deno.serve(async (req) => {
   let sawText = false;
   /** A word or an action reached the app; a clean ending with neither is refunded (`bad_output`). */
   let delivered = false;
+  /** Every word that reached the app this turn, exactly as sent, and the strings of every action forwarded — the scan. */
+  let said = '';
+  const acted: string[] = [];
   /** The loop is over and settling as itself; a late disconnect changes nothing. */
   let finished = false;
   let keepAlive: ReturnType<typeof setInterval> | null = null;
@@ -764,11 +786,15 @@ Deno.serve(async (req) => {
                   const d = msg.delta as { type?: string; text?: string; partial_json?: string } | undefined;
                   if (d?.type === 'text_delta' && d.text) {
                     // A reply that resumes after a tool round must not run into the words before it.
-                    if (!roundText && sawText) send({ t: ' ' });
+                    if (!roundText && sawText) {
+                      send({ t: ' ' });
+                      said += ' ';
+                    }
                     sawText = true;
                     delivered = true;
                     roundText = true;
                     if (at) at.text += d.text;
+                    said += d.text;
                     send({ t: d.text });
                   } else if (d?.type === 'input_json_delta' && typeof d.partial_json === 'string' && at) {
                     at.json += d.partial_json;
@@ -841,10 +867,12 @@ Deno.serve(async (req) => {
                   if (ASK_ACTION_NAMES.includes(c.name as string)) {
                     send({ action: { name: c.name, input } });
                     delivered = true;
+                    // The card's words are the model's too (an online-search chip shows `looking_for`): scanned at the end.
+                    acted.push(...scanStringsOf(input, 40));
                     return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };
                   }
                   if (!uid) return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
-                  const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes });
+                  const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes, keepText });
                   return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
                 }),
               );
@@ -874,6 +902,32 @@ Deno.serve(async (req) => {
       if (gaveUp === 'cancelled') return;
       finished = true;
       if (gaveUp === 'timeout') failure = 'timeout';
+
+      // ── 5a. THE OUTPUT SCAN (Sprint 2, CH-2 · contract §1.1) ─────────────────────────────────────────────
+      // ⛔ On everything that reached the app, however the turn ended — a clean finish, a cut-off, a dropped line. A
+      // hit takes the turn back: `retract` (the app shows the medical stop card instead), then a `done` line whose
+      // stop is a refusal so an app that does not know `retract` takes the words back too (ASK_RETRACT_STOP). Settled
+      // `guarded` and refunded — the athlete never pays for words they were not allowed to keep. The match is the
+      // model's words, so only its kind is logged.
+      const scanned = said.trim() || acted.length ? scanTexts([said, ...acted], question) : null;
+      if (scanned?.hit) {
+        console.log('coach-ask output scan', scanned.kind);
+        const taken = await settle('guarded', true, servedBy, spent());
+        send(askRetractEvent());
+        send({
+          done: true,
+          usage: { model: servedBy, ...spent() },
+          remaining: typeof taken?.remaining === 'number' ? taken.remaining : reserved.remaining,
+          stop: ASK_RETRACT_STOP,
+          ...(taken?.refunded === true ? { refunded: true } : {}),
+        });
+        try {
+          controller.close();
+        } catch {
+          // already closed by a cancel
+        }
+        return;
+      }
 
       // ── 5. Settle, THEN the last line (contract §1.3) ─────────────────────────────────────────────
       // Refunded on every failure that is ours or the model's (`askSettlement`); the app is told it was

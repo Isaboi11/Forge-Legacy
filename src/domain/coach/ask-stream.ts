@@ -1,7 +1,8 @@
 /**
  * HOLT'S ANSWER OFF THE WIRE, WITH A CLOCK ON IT (AI audit 2026-11-16, C-D2 · C-D4).
  *
- * `askHolt` (`src/data/coach-ask-live.ts`) used to read the coach-ask stream with no signal and no clock.
+ * `streamCoachAsk` (`src/data/coach-ask-live.ts`, `askHolt` before Sprint 2) used to read the coach-ask stream with no
+ * signal and no clock.
  * A stalled connection left "Holt is working" on screen until the phone gave up, so anything the athlete
  * typed meanwhile sat in the queue; and closing the sheet never stopped the model, which kept writing (and
  * costing) to the end. The read lives here now, pure, so a fake stream can prove the clock and the endings.
@@ -40,10 +41,20 @@
  *   · TELEMETRY — {@link askFailureReport} turns any ending that is not a clean answer into the one
  *     `AiFailure` shape `reportAiFailure` sends to `client_errors` and Sentry.
  *
+ * ══ SPRINT 2 (AI Road to 10 — CH-2, audit C-I1) ══
+ *
+ *   · TAKEN BACK — a `retract` line means the function's output scanner stopped Holt's finished reply: the read
+ *     settles `retracted`, whatever the `done` line after it says, and the sheet swaps the streamed words for the
+ *     medical stop card. Any action he forwarded goes with them, as on a refusal.
+ *   · AND CHECKED HERE TOO — {@link withOutputScan} runs the same scanner (`domain/ai/output-scan.ts`) on the settled
+ *     answer, so a phone with this code is protected even while the function on the server is an older one. A
+ *     client is not a boundary; it is a second layer.
+ *
  * ⚠ Domain code: relative imports only (`@/` would break `node --test`).
  */
 
 import { classifyAiFailure, type AiFailure } from '../ai/ai-failure.ts';
+import { scanStringsOf, scanTexts } from '../ai/output-scan.ts';
 import { parseSse, readAskEvent, utf8Decoder } from './ask-wire.ts';
 
 /** Nothing back at all inside this long, and the ask ends as an outage. */
@@ -201,6 +212,8 @@ export interface AskRead {
   upstream: string | null;
   /** The last status line ("Checking your lift log…"), if any arrived. */
   status: string | null;
+  /** The function took the reply back (`retract`, Sprint 2): its output scanner stopped it. */
+  retracted?: boolean;
 }
 
 /**
@@ -248,6 +261,9 @@ export async function readAskStream(
         } else if ('status' in e) {
           out.status = e.status;
           onStatus?.(e.status);
+        } else if ('retract' in e) {
+          // The `done` line follows; reading on keeps its balance and its refund.
+          out.retracted = true;
         } else if ('error' in e) {
           out.failure = e.error;
           out.refunded = e.refunded === true;
@@ -299,6 +315,11 @@ export type AskSettled =
   /** He declined it (the model's `refusal`). Whatever streamed is taken back. Not an outage. */
   | { kind: 'refused'; refunded?: true }
   /**
+   * Taken back by the output scanner (Sprint 2, CH-2) — the function's (`retract`) or this app's
+   * ({@link withOutputScan}). Whatever streamed goes, and the medical stop card stands in its place.
+   */
+  | { kind: 'retracted'; refunded?: true }
+  /**
    * The app failed. `timedOut` — nothing (or nothing more) came back in time: our clock, or the function's own
    * (`upstream: 'timeout'`). `aborted` — the caller's own signal (the sheet closed), and nobody is left to tell.
    * `detail` is for logs, never the athlete — and never the upstream's words.
@@ -312,6 +333,9 @@ export function settleAskRead(read: AskRead, early: AskEarlyStop | null = null):
   const aborted = early === 'aborted';
   /* Present only when true, so a result the function did not refund looks exactly as it did before Sprint 1. */
   const refunded = read.refunded ? { refunded: true as const } : {};
+  /* ⛔ TAKEN BACK FIRST: the function's scanner stopped the reply. Its `done` line says `refusal` (for older apps);
+     this app shows the medical stop card instead, and nothing he forwarded survives it. */
+  if (read.retracted) return { kind: 'retracted', ...refunded };
   /* ⚠ DECLINED, WITH OR WITHOUT WORDS BEFORE IT. A refusal can land mid-reply; what came before it is not
      an answer to keep, and any action he forwarded before declining goes with it. */
   if (read.finished && read.stop === 'refusal') return { kind: 'refused', ...refunded };
@@ -339,6 +363,18 @@ export function settleAskRead(read: AskRead, early: AskEarlyStop | null = null):
     actions: read.actions,
     ...refunded,
   };
+}
+
+/**
+ * ⛔ THE SAME OUTPUT SCAN, ON THIS END (Sprint 2, CH-2). An answer whose words — or whose forwarded card — the scanner
+ * stops becomes `retracted`, exactly as if the function had sent `retract`. `asked` is the athlete's question (a reply
+ * to a symptom that says "that's normal" is about the symptom). Everything that is not an answer passes untouched.
+ */
+export function withOutputScan(settled: AskSettled, asked: string): AskSettled {
+  if (settled.kind !== 'answer') return settled;
+  const hit = scanTexts([settled.text, ...settled.actions.flatMap((a) => scanStringsOf(a.input, 40))], asked);
+  if (!hit.hit) return settled;
+  return settled.refunded ? { kind: 'retracted', refunded: true } : { kind: 'retracted' };
 }
 
 /**
@@ -381,6 +417,9 @@ export function askFailureReport(x: {
     }
     case 'refused':
       return { ...base, kind: 'unreadable', reason: 'refusal', refunded };
+    /* The scanner working, like a medical stop — not a failure. The function's ledger counts it (`guarded`). */
+    case 'retracted':
+      return null;
     case 'out_of_credits':
       return { ...base, kind: 'out_of_credits', reason: 'out_of_credits', refunded: false };
     case 'offline': {
