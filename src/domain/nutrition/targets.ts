@@ -5,6 +5,24 @@
  * resting burn, an activity multiplier for maintenance, 500 kcal a day per pound a week, protein from
  * bodyweight, fat at 27% of calories, carbohydrate as the remainder.
  *
+ * ══ ⚠ THE MACRO SPLIT WAS CHANGED — AI audit 11-16, N-D4; PENDING DIETITIAN REVIEW ══
+ *
+ * The `.dc`'s split (protein 0.9 g × TOTAL bodyweight, fat 27%, carbs = whatever is left, floored at 0) gave a
+ * sedentary 330-lb woman losing 2 lb a week P 295 g / C 0 g / F 45 g on 1,580 kcal — 75% protein, no carbohydrate.
+ * No dietitian sets that. The split is now (`macroSplit`):
+ *
+ *   1. **Protein's reference weight** is the athlete's weight when BMI < 30 or height is unknown. At BMI ≥ 30 it is
+ *      the ADJUSTED body weight: ideal body weight + 0.4 × (actual − ideal), with ideal body weight by Devine from
+ *      height and sex (an unknown sex takes the higher, male, figure). Protein = 0.9 g per lb of it.
+ *   2. **Protein is capped at 35% of calories** (the top of the IOM's 10–35% range).
+ *   3. **Fat starts at 27% of calories** (the `.dc`), never below 20%.
+ *   4. **Carbohydrate gets a floor of 130 g** (the IOM RDA) whenever the calorie target allows it: fat gives way
+ *      first, down to 20% of calories, then protein, down to 30%.
+ *
+ * For an athlete under BMI 30 whose protein is under 35% and carbs over 130 g — most of them — the numbers are the
+ * `.dc`'s, unchanged. The PO signs off the split before a dietitian reviews it (Road to 10, NU-1); until then this
+ * header is the record of what changed and why. The method sheet (`methodRows`) says which rule applied.
+ *
  * ══ ⛔ THIS IS THE ONE NUTRITION MODULE THAT HAS TO SAY NO ══
  *
  * NUT-D5 and Architecture §10 put three limits in CODE, not in copy, because a recommender without them
@@ -182,6 +200,103 @@ export function burnFor(facts: AthleteFacts, todayIso: string): Burn | null {
 
 export type HeldReason = 'cap' | 'floor' | null;
 
+/* ── the macro split (AI audit 11-16, N-D4 — see the header; pending dietitian review) ─────────────── */
+
+/** At this BMI and above, protein is set from the adjusted body weight rather than the whole of it. */
+export const BMI_ADJUST_AT = 30;
+/** Adjusted body weight = ideal + this × (actual − ideal). The standard clinical figure. */
+export const ADJUSTED_FRACTION = 0.4;
+export const PROTEIN_G_PER_LB = 0.9;
+/** The top of the IOM's acceptable range for protein (10–35% of calories). */
+export const PROTEIN_MAX_SHARE = 0.35;
+/** How far protein may give way to make room for the carb floor, and no further. */
+export const PROTEIN_FLEX_SHARE = 0.3;
+export const FAT_SHARE = 0.27;
+/** Fat never goes below this share of calories (the bottom of the IOM's 20–35% range). */
+export const FAT_MIN_SHARE = 0.2;
+/** The IOM RDA for carbohydrate, in grams a day. */
+export const CARB_FLOOR_G = 130;
+
+const KG_PER_LB = 0.45359237;
+const floor5 = (n: number): number => Math.floor(n / 5) * 5;
+const ceil5 = (n: number): number => Math.ceil(n / 5) * 5;
+
+/** BMI from pounds and inches, or null when either is missing. */
+export function bmiOf(weightLb: number | null, heightIn: number | null): number | null {
+  if (!weightLb || weightLb <= 0 || !heightIn || heightIn <= 0) return null;
+  return (703 * weightLb) / (heightIn * heightIn);
+}
+
+/**
+ * Ideal body weight, Devine (1974): 50 kg (men) or 45.5 kg (women) + 2.3 kg per inch over 5 ft, in pounds.
+ * ⚠ An unspecified sex takes the HIGHER figure (men's) — the reading that gives more protein, not less.
+ */
+export function idealWeightLb(heightIn: number, sex: AthleteSex): number {
+  const base = sex === 'female' ? 45.5 : 50;
+  return (base + 2.3 * (heightIn - 60)) / KG_PER_LB;
+}
+
+/** The weight protein is set from: the athlete's own below BMI 30 (or with no height), the adjusted weight at or above. */
+export function proteinWeightLb(facts: Pick<AthleteFacts, 'sex' | 'weightLb' | 'heightIn'>): { lb: number; adjusted: boolean } {
+  const lb = facts.weightLb ?? 0;
+  const bmi = bmiOf(lb, facts.heightIn);
+  if (bmi == null || bmi < BMI_ADJUST_AT) return { lb, adjusted: false };
+  const ideal = idealWeightLb(facts.heightIn as number, facts.sex);
+  const adjusted = Math.round(ideal + ADJUSTED_FRACTION * (lb - ideal));
+  return adjusted < lb ? { lb: adjusted, adjusted: true } : { lb, adjusted: false };
+}
+
+export interface MacroSplit {
+  protein: number;
+  carb: number;
+  fat: number;
+  /** The weight protein was set from, and whether it is the adjusted one. */
+  proteinLb: number;
+  adjusted: boolean;
+  /** Protein held at 35% of calories. */
+  proteinCapped: boolean;
+  /** Fat, then protein, gave way so carbs could reach 130 g. */
+  fatEased: boolean;
+  proteinEased: boolean;
+}
+
+/**
+ * Calories → protein, carbs and fat, in grams to the nearest 5. The rules are the header's, in its order. Every
+ * figure is a whole 5 g, so the macros' calories land within a few of the target (the screen's 5% line holds).
+ */
+export function macroSplit(kcal: number, facts: Pick<AthleteFacts, 'sex' | 'weightLb' | 'heightIn'>): MacroSplit {
+  const ref = proteinWeightLb(facts);
+  const fromWeight = round5(ref.lb * PROTEIN_G_PER_LB);
+  const cap = floor5((kcal * PROTEIN_MAX_SHARE) / 4);
+  let protein = Math.min(fromWeight, cap);
+  let fat = round5((kcal * FAT_SHARE) / 9);
+  const carbsLeft = (): number => (kcal - protein * 4 - fat * 9) / 4;
+  /* Judged on the carbs the athlete will SEE (to the nearest 5), so a `.dc` split that already shows 130 g is left alone. */
+  const short = (): boolean => round5(carbsLeft()) < CARB_FLOOR_G;
+
+  let fatEased = false;
+  let proteinEased = false;
+  if (short()) {
+    const room = Math.max(0, fat - ceil5((kcal * FAT_MIN_SHARE) / 9));
+    const cut = Math.min(room, ceil5(((CARB_FLOOR_G - carbsLeft()) * 4) / 9));
+    if (cut > 0) {
+      fat -= cut;
+      fatEased = true;
+    }
+  }
+  if (short()) {
+    const room = Math.max(0, protein - ceil5((kcal * PROTEIN_FLEX_SHARE) / 4));
+    const cut = Math.min(room, ceil5(CARB_FLOOR_G - carbsLeft()));
+    if (cut > 0) {
+      protein -= cut;
+      proteinEased = true;
+    }
+  }
+  /* Never below zero: a calorie target too small for every floor still adds up rather than going negative. */
+  const carb = Math.max(0, round5(carbsLeft()));
+  return { protein, carb, fat, proteinLb: ref.lb, adjusted: ref.adjusted, proteinCapped: fromWeight > cap, fatEased, proteinEased };
+}
+
 export interface Recommendation extends Targets {
   /** Why the target is not simply "maintenance minus the pace asked for". */
   held: HeldReason;
@@ -191,6 +306,8 @@ export interface Recommendation extends Targets {
   goal: Goal;
   burn: Burn;
   floor: number;
+  /** How the macros were reached, so "How we calculated this" can say it (N-D4). */
+  split: MacroSplit;
 }
 
 /**
@@ -206,7 +323,6 @@ export function recommend(
 ): Recommendation | null {
   if (blockerFor(facts, todayIso)) return null;
   const floor = floorFor(facts.sex);
-  const weight = facts.weightLb as number;
 
   let kcal = burn.tdee;
   let held: HeldReason = null;
@@ -231,13 +347,11 @@ export function recommend(
     effectiveRate = 0;
   }
 
-  /* Protein from bodyweight, fat as a share of calories, carbohydrate as whatever is left — the split
-     the `.dc` specifies. Never below zero: a very low target with high protein can exhaust the budget. */
-  const protein = round5(weight * 0.9);
-  const fat = round5((kcal * 0.27) / 9);
-  const carb = Math.max(0, round5((kcal - protein * 4 - fat * 9) / 4));
+  /* Protein from bodyweight (adjusted at BMI 30+, capped at 35%), fat as a share of calories, carbohydrate the
+     rest with a 130 g floor — the `.dc`'s split with the N-D4 guards (header). */
+  const split = macroSplit(kcal, facts);
 
-  return { kcal, protein, carb, fat, held, effectiveRate, requestedRate, goal, burn, floor };
+  return { kcal, protein: split.protein, carb: split.carb, fat: split.fat, held, effectiveRate, requestedRate, goal, burn, floor, split };
 }
 
 /** The paces offered, per goal. Gaining tops out sooner — a pound a week is already fast to add. */
@@ -327,10 +441,33 @@ export function methodRows(rec: Recommendation, facts: AthleteFacts, sex: Athlet
       value: adjustment === 0 ? '0' : `${adjustment > 0 ? '+' : '−'}${fmt(Math.abs(adjustment))}`,
       note: goalNote,
     },
-    { label: 'Protein', value: `${rec.protein} g`, note: '0.9 g per lb of bodyweight.' },
-    { label: 'Fat', value: `${rec.fat} g`, note: '27% of calories.' },
-    { label: 'Carbs', value: `${rec.carb} g`, note: 'The calories left after protein and fat.' },
+    { label: 'Protein', value: `${rec.protein} g`, note: proteinNote(rec.split) },
+    {
+      label: 'Fat',
+      value: `${rec.fat} g`,
+      note: rec.split.fatEased ? `${Math.round((rec.fat * 900) / rec.kcal)}% of calories, down from 27% so carbs can reach 130 g.` : '27% of calories.',
+    },
+    {
+      label: 'Carbs',
+      value: `${rec.carb} g`,
+      note:
+        (rec.split.fatEased || rec.split.proteinEased) && rec.carb >= CARB_FLOOR_G
+          ? 'The calories left after protein and fat, with at least 130 g.'
+          : 'The calories left after protein and fat.',
+    },
   ];
+}
+
+/** The protein row's note: the weight it came from, and any guard that moved it (N-D4). */
+function proteinNote(s: MacroSplit): string {
+  const parts = [
+    s.adjusted
+      ? `0.9 g per lb of an adjusted bodyweight, ${s.proteinLb} lb. At a BMI of 30 or more, protein is set from a weight between the standard weight for your height and your current weight.`
+      : '0.9 g per lb of bodyweight.',
+  ];
+  if (s.proteinCapped) parts.push('Held to 35% of calories.');
+  if (s.proteinEased) parts.push('Eased back a little so carbs can reach 130 g.');
+  return parts.join(' ');
 }
 
 /* ── the manual side ──────────────────────────────────────────────────────── */
