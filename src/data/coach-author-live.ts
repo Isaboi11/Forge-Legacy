@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import { authorResultFrom, type AuthorRequest, type AuthorResult } from '@/domain/coach/author';
+import { AUTHOR_TIMEOUT_MS, authorWithin } from '@/domain/coach/author-deadline';
 import { medicalRoute } from '@/domain/coach/medical-routing';
 
 /**
@@ -16,19 +17,22 @@ export async function authorLive(req: AuthorRequest): Promise<AuthorResult | NoA
   }
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('coach-author', { body: req });
-    // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context` (see `recipe-photo-live.ts`).
-    let body: unknown = data;
-    if (error) {
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
+  /* Thirty seconds, then the rulebook builds it and he says so (AI audit 11-16, B-D8) — see `authorWithin`. */
+  return authorWithin(AUTHOR_TIMEOUT_MS, async (signal) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('coach-author', { body: req, signal });
+      // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context` (see `recipe-photo-live.ts`).
+      let body: unknown = data;
+      if (error) {
+        const ctx = (error as { context?: unknown }).context;
+        if (!(ctx instanceof Response)) return { kind: 'offline' };
+        body = await ctx.json().catch(() => null);
+        if (!body) return { kind: 'unavailable' };
+      }
+      if (!body) return { kind: 'offline' };
+      return authorResultFrom(body, req.kind);
+    } catch {
+      return { kind: 'offline' };
     }
-    if (!body) return { kind: 'offline' };
-    return authorResultFrom(body, req.kind);
-  } catch {
-    return { kind: 'offline' };
-  }
+  });
 }
