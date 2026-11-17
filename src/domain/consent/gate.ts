@@ -55,6 +55,13 @@ export interface ConsentGate {
   allowsNow(kind: ConsentKind): boolean;
   /** Record an answer given outside `ensure` (Settings: withdraw). Resolves whether it was stored. */
   answer(kind: ConsentKind, action: ConsentAction): Promise<boolean>;
+  /**
+   * The SERVER refused for want of a stored yes (an AI function's `no_consent`, Sprint 1 P-G9) although this phone
+   * believed it had one — an answer the server never stored, or a withdrawal on another device. Forgets this
+   * session's unconfirmed answers for `kind`, re-reads, and asks again whatever the re-read says (the function is
+   * the boundary, and a fresh yes is what it will accept). Concurrent calls share one sheet.
+   */
+  reask(kind: ConsentKind): Promise<boolean>;
   /** A different athlete (or nobody) is signed in: forget everything. */
   reset(): void;
 }
@@ -144,6 +151,24 @@ export function createConsentGate(deps: ConsentGateDeps): ConsentGate {
     return p;
   };
 
+  const reasking = new Map<ConsentKind, Promise<boolean>>();
+  const reask = (kind: ConsentKind): Promise<boolean> => {
+    const inFlight = reasking.get(kind);
+    if (inFlight) return inFlight;
+    const mine = epoch;
+    const p = (async () => {
+      local = local.filter((r) => r.kind !== kind);
+      changed();
+      await read();
+      if (mine !== epoch) return false;
+      const agreed = await deps.prompt(kind).catch(() => false);
+      await answer(kind, agreed ? 'granted' : 'declined');
+      return agreed;
+    })().finally(() => reasking.delete(kind));
+    reasking.set(kind, p);
+    return p;
+  };
+
   return {
     snapshot: () => snap,
     subscribe: (fn) => {
@@ -155,6 +180,7 @@ export function createConsentGate(deps: ConsentGateDeps): ConsentGate {
     ensure,
     allowsNow: (kind) => snap.status[kind] === 'granted',
     answer,
+    reask,
     reset: () => {
       epoch += 1;
       stored = [];
