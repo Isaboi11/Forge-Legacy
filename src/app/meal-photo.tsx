@@ -32,6 +32,8 @@ import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { finishFoodLog } from '@/lib/food-return';
 import { errorMessage } from '@/lib/useQuery';
@@ -79,6 +81,8 @@ export default function MealPhotoScreen() {
   const { pick, mediaPickerSheet } = useMediaPicker();
   const premiumAi = usePremiumAi();
   const nutritionAccess = useNutritionAccess();
+  /* Leaving mid-read stops the read (Sprint 1, P-G3): nobody is left to check the list. */
+  const closeSignal = useCloseSignal();
 
   /* A link's date is checked, not trusted (QA 09-26 N-19). */
   const iso = diaryDayParam(params.date, localToday());
@@ -121,13 +125,14 @@ export default function MealPhotoScreen() {
       });
       if (!asset) return;
       setStage({ step: 'reading' });
-      const r = await readMealPhoto(asset.uri);
+      const r = await readMealPhoto(asset.uri, closeSignal());
       if (r.kind === 'no_consent') {
         setStage({ step: 'problem', text: AI_DECLINED_LINE });
         return;
       }
       if (r.kind !== 'ok') {
-        setStage({ step: 'problem', text: mealPhotoError(r) });
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+        setStage({ step: 'problem', text: withNotCharged(mealPhotoError(r), r.refunded) });
         return;
       }
       setReadRef(uuid());

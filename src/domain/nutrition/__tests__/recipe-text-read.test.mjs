@@ -264,13 +264,14 @@ test('the function: CORS first, the nutrition gate before any fetch, redirects r
   assert.ok(at(".rpc('has_nutrition_planner')") < at('await fetchPage(target.url)'));
   assert.match(SRC, /redirect: 'manual'/);
   assert.match(SRC, /const t = linkTarget\(new URL\(next, url\)\.toString\(\)\);/);
-  assert.match(SRC, /signal: AbortSignal\.timeout\(FETCH_MS\)/);
+  // 8 s a request, and never past the run's own 20 s (AI Sprint 1 contract §3: inside the app's 30 s).
+  assert.match(SRC, /signal: AbortSignal\.timeout\(Math\.min\(FETCH_MS, left\)\)/);
   assert.ok(!/SERVICE_ROLE/.test(SRC), 'no service key');
 });
 
 test('the screen: "Paste a recipe" is live and a link goes through readRecipeLink', () => {
   const SCREEN = read('src/app/my-recipes.tsx');
   assert.match(SCREEN, /\{ id: 'paste', title: 'Paste a recipe', sub: '[^']*', soon: false \}/);
-  assert.match(SCREEN, /kind === 'link' \? await readRecipeLink\(pasteText\) : readPastedText\(pasteText\)/);
+  assert.match(SCREEN, /kind === 'link' \? await readRecipeLink\(pasteText, closeSignal\(\)\) : readPastedText\(pasteText\)/);
   assert.match(SCREEN, /openDraft\(r\.read, r\.from\)/);
 });

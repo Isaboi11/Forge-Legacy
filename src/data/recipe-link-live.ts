@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 import { linkPrecheck, linkResultFrom, readFetchedPage, type PasteResult } from '@/domain/nutrition/recipe-paste';
 import { MAX_PAGE_BYTES } from '@/domain/nutrition/recipe-text-read';
-import { supabase } from '@/lib/supabase';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
 
 /**
  * A pasted recipe LINK → the recipe (PO 2026-09-27). ⚠ NEVER THROWS — it runs behind a button on a screen
@@ -16,10 +16,13 @@ import { supabase } from '@/lib/supabase';
  * goes straight to `recipe-link-read`, which the phone also falls back to when a site refuses it.
  *
  * A page that OPENED but has no recipe on it is answered at once; asking the server would read the same page.
+ *
+ * ⏱ The server leg gives up after 30 s (contract §3; the function caps each fetch at 8 s and follows ≤ 4 hops), and
+ * stops when `signal` fires. No model and no credit, so nothing is "charged"; a failure is still reported (P-G1).
  */
 const PHONE_MS = 10_000;
 
-export async function readRecipeLink(raw: string): Promise<PasteResult> {
+export async function readRecipeLink(raw: string, signal?: AbortSignal): Promise<PasteResult> {
   const pre = linkPrecheck(raw);
   if (pre.kind !== 'ok' || !('url' in pre)) return pre as PasteResult;
 
@@ -33,18 +36,14 @@ export async function readRecipeLink(raw: string): Promise<PasteResult> {
     }
   }
 
-  try {
-    const { data, error } = await supabase.functions.invoke('recipe-link-read', { body: { url: pre.url } });
-    let body: unknown = data;
-    if (error) {
-      // A non-2xx carries its answer on `context`; anything else (not deployed, offline) is "couldn't open".
-      const ctx = (error as { context?: unknown }).context;
-      body = ctx instanceof Response ? await ctx.json().catch(() => null) : null;
-    }
-    return linkResultFrom(body);
-  } catch {
-    return { kind: 'unreachable' };
-  }
+  /* A non-2xx carries its answer on `context` (`invokeAi` reads it); anything else (not deployed, offline, a clock
+     that ran out) is "couldn't open". */
+  const a = await invokeAi('recipe-link-read', { url: pre.url }, { signal });
+  const r = linkResultFrom(a.offline || a.cancelled || a.timedOut ? null : a.body);
+  /* A page that would not open, or has no recipe, is an answer about the page — the function worked. What is
+     reported is the function itself failing: no answer, our clock, a 5xx, or not deployed (404). */
+  if (a.status === null || a.status >= 500 || a.status === 404) reportAiCall(a, r.kind);
+  return r;
 }
 
 async function fetchOnPhone(url: string): Promise<string | null> {

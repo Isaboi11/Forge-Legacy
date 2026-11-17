@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { ranOutOfTime, refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import { READABLE_MEDIA, photoResultFrom, type PhotoReadResult } from '@/domain/program/photo-read-result';
 import { cleanCardTranscript } from '@/domain/workout/card-transcript';
 import { readAsBase64 } from '@/data/program-photo-live';
@@ -21,10 +22,24 @@ import { readAsBase64 } from '@/data/program-photo-live';
  * ⚠ NEVER THROWS, and an outage never reads as a verdict on the photo (the same split as `program-photo-live.ts`).
  */
 
-export type CardReadResult =
+export type CardReadResult = Refundable<
   | { kind: 'ok'; text: string }
   | { kind: 'not_deployed' }
-  | Exclude<PhotoReadResult, { kind: 'ok' }>;
+  | Exclude<PhotoReadResult, { kind: 'ok' }>
+> & {
+  /** Either clock ran out (the app's 90 s, or the function's own upstream abort). */
+  slow?: boolean;
+};
+
+/**
+ * The card reader had no answer, so the table read (`program-photo-read`) is tried instead — not deployed yet, no
+ * connection, or the server failed. ⚠ NOT AFTER A TIMEOUT (AI audit V-D5): a second read of the same photo would be
+ * just as slow, and the athlete has already waited a minute and a half.
+ */
+export function cardReadFallsBack(card: CardReadResult | NoAiConsent): boolean {
+  if (card.kind === 'no_consent') return false;
+  return (card.kind === 'not_deployed' || card.kind === 'offline' || card.kind === 'unavailable') && !card.slow;
+}
 
 /** The same picture picked again is free: keyed by its bytes, since the web gives a fresh blob uri each time. */
 const readByContent = new Map<string, string>();
@@ -39,7 +54,8 @@ function fingerprint(base64: string): string {
   return `${base64.length}:${(h >>> 0).toString(36)}`;
 }
 
-export async function readWorkoutCard(uri: string): Promise<CardReadResult | NoAiConsent> {
+/** ⏱ 90 s (contract §3), aborted when `signal` fires. Failures are reported (P-G1); a refund rides on the result. */
+export async function readWorkoutCard(uri: string, signal?: AbortSignal): Promise<CardReadResult | NoAiConsent> {
   const file = await readAsBase64(uri);
   if (!file) return { kind: 'offline' };
   if (!READABLE_MEDIA.includes(file.mediaType)) return { kind: 'unsupported_format' };
@@ -50,20 +66,15 @@ export async function readWorkoutCard(uri: string): Promise<CardReadResult | NoA
 
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('workout-card-read', {
-      body: { image: file.data, mediaType: file.mediaType },
-    });
-    let body: unknown = data;
-    if (error) {
-      /* A non-2xx still carries the function's reason on the error's Response; only no answer at all is offline. */
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      if (ctx.status === 404) return { kind: 'not_deployed' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
-    }
-    if (!body) return { kind: 'offline' };
+  /* A non-2xx still carries the function's reason on the error's Response (`invokeAi`); only no answer is offline. */
+  const a = await invokeAi('workout-card-read', { image: file.data, mediaType: file.mediaType }, { signal });
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
+  const r = ((): CardReadResult => {
+    if (a.offline || a.cancelled) return { kind: 'offline' };
+    if (a.timedOut) return { kind: 'unavailable', slow: true };
+    if (a.status === 404) return { kind: 'not_deployed' };
+    const body = a.body;
+    if (!body) return a.status === 200 ? { kind: 'offline' } : { kind: 'unavailable' };
 
     const d = body as { ok?: boolean; text?: unknown };
     if (d.ok) {
@@ -75,8 +86,10 @@ export async function readWorkoutCard(uri: string): Promise<CardReadResult | NoA
     }
     /* Every refusal is the same set `program-photo-read` gives, so it is read by the same function. */
     const failed = photoResultFrom(body);
-    return failed.kind === 'ok' ? { kind: 'unavailable' } : failed;
-  } catch {
-    return { kind: 'offline' };
-  }
+    if (failed.kind === 'ok') return { kind: 'unavailable' };
+    return ranOutOfTime(a) && failed.kind === 'unavailable' ? { ...failed, slow: true } : failed;
+  })();
+  if (r.kind === 'ok') return r;
+  reportAiCall(a, r.kind);
+  return refundedResult(r, a);
 }

@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import { fetchMealPlanPrefs, fetchNutritionProfile } from '@/data/nutrition-live';
 import { localToday } from '@/domain/nutrition/day';
 import { kitchenRules, outcome, type KitchenRules } from '@/domain/nutrition/kitchen-rules';
@@ -14,25 +16,26 @@ import {
 /**
  * HOLT'S KITCHEN — the client half of `coach-kitchen` (Kitchen Scope §6). Never throws: an outage is a
  * result, and the chat has words for each one (`kitchenError`).
+ *
+ * ⏱ 60 s (contract §3), aborted when `signal` fires. Failures are reported (P-G1); a refund rides on the result.
  */
-export async function askKitchenLive(req: KitchenRequest): Promise<KitchenResult | NoAiConsent> {
+export async function askKitchenLive(req: KitchenRequest, signal?: AbortSignal): Promise<Refundable<KitchenResult> | NoAiConsent> {
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('coach-kitchen', { body: req });
-    // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context` (see `recipe-photo-live.ts`).
-    let body: unknown = data;
-    if (error) {
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
-    }
-    if (!body) return { kind: 'offline' };
-    return kitchenResultFrom(body, req.exclude);
-  } catch {
-    return { kind: 'offline' };
-  }
+  // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context`, which `invokeAi` reads.
+  const a = await invokeAi('coach-kitchen', req, { signal });
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
+  const r = ((): KitchenResult => {
+    if (a.offline || a.cancelled) return { kind: 'offline' };
+    if (a.timedOut) return { kind: 'unavailable' };
+    if (!a.body) return a.status === 200 ? { kind: 'offline' } : { kind: 'unavailable' };
+    return kitchenResultFrom(a.body, req.exclude);
+  })();
+  /* A code-guard stop is the guard working, not a failure. */
+  if (r.kind === 'ok' || r.kind === 'stop') return r;
+  /* `none`: every dish failed the device's guard — the model's output was unusable. */
+  reportAiCall(a, r.kind === 'none' ? 'bad_output' : r.kind);
+  return refundedResult(r, a);
 }
 
 /** Kitchen memory (§2): the dishes shown in the last 30 days, newest first. Empty on any failure. */

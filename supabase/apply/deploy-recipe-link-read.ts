@@ -66,6 +66,105 @@ export function linkTarget(raw: string): LinkTarget {
         return { kind: 'social', site: social };
     return { kind: 'ok', url: u.toString() };
 }
+export function parseIpv4(s: string): [
+    number,
+    number,
+    number,
+    number
+] | null {
+    const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s.trim());
+    if (!m)
+        return null;
+    const parts = m.slice(1);
+    if (parts.some((p) => p.length > 1 && p.startsWith('0')))
+        return null;
+    const o = parts.map(Number);
+    if (o.some((n) => n > 255))
+        return null;
+    return [o[0], o[1], o[2], o[3]];
+}
+export function parseIpv6(s: string): number[] | null {
+    let t = s.trim();
+    if (t.startsWith('[') && t.endsWith(']'))
+        t = t.slice(1, -1);
+    const zone = t.indexOf('%');
+    if (zone >= 0)
+        t = t.slice(0, zone);
+    if (!t.includes(':'))
+        return null;
+    const lastColon = t.lastIndexOf(':');
+    const last = t.slice(lastColon + 1);
+    if (last.includes('.')) {
+        const v4 = parseIpv4(last);
+        if (!v4)
+            return null;
+        t = `${t.slice(0, lastColon + 1)}${((v4[0] << 8) | v4[1]).toString(16)}:${((v4[2] << 8) | v4[3]).toString(16)}`;
+    }
+    const halves = t.split('::');
+    if (halves.length > 2)
+        return null;
+    const groupsOf = (h: string): string[] => (h === '' ? [] : h.split(':'));
+    const head = groupsOf(halves[0]);
+    const tail = halves.length === 2 ? groupsOf(halves[1]) : [];
+    if ([...head, ...tail].some((g) => !/^[0-9a-f]{1,4}$/i.test(g)))
+        return null;
+    const n = head.length + tail.length;
+    if (halves.length === 1 ? n !== 8 : n > 7)
+        return null;
+    const hex = (g: string) => parseInt(g, 16);
+    return [...head.map(hex), ...new Array<number>(8 - n).fill(0), ...tail.map(hex)];
+}
+function ipv4Blocked([a, b, c]: readonly number[]): boolean {
+    if (a === 0 || a === 10 || a === 127)
+        return true;
+    if (a === 100 && b >= 64 && b <= 127)
+        return true;
+    if (a === 169 && b === 254)
+        return true;
+    if (a === 172 && b >= 16 && b <= 31)
+        return true;
+    if (a === 192 && b === 168)
+        return true;
+    if (a === 192 && b === 0 && (c === 0 || c === 2))
+        return true;
+    if (a === 192 && b === 88 && c === 99)
+        return true;
+    if (a === 198 && (b === 18 || b === 19))
+        return true;
+    if (a === 198 && b === 51 && c === 100)
+        return true;
+    if (a === 203 && b === 0 && c === 113)
+        return true;
+    return a >= 224;
+}
+const ipv4In = (hi: number, lo: number): number[] => [hi >> 8, hi & 255, lo >> 8, lo & 255];
+function ipv6Blocked(g: readonly number[]): boolean {
+    if (g[0] === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0))
+        return ipv4Blocked(ipv4In(g[6], g[7]));
+    if ((g[0] & 0xe000) !== 0x2000)
+        return true;
+    if (g[0] === 0x2001 && g[1] < 0x200)
+        return true;
+    if (g[0] === 0x2001 && g[1] === 0xdb8)
+        return true;
+    if ((g[0] & 0xfff0) === 0x3ff0)
+        return true;
+    if (g[0] === 0x2002)
+        return ipv4Blocked(ipv4In(g[1], g[2]));
+    return false;
+}
+export function isBlockedAddress(ip: string): boolean {
+    const v4 = parseIpv4(ip);
+    if (v4)
+        return ipv4Blocked(v4);
+    const v6 = parseIpv6(ip);
+    return v6 ? ipv6Blocked(v6) : true;
+}
+export function resolvedVerdict(addresses: readonly string[]): 'ok' | 'private' | 'unresolved' {
+    if (!addresses.length)
+        return 'unresolved';
+    return addresses.some(isBlockedAddress) ? 'private' : 'ok';
+}
 const FRACTIONS: Record<string, number> = { '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75, '⅕': 0.2, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
 const FRACTION_CHARS = Object.keys(FRACTIONS).join('');
 const NAMED: Record<string, string> = {
@@ -364,7 +463,44 @@ export function recipeFromText(raw: string): PastedRecipe | null {
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const FETCH_MS = 8000;
+const TOTAL_MS = 20000;
+const DNS_MS = 3000;
 const MAX_HOPS = 4;
+type DnsRecord = 'A' | 'AAAA';
+type ResolveDns = (query: string, type: DnsRecord, options?: {
+    signal?: AbortSignal;
+}) => Promise<string[]>;
+let saidNoDns = false;
+async function checkAddresses(host: string): Promise<'ok' | 'private' | 'unresolved' | 'unchecked'> {
+    const resolve = (Deno as unknown as {
+        resolveDns?: ResolveDns;
+    }).resolveDns;
+    const unchecked = () => {
+        if (!saidNoDns)
+            console.warn('[recipe-link-read] Deno.resolveDns unavailable — the hostname filter is the only SSRF check (P-G7)');
+        saidNoDns = true;
+        return 'unchecked' as const;
+    };
+    if (typeof resolve !== 'function')
+        return unchecked();
+    const lookup = async (type: DnsRecord): Promise<string[] | 'denied'> => {
+        try {
+            return await resolve.call(Deno, host, type, { signal: AbortSignal.timeout(DNS_MS) });
+        }
+        catch (e) {
+            const name = (e as {
+                name?: unknown;
+            } | null)?.name;
+            if (name === 'PermissionDenied' || name === 'NotSupported')
+                return 'denied';
+            return [];
+        }
+    };
+    const [a, aaaa] = await Promise.all([lookup('A'), lookup('AAAA')]);
+    if (a === 'denied' && aaaa === 'denied')
+        return unchecked();
+    return resolvedVerdict([...(a === 'denied' ? [] : a), ...(aaaa === 'denied' ? [] : aaaa)]);
+}
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
 const CORS = {
     'Access-Control-Allow-Origin': '*',
@@ -378,14 +514,23 @@ async function fetchPage(start: string): Promise<{
     ok: false;
     reason: 'unreachable' | 'bad_url' | 'social';
 }> {
+    const deadline = Date.now() + TOTAL_MS;
     let url = start;
     for (let hop = 0; hop <= MAX_HOPS; hop++) {
+        const addresses = await checkAddresses(new URL(url).hostname);
+        if (addresses === 'private')
+            return { ok: false, reason: 'bad_url' };
+        if (addresses === 'unresolved')
+            return { ok: false, reason: 'unreachable' };
+        const left = deadline - Date.now();
+        if (left <= 0)
+            return { ok: false, reason: 'unreachable' };
         let res: Response;
         try {
             res = await fetch(url, {
                 redirect: 'manual',
                 headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-US,en;q=0.9' },
-                signal: AbortSignal.timeout(FETCH_MS),
+                signal: AbortSignal.timeout(Math.min(FETCH_MS, left)),
             });
         }
         catch {

@@ -68,6 +68,8 @@ import type { CatalogFood } from '@/domain/nutrition/serving';
 import { callerModalGone, pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
@@ -127,6 +129,8 @@ function MyRecipesScreen() {
   const router = useRouter();
   const barBottom = useBarBottom();
   const { showToast } = useToast();
+  /* Leaving mid-read stops the photo or link read (Sprint 1, P-G3). */
+  const closeSignal = useCloseSignal();
   const params = useLocalSearchParams<{ new?: string; edit?: string; draft?: string; add?: string }>();
   /* A dish Holt wrote ("See the recipe", Kitchen Scope §1.4) arrives as `?draft=1` with the read stashed —
      taken ONCE, here, and opened unsaved exactly like a scanned recipe. `from` says where it came from. */
@@ -275,20 +279,21 @@ function MyRecipesScreen() {
     setScanBusy(true);
     setScanError(null);
     try {
-      const r = await readRecipePhoto(uri);
+      const r = await readRecipePhoto(uri, closeSignal());
       if (r.kind === 'no_consent') {
         setScanError(AI_DECLINED_LINE);
         return;
       }
       if (r.kind !== 'ok') {
-        setScanError(recipePhotoError(r));
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+        setScanError(withNotCharged(recipePhotoError(r), r.refunded));
         return;
       }
       openDraft(r.read, 'picture');
     } finally {
       setScanBusy(false);
     }
-  }, [openDraft]);
+  }, [openDraft, closeSignal]);
 
   /* A pasted link or text. The box keeps what was pasted, so a failure can be fixed and read again. */
   const readPaste = async () => {
@@ -300,7 +305,7 @@ function MyRecipesScreen() {
     setScanError(null);
     setScanBusy(true);
     try {
-      const r = kind === 'link' ? await readRecipeLink(pasteText) : readPastedText(pasteText);
+      const r = kind === 'link' ? await readRecipeLink(pasteText, closeSignal()) : readPastedText(pasteText);
       if (r.kind !== 'ok') {
         setScanError(pasteError(r, scanOn));
         return;

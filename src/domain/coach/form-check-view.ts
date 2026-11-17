@@ -279,7 +279,8 @@ export type FormCheckResult =
    * We looked at the frames and could not read the lift in them. A better clip may work.
    * `charged` is false when the function said so (0221 onward: only a readable read spends). A function
    * deployed before that does not say, and did charge — so absence reads as true, and the screen only
-   * promises "Not charged." when it is.
+   * promises "Not charged." when it is. Sprint 1's reserve → settle function says `refunded: true` instead
+   * (contract §1.2), which is the same promise.
    */
   | { kind: 'unreadable'; charged: boolean }
   /** The frames were not usable as a request at all — only reachable if the device resize was skipped. */
@@ -306,6 +307,7 @@ export function formResultFrom(body: unknown, lift?: string, frameCount?: number
     remaining?: number;
     allowance?: number;
     charged?: boolean;
+    refunded?: boolean;
   };
 
   if (d.route === 'crisis' || d.route === 'urgent' || d.route === 'care' || d.route === 'medical_stop') {
@@ -323,7 +325,7 @@ export function formResultFrom(body: unknown, lift?: string, frameCount?: number
 
   switch (d.reason) {
     case 'unreadable':
-      return { kind: 'unreadable', charged: d.charged !== false };
+      return { kind: 'unreadable', charged: d.charged !== false && d.refunded !== true };
     case 'bad_request':
     case 'too_large':
       return { kind: 'bad_frames' };

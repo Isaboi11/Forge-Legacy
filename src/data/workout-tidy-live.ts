@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import { checkAiRewrite } from '@/domain/workout/workout-ai-gate';
 
 /**
@@ -30,24 +31,29 @@ export type TidyResult =
 /** The same card tidied twice this session is free the second time. Only a faithful rewrite is kept. */
 const tidied = new Map<string, string>();
 
-export async function tidyWrittenWorkout(text: string, resolveKey: (name: string) => string | undefined): Promise<TidyResult | NoAiConsent> {
+/**
+ * ⏱ 60 s (contract §3), aborted when `signal` fires (the screen closed). Every failure is reported (P-G1) and a
+ * refund rides on the result (`refunded`), so the screen can say "Not charged."
+ */
+export async function tidyWrittenWorkout(
+  text: string,
+  resolveKey: (name: string) => string | undefined,
+  signal?: AbortSignal,
+): Promise<Refundable<TidyResult> | NoAiConsent> {
   const card = text.trim();
   const already = tidied.get(card);
   if (already) return { kind: 'ok', text: already };
 
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('workout-tidy', { body: { text: card } });
-    let body: unknown = data;
-    if (error) {
-      /* A non-2xx still carries the function's reason on the error's Response; only no answer at all is offline. */
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
-    }
-    const d = (body ?? {}) as { ok?: boolean; text?: string; reason?: string };
+  /* A non-2xx still carries the function's reason (`invokeAi` reads it off the error's Response); only no answer at
+     all is offline. */
+  const a = await invokeAi('workout-tidy', { text: card }, { signal });
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
+  const r = ((): TidyResult => {
+    if (a.offline || a.cancelled) return { kind: 'offline' };
+    if (a.timedOut || !a.body) return { kind: 'unavailable' };
+    const d = a.body as { ok?: boolean; text?: string; reason?: string };
     if (!d.ok || typeof d.text !== 'string') {
       switch (d.reason) {
         case 'not_a_workout':
@@ -66,7 +72,9 @@ export async function tidyWrittenWorkout(text: string, resolveKey: (name: string
     if (problems.length) return { kind: 'unfaithful', problems };
     tidied.set(card, d.text);
     return { kind: 'ok', text: d.text };
-  } catch {
-    return { kind: 'offline' };
-  }
+  })();
+  if (r.kind === 'ok') return r;
+  /* A rewrite that changed a number is the model failing, so it is reported as bad output. */
+  reportAiCall(a, r.kind === 'unfaithful' ? 'bad_output' : r.kind);
+  return refundedResult(r, a);
 }

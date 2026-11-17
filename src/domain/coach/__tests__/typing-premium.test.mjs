@@ -121,7 +121,7 @@ test('⚠ conversation memory is this conversation, eight turns, into both AI jo
   // The eight-turn window (and the stopped-line drop, QA R2-F1) lives in the one builder, `askHistory`.
   assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(t\);/);
   assert.match(readFileSync(path.join(here, '../chat-history.ts'), 'utf8'), /export const CHAT_HISTORY_TURNS = 8;/);
-  assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\)\)/);
+  assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\), closeSignal\(\)\)/);
   assert.match(sheet, /askHolt\(\s*text,\s*history,\s*context,/);
 });
 

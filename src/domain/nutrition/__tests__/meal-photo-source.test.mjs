@@ -183,10 +183,11 @@ test('0223 merges meal_photo = 3 with the new key on the LEFT, guarded, and keep
 
 test('the app holds no key and calls only the Edge Function; the device re-runs the guard', () => {
   assert.ok(!/ANTHROPIC_API_KEY|x-api-key|api\.anthropic\.com/i.test(LIVE));
-  assert.match(LIVE, /functions\.invoke\('meal-photo-read'/);
-  assert.match(LIVE, /ctx instanceof Response/);
+  /* Sprint 1: every non-chat AI call goes through `invokeAi`, which reads a non-2xx's body off the Response. */
+  assert.match(LIVE, /invokeAi\('meal-photo-read'/);
+  assert.match(read('src/lib/ai-invoke.ts'), /ctx instanceof Response/);
   assert.match(LIVE, /return \{ kind: 'offline' \};/);
-  assert.match(LIVE, /mealPhotoResultFrom\(body\)/);
+  assert.match(LIVE, /mealPhotoResultFrom\(a\.body\)/);
   assert.match(LIVE, /searchFoods\(/, 'the numbers come from food-search');
 });
 

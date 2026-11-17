@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { callRpc } from '@/data/admin-live';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
 import {
   guessCategory,
   storagePathFor,
@@ -185,19 +186,26 @@ export interface BugPlain {
  * Runs the `bug-plain` Edge Function (0245): Claude writes the summary and it is saved on the row. About two
  * cents a bug, once. A missing function or 0245 not applied throws a sentence the panel shows in place of
  * the summary — the report underneath is always there.
+ *
+ * ⏱ 90 s (an admin tool on the longest model; not in contract §3 — see `AI_APP_TIMEOUT_MS`). Every failure is
+ * reported (P-G1) before it is thrown.
  */
-export async function writeBugPlain(id: string): Promise<BugPlain> {
-  const { data, error } = await supabase.functions.invoke('bug-plain', { body: { id } });
-  if (error) {
-    const status = (error as { context?: { status?: number } }).context?.status;
-    if (status === 404) throw new Error('The bug-plain function is not deployed yet.');
-    if (status === 403) throw new Error('Not authorized.');
-    if (status === 503) throw new Error('The AI key is not set on the server.');
-    throw new Error(error.message || 'Couldn’t write the summary.');
-  }
-  const r = data as { ok: boolean; reason?: string; plain?: BugPlain };
-  if (!r?.ok || !r.plain) throw new Error(r?.reason === 'context_failed' ? 'Migration 0245 isn’t applied yet.' : 'Couldn’t write the summary.');
-  return r.plain;
+export async function writeBugPlain(id: string, signal?: AbortSignal): Promise<BugPlain> {
+  const a = await invokeAi('bug-plain', { id }, { signal });
+  const fail = (outcome: string, line: string): never => {
+    reportAiCall(a, outcome);
+    throw new Error(line);
+  };
+  if (a.cancelled) throw new Error('Stopped.');
+  if (a.timedOut) fail('timeout', 'The summary took too long. Open the bug again to retry.');
+  if (a.offline) fail('offline', 'Couldn’t reach the server. Check the connection and try again.');
+  if (a.status === 404) fail('not_deployed', 'The bug-plain function is not deployed yet.');
+  if (a.status === 403) fail('forbidden', 'Not authorized.');
+  if (a.status === 503 && (a.body as { reason?: string } | null)?.reason === 'unconfigured') fail('unconfigured', 'The AI key is not set on the server.');
+  if (a.status !== null && a.status >= 300) fail('http_error', 'Couldn’t write the summary.');
+  const r = a.body as { ok: boolean; reason?: string; plain?: BugPlain } | null;
+  if (!r?.ok || !r.plain) fail('bad_output', r?.reason === 'context_failed' ? 'Migration 0245 isn’t applied yet.' : 'Couldn’t write the summary.');
+  return r!.plain!;
 }
 
 export interface BugBoard {

@@ -194,7 +194,7 @@ test('the app sends when each frame was taken, and the copy says any angle', () 
   assert.match(LIVE, /times: req\.times\?\.slice\(0, capped\.length\)/);
   assert.match(LIVE, /from any angle/);
   assert.ok(!/film[^.\n]*from the side/i.test(SCREEN), 'the screen must not tell them to film from the side');
-  assert.match(SCREEN, /formCheck\(\{ lift: chosen\.name, frames: got\.frames, times: got\.times, sizes: got\.sizes, note, focus, known, last, pose: got\.pose\?\.facts \}\)/);
+  assert.match(SCREEN, /formCheck\(\{ lift: chosen\.name, frames: got\.frames, times: got\.times, sizes: got\.sizes, note, focus, known, last, pose: got\.pose\?\.facts \}, closeSignal\(\)\)/);
   assert.match(LIVE, /sizes: req\.sizes\?\.slice\(0, capped\.length\)/);
 });
 
@@ -242,7 +242,8 @@ test('the app holds no key and calls only the Edge Function', () => {
   // The word "Anthropic" appears in a comment explaining why the key is NOT here, so this looks for the
   // things that would actually be a leak: the secret's name, the auth header, and the upstream URL.
   assert.ok(!/ANTHROPIC_API_KEY|x-api-key|api\.anthropic\.com/i.test(LIVE), 'no key, no direct model call from the app');
-  assert.match(LIVE, /functions\.invoke\('coach-form-check'/);
+  /* Sprint 1: through `invokeAi` — the contract's 90 s and the failure report. */
+  assert.match(LIVE, /invokeAi\(\s*'coach-form-check',/);
 });
 
 test('the native module is OPTIONAL, so an older binary hides the feature rather than crashing', () => {
@@ -266,13 +267,13 @@ test('the app reuses the ONE camera-or-library path and never touches ImagePicke
 });
 
 test('a non-2xx from the function is never reported as "offline"', () => {
-  assert.match(LIVE, /ctx instanceof Response/);
+  assert.match(read('src/lib/ai-invoke.ts'), /ctx instanceof Response/);
   assert.match(LIVE, /return \{ kind: 'unavailable' \};/);
   assert.match(LIVE, /return \{ kind: 'offline' \};/);
 });
 
 test('the app re-runs the guard on whatever came back', () => {
-  assert.match(LIVE, /return formResultFrom\(body, cleanLift, capped\.length\);/);
+  assert.match(LIVE, /return formResultFrom\(a\.body, cleanLift, capped\.length\);/);
   assert.match(VIEW, /const read = sanitizeFormRead\(d\.read, lift, frameCount\);/);
 });
 

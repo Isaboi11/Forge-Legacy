@@ -159,14 +159,15 @@ test('0220 merges recipe_photo = 3 with the new key on the LEFT, guarded, and as
 
 test('the app holds no key and calls only the Edge Function', () => {
   assert.ok(!/ANTHROPIC_API_KEY|x-api-key|api\.anthropic\.com/i.test(LIVE));
-  assert.match(LIVE, /functions\.invoke\('recipe-photo-read'/);
-  assert.match(LIVE, /ctx instanceof Response/);
+  /* Sprint 1: every non-chat AI call goes through `invokeAi`, which reads a non-2xx's body off the Response. */
+  assert.match(LIVE, /invokeAi\('recipe-photo-read'/);
+  assert.match(read('src/lib/ai-invoke.ts'), /ctx instanceof Response/);
   assert.match(LIVE, /return \{ kind: 'offline' \};/);
   // R2-F7: a failed call is only "offline" when the server did not answer at all (web shows a missing
   // function as a network failure, because the gateway's 404 carries no CORS headers).
   assert.match(LIVE, /await serverAnswers\(\)\) \? \{ kind: 'not_available' \} : \{ kind: 'offline' \}/);
   assert.match(LIVE, /mode: 'no-cors'/);
-  assert.match(LIVE, /recipePhotoResultFrom\(body\)/, 'the device re-runs the guard');
+  assert.match(LIVE, /recipePhotoResultFrom\(a\.body\)/, 'the device re-runs the guard');
 });
 
 test('the entry point needs Premium AI AND Nutrition, and is hidden otherwise', () => {

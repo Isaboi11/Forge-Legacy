@@ -16,9 +16,15 @@ export default AsyncStorage;
 export const uuid = () => globalThis.crypto.randomUUID();
 export const currentAppSession = () => null;
 
-/* @/lib/diagnostics */
+/* @/lib/diagnostics — `reported` holds every `reportError` error, `reportedOpts` its options; `crumbs` every breadcrumb. */
 export const reported = [];
-export const reportError = (e) => void reported.push(e);
+export const reportedOpts = [];
+export const reportError = (e, opts) => {
+  reported.push(e);
+  reportedOpts.push(opts ?? null);
+};
+export const crumbs = [];
+export const breadcrumb = (category, message, data) => void crumbs.push({ category, message, data });
 
 /* @/lib/storage-upload — the media path; nothing under test uploads. */
 export const MAX_CHECKIN_BYTES = 50 * 1024 * 1024;

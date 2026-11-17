@@ -59,6 +59,12 @@ export const consentAllowsNow = (kind: ConsentKind): boolean => gate.allowsNow(k
 /** Settings: withdraw. Honoured on this phone at once; resolves whether the server stored it. */
 export const withdrawConsent = (kind: ConsentKind): Promise<boolean> => gate.answer(kind, 'withdrawn');
 export const refreshConsents = (): Promise<void> => gate.refresh();
+/**
+ * An AI function answered `no_consent` (Sprint 1, P-G9: the server checks `health_consents` itself) although this
+ * phone thought it had a yes. The same sheet as `ensureConsent`, asked again; true = they agreed and it is stored,
+ * so the call can be tried once more. `lib/ai-invoke.ts` is the one caller.
+ */
+export const reaskConsent = (kind: ConsentKind): Promise<boolean> => gate.reask(kind);
 /** Start the read without waiting on it (a screen that wants the answer ready before it is needed). */
 export const warmConsents = (): void => void gate.ready();
 /** Wait for the answers to be read (never asks) — for background work that then checks `consentAllowsNow`. */
