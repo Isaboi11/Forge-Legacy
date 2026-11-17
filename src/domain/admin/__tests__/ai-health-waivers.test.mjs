@@ -77,6 +77,8 @@ test('⚠ a read from before 0272 still draws — the waived counts are unknown 
 });
 
 test('the page shows them in plain words, only when the server sent them', () => {
-  const page = readFileSync(new URL('../../../app/admin-ai.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
-  assert.match(page, /\{h\.waived \? \(\n\s+<>\n\s+<StatLine label="Free daily uses \(after the month ran out\)" value=\{h\.waived\.floor\} \/>\n\s+<StatLine label="Typed builds not charged twice" value=\{h\.waived\.typedBuild\} \/>\n\s+<StatLine label="Photo tidy passes at no charge" value=\{h\.waived\.photoTidy\} \/>/);
+  // Web / trunk: AI health is the Business CRM page (`AiHealthPage`); the three counts are figures beside
+  // "Credits charged", spread in only when `h.waived` is not null (build 11: three StatLines on /admin-ai).
+  const page = readFileSync(new URL('../../../components/forge/admin/pages/AiHealthPage.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(page, /\.\.\.\(h\.waived\n\s+\? \[\n\s+\{ label: 'Free daily uses \(after the month ran out\)', value: h\.waived\.floor\.toLocaleString\('en-US'\) \},\n\s+\{ label: 'Typed builds not charged twice', value: h\.waived\.typedBuild\.toLocaleString\('en-US'\) \},\n\s+\{ label: 'Photo tidy passes at no charge', value: h\.waived\.photoTidy\.toLocaleString\('en-US'\) \},\n\s+\]\n\s+: \[\]\),/);
 });
