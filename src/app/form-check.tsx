@@ -75,6 +75,9 @@ import { writeExerciseInbox } from '@/lib/exercise-inbox';
 import { useMediaPicker } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { ensureConsent } from '@/lib/consent';
+import { NOT_CHARGED } from '@/domain/ai/ai-failure';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 
 /**
  * FORM CHECK — built to `design_reference/Forge Modal Library Design (8)/Coach Holt Form Check.dc.html`
@@ -221,6 +224,8 @@ export default function FormCheckScreen() {
   const [quote, setQuote] = useState<FormQuote | null>(null);
   const [landed, setLanded] = useState<{ uri: string; ms: number }[]>([]);
   const cancelRef = useRef(false);
+  /* Leaving the screen mid-read stops the request (Sprint 1, P-G3). Cancel only stops the screen — see `send`. */
+  const closeSignal = useCloseSignal();
 
   const canRead = formCheckAvailable();
 
@@ -300,7 +305,7 @@ export default function FormCheckScreen() {
     setStage({ step: 'watching', phase: 1, lift: chosen });
     const last = await lastSavedForm(formLiftKey(chosen.name, chosen.key));
     const known = chosen.key ? knownFromCoaching(coachingContent.getPublished(chosen.key)) : '';
-    const res = await formCheck({ lift: chosen.name, frames: got.frames, times: got.times, sizes: got.sizes, note, focus, known, last, pose: got.pose?.facts });
+    const res = await formCheck({ lift: chosen.name, frames: got.frames, times: got.times, sizes: got.sizes, note, focus, known, last, pose: got.pose?.facts }, closeSignal());
     /* ⚠ A CANCEL DURING THE MODEL CALL ONLY STOPS THE SCREEN. The request is already out; if it comes back
        readable the function has spent the credit. The athlete asked to stop looking, not for a refund. */
     if (cancelRef.current) return;
@@ -345,8 +350,10 @@ export default function FormCheckScreen() {
         return setStage({ step: 'problem', text: 'That clip was too big to send. A shorter trim works best, from any angle.' });
       case 'unavailable_here':
         return setStage({ step: 'problem', text: 'Form check needs the latest version of the app.' });
+      /* "Not charged." only when the server says it gave the credits back (Sprint 1 contract §1.2): after the app's
+         own 90 s a read the server finished may still have spent them. */
       case 'unavailable':
-        return setStage({ step: 'problem', text: 'That broke on my end. Nothing was charged. Try again in a moment.' });
+        return setStage({ step: 'problem', text: withNotCharged('That broke on my end. Try again in a moment.', res.refunded) });
       case 'offline':
         return setStage({ step: 'problem', text: "I couldn't reach my notes just then. Check your connection and send it again." });
       /* "Not now" on the AI consent sheet — the frames never left the phone. */
@@ -440,7 +447,7 @@ export default function FormCheckScreen() {
         </View>
         <View style={[s.bottom, { paddingBottom: 26 + insets.bottom }]}>
           <FcPrimary label="Try another clip" onPress={restart} />
-          {stage.step === 'unreadable' && !stage.charged ? <Text style={s.foot}>Not charged.</Text> : null}
+          {stage.step === 'unreadable' && !stage.charged ? <Text style={s.foot}>{NOT_CHARGED}</Text> : null}
         </View>
       </Shell>
     );

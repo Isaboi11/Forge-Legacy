@@ -20,6 +20,7 @@ import { clock } from '@/domain/workout/posted-workout-lines';
 import { pickImageFromLibrary } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { withNotCharged } from '@/domain/ai/ai-call';
 import { usePremiumAi } from '@/lib/entitlement';
 
 /**
@@ -170,10 +171,14 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
    * one is dropped. A ref rather than state because it is read from an async handler, never in render.
    */
   const gen = useRef(0);
+  /** The read in flight, stopped when the sheet closes (Sprint 1, P-G3) — nobody is left to see its answer. */
+  const reader = useRef<AbortController | null>(null);
 
   /** Closing clears everything: the next open starts from an empty box, which is the whole contract. */
   const close = () => {
     gen.current += 1;
+    reader.current?.abort();
+    reader.current = null;
     setPasteText('');
     setImportError(null);
     setPreview(null);
@@ -234,8 +239,13 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
     setPhotoBusy(true);
     try {
       /* The card reader and the AI check, the same as every other door (PO 2026-09-30) — `readImportPhoto`. */
-      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
+      const ctl = new AbortController();
+      reader.current = ctl;
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key, ctl.signal);
       if (mine !== gen.current) return; // The sheet closed while we were reading.
+      /* Every failure line, plus "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+      const refunded = r.kind !== 'ok' && r.kind !== 'unparsed' && r.kind !== 'no_consent' && !!r.refunded;
+      const failed = (line: string) => setImportError(withNotCharged(line, refunded));
       // ⚠ THREE FAILURES THAT FEEL IDENTICAL AND ARE NOT. Brief §6: an outage must be visibly different
       // from a verdict. "We couldn't read that" when the request never left the building tells somebody
       // their program is unreadable, and they will go and retake a photograph that was always fine.
@@ -256,34 +266,34 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
           setImportError(r.error);
           break;
         case 'not_a_program':
-          setImportError('That doesn’t look like a training program. Try a photo of the table itself.');
+          failed('That doesn’t look like a training program. Try a photo of the table itself.');
           break;
         case 'unreadable':
-          setImportError('Couldn’t read a table out of that photo. A straighter, closer shot usually does it.');
+          failed('Couldn’t read a table out of that photo. A straighter, closer shot usually does it.');
           break;
         case 'too_large':
-          setImportError('That image is too big to read. Try a screenshot rather than a full-size photo.');
+          failed('That image is too big to read. Try a screenshot rather than a full-size photo.');
           break;
         case 'out_of_credits':
-          setImportError('You’re out of Premium AI credits for this month.');
+          failed('You’re out of Premium AI credits for this month.');
           break;
         case 'daily_limit':
-          setImportError('That’s a lot of photos for one day. Try again tomorrow, or paste the program as text.');
+          failed('That’s a lot of photos for one day. Try again tomorrow, or paste the program as text.');
           break;
         case 'not_entitled':
-          setImportError('Reading photos is part of Premium AI. Paste the program as text instead.');
+          failed('Reading photos is part of Premium AI. Paste the program as text instead.');
           break;
         case 'unsupported_format':
-          setImportError('That image type can’t be read. Take a screenshot of it and upload that instead.');
+          failed('That image type can’t be read. Take a screenshot of it and upload that instead.');
           break;
         case 'unavailable':
-          setImportError('Photo reading isn’t working right now. Try again in a bit, or paste the program as text.');
+          failed('Photo reading isn’t working right now. Try again in a bit, or paste the program as text.');
           break;
         case 'no_consent':
           setImportError(AI_DECLINED_LINE);
           break;
         default:
-          setImportError('Couldn’t reach us to read that photo. Check your connection and try again.');
+          failed('Couldn’t reach us to read that photo. Check your connection and try again.');
       }
     } finally {
       // In a `finally` because every branch above needs it and the one that forgot would strand the

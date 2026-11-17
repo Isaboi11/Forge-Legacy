@@ -271,6 +271,6 @@ test('the function: CORS first, the nutrition gate before any fetch, redirects r
 test('the screen: "Paste a recipe" is live and a link goes through readRecipeLink', () => {
   const SCREEN = read('src/app/my-recipes.tsx');
   assert.match(SCREEN, /\{ id: 'paste', title: 'Paste a recipe', sub: '[^']*', soon: false \}/);
-  assert.match(SCREEN, /kind === 'link' \? await readRecipeLink\(pasteText\) : readPastedText\(pasteText\)/);
+  assert.match(SCREEN, /kind === 'link' \? await readRecipeLink\(pasteText, closeSignal\(\)\) : readPastedText\(pasteText\)/);
   assert.match(SCREEN, /openDraft\(r\.read, r\.from\)/);
 });

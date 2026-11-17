@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import { readAsBase64 } from '@/data/program-photo-live';
 import { sniffMediaType } from '@/domain/program/photo-read-result';
 import { RECIPE_PHOTO_MEDIA, recipePhotoResultFrom, type RecipePhotoResult } from '@/domain/nutrition/recipe-photo-read';
@@ -54,8 +55,11 @@ async function serverAnswers(): Promise<boolean> {
   }
 }
 
-/** Read one picked recipe image. ⚠ NEVER THROWS — it runs behind a button on a screen with unsaved work. */
-export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult | NoAiConsent> {
+/**
+ * Read one picked recipe image. ⚠ NEVER THROWS — it runs behind a button on a screen with unsaved work.
+ * ⏱ 90 s (contract §3), aborted when `signal` fires. Failures are reported (P-G1); a refund rides on the result.
+ */
+export async function readRecipePhoto(uri: string, signal?: AbortSignal): Promise<Refundable<RecipePhotoResult> | NoAiConsent> {
   const file = await readAsBase64(uri);
   if (!file) return { kind: 'offline' };
 
@@ -68,28 +72,21 @@ export async function readRecipePhoto(uri: string): Promise<RecipePhotoResult | 
 
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('recipe-photo-read', {
-      body: { image: file.data, mediaType },
-    });
-
-    // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context` (see `program-photo-live.ts`).
-    let body: unknown = data;
-    if (error) {
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return (await serverAnswers()) ? { kind: 'not_available' } : { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return ctx.status === 404 ? { kind: 'not_available' } : { kind: 'unavailable' };
-    }
-    if (!body) return { kind: 'offline' };
-
-    const result = recipePhotoResultFrom(body);
-    if (result.kind === 'ok') {
-      if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
-      readByContent.set(key, result);
-    }
+  // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context`, which `invokeAi` reads (see `program-photo-live.ts`).
+  const a = await invokeAi('recipe-photo-read', { image: file.data, mediaType }, { signal });
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
+  const result = await (async (): Promise<RecipePhotoResult> => {
+    if (a.cancelled) return { kind: 'offline' };
+    if (a.offline) return (await serverAnswers()) ? { kind: 'not_available' } : { kind: 'offline' };
+    if (a.timedOut) return { kind: 'unavailable' };
+    if (!a.body) return a.status === 404 ? { kind: 'not_available' } : a.status === 200 ? { kind: 'offline' } : { kind: 'unavailable' };
+    return recipePhotoResultFrom(a.body);
+  })();
+  if (result.kind === 'ok') {
+    if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
+    readByContent.set(key, result);
     return result;
-  } catch {
-    return { kind: 'offline' };
   }
+  reportAiCall(a, result.kind);
+  return refundedResult(result, a);
 }

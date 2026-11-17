@@ -2,6 +2,8 @@ import type { ImagePickerAsset } from 'expo-image-picker';
 
 import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import {
   capFrames,
   FORM_ACTION,
@@ -320,8 +322,11 @@ export interface FormRequest {
  *
  * ⚠ NEVER THROWS. `offline` is the app failing, `unavailable` is the server failing, `unreadable` is a
  * read we genuinely could not get out of those frames (and was not charged for).
+ *
+ * ⏱ 90 s (contract §3), aborted when `signal` fires (the screen closed). Failures are reported (P-G1); a refund
+ * rides on the result.
  */
-export async function formCheck(req: FormRequest): Promise<FormCheckResult | NoAiConsent> {
+export async function formCheck(req: FormRequest, signal?: AbortSignal): Promise<Refundable<FormCheckResult> | NoAiConsent> {
   const cleanLift = (req.lift ?? '').replace(/\s+/g, ' ').trim().slice(0, FORM_LIFT_CHARS);
   const cleanNote = (req.note ?? '').replace(/\s+/g, ' ').trim().slice(0, FORM_NOTE_CHARS);
   if (!cleanLift) return { kind: 'bad_frames' };
@@ -333,39 +338,38 @@ export async function formCheck(req: FormRequest): Promise<FormCheckResult | NoA
 
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('coach-form-check', {
-      body: {
-        lift: cleanLift,
-        frames: capped,
-        times: req.times?.slice(0, capped.length),
-        sizes: req.sizes?.slice(0, capped.length),
-        note: cleanNote || undefined,
-        focus: req.focus?.length ? req.focus : undefined,
-        known: req.known || undefined,
-        last: req.last ?? undefined,
-        pose: req.pose ?? undefined,
-      },
-    });
+  const a = await invokeAi(
+    'coach-form-check',
+    {
+      lift: cleanLift,
+      frames: capped,
+      times: req.times?.slice(0, capped.length),
+      sizes: req.sizes?.slice(0, capped.length),
+      note: cleanNote || undefined,
+      focus: req.focus?.length ? req.focus : undefined,
+      known: req.known || undefined,
+      last: req.last ?? undefined,
+      pose: req.pose ?? undefined,
+    },
+    { signal },
+  );
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
 
-    /*
-     * ⚠ A NON-2xx IS NOT "OFFLINE" — the bug `program-photo-live.ts` records in the same place. The
-     * function answers `bad_request` with a 400 and `unconfigured` / `meter_unavailable` /
-     * `upstream_error` with a 503, and `functions.invoke` hands every one of those back as an `error`
-     * with `data` null. The body is still there, on the error's `context` (the Response); only a request
-     * that never got an answer is offline.
-     */
-    let body: unknown = data;
-    if (error) {
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
-    }
-    if (!body) return { kind: 'offline' };
-
-    return formResultFrom(body, cleanLift, capped.length);
-  } catch {
-    return { kind: 'offline' };
-  }
+  /*
+   * ⚠ A NON-2xx IS NOT "OFFLINE" — the bug `program-photo-live.ts` records in the same place. The
+   * function answers `bad_request` with a 400 and `unconfigured` / `meter_unavailable` /
+   * `upstream_error` with a 503, and `functions.invoke` hands every one of those back as an `error`
+   * with `data` null. The body is still there, on the error's `context` (the Response) — `invokeAi` reads
+   * it; only a request that never got an answer is offline.
+   */
+  const r = ((): FormCheckResult => {
+    if (a.offline || a.cancelled) return { kind: 'offline' };
+    if (a.timedOut) return { kind: 'unavailable' };
+    if (!a.body) return a.status === 200 ? { kind: 'offline' } : { kind: 'unavailable' };
+    return formResultFrom(a.body, cleanLift, capped.length);
+  })();
+  /* A code-guard stop is the guard working, not a failure. */
+  if (r.kind === 'ok' || r.kind === 'stopped') return r;
+  reportAiCall(a, r.kind);
+  return refundedResult(r, a);
 }

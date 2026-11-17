@@ -103,8 +103,10 @@ test('the write screen asks the gate before offering AI, tidies every photo, and
   assert.match(WRITE, /if \(quiet\) \{[\s\S]*?\.kind !== 'rules'\) return;\s*\}/);
   assert.match(WRITE, /if \(quiet\) return;/);
   /* The card is read whole first; the table read is the fallback only when that function has no answer. */
-  assert.match(WRITE, /const card = await readWorkoutCard\(picked\[0\]\);/);
-  assert.match(WRITE, /card\.kind === 'not_deployed' \|\| card\.kind === 'offline' \|\| card\.kind === 'unavailable'\) r = await readProgramPhoto\(picked\[0\]\);/);
+  assert.match(WRITE, /const card = await readWorkoutCard\(picked\[0\], closeSignal\(\)\);/);
+  assert.match(WRITE, /if \(card\.kind === 'not_deployed' \|\| cardReadFallsBack\(card\)\) r = await readProgramPhoto\(picked\[0\], closeSignal\(\)\);/);
+  /* …which is not deployed, no connection or the server failing — never after a timeout (Sprint 1, V-D5). */
+  assert.match(read('../../data/workout-card-read-live.ts'), /return \(card\.kind === 'not_deployed' \|\| card\.kind === 'offline' \|\| card\.kind === 'unavailable'\) && !card\.slow;/);
   assert.match(WRITE, /setText\(beforeAi\);/);
   assert.match(WRITE, /Tidied by AI\. Check every number against the card/);
   /* The rewrite is only ever put in the box by the client, which ran checkAiRewrite first. */
