@@ -19,7 +19,7 @@ const ALL = readMigrations(MIGRATIONS);
 
 test('every public table the migrations create ends with row-level security on', () => {
   const r = checkRls(ALL);
-  assert.ok(r.tables >= 129, `the ledger saw ${r.tables} tables — a parser that finds none passes trivially`);
+  assert.ok(r.tables >= 132, `the ledger saw ${r.tables} tables — a parser that finds none passes trivially`);
   assert.deepEqual(r.dynamic, [], 'no table name built at run time (it could not be checked)');
   assert.deepEqual(
     r.missing,
@@ -32,6 +32,11 @@ test('it would have caught coach_ai_config: without 0267, exactly that table, fr
   assert.ok(ALL.some((f) => f.name.startsWith('0267_')), '0267 is in this tree');
   const r = checkRls(ALL.filter((f) => !f.name.startsWith('0267_')));
   assert.deepEqual(r.missing, [{ table: 'coach_ai_config', createdIn: '0144_coach_ai_credits.sql' }]);
+});
+
+test('0269’s three tables are in the ledger with RLS on', () => {
+  const { ledger } = checkRls(ALL);
+  for (const t of ['ai_feedback', 'ai_ops_config', 'ai_canary_runs']) assert.equal(ledger.get(t)?.rls, true, t);
 });
 
 // ── the parser, on the shapes it must not get wrong ───────────────────────────────────────────────────────
