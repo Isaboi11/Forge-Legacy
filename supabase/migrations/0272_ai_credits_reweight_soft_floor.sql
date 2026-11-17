@@ -39,8 +39,12 @@
 --      resets_on, low_at (20, config), and the floor (per day, used today, left today, on_floor). Not entitled →
 --      zeros, never a balance (coach_ai_balance answers 150 to anybody). coach_ai_balance is untouched (old phones).
 --   6. ai_feedback.feature gains 'workout_tidy' (the typed "Fix it with AI" result's Helpful / Not helpful).
---   7. Grants: coach_ai_credits() revoked from public AND anon (Supabase grants both directly), granted to
---      authenticated. Replaced functions keep their grants (create or replace).
+--   7. admin_ai_health — the LIVE source (= 0269's text, md5-checked 2026-11-17; 0271 does not touch it) plus the
+--      waived counts: totals.waivers {floor, typed_build, photo_tidy} and floor_uses / typed_build / photo_tidy on
+--      every by_fn and by_fn_day row — same window, same time zone, delivered calls only (a refunded one gave nothing).
+--      Same signature, same admin_guard() (is_app_admin) first.
+--   8. Grants: coach_ai_credits() revoked from public AND anon (Supabase grants both directly), granted to
+--      authenticated. Replaced functions keep their grants (create or replace); restated anyway.
 --
 -- ══ ⚠ SAFE FOR EVERY DEPLOYED FUNCTION AND EVERY INSTALLED PHONE ══
 --
@@ -549,8 +553,163 @@ alter table public.ai_feedback add constraint ai_feedback_feature_check
   check (feature in ('chat', 'kitchen', 'meal_photo', 'form_check', 'import', 'author', 'interpret', 'recipe_photo', 'workout_tidy'));
 
 -- ══════════════════════════════════════════════════════════════════════════════
--- 8 · Grants — Supabase grants EXECUTE on a new function to anon and authenticated directly, so the new one is
---     revoked from public AND anon, then granted to authenticated. Replaced functions keep their grants.
+-- 8 · admin_ai_health — the LIVE source (pg_get_functiondef 2026-11-17 = 0269's text, md5 de03285c…); the ONE
+--     change: the waived calls are counted (marked 0272), so /admin-ai can say how many free daily uses the soft
+--     floor gave, and how many typed builds and photo tidies rode on a paid call.
+-- ══════════════════════════════════════════════════════════════════════════════
+
+create or replace function public.admin_ai_health(p_days integer default 7, p_tz text default 'UTC')
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_days  int  := least(greatest(coalesce(p_days, 7), 1), 90);
+  v_tz    text := coalesce(nullif(p_tz, ''), 'UTC');
+  v_since timestamptz;
+  v_cfg   public.ai_ops_config%rowtype;
+  v_out   jsonb;
+begin
+  perform public.admin_guard();
+
+  -- An unknown zone would raise inside every bucket below; the dashboard's clock falls back to UTC instead.
+  if not exists (select 1 from pg_catalog.pg_timezone_names z where z.name = v_tz) then
+    v_tz := 'UTC';
+  end if;
+  -- The first local midnight of the window, so the oldest day is a whole day like the others.
+  v_since := (((now() at time zone v_tz)::date - (v_days - 1))::timestamp) at time zone v_tz;
+
+  select * into v_cfg from public.ai_ops_config c where c.id;
+
+  with s as (
+    select x.fn,
+           x.action,
+           coalesce(x.fn, 'legacy:' || x.action)                  as grp,
+           x.credits,
+           x.cost_usd,
+           x.latency_ms,
+           x.waiver,                                              -- 0272
+           (x.reservation_id is not null and x.uncharged)         as refunded,
+           public.ai_spend_failed(x.outcome, x.uncharged)         as failed,
+           coalesce(x.outcome = 'cancelled', false)               as cancelled,
+           (x.occurred_at at time zone v_tz)::date                as d
+      from public.coach_ai_spend x
+     where x.occurred_at >= v_since
+  ),
+  f as (
+    select fb.feature, fb.rating, (fb.created_at at time zone v_tz)::date as d
+      from public.ai_feedback fb
+     where fb.created_at >= v_since
+  )
+  select jsonb_build_object(
+    'days',         v_days,
+    'tz',           v_tz,
+    'since',        v_since,
+    'generated_at', now(),
+    'totals', jsonb_build_object(
+      'calls',        (select count(*) from s),
+      'failures',     (select count(*) from s where s.failed),
+      'cancelled',    (select count(*) from s where s.cancelled),
+      'refunds',      (select count(*) from s where s.refunded),
+      'credits',      coalesce((select sum(s.credits) from s where not s.refunded), 0),
+      'cost_usd',     coalesce((select round(sum(s.cost_usd), 4) from s), 0),
+      'legacy_calls', (select count(*) from s where s.fn is null),
+      -- 0272: calls that held 0 credits on purpose, delivered (a refunded one gave nothing): the soft floor's free daily
+      -- uses, a typed build's write riding on its paid turn, a photo's tidy pass riding on its paid read.
+      'waivers', jsonb_build_object(
+        'floor',       (select count(*) from s where s.waiver = 'floor' and not s.refunded),
+        'typed_build', (select count(*) from s where s.waiver = 'typed_build' and not s.refunded),
+        'photo_tidy',  (select count(*) from s where s.waiver = 'photo_tidy' and not s.refunded))),
+    'last_24h', (select jsonb_build_object(
+                          'calls',    count(*),
+                          'failures', count(*) filter (where public.ai_spend_failed(y.outcome, y.uncharged)))
+                   from public.coach_ai_spend y
+                  where y.occurred_at > now() - interval '24 hours'),
+    'by_fn', coalesce((select jsonb_agg(r order by r.calls desc, r.grp) from (
+        select s.grp,
+               max(s.fn)                                                   as fn,
+               case when max(s.fn) is null then max(s.action) end          as action,
+               count(*)                                                    as calls,
+               count(*) filter (where s.failed)                            as failures,
+               count(*) filter (where s.cancelled)                         as cancelled,
+               count(*) filter (where s.refunded)                          as refunds,
+               coalesce(sum(s.credits) filter (where not s.refunded), 0)   as credits,
+               count(*) filter (where s.waiver = 'floor' and not s.refunded)       as floor_uses,   -- 0272
+               count(*) filter (where s.waiver = 'typed_build' and not s.refunded) as typed_build,  -- 0272
+               count(*) filter (where s.waiver = 'photo_tidy' and not s.refunded)  as photo_tidy,   -- 0272
+               round(coalesce(sum(s.cost_usd), 0), 4)                      as cost_usd,
+               count(s.latency_ms)                                         as timed,
+               round(percentile_cont(0.5)  within group (order by s.latency_ms))::int as p50_ms,
+               round(percentile_cont(0.95) within group (order by s.latency_ms))::int as p95_ms
+          from s
+         group by s.grp) r), '[]'::jsonb),
+    'by_fn_day', coalesce((select jsonb_agg(r order by r.d desc, r.calls desc, r.grp) from (
+        select s.d,
+               s.grp,
+               max(s.fn)                                                   as fn,
+               case when max(s.fn) is null then max(s.action) end          as action,
+               count(*)                                                    as calls,
+               count(*) filter (where s.failed)                            as failures,
+               count(*) filter (where s.cancelled)                         as cancelled,
+               count(*) filter (where s.refunded)                          as refunds,
+               coalesce(sum(s.credits) filter (where not s.refunded), 0)   as credits,
+               count(*) filter (where s.waiver = 'floor' and not s.refunded)       as floor_uses,   -- 0272
+               count(*) filter (where s.waiver = 'typed_build' and not s.refunded) as typed_build,  -- 0272
+               count(*) filter (where s.waiver = 'photo_tidy' and not s.refunded)  as photo_tidy,   -- 0272
+               round(coalesce(sum(s.cost_usd), 0), 4)                      as cost_usd,
+               count(s.latency_ms)                                         as timed,
+               round(percentile_cont(0.5)  within group (order by s.latency_ms))::int as p50_ms,
+               round(percentile_cont(0.95) within group (order by s.latency_ms))::int as p95_ms
+          from s
+         group by s.d, s.grp) r), '[]'::jsonb),
+    'feedback', coalesce((select jsonb_agg(r order by r.d desc, r.feature) from (
+        select f.d, f.feature,
+               count(*) filter (where f.rating = 1)  as up,
+               count(*) filter (where f.rating = -1) as down
+          from f
+         group by f.d, f.feature) r), '[]'::jsonb),
+    'feedback_totals', coalesce((select jsonb_agg(r order by r.feature) from (
+        select f.feature,
+               count(*) filter (where f.rating = 1)  as up,
+               count(*) filter (where f.rating = -1) as down
+          from f
+         group by f.feature) r), '[]'::jsonb),
+    'canary', jsonb_build_object(
+      'configured', coalesce(v_cfg.canary_url is not null, false),
+      'last',       (select jsonb_build_object('ran_at', r.ran_at, 'ok', r.ok, 'failed', r.failed, 'results', r.results)
+                       from public.ai_canary_runs r order by r.ran_at desc limit 1),
+      'last_ok_at', (select max(r.ran_at) from public.ai_canary_runs r where r.ok),
+      'recent',     coalesce((select jsonb_agg(jsonb_build_object('ran_at', r.ran_at, 'ok', r.ok, 'failed', r.failed)
+                                               order by r.ran_at desc)
+                                from (select * from public.ai_canary_runs order by ran_at desc limit 14) r), '[]'::jsonb)),
+    'unsettled', (select jsonb_build_object('count', count(*), 'oldest_at', min(r.reserved_at))
+                    from public.coach_ai_reservation r
+                   where r.settled_at is null
+                     and r.reserved_at < now() - make_interval(mins => coalesce(v_cfg.unsettled_minutes, 30))),
+    'alerts', jsonb_build_object(
+      'tripped',            public.ai_health_alert_state(),
+      'last_sent',          coalesce(v_cfg.last_alert_at, '{}'::jsonb),
+      'admins_with_device', (select count(*) from public.app_admins a
+                              where exists (select 1 from public.push_tokens t
+                                             where t.user_id = a.user_id and t.disabled_at is null))),
+    'thresholds', jsonb_build_object(
+      'fail_rate',            v_cfg.fail_rate,
+      'fail_min_calls',       v_cfg.fail_min_calls,
+      'drain_streak',         v_cfg.drain_streak,
+      'unsettled_minutes',    v_cfg.unsettled_minutes,
+      'alert_cooldown_hours', v_cfg.alert_cooldown_hours,
+      'canary_min_gap_hours', v_cfg.canary_min_gap_hours)
+  ) into v_out;
+
+  return v_out;
+end;
+$$;
+
+-- ══════════════════════════════════════════════════════════════════════════════
+-- 9 · Grants — Supabase grants EXECUTE on a new function to anon and authenticated directly, so the new one is
+--     revoked from public AND anon, then granted to authenticated. Replaced functions keep their grants; restated.
 -- ══════════════════════════════════════════════════════════════════════════════
 
 revoke all on function public.coach_ai_credits() from public, anon;
@@ -561,5 +720,8 @@ grant execute on function public.coach_ai_reserve(text, text) to authenticated;
 
 revoke all on function public.coach_ai_settle(uuid, text, text, integer, integer, integer, integer, integer, boolean) from public, anon;
 grant execute on function public.coach_ai_settle(uuid, text, text, integer, integer, integer, integer, integer, boolean) to authenticated;
+
+revoke all on function public.admin_ai_health(integer, text) from public, anon;
+grant execute on function public.admin_ai_health(integer, text) to authenticated;
 
 commit;
