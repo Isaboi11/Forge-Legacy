@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-3",
+  "promptHash": "9b3b6fbc218f118dc1753ef530b56c685464acfe03eec9be7f8f1815f8325dd6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T19:55:30.719Z",
+  "reply": {
+    "text": "```json\n{\n  \"options\": [\n    {\n      \"name\": \"Crunchy Veggie and Hummus Plate\",\n      \"why\": \"no stove needed and ready in minutes\",\n      \"cuisine\": \"Mediterranean\",\n      \"method\": \"no-cook\",\n      \"minutes\": 5,\n      \"servings\": 1,\n      \"mealType\": \"snacks\",\n      \"ingredients\": [\n        { \"text\": \"100 g hummus\", \"quantity\": 100, \"unit\": \"g\", \"food\": \"hummus\" },\n        { \"text\": \"80 g cucumber, sliced into sticks\", \"quantity\": 80, \"unit\": \"g\", \"food\": \"cucumber\" },\n        { \"text\": \"70 g carrot, cut into sticks\", \"quantity\": 70, \"unit\": \"g\", \"food\": \"carrot\" },\n        { \"text\": \"70 g red bell pepper, sliced\", \"quantity\": 70, \"unit\": \"g\", \"food\": \"red bell pepper\" }\n      ],\n      \"steps\": [\n        \"Spoon the hummus onto a plate or into a bowl.\",\n        \"Cut the cucumber, carrot and bell pepper into sticks.\",\n        \"Arrange the veggie sticks around the hummus and dig in.\"\n      ]\n    },\n    {\n      \"name\": \"Crispy Air-Fried Chickpeas\",\n      \"why\": \"fastest hot snack with real crunch\",\n      \"cuisine\": \"Indian\",\n      \"method\": \"air-fryer\",\n      \"minutes\": 15,\n      \"servings\": 2,\n      \"mealType\": \"snacks\",\n      \"ingredients\": [\n        { \"text\": \"240 g chickpeas, drained and patted dry\", \"quantity\": 240, \"unit\": \"g\", \"food\": \"chickpeas\" },\n        { \"text\": \"10 g olive oil\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"olive oil\" },\n        { \"text\": \"cumin, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"cumin\" },\n        { \"text\": \"chilli powder, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"chilli powder\" },\n        { \"text\": \"salt, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"salt\" }\n      ],\n      \"steps\": [\n        \"Pat the chickpeas very dry with a towel.\",\n        \"Toss them with the oil, cumin, chilli powder and salt.\",\n        \"Air-fry at 390°F (200°C) for 12 to 15 minutes, shaking the basket halfway, until deeply golden and crunchy.\",\n        \"Let cool a couple minutes before eating — they crisp up more as they sit.\"\n      ]\n    },\n    {\n      \"name\": \"Parmesan Kale Chips\",\n      \"why\": \"light, crunchy, and uses the oven while you do other things\",\n      \"cuisine\": \"American\",\n      \"method\": \"oven\",\n      \"minutes\": 18,\n      \"servings\": 1,\n      \"mealType\": \"snacks\",\n      \"ingredients\": [\n        { \"text\": \"70 g kale, torn into pieces\", \"quantity\": 70, \"unit\": \"g\", \"food\": \"kale\" },\n        { \"text\": \"8 g olive oil\", \"quantity\": 8, \"unit\": \"g\", \"food\": \"olive oil\" },\n        { \"text\": \"10 g parmesan, grated\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"parmesan\" },\n        { \"text\": \"garlic powder, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"garlic powder\" },\n        { \"text\": \"salt, to taste\", \"quantity\": null, \"unit\": \"\", \"food\": \"salt\" }\n      ],\n      \"steps\": [\n        \"Preheat the oven to 300°F (150°C) and line a tray with parchment.\",\n        \"Tear the kale into bite-size pieces, removing thick stems.\",\n        \"Toss with the oil, garlic powder and salt, then spread in a single layer on the tray.\",\n        \"Bake 12 to 15 minutes until edges are crisp but not browned, checking often.\",\n        \"Sprinkle with parmesan right after it comes out and let cool to fully crisp.\"\n      ]\n    }\n  ]\n}\n```",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 2819,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1742,
+    "output_tokens_details": {
+      "thinking_tokens": 396
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

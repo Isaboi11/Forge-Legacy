@@ -150,6 +150,9 @@ test('live: refuses without a budget, over the estimate, without a key; stops at
   assert.equal(state(recordings, 'fake', r.hash).current.size, 1);
   assert.equal(costOf({ input_tokens: 1e6, output_tokens: 1e6, cache_read_input_tokens: 1e6, cache_creation_input_tokens: 1e6 }, 'claude-sonnet-5'), 2 + 10 + 0.2 + 2.5);
   assert.equal(ratesFor('claude-haiku-4-5-20251001').in, 1, 'the longest prefix wins (0268)');
+  // One usage per function (import-corpus runs the app's own path): counted, not $0 (11-17).
+  const nested = { 'workout-card-read': { input_tokens: 1e6, output_tokens: 0 }, 'workout-tidy': { input_tokens: 0, output_tokens: 1e6 } };
+  assert.equal(costOf(nested, 'claude-sonnet-5'), 2 + 10);
   assert.equal(ratesFor('mystery').in, 2);
 });
 

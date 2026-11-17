@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-2",
+  "promptHash": "9b3b6fbc218f118dc1753ef530b56c685464acfe03eec9be7f8f1815f8325dd6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T19:55:15.034Z",
+  "reply": {
+    "text": "```json\n{\n  \"options\": [\n    {\n      \"name\": \"Sesame Chicken Noodles\",\n      \"why\": \"fastest hot option and close to your protein target\",\n      \"cuisine\": \"Thai\",\n      \"method\": \"pan\",\n      \"minutes\": 25,\n      \"servings\": 1,\n      \"mealType\": \"dinner\",\n      \"ingredients\": [\n        {\"text\": \"6 oz chicken breast, sliced\", \"quantity\": 170, \"unit\": \"g\", \"food\": \"chicken breast\"},\n        {\"text\": \"2 oz wheat noodles, dry\", \"quantity\": 60, \"unit\": \"g\", \"food\": \"wheat noodles\"},\n        {\"text\": \"1 tbsp tahini\", \"quantity\": 16, \"unit\": \"g\", \"food\": \"tahini\"},\n        {\"text\": \"1 tbsp soy sauce\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"soy sauce\"},\n        {\"text\": \"1 tsp honey\", \"quantity\": 7, \"unit\": \"g\", \"food\": \"honey\"},\n        {\"text\": \"1 clove garlic, minced\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"garlic\"},\n        {\"text\": \"1 tsp fresh ginger, grated\", \"quantity\": 5, \"unit\": \"g\", \"food\": \"fresh ginger\"},\n        {\"text\": \"1 tsp lemon juice\", \"quantity\": 5, \"unit\": \"g\", \"food\": \"lemon juice\"},\n        {\"text\": \"1 cup broccoli florets\", \"quantity\": 90, \"unit\": \"g\", \"food\": \"broccoli florets\"},\n        {\"text\": \"1 tsp sesame seeds\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"sesame seeds\"},\n        {\"text\": \"oil for the pan\", \"quantity\": 10, \"unit\": \"g\", \"food\": \"olive oil\"},\n        {\"text\": \"pinch of chilli flakes\", \"quantity\": null, \"unit\": \"\", \"food\": \"chilli flakes\"}\n      ],\n      \"steps\": [\n        \"Boil the noodles until just tender, about 6 minutes, then drain.\",\n        \"Heat oil in a pan over medium-high heat and cook chicken until browned and reaching 165°F inside, about 6-7 minutes.\",\n        \"Add garlic, ginger and broccoli, stir-fry 3 minutes until broccoli is bright and just tender.\",\n        \"Whisk tahini, soy sauce, honey and lemon juice in a small bowl until smooth.\",\n        \"Add noodles and sauce to the pan, toss everything together over low heat for 1-2 minutes.\",\n        \"Top with sesame seeds and chilli flakes, serve hot.\"\n      ]\n    },\n    {\n      \"name\": \"Tofu and Cabbage Sesame Bowl\",\n      \"why\": \"no stove needed, quick cold option\",\n      \"cuisine\": \"Vietnamese\",\n      \"method\": \"no-cook\",\n      \"minutes\": 12,\n      \"servings\": 1,\n      \"mealType\": \"lunch\",\n      \"ingredients\": [\n        {\"text\": \"6 oz firm tofu, cubed\", \"quantity\": 170, \"unit\": \"g\", \"food\": \"firm tofu\"},\n        {\"text\": \"1 cup cabbage, shredded\", \"quantity\": 90, \"unit\": \"g\", \"food\": \"cabbage\"},\n        {\"text\": \"1/2 cup carrot, shredded\", \"quantity\": 60, \"unit\": \"g\", \"food\": \"carrot\"},\n        {\"text\": \"1/3 cup edamame, thawed\", \"quantity\": 50, \"unit\": \"g\", \"food\": \"edamame\"},\n        {\"text\": \"1 tbsp tahini\", \"quantity\": 16, \"unit\": \"g\", \"food\": \"tahini\"},\n        {\"text\": \"1 tbsp soy sauce\", \"quantity\": 15, \"unit\": \"g\", \"food\": \"soy sauce\"},\n        {\"text\": \"1 tsp honey\", \"quantity\": 7, \"unit\": \"g\", \"food\": \"honey\"},\n        {\"text\": \"1 tsp lemon juice\", \"quantity\": 5, \"unit\": \"g\", \"food\": \"lemon juice\"},\n        {\"text\": \"1 clove garlic, minced\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"garlic\"},\n        {\"text\": \"1 tsp sesame seeds\", \"quantity\": 3, \"unit\": \"g\", \"food\": \"sesame seeds\"}\n      ],\n      \"steps\": [\n        \"Pat tofu dry and cut into cubes, place in a bowl.\",\n        \"Add shredded cabbage, carrot and edamame on top.\",\n        \"Whisk tahini, soy sauce, honey, lemon juice and garlic in a small bowl until smooth, adding a splash of water if too thick.\",\n        \"Pour sauce over the bowl and toss gently to coat everything.\",\n        \"Sprinkle with sesame seeds and serve right away.\"\n      ]\n    },\n    {\n      \"name\": \"Air-Fryer Sesame Pork and Broccoli\",\n      \"why\": \"hands-off cooking with a big protein portion\",\n      \"cuisine\": \"Asian-American\",\n      \"method\": \"air-fryer\",\n      \"minutes\": 25,\n      \"servings\": 1,\n      \"mealType\": \"dinner\",\n      \"ingredients\": [\n        {\"text\": \"7 oz pork tenderloin, cubed\", \"quantity\": 200, \"unit\": \"g\", \"food\": \"pork tenderloin\"},\n        {",
+    "stop_reason": "max_tokens"
+  },
+  "usage": {
+    "input_tokens": 2821,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 2600,
+    "output_tokens_details": {
+      "thinking_tokens": 827
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

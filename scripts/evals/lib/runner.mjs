@@ -48,6 +48,12 @@ export function ratesFor(model) {
 export function costOf(usage, model) {
   const r = ratesFor(model);
   const u = usage ?? {};
+  // ⚠ A suite that runs the app's own path (import-corpus) keeps one usage per function: `{ 'workout-card-read': {…},
+  // 'workout-tidy': {…} }`. Counting only the top level measured $0.00 for a run that cost $0.89 (11-17), which left
+  // its budget stop blind. Sum the nested usages too.
+  if (u.input_tokens == null && u.output_tokens == null && typeof u === 'object') {
+    return Object.values(u).reduce((sum, v) => (v && typeof v === 'object' ? sum + costOf(v, model) : sum), 0);
+  }
   return ((u.input_tokens ?? 0) * r.in + (u.output_tokens ?? 0) * r.out + (u.cache_read_input_tokens ?? 0) * r.read + (u.cache_creation_input_tokens ?? 0) * r.write) / 1e6;
 }
 

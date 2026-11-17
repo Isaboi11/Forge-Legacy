@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-22",
+  "promptHash": "57b5a3c1dbf0988c729a4383d8c7dfbaba15df45d65a11e8c575a11331cab486",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:11:30.644Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Hard HAT and Work BOOTS\"\nDay: 22  Tuesday  10-22-24\n\nWarm Up: Pack the work cooler. Fill the\nthermos. It's a work day.\n\n1. a. BACK SQUAT  7 sets of 3 reps @ 70%\nsuper\nset b. DB Bulgarian Split Squats\n7 sets of 3 reps\n(Keep these light to med)\n2min rest between\neach superset\n\n2. DEADLIFT  5 sets of 3 reps (70-75%)\n90 sec rest between sets\n\n3. a. DB RDL's  4 sets of 5 reps\nsuper b. DB Concentration Curls  4 sets of 10 reps\nset                                                eatharm\nc. DB Lateral Raises  4 sets of 20 reps\n90 sec rest between each superset\n\nCardio\nSuitcase/waiter's Carry\n6 total sets of 30 yds\n* 3 each way\n90 sec rest between sets\n* Just like we did on Day 14.\n\nRecovery\nPot Roast\n*extra Meaty\n30 min walk\nHeavy Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Hard Hat and Work Boots\"\nWarm up: Pack the work cooler. Fill the thermos. It's a work day.\n1. a. Back Squat 7 sets of 3 reps @ 70%\nsuper set b. DB Bulgarian Split Squats 7 sets of 3 reps\n* Keep these light to med\nrest 2:00 between each super set\n2. Deadlift 5 sets of 3 reps @ 70-75%\nrest 1:30\n3. a. DB RDL's 4 sets of 5 reps\nsuper set b. DB Concentration Curls 4 sets of 10 reps\n* each arm\nsuper set c. DB Lateral Raises 4 sets of 20 reps\nrest 1:30 between each super set\n4. Suitcase/Waiter's Carry 6 sets\n* 30 yds, 3 each way\n* Just like we did on Day 14.\nrest 1:30\nRecovery: Pot Roast · extra Meaty · 30 min walk · Heavy Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 368,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 391,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1838,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 333,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

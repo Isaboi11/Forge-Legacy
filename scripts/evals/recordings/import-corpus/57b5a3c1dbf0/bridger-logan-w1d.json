@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w1d",
+  "promptHash": "57b5a3c1dbf0988c729a4383d8c7dfbaba15df45d65a11e8c575a11331cab486",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T20:12:59.529Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "CIRCUIT\nWarm up muscle group\n30s Straight bar stretch\n30s Banded Pull Aparts\n30s 90/90 DB external rotation\n30s Light DB shoulder press\n\nBench Press\n10-8-6-4 reps\n\nAlt DB Front Raise\n12-12-12 reps\n\nReverse Grip Lat Pulldown\n10-8-6-4 reps\n\nCable Rope Tricep Extension\n10-10-10 reps\n\nSide Rear Delt Fly Machine\n12-12-12 reps\n\nPush Ups\nF-F-F reps\n\nRow\n10 min"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"CIRCUIT\"\nWarm up: Warm up muscle group - 30s Straight bar stretch, 30s Banded Pull Aparts, 30s 90/90 DB external rotation, 30s Light DB shoulder press\n1. Bench Press 4,6,8,10 reps\n* card lists reps as 10-8-6-4 reps, no % given\n2. Alt DB Front Raise 3 sets of 12 reps\n3. Reverse Grip Lat Pulldown 4,6,8,10 reps\n* card lists reps as 10-8-6-4 reps, no % given\n4. Cable Rope Tricep Extension 3 sets of 10 reps\n5. Side Rear Delt Fly Machine 3 sets of 12 reps\n6. Push Ups 3 sets\n* reps listed as F-F-F (failure each set)\n7. Row 1 set\n* 10 min"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4394,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 200,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 223,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1838,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 298,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}
