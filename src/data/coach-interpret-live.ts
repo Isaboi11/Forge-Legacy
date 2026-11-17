@@ -217,17 +217,20 @@ function stepFrom(raw: unknown, remaining: number | null): InterpretStep | null 
 /**
  * The month's remaining credits, for the surface that shows them.
  *
+ * `period` is the month the server is counting, as its first day (`YYYY-MM-01`, `coach_ai_balance` 0144) —
+ * the credits come back on the first day of the next one. Null when the row did not say.
+ *
  * ⚠ FAILS TO `null`, NOT TO ZERO. A read that failed is not an athlete who is out — showing "0 left"
  * because a request dropped would tell someone they cannot use a thing they have paid for.
  */
 export async function fetchCoachAiBalance(): Promise<
-  { remaining: number; allowance: number; spent: number } | null
+  { remaining: number; allowance: number; spent: number; period: string | null } | null
 > {
   try {
     const { data, error } = await supabase.rpc('coach_ai_balance').maybeSingle();
     if (error || !data) return null;
-    const d = data as { remaining: number; allowance: number; spent: number };
-    return { remaining: d.remaining, allowance: d.allowance, spent: d.spent };
+    const d = data as { remaining: number; allowance: number; spent: number; period?: unknown };
+    return { remaining: d.remaining, allowance: d.allowance, spent: d.spent, period: typeof d.period === 'string' ? d.period : null };
   } catch {
     return null;
   }
