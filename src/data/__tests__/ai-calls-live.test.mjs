@@ -1,6 +1,7 @@
 import './harness/hooks.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 
 /*
  * EVERY NON-CHAT AI CALL, ON THE DEVICE (AI Road to 10 Sprint 1 — PL-3 / PL-4, audit P-G1 / P-G3 / P-G9).
