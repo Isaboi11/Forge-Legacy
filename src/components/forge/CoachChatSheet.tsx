@@ -54,6 +54,7 @@ import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
 import { afterStop, askEndedWell, askEndResult, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
+import { typedBlock, typedBlockLine } from '@/domain/coach/typed-block';
 import { track } from '@/lib/analytics';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { summarizeChat } from '@/data/holt-chats-live';
@@ -1059,16 +1060,11 @@ export function CoachChatSheet({
         }
 
         if (written) {
-          /* One week, written by him, repeated for the length they chose. `vary: false` is the same shape
-             every shelf program with a fixed week already has. */
-          const structure: ProgramStructure = {
-            name: written.valid.title,
-            weeks: c.weeks ?? defaultWeeksFor(c.goal),
-            daysPerWeek: written.valid.days.length,
-            vary: false,
-            days: written.valid.days,
-            weekPlans: null,
-          };
+          /* The week he wrote, run through the rulebook's wave and deload for the length they chose (PB-4,
+             audit B-G4): his rep ranges climb a rep a week, PAS-D7's deload weeks are marked and cut, and any
+             fixed number they asked for is held. It used to be one week repeated (`vary: false`). */
+          const { structure, deloads } = typedBlock(written.valid.title, written.valid.days, c.weeks ?? defaultWeeksFor(c.goal));
+          const shape = typedBlockLine(structure, deloads);
           setBusy(null);
           if (draftNow(structure)) await saveProgramDraft(draftFromStructure(structure));
           setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
@@ -1078,6 +1074,7 @@ export function CoachChatSheet({
           const load = startingLoadLine(c);
           say(
             { kind: 'holt', text: [authoredLine(written.plan, written.valid), roomLine].filter(Boolean).join(' ') },
+            ...(shape ? [{ kind: 'holt' as const, text: shape }] : []),
             ...(load ? [{ kind: 'holt' as const, text: load }] : []),
             { kind: 'program', card: programCard, authored: true },
           );
