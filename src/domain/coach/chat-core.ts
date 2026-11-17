@@ -87,7 +87,8 @@ export type Turn =
   | { kind: 'explain'; name: string; catalogKey: string | null }
   /** `kicker` absent → STOP_KICKER. Crisis, emergency and care stops carry their own. */
   | { kind: 'stop'; text: string; kicker?: string }
-  | { kind: 'error'; text: string; sub: string; action: string }
+  /** `notCharged` — the function gave the credit back (Sprint 1, P-D2): the card says "Not charged." under it. */
+  | { kind: 'error'; text: string; sub: string; action: string; notCharged?: true }
   | { kind: 'saved'; text: string }
   | { kind: 'wall' }
   /** Holt's Kitchen (Kitchen Scope §1): up to three dishes, numbers from the app's catalogue. `numbers` is
