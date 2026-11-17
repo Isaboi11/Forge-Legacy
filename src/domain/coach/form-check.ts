@@ -470,12 +470,28 @@ function cleanDrill(raw: unknown): string {
 // stay away from.
 
 /**
- * Pain, injury, symptoms, and anything clinical.
+ * ⚠ THE CLINICAL NAMES FOR POSTURE AND MOVEMENT — ONE LIST, SHARED (AI Road to 10 Sprint 2, FC-1 · audit V-D6).
  *
- * ⚠ THE POSTURE-DIAGNOSIS WORDS (`valgus`, `varus`, `kyphosis`, `lordosis`, `scoliosis`) WERE ADDED WITH
- * BODY TRACKING (09-28, plan §7). Measured knee and torso positions make a model likelier to reach for the
- * clinical name; "knees move inward relative to the feet" is the movement and stays, "knee valgus" is a
- * diagnosis and goes. Tested both ways beside this file.
+ * `valgus`, `varus`, `kyphosis`, `lordosis`, `scoliosis` were added with body tracking (09-28, plan §7): measured
+ * knee and torso positions make a model likelier to reach for the clinical name. "Knees move inward relative to
+ * the feet" is the movement and stays; "knee valgus" is a diagnosis and goes. Build 11 had them; the web (trunk)
+ * and the deployed function did not. Sprint 2 makes it ONE list with Holt's chat output scanner
+ * (`src/domain/ai/output-scan.ts` `CLINICAL_TERMS`), widened there with the rest of the family (impingement,
+ * anterior pelvic tilt, winging…).
+ *
+ * ⚠ A BYTE-IDENTICAL COPY, NOT AN IMPORT. This file must stay import-free (see the header), so the regex is copied
+ * between the markers below and `src/domain/ai/__tests__/output-scan.test.mjs` fails if the two ever differ. Change
+ * one and you change the other, in the same commit. Here it drops the SENTENCE (form check's posture); in the
+ * output scanner it stops the whole reply. This module runs on the server AND on the app (`formResultFrom`
+ * re-checks every read), which is what puts it on the web too.
+ */
+// ── CLINICAL TERMS: begin ──
+const FORM_CLINICAL_TERMS =
+  /\b(valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|hyperlordo\w*|hyperkyphos\w*|impinge\w*|spondyl\w*|stenosis|dyskines\w*|scapular\s+winging|winged\s+scapula\w*|anterior\s+pelvic\s+tilt|pelvic\s+obliquity|trendelenburg|genu\s+(valgum|varum|recurvatum)|pes\s+(planus|cavus)|hypermobil\w*|crossed\s+syndrome)\b/i;
+// ── CLINICAL TERMS: end ──
+
+/**
+ * Pain, injury, symptoms, and anything clinical. The posture names are {@link FORM_CLINICAL_TERMS}, above.
  *
  * ⚠ `pinch` IS NOT IN HERE, ON PURPOSE. *"Pinch your shoulder blades together"* is one of the most common
  * legitimate cues in lifting, and banning the word would delete good coaching to catch a case `nerve`,
@@ -483,7 +499,7 @@ function cleanDrill(raw: unknown): string {
  * what `feedback_verify_guards_empirically` asks for.
  */
 const MEDICAL_SENTENCE =
-  /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
+  /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
 
 /**
  * Telling somebody to stop training, or to go and get looked at. A referral is not a technique note.
@@ -538,11 +554,12 @@ const BODY_SENTENCE =
 const NUMBER_SENTENCE =
   /(\b\d+(\.\d+)?\s*(lb|lbs|pound|pounds|kg|kgs|kilo|kilos|plate|plates)\b|\b(1\s?rm|e1rm|one[-\s]?rep\s+max|your\s+(true\s+|estimated\s+)?max|max\s+out|rep\s+max)\b|\b\d+\s*%\s*(of\s+)?(your\s+)?(1\s?rm|max)\b)/i;
 
-const BANNED = [MEDICAL_SENTENCE, REFERRAL_SENTENCE, VERDICT_SENTENCE, BODY_SENTENCE, NUMBER_SENTENCE];
+const BANNED = [MEDICAL_SENTENCE, FORM_CLINICAL_TERMS, REFERRAL_SENTENCE, VERDICT_SENTENCE, BODY_SENTENCE, NUMBER_SENTENCE];
 
 /** Which family vetoed this sentence, or null when nothing did. Exported so the tests can name a miss. */
 export function bannedFamily(sentence: string): 'medical' | 'referral' | 'verdict' | 'body' | 'number' | null {
-  const names = ['medical', 'referral', 'verdict', 'body', 'number'] as const;
+  // The clinical posture names are part of the medical family.
+  const names = ['medical', 'medical', 'referral', 'verdict', 'body', 'number'] as const;
   for (let i = 0; i < BANNED.length; i += 1) if (BANNED[i].test(sentence)) return names[i];
   return null;
 }

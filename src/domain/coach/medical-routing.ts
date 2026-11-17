@@ -55,6 +55,18 @@ export const ACUTE =
   /\b(ruptur\w*|fractur\w*(?!\s+(my|the|our)\s+(schedule|week|plans?|routine|program|calendar))|surger\w*|operation|operated|post[-\s]?op|sprain\w*|dislocat\w*|physio\w*|physical\s+therap\w*|doctor|surgeon|orthopa?ed\w*|mri|x[-\s]?ray|numb\w*|tingl\w*|pinched|shooting\s+pain|swell\w*|swollen|herniat\w*|bulging\s+disc|sciatic\w*|concussion|whiplash)\b/i;
 
 /**
+ * A NAMED CONDITION — the diagnosis said out loud (AI Road to 10 Sprint 2, CH-2: new phrasings). Always stops.
+ *
+ * "I have tendinitis, swap the curls" asks for an action, and still names a diagnosis whose severity the limitation
+ * list cannot hold — {@link ACUTE}'s reasoning exactly ("mapping a tear onto a mild exclusion"). Before Sprint 2 the
+ * conditions a gym names most (tennis elbow, shin splints, runner's knee, bursitis, impingement, carpal tunnel…) went
+ * past the guard to a model unless another word in the sentence stopped them. Each is a clinical term, not gym slang,
+ * so it stands alone like `ACUTE`'s words; "my IT band is tight" (anatomy) is not here, "IT band syndrome" is.
+ */
+export const CONDITION =
+  /\b(tendinitis|tendonitis|tendinopathy|tendinosis|bursitis|fasciitis|epicondyl\w*|tennis\s+elbow|golfer'?s\s+elbow|jumper'?s\s+knee|runner'?s\s+knee|shin\s+splints?|it\s?band\s+syndrome|itbs|piriformis\s+syndrome|carpal\s+tunnel|frozen\s+shoulder|adhesive\s+capsulitis|costochondritis|compartment\s+syndrome|osgood[-\s]schlatter\w*|impinge(ment|d|s)?|labral\s+tear\w*|slap\s+tear\w*|(meniscus|meniscal)\s+tear\w*|rotator\s+cuff\s+(tear\w*|injur\w*|tendin\w*)|patellofemoral|chondromalacia|subluxat\w*|spondyl\w*|stenosis|trigger\s+finger|de\s+quervain\w*|achilles\s+tendin\w*)\b/i;
+
+/**
  * ⛔ SOMEONE MAY BE IN DANGER. Checked before everything else, and never sent to the model.
  *
  * Stress test 2026-09-21: the live model answered "I want to hurt myself" and "thinking about ending it"
@@ -159,9 +171,12 @@ export const DIET_DRUG =
 
 /** A medical condition, medication, pregnancy or a procedure — the answer depends on a clinician. → advice */
 export const MEDICAL_CONTEXT =
-  /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney\s+(disease|stones?|failure|function|problems?|issues?|condition|transplant|damage|infection)|ckd|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance|lactating|lactation|breast\s*milk|milk\s+supply|pumping\s+(breast\s*)?milk|(i'?m|i\s+am|im|currently|still|been|while|when|and)\s+(\w+\s+)?nursing\b(?!\s+(a|an|my|the|this|that|his|her|student|school|home|degree|shift|job|injur\w*|hangover))|nursing\s+((a|my|the|our)\s+)?(mom|mother|mum|baby|son|daughter|newborn|infant|twins))\b/i;
+  /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney\s+(disease|stones?|failure|function|problems?|issues?|condition|transplant|damage|infection)|ckd|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance|ibuprofen|advil|motrin|nurofen|aleve|naproxen|tylenol|acetaminophen|paracetamol|panadol|aspirin|nsaids?|pain\s?killers?|pain\s+(meds?|relievers?|pills?)|muscle\s+relaxants?|antihistamines?|benadryl|antibiotics?|anti[-\s]?inflammatories|anti[-\s]?inflammatory\s+(meds?|medications?|pills?|drugs?)|lactating|lactation|breast\s*milk|milk\s+supply|pumping\s+(breast\s*)?milk|(i'?m|i\s+am|im|currently|still|been|while|when|and)\s+(\w+\s+)?nursing\b(?!\s+(a|an|my|the|this|that|his|her|student|school|home|degree|shift|job|injur\w*|hangover))|nursing\s+((a|my|the|our)\s+)?(mom|mother|mum|baby|son|daughter|newborn|infant|twins))\b/i;
 /* "I'm nursing, how much should I eat" reached a model (QA R2-F6). Nursing only as feeding a baby: "nursing a
-   sore hamstring", "a nursing student" and "nursing a hangover" stay clear. */
+   sore hamstring", "a nursing student" and "nursing a hangover" stay clear.
+   Over-the-counter painkillers added 2026-11-17 (Sprint 2, CH-2): "can I take ibuprofen before squats" and "how many
+   advil before a long run" reached a model. A medication question is the athlete's doctor's, so it is here (and the
+   stop names their doctor — `isClinicianStop`). */
 
 /*
  * ══ THE KITCHEN'S STOPS (Chef Holt stress test, 2026-09-25 — `Docs/Chef-Holt-Stress-Test-2026-09-25.md`) ══
@@ -269,7 +284,8 @@ const SYMPTOM_QUESTION_SOURCE = () =>
 
 /** An AMOUNT of caffeine, a supplement or a drug. → care */
 export const DOSE =
-  /(\b\d+(\.\d+)?\s*(mg|mcg|milligrams?|grams?|g|iu|scoops?)\b[^.?!]{0,30}\b(caffeine|creatine|pre-?workout|supplements?|beta-?alanine|melatonin|vitamin|ashwagandha|stims?)\b|\bhow\s+(much|many\s+(mg|milligrams|scoops))\s+(of\s+)?(caffeine|creatine|pre-?workout|melatonin|beta-?alanine|ashwagandha|vitamin\s*d?)\b|\b(caffeine|creatine|pre-?workout|melatonin)\s+(dose|dosage|dosing)\b)/i;
+  /(\b\d+(\.\d+)?\s*(mg|mcg|milligrams?|grams?|g|iu|scoops?)\b[^.?!]{0,30}\b(caffeine|creatine|pre-?workout|supplements?|beta-?alanine|melatonin|vitamin|ashwagandha|stims?)\b|\bhow\s+(much|many\s+(mg|milligrams|scoops))\s+(of\s+)?(caffeine|creatine|pre-?workout|melatonin|beta-?alanine|ashwagandha|vitamin\s*d?)\b|\b(caffeine|creatine|pre-?workout|melatonin)\s+(dose|dosage|dosing)\b|\b\d+\s*(pills?|tablets?|capsules?|caplets?|softgels?)\b)/i;
+/* A count of pills added 2026-11-17 (Sprint 2): "should I take 2 tablets of tylenol" — an amount is an amount. */
 
 const SYMPTOM_QUESTION = new RegExp(SYMPTOM_QUESTION_SOURCE(), 'i');
 
@@ -330,7 +346,7 @@ function routeOnce(t: string): MedicalRoute {
   if (EATING_DISORDER_NAMED.test(t)) return RECOVERY.test(t) ? 'advice' : 'care';
   if (MINOR_AGE.test(t) && MINOR_TOPIC.test(t)) return 'care';
   if (DOSE.test(t)) return 'care';
-  if (ACUTE.test(t)) return 'acute';
+  if (ACUTE.test(t) || CONDITION.test(t)) return 'acute';
   // "broke my ankle" stops; "broke my PR" does not. The body part is the whole difference.
   if (DAMAGE_NEAR_BODY.test(t)) return 'acute';
   if (MEDICAL_CONTEXT.test(t) || NUTRITION_MEDICAL.test(t) || SYMPTOM_QUESTION.test(t)) return 'advice';
