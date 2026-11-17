@@ -44,3 +44,16 @@ test('the phone snapshot waits for the photo to load, not a fixed delay', () => 
   assert.match(host, /const ready = !job\.photo \|\| loadedJob === job;/);
   assert.equal(/job\.photo \? 250 : 60/.test(host), false);
 });
+
+test('⚠ the uploaded picture is a JPEG at the drawing\'s own size — never the 3× PNG (Da Bois, 11-17: 50 MB)', () => {
+  const body = native.slice(native.indexOf('export async function renderStoryImage'), native.indexOf('export async function exportStory'));
+  assert.match(body, /rasterizeStory\(drawing, photo, \{ trueSize: true \}\)/, 'the post snapshot asks for true size');
+  assert.match(body, /mime: 'image\/jpeg'/, 'the post picture is a JPEG');
+  assert.equal(/mime: 'image\/png'/.test(body), false, 'the post picture is never the PNG snapshot');
+  assert.match(native, /resize\(\{ width, height \}\)/, 'the re-encode pins the pixel size');
+  assert.match(native, /SaveFormat\.JPEG/);
+  assert.match(host, /job\.trueSize && Platform\.OS === 'ios' \? PixelRatio\.get\(\)/, 'iOS asks for size ÷ screen scale');
+  assert.match(host, /snapshotSize\(job\)/, 'the snapshot uses that size');
+  const exp = native.slice(native.indexOf('export async function exportStory'));
+  assert.match(exp, /rasterizeStory\(spec\.drawing, photo\)/, 'the share sheet picture is untouched');
+});
