@@ -76,6 +76,8 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { errorMessage } from '@/lib/useQuery';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { AiFeedback } from '@/components/forge/AiFeedback';
+import { uuid } from '@/lib/app-session';
 
 /** How many photos one import takes. Each is a paid read; six covers a six-day week, one photo a day. */
 const MAX_PHOTOS = 6;
@@ -167,6 +169,8 @@ function ProgramImport() {
   const [skipped, setSkipped] = useState<string[]>(seed?.skipped ?? []);
   /** What a photo read asks the athlete to check before Create (`readImportPhoto`). */
   const [checks, setChecks] = useState<string[]>(seed?.checks ?? []);
+  /** This set of photo reads, for "Was this helpful?" (0269) — made once when the reads come back. */
+  const [photoRef, setPhotoRef] = useState<string | null>(null);
   /** What the paste called the program (`ParseResult.title`) — the draft's name, and said in the preview (QA programs-07). */
   const [title, setTitle] = useState<string | null>(null);
   /** Everything the read held, before one day was kept — what "Make it a program" switches to. */
@@ -312,6 +316,7 @@ function ProgramImport() {
       toCheck.push(...r.checks.map((c) => tag(i, c)));
     }
     setBusy(null);
+    setPhotoRef(uuid());
     showPreview(mergeParsedWeeks(parts), notRead, toCheck);
   };
 
@@ -431,6 +436,8 @@ function ProgramImport() {
                 </View>
               ) : null}
               <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={title} />
+              {/* Only a photo read is the model's work — a paste is the app's own parser and carries no vote. */}
+              {mode === 'photo' && photoRef ? <AiFeedback feature="import" aiRef={photoRef} style={styles.feedback} /> : null}
             </>
           ) : mode === 'paste' ? (
             <>
@@ -676,6 +683,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingTop: 12 },
   /* ⚠ CONTAINED ON WIDE SCREENS — the old sheet ran its text box edge to edge across a 1700px window. */
   column: { width: '100%', maxWidth: 820, alignSelf: 'center' },
+  feedback: { paddingTop: 14 },
   cancel: { fontSize: 15, color: flColor.gray400 },
   pressed: { opacity: 0.86 },
 

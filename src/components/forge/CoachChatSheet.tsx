@@ -31,6 +31,8 @@ import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
 import { HoltWords } from '@/components/forge/HoltWords';
+import { AiFeedback } from '@/components/forge/AiFeedback';
+import { turnRef } from '@/domain/ai/ai-feedback-core';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
@@ -1031,7 +1033,7 @@ export function CoachChatSheet({
           setBuilt({ kind: 'day', day });
           const dayCard = writtenDayCardFor(merged, day);
           setLastCard({ day: dayCard });
-          say({ kind: 'holt', text: [authoredLine(written.plan, written.valid), roomLine].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard });
+          say({ kind: 'holt', text: [authoredLine(written.plan, written.valid), roomLine].filter(Boolean).join(' ') }, { kind: 'day', card: dayCard, authored: true });
           return;
         }
 
@@ -1056,7 +1058,7 @@ export function CoachChatSheet({
           say(
             { kind: 'holt', text: [authoredLine(written.plan, written.valid), roomLine].filter(Boolean).join(' ') },
             ...(load ? [{ kind: 'holt' as const, text: load }] : []),
-            { kind: 'program', card: programCard },
+            { kind: 'program', card: programCard, authored: true },
           );
           return;
         }
@@ -1235,7 +1237,8 @@ export function CoachChatSheet({
           ...(concern && alt && alt !== c.goal
             ? [{ kind: 'chips' as const, chips: [{ label: `Build the ${RACE_SPEC[alt].label} instead`, patch: { goal: alt } }] }]
             : []),
-          { kind: 'program', card: programCard },
+          /* Authored only when Holt wrote its lifting days (the race path above); a rulebook build carries no vote. */
+          { kind: 'program', card: programCard, ...(holt.written ? { authored: true } : {}) },
         );
         /*
          * ⚠ WHAT THE ATHLETE ASKED FOR THAT DID NOT LAND IS SAID, NEVER DROPPED (Coach-AI-Amendment-001 §4.2).
@@ -3556,6 +3559,7 @@ export function CoachChatSheet({
                     onChip={onChip}
                     handoff={handoff}
                     kitchen={kitchen}
+                    feedback={b.feedback}
                   />
                 </TurnEnter>
               );
@@ -4091,10 +4095,42 @@ type Block =
        * second copy of it on the chips turn is a second thing that can disagree.
        */
       answer: string | null;
+      /** "Was this helpful?" — on an AI answer only (0269): `feedbackFor`. */
+      feedback: TurnFeedback | null;
     }
   /** `answer` — for chips with no Holt line to hang from (Try again under an outage card, C-D5), the `me` turn
       after them, so they read as answered the same way attached chips do. */
   | { key: number; kind: 'turn'; turn: Turn; answer?: string | null };
+
+/**
+ * ══ WHICH HOLT LINES ARE AI ANSWERS (AI Road to 10 Sprint 1, 0269 — the thumbs) ══
+ *
+ * Most of what Holt says is the rulebook talking, and asking "was this helpful?" under a scripted question would
+ * pollute the one quality signal the evals get. Three things are the model's, and only these carry the controls:
+ *   · a finished coach-ask reply — the turn a stream wrote (`sid`), once it is no longer `streaming`. `sid` is a
+ *     transient the stored thread drops (`coach-thread.ts`), so a restored reply carries no controls rather than
+ *     one that could be mistaken for a fresh answer;
+ *   · the kitchen's dishes (coach-kitchen) attached to the line;
+ *   · a program or day Holt wrote (coach-author), marked `authored` where it is said.
+ * The ref is made once per output from the line's own stamp (`turnRef`), so it is the same on every render.
+ */
+type TurnFeedback = { feature: 'chat' | 'kitchen' | 'author'; ref: string; after: 'words' | 'attached' };
+
+function feedbackFor(t: Extract<Turn, { kind: 'holt' }>, attached: Turn[]): TurnFeedback | null {
+  if (attached.some((x) => (x.kind === 'program' || x.kind === 'day') && x.authored === true)) {
+    const ref = turnRef('author', t.at);
+    return ref ? { feature: 'author', ref, after: 'attached' } : null;
+  }
+  if (attached.some((x) => x.kind === 'dishes')) {
+    const ref = turnRef('kitchen', t.at);
+    return ref ? { feature: 'kitchen', ref, after: 'attached' } : null;
+  }
+  if (t.sid != null && t.streaming !== true) {
+    const ref = turnRef('chat', t.at);
+    return ref ? { feature: 'chat', ref, after: 'words' } : null;
+  }
+  return null;
+}
 
 function layOut(thread: Turn[]): Block[] {
   const out: Block[] = [];
@@ -4117,7 +4153,7 @@ function layOut(thread: Turn[]): Block[] {
         j += 1;
       }
       const next = thread[j];
-      out.push({ key: i, kind: 'holt', text: t.text, at: t.at, attached, answer: next?.kind === 'me' ? next.text : null });
+      out.push({ key: i, kind: 'holt', text: t.text, at: t.at, attached, answer: next?.kind === 'me' ? next.text : null, feedback: feedbackFor(t, attached) });
       i = j - 1;
       continue;
     }
@@ -4157,6 +4193,7 @@ function HoltTurn({
   onChip,
   handoff,
   kitchen,
+  feedback,
 }: {
   text: string;
   at?: number;
@@ -4167,6 +4204,8 @@ function HoltTurn({
   handoff: Handoff;
   /** Kitchen Mode: every reply wears the chef's hat, not just the header (PO 09-27). */
   kitchen: boolean;
+  /** "Was this helpful?" on an AI answer (`feedbackFor`); null on every rulebook line. */
+  feedback: TurnFeedback | null;
 }) {
   const clock = clockOf(at);
   return (
@@ -4179,6 +4218,7 @@ function HoltTurn({
         <Text style={styles.holtEyebrow}>HOLT</Text>
         {/* Selectable, and his links open (AI audit C-D3) — `HoltWords`. */}
         <HoltWords text={text} style={[styles.holtText, !live && styles.holtTextPast]} />
+        {feedback?.after === 'words' ? <AiFeedback feature={feedback.feature} aiRef={feedback.ref} compact /> : null}
         {attached.length ? (
           <View style={styles.holtAttached}>
             {attached.map((t, i) => (
@@ -4186,6 +4226,7 @@ function HoltTurn({
             ))}
           </View>
         ) : null}
+        {feedback?.after === 'attached' ? <AiFeedback feature={feedback.feature} aiRef={feedback.ref} style={styles.holtFeedback} /> : null}
       </View>
     </View>
   );
@@ -5734,6 +5775,8 @@ const styles = StyleSheet.create({
   holtTextPast: { fontSize: 15.5, lineHeight: 22.5, color: flColor.gray400 },
   /* ⚠ INSIDE the content column, so the answers align to the question and not to the mark. */
   holtAttached: { paddingTop: 6, gap: 12 },
+  // "Was this helpful?" under a card Holt wrote — a step below the card so it reads as about the whole of it (0269).
+  holtFeedback: { paddingTop: 4 },
 
   /* ══ v2 LAYER 2 — THE ANSWER CONTROLS ══
      One vocabulary, five shapes: 48pt tall, 13px radius, never a full pill.

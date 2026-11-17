@@ -40,6 +40,7 @@ export type NotificationDestination =
   | { pathname: '/squad-post/[id]'; params: { id: string } }
   | '/transformation'
   | '/admin'
+  | '/admin-ai'
   | '/(tabs)/squads'
   | '/friends'
   | { pathname: '/friends'; params: { post: string } }
@@ -179,6 +180,10 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
     case 'athlete_signup':
     case 'feedback_filed':
       return '/admin';
+    /* 0269 — the hourly AI health alert (and the canary's). Push-only, operators only; the page's own
+       admin_guard keeps everyone else out. Without this arm the catch-all would open /inbox, which never holds it. */
+    case 'ai_alert':
+      return '/admin-ai';
     default:
       return n.squadId ? { pathname: '/squad/[id]', params: { id: n.squadId } } : '/inbox';
   }

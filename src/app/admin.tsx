@@ -4,6 +4,7 @@ import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, V
 import { Redirect, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import {
   AdminBarChart,
@@ -18,6 +19,7 @@ import {
 } from '@/components/forge/admin/charts';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flText } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
 import {
   dashboardTz,
   fetchAdminAdoption,
@@ -187,6 +189,20 @@ export default function AdminScreen() {
         <View style={styles.rangeRow}>
           <RangeControl options={RANGES.map((r) => ({ key: r.key, label: r.label }))} value={range} onChange={setRange} />
         </View>
+
+        {/* ── AI health (0269, AI Road to 10 Sprint 1) — its own page: one read, its own range. ── */}
+        <Pressable
+          onPress={() => router.push('/admin-ai')}
+          accessibilityRole="button"
+          accessibilityLabel="Open AI health"
+          style={({ pressed }) => [styles.aiLink, pressed && styles.aiLinkPressed]}
+        >
+          <View style={styles.aiLinkText}>
+            <Text style={styles.aiLinkTitle}>AI health</Text>
+            <Text style={styles.aiLinkSub}>Failures, latency, refunds and real cost per AI function · the daily canary · thumbs</Text>
+          </View>
+          <EngravedIcon name="chevron-right" size={16} color={forgeOr(flColor.bronze400, flColor.gray600)} />
+        </Pressable>
 
         {/* ── Overview ─────────────────────────────────────────────────── */}
         <Section state={overview}>
@@ -982,6 +998,22 @@ const styles = StyleSheet.create({
   boot: { flex: 1, backgroundColor: flColor.base, alignItems: 'center', justifyContent: 'center' },
   body: { paddingHorizontal: 16, paddingBottom: 56, gap: 14 },
   rangeRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingTop: 4 },
+  // The door to /admin-ai: a card-shaped row (layout both themes; colours are the card's own role tokens).
+  aiLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: flRadius.md,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+    backgroundColor: flColor.charcoal800,
+  },
+  aiLinkPressed: { borderColor: flColor.accentBorder },
+  aiLinkText: { flex: 1, minWidth: 0, gap: 2 },
+  aiLinkTitle: { color: flText.primary, fontSize: 14.5, fontFamily: flFont.display, letterSpacing: 0.3 },
+  aiLinkSub: { color: flColor.gray600, fontSize: 11, lineHeight: 16 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   footnote: { color: flColor.gray600, fontSize: 11, lineHeight: 16, marginTop: 8 },
   subhead: {
