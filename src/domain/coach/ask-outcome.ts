@@ -52,18 +52,36 @@ export const WITHOUT_AI_CREDITS = "Until then I'll still build from the taps, an
  *
  * `web` — the ask was a tapped online search, which costs more than an ordinary question.
  * `period` — `fetchCoachAiBalance().period`, or null when that read failed.
+ * `floor` — the soft floor (0272, MA12): chats and meal photos still work a few a day once the month is used. From
+ * `coach_ai_credits()`; null/absent before 0272 is pasted, and then the month-only line stands.
  */
 export function outOfAiCreditsLine(
-  o: { remaining: number; allowance: number; web?: boolean; period?: string | null },
+  o: {
+    remaining: number;
+    allowance: number;
+    web?: boolean;
+    period?: string | null;
+    floor?: { perDay: number; leftToday: number | null } | null;
+  },
   now: Date = new Date(),
   choose?: Chooser,
 ): string {
   if (!(o.allowance > 0)) return `${pick('ai_not_on', choose)} Every tap in here still works.`;
   const back = aiCreditsBackOnLabel(aiCreditsBackOn(o.period, now));
   const left = Math.max(0, Math.floor(o.remaining));
+  if (left === 0 && o.floor && o.floor.perDay > 0) {
+    const perDay = Math.floor(o.floor.perDay);
+    // Today's free ones are used too: "this month's are used" alone would read as nothing until the 1st.
+    if (o.floor.leftToday === 0) {
+      return `That's today's ${perDay} chats and meal photos. More tomorrow, and your Premium AI credits come back on ${back}.`;
+    }
+    // The floor still has room, so THIS ask was one the floor doesn't cover (an online search, a typed build).
+    const today = o.floor.leftToday == null ? `, ${perDay} a day` : ` (${Math.floor(o.floor.leftToday)} more today)`;
+    return `${o.web ? 'An online search' : 'That one'} needs Premium AI credits, and this month's are used. Ordinary questions and meal photos still work${today}, and your credits come back on ${back}.`;
+  }
   if (left === 0) return `${pick('out_of_ai_credits', choose)} They come back on ${back}. ${WITHOUT_AI_CREDITS}`;
   const credits = `You have ${left} Premium AI ${left === 1 ? 'credit' : 'credits'} left this month`;
-  /* An online search is weighted above an ordinary question (MA3-D16) — so the question still fits. */
+  /* An online search is weighted above an ordinary question (MA12; MA3-D16 before it) — so the question still fits. */
   if (o.web) return `${credits}, and an online search takes more than that. An ordinary question still fits, and they all come back on ${back}.`;
   return `${credits}, and that one takes more. They come back on ${back}. ${WITHOUT_AI_CREDITS}`;
 }
