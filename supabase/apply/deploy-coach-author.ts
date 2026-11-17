@@ -1,4 +1,4 @@
-// ===============================================================================================
+// ===
 // DASHBOARD PASTE COPY of supabase/functions/coach-author/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/coach/author.ts, author-catalogue.ts and medical-routing.ts, which
@@ -11,7 +11,7 @@
 // It charges the `day` and `program` actions coach-interpret already uses (0203).
 // ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
 // this copy also inlines, src/domain/ai/meter-server.ts); until then every build answers "meter unavailable".
-// ===============================================================================================
+// ===
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export const AUTHOR_ACTION = { day: 'day', program: 'program' } as const;
@@ -102,33 +102,33 @@ export function authorUserTurn(r: AuthorRequest): string {
         ? `Write ONLY the ${r.days ?? ''} LIFTING day${r.days === 1 ? '' : 's'} of a training week. The athlete is training for a ${r.beside.race} and runs ${r.beside.runDays} day${r.beside.runDays === 1 ? '' : 's'} a week on a running plan the app has already written. Do not write any running or cardio. The app repeats these lifting days for ${r.weeks ?? 'several'} weeks.`
         : r.kind === 'day'
             ? 'Write ONE training session.'
-            : `Write ONE training week${r.days == null ? ', with as many training days as they asked for' : ` of ${r.days} training day${r.days === 1 ? '' : 's'} — unless their words name a different number of days, in which case their words win`}. The app repeats the week for ${r.weeks ?? 'several'} weeks.`);
+            : `Write ONE training week${r.days == null ? ', with as many training days as they asked for' : ` of ${r.days} training day${r.days === 1 ? '' : 's'} \u2014 unless their words name a different number of days, in which case their words win`}. The app repeats the week for ${r.weeks ?? 'several'} weeks.`);
     lines.push('What the athlete said, in order:');
     for (const s of r.said)
         lines.push(`- "${s}"`);
     lines.push('');
     lines.push('What the app knows:');
     if (r.minutes != null)
-        lines.push(`- Time per session: ${r.minutes} minutes — about ${movementsFor(r.minutes)} movements unless they said a number.`);
+        lines.push(`- Time per session: ${r.minutes} minutes \u2014 about ${movementsFor(r.minutes)} movements unless they said a number.`);
     lines.push(r.goal ? `- Goal: ${GOAL_SAID[r.goal]}.` : '- Goal: not given. Read it from their words; if they did not say, write for building muscle.');
     if (r.level)
         lines.push(`- Level: ${r.level}.${r.level === 'advanced' ? '' : ' Nothing marked ^.'}`);
     if (r.room)
         lines.push(`- Training at: ${ROOM_SAID[r.room]}.`);
     if (r.only.length)
-        lines.push(`- Their kit allows ONLY these movements — nothing else in the library can be done where they train: ${r.only.join(' ')}.`);
+        lines.push(`- Their kit allows ONLY these movements \u2014 nothing else in the library can be done where they train: ${r.only.join(' ')}.`);
     else if (r.canUse.length)
-        lines.push(`- Equipment they can use — ONLY movements whose equipment is one of these: ${r.canUse.join(', ')}.`);
+        lines.push(`- Equipment they can use \u2014 ONLY movements whose equipment is one of these: ${r.canUse.join(', ')}.`);
     if (r.cannot.length)
-        lines.push(`- Not available where they train — never use: ${r.cannot.join(' ')}.`);
+        lines.push(`- Not available where they train \u2014 never use: ${r.cannot.join(' ')}.`);
     if (r.offPatterns.length) {
-        lines.push(`- Working around something — NO movement from these sections: ${r.offPatterns.join('; ')}.${r.keep.length ? ` The only exceptions allowed from them: ${r.keep.join(' ')}.` : ''}`);
+        lines.push(`- Working around something \u2014 NO movement from these sections: ${r.offPatterns.join('; ')}.${r.keep.length ? ` The only exceptions allowed from them: ${r.keep.join(' ')}.` : ''}`);
     }
     lines.push(r.cardio.length ? `- Cardio they can do: ${r.cardio.join(', ')}.` : '- Cardio they can do: none of the cardio- keys.');
     if (r.avoid.length)
         lines.push(`- Never use: ${r.avoid.join(', ')}.`);
     if (r.recent.length)
-        lines.push(`- Trained in their last few sessions — prefer something else unless they asked for it by name: ${r.recent.join(', ')}.`);
+        lines.push(`- Trained in their last few sessions \u2014 prefer something else unless they asked for it by name: ${r.recent.join(', ')}.`);
     if (r.notes.length)
         lines.push(`- What you know about this athlete: ${r.notes.join('; ')}.`);
     return lines.join('\n');
@@ -373,7 +373,7 @@ const SYMPTOM_QUESTION = new RegExp(SYMPTOM_QUESTION_SOURCE(), 'i');
 export const mentionsDiscomfort = (text: string): boolean => /\b(hurt\w*|pain\w*|ach(e|es|ing|y)|sore\w*|injur\w*|tweak(ed|ing)?|strain\w*|niggl\w*|uncomfortable|discomfort|stiff\w*|flare[-\s]?up|twinge)\b/i.test(text ?? '');
 export type MedicalRoute = 'clear' | 'crisis' | 'urgent' | 'care' | 'acute' | 'advice';
 export function medicalRoute(text: string): MedicalRoute {
-    const t = (text ?? '').replace(/[‘’ʼ]/g, "'").trim();
+    const t = (text ?? '').replace(/[\u2018\u2019\u02bc]/g, "'").trim();
     if (!t)
         return 'clear';
     const r = routeOnce(t);
@@ -649,7 +649,7 @@ Every word after the colon is one movement's key. A key ending in * is held or t
 - The key tells you the angle and the tool: "incline" presses and "low-to-high" flies train the upper chest; "decline" presses and "high-to-low" flies the lower. On push-ups it is reversed: "decline-push-up" (feet raised) is upper chest, "incline-push-up" (hands raised) is lower.
 - If the message gives the ONLY movements their kit allows, every movement comes from that list and from nowhere else.
 - If the message lists the equipment they can use, every movement comes from a line whose equipment is one of those. A movement it lists as not available is never used and never offered as a replacement.
-- If the message lists sections that are off, EVERY movement under those headings is off — machines, isolation and bodyweight versions included (a leg extension sits under Squat / Knee Dominant and is off with it) — except the exceptions it names. Movements the message says to never use are never used, whatever else it says.
+- If the message lists sections that are off, EVERY movement under those headings is off \u2014 machines, isolation and bodyweight versions included (a leg extension sits under Squat / Knee Dominant and is off with it) \u2014 except the exceptions it names. Movements the message says to never use are never used, whatever else it says.
 - A movement marked ^ only when the message says the athlete is advanced AND their words ask for that kind of work (calisthenics skills, Olympic lifts, "something hard"). Otherwise leave them out.
 - If they asked for a movement that is not in the library, use the closest one that is, and say so in "unmet".
 
@@ -690,7 +690,7 @@ When the message says to write ONLY the lifting days of a week for an athlete wh
 
 # The fields
 
-- "title": what the session is, as a gym would say it — "Chest & Triceps", "Upper Chest Focus", "Pull Day". At most 40 characters. For a week, the program's name. Use a name they gave.
+- "title": what the session is, as a gym would say it \u2014 "Chest & Triceps", "Upper Chest Focus", "Pull Day". At most 40 characters. For a week, the program's name. Use a name they gave.
 - "days": one entry for a single session. For a week, one entry per training day, in order, each with its own "name" ("Push", "Legs", "Upper A"). Use the day names they gave. Across a week, do not repeat a movement on two days unless they asked for it or it is a main lift they train twice.
 - "exercises": in the order they are trained.
   - "note": a short coaching cue for that movement when there is a useful one ("pause at the chest", "30-degree incline"), else "". At most 12 words. No weights.

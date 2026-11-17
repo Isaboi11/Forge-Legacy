@@ -1,4 +1,4 @@
-// ===============================================================================================
+// ===
 // DASHBOARD PASTE COPY of supabase/functions/recipe-photo-read/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/nutrition/recipe-photo-read.ts, which the Supabase dashboard
@@ -12,7 +12,7 @@
 // "meter unavailable".
 // ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
 // this copy also inlines, src/domain/ai/meter-server.ts); until then every read answers "meter unavailable".
-// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ===
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export const RECIPE_PHOTO_ACTION = 'recipe_photo';
@@ -222,28 +222,28 @@ export function recipePhotoError(r: Exclude<RecipePhotoResult, {
 }>): string {
     switch (r.kind) {
         case 'not_a_recipe':
-            return 'That doesn’t look like a recipe. Try a screenshot of the ingredients and method.';
+            return 'That doesn\u2019t look like a recipe. Try a screenshot of the ingredients and method.';
         case 'unreadable':
-            return 'Couldn’t read a recipe out of that picture. A closer, straighter shot usually does it.';
+            return 'Couldn\u2019t read a recipe out of that picture. A closer, straighter shot usually does it.';
         case 'too_large':
             return 'That image is too big to read. Try a screenshot instead.';
         case 'daily_limit':
-            return 'That’s a lot of recipes for one day. Try again tomorrow, or enter this one by hand.';
+            return 'That\u2019s a lot of recipes for one day. Try again tomorrow, or enter this one by hand.';
         case 'out_of_credits':
-            return 'You’re out of Premium AI credits for this month. You can still enter the recipe by hand.';
+            return 'You\u2019re out of Premium AI credits for this month. You can still enter the recipe by hand.';
         case 'not_entitled':
             return 'Reading recipes from a picture is part of Premium AI. You can still enter it by hand.';
         case 'no_nutrition':
-            return 'Nutrition isn’t turned on for your account yet.';
+            return 'Nutrition isn\u2019t turned on for your account yet.';
         case 'unsupported_format':
-            return 'That image type can’t be read. Take a screenshot of it and upload that instead.';
+            return 'That image type can\u2019t be read. Take a screenshot of it and upload that instead.';
         case 'unavailable':
-            return 'Recipe reading isn’t working right now. Try again in a bit, or enter it by hand.';
+            return 'Recipe reading isn\u2019t working right now. Try again in a bit, or enter it by hand.';
         case 'not_available':
-            return 'Scanning a recipe isn’t available right now. You can still enter it by hand.';
+            return 'Scanning a recipe isn\u2019t available right now. You can still enter it by hand.';
         case 'offline':
         default:
-            return 'Couldn’t reach Forge. Check your connection and try again.';
+            return 'Couldn\u2019t reach Forge. Check your connection and try again.';
     }
 }
 export type SettleOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'not_a_program' | 'unreadable' | 'bad_output' | 'cancelled' | 'guarded';
@@ -447,32 +447,32 @@ Read the recipe in the image and fill in the fields. You are a careful reader, n
 - "mealType": your best reading of which meal it is for: "breakfast", "lunch", "dinner" or "snacks" (desserts, bars, bites and drinks are snacks). "unknown" when nothing on the page suggests one. The athlete can change it.
 - "ingredients": one entry per ingredient line, in the page's order.
   - "text": the line exactly as written, including the amount and any prep notes ("2 cloves garlic, minced").
-  - "quantity": the amount as a number. Convert fractions and mixed numbers ("1 1/2" is 1.5, "½" is 0.5, "¾" is 0.75). For a range ("2-3 cups") use the first number. null when the line has no amount ("salt to taste", "oil for frying").
+  - "quantity": the amount as a number. Convert fractions and mixed numbers ("1 1/2" is 1.5, "\u00bd" is 0.5, "\u00be" is 0.75). For a range ("2-3 cups") use the first number. null when the line has no amount ("salt to taste", "oil for frying").
   - "unit": the unit as written, shortened the usual way where there is one: "cup", "tbsp", "tsp", "g", "kg", "oz", "lb", "ml", "l", "fl oz", or the counting word the page uses ("cloves", "slices", "large", "can"). Empty string when the amount is a plain count ("2 eggs").
   - "food": the plain food, in everyday words, WITHOUT the amount, the unit, the brand or the preparation. "2 cloves garlic, minced" is "garlic". "1 lb boneless skinless chicken breasts, cubed" is "chicken breasts". "1 cup long-grain white rice, rinsed" is "long-grain white rice". "Kerrygold butter, softened" is "butter". Keep a word that changes what the food is ("smoked salmon", "brown sugar", "whole wheat bread").
-- "steps": the method, one entry per step, rewritten briefly in plain words — a short sentence or two each, in your own words, not copied. Keep every temperature, time and doneness cue the page gives. Empty list if the page has no method.
+- "steps": the method, one entry per step, rewritten briefly in plain words \u2014 a short sentence or two each, in your own words, not copied. Keep every temperature, time and doneness cue the page gives. Empty list if the page has no method.
 
 # Worked ingredient lines
 
 These show how a printed line becomes one entry. Follow the pattern; do not copy the examples into an answer.
 
-- "1 1/2 cups whole milk" → text "1 1/2 cups whole milk", quantity 1.5, unit "cup", food "whole milk".
-- "3 Tbsp. extra-virgin olive oil, divided" → quantity 3, unit "tbsp", food "olive oil".
-- "2 tsp ground cumin" → quantity 2, unit "tsp", food "cumin".
-- "200g dried spaghetti" → quantity 200, unit "g", food "spaghetti".
-- "1 (14.5 oz) can diced tomatoes, undrained" → quantity 1, unit "can", food "canned tomatoes".
-- "4 large eggs, beaten" → quantity 4, unit "large", food "eggs".
-- "1 medium onion, finely chopped" → quantity 1, unit "medium", food "onion".
-- "Juice of 1 lemon" → quantity 1, unit "", food "lemon".
-- "Salt and pepper, to taste" → one line, quantity null, unit "", food "salt and pepper".
-- "Fresh cilantro, for garnish" → quantity null, unit "", food "cilantro".
-- "1/4 cup (60 ml) maple syrup" → use the first amount the page gives: quantity 0.25, unit "cup", food "maple syrup".
+- "1 1/2 cups whole milk" \u2192 text "1 1/2 cups whole milk", quantity 1.5, unit "cup", food "whole milk".
+- "3 Tbsp. extra-virgin olive oil, divided" \u2192 quantity 3, unit "tbsp", food "olive oil".
+- "2 tsp ground cumin" \u2192 quantity 2, unit "tsp", food "cumin".
+- "200g dried spaghetti" \u2192 quantity 200, unit "g", food "spaghetti".
+- "1 (14.5 oz) can diced tomatoes, undrained" \u2192 quantity 1, unit "can", food "canned tomatoes".
+- "4 large eggs, beaten" \u2192 quantity 4, unit "large", food "eggs".
+- "1 medium onion, finely chopped" \u2192 quantity 1, unit "medium", food "onion".
+- "Juice of 1 lemon" \u2192 quantity 1, unit "", food "lemon".
+- "Salt and pepper, to taste" \u2192 one line, quantity null, unit "", food "salt and pepper".
+- "Fresh cilantro, for garnish" \u2192 quantity null, unit "", food "cilantro".
+- "1/4 cup (60 ml) maple syrup" \u2192 use the first amount the page gives: quantity 0.25, unit "cup", food "maple syrup".
 
 Section headings inside an ingredient list ("For the sauce:", "Topping") are not ingredients; skip them, and read the lines under them normally.
 
 # What you must never do
 
-**Never write a nutrition number.** Recipe pages often print calories, protein, carbs, fat, sugar, sodium or "per serving" figures. Ignore all of them completely. There is no field for them and the app will never use them — it calculates its own from the ingredients.
+**Never write a nutrition number.** Recipe pages often print calories, protein, carbs, fat, sugar, sodium or "per serving" figures. Ignore all of them completely. There is no field for them and the app will never use them \u2014 it calculates its own from the ingredients.
 
 **Never invent an ingredient or an amount.** If a line is cut off, blurred or you are unsure of a number, set "quantity" to null rather than guess. A missing amount is shown to the athlete to fill in; a guessed one looks exactly like one the recipe wrote, and nobody can tell it is wrong.
 
@@ -484,7 +484,7 @@ Section headings inside an ingredient list ("For the sauce:", "Topping") are not
 
 # When it is not a recipe
 
-If the image does not show a recipe — a photo of a meal with no ingredient list, a nutrition label, a receipt, a menu, a conversation, a person, a landscape, a blank page — set "isRecipe" to false, "name" to "", "servings" and "minutes" to null, "mealType" to "unknown", and both lists empty. Do not explain.
+If the image does not show a recipe \u2014 a photo of a meal with no ingredient list, a nutrition label, a receipt, a menu, a conversation, a person, a landscape, a blank page \u2014 set "isRecipe" to false, "name" to "", "servings" and "minutes" to null, "mealType" to "unknown", and both lists empty. Do not explain.
 
 If the image shows a recipe you can only partly read, fill in the part you can read. Partly read is still a recipe; the athlete reviews everything before it is saved.`;
 interface Body {

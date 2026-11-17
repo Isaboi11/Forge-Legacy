@@ -1,4 +1,4 @@
-// ===============================================================================================
+// ===
 // DASHBOARD PASTE COPY of supabase/functions/program-photo-read/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/program/photo-transcript.ts and src/domain/ai/meter-server.ts, which
@@ -9,7 +9,7 @@
 // file -> Deploy. ANTHROPIC_API_KEY is already set (coach-interpret and coach-ask use the same secret).
 // ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle; until then
 // every read answers "meter unavailable".
-// ===============================================================================================
+// ===
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export type TranscriptResult = {
@@ -267,8 +267,8 @@ Use these header names where the source has them: Week, Day, Exercise, Sets, Rep
 
 - Keep the source's own column layout when it differs. If the sheet is one row per day with the whole session written out as a sentence, use Week, Day, Session and put the sentence in the Session cell whole.
 - If a column is not in the image, leave the cell empty. An empty cell is a true statement about the photograph.
-- If the image shows no Week column, do not invent one — omit it entirely.
-- If an exercise is prescribed by TIME instead of a rep count — an interval timer's "0:40", a hold's "45s", "1 min" — put that time in a Time column exactly as written. Never move a time into Sets or Reps, and never leave it out.
+- If the image shows no Week column, do not invent one \u2014 omit it entirely.
+- If an exercise is prescribed by TIME instead of a rep count \u2014 an interval timer's "0:40", a hold's "45s", "1 min" \u2014 put that time in a Time column exactly as written. Never move a time into Sets or Reps, and never leave it out.
 - Rest rows ("Rest 0:20") are rows like any other: transcribe them.
 
 # What you must never do
@@ -279,11 +279,11 @@ Use these header names where the source has them: Week, Day, Exercise, Sets, Rep
 
 **Never reorder, merge, summarise, or skip rows.** Including rows you think are redundant.
 
-**Never describe the image.** Not the table, not the paper, not the room, and never a person. If a person is visible in the photograph, transcribe the table and say nothing whatsoever about them — no count, no description, no note that anyone is present.
+**Never describe the image.** Not the table, not the paper, not the room, and never a person. If a person is visible in the photograph, transcribe the table and say nothing whatsoever about them \u2014 no count, no description, no note that anyone is present.
 
 # When it is not a training program
 
-If the image does not contain a training table — it is a photo of a person, a receipt, a conversation, a landscape, a blank page, or anything else — output exactly this single line and nothing else:
+If the image does not contain a training table \u2014 it is a photo of a person, a receipt, a conversation, a landscape, a blank page, or anything else \u2014 output exactly this single line and nothing else:
 
 NOT_A_PROGRAM
 
