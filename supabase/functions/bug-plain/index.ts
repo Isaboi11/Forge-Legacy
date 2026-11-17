@@ -24,6 +24,13 @@
  * One call per bug opened (then cached on the row): roughly 2–4k tokens in, a few hundred out — about
  * two cents on Claude Opus 5.5. Nothing runs in the background; an unopened bug costs nothing.
  *
+ * ══ METERED ON ITS OWN LINE (AI Road to 10, Sprint 1 — P-G10) ══
+ *
+ * Every model call, whatever its outcome, is recorded with `coach_ai_record_admin_usage('admin_bug_plain', …)`
+ * (0268): model, all four token counts, the round trip and the outcome, 0 credits, nobody's balance touched — so
+ * the Opus spend shows on /admin and the AI health page. A metering failure (0268 not applied yet) is ignored: it
+ * never fails the owner's click. ⛔ No reply carries the upstream's words or its status (P-D8).
+ *
  * ══ DEPLOYED BY PASTING THIS ONE FILE ══
  *
  * Supabase dashboard → Edge Functions → Deploy a new function → "Via Editor" → name it `bug-plain` →
@@ -144,6 +151,27 @@ Deno.serve(async (req) => {
   const { data: ctx, error: ctxErr } = await caller.rpc('admin_bug_context', { p_id: id });
   if (ctxErr || !ctx) return json({ ok: false, reason: 'context_failed' });
 
+  /** P-G10: the call on the operators' own ledger line (0268). Its result is ignored — it never fails the click. */
+  const meter = (
+    outcome: 'ok' | 'upstream_error' | 'upstream_unreachable' | 'refusal' | 'truncated' | 'bad_output',
+    latencyMs: number,
+    payload?: { model?: unknown; usage?: Record<string, unknown> },
+  ) => {
+    const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0);
+    const u = payload?.usage ?? {};
+    return caller.rpc('coach_ai_record_admin_usage', {
+      p_action: 'admin_bug_plain',
+      p_model: typeof payload?.model === 'string' && payload.model ? payload.model : MODEL,
+      p_input_tokens: n(u.input_tokens),
+      p_output_tokens: n(u.output_tokens),
+      p_cache_read_input_tokens: n(u.cache_read_input_tokens),
+      p_cache_creation_input_tokens: n(u.cache_creation_input_tokens),
+      p_latency_ms: n(latencyMs),
+      p_outcome: outcome,
+    });
+  };
+
+  const started = Date.now();
   let response: Response;
   try {
     response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -166,12 +194,28 @@ Deno.serve(async (req) => {
       }),
     });
   } catch {
+    await meter('upstream_unreachable', Date.now() - started);
     return json({ ok: false, reason: 'upstream_unreachable' });
   }
-  if (!response.ok) return json({ ok: false, reason: 'upstream_error', status: response.status });
+  if (!response.ok) {
+    // The upstream's words and status go to this function's own log, never to the board (P-D8).
+    console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
+    await meter('upstream_error', Date.now() - started);
+    return json({ ok: false, reason: 'upstream_error' });
+  }
 
-  const payload = await response.json();
-  if (payload?.stop_reason === 'refusal' || payload?.stop_reason === 'max_tokens') return json({ ok: false, reason: 'unwritten' });
+  let payload: { content?: { type: string; text: string }[]; stop_reason?: string; model?: unknown; usage?: Record<string, unknown> };
+  try {
+    payload = await response.json();
+  } catch {
+    await meter('upstream_error', Date.now() - started);
+    return json({ ok: false, reason: 'upstream_error' });
+  }
+  const latencyMs = Date.now() - started;
+  if (payload?.stop_reason === 'refusal' || payload?.stop_reason === 'max_tokens') {
+    await meter(payload.stop_reason === 'refusal' ? 'refusal' : 'truncated', latencyMs, payload);
+    return json({ ok: false, reason: 'unwritten' });
+  }
 
   const text: string = (payload?.content ?? [])
     .filter((b: { type: string }) => b.type === 'text')
@@ -181,8 +225,10 @@ Deno.serve(async (req) => {
   try {
     plain = JSON.parse(text);
   } catch {
+    await meter('bad_output', latencyMs, payload);
     return json({ ok: false, reason: 'unwritten' });
   }
+  await meter('ok', latencyMs, payload);
   plain.model = String(payload?.model ?? MODEL);
 
   const { error: saveErr } = await caller.rpc('admin_bug_plain_save', { p_id: id, p_plain: plain });
