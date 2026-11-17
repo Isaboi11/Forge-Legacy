@@ -101,31 +101,11 @@ test("somebody else's post cannot be edited — the reason comes back", async ()
   assert.equal(db.rows('squad_posts').find((r) => r.id === 'x1').body, 'Post x1');
 });
 
-/* ── An announcement pins itself (PO 2026-11-12) ── the composer said "Pins to the top" and nothing did. */
+/* ── ⛔ Only the owner pins (PO 2026-11-16, SQ-A7-D9) ── posting an announcement used to pin it and unpin the last. */
 
-test('⭐ a new announcement is pinned, and the one before it comes down — one on top at a time', async () => {
-  db.rows('squad_posts').push(post('a1', { type: 'announcement' }), post('a2', { type: 'announcement' }));
-  assert.equal(await live.pinAsAnnouncement(SQUAD, 'a1'), 'pinned');
-  assert.equal(await live.pinAsAnnouncement(SQUAD, 'a2'), 'pinned');
-  const rows = db.rows('squad_posts');
-  assert.ok(rows.find((r) => r.id === 'a2').pinned_at, 'the new one is on top');
-  assert.equal(rows.find((r) => r.id === 'a1').pinned_at, null, 'the old one is back in the feed');
-});
-
-test('a hand-pinned post is left alone; the old announcement makes room for the new one under the 3-pin cap', async () => {
-  db.rows('squad_posts').push(post('a1', { type: 'announcement' }), post('a2', { type: 'announcement' }));
-  await live.pinSquadPost('p1', true);
-  await live.pinSquadPost('p2', true);
-  assert.equal(await live.pinAsAnnouncement(SQUAD, 'a1'), 'pinned');
-  assert.equal(await live.pinAsAnnouncement(SQUAD, 'a2'), 'pinned', 'three pinned, but one of them was the old announcement');
-  assert.deepEqual(db.rows('squad_posts').filter((r) => r.pinned_at).map((r) => r.id).sort(), ['a2', 'p1', 'p2']);
-});
-
-test("three hand pins already: the announcement still exists, it just says 'full' instead of throwing", async () => {
-  db.rows('squad_posts').push(post('a1', { type: 'announcement' }));
-  for (const id of ['p1', 'p2', 'p3']) await live.pinSquadPost(id, true);
-  assert.equal(await live.pinAsAnnouncement(SQUAD, 'a1'), 'full');
-  assert.equal(db.rows('squad_posts').find((r) => r.id === 'a1').pinned_at, null);
+test('⭐ there is no auto-pin: the data layer offers only the owner\'s own pin', () => {
+  assert.equal(live.pinAsAnnouncement, undefined, 'pinAsAnnouncement is retired; never bring it back');
+  assert.equal(typeof live.pinSquadPost, 'function');
 });
 
 /* LAST: the column latch is per session, like the app's. */
