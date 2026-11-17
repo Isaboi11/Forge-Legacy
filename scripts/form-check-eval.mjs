@@ -10,9 +10,16 @@
  * Same as production, on purpose:
  *   · the SYSTEM prompt is read out of `supabase/functions/coach-form-check/index.ts` (not copied);
  *   · frame timing, count and size come from `form-check-view.ts` / `form-check.ts` (the app's own rules);
- *   · the answer goes through `parseFormRead` — the same guard and mark conversion the function runs.
+ *   · the text after the frames is `formUserText` — the function's own builder (Sprint 2): the lift, how far apart
+ *     the frames are (`formSpacingLine`, from the times sent), the library's notes, and the server's age line. Since
+ *     the 18+ floor (Sprint 2) every read that reaches the model has an adult age, so the eval sends one too
+ *     (`--age`, default 30, through the same `ageLine`);
+ *   · the answer goes through `parseFormRead` — the same guard and mark conversion the function runs — and then the
+ *     output scan (`scanTexts(formReadTexts(read))`): a read the function would hold back is recorded as HELD.
  * Different from production: frames come from ffmpeg instead of the phone (same timestamps, same 768 px long
  * edge, JPEG), and it calls the API directly with `ANTHROPIC_API_KEY` from `.env.local` — no credits, no DB.
+ * No body tracking (it needs the phone's native module), so the frames are the even ones with no rep tags — what
+ * the web and a build without tracking send.
  *
  * Needs `ffmpeg` and `ffprobe` on PATH.
  */
@@ -22,8 +29,10 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-import { FORM_FRAME_MAX_EDGE, FORM_OUTPUT_CAP, capFrames, frameLabel, parseFormRead } from '../src/domain/coach/form-check.ts';
+import { FORM_FRAME_MAX_EDGE, FORM_OUTPUT_CAP, capFrames, formReadTexts, formUserText, frameLabel, parseFormRead } from '../src/domain/coach/form-check.ts';
 import { formFrameCount, frameTimestamps, knownFromCoaching, trimWindow } from '../src/domain/coach/form-check-view.ts';
+import { ageLine } from '../src/domain/ai/meter-server.ts';
+import { scanTexts } from '../src/domain/ai/output-scan.ts';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODEL = 'claude-sonnet-5';
@@ -117,6 +126,10 @@ async function run() {
   const outDir = arg('out');
   if (!clipsDir || !outDir) throw new Error('usage: --clips <folder> --out <folder> [--only 03,06]');
   const only = arg('only')?.split(',');
+  // The server's age line, as an adult reaches the model since the 18+ floor (P-G8 + Sprint 2 FC-1).
+  const age = Number(arg('age') ?? 30);
+  if (!Number.isFinite(age) || age <= 18) throw new Error('--age must be an adult age: form check refuses anyone else before the model');
+  const profile = ageLine(age, false);
   const key = apiKey();
   const SYSTEM = systemPrompt();
   const results = [];
@@ -149,12 +162,8 @@ async function run() {
       content.push({ type: 'text', text: frameLabel(i, frames.length, times[i], sizes[i]) });
       content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } });
     });
-    content.push({
-      type: 'text',
-      text: `Those frames are one set of: ${clip.lift}. They are in time order.${
-        known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${known}` : ''
-      }\n\nAnswer with the JSON object only.`,
-    });
+    // The function's own builder — the same words in the same order as production (Sprint 2).
+    content.push({ type: 'text', text: formUserText({ lift: clip.lift, known, profile, times: times.slice(0, frames.length) }) });
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -184,16 +193,18 @@ async function run() {
 
     const text = (payload.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
     const read = payload.stop_reason === 'refusal' ? null : parseFormRead(text, clip.lift, frames.length, sizes);
+    // The function's output scan (Sprint 2): a read it would hold back never reaches the athlete.
+    const held = read ? scanTexts(formReadTexts(read)) : { hit: false };
     fs.writeFileSync(path.join(dir, 'raw.txt'), text);
     fs.writeFileSync(path.join(dir, 'read.json'), JSON.stringify(read, null, 2));
 
     for (const m of read?.marks ?? []) mark(framePaths[m.frame], path.join(dir, `mark-fix${m.fix + 1}.jpg`), m, sizes[m.frame]);
     sheet(framePaths, times, (read?.marks ?? []).map((m) => m.frame), path.join(dir, 'sheet.jpg'));
 
-    results.push({ ...clip, durMs: dur, frames: frames.length, usage: u, cost, read });
+    results.push({ ...clip, durMs: dur, frames: frames.length, usage: u, cost, read, held: held.hit ? held.kind : null });
     console.log(
       `${clip.id} ${clip.lift} (${clip.angle}) · ${frames.length} frames · $${cost.toFixed(4)} · ` +
-        (read ? `${read.view} · fixes ${read.fix.length} · marks ${read.marks.length}` : 'UNREADABLE'),
+        (read ? `${read.view} · fixes ${read.fix.length} · marks ${read.marks.length}${held.hit ? ` · HELD (${held.kind})` : ''}` : 'UNREADABLE'),
     );
   }
   fs.writeFileSync(path.join(outDir, 'results.json'), JSON.stringify(results, null, 2));

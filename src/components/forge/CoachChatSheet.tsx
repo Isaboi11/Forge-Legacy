@@ -48,7 +48,7 @@ import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
-import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
+import { streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
@@ -994,7 +994,8 @@ export function CoachChatSheet({
            one TypeScript still believes is null out here. */
         const holt: { written: { plan: AuthoredPlan; valid: ValidatedPlan } | null; fellBack: string | null } = { written: null, fellBack: null };
         /** Ask Holt to write it (`coach-author`). `false` means a stop card went up and nothing more should be said.
-            ⚠ Not `askHolt` — that is the imported coach-ask stream, and this used to shadow it (AI audit C-I7). */
+            ⚠ It used to be a local `askHolt` that shadowed the imported coach-ask stream (AI audit C-I7); that import
+            is `streamCoachAsk` now, so neither name can stand for the other. */
         const holtWrites = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
           const athlete = {
             experience: c.experience.lifting,
@@ -1765,7 +1766,8 @@ export function CoachChatSheet({
    * and it applies through `edit-ops`, so every invariant (a trained session is never touched, the session
    * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
    */
-  const editByWords = async (intent: EditIntent, said?: string) => {
+  /* `wanted`, not `intent`: the sheet's own `intent` prop is in scope here (C-I7 — no name shadows another). */
+  const editByWords = async (wanted: EditIntent, said?: string) => {
     if (said) editAsked.current = said;
     setBusy('thinking');
     const active = await Promise.race([
@@ -1782,10 +1784,10 @@ export function CoachChatSheet({
       said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
     ]);
     setBusy(null);
-    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
+    const res = resolveEditIntent(wanted, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
     if (!res.ok) {
       /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
-      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };
+      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
       say(
         { kind: 'holt', text: res.message },
         ...(res.ask !== 'not_editable' && res.options.length
@@ -2289,7 +2291,7 @@ export function CoachChatSheet({
    * ⚠ EVERY ASK STILL RUNNING, AND EVERY ASK A "TRY AGAIN" CAN SEND (AI audit 11-16, C-D2 · C-D5).
    *
    * One controller per ask, aborted if the sheet goes away mid-reply: nobody is left to read the words, and
-   * the abort is what reaches coach-ask's `cancel()`, so the model stops writing (and costing). `askHolt`'s
+   * the abort is what reaches coach-ask's `cancel()`, so the model stops writing (and costing). `streamCoachAsk`'s
    * own clock ends a stalled ask either way, so `busy` always lets go and the queue drains.
    *
    * A failed ask leaves what it was asked with here, under the id its Try again chip carries — sent at most
@@ -2483,10 +2485,11 @@ export function CoachChatSheet({
    * True when something was shown, so the caller adds nothing on top.
    */
   const actOn = async (actions: AskAction[], asked: string): Promise<boolean> => {
-    const edit = actions.find((a) => a.name === 'propose_program_edit');
-    const intent = edit ? narrowEdit(edit.input) : null;
-    if (intent) {
-      await editByWords(intent, asked);
+    /* Not `edit` / `intent`: both name sheet-wide state and props here (C-I7 — no name shadows another). */
+    const proposed = actions.find((a) => a.name === 'propose_program_edit');
+    const proposedEdit = proposed ? narrowEdit(proposed.input) : null;
+    if (proposedEdit) {
+      await editByWords(proposedEdit, asked);
       return true;
     }
     const web = actions.find((a) => a.name === 'offer_online_recipe_search');
@@ -2696,10 +2699,10 @@ export function CoachChatSheet({
     /* ⚠ THIS stream's turn, by id — never "the last streaming turn", which may be another answer's (R2-F5). */
     streamSeq.current += 1;
     const sid = streamSeq.current;
-    /* One controller per ask: the sheet going away aborts it (`asking`); `askHolt`'s own clock ends a stall (C-D2). */
+    /* One controller per ask: the sheet going away aborts it (`asking`); `streamCoachAsk`'s own clock ends a stall (C-D2). */
     const ctl = new AbortController();
     asking.current.add(ctl);
-    const r = await askHolt(
+    const r = await streamCoachAsk(
       text,
       history,
       context,
@@ -2786,6 +2789,15 @@ export function CoachChatSheet({
          */
         setThread((t) => markStopped(takeBackReply(t, sid), text));
         return say({ kind: 'holt', text: pick('declined_question') });
+      case 'retracted':
+        /*
+         * ⛔ TAKEN BACK (AI Road to 10 Sprint 2, CH-2). The output scanner stopped his finished reply — the function's
+         * (`retract`) or this app's own (`withOutputScan`, for an older function): a dose, a reassurance about a
+         * symptom, a diagnosis. The words go, and the medical stop card stands in their place — `medicalStop` also
+         * marks the athlete's line so it never rides along with the next question. Any card he forwarded goes too.
+         */
+        setThread((t) => takeBackReply(t, sid));
+        return medicalStop(text);
       case 'offline':
         /* The sheet went away mid-ask (`asking` aborted it) — there is nobody left to tell. */
         if (r.aborted) return;
@@ -3182,18 +3194,19 @@ export function CoachChatSheet({
   const keepInBuilder = async () => {
     if (built?.kind !== 'program') return;
     if (!earnsStructuredDevelopmentCredit(built.structure)) {
-      const draft = draftFromStructure(built.structure);
-      await saveProgramDraft(draft);
+      const programDraft = draftFromStructure(built.structure);
+      await saveProgramDraft(programDraft);
       /* Shown in chat already, so not news — the bubble never calls it "still sitting in the builder" (holt-13). */
-      await setDraftTold(draft.name || null);
+      await setDraftTold(programDraft.name || null);
       openBuilder();
       return;
     }
     const kept = await keepAsProgram();
     if (!kept) return;
-    const draft = { ...draftFromStructure(built.structure), mode: 'edit' as const, editId: kept, srcId: kept };
-    await saveProgramDraft(draft);
-    await setDraftTold(draft.name || null);
+    /* `programDraft`, not `draft` — that is the composer's text (C-I7 — no name shadows another). */
+    const programDraft = { ...draftFromStructure(built.structure), mode: 'edit' as const, editId: kept, srcId: kept };
+    await saveProgramDraft(programDraft);
+    await setDraftTold(programDraft.name || null);
     openBuilder(kept);
   };
 

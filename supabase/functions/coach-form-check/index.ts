@@ -3,8 +3,8 @@
  *
  * ══ WHAT THIS IS ══
  *
- * An athlete films a set. The app pulls three to twelve stills out of the clip, in time order, and sends them
- * here with the name of the lift. Holt answers about the TECHNIQUE and nothing else: bar path, brace,
+ * An athlete films a set. The app pulls 3 to 40 stills out of the clip (about three a second, PO 09-29), in time
+ * order, and sends them here with the name of the lift. Holt answers about the TECHNIQUE and nothing else: bar path, brace,
  * depth, knee and hip timing, bar position, tempo. Output is capped at 900 tokens — `CA-D5`'s figure for
  * this job — and the read is 6 credits, the weight `form_check` has carried in `coach_ai_config` since
  * migration `0144`.
@@ -44,11 +44,14 @@
  *   2. The day's ceiling (`FORM_PER_DAY`, P-D6) — a read was free when unreadable and had no cap at all.
  *   3. RESERVE the credit (`coach_ai_reserve`, 0268) — the Premium AI gate, the AI-sharing consent check and
  *      the server's age. Refused here if it would not be allowed.
+ *   3b. 18+ (Sprint 2, FC-1): a minor → `under_18`, no birth year → `age_unknown` (fail closed), both before the
+ *      model, settled `guarded` and refunded.
  *   4. One vision call, the frames in time order, each labelled with its position and second, under this
- *      function's own 75 s abort (AI Sprint 1 contract §3; the app waits 90 s).
- *   5. The guard, then SETTLE once (`coach_ai_settle`, all four token counts): a readable read is charged; an
- *      unreadable one, a refusal, an upstream failure or our timeout is refunded — "Not charged." still holds,
- *      without the quote's month-end race (P-D6). Then the answer.
+ *      function's own 75 s abort (AI Sprint 1 contract §3; the app waits 90 s). How far apart the frames are is said
+ *      in the user turn from the times that arrived (`formSpacingLine`, V-D4) — the cached block no longer claims it.
+ *   5. The guard, then the output scan (`scanTexts`, Sprint 2 CH-2), then SETTLE once (`coach_ai_settle`, all four
+ *      token counts): a readable read is charged; an unreadable one, a refusal, a scanner stop, an upstream failure
+ *      or our timeout is refunded — "Not charged." still holds, without the quote's month-end race (P-D6).
  *
  * The server's age goes in the user turn as one line (P-G8, `ageLine`); the cached system block is unchanged.
  *
@@ -64,8 +67,11 @@
  * ══ THE WIRE (to the app) ══
  *
  *   Guarded before the model:  { route: 'crisis' | 'urgent' | 'care' | 'medical_stop' }
+ *   Stopped after it (scan):   { route: 'medical_stop', held: true, remaining, refunded: true }      200
  *   Refused:                   { ok: false, reason: 'bad_request' | 'too_large' }                    400
  *                              { ok: false, reason: 'no_consent' }                                   403
+ *                              { ok: false, reason: 'under_18' | 'age_unknown', remaining,
+ *                                refunded: true }                                                    403
  *                              { ok: false, reason: 'daily_limit', limit }                           429
  *                              { ok: false, reason: 'out_of_credits', remaining, allowance }         200
  *                              { ok: false, reason: 'unconfigured' | 'meter_unavailable' }           503
@@ -97,10 +103,16 @@ import {
   FORM_LIFT_CHARS,
   FORM_NOTE_CHARS,
   FORM_OUTPUT_CAP,
+  FORM_AGE_UNKNOWN,
   FORM_PER_DAY,
+  FORM_UNDER_18,
+  formReadTexts,
+  formUserText,
   frameLabel,
   parseFormRead,
 } from '../../../src/domain/coach/form-check.ts';
+// ⚠ THE OUTPUT SCAN (Sprint 2, CH-2) — the scanner the chat, the kitchen and the app run, on what survived the guard.
+import { scanTexts } from '../../../src/domain/ai/output-scan.ts';
 // ⚠ THE MEASURED FACTS: narrowed and worded by one import-free module, so no client text reaches the prompt.
 import { capPose, poseFactLines, poseFrameTag } from '../../../src/domain/coach/pose/pose-facts.ts';
 // ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
@@ -188,7 +200,7 @@ The same goes for frames that are partly blurred, partly dark, or where part of 
 
 # Reading the frames
 
-Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. They are about a third of a second apart, so every rep is covered by several frames in a row. Use the timestamps to find where each rep starts and ends, then watch each rep through: the setup, the start, the bottom or turnaround, the lockout. The bottom position and the turnaround usually carry the most coaching. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
+Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. The message after the frames says how far apart they are. Use the timestamps to find where each rep starts and ends, then watch each rep through: the setup, the start, the bottom or turnaround, the lockout. The bottom position and the turnaround usually carry the most coaching. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
 
 Coach THIS set, not the lift in general. Every sentence you write must be something you saw in these frames — this athlete's reps, not the faults the lift usually has. If what you write would fit any video of this lift, look again and say what is particular to this one.
 
@@ -391,6 +403,17 @@ Deno.serve(async (req) => {
     return settledTail(settledFrom(data, error), meter.remaining);
   };
 
+  // ── 3b. 18+ (Sprint 2, FC-1 · Plan §1: legal caution, the medical rule's spirit) — BEFORE the model ─────
+  //
+  // The age is the SERVER's (the reservation reads `profiles.birth_year`; a client cannot send one). A minor is refused;
+  // an unknown age is refused too — fail CLOSED, Sprint 0's rule for age — and the app asks for the birth year. Both
+  // are settled `guarded` and refunded: the reservation is what read the age, so the credit goes straight back.
+  if (meter.minor || meter.ageYears == null) {
+    // No model call was made. `callFacts` reads any failed call as "no usage, no latency" — exactly this settle's facts.
+    const noCall: ModelCall = { kind: 'upstream_unreachable', latencyMs: 0 };
+    return json({ ok: false, reason: meter.minor ? FORM_UNDER_18 : FORM_AGE_UNKNOWN, ...(await settle('guarded', noCall)) }, 403);
+  }
+
   // ── 4. The model call ───────────────────────────────────────────────────────
   //
   // The frames go in one user turn, each preceded by its position and (when the app sent it) the second
@@ -407,16 +430,9 @@ Deno.serve(async (req) => {
   const measured = poseFactLines(pose);
   // P-G8: the server's age, from the profile — per request, so in the user turn and never the cached block.
   const profile = ageLine(meter.ageYears, meter.minor);
-  content.push({
-    type: 'text',
-    text: `Those frames are one set of: ${lift}. They are in time order.${
-      focus.length ? `\n\nLook especially at: ${focus.join(', ')}.` : ''
-    }${note ? `\n\nThe athlete says: "${note}"` : ''}${
-      known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${known}` : ''
-    }${last ? `\n\nLast saved read of this lift (${last.date}): ${last.fix}` : ''}${
-      measured.length ? `\n\n${measured.join('\n')}` : ''
-    }${profile ? `\n\n${profile}` : ''}\n\nAnswer with the JSON object only.`,
-  });
+  // FC-1: how far apart the frames are is said from the times that ARRIVED (`formSpacingLine`), never assumed — the
+  // one builder `scripts/form-check-eval.mjs` calls too.
+  content.push({ type: 'text', text: formUserText({ lift, focus, note, known, last, measured, profile, times }) });
 
   const call = await timedModelCall(
     (signal) =>
@@ -468,6 +484,14 @@ Deno.serve(async (req) => {
   if (!read) {
     const outcome: SettleOutcome = refused ? 'refusal' : payload?.stop_reason === 'max_tokens' ? 'truncated' : 'unreadable';
     return json({ ok: false, reason: 'unreadable', ...(await settle(outcome, call)), charged: false });
+  }
+
+  // ⛔ THE OUTPUT SCAN (Sprint 2, CH-2) on every line that survived the guard — the guard drops a sentence; the scanner
+  // reads what is left (a dose, a reassurance, a diagnosis the sentence families do not name). A hit is the existing
+  // stop reply, `medical_stop`, which every app already shows as the stop card — settled `guarded` and refunded.
+  // `held: true` lets an app since Sprint 2 say the READ strayed (not the pain line, which is for a note that named pain).
+  if (scanTexts(formReadTexts(read), note).hit) {
+    return json({ route: 'medical_stop', held: true, ...(await settle('guarded', call)) });
   }
 
   // A readable read is the one thing charged — all four token counts recorded, the cache read the one that matters.

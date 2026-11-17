@@ -122,12 +122,13 @@ test('⚠ conversation memory is this conversation, eight turns, into both AI jo
   assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(t\);/);
   assert.match(readFileSync(path.join(here, '../chat-history.ts'), 'utf8'), /export const CHAT_HISTORY_TURNS = 8;/);
   assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\), closeSignal\(\)\)/);
-  assert.match(sheet, /askHolt\(\s*text,\s*history,\s*context,/);
+  assert.match(sheet, /streamCoachAsk\(\s*text,\s*history,\s*context,/);
 });
 
 test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — never saved on its own', () => {
   const edit = sheet.slice(sheet.indexOf('const editByWords = async'), sheet.indexOf('const finishTypedEdit = async'));
-  assert.match(edit, /resolveEditIntent\(intent, active\.structure, marks, PICKER_DB/);
+  // `wanted` since Sprint 2 (C-I7): the sheet's `intent` prop is in scope, and no name shadows another.
+  assert.match(edit, /resolveEditIntent\(wanted, active\.structure, marks, PICKER_DB/);
   assert.doesNotMatch(edit, /updateProgram\(/, 'resolving must not save');
   const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
   assert.match(finish, /pe\.plan\.apply\(scope\)/);

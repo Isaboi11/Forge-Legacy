@@ -17,8 +17,8 @@ import {
   type FormLast,
 } from '@/domain/coach/form-check';
 import type { PoseFacts, PoseTag } from '@/domain/coach/pose/pose-facts';
-import { poseFrameChoice } from '@/domain/coach/pose/pose-frames';
-import { analysePose, measureFacts, measureReps, worstRep, type PoseAnalysis, type PoseLevel } from '@/domain/coach/pose/pose-measure';
+import { densePoseFrames } from '@/domain/coach/pose/pose-frames';
+import { analysePose, measureFacts, type PoseAnalysis, type PoseLevel } from '@/domain/coach/pose/pose-measure';
 import { anchorAt, pickStillAthlete } from '@/domain/coach/pose/pose-track';
 import {
   formClipNotice,
@@ -43,8 +43,9 @@ import { bodyPoseAvailable, cancelPose, detectPose, trackPose } from '@/lib/body
  *   · `pickFormVideo(pick)`   — the clip, through the app's one camera-or-library path.
  *   · `filmstrip(...)`        — 02's scrubber thumbnails.
  *   · `framesFromVideo(...)`  — the stills across the trimmed window; 03 shows them land. On a build with
- *                               body tracking (10+), the reps are found on the phone first and the stills
- *                               are each rep's key moments (`Docs/Form-Check-Body-Pose-Build-Plan.md`).
+ *                               body tracking (10+), the reps are found on the phone first and the dense stills
+ *                               are tagged with each rep's key moments (`densePoseFrames`, Sprint 2 FC-1 —
+ *                               before it, 6–10 hand-picked moments; `Docs/Form-Check-Body-Pose-Build-Plan.md`).
  *   · `formCheck(...)`        — the read (04).
  *
  * Every rule about how many frames, which moments, how big and what is allowed back lives in
@@ -216,10 +217,10 @@ export interface FrameOptions {
 /**
  * The stills across the trimmed window, in time order. `frames: []` when there is no usable read.
  *
- * Evenly spaced, unless this build has body tracking and it found at least two clean reps: then the dense
- * pass picks each rep's key moments (`poseFrameChoice`), the stills are pulled at exactly those times, and
- * `detect()` runs on the very JPEGs that are sent, so the joints drawn are the joints of the image Holt
- * and the athlete see. Any failure along that path is the `off` level — today's frames, same price.
+ * Evenly spaced — ~3 a second, the PO's 09-29 density — and, when this build has body tracking and it found clean
+ * reps, the still nearest each rep's key moment is moved onto it and tagged (`densePoseFrames`, Sprint 2 FC-1:
+ * the hand-picked 6–10 undid the density). `detect()` runs on the very JPEGs that are sent, so the joints drawn are
+ * the joints of the image Holt and the athlete see. Any failure along that path is the `off` level — even frames.
  *
  * ⚠ SEQUENTIAL, NOT `Promise.all`. Each still decodes a video frame into a full-resolution bitmap; ten of
  * those in flight at once on a 4K clip is a lot of native memory for no wall-clock gain.
@@ -244,12 +245,13 @@ export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Pro
     if (opts.cancelled?.()) return none;
     analysis = analysePose(track, opts.pattern, opts.lift);
     if (analysis.level === 'full') {
-      const choice = poseFrameChoice(analysis.reps, worstRep(measureReps(analysis)));
-      if (choice && choice.times.length >= FORM_FRAMES_MIN) {
-        wanted = choice.times;
-        wantedTags = choice.tags;
+      // FC-1 (Sprint 2): the dense frames stay; the ones on a rep's moment are nudged onto it and tagged.
+      const dense = densePoseFrames(wanted, analysis.reps);
+      if (dense.times.length >= FORM_FRAMES_MIN && dense.tags.some(Boolean)) {
+        wanted = dense.times;
+        wantedTags = dense.tags;
       } else {
-        // Reps, but not enough distinct moments to send: coach from even frames, still snap the marks.
+        // Reps, but no frame landed on one of their moments: coach from even frames, still snap the marks.
         analysis = { ...analysis, level: 'marks' };
       }
     }
@@ -370,6 +372,8 @@ export async function formCheck(req: FormRequest, signal?: AbortSignal): Promise
   })();
   /* A code-guard stop is the guard working, not a failure. */
   if (r.kind === 'ok' || r.kind === 'stopped') return r;
+  /* So are the age floor and the output scan (Sprint 2): not reported, and their refund rides on the result. */
+  if (r.kind === 'held' || r.kind === 'under_18' || r.kind === 'age_unknown') return refundedResult(r, a);
   reportAiCall(a, r.kind);
   return refundedResult(r, a);
 }

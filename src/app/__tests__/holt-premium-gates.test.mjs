@@ -62,7 +62,8 @@ test('G4 — an unreadable spend answer stops a capped athlete with a retry, in 
 
 test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more, in the chat and in the wizard', () => {
   // Only four weeks or more is KEPT as the Holt program; shorter is written as before and spends short_programs.
-  assert.match(fn('const keepInBuilder = '), /if \(!earnsStructuredDevelopmentCredit\(built\.structure\)\) \{\n\s+const draft = draftFromStructure\(built\.structure\);/);
+  // `programDraft` since Sprint 2 (C-I7): `draft` is the composer's text in the sheet, and no name shadows another.
+  assert.match(fn('const keepInBuilder = '), /if \(!earnsStructuredDevelopmentCredit\(built\.structure\)\) \{\n\s+const programDraft = draftFromStructure\(built\.structure\);/);
   assert.match(fn('const reallyStart = '), /const id = earnsStructuredDevelopmentCredit\(built\.structure\) \? await keepAsProgram\(\) : \(await createProgram\(built\.structure\)\)\.id;/);
   assert.doesNotMatch(chat, /consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\)/, 'every non-day build spending the program was the bug');
   assert.match(wizard, /if \(!earnsStructuredDevelopmentCredit\(structure\)\) \{\n\s+await saveProgramDraft\(draftFromStructure\(structure\)\);\n\s+router\.replace\('\/program-builder'\);\n\s+return;/);

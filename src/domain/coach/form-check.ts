@@ -277,6 +277,83 @@ export function capFrameSizes(raw: unknown, frameCount: number): [number, number
 }
 
 /**
+ * ══ HOW FAR APART THE FRAMES ARE — SAID FROM WHAT WAS SENT (AI Road to 10 Sprint 2, FC-1 · audit V-D3, V-D4) ══
+ *
+ * The cached system block used to say the frames are "about a third of a second apart, so every rep is covered by
+ * several frames in a row". That was true of the 09-29 dense sampling only: build 11's body tracking sent 6–10
+ * hand-picked moments, and a long trim at the 40-frame cap is ~0.75 s apart. A wrong spacing claim skews rep counts
+ * and tempo. So the block now says only that the labels carry the timestamps, and THIS line — computed from the
+ * times that actually arrived, per request, in the user turn — says what the spacing is. Null when no times came
+ * (an older app): then nothing is claimed.
+ */
+export function formSpacingLine(times: readonly number[] | null | undefined): string | null {
+  if (!times || times.length < 2) return null;
+  const gaps: number[] = [];
+  for (let i = 1; i < times.length; i += 1) gaps.push(times[i] - times[i - 1]);
+  const sorted = [...gaps].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const s = (ms: number) => `${Number((Math.max(0, ms) / 1000).toFixed(2))} s`;
+  // Even enough to describe by its median: dense sampling, including frames nudged onto a rep's moment (pose-frames).
+  const even = median > 0 && sorted[sorted.length - 1] <= median * 1.75 && sorted[0] >= median * 0.4;
+  if (even) {
+    return median <= 700
+      ? `The frames are evenly spaced, about ${s(median)} apart, so each rep is covered by several frames in a row.`
+      : `The frames are evenly spaced, about ${s(median)} apart — a rep may fall between two of them, so use the timestamps.`;
+  }
+  return `The frames are not evenly spaced (from ${s(sorted[0])} to ${s(sorted[sorted.length - 1])} apart), so judge timing from the timestamps, not from the frame count.`;
+}
+
+/** What goes after the frames in the user turn — the ONE builder, used by the function and by `scripts/form-check-eval.mjs`. */
+export interface FormUserParts {
+  lift: string;
+  focus?: readonly string[];
+  note?: string;
+  known?: string;
+  last?: FormLast | null;
+  /** `poseFactLines(pose)` — the measured block, when the phone sent one. */
+  measured?: readonly string[];
+  /** `ageLine(…)` — the server's age line (P-G8). */
+  profile?: string | null;
+  /** The times that were sent, for {@link formSpacingLine}. */
+  times?: readonly number[] | null;
+}
+
+/**
+ * The text block after the frames: the lift, how far apart the frames are, the athlete's focus and note (their own
+ * words, labelled so), the library's notes, the last read, the measured facts, the age. Order and wording are the
+ * function's; the eval calls this same function so a run mirrors production exactly.
+ */
+export function formUserText(p: FormUserParts): string {
+  const spacing = formSpacingLine(p.times);
+  const focus = p.focus ?? [];
+  const measured = p.measured ?? [];
+  return `Those frames are one set of: ${p.lift}. They are in time order.${spacing ? ` ${spacing}` : ''}${
+    focus.length ? `\n\nLook especially at: ${focus.join(', ')}.` : ''
+  }${p.note ? `\n\nThe athlete says: "${p.note}"` : ''}${
+    p.known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${p.known}` : ''
+  }${p.last ? `\n\nLast saved read of this lift (${p.last.date}): ${p.last.fix}` : ''}${
+    measured.length ? `\n\n${measured.join('\n')}` : ''
+  }${p.profile ? `\n\n${p.profile}` : ''}\n\nAnswer with the JSON object only.`;
+}
+
+/**
+ * ══ 18+ (AI Road to 10 Sprint 2, FC-1 · Plan §1: "Form check: no age floor" → 18+, legal caution) ══
+ *
+ * The function refuses before the model, from the SERVER's age (`coach_ai_reserve`, from `profiles.birth_year`): a
+ * minor → `under_18`; no birth year → `age_unknown` (fail closed, Sprint 0's rule for age). Both are settled `guarded`
+ * and refunded, with HTTP 403. An app before Sprint 2 shows its generic "broke on my end" for them.
+ */
+export const FORM_UNDER_18 = 'under_18';
+export const FORM_AGE_UNKNOWN = 'age_unknown';
+
+/** Every line of a read a person would see — what the output scanner reads (`scanTexts`, Sprint 2 CH-2). */
+export function formReadTexts(read: FormRead): string[] {
+  return [read.viewLine, ...read.looksGood, ...read.fix, read.cue, read.encourage, read.progress, read.drill, ...read.marks.map((m) => m.shows)].filter(
+    (s): s is string => typeof s === 'string' && s.length > 0,
+  );
+}
+
+/**
  * "Frame 3 of 10 (2.5 s in, 432 x 768 px):" — the label that goes before each still in the user turn.
  * With body tracking, `tag` names the rep and moment the phone measured ("rep 1 bottom", plan §5.4), so
  * Holt can pick the frame for a mark from what it IS rather than from what it looks like.
@@ -470,12 +547,28 @@ function cleanDrill(raw: unknown): string {
 // stay away from.
 
 /**
- * Pain, injury, symptoms, and anything clinical.
+ * ⚠ THE CLINICAL NAMES FOR POSTURE AND MOVEMENT — ONE LIST, SHARED (AI Road to 10 Sprint 2, FC-1 · audit V-D6).
  *
- * ⚠ THE POSTURE-DIAGNOSIS WORDS (`valgus`, `varus`, `kyphosis`, `lordosis`, `scoliosis`) WERE ADDED WITH
- * BODY TRACKING (09-28, plan §7). Measured knee and torso positions make a model likelier to reach for the
- * clinical name; "knees move inward relative to the feet" is the movement and stays, "knee valgus" is a
- * diagnosis and goes. Tested both ways beside this file.
+ * `valgus`, `varus`, `kyphosis`, `lordosis`, `scoliosis` were added with body tracking (09-28, plan §7): measured
+ * knee and torso positions make a model likelier to reach for the clinical name. "Knees move inward relative to
+ * the feet" is the movement and stays; "knee valgus" is a diagnosis and goes. Build 11 had them; the web (trunk)
+ * and the deployed function did not. Sprint 2 makes it ONE list with Holt's chat output scanner
+ * (`src/domain/ai/output-scan.ts` `CLINICAL_TERMS`), widened there with the rest of the family (impingement,
+ * anterior pelvic tilt, winging…).
+ *
+ * ⚠ A BYTE-IDENTICAL COPY, NOT AN IMPORT. This file must stay import-free (see the header), so the regex is copied
+ * between the markers below and `src/domain/ai/__tests__/output-scan.test.mjs` fails if the two ever differ. Change
+ * one and you change the other, in the same commit. Here it drops the SENTENCE (form check's posture); in the
+ * output scanner it stops the whole reply. This module runs on the server AND on the app (`formResultFrom`
+ * re-checks every read), which is what puts it on the web too.
+ */
+// ── CLINICAL TERMS: begin ──
+const FORM_CLINICAL_TERMS =
+  /\b(valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|hyperlordo\w*|hyperkyphos\w*|impinge\w*|spondyl\w*|stenosis|dyskines\w*|scapular\s+winging|winged\s+scapula\w*|anterior\s+pelvic\s+tilt|pelvic\s+obliquity|trendelenburg|genu\s+(valgum|varum|recurvatum)|pes\s+(planus|cavus)|hypermobil\w*|crossed\s+syndrome)\b/i;
+// ── CLINICAL TERMS: end ──
+
+/**
+ * Pain, injury, symptoms, and anything clinical. The posture names are {@link FORM_CLINICAL_TERMS}, above.
  *
  * ⚠ `pinch` IS NOT IN HERE, ON PURPOSE. *"Pinch your shoulder blades together"* is one of the most common
  * legitimate cues in lifting, and banning the word would delete good coaching to catch a case `nerve`,
@@ -483,7 +576,7 @@ function cleanDrill(raw: unknown): string {
  * what `feedback_verify_guards_empirically` asks for.
  */
 const MEDICAL_SENTENCE =
-  /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
+  /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
 
 /**
  * Telling somebody to stop training, or to go and get looked at. A referral is not a technique note.
@@ -538,11 +631,12 @@ const BODY_SENTENCE =
 const NUMBER_SENTENCE =
   /(\b\d+(\.\d+)?\s*(lb|lbs|pound|pounds|kg|kgs|kilo|kilos|plate|plates)\b|\b(1\s?rm|e1rm|one[-\s]?rep\s+max|your\s+(true\s+|estimated\s+)?max|max\s+out|rep\s+max)\b|\b\d+\s*%\s*(of\s+)?(your\s+)?(1\s?rm|max)\b)/i;
 
-const BANNED = [MEDICAL_SENTENCE, REFERRAL_SENTENCE, VERDICT_SENTENCE, BODY_SENTENCE, NUMBER_SENTENCE];
+const BANNED = [MEDICAL_SENTENCE, FORM_CLINICAL_TERMS, REFERRAL_SENTENCE, VERDICT_SENTENCE, BODY_SENTENCE, NUMBER_SENTENCE];
 
 /** Which family vetoed this sentence, or null when nothing did. Exported so the tests can name a miss. */
 export function bannedFamily(sentence: string): 'medical' | 'referral' | 'verdict' | 'body' | 'number' | null {
-  const names = ['medical', 'referral', 'verdict', 'body', 'number'] as const;
+  // The clinical posture names are part of the medical family.
+  const names = ['medical', 'medical', 'referral', 'verdict', 'body', 'number'] as const;
   for (let i = 0; i < BANNED.length; i += 1) if (BANNED[i].test(sentence)) return names[i];
   return null;
 }

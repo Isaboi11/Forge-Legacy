@@ -15,6 +15,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export const ACUTE = /\b(ruptur\w*|fractur\w*(?!\s+(my|the|our)\s+(schedule|week|plans?|routine|program|calendar))|surger\w*|operation|operated|post[-\s]?op|sprain\w*|dislocat\w*|physio\w*|physical\s+therap\w*|doctor|surgeon|orthopa?ed\w*|mri|x[-\s]?ray|numb\w*|tingl\w*|pinched|shooting\s+pain|swell\w*|swollen|herniat\w*|bulging\s+disc|sciatic\w*|concussion|whiplash)\b/i;
+export const CONDITION = /\b(tendinitis|tendonitis|tendinopathy|tendinosis|bursitis|fasciitis|epicondyl\w*|tennis\s+elbow|golfer'?s\s+elbow|jumper'?s\s+knee|runner'?s\s+knee|shin\s+splints?|it\s?band\s+syndrome|itbs|piriformis\s+syndrome|carpal\s+tunnel|frozen\s+shoulder|adhesive\s+capsulitis|costochondritis|compartment\s+syndrome|osgood[-\s]schlatter\w*|impinge(ment|d|s)?|labral\s+tear\w*|slap\s+tear\w*|(meniscus|meniscal)\s+tear\w*|rotator\s+cuff\s+(tear\w*|injur\w*|tendin\w*)|patellofemoral|chondromalacia|subluxat\w*|spondyl\w*|stenosis|trigger\s+finger|de\s+quervain\w*|achilles\s+tendin\w*)\b/i;
 export const CRISIS = /\b(kill(ing)?\s+myself|kms|suicid\w*|end(ing)?\s+(it\s+all|my\s+life|it)\b(?!\s+(early|there|here|with|on|at))|want(ed)?\s+to\s+die|wanna\s+die|rather\s+(not\s+exist|be\s+dead)|(don'?t|do\s+not)\s+want\s+to\s+(live|be\s+alive|exist|be\s+here\s+anymore)|hurt(ing)?\s+myself|harm(ing)?\s+myself|self[-\s]?harm\w*|cut(ting)?\s+myself|(hit|punch|punish)(ing)?\s+myself|no\s+reason\s+to\s+live|(till|until)\s+(they|it|i)\s+bleed|make\s+myself\s+bleed)\b/i;
 export const URGENT = /\b(chest\s+(pain|pressure|tightness|is\s+tight|feels\s+tight|hurts)|pain\s+in\s+my\s+chest|(passed|pass(ing)?|blacked|black(ing)?)\s+out|faint(ed|ing)?\b|can'?t\s+(catch\s+my\s+)?breathe?|trouble\s+breathing|struggling\s+to\s+breathe|asthma\s+attack|heart\s+(is\s+|keeps\s+|won'?t\s+stop\s+)?(racing|pounding|skipping|fluttering)|(dark|brown|cola|tea)[-\s]colou?red\s+(pee|urine)|(pee|urine)\s+(is\s+|was\s+|looks\s+)?(dark|brown|cola|tea)\b|rhabdo\w*|worst\s+headache|severe\s+headache|thunderclap|face\s+(is\s+)?droop\w*|slurr\w*|seizure|can'?t\s+feel\s+my\s+(legs|arms|feet)|(low|crashing)\s+blood\s+sugar|blood\s+(sugar|glucose)\s+(is\s+|was\s+|keeps\s+|feels\s+|went\s+|just\s+)*(low|crash\w*|dropp\w*|tank\w*|plummet\w*)|hypoglyc\w*|dolor\s+de\s+pecho|duele\s+el\s+pecho|(lost|losing|lose|can'?t\s+control)\s+(my\s+)?(bladder|bowel)|throat\s+(is\s+)?(swelling|swollen|closing)|short(ness)?\s+of\s+breath|swollen\s+and\s+(hot|red)|(hot|red)\s+and\s+swollen)\b/i;
 const AMBIGUOUS_DAMAGE = /\b(broke|broken|tear|tears|tearing|tore|torn|strained|strain|strains|snapped|popped|blew\s+out|went\s+pop)\b/i;
@@ -28,7 +29,7 @@ export const DISORDERED_EATING = /\b(purg(e|es|ed|ing)|(throw(ing|n)?|threw)\s+u
 export const EATING_DISORDER_NAMED = /\b(anorexi\w*|anorectic|bulimi\w*|eating\s+disorder\w*|binge[-\s]eating|arfid|orthorexi\w*|ednos)\b/i;
 const RECOVERY = /\b(recover(y|ing|ed)|in\s+treatment|my\s+(therapist|treatment\s+team))\b/i;
 export const DIET_DRUG = /\b(appetite\s+(suppress\w*|blocker\w*|killer\w*)|fat[-\s]?burners?|diet\s+(pills?|drugs?|tea)|slimming\s+(pills?|tea|drops)|weight[-\s]?loss\s+(pills?|drugs?|meds?|medications?|injections?|shots?|tea|supplements?)|phentermine|adipex|qsymia|contrave|orlistat|xenical|clenbuterol|clen|dnp|ephedrine|ephedra|garcinia|hydroxycut|lipozene|sibutramine)\b/i;
-export const MEDICAL_CONTEXT = /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney\s+(disease|stones?|failure|function|problems?|issues?|condition|transplant|damage|infection)|ckd|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance|lactating|lactation|breast\s*milk|milk\s+supply|pumping\s+(breast\s*)?milk|(i'?m|i\s+am|im|currently|still|been|while|when|and)\s+(\w+\s+)?nursing\b(?!\s+(a|an|my|the|this|that|his|her|student|school|home|degree|shift|job|injur\w*|hangover))|nursing\s+((a|my|the|our)\s+)?(mom|mother|mum|baby|son|daughter|newborn|infant|twins))\b/i;
+export const MEDICAL_CONTEXT = /\b(pregnan\w*|postpartum|post-partum|breastfeed\w*|breast-feed\w*|c-?section|miscarriage|epilep\w*|diabet\w*|insulin|heart\s+(condition|disease|murmur|attack|problem|issue)s?|arrhythmia|a-?fib|pacemaker|blood\s+pressure|hypertension|asthma|copd|cancer|chemo\w*|osteopor\w*|arthritis|ssris?|antidepressant\w*|medications?|prescription|cortisone|steroid\s+shot|kidney\s+(disease|stones?|failure|function|problems?|issues?|condition|transplant|damage|infection)|ckd|liver\s+(disease|condition)|hernia|cleared\s+(me|by)|got\s+clearance|ibuprofen|advil|motrin|nurofen|aleve|naproxen|tylenol|acetaminophen|paracetamol|panadol|aspirin|nsaids?|pain\s?killers?|pain\s+(meds?|relievers?|pills?)|muscle\s+relaxants?|antihistamines?|benadryl|antibiotics?|anti[-\s]?inflammatories|anti[-\s]?inflammatory\s+(meds?|medications?|pills?|drugs?)|lactating|lactation|breast\s*milk|milk\s+supply|pumping\s+(breast\s*)?milk|(i'?m|i\s+am|im|currently|still|been|while|when|and)\s+(\w+\s+)?nursing\b(?!\s+(a|an|my|the|this|that|his|her|student|school|home|degree|shift|job|injur\w*|hangover))|nursing\s+((a|my|the|our)\s+)?(mom|mother|mum|baby|son|daughter|newborn|infant|twins))\b/i;
 export const NUTRITION_MEDICAL = /\b(thyroid|hypothyroid\w*|hyperthyroid\w*|hashimoto\w*|cholesterol|statins?|a1c|pre-?diabet\w*|ibs|irritable\s+bowel|crohn'?s?|colitis|gerd|acid\s+reflux|gout|celiac|coeliac|pcos|polycystic|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide|glp-?1|metformin|blood\s*work|lab\s+(results?|work)|blood\s+tests?|blood\s+thinners?|warfarin|eliquis|gastric\s+(sleeve|bypass|band)|bariatric|lap[-\s]?band|anemi\w*|anaemi\w*|iron\s+deficien\w*|t[12]d|type\s*[-]?\s*(1|2|one|two|i|ii)\s+diabet\w*|(i\s+have|i'?ve\s+got|i'?m|im|i\s+am|with|living\s+with|as\s+a)\s+(a\s+)?type\s*[-]?\s*(1|2|one|two|i|ii)\b(?!\s*(and\s+type\s*\w+\s+)?(muscle|fib\w*|fibre\w*|fun|personality|error))|blood\s*(sugar|glucose)|glucose\s+(levels?|monitor\w*|spikes?|readings?)|cgm|insulin\s+resist\w*|(am\s+i|could\s+i\s+be|do\s+i\s+have|i\s+think\s+i'?m|i\s+think\s+i\s+(am|have)|think\s+i'?m)\s+(\w+\s+){0,2}(lactose\s+intolerant|gluten\s+intolerant|intolerant|allergic|celiac|an?\s+(food\s+)?allergy))\b/i;
 export const RESTRICTION = /\b((water|dry|juice|bone\s+broth)\s+fast\w*|(juice\s+)?cleanse\w*|detox\w*|lowest\s+(calories|cals?|possible)|as\s+(few|little|low)\s+(calories|cals?\s+)?as\s+possible|(?<![\d,.])([1-9]\d{2}|1,?[01]\d{2})\s*(cal\w*|kcals?)\s*((a|per|each)\s+day|\/\s*(day|d)\b|daily)|(?<![\d,.])([1-9]\d{2}|1,?[01]\d{2})\s*(cal\w*|kcals?)\s+(or\s+(less|under|below)\s+)?(a|per|each)\s+day|(target|goal|calories|cals?)\s+(to|at|of)\s+([1-9]\d{2}|1,?[01]\d{2})\b(?!\s*(protein|carbs?|g\b|grams?))|(only|just)\s+(eat(ing)?|consum\w*)\s+(?<![\d,.])([1-9]\d{2}|1,?[01]\d{2}|[1-9]\d)\s*(cal\w*|kcals?)\b(?!\s+(of|before|pre|after|post|for\s+(breakfast|lunch|dinner|a\s+snack)|in\b|more|left|remaining|over|under|to\s+(go|spare|work|spend)))|(eat|eating|ate|consume|consuming)\s+(only|just|under|less\s+than|below)\s+(?<![\d,.])([1-9]\d{2}|1,?[01]\d{2}|[1-9]\d)\s*(cal\w*|kcals?)\b(?!\s+(of|before|pre|after|post|for\s+(breakfast|lunch|dinner|a\s+snack)))|binge\w*\s+(and|then)\s+(then\s+)?(don'?t|not|stop|skip|starve|fast|purge|restrict)|(haven'?t|have\s+not|didn'?t|did\s+not|not)\s+eaten?\s+(anything\s+)?(in|for)\s+(\d+|a\s+few|two|three|four|several)\s+days|(cut|lose|drop)\s+(\d{2,}|[5-9])\s*(lbs?|pounds|kg|kilos?)\s+(in|by|within)\s+(a|one|1|2|two|3|three|a\s+few)\s+(week|days?)|(fasting|fasted|fast\s+for|without\s+(eating|food|any\s+food)|no\s+food|not\s+eat(ing)?|stop\s+eating|skip(ping)?\s+(eating|food|all\s+meals))\s+(for\s+)?((\d+|a|one|two|three|four|five|six|seven|a\s+few|a\s+couple(\s+of)?|several|multiple)[-\s]*(days?|weeks?)|(2[4-9]|[3-9]\d|\d{3})[-\s]*(hours?|hrs?|h)|(a\s+)?(whole|full|entire)\s+(day|week))\b|((\d+|a|one|two|three|four|five|six|seven|a\s+few|a\s+couple(\s+of)?|several|multiple)[-\s]*(days?|weeks?)|(2[4-9]|[3-9]\d|\d{3})[-\s]*(hours?|hrs?|h)|(a\s+)?(whole|full|entire)\s+(day|week))\s+(fast(s|ing)?|without\s+(eating|food|any\s+food)|of\s+(fasting|no\s+food|not\s+eating)|no\s+food)|laxatives?|diuretics?|water\s+pills|(feel|felt|feeling)\s+(so\s+)?(fat|disgusting|gross|ashamed|guilty)(\s+(and|&)\s+\w+)?\s+(after|when)\s+(i\s+)?(eat|eating|ate))\b/i;
 const CRASH_CUT = /\b(cut|cutting|lose|losing|drop|dropping|shed|shedding|burn\s+off)\s+(\d+(?:\.\d+)?)\s*(lbs?|pounds?|kgs?|kilos?|kilograms?)\s+(?:of\s+\w+\s+)?(?:in|by|within|over|inside)\s+(?:the\s+next\s+|less\s+than\s+|under\s+)?(a|an|one|two|three|four|five|six|a\s+few|a\s+couple(?:\s+of)?|\d+)\s*(days?|weeks?|wks?|months?)\b/i;
@@ -79,7 +80,7 @@ export function correctedForStops(text: string): string | null {
 }
 const SENSATION = String.raw `(crack\w*|pop|pops|popping|click\w*|grind\w*|clunk\w*|crunch\w*)`;
 const SYMPTOM_QUESTION_SOURCE = () => String.raw `\b${SENSATION}\s+${WORDS}(?:${BODY_PART.source.slice(3, -3)})\b|\b(?:${BODY_PART.source.slice(3, -3)})\s+${WORDS}${SENSATION}\b|\bis\s+(it|this|that)\s+(bad|normal|ok|okay|safe|dangerous|fine)\b[^.?!]{0,40}\bmy\s+(?:${BODY_PART.source.slice(3, -3)})\b`;
-export const DOSE = /(\b\d+(\.\d+)?\s*(mg|mcg|milligrams?|grams?|g|iu|scoops?)\b[^.?!]{0,30}\b(caffeine|creatine|pre-?workout|supplements?|beta-?alanine|melatonin|vitamin|ashwagandha|stims?)\b|\bhow\s+(much|many\s+(mg|milligrams|scoops))\s+(of\s+)?(caffeine|creatine|pre-?workout|melatonin|beta-?alanine|ashwagandha|vitamin\s*d?)\b|\b(caffeine|creatine|pre-?workout|melatonin)\s+(dose|dosage|dosing)\b)/i;
+export const DOSE = /(\b\d+(\.\d+)?\s*(mg|mcg|milligrams?|grams?|g|iu|scoops?)\b[^.?!]{0,30}\b(caffeine|creatine|pre-?workout|supplements?|beta-?alanine|melatonin|vitamin|ashwagandha|stims?)\b|\bhow\s+(much|many\s+(mg|milligrams|scoops))\s+(of\s+)?(caffeine|creatine|pre-?workout|melatonin|beta-?alanine|ashwagandha|vitamin\s*d?)\b|\b(caffeine|creatine|pre-?workout|melatonin)\s+(dose|dosage|dosing)\b|\b\d+\s*(pills?|tablets?|capsules?|caplets?|softgels?)\b)/i;
 const SYMPTOM_QUESTION = new RegExp(SYMPTOM_QUESTION_SOURCE(), 'i');
 export const mentionsDiscomfort = (text: string): boolean => /\b(hurt\w*|pain\w*|ach(e|es|ing|y)|sore\w*|injur\w*|tweak(ed|ing)?|strain\w*|niggl\w*|uncomfortable|discomfort|stiff\w*|flare[-\s]?up|twinge)\b/i.test(text ?? '');
 export type MedicalRoute = 'clear' | 'crisis' | 'urgent' | 'care' | 'acute' | 'advice';
@@ -107,7 +108,7 @@ function routeOnce(t: string): MedicalRoute {
         return 'care';
     if (DOSE.test(t))
         return 'care';
-    if (ACUTE.test(t))
+    if (ACUTE.test(t) || CONDITION.test(t))
         return 'acute';
     if (DAMAGE_NEAR_BODY.test(t))
         return 'acute';
@@ -239,6 +240,44 @@ export function capFrameSizes(raw: unknown, frameCount: number): [
     }
     return out;
 }
+export function formSpacingLine(times: readonly number[] | null | undefined): string | null {
+    if (!times || times.length < 2)
+        return null;
+    const gaps: number[] = [];
+    for (let i = 1; i < times.length; i += 1)
+        gaps.push(times[i] - times[i - 1]);
+    const sorted = [...gaps].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    const s = (ms: number) => `${Number((Math.max(0, ms) / 1000).toFixed(2))} s`;
+    const even = median > 0 && sorted[sorted.length - 1] <= median * 1.75 && sorted[0] >= median * 0.4;
+    if (even) {
+        return median <= 700
+            ? `The frames are evenly spaced, about ${s(median)} apart, so each rep is covered by several frames in a row.`
+            : `The frames are evenly spaced, about ${s(median)} apart \u2014 a rep may fall between two of them, so use the timestamps.`;
+    }
+    return `The frames are not evenly spaced (from ${s(sorted[0])} to ${s(sorted[sorted.length - 1])} apart), so judge timing from the timestamps, not from the frame count.`;
+}
+export interface FormUserParts {
+    lift: string;
+    focus?: readonly string[];
+    note?: string;
+    known?: string;
+    last?: FormLast | null;
+    measured?: readonly string[];
+    profile?: string | null;
+    times?: readonly number[] | null;
+}
+export function formUserText(p: FormUserParts): string {
+    const spacing = formSpacingLine(p.times);
+    const focus = p.focus ?? [];
+    const measured = p.measured ?? [];
+    return `Those frames are one set of: ${p.lift}. They are in time order.${spacing ? ` ${spacing}` : ''}${focus.length ? `\n\nLook especially at: ${focus.join(', ')}.` : ''}${p.note ? `\n\nThe athlete says: "${p.note}"` : ''}${p.known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${p.known}` : ''}${p.last ? `\n\nLast saved read of this lift (${p.last.date}): ${p.last.fix}` : ''}${measured.length ? `\n\n${measured.join('\n')}` : ''}${p.profile ? `\n\n${p.profile}` : ''}\n\nAnswer with the JSON object only.`;
+}
+export const FORM_UNDER_18 = 'under_18';
+export const FORM_AGE_UNKNOWN = 'age_unknown';
+export function formReadTexts(read: FormRead): string[] {
+    return [read.viewLine, ...read.looksGood, ...read.fix, read.cue, read.encourage, read.progress, read.drill, ...read.marks.map((m) => m.shows)].filter((s): s is string => typeof s === 'string' && s.length > 0);
+}
 export function frameLabel(index: number, total: number, timeMs?: number | null, size?: [
     number,
     number
@@ -346,14 +385,15 @@ function cleanDrill(raw: unknown): string {
         return '';
     return name;
 }
-const MEDICAL_SENTENCE = /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
+const FORM_CLINICAL_TERMS = /\b(valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|hyperlordo\w*|hyperkyphos\w*|impinge\w*|spondyl\w*|stenosis|dyskines\w*|scapular\s+winging|winged\s+scapula\w*|anterior\s+pelvic\s+tilt|pelvic\s+obliquity|trendelenburg|genu\s+(valgum|varum|recurvatum)|pes\s+(planus|cavus)|hypermobil\w*|crossed\s+syndrome)\b/i;
+const MEDICAL_SENTENCE = /\b(pain\w*|hurt\w*|sore\w*|ach(e|es|ed|ing|y)|discomfort|injur\w*|tweak\w*|strain\w*|sprain\w*|ruptur\w*|tear\w*|torn|herniat\w*|impinge\w*|tendin\w*|tendon|ligament|bursit\w*|arthrit\w*|inflam\w*|sciatic\w*|nerve|numb\w*|tingl\w*|swell\w*|swollen|bruis\w*|flare[-\s]?up|discs?|meniscus|acl|mcl|labrum|rotator\s+cuff|diagnos\w*|symptom\w*|condition|physio\w*|physical\s+therap\w*|chiroprac\w*|doctor|clinic\w*|medical|rehab\w*|prehab|treatment|heal(s|ed|ing)?)\b/i;
 const REFERRAL_SENTENCE = /\b(stop\s+(lifting|training|squatting|benching|deadlifting|pressing|doing)|see\s+(a|your)\s+(doctor|physio\w*|specialist|professional|pt\b)|get\s+(it|that|this)(\s+[\w'-]+){0,2}\s+(checked|looked\s+at|seen)|seek\s+(help|advice|attention))\b/i;
 const VERDICT_SENTENCE = /\b(safe(r|st|ly)?|unsafe|safety(?!\s*(squat\s+)?(bar|bars|pin|pins|strap|straps))|dangerous|danger|risky|risk\w*|injury\s+risk|harmful|hazard\w*|you'?ll\s+(get\s+hurt|blow|wreck|destroy)|wreck(ing)?\s+your|bad\s+for\s+your)\b/i;
 const BODY_SENTENCE = /\b(body\s?fat|physique|overweight|obese|obesity|skinny|chubby|fat\b|flabby|slim|bulky|belly|gut\b|love\s+handles|lean(er|ness)\b|lean\s+(body|mass|muscle)|lean(ed|ing)?\s+out\b(?!\s+over)|put(ting)?\s+on\s+(some\s+)?(muscle|size|mass)|your\s+(physique|frame|build)\b|(los(e|ing)|drop(ping)?|gain(ing)?|shed(ding)?)\s+(some\s+|a\s+few\s+|a\s+bit\s+of\s+)?(weight|fat|pounds|lbs?|kg)|you\s+look\s+(strong|big|small|heavy|light|thin|fit))\b/i;
 const NUMBER_SENTENCE = /(\b\d+(\.\d+)?\s*(lb|lbs|pound|pounds|kg|kgs|kilo|kilos|plate|plates)\b|\b(1\s?rm|e1rm|one[-\s]?rep\s+max|your\s+(true\s+|estimated\s+)?max|max\s+out|rep\s+max)\b|\b\d+\s*%\s*(of\s+)?(your\s+)?(1\s?rm|max)\b)/i;
-const BANNED = [MEDICAL_SENTENCE, REFERRAL_SENTENCE, VERDICT_SENTENCE, BODY_SENTENCE, NUMBER_SENTENCE];
+const BANNED = [MEDICAL_SENTENCE, FORM_CLINICAL_TERMS, REFERRAL_SENTENCE, VERDICT_SENTENCE, BODY_SENTENCE, NUMBER_SENTENCE];
 export function bannedFamily(sentence: string): 'medical' | 'referral' | 'verdict' | 'body' | 'number' | null {
-    const names = ['medical', 'referral', 'verdict', 'body', 'number'] as const;
+    const names = ['medical', 'medical', 'referral', 'verdict', 'body', 'number'] as const;
     for (let i = 0; i < BANNED.length; i += 1)
         if (BANNED[i].test(sentence))
             return names[i];
@@ -468,6 +508,141 @@ export function parseFormRead(text: unknown, lift?: string, frameCount?: number,
         return null;
     }
     return sanitizeFormRead(parsed, lift, frameCount, sizes);
+}
+export type ScanKind = 'dose' | 'reassurance' | 'diagnosis' | 'clinical';
+export type ScanResult = {
+    hit: false;
+} | {
+    hit: true;
+    kind: ScanKind;
+    match: string;
+};
+const SCAN_CLEAR: ScanResult = { hit: false };
+const scanSrc = (re: RegExp): string => re.source;
+export const CLINICAL_TERMS = /\b(valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|hyperlordo\w*|hyperkyphos\w*|impinge\w*|spondyl\w*|stenosis|dyskines\w*|scapular\s+winging|winged\s+scapula\w*|anterior\s+pelvic\s+tilt|pelvic\s+obliquity|trendelenburg|genu\s+(valgum|varum|recurvatum)|pes\s+(planus|cavus)|hypermobil\w*|crossed\s+syndrome)\b/i;
+const SCAN_DRUG = /(ibuprofen|advil|motrin|nurofen|aleve|naproxen|tylenol|acetaminophen|paracetamol|panadol|aspirin|excedrin|nsaids?|anti[-\s]?inflammatories|anti[-\s]?inflammatory\s+(pills?|tablets?|meds?|medications?|drugs?)|pain\s?killers?|pain\s+(meds?|medications?|relievers?|pills?)|codeine|tramadol|oxycodone|hydrocodone|opioids?|morphine|gabapentin|muscle\s+relaxants?|cyclobenzaprine|flexeril|prednisone|cortisone|corticosteroids?|steroids?|anabolics?|testosterone|trt|sarms?|ostarine|rad[-\s]?140|ligandrol|cardarine|mk[-\s]?677|trenbolone|tren|anavar|oxandrolone|dianabol|winstrol|deca|hgh|growth\s+hormone|bpc[-\s]?157|tb[-\s]?500|peptide\s+(therapy|injections?|cycles?)|clenbuterol|clen|dnp|ephedrine|ephedra|yohimbine|adderall|ritalin|modafinil|kratom|benadryl|diphenhydramine|zzzquil|nyquil|unisom|antihistamines?|antibiotics?|insulin|metformin|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide|phentermine|laxatives?|diuretics?|water\s+pills?|sleeping\s+pills?|sleep\s+aids?|melatonin|inhalers?|epi-?pens?)/;
+const SCAN_SUPPLEMENT = /(creatine|caffeine|pre[-\s]?workouts?|beta[-\s]?alanine|citrulline|arginine|bcaas?|eaas?|glutamine|hmb|ashwagandha|magnesium|zinc|zma|iron\s+(supplements?|pills?|tablets?)|vitamins?(\s+[a-k]\d{0,2})?|multivitamins?|fish\s+oil|omega[-\s]?3s?|glucosamine|chondroitin|curcumin|tongkat(\s+ali)?|fadogia|shilajit|sodium\s+bicarbonate|carnitine|cla|green\s+tea\s+extract|fat[-\s]?burners?|electrolyte\s+(tablets?|pills?|capsules?)|supplements?|stims?|stimulants?)/;
+const SCAN_SUBSTANCE = `(?:${scanSrc(SCAN_DRUG)}|${scanSrc(SCAN_SUPPLEMENT)})`;
+const SCAN_NUMBER = String.raw `\d+(?:[.,]\d+)?(?:\s*(?:-|${'\u2013'}|to)\s*\d+(?:[.,]\d+)?)?`;
+const SCAN_COUNT = String.raw `(?:\d+|a|an|one|two|three|four|five|six|half\s+an?|a\s+couple(?:\s+of)?|a\s+few|another|some)`;
+const SCAN_MEASURE = String.raw `(?:g|grams?|scoops?|servings?|tsp|teaspoons?|tbsp|tablespoons?|ml|milliliters?|millilitres?|cc|units?|doses?)`;
+const SCAN_DOSE: readonly RegExp[] = [
+    new RegExp(String.raw `\b${SCAN_NUMBER}\s*(?:mg|mcg|${'\u00b5'}g|ug|milligrams?|micrograms?|iu)\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_COUNT}\s+(?:[\w-]+\s+)?(?:pills?|tablets?|capsules?|caplets?|softgels?|gel\s?caps?|lozenges?|puffs?|injections?|suppositor\w*)\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_NUMBER}\s*${SCAN_MEASURE}\s+(?:of\s+)?(?:(?:your|the|pure|plain|a)\s+)?(?:[\w-]+\s+)?${SCAN_SUBSTANCE}\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_SUBSTANCE}(?:\s*[:,(${'\u2014'}${'\u2013'}-]\s*|\s+(?:(?:at|is|of|around|about|roughly|dose|dosage|dosing|usually)\s+)*)${SCAN_NUMBER}\s*${SCAN_MEASURE}\b`, 'i'),
+    new RegExp(String.raw `\b(?:a|one|two|three|half\s+a|a\s+couple\s+of)\s+(?:heaping\s+|level\s+|full\s+)?scoops?\s+of\s+${SCAN_SUBSTANCE}\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_COUNT}\s+${scanSrc(SCAN_DRUG)}\b`, 'i'),
+    new RegExp(String.raw `\b(?:take|taking|try|trying|pop|popping|use|using|grab|start(?:ing)?\s+(?:on|taking))\s+(?:an?\s+|some\s+|your\s+|the\s+)?${scanSrc(SCAN_DRUG)}\b`, 'i'),
+    new RegExp(String.raw `\b${scanSrc(SCAN_DRUG)}\b[^.?!\n]{0,40}\b(?:every\s+\d+(?:\s*(?:-|to)\s*\d+)?\s+hours?|(?:once|twice|three\s+times)\s+(?:a|per)\s+day|daily|per\s+day|a\s+day|before\s+bed|on\s+an\s+empty\s+stomach)\b`, 'i'),
+];
+const SCAN_BODY = /(shoulders?|rotator\s+cuff|labrum|knees?|kneecaps?|acl|mcl|meniscus|back|lower\s+back|spine|discs?|neck|hips?|ankles?|wrists?|elbows?|arms?|legs?|foot|feet|hands?|fingers?|ribs?|collarbone|hamstrings?|quads?|calf|calves|groin|achilles|biceps?|triceps?|pecs?|chest|glutes?|shins?|traps?|lats?|obliques?|adductors?|joints?|tendons?|ligaments?|muscles?|hammy|hammies)/;
+const SCAN_CONDITION = /\b(tendinitis|tendonitis|tendinopathy|tendinosis|bursitis|(osteo)?arthritis|fasciitis|plantar\s+fasci\w*|epicondyl\w*|tennis\s+elbow|golfer'?s\s+elbow|jumper'?s\s+knee|runner'?s\s+knee|shin\s+splints?|it\s?band\s+syndrome|itbs|piriformis\s+syndrome|carpal\s+tunnel|frozen\s+shoulder|adhesive\s+capsulitis|costochondritis|compartment\s+syndrome|osgood[-\s]schlatter\w*|sever'?s\s+disease|si\s+joint\s+dysfunction|sacroiliac\s+\w+|facet\s+(joint\s+)?(syndrome|irritation|arthropathy)|degenerative\s+disc|(herniated|bulging|slipped|ruptured)\s+discs?|herniat\w*|sciatica|stress\s+fractures?|fractur\w*|dislocat\w*|subluxat\w*|labral\s+tears?|slap\s+tears?|(meniscus|meniscal)\s+tears?|(acl|mcl|pcl|lcl)\s+(tears?|sprains?|injur\w*)|rotator\s+cuff\s+(tears?|injur\w*|tendin\w*|strain\w*)|torn\s+(\w+\s+)?(acl|mcl|meniscus|labrum|rotator\s+cuff|ligament|tendon|muscle|hamstring|bicep|pec|achilles|calf|quad|groin)|pulled\s+(a\s+)?(muscle|hamstring|groin|calf|quad|hammy|lat|pec)|pinched\s+nerve|nerve\s+(pain|irritation|impingement|entrapment|damage|compression)|sprain\w*|concussion\w*|whiplash|hernia\w*|rhabdo\w*|muscle\s+(knots?|spasms?|strains?|tears?|pulls?)|trigger\s+points?|overuse\s+injur\w*|repetitive\s+strain|patell\w+\s+(tendin\w*|pain\s+syndrome)|patellofemoral|chondromalacia|achilles\s+(tendin\w*|rupture|tear)|(hamstring|groin|calf|quad|lat|pec|oblique|adductor)\s+(strain|tear|pull)s?)\b/i;
+const SCAN_INJURY_NOUN = String.raw `(?:strain|sprain|tear|impingement|inflammation|irritation|injur\w*|knot|spasm|nerve(?:\s+\w+)?|tendon\w*|ligament|cartilage|disc|bruise|contusion)`;
+const SCAN_DIAGNOSIS: readonly RegExp[] = [
+    SCAN_CONDITION,
+    new RegExp(String.raw `\b(?:sounds|looks|seems|feels)\s+like\s+(?:you(?:'ve|\s+have|\s+may\s+have|\s+might\s+have)?\s+)?(?:a|an|some|your|the)?\s*(?:[\w-]+\s+){0,2}${SCAN_INJURY_NOUN}\b`, 'i'),
+    new RegExp(String.raw `\b(?:sounds|looks|seems)\s+like\s+(?:you(?:'ve|\s+have)?\s+)(?:strained|pulled|tweaked|tore|torn|sprained|irritated|inflamed|aggravated|injured|bruised|pinched|impinged)\b`, 'i'),
+    new RegExp(String.raw `\b(?:you(?:'ve|\s+have)?|it|that|this)\s+(?:probably|likely|might|may|could|must)\s+(?:have\s+|'ve\s+)?(?:just\s+)?(?:strained|pulled|tweaked|tore|sprained|irritated|aggravated|injured|bruised|pinched)\s+(?:it|something|that|this|(?:your|a|the)\s+(?:\w+\s+)?(?:${scanSrc(SCAN_BODY)}|nerve))\b`, 'i'),
+    /\b(it|that|this|something)\s+(probably|likely|might|may|could|must)\s+be\s+(just\s+)?(strained|torn|sprained|irritated|inflamed|aggravated|injured|bruised|pinched|impinged)\b/i,
+    new RegExp(String.raw `\b(?:probably|likely|possibly|most\s+likely|could\s+be|might\s+be|may\s+be|sounds\s+like)\s+(?:just\s+)?(?:a|an|some)\s+(?:[\w-]+\s+)?${SCAN_INJURY_NOUN}\b`, 'i'),
+    new RegExp(String.raw `\byou(?:'ve)?\s+(?:strained|tweaked|tore|sprained|injured|aggravated|irritated)\s+(?:your|a|the)?\s*(?:\w+\s+)?${scanSrc(SCAN_BODY)}\b`, 'i'),
+    /\b(classic|tell[-\s]?tale)\s+(sign|symptom)s?\s+of\b/i,
+    new RegExp(String.raw `\b(?:signs?|symptoms?)\s+of\s+(?:a|an)?\s*(?:\w+\s+)?(?:${SCAN_INJURY_NOUN}|condition|disorder|infection|syndrome)\b`, 'i'),
+    new RegExp(String.raw `\b(?:is\s+)?caused\s+by\s+(?:a|an|your)?\s*(?:\w+\s+)?(?:${SCAN_INJURY_NOUN}|joint)\b`, 'i'),
+];
+const SCAN_REASSURE_HARD = /\b(red\s+flags?|harmless|benign|(probably|likely|almost\s+certainly|most\s+likely)\s+nothing\b|(it'?s|that'?s|probably|likely|just)\s+(just\s+)?(gas|trapped\s+wind|indigestion|heartburn|a\s+stitch|a\s+side\s+stitch)\b|(go(es)?\s+away|clear(s)?\s+up|settle(s)?\s+down|heal(s)?|resolve(s)?|sort(s)?\s+(it)?self\s+out|fix(es)?\s+itself)\s+(on\s+its\s+own|by\s+itself|itself|with\s+(time|rest))|(no|don'?t|do\s+not|won'?t|wouldn'?t)\s+(really\s+)?need\s+(to\s+(see|go\s+to|call|bother\s+with)\s+)?(an?|the|your)\s+(doctor|physio\w*|gp|physical\s+therapist|specialist|er|emergency\s+room|hospital)|(no\s+need|nothing)\s+to\s+(see|call)\s+(an?|the|your)\s+(doctor|physio\w*|gp)|(it|that|this)\s+shouldn'?t\s+(hurt|be\s+painful|cause\s+(any\s+)?pain)|(that'?s|it'?s|this\s+is|isn'?t|is\s+not)\s+(not\s+)?an\s+injury)\b/i;
+const SCAN_REASSURE_SOFT = /\b(((completely|perfectly|totally|pretty|very|quite|super|fairly|entirely)\s+)?normal|common|(to\s+be\s+)?expected|expect\s+(some|a\s+(bit|little)\s+of|to\s+(feel|be))|typical(ly)?|natural|(probably|usually|generally|likely|should\s+be|will\s+be|'ll\s+be|be|is|'s|are|'re|feels?|looks?|seems?|sounds?)\s+(totally\s+|completely\s+|perfectly\s+|probably\s+|usually\s+|just\s+)?(fine|ok|okay|alright|all\s+right|nothing)|nothing\s+(serious|major|to\s+(worry|be\s+(worried|concerned))\s+about)|no\s+(need\s+to\s+)?worr(y|ies)|don'?t\s+worry|not\s+(a\s+|any\s+)?(big\s+deal|concern|worry|problem|issue)|nothing\s+to\s+(fret|stress)\s+about|(not|isn'?t|aren'?t)\s+serious|part\s+of\s+(the\s+process|training|it|lifting|getting\s+(stronger|fitter))|(will|should|'ll|usually|tends\s+to)\s+(pass|fade|ease(\s+off)?|settle(\s+down)?|go\s+away|wear\s+off|calm\s+down|be\s+gone|subside|disappear)|(goes|go|went)\s+away|wears?\s+off|(it'?s|that'?s|this\s+is)\s+(just|only|simply)|just\s+(your\s+)?(body|muscles?)\s+(adapting|adjusting|recovering|getting\s+used))\b/i;
+const SCAN_SYMPTOM = new RegExp(String.raw `\b(?:pain(?:s|ful|fully)?|hurt\w*(?!\s+(?:to\b|your\s+(?:progress|gains|chances|numbers)))|ach(?:e|es|ed|ing|y)|sore\w*|doms|stiff(?:ness|er)?\b(?!-leg|\s+leg(?:ged)?\s+(?:dead|rdl|good))|tightness|cramp\w*|spasm\w*|twinge\w*|tweaked|strained|sprain\w*|swell\w*|swollen|bruis\w*|numb(?!er)\w*|tingl\w*|pins\s+and\s+needles|dizz\w*|light[-\s]?headed\w*|faint\w*|wooz\w*|nause\w*|(?:feel|feels|feeling|felt)\s+(?:a\s+bit\s+|kind\s+of\s+|really\s+|so\s+)?(?:sick|ill|unwell|faint)|queas\w*|vomit\w*|throw(?:ing)?\s+up|threw\s+up|puk(?:e|ed|ing)|headaches?|migraines?|palpitations?|heart\s+(?:is\s+)?(?:racing|pounding|skipping|fluttering)|racing\s+heart|chest\s+(?:pain|tightness|pressure)|tight\s+chest|short(?:ness)?\s+of\s+breath|breathless\w*|burning\s+sensation|shooting\s+(?:pain|sensation)|throbb\w*|tenderness|tender\s+to\s+(?:the\s+)?touch|inflam\w*|bleed\w*|blood\s+in|rash\w*|itchy|itchiness|hives|shaky|trembl\w*|tremors?|injur\w*|discomfort|uncomfortable|niggl\w*|flare[-\s]?ups?|symptoms?)\b` +
+    '|' +
+    String.raw `\b(?:crack\w*|pop(?:s|ping|ped)?|click\w*|grind\w*|clunk\w*|crunch\w*|burn(?:s|ing)?)\s+(?:in|from|of|at|around)\s+(?:the\s+|your\s+|my\s+|their\s+)?(?:[\w'-]+\s+)?${scanSrc(SCAN_BODY)}\b` +
+    '|' +
+    String.raw `\b(?:tight|weird|funny)\s+(?:[\w'-]+\s+)?${scanSrc(SCAN_BODY)}\b` +
+    '|' +
+    String.raw `\b${scanSrc(SCAN_BODY)}\s+(?:[\w'-]+\s+){0,3}(?:crack\w*|pop(?:s|ping|ped)?|click\w*|grind\w*|clunk\w*|crunch\w*|tight|weird|funny|burn(?:s|ing)?)\b`, 'i');
+const SCAN_POINTS_BACK = /^(that'?s|that\s+is|it'?s|it\s+is|this\s+is|totally|completely|perfectly|very|pretty|quite|nothing|don'?t\s+worry|no\s+worries|normal|common|happens|yep|yeah|yes|sure|fine|all\s+normal)\b/i;
+function scanSentences(text: string): string[] {
+    return text
+        .split(/(?<=[.!?\u2026])\s+|\n+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+}
+const scanWords = (s: string): number => s.split(/\s+/).filter(Boolean).length;
+const scanNormal = (text: string): string => text.replace(/[\u2018\u2019\u02bc`\u00b4]/g, "'").replace(/[\u201c\u201d]/g, '"');
+const scanIdiomsOut = (text: string): string => text
+    .replace(/\b(?:won'?t|wouldn'?t|doesn'?t|didn'?t|can'?t|couldn'?t|never|not)\s+hurt\b/gi, ' ')
+    .replace(/\b(?:(?:band|pvc|stick|dowel)[-\s]+)?shoulder[-\s]+dislocates?\b/gi, 'shoulder pass-throughs');
+const scanHasSymptom = (s: string): boolean => SCAN_SYMPTOM.test(s);
+function scanReassurance(text: string, asked: string): string | null {
+    const hard = SCAN_REASSURE_HARD.exec(text);
+    if (hard)
+        return hard[0];
+    const said = scanSentences(text);
+    const askedSymptom = !!asked && scanHasSymptom(asked);
+    for (let i = 0; i < said.length; i += 1) {
+        const soft = SCAN_REASSURE_SOFT.exec(said[i]);
+        if (!soft)
+            continue;
+        if (scanHasSymptom(said[i]))
+            return soft[0];
+        const pointsBack = SCAN_POINTS_BACK.test(said[i]) || scanWords(said[i]) <= 4;
+        if (!pointsBack)
+            continue;
+        if (askedSymptom)
+            return soft[0];
+        if ((i > 0 && scanHasSymptom(said[i - 1])) || (i + 1 < said.length && scanHasSymptom(said[i + 1])))
+            return soft[0];
+    }
+    return null;
+}
+export function scanReply(text: string, asked?: string | null): ScanResult {
+    const t = scanIdiomsOut(scanNormal(typeof text === 'string' ? text : '')).trim();
+    if (!t)
+        return SCAN_CLEAR;
+    for (const re of SCAN_DOSE) {
+        const m = re.exec(t);
+        if (m)
+            return { hit: true, kind: 'dose', match: m[0] };
+    }
+    for (const re of SCAN_DIAGNOSIS) {
+        const m = re.exec(t);
+        if (m)
+            return { hit: true, kind: 'diagnosis', match: m[0] };
+    }
+    const clinical = CLINICAL_TERMS.exec(t);
+    if (clinical)
+        return { hit: true, kind: 'clinical', match: clinical[0] };
+    const reassured = scanReassurance(t, scanIdiomsOut(scanNormal(typeof asked === 'string' ? asked : '')));
+    if (reassured)
+        return { hit: true, kind: 'reassurance', match: reassured };
+    return SCAN_CLEAR;
+}
+export function scanTexts(texts: readonly unknown[], asked?: string | null): ScanResult {
+    for (const x of texts) {
+        if (typeof x !== 'string')
+            continue;
+        const r = scanReply(x, asked);
+        if (r.hit)
+            return r;
+    }
+    return SCAN_CLEAR;
+}
+export function scanStringsOf(value: unknown, max = 200): string[] {
+    const out: string[] = [];
+    const walk = (v: unknown, depth: number) => {
+        if (out.length >= max || depth > 6)
+            return;
+        if (typeof v === 'string')
+            out.push(v);
+        else if (Array.isArray(v))
+            for (const x of v)
+                walk(x, depth + 1);
+        else if (v && typeof v === 'object')
+            for (const x of Object.values(v as Record<string, unknown>))
+                walk(x, depth + 1);
+    };
+    walk(value, 0);
+    return out;
 }
 export const POSE_KINDS = ['squat', 'hinge', 'bench', 'pushup', 'press', 'pull', 'row', 'curl', 'extension', 'auto'] as const;
 export type PoseFactKind = (typeof POSE_KINDS)[number];
@@ -923,7 +1098,7 @@ The same goes for frames that are partly blurred, partly dark, or where part of 
 
 # Reading the frames
 
-Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. They are about a third of a second apart, so every rep is covered by several frames in a row. Use the timestamps to find where each rep starts and ends, then watch each rep through: the setup, the start, the bottom or turnaround, the lockout. The bottom position and the turnaround usually carry the most coaching. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
+Frames are numbered from 1, and each is labelled with the second of the clip it was taken at and its size in pixels. The message after the frames says how far apart they are. Use the timestamps to find where each rep starts and ends, then watch each rep through: the setup, the start, the bottom or turnaround, the lockout. The bottom position and the turnaround usually carry the most coaching. Reps that look the same as each other are worth noticing; so is a rep that looks different from the rest.
 
 Coach THIS set, not the lift in general. Every sentence you write must be something you saw in these frames \u2014 this athlete's reps, not the faults the lift usually has. If what you write would fit any video of this lift, look again and say what is particular to this one.
 
@@ -1078,6 +1253,10 @@ Deno.serve(async (req) => {
         const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
         return settledTail(settledFrom(data, error), meter.remaining);
     };
+    if (meter.minor || meter.ageYears == null) {
+        const noCall: ModelCall = { kind: 'upstream_unreachable', latencyMs: 0 };
+        return json({ ok: false, reason: meter.minor ? FORM_UNDER_18 : FORM_AGE_UNKNOWN, ...(await settle('guarded', noCall)) }, 403);
+    }
     const content: unknown[] = [];
     frames.forEach((data, i) => {
         content.push({ type: 'text', text: frameLabel(i, frames.length, times?.[i], sizes?.[i], poseFrameTag(pose, i)) });
@@ -1088,10 +1267,7 @@ Deno.serve(async (req) => {
     const last = capLast(body.last);
     const measured = poseFactLines(pose);
     const profile = ageLine(meter.ageYears, meter.minor);
-    content.push({
-        type: 'text',
-        text: `Those frames are one set of: ${lift}. They are in time order.${focus.length ? `\n\nLook especially at: ${focus.join(', ')}.` : ''}${note ? `\n\nThe athlete says: "${note}"` : ''}${known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${known}` : ''}${last ? `\n\nLast saved read of this lift (${last.date}): ${last.fix}` : ''}${measured.length ? `\n\n${measured.join('\n')}` : ''}${profile ? `\n\n${profile}` : ''}\n\nAnswer with the JSON object only.`,
-    });
+    content.push({ type: 'text', text: formUserText({ lift, focus, note, known, last, measured, profile, times }) });
     const call = await timedModelCall((signal) => fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         signal,
@@ -1126,6 +1302,9 @@ Deno.serve(async (req) => {
     if (!read) {
         const outcome: SettleOutcome = refused ? 'refusal' : payload?.stop_reason === 'max_tokens' ? 'truncated' : 'unreadable';
         return json({ ok: false, reason: 'unreadable', ...(await settle(outcome, call)), charged: false });
+    }
+    if (scanTexts(formReadTexts(read), note).hit) {
+        return json({ route: 'medical_stop', held: true, ...(await settle('guarded', call)) });
     }
     return json({ ok: true, read, ...(await settle('ok', call)) });
 });
