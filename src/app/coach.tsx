@@ -376,6 +376,9 @@ export default function CoachScreen() {
             recentRaceSec: parseTime(resultTime),
             learned,
             recent,
+            /* A race they asked for is BUILT, as the chat builds it (PO 2026-09-21, "suggest, then build"; AI audit
+               11-16, B-D10): the refusal becomes `assembly.concern`, said once in the notes below. */
+            ...(isEnduranceGoal(effGoal!) ? { buildAnyway: true } : {}),
           },
           PICKER_DB,
           canDoExercise,
@@ -384,7 +387,7 @@ export default function CoachScreen() {
           setError(res.refusal.message);
           return;
         }
-        const { structure, notes, deloadWeeks, restructured } = res.assembly;
+        const { structure, notes, deloadWeeks, restructured, concern } = res.assembly;
         const week1 = structure.weekPlans?.[0]?.days ?? structure.days;
         setBuilt({
           kind: 'program',
@@ -409,7 +412,13 @@ export default function CoachScreen() {
           /* Two kinds of honesty in one list: what he COULDN'T build, and what he built because of
              something this athlete taught him. Both are the coach showing his working. */
           /* …and what a body-part answer took out (QA holt-02) — the chat says it; this screen did not. */
-          notes: [...droppedLine(notes), ...stretchedLine(notes), ...learnedLine(learned, structure), ...limitationsLeftOut(limitations)],
+          notes: [
+            ...(concern ? [concern.message] : []),
+            ...droppedLine(notes),
+            ...stretchedLine(notes),
+            ...learnedLine(learned, structure),
+            ...limitationsLeftOut(limitations),
+          ],
           apply: async () => {
             /* Paid for when it is KEPT, once (AI audit 11-16, B-D1) — going back and building again costs nothing.
                Four weeks or more is the Holt program; shorter spends `short_programs` where it is saved (MA4-D5). */
