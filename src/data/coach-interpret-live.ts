@@ -9,11 +9,13 @@ import { narrowEdit, narrowNotes, narrowRemember, type EditIntent, type HistoryT
 export type { EditIntent, HistoryTurn };
 
 /**
- * THE ONE PLACE THE APP TALKS TO A MODEL.
+ * HOLT'S `interpret` JOB — a typed line that is not a question, placed for the engine.
  *
  * Phase D · D1. Calls the `coach-interpret` Edge Function, which holds the API key and does the
- * metering. Nothing else in `src/` may call Anthropic, and nothing here may hold a key — if a second
- * file starts answering this question they will disagree, exactly as `entitlement.ts` says about itself.
+ * metering. ⚠ NO LONGER THE ONLY MODEL CALL (AI audit 11-16, C-I7): questions stream from `coach-ask`
+ * (`coach-ask-live.ts`), typed builds go to `coach-author`, and the kitchen, the photo readers and form
+ * check each have their own function. What still holds for all of them: the app never calls Anthropic
+ * itself and never holds a key — every model call goes through an Edge Function that meters it.
  *
  * ══ ⚠ THE LOCAL MATCHER IS STILL HERE, AND IT IS NOT A FALLBACK FOR NOTHING ══
  *

@@ -243,9 +243,11 @@ import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
  * 4. A refusal is bronze and carries the alternative. A failure is red and says it was the app.
  * 5. The mark is the only bronze that moves — it warms while thinking, sweeps while building.
  *
- * ⚠ NO MODEL IS INVOLVED. Every question comes from `chat-core`, which is the shipped wizard's own
- * question set; every program comes from `assemble()`. The paid tier replaces exactly one function
- * (`interpret`) and nothing on this screen changes.
+ * ⚠ THE TAPS INVOLVE NO MODEL; TYPING DOES (Premium AI). Every tapped question comes from `chat-core`, the
+ * shipped wizard's own question set, and a tapped build from `assemble()`. A typed line is metered and goes
+ * to a model through an Edge Function: a question streams from `coach-ask` (`askAloud`), anything else is
+ * placed by `coach-interpret` (`understand`), and a typed build is written by `coach-author`, checked by the
+ * same gates (AI audit 11-16, C-I7 — this header said "no model is involved" long after that stopped being true).
  */
 /** PROMPT §2.4 — the sheet's top inset. The thread's bottom reserve is a share of `window - SHEET_TOP`. */
 const SHEET_TOP = 64;
@@ -964,11 +966,12 @@ export function CoachChatSheet({
          * through to the rulebook below, and he says that it did.
          */
         const roomLine = roomAssumed.current && isRoom(c.environment) ? roomAssumedLine(c.environment) : null;
-        /* Held in an object because `askHolt` fills it from inside a closure, and a `let` assigned there is
+        /* Held in an object because `holtWrites` fills it from inside a closure, and a `let` assigned there is
            one TypeScript still believes is null out here. */
         const holt: { written: { plan: AuthoredPlan; valid: ValidatedPlan } | null; fellBack: string | null } = { written: null, fellBack: null };
-        /** Ask Holt to write it. `false` means a stop card went up and nothing more should be said. */
-        const askHolt = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
+        /** Ask Holt to write it (`coach-author`). `false` means a stop card went up and nothing more should be said.
+            ⚠ Not `askHolt` — that is the imported coach-ask stream, and this used to shadow it (AI audit C-I7). */
+        const holtWrites = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
           const athlete = {
             experience: c.experience.lifting,
             environment: c.environment,
@@ -1008,7 +1011,7 @@ export function CoachChatSheet({
         };
         if (typed.current.length && !isEnduranceGoal(c.goal)) {
           const kind = mode_ === 'day' ? 'day' : 'program';
-          const ok = await askHolt(kind, kind === 'program' ? c.daysPerWeek : null, kind === 'program' ? (c.weeks ?? defaultWeeksFor(c.goal)) : null, null);
+          const ok = await holtWrites(kind, kind === 'program' ? c.daysPerWeek : null, kind === 'program' ? (c.weeks ?? defaultWeeksFor(c.goal)) : null, null);
           if (!ok) return;
         }
         const written = holt.written;
@@ -1149,7 +1152,7 @@ export function CoachChatSheet({
             /* The weeks they will actually be handed — told the block's full length, he reported their "7
                weeks" as something he had not done. */
             const keeps = merged.weeks != null && merged.weeks >= 1 && merged.weeks < structure.weeks ? merged.weeks : structure.weeks;
-            const ok = await askHolt('program', shape.liftDays, keeps, { race: RACE_SPEC[c.goal].label, runDays: shape.runDays });
+            const ok = await holtWrites('program', shape.liftDays, keeps, { race: RACE_SPEC[c.goal].label, runDays: shape.runDays });
             if (!ok) return;
             setBusy(null);
             const wrote = holt.written;
