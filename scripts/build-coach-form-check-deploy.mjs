@@ -30,7 +30,9 @@ const HEADER = `// =============================================================
 // Supabase dashboard -> Edge Functions -> Deploy a new function -> "Via Editor" -> name it
 // coach-form-check -> replace the editor contents with this whole file -> Deploy.
 // ANTHROPIC_API_KEY is already set (coach-interpret, coach-ask and program-photo-read use the same secret).
-// \`form_check\` is already priced in coach_ai_config.action_credits (migration 0144) - no migration needed.
+// \`form_check\` is already priced in coach_ai_config.action_credits (migration 0144).
+// ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
+// this copy also inlines, src/domain/ai/meter-server.ts); until then every read answers "meter unavailable".
 // ===============================================================================================
 
 `;

@@ -29,6 +29,8 @@ const HEADER = `// =============================================================
 // ANTHROPIC_API_KEY is already set (coach-interpret, coach-ask and program-photo-read use the same secret).
 // ! Apply supabase/apply/pending-0222.sql FIRST - it prices \`kitchen\`; until then every ask answers
 // "the kitchen's not working".
+// ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
+// this copy also inlines, src/domain/ai/meter-server.ts); until then every ask answers "meter unavailable".
 // ===============================================================================================
 
 `;
