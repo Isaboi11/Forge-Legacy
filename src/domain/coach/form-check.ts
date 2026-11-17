@@ -608,6 +608,35 @@ function sentences(line: string): string[] {
     .filter(Boolean);
 }
 
+/** A frame number in the text ("frame 12", "frames 27-28", "F4") — the athlete never saw numbered frames. */
+const FRAME_REF = /\b(?:frames?|F)\s*#?\d+(?:\s*(?:[-–—]|to|and|&)\s*(?:frames?\s*|F\s*)?#?\d+)*\b/i;
+
+/**
+ * One sentence with its frame numbers taken out, or null when they can't be taken out cleanly.
+ *
+ * ⚠ WHY (Sprint 2 eval, 11-17). With dense frames the model again wrote "visible around frames 27-28" on one clip
+ * in 21 (09-25: 0). The prompt asks it not to; this makes sure. It only DELETES (the boundary never writes a word):
+ * a bracket that holds the number, else the trailing clause that holds it ("…the weight up, visible around frames
+ * 27-28." → "…the weight up."), else the "around frame 12" phrase. A sentence still naming a frame is dropped.
+ */
+export function withoutFrameRefs(sentence: string): string | null {
+  if (!FRAME_REF.test(sentence)) return sentence;
+  const end = /[.!?]$/.test(sentence) ? sentence.slice(-1) : '';
+  let s = end ? sentence.slice(0, -1) : sentence;
+  s = s.replace(/\s*\([^()]*\)/g, (m) => (FRAME_REF.test(m) ? '' : m));
+  if (FRAME_REF.test(s)) {
+    const at = s.search(FRAME_REF);
+    const cut = Math.max(s.lastIndexOf(',', at), s.lastIndexOf(';', at), s.lastIndexOf(' — ', at), s.lastIndexOf(' - ', at));
+    if (cut > 0 && !FRAME_REF.test(s.slice(0, cut))) s = s.slice(0, cut);
+  }
+  if (FRAME_REF.test(s)) {
+    s = s.replace(new RegExp(`\\s*(?:(?:visible|seen|shown|clearest|best)\\s+)?(?:around|at|in|on|from|by)\\s+(?:the\\s+)?${FRAME_REF.source}`, 'gi'), '');
+  }
+  s = s.replace(/\s+([,;:])/g, '$1').replace(/[\s,;:—-]+$/, '').trim();
+  if (!s || FRAME_REF.test(s) || s.length < 12) return null;
+  return `${s}${end}`;
+}
+
 /** One line of the read, with every banned sentence removed. Empty string when nothing survives. */
 function cleanLine(raw: unknown): string {
   if (typeof raw !== 'string') return '';
@@ -617,7 +646,11 @@ function cleanLine(raw: unknown): string {
   // 09-25). Keep sentences while they fit; a first sentence that is too long on its own is cut at a word.
   const kept: string[] = [];
   let used = 0;
-  for (const s of sentences(flat).filter((x) => !isBannedSentence(x))) {
+  const clean = sentences(flat)
+    .filter((x) => !isBannedSentence(x))
+    .map(withoutFrameRefs)
+    .filter((x): x is string => x !== null);
+  for (const s of clean) {
     if (used + s.length + (kept.length ? 1 : 0) > FORM_LINE_CHARS) {
       if (!kept.length) {
         const cut = s.slice(0, FORM_LINE_CHARS - 1);
