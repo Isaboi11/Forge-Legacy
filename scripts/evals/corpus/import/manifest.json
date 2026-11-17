@@ -1,0 +1,2380 @@
+{
+  "about": "IM-2 photo-import corpus (AI Road to 10, Sprint 2). Binaries live OUTSIDE the repo under IMPORT_CORPUS_DIR (default C:/Users/isaia/import-corpus); this file holds what each item is, where it came from, its sha256, and the ANSWER KEY written by looking at it. Graded by scripts/evals/suites/import-corpus.mjs.",
+  "keyFormat": "\"<name> | <rx>\" per main-work row, in card order. rx: \"5x5\" sets x reps · \"4x8-12\" a rep range · \"3x30s\" / \"1x15min\" a clock · \"5x30yd\" a distance (sets graded, distance not representable) · \"6/6/4/4\" a per-set ladder (F = to failure) · \"?\" anything (e.g. \"2x?\" = 2 sets, reps unstated) · optional \" @70%\" or \" @65,75,80%\" percentages. A leading \"? \" marks a row that may or may not be imported (an ambiguous warm-up line). Warm-up and cool-down rows are not keyed.",
+  "root": "IMPORT_CORPUS_DIR",
+  "defaultRoot": "C:/Users/isaia/import-corpus",
+  "builtAt": "2026-11-17",
+  "items": [
+    {
+      "id": "po-3-week-upper-lower",
+      "kind": [
+        "multi-week sheet",
+        "screenshot of a printed table"
+      ],
+      "file": "sheets/po-3-week-upper-lower.png",
+      "sha256": "d844af68bdaa421249e312b95972b22c010c9ff186d91dcbb611a30c4ee25723",
+      "bytes": 617496,
+      "source": "PO screenshot, 2026-09-22 (Downloads/Screenshot 2026-09-22 111542.png) — the original of src/domain/program/__tests__/fixtures/po-3-week-photo.tsv",
+      "privacy": "none — a printed table",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Monday- Upper Body A",
+                "main": [
+                  "Bench Press | 3x8-12",
+                  "Bent Over Row | 3x8-12",
+                  "DB Shoulder Press | 3x8-12",
+                  "Lying Tricep Extension | 3x8-12",
+                  "Barbell or DB Curl | 3x8-12"
+                ]
+              },
+              {
+                "name": "Tuesday- Lower Body A",
+                "main": [
+                  "Squat | 3x8-12",
+                  "Stiff Leg Deadlift | 3x8-12",
+                  "Leg Extension | 3x8-12",
+                  "Leg Curl | 3x8-12",
+                  "Standing Calf Raise | 3x8-12",
+                  "Lying Leg Raise | 3x10-15",
+                  "Swiss Ball Crunch | 3x10-15"
+                ]
+              },
+              {
+                "name": "Thursday- Upper Body B",
+                "main": [
+                  "Dips | 3x8-12",
+                  "Pull-Ups | 3x8-12",
+                  "DB Side Lateral | 3x8-12",
+                  "Tricep Cable Pressdown | 3x8-12",
+                  "Cable Curl | 3x8-12"
+                ]
+              },
+              {
+                "name": "Friday- Lower Body B",
+                "main": [
+                  "Deadlift | 3x8-12",
+                  "Leg Press | 3x8-12",
+                  "Lunges | 3x8-12",
+                  "Seated Calf Raise | 3x8-12",
+                  "DB Shrugs (Optional) | 3x8-12",
+                  "Incline Crunch | 3x10-15",
+                  "Back Extension | 3x10-15"
+                ]
+              }
+            ]
+          },
+          {
+            "days": [
+              {
+                "name": "Monday- Upper Body A",
+                "main": [
+                  "Bench Press | 3x6-8",
+                  "Bent Over Row | 3x6-8",
+                  "DB Shoulder Press | 3x6-8",
+                  "Lying Tricep Extension | 3x6-8",
+                  "Barbell or DB Curl | 3x6-8"
+                ]
+              },
+              {
+                "name": "Tuesday- Lower Body A",
+                "main": [
+                  "Squat | 3x6-8",
+                  "Stiff Leg Deadlift | 3x6-8",
+                  "Leg Extension | 3x6-8",
+                  "Leg Curl | 3x6-8",
+                  "Standing Calf Raise | 3x6-8",
+                  "Lying Leg Raise | 3x10-15",
+                  "Swiss Ball Crunch | 3x10-15"
+                ]
+              },
+              {
+                "name": "Thursday- Upper Body B",
+                "main": [
+                  "Dips | 3x6-8",
+                  "Pull-Ups | 3x6-8",
+                  "DB Side Lateral | 3x6-8",
+                  "Tricep Cable Pressdown | 3x6-8",
+                  "Cable Curl | 3x6-8"
+                ]
+              },
+              {
+                "name": "Friday- Lower Body B",
+                "main": [
+                  "Deadlift | 3x6-8",
+                  "Leg Press | 3x6-8",
+                  "Lunges | 3x6-8",
+                  "Seated Calf Raise | 3x6-8",
+                  "DB Shrugs (Optional) | 3x6-8",
+                  "Incline Crunch | 3x10-15",
+                  "Back Extension | 3x10-15"
+                ]
+              }
+            ]
+          },
+          {
+            "days": [
+              {
+                "name": "Monday- Upper Body A",
+                "main": [
+                  "Bench Press | 3x4-6",
+                  "Bent Over Row | 3x4-6",
+                  "DB Shoulder Press | 3x4-6",
+                  "Lying Tricep Extension | 3x4-6",
+                  "Barbell or DB Curl | 3x4-6"
+                ]
+              },
+              {
+                "name": "Tuesday- Lower Body A",
+                "main": [
+                  "Squat | 3x4-6",
+                  "Stiff Leg Deadlift | 3x4-6",
+                  "Leg Extension | 3x4-6",
+                  "Leg Curl | 3x4-6",
+                  "Standing Calf Raise | 3x4-6",
+                  "Lying Leg Raise | 3x10-15",
+                  "Swiss Ball Crunch | 3x10-15"
+                ]
+              },
+              {
+                "name": "Thursday- Upper Body B",
+                "main": [
+                  "Dips | 3x4-6",
+                  "Pull-Ups | 3x4-6",
+                  "DB Side Lateral | 3x4-6",
+                  "Tricep Cable Pressdown | 3x4-6",
+                  "Cable Curl | 3x4-6"
+                ]
+              },
+              {
+                "name": "Friday- Lower Body B",
+                "main": [
+                  "Deadlift | 3x4-6",
+                  "Leg Press | 3x4-6",
+                  "Lunges | 3x4-6",
+                  "Seated Calf Raise | 3x4-6",
+                  "DB Shrugs (Optional) | 3x4-6",
+                  "Incline Crunch | 3x10-15",
+                  "Back Extension | 3x10-15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "three phases of the same 4-day upper/lower split (3×8-12, 3×6-8, 3×4-6); \"Abs\" is a heading, not an exercise; the shrug says (Optional)",
+      "legacy": {
+        "fixture": "src/domain/program/__tests__/fixtures/po-3-week-photo.tsv",
+        "from": "program-photo-read (table reader), 2026-09-22"
+      }
+    },
+    {
+      "id": "ig-6-day-physique-split",
+      "kind": [
+        "Instagram graphic"
+      ],
+      "file": "instagram/6-day-physique-split.png",
+      "sha256": "802b9d727e6d2b44ea864cc0747b506d7d291518c90016ba1e617a804a83e438",
+      "bytes": 906891,
+      "source": "PO screenshot, 2026-09-22 (Downloads/Screenshot 2026-09-22 111148.png)",
+      "privacy": "none — an illustrated graphic, no person",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Day 1 Chest + Triceps",
+                "main": [
+                  "Bench Press | 3x8-12",
+                  "Incline DB Press | 3x10",
+                  "Chest Fly | 3x12",
+                  "Tricep Pushdown | 3x12",
+                  "OH Tricep Extension | 3x10",
+                  "Push-ups | 2x?"
+                ]
+              },
+              {
+                "name": "Day 2 Back + Biceps",
+                "main": [
+                  "Lat Pulldown | 3x10",
+                  "Seated Cable Row | 3x10",
+                  "One-arm DB Row | 3x10",
+                  "Barbell Curl | 3x12",
+                  "Hammer Curl | 3x12",
+                  "Dead Hang | 2x?"
+                ]
+              },
+              {
+                "name": "Day 3 Legs",
+                "main": [
+                  "Squats | 4x8",
+                  "Leg Press | 3x10",
+                  "Leg Curl | 3x12",
+                  "Leg Extension | 3x12",
+                  "Calf Raises | 4x15"
+                ]
+              },
+              {
+                "name": "Day 4 Shoulders + Abs",
+                "main": [
+                  "Shoulder Press | 3x10",
+                  "Lateral Raises | 3x12",
+                  "Front Raises | 3x12",
+                  "Shrugs | 3x15",
+                  "Crunches | 3x20",
+                  "Leg Raises | 3x15",
+                  "Plank | 3x30s"
+                ]
+              },
+              {
+                "name": "Day 5 Chest + Back",
+                "main": [
+                  "Incline Bench Press | 3x10",
+                  "Lat Pulldown | 3x10",
+                  "Dumbbell Press | 3x10",
+                  "Cable Row | 3x10",
+                  "Push-ups | 2x?"
+                ]
+              },
+              {
+                "name": "Day 6 Arms + Abs",
+                "main": [
+                  "Barbell Curl | 3x10",
+                  "Hammer Curl | 3x12",
+                  "Tricep Dips | 3x10",
+                  "Rope Pushdown | 3x12",
+                  "Russian Twists | 3x20",
+                  "Plank | 3x45s"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "six body-part days in a 3×2 grid; Day 7 is a rest box, not a training day; \"2 sets\" with no reps; two timed planks"
+    },
+    {
+      "id": "squatober-2024-01",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5782.PNG",
+      "sha256": "7c7727c509f8b9742bc7225de34ef68a410d0d0ce7bab493a6d0e21c8926f8e3",
+      "bytes": 8000779,
+      "source": "PO screenshots, Squatober 2024 Day 1 (10-01-24) — \"For Those About to SQUAT\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "For Those About to SQUAT",
+                "main": [
+                  "Back Squat | 4/6/8/6/4 @67%",
+                  "Deadlift | 4x4 @70%",
+                  "Slow Strict Chin Up | 4x2-4",
+                  "DB RDL's | 4x5",
+                  "One Arm DB Rows | 4x5",
+                  "BB Bicep Curls | 4x15",
+                  "DB Shrugs | 4x15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "superset 3a/3b and cardio a/b; warm-up is jumping jacks/claps"
+    },
+    {
+      "id": "squatober-2024-02",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5787.PNG",
+      "sha256": "5247ab18f6387098fda0a1fffd53ba4ab58b7f977d7722e73f24721f61b7cffa",
+      "bytes": 6328702,
+      "source": "PO screenshots, Squatober 2024 Day 2 (10-02-24) — \"The SeeSaw\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The SeeSaw",
+                "main": [
+                  "Back Squat | 10/5/10/5/10 @50,65,55,70,60%",
+                  "Bench Press | 5x8 @67%",
+                  "DB Rear Laterals | 5x15",
+                  "EZ Bar/or BB Skullcrushers | 5x15",
+                  "KB Swings | 10x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "the squat is drawn as a zig-zag graph of reps/% — the hard case"
+    },
+    {
+      "id": "squatober-2024-03",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5788.PNG",
+      "sha256": "f8eaf408b0285f6c8ce6c90077337ccd335d84f68c615d8e8dfe4db4ead672ce",
+      "bytes": 4432826,
+      "source": "PO screenshots, Squatober 2024 Day 3 (10-03-24) — \"Carry On My Wayward Son\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Carry On My Wayward Son",
+                "main": [
+                  "Back Squat | 5x3 @80%",
+                  "DB/or KB Farmers Walk | 5x30yd",
+                  "BB Bent Over Rows | 5x5",
+                  "DB/or KB Farmers Walk | 5x30yd",
+                  "Heavy Alternating DB Curls | 5x5",
+                  "DB/or KB Farmers Walk | 5x30yd"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "the same farmers walk three times, each in its own superset; cardio is a planned day off"
+    },
+    {
+      "id": "squatober-2024-04",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5792.PNG",
+      "sha256": "cc4a197d9dcbdf6d3f8f17e84f4f9d0a04002ddc3866c21eb54ee9aeb69d679d",
+      "bytes": 6461782,
+      "source": "PO screenshots, Squatober 2024 Day 4 (10-04-24) — \"Business Friday, never Casual\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Business Friday, never Casual",
+                "main": [
+                  "Back Squat | 5x5 @75%",
+                  "Bench Press | 5x5 @75%",
+                  "Deadlift | 5x5 @75%",
+                  "? Triceps | ?x125",
+                  "? Biceps | ?x125"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "cardio is '125 reps of triceps / biceps, at your discretion' — optional either way"
+    },
+    {
+      "id": "squatober-2024-5-6",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5799.PNG",
+      "sha256": "3a53c3d837dd85921635c70c53067791ab1d4d7bb253d8c5b2e6e6d628ea2cad",
+      "bytes": 5161150,
+      "source": "PO screenshots, Squatober 2024 Day 5-6 (10-05/06-24) — \"Active Rest\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "refuse",
+      "key": null,
+      "notes": "a rest-day card: walk, sleep, meal prep — nothing to import, so the right answer is no workout"
+    },
+    {
+      "id": "squatober-2024-07",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5815.PNG",
+      "sha256": "6eb26cb11982e992c8172f28f12b7f4c1c9e94d274e5ca5df734fd96d1efd54d",
+      "bytes": 5832385,
+      "source": "PO screenshots, Squatober 2024 Day 7 (10-07-24) — \"The Countdown\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Countdown",
+                "main": [
+                  "? KB Swings | 3x10",
+                  "Back Squat | 5/4/3/2/1 @65,75,80,87,92%",
+                  "Bench Press | 5/4/3/2/1 @65,75,80,87,92%",
+                  "One Arm DB Rows | 5x5",
+                  "Close Grip Bench Press | ?x? @33%"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "bench is 'same as above' — the squat's ladder and percentages; close-grip is 100 reps in the fewest sets; the warm-up's light KB swings may read either way"
+    },
+    {
+      "id": "squatober-2024-08",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5818.PNG",
+      "sha256": "d428c6dff955f50aaad812367c601bbb67429291f1d97499f7e465078afd60e6",
+      "bytes": 5989166,
+      "source": "PO screenshots, Squatober 2024 Day 8 (10-08-24) — \"Tempo Tuesday\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Tempo Tuesday",
+                "main": [
+                  "Back Squat | 4x4 @60%",
+                  "Front Squat | 3x4 @45%",
+                  "DB Bulgarian Split Squats | 3x5",
+                  "BB RDL's | 3x5"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "tempo prose (5 s down, 2 s pause) applies to everything; split squats are 5 each leg"
+    },
+    {
+      "id": "squatober-2024-09",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5820.PNG",
+      "sha256": "3b2c720cf7e3218d7f7914256f6e9f162b30086663e6d55ce1462c93145662f7",
+      "bytes": 6507182,
+      "source": "PO screenshots, Squatober 2024 Day 9 (10-09-24) — \"Thighs and Wings\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Thighs and Wings",
+                "main": [
+                  "Back Squat | 5x5 @70%",
+                  "Strict Pull Ups | 5x2-5",
+                  "DB Reverse Lunges | 3x5",
+                  "BB Bent Over Row | 3x10",
+                  "One Arm DB Row | 3x10",
+                  "DB/or KB Farmers Walk | 3x40yd"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "three supersets",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week2.mjs#D9",
+        "from": "typed from the card, 2026-09-28"
+      }
+    },
+    {
+      "id": "squatober-2024-10",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5821.PNG",
+      "sha256": "cf719526a6b2a3676bffca6be1b886e393f0b7f5d741fe7725689e1b726fb865",
+      "bytes": 6882363,
+      "source": "PO screenshots, Squatober 2024 Day 10 (10-10-24) — \"Squats Never Stop\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Squats Never Stop",
+                "main": [
+                  "Back Squat | 6x6 @65%",
+                  "Bench Press | 5x8 @65%",
+                  "EZ Bar/or BB Skullcrushers | 1x50"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "'unbroken' sets; skullcrushers are one set of 50",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week2.mjs#D10",
+        "from": "typed from the card, 2026-09-28"
+      },
+      "mappedBy": "date order (5820 = Day 9 and 5892 = the Day 11 chart were viewed)"
+    },
+    {
+      "id": "squatober-2024-11",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5891.PNG",
+      "sha256": "b2046c8943213582b87567f02e66b2db07392fa2abe478c36831e73a8544dbce",
+      "bytes": 7026862,
+      "source": "PO screenshots, Squatober 2024 Day 11 (10-11-24) — \"At Your Discretion\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "At Your Discretion",
+                "main": [
+                  "Back Squat | ?x?",
+                  "Strict Chin Ups | 5x2-6",
+                  "BB Bicep Curls | ?x?"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "the squat is a menu of five options (33 reps @ 70% … 10 reps @ 90%) — ONE squat row is right, five option rows is wrong; curls are 50 reps at your discretion",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week2.mjs#D11",
+        "from": "typed from the card, 2026-09-28"
+      },
+      "mappedBy": "date order"
+    },
+    {
+      "id": "squatober-2024-11-chart",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5892.PNG",
+      "sha256": "85694d23a450600e112d405aacd7509480a04fdea4034ae8d59329b356836688",
+      "bytes": 1963367,
+      "source": "PO screenshots, Squatober 2024 Day 11 — \"Here is some help for Day 11\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "excluded",
+      "why": "a chart of set/rep options for Day 11, not a session — there is no single right import"
+    },
+    {
+      "id": "squatober-2024-12-13",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5907.PNG",
+      "sha256": "a412a6dea181e9e7f4606bd4ce64ef203af8700eabe3092885c597495ec9332a",
+      "bytes": 8288595,
+      "source": "PO screenshots, Squatober 2024 Day 12-13 — \"REST and Relaxation\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "refuse",
+      "key": null,
+      "notes": "rest-day card",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week2.mjs#D1213",
+        "from": "typed from the card, 2026-09-28"
+      },
+      "mappedBy": "date order"
+    },
+    {
+      "id": "squatober-2024-14",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5924.PNG",
+      "sha256": "287632b426e231acb851db2a11e994e91f18dd735fdbff73cef30d14250079b8",
+      "bytes": 7480468,
+      "source": "PO screenshots, Squatober 2024 Day 14 (10-14-24) — \"70's Big\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "70's Big",
+                "main": [
+                  "Back Squat | 6/6/4/4/2/2/10/10 @70,70,80,80,85,85,60,60%",
+                  "Deadlift | 5x2 @83%",
+                  "Strict Chin Ups | 5x2-6",
+                  "Suitcase and Waiters Carry Combo | ?x25yd",
+                  "? Suitcase and Waiters Carry Combo | 4x25yd"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "the squat is written as pairs of sets ('2 sets of 6 @ 70%' ×4 lines) = 8 sets; the carry is 4 sets each arm-arrangement, read as one row or two"
+    },
+    {
+      "id": "squatober-2024-15",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5932.PNG",
+      "sha256": "3f4ce9e933df71a9c5db0b6f8f8849bc3e7b8939eb7faf25dcd7060a2aeb6bde",
+      "bytes": 5646337,
+      "source": "PO screenshots, Squatober 2024 Day 15 (10-15-24) — \"Boring Simple Strength\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Boring Simple Strength",
+                "main": [
+                  "Back Squat | 5x5 @67,70,73,75,77%",
+                  "Bench Press | 5x5 @67,70,73,75,77%",
+                  "BB Bent Over Rows | 5x5",
+                  "DB RDL's | 5x5"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "bench is 'same %'s as the above squats'"
+    },
+    {
+      "id": "squatober-2024-16",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5948.PNG",
+      "sha256": "d86e436e260a7fa02e276cc69762659739621b5a2acd5e59099a8c0ddd46d5bc",
+      "bytes": 6280433,
+      "source": "PO screenshots, Squatober 2024 Day 16 (10-16-24) — \"The Stairway to Strongville\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Stairway to Strongville",
+                "main": [
+                  "Back Squat | 8/9/10/6/7/8/3/4/5/6 @50,55,60,70,72,73,80,80,80,80%"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "ONE lift written as three 'missions' — 10 sets, not three exercises",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week3.mjs#D16",
+        "from": "typed from the card, 2026-09-28"
+      },
+      "mappedBy": "date order (5924 = Day 14 and 5932 = Day 15 were viewed)"
+    },
+    {
+      "id": "squatober-2024-17",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5957.PNG",
+      "sha256": "27a9c7cfd6cd9af16fd4a035422900b61bf6b69ed4702c8a70dc91947c153db1",
+      "bytes": 7864179,
+      "source": "PO screenshots, Squatober 2024 Day 17 (10-17-24) — \"ReGroup and ReLoad\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "ReGroup and ReLoad",
+                "main": [
+                  "? Light KB Swings | 5x10",
+                  "Back Squat | 1x10 @55%",
+                  "Front Squat | 1x8",
+                  "BB Bulgarian Split Squats | 1x5",
+                  "Deadlift | 4x4 @65,70,75,75%",
+                  "KB Swings | 5x10",
+                  "DB Laterals | 5x15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "the warm-up's light KB swings may read either way; the front squat's '35-40% of back squat max' is a range, not graded"
+    },
+    {
+      "id": "squatober-2024-18",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_5995.PNG",
+      "sha256": "e43ba2e14ae5469ba640a4f873d6c1bd87e94caf28eb594e359d8660868f7cf9",
+      "bytes": 7451706,
+      "source": "PO screenshots, Squatober 2024 Day 18 (10-18-24) — \"The Forgotten Reps\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Forgotten Reps",
+                "main": [
+                  "? Jumping Jacks | ?x13",
+                  "? KB Swings | ?x11",
+                  "? Push ups | ?x9",
+                  "? Bodyweight Squats | ?x7",
+                  "Back Squat | 4x7 @60,65,70,72%",
+                  "Bench Press | 4x9 @55,60,65,70%",
+                  "BB Bent Over Rows | 4x9",
+                  "DB Rear Laterals | 3x11",
+                  "DB Reverse Lunges | 3x11",
+                  "DB RDL's | 3x11",
+                  "EzBar/or BB Skullcrushers | 5x13",
+                  "BB Bicep Curls | 5x13"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "'7 reps @ 60%, 65%, 70%, 72%' is FOUR sets; a three-way superset; the warm-up's counted moves may read either way",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week3.mjs#D18",
+        "from": "typed from the card, 2026-09-28"
+      },
+      "mappedBy": "date order (5957 = Day 17 was viewed)"
+    },
+    {
+      "id": "squatober-2024-21",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6004.jpg",
+      "sha256": "6bfc3b997ab2acb7bf7ca715693a10b245d4088e320e493a153027ec14628495",
+      "bytes": 824688,
+      "source": "PO screenshots, Squatober 2024 Day 21 (10-21-24) — \"The Pressure Cooker\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Pressure Cooker",
+                "main": [
+                  "? Back Squat | 2x3 @55,67%",
+                  "Back Squat | ?x3 @75%",
+                  "Bench Press | ?x3 @75%",
+                  "Slow Strict Chin Ups | 5x3-6",
+                  "Cable/or Band Triceps Pushdowns | 4x20",
+                  "Heavy DB Shrugs | 4x10",
+                  "Close Grip Pushups | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "as many sets of 3 as possible in 10 minutes; someone's RESULTS are handwritten in the margin (10.66 / 305 LBS, 14 / 233 LBS) — they are not the prescription; the warm-up build-up sets may read as their own row",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week3.mjs#D21",
+        "from": "typed from the card, 2026-09-28"
+      }
+    },
+    {
+      "id": "squatober-2024-21-b",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6005.PNG",
+      "sha256": "2bf072dadb38b4b1e38c317f4c2bde100c5176bf61263d33da013f67e55c4965",
+      "bytes": 3585909,
+      "source": "PO screenshots, Squatober 2024 Day 21 (10-21-24) — \"The Pressure Cooker (second screenshot)\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Pressure Cooker (second screenshot)",
+                "main": [
+                  "Cable/or Band Triceps Pushdowns | 4x20",
+                  "Heavy DB Shrugs | 4x10",
+                  "Close Grip Pushups | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "a scrolled screenshot: only the card's cardio box shows, under a long caption that talks about '3 reps @ 55% and 67%' and a 10-minute window — the caption is not the card"
+    },
+    {
+      "id": "squatober-2024-22",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6017.PNG",
+      "sha256": "dc55d0d13b6191a11a3f9e39d80605da99168b7f576eff2aa5145a7167d6fd05",
+      "bytes": 6674777,
+      "source": "PO screenshots, Squatober 2024 Day 22 (10-22-24) — \"Hard Hat and Work Boots\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Hard Hat and Work Boots",
+                "main": [
+                  "Back Squat | 7x3 @70%",
+                  "DB Bulgarian Split Squats | 7x3",
+                  "Deadlift | 5x3",
+                  "DB RDL's | 4x5",
+                  "DB Concentration Curls | 4x10",
+                  "DB Lateral Raises | 4x20",
+                  "Suitcase/Waiter's Carry | 6x30yd"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "deadlift '(70-75%)' is a range, not graded; the story row above the post shows other people's faces, children among them",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week3.mjs#D22",
+        "from": "typed from the card, 2026-09-28"
+      }
+    },
+    {
+      "id": "squatober-2024-23",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6022.jpg",
+      "sha256": "3e4af159c18544ac6894e9f4a6a1e13e1e994bd03c517ed8035de13d62101128",
+      "bytes": 916372,
+      "source": "PO screenshots, Squatober 2024 Day 23 (10-23-24) — \"The Pressure Cooker\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Pressure Cooker",
+                "main": [
+                  "? Back Squat | 2x3 @65,75%",
+                  "Back Squat | ?x2 @80%",
+                  "Bench Press | ?x2 @80%",
+                  "BB Bent Over Rows | 5x5",
+                  "DB Laterals | 4x15",
+                  "EzBar/or BB Skullcrushers | 4x15",
+                  "DB Rear Laterals | 4x15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "as many sets of 2 as possible in 10 minutes; handwritten RESULTS in the margin (9 / 335 LBS, 11 / 265 LBS) are not the prescription",
+      "legacy": {
+        "fixture": "src/domain/workout/__tests__/fixtures/squatober-2024-week3.mjs#D23",
+        "from": "typed from the card, 2026-09-28"
+      }
+    },
+    {
+      "id": "squatober-2024-24",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6035.PNG",
+      "sha256": "1e4e3eacb6d718b3dc2b64f9f73bd083f4e3bf92b121fdb4d63b4ffdc9907524",
+      "bytes": 6187703,
+      "source": "PO screenshots, Squatober 2024 Day 24 (10-24-24) — \"Cool Down the Biscuits\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Cool Down the Biscuits",
+                "main": [
+                  "? KB Swings | 3x10",
+                  "Back Squat | 5x5 @65%",
+                  "KB/or DB Farmers Walk | 5x30yd",
+                  "BB RDL's | 4x5",
+                  "Walking BW Lunges | 4x10",
+                  "KB Swings | 3x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "KB swings 3x10 in the warm-up AND as the cardio — the warm-up one may read either way; the next post's card peeks in at the bottom"
+    },
+    {
+      "id": "squatober-2024-25",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6036.PNG",
+      "sha256": "e6c3136f95fb6850740914b285d4a7a85376da26c373ceb1bff879a3510caeef",
+      "bytes": 7699092,
+      "source": "PO screenshots, Squatober 2024 Day 25 (10-25-24) — \"The Dress Rehearsal\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Dress Rehearsal",
+                "main": [
+                  "Back Squat | 5/4/3/2/1/3/2/1/2/1 @60,70,80,85,90,82,88,93,90,95%",
+                  "Bench Press | 5x5 @70%",
+                  "Slow Strict Chin Ups | 4x3-6",
+                  "Close Grip Bench Press | 4x10",
+                  "BB Bicep Curls | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "ONE squat written as three 'skits' — 10 sets, 24 reps; percentages written cramped on one line"
+    },
+    {
+      "id": "squatober-2024-25-b",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6041.PNG",
+      "sha256": "aebe369a9533c7d8998044c89f88d750ebe98dd7ed29071ba991d7d077f1a436",
+      "bytes": 5803452,
+      "source": "PO screenshots, Squatober 2024 Day 25 (10-25-24) — \"The Dress Rehearsal (second screenshot)\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Dress Rehearsal (second screenshot)",
+                "main": [
+                  "Back Squat | 5/4/3/2/1/3/2/1/2/1 @60,70,80,85,90,82,88,93,90,95%",
+                  "Bench Press | 5x5 @70%",
+                  "Slow Strict Chin Ups | 4x3-6",
+                  "Close Grip Bench Press | 4x10",
+                  "BB Bicep Curls | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "the same card screenshotted again with a different crop — the read must agree with IMG_6036"
+    },
+    {
+      "id": "squatober-2024-28",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6058.PNG",
+      "sha256": "5889fbea8bfeb9a7fe9f4ba878c9e030a54290d96b179399e11960cc68c0dde4",
+      "bytes": 7523552,
+      "source": "PO screenshots, Squatober 2024 Day 28 (10-28-24) — \"Snappy Strong\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Snappy Strong",
+                "main": [
+                  "Snappy Back Squat | 5x2 @70%",
+                  "Slow Strict Chin Ups | 5x3-6",
+                  "Bench Press | 5x3 @70%",
+                  "1-Arm DB Rows | 5x5",
+                  "Ez Bar/or BB Skullcrushers | 3x15",
+                  "KB Swings | 3x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "three supersets"
+    },
+    {
+      "id": "squatober-2024-29",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6066.PNG",
+      "sha256": "1328ba113a52b9847c9db20da9c0db76f8e6eab672d8815cba03bf840e266a26",
+      "bytes": 7677400,
+      "source": "PO screenshots, Squatober 2024 Day 29 (10-29-24) — \"Trickle Charger\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "Trickle Charger",
+                "main": [
+                  "? Jumping Jacks | ?x10",
+                  "? Pushups | ?x5",
+                  "Back Squat | 3x5 @55%",
+                  "DB Laterals | 4x10",
+                  "KB Swings | 4x10",
+                  "DB/or KB Farmers Walk | 4x30yd"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "a three-way superset; the warm-up's counted moves may read either way (it is repeated as the cardio cool-down)"
+    },
+    {
+      "id": "squatober-2024-30",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6069.PNG",
+      "sha256": "eb742b8129931d1e2194053ddaf98e4b0e30e3bc309142573038a985559ba8a0",
+      "bytes": 6393322,
+      "source": "PO screenshots, Squatober 2024 Day 30 (10-30-24) — \"The PR Party\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The PR Party",
+                "main": [
+                  "Back Squat | ?x?",
+                  "? Back Squat | ?x1"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "one open-ended max-out: a ramp (5 @ 55% … 1 @ 100%) then singles at 105%, 108%, 110%, 112% … 'keep climbing' — no fixed set count; one row, or the ramp and the singles as two"
+    },
+    {
+      "id": "squatober-2024-31",
+      "kind": [
+        "Instagram screenshot",
+        "handwritten card"
+      ],
+      "file": "squatober-2024/IMG_6070.PNG",
+      "sha256": "ad870b2e36eb9488eab4a4e88f676859877c5f620b1ee60b145210d326c251a5",
+      "bytes": 5766867,
+      "source": "PO screenshots, Squatober 2024 Day 31 (10-31-24) — \"The Hangover\"",
+      "privacy": "third-party Instagram post (penandpaperstrengthapp / sorinex_squatober); some screenshots show other people's story bubbles (faces, handles) — kept OUTSIDE the repo, never committed",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "The Hangover",
+                "main": [
+                  "Back Squat | 5x5",
+                  "Close Grip Bench Press | 5x10",
+                  "BB Bent Over Rows | 5x10",
+                  "Deadlifts | 4x3",
+                  "Slow Strict Chin Ups | 4x3-6",
+                  "? Triceps | ?x100",
+                  "? Biceps | ?x100",
+                  "? Shrugs | ?x100"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "notes": "percent RANGES (60-65%, 70-75%) are not graded; the cardio is '100 reps each, at your discretion'"
+    },
+    {
+      "id": "bridger-logan-w1a",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0652.PNG",
+      "sha256": "b4a75b52ee9f4833e3e565a893cf25b97e9f65606e0aa5cdca7590230fc6c527",
+      "bytes": 333674,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0652.PNG) — week 1, day A (PUSH)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PUSH",
+                "main": [
+                  "Incline Bench Press | 6/6/4/4",
+                  "EZ-Bar Skull Crushers | 10/8/6",
+                  "Barbell Standing Military Press | 6/6/4/4",
+                  "Low to High Cable Chest Fly | 3x8",
+                  "Bent Arm DB Lateral Raise | 3x8",
+                  "Dips | F/F/F",
+                  "Alt Arm KB Swing | 3x60s",
+                  "Burpees | 3x30s",
+                  "V Ups | 3x30s"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w1b",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0653.PNG",
+      "sha256": "cac968732b64c90751b4bd0e1593e8fa3b930d1066190835c0917fe17e0450db",
+      "bytes": 321177,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0653.PNG) — week 1, day B (PULL)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PULL",
+                "main": [
+                  "Overhand Grip Barbell Row | 6/6/4/4",
+                  "Cable Straight Arm Pulldown | 3x8",
+                  "EZ-Bar Preacher Curls | 6/6/4/4",
+                  "V-Bar Seated Cable Row | 4x6",
+                  "Incline DB Curls | 3x8",
+                  "Neutral Grip Pull Ups | F/F/F",
+                  "Treadmill Run | 1x15min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w1c",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0654.PNG",
+      "sha256": "de1a7963812e5bdace913df436ccea5c7f86acfca3ede6bceb2cb4d8cc9c6451",
+      "bytes": 342280,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0654.PNG) — week 1, day C (LEGS)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LEGS",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Barbell Squat | 10/8/6/4",
+                  "Machine Leg Extensions | 3x8",
+                  "Lying Hamstring Curl Machine | 3x8",
+                  "DB Bulgarian Split Squat | 3x16",
+                  "Sled Push | 3x30s",
+                  "Sled Pull | 3x30s",
+                  "KB Goblet Squat | 3x20",
+                  "Jumping Lunges | 3x20",
+                  "Plank Down Ups | 3x45s"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w1d",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0655.PNG",
+      "sha256": "0e833f656fdf84125da47440c3b6ad4df1f672aacfe213a37f9e4c0d4f152ac4",
+      "bytes": 314984,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0655.PNG) — week 1, day D (UPPER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER",
+                "main": [
+                  "Bench Press | 10/8/6/4",
+                  "Alt DB Front Raise | 3x12",
+                  "Reverse Grip Lat Pulldown | 10/8/6/4",
+                  "Cable Rope Tricep Extension | 3x10",
+                  "Side Rear Delt Fly Machine | 3x12",
+                  "Push Ups | F/F/F",
+                  "Row | 1x10min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w1e",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0656.PNG",
+      "sha256": "2a4f7262d82e2ab4a0e3b960575029a2447e10bdb29f1c5dfa7a7b78434f24e1",
+      "bytes": 322041,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0656.PNG) — week 1, day E (LOWER or RUN)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LOWER or RUN",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Barbell Hip Thrust | 8/8/6/6",
+                  "Conventional Deadlift | 8/8/6/6",
+                  "Heel Elevated DB Front Squat | 3x10",
+                  "DB Staggered-Stance Rom deadlift | 3x12",
+                  "45° Back Extension | 3x10",
+                  "Hanging Knee Raise - CORE | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w1f",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0657.PNG",
+      "sha256": "9c7dfd94f80454f7358c2f1840ef8415769b05ec47a758b8f35a9d839eda7740",
+      "bytes": 203311,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0657.PNG) — week 1, day F (OPTIONAL FULL BODY HIIT)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "OPTIONAL FULL BODY HIIT",
+                "main": [
+                  "Pulse Squats | ?x20",
+                  "DB Plank Pull Through | ?x20",
+                  "DB half burpee row | ?x10",
+                  "Reverse Lunge, Hammer Curl, Press (Left) | ?x?",
+                  "Reverse Crunches | ?x10",
+                  "Narrow Squat, hammer curl, front raise | ?x10",
+                  "Narrow Stance Snatch | ?x12",
+                  "Reverse Lunge, Hammer Curl, Press (Right) | ?x?"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w2a",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0658.PNG",
+      "sha256": "fa6d7c572eddee86c7f87e4d7d5df625c07c1e5a470a0679fba2f4759e33cf59",
+      "bytes": 348123,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0658.PNG) — week 2, day A (PUSH)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PUSH",
+                "main": [
+                  "Incline Bench Press | 5x5",
+                  "EZ-Bar Skull Crushers | 3x10",
+                  "Seated DB Shoulder Press w/ 3 Sec Negative | 3x8",
+                  "Low to High Cable Chest Fly | 3x10",
+                  "EZ-Bar Upright Row | 10/10/10/F",
+                  "Dips w/ 3 Sec Negatives | 3x10",
+                  "Burpees | 4x10",
+                  "DB Suitcase Carry | 4x30s",
+                  "V Ups | 4x15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w2b",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0659.PNG",
+      "sha256": "05ee9a75f5ab68ca6872c865dc0576c7d922fc7e7b608c6b4ba04dc3ccbfacd5",
+      "bytes": 309955,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0659.PNG) — week 2, day B (PULL)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PULL",
+                "main": [
+                  "Plate Loaded Low Row | 4x8",
+                  "Overhand Grip Lat Pulldown | 4x6",
+                  "Cable Straight Arm Pulldown | 3x12",
+                  "Neutral Grip Seated Cable Row | 3x10",
+                  "EZ-Bar Preacher Curls | 3x8",
+                  "DB Hammer Curls | 3x10",
+                  "Treadmill Run | 1x15min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w2c",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0660.PNG",
+      "sha256": "3a9ee4926e633bf932d680521e0361a1741eec09953bcfd5e2c98ae2b377234f",
+      "bytes": 309910,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0660.PNG) — week 2, day C (LEGS)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LEGS",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Barbell Squat | 5x5",
+                  "DB Bulgarian Split Squat | 3x16",
+                  "Lying Hamstring Curl Machine | 2x15",
+                  "Sled Push | 3x30s",
+                  "Sled Pull | 3x30s",
+                  "Half Kneeling KB High to Low chop | 3x16",
+                  "Alt DB Sit Ups | 3x12"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w2d",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0661.PNG",
+      "sha256": "7cf6869e1e2cdb0a956ab039fdb6771f6753c868205c8b38a386f7f4cd5984ef",
+      "bytes": 318631,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0661.PNG) — week 2, day D (UPPER or RUN)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER or RUN",
+                "main": [
+                  "Bench Press | 4x6",
+                  "Reverse Grip Lat Pulldown | 3x8",
+                  "Cable Rope Face Pulls | 3x12",
+                  "Cable Rope Tricep Extension | 3x10",
+                  "Side Rear Delt Fly Machine | 3x12",
+                  "Push Ups | F/F",
+                  "Row - 20 sec hard / 40 sec easy | 1x8min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w2e",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0662.PNG",
+      "sha256": "524db45d1a0b0343df2f2321995a12fc12b428405e23cf05401a67db816dd7b0",
+      "bytes": 287753,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0662.PNG) — week 2, day E (LOWER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LOWER",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Conventional Deadlift | 4x5",
+                  "Barbell Hip Thrust | 3x8",
+                  "KB/DB Curtsy Lunge | 3x16",
+                  "45° Back Extension | 2x15",
+                  "Hanging Knee Raise | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w2f",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0663.PNG",
+      "sha256": "7526aa9bd35c0d4c26f88a1284cd7828aa16807cb4ea816c1138998f4f158953",
+      "bytes": 194045,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0663.PNG) — week 2, day F (OPTIONAL FULL BODY HIIT)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "OPTIONAL FULL BODY HIIT",
+                "main": [
+                  "Wall Ball Burpee | ?x10",
+                  "Wall Ball Sit Up | ?x10",
+                  "Wall Ball Alt Jump Lunge | ?x12",
+                  "Wall Ball Mt Climbers | ?x20",
+                  "Kneeling Rotational Wall Ball Throw | ?x12",
+                  "Wall Ball Squat Toss | ?x15",
+                  "Wall Ball Alt Kneeling Roll Out | ?x12"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w3a",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0664.PNG",
+      "sha256": "823e71a4f5aa38b126e24484af277642404cff11395987fbfc5205c8e29c2b98",
+      "bytes": 314411,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0664.PNG) — week 3, day A (PUSH)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PUSH",
+                "main": [
+                  "Barbell Standing Military Press | 4x6",
+                  "DB Chest Press | 4x8",
+                  "Incline DB Chest Fly | 3x12",
+                  "Bent Arm DB Lateral Raise | 3x12",
+                  "Alt DB Front Raise | 3x12",
+                  "Hanging Knee Raise | 4x10",
+                  "Treadmill Run | 1x10min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w3b",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0665.PNG",
+      "sha256": "1b43c7395826dcfb196fba8231e35da71068cac0b330dcf5491f2c9b0b6ed830",
+      "bytes": 307684,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0665.PNG) — week 3, day B (PULL)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PULL",
+                "main": [
+                  "Conventional Deadlift | 5x5",
+                  "Plate Loaded Low Row | 4x8",
+                  "Overhand Grip Lat Pulldown | 4x10",
+                  "Inclined DB Reverse Fly | 3x18",
+                  "Incline DB Curls | 3x12",
+                  "DB Plank Row | 4x20",
+                  "Single Arm DB Snatch | 4x20",
+                  "Half Kneeling KB High to Low chop | 4x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w3c",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0666.PNG",
+      "sha256": "12b59cdf535c983bfb3d04ba26895405650f16335c38b935b7ca974551a6e92b",
+      "bytes": 308969,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0666.PNG) — week 3, day C (LEGS / HITT)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LEGS / HITT",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Single Leg Press | 4x16",
+                  "Sled Push | 4x30s",
+                  "Sled Pull | 4x30s",
+                  "Wall Balls | 3x20",
+                  "DB Deadlift | 3x12",
+                  "Max Effort Assault Bike | 3x45s",
+                  "DB Walking Lunges | 3x20",
+                  "Box Jumps | 3x20",
+                  "Alt DB Sit Ups | 3x16"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w3d",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0667.PNG",
+      "sha256": "53bc75eb5305e8aa29f7aff57e1820595260d1b1ec8930f8f29e8e2df871af7b",
+      "bytes": 305052,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0667.PNG) — week 3, day D (UPPER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER",
+                "main": [
+                  "Bench Press | 3x12",
+                  "Cable Rope Face Pulls | 3x12",
+                  "EZ-Bar Skull Crushers | 3x10",
+                  "Cable Curls | 3x15",
+                  "Easy Row | 1x5min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w3e",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0668.PNG",
+      "sha256": "713764043a278fe58d4b97668b2cc0a6f37353683fe46ee065bde56085feaf8e",
+      "bytes": 262177,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0668.PNG) — week 3, day E (LOWER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LOWER",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Conventional Deadlift | 4x5",
+                  "Barbell Hip Thrust | 3x8",
+                  "Wall Balls | 4x20",
+                  "Assault Bike | 4x60s",
+                  "Ball Slams | 4x20",
+                  "DB Suitcase Carry | 4x20s",
+                  "V Ups | 4x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w4a",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0669.PNG",
+      "sha256": "17bf3355aa5ac0b6fcaee49e0a376423f03c62a74f3d06cbb42588e4e55f6444",
+      "bytes": 527250,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0669.PNG) — week 4, day A (UPPER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER",
+                "main": [
+                  "Barbell Standing Military Press | 4x5",
+                  "Bench Press | 4x6",
+                  "Plate Loaded Low Row | 3x10",
+                  "Cable Straight Arm Pulldown | 4x8",
+                  "Bent Arm DB Lateral Raise | 3x12",
+                  "Hanging Knee Raise | 4x10"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w4b",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0670.PNG",
+      "sha256": "8a6ef919c52232ef32a43a3945a4769551bd9ec542c559e719e117f98593565a",
+      "bytes": 320823,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0670.PNG) — week 4, day B (LOWER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LOWER",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Barbell Squat | 5x5",
+                  "Romanian Deadlift | 4x8",
+                  "DB Bulgarian Split Squat | 3x16",
+                  "Lying Hamstring Curl Machine | 3x12",
+                  "Calf raise | 3x15",
+                  "Alt DB Sit Ups | 3x24",
+                  "KB Russian Twists | 3x24"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w4c",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0671.PNG",
+      "sha256": "d64f0d2f2a55ce36e60a731fddef56ef57e21844440dbbb46df6945e5a10a669",
+      "bytes": 224625,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0671.PNG) — week 4, day C (ATHLETIC CONDITIONING)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "ATHLETIC CONDITIONING",
+                "main": [
+                  "Sprint Sled Push | 5x20s",
+                  "Box Jumps | 4x12",
+                  "KB Swing | 4x20",
+                  "Assault Bike | 4x45s",
+                  "Kneeling Med Ball Slam | 4x16",
+                  "Pull Ups | F/F"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w4d",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0672.PNG",
+      "sha256": "8ca0a9310f574b3ce9d8ed8bb3026bf4f40e75d89a4f9087f9d0ae96ecd70cfc",
+      "bytes": 319168,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0672.PNG) — week 4, day D (UPPER PUMP)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER PUMP",
+                "main": [
+                  "Incline Bench Press | 4x10",
+                  "V-Bar Seated Cable Row | 4x10",
+                  "Cable Rope Face Pulls | 3x15",
+                  "Cable Curls | 3x12",
+                  "Cable Rope Tricep Extension | 3x12",
+                  "Treadmill Run | 1x10min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w4e",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0673.PNG",
+      "sha256": "9ac75e34d79c8dd8347c42d6f7c8d7442eed0e48f7ad3db7db0353bfd8d1e447",
+      "bytes": 244495,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0673.PNG) — week 4, day E (ATHLETIC TRAINING)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "ATHLETIC TRAINING",
+                "main": [
+                  "Row | ?x12",
+                  "Wall Balls | ?x20",
+                  "Alt Single Arm DB Snatch | ?x12",
+                  "DB Plank Row | ?x20",
+                  "No Weight Walking Lunges | ?x20",
+                  "Push Ups | 3x30"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w5a",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0674.PNG",
+      "sha256": "5f75d10b4a1961529594896b124f12e94315d421a0bf3c8c06e25087a5e50b74",
+      "bytes": 333039,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0674.PNG) — week 5, day A (UPPER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER",
+                "main": [
+                  "Bench Press | 5x5",
+                  "EZ-Bar Skull Crushers | 3x10",
+                  "Seated DB Shoulder Press | 4x10",
+                  "Overhand Grip Lat Pulldown | 4x8",
+                  "Side Rear Delt Fly Machine | 3x20",
+                  "Dips | F/F/F",
+                  "Push Ups | 3x20",
+                  "Bent Arm DB Lateral Raise | 3x15",
+                  "V Ups | 3x25"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w5b",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0675.PNG",
+      "sha256": "9bb47cfddfb547c2cb7bb4dd3769b80ad4c1222839af6a9a42614a610bae27be",
+      "bytes": 312120,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0675.PNG) — week 5, day B (PULL)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PULL",
+                "main": [
+                  "Overhand Grip Barbell Row | 4x6",
+                  "Overhand Grip Lat Pulldown | 4x10",
+                  "Inclined DB Reverse Fly | 4x10",
+                  "Incline DB Curls | 4x8",
+                  "Plate Loaded Low Row | 3x15",
+                  "DB Renegade Rows | 4x16",
+                  "KB Swing | 4x20",
+                  "DB Deadlift | 4x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w5c",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0676.PNG",
+      "sha256": "4944859c1d049378f9ba5c6a1af1efe48f905ce293afcda65b0cc6027857af37",
+      "bytes": 329204,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0676.PNG) — week 5, day C (LEGS)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LEGS",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Barbell Squat | 5x5",
+                  "DB Box Step Ups | 3x16",
+                  "Romanian Deadlift | 3x12",
+                  "Machine Leg Extensions | 3x10",
+                  "Standing DB Calf Raise | 4x12",
+                  "Box Jumps | 3x10",
+                  "Assault Bike | 3x45s",
+                  "Wall Balls | 3x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w5d",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0677.PNG",
+      "sha256": "62b69cd7780258afdca06855b504eebd7a50c6739156ee06d13ce4aac5e48df7",
+      "bytes": 343582,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0677.PNG) — week 5, day D (UPPER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER",
+                "main": [
+                  "Incline Bench Press | 4x12",
+                  "Reverse Grip Lat Pulldown | 3x15",
+                  "Cable Rope Face Pulls | 3x12",
+                  "Cable Curls | 3x12",
+                  "Cable Rope Tricep Extension | 3x12",
+                  "Alt DB Front Raise | 3x16",
+                  "Row - 20 sec hard / 40 sec easy | 1x5min",
+                  "KB Russian Twists | 3x30",
+                  "Alt DB Sit Ups | 3x20",
+                  "Half Kneeling KB High to Low chop | 3x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w5e",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0678.PNG",
+      "sha256": "f1f99e50fadc98198f429d7b92789a24e52a4ff8be928916be49cbd9215f4ad4",
+      "bytes": 266200,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0678.PNG) — week 5, day E (LOWER AND CONDITIONER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LOWER AND CONDITIONER",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Conventional Deadlift | 4x5",
+                  "Barbell Hip Thrust | 3x8",
+                  "DB Thrusters | ?x10",
+                  "Box Jumps | ?x15",
+                  "DB Walking Lunges | ?x20",
+                  "Row | ?x12",
+                  "V Ups | ?x15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w6a",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0679.PNG",
+      "sha256": "7372ea7090622045e9b05b542d8bb1316c00f4e8de24d24bf88251d2cf76fa8e",
+      "bytes": 307148,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0679.PNG) — week 6, day A (PUSH)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PUSH",
+                "main": [
+                  "Bench Press - Max Effort | 5x3",
+                  "Incline DB Chest Fly | 3x12",
+                  "Alt DB Front Raise | 3x20",
+                  "Cable Rope Tricep Extension | 4x10",
+                  "Dips | 3x12",
+                  "Hanging Knee Raise | 4x15",
+                  "Alt DB Sit Ups | 4x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w6b",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0680.PNG",
+      "sha256": "c79670735f3af446bbf38494ff0a3f172d8cc6ff264c3d9f7272b8cd6691a031",
+      "bytes": 311891,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0680.PNG) — week 6, day B (PULL)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "PULL",
+                "main": [
+                  "Plate Loaded Low Row | 4x8",
+                  "Overhand Grip Lat Pulldown | 4x10",
+                  "Cable Straight Arm Pulldown | 4x10",
+                  "Inclined DB Reverse Fly | 3x18",
+                  "Incline DB Curls | 3x12",
+                  "DB Plank Row | 4x20",
+                  "Single Arm DB Snatch | 4x20",
+                  "Half Kneeling KB High to Low chop | 4x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w6c",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0681.PNG",
+      "sha256": "ac0f7eec0fe60ff07f5ca9a165127ff6dde3b8cdc2f17c5cad6510e2fbe7bb6a",
+      "bytes": 307364,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0681.PNG) — week 6, day C (LEGS)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LEGS",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Barbell Squat - Max Effort | 4x3",
+                  "Machine Leg Extensions | 3x20",
+                  "Lying Hamstring Curl Machine | 3x20",
+                  "Sled Push | 4x30s",
+                  "Sled Pull | 4x30s",
+                  "Standing DB Calf Raise | 3x15"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w6d",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0682.PNG",
+      "sha256": "93a6b05ff6e8fe7e55f669097144fb6edf359572a298d361f584672cc6805751",
+      "bytes": 312308,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0682.PNG) — week 6, day D (UPPER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "UPPER",
+                "main": [
+                  "Barbell Standing Military Press | 4x3",
+                  "Cable Rope Face Pulls | 3x12",
+                  "EZ-Bar Preacher Curls | 4x8",
+                  "EZ-Bar Skull Crushers | 3x10",
+                  "Easy Row | 1x5min"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "bridger-logan-w6e",
+      "kind": [
+        "app screenshot"
+      ],
+      "file": "bridger-logan/IMG_0683.PNG",
+      "sha256": "bb7cf9b0dcc47843b6809882930b84336cda5c4455931cc789e34723d971db68",
+      "bytes": 262380,
+      "source": "PO screenshots of a purchased coaching program in another app (Downloads/workouts/IMG_0683.PNG) — week 6, day E (LOWER)",
+      "privacy": "a paid program bought by the PO — PERSONAL use only, never shipped as content (scripts/bridger-logan README); no face or name on screen",
+      "expect": "workout",
+      "key": {
+        "weeks": [
+          {
+            "days": [
+              {
+                "name": "LOWER",
+                "main": [
+                  "? Stairmaster | 1x3min",
+                  "Conventional Deadlift | 5x5",
+                  "Barbell Hip Thrust | 4x8",
+                  "Wall Balls | 4x20",
+                  "Assault Bike | 4x60s",
+                  "Ball Slams | 4x20",
+                  "DB Suitcase Carry | 4x20s",
+                  "V Ups | 4x20"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "keySource": "scripts/bridger-logan/program.mjs (hand transcription of these screenshots); order checked 2026-11-17 against IMG_0652 = W1 PUSH and IMG_0683 = W6 LOWER",
+      "notes": "numbered rows; per-set rep ladders (\"6-6-4-4\"), F = to failure, CIRCUIT blocks with a round count and timed members; the warm-up circuit is the warm-up, not main work"
+    },
+    {
+      "id": "pdf-10weekmass",
+      "kind": [
+        "PDF"
+      ],
+      "file": "pdf/10weekmass.pdf",
+      "sha256": "4de481965fcb883f2dda59fc2df3f941eea4bdc5e91665537851f49d3fdb3124",
+      "bytes": 73375,
+      "source": "PO download (Downloads/10weekmass.pdf) — a one-page Muscle & Strength program",
+      "privacy": "none — published program, no person",
+      "expect": "pending",
+      "why": "a PDF is not an image: it reaches the card reader only once IM-3 reads PDFs page by page (V-G6). Key it then."
+    },
+    {
+      "id": "pdf-6weekleanmass",
+      "kind": [
+        "PDF"
+      ],
+      "file": "pdf/6weekleanmass.pdf",
+      "sha256": "fe6f897d36f5a77ac6d2e2300f2c0435e75b8668f1018769bf9f2508aff052d9",
+      "bytes": 130070,
+      "source": "PO download (Downloads/6weekleanmass.pdf) — a one-page Muscle & Strength program",
+      "privacy": "none — published program, no person",
+      "expect": "pending",
+      "why": "a PDF is not an image: it reaches the card reader only once IM-3 reads PDFs page by page (V-G6). Key it then."
+    },
+    {
+      "id": "pdf-8weekbeginnerfatlossworkout",
+      "kind": [
+        "PDF"
+      ],
+      "file": "pdf/8weekbeginnerfatlossworkout.pdf",
+      "sha256": "66c37cf8c32b476502932bcb43f26498e4c1c4ab9647d2f4af81a478f383f023",
+      "bytes": 116484,
+      "source": "PO download (Downloads/8weekbeginnerfatlossworkout.pdf) — a one-page Muscle & Strength program",
+      "privacy": "none — published program, no person",
+      "expect": "pending",
+      "why": "a PDF is not an image: it reaches the card reader only once IM-3 reads PDFs page by page (V-G6). Key it then."
+    },
+    {
+      "id": "pdf-dumbbellonlyworkout",
+      "kind": [
+        "PDF"
+      ],
+      "file": "pdf/dumbbellonlyworkout.pdf",
+      "sha256": "02dbe6e09fc559bade61d7e2ec0c0623fa9220cd80a1b037a099cead56724cb0",
+      "bytes": 67393,
+      "source": "PO download (Downloads/dumbbellonlyworkout.pdf) — a one-page Muscle & Strength program",
+      "privacy": "none — published program, no person",
+      "expect": "pending",
+      "why": "a PDF is not an image: it reaches the card reader only once IM-3 reads PDFs page by page (V-G6). Key it then."
+    },
+    {
+      "id": "pdf-m-f-workoutroutine_1",
+      "kind": [
+        "PDF"
+      ],
+      "file": "pdf/m-f-workoutroutine_1.pdf",
+      "sha256": "bbcac1ea88665e3ecc195fc25043aa30b12cd96bb238ae7300514874d4d061c7",
+      "bytes": 67973,
+      "source": "PO download (Downloads/m-f-workoutroutine_1.pdf) — a one-page Muscle & Strength program",
+      "privacy": "none — published program, no person",
+      "expect": "pending",
+      "why": "a PDF is not an image: it reaches the card reader only once IM-3 reads PDFs page by page (V-G6). Key it then."
+    },
+    {
+      "id": "pdf-springshred",
+      "kind": [
+        "PDF"
+      ],
+      "file": "pdf/springshred.pdf",
+      "sha256": "f35d4fe050f7e3b0dbc8cf852957392a9a4d2855fba794e86fbc9e0cde3a5f0e",
+      "bytes": 134961,
+      "source": "PO download (Downloads/springshred.pdf) — a one-page Muscle & Strength program",
+      "privacy": "none — published program, no person",
+      "expect": "pending",
+      "why": "a PDF is not an image: it reaches the card reader only once IM-3 reads PDFs page by page (V-G6). Key it then."
+    }
+  ],
+  "transcriptOnly": {
+    "why": "Real program photos the PO sent in chat on 2026-09-22 and 2026-10-06 whose ORIGINAL images were never saved — only the model's transcripts are in the repo. They keep their parser tests (photo-programs.test.mjs, card-table.test.mjs) but cannot be re-read live. Re-send the pictures to bring them into the corpus.",
+    "fixtures": [
+      "src/domain/program/__tests__/fixtures/photo-2.tsv",
+      "src/domain/program/__tests__/fixtures/photo-3.tsv",
+      "src/domain/program/__tests__/fixtures/photo-4.tsv",
+      "src/domain/program/__tests__/fixtures/photo-5.tsv",
+      "src/domain/program/__tests__/fixtures/photo-6.tsv",
+      "src/domain/program/__tests__/fixtures/photo-7.tsv",
+      "src/domain/program/__tests__/fixtures/photo-8.tsv",
+      "src/domain/program/__tests__/fixtures/photo-9.tsv",
+      "src/domain/program/__tests__/fixtures/photo-10.tsv",
+      "src/domain/program/__tests__/fixtures/photo-12.tsv",
+      "src/domain/program/__tests__/fixtures/photo-13.tsv",
+      "src/domain/program/__tests__/fixtures/photo-14.tsv",
+      "src/domain/program/__tests__/fixtures/photo-15.tsv",
+      "src/domain/program/__tests__/fixtures/photo-16.tsv",
+      "src/domain/program/__tests__/fixtures/photo-17.tsv",
+      "src/domain/program/__tests__/fixtures/photo-18.tsv",
+      "src/domain/program/__tests__/fixtures/photo-19.tsv",
+      "src/domain/program/__tests__/fixtures/photo-20.tsv",
+      "src/domain/program/__tests__/fixtures/aunt-five-day-split-2026-10-06.txt",
+      "src/domain/program/__tests__/fixtures/tri-sheet-ios-paste.txt",
+      "src/domain/workout/__tests__/fixtures/squatober-2025.mjs",
+      "src/domain/workout/__tests__/fixtures/squatober-2026-day1.mjs"
+    ]
+  },
+  "excludedOnPurpose": [
+    {
+      "what": "Downloads/yup/IMG_0684–0690.PNG",
+      "why": "the coaching app's program LIST (not sessions), with the coach's face and the PO's first name"
+    },
+    {
+      "what": "Downloads/Copy of 6 Month Hybrid Training Program - Week 1.csv",
+      "why": "a CSV (IM-3, not a photo) that also carries the PO's own logged weights"
+    },
+    {
+      "what": "a 70.3 triathlon plan (.xlsx) in Downloads, written for another athlete",
+      "why": "it carries that athlete’s name and an injury note: private data, and not a photo"
+    }
+  ]
+}
