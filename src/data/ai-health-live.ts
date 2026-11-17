@@ -1,4 +1,5 @@
 import { callRpc } from '@/data/admin-live';
+import { shapeAiDeploys, type AiDeploys } from '@/domain/admin/ai-drift-core';
 import { shapeAiHealth, type AiHealth } from '@/domain/admin/ai-health-core';
 
 /**
@@ -12,4 +13,13 @@ import { shapeAiHealth, type AiHealth } from '@/domain/admin/ai-health-core';
 export async function fetchAiHealth(days: number, tz: string): Promise<AiHealth> {
   const raw = await callRpc<unknown>('admin_ai_health', { p_days: days, p_tz: tz });
   return shapeAiHealth(raw);
+}
+
+/**
+ * /admin-ai → "Deployed code" (migration 0271, `admin_ai_deploys`): the nightly deployed-vs-repo check and the
+ * recorded deploys. Its own read, so a database without 0271 fails only this card — never the page above it.
+ */
+export async function fetchAiDeploys(): Promise<AiDeploys> {
+  const raw = await callRpc<unknown>('admin_ai_deploys', { p_limit: 30 });
+  return shapeAiDeploys(raw);
 }
