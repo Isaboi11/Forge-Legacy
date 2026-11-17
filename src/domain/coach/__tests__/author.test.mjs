@@ -20,6 +20,7 @@ import path from 'node:path';
 
 import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
+import { AUTHOR_TIMEOUT_MS, authorWithin } from '../author-deadline.ts';
 import {
   AUTHOR_SCHEMA,
   authoredIsWhole,
@@ -479,4 +480,38 @@ test('a plan that stops after one movement is not whole, and the function asks o
   const fn = read('supabase/functions/coach-author/index.ts');
   assert.match(fn, /attempt < 2 && !authoredIsWhole\(plan\)/);
   assert.match(fn, /p_credits: attempt === 0 \? reserved\.credits_spent : 0/, 'the second ask rides on the credit already reserved');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B-D8 (AI audit 11-16) — HOW LONG HE MAY TAKE
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('B-D8: a write that takes too long gives way to the rulebook, and the request is cancelled', async () => {
+  assert.equal(AUTHOR_TIMEOUT_MS, 30_000);
+  let seen = null;
+  // A server that never answers — and a fetch that, like a real one, rejects once it is aborted.
+  const hung = (signal) => {
+    seen = signal;
+    return new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted'))));
+  };
+  const r = await authorWithin(20, hung);
+  assert.deepEqual(r, { kind: 'unavailable' });
+  assert.equal(seen.aborted, true, 'the request is aborted, not left running');
+  // The rulebook builds it and he says so, in the line every other failure already uses.
+  assert.equal(authorFallbackLine(r), "I couldn't write that one out just now, so I built it from the rulebook. It follows the focus, not every word.");
+  // A fetch that ignores the abort altogether (React Native's polyfill) cannot hold the answer either.
+  assert.deepEqual(await authorWithin(20, () => new Promise(() => {})), { kind: 'unavailable' });
+});
+
+test('B-D8: an answer inside the time is the answer, and nothing is aborted', async () => {
+  const plan = { say: 'x', title: 'x', days: [], unmet: [] };
+  let seen = null;
+  const r = await authorWithin(1000, async (signal) => {
+    seen = signal;
+    return { kind: 'ok', plan, remaining: 3 };
+  });
+  assert.deepEqual(r, { kind: 'ok', plan, remaining: 3 });
+  assert.equal(seen.aborted, false);
+  // A failure that is not the deadline keeps its own meaning.
+  assert.deepEqual(await authorWithin(1000, async () => Promise.reject(new Error('dns'))), { kind: 'offline' });
 });
