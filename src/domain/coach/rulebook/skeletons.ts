@@ -128,6 +128,11 @@ const UPPER: DaySkeleton = {
  * give triceps their half-sets) and Core, which only a 75-minute session ever reached, goes (Lower keeps
  * it). Strength keeps the plain `UPPER`: nobody reported its bench volume, and a second press there would
  * change every strength block for a reason this fix doesn't have. Swapped in by name — `GOAL_DAYS`.
+ *
+ * ⚠ THE WEEK MAY TRADE ONE DAY'S SECOND PRESS (PB-2). The weekly volume model (`volume-balance.ts`) also
+ * owes the lateral and rear delt their bands, and two six-exercise upper days cannot carry two presses each
+ * plus a raise and a rear-delt movement. The slot list is still the first draft; the balancer swaps the
+ * row the week can best spare, and chest still lands inside 10–20.
  */
 const UPPER_HYPERTROPHY: DaySkeleton = {
   ...UPPER,

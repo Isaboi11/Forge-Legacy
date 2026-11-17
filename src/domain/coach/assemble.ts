@@ -81,7 +81,18 @@ import {
   weekIsViable,
   type DaySkeleton,
 } from './rulebook/skeletons.ts';
-import { bandFor, deloadSets, deloadWeeks, GOAL_CATEGORY, type PasCategory } from './rulebook/volume.ts';
+import {
+  bandFor,
+  deloadSets,
+  deloadWeeks,
+  GOAL_CATEGORY,
+  VOLUME_GROUPS,
+  weeklyBandFor,
+  type PasCategory,
+  type VolumeGroup,
+  type WeeklyBand,
+} from './rulebook/volume.ts';
+import { balanceWeek, pickForGroup, trainableGroups, type DayAdjustment } from './volume-balance.ts';
 import {
   assembleEndurance,
   buildRunDay,
@@ -706,8 +717,14 @@ export function assemble(
   const plan = planLifts(c, c.goal, requested, pool, canDo, (day) => (isCount(day) ? day : null), concerns);
 
   const notes: AssemblyNote[] = [];
+  /* ⚠ THE WEEK IS HELD TO THE PER-MUSCLE BANDS ONCE, AND EVERY WEEK GETS THE SAME ADJUSTMENTS (PB-2). Working
+     weeks carry the same sets (reps wave, sets hold — `prescribeReps`), so balancing one balances all, and a
+     deload keeps the same exercises with its sets cut from the balanced number (PAS-D8 (4)). */
+  const volume = planVolume(plan, pool, c);
   const weekPlans = Array.from({ length: plan.weeks }, (_, weekIndex) => ({
-    days: plan.variants.map((_, i) => liftDay(plan, i, String.fromCharCode(65 + i), weekIndex, pool, c, notes)),
+    days: plan.variants.map((_, i) =>
+      withVolume(liftDay(plan, i, String.fromCharCode(65 + i), weekIndex, pool, c, notes), volume?.days[i], plan, c, weekIndex),
+    ),
   }));
 
   const thin = thinRefusal(weekPlans.flatMap((w) => w.days), c, plan.owned);
@@ -953,6 +970,100 @@ function liftDay(
     pins: plan.pinsByDay[i] ?? [],
     focus: plan.focus,
   }, notes);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// THE WEEK, HELD TO THE PER-MUSCLE BANDS (PB-2)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** The bands a build is held to, or null when its category states none (mobility). */
+function bandsFor(plan: LiftPlan, c: CoachConstraints): Map<VolumeGroup, WeeklyBand> | null {
+  const out = new Map<VolumeGroup, WeeklyBand>();
+  for (const g of VOLUME_GROUPS) {
+    const band = weeklyBandFor(plan.category, c.experience.lifting, g, plan.variants.length);
+    if (band) out.set(g, band);
+  }
+  return out.size > 0 ? out : null;
+}
+
+/**
+ * One working week, built the ordinary way, then held to `WEEKLY_SET_BANDS` by `balanceWeek` — the
+ * adjustments it returns are what every week of the block gets. Null when the category has no bands.
+ */
+function planVolume(plan: LiftPlan, pool: readonly CatalogExercise[], c: CoachConstraints) {
+  const bands = bandsFor(plan, c);
+  if (!bands) return null;
+  const byKey = new Map(pool.map((e) => [e.key, e]));
+  const experience = c.experience.lifting;
+  const band = bandFor(plan.category, false);
+  const budget = Math.min(exerciseBudget(c.sessionMinutes), band.maxExercises);
+  // A working week (week 0 never deloads). Its notes are thrown away — the real build says them once.
+  const week = plan.variants.map((_, i) => liftDay(plan, i, String.fromCharCode(65 + i), 0, pool, c, []));
+  const days = week.map((day, i) => {
+    const pinned = new Set((plan.pinsByDay[i] ?? []).map((p) => p.exercise.key));
+    return {
+      rows: day.main.map((e) => {
+        const ex = e.catalogKey ? (byKey.get(e.catalogKey) ?? null) : null;
+        return { ex, sets: e.sets ?? 0, locked: ex == null || pinned.has(ex.key) };
+      }),
+      maxExercises: budget,
+      maxSets: band.maxSets,
+      minSets: band.minSets,
+      minCompounds: band.minCompounds,
+      minExercises: band.minExercises,
+    };
+  });
+  return balanceWeek(days, {
+    bands,
+    trainable: trainableGroups(pool, plan.baseCtx),
+    daysPerWeek: plan.variants.length,
+    experience,
+    pick: (group, _day, used) => pickForGroup(group, pool, plan.baseCtx, used, experience),
+    newRowSets: prescribeReps('accessory', { category: plan.category, experience, weekIndex: 0, isDeload: false }).sets,
+    protect: plan.focus.muscles,
+  });
+}
+
+/** A row for an exercise the balancer chose, prescribed exactly as a slot fill at that position would be. */
+function liftRow(ex: CatalogExercise, index: number, plan: LiftPlan, c: CoachConstraints, weekIndex: number): ProgramExercise {
+  const experience = c.experience.lifting;
+  const role = roleFor(index, isCompound(ex.pattern));
+  const pctx = { category: plan.category, experience, weekIndex, totalWeeks: plan.weeks, isDeload: plan.deloads.includes(weekIndex) };
+  const cue = cueFor({ pattern: ex.pattern, goal: plan.goal, experience, isPrimary: index === 0, name: ex.name, equipId: ex.equipId });
+  const rest = restOf(plan.category, role, experience);
+  if (isTimedExercise(ex)) {
+    const t = prescribeTimed(role, pctx);
+    return { catalogKey: ex.key, name: ex.name, sets: t.sets, durationSec: t.durationSec, ...rest, ...(cue ? { coachNote: cue } : {}) };
+  }
+  const rx = prescribeReps(role, pctx);
+  return { catalogKey: ex.key, name: ex.name, sets: rx.sets, reps: rx.reps, repsMax: rx.repsMax, ...rest, ...(cue ? { coachNote: cue } : {}) };
+}
+
+/**
+ * A built day with the week's volume adjustments applied. A deload takes the adjusted working sets through
+ * `deloadSets`, so it is cut from what the athlete actually did the week before (PAS-D8 (2)).
+ */
+function withVolume(
+  day: ProgramDay,
+  adj: DayAdjustment | undefined,
+  plan: LiftPlan,
+  c: CoachConstraints,
+  weekIndex: number,
+): ProgramDay {
+  if (!adj || (adj.sets.size === 0 && adj.replace.size === 0 && adj.add.length === 0 && adj.drop.size === 0)) return day;
+  const isDeload = plan.deloads.includes(weekIndex);
+  const dose = (n: number) => (isDeload ? deloadSets(n) : n);
+  const edited = day.main.slice();
+  for (const [i, ex] of adj.replace) edited[i] = liftRow(ex, i, plan, c, weekIndex);
+  for (const [i, n] of adj.sets) if (edited[i]) edited[i] = { ...edited[i], sets: dose(n) };
+  const main = edited.filter((_, i) => !adj.drop.has(i));
+  if (adj.add.length > 0) {
+    const firstCardio = main.findIndex((e) => (e as { kind?: string }).kind === 'cardio');
+    const at = firstCardio < 0 ? main.length : firstCardio;
+    const added = adj.add.map((a, k) => ({ ...liftRow(a.ex, at + k, plan, c, weekIndex), sets: dose(a.sets) }));
+    main.splice(at, 0, ...added);
+  }
+  return { ...day, main };
 }
 
 /*

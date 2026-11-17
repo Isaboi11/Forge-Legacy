@@ -28,8 +28,10 @@ import path from 'node:path';
 
 import { buildPickerDb } from '../../exercise-picker/catalog-core.ts';
 import { canDoExercise } from '../../home-gym/equipment.ts';
-import { STRENGTH_GOALS } from '../constraints.ts';
+import { effectiveEquipment, normalise, STRENGTH_GOALS } from '../constraints.ts';
 import { assemble } from '../assemble.ts';
+import { contextFrom } from '../candidates.ts';
+import { trainableGroups } from '../volume-balance.ts';
 import { restFor } from '../prescribe.ts';
 import { validateProgram } from '../validate-program.ts';
 import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays, stylesForDaysSuggestedFirst } from '../rulebook/skeletons.ts';
@@ -37,12 +39,20 @@ import { AUTHORED_GOALS, defaultWeeksFor, stylesForDays, stylesForDaysSuggestedF
 import {
   DELOAD_MARKER,
   GOAL_CATEGORY,
-  MAJOR_MUSCLE_GROUPS,
-  weeklyGroupSets,
-  weeklyMuscleFloor,
+  GROUP_PATTERNS,
+  VOLUME_GROUPS,
+  WEEKLY_SET_BANDS,
+  weeklyBandFor,
+  weeklyMuscleSets,
 } from '../rulebook/volume.ts';
-import { PATTERN_PREFERENCES } from '../rulebook/preferences.ts';
-import { LIMITATION_KEEP_KEYS } from '../rulebook/limitations.ts';
+import { GROUP_PREFERENCES, PATTERN_PREFERENCES } from '../rulebook/preferences.ts';
+import {
+  equipmentAfterLimitations,
+  LIMITATION_KEEP_KEYS,
+  limitationExcludeKeys,
+  limitationKeepKeys,
+  limitationPatterns,
+} from '../rulebook/limitations.ts';
 import { buildDayWorkout, BODY_PARTS, SPLITS } from '../day.ts';
 
 /*
@@ -329,46 +339,56 @@ const validate = (structure, goal) =>
 // THE MATRIX
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('every authored goal × experience × schedule × room × limitation builds a valid program', () => {
-  const refusals = [];
-  const broken = [];
-  let built = 0;
-
-  /*
-   * ⚠ 75 MINUTES AS WELL AS 60, because 60 could not see the one failure the longest session has. At 75
-   * the exercise budget reaches HYPERTROPHY's ceiling of eight, and an advanced lifter's four sets on
-   * each came to 32 against PAS-D11's 30 — the builder wrote a day its own validator rejected, in 75 of
-   * 125 advanced 75-minute muscle builds (stress sweep, 2026-09-21), and this matrix passed throughout
-   * because it only ever asked for an hour.
-   */
+/*
+ * ⚠ 75 MINUTES AS WELL AS 60, because 60 could not see the one failure the longest session has. At 75
+ * the exercise budget reaches HYPERTROPHY's ceiling of eight, and an advanced lifter's four sets on
+ * each came to 32 against PAS-D11's 30 — the builder wrote a day its own validator rejected, in 75 of
+ * 125 advanced 75-minute muscle builds (stress sweep, 2026-09-21), and this matrix passed throughout
+ * because it only ever asked for an hour.
+ *
+ * Built ONCE and shared: the validity test and the weekly-volume test below walk exactly the same builds.
+ */
+let MATRIX = null;
+const matrixBuilds = () => {
+  if (MATRIX) return MATRIX;
+  MATRIX = [];
   for (const sessionMinutes of [60, 75]) {
-  for (const goal of SPLIT_GOALS) {
-    for (const experience of EXPERIENCES) {
-      for (const daysPerWeek of DAYS) {
-        for (const room of Object.keys(ROOMS)) {
-          for (const limitations of Object.keys(LIMITATION_SETS)) {
-            const c = constraintsFor(goal, experience, daysPerWeek, room, limitations, sessionMinutes);
-            const res = build(c);
-
-            if (!res.ok) {
-              refusals.push({ goal, experience, daysPerWeek, room, limitations, sessionMinutes, reason: res.refusal.reason });
-              continue;
-            }
-
-            built++;
-            const v = validate(res.assembly.structure, goal);
-            if (!v.ok) {
-              broken.push({
-                where: `${goal}/${experience}/${daysPerWeek}d/${room}/${limitations}/${sessionMinutes}min`,
-                // First three is enough to diagnose; the whole list would bury the signal.
-                failures: v.failures.slice(0, 3).map((f) => `${f.code}: ${f.message}`),
-              });
+    for (const goal of SPLIT_GOALS) {
+      for (const experience of EXPERIENCES) {
+        for (const daysPerWeek of DAYS) {
+          for (const room of Object.keys(ROOMS)) {
+            for (const limitations of Object.keys(LIMITATION_SETS)) {
+              const c = constraintsFor(goal, experience, daysPerWeek, room, limitations, sessionMinutes);
+              MATRIX.push({ c, goal, experience, daysPerWeek, room, limitations, sessionMinutes, res: build(c) });
             }
           }
         }
       }
     }
   }
+  return MATRIX;
+};
+
+test('every authored goal × experience × schedule × room × limitation builds a valid program', () => {
+  const refusals = [];
+  const broken = [];
+  let built = 0;
+
+  for (const { goal, experience, daysPerWeek, room, limitations, sessionMinutes, res } of matrixBuilds()) {
+    if (!res.ok) {
+      refusals.push({ goal, experience, daysPerWeek, room, limitations, sessionMinutes, reason: res.refusal.reason });
+      continue;
+    }
+
+    built++;
+    const v = validate(res.assembly.structure, goal);
+    if (!v.ok) {
+      broken.push({
+        where: `${goal}/${experience}/${daysPerWeek}d/${room}/${limitations}/${sessionMinutes}min`,
+        // First three is enough to diagnose; the whole list would bury the signal.
+        failures: v.failures.slice(0, 3).map((f) => `${f.code}: ${f.message}`),
+      });
+    }
   }
 
   assert.ok(built > 0, 'nothing built at all');
@@ -512,39 +532,147 @@ test('a deload is actually lighter than the week before it', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WEEKLY VOLUME PER MUSCLE — PAS §11.2 / PAS-A4 (AI audit 11-16, B-D2)
+// WEEKLY VOLUME PER MUSCLE — PAS §11.2 / PAS-A4, the PB-2 model (AI audit 11-16, B-D2 and B-G3)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const BY_KEY = new Map(POOL.map((e) => [e.key, e]));
 
-/** One week's sets for each major group, counted the PAS-A4-D1 way. */
-const weeklyVolume = (weekPlan) => {
-  const rows = weekPlan.days
-    .flatMap((d) => d.main)
-    .map((r) => ({ ex: BY_KEY.get(r.catalogKey), sets: r.sets ?? 0 }))
-    .filter((r) => r.ex)
-    .map((r) => ({ sets: r.sets, primaryMuscleIds: r.ex.primaryMuscleIds, muscleIds: r.ex.muscleIds }));
-  return Object.fromEntries(
-    Object.entries(MAJOR_MUSCLE_GROUPS).map(([g, muscles]) => [g, weeklyGroupSets(rows, muscles)]),
+/** One week's sets per muscle, PAS-A4-D1 counting (primary 1, secondary 0.5) — `volume.ts` `weeklyMuscleSets`. */
+const weeklyVolume = (weekPlan) =>
+  weeklyMuscleSets(
+    weekPlan.days
+      .flatMap((d) => d.main)
+      .map((r) => ({ ex: BY_KEY.get(r.catalogKey), sets: r.sets ?? 0 }))
+      .filter((r) => r.ex)
+      .map((r) => ({ sets: r.sets, primaryMuscleIds: r.ex.primaryMuscleIds, muscleIds: r.ex.muscleIds })),
+  );
+
+/**
+ * The groups this athlete can train directly — derived the way `assemble` derives its candidate context
+ * (the room through `equipmentForEnvironment`, then the limitations), and asked of the same function the
+ * builder asks. The two tests after the matrix keep it honest: a full gym with no limitation waives
+ * nothing, at every level, and a waiver needs a reason the room or a limitation can name.
+ */
+const TRAINABLE = new Map();
+const trainableFor = (c) => {
+  // The room, the limitations and the level decide it — not the goal, the days or the session length.
+  const key = JSON.stringify([c.environment, c.ownedEquipment, c.limitations, c.experience.lifting]);
+  if (!TRAINABLE.has(key)) TRAINABLE.set(key, trainableUncached(c));
+  return TRAINABLE.get(key);
+};
+const trainableUncached = (c) => {
+  const n = normalise(c);
+  const owned = equipmentAfterLimitations(effectiveEquipment(n), n.limitations);
+  return trainableGroups(
+    POOL,
+    contextFrom({
+      owned,
+      canDo: canDoExercise,
+      experience: n.experience.lifting,
+      limitations: n.limitations,
+      limitationPatterns,
+      limitationKeys: limitationExcludeKeys,
+      limitationKeepKeys,
+      excludeExercises: n.excludeExercises,
+    }),
   );
 };
 
+/** Every band a build breaks, one line per group per distinct week shape. */
+const outOfBand = (c, res, where) => {
+  const cat = GOAL_CATEGORY[c.goal];
+  const trainable = trainableFor(c);
+  const out = new Set();
+  res.assembly.structure.weekPlans.forEach((wp) => {
+    const deload = wp.days.some((d) => d.name.includes(DELOAD_MARKER)); // PAS-A4-D3: a deload sits under the floor
+    const v = weeklyVolume(wp);
+    for (const g of VOLUME_GROUPS) {
+      const band = weeklyBandFor(cat, c.experience.lifting, g, c.daysPerWeek);
+      if (!band) continue;
+      const floor = deload || !trainable.has(g) ? 0 : band.min;
+      if (v[g] > band.max || v[g] < floor) out.add(`${where}: ${g} ${v[g]} outside ${floor}–${band.max}${deload ? ' (deload)' : ''}`);
+    }
+  });
+  return [...out];
+};
+
+test('the bands are a whole table: every goal category, level and muscle, floor under ceiling', () => {
+  for (const [cat, table] of Object.entries(WEEKLY_SET_BANDS)) {
+    assert.ok(table.referenceDays >= 2 && table.referenceDays <= 6, cat);
+    for (const level of EXPERIENCES) {
+      for (const g of VOLUME_GROUPS) {
+        const b = table.bands[level][g];
+        assert.ok(b && b.min >= 0 && b.min <= b.max, `${cat}/${level}/${g}`);
+      }
+    }
+    // A beginner is never owed MORE than an intermediate (ACSM 2009; the Foundation Blueprint's lower end).
+    for (const g of VOLUME_GROUPS) assert.ok(table.bands.beginner[g].min <= table.bands.intermediate[g].min, `${cat}/${g}`);
+  }
+  // PAS §11.2's governing band, verbatim, for every large group at the default frequency.
+  for (const g of ['chest', 'lats', 'upper_back', 'quadriceps', 'hamstrings', 'glutes']) {
+    assert.deepEqual(weeklyBandFor('HYPERTROPHY', 'intermediate', g, 4), { min: 10, max: 20 }, g);
+  }
+  // Mobility is holds, not sets of a muscle: no band at all.
+  assert.equal(weeklyBandFor('MOBILITY', 'intermediate', 'chest', 4), null);
+  // Below the reference frequency the floor scales down; the ceiling never moves.
+  assert.deepEqual(weeklyBandFor('HYPERTROPHY', 'intermediate', 'chest', 2), { min: 5, max: 20 });
+});
+
 /**
- * ⚠ THE MATRIX ABOVE CHECKS VALIDITY, AND A FOUR-DAY MUSCLE BLOCK THAT BARELY TRAINED CHEST PASSED IT.
+ * ⚠ B-G3 — EVERY BUILD THE MATRIX MAKES, EVERY WORKING WEEK, EVERY MUSCLE, INSIDE ITS BAND.
  *
- * Every session sat inside PAS-D11's 18–30, so every program was "valid" — while Upper B, rotated so its
- * press fell off the end of a six-exercise hour, had no horizontal press at all (3–7 chest sets a week
- * across all twelve four-day builds, AI audit 11-16). Nothing asserted the week. This does.
- *
- * Both ways a muscle block gets its week: the goal's own split (the chat and the wizard, no style) and
- * the style the guided build suggests and always sends. Every working week, not just the first.
- *
- * ⚠ 45 MINUTES UP. A 30-minute session is four movements, already under PAS-D11's five-exercise
- * HYPERTROPHY floor and recorded as a deviation by the validator; the weekly floor cannot be owed by a
- * session the per-session floor has already excused.
+ * The validity test above passed a four-day muscle block that trained chest 3–7 sets a week (B-D2) and a
+ * six-day strength week that gave the glutes 31; before the volume model the band check below failed 2,989
+ * of these 4,320 builds (measured 2026-11-17, corrected muscle tags). `volume-balance.ts` moved them in; this
+ * keeps them there. A floor is
+ * owed only where the room and the limitations let the group be trained at all; a deload week only keeps
+ * the ceiling (PAS-A4-D3).
  */
-test('a muscle block gives every major group its weekly floor, in every working week', () => {
-  const short = [];
+test('every build the matrix makes lands inside its weekly per-muscle bands, every week (B-G3)', () => {
+  const outside = [];
+  let checked = 0;
+  for (const { c, goal, experience, daysPerWeek, room, limitations, sessionMinutes, res } of matrixBuilds()) {
+    if (!res.ok) continue;
+    checked++;
+    outside.push(...outOfBand(c, res, `${goal}/${experience}/${daysPerWeek}d/${room}/${limitations}/${sessionMinutes}min`));
+  }
+  assert.ok(checked > 4000, `the matrix shrank to ${checked} builds`);
+  assert.deepEqual(outside, [], `${outside.length} muscle-weeks outside their band:\n  ${outside.slice(0, 20).join('\n  ')}`);
+});
+
+test('a full gym with no limitation can train all twelve groups, so no floor there is ever waived', () => {
+  for (const experience of EXPERIENCES) {
+    for (const room of ['full_gym', 'home']) {
+      const trainable = trainableFor(constraintsFor('muscle', experience, 4, room, 'none'));
+      assert.deepEqual(VOLUME_GROUPS.filter((g) => !trainable.has(g)), [], `${experience}/${room}`);
+    }
+  }
+  // A waiver is a fact about the room: a bare floor has no bar to pull to, and a shoulders limitation
+  // takes the raises (Shoulder Isolation) — the floor is not owed what cannot be trained.
+  assert.ok(!trainableFor(constraintsFor('muscle', 'intermediate', 4, 'bodyweight', 'none')).has('lats'));
+  assert.ok(!trainableFor(constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'shoulders')).has('lateral_deltoids'));
+});
+
+test('every group-preference key exists and is a primary mover of its group, in one of its patterns', () => {
+  const wrong = [];
+  for (const [group, keys] of Object.entries(GROUP_PREFERENCES)) {
+    for (const key of keys) {
+      const ex = BY_KEY.get(key);
+      if (!ex) wrong.push(`${group}: "${key}" is not in the visible catalogue`);
+      else if (!ex.primaryMuscleIds.includes(group)) wrong.push(`${group}: "${key}" does not have ${group} as a primary mover`);
+      else if (!GROUP_PATTERNS[group].includes(ex.pattern)) wrong.push(`${group}: "${key}" is filed under ${ex.pattern}`);
+    }
+  }
+  assert.deepEqual(wrong, []);
+});
+
+/**
+ * ⚠ THE MATRIX ABOVE NEVER SENDS A SPLIT STYLE, AND THE GUIDED BUILD ALWAYS DOES — so the muscle goal is walked
+ * again here with the suggested style, and at 45 minutes too (five movements a session). Extended from the
+ * B-D2 floor test (AI audit 11-16), which held five groups to a floor; it now holds all twelve to the band.
+ */
+test('a muscle block keeps every group inside its band in every working week, whichever split it gets', () => {
+  const outside = [];
   let checked = 0;
   for (const sessionMinutes of [45, 60, 75]) {
     for (const experience of EXPERIENCES) {
@@ -554,28 +682,51 @@ test('a muscle block gives every major group its weekly floor, in every working 
             const c = { ...constraintsFor('muscle', experience, daysPerWeek, room, 'none', sessionMinutes), splitStyle };
             const res = build(c);
             assert.ok(res.ok, `muscle/${experience}/${daysPerWeek}d/${room} refused`);
-            const floor = weeklyMuscleFloor(GOAL_CATEGORY.muscle, daysPerWeek);
-            res.assembly.structure.weekPlans.forEach((wp, w) => {
-              if (wp.days.some((d) => d.name.includes(DELOAD_MARKER))) return; // PAS-A4-D3
-              checked++;
-              for (const [group, n] of Object.entries(weeklyVolume(wp))) {
-                if (n < floor) {
-                  short.push(`${experience}/${daysPerWeek}d/${room}/${sessionMinutes}min/${splitStyle ?? 'default'} wk${w + 1}: ${group} ${n} < ${floor}`);
-                }
-              }
-            });
+            checked++;
+            outside.push(...outOfBand(c, res, `${experience}/${daysPerWeek}d/${room}/${sessionMinutes}min/${splitStyle ?? 'default'}`));
           }
         }
       }
     }
   }
   assert.ok(checked > 0);
-  const unique = [...new Set(short.map((s) => s.replace(/ wk\d+:/, ':')))];
-  assert.deepEqual(unique, [], `${unique.length} muscle builds leave a major group under its weekly floor:\n  ${unique.slice(0, 15).join('\n  ')}`);
+  assert.deepEqual(outside, [], `${outside.length} muscle builds outside a band:\n  ${outside.slice(0, 15).join('\n  ')}`);
 });
 
+test('a four-day hour-long muscle block trains the lateral and the rear delt directly (PAS-A4-D2)', () => {
+  // Before the volume model no hypertrophy block at an hour reached a lateral raise: it sat seventh in a
+  // six-exercise upper day. Pressing feeds the front head; nothing but direct work feeds the other two.
+  const res = build(constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'none'));
+  const keys = res.assembly.structure.weekPlans[0].days.flatMap((d) => d.main.map((e) => BY_KEY.get(e.catalogKey)));
+  assert.ok(keys.some((e) => e?.primaryMuscleIds.includes('lateral_deltoids')), 'a lateral raise');
+  assert.ok(keys.some((e) => e?.primaryMuscleIds.includes('rear_deltoids')), 'a rear-delt movement');
+});
+
+test('a balanced block still deloads on the SAME exercises, lighter than the week before (PAS-D8)', () => {
+  for (const [goal, days] of [['muscle', 4], ['strength', 6], ['conditioning', 6], ['health', 2]]) {
+    const res = build(constraintsFor(goal, 'intermediate', days, 'full_gym', 'none'));
+    const { weekPlans } = res.assembly.structure;
+    const [w] = res.assembly.deloadWeeks;
+    const keysOf = (wp) => wp.days.map((d) => d.main.map((e) => e.catalogKey).join(','));
+    assert.deepEqual(keysOf(weekPlans[w]), keysOf(weekPlans[w - 1]), `${goal}: PAS-D8 (4) no new exercises in a deload`);
+    const sets = (wp) => wp.days.reduce((n, d) => n + d.main.reduce((m, e) => m + (e.sets ?? 0), 0), 0);
+    assert.ok(sets(weekPlans[w]) < sets(weekPlans[w - 1]), `${goal}: the deload is lighter`);
+    // And every working week is the same week — the bands hold in all of them, not just the first.
+    assert.deepEqual(keysOf(weekPlans[1]), keysOf(weekPlans[0]));
+  }
+});
+
+/*
+ * The D2 defect itself: rotating every slot sent Upper B's press past the budget, and chest got 3–7 sets.
+ *
+ * ⚠ THIS USED TO ASSERT TWO PRESSES ON EACH UPPER DAY, and that was the fix's mechanism, not the defect.
+ * `UPPER_HYPERTROPHY` presses twice so chest reaches PAS §11.2's 10 — and the weekly band now asserts that
+ * 10 directly (above). With the lateral and rear delt held to a band too (PAS-A4-D2), six-exercise upper
+ * days cannot carry two presses each AND a raise AND a rear-delt movement, so the volume model trades one
+ * day's second press for the direct delt work; chest still lands at 13. What D2 guards is kept: both upper
+ * days press, chest is inside its band, and A and B lead differently.
+ */
 test('a four-day muscle block presses on BOTH upper days', () => {
-  // The D2 defect itself: rotating every slot sent Upper B's press past the budget.
   for (const splitStyle of [null, 'upper_lower']) {
     const res = build({ ...constraintsFor('muscle', 'intermediate', 4, 'full_gym', 'none'), splitStyle });
     assert.ok(res.ok);
@@ -583,8 +734,9 @@ test('a four-day muscle block presses on BOTH upper days', () => {
     assert.equal(uppers.length, 2);
     for (const d of uppers) {
       const presses = d.main.filter((e) => patternOf(e.catalogKey) === 'Horizontal Push');
-      assert.ok(presses.length >= 2, `${d.name} (${splitStyle ?? 'default'}) presses ${presses.length} times: ${d.main.map((e) => e.name).join(', ')}`);
+      assert.ok(presses.length >= 1, `${d.name} (${splitStyle ?? 'default'}) has no press: ${d.main.map((e) => e.name).join(', ')}`);
     }
+    assert.ok(weeklyVolume(res.assembly.structure.weekPlans[0]).chest >= 10, 'chest at PAS §11.2’s floor');
     // B still leads differently from A — the reason it is a B.
     assert.notEqual(uppers[0].main[0].catalogKey, uppers[1].main[0].catalogKey);
   }
