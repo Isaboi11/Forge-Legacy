@@ -23,7 +23,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { flColor, flFont, flGradient, flRadius, flShadow } from '@/constants/foundation';
+import { flColor, flFont, flGradient, flRadius, flShadow, flText } from '@/constants/foundation';
 import { bronzeWash, wash } from '@/constants/washes';
 import { forgeOr, themeScrim } from '@/constants/theme-scrim';
 import { Button } from '@/components/forge/composites/Button';
@@ -53,6 +53,7 @@ import { streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
+import { afterStop, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
@@ -2301,7 +2302,29 @@ export function CoachChatSheet({
    * and cleared by that ask when its words start or it ends, so one ask's line never sits under another's dots.
    */
   const [askStatus, setAskStatus] = useState<{ sid: number; text: string } | null>(null);
-  const retryAsks = useRef(new Map<number, { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } }>());
+  const retryAsks = useRef(new Map<number, AskAgain>());
+  /*
+   * ══ STOP · REGENERATE · EDIT AND RESEND (AI Road to 10 Sprint 3a, CH-6) — rules in `chat-basics.ts` ══
+   *
+   * Stop aborts the asks running now — the same abort the sheet's close sends, so coach-ask settles a Stop exactly
+   * as it settles a close: `cancelled`, ⛔ charged, the model ran for them (Sprint 1 §1: never refunded on the
+   * athlete's own cancel). A Stop while the dots still show, before the call left the phone, reserves nothing.
+   * `stopped` tells a Stop from the sheet going away. `askOf` keeps each finished reply's ask by its `sid`, for
+   * Regenerate; `rewrite` is the reply whose question is back in the composer; `rewound` is the history an edited
+   * question is asked with (the thread from before the old one), read synchronously by the ask it starts.
+   */
+  const [asksLive, setAsksLive] = useState(0);
+  const stopped = useRef(new WeakSet<AbortController>());
+  const [askOf, setAskOf] = useState<ReadonlyMap<number, AskAgain>>(() => new Map());
+  const [rewrite, setRewrite] = useState<{ sid: number } | null>(null);
+  const rewound = useRef<Turn[] | null>(null);
+  const stopAsks = () => {
+    for (const c of asking.current) {
+      stopped.current.add(c);
+      c.abort();
+    }
+  };
+  const keepAsk = (sid: number, again: AskAgain) => setAskOf((m) => new Map(m).set(sid, again));
   useEffect(() => {
     const live = asking.current;
     return () => {
@@ -2322,6 +2345,17 @@ export function CoachChatSheet({
     }
     if (!text) return;
     setDraft('');
+    /* CH-6 Edit and resend: the old question and everything after it go, and the new words are asked in its place
+       with the history from before it. Behind a reply still arriving it is a plain send. */
+    const back = rewrite && !holding ? questionOf(thread, rewrite.sid) : null;
+    if (rewrite) setRewrite(null);
+    if (back) {
+      setThread(back.before);
+      rewound.current = back.before;
+      sendText(text);
+      rewound.current = null;
+      return;
+    }
     sendText(text);
   };
 
@@ -2470,7 +2504,7 @@ export function CoachChatSheet({
    * ⛔ The filter lives in `askHistory` (`domain/coach/chat-history.ts`) — it drops every line the app
    * STOPPED, so a medical message never reaches a model with the next question (QA R2-F1).
    */
-  const historyFrom = (t: Turn[]): AskTurn[] => askHistory(t);
+  const historyFrom = (t: Turn[]): AskTurn[] => askHistory(rewound.current ?? t);
 
   /**
    * ══ WHAT HOLT ASKED THE APP TO DO ══
@@ -2605,7 +2639,7 @@ export function CoachChatSheet({
    * The Try again chip under an outage card (AI audit C-D5) — the kitchen's retry chip, for a typed ask. The
    * ask itself waits in `retryAsks` under the id the chip carries; `onChip` sends it once.
    */
-  const retryChip = (again: { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } }): Turn => {
+  const retryChip = (again: AskAgain): Turn => {
     let id = Date.now();
     while (retryAsks.current.has(id)) id += 1;
     retryAsks.current.set(id, again);
@@ -2662,6 +2696,11 @@ export function CoachChatSheet({
       /* Fall through to the ordinary ask only if the local answer failed outright. */
     }
     setBusy('thinking');
+    /* One controller per ask, made BEFORE the context reads so Stop works while the dots show (CH-6). The sheet
+       going away aborts it (`asking`), and so does Stop; `streamCoachAsk`'s own clock ends a stall (C-D2). */
+    const ctl = new AbortController();
+    asking.current.add(ctl);
+    setAsksLive(asking.current.size);
     /*
      * ⚠ IN PARALLEL, NOT ONE AFTER ANOTHER (stress test 2026-09-25). These were three awaits in a row before
      * the model was even called. The kitchen also skips the training program: it answers food, and the
@@ -2700,18 +2739,26 @@ export function CoachChatSheet({
       },
       askSourcesLive(),
     );
+    /* CH-6: stopped while the dots showed — the call never left the phone, so nothing was reserved or charged. */
+    if (ctl.signal.aborted) {
+      asking.current.delete(ctl);
+      setAsksLive(asking.current.size);
+      setBusy(null);
+      if (stopped.current.has(ctl)) say({ kind: 'holt', text: ASK_STOPPED_LINE }, retryChip({ text, history, q, opts }));
+      return;
+    }
     let started = false;
+    /* The words so far — what a Stop leaves (`afterStop`). */
+    let shown = '';
     /* ⚠ THIS stream's turn, by id — never "the last streaming turn", which may be another answer's (R2-F5). */
     streamSeq.current += 1;
     const sid = streamSeq.current;
-    /* One controller per ask: the sheet going away aborts it (`asking`); `streamCoachAsk`'s own clock ends a stall (C-D2). */
-    const ctl = new AbortController();
-    asking.current.add(ctl);
     const r = await streamCoachAsk(
       text,
       history,
       context,
       (acc) => {
+        shown = acc;
         if (!started) {
           started = true;
           /* The dots give way to the words; the composer keeps holding while `streaming` is set. */
@@ -2733,6 +2780,7 @@ export function CoachChatSheet({
       },
     );
     asking.current.delete(ctl);
+    setAsksLive(asking.current.size);
     setBusy(null);
     setAskStatus((s) => (s?.sid === sid ? null : s));
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
@@ -2746,6 +2794,8 @@ export function CoachChatSheet({
           /* C-D5: with a Try again that sends the same ask (`retryChip`). Sprint 1: "Not charged." when coach-ask said so. */
           return say({ kind: 'error', ...askOfflineCard({ started: true, timedOut: false, refunded: r.refunded }) }, retryChip({ text, history, q, opts }));
         }
+        /* CH-6: Regenerate sends this same ask again, by the reply's sid. */
+        if (started) keepAsk(sid, { text, history, q, opts });
         if (!started && r.text) say({ kind: 'holt', text: r.text });
         /* C-D4: stopped at the length cap. The words stand, and he says they are not all of it. */
         if (r.cut) say({ kind: 'holt', text: pick('reply_ran_long') });
@@ -2804,8 +2854,23 @@ export function CoachChatSheet({
         setThread((t) => takeBackReply(t, sid));
         return medicalStop(text);
       case 'offline':
-        /* The sheet went away mid-ask (`asking` aborted it) — there is nobody left to tell. */
-        if (r.aborted) return;
+        if (r.aborted) {
+          /* The sheet went away mid-ask (`asking` aborted it) — there is nobody left to tell. */
+          if (!stopped.current.has(ctl)) return;
+          /*
+           * CH-6: the athlete tapped Stop — their choice, not a fault, so no outage card. The words so far stay, with
+           * the reply controls; a fragment that says nothing goes ("Stopped." and Try again instead); ⛔ words the
+           * output scan stops go, and the medical stop stands in their place. Charged as a close is: `cancelled`.
+           */
+          const left = started ? afterStop(shown, text) : 'drop';
+          if (left === 'retract') {
+            setThread((t) => takeBackReply(t, sid));
+            return medicalStop(text);
+          }
+          if (left === 'keep') return keepAsk(sid, { text, history, q, opts });
+          if (started) setThread((t) => takeBackReply(t, sid));
+          return say({ kind: 'holt', text: ASK_STOPPED_LINE }, retryChip({ text, history, q, opts }));
+        }
         if (started) setThread((t) => cutOffReply(t, sid));
         /* C-D5: the sub-line says what happened — dropped mid-reply, never got through, or nothing back in time —
            and Try again sends the same ask. Sprint 1 (P-D2): "Not charged." under it when coach-ask refunded. */
@@ -2818,6 +2883,23 @@ export function CoachChatSheet({
    * athlete's consent, and only that one ask carries it (Coach-AI-Amendment-002). Everything else is
    * `tapChip`, unchanged. Declared after `askAloud` because it calls it.
    */
+  /* CH-6 Regenerate: that reply (and what followed it) goes, and the same ask is sent again — a credit, like asking. */
+  const regenerate = (sid: number) => {
+    const again = askOf.get(sid);
+    const back = withoutReply(thread, sid);
+    if (!again || !back || holding) return;
+    setThread(back);
+    void askAloud(again.text, again.history, again.q, again.opts);
+  };
+  /* CH-6 Edit and resend: the question goes back in the composer; `send` asks the new words in its place. */
+  const editQuestion = (sid: number) => {
+    const asked = questionOf(thread, sid);
+    if (!asked || holding) return;
+    setRewrite({ sid });
+    setDraft(asked.text);
+    composerInput.current?.focus();
+  };
+
   const onChip = (chip: Chip) => {
     if (chip.attach) {
       say({ kind: 'me', text: chip.label });
@@ -3111,6 +3193,10 @@ export function CoachChatSheet({
      carry their own controls. Derived every render on purpose — the thread is capped at 100 turns and a
      memo here would be a second copy that can go stale. */
   const blocks = layOut(thread);
+  /* CH-6: Regenerate and Edit sit under the last AI reply only, and only while nothing is running. */
+  const lastSid = holding ? null : lastReplySid(thread);
+  /* A Stop button takes the send button's place while an ask runs and the composer is empty. */
+  const stoppable = asksLive > 0 && !picture && !draft.trim() && !dictation.listening;
   /*
    * ══ A REOPEN SHOWS HIS HELLO, NOT THE BOTTOM OF HOME (kitchen-14) ══
    *
@@ -3606,6 +3692,8 @@ export function CoachChatSheet({
               );
             }
             if (b.kind === 'holt') {
+              const sid = b.sid;
+              const tooled = sid != null && sid === lastSid && askOf.has(sid);
               return (
                 <TurnEnter key={b.key}>
                   <HoltTurn
@@ -3620,6 +3708,11 @@ export function CoachChatSheet({
                     handoff={handoff}
                     kitchen={kitchen}
                     feedback={b.feedback}
+                    /* Bare handlers + the sid, never an arrow made here: the compiler lint reads an arrow built in
+                       render as maybe called in render, and Regenerate reaches `Date.now` (retryChip). */
+                    sid={sid}
+                    onRegenerate={tooled ? regenerate : undefined}
+                    onEdit={tooled && questionOf(thread, sid) ? editQuestion : undefined}
                   />
                 </TurnEnter>
               );
@@ -3692,6 +3785,22 @@ export function CoachChatSheet({
         ) : null}
         {/* kitchen-20 (QA 09-26): a long paste is counted as it nears the limit, and a paste past it SAYS it was
             cut — a 1,434-character recipe used to lose its last third without a word. */}
+        {rewrite ? (
+          <View style={styles.rewriteBar}>
+            <Text style={styles.rewriteText}>Editing your question. Send asks it again in place of the old one.</Text>
+            <Pressable
+              onPress={() => {
+                setRewrite(null);
+                setDraft('');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Stop editing"
+              hitSlop={8}
+            >
+              <EngravedIcon name="close" size={12} color={flColor.gray600} />
+            </Pressable>
+          </View>
+        ) : null}
         {draft.length >= COMPOSER_COUNT_FROM ? (
           <Text style={[styles.composerCount, draft.length >= COMPOSER_MAX && styles.composerCountFull]} accessibilityLiveRegion="polite">
             {draft.length >= COMPOSER_MAX
@@ -3747,7 +3856,19 @@ export function CoachChatSheet({
             onKeyPress={Platform.OS === 'web' ? sendOnEnter : undefined}
             accessibilityLabel="Message Holt"
           />
-          {micShown ? (
+          {stoppable ? (
+            <Pressable
+              onPress={stopAsks}
+              accessibilityRole="button"
+              accessibilityLabel="Stop Holt's reply"
+              accessibilityHint="He stops where he is. A reply he already started still uses its credit."
+              style={styles.sendWrap}
+            >
+              <View style={styles.sendOff}>
+                <StopGlyph color={flColor.bronze400} />
+              </View>
+            </Pressable>
+          ) : micShown ? (
             <Pressable
               onPress={dictation.listening ? dictation.stop : () => void dictation.start()}
               accessibilityRole="button"
@@ -4152,6 +4273,8 @@ type Block =
       answer: string | null;
       /** "Was this helpful?" — on an AI answer only (0269): `feedbackFor`. */
       feedback: TurnFeedback | null;
+      /** The coach-ask stream that wrote it (CH-6: Regenerate / Edit find the reply by it). */
+      sid?: number;
     }
   /** `answer` — for chips with no Holt line to hang from (Try again under an outage card, C-D5), the `me` turn
       after them, so they read as answered the same way attached chips do. */
@@ -4170,6 +4293,12 @@ type Block =
  * The ref is made once per output from the line's own stamp (`turnRef`), so it is the same on every render.
  */
 type TurnFeedback = { feature: 'chat' | 'kitchen' | 'author'; ref: string; after: 'words' | 'attached' };
+
+/** One coach-ask as Try again and Regenerate send it again (C-D5, CH-6). */
+type AskAgain = { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } };
+
+/** What Holt says when the athlete stopped him before his first word (CH-6) — Try again goes under it. */
+const ASK_STOPPED_LINE = 'Stopped.';
 
 function feedbackFor(t: Extract<Turn, { kind: 'holt' }>, attached: Turn[]): TurnFeedback | null {
   if (attached.some((x) => (x.kind === 'program' || x.kind === 'day') && x.authored === true)) {
@@ -4208,7 +4337,7 @@ function layOut(thread: Turn[]): Block[] {
         j += 1;
       }
       const next = thread[j];
-      out.push({ key: i, kind: 'holt', text: t.text, at: t.at, attached, answer: next?.kind === 'me' ? next.text : null, feedback: feedbackFor(t, attached) });
+      out.push({ key: i, kind: 'holt', text: t.text, at: t.at, attached, answer: next?.kind === 'me' ? next.text : null, feedback: feedbackFor(t, attached), sid: t.sid });
       i = j - 1;
       continue;
     }
@@ -4249,6 +4378,9 @@ function HoltTurn({
   handoff,
   kitchen,
   feedback,
+  sid,
+  onRegenerate,
+  onEdit,
 }: {
   text: string;
   at?: number;
@@ -4261,6 +4393,10 @@ function HoltTurn({
   kitchen: boolean;
   /** "Was this helpful?" on an AI answer (`feedbackFor`); null on every rulebook line. */
   feedback: TurnFeedback | null;
+  /** CH-6: Regenerate / Edit — on the last AI reply only (`lastReplySid`); absent everywhere else. Copy is on every AI reply. */
+  sid?: number;
+  onRegenerate?: (sid: number) => void;
+  onEdit?: (sid: number) => void;
 }) {
   const clock = clockOf(at);
   return (
@@ -4273,7 +4409,16 @@ function HoltTurn({
         <Text style={styles.holtEyebrow}>HOLT</Text>
         {/* Selectable, and his links open (AI audit C-D3) — `HoltWords`. */}
         <HoltWords text={text} style={[styles.holtText, !live && styles.holtTextPast]} />
-        {feedback?.after === 'words' ? <AiFeedback feature={feedback.feature} aiRef={feedback.ref} compact /> : null}
+        {feedback?.after === 'words' ? (
+          <View style={styles.replyTools}>
+            <ReplyTools
+              text={text}
+              onRegenerate={onRegenerate && sid != null ? () => onRegenerate(sid) : undefined}
+              onEdit={onEdit && sid != null ? () => onEdit(sid) : undefined}
+            />
+            <AiFeedback feature={feedback.feature} aiRef={feedback.ref} compact />
+          </View>
+        ) : null}
         {attached.length ? (
           <View style={styles.holtAttached}>
             {attached.map((t, i) => (
@@ -4401,6 +4546,49 @@ function MicGlyph({ color }: { color: string }) {
 
 /** Ink on the bronze send/stop button — Forge's lit bronze; on Alabaster the fill's own white. */
 const SEND_INK = forgeOr<string>(flColor.bronze300, flColor.onBronze);
+
+/**
+ * CH-6: the controls under a finished AI reply — Copy always; Regenerate and Edit question on the last one. The
+ * same small pill as the thumbs beside them (`AiFeedback`), from the same tokens, so both themes are covered.
+ */
+function ReplyTools({ text, onRegenerate, onEdit }: { text: string; onRegenerate?: () => void; onEdit?: () => void }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(t);
+  }, [copied]);
+  const copy = () => {
+    void Clipboard.setStringAsync(text).then(
+      () => setCopied(true),
+      () => undefined,
+    );
+  };
+  return (
+    <>
+      <ReplyTool label={copied ? 'Copied' : 'Copy'} a11y={copied ? 'Copied' : 'Copy Holt’s reply'} onPress={copy} />
+      {onRegenerate ? <ReplyTool label="Regenerate" a11y="Regenerate Holt’s reply" hint="Asks again. Uses a credit, like asking." onPress={onRegenerate} /> : null}
+      {onEdit ? <ReplyTool label="Edit question" a11y="Edit your question and send it again" onPress={onEdit} /> : null}
+    </>
+  );
+}
+
+function ReplyTool({ label, a11y, hint, onPress }: { label: string; a11y: string; hint?: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
+      accessibilityHint={hint}
+      style={({ pressed }) => [styles.replyTool, pressed && styles.replyToolPressed]}
+    >
+      <Text style={styles.replyToolText} accessibilityLiveRegion={label === 'Copied' ? 'polite' : undefined}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
 
 function StopGlyph({ color }: { color: string }) {
   return <EngravedIcon name="stop" size={14} color={color} />;
@@ -5832,6 +6020,19 @@ const styles = StyleSheet.create({
   holtAttached: { paddingTop: 6, gap: 12 },
   // "Was this helpful?" under a card Holt wrote — a step below the card so it reads as about the whole of it (0269).
   holtFeedback: { paddingTop: 4 },
+  /* CH-6 — the pill matches AiFeedback's, so the row reads as one set of controls in both themes. */
+  replyTools: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6, paddingTop: 4 },
+  replyTool: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: flRadius.sm,
+    borderWidth: 1,
+    borderColor: flColor.bronzeBorderSubtle,
+  },
+  replyToolPressed: { opacity: 0.7 },
+  replyToolText: { color: flText.tertiary, fontSize: 11.5, fontWeight: '600' },
+  rewriteBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 8 },
+  rewriteText: { flex: 1, fontSize: 11.5, lineHeight: 15, color: flColor.gray600 },
 
   /* ══ v2 LAYER 2 — THE ANSWER CONTROLS ══
      One vocabulary, five shapes: 48pt tall, 13px radius, never a full pill.

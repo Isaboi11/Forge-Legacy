@@ -79,7 +79,8 @@ test('spoken words take the typed path, so every guard and the model see them th
   // ...and while the composer holds only Kitchen Mode's "What can I make with " seed (2026-09-25).
   // ...and never while a picture waits to be sent — then the button is Send (PO 2026-09-27).
   assert.match(sheet, /const micShown = dictation\.available && !picture && \(!draft\.trim\(\) \|\| draft === KITCHEN_MAKE_SEED\);/);
-  assert.match(sheet, /\{micShown \? \(/);
+  // CH-6 (Sprint 3a): Stop takes the button first while an ask runs and the composer is empty; then the mic.
+  assert.match(sheet, /\{stoppable \? \([\s\S]{0,600}?\) : micShown \? \(/);
 });
 
 test('a refused mic permission is said in plain words, not a silent dead button', () => {
@@ -119,7 +120,7 @@ test('⚠ the streamed reply is ONE growing turn, cleared of `streaming` when it
 
 test('⚠ conversation memory is this conversation, eight turns, into both AI jobs', () => {
   // The eight-turn window (and the stopped-line drop, QA R2-F1) lives in the one builder, `askHistory`.
-  assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(t\);/);
+  assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(rewound\.current \?\? t\);/);
   assert.match(readFileSync(path.join(here, '../chat-history.ts'), 'utf8'), /export const CHAT_HISTORY_TURNS = 8;/);
   assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\), closeSignal\(\)\)/);
   assert.match(sheet, /streamCoachAsk\(\s*text,\s*history,\s*context,/);
