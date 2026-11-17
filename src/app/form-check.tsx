@@ -42,13 +42,30 @@ import {
   type FormRead,
 } from '@/domain/coach/form-check';
 import {
+  FORM_AGE_UNKNOWN_LINE,
+  FORM_BIRTH_YEAR_HELP,
+  FORM_HELD,
   FORM_MEDICAL_STOP,
   FORM_NO_READ,
   FORM_TRIM_MIN_MS,
+  FORM_UNDER_18_LINE,
+  formAgeGate,
+  formBirthYear,
   knownFromCoaching,
   trimWindow,
   viewLabel,
 } from '@/domain/coach/form-check-view';
+import { fetchNutritionProfile, saveBirthYear } from '@/data/nutrition-live';
+import {
+  AI_FEEDBACK_FAILED_LINE,
+  AI_FEEDBACK_IDLE,
+  aiFeedbackA11y,
+  aiFeedbackStep,
+  aiFeedbackWrites,
+  shownVote,
+  type AiFeedbackState,
+  type AiRating,
+} from '@/domain/ai/ai-feedback-core';
 import { skeletonBones, snapMarks } from '@/domain/coach/pose/pose-marks';
 import { measuredForSave } from '@/domain/coach/pose/pose-measure';
 import { coachingContent } from '@/domain/exercise-coaching/query-service';
@@ -199,6 +216,10 @@ type Stage =
   | { step: 'read'; r: ReadState }
   | { step: 'unreadable'; charged: boolean }
   | { step: 'stopped'; kicker: string; text: string }
+  /** The output scanner held the read back (Sprint 2, CH-2). */
+  | { step: 'held'; refunded: boolean }
+  /** 18+ (Sprint 2, FC-1): under 18, or no birth year yet — the field to add it is on this screen. */
+  | { step: 'age'; minor: boolean; refunded: boolean }
   | { step: 'credits' }
   | { step: 'not_entitled' }
   | { step: 'problem'; text: string };
@@ -231,6 +252,14 @@ export default function FormCheckScreen() {
   const cancelRef = useRef(false);
   /* Leaving the screen mid-read stops the request (Sprint 1, P-G3). Cancel only stops the screen — see `send`. */
   const closeSignal = useCloseSignal();
+  /* The last clip sent, so a read the server refused for a missing birth year can go again once it is added. */
+  const lastSend = useRef<{ clip: Picked; startMs: number; endMs: number } | null>(null);
+  /*
+   * ══ 18+ BEFORE THE CAMERA (Sprint 2, FC-1) ══ The function is the boundary (it refuses `under_18` / `age_unknown`
+   * from the server's own age); this reads the same birth year up front so nobody films a set only to be refused.
+   * A read that fails ('failed') blocks nothing here — the server still decides.
+   */
+  const [ageGate, setAgeGate] = useState<'loading' | 'adult' | 'minor' | 'unknown' | 'failed'>('loading');
 
   const canRead = formCheckAvailable();
 
@@ -243,6 +272,21 @@ export default function FormCheckScreen() {
       live = false;
     };
   }, [stage.step]);
+
+  useEffect(() => {
+    let live = true;
+    fetchNutritionProfile({ strict: true }).then(
+      (p) => {
+        if (live) setAgeGate(formAgeGate(p.birthYear));
+      },
+      () => {
+        if (live) setAgeGate('failed');
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'));
 
@@ -286,6 +330,7 @@ export default function FormCheckScreen() {
     /* Asked before a frame is pulled, so the wait is never for nothing (MHMDA consent to share). */
     if (!(await ensureConsent('ai_sharing'))) return setStage({ step: 'problem', text: AI_DECLINED_LINE });
     const chosen = lift;
+    lastSend.current = { clip, startMs, endMs };
     cancelRef.current = false;
     setLanded([]);
     setStage({ step: 'watching', phase: 0, lift: chosen });
@@ -348,6 +393,15 @@ export default function FormCheckScreen() {
           // 06b's own line for a form check; crisis / urgent / care keep the chat's routes word for word.
           text: res.route === 'crisis' ? CRISIS_STOP : res.route === 'urgent' ? URGENT_STOP : res.route === 'care' ? CARE_STOP : FORM_MEDICAL_STOP,
         });
+      /* Sprint 2: the output scanner held the read back; the age floor refused it. Each refunded on the server. */
+      case 'held':
+        return setStage({ step: 'held', refunded: res.refunded === true });
+      case 'under_18':
+        setAgeGate('minor');
+        return setStage({ step: 'age', minor: true, refunded: res.refunded === true });
+      case 'age_unknown':
+        setAgeGate('unknown');
+        return setStage({ step: 'age', minor: false, refunded: res.refunded === true });
       case 'out_of_credits':
         return setStage({ step: 'credits' });
       case 'not_entitled':
@@ -370,6 +424,16 @@ export default function FormCheckScreen() {
 
   const restart = () => setStage({ step: 'start' });
 
+  /* A birth year was added on the age state. A minor is told so; an adult's refused set goes again, or Start opens. */
+  const onBirthYear = (year: number) => {
+    const gate = formAgeGate(year);
+    setAgeGate(gate);
+    if (gate === 'minor') return setStage({ step: 'age', minor: true, refunded: false });
+    const again = lastSend.current;
+    if (stage.step === 'age' && again) return void send(again.clip, again.startMs, again.endMs);
+    return restart();
+  };
+
   // ── What to draw ─────────────────────────────────────────────────────────────
   if (!canRead) return <NotOnDevice onClose={close} />;
 
@@ -377,6 +441,31 @@ export default function FormCheckScreen() {
     return (
       <Shell onClose={close}>
         <CreditsState notEntitled premiumAi={false} onPlans={() => void openPlans()} />
+      </Shell>
+    );
+  }
+
+  /* 18+ (Sprint 2): refused by the server, or known before the camera opens. */
+  if (stage.step === 'age' || (stage.step === 'start' && (ageGate === 'minor' || ageGate === 'unknown'))) {
+    const minor = stage.step === 'age' ? stage.minor : ageGate === 'minor';
+    return (
+      <Shell onClose={close}>
+        {/* `age` is only ever set after a set was sent (the server refused it), so its clip is there to send again. */}
+        <AgeState minor={minor} refunded={stage.step === 'age' && stage.refunded} resend={stage.step === 'age'} onSaved={onBirthYear} />
+      </Shell>
+    );
+  }
+
+  if (stage.step === 'held') {
+    return (
+      <Shell onClose={close}>
+        <View style={s.center}>
+          <HoltSays text={FORM_HELD} />
+        </View>
+        <View style={[s.bottom, { paddingBottom: 26 + insets.bottom }]}>
+          <FcPrimary label="Try another clip" onPress={restart} />
+          {stage.refunded ? <Text style={s.foot}>{NOT_CHARGED}</Text> : null}
+        </View>
       </Shell>
     );
   }
@@ -871,7 +960,9 @@ function ReadStage({
 }) {
   const insets = useSafeAreaInsets();
   const { read } = r;
-  const [useful, setUseful] = useState<boolean | null>(null);
+  /* UX-4 (Sprint 2): the vote is `AiFeedback`'s own state machine (`ai-feedback-core`) — one vote, changed never
+     withdrawn, shown at once and put back with a line if the write fails — drawn as the .dc's Useful / Not useful. */
+  const [vote, setVote] = useState<AiFeedbackState>(AI_FEEDBACK_IDLE);
   const [saved, setSaved] = useState<'no' | 'saving' | 'yes' | 'failed'>('no');
   /* `at` is the frame on screen; it starts on Holt's marked frame and ‹ › step through the rest, so a mark
      that landed one frame off still gets the athlete to the moment he meant. */
@@ -890,14 +981,22 @@ function ReadStage({
       : [`Frame ${f.at + 1} of ${r.uris.length}`, r.times[f.at] != null ? secs(r.times[f.at]) : ''].filter(Boolean).join(' · ');
   const step = (d: number) => setFull((f) => (f ? { ...f, at: Math.max(0, Math.min(r.uris.length - 1, f.at + d)) } : f));
 
+  /*
+   * ══ "WAS THIS USEFUL?" (UX-4 · 0269 `ai_feedback`) ══
+   *
+   * The same rules as `AiFeedback` everywhere else, through the same core: a tap on the other one changes the vote, a
+   * second tap on the chosen one does nothing (the table has no delete — a changed mind is signal, an empty one is
+   * not), the choice shows at once and goes back with a line if the write failed. This screen keeps the .dc's own
+   * Useful / Not useful look (no second control). `form_checks.useful` keeps form history's copy of it.
+   */
   const thumbs = (v: boolean) => {
-    const next = useful === v ? null : v;
-    setUseful(next);
-    if (r.id) void setFormUseful(r.id, next);
-    /* 0269 — the same vote in `ai_feedback`, where every AI answer's votes are counted for /admin → AI health.
-       This screen keeps its own designed Useful / Not useful (no second control). A vote taken back here stays
-       as it was there: that table has no delete, by design — a changed vote is a change, an empty one is not. */
-    if (next != null) void rateAiOutput({ feature: 'form_check', ref: r.ref, rating: next ? 1 : -1 });
+    const rating: AiRating = v ? 1 : -1;
+    if (!aiFeedbackWrites(vote, rating)) return;
+    setVote((now) => aiFeedbackStep(now, { type: 'tap', rating }));
+    if (r.id) void setFormUseful(r.id, v);
+    void rateAiOutput({ feature: 'form_check', ref: r.ref, rating }).then((ok) =>
+      setVote((now) => aiFeedbackStep(now, { type: ok ? 'saved' : 'failed', rating })),
+    );
   };
 
   const save = async () => {
@@ -994,9 +1093,17 @@ function ReadStage({
         <View style={s.actions}>
           <View style={s.fbRow}>
             {[true, false].map((v) => {
-              const on = useful === v;
+              const a11y = aiFeedbackA11y(vote, v ? 1 : -1);
+              const on = shownVote(vote) === (v ? 1 : -1);
               return (
-                <Pressable key={String(v)} onPress={() => thumbs(v)} style={[s.fb, on && s.chipOn]} accessibilityRole="button" accessibilityState={{ selected: on }}>
+                <Pressable
+                  key={String(v)}
+                  onPress={() => thumbs(v)}
+                  style={[s.fb, on && s.chipOn]}
+                  accessibilityRole="button"
+                  accessibilityLabel={v ? 'Useful' : 'Not useful'}
+                  accessibilityState={{ selected: a11y.selected, busy: a11y.busy }}
+                >
                   <View style={v ? null : s.flipY}>
                     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={on ? C.brz : C.ink2} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                       <Path d="M7 10v10H4V10zM7 10l4-7c1.5 0 2.5 1 2.2 2.6L12.6 9H19a2 2 0 0 1 2 2.3l-1.2 6.5A2.5 2.5 0 0 1 17.3 20H7" />
@@ -1007,6 +1114,11 @@ function ReadStage({
               );
             })}
           </View>
+          {vote.failed ? (
+            <Text style={s.foot} accessibilityLiveRegion="polite">
+              {AI_FEEDBACK_FAILED_LINE}
+            </Text>
+          ) : null}
           <FcPrimary label="Ask Holt about this" onPress={() => onAsk(askText())} />
           {r.id ? (
             <FcSecondary
@@ -1090,6 +1202,62 @@ function CreditsState({ notEntitled, premiumAi, onPlans }: { notEntitled: boolea
         </View>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * 18+ (AI Road to 10 Sprint 2, FC-1). Under 18: one line, no way round it here. No birth year: the field to add it,
+ * saved to `profiles.birth_year` — the same field Nutrition → Targets keeps, which hides it behind sex and a weigh-in,
+ * so this screen asks itself. `resend`: a set the server refused for want of it goes again once it is saved.
+ */
+function AgeState({ minor, refunded, resend, onSaved }: { minor: boolean; refunded: boolean; resend: boolean; onSaved: (year: number) => void }) {
+  const insets = useSafeAreaInsets();
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState<'idle' | 'saving' | 'failed'>('idle');
+  const year = formBirthYear(text);
+  const save = async () => {
+    if (year == null || saving === 'saving') return;
+    setSaving('saving');
+    try {
+      await saveBirthYear(year);
+      setSaving('idle');
+      onSaved(year);
+    } catch {
+      setSaving('failed');
+    }
+  };
+  return (
+    <>
+      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets style={s.flex} contentContainerStyle={[s.center, s.gap22]} keyboardShouldPersistTaps="handled">
+        <HoltSays text={minor ? FORM_UNDER_18_LINE : FORM_AGE_UNKNOWN_LINE} />
+        {minor ? null : (
+          <View style={s.group}>
+            <Text style={s.label}>BIRTH YEAR</Text>
+            <TextInput
+              value={text}
+              onChangeText={(v) => setText(v.replace(/[^0-9]/g, '').slice(0, 4))}
+              placeholder="YYYY"
+              placeholderTextColor={C.ink3}
+              keyboardType="number-pad"
+              maxLength={4}
+              returnKeyType="done"
+              onSubmitEditing={() => void save()}
+              style={s.note}
+              accessibilityLabel="Birth year"
+            />
+            <Text style={s.hint} accessibilityLiveRegion="polite">
+              {saving === 'failed' ? "Couldn't save that. Check your connection and try again." : text.length === 4 && year == null ? 'Enter a four-digit year.' : FORM_BIRTH_YEAR_HELP}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+      <View style={[s.bottom, { paddingBottom: 26 + insets.bottom }]}>
+        {minor ? null : (
+          <FcPrimary label={saving === 'saving' ? 'Saving…' : resend ? 'Save and read my set' : 'Save'} disabled={year == null || saving === 'saving'} onPress={() => void save()} />
+        )}
+        {refunded ? <Text style={s.foot}>{NOT_CHARGED}</Text> : null}
+      </View>
+    </>
   );
 }
 

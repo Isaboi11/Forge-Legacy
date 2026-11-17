@@ -277,6 +277,83 @@ export function capFrameSizes(raw: unknown, frameCount: number): [number, number
 }
 
 /**
+ * ══ HOW FAR APART THE FRAMES ARE — SAID FROM WHAT WAS SENT (AI Road to 10 Sprint 2, FC-1 · audit V-D3, V-D4) ══
+ *
+ * The cached system block used to say the frames are "about a third of a second apart, so every rep is covered by
+ * several frames in a row". That was true of the 09-29 dense sampling only: build 11's body tracking sent 6–10
+ * hand-picked moments, and a long trim at the 40-frame cap is ~0.75 s apart. A wrong spacing claim skews rep counts
+ * and tempo. So the block now says only that the labels carry the timestamps, and THIS line — computed from the
+ * times that actually arrived, per request, in the user turn — says what the spacing is. Null when no times came
+ * (an older app): then nothing is claimed.
+ */
+export function formSpacingLine(times: readonly number[] | null | undefined): string | null {
+  if (!times || times.length < 2) return null;
+  const gaps: number[] = [];
+  for (let i = 1; i < times.length; i += 1) gaps.push(times[i] - times[i - 1]);
+  const sorted = [...gaps].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const s = (ms: number) => `${Number((Math.max(0, ms) / 1000).toFixed(2))} s`;
+  // Even enough to describe by its median: dense sampling, including frames nudged onto a rep's moment (pose-frames).
+  const even = median > 0 && sorted[sorted.length - 1] <= median * 1.75 && sorted[0] >= median * 0.4;
+  if (even) {
+    return median <= 700
+      ? `The frames are evenly spaced, about ${s(median)} apart, so each rep is covered by several frames in a row.`
+      : `The frames are evenly spaced, about ${s(median)} apart — a rep may fall between two of them, so use the timestamps.`;
+  }
+  return `The frames are not evenly spaced (from ${s(sorted[0])} to ${s(sorted[sorted.length - 1])} apart), so judge timing from the timestamps, not from the frame count.`;
+}
+
+/** What goes after the frames in the user turn — the ONE builder, used by the function and by `scripts/form-check-eval.mjs`. */
+export interface FormUserParts {
+  lift: string;
+  focus?: readonly string[];
+  note?: string;
+  known?: string;
+  last?: FormLast | null;
+  /** `poseFactLines(pose)` — the measured block, when the phone sent one. */
+  measured?: readonly string[];
+  /** `ageLine(…)` — the server's age line (P-G8). */
+  profile?: string | null;
+  /** The times that were sent, for {@link formSpacingLine}. */
+  times?: readonly number[] | null;
+}
+
+/**
+ * The text block after the frames: the lift, how far apart the frames are, the athlete's focus and note (their own
+ * words, labelled so), the library's notes, the last read, the measured facts, the age. Order and wording are the
+ * function's; the eval calls this same function so a run mirrors production exactly.
+ */
+export function formUserText(p: FormUserParts): string {
+  const spacing = formSpacingLine(p.times);
+  const focus = p.focus ?? [];
+  const measured = p.measured ?? [];
+  return `Those frames are one set of: ${p.lift}. They are in time order.${spacing ? ` ${spacing}` : ''}${
+    focus.length ? `\n\nLook especially at: ${focus.join(', ')}.` : ''
+  }${p.note ? `\n\nThe athlete says: "${p.note}"` : ''}${
+    p.known ? `\n\nCoaching notes for this lift from the app's library (reference only):\n${p.known}` : ''
+  }${p.last ? `\n\nLast saved read of this lift (${p.last.date}): ${p.last.fix}` : ''}${
+    measured.length ? `\n\n${measured.join('\n')}` : ''
+  }${p.profile ? `\n\n${p.profile}` : ''}\n\nAnswer with the JSON object only.`;
+}
+
+/**
+ * ══ 18+ (AI Road to 10 Sprint 2, FC-1 · Plan §1: "Form check: no age floor" → 18+, legal caution) ══
+ *
+ * The function refuses before the model, from the SERVER's age (`coach_ai_reserve`, from `profiles.birth_year`): a
+ * minor → `under_18`; no birth year → `age_unknown` (fail closed, Sprint 0's rule for age). Both are settled `guarded`
+ * and refunded, with HTTP 403. An app before Sprint 2 shows its generic "broke on my end" for them.
+ */
+export const FORM_UNDER_18 = 'under_18';
+export const FORM_AGE_UNKNOWN = 'age_unknown';
+
+/** Every line of a read a person would see — what the output scanner reads (`scanTexts`, Sprint 2 CH-2). */
+export function formReadTexts(read: FormRead): string[] {
+  return [read.viewLine, ...read.looksGood, ...read.fix, read.cue, read.encourage, read.progress, read.drill, ...read.marks.map((m) => m.shows)].filter(
+    (s): s is string => typeof s === 'string' && s.length > 0,
+  );
+}
+
+/**
  * "Frame 3 of 10 (2.5 s in, 432 x 768 px):" — the label that goes before each still in the user turn.
  * With body tracking, `tag` names the rep and moment the phone measured ("rep 1 bottom", plan §5.4), so
  * Holt can pick the frame for a mark from what it IS rather than from what it looks like.
