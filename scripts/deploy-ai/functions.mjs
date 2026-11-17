@@ -70,7 +70,7 @@ export const FUNCTIONS = {
     verifyJwt: true,
     ai: true,
     probe: { options: 200, post: 401 },
-    tests: ['src/domain/coach/__tests__/coach-form-check-source.test.mjs', 'src/domain/coach/__tests__/training-gaps.test.mjs', 'src/domain/coach/__tests__/form-check-sprint2.test.mjs', MEDICAL, ...META],
+    tests: ['src/domain/coach/__tests__/coach-form-check-source.test.mjs', 'src/domain/coach/__tests__/training-gaps.test.mjs', 'src/domain/coach/__tests__/form-check-sprint2.test.mjs', 'src/domain/coach/__tests__/form-check-frame-refs.test.mjs', MEDICAL, ...META],
     suites: ['form-check'],
   },
   'coach-kitchen': {

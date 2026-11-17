@@ -406,6 +406,27 @@ function sentences(line: string): string[] {
         .map((s) => s.trim())
         .filter(Boolean);
 }
+const FRAME_REF = /\b(?:frames?|F)\s*#?\d+(?:\s*(?:[-\u2013\u2014]|to|and|&)\s*(?:frames?\s*|F\s*)?#?\d+)*\b/i;
+export function withoutFrameRefs(sentence: string): string | null {
+    if (!FRAME_REF.test(sentence))
+        return sentence;
+    const end = /[.!?]$/.test(sentence) ? sentence.slice(-1) : '';
+    let s = end ? sentence.slice(0, -1) : sentence;
+    s = s.replace(/\s*\([^()]*\)/g, (m) => (FRAME_REF.test(m) ? '' : m));
+    if (FRAME_REF.test(s)) {
+        const at = s.search(FRAME_REF);
+        const cut = Math.max(s.lastIndexOf(',', at), s.lastIndexOf(';', at), s.lastIndexOf(' \u2014 ', at), s.lastIndexOf(' - ', at));
+        if (cut > 0 && !FRAME_REF.test(s.slice(0, cut)))
+            s = s.slice(0, cut);
+    }
+    if (FRAME_REF.test(s)) {
+        s = s.replace(new RegExp(`\\s*(?:(?:visible|seen|shown|clearest|best)\\s+)?(?:around|at|in|on|from|by)\\s+(?:the\\s+)?${FRAME_REF.source}`, 'gi'), '');
+    }
+    s = s.replace(/\s+([,;:])/g, '$1').replace(/[\s,;:\u2014-]+$/, '').trim();
+    if (!s || FRAME_REF.test(s) || s.length < 12)
+        return null;
+    return `${s}${end}`;
+}
 function cleanLine(raw: unknown): string {
     if (typeof raw !== 'string')
         return '';
@@ -414,7 +435,11 @@ function cleanLine(raw: unknown): string {
         return '';
     const kept: string[] = [];
     let used = 0;
-    for (const s of sentences(flat).filter((x) => !isBannedSentence(x))) {
+    const clean = sentences(flat)
+        .filter((x) => !isBannedSentence(x))
+        .map(withoutFrameRefs)
+        .filter((x): x is string => x !== null);
+    for (const s of clean) {
         if (used + s.length + (kept.length ? 1 : 0) > FORM_LINE_CHARS) {
             if (!kept.length) {
                 const cut = s.slice(0, FORM_LINE_CHARS - 1);
