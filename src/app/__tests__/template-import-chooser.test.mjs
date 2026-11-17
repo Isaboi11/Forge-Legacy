@@ -35,3 +35,16 @@ test('the picture row is Premium AI only, hidden rather than locked, like Build 
   assert.match(SHEET, /const photoOn = PHOTO_IMPORT_LIVE && premiumAi;/);
   assert.match(SHEET, /\{photoOn \? \(\s*<StartOptionRow\s*title="Upload a picture"/);
 });
+
+/* AI audit 2026-11-16, V-D7: Create New promised "upload a picture" to everyone; only Premium AI can. No upsell line
+   (photo import is pay-only, and MA10 allows one seller nudge). */
+const CREATE_NEW = read('../../components/forge/compositions/CreateNewSheet.tsx');
+
+test('Create New only mentions a picture to Premium AI; everyone else is told to paste or type', () => {
+  assert.match(CREATE_NEW, /const premiumAi = usePremiumAi\(\);\s*const photoOn = PHOTO_IMPORT_LIVE && premiumAi;/);
+  assert.match(
+    CREATE_NEW,
+    /title="Import Workout Template"\s*sub=\{photoOn \? 'Paste a workout, or upload a picture of one\.' : 'Paste or type a workout\.'\}/,
+  );
+  assert.doesNotMatch(CREATE_NEW, /sub="[^"]*(picture|photo)[^"]*"\s*icon=\{ICON\.importProgram\}/, 'no picture promise outside the photoOn test');
+});

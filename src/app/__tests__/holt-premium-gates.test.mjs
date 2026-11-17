@@ -11,16 +11,43 @@ const chat = read('../../components/forge/CoachChatSheet.tsx');
 const wizard = read('../coach.tsx');
 const detail = read('../program/[id].tsx');
 
-test('H18 — the allowance is spent when he builds, in the chat and in the wizard, and a refusal stops the build', () => {
-  assert.match(chat, /setBusy\('building'\);[\s\S]{0,1400}const spend = await consumeHoltAllowance\(kind\);/);
-  assert.match(chat, /if \(mode_ === 'day' && !\(await payHolt\('day'\)\)\) return;/);
+/** `advance` — the chat's build — from its declaration to the next top-level declaration after it. */
+const advance = chat.slice(chat.indexOf('const advance = useCallback('), chat.indexOf('const askedAboutReplacing'));
+/** One top-level chat function, from its declaration to the next one. */
+const fn = (head) => {
+  const at = chat.indexOf(head);
+  assert.ok(at > 0, `${head} not found`);
+  return chat.slice(at, chat.indexOf('\n  const ', at + head.length));
+};
+
+test('H18 — the allowance is spent by one payer, in the chat and in the wizard, and a refusal stops the build', () => {
+  assert.match(chat, /const payHolt = useCallback\(\n\s+async \(kind: 'day' \| 'program', offerWeek = false\): Promise<boolean> => \{\n\s+const spend = await consumeHoltAllowance\(kind\);/);
+  assert.equal(chat.match(/consumeHoltAllowance\(/g)?.length, 1, 'one spend in the chat, through payHolt');
   const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
   assert.match(build, /const spend = await consumeHoltAllowance\(kind\);/);
-  assert.match(build, /if \(mode === 'day' && !\(await pay\('day'\)\)\) \{\n\s+setBusy\(false\);/);
+});
+
+test('B-D4 — a day pays once it EXISTS: never before the build, never for one he could not put together', () => {
+  // The chat: both day paths — the one he wrote from their words and the rulebook's — pay before the draft.
+  assert.equal(advance.match(/if \(!\(await payHolt\('day'\)\)\) return;/g)?.length, 2);
+  assert.doesNotMatch(advance, /mode_ === 'day' && !\(await payHolt\('day'\)\)/, 'paying before the build was the bug');
+  const written = advance.slice(advance.indexOf("if (written && mode_ === 'day') {"));
+  assert.ok(written.indexOf("if (!(await payHolt('day'))) return;") < written.indexOf('await saveWorkoutDraft('));
+  const rulebook = advance.slice(advance.indexOf('const r = buildDayWorkout(dayReq'));
+  const thin = rulebook.indexOf('if (thin) {');
+  const pays = rulebook.indexOf("if (!(await payHolt('day'))) return;");
+  assert.ok(thin > 0 && thin < pays, 'a thin day is answered before anything is spent');
+  assert.ok(pays < rulebook.indexOf('await saveWorkoutDraft('));
+  // The wizard: after the empty-day refusal, before the card.
+  const wbuild = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('const onApply = async'));
+  assert.doesNotMatch(wbuild, /mode === 'day' && !\(await pay\('day'\)\)/);
+  const day = wbuild.slice(wbuild.indexOf('const res = buildDayWorkout('));
+  assert.ok(day.indexOf('if (res.day.main.length === 0) {') < day.indexOf("if (!(await pay('day'))) return;"));
+  assert.ok(day.indexOf("if (!(await pay('day'))) return;") < day.indexOf("kind: 'day',"));
 });
 
 test('G4 — an unreadable spend answer stops a capped athlete with a retry, in the chat and in the wizard', () => {
-  const pay = chat.slice(chat.indexOf('const payHolt = async'), chat.indexOf('const payHolt = async') + 900);
+  const pay = chat.slice(chat.indexOf('const payHolt = useCallback('), chat.indexOf('const payHolt = useCallback(') + 900);
   assert.match(pay, /const verdict = holtSpendVerdict\(spend, gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;/);
   assert.match(pay, /if \(verdict === 'retry'\) \{\n\s+say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return false;/);
   assert.doesNotMatch(pay, /if \(!spend \|\| spend\.allowed\) return true;/, 'a null building anyway was the bug');
@@ -30,14 +57,39 @@ test('G4 — an unreadable spend answer stops a capped athlete with a retry, in 
 });
 
 test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more, in the chat and in the wizard', () => {
-  assert.match(chat, /const payForBlock = async \(structure: ProgramStructure\): Promise<boolean> => \{\n\s+if \(!earnsStructuredDevelopmentCredit\(structure\)\) return true;/);
-  // Both chat paths pay before the draft is saved: the block he wrote and the rulebook's.
-  assert.equal(chat.match(/if \(!\(await payForBlock\(structure\)\)\) return;/g)?.length, 2);
+  assert.match(fn('const payToKeep = '), /if \(built\?\.kind !== 'program' \|\| !earnsStructuredDevelopmentCredit\(built\.structure\)\) return Promise\.resolve\(true\);/);
   assert.doesNotMatch(chat, /consumeHoltAllowance\(mode_ === 'day' \? 'day' : 'program'\)/, 'every non-day build spending the program was the bug');
-  assert.match(wizard, /if \(earnsStructuredDevelopmentCredit\(structure\) && !\(await pay\('program'\)\)\) return;/);
+  assert.match(wizard, /if \(earnsStructuredDevelopmentCredit\(structure\) && !\(await keepLedger\(structure, \(\) => pay\('program'\)\)\)\) \{/);
   // The three block doors ask by length, never the Holt program outright.
   assert.equal(chat.match(/blockDoorRefuses\(/g)?.length, 3, 'its three doors');
   assert.doesNotMatch(chat, /guard\('holt_programs'\)/);
+});
+
+test('B-D1 — a Holt block is paid for when it is KEPT, before anything is written, never when he builds it', () => {
+  // Building spends nothing — so "Ask me again", which only builds again, spends nothing either.
+  assert.doesNotMatch(advance, /payHolt\('program'/, 'a build that spends the program is how a rebuild burned it');
+  assert.doesNotMatch(advance, /payForBlock/);
+  assert.doesNotMatch(fn('const rebuild = '), /payHolt|payToKeep|consumeHoltAllowance/);
+  // At the build, the Builder draft is written only when keeping it owes nothing more (else it was a free copy).
+  assert.equal(advance.match(/saveProgramDraft\(/g)?.length, 2);
+  assert.equal(advance.match(/if \(draftNow\(structure\)\)/g)?.length, 2, 'both build paths stage the draft through draftNow');
+  assert.match(advance, /const draftNow = \(structure: ProgramStructure\): boolean =>\n\s+!earnsStructuredDevelopmentCredit\(structure\) \|\| holtUncapped\(gates\('holt_programs'\)\);/);
+  // Every keep pays first, through the ledger, so the same build never pays twice.
+  assert.match(fn('const payToKeep = '), /return keepLedger\(built\.structure, \(\) => payHolt\('program', offerWeek\)\);/);
+  const start = fn('const reallyStart = ');
+  assert.ok(start.indexOf('if (!(await payToKeep())) return;') > 0, 'Start pays');
+  assert.ok(start.indexOf('if (!(await payToKeep())) return;') < start.indexOf('await createProgram(built.structure)'), 'Start pays BEFORE the row exists');
+  const builder = fn('const keepInBuilder = ');
+  assert.ok(builder.indexOf('if (!(await payToKeep())) return;') > 0, 'Save to the Builder pays');
+  assert.ok(builder.indexOf('if (!(await payToKeep())) return;') < builder.indexOf('await saveProgramDraft(draft)'), 'and before the draft is written');
+  assert.match(fn('const saveForLater = '), /if \(built\.kind === 'program'\) \{\n\s+await keepInBuilder\(\);/);
+  // The preview's "Final touches" is the same keep, not a second door straight into the Builder.
+  assert.match(chat, /if \(built\?\.kind === 'program'\) \{\n\s+saveForLater\(\);\n\s+return;\n\s+\}\n\s+handOff\(\);\n\s+router\.push\(built\?\.kind === 'day' \? '\/workout-builder' : '\/program-builder'\);/);
+  // The wizard: back-and-build costs nothing; Final touches pays, then writes the draft.
+  const wbuild = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('const onApply = async'));
+  assert.doesNotMatch(wbuild.replace(/apply: async \(\) => \{[\s\S]*?\n {10}\},/g, ''), /pay\('program'\)/, 'only `apply` pays for a block');
+  const apply = wbuild.slice(wbuild.indexOf("kind: 'program',"));
+  assert.ok(apply.indexOf("keepLedger(structure, () => pay('program'))") < apply.indexOf('await saveProgramDraft('));
 });
 
 test('H19 — every chat door to an edit lands in beginEdit, and beginEdit asks Premium AI first', () => {

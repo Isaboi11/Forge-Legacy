@@ -30,20 +30,23 @@ import { Button } from '@/components/forge/composites/Button';
 import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { HoltWords } from '@/components/forge/HoltWords';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
 import { consentForRoute } from '@/lib/consent';
 import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
-import { holtBlockDoor, holtSpendVerdict } from '@/domain/entitlement/caps-core';
+import { holtBlockDoor, holtKeepLedger, holtSpendVerdict, holtUncapped } from '@/domain/entitlement/caps-core';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
-import { interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
+import { fetchCoachAiBalance, interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
 import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
+import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
+import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
@@ -183,7 +186,7 @@ import { authorLive } from '@/data/coach-author-live';
 import { authorFallbackLine, type AuthoredPlan, type AuthorRequest } from '@/domain/coach/author';
 import { authoredLine, authorFacts, validateAuthored, type ValidatedPlan } from '@/domain/coach/author-validate';
 import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
-import { endsOnRace, firstWeeksOf, RACE_WEEK_LINE, raceWeekShape, spliceLiftDays, stopsShortLine } from '@/domain/coach/author-race';
+import { endsOnRace, firstWeeksOf, placeWrittenLifts, RACE_WEEK_LINE, raceWeekShape, stopsShortLine } from '@/domain/coach/author-race';
 import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
@@ -243,9 +246,11 @@ import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
  * 4. A refusal is bronze and carries the alternative. A failure is red and says it was the app.
  * 5. The mark is the only bronze that moves — it warms while thinking, sweeps while building.
  *
- * ⚠ NO MODEL IS INVOLVED. Every question comes from `chat-core`, which is the shipped wizard's own
- * question set; every program comes from `assemble()`. The paid tier replaces exactly one function
- * (`interpret`) and nothing on this screen changes.
+ * ⚠ THE TAPS INVOLVE NO MODEL; TYPING DOES (Premium AI). Every tapped question comes from `chat-core`, the
+ * shipped wizard's own question set, and a tapped build from `assemble()`. A typed line is metered and goes
+ * to a model through an Edge Function: a question streams from `coach-ask` (`askAloud`), anything else is
+ * placed by `coach-interpret` (`understand`), and a typed build is written by `coach-author`, checked by the
+ * same gates (AI audit 11-16, C-I7 — this header said "no model is involved" long after that stopped being true).
  */
 /** PROMPT §2.4 — the sheet's top inset. The thread's bottom reserve is a share of `window - SHEET_TOP`. */
 const SHEET_TOP = 64;
@@ -511,6 +516,8 @@ export function CoachChatSheet({
    * `workout_templates`, and neither can be reconstructed from a card that only carries strings.
    */
   const [built, setBuilt] = useState<Built | null>(null);
+  /** Which builds have been paid for at their keep — once each, however many times they are kept (B-D1). */
+  const [keepLedger] = useState(() => holtKeepLedger());
   /**
    * Naming what a Start is about to end (W-29). Null until there is genuinely something to lose — or until it
    * is UNKNOWN whether there is: `name: null` asks the same question without a name (B14 / UX-006).
@@ -775,6 +782,36 @@ export function CoachChatSheet({
 
   /* ── the turn cycle ────────────────────────────────────────────────────────────────────────────── */
 
+  /*
+   * ⚠ THE FREE ALLOWANCE IS SPENT ON WHAT HE ACTUALLY HANDS OVER (PO 11-08 launch QA, H18; AI audit 11-16, B-D1/B-D4).
+   * `consume_holt_allowance` is the only thing that moves the counters the doors' `guard` reads. Walking away from the
+   * questions costs nothing; so does a build he could not finish (a thin day) and a block nobody kept. A DAY pays once
+   * it exists. A BLOCK pays at the keep (Start / Save to the Builder, `payToKeep`), once — "Ask me again" used to spend
+   * Free's only program before they had kept anything. A refusal is the server's answer (another device spent the last
+   * one). A null is an unreadable answer, and it fails CLOSED (sweep G4): it pays only for an athlete with no ceiling on
+   * that allowance — anyone else is asked to try again, never sold anything (M-7 §10). See `holtSpendVerdict`.
+   */
+  const payHolt = useCallback(
+    async (kind: 'day' | 'program', offerWeek = false): Promise<boolean> => {
+      const spend = await consumeHoltAllowance(kind);
+      const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
+      if (verdict === 'build') return true;
+      setBusy(null);
+      if (verdict === 'retry') {
+        say({ kind: 'holt', text: PLAN_UNCHECKED });
+        return false;
+      }
+      /* A full block refused while a week is still free: the week is the door that can help, with every answer kept. */
+      const week = offerWeek && gates('short_programs').ok ? [{ label: JUST_A_WEEK, patch: { weeks: 1 } }] : [];
+      say(
+        { kind: 'holt', text: kind === 'day' ? 'You’ve used this month’s free days from me. Premium makes them unlimited.' : 'You’ve used the free program I can build on your plan. Premium makes them unlimited.' },
+        { kind: 'chips', chips: [...week, { label: 'See Premium', patch: {}, goTo: '/subscription?from=gate' }] },
+      );
+      return false;
+    },
+    [say, gates],
+  );
+
   const advance = useCallback(
     /* `lead` replaces the ack beat when the answer was a DECISION rather than information — "Replace it"
        is not something to thank anybody for (holtai-22). */
@@ -912,44 +949,14 @@ export function CoachChatSheet({
         }
 
         setBusy('building');
-        /*
-         * ⚠ THE FREE ALLOWANCE IS SPENT WHEN HE ACTUALLY BUILDS (PO 11-08 launch QA, H18). `consume_holt_allowance`
-         * is the only thing that moves the counters the doors' `guard` reads, and nothing called it — so a Free athlete's
-         * "1 program, 2 days a month" never ran out. Here and not at the door: walking away from the questions costs
-         * nothing. A refusal is the server's answer (another device spent the last one). A null is an unreadable answer,
-         * and it fails CLOSED (sweep G4): it builds only for an athlete with no ceiling on that allowance — anyone else
-         * is asked to try again, never sold anything (M-7 §10). See `holtSpendVerdict`.
-         *
-         * A day pays here. A block pays once its length is the engine's word (`payForBlock`), because a week is not the
-         * Holt program (MA4-D5, pricing sweep P6) — every non-day build used to spend it.
-         */
-        const payHolt = async (kind: 'day' | 'program', offerWeek = false): Promise<boolean> => {
-          const spend = await consumeHoltAllowance(kind);
-          const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
-          if (verdict === 'build') return true;
-          setBusy(null);
-          if (verdict === 'retry') {
-            say({ kind: 'holt', text: PLAN_UNCHECKED });
-            return false;
-          }
-          /* A full block refused while a week is still free: the week is the door that can help, with every answer kept. */
-          const week = offerWeek && gates('short_programs').ok ? [{ label: JUST_A_WEEK, patch: { weeks: 1 } }] : [];
-          say(
-            { kind: 'holt', text: kind === 'day' ? 'You’ve used this month’s free days from me. Premium makes them unlimited.' : 'You’ve used the free program I can build on your plan. Premium makes them unlimited.' },
-            { kind: 'chips', chips: [...week, { label: 'See Premium', patch: {}, goTo: '/subscription?from=gate' }] },
-          );
-          return false;
-        };
-        if (mode_ === 'day' && !(await payHolt('day'))) return;
+        /* `payHolt` (above `advance`) says what each build spends and when — a day pays once it exists (B-D4). */
         await pause(650);
         const c = completeFor(merged, mode_);
-        /** Four weeks or more spends the Holt program; shorter spends `short_programs`, at the save (MA4-D5). */
-        const payForBlock = async (structure: ProgramStructure): Promise<boolean> => {
-          if (!earnsStructuredDevelopmentCredit(structure)) return true;
-          setBusy('building');
-          /* No week offered for a race: its length is the calendar's, not a choice. */
-          return payHolt('program', !isEnduranceGoal(c.goal));
-        };
+        /** A block's Builder draft is written now only when keeping it owes nothing more. A capped athlete's Holt
+            program (four weeks or more, MA4-D5) waits for the keep and its payment (`payToKeep`, B-D1): written here,
+            it was the whole program sitting in the Builder before anything was paid for. */
+        const draftNow = (structure: ProgramStructure): boolean =>
+          !earnsStructuredDevelopmentCredit(structure) || holtUncapped(gates('holt_programs'));
         /* Resolved at the boundary and handed down — see the note on the same call in `coach.tsx`. The
            chat and the wizard must build the same program from the same answers, so both paths get it. */
         const [learned, recent] = await Promise.all([fetchLearnedPreferences(), fetchRecentWork()]);
@@ -964,11 +971,12 @@ export function CoachChatSheet({
          * through to the rulebook below, and he says that it did.
          */
         const roomLine = roomAssumed.current && isRoom(c.environment) ? roomAssumedLine(c.environment) : null;
-        /* Held in an object because `askHolt` fills it from inside a closure, and a `let` assigned there is
+        /* Held in an object because `holtWrites` fills it from inside a closure, and a `let` assigned there is
            one TypeScript still believes is null out here. */
         const holt: { written: { plan: AuthoredPlan; valid: ValidatedPlan } | null; fellBack: string | null } = { written: null, fellBack: null };
-        /** Ask Holt to write it. `false` means a stop card went up and nothing more should be said. */
-        const askHolt = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
+        /** Ask Holt to write it (`coach-author`). `false` means a stop card went up and nothing more should be said.
+            ⚠ Not `askHolt` — that is the imported coach-ask stream, and this used to shadow it (AI audit C-I7). */
+        const holtWrites = async (kind: 'day' | 'program', days: number | null, weeks: number | null, beside: AuthorRequest['beside']): Promise<boolean> => {
           const athlete = {
             experience: c.experience.lifting,
             environment: c.environment,
@@ -1008,13 +1016,15 @@ export function CoachChatSheet({
         };
         if (typed.current.length && !isEnduranceGoal(c.goal)) {
           const kind = mode_ === 'day' ? 'day' : 'program';
-          const ok = await askHolt(kind, kind === 'program' ? c.daysPerWeek : null, kind === 'program' ? (c.weeks ?? defaultWeeksFor(c.goal)) : null, null);
+          const ok = await holtWrites(kind, kind === 'program' ? c.daysPerWeek : null, kind === 'program' ? (c.weeks ?? defaultWeeksFor(c.goal)) : null, null);
           if (!ok) return;
         }
         const written = holt.written;
 
         if (written && mode_ === 'day') {
           const day = written.valid.days[0];
+          /* The day exists, so now it pays (B-D4) — and before the draft is written. */
+          if (!(await payHolt('day'))) return;
           setBusy(null);
           await saveWorkoutDraft({ name: day.name, warmup: day.warmup, main: day.main, cooldown: day.cooldown, editId: null });
           setBuilt({ kind: 'day', day });
@@ -1035,9 +1045,8 @@ export function CoachChatSheet({
             days: written.valid.days,
             weekPlans: null,
           };
-          if (!(await payForBlock(structure))) return;
           setBusy(null);
-          await saveProgramDraft(draftFromStructure(structure));
+          if (draftNow(structure)) await saveProgramDraft(draftFromStructure(structure));
           setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
           const asBuilt = { ...c, daysPerWeek: structure.daysPerWeek };
           const programCard = programCardFor(asBuilt, structure, [], written.valid.dropped.length ? '' : written.plan.say);
@@ -1084,6 +1093,8 @@ export function CoachChatSheet({
             say({ kind: 'holt', text: out.text }, { kind: 'chips', chips: out.chips });
             return;
           }
+          /* A day he could not put together costs nothing; this one exists, so it pays — before the draft (B-D4). */
+          if (!(await payHolt('day'))) return;
           /* The wizard's own handoff, not a second one. A single day goes to the WORKOUT builder and a
              block goes to the PROGRAM builder — two different review screens, and the chat has no business
              inventing a third route to either. */
@@ -1149,13 +1160,20 @@ export function CoachChatSheet({
             /* The weeks they will actually be handed — told the block's full length, he reported their "7
                weeks" as something he had not done. */
             const keeps = merged.weeks != null && merged.weeks >= 1 && merged.weeks < structure.weeks ? merged.weeks : structure.weeks;
-            const ok = await askHolt('program', shape.liftDays, keeps, { race: RACE_SPEC[c.goal].label, runDays: shape.runDays });
+            const ok = await holtWrites('program', shape.liftDays, keeps, { race: RACE_SPEC[c.goal].label, runDays: shape.runDays });
             if (!ok) return;
             setBusy(null);
             const wrote = holt.written;
             if (wrote) {
-              structure = spliceLiftDays(structure, wrote.valid.days);
-              raceLine = [authoredLine(wrote.plan, wrote.valid), shape.liftDays > 1 && endsOnRace(structure) ? RACE_WEEK_LINE : null].filter(Boolean).join(' ');
+              /* Placed by what each day asks of the legs against the rulebook's week, deloads kept (B-D3). */
+              const { weekShape, racePlacing } = res.assembly;
+              const placed = placeWrittenLifts(
+                structure,
+                wrote.valid.days,
+                weekShape && racePlacing ? { shape: weekShape, ...racePlacing, patternOf: (k) => itemByKey(k)?.pattern } : null,
+              );
+              structure = placed.structure;
+              raceLine = [authoredLine(wrote.plan, wrote.valid), placed.clash, shape.liftDays > 1 && endsOnRace(structure) ? RACE_WEEK_LINE : null].filter(Boolean).join(' ');
             }
           }
           /* "A 7 week program" for a race further off is the first seven weeks of its build. */
@@ -1164,14 +1182,16 @@ export function CoachChatSheet({
             raceLine = [raceLine, stopsShortLine(structure.weeks, builtWeeks)].filter(Boolean).join(' ');
           }
         }
-        /* After any cut to "the first N weeks", so what is charged is the block they are handed. */
-        if (!(await payForBlock(structure))) return;
+        /* Nothing is charged here: what is kept is paid for at the keep (`payToKeep`), and it is this structure —
+           after any cut to "the first N weeks" — so what is charged is the block they are handed. */
         setBusy(null);
-        const chatDraft = draftFromStructure(structure);
-        await saveProgramDraft(chatDraft);
-        /* QA holt-13 / holtai-16: a plan he just showed in chat is not news — mark it told, so the bubble
-           never turns it into "still sitting in the builder". A draft left in the builder itself still is. */
-        await setDraftTold(chatDraft.name || null);
+        if (draftNow(structure)) {
+          const chatDraft = draftFromStructure(structure);
+          await saveProgramDraft(chatDraft);
+          /* QA holt-13 / holtai-16: a plan he just showed in chat is not news — mark it told, so the bubble
+             never turns it into "still sitting in the builder". A draft left in the builder itself still is. */
+          await setDraftTold(chatDraft.name || null);
+        }
         /* A week and a block are the same object from the engine and two different things to save — one
            goes to `week_templates`, the other to the Program Builder's draft. The size answer is what
            tells them apart, and `structure.weeks` is the engine's own word for it rather than the
@@ -1275,7 +1295,7 @@ export function CoachChatSheet({
         setBusy(null);
       }
     },
-    [say, gates],
+    [say, gates, payHolt],
   );
 
   /*
@@ -2244,6 +2264,25 @@ export function CoachChatSheet({
   const holding = busy != null || streamingNow;
   /* Names each coach-ask stream, so its words land in its own turn. Touched only in the ask handler. */
   const streamSeq = useRef(0);
+  /*
+   * ⚠ EVERY ASK STILL RUNNING, AND EVERY ASK A "TRY AGAIN" CAN SEND (AI audit 11-16, C-D2 · C-D5).
+   *
+   * One controller per ask, aborted if the sheet goes away mid-reply: nobody is left to read the words, and
+   * the abort is what reaches coach-ask's `cancel()`, so the model stops writing (and costing). `askHolt`'s
+   * own clock ends a stalled ask either way, so `busy` always lets go and the queue drains.
+   *
+   * A failed ask leaves what it was asked with here, under the id its Try again chip carries — sent at most
+   * once, and never on top of an ask still running. Not in the thread: the history is up to eight turns.
+   */
+  const asking = useRef(new Set<AbortController>());
+  const retryAsks = useRef(new Map<number, { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } }>());
+  useEffect(() => {
+    const live = asking.current;
+    return () => {
+      for (const c of live) c.abort();
+      live.clear();
+    };
+  }, []);
 
   const send = () => {
     const text = draft.trim();
@@ -2479,6 +2518,12 @@ export function CoachChatSheet({
     if (!nudge) k.ask = ask;
     setBusy('thinking');
     const [rules, have, recent] = await Promise.all([kitchenRulesLive(), kitchenPantryLive(), recentKitchenDishesLive()]);
+    /* ⛔ FAIL CLOSED (AI audit 11-16, N-D2): allergies and diet that didn't load are never sent as "none". He says
+       so and stops — before the consent sheet, the credit and the model — with a way to ask again. */
+    if (rules.kind === 'unreadable') {
+      setBusy(null);
+      return void say({ kind: 'holt', text: pick('kitchen_prefs_unreadable') }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
+    }
     const left = rules.minor ? null : await kitchenLeftLive();
     const r = await askKitchenLive({
       have,
@@ -2527,6 +2572,26 @@ export function CoachChatSheet({
     );
   };
 
+  /**
+   * The Try again chip under an outage card (AI audit C-D5) — the kitchen's retry chip, for a typed ask. The
+   * ask itself waits in `retryAsks` under the id the chip carries; `onChip` sends it once.
+   */
+  const retryChip = (again: { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } }): Turn => {
+    let id = Date.now();
+    while (retryAsks.current.has(id)) id += 1;
+    retryAsks.current.set(id, again);
+    return { kind: 'chips', chips: [{ label: ASK_RETRY_LABEL, patch: {}, retryAsk: id }] };
+  };
+  /**
+   * Holt's line when the meter refused a typed ask (AI audit C-D1): this month's credits used, the day they come
+   * back (the SERVER's month, from `fetchCoachAiBalance`), and what still works — or, with no allowance at all,
+   * that Premium AI is not on. ⚠ Never `allowance_program`: that is the Free plan's one free block.
+   */
+  const creditsLine = async (r: { remaining: number; allowance: number }, web: boolean): Promise<string> => {
+    const balance = r.allowance > 0 ? await within(AI_BALANCE_LOOKUP_MS, fetchCoachAiBalance(), null) : null;
+    return outOfAiCreditsLine({ remaining: r.remaining, allowance: r.allowance, web, period: balance?.period ?? null });
+  };
+
   const askAloud = async (
     text: string,
     history: AskTurn[],
@@ -2550,7 +2615,8 @@ export function CoachChatSheet({
     /* Not in the kitchen: "what do I need to buy for the chili?" matched the gaps question (stress test). */
     if (!opts.kitchen && isGapQuestion(text)) {
       setBusy('thinking');
-      const reply = await gapReplyLive().catch(() => null);
+      /* Bounded, like the lookups below — a read that never answers must not hold "Holt is working" (C-D2). */
+      const reply = await within(ASK_CONTEXT_MS, gapReplyLive(), null);
       setBusy(null);
       if (reply) {
         say({ kind: 'holt', text: reply });
@@ -2563,8 +2629,11 @@ export function CoachChatSheet({
      * ⚠ IN PARALLEL, NOT ONE AFTER ANOTHER (stress test 2026-09-25). These were three awaits in a row before
      * the model was even called. The kitchen also skips the training program: it answers food, and the
      * lookup could hold the answer up to its timeout for nothing.
+     *
+     * ⚠ AND BOUNDED AS A WHOLE (AI audit C-D2). These reads have no deadline of their own, and "Holt is working"
+     * holds the queue while they run; past `ASK_CONTEXT_MS` he answers without whatever has not come back.
      */
-    const [active, brief, recipes, pantry, kitchenFood, left] = await Promise.all([
+    const [active, brief, recipes, pantry, kitchenFood, left] = await within(ASK_CONTEXT_MS, Promise.all([
       opts.kitchen
         ? Promise.resolve(null)
         : Promise.race([
@@ -2580,7 +2649,7 @@ export function CoachChatSheet({
       opts.kitchen && nutritionAccess ? kitchenPantryLive() : Promise.resolve([] as string[]),
       opts.kitchen && nutritionAccess ? fetchNutritionSummary().catch(() => null) : Promise.resolve(null),
       opts.kitchen && nutritionAccess ? kitchenLeftLive() : Promise.resolve(null),
-    ]);
+    ]), [null, { notes: [], training: null, nutrition: null }, [], [], null, null]);
     const context = buildAskContext(
       {
         question: text,
@@ -2598,6 +2667,9 @@ export function CoachChatSheet({
     /* ⚠ THIS stream's turn, by id — never "the last streaming turn", which may be another answer's (R2-F5). */
     streamSeq.current += 1;
     const sid = streamSeq.current;
+    /* One controller per ask: the sheet going away aborts it (`asking`); `askHolt`'s own clock ends a stall (C-D2). */
+    const ctl = new AbortController();
+    asking.current.add(ctl);
     const r = await askHolt(
       text,
       history,
@@ -2612,8 +2684,9 @@ export function CoachChatSheet({
         }
         setThread((t) => streamInto(t, sid, acc));
       },
-      { allowWeb: opts.allowWeb, recipes },
+      { allowWeb: opts.allowWeb, recipes, signal: ctl.signal },
     );
+    asking.current.delete(ctl);
     setBusy(null);
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
     setThread((t) => streamEnded(t, sid));
@@ -2623,9 +2696,12 @@ export function CoachChatSheet({
            ("N"). A fragment that says nothing is taken back; either way the athlete is told it broke. */
         if (!r.complete && started) {
           setThread((t) => cutOffReply(t, sid));
-          return say({ kind: 'error', text: 'I lost the line partway through.', sub: 'The connection dropped before I finished.', action: 'Ask me again in a moment.' });
+          /* C-D5: with a Try again that sends the same ask (`retryChip`). */
+          return say({ kind: 'error', ...askOfflineCard({ started: true, timedOut: false }) }, retryChip({ text, history, q, opts }));
         }
         if (!started && r.text) say({ kind: 'holt', text: r.text });
+        /* C-D4: stopped at the length cap. The words stand, and he says they are not all of it. */
+        if (r.cut) say({ kind: 'holt', text: pick('reply_ran_long') });
         /* What he asked the APP to do — a change to confirm, or the online-search offer. */
         if (await actOn(r.actions, text)) return;
         /* kitchen-07: he SAID he'd look online without calling the tool — the chip goes under him anyway. */
@@ -2657,18 +2733,27 @@ export function CoachChatSheet({
       case 'medical':
         return medicalStop(text);
       case 'out_of_credits':
-        return say({ kind: 'holt', text: pick('allowance_program') });
+        /* ⚠ A PAYING ATHLETE AT THE MONTH'S CAP — NOT THE FREE PLAN'S ONE BLOCK (AI audit C-D1). */
+        return say({ kind: 'holt', text: await creditsLine(r, opts.allowWeb === true) });
       /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone. */
       case 'no_consent':
         return say({ kind: 'holt', text: AI_DECLINED_HOLT });
+      case 'refused':
+        /*
+         * ⚠ HE DECLINED — A DECISION, NOT AN OUTAGE (AI audit C-D4, Design Brief §6). It used to fall through
+         * to "I couldn't reach my notes". Anything that streamed before it is taken back (the API's rule for a
+         * refusal mid-reply), and the line is marked so it never rides along with the next question — a decline
+         * on it once would otherwise follow the whole chat.
+         */
+        setThread((t) => markStopped(takeBackReply(t, sid), text));
+        return say({ kind: 'holt', text: pick('declined_question') });
       case 'offline':
+        /* The sheet went away mid-ask (`asking` aborted it) — there is nobody left to tell. */
+        if (r.aborted) return;
         if (started) setThread((t) => cutOffReply(t, sid));
-        return say({
-          kind: 'error',
-          text: started ? 'I lost the line partway through.' : "I couldn't reach my notes just then.",
-          sub: 'The connection dropped before I finished.',
-          action: 'Ask me again in a moment.',
-        });
+        /* C-D5: the sub-line says what happened — dropped mid-reply, never got through, or nothing back in time —
+           and Try again sends the same ask. */
+        return say({ kind: 'error', ...askOfflineCard({ started, timedOut: r.timedOut }) }, retryChip({ text, history, q, opts }));
     }
   };
 
@@ -2690,6 +2775,17 @@ export function CoachChatSheet({
       say({ kind: 'me', text: chip.label });
       const k = kitchenAsk.current;
       void runKitchen(k.ask || 'What can I make?', chip.kitchen === 'go' ? null : chip.kitchen);
+      return;
+    }
+    if (chip.retryAsk != null) {
+      /* C-D5 — the ask that failed, once more. Never on top of one still running (the chip keeps for after), and
+         once only: the ask is taken out as it is sent. A chip restored after a reload has nothing behind it. */
+      if (holding || asking.current.size > 0) return;
+      const again = retryAsks.current.get(chip.retryAsk);
+      if (!again) return void say({ kind: 'holt', text: 'Send me that one again and I’ll have another go.' });
+      retryAsks.current.delete(chip.retryAsk);
+      say({ kind: 'me', text: chip.label });
+      void askAloud(again.text, again.history, again.q, again.opts);
       return;
     }
     if (!chip.webSearch) return tapChip(chip);
@@ -2735,7 +2831,8 @@ export function CoachChatSheet({
       case 'medical':
         return medicalStop(text);
       case 'out_of_credits':
-        return say({ kind: 'holt', text: pick('allowance_program') });
+        /* The same line as a question at the cap (C-D1) — never the Free plan's `allowance_program`. */
+        return say({ kind: 'holt', text: await creditsLine(r, false) });
       case 'offline':
         return say({
           kind: 'error',
@@ -3000,17 +3097,40 @@ export function CoachChatSheet({
     router.push(route as Parameters<typeof router.push>[0]);
   };
 
+  /**
+   * Keeping a Holt BLOCK pays for it — here, once, before anything is written (AI audit 11-16, B-D1). Building it
+   * cost nothing, so "Ask me again" costs nothing either. `false` means he has said why not and nothing may be saved.
+   * A week and a block under four weeks owe nothing here: they spend `short_programs` where they are written (MA4-D5).
+   */
+  const payToKeep = (): Promise<boolean> => {
+    if (built?.kind !== 'program' || !earnsStructuredDevelopmentCredit(built.structure)) return Promise.resolve(true);
+    /* No week offered for a race: its length is the calendar's, not a choice. */
+    const offerWeek = constraints.goal != null && !isEnduranceGoal(constraints.goal);
+    return keepLedger(built.structure, () => payHolt('program', offerWeek));
+  };
+
+  /** A block into the Program Builder: paid for, then written as the draft the Builder opens. */
+  const keepInBuilder = async () => {
+    if (built?.kind !== 'program') return;
+    if (!(await payToKeep())) return;
+    const draft = draftFromStructure(built.structure);
+    await saveProgramDraft(draft);
+    /* Shown in chat already, so not news — the bubble never calls it "still sitting in the builder" (holt-13). */
+    await setDraftTold(draft.name || null);
+    openBuilder();
+  };
+
   const saveForLater = () => {
     if (!built || handing) return;
     void (async () => {
-      /* The PROGRAM path spends nothing here — the block becomes a row in the Builder, where the caps
-         are enforced at the point of creation. The other two write immediately, so they ask first. */
+      /* The PROGRAM path pays for the Holt program (`payToKeep`) and becomes a row in the Builder, where the
+         program caps are enforced at the point of creation. The other two write immediately, so they ask first. */
       if (built.kind === 'week' && !guard('short_programs')) return;
       if (built.kind === 'day' && !guard('templates')) return;
       setHanding(true);
       try {
         if (built.kind === 'program') {
-          openBuilder();
+          await keepInBuilder();
           return;
         }
         if (built.kind === 'week') {
@@ -3148,6 +3268,8 @@ export function CoachChatSheet({
         leaveFor(`/program/${programId}`);
         return;
       }
+      /* Paid for at the keep, after "end your current one?" was answered — and before the row exists (B-D1). */
+      if (!(await payToKeep())) return;
       const { id } = await createProgram(built.structure);
       const res = await startProgram(id);
       if (res?.ended) say({ kind: 'saved', text: 'Your previous program was ended.' });
@@ -3353,6 +3475,11 @@ export function CoachChatSheet({
                 rebuild();
                 return;
               }
+              // A block into the Builder is a keep, and is paid for first (B-D1) — `saveForLater`'s program path.
+              if (built?.kind === 'program') {
+                saveForLater();
+                return;
+              }
               handOff();
               router.push(built?.kind === 'day' ? '/workout-builder' : '/program-builder');
             }}
@@ -3418,7 +3545,7 @@ export function CoachChatSheet({
             }
             return (
               <TurnEnter key={b.key}>
-                <TurnView turn={b.turn} onChip={onChip} handoff={handoff} />
+                <TurnView turn={b.turn} answer={b.answer} onChip={onChip} handoff={handoff} />
               </TurnEnter>
             );
           })}
@@ -3948,7 +4075,9 @@ type Block =
        */
       answer: string | null;
     }
-  | { key: number; kind: 'turn'; turn: Turn };
+  /** `answer` — for chips with no Holt line to hang from (Try again under an outage card, C-D5), the `me` turn
+      after them, so they read as answered the same way attached chips do. */
+  | { key: number; kind: 'turn'; turn: Turn; answer?: string | null };
 
 function layOut(thread: Turn[]): Block[] {
   const out: Block[] = [];
@@ -3975,7 +4104,8 @@ function layOut(thread: Turn[]): Block[] {
       i = j - 1;
       continue;
     }
-    out.push({ key: i, kind: 'turn', turn: t });
+    const after = thread[i + 1];
+    out.push({ key: i, kind: 'turn', turn: t, answer: t.kind === 'chips' && after?.kind === 'me' ? after.text : null });
   }
   return out;
 }
@@ -4030,7 +4160,8 @@ function HoltTurn({
       </View>
       <View style={styles.holtBody}>
         <Text style={styles.holtEyebrow}>HOLT</Text>
-        <Text style={[styles.holtText, !live && styles.holtTextPast]}>{text}</Text>
+        {/* Selectable, and his links open (AI audit C-D3) — `HoltWords`. */}
+        <HoltWords text={text} style={[styles.holtText, !live && styles.holtTextPast]} />
         {attached.length ? (
           <View style={styles.holtAttached}>
             {attached.map((t, i) => (
@@ -4739,7 +4870,7 @@ function splitCardLabel(label: string): [string, string | null] {
  * sentence out one letter at a time. The finished line is announced once, when it is finished.
  */
 function HoltLine({ text }: { text: string; live?: boolean }) {
-  return <Text style={styles.holtText}>{text}</Text>;
+  return <HoltWords text={text} style={styles.holtText} />;
 }
 
 /**

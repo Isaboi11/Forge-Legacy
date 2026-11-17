@@ -33,10 +33,12 @@ const dish = (over = {}) => ({
   minutes: 25,
   servings: 1,
   mealType: 'dinner',
+  /* Every line in the catalogue's own words (the prompt's `KITCHEN_FOODS`), so it matches: since AI audit 11-16
+     (N-D1) an unmatched line drops the dish for anyone who avoids something, and the safe dish must be safe. */
   ingredients: [
     { text: '6 oz chicken thighs', quantity: 6, unit: 'oz', food: 'chicken thighs' },
-    { text: '1 cup cooked white rice', quantity: 1, unit: 'cup', food: 'white rice' },
-    { text: '1 cup spinach', quantity: 1, unit: 'cup', food: 'spinach' },
+    { text: '1 cup cooked white rice', quantity: 1, unit: 'cup', food: 'long-grain white rice' },
+    { text: '1 cup spinach', quantity: 1, unit: 'cup', food: 'baby spinach' },
   ],
   steps: ['Sear the chicken.', 'Serve over rice and spinach.'],
   ...over,
@@ -168,7 +170,7 @@ test('the food names in the prompt are the catalogue\'s, current', async () => {
 });
 
 test('diets are enforced by the app: a vegan never sees cheese, a vegetarian never sees chicken', () => {
-  const veg = dish({ name: 'Tofu Rice Bowl', ingredients: [{ text: '200 g tofu', quantity: 200, unit: 'g', food: 'tofu' }, { text: '2 tbsp peanut butter', quantity: 30, unit: 'g', food: 'peanut butter' }] });
+  const veg = dish({ name: 'Tofu Rice Bowl', ingredients: [{ text: '200 g tofu', quantity: 200, unit: 'g', food: 'firm tofu' }, { text: '2 tbsp peanut butter', quantity: 30, unit: 'g', food: 'peanut butter' }] });
   const cheesy = dish({ name: 'Bean and Cheese Bake', method: 'oven', ingredients: [{ text: '100 g black beans', quantity: 100, unit: 'g', food: 'black beans' }, { text: '50 g cheddar', quantity: 50, unit: 'g', food: 'cheddar' }] });
   assert.deepEqual(dishCards([veg, cheesy], [], 'vegan').map((c) => c.name), ['Tofu Rice Bowl'], 'peanut butter is vegan; cheddar is not');
   assert.deepEqual(dishCards([dish(), veg], [], 'vegetarian').map((c) => c.name), ['Tofu Rice Bowl']);

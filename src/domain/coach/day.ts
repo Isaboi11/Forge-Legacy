@@ -41,7 +41,7 @@ import {
   type CatalogExercise,
   type EquipmentGate,
 } from './candidates.ts';
-import { exerciseBudget, isTimedExercise, prescribeReps, prescribeTimed, roleFor } from './prescribe.ts';
+import { exerciseBudget, isTimedExercise, prescribeReps, prescribeTimed, restOf, roleFor } from './prescribe.ts';
 import { cueFor } from './rulebook/cues.ts';
 import { GOAL_CATEGORY } from './rulebook/volume.ts';
 import {
@@ -668,10 +668,12 @@ export function buildDayWorkout(
      * was never asked, so both gaps closed on the same question.
      */
     const cue = req.goal ? cueFor({ pattern, goal: req.goal, experience: req.experience, isPrimary: i === 0, name: ex.name, equipId: ex.equipId }) : null;
+    // Rest by category and role (B-D6) — one place for both fill strategies, since both end here.
+    const rest = restOf(category, roleFor(i, isCompound(pattern)), req.experience);
     // A plank is held, not counted — see `prescribeTimed`.
     if (isTimedExercise(ex)) {
       const t = prescribeTimed(roleFor(i, isCompound(pattern)), pctx);
-      return { catalogKey: ex.key, name: ex.name, sets: t.sets, durationSec: t.durationSec, ...(cue ? { coachNote: cue } : {}) };
+      return { catalogKey: ex.key, name: ex.name, sets: t.sets, durationSec: t.durationSec, ...rest, ...(cue ? { coachNote: cue } : {}) };
     }
     return {
       catalogKey: ex.key,
@@ -679,6 +681,7 @@ export function buildDayWorkout(
       sets: rx.sets,
       reps: rx.reps,
       repsMax: rx.repsMax,
+      ...rest,
       ...(cue ? { coachNote: cue } : {}),
     };
   });

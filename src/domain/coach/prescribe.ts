@@ -3,11 +3,11 @@
  *
  * ══ WHAT THIS CAN AND CANNOT PRESCRIBE ══
  *
- * `ProgramExercise` carries `sets`, `reps`, `repsMax`, `per`, `repScheme`, `durationSec`, the percent-of-max
- * fields, the grouping fields, and the cardio targets. **It has no rest field**, so the coach does not
- * prescribe rest — the rest timer is a session-time concern the logger already owns. Writing a rest value
- * into a structure nothing reads would be exactly the write-only-field failure the schema's own comments
- * exist to warn about (see `repsMax`, and the absent `notes`).
+ * `ProgramExercise` carries `sets`, `reps`, `repsMax`, `per`, `repScheme`, `durationSec`, `restSec`, the
+ * percent-of-max fields, the grouping fields, and the cardio targets. ⚠ This header used to say it had no
+ * rest field, and the coach prescribed none — `restSec` has existed since 2026-09-30 and the logger starts
+ * its rest timer on it (`sessionSetsFor`), so a heavy triple and a pushdown got the same rest. The coach now
+ * sets it by category and role (`restFor`, AI audit 11-16, B-D6).
  *
  * ⚠ IT ALSO DOES NOT PRESCRIBE LOAD. `percentOfMax` needs a tested max, and most athletes arriving at the
  * coach have none — a percentage of a number nobody has measured is a guess wearing a decimal point. Sets
@@ -110,6 +110,40 @@ const SET_COUNTS: Record<PasCategory, Record<SlotRole, Record<Experience, number
 
 /** Mobility holds, in seconds, by experience. Duration-based per PAS §10.1. */
 const MOBILITY_HOLD_SEC: Record<Experience, number> = { beginner: 30, intermediate: 45, advanced: 60 };
+
+/**
+ * Rest between sets, by category and role (AI audit 11-16, B-D6) — `null` where the category prescribes none.
+ *
+ * A heavy primary needs the time a pushdown does not: STRENGTH rests longest, HYPERTROPHY moderately, and
+ * CONDITIONING short, because short rest is the conditioning. Inside PAS §10.3's guidance for an intermediate
+ * (compounds 90–180 s, accessories 60–90 s) and its 120–240 s for an advanced lifter's primary compounds, except
+ * CONDITIONING, whose whole point is to rest less. RUNNING and MOBILITY are timed work with no set rest here.
+ */
+const REST_SEC: Record<PasCategory, Record<SlotRole, number> | null> = {
+  STRENGTH: { primary: 180, secondary: 120, accessory: 75 },
+  HYPERTROPHY: { primary: 120, secondary: 90, accessory: 60 },
+  CONDITIONING: { primary: 60, secondary: 45, accessory: 45 },
+  FULL_BODY: { primary: 90, secondary: 75, accessory: 60 },
+  RUNNING: null,
+  MOBILITY: null,
+};
+
+/** PAS §10.3: a BEGINNER self-regulates — compounds "60–90 s typical", accessory rest omitted. */
+const BEGINNER_COMPOUND_REST_MAX_SEC = 90;
+
+/** The `restSec` a coach-built row carries, or null for none (the logger's own default then applies). */
+export function restFor(category: PasCategory, role: SlotRole, experience: Experience): number | null {
+  const sec = REST_SEC[category]?.[role] ?? null;
+  if (sec == null) return null;
+  if (experience === 'beginner') return role === 'accessory' ? null : Math.min(sec, BEGINNER_COMPOUND_REST_MAX_SEC);
+  return sec;
+}
+
+/** `{ restSec }` for spreading into a row, or nothing. */
+export const restOf = (category: PasCategory, role: SlotRole, experience: Experience): { restSec?: number } => {
+  const sec = restFor(category, role, experience);
+  return sec == null ? {} : { restSec: sec };
+};
 
 /**
  * How many MAIN exercises fit in the time available.

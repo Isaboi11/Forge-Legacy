@@ -85,6 +85,11 @@ export type VoiceKey =
   | 'allowance_program'
   | 'allowance_day'
   | 'allowance_week'
+  | 'kitchen_prefs_unreadable'
+  | 'out_of_ai_credits'
+  | 'ai_not_on'
+  | 'declined_question'
+  | 'reply_ran_long'
   | 'rebuild_open'
   | 'ask_level_again'
   | 'level_saved'
@@ -561,11 +566,64 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
   ],
   /* A week asked for by length, with the free training weeks used (MA4-D5). The one Holt program is untouched, so
      nothing here says the block is gone. */
+  /*
+   * ⛔ THE KITCHEN COULDN'T READ WHAT YOU AVOID (AI audit 11-16, N-D2). Meal Plan Setup's allergies and diet didn't
+   * load, so he doesn't write dishes — nothing is sent, no credit is spent. Every variant says the same three
+   * things: it didn't load, he won't guess around an allergy, try again. No apology tour, no blame on the athlete.
+   */
+  kitchen_prefs_unreadable: [
+    "I couldn't load your food preferences just now, so I'm not going to guess around your allergies. Try again in a moment.",
+    "Your allergies and diet didn't load just now, and I won't guess around them. Give it a moment and try again.",
+    "I can't see your food preferences right now. Rather than guess around an allergy, I'll wait. Try again in a moment.",
+    "Your food preferences didn't come through, and an allergy isn't something I'll guess at. Try again shortly.",
+    "I couldn't check your allergies and diet just now, so no dishes yet. Try again in a moment.",
+  ],
   allowance_week: [
     "That's the free training weeks used. Every week you saved is still yours.",
     "I'd write you the week, but there's no free week left to keep it in.",
     "You've kept all the weeks your plan gives you. They're still there.",
     "The free weeks are spent. What you've already saved stays put.",
+  ],
+  /* ── a PAYING athlete's typed questions, at the month's cap (AI audit 11-16, C-D1) ────────────────
+   *
+   * ⚠ NEVER `allowance_program` HERE. That is the Free plan's one-block line, and a Premium AI athlete at the
+   * credit cap was being told his "free block" was used. These are only the opening sentence:
+   * `outOfAiCreditsLine` (`ask-outcome.ts`) adds when they come back and what still works, from the
+   * server's own month. Same rule as above — he answers, he does not sell. */
+  out_of_ai_credits: [
+    "That's this month's Premium AI credits used.",
+    "You've used this month's Premium AI credits.",
+    "That's the month's Premium AI credits spent.",
+    'Your Premium AI credits for this month are used up.',
+    "This month's Premium AI credits are all used.",
+  ],
+  /* The meter answered "no allowance at all" — Premium AI is not on for this account (it lapsed, or the app
+     still thinks it is). Not "used": there was nothing to use. */
+  ai_not_on: [
+    "Asking me in your own words is part of Premium AI, and it isn't on for this account right now.",
+    "Typed questions are part of Premium AI, and that isn't on for this account at the moment.",
+    "Talking to me in your own words needs Premium AI, which isn't on for this account right now.",
+    "That one needs Premium AI, and it isn't on for this account right now.",
+  ],
+  /* ── he declined the question (the model's `refusal`, C-D4) ───────────────────────────────────────
+   *
+   * ⚠ A DECISION, NOT AN OUTAGE (Design Brief §6) — no red card, no "try again". And like every refusal he
+   * makes, it carries the way forward (§5.7). Never a reason: the model does not say why, so neither does he. */
+  declined_question: [
+    "That's one I'll leave alone. Ask me about your training, your food or your plan and I'm all yours.",
+    "I'm going to pass on that one. Your training, your food, your program — ask me any of those.",
+    "Not one I'll answer. Try me on your training or your food instead.",
+    "I'll stay out of that one. What can I help with on your training or your food?",
+    "That's outside what I'll take on. Anything about your training or your food, I'm here for.",
+  ],
+  /* ── the reply stopped at the length cap (`max_tokens`, C-D4) ─────────────────────────────────────
+     The words above it stand; this says they are not all of it, so a cut answer never passes for a whole one. */
+  reply_ran_long: [
+    "That ran long, so I stopped there. Ask me to keep going and I'll pick it up.",
+    "I've hit my limit for one reply. Say keep going and I'll finish it.",
+    "That's as much as fits in one reply. Ask me to carry on and I will.",
+    "I ran out of room there. Tell me to keep going and I'll pick up where I stopped.",
+    'That one ran long. Ask me to keep going for the rest.',
   ],
   /* ── asked to build it again ──────────────────────────────────────────────────────────────────────
    *

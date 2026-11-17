@@ -723,8 +723,12 @@ const FS_TTL_MS = 24 * 60 * 60 * 1000;
 
 const fsExpiry = () => new Date(Date.now() - FS_TTL_MS).toISOString();
 
-/** Cached rows older than this hold grams-only or sibling-product servings (2026-09-24) and are re-fetched. */
-const SERVINGS_SINCE = '2026-09-24T19:45:00Z';
+/**
+ * Cached rows older than this hold grams-only or sibling-product servings (2026-09-24), or were fetched by
+ * the stale 09-25 deploy that lacked the GRM/MLT serving fix (a45c50b0; AI audit 11-16, N-D3: 220 USDA rows
+ * fetched after 09-29 still had a weightless serving). They are re-fetched, so the catalogue heals as people search.
+ */
+const SERVINGS_SINCE = '2026-11-17T06:00:00Z';
 
 /** Drop every FatSecret row we are no longer licensed to hold. Cheap, indexed, and safe to over-call. */
 async function purgeStaleFatSecret(admin: ReturnType<typeof createClient>): Promise<void> {

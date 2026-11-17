@@ -9,7 +9,8 @@
  *
  * What stands in its place, in code, on the device:
  *
- *   · the text must contain sets and reps written as sets and reps ("3 sets", "5 reps", "4x10", "75%"). A
+ *   · the text must contain training written the way training is written (`LIFTY`, below): sets and reps, a count
+ *     of a movement, a time or distance on a movement, a Sets/Reps column header, a load as a % of a max. A
  *     description of a photograph, or of a person in one, has none, and is refused as "not a workout";
  *   · it is capped in lines and characters, so nothing long rides along;
  *   · and it is never posted as it stands. It goes in the poster's own box, through the AI layout, through
@@ -23,8 +24,53 @@
 export const MAX_CARD_CHARS = 6000;
 export const MAX_CARD_LINES = 120;
 
-/** Sets and reps written as sets and reps. The same test `workout-ai-gate.ts` uses for "is there a workout here". */
-const LIFTY = /\d\s*(?:x\s*\d|sets?\b|reps?\b|%)/i;
+/*
+ * IS THERE TRAINING WRITTEN HERE? (AI audit 2026-11-16, V-D1.) The first rule was "a digit, then x, sets, reps or %".
+ * It turned away real programs and kept their credits: "Bench Press 4×6-8" (the × program graphics use), "Plank
+ * 3 × 30s", "15 Push-ups", "Run 5 km", and every column sheet whose numbers sit under a Sets / Reps header (12 of
+ * the 21 real photo sheets in `program/__tests__/fixtures`). And it let a menu through on "18% gratuity" and a till
+ * receipt on "2% MILK".
+ *
+ * Any ONE of these says yes:
+ *   · sets × reps with x, X or × ("4×6-8", "3 X 10"), but not a till's "2 x 1.25";
+ *   · a time or distance done N times ("400m x 6");
+ *   · "5 sets", "8 reps", "Sets: 3";
+ *   · a load as a % of a max: "@ 75%", "80% of 1RM", or two %s on one line ("60%, 65%, 70%");
+ *   · a Sets / Reps (or Reps / Weight) header with numbers below it;
+ *   · a line that starts with a count and a movement ("15 Push-ups", "- 20 air squats");
+ *   · a movement with a time or distance beside it ("Run 5 km", "Plank 30s", "400m row", "Wall sit 1:30");
+ *   · EMOM, AMRAP or Tabata.
+ * What it still refuses (`card-rule.test.mjs`): a menu, a receipt, a text message, a recipe, a caption, prose.
+ *
+ * ⚠ THE SAME RULE, CHARACTER FOR CHARACTER, IS IN `supabase/functions/workout-card-read/index.ts` (a dashboard paste,
+ * so it imports nothing). `workout-ai-gate.ts` imports this one. `card-rule.test.mjs` fails the moment they differ.
+ */
+// ── LIFTY: begin ──
+const LIFT_MOVE = String.raw`\b(?:push[ -]?ups?|pull[ -]?ups?|chin[ -]?ups?|sit[ -]?ups?|squats?|lunges?|burpees?|planks?|rows?|rowing|run|jog|sprints?|jumps?|jumping|crunch(?:es)?|swim|bike|swings?|wall[ -]?sits?|dead[ -]?hangs?|mountain[ -]?climbers?)\b`;
+const LIFT_TIME = String.raw`(?:\d+(?:\.\d+)?[ \t]*(?:s|secs?|seconds?|mins?|minutes?)\b|\b\d{1,2}:\d{2}\b)`;
+const LIFT_DISTANCE = String.raw`\d+(?:\.\d+)?[ \t]*(?:m|km|k|mi|miles?|meters?|metres?|yds?|yards?|cals?)\b`;
+const LIFT_AMOUNT = `(?:${LIFT_TIME}|${LIFT_DISTANCE})`;
+const LIFTY = new RegExp(
+  [
+    String.raw`\d[ \t]*[x×][ \t]*(?!\d*[.,]\d\d(?!\d))\d`,
+    String.raw`${LIFT_AMOUNT}[ \t]*[x×][ \t]*\d`,
+    String.raw`\d[ \t]*(?:sets?|reps?)\b`,
+    String.raw`\b(?:sets?|reps?)[ \t]*[:=][ \t]*\d`,
+    String.raw`@[ \t]*\d{1,3}(?:\.\d+)?[ \t]*%`,
+    String.raw`\d[ \t]*%[ \t]*(?:of[ \t]+)?(?:your[ \t]+)?(?:e?1[ \t]*rm|rm|max|tm)\b`,
+    String.raw`\d[ \t]*%[^\n]*\d[ \t]*%`,
+    String.raw`\b(?:sets?\b[^\n]*\breps?|reps?\b[^\n]*\b(?:sets?|weight|load|lbs?|kgs?)|(?:weight|load)\b[^\n]*\breps?)\b[^\n]*\n[\s\S]*?\d`,
+    String.raw`^[ \t]*(?:[-*•·]|\d{1,2}[.)])?[ \t]*\d{1,3}[ \t]+(?:[a-z]+[ \t]+)?${LIFT_MOVE}`,
+    String.raw`${LIFT_MOVE}(?:[ \t]+[a-z]+)?[ \t]*[:\-–—]?[ \t]*(?:for[ \t]+)?${LIFT_AMOUNT}`,
+    String.raw`${LIFT_AMOUNT}[ \t]+(?:of[ \t]+)?(?:[a-z]+[ \t]+)?${LIFT_MOVE}`,
+    String.raw`\b(?:emom|amrap|tabata)\b`,
+  ].join('|'),
+  'im',
+);
+// ── LIFTY: end ──
+
+/** The one rule: `cleanCardTranscript` below, `workout-ai-gate.ts` ("is there a workout here"), and the function's copy. */
+export { LIFTY };
 
 export type CardTranscript = { ok: true; text: string } | { ok: false; reason: 'not_a_program' | 'unreadable' };
 
