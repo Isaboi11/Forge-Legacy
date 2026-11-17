@@ -3,7 +3,16 @@ import { Text, View } from 'react-native';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import { Block, BlockGrid, Chip, FootNote, Full, HeroFigures, PageHeader, Row, Rows, when, type Figure } from '@/components/forge/admin/crm-ui';
-import { fetchAiHealth } from '@/data/ai-health-live';
+import { fetchAiDeploys, fetchAiHealth } from '@/data/ai-health-live';
+import {
+  DRIFT_ALARM,
+  driftRowLine,
+  driftVerdict,
+  latestDeploys,
+  type AiDeploys,
+  type DriftRow,
+  type DriftVerdict,
+} from '@/domain/admin/ai-drift-core';
 import {
   AI_ALERT_KINDS,
   AI_ALERT_LABEL,
@@ -101,6 +110,15 @@ function Loaded({ h }: { h: AiHealth }) {
     { label: 'Refunded', value: h.totals.refunds.toLocaleString('en-US'), note: 'Credits given back' },
     { label: 'Cancelled by the athlete', value: h.totals.cancelled.toLocaleString('en-US') },
     { label: 'Credits charged', value: h.totals.credits.toLocaleString('en-US') },
+    // What rode free (0272, MA12, Sprint 2) — only once the server counts it; a read from before 0272 has `waived: null`
+    // and the three figures are simply absent (unknown, never zeros).
+    ...(h.waived
+      ? [
+          { label: 'Free daily uses (after the month ran out)', value: h.waived.floor.toLocaleString('en-US') },
+          { label: 'Typed builds not charged twice', value: h.waived.typedBuild.toLocaleString('en-US') },
+          { label: 'Photo tidy passes at no charge', value: h.waived.photoTidy.toLocaleString('en-US') },
+        ]
+      : []),
     { label: 'Real cost', value: usdText(h.totals.costUsd), note: 'Per-model rates' },
   ];
 
@@ -173,6 +191,11 @@ function Loaded({ h }: { h: AiHealth }) {
             </Text>
           ) : null}
         </Block>
+
+        {/* ── Deployed code (0271, Sprint 2 PL-5): the nightly deployed-vs-repo check, on its own read ── */}
+        <Full full>
+          <DeployedCodeBlock />
+        </Full>
 
         {/* ── By function ── */}
         <Full full>
@@ -275,6 +298,91 @@ function FnRowView({ r }: { r: AiFnRow }) {
       <Text style={{ fontSize: 12, color: c.ink3 }}>{r.fn ?? `action: ${r.action ?? 'unknown'} · before the new meter`}</Text>
     </View>
   );
+}
+
+/**
+ * "Deployed code" — every function whose deployed file is not the repo's (0271, scripts/deploy-ai/drift.mjs; build 11's
+ * `DeployedCodeCard`). Its own read: a database without 0271 fails this block alone, and says so — never an "all clear".
+ */
+function DeployedCodeBlock() {
+  const q = useQuery(() => fetchAiDeploys(), []);
+  const d = q.data;
+  return (
+    <Block
+      label="Deployed code"
+      sub="Each night every function's deployed file is compared with the repo (main, which mirrors build 11). Anything that is not the same is listed."
+      state={
+        q.loading && !d
+          ? { loading: true }
+          : q.error || !d
+            ? { error: `${q.error ?? 'Nothing came back.'} Not known until it loads — this is not an all clear.`, onRetry: q.refetch }
+            : undefined
+      }
+    >
+      {d ? <DeployedCode d={d} /> : null}
+    </Block>
+  );
+}
+
+function DeployedCode({ d }: { d: AiDeploys }) {
+  const { c } = useCrm();
+  const v = driftVerdict(d, Date.parse(d.generatedAt));
+  const rows = v.state === 'never' ? [] : v.flagged;
+  const recent = latestDeploys(d.deploys);
+  const tone = v.state === 'clean' ? c.good : v.state === 'never' ? c.ink3 : c.crit;
+  return (
+    <View>
+      <Text style={{ paddingTop: 14, fontSize: 14, lineHeight: 21, color: tone }}>{driftLine(v)}</Text>
+      {rows.length ? (
+        <View style={{ paddingTop: 4 }}>
+          {rows.map((r) => (
+            <DriftRowView key={r.slug} r={r} />
+          ))}
+        </View>
+      ) : null}
+      {recent.length ? (
+        <Rows items={recent.map((x) => ({ label: x.slug, value: `v${x.version}`, note: `${x.method} · ${when(x.deployedAt, true)}` }))} />
+      ) : (
+        <Text style={{ marginTop: 12, fontSize: 12.5, lineHeight: 19, color: c.ink3 }}>
+          No deploy recorded yet — the deploy-ai skill records each one (slug, version, hash, commit).
+        </Text>
+      )}
+      {d.runs7d ? (
+        <Text style={{ marginTop: 12, fontSize: 12.5, lineHeight: 19, color: c.ink3 }}>
+          {d.runs7d} nightly check{d.runs7d === 1 ? '' : 's'} in the last 7 days.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function DriftRowView({ r }: { r: DriftRow }) {
+  const { c } = useCrm();
+  const alarm = DRIFT_ALARM.includes(r.status);
+  return (
+    <View style={{ paddingVertical: 12, gap: 3, borderBottomWidth: 1, borderBottomColor: c.line }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+        <Text style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: alarm ? '600' : '500', color: alarm ? c.ink : c.ink2 }} numberOfLines={1}>
+          {r.slug}
+        </Text>
+        <Text style={{ flexShrink: 0, fontSize: 13, color: alarm ? c.crit : c.ink3 }}>{driftRowLine(r)}</Text>
+      </View>
+      {r.detail ? <Text style={{ fontSize: 12.5, lineHeight: 18, color: c.ink2 }}>{r.detail}</Text> : null}
+    </View>
+  );
+}
+
+function driftLine(v: DriftVerdict): string {
+  switch (v.state) {
+    case 'never':
+      return 'No check has run yet — the nightly job starts once its GitHub secret is set.';
+    case 'stale':
+      return `✕ No check for ${v.hours} h — the nightly job missed. Last ran ${when(v.at, true)}.`;
+    case 'clean':
+      return `✓ Every deployed function matches the repo · checked ${when(v.at, true)}`;
+    case 'alarm':
+      return `✕ ${v.alarms.length} of ${v.count} function${v.count === 1 ? '' : 's'} not matching the repo · checked ${when(v.at, true)}`;
+  }
 }
 
 function verdictLine(v: CanaryVerdict): string {

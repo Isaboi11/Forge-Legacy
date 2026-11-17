@@ -80,11 +80,14 @@ test('lines and the latest deploy per function', () => {
 test('the page reads it on its own, and the card is on /admin-ai with a failed-load state', () => {
   const live = readFileSync(new URL('../../../data/ai-health-live.ts', import.meta.url), 'utf8');
   assert.match(live, /callRpc<unknown>\('admin_ai_deploys', \{ p_limit: 30 \}\)/);
-  const page = readFileSync(new URL('../../../app/admin-ai.tsx', import.meta.url), 'utf8');
-  assert.match(page, /<DeployedCodeCard \/>/);
+  // Web / trunk: AI health is the Business CRM page (`AiHealthPage`, which /admin-ai opens), so the card is a CRM
+  // Block there — build 11's `DeployedCodeCard` on its Forge page, the same read and the same promises.
+  const page = readFileSync(new URL('../../../components/forge/admin/pages/AiHealthPage.tsx', import.meta.url), 'utf8');
+  assert.match(page, /<DeployedCodeBlock \/>/);
   assert.match(page, /useQuery\(\(\) => fetchAiDeploys\(\), \[\]\)/);
   assert.match(page, /this is not an all clear/);
   // Existing tokens only (both themes): no hex colours in the new card.
-  const card = page.slice(page.indexOf('function DeployedCodeCard'), page.indexOf('function verdictLine'));
+  const card = page.slice(page.indexOf('function DeployedCodeBlock'), page.indexOf('function verdictLine'));
+  assert.ok(card.length > 200, 'the card is there');
   assert.doesNotMatch(card, /#[0-9a-fA-F]{3,8}\b/);
 });
