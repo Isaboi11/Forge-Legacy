@@ -8,6 +8,7 @@ import {
   type TimedAiFunction,
 } from '@/domain/ai/ai-call';
 import { elapsedMs, reportAiFailure } from '@/lib/ai-telemetry';
+import { noteAiRemaining } from '@/data/ai-credits-live';
 
 /**
  * ══ EVERY NON-CHAT AI CALL GOES THROUGH HERE (AI Road to 10, Sprint 1 — PL-3 / PL-4, audit P-G1 / P-G3) ══
@@ -37,6 +38,12 @@ export async function invokeAi(fn: TimedAiFunction, body: unknown, opts: AiInvok
   reportAiFailure(aiFailureOf(first));
   if (opts.signal?.aborted || !(await reaskConsent('ai_sharing'))) return first;
   return callOnce(fn, body, opts);
+}
+
+/** The credits chip's number is the one an answer carries (`remaining`, Sprint 1 §1.2 — UX-2, 0272). */
+function noted(answer: AiAnswer): AiAnswer {
+  noteAiRemaining(answer.body);
+  return answer;
 }
 
 /** Report one failed call (`AiFailure` via `reportAiFailure`). `outcome` = the module's own name for what happened. */
@@ -85,7 +92,7 @@ async function callOnce(fn: TimedAiFunction, body: unknown, opts: AiInvokeOption
     } catch {
       return answer({ offline: true });
     }
-  })();
+  })().then(noted);
 
   try {
     return await Promise.race([work, stopped]);
