@@ -75,9 +75,12 @@ test('kitchen in the meal plan, meal photo and photo import: a ref made once whe
 
 test('form check keeps its designed Useful / Not useful and counts the same vote in ai_feedback', () => {
   assert.match(FORM, /ref: id \?\? uuid\(\),/);
-  assert.match(FORM, /if \(next != null\) void rateAiOutput\(\{ feature: 'form_check', ref: r\.ref, rating: next \? 1 : -1 \}\);/);
-  assert.match(FORM, /if \(r\.id\) void setFormUseful\(r\.id, next\);/, 'its own column is still written');
-  assert.doesNotMatch(FORM, /<AiFeedback/, 'no second control on that screen');
+  // Sprint 2 (UX-4): the vote runs on AiFeedback's own core — one vote, changed never withdrawn, a failed write said.
+  assert.match(FORM, /void rateAiOutput\(\{ feature: 'form_check', ref: r\.ref, rating \}\)\.then\(\(ok\) =>/);
+  assert.match(FORM, /if \(!aiFeedbackWrites\(vote, rating\)\) return;/);
+  assert.match(FORM, /if \(r\.id\) void setFormUseful\(r\.id, v\);/, 'its own column is still written');
+  // `\b`, like the count below: `useState<AiFeedbackState>` is the core's state, not a second control.
+  assert.doesNotMatch(FORM, /<AiFeedback\b/, 'no second control on that screen');
 });
 
 test('the placements are exactly these', () => {
