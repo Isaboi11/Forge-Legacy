@@ -1762,7 +1762,8 @@ export function CoachChatSheet({
    * and it applies through `edit-ops`, so every invariant (a trained session is never touched, the session
    * count never moves) holds exactly as it does in the tapped flow. Nothing saves until they say so.
    */
-  const editByWords = async (intent: EditIntent, said?: string) => {
+  /* `wanted`, not `intent`: the sheet's own `intent` prop is in scope here (C-I7 — no name shadows another). */
+  const editByWords = async (wanted: EditIntent, said?: string) => {
     if (said) editAsked.current = said;
     setBusy('thinking');
     const active = await Promise.race([
@@ -1779,10 +1780,10 @@ export function CoachChatSheet({
       said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
     ]);
     setBusy(null);
-    const res = resolveEditIntent(intent, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
+    const res = resolveEditIntent(wanted, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
     if (!res.ok) {
       /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
-      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...intent, op: res.retarget } : intent, ask: res.ask };
+      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
       say(
         { kind: 'holt', text: res.message },
         ...(res.ask !== 'not_editable' && res.options.length
@@ -2480,10 +2481,11 @@ export function CoachChatSheet({
    * True when something was shown, so the caller adds nothing on top.
    */
   const actOn = async (actions: AskAction[], asked: string): Promise<boolean> => {
-    const edit = actions.find((a) => a.name === 'propose_program_edit');
-    const intent = edit ? narrowEdit(edit.input) : null;
-    if (intent) {
-      await editByWords(intent, asked);
+    /* Not `edit` / `intent`: both name sheet-wide state and props here (C-I7 — no name shadows another). */
+    const proposed = actions.find((a) => a.name === 'propose_program_edit');
+    const proposedEdit = proposed ? narrowEdit(proposed.input) : null;
+    if (proposedEdit) {
+      await editByWords(proposedEdit, asked);
       return true;
     }
     const web = actions.find((a) => a.name === 'offer_online_recipe_search');
@@ -3184,18 +3186,19 @@ export function CoachChatSheet({
   const keepInBuilder = async () => {
     if (built?.kind !== 'program') return;
     if (!earnsStructuredDevelopmentCredit(built.structure)) {
-      const draft = draftFromStructure(built.structure);
-      await saveProgramDraft(draft);
+      const programDraft = draftFromStructure(built.structure);
+      await saveProgramDraft(programDraft);
       /* Shown in chat already, so not news — the bubble never calls it "still sitting in the builder" (holt-13). */
-      await setDraftTold(draft.name || null);
+      await setDraftTold(programDraft.name || null);
       openBuilder();
       return;
     }
     const kept = await keepAsProgram();
     if (!kept) return;
-    const draft = { ...draftFromStructure(built.structure), mode: 'edit' as const, editId: kept, srcId: kept };
-    await saveProgramDraft(draft);
-    await setDraftTold(draft.name || null);
+    /* `programDraft`, not `draft` — that is the composer's text (C-I7 — no name shadows another). */
+    const programDraft = { ...draftFromStructure(built.structure), mode: 'edit' as const, editId: kept, srcId: kept };
+    await saveProgramDraft(programDraft);
+    await setDraftTold(programDraft.name || null);
     openBuilder(kept);
   };
 
