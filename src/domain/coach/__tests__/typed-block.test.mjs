@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { rowForWeek, typedBlock, typedBlockLine } from '../typed-block.ts';
+import { overCeilingLine, rowForWeek, typedBlock, typedBlockLine, typedOverCeiling } from '../typed-block.ts';
 import { DELOAD_MARKER, deloadWeeks } from '../rulebook/volume.ts';
 
 const bench = { catalogKey: 'bench', name: 'Bench Press', sets: 4, reps: 8, repsMax: 12 };
@@ -77,4 +77,37 @@ test('the chat builds a typed program through typedBlock (no more one week repea
   const sheet = readFileSync(new URL('../../../components/forge/CoachChatSheet.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   assert.match(sheet, /typedBlock\(written\.valid\.title, written\.valid\.days, c\.weeks \?\? defaultWeeksFor\(c\.goal\)\)/);
   assert.match(sheet, /typedBlockLine\(structure, deloads\)/);
+});
+
+/* ── PB-4, second half: the volume bands, checked (never enforced) ── */
+
+const MUSCLES = {
+  bench: { primaryMuscleIds: ['chest'], muscleIds: ['chest', 'triceps', 'front_deltoids'] },
+  fly: { primaryMuscleIds: ['chest'], muscleIds: ['chest'] },
+  curl: { primaryMuscleIds: ['biceps'], muscleIds: ['biceps'] },
+};
+const lookup = (k) => MUSCLES[k];
+const chestDay = (letter, sets) => ({ letter, name: 'Chest', warmup: [], cooldown: [], main: [{ catalogKey: 'bench', name: 'Bench', sets, reps: 8 }, { catalogKey: 'fly', name: 'Fly', sets, reps: 12 }] });
+
+test('a typed week past a muscle’s recoverable ceiling is said once; under it, nothing', () => {
+  // 4 days × (5 bench + 5 fly) = 40 chest sets; the hypertrophy ceiling is 20.
+  const over = typedOverCeiling([chestDay('A', 5), chestDay('B', 5), chestDay('C', 5), chestDay('D', 5)], 'muscle', 'intermediate', lookup);
+  assert.deepEqual(over.map((o) => [o.group, o.sets, o.max]), [['chest', 40, 20]]);
+  assert.equal(overCeilingLine(over), "Heads up: that's about 40 sets of chest a week — past the 20 most people recover from. Say the word and I'll trim it.");
+  // 2 days × 6 = 12 chest sets: inside the band → no line. Triceps get half a set per bench set (6), also fine.
+  assert.deepEqual(typedOverCeiling([chestDay('A', 3), chestDay('B', 3)], 'muscle', 'intermediate', lookup), []);
+  assert.equal(overCeilingLine([]), null);
+});
+
+test('⛔ floors are never owed by a typed program — an arms-only week is what they asked for', () => {
+  const arms = { letter: 'A', name: 'Arms', warmup: [], cooldown: [], main: [{ catalogKey: 'curl', name: 'Curl', sets: 4, reps: 10 }] };
+  assert.deepEqual(typedOverCeiling([arms], 'muscle', 'beginner', lookup), []);
+  // Unknown exercises, cardio and goals with no band (running, mobility) count nothing.
+  assert.deepEqual(typedOverCeiling([chestDay('A', 30)], 'run_5k', 'intermediate', lookup), []);
+  assert.deepEqual(typedOverCeiling([{ ...chestDay('A', 30), main: [{ name: 'Mystery', sets: 30, reps: 5 }] }], 'muscle', 'intermediate', lookup), []);
+});
+
+test('the chat says the ceiling line under a typed program, from the real catalogue', () => {
+  const sheet = readFileSync(new URL('../../../components/forge/CoachChatSheet.tsx', import.meta.url), 'utf8');
+  assert.match(sheet, /overCeilingLine\(typedOverCeiling\(written\.valid\.days, c\.goal, c\.experience\.lifting, itemByKey\)\)/);
 });

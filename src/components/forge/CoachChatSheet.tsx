@@ -54,7 +54,7 @@ import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
 import { afterStop, askEndedWell, askEndResult, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
-import { typedBlock, typedBlockLine } from '@/domain/coach/typed-block';
+import { overCeilingLine, typedBlock, typedBlockLine, typedOverCeiling } from '@/domain/coach/typed-block';
 import { track } from '@/lib/analytics';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { summarizeChat } from '@/data/holt-chats-live';
@@ -1061,7 +1061,13 @@ export function CoachChatSheet({
              audit B-G4): his rep ranges climb a rep a week, PAS-D7's deload weeks are marked and cut, and any
              fixed number they asked for is held. It used to be one week repeated (`vary: false`). */
           const { structure, deloads } = typedBlock(written.valid.title, written.valid.days, c.weeks ?? defaultWeeksFor(c.goal));
-          const shape = typedBlockLine(structure, deloads);
+          /* PB-4: the shape said once — and a muscle the week takes past its recoverable ceiling, with the offer to trim. */
+          const shape = [
+            typedBlockLine(structure, deloads),
+            overCeilingLine(typedOverCeiling(written.valid.days, c.goal, c.experience.lifting, itemByKey)),
+          ]
+            .filter(Boolean)
+            .join(' ');
           setBusy(null);
           if (draftNow(structure)) await saveProgramDraft(draftFromStructure(structure));
           setBuilt({ kind: structure.weeks === 1 ? 'week' : 'program', structure });
