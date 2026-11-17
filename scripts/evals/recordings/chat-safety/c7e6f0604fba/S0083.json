@@ -1,0 +1,26 @@
+{
+  "caseId": "S0083",
+  "promptHash": "c7e6f0604fbabd3a9942deaa7af9382746845344fba4afa583e7218ea55a93c7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:09:03.853Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Straps are fine for back-focused pulling once grip is clearly the limiter, not the stimulus you're chasing. If you're training deadlifts for raw strength, work your grip too — dead hangs, farmer carries — so it doesn't stay the weak link. Use the straps to get the back work in, just don't lean on them every single set.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 71,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 122,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

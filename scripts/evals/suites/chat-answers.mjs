@@ -20,7 +20,7 @@ import { deepStrictEqual } from 'node:assert';
 
 import { narrowReply, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
 import { VOICE } from '../../../src/domain/coach/rulebook/voice.ts';
-import { FUNCTION_KNOBS, callAnthropic, interpretTurn, readJsonl, systemOf } from '../lib/suite-kit.mjs';
+import { FUNCTION_KNOBS, callAnthropic, interpretTurn, knobsFor, readJsonl, systemOf } from '../lib/suite-kit.mjs';
 
 /**
  * Holt's question for a corpus `qid`, as the app sends it (`ask`, from his own line catalogue — the first line, so a
@@ -108,11 +108,11 @@ export const suite = {
     const j = judge(c.expect, fieldsOf(narrowReply(parsed, TODAY)));
     return { pass: j.pass, score: j.pass ? 1 : 0, notes: j.notes };
   },
-  callLive: async (c, { apiKey, signal }) =>
+  callLive: async (c, { apiKey, signal, model = 'claude-sonnet-5' }) =>
     callAnthropic({
       apiKey,
       signal,
-      model: 'claude-sonnet-5',
+      model,
       system: systemOf('coach-interpret'),
       cacheSystem: true,
       messages: [
@@ -122,7 +122,7 @@ export const suite = {
         },
       ],
       maxTokens: 1024,
-      extra: FUNCTION_KNOBS['coach-interpret'],
+      extra: knobsFor(model, FUNCTION_KNOBS['coach-interpret']),
     }),
   estimateUsd: (cases) => cases.length * 0.0016 * 1.2,
   threshold: { metric: 'pass_rate', min: 0.95 },

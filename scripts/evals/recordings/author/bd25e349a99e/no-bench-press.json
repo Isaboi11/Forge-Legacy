@@ -1,0 +1,26 @@
+{
+  "caseId": "no-bench-press",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:21:53.251Z",
+  "reply": {
+    "text": "{\"say\":\"Chest day with the bench press left out, built around flies, dips, machines and cables, and the pressing starts with a machine press so you're not stuck waiting on a flat bench. Upper and lower angles are both covered with incline and decline fly work plus the dip for lower chest.\",\"title\":\"Chest Day\",\"days\":[{\"name\":\"Chest\",\"exercises\":[{\"key\":\"machine-chest-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze at lockout\"},{\"key\":\"machine-incline-chest-press\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree angle\"},{\"key\":\"parallel-bar-dip\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"lean forward for chest\"},{\"key\":\"low-to-high-cable-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze at top\"},{\"key\":\"high-to-low-cable-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the stretch\"},{\"key\":\"pec-deck-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"slow on the way back\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 112,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 507,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "named-numbers",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:21:39.123Z",
+  "reply": {
+    "text": "{\"say\":\"Bench and incline dumbbell press lead the way exactly as you laid them out, then I added three more to round out the chest work from a few different angles.\",\"title\":\"Chest Day\",\"days\":[{\"name\":\"Chest Day\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":5,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":4,\"reps\":8,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"low-to-high-cable-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through the lower chest\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-crossover\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze at full stretch\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 126,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 385,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "rear-delts",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:20:11.687Z",
+  "reply": {
+    "text": "{\"say\":\"Shoulders day with rear delts as the clear priority: three dedicated rear-delt movements lead the way, backed by one lateral and one front/overhead piece to round things out. One standard overhead press keeps the push pattern in without turning this into a front-delt day.\",\"title\":\"Shoulders - Rear Delt Focus\",\"days\":[{\"name\":\"Shoulders\",\"exercises\":[{\"key\":\"cable-face-pull\",\"sets\":4,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pull to eye level, squeeze rear delts\"},{\"key\":\"dumbbell-rear-delt-fly\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"bent over, lead with elbows\"},{\"key\":\"machine-rear-delt-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"slow and controlled\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"light, controlled\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 116,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 469,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

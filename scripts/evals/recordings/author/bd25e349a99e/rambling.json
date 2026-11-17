@@ -1,0 +1,26 @@
+{
+  "caseId": "rambling",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:25:21.167Z",
+  "reply": {
+    "text": "{\"say\":\"Back day built around pull-ups like you asked, with rows for thickness and shrugs closing it out for traps. No direct bicep work today since you called that out.\",\"title\":\"Back & Traps\",\"days\":[{\"name\":\"Back Day\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"full range to the chin\"},{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pull to the lower ribs\"},{\"key\":\"cable-seated-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze shoulder blades together\"},{\"key\":\"straight-arm-cable-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"keep arms straight, feel the lats\"},{\"key\":\"cable-face-pull\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"elbows high\"},{\"key\":\"barbell-shrug\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pause at the top\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 155,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 472,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

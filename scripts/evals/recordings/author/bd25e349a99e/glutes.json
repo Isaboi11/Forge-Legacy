@@ -1,0 +1,26 @@
+{
+  "caseId": "glutes",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:20:40.732Z",
+  "reply": {
+    "text": "{\"say\":\"Glute day built around hip thrusts, then rounded out with glute bridge work, kickbacks and hip abduction to hit the muscle from every angle.\",\"title\":\"Glute Day\",\"days\":[{\"name\":\"Glute Day\",\"exercises\":[{\"key\":\"barbell-hip-thrust\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through heels, squeeze at top\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"hinge, keep bar close\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"lean torso forward for glutes\"},{\"key\":\"cable-glute-kickback\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pause at top of kick\"},{\"key\":\"band-lateral-walk\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"keep tension on the band\"},{\"key\":\"cable-hip-abduction\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the return\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 489,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

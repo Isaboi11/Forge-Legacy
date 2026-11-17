@@ -1,0 +1,26 @@
+{
+  "caseId": "side-delts",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:20:16.984Z",
+  "reply": {
+    "text": "{\"say\":\"Shoulder day built around width: the lateral raise work is the bulk of it, with a press and rear delt and front delt finisher to round things out.\",\"title\":\"Shoulder Day - Width Focus\",\"days\":[{\"name\":\"Shoulder Day\",\"exercises\":[{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"main pressing movement\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"leaning-dumbbell-lateral-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"lean away for more range\"},{\"key\":\"cable-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"constant tension through the set\"},{\"key\":\"behind-the-back-cable-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-rear-delt-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-front-raise\",\"sets\":2,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 108,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 534,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

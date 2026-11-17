@@ -1,0 +1,26 @@
+{
+  "caseId": "recent-variety",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:22:07.778Z",
+  "reply": {
+    "text": "{\"say\":\"Chest leads with a flat press plus incline and decline angles for full coverage, and triceps gets two movements to finish the push work.\",\"title\":\"Chest & Triceps\",\"days\":[{\"name\":\"Chest & Triceps\",\"exercises\":[{\"key\":\"barbell-incline-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through the upper chest\"},{\"key\":\"dumbbell-decline-bench-press\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-crossover\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze at the finish\"},{\"key\":\"dumbbell-tate-press\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-rope-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 181,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 391,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

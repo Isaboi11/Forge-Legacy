@@ -183,7 +183,7 @@ export async function runLive(suite, { root, apiKey, budget, record = false, rec
       const ctl = new AbortController();
       const t = setTimeout(() => ctl.abort(), 120_000);
       try {
-        out = await suite.callLive(c, { apiKey, signal: ctl.signal });
+        out = await suite.callLive(c, { apiKey, signal: ctl.signal, model: suite.model });
       } finally {
         clearTimeout(t);
       }

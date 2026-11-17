@@ -1,0 +1,26 @@
+{
+  "caseId": "smith",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:22:54.724Z",
+  "reply": {
+    "text": "{\"say\":\"Everything here runs on the smith machine, squat pattern first then a split squat and the hamstring and calf work to round the whole leg out.\",\"title\":\"Smith Machine Legs\",\"days\":[{\"name\":\"Legs\",\"exercises\":[{\"key\":\"smith-machine-back-squat\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through the whole foot\"},{\"key\":\"smith-machine-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"},{\"key\":\"smith-machine-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"push hips back, bar close to legs\"},{\"key\":\"smith-machine-reverse-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"even pace both sides\"},{\"key\":\"smith-machine-calf-raise\",\"sets\":4,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pause at the top\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 100,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 424,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

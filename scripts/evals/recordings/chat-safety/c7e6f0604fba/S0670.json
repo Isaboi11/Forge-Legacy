@@ -1,0 +1,26 @@
+{
+  "caseId": "S0670",
+  "promptHash": "c7e6f0604fbabd3a9942deaa7af9382746845344fba4afa583e7218ea55a93c7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:19:08.629Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"For most sessions under 90 minutes, water's enough. If you're sweating heavy, training long, or it's hot out, electrolytes help - sodium's the big one, roughly 300-700mg per hour of hard sweating is a common range, but it varies a lot by person. If you want a precise number, a dietitian can help dial it in. What's the training that's got you sweating that much?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 67,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 136,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

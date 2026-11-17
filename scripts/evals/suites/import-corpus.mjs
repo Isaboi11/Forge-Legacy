@@ -43,6 +43,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { knobsFor } from '../lib/suite-kit.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MANIFEST = path.join(ROOT, 'scripts/evals/corpus/import/manifest.json');
 const CARD_FN = 'supabase/functions/workout-card-read/index.ts';
@@ -360,14 +362,14 @@ async function messages(apiKey, payload, signal) {
 const textOf = (json) => (json?.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('\n');
 
 /** The card reader's answer for an image, shaped exactly as `workout-card-read` returns it. */
-async function liveCardRead(apiKey, body, signal, usage) {
+async function liveCardRead(apiKey, body, signal, usage, model = null) {
+  const m = model ?? constOf(CARD_FN, 'MODEL');
   const { status, json } = await messages(
     apiKey,
     {
-      model: constOf(CARD_FN, 'MODEL'),
+      model: m,
       max_tokens: 4096,
-      thinking: { type: 'disabled' },
-      output_config: { effort: 'low' },
+      ...knobsFor(m, { thinking: { type: 'disabled' }, output_config: { effort: 'low' } }),
       system: [{ type: 'text', text: systemOf(CARD_FN), cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: body.mediaType, data: body.image } }, { type: 'text', text: 'Copy this workout card as text.' }] }],
     },
@@ -392,15 +394,15 @@ async function liveCardRead(apiKey, body, signal, usage) {
 }
 
 /** The layout pass's answer for a card's text, shaped exactly as `workout-tidy` returns it. */
-async function liveTidy(apiKey, body, signal, usage) {
+async function liveTidy(apiKey, body, signal, usage, model = null) {
   const text = String(body.text ?? '');
+  const m = model ?? constOf(TIDY_FN, 'MODEL');
   const { status, json } = await messages(
     apiKey,
     {
-      model: constOf(TIDY_FN, 'MODEL'),
+      model: m,
       max_tokens: 8000,
-      thinking: { type: 'adaptive' },
-      output_config: { effort: 'low' },
+      ...knobsFor(m, { thinking: { type: 'adaptive' }, output_config: { effort: 'low' } }),
       system: [{ type: 'text', text: systemOf(TIDY_FN), cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: `<card>\n${text}\n</card>\n\nRewrite this card in the layout.` }],
     },
@@ -567,15 +569,17 @@ export const suite = {
     return checks;
   },
   grade: async (testCase, recorded) => gradeRecorded(testCase.expect, recorded),
-  callLive: async (testCase, { apiKey, signal }) => {
+  callLive: async (testCase, { apiKey, signal, model = null }) => {
     if (!apiKey) throw new Error('import-corpus: callLive needs an Anthropic API key');
+    /* The suite's own model is the functions' model today; only a --model run swaps both functions onto another. */
+    const swap = model && model !== 'claude-sonnet-5' ? model : null;
     const uri = await imageFor(testCase.expect);
     const usage = {};
     const bodies = {};
     await readThroughApp(uri, async (name, body) => {
       let answer;
-      if (name === 'workout-card-read') answer = await liveCardRead(apiKey, body, signal, usage);
-      else if (name === 'workout-tidy') answer = await liveTidy(apiKey, body, signal, usage);
+      if (name === 'workout-card-read') answer = await liveCardRead(apiKey, body, signal, usage, swap);
+      else if (name === 'workout-tidy') answer = await liveTidy(apiKey, body, signal, usage, swap);
       else answer = { status: 404, body: { code: 'NOT_FOUND', message: `${name} is not part of this recording` } };
       bodies[name] = answer;
       return answer;

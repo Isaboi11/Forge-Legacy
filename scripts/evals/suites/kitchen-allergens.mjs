@@ -14,9 +14,9 @@
  */
 
 import { dishCards } from '../../../src/domain/nutrition/kitchen-cards.ts';
-import { kitchenFromModelText, kitchenUserTurn, narrowKitchenRequest } from '../../../src/domain/nutrition/kitchen-dishes.ts';
+import { KITCHEN_OUTPUT_CAP, KITCHEN_SCHEMA, kitchenFromModelText, kitchenUserTurn, narrowKitchenRequest } from '../../../src/domain/nutrition/kitchen-dishes.ts';
 import { KITCHEN_FOODS } from '../../../src/domain/nutrition/kitchen-foods.ts';
-import { callAnthropic, templateOf } from '../lib/suite-kit.mjs';
+import { FUNCTION_KNOBS, callAnthropic, knobsFor, templateOf } from '../lib/suite-kit.mjs';
 
 /** allergen → words that give it away in a dish line. Written for this suite, not copied from the filter. */
 export const INDEPENDENT = {
@@ -68,6 +68,8 @@ export const suite = {
     { file: 'supabase/functions/coach-kitchen/index.ts', exportName: 'SYSTEM' },
     { file: 'supabase/functions/coach-kitchen/index.ts', exportName: 'MODEL' },
     { file: 'src/domain/nutrition/kitchen-dishes.ts', exportName: 'KITCHEN_SCHEMA' },
+    { file: 'src/domain/nutrition/kitchen-dishes.ts', exportName: 'KITCHEN_OUTPUT_CAP' },
+    { file: 'scripts/evals/lib/suite-kit.mjs', exportName: 'FUNCTION_KNOBS' },
   ],
   model: 'claude-sonnet-5',
   cases: async () =>
@@ -90,14 +92,21 @@ export const suite = {
     const leaks = dishes.filter((d) => shown.has(d.name)).flatMap((d) => leaksIn(d, c.input.avoid).map((a) => `${d.name}: ${a}`));
     return { pass: leaks.length === 0, score: leaks.length === 0 ? 1 : 0, notes: leaks.length ? `LEAK ${leaks.join('; ')}` : `${shown.size} dish(es) shown, 0 leaks` };
   },
-  callLive: async (c, { apiKey, signal }) =>
+  /* Sprint 3 harness fix: coach-kitchen's own request — thinking off, effort low, its JSON schema and output cap, the
+     cached SYSTEM block. The 11-17 recording (36/36) went without them, so this re-records. */
+  callLive: async (c, { apiKey, signal, model = 'claude-sonnet-5' }) =>
     callAnthropic({
       apiKey,
       signal,
-      model: 'claude-sonnet-5',
+      model,
       system: templateOf('coach-kitchen', 'SYSTEM', { KITCHEN_FOODS }),
+      cacheSystem: true,
       messages: [{ role: 'user', content: kitchenUserTurn(narrowKitchenRequest(c.input)) }],
-      maxTokens: 2600,
+      maxTokens: KITCHEN_OUTPUT_CAP,
+      extra: knobsFor(model, {
+        ...FUNCTION_KNOBS['coach-kitchen'],
+        output_config: { ...FUNCTION_KNOBS['coach-kitchen'].output_config, format: { type: 'json_schema', schema: KITCHEN_SCHEMA } },
+      }),
     }),
   // ~3k input (system + foods) + up to 2,600 output on Sonnet 5 ≈ $0.032 a call. Plus 20%.
   estimateUsd: (cases) => cases.length * 0.032 * 1.2,

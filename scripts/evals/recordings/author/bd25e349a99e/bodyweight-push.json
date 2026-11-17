@@ -1,0 +1,26 @@
+{
+  "caseId": "bodyweight-push",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:22:40.709Z",
+  "reply": {
+    "text": "{\"say\":\"Here's a bodyweight push day — chest, shoulders and triceps all get worked, starting with the biggest push-up variation and finishing with triceps isolation.\",\"title\":\"Bodyweight Push Day\",\"days\":[{\"name\":\"Push\",\"exercises\":[{\"key\":\"decline-push-up\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"feet raised, upper chest\"},{\"key\":\"push-up\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"standard flat press\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"hips high, shoulders\"},{\"key\":\"diamond-push-up\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"hands close, triceps\"},{\"key\":\"bench-dip\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 111,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 395,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

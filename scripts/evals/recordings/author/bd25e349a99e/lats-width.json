@@ -1,0 +1,26 @@
+{
+  "caseId": "lats-width",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:20:21.468Z",
+  "reply": {
+    "text": "{\"say\":\"Back day built for width, leading with lat pulldowns and pull-ups and just one row to finish out the upper back.\",\"title\":\"Back Day - Width Focus\",\"days\":[{\"name\":\"Back Day\",\"exercises\":[{\"key\":\"wide-grip-cable-lat-pulldown\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"reach tall, drive elbows down\"},{\"key\":\"pull-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"wide grip\"},{\"key\":\"straight-arm-cable-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"feel the lats stretch and squeeze\"},{\"key\":\"cable-pullover\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"machine-seated-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"your one row for the day\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 109,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 400,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

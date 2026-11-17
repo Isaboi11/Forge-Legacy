@@ -1,0 +1,26 @@
+{
+  "caseId": "holds",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:23:45.613Z",
+  "reply": {
+    "text": "{\"say\":\"Core-only day, four movements built around planks and side planks, with a couple of rotational and flexion pieces rounding it out.\",\"title\":\"Core Only\",\"days\":[{\"name\":\"Core\",\"exercises\":[{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"main\",\"note\":\"brace hard, don't sag hips\"},{\"key\":\"side-plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"stack hips, keep body straight\"},{\"key\":\"hanging-leg-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"},{\"key\":\"cable-pallof-press\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"resist rotation, slow tempo\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 328,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

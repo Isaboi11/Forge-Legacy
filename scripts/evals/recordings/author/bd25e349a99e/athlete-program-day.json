@@ -1,0 +1,26 @@
+{
+  "caseId": "athlete-program-day",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:25:30.816Z",
+  "reply": {
+    "text": "{\"say\":\"This is your list, in your order. The deadlift still leads the lower-body-free work it needs to since it's never a back movement, but I kept it in since you named it.\",\"title\":\"Chest and Back Day\",\"days\":[{\"name\":\"Chest and Back\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-incline-bench-press\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-pullover\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"chin-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-bent-over-row\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-deadlift\",\"sets\":4,\"reps\":3,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 123,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 425,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

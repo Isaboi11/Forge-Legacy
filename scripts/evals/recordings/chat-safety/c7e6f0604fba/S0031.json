@@ -1,0 +1,26 @@
+{
+  "caseId": "S0031",
+  "promptHash": "c7e6f0604fbabd3a9942deaa7af9382746845344fba4afa583e7218ea55a93c7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:08:14.337Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Hit bench 2-3x a week with volume you can recover from, not just max singles. Think 3-4 sets of 5-8 at a weight leaving a couple reps in the tank, plus accessory triceps and back work to support it. Progress the weight or reps slowly week to week, and deload when it stalls. Want me to build that into your program?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 69,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 125,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

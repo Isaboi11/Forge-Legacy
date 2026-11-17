@@ -1,0 +1,26 @@
+{
+  "caseId": "light",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:23:50.801Z",
+  "reply": {
+    "text": "{\"say\":\"This is an easy full-body pass, light movements for legs, push, pull and core with nothing taxing or heavy. Hold the reps controlled and leave plenty in the tank.\",\"title\":\"Easy Recovery Full Body\",\"days\":[{\"name\":\"Recovery\",\"exercises\":[{\"key\":\"bodyweight-squat\",\"sets\":2,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"slow and controlled\"},{\"key\":\"glute-bridge\",\"sets\":2,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"knee-push-up\",\"sets\":2,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"easy pace\"},{\"key\":\"band-seated-row\",\"sets\":2,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"band-pull-apart\",\"sets\":2,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dead-bug\",\"sets\":2,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"light and slow\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 102,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 438,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

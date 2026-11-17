@@ -1,0 +1,26 @@
+{
+  "caseId": "four-only",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:21:21.756Z",
+  "reply": {
+    "text": "{\"say\":\"Four moves, push only, biggest lift first so you get the most out of the short session: bench leads, then incline dumbbell work, overhead pressing, and triceps to finish.\",\"title\":\"Push Day\",\"days\":[{\"name\":\"Push Day\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through the chest\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"controlled descent\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"elbows pinned to sides\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 101,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 360,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

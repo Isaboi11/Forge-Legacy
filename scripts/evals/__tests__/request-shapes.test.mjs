@@ -116,3 +116,37 @@ test('author: the code-stopped case is never sent; the rest carry the schema and
   assert.deepEqual(sent[0].thinking, { type: 'disabled' });
   assert.deepEqual(sent[0].system[0].cache_control, { type: 'ephemeral' });
 });
+
+test('PL-7: each model gets the function’s settings in the form it accepts', async () => {
+  const { knobsFor } = await import('../lib/suite-kit.mjs');
+  const base = { thinking: { type: 'disabled' }, output_config: { effort: 'low', format: { type: 'json_schema', schema: {} } } };
+  assert.deepEqual(knobsFor('claude-sonnet-5', base), base);
+  // Sonnet 5.5: disabled is a 400 — thinking off is between_tools.
+  assert.deepEqual(knobsFor('claude-sonnet-5-5', base).thinking, { type: 'between_tools' });
+  // Opus 5.5: thinking cannot be off; effort low holds it down.
+  assert.equal(knobsFor('claude-opus-5-5', base).thinking, undefined);
+  assert.equal(knobsFor('claude-opus-5-5', base).output_config.effort, 'low');
+  // Haiku 5.5: disabled is accepted at effort high or below.
+  assert.deepEqual(knobsFor('claude-haiku-5-5', base), base);
+  // Haiku 4.5: neither effort nor the disabled form (the schema stays).
+  assert.deepEqual(knobsFor('claude-haiku-4-5', base), { output_config: { format: { type: 'json_schema', schema: {} } } });
+  // Adaptive stays adaptive everywhere it is allowed; the base is never mutated.
+  assert.deepEqual(knobsFor('claude-sonnet-5-5', { thinking: { type: 'adaptive' } }).thinking, { type: 'adaptive' });
+  assert.deepEqual(base.thinking, { type: 'disabled' });
+});
+
+test('coach-kitchen: thinking off, effort low, its schema and cap, cached SYSTEM — as the harness sends them', async () => {
+  const KITCHEN = readText('supabase/functions/coach-kitchen/index.ts');
+  has(KITCHEN, "thinking: { type: 'disabled' },");
+  has(KITCHEN, "output_config: { effort: 'low', format: { type: 'json_schema', schema: KITCHEN_SCHEMA } },");
+  has(KITCHEN, 'max_tokens: KITCHEN_OUTPUT_CAP,');
+  has(KITCHEN, "system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],");
+  const { suite } = await import('../suites/kitchen-allergens.mjs');
+  const cases = await suite.cases();
+  const { sent } = await captured(() => suite.callLive(cases[0], { ...live, model: 'claude-sonnet-5-5' }));
+  assert.equal(sent[0].model, 'claude-sonnet-5-5');
+  assert.deepEqual(sent[0].thinking, { type: 'between_tools' });
+  assert.equal(sent[0].output_config.effort, 'low');
+  assert.equal(sent[0].output_config.format.type, 'json_schema');
+  assert.deepEqual(sent[0].system[0].cache_control, { type: 'ephemeral' });
+});

@@ -1,0 +1,26 @@
+{
+  "caseId": "fat-loss",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:24:31.407Z",
+  "reply": {
+    "text": "{\"say\":\"This is a full-body circuit built to keep moving and keep your heart rate up, hitting legs, push, pull, and core in rotation. No single lift dominates, so you get a lean-out style session with constant work.\",\"title\":\"Full Body Circuit\",\"days\":[{\"name\":\"Full Body Circuit\",\"exercises\":[{\"key\":\"bodyweight-squat\",\"sets\":3,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"keep a steady pace\"},{\"key\":\"push-up\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"inverted-row\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"kettlebell-swing\",\"sets\":3,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"reverse-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"alternate legs\"},{\"key\":\"mountain-climber\",\"sets\":3,\"reps\":20,\"repsTo\":30,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"A\",\"part\":\"main\",\"note\":\"brace hard\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 80,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 505,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

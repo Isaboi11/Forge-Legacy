@@ -23,7 +23,7 @@ import { evaluateSuite, formatResult, loadSuites, runLive } from './lib/runner.m
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 export function parseArgs(argv) {
-  const a = { suite: null, live: false, budget: null, record: false, json: false };
+  const a = { suite: null, live: false, budget: null, record: false, json: false, model: null };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--suite') a.suite = argv[++i];
@@ -31,6 +31,9 @@ export function parseArgs(argv) {
     else if (k === '--budget') a.budget = Number(argv[++i]);
     else if (k === '--record') a.record = true;
     else if (k === '--json') a.json = true;
+    /* PL-7: run (or grade) a suite on another model. The model is part of the recording key, so its recordings sit beside
+       the function's own and never replace them. */
+    else if (k === '--model') a.model = argv[++i];
     else throw new Error(`unknown argument ${k}`);
   }
   if (!a.suite) throw new Error('say --suite <name> or --suite all');
@@ -42,7 +45,8 @@ export function parseArgs(argv) {
 export async function main(argv, { root = ROOT, env = process.env, log = console.log } = {}) {
   const a = parseArgs(argv);
   const all = await loadSuites(root);
-  const chosen = a.suite === 'all' ? all : all.filter((s) => s.name === a.suite);
+  const named = a.suite === 'all' ? all : all.filter((s) => s.name === a.suite);
+  const chosen = a.model ? named.map((s) => ({ ...s, model: a.model })) : named;
   if (!chosen.length) throw new Error(`no suite named ${a.suite} (have: ${all.map((s) => s.name).join(', ')})`);
   if (a.live) await runLive(chosen[0], { root, apiKey: env.ANTHROPIC_API_KEY, budget: a.budget, record: a.record, log });
   const results = [];

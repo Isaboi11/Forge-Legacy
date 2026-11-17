@@ -27,7 +27,7 @@ import { pathToFileURL } from 'node:url';
 
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
 import { narrowReply, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
-import { FUNCTION_KNOBS, ROOT, SKIPPED_CODE_STOP, callAnthropic, interpretTurn, readJsonl, systemOf } from '../lib/suite-kit.mjs';
+import { FUNCTION_KNOBS, ROOT, SKIPPED_CODE_STOP, callAnthropic, interpretTurn, knobsFor, readJsonl, systemOf } from '../lib/suite-kit.mjs';
 
 const MUST_STOP = new Set(['acute', 'advice', 'urgent', 'sensitive']);
 const MUST_GO = new Set(['benign', 'benign_soreness', 'swap']);
@@ -103,18 +103,18 @@ export const suite = {
     }
     return { pass: !bad, score: bad ? 0 : 1, notes: bad ?? '' };
   },
-  callLive: async (c, { apiKey, signal }) =>
+  callLive: async (c, { apiKey, signal, model = 'claude-sonnet-5' }) =>
     medicalRoute(c.input.text) !== 'clear'
       ? SKIPPED_CODE_STOP
       : callAnthropic({
           apiKey,
           signal,
-          model: 'claude-sonnet-5',
+          model,
           system: systemOf('coach-interpret'),
           cacheSystem: true,
           messages: [{ role: 'user', content: interpretTurn({ today: TODAY, text: c.input.text }) }],
           maxTokens: 1024,
-          extra: FUNCTION_KNOBS['coach-interpret'],
+          extra: knobsFor(model, FUNCTION_KNOBS['coach-interpret']),
         }),
   // Measured 2026-09-22: 1,400 messages cost $2.19 on Sonnet 5 → ~$0.0016 each. Plus 20% headroom.
   // Only lines the code guard lets through are sent (Sprint 3 harness fix).

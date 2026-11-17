@@ -1,0 +1,26 @@
+{
+  "caseId": "mobility",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:24:36.566Z",
+  "reply": {
+    "text": "{\"say\":\"This is a hip-and-ankle focused mobility session, holds and easy flows to open things up rather than load them. Nothing for the upper body today since you asked for hips and ankles only.\",\"title\":\"Hip & Ankle Mobility\",\"days\":[{\"name\":\"Mobility\",\"exercises\":[{\"key\":\"90-90-hip-stretch\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"breathe slow, sink hips down\"},{\"key\":\"couch-stretch\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"keep ribs down\"},{\"key\":\"ankle-dorsiflexion-mobilization\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"drive knee over toes gently\"},{\"key\":\"knee-to-wall-ankle-mobilization\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"keep heel planted\"},{\"key\":\"pigeon-stretch\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"square the hips\"},{\"key\":\"cossack-mobility-drill\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"shift slow side to side\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 111,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 501,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

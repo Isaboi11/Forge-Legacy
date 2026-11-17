@@ -1,0 +1,26 @@
+{
+  "caseId": "S0534",
+  "promptHash": "c7e6f0604fbabd3a9942deaa7af9382746845344fba4afa583e7218ea55a93c7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:16:59.493Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Depends on your days. Three days a week, PPL leaves each lift waiting a week between hits - fine for muscle with volume stacked, but upper/lower fits better at 4 days with more frequency per muscle. If you're after general strength and muscle on a normal schedule, I'd lean upper/lower. Tell me your days and goal and I'll build it.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 71,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 129,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

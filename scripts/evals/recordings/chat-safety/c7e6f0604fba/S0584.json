@@ -1,0 +1,26 @@
+{
+  "caseId": "S0584",
+  "promptHash": "c7e6f0604fbabd3a9942deaa7af9382746845344fba4afa583e7218ea55a93c7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:17:55.066Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Hit them from three angles: overhead pressing for the front delts, lateral raises for the side delts, and rear delt flyes or face pulls for the back. Most lifters respond well to 3-4 sets of each, twice a week, with a couple reps in reserve. Want me to build that into your program?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 63,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 110,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

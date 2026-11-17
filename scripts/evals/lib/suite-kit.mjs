@@ -85,7 +85,34 @@ export const perCall = (inTokens, outTokens, rates = { in: 2, out: 10 }) => (inT
 export const FUNCTION_KNOBS = {
   'coach-interpret': { thinking: { type: 'disabled' }, output_config: { effort: 'low' } },
   'coach-author': { thinking: { type: 'disabled' }, output_config: { effort: 'low' } },
+  'coach-kitchen': { thinking: { type: 'disabled' }, output_config: { effort: 'low' } },
 };
+
+/**
+ * ══ THE SAME KNOBS, AS ANOTHER MODEL TAKES THEM (Sprint 3, PL-7 — `run.mjs --model`) ══
+ *
+ * A comparison only means something if each model gets the function's settings in the form that model accepts
+ * (claude-api skill, models table, 11-17):
+ *   · Sonnet 5.5 — `thinking: disabled` is a 400; thinking off is `{ type: 'between_tools' }` (effort high or below).
+ *   · Opus 5.5 — thinking cannot be turned off at any effort; it runs adaptive, held down by effort `low`.
+ *   · Haiku 5.5 — `disabled` is accepted at effort high or below, so the function's own knobs stand.
+ *   · Haiku 4.5 — takes neither `effort` nor the disabled form (coach-interpret's own HAIKU branch): both dropped.
+ * Everything else (Sonnet 5, the functions' model today) gets the knobs unchanged.
+ */
+export function knobsFor(model, base) {
+  const k = { ...base, ...(base.output_config ? { output_config: { ...base.output_config } } : {}) };
+  const m = String(model ?? '');
+  if (m.startsWith('claude-sonnet-5-5') && k.thinking?.type === 'disabled') k.thinking = { type: 'between_tools' };
+  if (m.startsWith('claude-opus-5-5') && k.thinking?.type === 'disabled') delete k.thinking;
+  if (m.startsWith('claude-haiku-4-5')) {
+    delete k.thinking;
+    if (k.output_config) {
+      delete k.output_config.effort;
+      if (!Object.keys(k.output_config).length) delete k.output_config;
+    }
+  }
+  return k;
+}
 
 /** The system block as every function sends it: one text block, cached (the variable part is in the user turn). */
 export const cachedSystem = (text) => [{ type: 'text', text, cache_control: { type: 'ephemeral' } }];

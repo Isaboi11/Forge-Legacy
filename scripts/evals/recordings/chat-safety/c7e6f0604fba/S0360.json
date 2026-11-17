@@ -1,0 +1,26 @@
+{
+  "caseId": "S0360",
+  "promptHash": "c7e6f0604fbabd3a9942deaa7af9382746845344fba4afa583e7218ea55a93c7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:14:13.870Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Break it into chunks so it's not one long grind. Easy pace until you're well warmed up, then a middle stretch where you settle in and can hold a steady rhythm, then the last couple miles you just grind out on feel. Some people throw in a few surges or pick-up miles late to teach the legs to run tired. What matters most is finishing relaxed, not fast.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 63,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 131,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

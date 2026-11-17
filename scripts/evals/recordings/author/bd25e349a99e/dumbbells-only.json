@@ -1,0 +1,26 @@
+{
+  "caseId": "dumbbells-only",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:22:17.527Z",
+  "reply": {
+    "text": "{\"say\":\"Shoulders and arms with dumbbells only: pressing and lateral work to open the shoulders, then two for biceps and two for triceps.\",\"title\":\"Shoulders & Arms (Dumbbell)\",\"days\":[{\"name\":\"Shoulders & Arms\",\"exercises\":[{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"press straight overhead\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"lead with elbows\"},{\"key\":\"dumbbell-rear-delt-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"hinge forward, squeeze shoulder blades\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the lowering\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"neutral grip throughout\"},{\"key\":\"dumbbell-skull-crusher\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"elbows tucked\"},{\"key\":\"single-arm-dumbbell-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"full stretch overhead\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 98,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 588,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}
