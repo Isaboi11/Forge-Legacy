@@ -206,3 +206,14 @@ test('the one capture path, one read at a time, and the one diary write — only
   assert.match(log, /await addEntries\(iso, entries\);/);
   assert.match(log, /const entries = entriesFrom\(rows, meal\);/);
 });
+
+test('⛔ no silent failures (AI audit 11-16, N-D5): a declined consent says so, and a refused log says why', () => {
+  const take = SCREEN.slice(at('const takePhoto = async', SCREEN), at('const logMeal = async', SCREEN));
+  const declined = take.slice(at("if (!(await ensureConsent('ai_sharing'))) {", take));
+  const handled = declined.slice(0, declined.indexOf('return;'));
+  assert.match(handled, /showToast\(AI_DECLINED_LINE\)/, 'on the review: a toast, the rows stay');
+  assert.match(handled, /setStage\(\{ step: 'problem', text: AI_DECLINED_LINE \}\)/, 'elsewhere: the problem line');
+  assert.doesNotMatch(take, /ensureConsent\('ai_sharing'\)\)\) return;/, 'the bare, silent return is gone');
+  const log = SCREEN.slice(at('const logMeal = async', SCREEN), at('const totals = mealTotals(rows);', SCREEN));
+  assert.match(log, /\} catch \(e\) \{[\s\S]*?showToast\(errorMessage\(e\)\);[\s\S]*?\} finally \{\s*setLogging\(false\);/);
+});
