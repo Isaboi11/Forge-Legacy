@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * `@types/react-native`, so the types are correct and the runtime is not — the same shape as the
  * `useSafeAreaInsets` crash that shipped with every gate green.
  */
-import { Animated, Easing, Image, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type LayoutChangeEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, Image, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type LayoutChangeEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import Reanimated, { useAnimatedRef, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -53,7 +53,8 @@ import { streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
-import { afterStop, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
+import { afterStop, askEndedWell, askEndResult, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
+import { track } from '@/lib/analytics';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
@@ -2705,6 +2706,11 @@ export function CoachChatSheet({
     const ctl = new AbortController();
     asking.current.add(ctl);
     setAsksLive(asking.current.size);
+    /* CH-6 telemetry: when and how it ended, never what was said (`chat-basics.ts`). */
+    const source = opts.allowWeb ? 'web' : opts.kitchen ? 'kitchen' : 'chat';
+    const askedAt = Date.now();
+    let lookups = 0;
+    track('holt_ask_sent', { source });
     /*
      * ⚠ IN PARALLEL, NOT ONE AFTER ANOTHER (stress test 2026-09-25). These were three awaits in a row before
      * the model was even called. The kitchen also skips the training program: it answers food, and the
@@ -2748,6 +2754,7 @@ export function CoachChatSheet({
       asking.current.delete(ctl);
       setAsksLive(asking.current.size);
       setBusy(null);
+      track('holt_ask_ended', { source, result: stopped.current.has(ctl) ? 'stopped' : 'closed', ms: Date.now() - askedAt, count: 0, success: false });
       if (stopped.current.has(ctl)) say({ kind: 'holt', text: ASK_STOPPED_LINE }, retryChip({ text, history, q, opts }));
       return;
     }
@@ -2765,6 +2772,7 @@ export function CoachChatSheet({
         shown = acc;
         if (!started) {
           started = true;
+          track('holt_ask_first_word', { source, ms: Date.now() - askedAt });
           /* The dots give way to the words; the composer keeps holding while `streaming` is set. */
           setBusy(null);
           setAskStatus(null);
@@ -2779,6 +2787,7 @@ export function CoachChatSheet({
         signal: ctl.signal,
         /* The waiting bubble says what he is looking up — until his first word, never after. */
         onStatus: (line) => {
+          lookups += 1;
           if (!started) setAskStatus({ sid, text: line });
         },
       },
@@ -2789,6 +2798,8 @@ export function CoachChatSheet({
     setAskStatus((s) => (s?.sid === sid ? null : s));
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
     setThread((t) => streamEnded(t, sid));
+    const result = askEndResult(r, stopped.current.has(ctl));
+    track('holt_ask_ended', { source, result, ms: Date.now() - askedAt, count: lookups, success: askEndedWell(result) });
     switch (r.kind) {
       case 'answer':
         /* ⚠ CUT OFF PARTWAY (kitchen-09, QA 09-26): a dropped line came back as a finished one-letter answer
@@ -2801,6 +2812,8 @@ export function CoachChatSheet({
         /* CH-6: Regenerate sends this same ask again, by the reply's sid. */
         if (started) keepAsk(sid, { text, history, q, opts });
         if (!started && r.text) say({ kind: 'holt', text: r.text });
+        /* CH-6: VoiceOver / TalkBack read the finished reply once — words landing mid-stream are not announced. */
+        if (r.text) AccessibilityInfo.announceForAccessibility(`Holt: ${r.text}`);
         /* C-D4: stopped at the length cap. The words stand, and he says they are not all of it. */
         if (r.cut) say({ kind: 'holt', text: pick('reply_ran_long') });
         /* What he asked the APP to do — a change to confirm, or the online-search offer. */

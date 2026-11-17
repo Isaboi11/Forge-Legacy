@@ -182,7 +182,7 @@ test('Sprint 1 (P-D2): "Not charged." only when coach-ask SAID it refunded — n
 
 test('Sprint 1 (C-G5): the waiting bubble says the lookup — only before the first word, only this ask’s', () => {
   const ask = between('const askAloud = async', 'const onChip = (chip');
-  assert.match(ask, /onStatus: \(line\) => \{\s*if \(!started\) setAskStatus\(\{ sid, text: line \}\);\s*\}/);
+  assert.match(ask, /onStatus: \(line\) => \{\s*lookups \+= 1;\s*if \(!started\) setAskStatus\(\{ sid, text: line \}\);\s*\}/); // CH-6 counts lookups (telemetry)
   // The first word clears it; the ask ending clears it only if it is still this ask's line.
   assert.match(ask, /setBusy\(null\);\s*setAskStatus\(null\);\s*say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\);/);
   assert.match(ask, /setAskStatus\(\(s\) => \(s\?\.sid === sid \? null : s\)\);/);

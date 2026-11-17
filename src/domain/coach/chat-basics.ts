@@ -58,3 +58,53 @@ export function questionOf(thread: readonly Turn[], sid: number): { text: string
   }
   return null;
 }
+
+/*
+ * ══ CHAT TELEMETRY (CH-6) ══ — three events per ask, through `track()` (consent-gated, allowlisted props):
+ * `holt_ask_sent` · `holt_ask_first_word` (ms) · `holt_ask_ended` (result, ms, lookups as `count`).
+ * ⛔ Never the athlete's words or Holt's: only the enum below, a duration and a count.
+ */
+export type AskEndResult =
+  | 'answer'
+  | 'cut'
+  | 'dropped'
+  | 'refused'
+  | 'retracted'
+  | 'crisis'
+  | 'urgent'
+  | 'care'
+  | 'medical'
+  | 'out_of_credits'
+  | 'no_consent'
+  | 'timeout'
+  | 'offline'
+  | 'stopped'
+  | 'closed';
+
+/** How an ask ended, as one enum. `stopped` — the athlete tapped Stop (vs the sheet closing). */
+export function askEndResult(
+  r: { kind: string; complete?: boolean; cut?: boolean; timedOut?: boolean; aborted?: boolean },
+  stopped: boolean,
+): AskEndResult {
+  switch (r.kind) {
+    case 'answer':
+      return r.complete === false ? 'dropped' : r.cut ? 'cut' : 'answer';
+    case 'offline':
+      if (r.aborted) return stopped ? 'stopped' : 'closed';
+      return r.timedOut ? 'timeout' : 'offline';
+    case 'refused':
+    case 'retracted':
+    case 'crisis':
+    case 'urgent':
+    case 'care':
+    case 'medical':
+    case 'out_of_credits':
+    case 'no_consent':
+      return r.kind as AskEndResult;
+    default:
+      return 'offline';
+  }
+}
+
+/** A whole answer reached the athlete (cut at the length cap still counts — the words stand). */
+export const askEndedWell = (result: AskEndResult): boolean => result === 'answer' || result === 'cut';

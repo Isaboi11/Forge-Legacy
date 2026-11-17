@@ -75,3 +75,37 @@ test('the reply controls: Copy on every finished AI reply, Regenerate + Edit onl
   assert.match(SHEET, /lastReplySid\(thread\)/);
   assert.match(SHEET, /accessibilityLabel="Stop Holt's reply"/);
 });
+
+/* ── telemetry (CH-6) ────────────────────────────────────────────────────────────────────────────── */
+
+test('every way an ask ends is one enum; Stop and a close are told apart', async () => {
+  const { askEndResult, askEndedWell } = await import('../chat-basics.ts');
+  assert.equal(askEndResult({ kind: 'answer', complete: true, cut: false }, false), 'answer');
+  assert.equal(askEndResult({ kind: 'answer', complete: true, cut: true }, false), 'cut');
+  assert.equal(askEndResult({ kind: 'answer', complete: false }, false), 'dropped');
+  assert.equal(askEndResult({ kind: 'offline', aborted: true }, true), 'stopped');
+  assert.equal(askEndResult({ kind: 'offline', aborted: true }, false), 'closed');
+  assert.equal(askEndResult({ kind: 'offline', timedOut: true, aborted: false }, false), 'timeout');
+  assert.equal(askEndResult({ kind: 'offline', timedOut: false, aborted: false }, false), 'offline');
+  for (const k of ['refused', 'retracted', 'crisis', 'urgent', 'care', 'medical', 'out_of_credits', 'no_consent']) {
+    assert.equal(askEndResult({ kind: k }, false), k);
+  }
+  assert.equal(askEndedWell('answer'), true);
+  assert.equal(askEndedWell('cut'), true);
+  assert.equal(askEndedWell('stopped'), false);
+});
+
+test('⛔ chat telemetry carries only allowlisted keys — never the words', async () => {
+  const { ALLOWED_PROP_KEYS } = await import('../../analytics/props-core.ts');
+  const calls = [...SHEET.matchAll(/track\('holt_ask_[a-z_]+', \{([^}]*)\}\)/g)];
+  assert.equal(calls.length >= 3, true, 'sent, first word and ended are all tracked');
+  for (const [, body] of calls) {
+    for (const key of body.split(',').map((p) => p.split(':')[0].replace('...', '').trim()).filter(Boolean)) {
+      assert.ok(ALLOWED_PROP_KEYS.has(key), `${key} is allowlisted`);
+    }
+  }
+});
+
+test('VoiceOver reads a finished reply (streamed words are not announced as they land)', () => {
+  assert.match(SHEET, /AccessibilityInfo\.announceForAccessibility\(`Holt: \$\{r\.text\}`\)/);
+});
