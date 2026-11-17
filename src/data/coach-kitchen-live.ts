@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
 import { fetchMealPlanPrefs, fetchNutritionProfile } from '@/data/nutrition-live';
 import { localToday } from '@/domain/nutrition/day';
-import { ageFrom, isUnderAge } from '@/domain/nutrition/targets';
+import { kitchenRules, outcome, type KitchenRules } from '@/domain/nutrition/kitchen-rules';
 import {
   KITCHEN_MEMORY_DAYS,
   kitchenResultFrom,
@@ -62,10 +62,15 @@ export async function rememberKitchenDishesLive(dishes: readonly KitchenDish[]):
   }
 }
 
-/** What the athlete avoids and whether they are under 18 — from Meal Plan Setup and the nutrition profile. */
-export async function kitchenRulesLive(): Promise<{ allergens: string[]; diet: string | null; minor: boolean }> {
-  const [prefs, profile] = await Promise.all([fetchMealPlanPrefs().catch(() => null), fetchNutritionProfile().catch(() => null)]);
-  /* The same door as Targets and Meal Plan (`isUnderAge`): the year someone turns 18 still reads as under 18. */
-  const minor = isUnderAge(ageFrom(profile?.birthYear ?? null, localToday()));
-  return { allergens: (prefs?.allergens ?? []) as string[], diet: (prefs?.diet as string | undefined) ?? null, minor };
+/**
+ * What the athlete avoids and whether they are under 18 — from Meal Plan Setup and the nutrition profile.
+ *
+ * ⛔ FAIL CLOSED (AI audit 11-16, N-D2). Both reads are `strict`, so a failed read is never "no allergies" or
+ * "an adult": a setup that didn't load comes back `unreadable` and the ask is refused before anything is sent;
+ * a profile that didn't load is treated as under 18 (no numbers). The rules themselves: `kitchenRules`.
+ */
+export async function kitchenRulesLive(): Promise<KitchenRules> {
+  const strict = { strict: true };
+  const [prefs, profile] = await Promise.all([outcome(fetchMealPlanPrefs(strict)), outcome(fetchNutritionProfile(strict))]);
+  return kitchenRules(prefs, profile, localToday());
 }

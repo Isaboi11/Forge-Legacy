@@ -2479,6 +2479,12 @@ export function CoachChatSheet({
     if (!nudge) k.ask = ask;
     setBusy('thinking');
     const [rules, have, recent] = await Promise.all([kitchenRulesLive(), kitchenPantryLive(), recentKitchenDishesLive()]);
+    /* ⛔ FAIL CLOSED (AI audit 11-16, N-D2): allergies and diet that didn't load are never sent as "none". He says
+       so and stops — before the consent sheet, the credit and the model — with a way to ask again. */
+    if (rules.kind === 'unreadable') {
+      setBusy(null);
+      return void say({ kind: 'holt', text: pick('kitchen_prefs_unreadable') }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
+    }
     const left = rules.minor ? null : await kitchenLeftLive();
     const r = await askKitchenLive({
       have,

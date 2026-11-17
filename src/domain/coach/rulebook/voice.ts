@@ -85,6 +85,7 @@ export type VoiceKey =
   | 'allowance_program'
   | 'allowance_day'
   | 'allowance_week'
+  | 'kitchen_prefs_unreadable'
   | 'rebuild_open'
   | 'ask_level_again'
   | 'level_saved'
@@ -561,6 +562,18 @@ export const VOICE: Record<VoiceKey, readonly string[]> = {
   ],
   /* A week asked for by length, with the free training weeks used (MA4-D5). The one Holt program is untouched, so
      nothing here says the block is gone. */
+  /*
+   * ⛔ THE KITCHEN COULDN'T READ WHAT YOU AVOID (AI audit 11-16, N-D2). Meal Plan Setup's allergies and diet didn't
+   * load, so he doesn't write dishes — nothing is sent, no credit is spent. Every variant says the same three
+   * things: it didn't load, he won't guess around an allergy, try again. No apology tour, no blame on the athlete.
+   */
+  kitchen_prefs_unreadable: [
+    "I couldn't load your food preferences just now, so I'm not going to guess around your allergies. Try again in a moment.",
+    "Your allergies and diet didn't load just now, and I won't guess around them. Give it a moment and try again.",
+    "I can't see your food preferences right now. Rather than guess around an allergy, I'll wait. Try again in a moment.",
+    "Your food preferences didn't come through, and an allergy isn't something I'll guess at. Try again shortly.",
+    "I couldn't check your allergies and diet just now, so no dishes yet. Try again in a moment.",
+  ],
   allowance_week: [
     "That's the free training weeks used. Every week you saved is still yours.",
     "I'd write you the week, but there's no free week left to keep it in.",
