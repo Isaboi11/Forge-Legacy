@@ -340,10 +340,6 @@ export default function CoachScreen() {
       else setError(kind === 'day' ? 'You’ve used this month’s free Holt days. Premium makes them unlimited.' : 'You’ve used the free Holt program on your plan. Premium makes them unlimited.');
       return false;
     };
-    if (mode === 'day' && !(await pay('day'))) {
-      setBusy(false);
-      return;
-    }
     /* QA holt-31: a level answered here is THE level — the chat reads the same one and never asks again. */
     if (askExperience && experience) void rememberExperience({ lifting: experience, running: experience });
     try {
@@ -448,6 +444,8 @@ export default function CoachScreen() {
           );
           return;
         }
+        /* A day he could not put together costs nothing; this one exists, so now it pays (B-D4). */
+        if (!(await pay('day'))) return;
         /* Asked by catalogue key where there is one, so the wizard and the logger read the same history
            for the same lift — see `lift-history-live`. This used to ask by name alone. */
         const history = await fetchLiftHistory(res.day.main.map((e) => ({ catalogKey: e.catalogKey, name: e.name })));

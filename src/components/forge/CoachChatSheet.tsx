@@ -946,8 +946,7 @@ export function CoachChatSheet({
         }
 
         setBusy('building');
-        /* `payHolt` (above `advance`) says what each build spends and when. */
-        if (mode_ === 'day' && !(await payHolt('day'))) return;
+        /* `payHolt` (above `advance`) says what each build spends and when — a day pays once it exists (B-D4). */
         await pause(650);
         const c = completeFor(merged, mode_);
         /** A block's Builder draft is written now only when keeping it owes nothing more. A capped athlete's Holt
@@ -1021,6 +1020,8 @@ export function CoachChatSheet({
 
         if (written && mode_ === 'day') {
           const day = written.valid.days[0];
+          /* The day exists, so now it pays (B-D4) — and before the draft is written. */
+          if (!(await payHolt('day'))) return;
           setBusy(null);
           await saveWorkoutDraft({ name: day.name, warmup: day.warmup, main: day.main, cooldown: day.cooldown, editId: null });
           setBuilt({ kind: 'day', day });
@@ -1089,6 +1090,8 @@ export function CoachChatSheet({
             say({ kind: 'holt', text: out.text }, { kind: 'chips', chips: out.chips });
             return;
           }
+          /* A day he could not put together costs nothing; this one exists, so it pays — before the draft (B-D4). */
+          if (!(await payHolt('day'))) return;
           /* The wizard's own handoff, not a second one. A single day goes to the WORKOUT builder and a
              block goes to the PROGRAM builder — two different review screens, and the chat has no business
              inventing a third route to either. */
