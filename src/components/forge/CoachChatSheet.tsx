@@ -32,6 +32,7 @@ import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/Confirm
 import { HoltMark } from '@/components/forge/HoltMark';
 import { HoltWords } from '@/components/forge/HoltWords';
 import { AiFeedback } from '@/components/forge/AiFeedback';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 import { turnRef } from '@/domain/ai/ai-feedback-core';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -3424,6 +3425,7 @@ export function CoachChatSheet({
                 {busy === 'building' ? 'BUILDING' : busy === 'reading' ? 'READING' : busy === 'thinking' ? 'THINKING' : 'READY'}
               </Text>
             </View>
+            <AiCreditsChip busy={busy != null} short />
           </View>
           {/*
             ⚠ **STARTING AGAIN USED TO MEAN SCROLLING.** Come back after finishing a conversation and the

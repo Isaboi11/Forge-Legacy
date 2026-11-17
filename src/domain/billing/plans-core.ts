@@ -638,7 +638,7 @@ export const PAYWALL_FAQ: readonly { q: string; a: string }[] = [
   },
   {
     q: 'How does the AI allowance work?',
-    a: 'Premium AI includes a monthly AI allowance that resets each month. A message uses a little; reading a photo or checking your form uses more. Basic Holt is never counted against it.',
+    a: 'Premium AI includes a monthly AI allowance that resets each month, and Holt’s header shows what’s left. A message uses a little; reading a photo or checking your form uses more. If it runs out, chats with Holt and meal photos keep working a few a day until it resets. Basic Holt is never counted against it.',
   },
   {
     q: 'Can I restore my purchase?',

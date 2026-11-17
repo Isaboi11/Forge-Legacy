@@ -75,6 +75,7 @@ import { errorMessage } from '@/lib/useQuery';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { AiFeedback } from '@/components/forge/AiFeedback';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 import { uuid } from '@/lib/app-session';
 import { withNotCharged } from '@/domain/ai/ai-call';
 import { useCloseSignal } from '@/lib/useCloseSignal';
@@ -384,9 +385,12 @@ function ProgramImport() {
         title={isToday ? 'Import a Workout' : isTemplate ? 'Build a Template' : 'Build a Program'}
         onBack={back}
         actions={
-          <Pressable onPress={cancel} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
-            <Text style={styles.cancel}>Cancel</Text>
-          </Pressable>
+          <>
+            {mode === 'photo' ? <AiCreditsChip /> : null}
+            <Pressable onPress={cancel} accessibilityRole="button" accessibilityLabel="Cancel" hitSlop={8}>
+              <Text style={styles.cancel}>Cancel</Text>
+            </Pressable>
+          </>
         }
       />
 
