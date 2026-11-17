@@ -20,8 +20,8 @@ import {
 
 const step = (s, ...events) => events.reduce(aiFeedbackStep, s);
 
-test('the eight features, each with a label', () => {
-  assert.deepEqual([...AI_FEEDBACK_FEATURES], ['chat', 'kitchen', 'meal_photo', 'form_check', 'import', 'author', 'interpret', 'recipe_photo']);
+test('the nine features (0269’s eight + 0272’s workout_tidy), each with a label', () => {
+  assert.deepEqual([...AI_FEEDBACK_FEATURES], ['chat', 'kitchen', 'meal_photo', 'form_check', 'import', 'author', 'interpret', 'recipe_photo', 'workout_tidy']);
   for (const f of AI_FEEDBACK_FEATURES) assert.ok(AI_FEEDBACK_FEATURE_LABEL[f], f);
 });
 

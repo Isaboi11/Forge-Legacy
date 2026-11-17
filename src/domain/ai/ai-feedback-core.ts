@@ -11,7 +11,10 @@
  * data module (`data/ai-feedback-live.ts`) both read it.
  */
 
-/** What produced the answer. ⚠ Must equal `ai_feedback_feature_check` in 0269 (a test compares them). */
+/**
+ * What produced the answer. ⚠ Must equal `ai_feedback_feature_check` — 0269's list, plus `workout_tidy` from 0272
+ * (the typed "Fix it with AI" result, UX-4). The tests compare both migrations with this list.
+ */
 export type AiFeedbackFeature =
   | 'chat'
   | 'kitchen'
@@ -20,7 +23,8 @@ export type AiFeedbackFeature =
   | 'import'
   | 'author'
   | 'interpret'
-  | 'recipe_photo';
+  | 'recipe_photo'
+  | 'workout_tidy';
 
 export const AI_FEEDBACK_FEATURES: readonly AiFeedbackFeature[] = [
   'chat',
@@ -31,6 +35,7 @@ export const AI_FEEDBACK_FEATURES: readonly AiFeedbackFeature[] = [
   'author',
   'interpret',
   'recipe_photo',
+  'workout_tidy',
 ];
 
 /** How the AI health page names each one. */
@@ -43,6 +48,7 @@ export const AI_FEEDBACK_FEATURE_LABEL: Readonly<Record<AiFeedbackFeature, strin
   author: 'Holt-written program',
   interpret: 'Typed to Holt',
   recipe_photo: 'Recipe photo',
+  workout_tidy: 'Fix it with AI',
 };
 
 export type AiRating = 1 | -1;
