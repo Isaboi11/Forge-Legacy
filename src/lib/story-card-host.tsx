@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { PixelRatio, Platform, StyleSheet, View } from 'react-native';
 import type Svg from 'react-native-svg';
 
 import { StoryCanvas } from '@/components/forge/StoryCanvas';
@@ -20,6 +20,21 @@ type Resolver = (base64: string | null) => void;
 interface Job {
   drawing: StoryDrawing;
   photo: string | null;
+  /** Come back at the drawing's own pixel size — see `snapshotSize`. */
+  trueSize: boolean;
+}
+
+/**
+ * ⚠ AN iPHONE SNAPSHOT IS DRAWN AT THE SCREEN'S SCALE (11-17, Braiden in Da Bois). react-native-svg's
+ * `toDataURL` draws into a default `UIGraphicsImageRenderer`, which multiplies the size it is given by the
+ * screen scale (3 on most iPhones) and draws 16 bits a channel on a wide-colour screen. A 1080×1350 post
+ * picture came back 3240×4050 at 16 bits — a 50 MB PNG the squad feed never finished showing. Asking for
+ * the size ÷ the scale makes the pixels come out at the drawing's size. iOS only: Android draws the size
+ * it is given.
+ */
+function snapshotSize(job: Job): { width: number; height: number } {
+  const scale = job.trueSize && Platform.OS === 'ios' ? PixelRatio.get() || 1 : 1;
+  return { width: Math.round(job.drawing.width / scale), height: Math.round(job.drawing.height / scale) };
 }
 
 type Host = (job: Job, resolve: Resolver) => void;
@@ -34,8 +49,11 @@ export function storyHostReady(): boolean {
   return hosts.length > 0;
 }
 
-/** Draw and snapshot. Null when no host is mounted, the platform declines, or six seconds pass. */
-export function rasterizeStory(drawing: StoryDrawing, photo: string | null): Promise<string | null> {
+/**
+ * Draw and snapshot, as base64 PNG. Null when no host is mounted, the platform declines, or six seconds pass.
+ * `trueSize` is for a picture that gets UPLOADED — the share sheet's picture is left as it always was.
+ */
+export function rasterizeStory(drawing: StoryDrawing, photo: string | null, opts?: { trueSize?: boolean }): Promise<string | null> {
   const host = hosts[hosts.length - 1];
   if (!host) return Promise.resolve(null);
   return new Promise<string | null>((resolve) => {
@@ -46,7 +64,7 @@ export function rasterizeStory(drawing: StoryDrawing, photo: string | null): Pro
       resolve(v);
     };
     const timer = setTimeout(() => once(null), 6000);
-    host({ drawing, photo }, (v) => {
+    host({ drawing, photo, trueSize: opts?.trueSize === true }, (v) => {
       clearTimeout(timer);
       once(v);
     });
@@ -88,7 +106,7 @@ export function StoryCardHost() {
         resolve(base64 ?? null);
         setJob(null);
       },
-      { width: job.drawing.width, height: job.drawing.height },
+      snapshotSize(job),
     );
   }, [job]);
 
