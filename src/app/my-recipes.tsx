@@ -74,6 +74,9 @@ import { useToast } from '@/hooks/useCeremony';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { errorMessage, useQuery } from '@/lib/useQuery';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
+import { AiFeedback } from '@/components/forge/AiFeedback';
+import { uuid } from '@/lib/app-session';
 
 const fmt = (n: number) => Math.round(n).toLocaleString('en-US');
 const ALLERGEN_LABEL = Object.fromEntries(ALLERGENS.map((a) => [a.key, a.label])) as Record<string, string>;
@@ -184,6 +187,14 @@ function MyRecipesScreen() {
   const [barcodeOpen, setBarcodeOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [fromHolt] = useState(() => seed != null);
+  /*
+   * "Was this helpful?" on what AI wrote into the form (UX-4, 0269 `ai_feedback`): Holt's dish from the Kitchen
+   * (`kitchen`) or a recipe read from a picture (`recipe_photo`). A page or a paste is the parser, not the model —
+   * no control. The ref is made once, when the draft opens.
+   */
+  const [draftVote, setDraftVote] = useState<{ feature: 'kitchen' | 'recipe_photo'; ref: string } | null>(() =>
+    seed != null ? { feature: 'kitchen', ref: uuid() } : null,
+  );
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const scanning = useRef(false);
@@ -268,6 +279,7 @@ function MyRecipesScreen() {
       setEditAllergens(false);
       setUnmatched(draft.unmatched);
       setImportedFrom(from);
+      setDraftVote(from === 'picture' ? { feature: 'recipe_photo', ref: uuid() } : null);
       setOverride({ form: draft.form });
       showToast(importToast(draft));
     },
@@ -404,7 +416,7 @@ function MyRecipesScreen() {
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
-      <AppBar title="" transparent onBack={() => (form ? closeForm() : router.back())} />
+      <AppBar title="" transparent onBack={() => (form ? closeForm() : router.back())} actions={<AiCreditsChip />} />
 
       {!form ? (
         <>
@@ -513,6 +525,9 @@ function MyRecipesScreen() {
                 <Text style={styles.lede}>{`${IMPORTED_LINE[importedFrom]} Nothing is saved until you do: check the amounts and confirm the allergens.`}</Text>
               ) : fromHolt && !form.editId ? (
                 <Text style={styles.lede}>Holt&apos;s dish. The numbers are the app&apos;s, from these ingredients. Nothing is saved until you do: check the amounts and confirm the allergens.</Text>
+              ) : null}
+              {draftVote && !form.editId && (importedFrom === 'picture' || (!importedFrom && fromHolt)) ? (
+                <AiFeedback feature={draftVote.feature} aiRef={draftVote.ref} />
               ) : null}
             </View>
 
