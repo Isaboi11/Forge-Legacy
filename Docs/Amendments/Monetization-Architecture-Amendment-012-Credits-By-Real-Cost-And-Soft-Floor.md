@@ -96,8 +96,10 @@ From the ledger's real per-call costs (§2 table), a month at the limit:
 
 The plan's "~$2 worst case" holds for chats and photos. It does not hold for a typed-program-heavy athlete, because a
 write costs ~20× a chat and MA12-D2 halves its price. Against ~$17 net from Premium AI ($19.99 less Apple's 15%) every
-row is covered; against ~$6.80 net from the $7.99 Tester AI plan the typed-build month is not. **PO decision (open):**
-accept it, keep a full-week write at 2 (a day at 1), or cap coach-author writes a day — each is one SQL update.
+row is covered; against ~$6.80 net from the $7.99 Tester AI plan the typed-build month is not. **✅ PO decision
+2026-11-17: ACCEPTED ("Yeah keep it")** — a typed build stays 1 credit, no daily cap. Nobody realistic comes close;
+the AI health page shows it if someone does. The alternatives (a full-week write at 2, or a daily cap on coach-author
+writes) remain one SQL update each if the ledger ever says otherwise.
 
 ## 4. Known limits
 
