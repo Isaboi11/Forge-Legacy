@@ -139,6 +139,17 @@ export default function NutritionTargetsScreen() {
   const weightLb = useMemo(() => latestBodyReading(bodyEntries ?? [], 'weight'), [bodyEntries]);
   const sex = (profile?.sex ?? 'unspecified') as AthleteSex;
 
+  /*
+   * ⛔ PREGNANT OR BREASTFEEDING? (AI audit 11-16, N-G2) — beside the under-18 gate, in the spirit of the medical
+   * stop: a recommended deficit is no one's business during pregnancy or while breastfeeding but a doctor's or a
+   * registered dietitian's. Asked of anyone who isn't male, once per visit, BEFORE any goal, pace or number shows.
+   * Yes → no recommendation at all, a care card pointing to a doctor or dietitian, and Manual still open.
+   * ⚠ THE ANSWER IS NEVER STORED — not on the profile, not in prefs, not in a log. It is sensitive health data, and
+   * keeping it is not needed to keep the athlete safe: it lives in this screen's state and is gone when they leave.
+   */
+  const [pregnancy, setPregnancy] = useState<'yes' | 'no' | null>(null);
+  const pregnancyHold = sex !== 'male' && pregnancy !== 'no';
+
   const storedHeight = nutritionProfile?.heightIn ?? null;
   const by = byText ?? (nutritionProfile?.birthYear != null ? String(nutritionProfile.birthYear) : '');
   const ft = ftText ?? (storedHeight != null ? String(Math.floor(storedHeight / 12)) : '');
@@ -153,7 +164,7 @@ export default function NutritionTargetsScreen() {
   const facts: AthleteFacts = { sex, weightLb, birthYear, heightIn, activity };
   const blocker = blockerFor(facts, todayIso);
   const burn = burnFor(facts, todayIso);
-  const rec = burn && !profileFailed ? recommend(facts, burn, goal, pace, todayIso) : null;
+  const rec = burn && !profileFailed && !pregnancyHold ? recommend(facts, burn, goal, pace, todayIso) : null;
 
   const rows = useMemo(() => historyRows(history ?? [], todayIso), [history, todayIso]);
   const currentRow = history?.length ? history[history.length - 1] : null;
@@ -198,6 +209,7 @@ export default function NutritionTargetsScreen() {
     if (profileFailed) blocked = 'Your details didn’t load.';
     else if (blocker?.kind === 'under-age') blocked = 'Recommended targets start at 18.';
     else if (blocker) blocked = 'Add the details above to see a target.';
+    else if (pregnancyHold) blocked = pregnancy === 'yes' ? 'No recommended target for now.' : 'Answer the question above to see a target.';
     else if (rec) proposed = { kcal: rec.kcal, protein: rec.protein, carb: rec.carb, fat: rec.fat };
   } else if (!manKcal) blocked = 'Enter a calorie target.';
   else if (manualCheck.tooLow) blocked = `The lowest target Forge will set for you is ${grouped(manualCheck.minimum)}.`;
@@ -491,119 +503,127 @@ export default function NutritionTargetsScreen() {
                 {/* the care line, above the goal and pace */}
                 <NutritionCareLine care={care} style={styles.careLine} />
 
-                {/* goal */}
-                <Text style={[styles.sectionLabel, styles.sectionSolo]}>Goal</Text>
-                <View style={styles.goalRow}>
-                  {(['lose', 'maintain', 'gain'] as const).map((key) => {
-                    const on = goal === key;
-                    return (
-                      <Pressable
-                        key={key}
-                        accessibilityRole="button"
-                        accessibilityState={{ selected: on }}
-                        style={[styles.goalButton, on && styles.goalButtonOn]}
-                        onPress={() => setGoal(key)}
-                      >
-                        <Text style={[styles.goalText, on && styles.goalTextOn]}>
-                          {key === 'lose' ? 'Lose' : key === 'maintain' ? 'Maintain' : 'Gain'}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-
-                {goal !== 'maintain' ? (
-                  <View style={styles.paceRow}>
-                    <Text style={styles.paceLabel}>Pace</Text>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Slower"
-                      disabled={pace <= 0.25}
-                      style={styles.paceStep}
-                      onPress={() => setRate((r) => Math.max(0.25, r - 0.25))}
-                    >
-                      <Glyph kind="minus" dim={pace <= 0.25} />
-                    </Pressable>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Choose pace" style={styles.paceValue} onPress={() => setSheet('pace')}>
-                      <Text style={styles.paceValueText}>{paceLabel(pace)}</Text>
-                      <Chevron />
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Faster"
-                      disabled={slowestOnly || pace >= maxPace(goal)}
-                      style={styles.paceStep}
-                      onPress={() => setRate((r) => Math.min(maxPace(goal), r + 0.25))}
-                    >
-                      <Glyph kind="plus" dim={slowestOnly || pace >= maxPace(goal)} />
-                    </Pressable>
-                  </View>
-                ) : null}
-
-                {/* the number */}
-                {rec ? (
+                {/* ⛔ PREGNANT OR BREASTFEEDING? (AI audit 11-16, N-G2) — asked before any goal, pace or number, and
+                    answered for this visit only (see `pregnancy` above). A yes shows no recommendation at all. */}
+                {pregnancyHold ? (
+                  <PregnancyCard answered={pregnancy === 'yes'} onAnswer={setPregnancy} onManual={() => setMode('manual')} />
+                ) : (
                   <>
-                    <View style={styles.resultCard}>
-                      <View style={styles.resultHead}>
-                        <View>
-                          <Text style={styles.resultCal}>{grouped(rec.kcal)}</Text>
-                          <Text style={styles.eyebrow}>Calories / day</Text>
-                        </View>
-                        <Text style={styles.resultVs}>
-                          {current
-                            ? rec.kcal === current.kcal
-                              ? 'Same as current target'
-                              : `${grouped(Math.abs(rec.kcal - current.kcal))} cal ${rec.kcal > current.kcal ? 'above' : 'below'} current target`
-                            : 'No target set yet'}
-                        </Text>
-                      </View>
-                      <View style={styles.resultMacros}>
-                        {[
-                          { v: `${rec.protein} g`, label: 'Protein' },
-                          { v: `${rec.carb} g`, label: 'Carbs' },
-                          { v: `${rec.fat} g`, label: 'Fat' },
-                        ].map((m) => (
-                          <View key={m.label} style={styles.resultMacro}>
-                            <Text style={styles.resultMacroValue}>{m.v}</Text>
-                            <Text style={styles.resultMacroLabel}>{m.label}</Text>
-                          </View>
-                        ))}
-                      </View>
-                      <View>
-                        <Text style={styles.basis}>{basisLine(rec)}</Text>
-                        <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setSheet('method')}>
-                          <Text style={styles.linkText}>How we calculated this ›</Text>
+                    {/* goal */}
+                    <Text style={[styles.sectionLabel, styles.sectionSolo]}>Goal</Text>
+                    <View style={styles.goalRow}>
+                      {(['lose', 'maintain', 'gain'] as const).map((key) => {
+                        const on = goal === key;
+                        return (
+                          <Pressable
+                            key={key}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: on }}
+                            style={[styles.goalButton, on && styles.goalButtonOn]}
+                            onPress={() => setGoal(key)}
+                          >
+                            <Text style={[styles.goalText, on && styles.goalTextOn]}>
+                              {key === 'lose' ? 'Lose' : key === 'maintain' ? 'Maintain' : 'Gain'}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    {goal !== 'maintain' ? (
+                      <View style={styles.paceRow}>
+                        <Text style={styles.paceLabel}>Pace</Text>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Slower"
+                          disabled={pace <= 0.25}
+                          style={styles.paceStep}
+                          onPress={() => setRate((r) => Math.max(0.25, r - 0.25))}
+                        >
+                          <Glyph kind="minus" dim={pace <= 0.25} />
+                        </Pressable>
+                        <Pressable accessibilityRole="button" accessibilityLabel="Choose pace" style={styles.paceValue} onPress={() => setSheet('pace')}>
+                          <Text style={styles.paceValueText}>{paceLabel(pace)}</Text>
+                          <Chevron />
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Faster"
+                          disabled={slowestOnly || pace >= maxPace(goal)}
+                          style={styles.paceStep}
+                          onPress={() => setRate((r) => Math.min(maxPace(goal), r + 0.25))}
+                        >
+                          <Glyph kind="plus" dim={slowestOnly || pace >= maxPace(goal)} />
                         </Pressable>
                       </View>
-                      {heldLine(rec, sex) ? (
-                        <View style={styles.shield}>
-                          <ShieldGlyph />
-                          <Text style={styles.shieldText}>{heldLine(rec, sex)}</Text>
+                    ) : null}
+
+                    {/* the number */}
+                    {rec ? (
+                      <>
+                        <View style={styles.resultCard}>
+                          <View style={styles.resultHead}>
+                            <View>
+                              <Text style={styles.resultCal}>{grouped(rec.kcal)}</Text>
+                              <Text style={styles.eyebrow}>Calories / day</Text>
+                            </View>
+                            <Text style={styles.resultVs}>
+                              {current
+                                ? rec.kcal === current.kcal
+                                  ? 'Same as current target'
+                                  : `${grouped(Math.abs(rec.kcal - current.kcal))} cal ${rec.kcal > current.kcal ? 'above' : 'below'} current target`
+                                : 'No target set yet'}
+                            </Text>
+                          </View>
+                          <View style={styles.resultMacros}>
+                            {[
+                              { v: `${rec.protein} g`, label: 'Protein' },
+                              { v: `${rec.carb} g`, label: 'Carbs' },
+                              { v: `${rec.fat} g`, label: 'Fat' },
+                            ].map((m) => (
+                              <View key={m.label} style={styles.resultMacro}>
+                                <Text style={styles.resultMacroValue}>{m.v}</Text>
+                                <Text style={styles.resultMacroLabel}>{m.label}</Text>
+                              </View>
+                            ))}
+                          </View>
+                          <View>
+                            <Text style={styles.basis}>{basisLine(rec)}</Text>
+                            <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setSheet('method')}>
+                              <Text style={styles.linkText}>How we calculated this ›</Text>
+                            </Pressable>
+                          </View>
+                          {heldLine(rec, sex) ? (
+                            <View style={styles.shield}>
+                              <ShieldGlyph />
+                              <Text style={styles.shieldText}>{heldLine(rec, sex)}</Text>
+                            </View>
+                          ) : null}
                         </View>
-                      ) : null}
-                    </View>
-                    <Pressable
-                      accessibilityRole="button"
-                      hitSlop={8}
-                      onPress={() => {
-                        setManual({
-                          kcal: String(rec.kcal),
-                          protein: String(rec.protein),
-                          carb: String(rec.carb),
-                          fat: String(rec.fat),
-                        });
-                        setMode('manual');
-                      }}
-                    >
-                      <Text style={[styles.linkText, styles.adjustLink]}>Adjust these in Manual</Text>
-                    </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          hitSlop={8}
+                          onPress={() => {
+                            setManual({
+                              kcal: String(rec.kcal),
+                              protein: String(rec.protein),
+                              carb: String(rec.carb),
+                              fat: String(rec.fat),
+                            });
+                            setMode('manual');
+                          }}
+                        >
+                          <Text style={[styles.linkText, styles.adjustLink]}>Adjust these in Manual</Text>
+                        </Pressable>
+                      </>
+                    ) : (
+                      <View style={styles.pending}>
+                        <Text style={styles.pendingText}>
+                          Your target appears here once birth year, height and a normal week are in.
+                        </Text>
+                      </View>
+                    )}
                   </>
-                ) : (
-                  <View style={styles.pending}>
-                    <Text style={styles.pendingText}>
-                      Your target appears here once birth year, height and a normal week are in.
-                    </Text>
-                  </View>
                 )}
               </>
             )}
@@ -689,9 +709,10 @@ export default function NutritionTargetsScreen() {
         )}
       </ScrollView>
 
-      {/* commit — not on a gate (under 18, no sex, no weigh-in, details that didn't load): there is no target to
-          use, and a greyed USE THESE TARGETS only repeated the card's own message (QA 09-26 N-42). */}
-      {mode === 'recommended' && (profileFailed || (blocker && blocker.kind !== 'incomplete')) ? null : (
+      {/* commit — not on a gate (under 18, no sex, no weigh-in, details that didn't load, the pregnancy question or
+          its answer): there is no target to use, and a greyed USE THESE TARGETS only repeated the card's own
+          message (QA 09-26 N-42). */}
+      {mode === 'recommended' && (profileFailed || pregnancyHold || (blocker && blocker.kind !== 'incomplete')) ? null : (
         <View style={[styles.footer, { paddingBottom: barBottom }]}>
           {macroWarn ? (
             <Text style={styles.footerWarn} accessibilityLiveRegion="polite">
@@ -715,7 +736,7 @@ export default function NutritionTargetsScreen() {
             .filter((option) => !slowestOnly || option <= pace)
             .map((option) => {
             const on = Math.abs(pace - option) < 0.01;
-            const preview = burn ? recommend(facts, burn, goal, option, todayIso) : null;
+            const preview = burn && !profileFailed && !pregnancyHold ? recommend(facts, burn, goal, option, todayIso) : null;
             let sub = preview ? `${grouped(preview.kcal)} cal / day` : '';
             if (preview?.held === 'cap') sub += ` · held at ${preview.burn.lossCap.toFixed(1)} lb, 1% of bodyweight`;
             if (preview?.held === 'floor') sub += ` · held at the ${grouped(preview.floor)} floor`;
@@ -810,6 +831,64 @@ function WeighInCard({ metric, onSaved, onError }: { metric: boolean; onSaved: (
         <Button variant="secondary" fullWidth disabled={!valid || busy} onPress={save}>
           Save weight
         </Button>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * "Are you pregnant or breastfeeding?" — and, on a yes, the care card in its place (AI audit 11-16, N-G2). Drawn in
+ * the gate cards' own language (the under-18 card is its neighbour), so both themes come from the same tokens.
+ * Nothing here is stored: the answer is the screen's state (`pregnancy`), and "Not right?" simply asks again.
+ */
+function PregnancyCard({
+  answered,
+  onAnswer,
+  onManual,
+}: {
+  /** True once they have said yes. */
+  answered: boolean;
+  onAnswer: (answer: 'yes' | 'no' | null) => void;
+  onManual: () => void;
+}) {
+  if (!answered) {
+    return (
+      <View style={styles.gateCard}>
+        <Text style={styles.gateHeadline} accessibilityRole="header">
+          Are you pregnant or breastfeeding?
+        </Text>
+        <Text style={styles.gateBody}>Forge asks before it recommends a target. Your answer isn’t saved.</Text>
+        <View style={styles.gateActions}>
+          <Button variant="secondary" fullWidth onPress={() => onAnswer('no')}>
+            No
+          </Button>
+          <Button variant="secondary" fullWidth onPress={() => onAnswer('yes')}>
+            Yes
+          </Button>
+        </View>
+      </View>
+    );
+  }
+  return (
+    <View style={styles.gateCard}>
+      <Text style={styles.gateHeadline} accessibilityRole="header">
+        No recommended target for now.
+      </Text>
+      <Text style={styles.gateBody}>
+        Forge doesn’t calculate calorie targets during pregnancy or while breastfeeding. What your body needs
+        changes as you go, and a doctor or registered dietitian is the right person to set it. If they’ve given
+        you numbers, you can enter them in Manual.
+      </Text>
+      <View style={styles.gateActions}>
+        <Button variant="secondary" fullWidth onPress={onManual}>
+          Enter targets I’ve been given
+        </Button>
+        <View style={styles.gateFoot}>
+          <Text style={styles.gateFootText}>You answered yes.</Text>
+          <Pressable accessibilityRole="button" hitSlop={8} onPress={() => onAnswer(null)}>
+            <Text style={styles.linkText}>Not right?</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
