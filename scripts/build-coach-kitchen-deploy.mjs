@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compactForPaste } from './compact-deploy.mjs';
+import { normalizeBundle } from './lib/bundle-normalize.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FUNCTION = 'supabase/functions/coach-kitchen/index.ts';
@@ -46,7 +47,7 @@ export function buildCoachKitchenDeploy() {
     return `// -- inlined: ${rel} --\n${body}\n\n// -- end inlined --\n`;
   });
   if (inlined.includes("'../../../src/")) throw new Error('an import from src/ was not inlined');
-  return compactForPaste(HEADER, inlined);
+  return normalizeBundle(compactForPaste(HEADER, inlined));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -1,4 +1,4 @@
-// ===============================================================================================
+// ===
 // DASHBOARD PASTE COPY of supabase/functions/meal-photo-read/index.ts - GENERATED, DO NOT EDIT.
 //
 // The real function imports src/domain/nutrition/meal-photo-read.ts, which the Supabase dashboard
@@ -12,7 +12,7 @@
 // "meter unavailable".
 // ! Apply supabase/apply/pending-0268.sql FIRST - it creates coach_ai_reserve / coach_ai_settle (the meter
 // this copy also inlines, src/domain/ai/meter-server.ts); until then every read answers "meter unavailable".
-// ═══════════════════════════════════════════════════════════════════════════════════════════════
+// ===
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 export const MEAL_PHOTO_ACTION = 'meal_photo';
@@ -192,24 +192,24 @@ export function mealPhotoError(r: Exclude<MealPhotoResult, {
         case 'not_food':
             return 'No food in that one. Take the photo from above, with the whole plate in the frame.';
         case 'unreadable':
-            return 'Couldn’t make out the food in that photo. A brighter shot from above usually does it.';
+            return 'Couldn\u2019t make out the food in that photo. A brighter shot from above usually does it.';
         case 'too_large':
             return 'That image is too big to read. Try taking the photo again.';
         case 'daily_limit':
-            return 'That’s a lot of meal photos for one day. Search for the food instead, or try again tomorrow.';
+            return 'That\u2019s a lot of meal photos for one day. Search for the food instead, or try again tomorrow.';
         case 'out_of_credits':
-            return 'You’re out of Premium AI credits for this month. You can still search for the food.';
+            return 'You\u2019re out of Premium AI credits for this month. You can still search for the food.';
         case 'not_entitled':
             return 'Logging a meal from a photo is part of Premium AI. You can still search for the food.';
         case 'no_nutrition':
-            return 'Nutrition isn’t turned on for your account yet.';
+            return 'Nutrition isn\u2019t turned on for your account yet.';
         case 'unsupported_format':
-            return 'That image type can’t be read. Take the photo with the camera instead.';
+            return 'That image type can\u2019t be read. Take the photo with the camera instead.';
         case 'unavailable':
-            return 'Photo logging isn’t working right now. Try again in a bit, or search for the food.';
+            return 'Photo logging isn\u2019t working right now. Try again in a bit, or search for the food.';
         case 'offline':
         default:
-            return 'Couldn’t reach Forge. Check your connection and try again.';
+            return 'Couldn\u2019t reach Forge. Check your connection and try again.';
     }
 }
 export type SettleOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'not_a_program' | 'unreadable' | 'bad_output' | 'cancelled' | 'guarded';
@@ -409,7 +409,7 @@ Name each food on the plate and estimate its portion. You are a careful observer
 - "isFood": true when the photo shows food or drink someone is eating or about to eat. False for anything else.
 - "items": one entry per distinct food, in a sensible order (main, sides, sauces, drinks).
   - "name": the food in plain everyday words, the way the athlete would say it: "grilled chicken breast", "white rice", "steamed broccoli", "caesar salad", "cheeseburger", "glass of orange juice". Keep it short.
-  - "search": a short phrase to search a food database with — the food's common database name, most important word first, without amounts: "chicken breast grilled", "rice white cooked", "broccoli steamed", "caesar salad", "cheeseburger". When the brand or restaurant is plainly visible (a wrapper, a logo, a labelled package, a branded cup), put it in: "big mac mcdonalds", "chipotle chicken burrito bowl", "chobani greek yogurt vanilla". Never guess a brand you cannot see.
+  - "search": a short phrase to search a food database with \u2014 the food's common database name, most important word first, without amounts: "chicken breast grilled", "rice white cooked", "broccoli steamed", "caesar salad", "cheeseburger". When the brand or restaurant is plainly visible (a wrapper, a logo, a labelled package, a branded cup), put it in: "big mac mcdonalds", "chipotle chicken burrito bowl", "chobani greek yogurt vanilla". Never guess a brand you cannot see.
   - "amount" and "unit": the portion in the household measure a person would use for that food: 1.5 "cup" of rice, 2 "slice" of pizza, 1 "medium" apple, 2 "tbsp" of dressing, 3 "piece" of sushi, 1 "can" of soda. Use "piece" for countable things with no better word. amount null only when no household measure makes sense.
   - "grams": your best estimate of the weight of that portion in grams, as eaten. Always give it when you can see the food.
   - "confidence": how sure you are of WHAT the food is (not of the amount). "high" when it is unmistakable, "medium" when it is probably right, "low" when you are guessing between similar foods.
@@ -420,7 +420,7 @@ Use what is in the frame for scale: a standard dinner plate is about 26 cm (10 i
 
 # Splitting and combining
 
-List foods the way a food diary would. A burger is one item, not bun, patty and cheese. A mixed dish (a curry, a stir fry, a burrito bowl, a salad with toppings) is one item unless its parts are clearly separate on the plate. Plated components that are separate — meat, a starch, a vegetable — are separate items. A visible sauce, dressing, butter or oil in a noticeable amount is its own item. A drink in the frame that is clearly with the meal is its own item; plain water is not listed.
+List foods the way a food diary would. A burger is one item, not bun, patty and cheese. A mixed dish (a curry, a stir fry, a burrito bowl, a salad with toppings) is one item unless its parts are clearly separate on the plate. Plated components that are separate \u2014 meat, a starch, a vegetable \u2014 are separate items. A visible sauce, dressing, butter or oil in a noticeable amount is its own item. A drink in the frame that is clearly with the meal is its own item; plain water is not listed.
 
 Never list more than twelve items. For a spread (a buffet, a shared table), list only what is on the plate nearest the camera.
 
@@ -428,18 +428,18 @@ Never list more than twelve items. For a spread (a buffet, a shared table), list
 
 These show how something on a plate becomes one entry. Follow the pattern; do not copy the examples into an answer.
 
-- A grilled chicken breast beside rice → name "grilled chicken breast", search "chicken breast grilled", amount 1, unit "piece", grams 170, confidence "high".
-- A mound of white rice about the size of a fist → name "white rice", search "rice white cooked", amount 1, unit "cup", grams 180.
-- Two slices of pepperoni pizza → name "pepperoni pizza", search "pepperoni pizza", amount 2, unit "slice", grams 220.
-- A McDonald's Big Mac in its box, logo visible → name "Big Mac", search "big mac mcdonalds", amount 1, unit "piece", grams 215.
-- A bowl of oatmeal topped with blueberries → two items: "oatmeal" (amount 1, unit "cup", grams 240) and "blueberries" (amount 0.25, unit "cup", grams 37).
-- A drizzle of ranch dressing on a salad → its own item: name "ranch dressing", search "ranch dressing", amount 2, unit "tbsp", grams 30.
-- A can of cola beside the plate → name "cola", search "cola soda", amount 1, unit "can", grams 368.
-- A curry you cannot tell is chicken or lamb → name "meat curry", search "curry chicken", confidence "low".
+- A grilled chicken breast beside rice \u2192 name "grilled chicken breast", search "chicken breast grilled", amount 1, unit "piece", grams 170, confidence "high".
+- A mound of white rice about the size of a fist \u2192 name "white rice", search "rice white cooked", amount 1, unit "cup", grams 180.
+- Two slices of pepperoni pizza \u2192 name "pepperoni pizza", search "pepperoni pizza", amount 2, unit "slice", grams 220.
+- A McDonald's Big Mac in its box, logo visible \u2192 name "Big Mac", search "big mac mcdonalds", amount 1, unit "piece", grams 215.
+- A bowl of oatmeal topped with blueberries \u2192 two items: "oatmeal" (amount 1, unit "cup", grams 240) and "blueberries" (amount 0.25, unit "cup", grams 37).
+- A drizzle of ranch dressing on a salad \u2192 its own item: name "ranch dressing", search "ranch dressing", amount 2, unit "tbsp", grams 30.
+- A can of cola beside the plate \u2192 name "cola", search "cola soda", amount 1, unit "can", grams 368.
+- A curry you cannot tell is chicken or lamb \u2192 name "meat curry", search "curry chicken", confidence "low".
 
 # What you must never do
 
-**Never write a nutrition number.** No calories, protein, carbs, fat, sugar, sodium, points or "per serving" figures, even if a label or menu in the photo prints them. There is no field for them and the app will never use them — it takes its own from the food database.
+**Never write a nutrition number.** No calories, protein, carbs, fat, sugar, sodium, points or "per serving" figures, even if a label or menu in the photo prints them. There is no field for them and the app will never use them \u2014 it takes its own from the food database.
 
 **Never invent a food you cannot see.** Do not add a drink, a sauce or a side because meals like this usually have one. If something is hidden or ambiguous, list what you can see and mark "confidence" "low" rather than guess what is underneath.
 
@@ -449,7 +449,7 @@ These show how something on a plate becomes one entry. Follow the pattern; do no
 
 # When it is not a meal
 
-If the photo does not show food or drink — a person, a pet, a landscape, a document, a screenshot of a conversation, a blank or dark image — set "isFood" to false and "items" to an empty list. A nutrition label, a menu or a recipe page is not a meal either: set "isFood" to false. Do not explain.
+If the photo does not show food or drink \u2014 a person, a pet, a landscape, a document, a screenshot of a conversation, a blank or dark image \u2014 set "isFood" to false and "items" to an empty list. A nutrition label, a menu or a recipe page is not a meal either: set "isFood" to false. Do not explain.
 
 If the photo shows food you can only partly make out, list what you can make out. A partial list is still useful; the athlete reviews every item before it is saved.`;
 interface Body {
