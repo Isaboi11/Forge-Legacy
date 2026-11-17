@@ -33,6 +33,7 @@ import { HoltMark } from '@/components/forge/HoltMark';
 import { HoltWords } from '@/components/forge/HoltWords';
 import { AiFeedback } from '@/components/forge/AiFeedback';
 import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
+import { fetchAiCredits } from '@/data/ai-credits-live';
 import { turnRef } from '@/domain/ai/ai-feedback-core';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
@@ -2618,10 +2619,18 @@ export function CoachChatSheet({
    * Holt's line when the meter refused a typed ask (AI audit C-D1): this month's credits used, the day they come
    * back (the SERVER's month, from `fetchCoachAiBalance`), and what still works — or, with no allowance at all,
    * that Premium AI is not on. ⚠ Never `allowance_program`: that is the Free plan's one free block.
+   * The soft floor (0272, MA12) comes from `coach_ai_credits()`, read fresh in parallel: with it, a refused chat says
+   * "today's are used, more tomorrow", not "nothing until the 1st".
    */
   const creditsLine = async (r: { remaining: number; allowance: number }, web: boolean): Promise<string> => {
-    const balance = r.allowance > 0 ? await within(AI_BALANCE_LOOKUP_MS, fetchCoachAiBalance(), null) : null;
-    return outOfAiCreditsLine({ remaining: r.remaining, allowance: r.allowance, web, period: balance?.period ?? null });
+    const [balance, credits] = r.allowance > 0
+      ? await Promise.all([
+          within(AI_BALANCE_LOOKUP_MS, fetchCoachAiBalance(), null),
+          within(AI_BALANCE_LOOKUP_MS, fetchAiCredits(true), null),
+        ])
+      : [null, null];
+    const floor = credits && credits.floorPerDay > 0 ? { perDay: credits.floorPerDay, leftToday: credits.floorLeftToday } : null;
+    return outOfAiCreditsLine({ remaining: r.remaining, allowance: r.allowance, web, period: balance?.period ?? credits?.period ?? null, floor });
   };
 
   const askAloud = async (
