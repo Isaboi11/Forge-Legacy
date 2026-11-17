@@ -56,7 +56,7 @@
  * in both: swelling is a sign, not a preference.
  */
 export const ACUTE =
-  /\b(ruptur\w*|fractur\w*(?!\s+(my|the|our)\s+(schedule|week|plans?|routine|program|calendar))|surger\w*|operation|operated|post[-\s]?op|sprain\w*|dislocat\w*|physio\w*|physical\s+therap\w*|doctor|surgeon|orthopa?ed\w*|mri|x[-\s]?ray|numb\w*|tingl\w*|pinched|shooting\s+pain|swell\w*|swollen|herniat\w*|bulging\s+disc|sciatic\w*|concussion|whiplash)\b/i;
+  /\b(ruptur\w*|fractur\w*(?!\s+(my|the|our)\s+(schedule|week|plans?|routine|program|calendar))|surger\w*|operation|operated|post[-\s]?op|sprain\w*|dislocat\w*|physio\w*|physical\s+therap\w*|doctor|surgeon|orthopa?ed\w*|mri|x[-\s]?ray|numb(?!er)\w*|tingl\w*|pinched|shooting\s+pain|swell\w*|swollen|herniat\w*|bulging\s+disc|sciatic\w*|concussion|whiplash)\b/i;
 
 /**
  * A NAMED CONDITION — the diagnosis said out loud (AI Road to 10 Sprint 2, CH-2: new phrasings). Always stops.
@@ -329,7 +329,14 @@ export type MedicalRoute =
  */
 export function medicalRoute(text: string): MedicalRoute {
   // Phone keyboards type a curly apostrophe: "I’m 16" must read as "I'm 16" (QA R2-F6, iPhone input).
-  const t = (text ?? '').replace(/[‘’ʼ]/g, "'").trim();
+  // ✅ PO 2026-11-17 (Sprint 2): the catalogue warm-up "band shoulder dislocates" is an exercise, not an injury —
+  // read with its equipment word only, so "my shoulder dislocates" and "I dislocated it doing band dislocates" still
+  // stop. Taken out as text (no lookbehind: the phone runs Hermes), as output-scan.ts does. ("numbers" ≠ "numb":
+  // ACUTE's `numb(?!er)`.)
+  const t = (text ?? '')
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/\b(?:band|pvc|stick|dowel|broom(?:stick)?)[-\s]+(?:shoulder[-\s]+)?dislocates?\b/gi, 'shoulder pass-throughs')
+    .trim();
   if (!t) return 'clear';
   const r = routeOnce(t);
   if (r !== 'clear') return r;
