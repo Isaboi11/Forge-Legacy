@@ -1,6 +1,8 @@
 import type { HoltNote } from '@/domain/coach/holt-marks';
 import type { CardioActivity } from '@/domain/workout/conditioning';
 import { signedInUserId, supabase } from '@/lib/supabase';
+import { consumeHoltAllowance } from '@/data/entitlement-live';
+import type { HoltKeep } from '@/domain/entitlement/caps-core';
 import type { LoggedWorkout, ProgramState, SessionMark, SessionState } from '@/domain/program/progress-core';
 import { matchSharedShapeToSlot, type SharedShapeExercise } from '@/domain/program/shared-session';
 import type { LiftMaxes } from '@/domain/program/percent-max';
@@ -339,6 +341,55 @@ export async function createProgram(
     .single();
   if (error) throw error;
   return { id: data.id };
+}
+
+/** No such function in the schema yet — 0270 not pasted (PostgREST's cache miss, or Postgres's own). */
+const RPC_MISSING = new Set(['PGRST202', '42883']);
+/** A Postgres refusal (a SQLSTATE), as opposed to no answer at all — postgrest-js's transport errors have no code. */
+const isDbRefusal = (code: unknown): boolean => typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code);
+
+/**
+ * ══ KEEP A HOLT BLOCK: CHARGED AND SAVED IN ONE STEP (0270 `keep_holt_program`, AI Road to 10 Sprint 1) ══
+ *
+ * Sprint 0 (B-D1) paid for a Holt program at the keep and then wrote it in a second call, so a failed write was a
+ * program paid for and never kept, and nothing on the server tied the two. `keep_holt_program` spends
+ * `consume_holt_allowance('program')` and inserts the `programs` row in ONE transaction: no kept Holt program without
+ * its spend, no spend without the kept program. Only for a block of four weeks or more — shorter is a training week
+ * (MA4-D5) and goes through `createProgram`, which spends `short_programs`.
+ *
+ *   · `kept`    — the row exists and is paid for; start it, or open the Builder on it.
+ *   · `refused` — the allowance is used up; nothing was written.
+ *   · `unread`  — no readable answer (no signal). Because it is one transaction, nothing was kept OR spent; the
+ *                 caller applies the fail-closed rule (`holtKeepVerdict`, 78ee55ae).
+ * A Postgres refusal (the programs cap, a bad structure) THROWS, so the caller's "That didn't save" names it.
+ *
+ * ⚠ BEFORE 0270 IS PASTED the function is missing, and this runs the old two steps — spend, then write — so the
+ *   client can ship first. Old phones never call this; they keep doing exactly that.
+ */
+export async function keepHoltProgram(structure: ProgramStructure): Promise<HoltKeep> {
+  const { data, error } = await supabase.rpc('keep_holt_program', { p_structure: structure });
+  if (error) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === 'string' && RPC_MISSING.has(code)) return keepInTwoSteps(structure);
+    if (isDbRefusal(code)) throw error;
+    return { kind: 'unread' };
+  }
+  const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | null | undefined;
+  if (!row || typeof row !== 'object') return { kind: 'unread' };
+  const used = typeof row.used === 'number' ? row.used : 0;
+  const allowance = typeof row.allowance === 'number' ? row.allowance : 0;
+  if (row.allowed !== true) return { kind: 'refused', used, allowance };
+  if (typeof row.program_id !== 'string') return { kind: 'unread' };
+  return { kind: 'kept', programId: row.program_id, used, allowance };
+}
+
+/** Pre-0270: Sprint 0's spend-then-write, unchanged. */
+async function keepInTwoSteps(structure: ProgramStructure): Promise<HoltKeep> {
+  const spend = await consumeHoltAllowance('program');
+  if (!spend) return { kind: 'unread' };
+  if (!spend.allowed) return { kind: 'refused', used: spend.used, allowance: spend.allowance };
+  const { id } = await createProgram(structure);
+  return { kind: 'kept', programId: id, used: spend.used, allowance: spend.allowance };
 }
 
 /**

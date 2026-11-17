@@ -264,29 +264,54 @@ export const holtUncapped = (gate: Gate): boolean =>
   gate.outcome === 'allowed' && typeof gate.cap === 'number' && gate.cap < 0;
 
 /**
- * ══ A HOLT PROGRAM IS PAID FOR WHEN IT IS KEPT, ONCE (AI audit 11-16, B-D1) ══
+ * What keeping a Holt block of four weeks or more answered (`keepHoltProgram`, 0270 `keep_holt_program`). The spend
+ * and the `programs` row are ONE server transaction, so `unread` — no readable answer — means nothing was kept and
+ * nothing was spent.
+ */
+export type HoltKeep =
+  | { kind: 'kept'; programId: string; used: number; allowance: number }
+  | { kind: 'refused'; used: number; allowance: number }
+  | { kind: 'unread' };
+
+/**
+ * The keep's answer, through the same fail-closed rule as a spend (sweep G4, `holtSpendVerdict`): `kept`; `used_up`
+ * (the server refused — the used-up line); `retry` (unreadable, and this athlete has a ceiling — never an upsell,
+ * M-7 §10); `write` (unreadable, but no ceiling: they never needed the spend, so the program is written plainly).
+ */
+export function holtKeepVerdict(keep: HoltKeep, gate: Gate): 'kept' | 'used_up' | 'retry' | 'write' {
+  if (keep.kind === 'kept') return 'kept';
+  if (keep.kind === 'refused') return 'used_up';
+  return holtUncapped(gate) ? 'write' : 'retry';
+}
+
+/**
+ * ══ A HOLT PROGRAM IS PAID FOR WHEN IT IS KEPT, ONCE (AI audit 11-16, B-D1 · 0270) ══
  *
  * It used to be spent when he BUILT it, so a rebuild spent it again: a Free beginner who tapped "Ask me again" (or
  * went back and rebuilt in the wizard) was told the free program was used before they had kept anything. Building
- * is now free; the spend happens at the keep — Start, or Save to the Builder — and must succeed before anything is
- * written, because `programs` cannot tell a Holt block from a hand-built one and nothing on the server would stop it.
+ * is free; the keep — Start, Save to the Builder, Final touches — is where it is paid for, and since 0270 the spend
+ * and the program row are one server step (`keepHoltProgram`), so neither can happen without the other.
  *
- * One ledger per screen, keyed by the build object. `pay` is the spend-or-say-why-not (true = paid). A keep of a
- * build already paid for — Start after a save that failed, a second tap while the first is in flight — answers from
- * the ledger and never spends again. A refused or unreadable spend is forgotten, so trying again asks the server.
+ * One ledger per screen, keyed by the build object. `keep` keeps it and answers what it kept (the program id), or
+ * null once it has said why not. A second keep of a build already kept — Start after "Adjust it", a retry after a
+ * start that failed, a second tap while the first is in flight — answers the SAME program and never spends or writes
+ * again. A null or a throw is forgotten, so trying again asks the server.
  */
-export type HoltKeepLedger = (build: object, pay: () => Promise<boolean>) => Promise<boolean>;
+export type HoltKeepOnce<T> = (build: object, keep: () => Promise<T | null>) => Promise<T | null>;
 
-export function holtKeepLedger(): HoltKeepLedger {
-  const paid = new WeakMap<object, Promise<boolean>>();
-  return (build, pay) => {
-    const prior = paid.get(build);
+export function holtKeepOnce<T>(): HoltKeepOnce<T> {
+  const kept = new WeakMap<object, Promise<T | null>>();
+  return (build, keep) => {
+    const prior = kept.get(build);
     if (prior) return prior;
-    const attempt = pay().catch(() => false);
-    paid.set(build, attempt);
-    void attempt.then((ok) => {
-      if (!ok) paid.delete(build);
-    });
+    const attempt = keep();
+    kept.set(build, attempt);
+    attempt.then(
+      (v) => {
+        if (v == null) kept.delete(build);
+      },
+      () => kept.delete(build),
+    );
     return attempt;
   };
 }

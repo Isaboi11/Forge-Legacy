@@ -40,7 +40,7 @@ import { consentForRoute } from '@/lib/consent';
 import { withNotCharged } from '@/domain/ai/ai-call';
 import { useCloseSignal } from '@/lib/useCloseSignal';
 import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
-import { holtBlockDoor, holtKeepLedger, holtSpendVerdict, holtUncapped } from '@/domain/entitlement/caps-core';
+import { holtBlockDoor, holtKeepOnce, holtKeepVerdict, holtSpendVerdict, holtUncapped } from '@/domain/entitlement/caps-core';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { fetchCoachAiBalance, interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { addNotes, fetchNotes } from '@/data/holt-notes-live';
@@ -199,6 +199,7 @@ import {
   createProgram,
   fetchMyPrograms,
   fetchProgramSessions,
+  keepHoltProgram,
   startProgram,
   updateProgram,
   skipProgramSession,
@@ -521,8 +522,8 @@ export function CoachChatSheet({
    * `workout_templates`, and neither can be reconstructed from a card that only carries strings.
    */
   const [built, setBuilt] = useState<Built | null>(null);
-  /** Which builds have been paid for at their keep — once each, however many times they are kept (B-D1). */
-  const [keepLedger] = useState(() => holtKeepLedger());
+  /** Which builds have been kept, and as which program — once each, however many times they are kept (B-D1, 0270). */
+  const [keepOnce] = useState(() => holtKeepOnce<string>());
   /** The sheet going away stops Holt's interpret / author / kitchen / photo calls (Sprint 1, P-G3). The chat's own
       asks keep their `asking` controllers. */
   const closeSignal = useCloseSignal();
@@ -791,20 +792,19 @@ export function CoachChatSheet({
    * ⚠ THE FREE ALLOWANCE IS SPENT ON WHAT HE ACTUALLY HANDS OVER (PO 11-08 launch QA, H18; AI audit 11-16, B-D1/B-D4).
    * `consume_holt_allowance` is the only thing that moves the counters the doors' `guard` reads. Walking away from the
    * questions costs nothing; so does a build he could not finish (a thin day) and a block nobody kept. A DAY pays once
-   * it exists. A BLOCK pays at the keep (Start / Save to the Builder, `payToKeep`), once — "Ask me again" used to spend
+   * it exists. A BLOCK pays at the keep (Start / Save to the Builder, `keepAsProgram` — the spend and the row in one
+   * server step since 0270), once — "Ask me again" used to spend
    * Free's only program before they had kept anything. A refusal is the server's answer (another device spent the last
    * one). A null is an unreadable answer, and it fails CLOSED (sweep G4): it pays only for an athlete with no ceiling on
    * that allowance — anyone else is asked to try again, never sold anything (M-7 §10). See `holtSpendVerdict`.
    */
-  const payHolt = useCallback(
-    async (kind: 'day' | 'program', offerWeek = false): Promise<boolean> => {
-      const spend = await consumeHoltAllowance(kind);
-      const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
-      if (verdict === 'build') return true;
+  /** Why the allowance was not spent, in his words — a day's spend (`payHolt`) and a block's keep (`keepAsProgram`). */
+  const sayHoltRefused = useCallback(
+    (kind: 'day' | 'program', verdict: 'used_up' | 'retry', offerWeek = false) => {
       setBusy(null);
       if (verdict === 'retry') {
         say({ kind: 'holt', text: PLAN_UNCHECKED });
-        return false;
+        return;
       }
       /* A full block refused while a week is still free: the week is the door that can help, with every answer kept. */
       const week = offerWeek && gates('short_programs').ok ? [{ label: JUST_A_WEEK, patch: { weeks: 1 } }] : [];
@@ -812,9 +812,19 @@ export function CoachChatSheet({
         { kind: 'holt', text: kind === 'day' ? 'You’ve used this month’s free days from me. Premium makes them unlimited.' : 'You’ve used the free program I can build on your plan. Premium makes them unlimited.' },
         { kind: 'chips', chips: [...week, { label: 'See Premium', patch: {}, goTo: '/subscription?from=gate' }] },
       );
-      return false;
     },
     [say, gates],
+  );
+
+  const payHolt = useCallback(
+    async (kind: 'day' | 'program', offerWeek = false): Promise<boolean> => {
+      const spend = await consumeHoltAllowance(kind);
+      const verdict = holtSpendVerdict(spend, gates(kind === 'day' ? 'holt_days_per_month' : 'holt_programs'));
+      if (verdict === 'build') return true;
+      sayHoltRefused(kind, verdict, offerWeek);
+      return false;
+    },
+    [gates, sayHoltRefused],
   );
 
   const advance = useCallback(
@@ -958,7 +968,7 @@ export function CoachChatSheet({
         await pause(650);
         const c = completeFor(merged, mode_);
         /** A block's Builder draft is written now only when keeping it owes nothing more. A capped athlete's Holt
-            program (four weeks or more, MA4-D5) waits for the keep and its payment (`payToKeep`, B-D1): written here,
+            program (four weeks or more, MA4-D5) waits for the keep and its payment (`keepAsProgram`, B-D1): written here,
             it was the whole program sitting in the Builder before anything was paid for. */
         const draftNow = (structure: ProgramStructure): boolean =>
           !earnsStructuredDevelopmentCredit(structure) || holtUncapped(gates('holt_programs'));
@@ -1188,7 +1198,7 @@ export function CoachChatSheet({
             raceLine = [raceLine, stopsShortLine(structure.weeks, builtWeeks)].filter(Boolean).join(' ');
           }
         }
-        /* Nothing is charged here: what is kept is paid for at the keep (`payToKeep`), and it is this structure —
+        /* Nothing is charged here: what is kept is paid for at the keep (`keepAsProgram`), and it is this structure —
            after any cut to "the first N weeks" — so what is charged is the block they are handed. */
         setBusy(null);
         if (draftNow(structure)) {
@@ -3090,8 +3100,13 @@ export function CoachChatSheet({
   const freshGreeting = endsAtHome ? [...blocks].reverse().find((b) => b.kind === 'greeting' && b.slot === 'greeting')?.key : undefined;
   const greetingAtTop = (e: LayoutChangeEvent) => scroller.current?.scrollTo({ y: Math.max(0, e.nativeEvent.layout.y - 4), animated: false });
 
-  const openBuilder = () => {
+  /** `kept`: a Holt block already kept as this program (0270) — the Builder opens ON it, so Save writes back over it. */
+  const openBuilder = (kept?: string) => {
     handOff();
+    if (kept) {
+      router.push({ pathname: '/program-builder', params: { o: 'edit', id: kept } });
+      return;
+    }
     /*
      * ⚠ PUSH, NOT REPLACE — and this was a dead back button (PO, 2026-08-09).
      *
@@ -3127,33 +3142,59 @@ export function CoachChatSheet({
   };
 
   /**
-   * Keeping a Holt BLOCK pays for it — here, once, before anything is written (AI audit 11-16, B-D1). Building it
-   * cost nothing, so "Ask me again" costs nothing either. `false` means he has said why not and nothing may be saved.
-   * A week and a block under four weeks owe nothing here: they spend `short_programs` where they are written (MA4-D5).
+   * Keeping a Holt BLOCK of four weeks or more: CHARGED AND SAVED IN ONE SERVER STEP (0270 `keep_holt_program`, AI Road
+   * to 10 Sprint 1; B-D1). Building it cost nothing, so "Ask me again" costs nothing either. Answers the kept program's
+   * id, or null once he has said why not — and then nothing was written and nothing spent. Once per build
+   * (`keepOnce`): Start after "Adjust it", or a retry after a start that failed, gets the same program. The fail-closed
+   * rule (sweep G4) is `holtKeepVerdict`'s. A week and a block under four weeks are not the Holt program and never
+   * come here: they spend `short_programs` where they are written (MA4-D5).
    */
-  const payToKeep = (): Promise<boolean> => {
-    if (built?.kind !== 'program' || !earnsStructuredDevelopmentCredit(built.structure)) return Promise.resolve(true);
+  const keepAsProgram = (): Promise<string | null> => {
+    if (built?.kind !== 'program') return Promise.resolve(null);
+    const structure = built.structure;
     /* No week offered for a race: its length is the calendar's, not a choice. */
     const offerWeek = constraints.goal != null && !isEnduranceGoal(constraints.goal);
-    return keepLedger(built.structure, () => payHolt('program', offerWeek));
+    return keepOnce(structure, async () => {
+      const keep = await keepHoltProgram(structure);
+      const verdict = holtKeepVerdict(keep, gates('holt_programs'));
+      if (keep.kind === 'kept') return keep.programId;
+      /* No ceiling, and the answer was unreadable: there was never anything to spend. */
+      if (verdict === 'write') return (await createProgram(structure)).id;
+      sayHoltRefused('program', verdict === 'used_up' ? 'used_up' : 'retry', offerWeek);
+      return null;
+    });
   };
 
-  /** A block into the Program Builder: paid for, then written as the draft the Builder opens. */
+  /**
+   * A block into the Program Builder. Four weeks or more is KEPT first — the row exists and is paid for — and the
+   * Builder opens on it in edit mode, with Holt's draft as the working copy, so Save writes back over the kept program
+   * instead of making a second one. Shorter is the draft the Builder opens, as before; its save spends `short_programs`.
+   */
   const keepInBuilder = async () => {
     if (built?.kind !== 'program') return;
-    if (!(await payToKeep())) return;
-    const draft = draftFromStructure(built.structure);
+    if (!earnsStructuredDevelopmentCredit(built.structure)) {
+      const draft = draftFromStructure(built.structure);
+      await saveProgramDraft(draft);
+      /* Shown in chat already, so not news — the bubble never calls it "still sitting in the builder" (holt-13). */
+      await setDraftTold(draft.name || null);
+      openBuilder();
+      return;
+    }
+    const kept = await keepAsProgram();
+    if (!kept) return;
+    const draft = { ...draftFromStructure(built.structure), mode: 'edit' as const, editId: kept, srcId: kept };
     await saveProgramDraft(draft);
-    /* Shown in chat already, so not news — the bubble never calls it "still sitting in the builder" (holt-13). */
     await setDraftTold(draft.name || null);
-    openBuilder();
+    openBuilder(kept);
   };
 
   const saveForLater = () => {
     if (!built || handing) return;
     void (async () => {
-      /* The PROGRAM path pays for the Holt program (`payToKeep`) and becomes a row in the Builder, where the
-         program caps are enforced at the point of creation. The other two write immediately, so they ask first. */
+      /* A PROGRAM of four weeks or more is kept right here (`keepInBuilder` → `keepAsProgram`, 0270) — a row, so it asks
+         the programs slot first, as Start does; shorter becomes the Builder's draft, whose save asks. The other two
+         write immediately, so they ask first. */
+      if (built.kind === 'program' && earnsStructuredDevelopmentCredit(built.structure) && !guard('programs')) return;
       if (built.kind === 'week' && !guard('short_programs')) return;
       if (built.kind === 'day' && !guard('templates')) return;
       setHanding(true);
@@ -3289,9 +3330,10 @@ export function CoachChatSheet({
         leaveFor(`/program/${programId}`);
         return;
       }
-      /* Paid for at the keep, after "end your current one?" was answered — and before the row exists (B-D1). */
-      if (!(await payToKeep())) return;
-      const { id } = await createProgram(built.structure);
+      /* Kept after "end your current one?" was answered: four weeks or more is charged and written in one server step
+         (0270, `keepAsProgram`); shorter is a training week, written as before (it spends `short_programs`, MA4-D5). */
+      const id = earnsStructuredDevelopmentCredit(built.structure) ? await keepAsProgram() : (await createProgram(built.structure)).id;
+      if (!id) return;
       const res = await startProgram(id);
       if (res?.ended) say({ kind: 'saved', text: 'Your previous program was ended.' });
       leaveFor(`/program/${id}`);
