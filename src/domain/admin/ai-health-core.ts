@@ -109,6 +109,20 @@ export interface AiFnRow {
   timed: number;
   p50Ms: number | null;
   p95Ms: number | null;
+  /** What rode free (0272), or null when the read predates it — never drawn as zeros. */
+  waived: AiWaived | null;
+}
+
+/**
+ * Calls that held 0 credits on purpose (0272, Monetization Amendment 012), delivered ones only:
+ *   · `floor` — the soft floor's free daily uses, after an athlete's month of credits ran out;
+ *   · `typedBuild` — a typed build's write that rode on the paid turn that opened it;
+ *   · `photoTidy` — a photo's tidy pass that rode on the paid read it tidied.
+ */
+export interface AiWaived {
+  floor: number;
+  typedBuild: number;
+  photoTidy: number;
 }
 
 export interface AiCanaryProbe {
@@ -139,6 +153,8 @@ export interface AiHealth {
   since: string;
   generatedAt: string;
   totals: { calls: number; failures: number; cancelled: number; refunds: number; credits: number; costUsd: number; legacyCalls: number };
+  /** The window's waived calls (0272); null when the server has not got 0272 yet — the page still draws. */
+  waived: AiWaived | null;
   last24h: { calls: number; failures: number };
   byFn: AiFnRow[];
   byDay: { d: string; rows: AiFnRow[] }[];
@@ -229,7 +245,18 @@ function fnRow(r: unknown): AiFnRow | null {
     timed: num(r.timed),
     p50Ms: numOrNull(r.p50_ms),
     p95Ms: numOrNull(r.p95_ms),
+    waived:
+      'floor_uses' in r || 'typed_build' in r || 'photo_tidy' in r
+        ? { floor: num(r.floor_uses), typedBuild: num(r.typed_build), photoTidy: num(r.photo_tidy) }
+        : null,
   };
+}
+
+/** `totals.waivers` (0272) → the counts, or null when the read has none (an older server: unknown, not zero). */
+function waivedTotals(totals: Obj): AiWaived | null {
+  const w = totals.waivers;
+  if (!isObj(w)) return null;
+  return { floor: num(w.floor), typedBuild: num(w.typed_build), photoTidy: num(w.photo_tidy) };
 }
 
 function feedbackRow(r: unknown): AiFeedbackCount | null {
@@ -295,6 +322,7 @@ export function shapeAiHealth(raw: unknown): AiHealth {
       costUsd: num(totals.cost_usd),
       legacyCalls: num(totals.legacy_calls),
     },
+    waived: waivedTotals(totals),
     last24h: { calls: num(last24h.calls), failures: num(last24h.failures) },
     byFn,
     byDay,
@@ -400,6 +428,9 @@ export function fnLine(r: AiFnRow): string {
     r.cancelled ? `${r.cancelled} cancelled` : null,
     r.timed ? `p50 ${msText(r.p50Ms)} · p95 ${msText(r.p95Ms)}` : 'no latency recorded',
     `${r.credits} credit${r.credits === 1 ? '' : 's'}`,
+    r.waived?.floor ? `${r.waived.floor} free daily use${r.waived.floor === 1 ? '' : 's'}` : null,
+    r.waived?.typedBuild ? `${r.waived.typedBuild} typed build${r.waived.typedBuild === 1 ? '' : 's'} not charged twice` : null,
+    r.waived?.photoTidy ? `${r.waived.photoTidy} photo tid${r.waived.photoTidy === 1 ? 'y' : 'ies'} free` : null,
     usdText(r.costUsd),
   ];
   return parts.filter(Boolean).join(' · ');
