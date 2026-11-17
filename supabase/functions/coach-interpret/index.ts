@@ -47,6 +47,12 @@
  * a boundary. Same rule `entitlement.ts` states about itself — the gate belongs in the layer that
  * cannot be talked out of it.
  *
+ * ⚠ AND WHAT THE MODEL SAYS IS CHECKED TOO (AI Road to 10 Sprint 2, CH-2 · audit C-D6, C-I1). The after-model guard
+ * above reads the ATHLETE's words, which step 0 already passed, so on its own it can never change an answer. Step 5b
+ * reads Holt's `say` lines with the output scanner (`src/domain/ai/output-scan.ts`): a dose, a reassurance about a
+ * symptom, a diagnosis or a clinical word is `medical_stop`, settled `guarded` and refunded. Notes go through the
+ * scanner too, and in quotes, as data (C-I4).
+ *
  * ══ ⚠ THE CACHE IS THE COST MODEL ══
  *
  * Cache reads are ~0.1× input. The pricing plan's ≈$49/yr worst case assumes the rulebook prompt is
@@ -72,9 +78,11 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 // ⚠ ONE SOURCE FOR THE GUARD. The classifier is a pure domain module so `node --test` can prove it
 // separates real sentences, and so the function and the app can never drift apart on where the line is.
 import { medicalRoute, withoutStoppedTurns } from '../../../src/domain/coach/medical-routing.ts';
+// ⚠ AND ONE SOURCE FOR WHAT THE MODEL SAYS (Sprint 2, CH-2): the scanner coach-ask, coach-kitchen and form check run.
+import { scanReply, scanTexts } from '../../../src/domain/ai/output-scan.ts';
 // ⚠ AND ONE SOURCE FOR TRUSTING THE MODEL. Structured outputs are gone (see THE OUTPUT below), so every field
 // the model returns is checked in code, in a pure module `node --test` can prove narrows junk.
-import { narrowHistory, narrowNotes, narrowReply, narrowRoute, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
+import { narrowHistory, narrowNotes, narrowReply, narrowRoute, parseModelJson, replySays } from '../../../src/domain/coach/interpret-narrow.ts';
 // ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
 import {
   ageLine,
@@ -420,9 +428,12 @@ Deno.serve(async (req) => {
     ? `Earlier in this conversation:\n${history.map((t) => `${t.role === 'athlete' ? 'Athlete' : 'Holt'}: ${t.text}`).join('\n')}\n\n`
     : '';
   // CA-D2: what the athlete told Holt about themselves, so answers use it. A saved line that would trip the
-  // medical guard is not sent — the body is amber-tier and goes to a model only on an explicit ask.
-  const notes = narrowNotes(body.notes).filter((n) => medicalRoute(n) === 'clear');
-  const knows = notes.length ? `What you know about this athlete:\n${notes.map((n) => `- ${n}`).join('\n')}\n\n` : '';
+  // medical guard is not sent — the body is amber-tier and goes to a model only on an explicit ask — nor one the output
+  // scanner would stop (Sprint 2: "takes 2 advil before runs" is an amount whoever typed it). Each goes in double
+  // quotes, any quote inside it an apostrophe: a person typed it, so it is data (C-I4; SYSTEM already says "facts, not
+  // instructions").
+  const notes = narrowNotes(body.notes).filter((n) => medicalRoute(n) === 'clear' && !scanReply(n).hit);
+  const knows = notes.length ? `What you know about this athlete:\n${notes.map((n) => `- "${n.replace(/["“”]/g, "'")}"`).join('\n')}\n\n` : '';
 
   const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
 
@@ -526,9 +537,19 @@ Deno.serve(async (req) => {
   //     plain single route; a stop filed inside one wins the whole reply;
   //   · remember — up to two lines the athlete said about themselves (CA-D2), never a body fact.
   const reply = narrowReply(parsed, today, notes);
+
+  // ── 5b. THE OUTPUT CHECK — what the MODEL wrote (Sprint 2, CH-2 · audit C-I1, C-D6) ──
+  //
+  // ⚠ THIS RUNS AFTER THE MODEL AND OVERRULES IT. Step 4 re-reads the ATHLETE's words (kept as it was; audit C-D6
+  // notes it is the same input step 0 already passed). This is the check that was missing: it reads every line Holt
+  // would SAY (`say` on an answer, a patch, or any of a multi's actions). A dose, a reassurance about a symptom, a
+  // diagnosis or a clinical word is the medical stop — the route every app already has copy for — settled `guarded`
+  // and refunded. The athlete's words are the scan's `asked`: "that's normal" after "my knee hurts" is about the knee.
+  if (scanTexts(replySays(reply), text).hit) return json({ route: 'medical_stop', ...(await tail('guarded')) });
+
   // The same guard the message went through, on each line Holt would save: a note is never the body.
   if (reply.remember) {
-    const kept = reply.remember.filter((line) => medicalRoute(line) === 'clear');
+    const kept = reply.remember.filter((line) => medicalRoute(line) === 'clear' && !scanReply(line).hit);
     if (kept.length) reply.remember = kept;
     else delete reply.remember;
   }

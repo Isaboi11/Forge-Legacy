@@ -531,6 +531,137 @@ export function withoutStoppedTurns<T extends {
     }
     return kept;
 }
+export type ScanKind = 'dose' | 'reassurance' | 'diagnosis' | 'clinical';
+export type ScanResult = {
+    hit: false;
+} | {
+    hit: true;
+    kind: ScanKind;
+    match: string;
+};
+const SCAN_CLEAR: ScanResult = { hit: false };
+const scanSrc = (re: RegExp): string => re.source;
+export const CLINICAL_TERMS = /\b(valgus|varus|kyphos\w*|kyphotic|lordos\w*|lordotic|scolio\w*|hyperlordo\w*|hyperkyphos\w*|impinge\w*|spondyl\w*|stenosis|dyskines\w*|scapular\s+winging|winged\s+scapula\w*|anterior\s+pelvic\s+tilt|pelvic\s+obliquity|trendelenburg|genu\s+(valgum|varum|recurvatum)|pes\s+(planus|cavus)|hypermobil\w*|crossed\s+syndrome)\b/i;
+const SCAN_DRUG = /(ibuprofen|advil|motrin|nurofen|aleve|naproxen|tylenol|acetaminophen|paracetamol|panadol|aspirin|excedrin|nsaids?|anti[-\s]?inflammatories|anti[-\s]?inflammatory\s+(pills?|tablets?|meds?|medications?|drugs?)|pain\s?killers?|pain\s+(meds?|medications?|relievers?|pills?)|codeine|tramadol|oxycodone|hydrocodone|opioids?|morphine|gabapentin|muscle\s+relaxants?|cyclobenzaprine|flexeril|prednisone|cortisone|corticosteroids?|steroids?|anabolics?|testosterone|trt|sarms?|ostarine|rad[-\s]?140|ligandrol|cardarine|mk[-\s]?677|trenbolone|tren|anavar|oxandrolone|dianabol|winstrol|deca|hgh|growth\s+hormone|bpc[-\s]?157|tb[-\s]?500|peptide\s+(therapy|injections?|cycles?)|clenbuterol|clen|dnp|ephedrine|ephedra|yohimbine|adderall|ritalin|modafinil|kratom|benadryl|diphenhydramine|zzzquil|nyquil|unisom|antihistamines?|antibiotics?|insulin|metformin|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide|phentermine|laxatives?|diuretics?|water\s+pills?|sleeping\s+pills?|sleep\s+aids?|melatonin|inhalers?|epi-?pens?)/;
+const SCAN_SUPPLEMENT = /(creatine|caffeine|pre[-\s]?workouts?|beta[-\s]?alanine|citrulline|arginine|bcaas?|eaas?|glutamine|hmb|ashwagandha|magnesium|zinc|zma|iron\s+(supplements?|pills?|tablets?)|vitamins?(\s+[a-k]\d{0,2})?|multivitamins?|fish\s+oil|omega[-\s]?3s?|glucosamine|chondroitin|curcumin|tongkat(\s+ali)?|fadogia|shilajit|sodium\s+bicarbonate|carnitine|cla|green\s+tea\s+extract|fat[-\s]?burners?|electrolyte\s+(tablets?|pills?|capsules?)|supplements?|stims?|stimulants?)/;
+const SCAN_SUBSTANCE = `(?:${scanSrc(SCAN_DRUG)}|${scanSrc(SCAN_SUPPLEMENT)})`;
+const SCAN_NUMBER = String.raw `\d+(?:[.,]\d+)?(?:\s*(?:-|–|to)\s*\d+(?:[.,]\d+)?)?`;
+const SCAN_COUNT = String.raw `(?:\d+|a|an|one|two|three|four|five|six|half\s+an?|a\s+couple(?:\s+of)?|a\s+few|another|some)`;
+const SCAN_MEASURE = String.raw `(?:g|grams?|scoops?|servings?|tsp|teaspoons?|tbsp|tablespoons?|ml|milliliters?|millilitres?|cc|units?|doses?)`;
+const SCAN_DOSE: readonly RegExp[] = [
+    new RegExp(String.raw `\b${SCAN_NUMBER}\s*(?:mg|mcg|µg|ug|milligrams?|micrograms?|iu)\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_COUNT}\s+(?:[\w-]+\s+)?(?:pills?|tablets?|capsules?|caplets?|softgels?|gel\s?caps?|lozenges?|puffs?|injections?|suppositor\w*)\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_NUMBER}\s*${SCAN_MEASURE}\s+(?:of\s+)?(?:(?:your|the|pure|plain|a)\s+)?(?:[\w-]+\s+)?${SCAN_SUBSTANCE}\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_SUBSTANCE}(?:\s*[:,(—–-]\s*|\s+(?:(?:at|is|of|around|about|roughly|dose|dosage|dosing|usually)\s+)*)${SCAN_NUMBER}\s*${SCAN_MEASURE}\b`, 'i'),
+    new RegExp(String.raw `\b(?:a|one|two|three|half\s+a|a\s+couple\s+of)\s+(?:heaping\s+|level\s+|full\s+)?scoops?\s+of\s+${SCAN_SUBSTANCE}\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_COUNT}\s+${scanSrc(SCAN_DRUG)}\b`, 'i'),
+    new RegExp(String.raw `\b(?:take|taking|try|trying|pop|popping|use|using|grab|start(?:ing)?\s+(?:on|taking))\s+(?:an?\s+|some\s+|your\s+|the\s+)?${scanSrc(SCAN_DRUG)}\b`, 'i'),
+    new RegExp(String.raw `\b${scanSrc(SCAN_DRUG)}\b[^.?!\n]{0,40}\b(?:every\s+\d+(?:\s*(?:-|to)\s*\d+)?\s+hours?|(?:once|twice|three\s+times)\s+(?:a|per)\s+day|daily|per\s+day|a\s+day|before\s+bed|on\s+an\s+empty\s+stomach)\b`, 'i'),
+];
+const SCAN_BODY = /(shoulders?|rotator\s+cuff|labrum|knees?|kneecaps?|acl|mcl|meniscus|back|lower\s+back|spine|discs?|neck|hips?|ankles?|wrists?|elbows?|arms?|legs?|foot|feet|hands?|fingers?|ribs?|collarbone|hamstrings?|quads?|calf|calves|groin|achilles|biceps?|triceps?|pecs?|chest|glutes?|shins?|traps?|lats?|obliques?|adductors?|joints?|tendons?|ligaments?|muscles?|hammy|hammies)/;
+const SCAN_CONDITION = /\b(tendinitis|tendonitis|tendinopathy|tendinosis|bursitis|(osteo)?arthritis|fasciitis|plantar\s+fasci\w*|epicondyl\w*|tennis\s+elbow|golfer'?s\s+elbow|jumper'?s\s+knee|runner'?s\s+knee|shin\s+splints?|it\s?band\s+syndrome|itbs|piriformis\s+syndrome|carpal\s+tunnel|frozen\s+shoulder|adhesive\s+capsulitis|costochondritis|compartment\s+syndrome|osgood[-\s]schlatter\w*|sever'?s\s+disease|si\s+joint\s+dysfunction|sacroiliac\s+\w+|facet\s+(joint\s+)?(syndrome|irritation|arthropathy)|degenerative\s+disc|(herniated|bulging|slipped|ruptured)\s+discs?|herniat\w*|sciatica|stress\s+fractures?|fractur\w*|dislocat(ed|ion\w*|ing)|(?<!(shoulder|band|pvc|stick|dowel)[-\s])dislocates?|subluxat\w*|labral\s+tears?|slap\s+tears?|(meniscus|meniscal)\s+tears?|(acl|mcl|pcl|lcl)\s+(tears?|sprains?|injur\w*)|rotator\s+cuff\s+(tears?|injur\w*|tendin\w*|strain\w*)|torn\s+(\w+\s+)?(acl|mcl|meniscus|labrum|rotator\s+cuff|ligament|tendon|muscle|hamstring|bicep|pec|achilles|calf|quad|groin)|pulled\s+(a\s+)?(muscle|hamstring|groin|calf|quad|hammy|lat|pec)|pinched\s+nerve|nerve\s+(pain|irritation|impingement|entrapment|damage|compression)|sprain\w*|concussion\w*|whiplash|hernia\w*|rhabdo\w*|muscle\s+(knots?|spasms?|strains?|tears?|pulls?)|trigger\s+points?|overuse\s+injur\w*|repetitive\s+strain|patell\w+\s+(tendin\w*|pain\s+syndrome)|patellofemoral|chondromalacia|achilles\s+(tendin\w*|rupture|tear)|(hamstring|groin|calf|quad|lat|pec|oblique|adductor)\s+(strain|tear|pull)s?)\b/i;
+const SCAN_INJURY_NOUN = String.raw `(?:strain|sprain|tear|impingement|inflammation|irritation|injur\w*|knot|spasm|nerve(?:\s+\w+)?|tendon\w*|ligament|cartilage|disc|bruise|contusion)`;
+const SCAN_DIAGNOSIS: readonly RegExp[] = [
+    SCAN_CONDITION,
+    new RegExp(String.raw `\b(?:sounds|looks|seems|feels)\s+like\s+(?:you(?:'ve|\s+have|\s+may\s+have|\s+might\s+have)?\s+)?(?:a|an|some|your|the)?\s*(?:[\w-]+\s+){0,2}${SCAN_INJURY_NOUN}\b`, 'i'),
+    new RegExp(String.raw `\b(?:sounds|looks|seems)\s+like\s+(?:you(?:'ve|\s+have)?\s+)(?:strained|pulled|tweaked|tore|torn|sprained|irritated|inflamed|aggravated|injured|bruised|pinched|impinged)\b`, 'i'),
+    new RegExp(String.raw `\b(?:you(?:'ve|\s+have)?|it|that|this)\s+(?:probably|likely|might|may|could|must)\s+(?:have\s+|'ve\s+)?(?:just\s+)?(?:strained|pulled|tweaked|tore|sprained|irritated|aggravated|injured|bruised|pinched)\s+(?:it|something|that|this|(?:your|a|the)\s+(?:\w+\s+)?(?:${scanSrc(SCAN_BODY)}|nerve))\b`, 'i'),
+    /\b(it|that|this|something)\s+(probably|likely|might|may|could|must)\s+be\s+(just\s+)?(strained|torn|sprained|irritated|inflamed|aggravated|injured|bruised|pinched|impinged)\b/i,
+    new RegExp(String.raw `\b(?:probably|likely|possibly|most\s+likely|could\s+be|might\s+be|may\s+be|sounds\s+like)\s+(?:just\s+)?(?:a|an|some)\s+(?:[\w-]+\s+)?${SCAN_INJURY_NOUN}\b`, 'i'),
+    new RegExp(String.raw `\byou(?:'ve)?\s+(?:strained|tweaked|tore|sprained|injured|aggravated|irritated)\s+(?:your|a|the)?\s*(?:\w+\s+)?${scanSrc(SCAN_BODY)}\b`, 'i'),
+    /\b(classic|tell[-\s]?tale)\s+(sign|symptom)s?\s+of\b/i,
+    new RegExp(String.raw `\b(?:signs?|symptoms?)\s+of\s+(?:a|an)?\s*(?:\w+\s+)?(?:${SCAN_INJURY_NOUN}|condition|disorder|infection|syndrome)\b`, 'i'),
+    new RegExp(String.raw `\b(?:is\s+)?caused\s+by\s+(?:a|an|your)?\s*(?:\w+\s+)?(?:${SCAN_INJURY_NOUN}|joint)\b`, 'i'),
+];
+const SCAN_REASSURE_HARD = /\b(red\s+flags?|harmless|benign|(probably|likely|almost\s+certainly|most\s+likely)\s+nothing\b|(it'?s|that'?s|probably|likely|just)\s+(just\s+)?(gas|trapped\s+wind|indigestion|heartburn|a\s+stitch|a\s+side\s+stitch)\b|(go(es)?\s+away|clear(s)?\s+up|settle(s)?\s+down|heal(s)?|resolve(s)?|sort(s)?\s+(it)?self\s+out|fix(es)?\s+itself)\s+(on\s+its\s+own|by\s+itself|itself|with\s+(time|rest))|(no|don'?t|do\s+not|won'?t|wouldn'?t)\s+(really\s+)?need\s+(to\s+(see|go\s+to|call|bother\s+with)\s+)?(an?|the|your)\s+(doctor|physio\w*|gp|physical\s+therapist|specialist|er|emergency\s+room|hospital)|(no\s+need|nothing)\s+to\s+(see|call)\s+(an?|the|your)\s+(doctor|physio\w*|gp)|(it|that|this)\s+shouldn'?t\s+(hurt|be\s+painful|cause\s+(any\s+)?pain)|(that'?s|it'?s|this\s+is|isn'?t|is\s+not)\s+(not\s+)?an\s+injury)\b/i;
+const SCAN_REASSURE_SOFT = /\b(((completely|perfectly|totally|pretty|very|quite|super|fairly|entirely)\s+)?normal|common|(to\s+be\s+)?expected|expect\s+(some|a\s+(bit|little)\s+of|to\s+(feel|be))|typical(ly)?|natural|(probably|usually|generally|likely|should\s+be|will\s+be|'ll\s+be|be|is|'s|are|'re|feels?|looks?|seems?|sounds?)\s+(totally\s+|completely\s+|perfectly\s+|probably\s+|usually\s+|just\s+)?(fine|ok|okay|alright|all\s+right|nothing)|nothing\s+(serious|major|to\s+(worry|be\s+(worried|concerned))\s+about)|no\s+(need\s+to\s+)?worr(y|ies)|don'?t\s+worry|not\s+(a\s+|any\s+)?(big\s+deal|concern|worry|problem|issue)|nothing\s+to\s+(fret|stress)\s+about|(not|isn'?t|aren'?t)\s+serious|part\s+of\s+(the\s+process|training|it|lifting|getting\s+(stronger|fitter))|(will|should|'ll|usually|tends\s+to)\s+(pass|fade|ease(\s+off)?|settle(\s+down)?|go\s+away|wear\s+off|calm\s+down|be\s+gone|subside|disappear)|(goes|go|went)\s+away|wears?\s+off|(it'?s|that'?s|this\s+is)\s+(just|only|simply)|just\s+(your\s+)?(body|muscles?)\s+(adapting|adjusting|recovering|getting\s+used))\b/i;
+const SCAN_SYMPTOM = new RegExp(String.raw `\b(?:pain(?:s|ful|fully)?|(?<!(?:won'?t|wouldn'?t|doesn'?t|didn'?t|can'?t|couldn'?t|never|not)\s)hurt\w*(?!\s+(?:to\b|your\s+(?:progress|gains|chances|numbers)))|ach(?:e|es|ed|ing|y)|sore\w*|doms|stiff(?:ness|er)?\b(?!-leg|\s+leg(?:ged)?\s+(?:dead|rdl|good))|tightness|cramp\w*|spasm\w*|twinge\w*|tweaked|strained|sprain\w*|swell\w*|swollen|bruis\w*|numb(?!er)\w*|tingl\w*|pins\s+and\s+needles|dizz\w*|light[-\s]?headed\w*|faint\w*|wooz\w*|nause\w*|(?:feel|feels|feeling|felt)\s+(?:a\s+bit\s+|kind\s+of\s+|really\s+|so\s+)?(?:sick|ill|unwell|faint)|queas\w*|vomit\w*|throw(?:ing)?\s+up|threw\s+up|puk(?:e|ed|ing)|headaches?|migraines?|palpitations?|heart\s+(?:is\s+)?(?:racing|pounding|skipping|fluttering)|racing\s+heart|chest\s+(?:pain|tightness|pressure)|tight\s+chest|short(?:ness)?\s+of\s+breath|breathless\w*|burning\s+sensation|shooting\s+(?:pain|sensation)|throbb\w*|tenderness|tender\s+to\s+(?:the\s+)?touch|inflam\w*|bleed\w*|blood\s+in|rash\w*|itchy|itchiness|hives|shaky|trembl\w*|tremors?|injur\w*|discomfort|uncomfortable|niggl\w*|flare[-\s]?ups?|symptoms?)\b` +
+    '|' +
+    String.raw `\b(?:crack\w*|pop(?:s|ping|ped)?|click\w*|grind\w*|clunk\w*|crunch\w*|burn(?:s|ing)?)\s+(?:in|from|of|at|around)\s+(?:the\s+|your\s+|my\s+|their\s+)?(?:[\w'-]+\s+)?${scanSrc(SCAN_BODY)}\b` +
+    '|' +
+    String.raw `\b(?:tight|weird|funny)\s+(?:[\w'-]+\s+)?${scanSrc(SCAN_BODY)}\b` +
+    '|' +
+    String.raw `\b${scanSrc(SCAN_BODY)}\s+(?:[\w'-]+\s+){0,3}(?:crack\w*|pop(?:s|ping|ped)?|click\w*|grind\w*|clunk\w*|crunch\w*|tight|weird|funny|burn(?:s|ing)?)\b`, 'i');
+const SCAN_POINTS_BACK = /^(that'?s|that\s+is|it'?s|it\s+is|this\s+is|totally|completely|perfectly|very|pretty|quite|nothing|don'?t\s+worry|no\s+worries|normal|common|happens|yep|yeah|yes|sure|fine|all\s+normal)\b/i;
+function scanSentences(text: string): string[] {
+    return text
+        .split(/(?<=[.!?…])\s+|\n+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+}
+const scanWords = (s: string): number => s.split(/\s+/).filter(Boolean).length;
+const scanNormal = (text: string): string => text.replace(/[‘’ʼ`´]/g, "'").replace(/[“”]/g, '"');
+function scanReassurance(text: string, asked: string): string | null {
+    const hard = SCAN_REASSURE_HARD.exec(text);
+    if (hard)
+        return hard[0];
+    const said = scanSentences(text);
+    const askedSymptom = !!asked && SCAN_SYMPTOM.test(asked);
+    for (let i = 0; i < said.length; i += 1) {
+        const soft = SCAN_REASSURE_SOFT.exec(said[i]);
+        if (!soft)
+            continue;
+        if (SCAN_SYMPTOM.test(said[i]))
+            return soft[0];
+        const pointsBack = SCAN_POINTS_BACK.test(said[i]) || scanWords(said[i]) <= 4;
+        if (!pointsBack)
+            continue;
+        if (askedSymptom)
+            return soft[0];
+        if ((i > 0 && SCAN_SYMPTOM.test(said[i - 1])) || (i + 1 < said.length && SCAN_SYMPTOM.test(said[i + 1])))
+            return soft[0];
+    }
+    return null;
+}
+export function scanReply(text: string, asked?: string | null): ScanResult {
+    const t = scanNormal(typeof text === 'string' ? text : '').trim();
+    if (!t)
+        return SCAN_CLEAR;
+    for (const re of SCAN_DOSE) {
+        const m = re.exec(t);
+        if (m)
+            return { hit: true, kind: 'dose', match: m[0] };
+    }
+    for (const re of SCAN_DIAGNOSIS) {
+        const m = re.exec(t);
+        if (m)
+            return { hit: true, kind: 'diagnosis', match: m[0] };
+    }
+    const clinical = CLINICAL_TERMS.exec(t);
+    if (clinical)
+        return { hit: true, kind: 'clinical', match: clinical[0] };
+    const reassured = scanReassurance(t, scanNormal(typeof asked === 'string' ? asked : ''));
+    if (reassured)
+        return { hit: true, kind: 'reassurance', match: reassured };
+    return SCAN_CLEAR;
+}
+export function scanTexts(texts: readonly unknown[], asked?: string | null): ScanResult {
+    for (const x of texts) {
+        if (typeof x !== 'string')
+            continue;
+        const r = scanReply(x, asked);
+        if (r.hit)
+            return r;
+    }
+    return SCAN_CLEAR;
+}
+export function scanStringsOf(value: unknown, max = 200): string[] {
+    const out: string[] = [];
+    const walk = (v: unknown, depth: number) => {
+        if (out.length >= max || depth > 6)
+            return;
+        if (typeof v === 'string')
+            out.push(v);
+        else if (Array.isArray(v))
+            for (const x of v)
+                walk(x, depth + 1);
+        else if (v && typeof v === 'object')
+            for (const x of Object.values(v as Record<string, unknown>))
+                walk(x, depth + 1);
+    };
+    walk(value, 0);
+    return out;
+}
 export const KITCHEN_FOODS = "all-purpose flour; almonds; apple; avocado; avocado oil; baby spinach; baking powder; balsamic vinegar; banana; beef jerky; black beans; black pepper; blueberries; bok choy; brioche burger bun; broccoli florets; brown or green lentils; brown rice cakes; brown sugar; bulgur; butter; butternut squash; cabbage; canned tomatoes; capers; carrot; cheddar; chia seeds; chicken breast; chicken thighs; chickpeas; chilli flakes; chilli powder; cider vinegar; coconut milk; cod fillet; cottage cheese; cream cheese; cucumber; cumin; curry powder; dried oregano; dried parsley; dry-roasted peanuts; edamame; egg whites; eggs; extra-lean ground beef; feta; firm tofu; flour tortilla; fresh cilantro; fresh ginger; fresh mint; fresh parsley; garlic; garlic powder; granola; grapes; greek yogurt; green beans; ground cinnamon; ground turkey; halloumi; honey; hot sauce; hummus; italian herbs; kale; kidney beans; lean ground beef; lemon juice; light butter; light cream cheese; light mayonnaise; long-grain white rice; low-carb bagel; low-carb mini wrap; low-carb tortilla; mango; marshmallow creme; milk; milk chocolate; mini chocolate chips; mushrooms; olive oil; onion; onion powder; orange; orzo or pasta; parmesan; part-skim mozzarella; peach; peanut butter; pearl barley; pepperoni; pita; pizza sauce; plain bagel; plain yogurt; pork tenderloin; potatoes; quinoa; raisins; raw prawns; red bell pepper; reduced-calorie barbecue sauce; reduced-fat american cheese; reduced-fat cheddar; reduced-fat peanut butter; rice milk; rocket; rolled oats; salmon fillet; salsa; salt; sesame seeds; sirloin steak; sliced turkey breast; smoked paprika; smoked salmon; sour cream; soy sauce; spaghetti; strawberries; sun-dried tomatoes in oil; sweet potato; tahini; teriyaki sauce; tomato paste; tomatoes; tuna in water; turkey bacon; turkey pepperoni; turkey sausage; unsweetened applesauce; vanilla extract; vegetable broth; wheat noodles; whey protein powder; white beans; whole-wheat bread";
 export type SettleOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'not_a_program' | 'unreadable' | 'bad_output' | 'cancelled' | 'guarded';
 export const UPSTREAM_ABORT_MS: Readonly<Record<string, number>> = {
@@ -853,6 +984,9 @@ Deno.serve(async (req) => {
     const options = kitchenFromModelText(text, request.exclude);
     if (!options.length) {
         return json({ ok: false, reason: 'none', ...(await settle(payload?.stop_reason === 'max_tokens' ? 'truncated' : 'bad_output', call)) });
+    }
+    if (scanTexts(scanStringsOf(options, 400), request.ask).hit) {
+        return json({ ok: false, reason: 'stop', route: 'medical', ...(await settle('guarded', call)) });
     }
     return json({ ok: true, options, ...(await settle('ok', call)) });
 });

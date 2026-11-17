@@ -470,3 +470,14 @@ export function narrowReply(parsed: Obj, todayISO: string, knownNotes: readonly 
   if (!route || route === 'unclear') return withMemory({ route: 'unclear' });
   return withMemory(narrowAction(parsed, todayISO) ?? { route: 'unclear' });
 }
+
+/**
+ * Every line Holt would SAY in a narrowed reply — the `say` of an answer or a patch, and of each action in a multi —
+ * for the function's output scan (AI Road to 10 Sprint 2, CH-2: `scanTexts` in `domain/ai/output-scan.ts`). The
+ * athlete's own words (an edit's named exercise, a pin, a remembered line) are not his and are not here.
+ */
+export function replySays(reply: NarrowedReply): string[] {
+  const one = (a: WireAction): string[] => ('say' in a && typeof a.say === 'string' && a.say ? [a.say] : []);
+  if (reply.route === 'multi' && 'actions' in reply) return reply.actions.flatMap(one);
+  return one(reply as WireAction);
+}
