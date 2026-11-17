@@ -49,6 +49,7 @@ import { askHolt, askSourcesLive, type AskAction, type AskTurn } from '@/data/co
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
+import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
@@ -2277,6 +2278,12 @@ export function CoachChatSheet({
    * once, and never on top of an ask still running. Not in the thread: the history is up to eight turns.
    */
   const asking = useRef(new Set<AbortController>());
+  /*
+   * What he is looking up while the dots show (AI Road to 10 Sprint 1, C-G5) — "Checking your lift log…", one of
+   * coach-ask's fixed lines, never the model's words. Set only before an ask's first word, by that ask's `sid`,
+   * and cleared by that ask when its words start or it ends, so one ask's line never sits under another's dots.
+   */
+  const [askStatus, setAskStatus] = useState<{ sid: number; text: string } | null>(null);
   const retryAsks = useRef(new Map<number, { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } }>());
   useEffect(() => {
     const live = asking.current;
@@ -2683,15 +2690,25 @@ export function CoachChatSheet({
           started = true;
           /* The dots give way to the words; the composer keeps holding while `streaming` is set. */
           setBusy(null);
+          setAskStatus(null);
           say({ kind: 'holt', text: acc, streaming: true, sid });
           return;
         }
         setThread((t) => streamInto(t, sid, acc));
       },
-      { allowWeb: opts.allowWeb, recipes, signal: ctl.signal },
+      {
+        allowWeb: opts.allowWeb,
+        recipes,
+        signal: ctl.signal,
+        /* The waiting bubble says what he is looking up — until his first word, never after. */
+        onStatus: (line) => {
+          if (!started) setAskStatus({ sid, text: line });
+        },
+      },
     );
     asking.current.delete(ctl);
     setBusy(null);
+    setAskStatus((s) => (s?.sid === sid ? null : s));
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
     setThread((t) => streamEnded(t, sid));
     switch (r.kind) {
@@ -2700,8 +2717,8 @@ export function CoachChatSheet({
            ("N"). A fragment that says nothing is taken back; either way the athlete is told it broke. */
         if (!r.complete && started) {
           setThread((t) => cutOffReply(t, sid));
-          /* C-D5: with a Try again that sends the same ask (`retryChip`). */
-          return say({ kind: 'error', ...askOfflineCard({ started: true, timedOut: false }) }, retryChip({ text, history, q, opts }));
+          /* C-D5: with a Try again that sends the same ask (`retryChip`). Sprint 1: "Not charged." when coach-ask said so. */
+          return say({ kind: 'error', ...askOfflineCard({ started: true, timedOut: false, refunded: r.refunded }) }, retryChip({ text, history, q, opts }));
         }
         if (!started && r.text) say({ kind: 'holt', text: r.text });
         /* C-D4: stopped at the length cap. The words stand, and he says they are not all of it. */
@@ -2756,8 +2773,8 @@ export function CoachChatSheet({
         if (r.aborted) return;
         if (started) setThread((t) => cutOffReply(t, sid));
         /* C-D5: the sub-line says what happened — dropped mid-reply, never got through, or nothing back in time —
-           and Try again sends the same ask. */
-        return say({ kind: 'error', ...askOfflineCard({ started, timedOut: r.timedOut }) }, retryChip({ text, history, q, opts }));
+           and Try again sends the same ask. Sprint 1 (P-D2): "Not charged." under it when coach-ask refunded. */
+        return say({ kind: 'error', ...askOfflineCard({ started, timedOut: r.timedOut, refunded: r.refunded }) }, retryChip({ text, history, q, opts }));
     }
   };
 
@@ -3543,7 +3560,7 @@ export function CoachChatSheet({
               </TurnEnter>
             );
           })}
-          {waiting ? <Waiting kind={waiting} /> : null}
+          {waiting ? <Waiting kind={waiting} status={waiting === 'thinking' ? askStatus?.text ?? null : null} /> : null}
         </Reanimated.ScrollView>
         )}
 
@@ -4303,10 +4320,13 @@ function SendGlyph({ color }: { color: string }) {
  */
 
 
-/** The two waits. Building names its steps, because a spinner would waste the moment. */
-function Waiting({ kind }: { kind: 'thinking' | 'building' }) {
+/**
+ * The two waits. Building names its steps, because a spinner would waste the moment. Thinking names its lookup
+ * when coach-ask says which one is running (`status`, Sprint 1 C-G5) — the same bubble, with the line beside the dots.
+ */
+function Waiting({ kind, status }: { kind: 'thinking' | 'building'; status?: string | null }) {
   // Where his next line will land, in the shape it will land in (§9.1–9.2).
-  if (kind === 'thinking') return <View style={styles.dotsWrap}><TypingBubble /></View>;
+  if (kind === 'thinking') return <View style={styles.dotsWrap}><TypingBubble status={status ?? null} /></View>;
   return <BuildingCard />;
 }
 
@@ -4385,12 +4405,26 @@ function BuildingCard() {
  * The dots are the same component the `thinking` state uses. That is deliberate: both mean Holt is
  * working, and giving them two different animations would be inventing a distinction nobody asked for.
  */
-function TypingBubble() {
+function TypingBubble({ status = null }: { status?: string | null }) {
+  /*
+   * ⚠ THE STATUS LINE IS COACH-ASK'S FIXED PHRASE (`ASK_STATUS_PHRASES`), not anything the model wrote — the wire
+   * drops any other string. It sits after the dots in the same bubble, in the secondary ink of either theme (no
+   * bronze: nothing has been earned yet), one line, and it is what a screen reader hears while he looks it up.
+   */
   return (
-    <View style={styles.typingBubble} accessibilityLabel="Holt is typing">
+    <View
+      style={styles.typingBubble}
+      accessibilityLabel={status ?? 'Holt is typing'}
+      accessibilityLiveRegion={status ? 'polite' : 'none'}
+    >
       {[0, 1, 2].map((i) => (
         <ThinkingDot key={i} delay={i * 180} />
       ))}
+      {status ? (
+        <Text style={styles.typingStatus} numberOfLines={1}>
+          {status}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -4497,12 +4531,16 @@ function TurnView({
 
     case 'error':
       /* The ONE place red appears. A refusal is Holt deciding; this is the app failing, and conflating
-         the two would make him look arbitrary. */
+         the two would make him look arbitrary. "Not charged." sits UNDER the card, in the quiet secondary
+         ink — it is reassurance, not part of the failure (Sprint 1, P-D2; shown only when coach-ask refunded). */
       return (
-        <View style={styles.error}>
-          <Text style={styles.errorTitle}>{turn.text}</Text>
-          <Text style={styles.errorSub}>{turn.sub}</Text>
-          <Text style={styles.errorAction}>{turn.action}</Text>
+        <View style={styles.errorWrap}>
+          <View style={styles.error}>
+            <Text style={styles.errorTitle}>{turn.text}</Text>
+            <Text style={styles.errorSub}>{turn.sub}</Text>
+            <Text style={styles.errorAction}>{turn.action}</Text>
+          </View>
+          {turn.notCharged ? <Text style={styles.errorFoot}>{NOT_CHARGED}</Text> : null}
         </View>
       );
 
@@ -5810,6 +5848,8 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
   },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze400, opacity: 0.5 },
+  /* The lookup line after the dots (C-G5). Layout for both themes; the ink is the secondary token, never bronze. */
+  typingStatus: { marginLeft: 5, flexShrink: 1, fontSize: 13, lineHeight: 18, color: flColor.gray400 },
   buildCard: {
     marginLeft: 52,
     padding: 18,
@@ -5831,10 +5871,13 @@ const styles = StyleSheet.create({
   rail: { height: 3, borderRadius: 2, backgroundColor: flColor.charcoal700, overflow: 'hidden' },
   railFill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
+  /* Layout, so both themes (§2.0): the card, then the "Not charged." line under it. Colours are tokens. */
+  errorWrap: { gap: 6 },
   error: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.dangerBorder, backgroundColor: flColor.dangerBg, padding: 13, gap: 3 },
   errorTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.dangerText },
   errorSub: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
   errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: flColor.dangerText },
+  errorFoot: { paddingHorizontal: 13, fontSize: 12.5, lineHeight: 17, color: flColor.gray400 },
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
   kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
