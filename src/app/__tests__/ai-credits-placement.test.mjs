@@ -20,7 +20,10 @@ const MEAL_PHOTO = read('../meal-photo.tsx');
 
 test('the chip: Premium AI only, decided by itself; the server’s words; neutral unless warning; theme tokens only', () => {
   assert.match(CHIP, /const premiumAi = usePremiumAi\(\);/);
-  assert.match(CHIP, /const chip = premiumAi \? aiCreditsChip\(read\) : null;\n\s+if \(!chip\) return null;/, 'no Premium AI, no read, a failed read → nothing, never a 0');
+  assert.match(CHIP, /const chip = premiumAi \? aiCreditsChip\(read\) : null;\n\s+if \(!chip\) return short && premiumAi && read == null \? <View style=\{styles\.held\}/, 'no Premium AI, no read, a failed read → no words, never a 0');
+  // In Holt's header it is a line: its height is held for Premium AI until the first read, so the thread never jumps.
+  assert.match(CHIP, /held: \{ height: CHIP_HEIGHT \}/);
+  assert.match(CHIP, /minHeight: CHIP_HEIGHT/);
   assert.match(CHIP, /accessibilityLabel=\{chip\.a11y\}/, 'VoiceOver hears the whole sentence, reset date included');
   assert.match(CHIP, /\{short \? chip\.short : chip\.label\}/);
   assert.doesNotMatch(CHIP, /#[0-9a-fA-F]{3,8}\b|rgba?\(/, 'theme tokens, never a hard-coded colour');
@@ -70,15 +73,16 @@ test('every AI screen carries the chip in its app bar', () => {
 });
 
 test('thumbs on the card read and the typed tidy (workout-write): one output, one ref, made when the answer lands', () => {
-  assert.match(WRITE, /setBeforeAi\(null\);\n\s+setAiVote\(\{ feature: 'import', ref: uuid\(\) \}\);/, 'the photo’s read (card read + its tidy pass) is one output');
-  assert.match(WRITE, /if \(!photo\) setAiVote\(\{ feature: 'workout_tidy', ref: uuid\(\) \}\);/, 'a typed "Fix it with AI" is its own');
-  assert.match(WRITE, /await tidy\(words, false, true\);/);
-  assert.match(WRITE, /await tidy\(words, true, true\);/);
+  // A typed "Fix it with AI" is its own output; the photo's read and its tidy pass are ONE, so the photo's vote is
+  // set after the pass and replaces the one the pass set.
+  assert.match(WRITE, /setName\(null\);\n\s+setAiVote\(\{ feature: 'workout_tidy', ref: uuid\(\) \}\);\n\s+return;/);
+  assert.match(WRITE, /else if \(call\.kind === 'rules'\) await tidy\(words, true\);\n(\s+\/\*[^*]*\*\/\n|\s+\/\*[\s\S]*?\*\/\n)\s+setAiVote\(\{ feature: 'import', ref: uuid\(\) \}\);/);
   assert.match(WRITE, /setAiVote\(null\);\n\s+setBusy\('Reading your photo…'\);/, 'a new photo takes the old control away');
   assert.match(WRITE, /setBeforeAi\(null\); setError\(null\); setAiVote\(null\); \}\}/, 'Clear takes it away');
   assert.match(WRITE, /\{aiVote && !busy \? <AiFeedback feature=\{aiVote\.feature\} aiRef=\{aiVote\.ref\} \/> : null\}/);
   const ok = WRITE.indexOf("if (r.kind !== 'ok') {\n        setError(withNotCharged(");
   assert.ok(ok > 0 && ok < WRITE.indexOf("setAiVote({ feature: 'import'"), 'only after a read that worked');
+  assert.match(WRITE, /setBusy\('Tidying it up with AI…'\);\n\s+setError\(null\);\n\s+setAiVote\(null\);/, 'a new fix takes the old control away');
 });
 
 test('thumbs on the Kitchen’s dish and a recipe read from a picture (my-recipes); a page or a paste is the parser', () => {
@@ -89,7 +93,7 @@ test('thumbs on the Kitchen’s dish and a recipe read from a picture (my-recipe
 
 test('a meal photo refused on the floor says today, not the month', () => {
   assert.match(MEAL_PHOTO, /const floor = r\.kind === 'out_of_credits' \? aiFloorUsedLine\(aiCreditsNow\(session\?\.user\.id \?\? null\)\) : null;/);
-  assert.match(MEAL_PHOTO, /withNotCharged\(floor \? `\$\{floor\} You can still search for the food\.` : mealPhotoError\(r\), r\.refunded\)/);
+  assert.match(MEAL_PHOTO, /text: floor \? withNotCharged\(`\$\{floor\} You can still search for the food\.`, r\.refunded\) : withNotCharged\(mealPhotoError\(r\), r\.refunded\)/);
 });
 
 test('no copy in the app states a credit weight — the server is the only place one lives (MA3-D16, 0272)', () => {

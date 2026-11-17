@@ -126,10 +126,10 @@ export default function WorkoutWriteScreen() {
    * `quiet` is the pass every photo gets even when the code reader found nothing wrong: if AI can't improve on that
    * reading, the reading stands and nothing is said — there is no problem to report.
    */
-  const tidy = async (card: string, quiet = false, photo = false) => {
+  const tidy = async (card: string, quiet = false) => {
     setBusy('Tidying it up with AI…');
     setError(null);
-    if (!photo) setAiVote(null);
+    setAiVote(null);
     try {
       const r = await tidyWrittenWorkout(card, resolveKey, closeSignal());
       if (r.kind === 'ok') {
@@ -141,8 +141,7 @@ export default function WorkoutWriteScreen() {
         setBeforeAi(card);
         setText(r.text);
         setName(null);
-        /* A photo's pass is part of the photo's read, which already carries the vote. */
-        if (!photo) setAiVote({ feature: 'workout_tidy', ref: uuid() });
+        setAiVote({ feature: 'workout_tidy', ref: uuid() });
         return;
       }
       if (quiet) return;
@@ -224,7 +223,6 @@ export default function WorkoutWriteScreen() {
       const words = 'text' in r ? r.text : tsvToWrittenText(r.tsv);
       setText(words);
       setBeforeAi(null);
-      setAiVote({ feature: 'import', ref: uuid() });
       /*
        * EVERY photo gets the AI pass (Import Amendment 002, amended PO 2026-09-30: "I thought we were having ai read it
        * to make sure it gets it right"). The poster already chose AI by choosing a photo, and a handwritten card's
@@ -234,8 +232,11 @@ export default function WorkoutWriteScreen() {
        */
       const w = readWrittenWorkout(words);
       const call = whenToUseAi(words, w, writtenToTemplate(w, resolveKey));
-      if (call.kind === 'ai') await tidy(words, false, true);
-      else if (call.kind === 'rules') await tidy(words, true, true);
+      if (call.kind === 'ai') await tidy(words);
+      else if (call.kind === 'rules') await tidy(words, true);
+      /* The photo's read and its tidy pass are ONE output, and it votes as the photo — set after the pass, which
+         marks its own result as a typed fix. */
+      setAiVote({ feature: 'import', ref: uuid() });
     } finally {
       setBusy(null);
       reading.current = false;
