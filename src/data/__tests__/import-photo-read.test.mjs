@@ -1,6 +1,8 @@
 import './harness/hooks.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /*
  * ONE PHOTO READER FOR EVERY IMPORT DOOR (PO 2026-09-30). The functions are faked, answering with what the live
@@ -93,7 +95,28 @@ test('an AI layout that changed a number is thrown away — the reader’s own r
   assert.ok(r.checks.some((c) => /9 total sets/.test(c)), JSON.stringify(r.checks));
 });
 
-test('a program sheet of several days still goes to the table reader, and AI is not asked', async () => {
+/*
+ * A PROGRAM SHEET, ON THE PATH PRODUCTION TAKES (AI audit 2026-11-16, V-D2 / D8). `workout-card-read` is deployed, so a
+ * photographed sheet comes back as lines of TEXT, not a TSV. This test used to pass only by faking the card reader as
+ * not deployed. The cells are the PO's real 3-week sheet (`po-3-week-photo.tsv`, the table reader's real answer);
+ * there is no live card-reader answer for that photo yet, so they are laid out as the card reader writes a table:
+ * a title, then cells between pipes.
+ */
+const PO_3_WEEK = fs.readFileSync(path.join(process.cwd(), 'src/domain/program/__tests__/fixtures/po-3-week-photo.tsv'), 'utf8').replace(/\r/g, '');
+const PO_3_WEEK_CARD = `3 WEEK PROGRAM\n${PO_3_WEEK.split('\n').filter((l) => l.trim()).map((l) => l.split('\t').join(' | ')).join('\n')}`;
+const daysOf = (r) => r.weeks.reduce((n, w) => n + w.days.length, 0);
+
+test('a program sheet read by the card reader goes to the table reader whole (3 weeks, 12 days), and AI is not asked', async () => {
+  answers({ 'workout-card-read': [{ ok: true, text: PO_3_WEEK_CARD }] });
+  const r = await readImportPhoto(photo(), resolveKey);
+  assert.equal(r.kind, 'ok');
+  assert.equal(r.via, 'table');
+  assert.deepEqual([r.weeks.length, daysOf(r)], [3, 12]);
+  assert.deepEqual(calls, { 'workout-card-read': 1 }, 'no AI layout, and no second (paid) table read');
+  assert.equal(r.weeks[0].days[0].items[0].name, 'Bench Press');
+});
+
+test('a program sheet still goes to the table reader when the card reader is down and the table read answers', async () => {
   const tsv = 'Week\tDay\tExercise\tSets\tReps\n1\tA\tBack Squat\t5\t5\n1\tB\tBench Press\t5\t5\n2\tA\tBack Squat\t5\t3\n2\tB\tBench Press\t5\t3';
   answers({ 'workout-card-read': NOT_FOUND, 'program-photo-read': [{ ok: true, tsv, rows: 5 }] });
   const r = await readImportPhoto(photo(), resolveKey);
