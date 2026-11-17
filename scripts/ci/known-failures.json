@@ -1,0 +1,25 @@
+{
+  "_comment": "Tests that fail on the Sprint 2 base (feat/build11 @ a6b88e79, 2026-11-17) and are owned elsewhere. CI allows EXACTLY these, by test name; any other failure fails the run. When one is fixed, CI prints a notice — take it off this list. Never add one to make a red run green: fix the test or the code.",
+  "failures": [
+    {
+      "name": "⚠ the rest of complete_onboarding is 0066 unchanged — rebuilt from the newest body",
+      "file": "src/app/__tests__/onboarding-missing-profile.test.mjs",
+      "why": "The contract names it (Docs/AI-Sprint-2-Build-Notes.md §6: \"complete_onboarding 0066 body\"). Not investigated here."
+    },
+    {
+      "name": "every client call to an Anthropic-backed Edge Function waits on the AI consent",
+      "file": "src/domain/consent/__tests__/consent.test.mjs",
+      "why": "The contract names it (§6: \"AI consent → bug-plain\"). Not investigated here."
+    },
+    {
+      "name": "the RPC is SECURITY INVOKER, capped at 200 rows, and idempotent on the unique index",
+      "file": "src/domain/health/__tests__/migration-0234.test.mjs",
+      "why": "The contract names it (§6: \"migration-0234 ×2\"). Not investigated here."
+    },
+    {
+      "name": "the push trigger keeps 0153’s arms and function, and adds only the source gate",
+      "file": "src/domain/health/__tests__/migration-0234.test.mjs",
+      "why": "The contract names it (§6: \"migration-0234 ×2\"). Not investigated here."
+    }
+  ]
+}
