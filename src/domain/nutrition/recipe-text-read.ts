@@ -89,6 +89,103 @@ export function linkTarget(raw: string): LinkTarget {
   return { kind: 'ok', url: u.toString() };
 }
 
+/* ── the address a name resolves to (AI audit 11-16, P-G7) ──────────────── */
+/*
+ * `linkTarget` judges the NAME. A public name can still resolve to a private address (an A record of 10.0.0.5, a
+ * rebinding service, a cloud metadata IP), so the function also resolves every name it is about to fetch — the
+ * first URL and every redirect hop — and refuses it if ANY address is not plainly public. Only the global
+ * internet is reachable: anything not provably public is refused, including what this code cannot read.
+ */
+
+/** A strict dotted quad → its four octets, or null. No leading zeros (`010` is octal to some parsers). */
+export function parseIpv4(s: string): [number, number, number, number] | null {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(s.trim());
+  if (!m) return null;
+  const parts = m.slice(1);
+  if (parts.some((p) => p.length > 1 && p.startsWith('0'))) return null;
+  const o = parts.map(Number);
+  if (o.some((n) => n > 255)) return null;
+  return [o[0], o[1], o[2], o[3]];
+}
+
+/** IPv6 text → its eight 16-bit groups, or null. Takes `::`, a trailing dotted quad, `[brackets]` and a `%zone`. */
+export function parseIpv6(s: string): number[] | null {
+  let t = s.trim();
+  if (t.startsWith('[') && t.endsWith(']')) t = t.slice(1, -1);
+  const zone = t.indexOf('%');
+  if (zone >= 0) t = t.slice(0, zone);
+  if (!t.includes(':')) return null;
+  const lastColon = t.lastIndexOf(':');
+  const last = t.slice(lastColon + 1);
+  if (last.includes('.')) {
+    const v4 = parseIpv4(last);
+    if (!v4) return null;
+    t = `${t.slice(0, lastColon + 1)}${((v4[0] << 8) | v4[1]).toString(16)}:${((v4[2] << 8) | v4[3]).toString(16)}`;
+  }
+  const halves = t.split('::');
+  if (halves.length > 2) return null;
+  const groupsOf = (h: string): string[] => (h === '' ? [] : h.split(':'));
+  const head = groupsOf(halves[0]);
+  const tail = halves.length === 2 ? groupsOf(halves[1]) : [];
+  if ([...head, ...tail].some((g) => !/^[0-9a-f]{1,4}$/i.test(g))) return null;
+  const n = head.length + tail.length;
+  if (halves.length === 1 ? n !== 8 : n > 7) return null;
+  const hex = (g: string) => parseInt(g, 16);
+  return [...head.map(hex), ...new Array<number>(8 - n).fill(0), ...tail.map(hex)];
+}
+
+/** Not the public internet: this-network, private, CGNAT, loopback, link-local, test, benchmark, multicast, reserved. */
+function ipv4Blocked([a, b, c]: readonly number[]): boolean {
+  if (a === 0 || a === 10 || a === 127) return true; // 0/8 (incl. 0.0.0.0) · 10/8 · loopback
+  if (a === 100 && b >= 64 && b <= 127) return true; // 100.64/10 carrier-grade NAT
+  if (a === 169 && b === 254) return true; // link-local — 169.254.169.254 is the cloud metadata service
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16/12
+  if (a === 192 && b === 168) return true; // 192.168/16
+  if (a === 192 && b === 0 && (c === 0 || c === 2)) return true; // 192.0.0/24 protocol · 192.0.2/24 TEST-NET-1
+  if (a === 192 && b === 88 && c === 99) return true; // 6to4 relay anycast
+  if (a === 198 && (b === 18 || b === 19)) return true; // 198.18/15 benchmarking
+  if (a === 198 && b === 51 && c === 100) return true; // TEST-NET-2
+  if (a === 203 && b === 0 && c === 113) return true; // TEST-NET-3
+  return a >= 224; // 224/4 multicast · 240/4 reserved · 255.255.255.255
+}
+
+const ipv4In = (hi: number, lo: number): number[] => [hi >> 8, hi & 255, lo >> 8, lo & 255];
+
+/**
+ * Only global unicast (2000::/3) is public, so everything outside it is refused — `::`, `::1`, IPv4-mapped
+ * `::ffff:a.b.c.d` and IPv4-compatible `::a.b.c.d` (whatever IPv4 they carry), ULA fc00::/7, link-local fe80::/10,
+ * site-local, multicast ff00::/8, discard 100::/64 — except NAT64 64:ff9b::/96, which is judged by the IPv4 inside
+ * it (a DNS64 resolver synthesises one for every IPv4-only site). Inside 2000::/3: the IETF block 2001::/23 (Teredo,
+ * ORCHID, benchmarking), documentation 2001:db8::/32 and 3fff::/20 are refused, and 6to4 2002::/16 is judged by its
+ * IPv4.
+ */
+function ipv6Blocked(g: readonly number[]): boolean {
+  if (g[0] === 0x64 && g[1] === 0xff9b && g.slice(2, 6).every((x) => x === 0)) return ipv4Blocked(ipv4In(g[6], g[7]));
+  if ((g[0] & 0xe000) !== 0x2000) return true;
+  if (g[0] === 0x2001 && g[1] < 0x200) return true;
+  if (g[0] === 0x2001 && g[1] === 0xdb8) return true;
+  if ((g[0] & 0xfff0) === 0x3ff0) return true;
+  if (g[0] === 0x2002) return ipv4Blocked(ipv4In(g[1], g[2]));
+  return false;
+}
+
+/** True unless `ip` is a plainly public IPv4 or IPv6 address. Anything unreadable is refused (fail closed). */
+export function isBlockedAddress(ip: string): boolean {
+  const v4 = parseIpv4(ip);
+  if (v4) return ipv4Blocked(v4);
+  const v6 = parseIpv6(ip);
+  return v6 ? ipv6Blocked(v6) : true;
+}
+
+/**
+ * What every address a name resolved to (A and AAAA together) says about fetching it: `private` if ANY is blocked
+ * (an attacker needs only one), `unresolved` if there were none (nothing to check, so nothing is fetched), else `ok`.
+ */
+export function resolvedVerdict(addresses: readonly string[]): 'ok' | 'private' | 'unresolved' {
+  if (!addresses.length) return 'unresolved';
+  return addresses.some(isBlockedAddress) ? 'private' : 'ok';
+}
+
 /* ── small text helpers ─────────────────────────────────────────────────── */
 
 const FRACTIONS: Record<string, number> = { '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75, '⅕': 0.2, '⅛': 0.125, '⅜': 0.375, '⅝': 0.625, '⅞': 0.875 };
