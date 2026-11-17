@@ -18,8 +18,9 @@
  *      AI-sharing consent check, and the server's age.
  *   5. One call — Sonnet 5, thinking off, effort low, cached system block, structured output — under this
  *      function's own 45 s abort (AI Sprint 1 contract §3; the app waits 60 s).
- *   6. The guard (`sanitizeKitchenAnswer`), then settle ONCE (`coach_ai_settle`), then the answer. Every failure
- *      after the reservation — upstream, timeout, refusal, no usable dish — gives the credits back (P-D2).
+ *   6. The guard (`sanitizeKitchenAnswer`), then the output scan (`scanTexts`, Sprint 2 CH-2), then settle ONCE
+ *      (`coach_ai_settle`), then the answer. Every failure after the reservation — upstream, timeout, refusal, no
+ *      usable dish, a scanner stop (`guarded`) — gives the credits back (P-D2).
  *
  * ══ AGE (P-G8) ══
  *
@@ -31,6 +32,7 @@
  *
  *   { ok: false, reason: 'bad_request' }                                   400
  *   { ok: false, reason: 'stop', route: 'crisis'|'urgent'|'care'|'medical' } 200  (no credit spent)
+ *   { ok: false, reason: 'stop', route: 'medical', remaining, refunded: true } 200  (the output scan, after the model)
  *   { ok: false, reason: 'no_nutrition' | 'no_consent' }                   403
  *   { ok: false, reason: 'daily_limit', limit }                            429
  *   { ok: false, reason: 'out_of_credits', remaining, allowance }          200
@@ -54,6 +56,8 @@ import {
   narrowKitchenRequest,
 } from '../../../src/domain/nutrition/kitchen-dishes.ts';
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
+// ⚠ WHAT THE MODEL WROTE, CHECKED BEFORE IT LEAVES (Sprint 2, CH-2) — the scanner coach-ask and the app run.
+import { scanStringsOf, scanTexts } from '../../../src/domain/ai/output-scan.ts';
 import { KITCHEN_FOODS } from '../../../src/domain/nutrition/kitchen-foods.ts';
 // ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
 import {
@@ -252,6 +256,13 @@ Deno.serve(async (req) => {
   const options = kitchenFromModelText(text, request.exclude);
   if (!options.length) {
     return json({ ok: false, reason: 'none', ...(await settle(payload?.stop_reason === 'max_tokens' ? 'truncated' : 'bad_output', call)) });
+  }
+  // ⛔ THE OUTPUT SCAN (Sprint 2, CH-2 · contract §1.1): every field of every dish Holt wrote — name, "why", each step,
+  // each ingredient line — read on its own. A dose, a reassurance, a diagnosis or a clinical word is the existing stop
+  // (`reason: 'stop'`, which every app shows as the stop card), settled `guarded` and refunded. Food amounts flow:
+  // "200 g chicken" is not a dose (the scanner's corpus holds the kitchen's real dishes to that).
+  if (scanTexts(scanStringsOf(options, 400), request.ask).hit) {
+    return json({ ok: false, reason: 'stop', route: 'medical', ...(await settle('guarded', call)) });
   }
   return json({ ok: true, options, ...(await settle('ok', call)) });
 });
