@@ -8,7 +8,7 @@
  * never "hypertrophy over eight weeks". So the intake is one question, not four, and the fill strategy
  * changes with the answer.
  *
- * ══ TWO FILL STRATEGIES, BECAUSE THE TWO ANSWERS ARE NOT THE SAME SHAPE ══
+ * ══ TWO SELECTIONS, ONE COLLECTOR — BECAUSE THE TWO ANSWERS ARE NOT THE SAME SHAPE ══
  *
  *  · **A split** is already a pattern list — `PUSH`, `PULL`, `LEGS` — so it reuses the program engine's
  *    skeletons unchanged. A push day is a push day whether it sits in a block or stands alone.
@@ -18,6 +18,10 @@
  *    across three patterns. Filling that from a pattern skeleton would either miss the muscle or prescribe
  *    five bench variants. So it selects by muscle and then *spreads* across patterns (see `roundRobin`),
  *    which is what stops a chest day being the same press four times.
+ *
+ *  ⚠ BOTH COLLECT THROUGH `collectRanked` (candidates.ts) — the same gates and the same ranking, so a fix
+ *    to which exercise is allowed or preferred lands once (PB-2). Only how a day is picked from the
+ *    ranked lists differs.
  *
  * The output is a `ProgramDay` — the shape the Program Builder, the workout templates and `template-day-core`
  * all already speak. Nothing new to teach the app.
@@ -35,8 +39,8 @@ import {
 } from './constraints.ts';
 import {
   canStretch,
+  collectRanked,
   contextFrom,
-  difficultyAllows,
   isCompound,
   type CatalogExercise,
   type EquipmentGate,
@@ -513,29 +517,27 @@ export function buildDayWorkout(
     const focus = req.focus;
     const targets = new Set(focus.parts.flatMap((p) => BODY_PART_MUSCLES[p]));
 
-    // Primary movers only. An exercise that hits the chest as a SECONDARY is not a chest exercise, and a
-    // "chest day" made of movements that merely involve the chest is the commonest way this goes wrong.
-    const collect = (stretch: boolean) => {
-      const out = new Map<string, CatalogExercise[]>();
-      for (const ex of pool) {
+    /*
+     * Primary movers only. An exercise that hits the chest as a SECONDARY is not a chest exercise, and a
+     * "chest day" made of movements that merely involve the chest is the commonest way this goes wrong.
+     *
+     * ⚠ THROUGH `collectRanked`, THE SAME COLLECTOR `fillSlot` USES (PB-2). This path used to gate and sort
+     * its own list, and three fixes never reached it: coherence (a Triceps Stretch was triceps work here),
+     * the athlete's own swaps in the ranking, and difficulty fit. One collector, so the next fix lands once.
+     * What stays different is only the SELECTION — round-robin across patterns, below — because a body-part
+     * day and a split day are different questions.
+     */
+    const collect = (stretch: boolean) =>
+      collectRanked(
         /* Conditioning joins on its PATTERN, not on a muscle — see the note on `DayFocus.cardio`. It is
            an `||` rather than a separate pass so a session that asks for chest and conditioning gets both
            spread through the same round-robin, instead of the cardio arriving as an afterthought bolted
            on the end. */
-        const wanted = ex.primaryMuscleIds.some((m) => targets.has(m)) || (focus.cardio === true && ex.pattern === CARDIO_PATTERN);
-        if (!wanted) continue;
-        // `keepKeys` re-admits a movement whose PATTERN is banned — the glute bridge inside a hinge ban.
-        // `excludeKeys` still wins; `contextFrom` has already resolved that precedence.
-        if (ctx.excludePatterns.has(ex.pattern) && !ctx.keepKeys?.has(ex.key)) continue;
-        if (ctx.excludeKeys.has(ex.key)) continue;
-        if (!canDo(ex, owned)) continue;
-        if (!difficultyAllows(ex, req.experience, stretch)) continue;
-        const list = out.get(ex.pattern) ?? [];
-        list.push(ex);
-        out.set(ex.pattern, list);
-      }
-      return out;
-    };
+        (ex) => ex.primaryMuscleIds.some((m) => targets.has(m)) || (focus.cardio === true && ex.pattern === CARDIO_PATTERN),
+        pool,
+        ctx,
+        stretch,
+      );
 
     /*
      * ⚠ THE SAME TWO-PASS RULE `fillSlot` USES, FOR THE SAME REASON — see the `STRETCH_CEILING` note in
@@ -554,17 +556,6 @@ export function buildDayWorkout(
         count = widerCount;
         stretched = true;
       }
-    }
-
-    for (const [pattern, list] of byPattern) {
-      list.sort(
-        (a, b) =>
-          (preferenceRank(pattern, a.key) === preferenceRank(pattern, b.key)
-            ? 0
-            : preferenceRank(pattern, a.key) - preferenceRank(pattern, b.key)) ||
-          b.muscleIds.length - a.muscleIds.length ||
-          a.key.localeCompare(b.key),
-      );
     }
 
     /*
