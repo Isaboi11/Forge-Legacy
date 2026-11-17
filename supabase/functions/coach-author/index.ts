@@ -13,19 +13,29 @@
  *
  *   0. The request, narrowed (`narrowAuthorRequest`).
  *   1. The code guard on the athlete's words (`medicalRoute`) — before any credit (PO 09-22 legal caution).
- *   2. Reserve the credit (`coach_ai_spend_credits`, `day` or `program`, 0203) — also the Premium AI gate.
+ *   2. Reserve the credit (`coach_ai_reserve`, `day` or `program`, 0268) — also the Premium AI gate, the
+ *      AI-sharing consent check, and the server's age.
  *   3. One call — Sonnet 5, thinking off, effort low, cached system block (rules + catalogue), structured output.
- *      Asked ONCE more, on the same credit, if a day came back with fewer than three main movements.
- *   4. Record what it cost. 5. The shape check (`authoredFromModelText`), then the answer.
+ *      Asked ONCE more, on the same credit, if a day came back with fewer than three main movements. Both asks
+ *      share ONE 25 s budget (AI Sprint 1 contract §3): the app gives up at 30 s and builds from the rulebook.
+ *   4. The shape check (`authoredFromModelText`), then settle ONCE (`coach_ai_settle`, both asks' tokens), then
+ *      the answer. Every failure after the reservation — upstream, timeout, refusal, nothing usable — gives the
+ *      credit back (P-D2).
+ *
+ * The server's age goes in the user turn as one line (P-G8, `withAgeLine`); the cached system block is unchanged.
  *
  * ══ THE WIRE ══
  *
  *   { ok: false, reason: 'bad_request' }                                     400
  *   { ok: false, reason: 'stop', route: 'crisis'|'urgent'|'care'|'medical' }   200  (no credit spent)
+ *   { ok: false, reason: 'no_consent' }                                      403
  *   { ok: false, reason: 'out_of_credits', remaining, allowance }            200
- *   { ok: false, reason: 'unconfigured'|'meter_unavailable'|'upstream_error'|'upstream_unreachable' } 503
- *   { ok: false, reason: 'none', remaining }                                 200
+ *   { ok: false, reason: 'unconfigured'|'meter_unavailable' }                503
+ *   { ok: false, reason: 'upstream_error'|'upstream_unreachable', upstream?: 'timeout', remaining, refunded: true } 503
+ *   { ok: false, reason: 'none', remaining, refunded: true }                 200
  *   { ok: true, plan: AuthoredPlan, remaining, usage }
+ *
+ * ⛔ No reply carries the upstream's words (P-D8) or the reservation id.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -41,10 +51,25 @@ import {
 } from '../../../src/domain/coach/author.ts';
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
 import { AUTHOR_CATALOGUE } from '../../../src/domain/coach/author-catalogue.ts';
+// ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
+import {
+  failedCallReply,
+  reserveFrom,
+  settleArgs,
+  settledFrom,
+  settledTail,
+  type SettleOutcome,
+  timedModelCall,
+  UPSTREAM_ABORT_MS,
+  withAgeLine,
+} from '../../../src/domain/ai/meter-server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+/** This function's deployed slug — the meter's `fn` (0268). */
+const FN = 'coach-author';
 
 /** The model already locked for Holt (Holt-AI benchmark 2026-09-24). */
 const MODEL = 'claude-sonnet-5';
@@ -180,16 +205,23 @@ Deno.serve(async (req) => {
   const authorization = req.headers.get('Authorization') ?? '';
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
 
-  // ── 2. Reserve the credit — and the Premium AI gate (0203) ───────────────────
+  // ── 2. Reserve the credit — the Premium AI gate (0203), the consent check and the server's age (0268) ──
+  //
+  // The credit is HELD until step 4 settles it; every failure from here on gives it back (P-D2).
+  // ⛔ `meter.id` (the reservation) stays in this function — no reply carries it.
   const action = AUTHOR_ACTION[request.kind];
-  const { data: spend, error: spendError } = await supabase.rpc('coach_ai_spend_credits', { p_action: action }).maybeSingle();
-  if (spendError) return json({ ok: false, reason: 'meter_unavailable' }, 503);
-  const reserved = spend as { allowed: boolean; credits_spent: number; remaining: number; allowance: number } | null;
-  if (!reserved?.allowed) {
-    return json({ ok: false, reason: 'out_of_credits', remaining: reserved?.remaining ?? 0, allowance: reserved?.allowance ?? 0 });
+  const { data: reservedRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: action, p_fn: FN })
+    .maybeSingle();
+  const meter = reserveFrom(reservedRow, reserveError);
+  if (!meter.ok) {
+    if (meter.reason === 'meter_unavailable') return json({ ok: false, reason: 'meter_unavailable' }, 503);
+    if (meter.reason === 'no_consent') return json({ ok: false, reason: 'no_consent' }, 403);
+    // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
+    return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
 
-  // ── 3. The model call, 4. what it cost ───────────────────────────────────────
+  // ── 3. The model call ────────────────────────────────────────────────────────
   //
   // Asked at most twice. Live run 2026-09-30: once in 122 asks the reply stopped after one warm-up movement,
   // and the device would have refused it and built from the rulebook. A second ask on the same credit costs
@@ -197,39 +229,56 @@ Deno.serve(async (req) => {
   let plan: ReturnType<typeof authoredFromModelText> = null;
   const total = { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
   let modelUsed = MODEL;
+  let latencyMs = 0;
+  let lastStop: string | undefined;
+  /** Settled ONCE for both asks, before the answer is returned (contract §1.3). Every outcome but `ok` refunds. */
+  const settle = async (outcome: SettleOutcome) => {
+    const usage = {
+      input_tokens: total.input,
+      output_tokens: total.output,
+      cache_read_input_tokens: total.cacheRead,
+      cache_creation_input_tokens: total.cacheWrite,
+    };
+    const { data, error } = await supabase
+      .rpc('coach_ai_settle', settleArgs(meter.id, outcome, { model: modelUsed, usage, latencyMs }))
+      .maybeSingle();
+    return settledTail(settledFrom(data, error), meter.remaining);
+  };
+  // The age is per request, so it is in the user turn — never the cached block (P-G8).
+  const turn = withAgeLine(authorUserTurn(request), meter.ageYears, meter.minor);
+  // ONE budget for both asks (contract §3), so the answer always lands inside the app's 30 s.
+  const deadline = Date.now() + UPSTREAM_ABORT_MS[FN];
   for (let attempt = 0; attempt < 2 && !authoredIsWhole(plan); attempt += 1) {
-    let response: Response;
-    try {
-      response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: AUTHOR_OUTPUT_CAP[request.kind],
-          thinking: { type: 'disabled' },
-          // ⛔ The schema has no field for a load — he cannot write a weight because there is nowhere to put one.
-          output_config: { effort: 'low', format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },
-          system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-          messages: [{ role: 'user', content: authorUserTurn(request) }],
+    const left = deadline - Date.now();
+    if (left <= 0) break;
+    const call = await timedModelCall(
+      (signal) =>
+        fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          signal,
+          headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          body: JSON.stringify({
+            model: MODEL,
+            max_tokens: AUTHOR_OUTPUT_CAP[request.kind],
+            thinking: { type: 'disabled' },
+            // ⛔ The schema has no field for a load — he cannot write a weight because there is nowhere to put one.
+            output_config: { effort: 'low', format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },
+            system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+            messages: [{ role: 'user', content: turn }],
+          }),
         }),
-      });
-    } catch {
+      left,
+    );
+    latencyMs += call.latencyMs;
+
+    if (call.kind !== 'ok') {
+      // The second ask failing keeps the first answer. The first failing is refunded; the upstream's words are in
+      // this function's log only (P-D8).
       if (attempt > 0) break;
-      return json({ ok: false, reason: 'upstream_unreachable' }, 503);
+      return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind)) }, 503);
     }
 
-    if (!response.ok) {
-      console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
-      if (attempt > 0) break;
-      await supabase.rpc('coach_ai_record_usage', {
-        p_action: action, p_credits: reserved.credits_spent, p_model: MODEL,
-        p_input_tokens: 0, p_output_tokens: 0, p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-        p_uncharged: true,
-      });
-      return json({ ok: false, reason: 'upstream_error' }, 503);
-    }
-
-    const payload = await response.json();
+    const payload = call.payload;
     const usage = payload?.usage ?? {};
     modelUsed = payload?.model ?? MODEL;
     total.input += usage.input_tokens ?? 0;
@@ -237,19 +286,8 @@ Deno.serve(async (req) => {
     total.cacheRead += usage.cache_read_input_tokens ?? 0;
     total.cacheWrite += usage.cache_creation_input_tokens ?? 0;
 
-    // Every call is recorded; the credit was reserved once, so only the first carries it.
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: action,
-      p_credits: attempt === 0 ? reserved.credits_spent : 0,
-      p_model: modelUsed,
-      p_input_tokens: usage.input_tokens ?? 0,
-      p_output_tokens: usage.output_tokens ?? 0,
-      p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-      p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-      p_uncharged: attempt > 0,
-    });
-
-    if (payload?.stop_reason === 'refusal') return json({ ok: false, reason: 'none', remaining: reserved.remaining });
+    if (payload?.stop_reason === 'refusal') return json({ ok: false, reason: 'none', ...(await settle('refusal')) });
+    lastStop = payload?.stop_reason;
 
     const text: string = (payload?.content ?? [])
       .filter((b: { type: string }) => b.type === 'text')
@@ -258,12 +296,13 @@ Deno.serve(async (req) => {
     plan = authoredFromModelText(text, request.kind) ?? plan;
   }
 
-  // ── 5. THE SHAPE CHECK — the device then checks every movement against the athlete (`author-validate.ts`) ──
-  if (!plan) return json({ ok: false, reason: 'none', remaining: reserved.remaining });
+  // ── 4. THE SHAPE CHECK — the device then checks every movement against the athlete (`author-validate.ts`) ──
+  // Nothing usable is refunded.
+  if (!plan) return json({ ok: false, reason: 'none', ...(await settle(lastStop === 'max_tokens' ? 'truncated' : 'bad_output')) });
   return json({
     ok: true,
     plan,
-    remaining: reserved.remaining,
+    ...(await settle('ok')),
     // What this build cost, so a live run measures the price instead of guessing it.
     usage: { model: modelUsed, ...total },
   });

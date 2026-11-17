@@ -57,6 +57,15 @@
  * Sonnet 5's minimum cacheable prefix is **1024 tokens**. A shorter system prompt silently does not
  * cache — no error, just `cache_creation_input_tokens: 0` forever. `SYSTEM` is comfortably over it, and
  * `coach_ai_cache_health()` in migration 0144 is how you confirm it in production.
+ *
+ * ══ THE METER (AI Road to 10, Sprint 1 — `Docs/AI-Sprint-1-Build-Notes.md` §1) ══
+ *
+ * `coach_ai_reserve` holds the credit (Premium AI, the AI-sharing consent, the balance — 0268) and hands back
+ * the server's age, which goes in the USER turn as one line (P-G8). The model runs under this function's own
+ * 45 s abort (the app waits 60 s). `coach_ai_settle` runs ONCE before the reply, and every failure after the
+ * reservation gives the credit back (P-D2): unreachable, a non-2xx, our timeout (`upstream_error` +
+ * `upstream: 'timeout'`), a refusal, or an answer that cannot be read. No reply carries the upstream's words
+ * (P-D8) or the reservation id. `{ route: 'error', reason: 'no_consent' }` (403) is new; old apps never reach it.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -66,10 +75,27 @@ import { medicalRoute, withoutStoppedTurns } from '../../../src/domain/coach/med
 // ⚠ AND ONE SOURCE FOR TRUSTING THE MODEL. Structured outputs are gone (see THE OUTPUT below), so every field
 // the model returns is checked in code, in a pure module `node --test` can prove narrows junk.
 import { narrowHistory, narrowNotes, narrowReply, narrowRoute, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
+// ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
+import {
+  ageLine,
+  callFacts,
+  failedCallReply,
+  type ModelCall,
+  reserveFrom,
+  settleArgs,
+  settledFrom,
+  settledTail,
+  type SettleOutcome,
+  timedModelCall,
+  UPSTREAM_ABORT_MS,
+} from '../../../src/domain/ai/meter-server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+/** This function's deployed slug — the meter's `fn` (0268). */
+const FN = 'coach-interpret';
 
 /** Locked in the pricing plan. Sonnet 5 — the engine does the hard work; the model only parses intent. */
 const MODEL = 'claude-sonnet-5';
@@ -352,21 +378,19 @@ Deno.serve(async (req) => {
 
   // ── 1. Reserve the credit BEFORE the model call ────────────────────────────
   //
-  // An athlete one credit short must be refused before a dollar is spent, not billed and then told.
+  // An athlete one credit short must be refused before a dollar is spent, not billed and then told. The credit
+  // is HELD until step 3 settles it; every failure from here on gives it back (P-D2).
+  // ⛔ `meter.id` (the reservation) stays in this function — no reply carries it.
   const action = body.mode === 'day' ? 'day' : body.questionId ? 'message' : 'program';
-  const { data: spend, error: spendError } = await supabase
-    .rpc('coach_ai_spend_credits', { p_action: action })
+  const { data: reservedRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: action, p_fn: FN })
     .maybeSingle();
-
-  if (spendError) return json({ route: 'error', reason: 'meter_unavailable' }, 503);
-
-  const reserved = spend as { allowed: boolean; credits_spent: number; remaining: number; allowance: number } | null;
-  if (!reserved?.allowed) {
-    return json({
-      route: 'out_of_credits',
-      remaining: reserved?.remaining ?? 0,
-      allowance: reserved?.allowance ?? 0,
-    });
+  const meter = reserveFrom(reservedRow, reserveError);
+  if (!meter.ok) {
+    if (meter.reason === 'meter_unavailable') return json({ route: 'error', reason: 'meter_unavailable' }, 503);
+    if (meter.reason === 'no_consent') return json({ route: 'error', reason: 'no_consent' }, 403);
+    // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
+    return json({ route: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
 
   // ── 2. The model call ──────────────────────────────────────────────────────
@@ -379,6 +403,8 @@ Deno.serve(async (req) => {
     // 2024-10-12 (stress test 2026-09-21: 4 of 92 race dates right). In the user turn, never the system
     // block, because it changes daily and would break the cache.
     `Today is ${today}.`,
+    // P-G8: the server's age, from the profile — per request, so here and never in the cached block.
+    ageLine(meter.ageYears, meter.minor),
     body.ask ?`Holt just asked: "${body.ask}"` : 'The athlete spoke first; no question is on the table.',
     body.chips?.length ? `Offered answers: ${body.chips.join(' · ')}` : null,
     body.mode === 'day' ? 'Mode: ONE session, not a program.' : 'Mode: a full program.',
@@ -400,103 +426,92 @@ Deno.serve(async (req) => {
 
   const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
 
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 1024,
-        // Slot-filling, not reasoning, and it is the highest-volume call in the product. The acuity
-        // guard below is code, so the model is not the only thing standing between an athlete and a
-        // wrong route. If routing quality slips, `{type:'adaptive'}` with effort 'low' is the escape
-        // hatch — it costs more per call and is the documented recommendation for Sonnet 5.
-        // Haiku 4.5 takes neither `effort` (a 400 there) nor the disabled-thinking form; it runs without
-        // thinking when the field is absent.
-        ...(model === HAIKU ? {} : { thinking: { type: 'disabled' } }),
-        ...(model === HAIKU ? {} : { output_config: { effort: 'low' } }),
-        system: [
-          { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
-        ],
-        messages: [
-          { role: 'user', content: `${context}\n\n${knows}${earlier}The athlete typed: "${text}"` },
-        ],
-      }),
-    });
-  } catch {
-    return json({ route: 'error', reason: 'upstream_unreachable' }, 503);
-  }
-
-  if (!response.ok) {
-    // The reason goes to the function's own log (dashboard → Edge Functions → Logs), never to the client.
-    const upstream = (await response.text().catch(() => '')).slice(0, 800);
-    console.error('anthropic', response.status, upstream);
-    // Record the failed attempt so the 60-day run does not under-count what the product actually costs
-    // to operate. Credits already reserved stay spent — see the refund note below.
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: action, p_credits: reserved.credits_spent, p_model: model,
-      p_input_tokens: 0, p_output_tokens: 0,
-      p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-      p_uncharged: true,
-    });
-    // The upstream's own words (its error type and message, never our key or prompt), so a rejected request
-    // explains itself to whoever is testing instead of reading as a bare outage.
-    return json({ route: 'error', reason: 'upstream_error', status: response.status, detail: upstream.slice(0, 300) }, 503);
-  }
-
-  const payload = await response.json();
-  const usage = payload?.usage ?? {};
-  // What this call cost, returned with every reply so the routing benchmark measures instead of guessing.
-  const tail = {
-    remaining: reserved.remaining,
-    usage: {
-      model: payload?.model ?? model,
-      input: usage.input_tokens ?? 0,
-      cacheRead: usage.cache_read_input_tokens ?? 0,
-      cacheWrite: usage.cache_creation_input_tokens ?? 0,
-      output: usage.output_tokens ?? 0,
-    },
+  /**
+   * Settled ONCE, before the reply (contract §1.3), with all four token counts — the cache read is the one that
+   * matters. Every outcome but `ok` refunds.
+   */
+  const settle = async (outcome: SettleOutcome, call: ModelCall) => {
+    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, model))).maybeSingle();
+    return settledTail(settledFrom(data, error), meter.remaining);
   };
 
-  // ── 3. Record what it actually cost ────────────────────────────────────────
-  //
-  // All four counts, separately. The cache read is the one that matters, and collapsing them into
-  // "input tokens" is how a product convinces itself it is 10× more expensive than it is.
-  await supabase.rpc('coach_ai_record_usage', {
-    p_action: action,
-    p_credits: reserved.credits_spent,
-    p_model: payload?.model ?? model,
-    p_input_tokens: usage.input_tokens ?? 0,
-    p_output_tokens: usage.output_tokens ?? 0,
-    p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-    p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-    p_uncharged: false,
-  });
+  const call = await timedModelCall(
+    (signal) =>
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: {
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          // Slot-filling, not reasoning, and it is the highest-volume call in the product. The acuity
+          // guard below is code, so the model is not the only thing standing between an athlete and a
+          // wrong route. If routing quality slips, `{type:'adaptive'}` with effort 'low' is the escape
+          // hatch — it costs more per call and is the documented recommendation for Sonnet 5.
+          // Haiku 4.5 takes neither `effort` (a 400 there) nor the disabled-thinking form; it runs without
+          // thinking when the field is absent.
+          ...(model === HAIKU ? {} : { thinking: { type: 'disabled' } }),
+          ...(model === HAIKU ? {} : { output_config: { effort: 'low' } }),
+          system: [
+            { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
+          ],
+          messages: [
+            { role: 'user', content: `${context}\n\n${knows}${earlier}The athlete typed: "${text}"` },
+          ],
+        }),
+      }),
+    UPSTREAM_ABORT_MS[FN],
+  );
 
-  // A safety refusal is not a route the athlete chose; treat it as unclear rather than inventing copy.
+  // Unreachable, a non-2xx, or our own abort: refunded. ⛔ The upstream's words (its status, its error body) go to
+  // this function's own log (dashboard → Edge Functions → Logs) and never to the app (P-D8) — they can carry
+  // provider and billing text.
+  if (call.kind !== 'ok') {
+    return json({ route: 'error', ...failedCallReply(call.kind), ...(await settle(call.kind, call)) }, 503);
+  }
+
+  const payload = call.payload;
+  const usage = payload?.usage ?? {};
+  // What this call cost, returned with every reply so the routing benchmark measures instead of guessing.
+  const usageTail = {
+    model: payload?.model ?? model,
+    input: usage.input_tokens ?? 0,
+    cacheRead: usage.cache_read_input_tokens ?? 0,
+    cacheWrite: usage.cache_creation_input_tokens ?? 0,
+    output: usage.output_tokens ?? 0,
+  };
+
+  // ── 3. Settle, then the reply ──────────────────────────────────────────────
+  //
+  // The tail every reply carries: the balance after the settle, `refunded: true` when it refunded, the usage.
+  const tail = async (outcome: SettleOutcome) => ({ ...(await settle(outcome, call)), usage: usageTail });
+
+  // A safety refusal is not a route the athlete chose; treat it as unclear rather than inventing copy. Refunded.
   if (payload?.stop_reason === 'refusal') {
-    return json({ route: 'unclear', ...tail });
+    return json({ route: 'unclear', ...(await tail('refusal')) });
   }
 
   // Defensive by construction: fences stripped, the first {...} span parsed, and the route checked
-  // against its enum. Anything that fails is `unclear` — Holt asks again rather than acting on junk.
+  // against its enum. Anything that fails is `unclear` — Holt asks again rather than acting on junk. Refunded.
   const block = (payload?.content ?? []).find((b: { type: string }) => b.type === 'text');
   const parsed = parseModelJson(block?.text);
   const route = narrowRoute(parsed?.route);
-  if (!parsed || !route) return json({ route: 'unclear', ...tail });
+  if (!parsed || !route) {
+    return json({ route: 'unclear', ...(await tail(payload?.stop_reason === 'max_tokens' ? 'truncated' : 'bad_output')) });
+  }
 
   // ── 4. THE ACUITY OVERRIDE ─────────────────────────────────────────────────
   //
   // ⚠ THIS RUNS AFTER THE MODEL AND OVERRULES IT. The model is good at this and is not trusted with it
   // alone. If the athlete's own words describe damage or ask what is wrong, the route is a stop no
-  // matter what came back — including when they also asked for a swap.
+  // matter what came back — including when they also asked for a swap. A stop is never charged, the same
+  // promise the guard before the model keeps.
   const after = guardRoute(text);
-  if (after) return json({ route: after, ...tail });
+  if (after) return json({ route: after, ...(await tail('refusal')) });
 
   // ── 5. Narrow the reply to what the device may act on ─────────────────────
   //
@@ -517,15 +532,20 @@ Deno.serve(async (req) => {
     if (kept.length) reply.remember = kept;
     else delete reply.remember;
   }
-  return json({ ...reply, ...tail });
+  // Charged only for an answer the athlete can use. A stop the MODEL routed (crisis, urgent, care, medical) is
+  // free, like the code guard's; a reply the narrowing emptied (a route with nothing usable in it) is refunded.
+  const stopped = reply.route === 'crisis' || reply.route === 'urgent' || reply.route === 'care' || reply.route === 'medical_stop';
+  const emptied = reply.route === 'unclear' && route !== 'unclear';
+  return json({ ...reply, ...(await tail(stopped ? 'refusal' : emptied ? 'bad_output' : 'ok')) });
 });
 
 /*
- * ⚠ CREDITS ARE NOT REFUNDED ON AN UPSTREAM FAILURE, AND THAT IS A DECISION.
+ * ⚠ CREDITS COME BACK WHEN THE CALL FAILS (AI Road to 10, Sprint 1 — P-D2; this replaces the 2026-08 note that
+ * there was no refund).
  *
- * A refund path is a second write that can itself fail, and a meter that both grants and returns credits
- * is a meter with a race in it. At one credit for a message the athlete loses a fraction of a cent's
- * worth of allowance; at 150/month it is not felt. If the 60-day run shows upstream failures are common
- * enough to matter, the fix is a compensating ledger entry — never a decrement of `spent`, which would
- * reopen the race the single guarded UPDATE closes.
+ * The note this replaces was right about the race: a meter that both grants and returns credits by decrementing
+ * `spent` in a second, unguarded write reopens the race the single guarded UPDATE closes. So the refund is bound
+ * to a RESERVATION (0268): `coach_ai_reserve` takes the credit through that same guarded UPDATE and records what
+ * it took; `coach_ai_settle` claims the reservation once (its own guarded UPDATE) and only then gives that exact
+ * amount back to that exact period, never below zero. A second settle is a no-op, so a retry cannot refund twice.
  */

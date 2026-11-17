@@ -14,20 +14,32 @@
  *   1. The code guard on the athlete's words (`medicalRoute`) — before any credit (PO 09-22 legal caution).
  *   2. Nutrition access (`has_nutrition_access()`), before the credit.
  *   3. The day's ceiling.
- *   4. Reserve the credit (`coach_ai_spend_credits`, `p_action` 'kitchen', 0222) — also the Premium AI gate.
- *   5. One call — Sonnet 5, thinking off, effort low, cached system block, structured output.
- *   6. Record what it cost. 7. The guard (`sanitizeKitchenAnswer`), then the answer.
+ *   4. Reserve the credit (`coach_ai_reserve`, `p_action` 'kitchen', 0268) — also the Premium AI gate, the
+ *      AI-sharing consent check, and the server's age.
+ *   5. One call — Sonnet 5, thinking off, effort low, cached system block, structured output — under this
+ *      function's own 45 s abort (AI Sprint 1 contract §3; the app waits 60 s).
+ *   6. The guard (`sanitizeKitchenAnswer`), then settle ONCE (`coach_ai_settle`), then the answer. Every failure
+ *      after the reservation — upstream, timeout, refusal, no usable dish — gives the credits back (P-D2).
+ *
+ * ══ AGE (P-G8) ══
+ *
+ * A minor is the server's minor (`coach_ai_reserve`, from the profile) OR the app's flag — the stricter wins. It
+ * keeps the "left today" numbers out of the user turn, as before, and the age goes in the user turn as one line
+ * (`withAgeLine`). The cached system block is unchanged.
  *
  * ══ THE WIRE ══
  *
  *   { ok: false, reason: 'bad_request' }                                   400
  *   { ok: false, reason: 'stop', route: 'crisis'|'urgent'|'care'|'medical' } 200  (no credit spent)
- *   { ok: false, reason: 'no_nutrition' }                                  403
+ *   { ok: false, reason: 'no_nutrition' | 'no_consent' }                   403
  *   { ok: false, reason: 'daily_limit', limit }                            429
  *   { ok: false, reason: 'out_of_credits', remaining, allowance }          200
- *   { ok: false, reason: 'unconfigured'|'meter_unavailable'|'upstream_error'|'upstream_unreachable' } 503
- *   { ok: false, reason: 'none', remaining }                               200
+ *   { ok: false, reason: 'unconfigured'|'meter_unavailable' }              503
+ *   { ok: false, reason: 'upstream_error'|'upstream_unreachable', upstream?: 'timeout', remaining, refunded: true } 503
+ *   { ok: false, reason: 'none', remaining, refunded: true }               200
  *   { ok: true, options: KitchenDish[], remaining }
+ *
+ * ⛔ No reply carries the upstream's words (P-D8) or the reservation id.
  */
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -43,10 +55,27 @@ import {
 } from '../../../src/domain/nutrition/kitchen-dishes.ts';
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
 import { KITCHEN_FOODS } from '../../../src/domain/nutrition/kitchen-foods.ts';
+// ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
+import {
+  callFacts,
+  failedCallReply,
+  type ModelCall,
+  reserveFrom,
+  settleArgs,
+  settledFrom,
+  settledTail,
+  type SettleOutcome,
+  timedModelCall,
+  UPSTREAM_ABORT_MS,
+  withAgeLine,
+} from '../../../src/domain/ai/meter-server.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+
+/** This function's deployed slug — the meter's `fn` (0268). */
+const FN = 'coach-kitchen';
 
 /** The model already locked for Holt (Holt-AI benchmark 2026-09-24). */
 const MODEL = 'claude-sonnet-5';
@@ -160,68 +189,69 @@ Deno.serve(async (req) => {
     .gte('occurred_at', since.toISOString());
   if (!countError && (count ?? 0) >= KITCHEN_PER_DAY) return json({ ok: false, reason: 'daily_limit', limit: KITCHEN_PER_DAY }, 429);
 
-  // ── 4. Reserve the credit — and the Premium AI gate (0203) ───────────────────
-  const { data: spend, error: spendError } = await supabase.rpc('coach_ai_spend_credits', { p_action: KITCHEN_ACTION }).maybeSingle();
-  if (spendError) return json({ ok: false, reason: 'meter_unavailable' }, 503);
-  const reserved = spend as { allowed: boolean; credits_spent: number; remaining: number; allowance: number } | null;
-  if (!reserved?.allowed) {
-    return json({ ok: false, reason: 'out_of_credits', remaining: reserved?.remaining ?? 0, allowance: reserved?.allowance ?? 0 });
+  // ── 4. Reserve the credit — the Premium AI gate (0203), the consent check and the server's age (0268) ──
+  //
+  // The credits are HELD until step 6 settles them; every failure from here on gives them back (P-D2).
+  // ⛔ `meter.id` (the reservation) stays in this function — no reply carries it.
+  const { data: reservedRow, error: reserveError } = await supabase
+    .rpc('coach_ai_reserve', { p_action: KITCHEN_ACTION, p_fn: FN })
+    .maybeSingle();
+  const meter = reserveFrom(reservedRow, reserveError);
+  if (!meter.ok) {
+    if (meter.reason === 'meter_unavailable') return json({ ok: false, reason: 'meter_unavailable' }, 503);
+    if (meter.reason === 'no_consent') return json({ ok: false, reason: 'no_consent' }, 403);
+    // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
+    return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
+  /** Settled ONCE, before the answer is returned (contract §1.3). Every outcome but `ok` refunds. */
+  const settle = async (outcome: SettleOutcome, call: ModelCall) => {
+    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
+    return settledTail(settledFrom(data, error), meter.remaining);
+  };
 
-  // ── 5. The model call ───────────────────────────────────────────────────────
-  let response: Response;
-  try {
-    response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: KITCHEN_OUTPUT_CAP,
-        thinking: { type: 'disabled' },
-        // ⛔ The schema is the NUT-D4 wall: it has no field for a nutrition number.
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: KITCHEN_SCHEMA } },
-        system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
-        messages: [{ role: 'user', content: kitchenUserTurn(request) }],
+  // P-G8: the stricter of the server's minor (from the profile) and the app's flag. A minor gets no "left today"
+  // numbers (as before) and the conservative-advice line.
+  const minor = request.minor || meter.minor;
+
+  // ── 5. The model call, under this function's own abort (contract §3) ───────
+  const call = await timedModelCall(
+    (signal) =>
+      fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: KITCHEN_OUTPUT_CAP,
+          thinking: { type: 'disabled' },
+          // ⛔ The schema is the NUT-D4 wall: it has no field for a nutrition number.
+          output_config: { effort: 'low', format: { type: 'json_schema', schema: KITCHEN_SCHEMA } },
+          system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
+          // The age is per request, so it is in the user turn — never the cached block.
+          messages: [{ role: 'user', content: withAgeLine(kitchenUserTurn({ ...request, minor }), meter.ageYears, minor) }],
+        }),
       }),
-    });
-  } catch {
-    return json({ ok: false, reason: 'upstream_unreachable' }, 503);
+    UPSTREAM_ABORT_MS[FN],
+  );
+
+  // Unreachable, a non-2xx, or our own abort: refunded. The upstream's words are in this function's log only (P-D8).
+  if (call.kind !== 'ok') {
+    return json({ ok: false, ...failedCallReply(call.kind), ...(await settle(call.kind, call)) }, 503);
   }
+  const payload = call.payload;
 
-  if (!response.ok) {
-    console.error('anthropic', response.status, (await response.text().catch(() => '')).slice(0, 800));
-    await supabase.rpc('coach_ai_record_usage', {
-      p_action: KITCHEN_ACTION, p_credits: reserved.credits_spent, p_model: MODEL,
-      p_input_tokens: 0, p_output_tokens: 0, p_cache_read_input_tokens: 0, p_cache_creation_input_tokens: 0,
-      p_uncharged: true,
-    });
-    return json({ ok: false, reason: 'upstream_error' }, 503);
-  }
-
-  const payload = await response.json();
-  const usage = payload?.usage ?? {};
-
-  // ── 6. Record what it cost ──────────────────────────────────────────────────
-  await supabase.rpc('coach_ai_record_usage', {
-    p_action: KITCHEN_ACTION,
-    p_credits: reserved.credits_spent,
-    p_model: payload?.model ?? MODEL,
-    p_input_tokens: usage.input_tokens ?? 0,
-    p_output_tokens: usage.output_tokens ?? 0,
-    p_cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-    p_cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-    p_uncharged: false,
-  });
-
-  if (payload?.stop_reason === 'refusal') return json({ ok: false, reason: 'none', remaining: reserved.remaining });
+  if (payload?.stop_reason === 'refusal') return json({ ok: false, reason: 'none', ...(await settle('refusal', call)) });
 
   const text: string = (payload?.content ?? [])
     .filter((b: { type: string }) => b.type === 'text')
     .map((b: { text: string }) => b.text)
     .join('');
 
-  // ── 7. THE BOUNDARY — runs after the model and overrules it (NUT-D4, forced spread, no repeats) ──
+  // ── 6. THE BOUNDARY — runs after the model and overrules it (NUT-D4, forced spread, no repeats) — then the settle ──
+  // No usable dish is refunded.
   const options = kitchenFromModelText(text, request.exclude);
-  if (!options.length) return json({ ok: false, reason: 'none', remaining: reserved.remaining });
-  return json({ ok: true, options, remaining: reserved.remaining });
+  if (!options.length) {
+    return json({ ok: false, reason: 'none', ...(await settle(payload?.stop_reason === 'max_tokens' ? 'truncated' : 'bad_output', call)) });
+  }
+  return json({ ok: true, options, ...(await settle('ok', call)) });
 });

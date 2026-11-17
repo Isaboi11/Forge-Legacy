@@ -35,26 +35,34 @@ const system = () => SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;'
 // ⛔ The order that makes it legal and cheap
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-test('guard → frames → QUOTE → model → SPEND, in that order', () => {
+test('guard → frames → daily cap → RESERVE → model → guard → SETTLE, in that order (AI Sprint 1, P-D6)', () => {
   const guard = at('const guarded = guardRoute(');
   const frames = at('const frames = capFrames(body.frames)');
-  const quote = at("rpc('coach_ai_quote', { p_action: FORM_ACTION })");
+  const cap = at(".eq('action', FORM_ACTION)");
+  const reserve = at("rpc('coach_ai_reserve', { p_action: FORM_ACTION, p_fn: FN })");
   const model = at("fetch('https://api.anthropic.com/v1/messages'");
   const parse = at('parseFormRead(text, lift, frames.length, sizes)');
-  const spend = at("rpc('coach_ai_spend_credits', { p_action: FORM_ACTION })");
+  const settle = at("settle('ok', call)");
   assert.ok(guard < frames, 'a note about pain must not even be size-checked first');
-  assert.ok(frames < quote, 'unusable frames must not even be quoted');
-  assert.ok(quote < model, 'an athlete who could not pay is refused before the model call');
-  assert.ok(model < parse && parse < spend, 'the credit is spent only after the guard has a read');
+  assert.ok(frames < cap && cap < reserve, 'unusable frames and a spent day are refused before any credit is held');
+  assert.ok(reserve < model, 'an athlete who could not pay is refused before the model call');
+  assert.ok(model < parse && parse < settle, 'the credit is kept only after the guard has a read');
+  assert.ok(!/coach_ai_quote|coach_ai_spend_credits|coach_ai_record_usage/.test(SRC), 'the quote → spend path is gone (its month-end race with it)');
 });
 
-test('⭐ "Not charged." is true: only a readable read spends (design 06a, Plan §9.3)', () => {
-  // The spend sits inside `if (read)` and nowhere else.
-  assert.match(SRC, /if \(read\) \{\n\s*const \{ data \} = await supabase\.rpc\('coach_ai_spend_credits', \{ p_action: FORM_ACTION \}\)\.maybeSingle\(\);/);
-  assert.equal(SRC.match(/rpc\('coach_ai_spend_credits'/g).length, 1, 'exactly one spend, the guarded one');
-  assert.match(SRC, /if \(!read\) return json\(\{ ok: false, reason: 'unreadable', remaining: quote\.remaining, charged: false \}\);/);
-  // A refused quote answers out_of_credits before anything is sent upstream.
-  assert.match(SRC, /if \(!quote\?\.allowed\) \{\n\s*return json\(\{\n\s*ok: false,\n\s*reason: 'out_of_credits',/);
+test('⭐ "Not charged." is true: only a readable read is kept — everything else is refunded (design 06a, Plan §9.3)', () => {
+  assert.equal(SRC.match(/rpc\('coach_ai_settle'/g).length, 1, 'one settle, in the closure');
+  assert.equal(SRC.match(/settle\('ok', call\)/g).length, 1, 'exactly one charged path, the readable read');
+  assert.match(SRC, /if \(!read\) \{\n[^\n]*const outcome: SettleOutcome = refused \? 'refusal' : payload\?\.stop_reason === 'max_tokens' \? 'truncated' : 'unreadable';\n\s*return json\(\{ ok: false, reason: 'unreadable', \.\.\.\(await settle\(outcome, call\)\), charged: false \}\);/);
+  // A refused reservation answers out_of_credits before anything is sent upstream.
+  assert.match(SRC, /if \(!meter\.ok\) \{[\s\S]{0,400}reason: 'out_of_credits', remaining: meter\.remaining, allowance: meter\.allowance/);
+});
+
+test('P-D6: a day’s ceiling, counted the way workout-tidy counts its own, answers daily_limit 429', () => {
+  assert.match(DOMAIN, /export const FORM_PER_DAY = 20;/);
+  assert.match(SRC, /since\.setUTCHours\(0, 0, 0, 0\);/);
+  assert.match(SRC, /\.from\('coach_ai_spend'\)\s*\.select\('id', \{ count: 'exact', head: true \}\)\s*\.eq\('action', FORM_ACTION\)\s*\.gte\('occurred_at', since\.toISOString\(\)\);/);
+  assert.match(SRC, /if \(!countError && \(count \?\? 0\) >= FORM_PER_DAY\) return json\(\{ ok: false, reason: 'daily_limit', limit: FORM_PER_DAY \}, 429\);/);
 });
 
 test('a guarded request returns a route and spends nothing', () => {
@@ -115,17 +123,14 @@ test('the frames go in the user turn, in order, each labelled with its position'
 });
 
 test('usage is recorded with all four token counts, on success and on failure', () => {
-  for (const p of [
-    'p_input_tokens: usage.input_tokens',
-    'p_output_tokens: usage.output_tokens',
-    'p_cache_read_input_tokens: usage.cache_read_input_tokens',
-    'p_cache_creation_input_tokens: usage.cache_creation_input_tokens',
-  ]) {
-    assert.ok(SRC.includes(p), p);
+  // Every path after the reservation settles with the call's own usage; `settleArgs` maps the four counts.
+  assert.match(SRC, /rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, MODEL\)\)\)/);
+  assert.ok(SRC.includes('...(await settle(call.kind, call))'), 'the upstream failure is recorded (and refunded) too');
+  assert.ok(SRC.includes('...(await settle(outcome, call)), charged: false'), 'an unreadable read is recorded, refunded');
+  const committed = read(DEPLOY_COPY);
+  for (const p of ['p_input_tokens', 'p_output_tokens', 'p_cache_read_input_tokens', 'p_cache_creation_input_tokens']) {
+    assert.ok(committed.includes(p), p);
   }
-  assert.equal(SRC.match(/coach_ai_record_usage/g).length, 2, 'the upstream failure is recorded too');
-  assert.match(SRC, /p_uncharged: true,/);
-  assert.match(SRC, /p_uncharged: !spent\?\.allowed,/, 'an unreadable read is recorded, uncharged');
 });
 
 test('the meter’s weight lives in SQL, never in the function', () => {
@@ -209,10 +214,10 @@ test('the prompt REQUIRES earned praise and a closing line of encouragement (PO 
 });
 
 test('the LAST thing between the model and the answer is the code guard, not the prompt', () => {
-  const guard = at('const read = payload?.stop_reason === \'refusal\' ? null : parseFormRead(text, lift, frames.length, sizes);');
-  const answer = at('return json({ ok: true, read, remaining: spent?.remaining ?? quote.remaining });');
+  const guard = at('const read = refused ? null : parseFormRead(text, lift, frames.length, sizes);');
+  const answer = at("return json({ ok: true, read, ...(await settle('ok', call)) });");
   assert.ok(guard < answer);
-  // Between them: the spend, the usage record, and the refusal — nothing that touches `text`.
+  // Between them: the refund for an unreadable read and the settle — nothing that touches `text`.
   const between = SRC.slice(SRC.indexOf('\n', guard), answer);
   assert.ok(!/\btext\b/.test(between.replace(/\/\/.*$/gm, '')), 'the raw model text never reaches the answer');
   assert.ok(!/read: text|read: payload/.test(SRC), 'the raw model text is never the answer');
@@ -225,7 +230,8 @@ test('the lift echoed back comes from the REQUEST, not from the model', () => {
 });
 
 test('a model refusal reads as an unreadable clip, not as an app failure — and is not charged', () => {
-  assert.match(SRC, /payload\?\.stop_reason === 'refusal' \? null :/);
+  assert.match(SRC, /const refused = payload\?\.stop_reason === 'refusal';\n\s*const read = refused \? null :/);
+  assert.match(SRC, /refused \? 'refusal' :/, 'settled as a refusal, so it is refunded');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -312,7 +318,7 @@ test("⛔ the guard uses the BROAD discomfort list, before the credit", () => {
   // read against it (PO 2026-09-22). Live that day: it reached the model and spent credits.
   assert.match(SRC, /mentionsDiscomfort\(said\)/);
   const guardAt = SRC.indexOf("mentionsDiscomfort(said)");
-  const creditAt = SRC.indexOf(".rpc('coach_ai_spend_credits'");
+  const creditAt = SRC.indexOf(".rpc('coach_ai_reserve'");
   assert.ok(guardAt > 0 && creditAt > guardAt, "the guard must run before the credit is reserved");
 });
 
