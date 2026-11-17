@@ -101,7 +101,9 @@ test('⚠ the sheet answers out_of_credits with the credit line in BOTH AI paths
   // A tapped search is weighed as a search.
   assert.match(ask, /creditsLine\(r, opts\.allowWeb === true\)/);
   // The server's month, from the balance, with a deadline — and no balance read when there is no allowance.
-  assert.match(sheet, /r\.allowance > 0 \? await within\(AI_BALANCE_LOOKUP_MS, fetchCoachAiBalance\(\), null\) : null/);
+  // (Sprint 2: the floor's read runs beside it, inside the same allowance check.)
+  assert.match(sheet, /r\.allowance > 0\s*\?\s*await Promise\.all\(\[\s*within\(AI_BALANCE_LOOKUP_MS, fetchCoachAiBalance\(\), null\),/);
+  assert.match(sheet, /\]\)\s*:\s*\[null, null\];/);
   // The Free plan's one-block line still answers the Free plan's block door.
   const door = between('const blockDoorRefuses = ', 'return true;');
   assert.match(door, /pick\(key === 'short_programs' \? 'allowance_week' : 'allowance_program'\)/);
@@ -233,4 +235,23 @@ test('⚠ every ask has a controller, the sheet going away aborts it, and busy a
   // The lookups before the ask are bounded as a whole, and so is the gaps answer.
   assert.match(ask, /await within\(ASK_CONTEXT_MS, Promise\.all\(\[/);
   assert.match(ask, /const reply = await within\(ASK_CONTEXT_MS, gapReplyLive\(\), null\);/);
+});
+
+test('the soft floor (0272, MA12): a refused chat says today, not "nothing until the 1st"', () => {
+  const used = outOfAiCreditsLine({ remaining: 0, allowance: 150, period: NOV, floor: { perDay: 5, leftToday: 0 } }, MID_NOV);
+  assert.equal(used, "That's today's 5 chats and meal photos. More tomorrow, and your Premium AI credits come back on December 1.");
+  // Room left on the floor: the refused ask was one the floor does not cover.
+  const web = outOfAiCreditsLine({ remaining: 0, allowance: 150, web: true, period: NOV, floor: { perDay: 5, leftToday: 3 } }, MID_NOV);
+  assert.equal(web, "An online search needs Premium AI credits, and this month's are used. Ordinary questions and meal photos still work (3 more today), and your credits come back on December 1.");
+  const build = outOfAiCreditsLine({ remaining: 0, allowance: 150, period: NOV, floor: { perDay: 5, leftToday: null } }, MID_NOV);
+  assert.equal(build, "That one needs Premium AI credits, and this month's are used. Ordinary questions and meal photos still work, 5 a day, and your credits come back on December 1.");
+  // Before 0272 is pasted there is no floor: the month-only line stands, word for word.
+  // (`pick` rotates its phrasings, so two calls are compared by what they promise, not word for word.)
+  for (const floor of [null, undefined, { perDay: 0, leftToday: null }]) {
+    const before = outOfAiCreditsLine({ remaining: 0, allowance: 150, period: NOV, floor }, MID_NOV);
+    assert.match(before, /They come back on December 1\. Until then I'll still build from the taps/);
+    assert.ok(!/today|tomorrow/.test(before), before);
+  }
+  // The chat reads the floor fresh, in parallel with the month, both bounded.
+  assert.match(sheet, /within\(AI_BALANCE_LOOKUP_MS, fetchAiCredits\(true\), null\)/);
 });
