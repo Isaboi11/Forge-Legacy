@@ -59,6 +59,7 @@ import {
   prescribeReps,
   prescribeTimed,
   prescribeCardio,
+  restOf,
   roleFor,
 } from './prescribe.ts';
 import { MIN_DAY_MOVEMENTS } from './day.ts';
@@ -463,10 +464,11 @@ function buildDay(
       return { row, dose: 0 };
     }
     // A pinned plank is still held, not counted — the pin fixes WHICH exercise, not how it is measured.
+    const rest = restOf(opts.category, roleFor(index, isCompound(exercise.pattern)), opts.experience.lifting);
     if (isTimedExercise(exercise)) {
       const t = prescribeTimed(roleFor(index, isCompound(exercise.pattern)), pctx);
       const dose = own ?? t.sets;
-      const row = { catalogKey: exercise.key, name: exercise.name, sets: dose, durationSec: t.durationSec, ...(cue ? { coachNote: cue } : {}) };
+      const row = { catalogKey: exercise.key, name: exercise.name, sets: dose, durationSec: t.durationSec, ...rest, ...(cue ? { coachNote: cue } : {}) };
       return { row, dose };
     }
     const rx = prescribeReps(roleFor(index, isCompound(exercise.pattern)), pctx);
@@ -478,6 +480,7 @@ function buildDay(
       sets: dose,
       reps: verbatimReps ?? rx.reps,
       ...(verbatimReps != null ? {} : { repsMax: rx.repsMax }),
+      ...rest,
       ...(cue ? { coachNote: cue } : {}),
     };
     return { row, dose };
@@ -585,6 +588,7 @@ function buildDay(
         name: found.exercise.name,
         sets: dose,
         durationSec: t.durationSec,
+        ...restOf(opts.category, role, opts.experience.lifting),
         ...(cue ? { coachNote: cue } : {}),
       });
     } else {
@@ -599,6 +603,7 @@ function buildDay(
         sets: dose,
         reps: rx.reps,
         repsMax: rx.repsMax,
+        ...restOf(opts.category, role, opts.experience.lifting),
         ...(cue ? { coachNote: cue } : {}),
       });
     }
