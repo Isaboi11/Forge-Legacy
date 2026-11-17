@@ -503,7 +503,7 @@ Deno.serve(async (req) => {
   if (minor) {
     const stopped = guardRoute(question, true);
     if (stopped) {
-      await settle('other', true, model, NO_USAGE);
+      await settle('guarded', true, model, NO_USAGE);
       return json({ route: stopped });
     }
   }
