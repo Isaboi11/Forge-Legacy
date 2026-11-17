@@ -106,10 +106,28 @@ test('the paste bundle carries the migration verbatim: every statement, in order
   assert.ok(BUNDLE.includes(b), 'pending-0272.sql §1 is not byte-for-byte the migration — regenerate it');
   const want = statements(b);
   assert.deepEqual(statements(S1), want, '§1 differs from the migration');
-  // Stated, as the migration skill asks: 29 of 29 (begin … commit).
-  assert.equal(want.length, 29, `0272 has ${want.length} statements — update this count if that is intended`);
+  // Stated, as the migration skill asks: 32 of 32 (begin … commit; admin_ai_health + its two grants added 11-17).
+  assert.equal(want.length, 32, `0272 has ${want.length} statements — update this count if that is intended`);
   assert.equal(want[0], 'begin');
   assert.equal(want[want.length - 1], 'commit');
+});
+
+test('admin_ai_health is 0269’s (= live) plus the waived counts — no live line lost, the guard still first, grants restated', () => {
+  const live = body(read('supabase/migrations/0269_ai_observability.sql'), 'admin_ai_health');
+  const next = body(MIG, 'admin_ai_health');
+  keepsEveryLiveLine(live, next, ["'legacy_calls', (select count(*) from s where s.fn is null)),"]);
+  assert.match(next, /'legacy_calls', \(select count\(\*\) from s where s\.fn is null\),\n/);
+  // What the page reads: overall and per function / per day, delivered calls only (a refunded one gave nothing).
+  for (const w of ['floor', 'typed_build', 'photo_tidy']) {
+    assert.ok(next.includes(`(select count(*) from s where s.waiver = '${w}' and not s.refunded)`), `totals.waivers.${w}`);
+    assert.equal((next.match(new RegExp(`count\\(\\*\\) filter \\(where s\\.waiver = '${w}' and not s\\.refunded\\)`, 'g')) ?? []).length, 2, `${w} on by_fn and by_fn_day`);
+  }
+  assert.match(next, /as floor_uses,/);
+  const c = code(next);
+  assert.ok(c.indexOf('perform public.admin_guard();') < c.indexOf('with s as ('), 'nobody but an operator reads it');
+  assert.match(MIG, /create or replace function public\.admin_ai_health\(p_days integer default 7, p_tz text default 'UTC'\)\nreturns jsonb\nlanguage plpgsql\nstable\nsecurity definer/);
+  assert.match(code(MIG), /revoke all on function public\.admin_ai_health\(integer, text\) from public, anon;\ngrant execute on function public\.admin_ai_health\(integer, text\) to authenticated;/);
+  assert.equal(read('supabase/migrations/0271_ai_deploys_and_drift.sql').includes('function public.admin_ai_health'), false, '0271 does not replace it');
 });
 
 test('reserve is the LIVE source plus marked additions — the profile read is the only live line replaced', () => {
@@ -229,6 +247,9 @@ test('§2 raises when §1 did not land; §3 rehearses as two real accounts and r
   assert.ok(!/\b(update|delete from|insert into) public\./.test(code(outside)), '§3 outside the rehearsal is read-only');
   const all = statements(S3);
   assert.match(all[all.length - 1], /^select n, check_name, expected, actual, pass from r0272_report order by n$/);
+  // Row 21: the AI health read counts what the rehearsal added, overall and per function.
+  assert.match(S3, /v_h0 := public\.admin_ai_health\(7, 'UTC'\);/);
+  assert.match(S3, /'n', 21, 'c', 'AI health counts what rode free'/);
   // The header's prediction names every row the report prints.
-  for (let n = 1; n <= 20; n += 1) assert.match(BUNDLE, new RegExp(`^--\\s+${n} `, 'm'), `the prediction covers row ${n}`);
+  for (let n = 1; n <= 21; n += 1) assert.match(BUNDLE, new RegExp(`^--\\s+${n} `, 'm'), `the prediction covers row ${n}`);
 });

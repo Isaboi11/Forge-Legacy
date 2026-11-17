@@ -217,6 +217,14 @@ function Loaded({ h }: { h: AiHealth }) {
         <StatLine label="Refunded" value={h.totals.refunds} />
         {h.totals.cancelled ? <StatLine label="Cancelled by the athlete" value={h.totals.cancelled} /> : null}
         <StatLine label="Credits charged" value={h.totals.credits} />
+        {/* What rode free (0272, MA12) — only once the server counts it; before 0272 the lines are simply absent. */}
+        {h.waived ? (
+          <>
+            <StatLine label="Free daily uses (after the month ran out)" value={h.waived.floor} />
+            <StatLine label="Typed builds not charged twice" value={h.waived.typedBuild} />
+            <StatLine label="Photo tidy passes at no charge" value={h.waived.photoTidy} />
+          </>
+        ) : null}
         <StatLine label="Real cost" value={usdText(h.totals.costUsd)} />
         {h.byFn.length === 0 ? (
           <Text style={styles.quietLine}>No AI calls in this window.</Text>
