@@ -19,6 +19,22 @@ import { readWrittenWorkout, rowsToWrittenText, writtenToTemplate, type WrittenT
  */
 const HOLD = /^(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?)\b(?:\s+each\s+set)?[.,;]?\s*(.*)$/i;
 
+/**
+ * IM-1 (Sprint 3): "F-F-F reps" under a lift with no rep count of its own — every set to failure, one F per set (the
+ * Bridger Logan cards; the AI layout keeps it as a note). Only a whole ladder of F's; "10-10-10-F" stays the
+ * author's words. "to failure" / "AMRAP" in the note does the same, with the lift's own set count.
+ */
+const ALL_F = /^\s*(F(?:\s*[-–]\s*F){1,19})\s*reps?\.?\s*$/i;
+const TO_FAILURE_WORDS = /\b(?:(?:to|till?|until)\s+failure|amrap|max\s+reps|as\s+many\s+(?:reps\s+)?as\s+possible)\b/i;
+
+function failureFromNote(note: string, sets: number): { sets: number; note: string } | null {
+  const parts = note.split(' · ').map((x) => x.trim()).filter(Boolean);
+  const at = parts.findIndex((x) => ALL_F.test(x));
+  if (at >= 0) return { sets: ALL_F.exec(parts[at])![1].split(/[-–]/).length, note: parts.filter((_, i) => i !== at).join(' · ') };
+  if (parts.some((x) => TO_FAILURE_WORDS.test(x))) return { sets, note: parts.join(' · ') };
+  return null;
+}
+
 export function writtenToWeeks(w: WrittenWorkout, rows: readonly WrittenTemplateRow[]): { weeks: ParsedWeek[]; skipped: string[] } {
   const items: ParsedItem[] = rows.map((r) => {
     /* A timed hold becomes a timed set — the preview steps its clock and the logger times it. The words that said
@@ -30,7 +46,10 @@ export function writtenToWeeks(w: WrittenWorkout, rows: readonly WrittenTemplate
     const at = r.targetReps === 0 && !r.repScheme?.length ? pieces.findIndex((s) => HOLD.test(s) && !HOLD.exec(s)![3]) : -1;
     const hold = at >= 0 ? HOLD.exec(pieces[at]) : null;
     const durationSec = hold ? Number(hold[1]) * (/^m/i.test(hold[2]) ? 60 : 1) : undefined;
-    const note = hold ? pieces.filter((_, i) => i !== at).join(', ') : noteParts.join(' · ');
+    const plain = hold ? pieces.filter((_, i) => i !== at).join(', ') : noteParts.join(' · ');
+    /* A counted lift with no reps of its own whose note says every set goes to failure (IM-1). */
+    const failure = !hold && r.targetReps === 0 && !r.repScheme?.length ? failureFromNote(plain, r.sets) : null;
+    const note = failure ? failure.note : plain;
 
     const rx: ImportRx = {
       ...(r.catalogKey ? { catalogKey: r.catalogKey } : null),
@@ -45,8 +64,9 @@ export function writtenToWeeks(w: WrittenWorkout, rows: readonly WrittenTemplate
     };
     return {
       name: r.name,
-      sets: r.repScheme?.length || r.sets,
+      sets: failure ? failure.sets || r.sets : r.repScheme?.length || r.sets,
       reps: r.targetReps,
+      ...(failure ? { toFailure: true } : null),
       /* Every number here is the card's, read and checked — nothing was filled in. */
       setsAssumed: false,
       repsAssumed: false,

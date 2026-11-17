@@ -52,3 +52,18 @@ test('"N sets" is the layout’s placeholder for an unknown count — never part
   assert.ok(names.some((n) => /^EZ Bar Skullcrushers$/i.test(n)), names.join(' · '));
   assert.ok(!names.some((n) => /\bN Sets\b/i.test(n)), names.join(' · '));
 });
+
+test('"* F-F-F reps" under a lift with no reps is every set to failure, one F per set (bridger-logan-w1a)', async () => {
+  const { writtenToWeeks } = await import('../../program/written-import.ts');
+  const w = readWrittenWorkout('1. Incline Bench Press 4 sets\n* 6-6-4-4 reps\n2. Dips\n* F-F-F reps');
+  const { weeks } = writtenToWeeks(w, writtenToTemplate(w, resolveKey));
+  const dips = weeks[0].days[0].items.find((it) => /dips/i.test(it.name));
+  assert.equal(dips.toFailure, true);
+  assert.equal(dips.sets, 3);
+  assert.ok(!/F-F-F/.test(dips.note ?? ''), 'the F ladder is read, not left as a note');
+  // A mixed ladder stays the author's words; a lift with its own reps is never turned to failure.
+  const mixed = readWrittenWorkout('1. Upright Row 4 sets\n* 10-10-10-F reps');
+  assert.notEqual(writtenToWeeks(mixed, writtenToTemplate(mixed, resolveKey)).weeks[0].days[0].items[0].toFailure, true);
+  const counted = readWrittenWorkout('1. Push Ups 3 sets of 12 reps\n* to failure on the last');
+  assert.notEqual(writtenToWeeks(counted, writtenToTemplate(counted, resolveKey)).weeks[0].days[0].items[0].toFailure, true);
+});
