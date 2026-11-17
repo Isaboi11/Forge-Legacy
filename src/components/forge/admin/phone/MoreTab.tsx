@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
 import { when } from '@/components/forge/admin/crm-ui';
@@ -115,6 +116,7 @@ type MoreData = ReturnType<typeof useMoreData>;
 function MoreRoot({ data }: { data: MoreData }) {
   const { c, pref, setMode } = useCrm();
   const { setMoreView, exit, openSheet } = usePhone();
+  const router = useRouter();
   const s = data.appstore.data;
   const avg = s?.rating?.avg ?? null;
   const asSub = !s
@@ -137,11 +139,13 @@ function MoreRoot({ data }: { data: MoreData }) {
   const soc = socialSubs(data.social);
   // The first three are the Social group (AA-D25); each group's heading is drawn above its first row.
   const SOCIAL_ROWS = 3;
-  const rows: { key: Exclude<MoreView, 'root'>; label: string; sub: string; badge?: number }[] = [
+  const rows: { key: Exclude<MoreView, 'root'> | 'aihealth'; label: string; sub: string; badge?: number }[] = [
     { key: 'social', label: 'Numbers', sub: soc.numbers },
     { key: 'content', label: 'Content', sub: soc.content },
     { key: 'playbook', label: 'Playbook', sub: soc.playbook },
     { key: 'appstore', label: 'App Store', sub: asSub },
+    // AI Road to 10 Sprint 1 (0269): not a More view — it opens /admin-ai, the same page the AI alert push opens.
+    { key: 'aihealth', label: 'AI health', sub: 'Failures, refunds and real cost per AI function' },
     { key: 'usage', label: 'Usage', sub: 'Active athletes and retention' },
     { key: 'moderation', label: 'Moderation', sub: modSub, badge: waiting },
     { key: 'surveys', label: 'Surveys', sub: surveySub },
@@ -160,7 +164,7 @@ function MoreRoot({ data }: { data: MoreData }) {
           <View key={r.key}>
             {i === 0 ? <SectionHead label="Social" style={{ marginTop: 22, marginBottom: 2 }} /> : i === SOCIAL_ROWS ? <SectionHead label="Business" style={{ marginTop: 26, marginBottom: 2 }} /> : null}
             <Pressable
-            onPress={() => setMoreView(r.key)}
+            onPress={() => (r.key === 'aihealth' ? router.push('/admin-ai') : setMoreView(r.key))}
             accessibilityRole="button"
             style={({ pressed }) => [
               { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.line },

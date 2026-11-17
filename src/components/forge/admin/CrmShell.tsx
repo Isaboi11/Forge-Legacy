@@ -6,6 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CrmThemeProvider, useCrm, type CrmMode } from '@/components/forge/admin/crm-theme';
 import { DISPLAY, ToastProvider, useLayout } from '@/components/forge/admin/crm-ui';
 import { PhoneShell } from '@/components/forge/admin/phone/PhoneShell';
+import { AiHealthPage } from '@/components/forge/admin/pages/AiHealthPage';
 import { AiPage } from '@/components/forge/admin/pages/AiPage';
 import { AppStorePage } from '@/components/forge/admin/pages/AppStorePage';
 import { BugsPage } from '@/components/forge/admin/pages/BugsPage';
@@ -181,6 +182,8 @@ function PageBody({ page, props }: { page: PageKey; props: PageProps }) {
       return <UsersPage {...props} />;
     case 'ai':
       return <AiPage {...props} />;
+    case 'aihealth':
+      return <AiHealthPage tz={props.tz} />;
     case 'appstore':
       return <AppStorePage {...props} />;
     case 'usage':

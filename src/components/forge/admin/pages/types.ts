@@ -6,6 +6,7 @@ export type PageKey =
   | 'revenue'
   | 'users'
   | 'ai'
+  | 'aihealth'
   | 'appstore'
   | 'usage'
   | 'social'
@@ -37,6 +38,8 @@ export const NAV: { group: string; items: { key: PageKey; label: string }[] }[] 
       { key: 'revenue', label: 'Revenue' },
       { key: 'users', label: 'Users & plans' },
       { key: 'ai', label: 'AI usage' },
+      // AI Road to 10 Sprint 1 (0269): failures, refunds, latency and real cost per AI function. Build 11's /admin-ai.
+      { key: 'aihealth', label: 'AI health' },
       { key: 'appstore', label: 'App Store' },
     ],
   },
