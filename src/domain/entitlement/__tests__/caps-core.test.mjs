@@ -8,7 +8,8 @@ import {
   entitlementReadStatus,
   gateFor,
   holtBlockDoor,
-  holtKeepLedger,
+  holtKeepOnce,
+  holtKeepVerdict,
   holtSpendVerdict,
   holtUncapped,
   m7Benefits,
@@ -220,9 +221,10 @@ test('G4: an unreadable Holt spend fails closed for Free and never stops an athl
 /**
  * B-D1 (AI audit 11-16) — the Holt program is paid for at the KEEP, once per build.
  *
- * Driven the way the chat and the wizard drive it: building makes a build object and spends nothing; a keep
- * runs `pay` through the ledger and writes only on a yes. `consume` stands in for `consume_holt_allowance` on
- * a Free account (1 for life), so a second spend is refused the way the RPC refuses it.
+ * Driven the way the chat and the wizard drive it: building makes a build object and spends nothing; a keep runs
+ * through the ledger (`holtKeepOnce`) and `keepRpc` stands in for 0270's `keep_holt_program` on a Free account
+ * (1 for life): the spend and the saved row are ONE step, so a second keep is refused the way the RPC refuses it and
+ * nothing is saved without its spend.
  */
 const holtFlow = ({ answer } = {}) => {
   const gate = gateFor('holt_programs', FREE, usage());
@@ -230,29 +232,59 @@ const holtFlow = ({ answer } = {}) => {
   const saved = [];
   let used = 0;
   let calls = 0;
-  const consume = async () => {
+  const keepRpc = async (b) => {
     calls += 1;
-    if (answer === 'unreadable') return null;
-    if (used >= 1) return { allowed: false };
+    if (answer === 'unreadable') return { kind: 'unread' };
+    if (used >= 1) return { kind: 'refused', used, allowance: 1 };
     used += 1;
-    return { allowed: true };
+    saved.push(b);
+    return { kind: 'kept', programId: `p${used}`, used, allowance: 1 };
   };
-  /* The chat's `payHolt`: the verdict, and the line he says when it is not a yes. */
-  const pay = async () => {
-    const verdict = holtSpendVerdict(await consume(), gate);
-    if (verdict === 'retry') said.push('PLAN_UNCHECKED');
-    if (verdict === 'used_up') said.push('used_up');
-    return verdict === 'build';
-  };
-  const ledger = holtKeepLedger();
+  /* The chat's `keepAsProgram`: the verdict, and the line he says when it is not a yes. */
+  const once = holtKeepOnce();
   const build = () => ({ weeks: 8 });
   const keep = async (b) => {
-    if (!(await ledger(b, pay))) return false;
-    saved.push(b);
-    return true;
+    const id = await once(b, async () => {
+      const k = await keepRpc(b);
+      const verdict = holtKeepVerdict(k, gate);
+      if (k.kind === 'kept') return k.programId;
+      if (verdict === 'write') return 'written-plainly';
+      said.push(verdict === 'retry' ? 'PLAN_UNCHECKED' : 'used_up');
+      return null;
+    });
+    return id !== null;
   };
   return { build, keep, said, saved, calls: () => calls };
 };
+
+test('0270: the keep’s answer goes through the same fail-closed rule as a spend', () => {
+  const capped = gateFor('holt_programs', FREE, usage());
+  const uncapped = gateFor('holt_programs', PAID, usage());
+  assert.equal(holtKeepVerdict({ kind: 'kept', programId: 'p', used: 1, allowance: 1 }, capped), 'kept');
+  assert.equal(holtKeepVerdict({ kind: 'refused', used: 1, allowance: 1 }, capped), 'used_up');
+  assert.equal(holtKeepVerdict({ kind: 'unread' }, capped), 'retry', 'a ceiling and no answer: a retry, never an upsell');
+  assert.equal(holtKeepVerdict({ kind: 'unread' }, uncapped), 'write', 'no ceiling: nothing to spend, so it is written');
+  // The same rule as `holtSpendVerdict`, case for case.
+  assert.equal(holtSpendVerdict(null, capped), 'retry');
+  assert.equal(holtSpendVerdict(null, uncapped), 'build');
+});
+
+test('0270: one build is kept as ONE program — the second keep answers the same id; a null or a throw is forgotten', async () => {
+  const once = holtKeepOnce();
+  const b = {};
+  let n = 0;
+  assert.equal(await once(b, async () => `p${++n}`), 'p1');
+  assert.equal(await once(b, async () => `p${++n}`), 'p1', 'Start after "Adjust it" starts the program already kept');
+  assert.equal(n, 1);
+
+  const refused = {};
+  assert.equal(await once(refused, async () => null), null);
+  assert.equal(await once(refused, async () => 'p9'), 'p9', 'a refusal is not remembered as kept');
+
+  const broke = {};
+  await assert.rejects(once(broke, async () => Promise.reject(new Error('Program limit reached'))), /limit/);
+  assert.equal(await once(broke, async () => 'p10'), 'p10', 'a throw is not remembered either');
+});
 
 test('B-D1: build → "Ask me again" → keep spends the Holt program ONCE', async () => {
   const f = holtFlow();
