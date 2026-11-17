@@ -611,6 +611,21 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
   }
 
   function handleLift(line: string, cardioHead: boolean) {
+    /* "EZ Bar Skullcrushers N sets": the AI layout's placeholder for a count the card never gave (IM-1, 11-17). It is
+       not part of the name, and it is not a number — the count stays unknown. */
+    line = line.replace(/\s+N\s+sets?\b/gi, '');
+    /*
+     * "* 6-6-4-4 reps" on its own line under "1. Incline Bench Press 4 sets" (IM-1, 11-17): the AI layout put each
+     * set's reps one line down, and they used to become a note — four sets of nothing. A dash ladder of three rungs or
+     * more ("8-12 reps" is a range), onto a lift that has no reps of its own yet. "F-F-F" is left as the author's words.
+     */
+    const ladder = /^[•·▪◦*]?\s*(\d{1,3}(?:\s*[-–]\s*\d{1,3}){2,19})\s*reps?\.?\s*$/i.exec(line.trim());
+    if (ladder && cur && !(cur as WrittenExercise).repScheme && (cur as WrittenExercise).reps == null) {
+      const ex = cur as WrittenExercise;
+      ex.repScheme = ladder[1].split(/[-–]/).map((x) => Number(x.trim()));
+      ex.sets = ex.repScheme.length;
+      return;
+    }
     /*
      * "* Perform 2 sets of this Cluster." — the rungs above are ONE cluster; do it twice. The scheme is repeated whole,
      * each rung's rest with it: 5@67% rest 30s, 5@67% rest 30s, 5@67% rest 2:30, and again (Season 11 Day 3).
