@@ -35,6 +35,8 @@ import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forg
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
 import { consentForRoute } from '@/lib/consent';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { holtBlockDoor, holtKeepLedger, holtSpendVerdict, holtUncapped } from '@/domain/entitlement/caps-core';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
@@ -518,6 +520,9 @@ export function CoachChatSheet({
   const [built, setBuilt] = useState<Built | null>(null);
   /** Which builds have been paid for at their keep — once each, however many times they are kept (B-D1). */
   const [keepLedger] = useState(() => holtKeepLedger());
+  /** The sheet going away stops Holt's interpret / author / kitchen / photo calls (Sprint 1, P-G3). The chat's own
+      asks keep their `asking` controllers. */
+  const closeSignal = useCloseSignal();
   /** Naming what a Start is about to end (W-29). Null until there is genuinely something to lose. */
   const [confirmEnd, setConfirmEnd] = useState<string | null>(null);
   const [handing, setHanding] = useState(false);
@@ -995,7 +1000,7 @@ export function CoachChatSheet({
             recent: Object.keys(recent?.sessionsAgo ?? {}),
             notes: heardNotes.current,
             beside,
-          });
+          }, closeSignal());
           if (a.kind === 'stop') {
             setBusy(null);
             /* Through the same four helpers as every other stop, so the line is marked and never sent again. */
@@ -1003,7 +1008,8 @@ export function CoachChatSheet({
             return false;
           }
           if (a.kind === 'no_consent') holt.fellBack = AI_DECLINED_HOLT;
-          else if (a.kind !== 'ok') holt.fellBack = authorFallbackLine(a);
+          /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+          else if (a.kind !== 'ok') holt.fellBack = withNotCharged(authorFallbackLine(a), a.refunded);
           else {
             const valid = validateAuthored(a.plan, athlete, PICKER_DB, canDoExercise);
             holt.written = valid ? { plan: a.plan, valid } : null;
@@ -1292,7 +1298,7 @@ export function CoachChatSheet({
         setBusy(null);
       }
     },
-    [say, gates, payHolt],
+    [say, gates, payHolt, closeSignal],
   );
 
   /*
@@ -2370,9 +2376,10 @@ export function CoachChatSheet({
     setBusy('reading');
     try {
       if (kind === 'recipe') {
-        const r = await readRecipePhoto(uri);
+        const r = await readRecipePhoto(uri, closeSignal());
         if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
-        if (r.kind !== 'ok') return void say({ kind: 'holt', text: attachErrorLine(kind, r.kind) });
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+        if (r.kind !== 'ok') return void say({ kind: 'holt', text: withNotCharged(attachErrorLine(kind, r.kind), r.refunded) });
         say({ kind: 'holt', text: attachDoneLine(kind) });
         stashRecipeDraft(r.read);
         handOff();
@@ -2380,13 +2387,13 @@ export function CoachChatSheet({
         return;
       }
       /* The same card reader and AI check every import door uses (PO 2026-09-30) — `readImportPhoto`. */
-      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key, closeSignal());
       if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
       if (r.kind === 'unparsed') {
         say({ kind: 'holt', text: `I read it, but couldn’t turn it into a ${kind === 'template' ? 'workout' : 'program'}. ${r.error}` });
         return;
       }
-      if (r.kind !== 'ok') return void say({ kind: 'holt', text: attachErrorLine(kind, r.kind) });
+      if (r.kind !== 'ok') return void say({ kind: 'holt', text: withNotCharged(attachErrorLine(kind, r.kind), r.refunded) });
       stashImportRead({ weeks: r.weeks, skipped: r.skipped, checks: r.checks });
       say({ kind: 'holt', text: attachDoneLine(kind) });
       handOff();
@@ -2530,7 +2537,7 @@ export function CoachChatSheet({
       lean: rotationLeanToday(k.asks),
       left,
       minor: rules.minor,
-    });
+    }, closeSignal());
     k.asks += 1;
     setBusy(null);
     /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone, and no fallback ask either. */
@@ -2544,10 +2551,11 @@ export function CoachChatSheet({
     /* ⚠ THE DISH WRITER COULDN'T ANSWER, AND HE SAYS SO (kitchen-06, QA 09-26). This used to hand the question
        to coach-ask, which only reads the recipe book — so a failure came back looking like his real answer
        ("nothing in your book, want me to look online?"). Now it is named, with a way to ask again. */
+    /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
     if (r.kind === 'unavailable' || r.kind === 'offline') {
-      return void say({ kind: 'holt', text: kitchenError(r) }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
+      return void say({ kind: 'holt', text: withNotCharged(kitchenError(r), r.refunded) }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
     }
-    if (r.kind !== 'ok') return void say({ kind: 'holt', text: kitchenError(r) });
+    if (r.kind !== 'ok') return void say({ kind: 'holt', text: withNotCharged(kitchenError(r), r.refunded) });
     const cards = dishCards(r.dishes, rules.allergens, rules.diet);
     if (!cards.length) return void say({ kind: 'holt', text: kitchenError({ kind: 'none' }) });
     k.shown.push(...cards.map((c) => c.name));
@@ -2830,10 +2838,19 @@ export function CoachChatSheet({
         /* The same line as a question at the cap (C-D1) — never the Free plan's `allowance_program`. */
         return say({ kind: 'holt', text: await creditsLine(r, false) });
       case 'offline':
+        /* Which way it failed (Sprint 1, P-G3): his end, a clock, or the connection — and "Not charged." when the
+           server gave the credit back. */
         return say({
           kind: 'error',
           text: "I couldn't reach my notes just then.",
-          sub: 'The connection dropped before I heard back.',
+          sub: withNotCharged(
+            r.timedOut
+              ? 'It took too long, so I stopped waiting.'
+              : r.unavailable
+                ? 'Something broke on my end, not your connection.'
+                : 'The connection dropped before I heard back.',
+            r.refunded,
+          ),
           action: 'Tap an answer, or send it again in a moment.',
         });
       case 'unclear':
@@ -2944,7 +2961,7 @@ export function CoachChatSheet({
     /* A question streams from coach-ask in Holt's words; everything else is parsed for the engine. */
     if (looksLikeQuestion(text)) return askAloud(text, history, q);
     setBusy('thinking');
-    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history, await loadNotes());
+    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history, await loadNotes(), closeSignal());
     setBusy(null);
     /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone. */
     if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });

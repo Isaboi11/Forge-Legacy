@@ -22,7 +22,9 @@ import { exerciseNameFor } from '@/domain/training/exercise-names';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { putWrittenDraft } from '@/lib/written-workout-intent';
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
-import { readWorkoutCard } from '@/data/workout-card-read-live';
+import { cardReadFallsBack, readWorkoutCard } from '@/data/workout-card-read-live';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 import { whenToUseAi } from '@/domain/workout/workout-ai-gate';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
 
@@ -83,6 +85,8 @@ export default function WorkoutWriteScreen() {
   /* The poster's own words from before AI tidied them — Undo puts them back. Null = AI has not touched the box. */
   const [beforeAi, setBeforeAi] = useState<string | null>(null);
   const reading = useRef(false);
+  /* Leaving mid-read stops the photo read and the AI layout (Sprint 1, P-G3). */
+  const closeSignal = useCloseSignal();
   /* "Edit" beside the preview (PO 2026-09-30: "it doesn't look like I can edit") takes you back up to the box. */
   const scrollRef = useRef<ScrollView>(null);
   const boxRef = useRef<TextInput>(null);
@@ -109,7 +113,7 @@ export default function WorkoutWriteScreen() {
     setBusy('Tidying it up with AI…');
     setError(null);
     try {
-      const r = await tidyWrittenWorkout(card, resolveKey);
+      const r = await tidyWrittenWorkout(card, resolveKey, closeSignal());
       if (r.kind === 'ok') {
         if (quiet) {
           /* Over a reading with nothing wrong in it, AI's layout is taken only if it too reads with nothing wrong. */
@@ -122,10 +126,13 @@ export default function WorkoutWriteScreen() {
         return;
       }
       if (quiet) return;
-      setError(
-        r.kind === 'no_consent'
-          ? AI_DECLINED_LINE
-          : r.kind === 'unfaithful'
+      if (r.kind === 'no_consent') {
+        setError(AI_DECLINED_LINE);
+        return;
+      }
+      /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+      setError(withNotCharged(
+        r.kind === 'unfaithful'
             ? 'AI changed a number on the card, so your words are kept as they are. Check the list below and fix those lines by hand.'
             : r.kind === 'not_entitled'
               ? 'Fixing a workout with AI is part of Premium AI. Fix the lines below by hand instead.'
@@ -140,7 +147,8 @@ export default function WorkoutWriteScreen() {
                       : r.kind === 'unreadable'
                         ? 'AI couldn’t make sense of it either. Fix the lines below by hand.'
                         : 'Couldn’t reach AI just now. Try again in a moment, or fix the lines below by hand.',
-      );
+        r.refunded,
+      ));
     } finally {
       setBusy(null);
     }
@@ -165,24 +173,30 @@ export default function WorkoutWriteScreen() {
        * the function not deployed yet (a 404 on the phone; on the web the preflight fails and it reads as offline),
        * or down. A refusal — not a workout, no credits — is an answer, and is not asked twice.
        */
-      const card = await readWorkoutCard(picked[0]);
+      const card = await readWorkoutCard(picked[0], closeSignal());
       let r: Awaited<ReturnType<typeof readProgramPhoto>> | { kind: 'ok'; text: string };
-      if (card.kind === 'not_deployed' || card.kind === 'offline' || card.kind === 'unavailable') r = await readProgramPhoto(picked[0]);
+      /* Not after a timeout: a second read of the same photo would be just as slow (`cardReadFallsBack`, V-D5). */
+      if (card.kind === 'not_deployed' || cardReadFallsBack(card)) r = await readProgramPhoto(picked[0], closeSignal());
       else r = card;
       if (r.kind === 'no_consent') {
         setError(AI_DECLINED_LINE);
         return;
       }
       if (r.kind !== 'ok') {
-        setError(
+        setError(withNotCharged(
           r.kind === 'not_a_program'
             ? 'That doesn’t look like a workout. Try a photo of the card itself.'
             : r.kind === 'not_entitled'
               ? 'Reading photos is part of Premium AI. Type or paste the workout instead.'
               : r.kind === 'out_of_credits'
                 ? 'You’re out of Premium AI credits for this month. Type or paste the workout instead.'
-                : 'Couldn’t read that photo. Try a closer, straighter shot — or type it in.',
-        );
+                : r.kind === 'unavailable'
+                  ? 'Photo reading isn’t working right now. Try again in a bit — or type it in.'
+                  : r.kind === 'offline'
+                    ? 'Couldn’t reach us to read that photo. Check your connection and try again — or type it in.'
+                    : 'Couldn’t read that photo. Try a closer, straighter shot — or type it in.',
+          r.refunded,
+        ));
         return;
       }
       /* The transcription goes IN THE BOX — the poster reads it against the card and fixes anything before use. */

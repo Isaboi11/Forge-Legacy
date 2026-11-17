@@ -1,6 +1,7 @@
 import type { NoAiConsent } from '@/lib/consent';
+import type { Refundable } from '@/domain/ai/ai-call';
 import { readProgramPhoto } from '@/data/program-photo-live';
-import { readWorkoutCard } from '@/data/workout-card-read-live';
+import { cardReadFallsBack, readWorkoutCard } from '@/data/workout-card-read-live';
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
 import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import type { PhotoReadResult } from '@/domain/program/photo-read-result';
@@ -41,7 +42,8 @@ export type ImportPhotoRead =
     }
   | { kind: 'unparsed'; error: string }
   | NoAiConsent
-  | Exclude<PhotoReadResult, { kind: 'ok' }>;
+  /** `refunded`: the read that failed was given back (Sprint 1) — the screens add "Not charged." */
+  | Refundable<Exclude<PhotoReadResult, { kind: 'ok' }>>;
 
 /** Why AI's layout is not the one being shown, in the poster's terms. */
 function aiMissLine(kind: string): string {
@@ -50,15 +52,17 @@ function aiMissLine(kind: string): string {
     : 'The AI check didn’t run on this one. Check every number against your photo.';
 }
 
-export async function readImportPhoto(uri: string, resolveKey: (name: string) => string | undefined): Promise<ImportPhotoRead> {
+/** `signal`: the screen or sheet closed — every AI call below it stops (Sprint 1, P-G3). */
+export async function readImportPhoto(uri: string, resolveKey: (name: string) => string | undefined, signal?: AbortSignal): Promise<ImportPhotoRead> {
   /* ── 1. The words on the photo ── */
-  const card = await readWorkoutCard(uri);
+  const card = await readWorkoutCard(uri, signal);
   let text: string;
   let tsv: string | null = null;
   if (card.kind === 'ok') text = card.text;
-  else if (card.kind === 'not_deployed' || card.kind === 'offline' || card.kind === 'unavailable') {
-    /* The card reader has no answer (not deployed yet, or down): the table read, as every door used before. */
-    const r = await readProgramPhoto(uri);
+  else if (card.kind === 'not_deployed' || cardReadFallsBack(card)) {
+    /* The card reader has no answer (not deployed yet, or down): the table read, as every door used before. Not
+       after a timeout — a second read of the same photo would be just as slow (`cardReadFallsBack`, V-D5). */
+    const r = await readProgramPhoto(uri, signal);
     if (r.kind !== 'ok') return r;
     tsv = r.tsv;
     text = tsvToWrittenText(r.tsv);
@@ -77,7 +81,7 @@ export async function readImportPhoto(uri: string, resolveKey: (name: string) =>
   /* ── 3. One workout: AI lays it out, the code reads it ── */
   const checks: string[] = [];
   let words = text;
-  const tidy = await tidyWrittenWorkout(text, resolveKey);
+  const tidy = await tidyWrittenWorkout(text, resolveKey, signal);
   if (tidy.kind === 'ok') words = tidy.text;
   else if (tidy.kind === 'no_consent') return tidy;
   else checks.push(aiMissLine(tidy.kind));

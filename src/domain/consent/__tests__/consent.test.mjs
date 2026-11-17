@@ -356,7 +356,8 @@ test('every client call to an Anthropic-backed Edge Function waits on the AI con
   for (const f of files) {
     const src = readFileSync(f, 'utf8');
     for (const fn of aiFunctions) {
-      if (src.includes(`invoke('${fn}'`) || src.includes(`functions/v1/${fn}`)) callers.push([f, fn, src]);
+      /* `invokeAi('…'` is Sprint 1's one wrapper for every non-chat AI call (`lib/ai-invoke.ts`). */
+      if (src.includes(`invoke('${fn}'`) || src.includes(`invokeAi('${fn}'`) || src.includes(`functions/v1/${fn}`)) callers.push([f, fn, src]);
     }
   }
   assert.ok(callers.length >= 7, `only ${callers.length} callers found — the scan is broken`);

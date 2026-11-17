@@ -45,7 +45,7 @@ const CLIENT = read('../../data/program-photo-live.ts');
 test('the sheet imports the photo reader', () => {
   assert.match(SHEET, /import \{ readImportPhoto \} from '@\/data\/import-photo-read'/);
   assert.match(SHEET, /import \{ pickImageFromLibrary \} from '@\/lib\/useMediaPicker'/);
-  assert.match(read('../../data/import-photo-read.ts'), /const r = await readProgramPhoto\(uri\);/);
+  assert.match(read('../../data/import-photo-read.ts'), /const r = await readProgramPhoto\(uri, signal\);/);
 });
 
 test('the sheet actually calls it — an import alone renders no button', () => {
@@ -68,7 +68,7 @@ test('⚠ the read lands in the box AND the preview — the words stay where the
   // What must hold is that the words it was read from are shown, and that the preview is the checked read.
   assert.match(SHEET, /setPasteText\(r\.text\);/);
   assert.match(SHEET, /setChecks\(r\.checks\);/);
-  assert.match(read('../../data/import-photo-read.ts'), /const tidy = await tidyWrittenWorkout\(text, resolveKey\);/);
+  assert.match(read('../../data/import-photo-read.ts'), /const tidy = await tidyWrittenWorkout\(text, resolveKey, signal\);/);
   // AI's layout is only ever used through the client that ran `checkAiRewrite` first.
   assert.match(read('../../data/workout-tidy-live.ts'), /const problems = checkAiRewrite\(card, d\.text, resolveKey\);/);
 });
@@ -155,7 +155,7 @@ test('⚠ nothing client-side holds an API key or talks to Anthropic directly', 
     assert.ok(!source.includes('ANTHROPIC_API_KEY'), `${name} references the API key`);
     assert.ok(!source.includes('api.anthropic.com'), `${name} calls Anthropic directly`);
   }
-  assert.match(CLIENT, /supabase\.functions\.invoke\('program-photo-read'/);
+  assert.match(CLIENT, /invokeAi\('program-photo-read'/);
 });
 
 

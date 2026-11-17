@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { ranOutOfTime, refundedBy, serverSaysNoConsent } from '@/domain/ai/ai-call';
 import type { CoachConstraints } from '@/domain/coach/constraints';
 import type { Question } from '@/domain/coach/chat-core';
 import { interpret as interpretLocally } from '@/domain/coach/chat-core';
@@ -60,8 +62,11 @@ export type InterpretStep =
   | { kind: 'unclear' }
   /** The month's credits are gone. A commercial state, not a coaching one. */
   | { kind: 'out_of_credits'; remaining: number; allowance: number }
-  /** The app failed. Never conflate with `unclear`. */
-  | { kind: 'offline' };
+  /**
+   * The app failed. Never conflate with `unclear`. Sprint 1 says which way (P-G3): `unavailable` = the function
+   * answered and IT failed (not the connection); `timedOut` = a clock ran out; `refunded` = "Not charged."
+   */
+  | { kind: 'offline'; unavailable?: boolean; timedOut?: boolean; refunded?: boolean };
 
 /** What one message resolved to. */
 export type InterpretResult = (
@@ -88,6 +93,8 @@ type Known = Partial<Record<string, unknown>>;
  * Place a typed answer, cheaply first and then expensively.
  *
  * ⚠ NEVER THROWS. A coach that crashes mid-conversation is worse than one that says "say that again".
+ *
+ * ⏱ 60 s (contract §3), aborted when `signal` fires (the sheet closed). Failures are reported (P-G1).
  */
 export async function interpretTyped(
   text: string,
@@ -101,6 +108,7 @@ export async function interpretTyped(
    * chars. Sent in the user turn as "What you know about this athlete:" so answers use it.
    */
   notes: readonly string[] = [],
+  signal?: AbortSignal,
 ): Promise<InterpretResult | NoAiConsent> {
   const trimmed = text.trim();
   if (!trimmed) return { kind: 'unclear' };
@@ -121,22 +129,34 @@ export async function interpretTyped(
   // 2. The paid path.
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
+  const call = await invokeAi(
+    'coach-interpret',
+    {
+      text: trimmed,
+      questionId: question?.id ?? null,
+      ask: question?.ask ?? null,
+      chips: question?.chips.map((c) => c.label) ?? [],
+      mode,
+      known,
+      ...(history.length ? { history: history.slice(-6) } : {}),
+      ...(sentNotes.length ? { notes: sentNotes } : {}),
+    },
+    { signal },
+  );
+  if (serverSaysNoConsent(call)) return NO_AI_CONSENT;
+  /* Every way it failed is still `offline` to the chat (never `unclear`) — now saying which way, reported once. */
+  const failed = (outcome: string): InterpretResult => {
+    reportAiCall(call, outcome);
+    return {
+      kind: 'offline',
+      ...(call.status !== null && !call.timedOut ? { unavailable: true } : {}),
+      ...(ranOutOfTime(call) ? { timedOut: true } : {}),
+      ...(refundedBy(call) ? { refunded: true } : {}),
+    };
+  };
+  if (call.offline || call.cancelled || call.timedOut || call.status === null || call.status >= 300 || !call.body) return failed('offline');
+  const data = call.body;
   try {
-    const { data, error } = await supabase.functions.invoke('coach-interpret', {
-      body: {
-        text: trimmed,
-        questionId: question?.id ?? null,
-        ask: question?.ask ?? null,
-        chips: question?.chips.map((c) => c.label) ?? [],
-        mode,
-        known,
-        ...(history.length ? { history: history.slice(-6) } : {}),
-        ...(sentNotes.length ? { notes: sentNotes } : {}),
-      },
-    });
-
-    if (error || !data) return { kind: 'offline' };
-
     const remaining = typeof (data as { remaining?: unknown }).remaining === 'number' ? (data as { remaining: number }).remaining : null;
     // Narrowed again on this side, like every field: a stale or future function must not hand the chat junk.
     const remember = narrowRemember((data as { remember?: unknown }).remember, sentNotes);
@@ -175,10 +195,10 @@ export async function interpretTyped(
         return withMemory({ kind: 'unclear' });
       default:
         // `error`, or a route this build does not know. Both are the app failing, not Holt deciding.
-        return { kind: 'offline' };
+        return failed(typeof route === 'string' ? `route_${route}` : 'bad_output');
     }
   } catch {
-    return { kind: 'offline' };
+    return failed('bad_output');
   }
 }
 

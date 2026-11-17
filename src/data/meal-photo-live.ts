@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabase';
 import { ensureConsent, NO_AI_CONSENT, type NoAiConsent } from '@/lib/consent';
+import { invokeAi, reportAiCall } from '@/lib/ai-invoke';
+import { refundedResult, serverSaysNoConsent, type Refundable } from '@/domain/ai/ai-call';
 import { readAsBase64 } from '@/data/program-photo-live';
 import { searchFoods } from '@/data/nutrition-live';
 import { sniffMediaType } from '@/domain/program/photo-read-result';
@@ -39,8 +40,11 @@ function fingerprint(base64: string): string {
   return `${base64.length}:${(h >>> 0).toString(36)}`;
 }
 
-/** Read one meal photo. ⚠ NEVER THROWS — it runs behind a button the athlete is waiting on. */
-export async function readMealPhoto(uri: string): Promise<MealPhotoResult | NoAiConsent> {
+/**
+ * Read one meal photo. ⚠ NEVER THROWS — it runs behind a button the athlete is waiting on.
+ * ⏱ 90 s (contract §3), aborted when `signal` fires. Failures are reported (P-G1); a refund rides on the result.
+ */
+export async function readMealPhoto(uri: string, signal?: AbortSignal): Promise<Refundable<MealPhotoResult> | NoAiConsent> {
   const file = await readAsBase64(uri);
   if (!file) return { kind: 'unsupported_format' };
 
@@ -53,30 +57,22 @@ export async function readMealPhoto(uri: string): Promise<MealPhotoResult | NoAi
 
   /* Consent before sharing (MHMDA / Nevada SB 370): nothing goes to the AI provider without a stored yes. */
   if (!(await ensureConsent('ai_sharing'))) return NO_AI_CONSENT;
-  try {
-    const { data, error } = await supabase.functions.invoke('meal-photo-read', {
-      body: { image: file.data, mediaType },
-    });
-
-    // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context` (see `program-photo-live.ts`).
-    let body: unknown = data;
-    if (error) {
-      const ctx = (error as { context?: unknown }).context;
-      if (!(ctx instanceof Response)) return { kind: 'offline' };
-      body = await ctx.json().catch(() => null);
-      if (!body) return { kind: 'unavailable' };
-    }
-    if (!body) return { kind: 'offline' };
-
-    const result = mealPhotoResultFrom(body);
-    if (result.kind === 'ok') {
-      if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
-      readByContent.set(key, result);
-    }
+  // ⚠ A non-2xx is NOT "offline" — its body is on the error's `context`, which `invokeAi` reads (see `program-photo-live.ts`).
+  const a = await invokeAi('meal-photo-read', { image: file.data, mediaType }, { signal });
+  if (serverSaysNoConsent(a)) return NO_AI_CONSENT;
+  const result = ((): MealPhotoResult => {
+    if (a.offline || a.cancelled) return { kind: 'offline' };
+    if (a.timedOut) return { kind: 'unavailable' };
+    if (!a.body) return a.status === 200 ? { kind: 'offline' } : { kind: 'unavailable' };
+    return mealPhotoResultFrom(a.body);
+  })();
+  if (result.kind === 'ok') {
+    if (readByContent.size >= MAX_REMEMBERED) readByContent.delete(readByContent.keys().next().value!);
+    readByContent.set(key, result);
     return result;
-  } catch {
-    return { kind: 'offline' };
   }
+  reportAiCall(a, result.kind);
+  return refundedResult(result, a);
 }
 
 /**

@@ -72,6 +72,8 @@ import { errorMessage, useQuery } from '@/lib/useQuery';
 import { useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 import { askKitchenLive, recentKitchenDishesLive, rememberKitchenDishesLive } from '@/data/coach-kitchen-live';
 import { dishCards, type DishCard } from '@/domain/nutrition/kitchen-cards';
 import { kitchenError, rotationLeanToday } from '@/domain/nutrition/kitchen-dishes';
@@ -112,6 +114,8 @@ function MealPlanScreen() {
   const router = useRouter();
   const barBottom = useBarBottom();
   const { showToast } = useToast();
+  /* Leaving mid-fill stops Holt's dish writes (Sprint 1, P-G3). */
+  const closeSignal = useCloseSignal();
   const scrollRef = useRef<ScrollView>(null);
   const dayY = useRef<number[]>([]);
   const stripH = useRef(0);
@@ -261,15 +265,17 @@ function MealPlanScreen() {
     const avoid = fillAvoid(prefs);
     const picks: { slot: PlanSlotName; card: DishCard }[] = [];
     let failure: string | null = null;
+    const signal = closeSignal();
     const results = await Promise.all(
       slots.map((slot, i) =>
-        askKitchenLive({ have: [], ask: fillAsk(slot, prefs), avoid, exclude, nudge: null, lean: rotationLeanToday(i), left: null, minor: false }),
+        askKitchenLive({ have: [], ask: fillAsk(slot, prefs), avoid, exclude, nudge: null, lean: rotationLeanToday(i), left: null, minor: false }, signal),
       ),
     );
     results.forEach((r, i) => {
       if (r.kind !== 'ok') {
         if (r.kind === 'no_consent') failure = AI_DECLINED_LINE;
-        else if (r.kind !== 'stop') failure = kitchenError(r);
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+        else if (r.kind !== 'stop') failure = withNotCharged(kitchenError(r), r.refunded);
         return;
       }
       void rememberKitchenDishesLive(r.dishes);

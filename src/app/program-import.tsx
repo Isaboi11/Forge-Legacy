@@ -74,6 +74,8 @@ import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { errorMessage } from '@/lib/useQuery';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
+import { withNotCharged } from '@/domain/ai/ai-call';
+import { useCloseSignal } from '@/lib/useCloseSignal';
 
 /** How many photos one import takes. Each is a paid read; six covers a six-day week, one photo a day. */
 const MAX_PHOTOS = 6;
@@ -164,6 +166,8 @@ function ProgramImport() {
   const [title, setTitle] = useState<string | null>(null);
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
   const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[]; checks: string[] }>());
+  /* Leaving mid-read stops the photo reads (Sprint 1, P-G3). */
+  const closeSignal = useCloseSignal();
 
   const back = () => {
     if (preview) {
@@ -269,7 +273,7 @@ function ProgramImport() {
        * still read as a table; one workout is laid out by AI, checked number by number, and read by the written
        * reader, ramps and percentages and rest included. See `readImportPhoto`.
        */
-      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key);
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key, closeSignal());
       if (r.kind === 'no_consent') {
         setBusy(null);
         setError(AI_DECLINED_LINE);
@@ -282,7 +286,8 @@ function ProgramImport() {
       }
       if (r.kind !== 'ok') {
         setBusy(null);
-        setError(photoError(r, i + 1, photos.length));
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+        setError(withNotCharged(photoError(r, i + 1, photos.length), r.refunded));
         return;
       }
       reads.current.set(uri, { weeks: r.weeks, skipped: r.skipped, checks: r.checks });
