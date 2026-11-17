@@ -276,7 +276,8 @@ function Loaded({ h }: { h: AiHealth }) {
 
       <Text style={styles.disclaimer}>
         A call <Text style={styles.disclaimerStrong}>failed</Text> when its outcome was anything but ok — a refusal, a timeout, an
-        unreadable answer — except the athlete’s own cancel. Calls from before the new meter have no outcome; for those, the old
+        unreadable answer — except the athlete’s own cancel, or a server guard stopping it on purpose (refunded, and counted as a
+        refund). Calls from before the new meter have no outcome; for those, the old
         “uncharged” flag is the record, and they were charged anyway (nothing could be refunded then). Real cost is the per-model
         rate map, not the old flat rate. Aggregates only: nobody is named on this page.
       </Text>

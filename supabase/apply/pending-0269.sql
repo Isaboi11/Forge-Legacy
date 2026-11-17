@@ -77,7 +77,7 @@ declare
 begin
   select string_agg(want.t || '.' || want.c, ', ') into v_missing
     from (values ('coach_ai_spend', 'fn'), ('coach_ai_spend', 'outcome'), ('coach_ai_spend', 'latency_ms'),
-                 ('coach_ai_spend', 'reservation_id'), ('coach_ai_reservation', 'created_at'),
+                 ('coach_ai_spend', 'reservation_id'), ('coach_ai_reservation', 'reserved_at'),
                  ('coach_ai_reservation', 'settled_at')) as want(t, c)
    where not exists (select 1 from information_schema.columns ic
                       where ic.table_schema = 'public' and ic.table_name = want.t and ic.column_name = want.c);
@@ -190,7 +190,7 @@ immutable
 set search_path = public, pg_temp
 as $$
   select case
-           when p_outcome is not null then p_outcome not in ('ok', 'cancelled')
+           when p_outcome is not null then p_outcome not in ('ok', 'cancelled', 'guarded')
            else coalesce(p_uncharged, false)
          end;
 $$;
@@ -290,10 +290,10 @@ begin
   end if;
 
   -- ④ A reservation nobody settled — the function was killed between the model and the meter.
-  select count(*), min(r.created_at) into v_unsettled, v_oldest
+  select count(*), min(r.reserved_at) into v_unsettled, v_oldest
     from public.coach_ai_reservation r
    where r.settled_at is null
-     and r.created_at < now() - make_interval(mins => v_cfg.unsettled_minutes);
+     and r.reserved_at < now() - make_interval(mins => v_cfg.unsettled_minutes);
   if v_unsettled > 0 then
     v_out := v_out || jsonb_build_array(jsonb_build_object(
       'kind', 'unsettled',
@@ -582,10 +582,10 @@ begin
       'recent',     coalesce((select jsonb_agg(jsonb_build_object('ran_at', r.ran_at, 'ok', r.ok, 'failed', r.failed)
                                                order by r.ran_at desc)
                                 from (select * from public.ai_canary_runs order by ran_at desc limit 14) r), '[]'::jsonb)),
-    'unsettled', (select jsonb_build_object('count', count(*), 'oldest_at', min(r.created_at))
+    'unsettled', (select jsonb_build_object('count', count(*), 'oldest_at', min(r.reserved_at))
                     from public.coach_ai_reservation r
                    where r.settled_at is null
-                     and r.created_at < now() - make_interval(mins => coalesce(v_cfg.unsettled_minutes, 30))),
+                     and r.reserved_at < now() - make_interval(mins => coalesce(v_cfg.unsettled_minutes, 30))),
     'alerts', jsonb_build_object(
       'tripped',            public.ai_health_alert_state(),
       'last_sent',          coalesce(v_cfg.last_alert_at, '{}'::jsonb),
@@ -752,6 +752,6 @@ select
   (select count(*) from public.app_admins a
     where exists (select 1 from public.push_tokens t where t.user_id = a.user_id and t.disabled_at is null)) as admins_with_device,
   (select count(*) from public.coach_ai_reservation r
-    where r.settled_at is null and r.created_at < now() - interval '30 minutes')                         as unsettled_now,
+    where r.settled_at is null and r.reserved_at < now() - interval '30 minutes')                        as unsettled_now,
   public.ai_health_alert_state()                                                                         as alerts_now,
   (select count(*) from public.coach_ai_spend where fn is not null)                                      as spend_rows_with_fn;

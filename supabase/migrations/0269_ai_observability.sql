@@ -3,7 +3,7 @@
 --        (admin_ai_health), a daily canary per model, and an hourly alert pushed to the operators.
 --
 -- ⚠ APPLY AFTER 0268. It reads 0268's `coach_ai_spend.fn / outcome / latency_ms / reservation_id` and
---   `coach_ai_reservation(created_at, settled_at)`. The first statement below refuses to run without them.
+--   `coach_ai_reservation(reserved_at, settled_at)`. The first statement below refuses to run without them.
 --
 -- AI Road to 10, Sprint 1 "the foundation" — PL-4 (observability) and the platform gate "② every AI failure
 -- captured, PO alerted within 15 min" (Docs/AI-Road-To-10-Plan-v1.0.md §0, §2). Audit rows G1 (AI failures
@@ -39,8 +39,10 @@
 --
 -- ══ WHAT COUNTS AS WHAT (the AI health page and the alerts read these the same way) ══
 --
---   failed     outcome is set and is neither 'ok' nor 'cancelled' (a user's own cancel is not a fault, contract
---              §4). Rows from before 0268 — and rows the old record_usage path still writes — have no outcome;
+--   failed     outcome is set and is none of 'ok', 'cancelled', 'guarded' — a user's own cancel is not a fault
+--              (contract §4), and 'guarded' is 0268's server guard stopping a call on purpose after the reserve
+--              (coach-ask: a server-derived minor), refunded. Both still count as calls (and guarded as a
+--              refund). Rows from before 0268 — and rows the old record_usage path still writes — have no outcome;
 --              for those the function's own `uncharged` flag is the record: the old functions set it exactly on
 --              an upstream failure (audit D2).
 --   refunded   uncharged AND written by settle (reservation_id set). Before 0268 nothing could be refunded: the
@@ -61,7 +63,7 @@ declare
 begin
   select string_agg(want.t || '.' || want.c, ', ') into v_missing
     from (values ('coach_ai_spend', 'fn'), ('coach_ai_spend', 'outcome'), ('coach_ai_spend', 'latency_ms'),
-                 ('coach_ai_spend', 'reservation_id'), ('coach_ai_reservation', 'created_at'),
+                 ('coach_ai_spend', 'reservation_id'), ('coach_ai_reservation', 'reserved_at'),
                  ('coach_ai_reservation', 'settled_at')) as want(t, c)
    where not exists (select 1 from information_schema.columns ic
                       where ic.table_schema = 'public' and ic.table_name = want.t and ic.column_name = want.c);
@@ -174,7 +176,7 @@ immutable
 set search_path = public, pg_temp
 as $$
   select case
-           when p_outcome is not null then p_outcome not in ('ok', 'cancelled')
+           when p_outcome is not null then p_outcome not in ('ok', 'cancelled', 'guarded')
            else coalesce(p_uncharged, false)
          end;
 $$;
@@ -274,10 +276,10 @@ begin
   end if;
 
   -- ④ A reservation nobody settled — the function was killed between the model and the meter.
-  select count(*), min(r.created_at) into v_unsettled, v_oldest
+  select count(*), min(r.reserved_at) into v_unsettled, v_oldest
     from public.coach_ai_reservation r
    where r.settled_at is null
-     and r.created_at < now() - make_interval(mins => v_cfg.unsettled_minutes);
+     and r.reserved_at < now() - make_interval(mins => v_cfg.unsettled_minutes);
   if v_unsettled > 0 then
     v_out := v_out || jsonb_build_array(jsonb_build_object(
       'kind', 'unsettled',
@@ -566,10 +568,10 @@ begin
       'recent',     coalesce((select jsonb_agg(jsonb_build_object('ran_at', r.ran_at, 'ok', r.ok, 'failed', r.failed)
                                                order by r.ran_at desc)
                                 from (select * from public.ai_canary_runs order by ran_at desc limit 14) r), '[]'::jsonb)),
-    'unsettled', (select jsonb_build_object('count', count(*), 'oldest_at', min(r.created_at))
+    'unsettled', (select jsonb_build_object('count', count(*), 'oldest_at', min(r.reserved_at))
                     from public.coach_ai_reservation r
                    where r.settled_at is null
-                     and r.created_at < now() - make_interval(mins => coalesce(v_cfg.unsettled_minutes, 30))),
+                     and r.reserved_at < now() - make_interval(mins => coalesce(v_cfg.unsettled_minutes, 30))),
     'alerts', jsonb_build_object(
       'tripped',            public.ai_health_alert_state(),
       'last_sent',          coalesce(v_cfg.last_alert_at, '{}'::jsonb),
