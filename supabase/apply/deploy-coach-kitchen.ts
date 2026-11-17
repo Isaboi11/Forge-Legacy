@@ -545,14 +545,14 @@ export const CLINICAL_TERMS = /\b(valgus|varus|kyphos\w*|kyphotic|lordos\w*|lord
 const SCAN_DRUG = /(ibuprofen|advil|motrin|nurofen|aleve|naproxen|tylenol|acetaminophen|paracetamol|panadol|aspirin|excedrin|nsaids?|anti[-\s]?inflammatories|anti[-\s]?inflammatory\s+(pills?|tablets?|meds?|medications?|drugs?)|pain\s?killers?|pain\s+(meds?|medications?|relievers?|pills?)|codeine|tramadol|oxycodone|hydrocodone|opioids?|morphine|gabapentin|muscle\s+relaxants?|cyclobenzaprine|flexeril|prednisone|cortisone|corticosteroids?|steroids?|anabolics?|testosterone|trt|sarms?|ostarine|rad[-\s]?140|ligandrol|cardarine|mk[-\s]?677|trenbolone|tren|anavar|oxandrolone|dianabol|winstrol|deca|hgh|growth\s+hormone|bpc[-\s]?157|tb[-\s]?500|peptide\s+(therapy|injections?|cycles?)|clenbuterol|clen|dnp|ephedrine|ephedra|yohimbine|adderall|ritalin|modafinil|kratom|benadryl|diphenhydramine|zzzquil|nyquil|unisom|antihistamines?|antibiotics?|insulin|metformin|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide|phentermine|laxatives?|diuretics?|water\s+pills?|sleeping\s+pills?|sleep\s+aids?|melatonin|inhalers?|epi-?pens?)/;
 const SCAN_SUPPLEMENT = /(creatine|caffeine|pre[-\s]?workouts?|beta[-\s]?alanine|citrulline|arginine|bcaas?|eaas?|glutamine|hmb|ashwagandha|magnesium|zinc|zma|iron\s+(supplements?|pills?|tablets?)|vitamins?(\s+[a-k]\d{0,2})?|multivitamins?|fish\s+oil|omega[-\s]?3s?|glucosamine|chondroitin|curcumin|tongkat(\s+ali)?|fadogia|shilajit|sodium\s+bicarbonate|carnitine|cla|green\s+tea\s+extract|fat[-\s]?burners?|electrolyte\s+(tablets?|pills?|capsules?)|supplements?|stims?|stimulants?)/;
 const SCAN_SUBSTANCE = `(?:${scanSrc(SCAN_DRUG)}|${scanSrc(SCAN_SUPPLEMENT)})`;
-const SCAN_NUMBER = String.raw `\d+(?:[.,]\d+)?(?:\s*(?:-|–|to)\s*\d+(?:[.,]\d+)?)?`;
+const SCAN_NUMBER = String.raw `\d+(?:[.,]\d+)?(?:\s*(?:-|${'\u2013'}|to)\s*\d+(?:[.,]\d+)?)?`;
 const SCAN_COUNT = String.raw `(?:\d+|a|an|one|two|three|four|five|six|half\s+an?|a\s+couple(?:\s+of)?|a\s+few|another|some)`;
 const SCAN_MEASURE = String.raw `(?:g|grams?|scoops?|servings?|tsp|teaspoons?|tbsp|tablespoons?|ml|milliliters?|millilitres?|cc|units?|doses?)`;
 const SCAN_DOSE: readonly RegExp[] = [
-    new RegExp(String.raw `\b${SCAN_NUMBER}\s*(?:mg|mcg|µg|ug|milligrams?|micrograms?|iu)\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_NUMBER}\s*(?:mg|mcg|${'\u00b5'}g|ug|milligrams?|micrograms?|iu)\b`, 'i'),
     new RegExp(String.raw `\b${SCAN_COUNT}\s+(?:[\w-]+\s+)?(?:pills?|tablets?|capsules?|caplets?|softgels?|gel\s?caps?|lozenges?|puffs?|injections?|suppositor\w*)\b`, 'i'),
     new RegExp(String.raw `\b${SCAN_NUMBER}\s*${SCAN_MEASURE}\s+(?:of\s+)?(?:(?:your|the|pure|plain|a)\s+)?(?:[\w-]+\s+)?${SCAN_SUBSTANCE}\b`, 'i'),
-    new RegExp(String.raw `\b${SCAN_SUBSTANCE}(?:\s*[:,(—–-]\s*|\s+(?:(?:at|is|of|around|about|roughly|dose|dosage|dosing|usually)\s+)*)${SCAN_NUMBER}\s*${SCAN_MEASURE}\b`, 'i'),
+    new RegExp(String.raw `\b${SCAN_SUBSTANCE}(?:\s*[:,(${'\u2014'}${'\u2013'}-]\s*|\s+(?:(?:at|is|of|around|about|roughly|dose|dosage|dosing|usually)\s+)*)${SCAN_NUMBER}\s*${SCAN_MEASURE}\b`, 'i'),
     new RegExp(String.raw `\b(?:a|one|two|three|half\s+a|a\s+couple\s+of)\s+(?:heaping\s+|level\s+|full\s+)?scoops?\s+of\s+${SCAN_SUBSTANCE}\b`, 'i'),
     new RegExp(String.raw `\b${SCAN_COUNT}\s+${scanSrc(SCAN_DRUG)}\b`, 'i'),
     new RegExp(String.raw `\b(?:take|taking|try|trying|pop|popping|use|using|grab|start(?:ing)?\s+(?:on|taking))\s+(?:an?\s+|some\s+|your\s+|the\s+)?${scanSrc(SCAN_DRUG)}\b`, 'i'),
@@ -585,12 +585,12 @@ const SCAN_SYMPTOM = new RegExp(String.raw `\b(?:pain(?:s|ful|fully)?|hurt\w*(?!
 const SCAN_POINTS_BACK = /^(that'?s|that\s+is|it'?s|it\s+is|this\s+is|totally|completely|perfectly|very|pretty|quite|nothing|don'?t\s+worry|no\s+worries|normal|common|happens|yep|yeah|yes|sure|fine|all\s+normal)\b/i;
 function scanSentences(text: string): string[] {
     return text
-        .split(/(?<=[.!?…])\s+|\n+/)
+        .split(/(?<=[.!?\u2026])\s+|\n+/)
         .map((s) => s.trim())
         .filter(Boolean);
 }
 const scanWords = (s: string): number => s.split(/\s+/).filter(Boolean).length;
-const scanNormal = (text: string): string => text.replace(/[‘’ʼ`´]/g, "'").replace(/[“”]/g, '"');
+const scanNormal = (text: string): string => text.replace(/[\u2018\u2019\u02bc`\u00b4]/g, "'").replace(/[\u201c\u201d]/g, '"');
 const scanIdiomsOut = (text: string): string => text
     .replace(/\b(?:won'?t|wouldn'?t|doesn'?t|didn'?t|can'?t|couldn'?t|never|not)\s+hurt\b/gi, ' ')
     .replace(/\b(?:(?:band|pvc|stick|dowel)[-\s]+)?shoulder[-\s]+dislocates?\b/gi, 'shoulder pass-throughs');
