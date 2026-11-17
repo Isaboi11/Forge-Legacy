@@ -56,6 +56,9 @@ import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
 import { type PhotoReadResult } from '@/data/program-photo-live';
 import { readImportPhoto } from '@/data/import-photo-read';
+import { AiStatus } from '@/components/forge/AiStatus';
+import { ImportPhotoStrip } from '@/components/forge/ImportPhotoStrip';
+import { aiFailed, importProgress, type AiStatus as AiStatusModel } from '@/domain/ai/ai-status';
 import { resolveExerciseName, resolveImportedName } from '@/domain/exercise-picker/data';
 import { moreThanOneWorkout, parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import { mergeParsedWeeks } from '@/domain/program/import-merge';
@@ -166,6 +169,8 @@ function ProgramImport() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  /* UX-1 / IM-4: the photo read's state in the one AI look — which photo, which step, or why it stopped. */
+  const [aiState, setAiState] = useState<AiStatusModel | null>(null);
   const [preview, setPreview] = useState<ParsedWeek[] | null>(seed?.weeks ?? null);
   const [scopeNote, setScopeNote] = useState<string | null>(seed?.note ?? null);
   /** Lines the parser did not take as training — the preview lists them (`ParseResult.skipped`). */
@@ -279,6 +284,7 @@ function ProgramImport() {
   };
   const readAllPhotos = async () => {
     setError(null);
+    setAiState(null);
     const parts: ParsedWeek[][] = [];
     const notRead: string[] = [];
     const toCheck: string[] = [];
@@ -293,27 +299,30 @@ function ProgramImport() {
         continue;
       }
       setBusy(photos.length > 1 ? `Reading photo ${i + 1} of ${photos.length}…` : 'Reading your photo…');
+      setAiState(importProgress(photos.length, i, 'card'));
       /*
        * THE CARD READER AND THE AI CHECK — the same as the squad screen (PO 2026-09-30: "shouldn't this be the same
        * card reader … that should be going through AI as well so we know it works"). A sheet of several days is
        * still read as a table; one workout is laid out by AI, checked number by number, and read by the written
        * reader, ramps and percentages and rest included. See `readImportPhoto`.
        */
-      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key, closeSignal());
+      const r = await readImportPhoto(uri, (n) => resolveExerciseName(n)?.key, closeSignal(), (phase) => setAiState(importProgress(photos.length, i, phase)));
+      const failedAt = (line: string, refunded?: boolean) => setAiState(aiFailed(line, refunded));
       if (r.kind === 'no_consent') {
         setBusy(null);
+        setAiState(null);
         setError(AI_DECLINED_LINE);
         return;
       }
       if (r.kind === 'unparsed') {
         setBusy(null);
-        setError(tag(i, r.error));
+        failedAt(tag(i, r.error));
         return;
       }
       if (r.kind !== 'ok') {
         setBusy(null);
-        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
-        setError(withNotCharged(photoError(r, i + 1, photos.length), r.refunded));
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2) — the kit's own sub-line. */
+        failedAt(withNotCharged(photoError(r, i + 1, photos.length), r.refunded), r.refunded);
         return;
       }
       reads.current.set(uri, { weeks: r.weeks, skipped: r.skipped, checks: r.checks });
@@ -322,6 +331,7 @@ function ProgramImport() {
       toCheck.push(...r.checks.map((c) => tag(i, c)));
     }
     setBusy(null);
+    setAiState(null);
     setPhotoRef(uuid());
     showPreview(mergeParsedWeeks(parts), notRead, toCheck);
   };
@@ -444,6 +454,8 @@ function ProgramImport() {
                   </View>
                 </View>
               ) : null}
+              {/* IM-4: the photo beside what was read — tap one to compare it against the rows below. */}
+              {mode === 'photo' && photos.length ? <ImportPhotoStrip photos={photos} /> : null}
               <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={title} />
               {/* Only a photo read is the model's work — a paste is the app's own parser and carries no vote. */}
               {mode === 'photo' && photoRef ? <AiFeedback feature="import" aiRef={photoRef} style={styles.feedback} /> : null}
@@ -581,7 +593,11 @@ function ProgramImport() {
                   ) : null}
                 </>
               )}
-              {busy ? <Text style={styles.busy}>{busy}</Text> : null}
+              {aiState ? (
+                <AiStatus status={aiState} onRetry={() => void previewPhotos()} style={styles.aiStatus} />
+              ) : busy ? (
+                <Text style={styles.busy}>{busy}</Text>
+              ) : null}
               {error ? <Text style={styles.error}>{error}</Text> : null}
             </>
           )}
@@ -845,6 +861,7 @@ const styles = StyleSheet.create({
   },
   addMoreText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   busy: { fontSize: 13, color: flColor.bronze300, marginTop: 14, textAlign: 'center' },
+  aiStatus: { marginTop: 14 },
 
   footer: {
     paddingHorizontal: 20,

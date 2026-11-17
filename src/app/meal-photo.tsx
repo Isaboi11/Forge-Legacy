@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
@@ -33,6 +33,8 @@ import { useMediaPicker } from '@/lib/useMediaPicker';
 import { ensureConsent } from '@/lib/consent';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { withNotCharged } from '@/domain/ai/ai-call';
+import { AiStatus } from '@/components/forge/AiStatus';
+import { aiFailed, mealPhotoProgress } from '@/domain/ai/ai-status';
 import { useCloseSignal } from '@/lib/useCloseSignal';
 import { SCREEN_BOTTOM_GAP, useBarBottom } from '@/lib/screen-insets';
 import { finishFoodLog } from '@/lib/food-return';
@@ -209,16 +211,12 @@ export default function MealPhotoScreen() {
           </View>
         ) : null}
 
-        {stage.step === 'reading' || stage.step === 'matching' ? (
-          <View style={styles.working}>
-            <ActivityIndicator color={flColor.bronze400} />
-            <Text style={styles.workingText}>{stage.step === 'reading' ? 'Looking at your meal…' : 'Finding the foods…'}</Text>
-          </View>
-        ) : null}
+        {/* UX-1: the one AI look — the two steps as they happen, and a failure with "Not charged." on its own line. */}
+        {stage.step === 'reading' || stage.step === 'matching' ? <AiStatus status={mealPhotoProgress(stage.step)} style={styles.aiStatus} /> : null}
 
         {stage.step === 'problem' ? (
           <View style={styles.intro}>
-            <Text style={styles.problem}>{stage.text}</Text>
+            <AiStatus status={aiFailed(stage.text, false, false)} />
           </View>
         ) : null}
 
@@ -534,8 +532,7 @@ const styles = StyleSheet.create({
   introFine: { fontSize: 12.5, color: flColor.gray600 },
   problem: { fontSize: 14, lineHeight: 21, color: flColor.cream100, paddingTop: 8 },
 
-  working: { alignItems: 'center', gap: 14, paddingVertical: 48 },
-  workingText: { fontSize: 13.5, color: flColor.gray400 },
+  aiStatus: { marginVertical: 32 },
 
   totals: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingBottom: 6 },
   totalKcal: { fontFamily: flFont.display, fontSize: 40, color: flColor.cream100 },

@@ -442,6 +442,15 @@ export function ImportSpreadsheetSheet({ open, onClose, scope, cta, onConfirm }:
  * same confirmation the sheet does: one preview, one set of corrections, two hosts. It owns no state —
  * the host holds `weeks` and gets every correction back through `onChange`.
  */
+/**
+ * IM-4: reps the reader guessed, or could not read at all (a counted lift that came back with 0 reps — "4 × 0") —
+ * never a to-failure set or a timed one, which say what they are.
+ */
+export function repsUnsure(it: { reps: number; repsAssumed?: boolean; toFailure?: boolean; durationSec?: number | null }): boolean {
+  if (it.toFailure || it.durationSec != null) return false;
+  return !!it.repsAssumed || it.reps === 0;
+}
+
 export function ImportPreview({
   weeks: preview,
   onChange,
@@ -489,9 +498,10 @@ export function ImportPreview({
 
   /* WHICH MARKS THIS PREVIEW ACTUALLY SHOWS (QA 09-26 holtai-23): the note explains → and ≈ only when a row
      carries one, and promises grey text only when some row has it — never a legend for marks that aren't there. */
-  const marks = { matched: false, guessed: false, source: false, failure: false };
+  const marks = { matched: false, guessed: false, source: false, failure: false, unsure: false };
   for (const w of preview) for (const d of w.days) for (const it of d.items) {
     if (it.note && it.note !== it.name) marks.source = true;
+    if (it.kind !== 'cardio' && (it.setsAssumed || repsUnsure(it))) marks.unsure = true;
     if (it.toFailure && it.durationSec == null) marks.failure = true;
     if (it.kind === 'cardio') continue;
     const hit = resolveName(it.name);
@@ -648,6 +658,7 @@ export function ImportPreview({
             Tap Edit to change anything as text — a rep, a percentage, a rest. Or tap − / + to fix sets × reps, edit a name, or remove a row with ✕.
             {marks.matched ? ' → shows the library exercise a name became.' : ''}
             {marks.guessed ? ' ≈ means the name didn’t say which kind, so we picked the usual one — change it in the builder if it’s wrong.' : ''}
+            {marks.unsure ? ' A number in a dashed box was guessed or couldn’t be read — check it against your photo.' : ''}
             {marks.failure ? ' F is a set taken to failure.' : ''}
             {marks.source
               ? ' Grey text is the sentence we read it from — it is kept as a coaching note, so anything we couldn’t turn into a number still reaches you.'
@@ -815,7 +826,12 @@ export function ImportPreview({
                         ) : (
                         <View style={styles.impSteppers}>
                           <ImpStep label={`Fewer sets of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'sets', -1)} />
-                          <Text style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}>{it.sets}</Text>
+                          <Text
+                            style={[styles.impNum, it.setsAssumed ? styles.impNumAssumed : null]}
+                            accessibilityLabel={it.setsAssumed ? `${it.sets} sets, guessed — check it` : undefined}
+                          >
+                            {it.sets}
+                          </Text>
                           <ImpStep label={`More sets of ${it.name}`} glyph="+" onPress={() => bumpPreview(wi, di, ii, 'sets', 1)} />
                           <Text style={styles.impTimes}>×</Text>
                           {/* A TIMED set (PO 2026-09-27: "my picture is in seconds and not reps") — the clock
@@ -831,8 +847,8 @@ export function ImportPreview({
                               <ImpStep label={`Fewer reps of ${it.name}`} glyph="−" onPress={() => bumpPreview(wi, di, ii, 'reps', -1)} />
                               {/* TO FAILURE says so (QA programs-08) — not an assumed 10. − / + turns it into a count. */}
                               <Text
-                                style={[styles.impNum, styles.impNumWide, it.repsAssumed && !it.toFailure ? styles.impNumAssumed : null]}
-                                accessibilityLabel={it.toFailure ? 'to failure' : undefined}
+                                style={[styles.impNum, styles.impNumWide, repsUnsure(it) ? styles.impNumAssumed : null]}
+                                accessibilityLabel={it.toFailure ? 'to failure' : repsUnsure(it) ? `${it.reps} reps, guessed — check it` : undefined}
                               >
                                 {it.toFailure ? 'F' : it.reps}
                               </Text>
@@ -1016,7 +1032,8 @@ const styles = StyleSheet.create({
   impNum: { fontSize: 12, color: flColor.cream100, width: 16, textAlign: 'center', fontVariant: ['tabular-nums'] },
   impNumWide: { width: 22 },
   /* An assumed number is dimmer — the sheet did not say it, and the athlete should see the difference. */
-  impNumAssumed: { color: flColor.gray600 },
+  /* IM-4: a guessed or unread number is BOXED, not just greyed — it is the thing to check (both themes: tokens only). */
+  impNumAssumed: { color: flColor.gray600, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.gray600, borderRadius: 4 },
   impTimes: { fontSize: 11, color: flColor.gray600, marginHorizontal: 1 },
 
   impAddWeek: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, paddingVertical: 11, borderRadius: flRadius.md, borderWidth: 1, borderStyle: 'dashed', borderColor: flColor.charcoal500 },
