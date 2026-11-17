@@ -30,6 +30,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { StopCalls } from '@/components/forge/StopCalls';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { HoltMark } from '@/components/forge/HoltMark';
+import { HoltWords } from '@/components/forge/HoltWords';
 import { EngravedIcon, engravedTint, type EngravedName } from '@/components/forge/primitives/icons/EngravedIcon';
 import { usePremiumGate } from '@/hooks/usePremiumGate';
 import { AI_DECLINED_HOLT } from '@/domain/consent/consent';
@@ -4045,7 +4046,8 @@ function HoltTurn({
       </View>
       <View style={styles.holtBody}>
         <Text style={styles.holtEyebrow}>HOLT</Text>
-        <Text style={[styles.holtText, !live && styles.holtTextPast]}>{text}</Text>
+        {/* Selectable, and his links open (AI audit C-D3) — `HoltWords`. */}
+        <HoltWords text={text} style={[styles.holtText, !live && styles.holtTextPast]} />
         {attached.length ? (
           <View style={styles.holtAttached}>
             {attached.map((t, i) => (
@@ -4754,7 +4756,7 @@ function splitCardLabel(label: string): [string, string | null] {
  * sentence out one letter at a time. The finished line is announced once, when it is finished.
  */
 function HoltLine({ text }: { text: string; live?: boolean }) {
-  return <Text style={styles.holtText}>{text}</Text>;
+  return <HoltWords text={text} style={styles.holtText} />;
 }
 
 /**
