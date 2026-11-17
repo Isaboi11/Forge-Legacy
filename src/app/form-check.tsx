@@ -80,6 +80,7 @@ import { ensureConsent } from '@/lib/consent';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { withNotCharged } from '@/domain/ai/ai-call';
 import { useCloseSignal } from '@/lib/useCloseSignal';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 
 /**
  * FORM CHECK — built to `design_reference/Forge Modal Library Design (8)/Coach Holt Form Check.dc.html`
@@ -620,7 +621,7 @@ function Shell({ children, onClose, title = 'Form Check' }: { children: React.Re
   return (
     <View style={s.root}>
       <ScreenBackground atmospheric overlay={null} />
-      <AppBar title={title} onClose={onClose} />
+      <AppBar title={title} onClose={onClose} actions={<AiCreditsChip />} />
       {children}
     </View>
   );

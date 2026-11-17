@@ -28,6 +28,10 @@ import { useCloseSignal } from '@/lib/useCloseSignal';
 import { whenToUseAi } from '@/domain/workout/workout-ai-gate';
 import { usePremiumAi } from '@/lib/entitlement';
 import { SCREEN_BOTTOM_GAP } from '@/lib/screen-insets';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
+import { AiFeedback } from '@/components/forge/AiFeedback';
+import type { AiFeedbackFeature } from '@/domain/ai/ai-feedback-core';
+import { uuid } from '@/lib/app-session';
 
 /**
  * Write a workout for the squad (PO 2026-09-27, Squatober): "the insta page … posts the night before. I want to
@@ -91,6 +95,12 @@ export default function WorkoutWriteScreen() {
   const [error, setError] = useState<string | null>(null);
   /* The poster's own words from before AI tidied them — Undo puts them back. Null = AI has not touched the box. */
   const [beforeAi, setBeforeAi] = useState<string | null>(null);
+  /*
+   * "Was this helpful?" under what AI put in the box (UX-4, 0269 `ai_feedback`): the photo's read (`import`, the card
+   * read + its tidy pass — one output) or a typed "Fix it with AI" (`workout_tidy`, 0272). The ref is made ONCE, when
+   * the answer lands; a new photo, a new fix or Clear takes the control away.
+   */
+  const [aiVote, setAiVote] = useState<{ feature: AiFeedbackFeature; ref: string } | null>(null);
   const reading = useRef(false);
   /* Leaving mid-read stops the photo read and the AI layout (Sprint 1, P-G3). */
   const closeSignal = useCloseSignal();
@@ -119,6 +129,7 @@ export default function WorkoutWriteScreen() {
   const tidy = async (card: string, quiet = false) => {
     setBusy('Tidying it up with AI…');
     setError(null);
+    setAiVote(null);
     try {
       const r = await tidyWrittenWorkout(card, resolveKey, closeSignal());
       if (r.kind === 'ok') {
@@ -130,6 +141,7 @@ export default function WorkoutWriteScreen() {
         setBeforeAi(card);
         setText(r.text);
         setName(null);
+        setAiVote({ feature: 'workout_tidy', ref: uuid() });
         return;
       }
       if (quiet) return;
@@ -172,6 +184,7 @@ export default function WorkoutWriteScreen() {
         return;
       }
       if (!picked.length) return;
+      setAiVote(null);
       setBusy('Reading your photo…');
       /*
        * THE WHOLE CARD, LINE BY LINE (`workout-card-read`, PO 2026-09-30: "yes I want the title") — its name, the
@@ -221,6 +234,9 @@ export default function WorkoutWriteScreen() {
       const call = whenToUseAi(words, w, writtenToTemplate(w, resolveKey));
       if (call.kind === 'ai') await tidy(words);
       else if (call.kind === 'rules') await tidy(words, true);
+      /* The photo's read and its tidy pass are ONE output, and it votes as the photo — set after the pass, which
+         marks its own result as a typed fix. */
+      setAiVote({ feature: 'import', ref: uuid() });
     } finally {
       setBusy(null);
       reading.current = false;
@@ -249,7 +265,7 @@ export default function WorkoutWriteScreen() {
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.4)' }} />
-      <AppBar title={editId ? 'Edit the workout' : 'Write a workout'} transparent onBack={() => router.back()} />
+      <AppBar title={editId ? 'Edit the workout' : 'Write a workout'} transparent onBack={() => router.back()} actions={<AiCreditsChip />} />
       <ScrollView ref={scrollRef} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets contentContainerStyle={[styles.content, { paddingBottom: SCREEN_BOTTOM_GAP + 80 }]} keyboardShouldPersistTaps="handled">
         {editId && editText === '' ? (
           /* Posted from a saved workout: something in it has no words here, so it is not reopened as words. */
@@ -271,7 +287,7 @@ export default function WorkoutWriteScreen() {
             </Pressable>
           ) : null}
           {text ? (
-            <Pressable onPress={() => { setText(''); setName(null); setBeforeAi(null); setError(null); }} accessibilityRole="button" hitSlop={6}>
+            <Pressable onPress={() => { setText(''); setName(null); setBeforeAi(null); setError(null); setAiVote(null); }} accessibilityRole="button" hitSlop={6}>
               <Text style={styles.clear}>Clear</Text>
             </Pressable>
           ) : null}
@@ -311,6 +327,7 @@ export default function WorkoutWriteScreen() {
         ) : aiCall.kind === 'too_long' && premiumAi ? (
           <Text style={styles.warn}>That’s too long for AI to fix in one go. Fix the lines below by hand, or post it as two workouts.</Text>
         ) : null}
+        {aiVote && !busy ? <AiFeedback feature={aiVote.feature} aiRef={aiVote.ref} /> : null}
 
         <TextInput
           ref={boxRef}

@@ -39,7 +39,11 @@ import { finishFoodLog } from '@/lib/food-return';
 import { errorMessage } from '@/lib/useQuery';
 import { forgeOr } from '@/constants/theme-scrim';
 import { AiFeedback } from '@/components/forge/AiFeedback';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 import { uuid } from '@/lib/app-session';
+import { useAuth } from '@/lib/auth';
+import { aiCreditsNow } from '@/data/ai-credits-live';
+import { aiFloorUsedLine } from '@/domain/ai/credits';
 
 /**
  * Log from a Photo — Nutrition Architecture §2 "Log a meal from a photo" (Premium AI, credits).
@@ -81,6 +85,7 @@ export default function MealPhotoScreen() {
   const { pick, mediaPickerSheet } = useMediaPicker();
   const premiumAi = usePremiumAi();
   const nutritionAccess = useNutritionAccess();
+  const { session } = useAuth();
   /* Leaving mid-read stops the read (Sprint 1, P-G3): nobody is left to check the list. */
   const closeSignal = useCloseSignal();
 
@@ -131,8 +136,10 @@ export default function MealPhotoScreen() {
         return;
       }
       if (r.kind !== 'ok') {
-        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
-        setStage({ step: 'problem', text: withNotCharged(mealPhotoError(r), r.refunded) });
+        /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). With a soft floor (0272), a
+           meal photo refused for credits means TODAY's are used, not the month's — said so, with tomorrow. */
+        const floor = r.kind === 'out_of_credits' ? aiFloorUsedLine(aiCreditsNow(session?.user.id ?? null)) : null;
+        setStage({ step: 'problem', text: floor ? withNotCharged(`${floor} You can still search for the food.`, r.refunded) : withNotCharged(mealPhotoError(r), r.refunded) });
         return;
       }
       setReadRef(uuid());
@@ -178,7 +185,7 @@ export default function MealPhotoScreen() {
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.22)' }} />
-      <AppBar title="Log from Photo" transparent onBack={() => router.back()} />
+      <AppBar title="Log from Photo" transparent onBack={() => router.back()} actions={<AiCreditsChip />} />
 
       <Pressable accessibilityRole="button" style={styles.mealLine} onPress={() => setMealPickerOpen(true)}>
         <Text style={styles.mealLineLabel}>Adding to</Text>

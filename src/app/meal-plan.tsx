@@ -81,6 +81,7 @@ import { allergenLine, dayHasEmptySlot, emptySlots, fillAsk, fillAvoid, formForP
 import { recipeFrom } from '@/domain/nutrition/user-recipes';
 import { NutritionPlannerGate } from '@/components/forge/NutritionPlannerGate';
 import { AiFeedback } from '@/components/forge/AiFeedback';
+import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 import { uuid } from '@/lib/app-session';
 
 const takeSwapRequestAsync = () => Promise.resolve(takeSwapRequest());
@@ -572,7 +573,7 @@ function MealPlanScreen() {
   return (
     <View style={styles.screen}>
       <ScreenBackground paperTexture="atmospheric" image={SCREEN_BG.slate} overlay={{ flat: 'rgba(5,5,5,0.46)' }} />
-      <AppBar title="" transparent onBack={() => router.back()} />
+      <AppBar title="" transparent onBack={() => router.back()} actions={<AiCreditsChip />} />
 
       <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets
         ref={scrollRef}
