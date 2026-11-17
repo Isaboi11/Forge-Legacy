@@ -159,7 +159,7 @@ Frame labels (`frameLabel`) gain the rep tag ("Frame 2 of 6 (3.1 s in, rep 1 bot
 
 ## 8. When pose can't help: fall back to today
 
-Three levels, decided in `pose-track.ts`, all at the **same price** (6 credits):
+Three levels, decided in `pose-track.ts`, all at the **same price** (6 credits; 3 since MA12, 2026-11-17):
 
 | Level | When | What happens |
 |---|---|---|
