@@ -189,3 +189,4 @@ Left at start: **$5.43** of $30. **PO 2026-11-18: cap raised to $37 (+$7) for th
 ## 5. Log
 - 2026-11-18 — `ai/s4b` + 2 lane worktrees off `36749b02`; contract written; stubs committed.
 - 2026-11-18 — PO: yes to the $7 cap raise ($30 → $37) for the 38 ask-answers lines. Step 2 is unblocked once step 1 is done (subset first, full re-records only if the subset holds).
+- 2026-11-18 — `ai/s4b-chats` merged (`8aa5b72b`): 0279 `holt_chats` (+ `preview` column, trigram index — pg_trgm 1.6 already on), `past-chats.ts` store rules, `/holt-chats` (search, Continue), sign-out clears the device thread. tsc 0, eslint 0, src 7161 / 5 known fails, web export built. Integrator rulings: `preview` column OK · Premium-AI-only OK (AI is pay-only) · telemetry prop is `kind` not `event` (`event` isn't in ALLOWED_PROP_KEYS) — lane A's `holt_memory` must use `kind` too. $0.
