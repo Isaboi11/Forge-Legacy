@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w2f",
+  "promptHash": "3aa4bacf058bb4b0a22853c0048e368e16358586ed9980023c6d3c3bcbef87f5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:07:43.255Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "CIRCUIT\nAMRAP #1\nRounds: 10m\n10 Wall Ball Burpee\n10 Wall Ball Sit Up\n12 Wall Ball Alt Jump Lunge\n20 Wall Ball Mt Climbers\n\nCIRCUIT\nAMRAP #2\nRounds: 10m\n12 Kneeling Rotational Wall Ball Throw\n15 Wall Ball Squat Toss\n12 Wall Ball Alt Kneeling Roll Out"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Circuit\"\nWarm up: \n1. a. Wall Ball Burpee 10 reps\n* AMRAP #1, Rounds: 10m\nsuper set b. Wall Ball Sit Up 10 reps\nsuper set c. Wall Ball Alt Jump Lunge 12 reps\nsuper set d. Wall Ball Mt Climbers 20 reps\n2. a. Kneeling Rotational Wall Ball Throw 12 reps\n* AMRAP #2, Rounds: 10m\nsuper set b. Wall Ball Squat Toss 15 reps\nsuper set c. Wall Ball Alt Kneeling Roll Out 12 reps"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 171,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 220,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

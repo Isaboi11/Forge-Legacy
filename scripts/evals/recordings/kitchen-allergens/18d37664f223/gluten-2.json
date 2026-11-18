@@ -1,0 +1,26 @@
+{
+  "caseId": "gluten-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:40:50.698Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Turkey and Avocado Lettuce Wrap\",\"why\":\"quick sandwich fix with no bread needed\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"4 large romaine or cabbage leaves\",\"quantity\":80,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"4 oz sliced turkey breast\",\"quantity\":110,\"unit\":\"g\",\"food\":\"sliced turkey breast\"},{\"text\":\"1/2 avocado, sliced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"2 slices tomato\",\"quantity\":40,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1 tbsp light mayonnaise\",\"quantity\":15,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Lay the large leaves flat on a plate.\",\"Spread a thin layer of mayonnaise on each leaf.\",\"Layer turkey, avocado, and tomato on top.\",\"Season with salt and pepper, then roll up tightly like a wrap.\",\"Slice in half and serve cold.\"]},{\"name\":\"Grilled Cheese on Low-Carb Bagel\",\"why\":\"warm, toasty sandwich without the gluten\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":10,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 low-carb bagel, split\",\"quantity\":85,\"unit\":\"g\",\"food\":\"low-carb bagel\"},{\"text\":\"2 slices reduced-fat cheddar\",\"quantity\":40,\"unit\":\"g\",\"food\":\"reduced-fat cheddar\"},{\"text\":\"1 tbsp butter, softened\",\"quantity\":14,\"unit\":\"g\",\"food\":\"butter\"}],\"steps\":[\"Spread butter on the outer sides of the bagel halves.\",\"Place cheese between the unbuttered sides.\",\"Heat a pan over medium and add the sandwich, buttered side down.\",\"Cook 3 to 4 minutes per side until golden and cheese melts.\",\"Remove, slice, and serve warm.\"]},{\"name\":\"Hummus and Veggie Tortilla Sandwich\",\"why\":\"fast no-stove option packed with crunch\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":8,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 low-carb tortilla\",\"quantity\":60,\"unit\":\"g\",\"food\":\"low-carb tortilla\"},{\"text\":\"3 tbsp hummus\",\"quantity\":45,\"unit\":\"g\",\"food\":\"hummus\"},{\"text\":\"1/4 cucumber, sliced thin\",\"quantity\":40,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1/4 red bell pepper, sliced thin\",\"quantity\":35,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"handful baby spinach\",\"quantity\":20,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Lay the tortilla flat and spread hummus evenly over it.\",\"Layer cucumber, bell pepper, and spinach on one half.\",\"Season lightly with salt and pepper.\",\"Fold or roll the tortilla over the filling.\",\"Slice in half and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 154,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1173,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

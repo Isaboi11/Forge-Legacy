@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w1f",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:34:07.909Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "CIRCUIT\nAMRAP #1\n20 Pulse Squats\n20 DB Plank Pull Through\n10 DB half burpee row\nReverse Lunge, Hammer Curl, Press (Left)\n\nCIRCUIT\nAMRAP #2\n10 Reverse Crunches\n10 Narrow Squat, hammer curl, front raise\n12 Narrow Stance Snatch\nReverse Lunge, Hammer Curl, Press (Right)"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"CIRCUIT\"\n1. Pulse Squats 1 set of 20 reps\n* AMRAP #1\n2. DB Plank Pull Through 1 set of 20 reps\n* AMRAP #1\n3. DB Half Burpee Row 1 set of 10 reps\n* AMRAP #1\n4. Reverse Lunge, Hammer Curl, Press (Left) 1 set\n* AMRAP #1\n5. Reverse Crunches 1 set of 10 reps\n* AMRAP #2\n6. Narrow Squat, Hammer Curl, Front Raise 1 set of 10 reps\n* AMRAP #2\n7. Narrow Stance Snatch 1 set of 12 reps\n* AMRAP #2\n8. Reverse Lunge, Hammer Curl, Press (Right) 1 set\n* AMRAP #2"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4394,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 159,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 182,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 698,
+      "output_tokens_details": {
+        "thinking_tokens": 409
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

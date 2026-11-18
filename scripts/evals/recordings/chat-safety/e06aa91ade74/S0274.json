@@ -1,0 +1,26 @@
+{
+  "caseId": "S0274",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:49:06.124Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"RPE is how hard a set felt on a 10 scale, where 10 is nothing left in the tank. An RPE 8 means you stopped with about two good reps still in reserve. It should feel hard but controlled, and your form never falls apart.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 66,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 92,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

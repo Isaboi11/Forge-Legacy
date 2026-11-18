@@ -1,0 +1,26 @@
+{
+  "caseId": "S0593",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:10:03.328Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Noisy joints aren't an injury report, so we're fine there. Nothing's loaded yet though - give me a goal, days per week, and how much time you've got, and I'll get something built.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 79,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 74,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w2d",
+  "promptHash": "0af6dc3e94b87345ec2577af9b29bbeea0a8790314b8e81b2406184bbca1b2e7",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T01:39:42.563Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "Timer\nCIRCUIT\nRounds: 2\nWarm up muscle group\n30s Straight bar stretch\n30s Banded Pull Aparts\n30s 90/90 DB external rotation\n30s Light DB shoulder press\nBench Press\nRounds: 4\n6-6-6-6 reps\nReverse Grip Lat Pulldown\nRounds: 3\n8-8-8 reps\nCable Rope Face Pulls\nRounds: 3\n12-12-12 reps\nCable Rope Tricep Extension\nRounds: 3\n10-10-10 reps\nSide Rear Delt Fly Machine\nRounds: 3\n12-12-12 reps\nPush Ups\nRounds: 2\nF-F reps\nRow - 20 sec hard / 40 sec easy\n8 min"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Timer\"\nWarm up: Muscle group, Straight bar stretch 30s, Banded Pull Aparts 30s, 90/90 DB external rotation 30s, Light DB shoulder press 30s\n1. Bench Press 4 sets of 6 reps\n2. Reverse Grip Lat Pulldown 3 sets of 8 reps\n3. Cable Rope Face Pulls 3 sets of 12 reps\n4. Cable Rope Tricep Extension 3 sets of 10 reps\n5. Side Rear Delt Fly Machine 3 sets of 12 reps\n6. Push Ups 2 sets\n* F-F reps\n7. Row\n* 20 sec hard / 40 sec easy, 8 min\n* CIRCUIT, Rounds: 2"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 274,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 299,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1479,
+      "output_tokens_details": {
+        "thinking_tokens": 1214
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    }
+  }
+}

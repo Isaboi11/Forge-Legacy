@@ -1,0 +1,26 @@
+{
+  "caseId": "S0418",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:06:56.832Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Normal muscle soreness, yes. Train through it, maybe go a little lighter on the sore spot. Sharp pain or soreness that gets worse during the set is your cue to stop. Keep moving, blood flow actually helps recovery.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 68,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 93,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

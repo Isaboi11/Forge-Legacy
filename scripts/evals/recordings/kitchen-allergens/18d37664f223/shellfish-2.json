@@ -1,0 +1,26 @@
+{
+  "caseId": "shellfish-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:43:37.323Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Garlic Butter Chicken Bites\",\"why\":\"same garlicky flavor you wanted, built with chicken instead of shellfish\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz chicken breast, cut into bite-size pieces\",\"quantity\":340,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp butter\",\"quantity\":14,\"unit\":\"g\",\"food\":\"butter\"},{\"text\":\"5 cloves garlic, minced\",\"quantity\":15,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tbsp fresh parsley, chopped\",\"quantity\":4,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"Salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Season chicken pieces with salt and pepper.\",\"Heat olive oil in a pan over medium-high heat.\",\"Add chicken and cook, stirring occasionally, until golden and cooked to 165°F internal, about 8-10 minutes.\",\"Lower heat, add butter and garlic, cook 1 minute until fragrant.\",\"Stir in lemon juice and parsley, toss chicken to coat.\",\"Serve hot.\"]},{\"name\":\"Garlic Tofu and Broccoli Stir-Fry\",\"why\":\"plant-based garlic dinner that comes together fast in one pan\",\"cuisine\":\"Chinese\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz firm tofu, cubed and pressed\",\"quantity\":340,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"2 cups broccoli florets\",\"quantity\":180,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"5 cloves garlic, minced\",\"quantity\":15,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"1/2 cup long-grain white rice, dry\",\"quantity\":90,\"unit\":\"g\",\"food\":\"long-grain white rice\"}],\"steps\":[\"Cook rice according to package directions in a pot with water.\",\"Heat oil in a pan over medium-high heat, add tofu and fry until golden on all sides, about 6-8 minutes.\",\"Add broccoli and splash of water, cover briefly to steam-cook until bright green and tender, 3-4 minutes.\",\"Add garlic and ginger, stir 1 minute until fragrant.\",\"Pour in soy sauce, toss everything to coat.\",\"Serve over the cooked rice.\"]},{\"name\":\"Garlic Herb Baked Cod\",\"why\":\"keeps the seafood-dinner feel without any shellfish\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz cod fillet\",\"quantity\":340,\"unit\":\"g\",\"food\":\"cod fillet\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"4 cloves garlic, minced\",\"quantity\":12,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":1,\"unit\":\"g\",\"food\":\"dried oregano\"},{\"text\":\"1 tbsp fresh parsley, chopped\",\"quantity\":4,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"Salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"2 cups baby spinach\",\"quantity\":60,\"unit\":\"g\",\"food\":\"baby spinach\"}],\"steps\":[\"Preheat oven to 400°F.\",\"Place cod on a lined baking sheet, drizzle with olive oil and lemon juice.\",\"Scatter garlic and oregano over the fillet, season with salt and pepper.\",\"Bake 12-15 minutes until cod flakes easily and reaches 145°F internal.\",\"Wilt spinach quickly in a pan with a drop of oil while fish finishes.\",\"Top fish with fresh parsley and serve with the spinach.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 117,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1639,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0058",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:00:20.482Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Hormone shifts through menopause can mean less muscle retention, more fat storage tendency, and sometimes rougher sleep and recovery. The practical response is usually more strength work, not less, plus solid protein intake. Keep lifting heavy a few times a week and don't shy away from it. If you want, tell me your days and gym setup and I'll build around that.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 67,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 130,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

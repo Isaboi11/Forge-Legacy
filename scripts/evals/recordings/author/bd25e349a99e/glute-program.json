@@ -1,0 +1,26 @@
+{
+  "caseId": "glute-program",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:29:26.332Z",
+  "reply": {
+    "text": "{\"say\":\"Glutes get direct work on three of your four days, with a hip thrust or deadlift leading each so the volume stays priority. The fourth day covers your upper body without any chest, since you said that one doesn't matter to you.\",\"title\":\"Glute Priority / Upper Body\",\"days\":[{\"name\":\"Glutes A\",\"exercises\":[{\"key\":\"barbell-hip-thrust\",\"sets\":4,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through heels\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"push hips back\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"},{\"key\":\"cable-glute-kickback\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze at top\"}]},{\"name\":\"Upper Body\",\"exercises\":[{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"flat back\"},{\"key\":\"barbell-overhead-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"machine-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Glutes B\",\"exercises\":[{\"key\":\"barbell-sumo-deadlift\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"wide stance, drive knees out\"},{\"key\":\"dumbbell-hip-thrust\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pause at the top\"},{\"key\":\"kettlebell-walking-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"band-hip-abduction\",\"sets\":3,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Glutes C\",\"exercises\":[{\"key\":\"barbell-glute-bridge\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"full lockout squeeze\"},{\"key\":\"cable-pull-through\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"kettlebell-goblet-squat\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-donkey-kick\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 160,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1250,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

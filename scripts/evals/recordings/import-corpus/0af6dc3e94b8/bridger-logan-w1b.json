@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w1b",
+  "promptHash": "0af6dc3e94b87345ec2577af9b29bbeea0a8790314b8e81b2406184bbca1b2e7",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T01:38:18.093Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "Timer\nCIRCUIT\nRounds: 2\nWarm up muscle group\n30s Straight bar stretch\n30s Banded Pull Aparts\n30s 90/90 DB external rotation\n30s Light Bent Over DB Row\nOverhand Grip Barbell Row\nRounds: 4\n6-6-4-4 reps\nCable Straight Arm Pulldown\nRounds: 3\n8-8-8 reps\nEZ-Bar Preacher Curls\nRounds: 4\n6-6-4-4 reps\nV-Bar Seated Cable Row\nRounds: 4\n6-6-6-6 reps\nIncline DB Curls\nRounds: 3\n8-8-8 reps\nNeutral Grip Pull Ups\nRounds: 3\nF-F-F reps\nTreadmill Run\n15 min\nSwipe to complete"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Timer\"\nWarm up: Warm up muscle group. CIRCUIT, Rounds: 2. 30s Straight bar stretch, 30s Banded Pull Aparts, 30s 90/90 Dumbbell external rotation, 30s Light Bent Over Dumbbell Row.\na. Overhand Grip Barbell Row 4 sets, 6,6,4,4 reps\nsuper set b. Cable Straight Arm Pulldown 3 sets of 8 reps\nsuper set c. EZ-Bar Preacher Curls 4 sets, 6,6,4,4 reps\nsuper set d. V-Bar Seated Cable Row 4 sets of 6 reps\nsuper set e. Incline Dumbbell Curls 3 sets of 8 reps\nsuper set f. Neutral Grip Pull Ups 3 sets\n* F-F-F reps\nsuper set g. Treadmill Run\n* 15 min\n* Swipe to complete"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 290,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 315,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 2574,
+      "output_tokens_details": {
+        "thinking_tokens": 2257
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    }
+  }
+}

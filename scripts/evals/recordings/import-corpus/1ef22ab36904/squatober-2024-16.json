@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-16",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:31:41.756Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE STAIRWAY to STRONGville\"\nDay:16 Wednesday 10-16-24\n\nWarm Up: Strongville requires members\nto keep their chili hot. So crank\nup that fire.\n\n1. BACK SQUAT \"yes! we are here for it all\"\n10 total sets, 66 total reps 🙂\n\nMission One\n10 reps e 60%\n9 reps e 55%\n8 reps e 50%\n2½ min rest between each set\n8 reps e 73%\nMission Two\n7 reps e 72%\n6 reps e 70%\n2½ min rest between each set\n6 reps e 80%\n5 reps e 80%\nMission Three\n4 reps e 80%\n3 reps e 80%\n3 min rest between each set.\n\nCardio\nPlanned Day off\n\nRecovery\nHot chili with extra meat\n30 min walk\n8-9 hrs sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE STAIRWAY to STRONGville\"\nWarm up: Strongville requires members to keep their chili hot. So crank up that fire.\n1. Back Squat 10 reps @ 60% rest 2:30, 9 reps @ 55% rest 2:30, 8 reps @ 50% rest 2:30, 8 reps @ 73% rest 2:30, 7 reps @ 72% rest 2:30, 6 reps @ 70% rest 2:30, 6 reps @ 80% rest 2:30, 5 reps @ 80% rest 2:30, 4 reps @ 80% rest 3:00, 3 reps @ 80% rest 3:00\n* \"yes! we are here for it all\"\n* 10 total sets, 66 total reps\n* Mission One, Mission Two, Mission Three\nCardio: Planned Day off\nRecovery: Hot chili with extra meat · 30 min walk · 8-9 hrs sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 290,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 313,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 2012,
+      "output_tokens_details": {
+        "thinking_tokens": 1692
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

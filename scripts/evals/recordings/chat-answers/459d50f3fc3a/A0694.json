@@ -1,0 +1,26 @@
+{
+  "caseId": "A0694",
+  "promptHash": "459d50f3fc3ab1c38190320e137057d0b6d8bb6aab6c1964670a7ec4e8fc0ced",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:48:21.793Z",
+  "reply": {
+    "text": "{\"route\": \"patch\", \"patch\": {\"sessionMinutes\": 45}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 57,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 28,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

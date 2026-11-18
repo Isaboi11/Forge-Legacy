@@ -1,0 +1,26 @@
+{
+  "caseId": "upper-lower-4",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:28:36.680Z",
+  "reply": {
+    "text": "{\"say\":\"This is a classic upper/lower split built around getting your big lifts stronger: squat and bench lead lower and upper days, with deadlift and overhead press as the second heavy movements. Supporting work stays moderate so the main lifts get your best effort.\",\"title\":\"Upper Lower Strength\",\"days\":[{\"name\":\"Lower A\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":5,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"heaviest lift of the day\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-walking-lunge\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Upper A\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":5,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"heaviest lift of the day\"},{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-overhead-press\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"chin-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Lower B\",\"exercises\":[{\"key\":\"barbell-deadlift\",\"sets\":5,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"heaviest lift of the day\"},{\"key\":\"barbell-front-squat\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"seated-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Upper B\",\"exercises\":[{\"key\":\"barbell-overhead-press\",\"sets\":5,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"heaviest lift of the day\"},{\"key\":\"barbell-incline-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-seated-row\",\"sets\":4,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"machine-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 128,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1334,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

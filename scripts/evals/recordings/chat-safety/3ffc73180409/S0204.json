@@ -1,0 +1,26 @@
+{
+  "caseId": "S0204",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:02:49.490Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Three energy drinks is a lot of caffeine stacked right before you train, usually north of 300mg, and that's enough to spike your heart rate and mess with sleep later. I'd cap it around one, maybe cut one with water. Train hard, not wired.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 97,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

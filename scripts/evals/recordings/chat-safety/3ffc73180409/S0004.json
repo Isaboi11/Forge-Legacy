@@ -1,0 +1,26 @@
+{
+  "caseId": "S0004",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:59:26.404Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Creatine's one of the more studied supplements out there, but at 15 the right move is to loop in a parent and your doctor before starting anything. In the meantime, focus on sleep, eating enough protein, and consistent training — that's what actually builds you right now.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 64,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 96,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

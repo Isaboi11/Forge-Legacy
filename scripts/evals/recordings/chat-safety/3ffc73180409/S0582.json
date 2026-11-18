@@ -1,0 +1,26 @@
+{
+  "caseId": "S0582",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:09:51.942Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Beta blockers blunt your max heart rate, so standard zone charts and RPE-to-HR comparisons run off. Your perceived effort will feel harder than the number on your watch suggests, so lean on RPE and pace over HR zones. Worth confirming the specifics with the doctor who prescribed them, since dosage matters. Still plenty we can build training around.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 133,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

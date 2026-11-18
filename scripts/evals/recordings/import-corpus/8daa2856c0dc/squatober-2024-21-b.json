@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-21-b",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:57:14.621Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "add resistance\n\nCardio\nsuper\nset\na. Cable/or Band Triceps Pushdowns\n4x20 reps\nb. Heavy DB Shrugs 4x10 reps\nc. Close Grip Pushups 4x10reps\n* add weight if needed\n2 min rest between each superset\n\nRecovery\nSteak and Eggs\nextra side of steak\n30 min walk\nSleep like\na Bear!!"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Cardio\"\nWarm up: add resistance\n1. a. Cable Triceps Pushdowns 4 sets of 20 reps\n* Or band\nsuper set b. Heavy DB Shrugs 4 sets of 10 reps\nsuper set c. Close Grip Pushups 4 sets of 10 reps\n* Add weight if needed\nrest 2:00 between each super set\nRecovery: Steak and Eggs · extra side of steak · 30 min walk · Sleep like a Bear!!"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4528,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 139,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 162,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 555,
+      "output_tokens_details": {
+        "thinking_tokens": 389
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

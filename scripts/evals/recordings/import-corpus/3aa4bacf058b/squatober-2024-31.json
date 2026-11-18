@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-31",
+  "promptHash": "3aa4bacf058bb4b0a22853c0048e368e16358586ed9980023c6d3c3bcbef87f5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:06:14.019Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE HANGOVER\"\nDay: 31 Thursday 10-31-24\nWarm Up: Snack on some Halloween Candy\n1. BACK SQUAT 5 sets of 5 reps @ 60-65%\n90 sec rest between each set\n2. a. Close Grip Bench Press 5 sets of 10 reps\nsuper set\nb. BB Bent Over Rows 5 sets of 10 reps\n2 min rest between each super set\n3. a. DEADlifts 4 sets of 3 reps 70-75%\nsuper set\nb. Slow Strict Chin Ups 4 sets of 3-6 reps\n2 min rest between each super set\nCardio\nTriceps 100 reps\nBiceps 100 reps\nShrugs 100 reps\n*100% at your discretion\nRecovery\nEggs, Bacon\nBiscuits & Gravy\n30 min Walk\nInvest in Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Day 31: The Hangover\"\nWarm up: Snack on some Halloween Candy\n1. Back Squat 5 sets of 5 reps @ 60-65%\nrest 1:30\n2. a. Close Grip Bench Press 5 sets of 10 reps\nsuper set b. Barbell Bent Over Rows 5 sets of 10 reps\nrest 2:00 between each super set\n3. a. Deadlifts 4 sets of 3 reps @ 70-75%\nsuper set b. Slow Strict Chin Ups 4 sets of 3-6 reps\nrest 2:00 between each super set\n4. a. Triceps 100 reps\nsuper set b. Biceps 100 reps\nsuper set c. Shrugs 100 reps\n* 100% at your discretion\nRecovery: Eggs, Bacon · Biscuits & Gravy · 30 min Walk · Invest in Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1169,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 305,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 330,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 298,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w2e",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:34:38.376Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "(Optional) Stairmaster\n3 min\n\nCIRCUIT\nWarmup\n30s DB Reverse Lunge\n30s DB Squat\n30s DB Staggered-Stance Rom deadlift\n\nConventional Deadlift\n5-5-5-5 reps\n\nBarbell Hip Thrust\n8-8-8 reps\n\nKB/DB Curtsy Lunge\n16-16-16 reps\n\n45° Back Extension\n15-15 reps\n\nHanging Knee Raise\n10-10-10-10 reps"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Workout\"\nWarm up: (Optional) Stairmaster 3 min\n* CIRCUIT: 30s DB Reverse Lunge, 30s DB Squat, 30s DB Staggered-Stance Rom deadlift\n1. Conventional Deadlift 4 sets of 5 reps\n2. Barbell Hip Thrust 3 sets of 8 reps\n3. KB/DB Curtsy Lunge 3 sets of 16 reps\n4. 45° Back Extension 2 sets of 15 reps\n5. Hanging Knee Raise 4 sets of 10 reps"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4394,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 174,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 510,
+      "output_tokens_details": {
+        "thinking_tokens": 306
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

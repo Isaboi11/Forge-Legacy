@@ -1,0 +1,26 @@
+{
+  "caseId": "S0083",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:00:39.562Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Straps are fine for high-rep pulls or when grip is capping the weight you want on your back, but don't lean on them every set — your grip needs the work too. Mix it: pull the first sets raw, strap up once your hands start slipping. Mixed or hook grip helps too.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 71,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 103,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

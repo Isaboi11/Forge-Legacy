@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-29",
+  "promptHash": "3aa4bacf058bb4b0a22853c0048e368e16358586ed9980023c6d3c3bcbef87f5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:05:55.625Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"TRICKLE CHARGER\"\nDay: 29 Tuesday 10-29-24\n\nWarm Up: 10 Jumping Jacks\nCrack the Knuckles\n5 pushups\n*Repeat as needed\n\n1. BACK SQUAT 3 sets of 5 reps @ 55%\n90 sec rest between sets\nmove the weight fast\n\n2. a. DB Laterals 4 x 10 reps\nsuper set all 3\nb. KB Swings 4 x 10 reps\nc. DB/or KB Farmers Walk 4 x 30 yds\n90 sec rest between each super set\n\nCardio\nDo the warm up\nas a cool down\n\nRecovery\nThick Steak\nBaked Tators\n30 min walk\nHigh level Sleep\n\nThis Session should take 20-25 minutes"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Day 29: Trickle Charger\"\nWarm up: 10 Jumping Jacks · Crack the Knuckles · 5 pushups\n* Repeat as needed\n1. Back Squat 3 sets of 5 reps @ 55%\n* Move the weight fast\nrest 1:30\n2. a. Dumbbell Laterals 4 sets of 10 reps\nsuper set b. Kettlebell Swings 4 sets of 10 reps\nsuper set c. Dumbbell Farmers Walk 4 sets\n* Or kettlebell. 30 yds\n* Super set all 3\nrest 1:30 between each super set\nRecovery: Cardio: Do the warm up as a cool down · Thick Steak · Baked Tators · 30 min walk · High level Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1169,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 263,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 288,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 258,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

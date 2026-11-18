@@ -54,12 +54,27 @@ export function literalConstant(rel, name) {
  * Never logs the key, never returns Anthropic's error text into a recording.
  */
 export async function callAnthropic({ apiKey, signal, model, system, messages, maxTokens = 1024, extra = {}, cacheSystem = false }) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    signal,
-    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: maxTokens, system: cacheSystem ? cachedSystem(system) : system, messages, ...extra }),
-  });
+  const send = () =>
+    fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal,
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model, max_tokens: maxTokens, system: cacheSystem ? cachedSystem(system) : system, messages, ...extra }),
+    });
+  /* A dropped connection ("fetch failed") once ended a whole 1,158-case run (11-17). One retry after a pause; a second
+     failure is this case's error, never the run's — and an error is never recorded as the model's answer. */
+  let res;
+  try {
+    res = await send();
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      res = await send();
+    } catch {
+      return { reply: { error: 'network' }, usage: null };
+    }
+  }
   if (!res.ok) {
     await res.text().catch(() => '');
     return { reply: { error: `http_${res.status}` }, usage: null };

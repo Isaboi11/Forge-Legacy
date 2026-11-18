@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-18",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:31:56.394Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE FORGOTTEN REPS\"\nDay:18 Friday 10-18-24\n\nWarm Up: 13x Jumping Jacks\n11x KB Swings\n9x Push ups\n7x Bodyweight Squats\n\n1. BACK SQUAT 7reps @ 60%,65%,70%,72%\n2½ min rest between each set\n\n2. a. BENCH PRESS 9 reps @ 55%,60%,65%,70%\nsuper\nset b. BB Bent Over Rows 4 sets of 9 reps\n3 min rest between each superset\n\n3. a. DB Rear Laterals 3x 11 reps\nsuper\nset b. DB Reverse Lunges 3x 11 reps each leg\nc. DB RDL's 3x 11 reps\n2 min rest between each super set\n\nCardio\na. Ez Bar/or BB Skullcrushers\n5 x 13 reps\nsuper\nset b. BB Bicep Curls\n5 x 13 reps\n90 sec rest between\neach superset\n\nRecovery\nSloppy Joes\nand tator tots\n*extra sloppy\n30 min walk\nDeep Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE FORGOTTEN REPS\"\nWarm up: 13x Jumping Jacks, 11x KB Swings, 9x Push ups, 7x Bodyweight Squats\n1. Back Squat 7 reps @ 60%, 7 reps @ 65%, 7 reps @ 70%, 7 reps @ 72%\nrest 2:30\n2. a. Bench Press 9 reps @ 55%, 9 reps @ 60%, 9 reps @ 65%, 9 reps @ 70%\nsuper set b. BB Bent Over Rows 4 sets of 9 reps\nrest 3:00 between each super set\n3. a. DB Rear Laterals 3 sets of 11 reps\nsuper set b. DB Reverse Lunges 3 sets of 11 reps\n* each leg\nsuper set c. DB RDL's 3 sets of 11 reps\nrest 2:00 between each super set\n4. a. Ez Bar/or BB Skullcrushers 5 sets of 13 reps\nsuper set b. BB Bicep Curls 5 sets of 13 reps\nrest 1:30 between each super set\nRecovery: Cardio · Sloppy Joes and tator tots · extra sloppy · 30 min walk · Deep Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 373,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 396,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 419,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-4",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:57:48.331Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Crispy Chicken Sausage Pizza Pita\",\"why\":\"Fastest of the three and no dough to wrangle\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"2 pita breads\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"1/2 cup pizza sauce\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"6 oz turkey sausage, casing removed\",\"quantity\":170,\"unit\":\"g\",\"food\":\"turkey sausage\"},{\"text\":\"1 red bell pepper, sliced thin\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1/2 onion, sliced thin\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp dried Italian herbs\",\"quantity\":2,\"unit\":\"g\",\"food\":\"italian herbs\"},{\"text\":\"Chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Heat the oven to 425°F and line a sheet pan with parchment.\",\"Brown the sausage in a pan over medium-high heat, breaking it up, until no pink remains and it reaches 165°F, about 6 minutes.\",\"Lay the pitas on the pan and spread the pizza sauce to the edges.\",\"Top with the sausage, pepper and onion, then drizzle with the oil and sprinkle the herbs.\",\"Bake 8 to 10 minutes until the edges are crisp and the pepper is softened.\",\"Finish with chilli flakes and slice into wedges.\"]},{\"name\":\"Skillet Pepperoni Flatbread Pizza\",\"why\":\"Classic pizza-night flavor straight from the pan\",\"cuisine\":\"Italian-American\",\"method\":\"pan\",\"minutes\":15,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"1 flour tortilla\",\"quantity\":60,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1/4 cup pizza sauce\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"1 oz turkey pepperoni\",\"quantity\":30,\"unit\":\"g\",\"food\":\"turkey pepperoni\"},{\"text\":\"3 mushrooms, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"mushrooms\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":1.5,\"unit\":\"g\",\"food\":\"garlic powder\"},{\"text\":\"1/2 tsp dried oregano\",\"quantity\":1,\"unit\":\"g\",\"food\":\"dried oregano\"}],\"steps\":[\"Heat the oil in a wide nonstick pan over medium heat.\",\"Place the tortilla in the pan and toast 1 minute until it starts to firm up.\",\"Spread the sauce over the tortilla and sprinkle with garlic powder and oregano.\",\"Add the mushrooms and pepperoni.\",\"Cover and cook 4 to 5 minutes until the bottom is crisp and the toppings are hot.\",\"Slide onto a board, slice and serve.\"]},{\"name\":\"Pizza-Stuffed Baked Potatoes\",\"why\":\"A different take that uses no bread at all\",\"cuisine\":\"American\",\"method\":\"air-fryer\",\"minutes\":40,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"2 medium potatoes\",\"quantity\":400,\"unit\":\"g\",\"food\":\"potatoes\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/2 cup pizza sauce\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"4 oz ground turkey\",\"quantity\":110,\"unit\":\"g\",\"food\":\"ground turkey\"},{\"text\":\"1/2 green-free onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tsp dried Italian herbs\",\"quantity\":2,\"unit\":\"g\",\"food\":\"italian herbs\"},{\"text\":\"Salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Scrub the potatoes, prick with a fork, rub with the oil and salt.\",\"Air-fry at 400°F for 30 to 35 minutes until a knife slides in easily.\",\"Meanwhile, cook the turkey and onion in a pan over medium-high heat until no pink remains and it reaches 160°F.\",\"Stir in the pizza sauce and Italian herbs and simmer 3 minutes.\",\"Split the potatoes open and fluff the insides with a fork.\",\"Spoon the pizza filling over the potatoes and finish with black pepper.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 114,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1685,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

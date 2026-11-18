@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-4",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:44:57.628Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Garlic Herb Yogurt Dip\",\"why\":\"quick, no cooking, pairs with any veggies you've got\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"1 cup plain yogurt\",\"quantity\":240,\"unit\":\"g\",\"food\":\"plain yogurt\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp fresh parsley, chopped\",\"quantity\":4,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"1 tsp lemon juice\",\"quantity\":5,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Mix yogurt, garlic, parsley and lemon juice in a bowl.\",\"Season with salt and pepper.\",\"Chill a few minutes before serving with cut veggies.\"]},{\"name\":\"Smoky Black Bean Dip\",\"why\":\"warm, hearty dip that uses pantry beans well\",\"cuisine\":\"Mexican\",\"method\":\"microwave\",\"minutes\":8,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"1 cup black beans, drained\",\"quantity\":240,\"unit\":\"g\",\"food\":\"black beans\"},{\"text\":\"2 tbsp salsa\",\"quantity\":30,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"1 tsp cumin\",\"quantity\":2,\"unit\":\"g\",\"food\":\"cumin\"},{\"text\":\"1/2 tsp smoked paprika\",\"quantity\":1,\"unit\":\"g\",\"food\":\"smoked paprika\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Combine beans, salsa, cumin, paprika and oil in a microwave-safe bowl.\",\"Microwave 2 minutes, then mash with a fork until mostly smooth.\",\"Microwave another minute if needed to heat through.\",\"Season with salt and serve warm with veggies.\"]},{\"name\":\"Roasted Red Pepper and Feta Dip\",\"why\":\"oven roasting brings out more flavor for dipping\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":25,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"1 red bell pepper\",\"quantity\":150,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1/2 cup feta, crumbled\",\"quantity\":75,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"2 tbsp greek yogurt\",\"quantity\":30,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Roast the whole pepper at 425°F for 20 minutes until charred and soft.\",\"Let cool, peel off skin and remove seeds.\",\"Blend pepper with feta, yogurt, oil and garlic until smooth.\",\"Season with pepper and serve with cut veggies.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 90,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1208,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "bodyweight-program",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:30:07.362Z",
+  "reply": {
+    "text": "{\"say\":\"Four bodyweight days built around your pull-up bar: push, pull, legs, and a full-body day mixing core and carries. Everything is calisthenics, no equipment beyond the bar.\",\"title\":\"Calisthenics 4-Day\",\"days\":[{\"name\":\"Push Day\",\"exercises\":[{\"key\":\"push-up\",\"sets\":4,\"reps\":8,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"full range\"},{\"key\":\"decline-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"feet raised\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"hips high\"},{\"key\":\"diamond-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"triceps focus\"},{\"key\":\"bench-dip\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Pull Day\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":5,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"full hang to chin over bar\"},{\"key\":\"chin-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"inverted-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"use bar low or table edge\"},{\"key\":\"scapular-pull-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"active-hang\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"grip and shoulder work\"}]},{\"name\":\"Legs Day\",\"exercises\":[{\"key\":\"bodyweight-squat\",\"sets\":4,\"reps\":12,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"rear foot elevated\"},{\"key\":\"forward-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"each leg\"},{\"key\":\"glute-bridge\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"single-leg-calf-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"each leg\"}]},{\"name\":\"Full Body & Core\",\"exercises\":[{\"key\":\"burpee\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"pistol-squat\",\"sets\":3,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"assisted if needed\"},{\"key\":\"hanging-leg-raise\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"use the bar\"},{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":40,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"side-plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"each side\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 158,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1281,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

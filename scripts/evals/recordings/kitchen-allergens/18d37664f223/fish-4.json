@@ -1,0 +1,26 @@
+{
+  "caseId": "fish-4",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:43:06.011Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Ground Beef Tacos\",\"why\":\"classic taco night, quick and filling\",\"cuisine\":\"Mexican\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz lean ground beef\",\"quantity\":225,\"unit\":\"g\",\"food\":\"lean ground beef\"},{\"text\":\"4 small flour tortillas\",\"quantity\":120,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1/2 cup salsa\",\"quantity\":80,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"1 tsp chilli powder\",\"quantity\":3,\"unit\":\"g\",\"food\":\"chilli powder\"},{\"text\":\"1/2 tsp cumin\",\"quantity\":2,\"unit\":\"g\",\"food\":\"cumin\"},{\"text\":\"1/2 onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat oil in a pan over medium heat and cook onion and garlic until soft, about 3 minutes.\",\"Add ground beef, breaking it up, and cook until no longer pink and internal temperature reaches 160°F, about 8 minutes.\",\"Stir in chilli powder, cumin, salt and pepper.\",\"Warm tortillas in a dry pan for 30 seconds per side.\",\"Fill tortillas with beef mixture and top with salsa.\"]},{\"name\":\"Crispy Chicken Tacos\",\"why\":\"uses the oven so you're hands-off while it cooks\",\"cuisine\":\"Mexican\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"10 oz chicken thighs, cut into strips\",\"quantity\":280,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":3,\"unit\":\"g\",\"food\":\"smoked paprika\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":2,\"unit\":\"g\",\"food\":\"garlic powder\"},{\"text\":\"4 small flour tortillas\",\"quantity\":120,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1/4 cup sour cream\",\"quantity\":60,\"unit\":\"g\",\"food\":\"sour cream\"},{\"text\":\"1/4 cup shredded cabbage\",\"quantity\":30,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Preheat oven to 425°F.\",\"Toss chicken strips with oil, paprika, garlic powder, salt and pepper.\",\"Spread on a baking sheet and roast 18-20 minutes until chicken reaches 165°F internal temperature.\",\"Warm tortillas and fill with chicken, cabbage and a spoon of sour cream.\"]},{\"name\":\"No-Cook Black Bean Tacos\",\"why\":\"ready in minutes with no stove needed\",\"cuisine\":\"Mexican\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 can black beans, drained\",\"quantity\":240,\"unit\":\"g\",\"food\":\"black beans\"},{\"text\":\"4 small flour tortillas\",\"quantity\":120,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1/2 cup salsa\",\"quantity\":80,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"1/4 cup feta, crumbled\",\"quantity\":40,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"1/4 avocado, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"2 tbsp fresh cilantro, chopped\",\"quantity\":6,\"unit\":\"g\",\"food\":\"fresh cilantro\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Mash black beans lightly in a bowl with lemon juice and salt.\",\"Spread bean mixture onto tortillas.\",\"Top with salsa, feta, avocado slices and cilantro.\",\"Fold and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 114,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1623,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

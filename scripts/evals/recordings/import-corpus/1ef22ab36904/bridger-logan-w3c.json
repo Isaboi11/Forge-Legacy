@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w3c",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:35:15.322Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "(Optional) Stairmaster\n3 min\n\nCIRCUIT\nWarmup\n30s 90/90 Stretch\n30s DB Reverse Lunge\n30s DB Squat\n30s DB Staggered-Stance Rom deadlift\n\nSingle Leg Press\n16-16-16-16 reps\n\nCIRCUIT\nHeavy Sled Push / Pull\n30s Sled Push\n30s Sled Pull\n\nCIRCUIT\nAMRAP #1\n20 Wall Balls\n12 DB Deadlift\n45s Max Effort Assault Bike\n\nCIRCUIT\nAMRAP #2\n20 DB Walking Lunges\n20 Box Jumps\n16 Alt DB Sit Ups"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "Warm up: (Optional) Stairmaster 3 min\n* 30s 90/90 Stretch, 30s DB Reverse Lunge, 30s DB Squat, 30s DB Staggered-Stance RDL\n\n1. Single Leg Press 4 sets of 16 reps\n\n2. a. Sled Push 1 set\n* 30s\nsuper set b. Sled Pull 1 set\n* 30s\n\n3. a. Wall Balls 1 set of 20 reps\nsuper set b. DB Deadlift 1 set of 12 reps\nsuper set c. Max Effort Assault Bike 1 set\n* 45s\n* AMRAP #1\n\n4. a. DB Walking Lunges 1 set of 20 reps\nsuper set b. Box Jumps 1 set of 20 reps\nsuper set c. Alt DB Sit Ups 1 set of 16 reps\n* AMRAP #2"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4394,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 241,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 264,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 992,
+      "output_tokens_details": {
+        "thinking_tokens": 698
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

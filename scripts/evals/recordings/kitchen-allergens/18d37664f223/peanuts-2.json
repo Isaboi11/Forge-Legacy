@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:37:39.785Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Sunbutter Noodles with Veggies\",\"why\":\"gets you a peanut-style sauce texture without peanuts\",\"cuisine\":\"Asian\",\"method\":\"pot\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz wheat noodles\",\"quantity\":170,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"3 tbsp tahini\",\"quantity\":45,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp honey\",\"quantity\":15,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 cup shredded carrot\",\"quantity\":100,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"1 cup bok choy, chopped\",\"quantity\":90,\"unit\":\"g\",\"food\":\"bok choy\"},{\"text\":\"1 tbsp sesame seeds\",\"quantity\":10,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Boil noodles until tender, about 7-9 minutes, then drain.\",\"Whisk tahini, soy sauce, honey, ginger, and garlic with a splash of hot water until smooth.\",\"Steam or quickly boil the carrot and bok choy until just tender, about 3 minutes.\",\"Toss noodles and vegetables with the sauce.\",\"Top with sesame seeds and serve warm.\"]},{\"name\":\"Sesame Chicken Bowl\",\"why\":\"keeps protein high and the sauce does the work\",\"cuisine\":\"Asian\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz chicken thighs, sliced\",\"quantity\":340,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"3 tbsp tahini\",\"quantity\":45,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp honey\",\"quantity\":15,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tsp cider vinegar\",\"quantity\":5,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 cup cooked white rice\",\"quantity\":75,\"unit\":\"g\",\"food\":\"white rice\"},{\"text\":\"1 cup broccoli florets\",\"quantity\":90,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Cook rice according to package directions.\",\"Heat oil in a pan over medium-high and cook chicken until browned and cooked through to 165°F, about 7-9 minutes.\",\"Steam broccoli until bright green and tender, about 4 minutes.\",\"Mix tahini, soy sauce, honey, and vinegar with a little water until pourable.\",\"Serve chicken and broccoli over rice, drizzled with sauce and sesame seeds.\"]},{\"name\":\"Cold Tofu Salad with Sesame Dressing\",\"why\":\"no stove needed and still gets you that peanut-style flavor\",\"cuisine\":\"Asian\",\"method\":\"no-cook\",\"minutes\":12,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"8 oz firm tofu, cubed\",\"quantity\":225,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1 cucumber, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 cup shredded cabbage\",\"quantity\":90,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"3 tbsp tahini\",\"quantity\":45,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp honey\",\"quantity\":15,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tsp cider vinegar\",\"quantity\":5,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Drain tofu and pat dry, then cube it.\",\"Whisk tahini, soy sauce, honey, and vinegar with a splash of water until smooth.\",\"Toss cucumber, cabbage, and tofu together in a bowl.\",\"Pour the dressing over and toss to coat.\",\"Top with sesame seeds and serve cold.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 101,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1686,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

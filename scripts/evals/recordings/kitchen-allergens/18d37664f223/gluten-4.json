@@ -1,0 +1,26 @@
+{
+  "caseId": "gluten-4",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:41:16.166Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Grilled Sirloin Burger with Lettuce Bun\",\"why\":\"classic burger without the gluten, closest to what you asked for\",\"cuisine\":\"American\",\"method\":\"grill\",\"minutes\":20,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz ground beef, formed into a patty\",\"quantity\":170,\"unit\":\"g\",\"food\":\"lean ground beef\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"1 slice reduced-fat cheddar\",\"quantity\":20,\"unit\":\"g\",\"food\":\"reduced-fat cheddar\"},{\"text\":\"2 large lettuce leaves for the bun\",\"quantity\":30,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"2 slices tomato\",\"quantity\":40,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"a few slices onion\",\"quantity\":20,\"unit\":\"g\",\"food\":\"onion\"}],\"steps\":[\"Season the beef patty with salt and pepper.\",\"Heat the grill to medium-high.\",\"Grill the patty about 4 minutes per side until it reaches 160°F internal temperature.\",\"Add cheese in the last minute to melt.\",\"Stack patty, cheese, tomato, and onion between two large lettuce leaves and serve.\"]},{\"name\":\"Turkey Burger Patties in the Oven\",\"why\":\"lighter protein option, hands-off cooking in the oven\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz ground turkey\",\"quantity\":340,\"unit\":\"g\",\"food\":\"ground turkey\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"onion powder to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"onion powder\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 large lettuce leaves per patty\",\"quantity\":60,\"unit\":\"g\",\"food\":\"cabbage\"}],\"steps\":[\"Preheat oven to 400°F.\",\"Mix ground turkey with garlic, onion powder, salt, and pepper.\",\"Form into two patties and brush lightly with olive oil.\",\"Bake on a lined tray for about 18-20 minutes until internal temperature reaches 165°F.\",\"Wrap each patty in lettuce leaves to serve.\"]},{\"name\":\"Pan-Seared Beef and Mushroom Burger Bowl\",\"why\":\"all the burger flavor in a bowl, fast on the stove\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":18,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz ground beef\",\"quantity\":170,\"unit\":\"g\",\"food\":\"lean ground beef\"},{\"text\":\"1 cup sliced mushrooms\",\"quantity\":70,\"unit\":\"g\",\"food\":\"mushrooms\"},{\"text\":\"1/4 onion, sliced\",\"quantity\":40,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat olive oil in a pan over medium-high heat.\",\"Add onion and mushrooms, cook until softened, about 5 minutes.\",\"Push vegetables aside, add ground beef and break it up, cooking until it reaches 160°F internal temperature.\",\"Stir in baby spinach until just wilted.\",\"Season with salt and pepper and serve in a bowl.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 152,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1412,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

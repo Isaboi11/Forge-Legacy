@@ -1,0 +1,26 @@
+{
+  "caseId": "S0283",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:49:18.322Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Jelly arms after a burnout set is a normal feeling. You pushed the muscle close to failure and it ran out of fuel for the moment. It usually settles within a few minutes. If it ever comes with real pain or numbness, that's a different conversation, and I'm not the one to have it with.\", \"remember\": []}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 73,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 114,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

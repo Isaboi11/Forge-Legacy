@@ -1,0 +1,26 @@
+{
+  "caseId": "calisthenics-skills",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:33:45.305Z",
+  "reply": {
+    "text": "{\"say\":\"Each day builds the pulling strength, straight-arm pressing and core control a muscle up and front lever demand, with pull-ups and rows as your anchors and timed holds to build the lever. Day one leans on pulling density, day two adds pressing and straight-arm work for the transition, day three ties it together with heavier pulls and core holds.\",\"title\":\"Calisthenics: Muscle Up & Front Lever\",\"days\":[{\"name\":\"Pull Strength & Core\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"},{\"key\":\"chin-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"scapular-pull-up\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"build shoulder control for the lever\"},{\"key\":\"inverted-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"keep body rigid\"},{\"key\":\"hollow-body-hold\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"brace hard, this is lever prep\"},{\"key\":\"l-sit\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":20,\"group\":\"\",\"part\":\"main\",\"note\":\"straight arms, hollow body\"}]},{\"name\":\"Press & Transition Work\",\"exercises\":[{\"key\":\"dive-bomber-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"builds the dip-like press pattern\"},{\"key\":\"straight-bar-dip\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"key piece of the muscle up transition\"},{\"key\":\"bench-dip\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"archer-pull-up\",\"sets\":3,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"builds one-side pulling strength\"},{\"key\":\"active-hang\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"loaded shoulder position\"},{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":40,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Heavy Pull & Lever Build\",\"exercises\":[{\"key\":\"weighted\",\"sets\":1,\"reps\":0,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"chest-to-bar-pull-up\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"explosive pull, sets up the muscle up\"},{\"key\":\"negative-pull-up\",\"sets\":3,\"reps\":5,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"slow 5 second lowers\"},{\"key\":\"bodyweight-row\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"feet elevated for more load\"},{\"key\":\"dead-hang\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dragon-flag\",\"sets\":3,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"core strength central to the front lever\"},{\"key\":\"superman-hold\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[\"I left out the weighted exercise placeholder since there is no added-load pull-up variant in the app's bodyweight library at home.\"]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 160,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1380,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

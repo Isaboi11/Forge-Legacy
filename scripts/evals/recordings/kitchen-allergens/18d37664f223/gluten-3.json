@@ -1,0 +1,26 @@
+{
+  "caseId": "gluten-3",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:41:04.224Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Sesame Garlic Rice Noodle Bowl\",\"why\":\"quick and uses pantry staples you likely have\",\"cuisine\":\"Asian\",\"method\":\"pot\",\"minutes\":20,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"90 g rice noodles (wheat noodles substitute not used - use gluten-free rice noodles)\",\"quantity\":90,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"1 tbsp tamari (gluten-free soy alternative)\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"handful baby spinach\",\"quantity\":40,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1/2 carrot, julienned\",\"quantity\":40,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Boil noodles according to package until tender, then drain.\",\"Heat oil in a pot over medium heat, add garlic and ginger, cook 30 seconds until fragrant.\",\"Add carrot and spinach, cook 2 minutes until softened.\",\"Stir in tamari and cooked noodles, toss until coated and heated through.\",\"Sprinkle with sesame seeds and serve hot.\"]},{\"name\":\"Cold Peanut-Free Noodle Salad\",\"why\":\"no stove needed, light and refreshing\",\"cuisine\":\"Asian\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"90 g rice noodles, cooked and cooled\",\"quantity\":90,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"1/2 cucumber, sliced thin\",\"quantity\":75,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1/2 red bell pepper, sliced thin\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 tbsp cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp tamari\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"fresh cilantro, chopped, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh cilantro\"}],\"steps\":[\"Cook noodles per package, rinse under cold water, and drain well.\",\"Toss noodles with cucumber and bell pepper in a bowl.\",\"Whisk vinegar, oil, and tamari together in a small bowl.\",\"Pour dressing over noodles and vegetables, toss to coat.\",\"Top with fresh cilantro and serve chilled.\"]},{\"name\":\"Spicy Chicken Noodle Stir-Fry\",\"why\":\"closest to your protein for the day, built to fill you up\",\"cuisine\":\"Asian\",\"method\":\"pan\",\"minutes\":25,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz chicken breast, sliced thin\",\"quantity\":170,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"90 g rice noodles, cooked\",\"quantity\":90,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1/2 onion, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tbsp tamari\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp chilli flakes\",\"quantity\":2,\"unit\":\"g\",\"food\":\"chilli flakes\"},{\"text\":\"handful bok choy, chopped\",\"quantity\":60,\"unit\":\"g\",\"food\":\"bok choy\"}],\"steps\":[\"Heat oil in a pan over medium-high heat.\",\"Add chicken and cook 5-6 minutes, stirring, until internal temperature reaches 165°F and no pink remains.\",\"Add garlic and onion, cook 2 minutes until softened.\",\"Stir in bok choy and cook 2 minutes until wilted.\",\"Add cooked noodles, tamari, and chilli flakes, toss everything together until heated through and well mixed.\",\"Serve hot.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 152,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1638,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

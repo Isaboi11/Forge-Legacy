@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w4b",
+  "promptHash": "3aa4bacf058bb4b0a22853c0048e368e16358586ed9980023c6d3c3bcbef87f5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:08:32.890Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "(Optional) Stairmaster\n3 min\n\nCIRCUIT\nWarmup\nRounds: 2\n30s 90/90 Stretch\n30s DB Reverse Lunge\n30s DB Squat\n30s DB Staggered-Stance Rom deadlift\n\nBarbell Squat\nRounds: 5\n5-5-5-5-5 reps\n\nRomanian Deadlift\nRounds: 4\n8-8-8-8 reps\n\nDB Bulgarian Split Squat\nRounds: 3\n16-16-16 reps\n\nLying Hamstring Curl Machine\nRounds: 3\n12-12-12 reps\n\nCalf raise\nRounds: 3\n15-15-15 reps\n\nCIRCUIT\nCore Finisher\nRounds: 3\n24 Alt DB Sit Ups\n24 KB Russian Twists"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Workout\"\nWarm up: (Optional) Stairmaster 3 min\n1. a. DB 90/90 Stretch 2 sets\n* 30s\nsuper set b. DB Reverse Lunge 2 sets\n* 30s\nsuper set c. DB Squat 2 sets\n* 30s\nsuper set d. DB Staggered-Stance Rom deadlift 2 sets\n* 30s\n2. Barbell Squat 5 sets of 5 reps\n3. Romanian Deadlift 4 sets of 8 reps\n4. DB Bulgarian Split Squat 3 sets of 16 reps\n5. Lying Hamstring Curl Machine 3 sets of 12 reps\n6. Calf raise 3 sets of 15 reps\n7. a. Alt DB Sit Ups 3 sets of 24 reps\nsuper set b. KB Russian Twists 3 sets of 24 reps"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 283,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 308,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 300,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

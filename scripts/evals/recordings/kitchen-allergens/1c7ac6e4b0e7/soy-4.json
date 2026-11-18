@@ -1,0 +1,26 @@
+{
+  "caseId": "soy-4",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:00:04.038Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Salmon Sushi-Style Rice Bowl\",\"why\":\"closest to the classic sushi bowl you asked for\",\"cuisine\":\"Japanese\",\"method\":\"pan\",\"minutes\":25,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"70 g short or long-grain white rice, dry\",\"quantity\":70,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"150 g salmon fillet\",\"quantity\":150,\"unit\":\"g\",\"food\":\"salmon fillet\"},{\"text\":\"80 g cucumber, thinly sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"70 g avocado, sliced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"40 g carrot, shredded\",\"quantity\":40,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"10 g rice vinegar or cider vinegar\",\"quantity\":10,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"5 g olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Rinse the rice, then cook it in a pot with water until tender, about 15 minutes. Stir in the vinegar and a pinch of salt and let it cool a little.\",\"Pat the salmon dry and season with salt and pepper.\",\"Heat the oil in a pan over medium-high heat. Cook the salmon skin-side down 4 to 5 minutes, flip, and cook 3 to 4 minutes more until it reaches 145°F inside and flakes easily.\",\"Flake the salmon into chunks with a fork.\",\"Spoon the rice into a bowl and arrange the cucumber, avocado, carrot and salmon on top.\",\"Finish with sesame seeds and a squeeze of hot sauce if you like heat.\"]},{\"name\":\"Smoked Salmon Cucumber Rice Bowl\",\"why\":\"no stove for the topping, quick to throw together\",\"cuisine\":\"Japanese-inspired\",\"method\":\"bowl\",\"minutes\":20,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"70 g white rice, dry\",\"quantity\":70,\"unit\":\"g\",\"food\":\"white rice\"},{\"text\":\"80 g smoked salmon\",\"quantity\":80,\"unit\":\"g\",\"food\":\"smoked salmon\"},{\"text\":\"80 g cucumber, ribbons or slices\",\"quantity\":80,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"60 g avocado, sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"30 g carrot, shredded\",\"quantity\":30,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"10 g cider vinegar\",\"quantity\":10,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"10 g light mayonnaise\",\"quantity\":10,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"hot sauce to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"hot sauce\"}],\"steps\":[\"Cook the rice in a pot with water until tender, about 15 minutes, then stir in the vinegar and let it cool slightly.\",\"Mix the mayonnaise with a few drops of hot sauce for a quick spicy drizzle.\",\"Put the rice in a bowl and top with the smoked salmon, cucumber, avocado and carrot.\",\"Drizzle with the spicy mayo and sprinkle with sesame seeds.\"]},{\"name\":\"Spicy Tuna Sushi-Style Bowl\",\"why\":\"cheapest and fastest, built from the pantry\",\"cuisine\":\"Hawaiian\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"70 g quinoa, dry\",\"quantity\":70,\"unit\":\"g\",\"food\":\"quinoa\"},{\"text\":\"110 g tuna in water, drained\",\"quantity\":110,\"unit\":\"g\",\"food\":\"tuna in water\"},{\"text\":\"15 g light mayonnaise\",\"quantity\":15,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"5 g hot sauce\",\"quantity\":5,\"unit\":\"g\",\"food\":\"hot sauce\"},{\"text\":\"80 g cucumber, diced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"70 g avocado, diced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"30 g carrot, shredded\",\"quantity\":30,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Rinse the quinoa and simmer in water about 12 minutes until the little tails pop out, then fluff and cool slightly.\",\"Stir the tuna with the mayonnaise and hot sauce until creamy.\",\"Spoon the quinoa into a bowl and top with the spicy tuna, cucumber, avocado and carrot.\",\"Sprinkle with sesame seeds and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 108,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1812,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

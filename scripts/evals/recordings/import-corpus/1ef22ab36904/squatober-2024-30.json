@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-30",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:33:11.775Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PR PARTY\"\nDay: 30   Wednesday 10-30-24\n\nWarm Up: Kick the door down as you enter the weight room. Chili so hot your nickname is \"Dragon Breath\"\n\n1. BACK SQUAT\n5 reps @ 55%, 3 @ 65%, 2 @ 75%, 1 @ 85%, 93%, 100%\n2 to 2½ min rest between these ramp up sets\n\n1 rep @ 105%, 108%, 110%, 112%...\n2½ to 3 min rest between these sets\nKeep climbing 2-3% each set if it is there to get.\n\nCardio\nPlanned\nDay\nOff!!\n:)\n\nRecovery\nSpaghetti\nand Meatballs\nFavorite Halloween\nCandy\nBig Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PR PARTY\"\nWarm up: Kick the door down as you enter the weight room. Chili so hot your nickname is \"Dragon Breath\"\n1. Back Squat 5 reps @ 55%, 3 reps @ 65%, 2 reps @ 75%, 1 reps @ 85%, 1 reps @ 93%, 1 reps @ 100%\nrest 2:00 to 2:30\n* 1 rep @ 105%, 108%, 110%, 112%...\n* 2:30 to 3:00 rest between these sets\n* Keep climbing 2-3% each set if it is there to get.\nRecovery: Cardio Planned Day Off!! :) · Spaghetti and Meatballs · Favorite Halloween Candy · Big Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 265,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 288,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 258,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

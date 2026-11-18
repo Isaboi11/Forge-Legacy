@@ -1,0 +1,26 @@
+{
+  "caseId": "S0127",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:46:52.331Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Penguin walk is just muscle soreness from hard training, and it usually fades within a couple of days. Moving around lightly tends to help more than lying still. I can't see your schedule from here, so open the Workouts tab for today's session. Or tell me how long you've got and I'll set up something lighter.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 110,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

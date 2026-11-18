@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-3",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:39:28.023Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Veggie Egg White Scramble\",\"why\":\"uses the most of what you have and packs in protein without dairy\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":15,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"6 egg whites\",\"quantity\":180,\"unit\":\"g\",\"food\":\"egg whites\"},{\"text\":\"2 whole eggs\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"1/2 cup diced red bell pepper\",\"quantity\":75,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1/2 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat olive oil in a pan over medium heat.\",\"Add bell pepper and cook 3 minutes until soft.\",\"Add spinach and cook until wilted.\",\"Whisk egg whites and whole eggs together, pour into pan.\",\"Scramble gently until eggs are fully set with no runny liquid, about 3-4 minutes.\",\"Season with salt and pepper, serve hot.\"]},{\"name\":\"Turkey Sausage Breakfast Bowl\",\"why\":\"fastest of the three and heavy on protein to start the day\",\"cuisine\":\"American\",\"method\":\"microwave\",\"minutes\":10,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"4 oz turkey sausage, sliced\",\"quantity\":115,\"unit\":\"g\",\"food\":\"turkey sausage\"},{\"text\":\"2 eggs\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"1/2 cup black beans, drained\",\"quantity\":90,\"unit\":\"g\",\"food\":\"black beans\"},{\"text\":\"2 tbsp salsa\",\"quantity\":30,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"1 tbsp fresh cilantro, chopped\",\"quantity\":4,\"unit\":\"g\",\"food\":\"fresh cilantro\"}],\"steps\":[\"Microwave turkey sausage slices in a bowl for 2 minutes until hot and cooked through.\",\"In a separate microwave-safe mug, whisk the eggs and microwave in 30-second bursts, stirring between, until fully set, about 90 seconds, reaching 165°F.\",\"Warm black beans in the microwave for 1 minute.\",\"Combine sausage, eggs, and beans in a bowl.\",\"Top with salsa and cilantro, serve.\"]},{\"name\":\"Protein Overnight Chia Bowl\",\"why\":\"no stove needed and ready to grab in the morning\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"1 scoop whey protein powder\",\"quantity\":30,\"unit\":\"g\",\"food\":\"whey protein powder\"},{\"text\":\"2 tbsp chia seeds\",\"quantity\":24,\"unit\":\"g\",\"food\":\"chia seeds\"},{\"text\":\"1 cup rice milk\",\"quantity\":240,\"unit\":\"g\",\"food\":\"rice milk\"},{\"text\":\"1/2 banana, sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"banana\"},{\"text\":\"1 tbsp almonds, chopped\",\"quantity\":10,\"unit\":\"g\",\"food\":\"almonds\"}],\"steps\":[\"In a jar or bowl, whisk protein powder and rice milk until smooth.\",\"Stir in chia seeds until evenly mixed.\",\"Cover and refrigerate at least 2 hours or overnight until thickened.\",\"Top with sliced banana and chopped almonds before serving.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 117,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1296,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

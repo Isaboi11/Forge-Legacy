@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-30",
+  "promptHash": "0af6dc3e94b87345ec2577af9b29bbeea0a8790314b8e81b2406184bbca1b2e7",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T01:37:44.329Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PR PARTY\"\nDay: 30 Wednesday 10-30-24\n\nWarm Up: Kick the door down as you enter the weight room. Chili so hot your nickname is \"Dragon Breath\"\n\n1. BACK SQUAT\n5 reps @ 55%, 3 @ 65%, 2 @ 75%, 1 @ 85%, 93%, 106%\n2 to 2½ min rest between these ramp up sets\n\n1 rep @ 105%, 108%, 110%, 112%...\n2½ to 3 min rest between these sets\nKeep climbing 2-3% each set if it is there to get.\n\nCardio\nPlanned Day Off!! ☺\n\nRecovery\nSpaghetti and Meatballs\nFavorite Halloween Candy\nBig Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Day 30: The PR Party\"\nWarm up: Kick the door down as you enter the weight room. Chili so hot your nickname is \"Dragon Breath\"\n1. Back Squat 5 reps @ 55%, 3 reps @ 65%, 2 reps @ 75%, 1 rep @ 85%\n* 93%, 106%\n* 2 to 2½ min rest between these ramp up sets\n* Then: 1 rep @ 105%, 108%, 110%, 112%...\n* 2½ to 3 min rest between these sets\n* Keep climbing 2-3% each set if it is there to get.\nRecovery: Cardio: Planned Day Off!! ☺ · Spaghetti and Meatballs · Favorite Halloween Candy · Big Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1169,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 261,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 286,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1339,
+      "output_tokens_details": {
+        "thinking_tokens": 1080
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    }
+  }
+}

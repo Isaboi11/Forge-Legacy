@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-3",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:56:53.460Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Cinnamon Banana Oat Pancakes\",\"why\":\"Tastes like dessert, cooks in one pan, and no stove-top fuss.\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"60 g rolled oats\",\"quantity\":60,\"unit\":\"g\",\"food\":\"rolled oats\"},{\"text\":\"1 ripe banana, mashed (about 120 g)\",\"quantity\":120,\"unit\":\"g\",\"food\":\"banana\"},{\"text\":\"2 large eggs\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"1 tsp ground cinnamon\",\"quantity\":2,\"unit\":\"g\",\"food\":\"ground cinnamon\"},{\"text\":\"1/2 tsp baking powder\",\"quantity\":2,\"unit\":\"g\",\"food\":\"baking powder\"},{\"text\":\"1/2 tsp vanilla extract\",\"quantity\":2,\"unit\":\"g\",\"food\":\"vanilla extract\"},{\"text\":\"1 tsp butter for the pan\",\"quantity\":5,\"unit\":\"g\",\"food\":\"butter\"},{\"text\":\"60 g blueberries to top\",\"quantity\":60,\"unit\":\"g\",\"food\":\"blueberries\"},{\"text\":\"1 tbsp honey to drizzle\",\"quantity\":20,\"unit\":\"g\",\"food\":\"honey\"}],\"steps\":[\"Blend or mash the oats, banana, eggs, cinnamon, baking powder and vanilla into a thick batter. Let it sit 5 minutes.\",\"Melt the butter in a nonstick pan over medium-low heat.\",\"Pour in small rounds of batter, about 1/4 cup each.\",\"Cook 2 to 3 minutes until bubbles form and the edges look set, then flip.\",\"Cook another 1 to 2 minutes until golden and cooked through, with no wet batter in the middle.\",\"Stack, top with blueberries and a drizzle of honey.\"]},{\"name\":\"Chocolate Chip Baked Oatmeal\",\"why\":\"Bakes hands-off and reads like a cookie for breakfast.\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":35,\"servings\":2,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"80 g rolled oats\",\"quantity\":80,\"unit\":\"g\",\"food\":\"rolled oats\"},{\"text\":\"1 ripe banana, mashed (about 120 g)\",\"quantity\":120,\"unit\":\"g\",\"food\":\"banana\"},{\"text\":\"1 large egg\",\"quantity\":1,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"150 g milk\",\"quantity\":150,\"unit\":\"g\",\"food\":\"milk\"},{\"text\":\"1/2 tsp baking powder\",\"quantity\":2,\"unit\":\"g\",\"food\":\"baking powder\"},{\"text\":\"1 tsp ground cinnamon\",\"quantity\":2,\"unit\":\"g\",\"food\":\"ground cinnamon\"},{\"text\":\"1/2 tsp vanilla extract\",\"quantity\":2,\"unit\":\"g\",\"food\":\"vanilla extract\"},{\"text\":\"20 g mini chocolate chips\",\"quantity\":20,\"unit\":\"g\",\"food\":\"mini chocolate chips\"},{\"text\":\"pinch of salt\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 350°F and grease a small baking dish.\",\"Stir the mashed banana, egg, milk, vanilla and cinnamon together.\",\"Mix in the oats, baking powder and salt, then fold in most of the chocolate chips.\",\"Pour into the dish and scatter the remaining chips on top.\",\"Bake 25 to 30 minutes until the center is set and the top is golden.\",\"Cool 5 minutes, then scoop and serve warm.\"]},{\"name\":\"Berry Cheesecake Yogurt Bowl\",\"why\":\"No cooking at all and ready in five minutes.\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"200 g Greek yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"30 g light cream cheese\",\"quantity\":30,\"unit\":\"g\",\"food\":\"light cream cheese\"},{\"text\":\"1 tbsp honey\",\"quantity\":20,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1/2 tsp vanilla extract\",\"quantity\":2,\"unit\":\"g\",\"food\":\"vanilla extract\"},{\"text\":\"100 g strawberries, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"strawberries\"},{\"text\":\"30 g granola\",\"quantity\":30,\"unit\":\"g\",\"food\":\"granola\"}],\"steps\":[\"Whisk the yogurt, cream cheese, honey and vanilla in a bowl until smooth and thick.\",\"Spoon into a serving bowl.\",\"Top with the sliced strawberries.\",\"Sprinkle the granola over just before eating so it stays crunchy.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 132,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1649,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

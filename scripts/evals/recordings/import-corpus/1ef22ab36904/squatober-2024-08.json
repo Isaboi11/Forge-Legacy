@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-08",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:30:12.024Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"TEMPO TUESDAY\"\nDay: 8 Tuesday 10-08-24\n\nWarm Up: Get Loose and memorize\nthe rep tempo.\n\nThe Rep Tempo of the Day!!\n5 seconds on the way Down\n2 second pause in the Bottom\nNormal tempo on the way up\n\n1. BACK SQUAT 4 sets of 4 reps @ 60%\n* 2 min rest between sets\n\n2. FRONT SQUAT 3 sets of 4 reps @ 45%\n% taken from Back Squat Max, 2 min rest\n\n3. DB Bulgarian Split Squats\n3 sets of 5 reps each leg\n2 min rest between sets\n\nCardio\nBB RDL's\n3 sets of 5 reps\n90 sec rest between sets\n\nRecovery\nAll you can eat tacos.\n8-4 hrs sleep\n30 min walk"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"TEMPO TUESDAY\"\nWarm up: Get Loose and memorize the rep tempo. The Rep Tempo of the Day!! 5 seconds on the way Down, 2 second pause in the Bottom, Normal tempo on the way up\n1. Back Squat 4 sets of 4 reps @ 60%\nrest 2:00\n2. Front Squat 3 sets of 4 reps @ 45% of back squat max\nrest 2:00\n3. DB Bulgarian Split Squats 3 sets of 5 reps\n* each leg\nrest 2:00\n4. BB RDL's 3 sets of 5 reps\n* Cardio\nrest 1:30\nRecovery: All you can eat tacos. · 8-4 hrs sleep · 30 min walk"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 295,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 318,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 259,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

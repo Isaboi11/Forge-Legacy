@@ -1,0 +1,26 @@
+{
+  "caseId": "S0380",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:06:15.498Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Eight weeks hard without a break is right in the window where a deload earns its keep. Take this next week and cut volume by a third to half, keep intensity moderate, sleep and eat normally. You'll come back out the other side hitting harder than you are now.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 94,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

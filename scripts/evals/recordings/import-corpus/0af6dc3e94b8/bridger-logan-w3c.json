@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w3c",
+  "promptHash": "0af6dc3e94b87345ec2577af9b29bbeea0a8790314b8e81b2406184bbca1b2e7",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T01:40:26.241Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "(Optional) Stairmaster\n3 min\nCIRCUIT\nRounds: 2\nWarmup\n30s 90/90 Stretch\n30s DB Reverse Lunge\n30s DB Squat\n30s DB Staggered-Stance Rom deadlift\nSingle Leg Press\nRounds: 4\n16-16-16-16 reps\nCIRCUIT\nRounds: 4\nHeavy Sled Push / Pull\n30s Sled Push\n30s Sled Pull\nCIRCUIT\nRounds: 3\nAMRAP #1\n20 Wall Balls\n12 DB Deadlift\n45s Max Effort Assault Bike\nCIRCUIT\nRounds: 3\nAMRAP #2\n20 DB Walking Lunges\n20 Box Jumps\n16 Alt DB Sit Ups"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Untitled workout\"\nWarm up: (Optional) Stairmaster 3 min\n1. a. 90/90 Stretch 2 sets\n* Warmup circuit, 30s each\nsuper set b. Dumbbell Reverse Lunge 2 sets\n* 30s\nsuper set c. Dumbbell Squat 2 sets\n* 30s\nsuper set d. Dumbbell Staggered-Stance Rom Deadlift 2 sets\n* 30s\n2. Single Leg Press 4 sets of 16 reps\n3. a. Sled Push 4 sets\n* Heavy Sled Push / Pull, 30s\nsuper set b. Sled Pull 4 sets\n* 30s\n4. a. Wall Balls 3 sets of 20 reps\n* AMRAP #1\nsuper set b. Dumbbell Deadlift 3 sets of 12 reps\nsuper set c. Assault Bike 3 sets\n* Max effort, 45s\n5. a. Dumbbell Walking Lunges 3 sets of 20 reps\n* AMRAP #2\nsuper set b. Box Jumps 3 sets of 20 reps\nsuper set c. Alternating Dumbbell Sit Ups 3 sets of 16 reps"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 281,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 306,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1898,
+      "output_tokens_details": {
+        "thinking_tokens": 1492
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-haiku-5-5"
+    }
+  }
+}

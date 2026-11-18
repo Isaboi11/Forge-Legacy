@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-1",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:39:03.225Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Dairy-Free Mac and Cheese\",\"why\":\"closest match to what you asked for without any dairy\",\"cuisine\":\"American\",\"method\":\"pot\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz pasta\",\"quantity\":170,\"unit\":\"g\",\"food\":\"orzo or pasta\"},{\"text\":\"1 cup butternut squash, cubed\",\"quantity\":120,\"unit\":\"g\",\"food\":\"butternut squash\"},{\"text\":\"1/2 cup potatoes, cubed\",\"quantity\":80,\"unit\":\"g\",\"food\":\"potatoes\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1/4 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Boil pasta in salted water until just tender, about 9 minutes, then drain and set aside.\",\"In the same pot, boil the squash, potatoes and garlic together until very soft, about 12 minutes.\",\"Drain the vegetables, keeping a splash of the cooking water, then blend or mash them smooth with the olive oil, paprika, salt and pepper.\",\"Stir the sauce into the pasta until coated, adding a little reserved water if it's too thick.\",\"Serve hot.\"]},{\"name\":\"Baked Turkey Pepperoni Pasta Bake\",\"why\":\"a baked pasta dish with no dairy that still feels like a casserole night\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":35,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz pasta\",\"quantity\":170,\"unit\":\"g\",\"food\":\"orzo or pasta\"},{\"text\":\"1 cup canned tomatoes\",\"quantity\":120,\"unit\":\"g\",\"food\":\"canned tomatoes\"},{\"text\":\"2 tbsp tomato paste\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tomato paste\"},{\"text\":\"1/2 small onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 oz turkey pepperoni\",\"quantity\":55,\"unit\":\"g\",\"food\":\"turkey pepperoni\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Preheat the oven to 400°F.\",\"Boil the pasta until just shy of tender, about 8 minutes, then drain.\",\"Heat olive oil in an oven-safe pot, cook onion and garlic until soft, about 4 minutes.\",\"Add canned tomatoes, tomato paste, oregano and salt, simmer 5 minutes.\",\"Stir in the pasta and turkey pepperoni, then transfer to a baking dish.\",\"Bake uncovered 15 minutes until bubbling and the top is lightly browned.\",\"Let cool a few minutes before serving.\"]},{\"name\":\"Creamy Cashew-Style Mac Bowl\",\"why\":\"a quick no-cook sauce for a cold pasta bowl when you don't want to turn on the stove long\",\"cuisine\":\"American\",\"method\":\"bowl\",\"minutes\":20,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"3 oz pasta, cooked and cooled\",\"quantity\":85,\"unit\":\"g\",\"food\":\"orzo or pasta\"},{\"text\":\"2 tbsp tahini\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/4 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"1/4 tsp onion powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"onion powder\"},{\"text\":\"2 tbsp vegetable broth\",\"quantity\":30,\"unit\":\"g\",\"food\":\"vegetable broth\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook pasta in boiling water until tender, drain and run under cold water to cool.\",\"In a bowl whisk tahini, lemon juice, olive oil, garlic powder, onion powder and vegetable broth until smooth and creamy.\",\"Season the sauce with salt to taste.\",\"Toss the cooled pasta in the sauce until fully coated.\",\"Serve right away or chilled.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 114,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1730,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

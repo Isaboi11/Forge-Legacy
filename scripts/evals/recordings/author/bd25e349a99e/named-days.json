@@ -1,0 +1,26 @@
+{
+  "caseId": "named-days",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:31:23.369Z",
+  "reply": {
+    "text": "{\"say\":\"Day one is your heavy lower day, built around the squat and deadlift with low reps and real loading. Day two is upper pump work, higher reps across press, row, pulldown and isolation to chase a burn. Day three is athletic, with jumps for power and carries for grip and trunk.\",\"title\":\"Heavy Lower / Upper Pump / Athletic\",\"days\":[{\"name\":\"Heavy Lower\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":5,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive through the floor\"},{\"key\":\"barbell-deadlift\",\"sets\":4,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"brace hard before pulling\"},{\"key\":\"barbell-bulgarian-split-squat\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"pause at the top\"}]},{\"name\":\"Upper Pump\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"machine-seated-row\",\"sets\":4,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze shoulder blades together\"},{\"key\":\"machine-incline-chest-press\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"machine-lat-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Athletic\",\"exercises\":[{\"key\":\"box-jump\",\"sets\":4,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"land soft, reset each rep\"},{\"key\":\"broad-jump\",\"sets\":4,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"full extension on takeoff\"},{\"key\":\"skater-jump\",\"sets\":3,\"reps\":8,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"farmer-carry\",\"sets\":4,\"reps\":0,\"repsTo\":0,\"seconds\":40,\"group\":\"\",\"part\":\"main\",\"note\":\"walk tall, grip tight\"},{\"key\":\"dumbbell-suitcase-carry\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"resist leaning to one side\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 171,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1202,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

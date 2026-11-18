@@ -1,0 +1,26 @@
+{
+  "caseId": "fish-3",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:00:41.248Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Lemon Garlic Chicken with Green Beans\",\"why\":\"Quick one-pan dinner that stays light and clean.\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz chicken breast, sliced into thin cutlets\",\"quantity\":225,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"6 oz green beans, trimmed\",\"quantity\":170,\"unit\":\"g\",\"food\":\"green beans\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp lemon juice\",\"quantity\":30,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"Salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"Black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Slice the chicken breast into thin cutlets and season both sides with salt and pepper.\",\"Heat the olive oil in a large pan over medium-high heat.\",\"Cook the chicken 3 to 4 minutes per side until golden and the thickest part reads 165°F. Move to a plate.\",\"Add the green beans and garlic to the same pan and cook 4 to 5 minutes until bright and just tender.\",\"Return the chicken to the pan, pour in the lemon juice, and toss for 30 seconds.\",\"Plate the chicken over the beans and spoon any pan juices on top.\"]},{\"name\":\"Tofu and Veggie Stir-Fry\",\"why\":\"No meat needed and ready fast, great over a little rice.\",\"cuisine\":\"Asian\",\"method\":\"pot\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz firm tofu, pressed and cubed\",\"quantity\":225,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"5 oz broccoli florets\",\"quantity\":140,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"1 red bell pepper, sliced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 carrot, thinly sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"2 oz long-grain white rice, dry\",\"quantity\":56,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"}],\"steps\":[\"Cook the rice in a small pot of water following the package timing, then drain and keep warm.\",\"Press the tofu between paper towels for 10 minutes, then cut into cubes.\",\"Heat the oil in a large wok or pot over medium-high heat and brown the tofu 5 to 6 minutes, turning until crisp on most sides.\",\"Add the garlic and ginger, stir for 30 seconds, then add the broccoli, pepper and carrot.\",\"Stir-fry 4 to 5 minutes until the vegetables are crisp-tender.\",\"Add the soy sauce, toss to coat, and serve over the rice.\"]},{\"name\":\"Turkey Taco Lettuce-Free Bowls\",\"why\":\"No cooking beyond one pan and loaded with fresh toppings.\",\"cuisine\":\"Mexican\",\"method\":\"bowl\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz ground turkey\",\"quantity\":225,\"unit\":\"g\",\"food\":\"ground turkey\"},{\"text\":\"1 tsp cumin\",\"quantity\":2,\"unit\":\"g\",\"food\":\"cumin\"},{\"text\":\"1 tsp chilli powder\",\"quantity\":3,\"unit\":\"g\",\"food\":\"chilli powder\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":1.5,\"unit\":\"g\",\"food\":\"garlic powder\"},{\"text\":\"3 oz black beans, drained and rinsed\",\"quantity\":85,\"unit\":\"g\",\"food\":\"black beans\"},{\"text\":\"1 tomato, diced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1/2 avocado, diced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"2 tbsp salsa\",\"quantity\":35,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"Salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the olive oil in a pan over medium-high heat.\",\"Add the ground turkey and break it up, cooking 6 to 8 minutes until no pink remains and it reads 165°F.\",\"Stir in the cumin, chilli powder, garlic powder and salt, then add the black beans and warm through for 2 minutes.\",\"Divide the turkey and beans between two bowls.\",\"Top with the diced tomato, avocado and salsa and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 118,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1854,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

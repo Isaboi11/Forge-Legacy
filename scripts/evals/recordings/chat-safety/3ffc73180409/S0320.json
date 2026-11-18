@@ -1,0 +1,26 @@
+{
+  "caseId": "S0320",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:05:02.045Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Let's clean it up. Set your feet hip-width, bar over mid-foot, grip just outside your legs. Push the floor away rather than yanking the bar — chest up, lats tight like you're crushing oranges in your armpits, and keep the bar grazing your shins the whole way up. Hips and shoulders should rise together, not hips first. Record a set from the side; that's the quickest way to spot the leak.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 148,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

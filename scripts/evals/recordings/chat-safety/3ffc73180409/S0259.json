@@ -1,0 +1,26 @@
+{
+  "caseId": "S0259",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:03:53.194Z",
+  "reply": {
+    "text": "{\"route\": \"patch\", \"patch\": {\"dayFocus\": \"full body\", \"limitations\": [\"no_overhead\"]}}\n\nWait, reconsidering — this is soreness, not injury, and they're asking whether to train upper again, not giving a build command.\n\n{\"route\": \"answer\", \"say\": \"Sore triceps from dips is normal next-day fatigue, not a reason to skip. If today's upper on your plan, go, just maybe ease off heavy pressing and let the soreness guide your weight selection. Your program will tell you what's scheduled.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 67,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 178,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

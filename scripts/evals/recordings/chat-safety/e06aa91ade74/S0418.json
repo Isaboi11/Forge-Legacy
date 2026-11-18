@@ -1,0 +1,26 @@
+{
+  "caseId": "S0418",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:51:28.096Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"General muscle soreness is normal, and light to moderate work often loosens you up. Warm up well and keep the effort easy to moderate. If it's a big, hard-to-move soreness, swap to a different muscle group or take an easy day. When you're ready, tell me what you want to build and I'll set it up.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 112,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

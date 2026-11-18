@@ -1,0 +1,26 @@
+{
+  "caseId": "S0350",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:50:22.057Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Sure, sleeves are optional. They add a bit of warmth and some feel, but they don't hold the lift up. Warm up with a couple of lighter sets, keep your reps clean, and squat as normal. Grab a new pair when it suits you, and tell me when you want a program built.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 106,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

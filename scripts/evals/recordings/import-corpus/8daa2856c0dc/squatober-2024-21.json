@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-21",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:57:08.893Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PRESSURE COOKER\"\nDay: 21  Monday 10-21-24\n\nWarm Up: Spike the Chili temp. Hit some\nbuild up squat sets. 3reps @ 55%, 67%\n\n1. BACK SQUAT 75%\nPerform as many SETS of 3reps\nas possible in a 10 minute window of time.\nRecord how many SETS you got here 10.66\n305LBS\n* Please read caption\n\n2. BENCH PRESS = same warm up and same\npressure cooker as the Squat.\nRecord how many SETS you got here 14\n233LBS\n\n3. SLOW Strict Chin Ups 5 sets of 3-6 reps\n* 2 min rest between sets, Full range of motion\nadd resistance if needed\n\nCardio\nsuper set\na. Cablelor Band Triceps Pushdowns\n4x20 reps\nb. Heavy DB Shrugs 4x10 reps\nc. Close Grip Pushups 4x10reps\n* add weight if needed\n2min rest between each superset\n\nRecovery\nSteak and Eggs\nextra side of steak\n30 min walk\nSleep like a Bear!!"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Day 21: The Pressure Cooker\"\nWarm up: Spike the Chili temp. Hit some build up squat sets.\nBack Squat warm up sets: 3 reps @ 55%, 3 reps @ 67%\n1. Back Squat 1 set of 3 reps @ 75%\n* Perform as many sets of 3 reps as possible in a 10 minute window of time.\n* Please read caption\nBench Press warm up sets: 3 reps @ 55%, 3 reps @ 67%\n2. Bench Press 1 set of 3 reps @ 75%\n* Same pressure cooker as the Squat: perform as many sets of 3 reps as possible in a 10 minute window of time.\n3. Slow Strict Chin Ups 5 sets of 3-6 reps\n* Full range of motion, add resistance if needed\nrest 2:00\n4. a. Cable Triceps Pushdowns 4 sets of 20 reps\n* Or band\nsuper set b. Heavy DB Shrugs 4 sets of 10 reps\nsuper set c. Close Grip Pushups 4 sets of 10 reps\n* Add weight if needed\nrest 2:00 between each super set\nRecovery: Steak and Eggs, extra side of steak · 30 min walk · Sleep like a Bear!!"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4528,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 378,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 401,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 433,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

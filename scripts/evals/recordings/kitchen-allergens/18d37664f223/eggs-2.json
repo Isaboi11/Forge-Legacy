@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:40:00.604Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Turkey and Cheddar Sandwich\",\"why\":\"fast and needs no cooking at all\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"2 slices whole-wheat bread\",\"quantity\":70,\"unit\":\"g\",\"food\":\"whole-wheat bread\"},{\"text\":\"3 oz sliced turkey breast\",\"quantity\":85,\"unit\":\"g\",\"food\":\"sliced turkey breast\"},{\"text\":\"1 slice cheddar\",\"quantity\":20,\"unit\":\"g\",\"food\":\"cheddar\"},{\"text\":\"a few leaves lettuce or rocket\",\"quantity\":15,\"unit\":\"g\",\"food\":\"rocket\"},{\"text\":\"2 slices tomato\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"mustard or hot sauce to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"hot sauce\"}],\"steps\":[\"Lay out the bread slices.\",\"Layer turkey, cheddar, rocket and tomato on one slice.\",\"Add mustard or hot sauce to taste.\",\"Close the sandwich, cut in half and serve.\"]},{\"name\":\"Grilled Cheese with Turkey Bacon\",\"why\":\"warm, filling, and ready fast in a pan\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":10,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"2 slices whole-wheat bread\",\"quantity\":70,\"unit\":\"g\",\"food\":\"whole-wheat bread\"},{\"text\":\"2 slices cheddar\",\"quantity\":40,\"unit\":\"g\",\"food\":\"cheddar\"},{\"text\":\"2 slices turkey bacon, cooked\",\"quantity\":30,\"unit\":\"g\",\"food\":\"turkey bacon\"},{\"text\":\"1 tsp butter for the pan\",\"quantity\":10,\"unit\":\"g\",\"food\":\"butter\"}],\"steps\":[\"Cook turkey bacon in a pan over medium heat until crisp, about 3 to 4 minutes, then set aside.\",\"Butter one side of each bread slice.\",\"Layer cheddar and turkey bacon between the slices, buttered sides out.\",\"Toast in the pan over medium-low heat for 2 to 3 minutes per side until golden and cheese melts.\",\"Slice and serve hot.\"]},{\"name\":\"Hummus Veggie Wrap\",\"why\":\"quick to roll up and light for midday\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 flour tortilla\",\"quantity\":60,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"3 tbsp hummus\",\"quantity\":45,\"unit\":\"g\",\"food\":\"hummus\"},{\"text\":\"1/4 cucumber, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1/4 red bell pepper, sliced\",\"quantity\":35,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"handful baby spinach\",\"quantity\":20,\"unit\":\"g\",\"food\":\"baby spinach\"}],\"steps\":[\"Spread hummus evenly over the tortilla.\",\"Layer cucumber, bell pepper and spinach across the center.\",\"Roll the tortilla up tightly, tucking in the sides.\",\"Slice in half and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 100,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1139,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

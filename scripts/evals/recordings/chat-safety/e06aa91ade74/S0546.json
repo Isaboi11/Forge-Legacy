@@ -1,0 +1,26 @@
+{
+  "caseId": "S0546",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:53:17.031Z",
+  "reply": {
+    "text": "{\"route\": \"patch\", \"say\": \"Got it, today's session will steer clear of the heavy pulls.\", \"patch\": {\"limitations\": [\"lower_back\"], \"dayFocus\": \"full body\"}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 101,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 67,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

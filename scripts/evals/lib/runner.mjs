@@ -147,7 +147,7 @@ export async function evaluateSuite(suite, { root, recordings = recordingsRoot(r
  * measured spend passes it. `record` writes the recordings the offline replay grades.
  */
 /** Worth one wait and a retry: rate limits, overload, a passing 5xx. Anything else (401 key, 400 credit) stops at once. */
-const RETRYABLE = /^http_(429|500|502|503|529)$/;
+const RETRYABLE = /^(?:http_(429|500|502|503|529)|network)$/;
 
 /**
  * The upstream failure inside a live answer, or null. `callAnthropic` returns `{ error: 'http_<status>' }`; a suite
@@ -155,7 +155,8 @@ const RETRYABLE = /^http_(429|500|502|503|529)$/;
  */
 export function liveError(out) {
   const r = out?.reply;
-  if (r && typeof r.error === 'string' && /^http_\d{3}$/.test(r.error)) return r.error;
+  /* `network` — callAnthropic's dropped connection, after its own retry: an error, never the model's answer. */
+  if (r && typeof r.error === 'string' && /^(?:http_\d{3}|network)$/.test(r.error)) return r.error;
   if (r?.bodies && typeof r.bodies === 'object') {
     for (const [fn, a] of Object.entries(r.bodies)) if (a?.body?.reason === 'upstream_error') return `${fn}: upstream_error`;
   }

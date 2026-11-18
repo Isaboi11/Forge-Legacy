@@ -1,0 +1,26 @@
+{
+  "caseId": "S0380",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:50:51.110Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Eight hard weeks is right around when most people are due one. Signs it's time: lifts stalling or slipping, warm-ups feeling heavy, sleep or mood sliding, or motivation dropping. If you're seeing a couple of those, take a lighter week with about half the sets at the same weights. If you feel strong and your numbers are still climbing, keep going. How have your lifts been moving?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 74,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 143,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "soy-3",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:41:58.836Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Chickpea Quinoa Power Bowl\",\"why\":\"gives you the most plant protein in one bowl\",\"cuisine\":\"Mediterranean\",\"method\":\"bowl\",\"minutes\":25,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"60 g quinoa, dry\",\"quantity\":60,\"unit\":\"g\",\"food\":\"quinoa\"},{\"text\":\"150 g chickpeas, drained\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"50 g cucumber, diced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"60 g tomatoes, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"20 g red bell pepper, diced\",\"quantity\":20,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Rinse quinoa and cook in simmering water about 15 minutes until fluffy, then let it cool slightly.\",\"Drain and rinse the chickpeas.\",\"Dice the cucumber, tomatoes, and bell pepper.\",\"Combine quinoa, chickpeas, and vegetables in a bowl.\",\"Drizzle with olive oil and lemon juice, season with salt and pepper, and toss well.\"]},{\"name\":\"Roasted Lentil and Sweet Potato Bowl\",\"why\":\"oven does the work while you train, and lentils bring steady protein\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":40,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g sweet potato, cubed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"sweet potato\"},{\"text\":\"120 g brown or green lentils, cooked\",\"quantity\":120,\"unit\":\"g\",\"food\":\"brown or green lentils\"},{\"text\":\"50 g kale, chopped\",\"quantity\":50,\"unit\":\"g\",\"food\":\"kale\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 g cumin\",\"quantity\":1,\"unit\":\"g\",\"food\":\"cumin\"},{\"text\":\"1 g smoked paprika\",\"quantity\":1,\"unit\":\"g\",\"food\":\"smoked paprika\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat oven to 400°F (200°C).\",\"Toss sweet potato cubes with half the oil, cumin, paprika, salt, and pepper.\",\"Roast 25 to 30 minutes until tender and lightly browned.\",\"Massage kale with remaining oil and a pinch of salt until softened.\",\"Warm cooked lentils if needed.\",\"Build the bowl with lentils, roasted sweet potato, and kale.\"]},{\"name\":\"No-Cook Peanut Chickpea Noodle Bowl\",\"why\":\"zero stove time and still loaded with plant protein\",\"cuisine\":\"Asian-inspired\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"80 g wheat noodles, cooked and cooled\",\"quantity\":80,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"150 g chickpeas, drained\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"40 g carrot, shredded\",\"quantity\":40,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"40 g cabbage, shredded\",\"quantity\":40,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"20 g dry-roasted peanuts, chopped\",\"quantity\":20,\"unit\":\"g\",\"food\":\"dry-roasted peanuts\"},{\"text\":\"10 g fresh cilantro, chopped\",\"quantity\":10,\"unit\":\"g\",\"food\":\"fresh cilantro\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"hot sauce to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"hot sauce\"}],\"steps\":[\"Cook the noodles ahead of time according to package directions, then cool under cold water and drain well.\",\"Drain and rinse the chickpeas.\",\"Shred the carrot and cabbage.\",\"Combine noodles, chickpeas, carrot, cabbage, and peanuts in a bowl.\",\"Whisk lemon juice, olive oil, and hot sauce, then toss through the bowl.\",\"Top with chopped cilantro and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 107,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1711,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

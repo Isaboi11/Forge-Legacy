@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-3",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:44:47.454Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Baked Chickpea Falafel Wraps\",\"why\":\"closest match to what you asked for, baked instead of fried\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":35,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 can (400g) chickpeas, drained\",\"quantity\":400,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"1/4 cup chopped fresh parsley\",\"quantity\":15,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1/4 onion, chopped\",\"quantity\":40,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tsp cumin\",\"quantity\":2,\"unit\":\"g\",\"food\":\"cumin\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 tbsp flour to bind\",\"quantity\":15,\"unit\":\"g\",\"food\":\"all-purpose flour\"},{\"text\":\"2 low-carb tortillas\",\"quantity\":90,\"unit\":\"g\",\"food\":\"low-carb tortilla\"},{\"text\":\"1/2 cup shredded cabbage\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"2 tbsp plain yogurt sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"plain yogurt\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Preheat oven to 400°F.\",\"Mash chickpeas with parsley, garlic, onion, cumin, flour, salt and pepper until it holds together.\",\"Form into small patties, brush with olive oil, bake 20-25 minutes flipping once until golden and firm.\",\"Warm tortillas, fill with falafel patties, cabbage and a spoon of yogurt sauce.\",\"Roll up tightly and serve.\"]},{\"name\":\"Pan-Fried Falafel Wrap\",\"why\":\"fastest way to get crisp falafel without the oven\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 can (400g) chickpeas, drained\",\"quantity\":400,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"2 cloves garlic\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1/4 onion, chopped\",\"quantity\":40,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tsp ground cinnamon\",\"quantity\":1,\"unit\":\"g\",\"food\":\"ground cinnamon\"},{\"text\":\"1 tsp cumin\",\"quantity\":2,\"unit\":\"g\",\"food\":\"cumin\"},{\"text\":\"2 tbsp flour\",\"quantity\":15,\"unit\":\"g\",\"food\":\"all-purpose flour\"},{\"text\":\"3 tbsp olive oil for frying\",\"quantity\":40,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 pita breads\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"1/2 cup chopped tomatoes\",\"quantity\":75,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1/4 cup chopped cucumber\",\"quantity\":35,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Mash chickpeas, garlic, onion, cinnamon, cumin, flour, salt and pepper into a coarse paste.\",\"Shape into small patties.\",\"Heat olive oil in a pan over medium heat and fry patties 3-4 minutes per side until golden and crisp outside.\",\"Warm pita, fill with falafel, tomato and cucumber.\",\"Fold and serve warm.\"]},{\"name\":\"No-Cook Chickpea Smash Wrap\",\"why\":\"no stove needed, ready in minutes\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 cup canned chickpeas, drained and mashed\",\"quantity\":165,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"2 tbsp plain yogurt\",\"quantity\":30,\"unit\":\"g\",\"food\":\"plain yogurt\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1/4 cup chopped fresh parsley\",\"quantity\":15,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"1 low-carb tortilla\",\"quantity\":45,\"unit\":\"g\",\"food\":\"low-carb tortilla\"},{\"text\":\"1/4 cup shredded carrot\",\"quantity\":30,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Mash chickpeas with a fork in a bowl.\",\"Stir in yogurt, lemon juice, garlic, parsley, salt and pepper.\",\"Lay tortilla flat and spread the chickpea mash down the center.\",\"Top with shredded carrot.\",\"Roll up tightly and slice in half to serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 89,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1852,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

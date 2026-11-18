@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-2",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:56:43.208Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Berry Yogurt Granola Bowl\",\"why\":\"Fastest of the three and no cooking at all.\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"200 g plain Greek yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"50 g granola (check the label for nuts)\",\"quantity\":50,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"100 g blueberries\",\"quantity\":100,\"unit\":\"g\",\"food\":\"blueberries\"},{\"text\":\"100 g strawberries, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"strawberries\"},{\"text\":\"10 g chia seeds\",\"quantity\":10,\"unit\":\"g\",\"food\":\"chia seeds\"},{\"text\":\"10 g honey\",\"quantity\":10,\"unit\":\"g\",\"food\":\"honey\"}],\"steps\":[\"Spoon the yogurt into a wide bowl and smooth the top.\",\"Slice the strawberries and scatter them with the blueberries over the yogurt.\",\"Sprinkle the granola and chia seeds on top.\",\"Drizzle with honey and eat right away so the granola stays crunchy.\"]},{\"name\":\"Warm Cinnamon Apple Granola Bowl\",\"why\":\"Cozy and cooked, a nice change from cold bowls.\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":12,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"150 g apple, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"apple\"},{\"text\":\"5 g butter\",\"quantity\":5,\"unit\":\"g\",\"food\":\"butter\"},{\"text\":\"1 g ground cinnamon\",\"quantity\":1,\"unit\":\"g\",\"food\":\"ground cinnamon\"},{\"text\":\"50 g granola (check the label for nuts)\",\"quantity\":50,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"150 g plain Greek yogurt\",\"quantity\":150,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"15 g raisins\",\"quantity\":15,\"unit\":\"g\",\"food\":\"raisins\"}],\"steps\":[\"Melt the butter in a small pan over medium heat.\",\"Add the diced apple and cinnamon and cook 5 to 6 minutes until soft and lightly golden.\",\"Stir in the raisins for the last minute.\",\"Spoon the yogurt into a bowl and pile the warm apples on top.\",\"Finish with the granola for crunch.\"]},{\"name\":\"Tropical Peanut Butter Granola Bowl\",\"why\":\"Packs the most protein and keeps you full.\",\"cuisine\":\"Tropical\",\"method\":\"bowl\",\"minutes\":8,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"150 g cottage cheese\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cottage cheese\"},{\"text\":\"100 g mango, diced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"mango\"},{\"text\":\"1 banana, sliced (about 100 g)\",\"quantity\":100,\"unit\":\"g\",\"food\":\"banana\"},{\"text\":\"50 g granola (check the label for nuts)\",\"quantity\":50,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"15 g peanut butter (peanuts are not tree nuts)\",\"quantity\":15,\"unit\":\"g\",\"food\":\"peanut butter\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Spoon the cottage cheese into a bowl.\",\"Top with the diced mango and sliced banana.\",\"Warm the peanut butter in the microwave for 10 seconds so it drizzles easily, then spoon it over the fruit.\",\"Sprinkle on the granola and sesame seeds and serve right away.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 127,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1287,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

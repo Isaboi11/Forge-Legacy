@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-4",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:57:03.652Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Crunchy Chickpea Cucumber Salad\",\"why\":\"no stove needed and loaded with crunch\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"120 g canned chickpeas, drained and rinsed\",\"quantity\":120,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"150 g cucumber, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"100 g tomatoes, chopped\",\"quantity\":100,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"40 g feta, crumbled\",\"quantity\":40,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"20 g onion, thinly sliced\",\"quantity\":20,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":1,\"unit\":\"g\",\"food\":\"dried oregano\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Pat the chickpeas dry so they stay crisp in the salad.\",\"Dice the cucumber and tomatoes and slice the onion thin.\",\"Whisk the olive oil, lemon juice, oregano, salt and pepper in a large bowl.\",\"Add the chickpeas, cucumber, tomatoes and onion and toss well.\",\"Top with the crumbled feta and eat right away so everything stays crunchy.\"]},{\"name\":\"Sesame Chicken Crunch Slaw\",\"why\":\"most protein of the three, with a big raw-veg crunch\",\"cuisine\":\"Asian\",\"method\":\"pan\",\"minutes\":20,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g chicken breast, sliced into thin strips\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"120 g cabbage, finely shredded\",\"quantity\":120,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"60 g carrot, grated\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"60 g red bell pepper, thinly sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"10 g sesame seeds\",\"quantity\":10,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"15 g soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"10 g honey\",\"quantity\":10,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"10 g cider vinegar\",\"quantity\":10,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"}],\"steps\":[\"Whisk the soy sauce, honey and cider vinegar together for the dressing.\",\"Heat the olive oil in a pan over medium-high heat.\",\"Cook the chicken strips 5 to 6 minutes, turning, until golden and no longer pink inside; the thickest piece should read 165°F.\",\"Toss the cabbage, carrot and bell pepper in a bowl with most of the dressing.\",\"Top with the warm chicken, drizzle the remaining dressing and sprinkle with sesame seeds.\"]},{\"name\":\"Roasted Chickpea Kale Salad\",\"why\":\"oven-crisped chickpeas give you crunch in every bite\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":35,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"240 g canned chickpeas, drained and rinsed\",\"quantity\":240,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"100 g kale, stems removed and chopped small\",\"quantity\":100,\"unit\":\"g\",\"food\":\"kale\"},{\"text\":\"100 g carrot, grated\",\"quantity\":100,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"20 g olive oil, divided\",\"quantity\":20,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":2,\"unit\":\"g\",\"food\":\"smoked paprika\"},{\"text\":\"20 g lemon juice\",\"quantity\":20,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"20 g parmesan, shaved\",\"quantity\":20,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 425°F.\",\"Dry the chickpeas well, toss with half the olive oil, the paprika and salt, and spread on a sheet pan.\",\"Roast 20 to 25 minutes, shaking once, until deep golden and crisp.\",\"Massage the chopped kale with the remaining oil, lemon juice and pepper for about a minute to soften it.\",\"Toss the kale with the grated carrot, top with the hot chickpeas and parmesan, and serve right away.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 128,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1764,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

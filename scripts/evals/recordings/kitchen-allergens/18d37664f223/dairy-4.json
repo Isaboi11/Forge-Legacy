@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-4",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:39:40.615Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Grilled Veggie Flatbread Pizza\",\"why\":\"grill gives you that charred crust without needing the oven\",\"cuisine\":\"Italian\",\"method\":\"grill\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"2 pita breads\",\"quantity\":130,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"1/2 cup pizza sauce\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"1/2 red bell pepper, sliced\",\"quantity\":75,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1/2 cup mushrooms, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"mushrooms\"},{\"text\":\"1/4 onion, sliced\",\"quantity\":40,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat grill to medium-high.\",\"Brush pita with olive oil on both sides.\",\"Grill vegetables 3-4 minutes until lightly charred, then set aside.\",\"Grill pita 1-2 minutes per side until grill marks form.\",\"Spread pizza sauce on pita, top with grilled vegetables.\",\"Sprinkle with oregano, salt and pepper, and serve warm.\"]},{\"name\":\"Sheet Pan Pepperoni Pizza\",\"why\":\"closest to a classic pizza night without dairy, straight from the oven\",\"cuisine\":\"Italian\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"2 flour tortillas\",\"quantity\":120,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1/2 cup pizza sauce\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"20 slices turkey pepperoni\",\"quantity\":50,\"unit\":\"g\",\"food\":\"turkey pepperoni\"},{\"text\":\"1/4 onion, thinly sliced\",\"quantity\":40,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"chilli flakes to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Preheat oven to 425°F.\",\"Place tortillas on a baking sheet and brush lightly with olive oil.\",\"Spread pizza sauce evenly over each tortilla.\",\"Top with turkey pepperoni and onion slices.\",\"Bake 10-12 minutes until edges are crisp and pepperoni is heated through to 165°F.\",\"Sprinkle with oregano and chilli flakes before slicing.\"]},{\"name\":\"No-Bake Pizza Hummus Bowl\",\"why\":\"no stove needed, all the pizza flavors in a quick bowl\",\"cuisine\":\"Italian\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"1/2 cup hummus\",\"quantity\":120,\"unit\":\"g\",\"food\":\"hummus\"},{\"text\":\"1/4 cup pizza sauce\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"10 slices turkey pepperoni, chopped\",\"quantity\":25,\"unit\":\"g\",\"food\":\"turkey pepperoni\"},{\"text\":\"1/4 cup cherry tomatoes, halved\",\"quantity\":40,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1 tbsp fresh parsley, chopped\",\"quantity\":4,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Spread hummus in the bottom of a bowl.\",\"Spoon pizza sauce over the hummus.\",\"Scatter chopped pepperoni and tomatoes on top.\",\"Drizzle with olive oil and sprinkle with oregano and parsley.\",\"Serve with pita or tortilla chips for scooping.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 112,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1569,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

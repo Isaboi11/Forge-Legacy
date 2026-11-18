@@ -1,0 +1,26 @@
+{
+  "caseId": "S0360",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:50:31.557Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Easiest trick is to chop it into chunks in your head: run to the first landmark, then the next, and never think about the full distance. You can also take a short walk break every mile or two, which is a legitimate strategy, not cheating. Keep the pace easy enough to hold a conversation and the miles go by faster than you'd expect.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 65,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

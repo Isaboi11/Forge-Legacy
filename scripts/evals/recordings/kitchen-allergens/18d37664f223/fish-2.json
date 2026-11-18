@@ -1,0 +1,26 @@
+{
+  "caseId": "fish-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:42:39.070Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Smoky Paprika Chicken with Rice\",\"why\":\"gives you a smoky savory flavor since fish is off the table\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz chicken thighs, sliced\",\"quantity\":340,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":2,\"unit\":\"g\",\"food\":\"smoked paprika\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":1,\"unit\":\"g\",\"food\":\"garlic powder\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"2/3 cup white rice, dry\",\"quantity\":120,\"unit\":\"g\",\"food\":\"white rice\"}],\"steps\":[\"Cook rice according to package directions.\",\"Toss sliced chicken with smoked paprika, garlic powder, salt and pepper.\",\"Heat oil in a pan over medium-high heat.\",\"Cook chicken 6-8 minutes, turning, until internal temperature reaches 165°F.\",\"Serve chicken over the rice.\"]},{\"name\":\"Turkey and White Bean Soup\",\"why\":\"warm, savory, and easy to batch for the week\",\"cuisine\":\"American\",\"method\":\"pot\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz ground turkey\",\"quantity\":225,\"unit\":\"g\",\"food\":\"ground turkey\"},{\"text\":\"1 cup white beans, drained\",\"quantity\":150,\"unit\":\"g\",\"food\":\"white beans\"},{\"text\":\"2 cups vegetable broth\",\"quantity\":480,\"unit\":\"g\",\"food\":\"vegetable broth\"},{\"text\":\"1/2 cup diced carrot\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"1/4 cup diced onion\",\"quantity\":35,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":1,\"unit\":\"g\",\"food\":\"dried oregano\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat oil in a pot over medium heat.\",\"Add onion, carrot and garlic, cook 4 minutes until softened.\",\"Add ground turkey, breaking it up, cook until no pink remains and internal temperature reaches 165°F.\",\"Add broth, beans and oregano, bring to a simmer.\",\"Simmer 10 minutes, season with salt and pepper, serve hot.\"]},{\"name\":\"Greek Yogurt Chicken Salad Bowl\",\"why\":\"no cooking needed, quick protein-forward option\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"6 oz cooked chicken breast, diced\",\"quantity\":170,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"1/3 cup greek yogurt\",\"quantity\":80,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"1/4 cucumber, diced\",\"quantity\":40,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1/4 cup diced red bell pepper\",\"quantity\":35,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tbsp fresh parsley, chopped\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Combine diced chicken, yogurt, cucumber, bell pepper and lemon juice in a bowl.\",\"Stir until evenly coated.\",\"Season with salt and pepper and stir in parsley.\",\"Serve chilled or at room temperature.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 119,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1553,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

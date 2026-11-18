@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-1",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:44:17.491Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Greek Mezze Plate with Yogurt Dip\",\"why\":\"classic spread that uses simple fridge staples, no cooking needed\",\"cuisine\":\"Greek\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"150 g greek yogurt\",\"quantity\":150,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 cucumber, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 tomato, sliced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"80 g feta, sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"1 pita, cut into wedges\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"Kalamata olives to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"olives\"},{\"text\":\"Dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Mix the greek yogurt with garlic, lemon juice, olive oil and a pinch of oregano for a quick dip.\",\"Arrange cucumber, tomato, feta and olives on a plate.\",\"Warm or lightly toast the pita wedges if you like, then add to the plate.\",\"Serve the dip alongside everything for dipping and scooping.\"]},{\"name\":\"Roasted Veggie and Halloumi Mezze\",\"why\":\"warm oven option that adds more to the spread without extra pans\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"150 g red bell pepper, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"150 g sweet potato, cubed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"sweet potato\"},{\"text\":\"1 small red onion, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"180 g halloumi, sliced\",\"quantity\":180,\"unit\":\"g\",\"food\":\"halloumi\"},{\"text\":\"Dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"Black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Preheat oven to 425°F.\",\"Toss the pepper, sweet potato and onion with olive oil, oregano and pepper on a tray.\",\"Roast for 20 minutes, stirring once, until the sweet potato is tender.\",\"In the last 5 minutes, add the halloumi slices to the tray and roast until golden on the edges.\",\"Plate the roasted vegetables and halloumi together as part of the mezze spread.\"]},{\"name\":\"Chickpea and Herb Salad Mezze Bowl\",\"why\":\"quick stovetop-free protein addition built around chickpeas\",\"cuisine\":\"Mediterranean\",\"method\":\"bowl\",\"minutes\":10,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 can chickpeas, drained\",\"quantity\":240,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"1 tomato, diced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1 cucumber, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"20 g fresh parsley, chopped\",\"quantity\":20,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"10 g fresh mint, chopped\",\"quantity\":10,\"unit\":\"g\",\"food\":\"fresh mint\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"Salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Combine chickpeas, tomato, cucumber, parsley and mint in a bowl.\",\"Whisk olive oil, lemon juice and salt together.\",\"Pour the dressing over the salad and toss well.\",\"Add the bowl to the mezze plate alongside the other dishes.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 89,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1593,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

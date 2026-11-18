@@ -1,0 +1,26 @@
+{
+  "caseId": "soy-1",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:41:30.172Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Chicken and Broccoli Stir Fry\",\"why\":\"a classic stir fry with lean protein and veg you likely have\",\"cuisine\":\"Chinese\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz chicken breast, sliced thin\",\"quantity\":340,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"2 cups broccoli florets\",\"quantity\":180,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"1 carrot, sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp hot sauce (optional)\",\"quantity\":null,\"unit\":\"\",\"food\":\"hot sauce\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat oil in a large pan or wok over high heat.\",\"Add chicken and cook, stirring, until golden and reaching 165°F internal, about 6-8 minutes; remove and set aside.\",\"Add broccoli and carrot to the pan, stir fry 4-5 minutes until crisp-tender.\",\"Add garlic and ginger, cook 30 seconds until fragrant.\",\"Return chicken to the pan, season with salt, pepper and hot sauce if using.\",\"Toss everything together and serve hot.\"]},{\"name\":\"Beef and Pepper Stir Fry\",\"why\":\"quick dinner that uses a different protein and cooking speed\",\"cuisine\":\"Chinese\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"10 oz sirloin steak, sliced thin\",\"quantity\":280,\"unit\":\"g\",\"food\":\"sirloin steak\"},{\"text\":\"1 red bell pepper, sliced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1/2 onion, sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat oil in a hot pan or wok.\",\"Sear sliced steak quickly, 2-3 minutes per side, until it reaches at least 145°F and rests 3 minutes.\",\"Remove steak, add onion and bell pepper to the pan and stir fry 3-4 minutes until softened.\",\"Add garlic and cook 30 seconds.\",\"Return steak to the pan, add vinegar, salt and pepper, toss to combine.\",\"Serve immediately.\"]},{\"name\":\"Shrimp and Cabbage Stir Fry\",\"why\":\"lighter option that comes together fast with seafood instead of meat\",\"cuisine\":\"Chinese\",\"method\":\"pan\",\"minutes\":15,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"12 oz raw prawns, peeled\",\"quantity\":340,\"unit\":\"g\",\"food\":\"raw prawns\"},{\"text\":\"2 cups cabbage, shredded\",\"quantity\":180,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"1 carrot, julienned\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"chilli flakes to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat oil in a large pan over high heat.\",\"Add prawns and cook until pink and opaque, reaching 145°F internal, about 2-3 minutes; remove and set aside.\",\"Add cabbage and carrot to the pan, stir fry 3-4 minutes until just tender.\",\"Add garlic and chilli flakes, cook 30 seconds.\",\"Return prawns to the pan, add lemon juice and salt, toss well.\",\"Serve hot.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 103,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1687,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w3c",
+  "promptHash": "3aa4bacf058bb4b0a22853c0048e368e16358586ed9980023c6d3c3bcbef87f5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:08:05.456Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "1. (Optional) Stairmaster\n3 min\n\n2. CIRCUIT\nWarmup\nRounds: 2\n30s 90/90 Stretch\n30s DB Reverse Lunge\n30s DB Squat\n30s DB Staggered-Stance Rom deadlift\n\n3. Single Leg Press\nRounds: 4\n16-16-16-16 reps\n\n4. CIRCUIT\nHeavy Sled Push / Pull\nRounds: 4\n30s Sled Push\n30s Sled Pull\n\n5. CIRCUIT\nAMRAP #1\nRounds: 3\n20 Wall Balls\n12 DB Deadlift\n45s Max Effort Assault Bike\n\n6. CIRCUIT\nAMRAP #2\nRounds: 3\n20 DB Walking Lunges\n20 Box Jumps\n16 Alt DB Sit Ups"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": false,
+          "reason": "not_a_workout"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 293,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 318,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 14,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

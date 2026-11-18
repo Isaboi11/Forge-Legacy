@@ -1,0 +1,26 @@
+{
+  "caseId": "shellfish-2",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:01:18.452Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Garlic Butter Chicken Skillet\",\"why\":\"Same bold garlic hit as shrimp, ready in one pan\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"400 g boneless chicken thighs, cut into bite-size pieces\",\"quantity\":400,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"20 g butter\",\"quantity\":20,\"unit\":\"g\",\"food\":\"butter\"},{\"text\":\"15 g garlic (about 5 cloves), minced\",\"quantity\":15,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"5 g chopped fresh parsley\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"Salt, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"Black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"150 g broccoli florets\",\"quantity\":150,\"unit\":\"g\",\"food\":\"broccoli florets\"}],\"steps\":[\"Pat the chicken dry and season with salt and pepper.\",\"Heat the olive oil in a large pan over medium-high heat and cook the chicken in a single layer for 6 to 8 minutes, turning once, until golden.\",\"Add the broccoli and a splash of water, cover, and steam for 3 minutes.\",\"Lower the heat, add the butter and garlic, and stir for 30 seconds until fragrant but not browned.\",\"Cook until the chicken reaches 165°F inside and the juices run clear.\",\"Squeeze in the lemon juice, toss with parsley, and serve.\"]},{\"name\":\"Garlic Lemon Salmon with Rice\",\"why\":\"Closest to a seafood dinner without the shellfish\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g salmon fillet, cut into 2 portions\",\"quantity\":300,\"unit\":\"g\",\"food\":\"salmon fillet\"},{\"text\":\"15 g garlic (about 5 cloves), minced\",\"quantity\":15,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"15 g lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"140 g long-grain white rice, dry\",\"quantity\":140,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"150 g green beans, trimmed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"green beans\"},{\"text\":\"Salt, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"Black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat the oven to 400°F and line a sheet pan.\",\"Cook the rice according to the package directions.\",\"Mix the garlic, olive oil, lemon juice, salt and pepper.\",\"Put the salmon and green beans on the pan and spoon the garlic mixture over both.\",\"Roast 12 to 15 minutes until the salmon flakes easily and reaches 145°F.\",\"Serve the salmon and beans over the rice.\"]},{\"name\":\"Garlic Tofu Stir-Fry Bowl\",\"why\":\"Fast, savory and lighter than the other two\",\"cuisine\":\"Asian\",\"method\":\"bowl\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"350 g firm tofu, pressed and cubed\",\"quantity\":350,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"20 g garlic (about 6 cloves), minced\",\"quantity\":20,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"15 g soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"200 g bok choy, chopped\",\"quantity\":200,\"unit\":\"g\",\"food\":\"bok choy\"},{\"text\":\"120 g brown rice, dry\",\"quantity\":120,\"unit\":\"g\",\"food\":\"brown rice\"},{\"text\":\"Chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Cook the brown rice according to the package directions.\",\"Heat the oil in a large pan over medium-high heat and fry the tofu 6 to 8 minutes, turning, until golden on most sides.\",\"Add the garlic and chilli flakes and stir for 30 seconds.\",\"Add the bok choy and soy sauce and cook 2 to 3 minutes until the stems are tender-crisp.\",\"Spoon over the rice in bowls and serve hot.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 119,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1713,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "shellfish-3",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:43:51.607Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Lemon Garlic Salmon Pasta\",\"why\":\"uses the most of what you have with no shellfish needed\",\"cuisine\":\"Italian\",\"method\":\"pot\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz spaghetti\",\"quantity\":170,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"8 oz salmon fillet, cut into chunks\",\"quantity\":225,\"unit\":\"g\",\"food\":\"salmon fillet\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"3 cloves garlic, minced\",\"quantity\":9,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 tbsp fresh parsley, chopped\",\"quantity\":8,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"chilli flakes to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Boil salted water and cook spaghetti until al dente, then drain and reserve a splash of pasta water.\",\"Heat olive oil in a pot over medium heat and add garlic, cooking 30 seconds until fragrant.\",\"Add salmon chunks and cook 4 to 5 minutes, turning gently, until salmon flakes easily and reaches 145°F internal temperature.\",\"Add drained pasta, lemon juice, and a splash of reserved pasta water, tossing to coat.\",\"Stir in parsley, season with salt, pepper, and chilli flakes, and serve.\"]},{\"name\":\"Baked Cod and Tomato Orzo\",\"why\":\"hands-off oven method while the orzo cooks alongside\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":35,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz cod fillet\",\"quantity\":225,\"unit\":\"g\",\"food\":\"cod fillet\"},{\"text\":\"6 oz orzo pasta\",\"quantity\":170,\"unit\":\"g\",\"food\":\"orzo or pasta\"},{\"text\":\"1 cup canned tomatoes\",\"quantity\":240,\"unit\":\"g\",\"food\":\"canned tomatoes\"},{\"text\":\"1/2 onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":2,\"unit\":\"g\",\"food\":\"dried oregano\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Preheat oven to 400°F.\",\"Boil orzo in salted water until just tender, then drain and spread in a baking dish.\",\"In a bowl, mix canned tomatoes, onion, garlic, olive oil, oregano, salt, and pepper, then pour over orzo and stir to combine.\",\"Lay cod fillet on top, season with salt and pepper.\",\"Bake 18 to 20 minutes until cod flakes easily and reaches 145°F internal temperature.\",\"Serve cod over the tomato orzo.\"]},{\"name\":\"Chilled Tuna Pasta Salad\",\"why\":\"no stove needed, fast lunch using pantry tuna\",\"cuisine\":\"Italian\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"6 oz orzo or pasta, cooked and cooled\",\"quantity\":170,\"unit\":\"g\",\"food\":\"orzo or pasta\"},{\"text\":\"2 cans tuna in water, drained\",\"quantity\":280,\"unit\":\"g\",\"food\":\"tuna in water\"},{\"text\":\"1/2 cucumber, diced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1/2 red bell pepper, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 tbsp fresh parsley, chopped\",\"quantity\":8,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook pasta according to package directions, then drain and rinse under cold water to cool.\",\"Flake tuna into a large bowl.\",\"Add cooled pasta, cucumber, and bell pepper to the bowl.\",\"Drizzle with olive oil and lemon juice, then toss to combine.\",\"Stir in parsley, season with salt and pepper, and serve chilled.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 111,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1727,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

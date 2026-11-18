@@ -1,0 +1,26 @@
+{
+  "caseId": "S0004",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:45:03.974Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"That's one for a doctor or a dietitian, and with you being 15 I'd really want a parent in on it too. What I can say is that the biggest gains at your age come from consistent training, enough food, protein included, and solid sleep, and none of that needs a supplement. Want me to set up a program?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 66,
+    "cache_creation_input_tokens": 6985,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 6985,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 108,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

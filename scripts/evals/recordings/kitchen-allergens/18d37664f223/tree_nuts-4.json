@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-4",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:38:48.453Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Crunchy Chicken and Cabbage Salad\",\"why\":\"packs in crunch from cabbage and seeds with a solid hit of protein\",\"cuisine\":\"Asian\",\"method\":\"no-cook\",\"minutes\":20,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"2 cups shredded cabbage\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"1 carrot, julienned\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"8 oz cooked chicken breast, sliced\",\"quantity\":225,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"1 tbsp sesame seeds\",\"quantity\":10,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Slice cooked chicken (cook to 165°F internal if not already cooked) and set aside.\",\"Toss cabbage and carrot in a large bowl.\",\"Whisk soy sauce, olive oil, lemon juice and garlic for dressing.\",\"Add chicken to the bowl, pour dressing over and toss well.\",\"Top with sesame seeds and season with salt and pepper before serving.\"]},{\"name\":\"Roasted Chickpea Crunch Salad\",\"why\":\"roasting the chickpeas gives real crunch without needing a stove\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 can chickpeas, drained\",\"quantity\":240,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":2,\"unit\":\"g\",\"food\":\"smoked paprika\"},{\"text\":\"4 cups rocket\",\"quantity\":100,\"unit\":\"g\",\"food\":\"rocket\"},{\"text\":\"1 cucumber, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1/2 red bell pepper, diced\",\"quantity\":75,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"2 tbsp feta, crumbled\",\"quantity\":30,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Preheat oven to 425°F.\",\"Toss chickpeas with olive oil, smoked paprika, salt and pepper.\",\"Roast chickpeas 20 minutes, shaking the pan halfway, until crisp.\",\"Combine rocket, cucumber and bell pepper in a bowl.\",\"Top salad with roasted chickpeas and feta.\",\"Drizzle with lemon juice and serve.\"]},{\"name\":\"Crispy Air-Fried Tofu Crunch Bowl\",\"why\":\"air-frying the tofu gives the crunch without extra oil\",\"cuisine\":\"Asian\",\"method\":\"air-fryer\",\"minutes\":25,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"8 oz firm tofu, cubed\",\"quantity\":225,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cups shredded cabbage\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"1 carrot, julienned\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"1/4 cup edamame, shelled\",\"quantity\":40,\"unit\":\"g\",\"food\":\"edamame\"},{\"text\":\"1 tbsp rice vinegar or lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Toss tofu cubes with soy sauce and olive oil.\",\"Air-fry at 390°F for 12-15 minutes, shaking halfway, until crisp and golden.\",\"Combine cabbage, carrot and edamame in a bowl.\",\"Add lemon juice, salt and pepper and toss.\",\"Top salad with crispy tofu and sesame seeds before serving.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 126,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1752,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

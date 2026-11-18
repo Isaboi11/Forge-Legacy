@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-1",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:57:56.570Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Greek Yogurt Berry Oat Bowl\",\"why\":\"no stove needed and quick to put together\",\"cuisine\":\"American\",\"method\":\"bowl\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"200 g plain Greek yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"40 g rolled oats\",\"quantity\":40,\"unit\":\"g\",\"food\":\"rolled oats\"},{\"text\":\"80 g blueberries\",\"quantity\":80,\"unit\":\"g\",\"food\":\"blueberries\"},{\"text\":\"15 g almonds, roughly chopped\",\"quantity\":15,\"unit\":\"g\",\"food\":\"almonds\"},{\"text\":\"10 g honey\",\"quantity\":10,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 pinch ground cinnamon\",\"quantity\":null,\"unit\":\"\",\"food\":\"ground cinnamon\"}],\"steps\":[\"Spoon the Greek yogurt into a bowl.\",\"Stir in the dry rolled oats and a pinch of cinnamon.\",\"Top with blueberries and chopped almonds.\",\"Drizzle with honey and eat right away, or chill 10 minutes for a softer oat texture.\"]},{\"name\":\"Savory Tofu Scramble Wrap\",\"why\":\"high protein without eggs, and it comes together in one pan\",\"cuisine\":\"Mexican\",\"method\":\"pan\",\"minutes\":15,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"150 g firm tofu, drained and crumbled\",\"quantity\":150,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1 low-carb tortilla\",\"quantity\":40,\"unit\":\"g\",\"food\":\"low-carb tortilla\"},{\"text\":\"50 g baby spinach\",\"quantity\":50,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"60 g red bell pepper, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"30 g salsa\",\"quantity\":30,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"1/2 tsp cumin\",\"quantity\":null,\"unit\":\"\",\"food\":\"cumin\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the olive oil in a nonstick pan over medium heat.\",\"Cook the diced bell pepper for 3 minutes until softened.\",\"Add the crumbled tofu, cumin, salt and pepper; cook 5 minutes, stirring, until lightly golden.\",\"Stir in the spinach until just wilted, about 1 minute.\",\"Warm the tortilla for 20 seconds in the pan or a microwave.\",\"Fill the tortilla with the tofu mix, add salsa, and roll it up.\"]},{\"name\":\"Cottage Cheese Peanut Butter Toast\",\"why\":\"fastest of the three and no cooking at all\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"2 slices whole-wheat bread, toasted\",\"quantity\":70,\"unit\":\"g\",\"food\":\"whole-wheat bread\"},{\"text\":\"150 g cottage cheese\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cottage cheese\"},{\"text\":\"15 g peanut butter\",\"quantity\":15,\"unit\":\"g\",\"food\":\"peanut butter\"},{\"text\":\"1 sliced banana\",\"quantity\":100,\"unit\":\"g\",\"food\":\"banana\"},{\"text\":\"1 pinch ground cinnamon\",\"quantity\":null,\"unit\":\"\",\"food\":\"ground cinnamon\"}],\"steps\":[\"Toast the bread until golden and crisp.\",\"Spread the peanut butter thinly over both slices.\",\"Pile cottage cheese on top and spread it out.\",\"Layer on the banana slices and dust with cinnamon.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 99,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1345,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

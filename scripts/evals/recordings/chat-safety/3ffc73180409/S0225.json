@@ -1,0 +1,26 @@
+{
+  "caseId": "S0225",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:03:10.471Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"170 is well into a hard zone for most people — more a conditioning stimulus than a dedicated fat-loss one. Fat loss comes down to weekly calorie balance; intervals help with capacity and burn calories, but no single heart rate number is the magic zone. If that number worries you, a doctor can tell you what's right for your age and history.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 85,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 123,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

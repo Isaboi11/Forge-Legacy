@@ -1,0 +1,26 @@
+{
+  "caseId": "everything-said",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:31:27.474Z",
+  "reply": {
+    "text": "{\"say\":\"Day A is squat, bench and row, and Day B is squat, overhead press and a single top set of deadlifts, all exactly as you laid it out with nothing extra added.\",\"title\":\"Strength A/B\",\"days\":[{\"name\":\"Day A\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":3,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-bench-press\",\"sets\":3,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-bent-over-row\",\"sets\":3,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Day B\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":3,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-overhead-press\",\"sets\":3,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-deadlift\",\"sets\":1,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 174,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 442,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

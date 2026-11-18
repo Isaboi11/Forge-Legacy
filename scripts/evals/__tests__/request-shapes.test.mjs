@@ -150,3 +150,22 @@ test('coach-kitchen: thinking off, effort low, its schema and cap, cached SYSTEM
   assert.equal(sent[0].output_config.format.type, 'json_schema');
   assert.deepEqual(sent[0].system[0].cache_control, { type: 'ephemeral' });
 });
+
+test('a dropped connection is retried once, then is an error — never recorded as the model’s answer', async () => {
+  const { callAnthropic } = await import('../lib/suite-kit.mjs');
+  const { liveError } = await import('../lib/runner.mjs');
+  const real = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new TypeError('fetch failed');
+  };
+  try {
+    const out = await callAnthropic({ apiKey: 'k', model: 'claude-sonnet-5', system: 's', messages: [] });
+    assert.equal(calls, 2);
+    assert.deepEqual(out, { reply: { error: 'network' }, usage: null });
+    assert.equal(liveError(out), 'network');
+  } finally {
+    globalThis.fetch = real;
+  }
+});

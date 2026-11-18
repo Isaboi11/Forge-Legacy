@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:39:16.807Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Creamy Tofu Alfredo Pasta\",\"why\":\"gets you that creamy pasta without any dairy at all\",\"cuisine\":\"Italian\",\"method\":\"pot\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz spaghetti\",\"quantity\":170,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"7 oz firm tofu\",\"quantity\":200,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/2 cup vegetable broth\",\"quantity\":120,\"unit\":\"g\",\"food\":\"vegetable broth\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"fresh parsley, chopped\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh parsley\"}],\"steps\":[\"Boil the spaghetti in salted water until al dente, then drain, keeping a little pasta water aside.\",\"Blend the tofu, garlic, olive oil, broth and lemon juice until smooth and creamy.\",\"Warm the tofu sauce in the pot over low heat, stirring so it doesn't stick.\",\"Toss in the drained pasta and mix well, loosening with reserved pasta water if needed.\",\"Season with salt and pepper, top with parsley and serve hot.\"]},{\"name\":\"Creamy Cashew-Free Mushroom Pasta\",\"why\":\"uses pantry basics for a rich sauce with no stove-side babysitting needed once simmering\",\"cuisine\":\"Italian\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"6 oz orzo or pasta\",\"quantity\":170,\"unit\":\"g\",\"food\":\"orzo or pasta\"},{\"text\":\"6 oz mushrooms, sliced\",\"quantity\":170,\"unit\":\"g\",\"food\":\"mushrooms\"},{\"text\":\"1/2 onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 cup coconut milk\",\"quantity\":240,\"unit\":\"g\",\"food\":\"coconut milk\"},{\"text\":\"1/2 cup vegetable broth\",\"quantity\":120,\"unit\":\"g\",\"food\":\"vegetable broth\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Cook the pasta in salted boiling water until al dente, then drain.\",\"Heat olive oil in a pan and sauté onion and garlic until soft.\",\"Add mushrooms and cook until browned, about 5 minutes.\",\"Pour in coconut milk and broth, simmer until slightly thickened, about 5 minutes.\",\"Toss the cooked pasta into the sauce, season with salt and pepper, and serve.\"]},{\"name\":\"No-Cook Creamy Avocado Pasta\",\"why\":\"fastest option with no stove needed for the sauce\",\"cuisine\":\"Italian\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"6 oz spaghetti\",\"quantity\":170,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"1 avocado\",\"quantity\":150,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"2 cloves garlic\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp lemon juice\",\"quantity\":30,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":28,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"fresh parsley, chopped\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Cook the spaghetti in salted boiling water until al dente, then drain and cool slightly.\",\"Blend the avocado, garlic, lemon juice and olive oil until smooth and creamy.\",\"Toss the warm pasta with the avocado sauce until well coated.\",\"Season with salt and pepper, top with parsley, and serve right away.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 115,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1674,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-2",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:44:32.300Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Cold Soy Noodle Salad with Cucumber and Carrot\",\"why\":\"cool no-cook option that hits the brief fast\",\"cuisine\":\"Asian\",\"method\":\"no-cook\",\"minutes\":20,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"6 oz wheat noodles\",\"quantity\":170,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"1 small cucumber, julienned\",\"quantity\":120,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 carrot, julienned\",\"quantity\":70,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp rice vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"fresh cilantro, chopped\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh cilantro\"}],\"steps\":[\"Cook the noodles in boiling water until just tender, about 5 to 7 minutes.\",\"Drain and rinse under cold water until fully cooled.\",\"Whisk soy sauce, vinegar, honey, oil, garlic and ginger in a bowl.\",\"Toss noodles with cucumber, carrot and the dressing.\",\"Top with cilantro and serve cold.\"]},{\"name\":\"Chicken Pan Noodle Salad with Peanuts\",\"why\":\"warm pan version with protein built in\",\"cuisine\":\"Asian\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"8 oz chicken breast, sliced thin\",\"quantity\":225,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"6 oz wheat noodles\",\"quantity\":170,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"1 red bell pepper, sliced thin\",\"quantity\":100,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tbsp dry-roasted peanuts, crushed\",\"quantity\":20,\"unit\":\"g\",\"food\":\"dry-roasted peanuts\"},{\"text\":\"fresh mint, chopped\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh mint\"}],\"steps\":[\"Cook noodles until just tender, drain and set aside.\",\"Heat oil in a pan over medium-high heat.\",\"Add chicken and cook until browned and reaching 165°F internal, about 6 to 8 minutes.\",\"Add garlic and bell pepper, cook 2 minutes until just softened.\",\"Add noodles and soy sauce, toss everything together over heat for 1 minute.\",\"Serve topped with crushed peanuts and mint.\"]},{\"name\":\"Tofu and Edamame Noodle Bowl\",\"why\":\"plant-forward bowl that still carries good protein\",\"cuisine\":\"Asian\",\"method\":\"bowl\",\"minutes\":20,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"6 oz wheat noodles\",\"quantity\":170,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"8 oz firm tofu, cubed\",\"quantity\":225,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1/2 cup edamame, shelled\",\"quantity\":80,\"unit\":\"g\",\"food\":\"edamame\"},{\"text\":\"1 carrot, shredded\",\"quantity\":70,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Cook noodles until just tender, drain and rinse under cold water.\",\"Steam or microwave edamame until warmed through, about 3 minutes.\",\"Pat tofu dry and set in the bowl without cooking for a quick no-heat option, or pan-sear lightly if preferred.\",\"Whisk soy sauce, vinegar, honey, oil and chilli flakes.\",\"Combine noodles, tofu, edamame and carrot in a bowl and pour dressing over.\",\"Toss gently and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 91,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1796,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

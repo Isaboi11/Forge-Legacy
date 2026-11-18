@@ -1,0 +1,26 @@
+{
+  "caseId": "superset-arms",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:25:42.348Z",
+  "reply": {
+    "text": "{\"say\":\"Arms day, three rounds of a biceps move paired straight through with a triceps move so you keep moving and keep both muscles pumped.\",\"title\":\"Arms\",\"days\":[{\"name\":\"Arms\",\"exercises\":[{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"control the lowering\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"elbows pinned to sides\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"B\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"B\",\"part\":\"main\",\"note\":\"keep elbows close to head\"},{\"key\":\"ez-bar-preacher-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"C\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-skull-crusher\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"C\",\"part\":\"main\",\"note\":\"flare elbows slightly\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 110,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 473,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

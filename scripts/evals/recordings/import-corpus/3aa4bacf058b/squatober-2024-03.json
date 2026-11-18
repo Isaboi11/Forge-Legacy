@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-03",
+  "promptHash": "3aa4bacf058bb4b0a22853c0048e368e16358586ed9980023c6d3c3bcbef87f5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:03:03.188Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Carry On My Wayward Son\" -Kansas\nDay: 3 Thursday 10-03-24\nWarm Up: Get awake and Loosen Up !\n\n1. a. BACK SQUAT 5 sets of 3reps @ 80%\nsuper set\nb. DB/or KB Farmers Walk 5 sets of 30yds\nAim to get 30-40% of Bodyweight in each hand\n2½ min rest between each superset\n\n2. a. BB BENT OVER Rows 5 sets of 5 reps\nsuper set\nb. DB/or KB Farmers Walk 5 sets of 30yds\n30-40% of BW in each hand\n2min rest between each super set\n\n3. a. Heavy Alternating DB Curls 5 sets of 5 reps\nsuper set\nb. DB/or KB Farmers Walk 5 sets of 30yds\n30-40% in each hand. 2 min rest\n\nCardio\nPlanned Day off\n\nRecovery\nSalisbury Steak\nMashed Tators\n30 min Walk\n8-9 Hrs Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Day 3: Carry On My Wayward Son\"\nWarm up: Get awake and Loosen Up !\n1. a. Back Squat 5 sets of 3 reps @ 80%\nsuper set b. Dumbbell Farmers Walk 5 sets\n* Or KB. 30yds. Aim to get 30-40% of Bodyweight in each hand\nrest 2:30 between each super set\n2. a. Barbell Bent Over Rows 5 sets of 5 reps\nsuper set b. Dumbbell Farmers Walk 5 sets\n* Or KB. 30yds. 30-40% of BW in each hand\nrest 2:00 between each super set\n3. a. Heavy Alternating Dumbbell Curls 5 sets of 5 reps\nsuper set b. Dumbbell Farmers Walk 5 sets\n* Or KB. 30yds. 30-40% in each hand\nrest 2:00 between each super set\nRecovery: Cardio: Planned Day off · Salisbury Steak · Mashed Tators · 30 min Walk · 8-9 Hrs Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 3975,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 554,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 351,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 376,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 364,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5-5"
+    }
+  }
+}

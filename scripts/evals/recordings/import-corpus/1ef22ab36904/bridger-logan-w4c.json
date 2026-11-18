@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w4c",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:35:39.065Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "1 Sprint Sled Push\n20-20-20-20-20 sec\n\nCIRCUIT\n2 HIIT CIRCUIT\n12 Box Jumps\n20 KB Swing\n45s Assault Bike\n16 Kneeling Med Ball Slam\n\n3 Pull Ups\nF-F reps\n\nCIRCUIT\n4 Stretch where you are sore\n2m Worlds Greatest Stretch\n2m Straight bar stretch"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Workout\"\nWarm up: \n1. Sprint Sled Push 5 sets\n* 20 sec each set\n2. a. Box Jumps 1 set of 12 reps\nsuper set b. KB Swing 1 set of 20 reps\nsuper set c. Assault Bike 1 set\n* 45s\nsuper set d. Kneeling Med Ball Slam 1 set of 16 reps\n3. Pull Ups\n* F-F reps\n4. Stretch where you are sore\n* 2m Worlds Greatest Stretch\n* 2m Straight bar stretch"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4394,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 151,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 174,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 187,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

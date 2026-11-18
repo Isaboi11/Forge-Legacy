@@ -1,0 +1,26 @@
+{
+  "caseId": "S0338",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:05:26.767Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Protein powder isn't really where the danger is—it's food you're already counting. Most folks do fine with one or two scoops a day on top of regular meals. If you're pushing way past that, it's more about gut comfort than harm. For a number that fits you, a doctor or dietitian's the right call. What's today's session looking like?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 61,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

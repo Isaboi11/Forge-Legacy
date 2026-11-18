@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-04",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:55:23.664Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"BUSINESS FRIDAY, never casual\"\nDay: 4 Friday 10-04-24\n\nWarm Up: Iron your favorite Polo shirt.\nYes, It's Business Friday! We dress up↑.\n\n1. BACK SQUAT 5 sets of 5 reps @ 75%\n2 to 2½ min rest\n\n2. BENCH PRESS 5 sets of 5 reps @ 75%\n2 to 2½ min rest\n\n3. DEADLIFT 5 sets of 5 reps @ 75%\n2 to 2½ min rest. * No Bouncing\n\nCardio\n125 reps of Triceps\n125 reps of Biceps\n100% at your discretion\n\nRecovery\nPot Roast\nextra Meaty\n30 min Walk\n8-9 hrs Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Business Friday, never casual\"\nWarm up: Iron your favorite Polo shirt. Yes, It's Business Friday! We dress up↑.\n1. Back Squat 5 sets of 5 reps @ 75%\nrest 2:00 to 2:30\n2. Bench Press 5 sets of 5 reps @ 75%\nrest 2:00 to 2:30\n3. Deadlift 5 sets of 5 reps @ 75%\nrest 2:00 to 2:30\n* No Bouncing\n4. Triceps 125 reps\n* 100% at your discretion\n5. Biceps 125 reps\n* 100% at your discretion\nRecovery: Pot Roast · extra Meaty · 30 min Walk · 8-9 hrs Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 269,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 292,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 403,
+      "output_tokens_details": {
+        "thinking_tokens": 149
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "shellfish-4",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T00:01:39.863Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Salmon Poke Bowl\",\"why\":\"the classic poke bowl, no stove needed\",\"cuisine\":\"Hawaiian\",\"method\":\"no-cook\",\"minutes\":20,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"60 g long-grain white rice, dry, cooked per package\",\"quantity\":60,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"150 g sushi-grade salmon fillet, cubed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"salmon fillet\"},{\"text\":\"20 g soy sauce\",\"quantity\":20,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"80 g cucumber, sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"70 g avocado, sliced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"60 g edamame, shelled\",\"quantity\":60,\"unit\":\"g\",\"food\":\"edamame\"},{\"text\":\"40 g carrot, shredded\",\"quantity\":40,\"unit\":\"g\",\"food\":\"carrot\"}],\"steps\":[\"Cook the rice per package directions and let it cool a few minutes.\",\"Cube the salmon and toss with the soy sauce and half the sesame seeds. Chill for 10 minutes. Use only fish sold as sushi-grade, or swap to cooked salmon.\",\"Slice the cucumber and avocado, shred the carrot, and warm the edamame.\",\"Spoon the rice into a bowl and arrange the salmon and vegetables on top.\",\"Finish with the remaining sesame seeds.\"]},{\"name\":\"Teriyaki Tofu Poke Bowl\",\"why\":\"a crispy plant-based take on poke, done in a pan\",\"cuisine\":\"Japanese\",\"method\":\"pan\",\"minutes\":25,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"60 g brown rice, dry, cooked per package\",\"quantity\":60,\"unit\":\"g\",\"food\":\"brown rice\"},{\"text\":\"150 g firm tofu, pressed and cubed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"25 g teriyaki sauce\",\"quantity\":25,\"unit\":\"g\",\"food\":\"teriyaki sauce\"},{\"text\":\"80 g edamame, shelled\",\"quantity\":80,\"unit\":\"g\",\"food\":\"edamame\"},{\"text\":\"70 g cabbage, thinly shredded\",\"quantity\":70,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"70 g mango, cubed\",\"quantity\":70,\"unit\":\"g\",\"food\":\"mango\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Cook the brown rice per package directions.\",\"Press the tofu between towels for 10 minutes, then cut into cubes.\",\"Heat the oil in a pan over medium-high heat and fry the tofu 6 to 8 minutes until golden on all sides.\",\"Add the teriyaki sauce and toss for 1 minute until glazed.\",\"Build the bowl with rice, tofu, edamame, cabbage and mango, then sprinkle with sesame seeds.\"]},{\"name\":\"Spicy Tuna Poke Bowl\",\"why\":\"fastest of the three, uses pantry tuna\",\"cuisine\":\"Hawaiian\",\"method\":\"bowl\",\"minutes\":15,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"60 g long-grain white rice, dry, cooked per package\",\"quantity\":60,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"140 g tuna in water, drained\",\"quantity\":140,\"unit\":\"g\",\"food\":\"tuna in water\"},{\"text\":\"15 g light mayonnaise\",\"quantity\":15,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"5 g hot sauce\",\"quantity\":5,\"unit\":\"g\",\"food\":\"hot sauce\"},{\"text\":\"10 g soy sauce\",\"quantity\":10,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"80 g cucumber, diced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"70 g avocado, sliced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"5 g sesame seeds\",\"quantity\":5,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Cook the rice per package directions and let it cool slightly.\",\"Mix the drained tuna with the mayonnaise, hot sauce and soy sauce.\",\"Dice the cucumber and slice the avocado.\",\"Spoon the rice into a bowl and top with the spicy tuna, cucumber and avocado.\",\"Sprinkle with sesame seeds and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 113,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1685,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

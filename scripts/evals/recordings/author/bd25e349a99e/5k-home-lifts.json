@@ -1,0 +1,26 @@
+{
+  "caseId": "5k-home-lifts",
+  "promptHash": "bd25e349a99ecef28415aeca1f93e008e507f01cc23f3feea03c00d218dbd541",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:28:02.069Z",
+  "reply": {
+    "text": "{\"say\":\"Two full-body lifting days to back up your running, built around dumbbells and a bench. Each day hits legs, hips, push, pull and core so you stay strong without piling on fatigue before your runs.\",\"title\":\"5K Strength Support\",\"days\":[{\"name\":\"Lifting Day 1\",\"exercises\":[{\"key\":\"dumbbell-romanian-deadlift\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"keep the bar close to your legs\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"control the descent\"},{\"key\":\"dumbbell-bench-press\",\"sets\":4,\"reps\":5,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"single-arm-dumbbell-row\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"drive elbow back\"},{\"key\":\"single-leg-dumbbell-calf-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"brace hard\"}]},{\"name\":\"Lifting Day 2\",\"exercises\":[{\"key\":\"dumbbell-goblet-squat\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"single-leg-dumbbell-romanian-deadlift\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"balance over the standing leg\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":4,\"reps\":5,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-chest-supported-row\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"squeeze shoulder blades\"},{\"key\":\"dumbbell-calf-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-dead-bug\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"slow and controlled\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 180,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 893,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-4",
+  "promptHash": "18d37664f223e94ce9279f6a4743252320519922a8fa3c88c3adc2f87edacab7",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:38:01.612Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Grilled Soy Ginger Chicken Skewers\",\"why\":\"keeps the grilled skewer idea without any peanut sauce\",\"cuisine\":\"Southeast Asian\",\"method\":\"grill\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"14 oz boneless chicken thighs, cubed\",\"quantity\":400,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp honey\",\"quantity\":15,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt and pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Mix soy sauce, honey, ginger, garlic and oil in a bowl.\",\"Add chicken cubes and marinate 10 minutes.\",\"Thread chicken onto skewers.\",\"Grill over medium-high heat, turning often, until chicken reaches 165°F internal, about 10-12 minutes.\",\"Season with salt and pepper and serve.\"]},{\"name\":\"Coconut Curry Chicken Bowl\",\"why\":\"keeps the creamy coconut flavor of satay without peanuts\",\"cuisine\":\"Thai\",\"method\":\"pan\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"14 oz chicken breast, sliced\",\"quantity\":400,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"1 cup coconut milk\",\"quantity\":240,\"unit\":\"g\",\"food\":\"coconut milk\"},{\"text\":\"1 tbsp curry powder\",\"quantity\":8,\"unit\":\"g\",\"food\":\"curry powder\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1/2 onion, sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2/3 cup white rice, dry\",\"quantity\":120,\"unit\":\"g\",\"food\":\"white rice\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"fresh cilantro to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh cilantro\"}],\"steps\":[\"Cook rice according to package in a pot until tender.\",\"Heat oil in a pan and sauté onion and garlic until soft.\",\"Add chicken and cook until lightly browned.\",\"Pour in coconut milk, curry powder and soy sauce, simmer until chicken reaches 165°F internal, about 10 minutes.\",\"Serve over rice and top with cilantro.\"]},{\"name\":\"Cold Sesame Chicken Noodle Bowl\",\"why\":\"a no-cook option built from leftover-style cold chicken and noodles\",\"cuisine\":\"Asian\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"10 oz cooked chicken breast, sliced\",\"quantity\":280,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"5 oz wheat noodles, cooked and cooled\",\"quantity\":140,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"1 tbsp sesame seeds\",\"quantity\":10,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp cider vinegar\",\"quantity\":5,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1/2 cucumber, sliced thin\",\"quantity\":100,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 carrot, shredded\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"}],\"steps\":[\"Toss cooled noodles with soy sauce, vinegar and oil in a large bowl.\",\"Add sliced chicken, cucumber and carrot.\",\"Toss everything together to coat evenly.\",\"Sprinkle with sesame seeds and serve cold.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 95,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3526,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1586,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

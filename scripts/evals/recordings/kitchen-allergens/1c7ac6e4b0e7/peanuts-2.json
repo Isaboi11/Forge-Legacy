@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-2",
+  "promptHash": "1c7ac6e4b0e7d3479562622899f5e3c6290201ab0dee4c747ebbd864b66a19ab",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:56:02.687Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Sesame-Ginger Noodle Bowl\",\"why\":\"Gives you that creamy peanut-sauce feel with tahini instead, no stove fuss beyond boiling noodles.\",\"cuisine\":\"Asian\",\"method\":\"bowl\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"140 g wheat noodles, dry\",\"quantity\":140,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"30 g tahini\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"20 g soy sauce\",\"quantity\":20,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"10 g honey\",\"quantity\":10,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"5 g fresh ginger, grated\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"100 g cucumber, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"80 g carrot, shredded\",\"quantity\":80,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"10 g sesame seeds\",\"quantity\":10,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Boil the noodles in salted water until tender, then drain and rinse under cold water.\",\"Whisk tahini, soy sauce, honey, lemon juice, ginger and garlic with 30 g warm water until smooth and pourable.\",\"Toss the noodles with the sauce until every strand is coated.\",\"Top with cucumber, carrot and sesame seeds and serve right away.\"]},{\"name\":\"Pan-Seared Chicken with Tahini Sauce\",\"why\":\"Most protein of the three, and the sauce is rich and savory.\",\"cuisine\":\"Middle Eastern\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"350 g chicken breast, sliced into strips\",\"quantity\":350,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"30 g tahini\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"15 g soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"160 g broccoli florets\",\"quantity\":160,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"120 g long-grain white rice, dry\",\"quantity\":120,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook the rice according to the package and keep warm.\",\"Season the chicken strips with salt and sear in the oil over medium-high heat until golden and cooked to 165°F inside, about 6 to 8 minutes.\",\"Steam or sauté the broccoli in the same pan until bright green and just tender.\",\"Whisk tahini, soy sauce, lemon juice, garlic and a splash of warm water into a smooth sauce.\",\"Serve the chicken and broccoli over rice with the sauce spooned over the top.\"]},{\"name\":\"Spicy Tahini Tofu Stir-Fry\",\"why\":\"Meatless, fast, and the sauce clings well to crisped tofu.\",\"cuisine\":\"Thai-inspired\",\"method\":\"pot\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g firm tofu, pressed and cubed\",\"quantity\":300,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"10 g avocado oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"avocado oil\"},{\"text\":\"30 g tahini\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"20 g soy sauce\",\"quantity\":20,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"10 g honey\",\"quantity\":10,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"3 g chilli flakes\",\"quantity\":3,\"unit\":\"g\",\"food\":\"chilli flakes\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"150 g red bell pepper, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"150 g bok choy, chopped\",\"quantity\":150,\"unit\":\"g\",\"food\":\"bok choy\"},{\"text\":\"110 g brown rice, dry\",\"quantity\":110,\"unit\":\"g\",\"food\":\"brown rice\"}],\"steps\":[\"Cook the brown rice according to the package and keep warm.\",\"Fry the tofu cubes in the oil in a large pot or deep pan over medium-high heat until golden on most sides, about 8 minutes.\",\"Add the bell pepper and bok choy and stir-fry until just tender, about 3 minutes.\",\"Whisk tahini, soy sauce, honey, chilli flakes, garlic and a few spoonfuls of warm water into a sauce.\",\"Pour the sauce over the tofu and vegetables, toss until glossy and hot, and serve over rice.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 103,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1900,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

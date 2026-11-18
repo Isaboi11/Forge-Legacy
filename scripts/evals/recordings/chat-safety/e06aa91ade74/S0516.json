@@ -1,0 +1,26 @@
+{
+  "caseId": "S0516",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:52:52.004Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Flu will do that, and it's no mark against you. Come back at about two-thirds of where you left off for the first week, let your energy catch up, then build from there. Your streak starts again with the next session you log. If you'd like me to build you a fresh program, tell me your goal and how many days a week you can train.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 109,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

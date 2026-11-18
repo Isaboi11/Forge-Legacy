@@ -1,0 +1,60 @@
+{
+  "caseId": "po-3-week-upper-lower",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:54:48.933Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "Monday- Upper Body A | Thursday- Upper Body B\nBench Press | 3 X 8-12 | Dips | 3 X 8-12\nBent Over Row | 3 X 8-12 | Pull-Ups | 3 X 8-12\nDB Shoulder Press | 3 X 8-12 | DB Side Lateral | 3 X 8-12\nLying Tricep Extension | 3 X 8-12 | Tricep Cable Pressdown | 3 X 8-12\nBarbell or DB Curl | 3 X 8-12 | Cable Curl | 3 X 8-12\nTuesday- Lower Body A | Friday- Lower Body B\nSquat | 3 X 8-12 | Deadlift | 3 X 8-12\nStiff Leg Deadlift | 3 X 8-12 | Leg Press | 3 X 8-12\nLeg Extension | 3 X 8-12 | Lunges | 3 X 8-12\nLeg Curl | 3 X 8-12 | Seated Calf Raise | 3 X 8-12\nStanding Calf Raise | 3 X 8-12 | DB Shrugs (Optional) | 3 X 8-12\nAbs | Abs\nLying Leg Raise | 3 X 10-15 | Incline Crunch | 3 X 10-15\nSwiss Ball Crunch | 3 X 10-15 | Back Extension | 3 X 10-15\n\nNote: Rest Periods = 1 Minute\n\nMonday- Upper Body A | Thursday- Upper Body B\nBench Press | 3 X 6-8 | Dips | 3 X 6-8\nBent Over Row | 3 X 6-8 | Pull-Ups | 3 X 6-8\nDB Shoulder Press | 3 X 6-8 | DB Side Lateral | 3 X 6-8\nLying Tricep Extension | 3 X 6-8 | Tricep Cable Pressdown | 3 X 6-8\nBarbell or DB Curl | 3 X 6-8 | Cable Curl | 3 X 6-8\nTuesday- Lower Body A | Friday- Lower Body B\nSquat | 3 X 6-8 | Deadlift | 3 X 6-8\nStiff Leg Deadlift | 3 X 6-8 | Leg Press | 3 X 6-8\nLeg Extension | 3 X 6-8 | Lunges | 3 X 6-8\nLeg Curl | 3 X 6-8 | Seated Calf Raise | 3 X 6-8\nStanding Calf Raise | 3 X 6-8 | DB Shrugs (Optional) | 3 X 6-8\nAbs | Abs\nLying Leg Raise | 3 X 10-15 | Incline Crunch | 3 X 10-15\nSwiss Ball Crunch | 3 X 10-15 | Back Extension | 3 X 10-15\n\nNote: Rest Periods = 90 Seconds\n\nMonday- Upper Body A | Thursday- Upper Body B\nBench Press | 3 X 4-6 | Dips | 3 X 4-6\nBent Over Row | 3 X 4-6 | Pull-Ups | 3 X 4-6\nDB Shoulder Press | 3 X 4-6 | DB Side Lateral | 3 X 4-6\nLying Tricep Extension | 3 X 4-6 | Tricep Cable Pressdown | 3 X 4-6\nBarbell or DB Curl | 3 X 4-6 | Cable Curl | 3 X 4-6\nTuesday- Lower Body A | Friday- Lower Body B\nSquat | 3 X 4-6 | Deadlift | 3 X 4-6\nStiff Leg Deadlift | 3 X 4-6 | Leg Press | 3 X 4-6\nLeg Extension | 3 X 4-6 | Lunges | 3 X 4-6\nLeg Curl | 3 X 4-6 | Seated Calf Raise | 3 X 4-6\nStanding Calf Raise | 3 X 4-6 | DB Shrugs (Optional) | 3 X 4-6\nAbs | Abs\nLying Leg Raise | 3 X 10-15 | Incline Crunch | 3 X 10-15\nSwiss Ball Crunch | 3 X 10-15 | Back Extension | 3 X 10-15\n\nNote: Rest Periods = 2 Minute"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Phase 1: 3 X 8-12\"\n1. Bench Press 3 sets of 8-12 reps\n2. Bent Over Row 3 sets of 8-12 reps\n3. DB Shoulder Press 3 sets of 8-12 reps\n4. Lying Tricep Extension 3 sets of 8-12 reps\n5. Barbell or DB Curl 3 sets of 8-12 reps\n6. Lying Leg Raise 3 sets of 10-15 reps\n7. Swiss Ball Crunch 3 sets of 10-15 reps\n8. Dips 3 sets of 8-12 reps\n9. Pull-Ups 3 sets of 8-12 reps\n10. DB Side Lateral 3 sets of 8-12 reps\n11. Tricep Cable Pressdown 3 sets of 8-12 reps\n12. Cable Curl 3 sets of 8-12 reps\n13. Incline Crunch 3 sets of 10-15 reps\n14. Back Extension 3 sets of 10-15 reps\n15. Squat 3 sets of 8-12 reps\n16. Stiff Leg Deadlift 3 sets of 8-12 reps\n17. Leg Extension 3 sets of 8-12 reps\n18. Leg Curl 3 sets of 8-12 reps\n19. Standing Calf Raise 3 sets of 8-12 reps\n20. Lying Leg Raise 3 sets of 10-15 reps\n21. Swiss Ball Crunch 3 sets of 10-15 reps\n22. Deadlift 3 sets of 8-12 reps\n23. Leg Press 3 sets of 8-12 reps\n24. Lunges 3 sets of 8-12 reps\n25. Seated Calf Raise 3 sets of 8-12 reps\n26. DB Shrugs 3 sets of 8-12 reps\n* Optional\n27. Incline Crunch 3 sets of 10-15 reps\n28. Back Extension 3 sets of 10-15 reps\nrest 1:00\n\n\"Phase 2: 3 X 6-8\"\n1. Bench Press 3 sets of 6-8 reps\n2. Bent Over Row 3 sets of 6-8 reps\n3. DB Shoulder Press 3 sets of 6-8 reps\n4. Lying Tricep Extension 3 sets of 6-8 reps\n5. Barbell or DB Curl 3 sets of 6-8 reps\n6. Lying Leg Raise 3 sets of 10-15 reps\n7. Swiss Ball Crunch 3 sets of 10-15 reps\n8. Dips 3 sets of 6-8 reps\n9. Pull-Ups 3 sets of 6-8 reps\n10. DB Side Lateral 3 sets of 6-8 reps\n11. Tricep Cable Pressdown 3 sets of 6-8 reps\n12. Cable Curl 3 sets of 6-8 reps\n13. Incline Crunch 3 sets of 10-15 reps\n14. Back Extension 3 sets of 10-15 reps\n15. Squat 3 sets of 6-8 reps\n16. Stiff Leg Deadlift 3 sets of 6-8 reps\n17. Leg Extension 3 sets of 6-8 reps\n18. Leg Curl 3 sets of 6-8 reps\n19. Standing Calf Raise 3 sets of 6-8 reps\n20. Lying Leg Raise 3 sets of 10-15 reps\n21. Swiss Ball Crunch 3 sets of 10-15 reps\n22. Deadlift 3 sets of 6-8 reps\n23. Leg Press 3 sets of 6-8 reps\n24. Lunges 3 sets of 6-8 reps\n25. Seated Calf Raise 3 sets of 6-8 reps\n26. DB Shrugs 3 sets of 6-8 reps\n* Optional\n27. Incline Crunch 3 sets of 10-15 reps\n28. Back Extension 3 sets of 10-15 reps\nrest 1:30\n\n\"Phase 3: 3 X 4-6\"\n1. Bench Press 3 sets of 4-6 reps\n2. Bent Over Row 3 sets of 4-6 reps\n3. DB Shoulder Press 3 sets of 4-6 reps\n4. Lying Tricep Extension 3 sets of 4-6 reps\n5. Barbell or DB Curl 3 sets of 4-6 reps\n6. Lying Leg Raise 3 sets of 10-15 reps\n7. Swiss Ball Crunch 3 sets of 10-15 reps\n8. Dips 3 sets of 4-6 reps\n9. Pull-Ups 3 sets of 4-6 reps\n10. DB Side Lateral 3 sets of 4-6 reps\n11. Tricep Cable Pressdown 3 sets of 4-6 reps\n12. Cable Curl 3 sets of 4-6 reps\n13. Incline Crunch 3 sets of 10-15 reps\n14. Back Extension 3 sets of 10-15 reps\n15. Squat 3 sets of 4-6 reps\n16. Stiff Leg Deadlift 3 sets of 4-6 reps\n17. Leg Extension 3 sets of 4-6 reps\n18. Leg Curl 3 sets of 4-6 reps\n19. Standing Calf Raise 3 sets of 4-6 reps\n20. Lying Leg Raise 3 sets of 10-15 reps\n21. Swiss Ball Crunch 3 sets of 10-15 reps\n22. Deadlift 3 sets of 4-6 reps\n23. Leg Press 3 sets of 4-6 reps\n24. Lunges 3 sets of 4-6 reps\n25. Seated Calf Raise 3 sets of 4-6 reps\n26. DB Shrugs 3 sets of 4-6 reps\n* Optional\n27. Incline Crunch 3 sets of 10-15 reps\n28. Back Extension 3 sets of 10-15 reps\nrest 2:00"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1482,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1514,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 1537,
+      "cache_creation_input_tokens": 2070,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 2070,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 3598,
+      "output_tokens_details": {
+        "thinking_tokens": 1544
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

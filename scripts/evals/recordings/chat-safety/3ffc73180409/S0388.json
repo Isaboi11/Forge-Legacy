@@ -1,0 +1,26 @@
+{
+  "caseId": "S0388",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:06:22.063Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Hell yes, new bench PR — what'd you hit? Let it settle a few days before you chase the next one; keep the accessories honest and the number will keep moving.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 66,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 67,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

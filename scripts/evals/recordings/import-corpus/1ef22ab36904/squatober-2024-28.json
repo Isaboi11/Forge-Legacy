@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-28",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:32:59.125Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"SNAPPY STRONG\"\nDay: 28  Monday  10-28-24\n\nWarm Up: Make up your mind and tell\nyourself that you're gonna move\nthe weights Fast and SNAPPY today.\n\n1. a. Snappy BACK Squat 5 sets of 2 reps\nsuper        @ 70%\nset  b. Slow Strict Chin Ups 5 sets of 3-6 reps\n   2 min rest between each superset\n\n2. a. BENCH PRESS 5 sets of 3 reps @ 70%\n                                        \"Be Snappy\"\nsuper\nset  b. 1 Arm DB Rows 5 sets of 5 reps\n   2 min rest between each superset\n\nCardio                           Recovery\n                                 Meat loaf\na. Ez Bar/or BB Skullcrushers    Green Beans\n             3x 15 reps          Mac & Cheese\nsuper                             30 min Walk\nset b. KB Swings 3x 10 reps      Heavy Sleep\n   60 sec rest between each\n         super set\n\n* This session should take 30-35 minutes"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"SNAPPY STRONG\"\nWarm up: Make up your mind and tell yourself that you're gonna move the weights Fast and SNAPPY today.\n1. a. Snappy Back Squat 5 sets of 2 reps @ 70%\nsuper set b. Slow Strict Chin Ups 5 sets of 3-6 reps\nrest 2:00 between each super set\n2. a. Bench Press 5 sets of 3 reps @ 70%\n* Be Snappy\nsuper set b. 1 Arm DB Rows 5 sets of 5 reps\nrest 2:00 between each super set\n3. a. Ez Bar Skullcrushers 3 sets of 15 reps\n* Or BB\nsuper set b. KB Swings 3 sets of 10 reps\nrest 1:00 between each super set\n* This session should take 30-35 minutes\nRecovery: Meat loaf · Green Beans · Mac & Cheese · 30 min Walk · Heavy Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 358,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 381,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 325,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

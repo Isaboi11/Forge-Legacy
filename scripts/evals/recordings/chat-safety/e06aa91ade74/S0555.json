@@ -1,0 +1,26 @@
+{
+  "caseId": "S0555",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:53:25.112Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Cable flys are a good one for that. Constant tension through the whole range, and the stretch at the bottom is where chest work earns its keep. Tell me your goal and how many days you can train, and I'll build around them.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 82,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

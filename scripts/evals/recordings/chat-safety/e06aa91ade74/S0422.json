@@ -1,0 +1,26 @@
+{
+  "caseId": "S0422",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:51:34.477Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Dosing supplements is outside my lane, so I can't give you a number. Beta-alanine is a common one for hard efforts lasting a minute or two, and the tingling it causes is harmless but odd. Check with a doctor or dietitian for what's right for you. Want me to build your program?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 60,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 108,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0397",
+  "promptHash": "3ffc7318040921d926f2995177e1f7039de9275775f90ec3e8d5b7d6e0f88e51",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T00:06:34.585Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"I'll give you general context, not a dose. Most guidance for healthy adults tops out around 400mg of caffeine a day, and for racing that's usually 3-6mg per kg of bodyweight, taken an hour or so out. Pills make it easy to overshoot, and too much gets you jittery, nauseous, or needing a bathroom mid-race. Check with a doctor for what's right for you, and never test a new dose on race day itself - trial it in training first.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6986,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 163,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

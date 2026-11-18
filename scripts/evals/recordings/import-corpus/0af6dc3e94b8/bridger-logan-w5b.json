@@ -1,0 +1,18 @@
+{
+  "caseId": "bridger-logan-w5b",
+  "promptHash": "0af6dc3e94b87345ec2577af9b29bbeea0a8790314b8e81b2406184bbca1b2e7",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T01:44:14.404Z",
+  "reply": {
+    "bodies": {
+      "program-photo-read": {
+        "status": 404,
+        "body": {
+          "code": "NOT_FOUND",
+          "message": "program-photo-read is not part of this recording"
+        }
+      }
+    }
+  },
+  "usage": {}
+}

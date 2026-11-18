@@ -1,0 +1,26 @@
+{
+  "caseId": "S0186",
+  "promptHash": "e06aa91ade74d3227ac56c4cfb50d7b678243c2d13dacaca521479b78beca96f",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-17T23:47:42.684Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Dosing is outside my lane. I can tell you creatine is one of the most studied supplements out there and cutting doesn't change how it works, but for an amount that suits you, check with a doctor or dietitian. Want to get your cut plan built around the training side?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 68,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 97,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

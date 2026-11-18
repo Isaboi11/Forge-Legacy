@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-10",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:30:37.809Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"SQUATS NEVER STOP\"\nDay: 10 Thursday 10-10-24\n\nWarm Up: Practice Doing some\n\"Unbroken Sets\" of back Squats. These\nare done with absolutely no pauses\nor breaks during the set. The reps\ngo down and up continuously until\nthe set is done.\n\n1. BACK SQUAT \"UNBROKEN\"\n6 sets of 6 reps @ 65%\n6 total sets, 36 total reps, 2 min rest\n\n2. BENCH PRESS \"UNBROKEN\"\n5 sets of 8 reps @ 65%\n2min rest\n\nCardio\nEZ Bar/or BB\nskullcrushers x30 reps\n\"UNBROKEN\"\n\nRecovery\nSalisbury steak\nand gravy\nMashed tators\n30 Min walk\n8+ hrs sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Day 10: Squats Never Stop\"\nWarm up: Practice doing some \"Unbroken Sets\" of back squats. These are done with absolutely no pauses or breaks during the set. The reps go down and up continuously until the set is done.\n1. Back Squat 6 sets of 6 reps @ 65%\n* \"Unbroken\"\nrest 2:00\n2. Bench Press 5 sets of 8 reps @ 65%\n* \"Unbroken\"\nrest 2:00\n3. EZ Bar Skullcrushers 1 set of 30 reps\n* Or BB, \"Unbroken\", Cardio\nRecovery: Salisbury steak and gravy · Mashed tators · 30 Min walk · 8+ hrs sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 281,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 304,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 247,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

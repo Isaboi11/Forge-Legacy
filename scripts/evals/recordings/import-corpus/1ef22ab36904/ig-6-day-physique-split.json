@@ -1,0 +1,36 @@
+{
+  "caseId": "ig-6-day-physique-split",
+  "promptHash": "1ef22ab3690481c55727a6f3aa77d4e1de8452b992bb47992399687093c365a0",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-17T23:28:37.858Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "6-DAY PHYSIQUE\nTRANSFORMATION SPLIT\n\nDAY 1\nCHEST + TRICEPS\n• Bench Press | 3 x 8-12\n• Incline DB Press | 3 x 10\n• Chest Fly | 3 x 12\n• Tricep Pushdown | 3 x 12\n• OH Tricep Extension | 3 x 10\n• Push-ups | 2 sets\n\nDAY 2\nBACK + BICEPS\n• Lat Pulldown | 3 x 10\n• Seated Cable Row | 3 x 10\n• One-arm DB Row | 3 x 10\n• Barbell Curl | 3 x 12\n• Hammer Curl | 3 x 12\n• Dead Hang | 2 sets\n\nDAY 3\nLEGS\n• Squats | 4 x 8\n• Leg Press | 3 x 10\n• Leg Curl | 3 x 12\n• Leg Extension | 3 x 12\n• Calf Raises | 4 x 15\n\nDAY 4\nSHOULDERS + ABS\n• Shoulder Press | 3 x 10\n• Lateral Raises | 3 x 12\n• Front Raises | 3 x 12\n• Shrugs | 3 x 15\n• Crunches | 3 x 20\n• Leg Raises | 3 x 15\n• Plank | 3 x 30 sec\n\nDAY 5\nCHEST + BACK\n• Incline Bench Press | 3 x 10\n• Lat Pulldown | 3 x 10\n• Dumbbell Press | 3 x 10\n• Cable Row | 3 x 10\n• Push-ups | 2 sets\n\nDAY 6\nARMS + ABS\n• Barbell Curl | 3 x 10\n• Hammer Curl | 3 x 12\n• Tricep Dips | 3 x 10\n• Rope Pushdown | 3 x 12\n• Russian Twists | 3 x 20\n• Plank | 3 x 45 sec\n\nDAY 7\nREST DAY\nWALKING OR\nCYCLING\nSTRETCHING\nSTAY\nSLEEP"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1383,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 705,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

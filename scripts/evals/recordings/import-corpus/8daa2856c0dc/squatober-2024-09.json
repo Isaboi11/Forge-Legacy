@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-09",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:55:56.246Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THIGHS and WINGS\"\nDay: 9  Wednesday 10-09-24\n\nWarm Up: Hit up 5 or more of your\nlifting buddies to meet you for some\nLEGS and BACK Strength Training.\n\nsuper set\n1. a. BACK SQUAT 5 sets of 5 reps @ 70%\nb. STRICT Pull Ups 5 sets of 2-5 reps\n2½ min rest between each super set\n* Full range of Motion*\n\nsuper set\n2. a. DB REVERSE LUNGES 3 sets of 5 reps\nb. BB BENT OVER ROW 3 sets of 10 reps\n2 min rest between each superset\n\nCardio\nsuper set\na. ONE Arm DB Row\n3 x 10 reps each arm\nb. DB/or KB Farmers walk\n3 sets of 40 yards\n90 sec rest between\neach superset\n\nRecovery\n30 min Walk\nPulled Pork\nSandwiches\nMac and Cheese\n8+ hrs of sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THIGHS and WINGS\"\nWarm up: Hit up 5 or more of your lifting buddies to meet you for some LEGS and BACK Strength Training.\n1. a. Back Squat 5 sets of 5 reps @ 70%\n* Full range of Motion\nsuper set b. Strict Pull Ups 5 sets of 2-5 reps\nrest 2:30 between each super set\n2. a. Dumbbell Reverse Lunges 3 sets of 5 reps\nsuper set b. BB Bent Over Row 3 sets of 10 reps\nrest 2:00 between each super set\n3. a. One Arm Dumbbell Row 3 sets of 10 reps\n* each arm\nsuper set b. Dumbbell Farmers walk 3 sets\n* 40 yards\nrest 1:30 between each super set\nRecovery: 30 min Walk · Pulled Pork Sandwiches · Mac and Cheese · 8+ hrs of sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 341,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 364,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 320,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}
