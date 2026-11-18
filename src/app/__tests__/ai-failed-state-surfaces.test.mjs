@@ -69,7 +69,14 @@ const SURFACES = [
     'src/components/forge/ImportSpreadsheetSheet.tsx',
     [/const refunded = r\.kind !== 'ok' && r\.kind !== 'unparsed' && r\.kind !== 'no_consent' && !!r\.refunded;/, /const failed = \(line: string\) => setImportError\(withNotCharged\(line, refunded\)\);/],
   ],
-  ['src/app/workout-write.tsx', [/'Couldn’t reach AI just now\. Try again in a moment, or fix the lines below by hand\.',\n\s*r\.refunded,\n\s*\)\);/, /'Couldn’t read that photo\. Try a closer, straighter shot — or type it in\.',\n\s*r\.refunded,\n\s*\)\);/]],
+  // UX-1 (Sprint 3b): the line goes to the AI state kit (`aiProblem`), which keeps "Not charged." as its own line.
+  [
+    'src/app/workout-write.tsx',
+    [
+      /'Couldn’t reach AI just now\. Try again in a moment, or fix the lines below by hand\.',\n\s*r\.refunded,\n\s*\);\n\s*setFailed\(\{ status: aiProblem\(line, \{ refunded: r\.refunded,/,
+      /'Couldn’t read that photo\. Try a closer, straighter shot — or type it in\.',\n\s*r\.refunded,\n\s*\);\n[^\n]*\n[^\n]*\n\s*setFailed\(\{ status: aiProblem\(line, \{ refunded: r\.refunded,/,
+    ],
+  ],
   ['src/app/meal-plan.tsx', [/failure = withNotCharged\(kitchenError\(r\), r\.refunded\)/]],
   ['src/app/form-check.tsx', [/withNotCharged\('That broke on my end\. Try again in a moment\.', res\.refunded\)/, /<Text style=\{s\.foot\}>\{NOT_CHARGED\}<\/Text>/]],
   [
@@ -77,7 +84,8 @@ const SURFACES = [
     [
       /holt\.fellBack = withNotCharged\(authorFallbackLine\(a\), a\.refunded\)/,
       /'The connection dropped before I heard back\.',\n\s*r\.refunded,\n\s*\),/,
-      /text: withNotCharged\(kitchenError\(r\), r\.refunded\) \}, \{ kind: 'chips'/,
+      // UX-1 (Sprint 3b): the kitchen failing is the chat's failure card; "Not charged." rides as its flag.
+      /\{ kind: 'error', text: kitchenError\(r\), sub: '', action: '', \.\.\.\(r\.refunded \? \{ notCharged: true as const \} : \{\}\) \},\n\s*\{ kind: 'chips'/,
       /if \(r\.kind !== 'ok'\) return void say\(\{ kind: 'holt', text: withNotCharged\(kitchenError\(r\), r\.refunded\) \}\);/,
       /if \(r\.kind !== 'ok'\) return void say\(\{ kind: 'holt', text: withNotCharged\(attachErrorLine\(kind, r\.kind\), r\.refunded\) \}\);/,
     ],

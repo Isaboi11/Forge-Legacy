@@ -176,13 +176,14 @@ test('Sprint 1 (P-D2): "Not charged." only when coach-ask SAID it refunded — n
   // Both outage cards in askAloud pass the server's word through; the card renders NOT_CHARGED under itself.
   const ask = between('const askAloud = async', 'const onChip = (chip');
   assert.equal((ask.match(/askOfflineCard\(\{[^)]*refunded: r\.refunded \}\)/g) ?? []).length, 2);
-  assert.match(sheet, /\{turn\.notCharged \? <Text style=\{styles\.errorFoot\}>\{NOT_CHARGED\}<\/Text> : null\}/);
-  assert.match(sheet, /import \{ NOT_CHARGED \} from '@\/domain\/ai\/ai-failure';/);
+  // UX-1 (Sprint 3b): the card is the AI state kit, which draws NOT_CHARGED on its own line from the flag (ai-status.test).
+  assert.match(sheet, /return <AiStatus status=\{chatFailure\(turn\)\} \/>;/);
+  assert.match(sheet, /import \{ chatFailure \} from '@\/domain\/ai\/ai-status';/);
 });
 
 test('Sprint 1 (C-G5): the waiting bubble says the lookup — only before the first word, only this ask’s', () => {
   const ask = between('const askAloud = async', 'const onChip = (chip');
-  assert.match(ask, /onStatus: \(line\) => \{\s*lookups \+= 1;\s*if \(!started\) setAskStatus\(\{ sid, text: line \}\);\s*\}/); // CH-6 counts lookups (telemetry)
+  assert.match(ask, /onStatus: \(line\) => \{\s*lookups \+= 1;\s*statusLines\.push\(line\);\s*if \(!started\) setAskStatus\(\{ sid, text: line \}\);\s*\}/); // CH-6 counts lookups and names the tools (telemetry)
   // The first word clears it; the ask ending clears it only if it is still this ask's line.
   assert.match(ask, /setBusy\(null\);\s*setAskStatus\(null\);\s*say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\);/);
   assert.match(ask, /setAskStatus\(\(s\) => \(s\?\.sid === sid \? null : s\)\);/);

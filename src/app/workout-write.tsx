@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { AppBar } from '@/components/forge/composites/AppBar';
@@ -24,6 +24,8 @@ import { putWrittenDraft } from '@/lib/written-workout-intent';
 import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
 import { cardReadFallsBack, readWorkoutCard } from '@/data/workout-card-read-live';
 import { withNotCharged } from '@/domain/ai/ai-call';
+import { AiStatus } from '@/components/forge/AiStatus';
+import { aiProblem, cardReadProgress, TIDY_WORKING, type AiStatus as AiStatusModel } from '@/domain/ai/ai-status';
 import { useCloseSignal } from '@/lib/useCloseSignal';
 import { whenToUseAi } from '@/domain/workout/workout-ai-gate';
 import { usePremiumAi } from '@/lib/entitlement';
@@ -91,8 +93,13 @@ export default function WorkoutWriteScreen() {
   const text = typed ?? editText ?? '';
   const [name, setName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
+  /* UX-1 (Sprint 3b): what AI is doing, in the one AI state kit — the photo's two steps, or the one tidy. */
+  const [busy, setBusy] = useState<AiStatusModel | null>(null);
+  /* A plain note that is not an AI failure ("Not now" on consent, a photo that would not open). */
   const [error, setError] = useState<string | null>(null);
+  /* An AI failure, in the kit: "Not charged." on its own line when refunded, out of credits as its own state, and
+     Try again (the same tidy, or another photo) where trying again could help. */
+  const [failed, setFailed] = useState<{ status: AiStatusModel; retry: 'tidy' | 'photo' } | null>(null);
   /* The poster's own words from before AI tidied them — Undo puts them back. Null = AI has not touched the box. */
   const [beforeAi, setBeforeAi] = useState<string | null>(null);
   /*
@@ -126,9 +133,10 @@ export default function WorkoutWriteScreen() {
    * `quiet` is the pass every photo gets even when the code reader found nothing wrong: if AI can't improve on that
    * reading, the reading stands and nothing is said — there is no problem to report.
    */
-  const tidy = async (card: string, quiet = false) => {
-    setBusy('Tidying it up with AI…');
+  const tidy = async (card: string, quiet = false, viaPhoto = false) => {
+    setBusy(viaPhoto ? cardReadProgress('layout') : TIDY_WORKING);
     setError(null);
+    setFailed(null);
     setAiVote(null);
     try {
       const r = await tidyWrittenWorkout(card, resolveKey, closeSignal());
@@ -150,7 +158,7 @@ export default function WorkoutWriteScreen() {
         return;
       }
       /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
-      setError(withNotCharged(
+      const line = withNotCharged(
         r.kind === 'unfaithful'
             ? 'AI changed a number on the card, so your words are kept as they are. Check the list below and fix those lines by hand.'
             : r.kind === 'not_entitled'
@@ -167,7 +175,8 @@ export default function WorkoutWriteScreen() {
                         ? 'AI couldn’t make sense of it either. Fix the lines below by hand.'
                         : 'Couldn’t reach AI just now. Try again in a moment, or fix the lines below by hand.',
         r.refunded,
-      ));
+      );
+      setFailed({ status: aiProblem(line, { refunded: r.refunded, outOfCredits: r.kind === 'out_of_credits', canRetry: r.kind === 'offline' || r.kind === 'unavailable' }), retry: 'tidy' });
     } finally {
       setBusy(null);
     }
@@ -177,6 +186,7 @@ export default function WorkoutWriteScreen() {
     if (reading.current) return;
     reading.current = true;
     setError(null);
+    setFailed(null);
     try {
       const picked = await pickImagesFromLibrary(1);
       if (picked === 'failed') {
@@ -185,7 +195,7 @@ export default function WorkoutWriteScreen() {
       }
       if (!picked.length) return;
       setAiVote(null);
-      setBusy('Reading your photo…');
+      setBusy(cardReadProgress('reading'));
       /*
        * THE WHOLE CARD, LINE BY LINE (`workout-card-read`, PO 2026-09-30: "yes I want the title") — its name, the
        * warm-up, every rest, the margin's "super set all 3". The table read below has no row for a title and puts
@@ -203,7 +213,7 @@ export default function WorkoutWriteScreen() {
         return;
       }
       if (r.kind !== 'ok') {
-        setError(withNotCharged(
+        const line = withNotCharged(
           r.kind === 'not_a_program'
             ? 'That doesn’t look like a workout. Try a photo of the card itself.'
             : r.kind === 'not_entitled'
@@ -216,7 +226,10 @@ export default function WorkoutWriteScreen() {
                     ? 'Couldn’t reach us to read that photo. Check your connection and try again — or type it in.'
                     : 'Couldn’t read that photo. Try a closer, straighter shot — or type it in.',
           r.refunded,
-        ));
+        );
+        /* Try again = another photo — except where Premium AI or this month's credits are the reason. */
+        const noAi = r.kind === 'not_entitled' || r.kind === 'out_of_credits';
+        setFailed({ status: aiProblem(line, { refunded: r.refunded, outOfCredits: r.kind === 'out_of_credits', canRetry: !noAi }), retry: 'photo' });
         return;
       }
       /* The transcription goes IN THE BOX — the poster reads it against the card and fixes anything before use. */
@@ -232,8 +245,8 @@ export default function WorkoutWriteScreen() {
        */
       const w = readWrittenWorkout(words);
       const call = whenToUseAi(words, w, writtenToTemplate(w, resolveKey));
-      if (call.kind === 'ai') await tidy(words);
-      else if (call.kind === 'rules') await tidy(words, true);
+      if (call.kind === 'ai') await tidy(words, false, true);
+      else if (call.kind === 'rules') await tidy(words, true, true);
       /* The photo's read and its tidy pass are ONE output, and it votes as the photo — set after the pass, which
          marks its own result as a typed fix. */
       setAiVote({ feature: 'import', ref: uuid() });
@@ -287,18 +300,16 @@ export default function WorkoutWriteScreen() {
             </Pressable>
           ) : null}
           {text ? (
-            <Pressable onPress={() => { setText(''); setName(null); setBeforeAi(null); setError(null); setAiVote(null); }} accessibilityRole="button" hitSlop={6}>
+            <Pressable onPress={() => { setText(''); setName(null); setBeforeAi(null); setError(null); setFailed(null); setAiVote(null); }} accessibilityRole="button" hitSlop={6}>
               <Text style={styles.clear}>Clear</Text>
             </Pressable>
           ) : null}
         </View>
-        {busy ? (
-          <View style={styles.busy}>
-            <ActivityIndicator color={flColor.bronze400} />
-            <Text style={styles.busyText}>{busy}</Text>
-          </View>
-        ) : null}
+        {/* UX-1 (Sprint 3b): the one AI look — the photo's two steps as they happen; a failure with "Not charged." on
+            its own line, out of credits as its own state, and Try again where it could help. */}
+        {busy ? <AiStatus status={busy} /> : null}
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {failed && !busy ? <AiStatus status={failed.status} onRetry={failed.retry === 'photo' ? () => void fromPhoto() : () => void tidy(text)} /> : null}
         {beforeAi != null ? (
           <View style={styles.aiBar}>
             <Text style={styles.aiText}>Tidied by AI. Check every number against the card before you use it.</Text>
@@ -413,8 +424,6 @@ const styles = StyleSheet.create({
   photoText: { fontSize: 14, fontWeight: '600', color: flColor.cream100 },
   clear: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
   pressed: { opacity: 0.8 },
-  busy: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  busyText: { fontSize: 13, color: flColor.gray400 },
   error: { fontSize: 13, lineHeight: 18, color: flColor.cream100 },
   box: {
     minHeight: 220,

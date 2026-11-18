@@ -17,9 +17,10 @@ export interface AiStep {
 
 export type AiStatus =
   | { kind: 'working'; headline: string; detail?: string | null; steps?: readonly AiStep[] }
-  | { kind: 'failed'; headline: string; notCharged: boolean; canRetry: boolean }
-  | { kind: 'out_of_credits'; headline: string }
-  | { kind: 'offline'; headline: string; canRetry: boolean };
+  /* `detail` (Sprint 3b): the one line under the headline that says what happened or what to do. */
+  | { kind: 'failed'; headline: string; detail?: string | null; notCharged: boolean; canRetry: boolean }
+  | { kind: 'out_of_credits'; headline: string; detail?: string | null }
+  | { kind: 'offline'; headline: string; detail?: string | null; canRetry: boolean };
 
 /** What one photo of an import is doing right now (`readImportPhoto`'s `onStep`). */
 export type ImportPhase = 'card' | 'layout';
@@ -71,11 +72,51 @@ export function aiFailed(line: string, refunded: boolean | null | undefined, can
 /** The words a screen reader hears for the kit — one sentence, the same order the eye reads. */
 export function aiStatusA11y(s: AiStatus): string {
   switch (s.kind) {
-    case 'working':
-      return [s.headline, s.detail].filter(Boolean).join(' ');
     case 'failed':
-      return [s.headline, s.notCharged ? NOT_CHARGED : null].filter(Boolean).join(' ');
+      return [s.headline, s.detail, s.notCharged ? NOT_CHARGED : null].filter(Boolean).join(' ');
     default:
-      return s.headline;
+      return [s.headline, s.detail].filter(Boolean).join(' ');
   }
+}
+
+/* ══ SPRINT 3b (UX-1 rollout): workout write (card read + tidy), Kitchen, Holt's chat ══ */
+
+/**
+ * A failure, sorted into the kit's states: OUT OF CREDITS is its own state (a commercial one, not a fault, never
+ * offered Try again); anything else is `aiFailed`'s — the line once, "Not charged." on its own line when refunded.
+ */
+export function aiProblem(line: string, o: { refunded?: boolean | null; outOfCredits?: boolean; canRetry?: boolean } = {}): AiStatus {
+  if (o.outOfCredits) return { kind: 'out_of_credits', headline: line.replace(NOT_CHARGED, '').trim() };
+  return aiFailed(line, o.refunded, o.canRetry ?? false);
+}
+
+/**
+ * A workout card from a photo: it reads the card, then lays it out with AI (`workout-card-read`, then `workout-tidy`)
+ * — two steps, said as they happen. `layout` is also the quiet pass every photo gets.
+ */
+export function cardReadProgress(step: 'reading' | 'layout'): AiStatus {
+  const reading = step === 'reading';
+  return {
+    kind: 'working',
+    headline: reading ? 'Reading your photo…' : 'Laying it out…',
+    steps: [
+      { label: 'Read the card', state: reading ? 'now' : 'done' },
+      { label: 'Lay it out', state: reading ? 'waiting' : 'now' },
+    ],
+  };
+}
+
+/** A typed or pasted workout, fixed with AI ("Fix it with AI") — one step, so no step row. */
+export const TIDY_WORKING: AiStatus = { kind: 'working', headline: 'Tidying it up with AI…' };
+
+/**
+ * Holt's chat's failure card (the `error` turn — the one place red appears in the chat) in the kit: its line, then
+ * what happened and what to do as one detail line, then "Not charged." — once, whether the turn carries the flag
+ * (`askOfflineCard`) or the words (`withNotCharged` in a sub). No Try again in the card: the chat's own Try again
+ * chip sits under it and sends the same ask (C-D5).
+ */
+export function chatFailure(t: { text: string; sub?: string | null; action?: string | null; notCharged?: boolean }): AiStatus {
+  const said = [t.sub, t.action].map((x) => (x ?? '').replace(NOT_CHARGED, '').trim()).filter(Boolean);
+  const notCharged = !!t.notCharged || [t.text, t.sub, t.action].some((x) => (x ?? '').includes(NOT_CHARGED));
+  return { kind: 'failed', headline: t.text.replace(NOT_CHARGED, '').trim(), detail: said.join(' ') || null, notCharged, canRetry: false };
 }

@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { flColor, flRadius, flText } from '@/constants/foundation';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
 import { aiStatusA11y, type AiStatus as AiStatusModel, type AiStepState } from '@/domain/ai/ai-status';
@@ -27,7 +28,7 @@ export function AiStatus({ status, onRetry, style }: { status: AiStatusModel; on
         {status.kind === 'working' ? <ActivityIndicator size="small" color={flText.secondary} /> : null}
         <View style={styles.words}>
           <Text style={[styles.headline, failed ? styles.headlineFailed : null]}>{status.headline}</Text>
-          {status.kind === 'working' && status.detail ? <Text style={styles.detail}>{status.detail}</Text> : null}
+          {status.detail ? <Text style={styles.detail}>{status.detail}</Text> : null}
           {status.kind === 'failed' && status.notCharged ? <Text style={styles.detail}>{NOT_CHARGED}</Text> : null}
         </View>
       </View>
@@ -35,10 +36,10 @@ export function AiStatus({ status, onRetry, style }: { status: AiStatusModel; on
         <View style={styles.steps}>
           {status.steps.map((s) => (
             <View key={s.label} style={[styles.step, STEP_STYLE[s.state]]}>
-              <Text style={[styles.stepText, s.state === 'now' ? styles.stepTextNow : null]}>
-                {s.state === 'done' ? '✓ ' : s.state === 'failed' ? '✕ ' : ''}
-                {s.label}
-              </Text>
+              {/* Sprint 3b: the engraved set's check and close, not text glyphs. */}
+              {s.state === 'done' ? <EngravedIcon name="check" size={11} color={flText.secondary} /> : null}
+              {s.state === 'failed' ? <EngravedIcon name="close" size={11} color={flColor.dangerText} /> : null}
+              <Text style={[styles.stepText, s.state === 'now' ? styles.stepTextNow : null]}>{s.label}</Text>
             </View>
           ))}
         </View>
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
   headlineFailed: { color: flColor.dangerText },
   detail: { fontSize: 12, color: flText.secondary },
   steps: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  step: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.divider },
+  step: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: flRadius.sm, borderWidth: 1, borderColor: flColor.divider },
   stepDone: { opacity: 0.75 },
   stepNow: { borderColor: flText.secondary },
   stepWaiting: { opacity: 0.5 },
