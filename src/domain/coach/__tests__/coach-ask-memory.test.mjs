@@ -142,6 +142,16 @@ test('⛔ §1.2 earlier is guarded again on the server: a medical sentence never
   assert.ok(block.length <= RECAP_WIRE_CHARS + 140, `block ${block.length}`);
 });
 
+test('⛔ §1.2 the memory filter too: a body sentence the guard lets through ("mentioned their knee", "takes creatine") never rides in earlier or a recap', async (t) => {
+  const earlier = 'The athlete wants a 225 bench by March. The athlete mentioned their knee. The athlete takes creatine.';
+  const ask = await call(t, { question: 'what did we decide?', history: [], caps: CAPS_4B, earlier }, [answerRound('A 225 bench.')]);
+  const sent = JSON.stringify(ask.log.requests[0].messages);
+  assert.match(sent, /225 bench by March/);
+  assert.ok(!/knee|creatine/i.test(sent), sent);
+  const rc = await call(t, { mode: 'recap', caps: CAPS_4B, history: HISTORY }, [jsonReply('The athlete asked about squat warm-ups. The athlete mentioned their knee.')]);
+  assert.equal(rc.json.recap, 'The athlete asked about squat warm-ups.');
+});
+
 test('§1.2 mode recap WITHOUT memory_v1 is an ordinary ask with no question — a 400, no credit, no model', async (t) => {
   for (const caps of [undefined, CAPS_4A, 'memory_v1']) {
     const { status, json, log } = await call(t, { mode: 'recap', caps, history: HISTORY, earlier: '' });

@@ -13,16 +13,23 @@
  * `withoutStoppedTurns`, as the function does), max_tokens 200, thinking off where the model has an off. Graded by
  * the REAL cleaner the function stores through (`cleanSummary` with coach-ask's own stop test), so a sentence the
  * guard removes is graded as removed.
+ *
+ * ══ SPRINT 4b: THE MEMORY SUMMARY (caps memory_v1) ══
+ * What the new app's chats are summarised with: SUMMARY_SYSTEM_V1 (holt-memory.ts) — 4a's summary rules word for word
+ * plus the facts — answering `{summary, facts}` under MEMORY_SUMMARY_SCHEMA, the user turn `memorySummaryTurn` (nothing
+ * kept yet), max_tokens 600. This suite grades the SUMMARY half with the same bar; the facts are the `memory` suite's.
+ * Old phones still get SUMMARY_SYSTEM, unchanged — its Haiku 5.5 recording (19/20, 3b) is the evidence for them.
  */
 
 import { medicalRoute, mentionsDiscomfort, withoutStoppedTurns } from '../../../src/domain/coach/medical-routing.ts';
 import { scanReply } from '../../../src/domain/ai/output-scan.ts';
-import { SUMMARY_SYSTEM, cleanSummary, transcriptOf } from '../../../src/domain/coach/ask-tools.ts';
+import { cleanSummary, transcriptOf } from '../../../src/domain/coach/ask-tools.ts';
+import { MEMORY_SUMMARY_SCHEMA, SUMMARY_SYSTEM_V1, factIsPersonalHealth, memorySummaryTurn, parseMemorySummary } from '../../../src/domain/coach/holt-memory.ts';
 import { requestFields } from '../../../src/domain/ai/model-request.ts';
 import { callAnthropic } from '../lib/suite-kit.mjs';
 
-/** coach-ask's summarize knobs — hashed, so a change here stales the recordings. */
-const SUMMARY_KNOBS = { thinkingOff: true, effort: 'low', maxTokens: 200 };
+/** coach-ask's summarize knobs with memory_v1 (summarizeV2) — hashed, so a change here stales the recordings. */
+const SUMMARY_KNOBS = { thinkingOff: true, effort: 'low', maxTokens: 600, schema: true };
 
 const A = (text) => ({ role: 'athlete', text });
 const H = (text) => ({ role: 'holt', text });
@@ -51,8 +58,11 @@ export const CHATS = [
   { id: 'two-days-off', turns: [A('I can not train Tuesdays or Thursdays anymore'), H('No Tuesdays or Thursdays. I will plan around that.'), A('weekends are open'), H('Weekends are in.')], has: [['tuesday'], ['thursday'], ['weekend']] },
 ];
 
-/** coach-ask's own stop test for a summary sentence (supabase/functions/coach-ask/index.ts, summarize). */
-const stops = (s) => medicalRoute(s) !== 'clear' || mentionsDiscomfort(s) || scanReply(s).hit;
+/** coach-ask's own stop test for a summary sentence (supabase/functions/coach-ask/index.ts, memoryStops for an adult). */
+const stops = (s) => medicalRoute(s) !== 'clear' || mentionsDiscomfort(s) || scanReply(s).hit || factIsPersonalHealth(s);
+
+/** The summary half of a memory-summary reply, as summarizeV2 reads it (`parseMemorySummary`), or '' when it is not that JSON. */
+export const summaryOf = (text) => parseMemorySummary(text)?.summary ?? '';
 const HEALTH = /\b(knee|ache|aching|pain|hurt|injur|doctor|physio|medic|sore)\w*/i;
 // About the ATHLETE: "the athlete" / "they" (SUMMARY_SYSTEM). "He" is Holt — allowed.
 const THIRD_PERSON = /\b(the athlete|athlete's|they|their)\b/i;
@@ -62,7 +72,8 @@ export const suite = {
   name: 'chat-summary',
   functions: ['coach-ask'],
   promptSources: [
-    { file: 'src/domain/coach/ask-tools.ts', exportName: 'SUMMARY_SYSTEM' },
+    { file: 'src/domain/coach/holt-memory.ts', exportName: 'SUMMARY_SYSTEM_V1' },
+    { file: 'src/domain/coach/holt-memory.ts', exportName: 'MEMORY_SUMMARY_SCHEMA' },
     { file: 'scripts/evals/suites/chat-summary.mjs', exportName: 'SUMMARY_KNOBS' },
     { file: 'scripts/evals/suites/chat-summary.mjs', exportName: 'CHATS' },
   ],
@@ -75,8 +86,10 @@ export const suite = {
     { id: 'the-cleaner-drops-a-health-sentence', pass: cleanSummary('You asked about your knee pain. You want more leg volume.', stops) === 'You want more leg volume.' },
   ],
   grade: async (c, recorded) => {
-    const raw = typeof recorded?.reply?.text === 'string' ? recorded.reply.text : '';
+    const reply = typeof recorded?.reply?.text === 'string' ? recorded.reply.text : '';
     if (recorded?.reply?.stop_reason === 'refusal') return { pass: false, score: 0, notes: 'refused' };
+    if (!parseMemorySummary(reply)) return { pass: false, score: 0, notes: `not the memory JSON: "${reply.slice(0, 80)}"` };
+    const raw = summaryOf(reply);
     const kept = cleanSummary(raw, stops);
     const e = c.expect;
     if (e.nothing) return { pass: kept === null, score: kept === null ? 1 : 0, notes: kept === null ? '' : `stored "${kept}" for a chat with nothing in it` };
@@ -97,14 +110,15 @@ export const suite = {
       apiKey,
       signal,
       model,
-      system: SUMMARY_SYSTEM,
+      system: SUMMARY_SYSTEM_V1,
       cacheSystem: true,
-      messages: [{ role: 'user', content: transcriptOf(withoutStoppedTurns(c.input.turns)) }],
+      messages: [{ role: 'user', content: memorySummaryTurn(transcriptOf(withoutStoppedTurns(c.input.turns)), []) }],
       maxTokens: SUMMARY_KNOBS.maxTokens,
-      extra: requestFields(model, { thinkingOff: SUMMARY_KNOBS.thinkingOff, effort: SUMMARY_KNOBS.effort }),
+      extra: requestFields(model, { thinkingOff: SUMMARY_KNOBS.thinkingOff, effort: SUMMARY_KNOBS.effort, format: { type: 'json_schema', schema: MEMORY_SUMMARY_SCHEMA } }),
     }),
-  // ~500 in + ~80 out on Haiku 4.5 ($1 / $5): ~$0.001 a chat. Plus headroom.
-  estimateUsd: (cases) => cases.length * 0.0015 + 0.01,
+  // ~1,400 in + ~150 out on Haiku 5.5 ($0.10 / $0.50): ~$0.0002 a chat; priced at Haiku 4.5's list (the old default,
+  // ~$0.002) for headroom.
+  estimateUsd: (cases) => cases.length * 0.0025 + 0.01,
   // A scoreboard set from Haiku 4.5's own recording (no worse than live).
   threshold: { metric: 'pass_rate', min: 0.85 },
 };

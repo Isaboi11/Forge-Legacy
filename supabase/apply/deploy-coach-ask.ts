@@ -3657,7 +3657,7 @@ async function memorySwitch(supabase: ReturnType<typeof createClient>, authoriza
         return 'unknown';
     }
 }
-const memoryStops = (minor: boolean) => (s: string): boolean => guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit;
+const memoryStops = (minor: boolean) => (s: string): boolean => guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit || factIsPersonalHealth(s);
 async function memoryModelCall(settle: ReturnType<typeof settler>, authorization: string, { system, user, maxTokens, format }: {
     system: string;
     user: string;

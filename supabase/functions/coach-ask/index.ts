@@ -144,6 +144,7 @@ import { checkFoodAction, FOOD_ACTION_NAMES, FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOO
 // free, inlined into the paste copy. Read ONLY with caps `memory_v1`; the off switch (0278) is read for every app.
 import {
   cleanRecap,
+  factIsPersonalHealth,
   factsToKeep,
   HOLT_MEMORY_CAPS,
   HOLT_NOTES_CAP,
@@ -613,9 +614,12 @@ async function memorySwitch(supabase: ReturnType<typeof createClient>, authoriza
 /**
  * The summary's stop test — stricter than a question's guard: a stored memory keeps nothing about the body at all, not
  * even the "it hurts, swap it" a live question is allowed (medical-routing.ts), so `mentionsDiscomfort` too. A minor's
- * memory goes through the minor's guard as well.
+ * memory goes through the minor's guard as well. Sprint 4b: and the memory filter's word lists (`factIsPersonalHealth`) —
+ * the guard lets "The athlete mentioned their knee." or "…takes creatine." through (they ask nothing), and a memory must
+ * not keep them. Used for 4b's memory jobs (the recap both ways, the memory summary, the facts); 4a's summary is unchanged.
  */
-const memoryStops = (minor: boolean) => (s: string): boolean => guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit;
+const memoryStops = (minor: boolean) => (s: string): boolean =>
+  guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit || factIsPersonalHealth(s);
 
 /**
  * One Haiku call for a memory job (the summary, the recap): its own clock, the configured summary model
