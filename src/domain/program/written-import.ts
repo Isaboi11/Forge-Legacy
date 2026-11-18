@@ -15,9 +15,10 @@ import { readWrittenWorkout, rowsToWrittenText, writtenToTemplate, type WrittenT
 
 /**
  * "20 seconds each set" (the reader's words) or "20 seconds" (the AI layout's note, on both live runs) — a hold, which
- * the import holds as a clock. Only on a lift with no rep count.
+ * the import holds as a clock. Only on a lift with no rep count. An app screen's "1m" / "2m" (Sprint 3b) is minutes —
+ * only 1 to 10 of them: "400m" is a distance, never a clock.
  */
-const HOLD = /^(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?)\b(?:\s+each\s+set)?[.,;]?\s*(.*)$/i;
+const HOLD = /^(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?|m(?=\b)(?<=\b(?:[1-9]|10)m))\b(?:\s+each\s+set)?[.,;]?\s*(.*)$/i;
 
 /**
  * IM-1 (Sprint 3): "F-F-F reps" under a lift with no rep count of its own — every set to failure, one F per set (the
