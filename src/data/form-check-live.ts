@@ -129,6 +129,8 @@ export type FormVideo =
  *
  * `videoMaxDuration` asks the CAMERA for {@link FORM_CLIP_SECONDS}, a real limit on a clip being recorded
  * now. A clip from the library can be any length; the trim screen then covers at most that much of it.
+ * `localOnly` is what makes that true: the clip is only read here, never uploaded, so the picker neither caps a
+ * library clip's length nor transcodes it.
  */
 export async function pickFormVideo(pick: MediaPick, source: 'camera' | 'library'): Promise<FormVideo> {
   if (!formCheckAvailable()) return { kind: 'unavailable' };
@@ -139,6 +141,7 @@ export async function pickFormVideo(pick: MediaPick, source: 'camera' | 'library
       title: 'Form check',
       hint: 'Film one set from any angle, whole body in frame.',
       videoMaxDuration: FORM_CLIP_SECONDS,
+      localOnly: true,
       directCamera: source === 'camera',
       directLibrary: source === 'library',
     });

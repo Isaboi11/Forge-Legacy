@@ -106,6 +106,13 @@ export interface MediaPickConfig {
   directLibrary?: boolean; // skip the chooser and open the library — for a screen that IS the camera (Scan label's Photos)
   /** `pickMany` only: how many the LIBRARY may return (the camera always takes one). A squad post's photos, PO 09-28. */
   limit?: number;
+  /**
+   * The video is only READ on this phone and never uploaded (Form check reads frames from it): a LIBRARY clip may be
+   * any length, and no clip is transcoded. Without it the library refused every clip over the cap, so the PO's own
+   * long gym videos could not be picked at all and the trim screen never got them (PO 11-17). The camera keeps
+   * `videoMaxDuration`.
+   */
+  localOnly?: boolean;
 }
 
 type Resolver = (assets: ImagePicker.ImagePickerAsset[]) => void;
@@ -411,7 +418,12 @@ export function useMediaPicker() {
         quality: config.quality,
         // A caller may ask for less than the ceiling but never more — 0 means "no limit" to the picker,
         // so it has to clamp up to the cap rather than through it.
-        videoMaxDuration: config.videoMaxDuration && config.videoMaxDuration > 0 ? Math.min(config.videoMaxDuration, MAX_VIDEO_SECONDS) : MAX_VIDEO_SECONDS,
+        videoMaxDuration:
+          config.localOnly && source === 'library'
+            ? 0
+            : config.videoMaxDuration && config.videoMaxDuration > 0
+              ? Math.min(config.videoMaxDuration, MAX_VIDEO_SECONDS)
+              : MAX_VIDEO_SECONDS,
         videoQuality: ImagePicker.UIImagePickerControllerQualityType.IFrame1280x720, // iOS-only; 720p is plenty for a form check
       };
       const limit = source === 'library' && config.limit && config.limit > 1 ? config.limit : 1;
@@ -440,7 +452,7 @@ export function useMediaPicker() {
          */
         const out: ImagePicker.ImagePickerAsset[] = [];
         for (const asset of assets) {
-          if (asset.type !== 'video') {
+          if (asset.type !== 'video' || config.localOnly) {
             out.push(asset);
             continue;
           }
