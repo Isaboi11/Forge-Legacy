@@ -66,12 +66,28 @@ export interface ActionCardModel {
   secondary?: { label: string; key: string };
   /** A credit line the licence needs (FatSecret, HF-D5). */
   credit?: string;
+  /**
+   * Lane C (append): what the APP resolved for this card — ids, catalogue keys, the date, the numbers on it. The
+   * executor is handed THIS, not the model's input, so Confirm writes exactly what the card showed. Absent = the
+   * executor takes `action.input` (B's meal cards).
+   */
+  plan?: Record<string, unknown>;
 }
 
 /** Opaque: whatever the executor needs to put things back exactly as they were. */
 export type UndoToken = { action: HoltActionName; [k: string]: unknown };
 
-export type ApplyResult = { ok: true; undo: UndoToken; said: string } | { ok: false; reason: 'offline' | 'not_allowed' | 'gone' | 'failed' };
+export type ApplyResult =
+  | {
+      ok: true;
+      undo: UndoToken;
+      said: string;
+      /** Lane C (append): a route the sheet hands off to after the write (start_workout → '/workout', open_door). */
+      go?: string;
+      /** Lane C (append): set when there is nothing to undo, saying why in plain words. The card then shows no Undo. */
+      noUndo?: string;
+    }
+  | { ok: false; reason: 'offline' | 'not_allowed' | 'gone' | 'failed' };
 
 /** Each action's executor. A failed `apply` leaves nothing behind (each executor has a test that says so). */
 export interface HoltActionExecutor<I = Record<string, unknown>> {
@@ -81,3 +97,39 @@ export interface HoltActionExecutor<I = Record<string, unknown>> {
 
 /** §1.9 — the app's `holt_action` event. Names only. */
 export type HoltActionOutcome = 'confirmed' | 'undone' | 'dismissed' | 'failed';
+
+/*
+ * ══ LANE C (append) — the inputs the app reads for the training actions ══
+ *
+ * Lane A's tool definitions send these field names; the app narrows each one and resolves every id, key, date and
+ * number itself (`holt-action-cards.ts`). Words only from the model — the one number it may pass is a pace the
+ * athlete said ("a pound a week"), which `recommend()` then clamps.
+ */
+/** "Swap bench for dumbbell bench today": the athlete's words for both exercises. */
+export interface SwapExerciseTodayInput {
+  from: string;
+  to: string;
+}
+/** "Start my workout" (no name = today's session) or "start push day" / "start my Upper A template". */
+export interface StartWorkoutInput {
+  name?: string;
+}
+/** "Put legs on Thursday": the day in words ("thursday", "tomorrow", "next monday", "the 24th") and what. */
+export interface ScheduleSessionInput {
+  when: string;
+  what?: string;
+}
+/** "Set my targets to lose a pound a week": goal and pace as said. Never calories or macros. */
+export interface SetTargetsInput {
+  goal: 'lose' | 'maintain' | 'gain';
+  /** Pounds a week, as the athlete said it. Optional: the Targets screen's default is used without it. */
+  pace?: number;
+}
+/** "Remember I train at 6am": the athlete's own words, one line. */
+export interface RememberNoteInput {
+  text: string;
+}
+/** "Take me to my targets". */
+export interface OpenDoorInput {
+  door: Door;
+}
