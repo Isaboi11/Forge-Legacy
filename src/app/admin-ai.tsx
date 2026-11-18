@@ -6,6 +6,7 @@ import { Redirect, useRouter } from 'expo-router';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { ScreenBackground } from '@/components/screen-background';
 import { RangeControl, SectionCard, StatLine } from '@/components/forge/admin/charts';
+import { ImportMissesCard } from '@/components/forge/admin/ImportMissesCard';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flFont, flRadius, flText } from '@/constants/foundation';
 import { dashboardTz, isAppAdmin } from '@/data/admin-live';
@@ -123,6 +124,7 @@ export default function AdminAiScreen() {
         ) : (
           <Loaded h={h} />
         )}
+        <ImportMissesCard />
       </ScrollView>
     </View>
   );
