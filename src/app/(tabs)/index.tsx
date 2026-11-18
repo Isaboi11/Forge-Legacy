@@ -24,6 +24,8 @@ import { circleActivity as circleActivityFor } from '@/domain/home/circle-activi
 import { displayWeight } from '@/domain/settings/units';
 import { useUnits } from '@/lib/settings';
 import { WeeklyReviewCard } from '@/components/forge/WeeklyReviewCard';
+import { FoundViaCard } from '@/components/forge/FoundViaCard';
+import { fetchFoundViaOwed } from '@/data/found-via-live';
 import { WelcomeBackLine } from '@/components/forge/compositions/WelcomeBackLine';
 import { HoltUpdateSheet, HoltUpdatedChip } from '@/components/forge/HoltUpdate';
 import { holtSpanLabel, undoHoltChange } from '@/domain/coach/holt-marks';
@@ -319,6 +321,13 @@ export default function HomeScreen() {
    */
   const { data: recentCardio, settled: cardioSettled } = useQuery(fetchRecentCardio, []);
   const cardioPills = useMemo(() => cardioPillsByRecency(recentCardio ?? []), [recentCardio]);
+
+  /**
+   * "How did you find Forge Legacy?" — asked once, as a one-tap card at the top of Home (PO 11-17, 0273).
+   * Not refetched on focus: once answered, the card retires itself, and the server never says "owed"
+   * again. Any failed read is `false` — no card, never a broken Home.
+   */
+  const { data: foundViaOwed, settled: foundViaSettled } = useQuery(fetchFoundViaOwed, []);
   const router = useRouter();
   const { startWorkout } = useWorkoutSession();
   // Once, right after onboarding, and only for a Free athlete — see the hook (ONB-A7-D2).
@@ -1056,6 +1065,7 @@ export default function HomeScreen() {
       welcomeSettled, // ┐ "Welcome back" sits ABOVE the hero, so a late arrival would shove the whole
       closedBreak !== undefined, // ┘ screen down — the facts and this device's closed break both gate it
       cardioSettled, // the Start sheet's cardio pill ORDER — a reshuffle under a thumb would start the wrong one
+      foundViaSettled, // the found-via card is the FIRST thing in the content — late, it would shove all of Home down
     ],
     ceilingReached,
   );
@@ -1212,6 +1222,10 @@ export default function HomeScreen() {
         ) : null}
 
         <View style={styles.content}>
+          {/* HOW DID YOU FIND US — once, above everything, then gone for good (PO 11-17, 0273). On the
+              first Home it sits under Holt's welcome sheet and is the first thing seen when that closes. */}
+          {foundViaOwed ? <FoundViaCard /> : null}
+
           {/*
             THE WORKOUT CTA — H-1 Tier 3, "Always present. Never disabled. One button."
 

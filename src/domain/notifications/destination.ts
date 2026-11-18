@@ -173,11 +173,14 @@ export function destinationFor(n: NotificationTarget): NotificationDestination {
     /*
      * Push-only kinds — no feed row, so the `default` arm's Inbox could never contain them (PO 11-08 launch QA, H16).
      * A reply to your cheer (0240) opens the person who replied, as its stored route says; the operator alerts
-     * (0137 sign-up, 0167 feedback) open `/admin`, whose own gate keeps everyone else out.
+     * (0137/0266 sign-up, 0266 plan started or changed, 0273 how they found us, 0167 feedback) open `/admin`,
+     * whose own gate keeps everyone else out.
      */
     case 'workout_cheer_reply':
       return n.actorId ? { pathname: '/athlete/[id]', params: { id: n.actorId } } : '/inbox';
     case 'athlete_signup':
+    case 'athlete_plan':
+    case 'athlete_found_via':
     case 'feedback_filed':
       return '/admin';
     /* 0269 — the hourly AI health alert (and the canary's). Push-only, operators only; the page's own
