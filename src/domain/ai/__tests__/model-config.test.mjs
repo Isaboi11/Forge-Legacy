@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { Buffer } from 'node:buffer';
 
 import { choiceFromRow, MODEL_CONFIG_FAIL_TTL_MS, modelConfigReader, uidFromAuthorization } from '../model-config.ts';
 import { EFFORTS, KNOWN_MODELS } from '../model-request.ts';
