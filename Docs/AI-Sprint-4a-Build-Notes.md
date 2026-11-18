@@ -174,6 +174,7 @@ and A's mounts onto C's components, at merge.
 ## 3. Budget log (integrator)
 | Run | Lane | Estimate | Real |
 |---|---|---|---|
+| meal-describe (33 cases, Haiku 5.5) | B | $0.06 | $0.0029 |
 
 ## 4. Integrator (this session)
 - Merge C → B → A into `ai/s4a` (A last: it mounts C's components and registers B's tools), rebuild every bundle, the
@@ -184,3 +185,7 @@ and A's mounts onto C's components, at merge.
 
 ## 5. Log
 - 2026-11-18 — `ai/s4a` + 3 lane worktrees off `e1abd8ef`; contract written.
+- 2026-11-18 — PO: `schedule_session` is OUT of 4a — built right after 4a with the calendar's upcoming days (CAL-D8, never built; Workout History's calendar shows past sessions only). `set_targets` for women / sex unspecified: the card sends them to the Targets screen (its pregnancy question can't be asked on a card).
+- 2026-11-18 — `ai/s4a-cards` merged (`368e2e5f`): cards, toolbox, status line, executors for swap / start / targets / note / door. Targets Undo writes the earlier numbers as a new row (no DELETE policy on `nutrition_targets`); a first-ever target has no Undo.
+- 2026-11-18 — `ai/s4a-meal` merged (`1eaa9394`): food-lookup port, `log_food`, `meal-describe` + `/describe-meal`, Add sheet rows, `0277` (meal-describe on the soft floor + its own ledger slug) AUTHORED. Eval 33/33, $0.0029. ⛔ Found: `medicalRoute` misses "made myself throw up" phrasings → sent to lane A.
+- 2026-11-18 — integrator `8bea0a73`: B's meal card + executors wired into C's registry; AI health names `meal-describe`.

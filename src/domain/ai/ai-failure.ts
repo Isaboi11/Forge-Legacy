@@ -24,7 +24,8 @@ export type AiFunction =
   | 'program-photo-read'
   | 'workout-card-read'
   | 'workout-tidy'
-  | 'bug-plain';
+  | 'bug-plain'
+  | 'meal-describe';
 
 /**
  * What went wrong, from the athlete's side of the screen.

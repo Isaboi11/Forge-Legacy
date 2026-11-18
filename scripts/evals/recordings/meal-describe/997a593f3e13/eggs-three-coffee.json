@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-three-coffee",
+  "promptHash": "997a593f3e136fb3f6755a775b0ca91190f4cfe516589d2be4d87e48a51749e8",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T18:06:52.282Z",
+  "reply": {
+    "text": "{\"isFood\":true,\"items\":[{\"name\":\"eggs\",\"search\":\"egg cooked\",\"amount\":3,\"unit\":\"piece\",\"grams\":150,\"confidence\":\"medium\"},{\"name\":\"toast\",\"search\":\"bread toasted\",\"amount\":1,\"unit\":\"slice\",\"grams\":30,\"confidence\":\"medium\"},{\"name\":\"black coffee\",\"search\":\"coffee brewed black\",\"amount\":1,\"unit\":\"cup\",\"grams\":240,\"confidence\":\"high\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 45,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 2940,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 154,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

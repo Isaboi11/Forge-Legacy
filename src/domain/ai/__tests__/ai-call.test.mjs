@@ -32,6 +32,7 @@ test('every non-chat AI function has the contract §3 app timeout', () => {
     'coach-author': 30_000,
     'recipe-link-read': 30_000,
     'bug-plain': 90_000,
+    'meal-describe': 45_000,
   });
   // The chat's streamed ask keeps its own Sprint 0 clock (another branch's), so it is not here.
   assert.equal('coach-ask' in AI_APP_TIMEOUT_MS, false);

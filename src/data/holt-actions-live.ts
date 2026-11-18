@@ -30,6 +30,7 @@ import { fetchPlannedWorkout } from '@/data/planned-workout-live';
 import { fetchBodyEntries, latestBodyReading } from '@/data/body-metrics-live';
 import { fetchNutritionProfile, fetchRangeTotals, fetchTargetHistory, saveTargets } from '@/data/nutrition-live';
 import { addNotes, deleteNote } from '@/data/holt-notes-live';
+import { HOLT_MEAL_EXECUTORS } from '@/data/holt-meal-live';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { slotStates } from '@/domain/program/progress-core';
 import { isCardioKey } from '@/domain/workout/conditioning';
@@ -143,6 +144,8 @@ const EXECUTORS: Partial<Record<HoltActionName, HoltActionExecutor>> = {
   set_targets: targetsExecutor(DEPS),
   remember_note: noteExecutor(DEPS),
   open_door: doorExecutor(DEPS),
+  /* Lane B (integrator wiring): Log it / Save as a meal, Undo deletes exactly those rows. */
+  ...HOLT_MEAL_EXECUTORS,
 };
 
 /**
@@ -267,6 +270,7 @@ export async function liveCardContext(opts: { units: 'imperial' | 'metric'; nutr
   return {
     units: opts.units,
     today,
+    hour: new Date().getHours(),
     nutritionAccess: opts.nutritionAccess,
     catalog: PICKER_DB,
     loadToday,
