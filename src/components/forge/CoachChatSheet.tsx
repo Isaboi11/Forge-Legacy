@@ -217,6 +217,8 @@ import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
 import { endsOnRace, firstWeeksOf, placeWrittenLifts, RACE_WEEK_LINE, raceWeekShape, stopsShortLine } from '@/domain/coach/author-race';
 import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
+import { PAST_CHATS_ROUTE } from '@/domain/coach/holt-memory';
+import { usePastChatSync } from '@/components/forge/usePastChatSync';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
   createProgram,
@@ -371,7 +373,7 @@ export function CoachChatSheet({
         ? (turns) =>
             /* A stopped line is never summarised either (QA R2-F1); and what the app DID — a failed request,
                a plan only shown — rides along so the memory cannot say it happened (QA holtai-13). */
-            void summarizeChat(summaryHistory(turns))
+            summarizeChat(summaryHistory(turns)) // returned, not voided: its summary goes onto the past chat (4b §1.6)
         : null,
     );
   }, [premiumAi]);
@@ -810,6 +812,8 @@ export function CoachChatSheet({
     /* With where it had got to, so a refresh restores the build as well as the words (QA holt-08). */
     void saveThread(thread, { mode, constraints });
   }, [thread, mode, constraints]);
+  /* Sprint 4b §1.5 — past chats: the row in `holt_chats` follows this thread (usePastChatSync.ts). */
+  usePastChatSync(thread, premiumAi);
 
   /**
    * ⚠ **AND CLOSING IS NOT ONLY THE X.** `collapse` covers the three deliberate closes — the X, the
@@ -3756,6 +3760,7 @@ export function CoachChatSheet({
           />
           {/* §4.9 — it collapses to the bubble, and it DOES end the conversation. The comment here used
               to say the opposite; it had been wrong since 2026-08-11, when closing started clearing. */}
+          {premiumAi ? <HeaderAction label="PAST CHATS" onPress={() => { handOff(); router.push(PAST_CHATS_ROUTE as Parameters<typeof router.push>[0]); }} accessibilityLabel="Past chats" icon="history" bare={compact} /> : null}
           <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad={!compact} icon="close" bare={compact} />
         </View>
 
