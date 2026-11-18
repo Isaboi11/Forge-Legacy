@@ -144,6 +144,7 @@ const NUTRITION_ROUTES = new Set([
   'recipe',
   'meal-detail',
   'meal-photo',
+  'describe-meal',
   'meal-plan',
   'meal-plan-setup',
   'grocery-list',

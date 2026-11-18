@@ -92,3 +92,10 @@ test('Nutrition’s Add sheet: Snap a plate and Describe a meal, both behind Pre
   assert.match(block, /title="Describe a meal"[\s\S]*pathname: '\/describe-meal'/);
   assert.match(read('app/log-food.tsx'), /const photoOn = premiumAi && nutritionAccess;/);
 });
+
+test('a door into /describe-meal from outside the tab (Holt’s toolbox) asks the Nutrition consent first, as /meal-photo does', async () => {
+  const { isNutritionRoute } = await import('../../domain/consent/consent.ts');
+  assert.equal(isNutritionRoute('/describe-meal'), true);
+  assert.equal(isNutritionRoute('/describe-meal?date=2026-11-18&meal=lunch'), true);
+  assert.equal(isNutritionRoute('/meal-photo'), true);
+});
