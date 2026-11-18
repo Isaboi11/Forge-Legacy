@@ -86,6 +86,7 @@ import {
   formCheckAvailable,
   framesFromVideo,
   pickFormVideo,
+  REP_SCAN_MAX_MS,
   repScanSpan,
   scanCovers,
   scanReps,
@@ -233,7 +234,7 @@ const POSE_OFF_LINE = "Body tracking couldn't lock on, so this read is from the 
 type Stage =
   | { step: 'start' }
   /** `scan`: body tracking looking for the reps (null on a build without it) — the trim's ticks. */
-  | { step: 'trim'; clip: Picked; scan: Promise<RepScan | null> | null }
+  | { step: 'trim'; clip: Picked }
   | { step: 'watching'; phase: 0 | 1 | 2; lift: Lift }
   | { step: 'read'; r: ReadState }
   | { step: 'unreadable'; charged: boolean }
@@ -293,14 +294,38 @@ export default function FormCheckScreen() {
   const canRead = formCheckAvailable();
 
   /*
-   * The trim screen's rep scan (PO 11-17): body tracking starts on the clip the moment it is picked, so the trim can
-   * mark the reps — and a read whose trim it covers slices it instead of tracking again (`scanCovers`). One job at a
-   * time: the native pass has ONE cancel flag, so a second pass is never started while this one runs (see `send`).
+   * The trim screen's rep scan (PO 11-17): body tracking runs on the clip as the trim opens — or, on a clip over a
+   * minute, on the window the handles are on, again each time a handle is let go — so the trim can mark the reps; and a
+   * read whose trim a scan covers slices it instead of tracking again (`scanCovers`).
+   *
+   * ⚠ ONE PASS AT A TIME. The native pass has ONE cancel flag, and starting a pass clears it — so a pass started while a
+   * cancelled one is still winding down would let both run. A new scan, and a read, first wait for the cancelled one
+   * (`scanSettling`); `scanToken` makes a request that was overtaken while it waited give up.
    */
   const scanJob = useRef<{ uri: string; span: { startMs: number; endMs: number; fps: number }; promise: Promise<RepScan | null> } | null>(null);
+  const scanToken = useRef(0);
+  const scanSettling = useRef<Promise<unknown> | null>(null);
   const stopScan = () => {
-    if (scanJob.current) cancelFormTracking();
+    scanToken.current += 1;
+    const prev = scanJob.current;
     scanJob.current = null;
+    if (prev) {
+      cancelFormTracking();
+      scanSettling.current = prev.promise;
+    }
+  };
+  const beginScan = async (uri: string, durationMs: number | null, win?: { start: number; end: number }): Promise<RepScan | null> => {
+    if (!bodyPoseAvailable() || !lift) return null;
+    stopScan();
+    const token = scanToken.current;
+    const settling = scanSettling.current;
+    if (settling) await settling;
+    if (token !== scanToken.current) return null; // overtaken: a newer scan, or a read, took over
+    scanSettling.current = null;
+    const pattern = lift.key ? (PICKER_DB.find((x) => x.key === lift.key)?.pattern ?? null) : null;
+    const promise = scanReps(uri, durationMs, pattern, lift.name, win);
+    scanJob.current = { uri, span: repScanSpan(durationMs, win), promise };
+    return promise;
   };
   useEffect(
     () => () => {
@@ -402,13 +427,7 @@ export default function FormCheckScreen() {
       return;
     }
     stopScan();
-    let scan: Promise<RepScan | null> | null = null;
-    if (bodyPoseAvailable()) {
-      const pattern = lift.key ? (PICKER_DB.find((x) => x.key === lift.key)?.pattern ?? null) : null;
-      scan = scanReps(video.uri, video.durationMs, pattern, lift.name);
-      scanJob.current = { uri: video.uri, span: repScanSpan(video.durationMs), promise: scan };
-    }
-    setStage({ step: 'trim', clip: { uri: video.uri, durationMs: video.durationMs, notice: video.notice, source }, scan });
+    setStage({ step: 'trim', clip: { uri: video.uri, durationMs: video.durationMs, notice: video.notice, source } });
   };
 
   // ── 02 → 03 → 04: the read ───────────────────────────────────────────────────
@@ -427,6 +446,7 @@ export default function FormCheckScreen() {
     let scan: RepScan | null = null;
     const job = scanJob.current;
     scanJob.current = null;
+    scanToken.current += 1; // a scan request still waiting gives up
     if (job && job.uri === clip.uri) {
       if (scanCovers(job.span, startMs, endMs)) scan = await job.promise;
       else {
@@ -434,6 +454,8 @@ export default function FormCheckScreen() {
         await job.promise;
       }
     }
+    if (scanSettling.current) await scanSettling.current;
+    scanSettling.current = null;
     if (cancelRef.current) return;
 
     const got = await framesFromVideo(clip.uri, {
@@ -585,7 +607,7 @@ export default function FormCheckScreen() {
       <Shell onClose={close}>
         <TrimStage
           clip={stage.clip}
-          scan={stage.scan}
+          rescan={bodyPoseAvailable() ? (w) => beginScan(stage.clip.uri, stage.clip.durationMs, w) : null}
           onSend={(a, b) => void send(stage.clip, a, b)}
           onRepick={() => {
             restart();
@@ -922,13 +944,13 @@ const TRIM_TOUCH_STYLE = Platform.OS === 'web' ? ({ touchAction: 'none' } as unk
 
 function TrimStage({
   clip,
-  scan,
+  rescan,
   onSend,
   onRepick,
 }: {
   clip: Picked;
-  /** The rep scan started when the clip was picked, or null on a build without body tracking. */
-  scan: Promise<RepScan | null> | null;
+  /** Body tracking over the clip (or, past a minute, over `win`), or null on a build without it. */
+  rescan: ((win?: Win) => Promise<RepScan | null>) | null;
   onSend: (startMs: number, endMs: number) => void;
   onRepick: () => void;
 }) {
@@ -942,7 +964,7 @@ function TrimStage({
   /** The strip's width in points — render needs it to split the touch room between two grips close together. */
   const [stripW, setStripW] = useState(0);
   /** The reps body tracking found: null while it looks. */
-  const [reps, setReps] = useState<RepSpan[] | null>(scan ? null : []);
+  const [reps, setReps] = useState<RepSpan[] | null>(rescan ? null : []);
   /** The rep the window is trimmed to on its own ("Just rep 3"), 0-based. */
   const [just, setJust] = useState<number | null>(null);
   const player = useVideoPlayer(clip.uri, (p) => {
@@ -983,7 +1005,9 @@ function TrimStage({
   const [pans] = useState(() => {
     /* `touched`: a grip has moved, so the scan must not move the window under the athlete. `before`: the window to put
        back when "Just rep N" is tapped off. */
-    const live = { trim, w: 1, grab: 0, x0: 0, touched: false, just: null as number | null, before: null as Win | null };
+    const live = { trim, w: 1, grab: 0, x0: 0, touched: false, just: null as number | null, before: null as Win | null, seq: 0, alive: true };
+    /** Past a minute the whole clip is too long to scan densely: the reps are looked for where the handles are. */
+    const long = dur > REP_SCAN_MAX_MS;
     const show = (ms: number) => {
       seekPlayer(player, ms);
       setHead(ms);
@@ -1028,7 +1052,10 @@ function TrimStage({
           show(live.grab);
         },
         onPanResponderMove: (_e, g) => put(which, live.grab + (g.dx / live.w) * dur),
-        onPanResponderRelease: finish,
+        onPanResponderRelease: () => {
+          finish();
+          if (long) look(false);
+        },
         onPanResponderTerminate: finish,
       });
     /* The strip itself: touch to put the playhead there (inside the window), drag to scrub. */
@@ -1053,11 +1080,28 @@ function TrimStage({
       handMoved();
       put(which, live.trim[which] + by);
     };
+    /* Found reps are wrapped — unless a grip has already moved. */
+    const wrap = (rs: RepSpan[]) => {
+      const w = live.touched ? null : wrapReps(rs, dur, FORM_TRIM_MIN_MS, FORM_CLIP_MS);
+      if (w) set(w, w.start);
+    };
+    /* Look for the reps: the whole clip, or — past a minute — the window the handles are on. `fresh`: the screen is
+       already saying "Finding your reps…". Only the newest look counts; a failed one leaves the ticks empty. */
+    const look = (fresh: boolean) => {
+      if (!rescan) return;
+      const seq = ++live.seq;
+      if (!fresh) setReps(null);
+      void rescan(long ? { ...live.trim } : undefined).then((found) => {
+        if (!live.alive || seq !== live.seq) return;
+        const rs = found?.reps ?? [];
+        setReps(rs);
+        wrap(rs);
+      });
+    };
     return {
-      /** The scan found reps: wrap them — unless a grip has already moved. */
-      wrap: (rs: RepSpan[]) => {
-        const w = live.touched ? null : wrapReps(rs, dur, FORM_TRIM_MIN_MS, FORM_CLIP_MS);
-        if (w) set(w, w.start);
+      look,
+      dispose: () => {
+        live.alive = false;
       },
       /** A rep's number was tapped: that rep alone, or (null) the window from before. */
       pick: (i: number | null, rs: RepSpan[]) => {
@@ -1089,18 +1133,9 @@ function TrimStage({
   });
 
   useEffect(() => {
-    if (!scan) return undefined;
-    let alive = true;
-    void scan.then((found) => {
-      if (!alive) return;
-      const rs = found?.reps ?? [];
-      setReps(rs);
-      pans.wrap(rs);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [scan, pans]);
+    pans.look(true);
+    return () => pans.dispose();
+  }, [pans]);
 
   const leftPct = (trim.start / dur) * 100;
   const rightPct = 100 - (trim.end / dur) * 100;
@@ -1158,11 +1193,15 @@ function TrimStage({
           label={false}
           size={32}
         />
-        {clip.notice ? <Text style={s.hint}>{`That clip is long — I'll watch up to ${Math.round(FORM_CLIP_MS / 1000)} seconds of it.`}</Text> : null}
+        {clip.notice ? (
+          <Text style={s.hint}>
+            {`That clip is long — I'll watch up to ${Math.round(FORM_CLIP_MS / 1000)} seconds of it.${rescan && dur > REP_SCAN_MAX_MS ? ' Put the handles over your set and I’ll find the reps.' : ''}`}
+          </Text>
+        ) : null}
 
         <View style={s.stripWrap}>
           {/* The .dc's rep ticks — over the strip's touch room (zIndex), and only the ticks themselves take a touch. */}
-          {scan ? (
+          {rescan ? (
             <View style={s.tickRow} pointerEvents="box-none">
               {reps === null ? (
                 <Text style={s.tickWait}>Finding your reps…</Text>

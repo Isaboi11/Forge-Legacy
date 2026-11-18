@@ -233,8 +233,13 @@ export interface RepScan {
   reps: RepSpan[];
 }
 
-/** The span a scan of this clip covers, known before it finishes (the read decides with it whether to wait). */
-export function repScanSpan(durationMs: number | null): { startMs: number; endMs: number; fps: number } {
+/**
+ * The span a scan covers, known before it finishes (the read decides with it whether to wait): the clip up to a
+ * minute, or — a longer clip (PO's gym videos run over one; library clips reach the trim at any length, 11-17) — the
+ * window the athlete has the handles on, at the density a read of that window would use.
+ */
+export function repScanSpan(durationMs: number | null, win?: { start: number; end: number } | null): { startMs: number; endMs: number; fps: number } {
+  if (win && win.end > win.start) return { startMs: win.start, endMs: win.end, fps: poseFps(win.end - win.start) };
   const dur = durationMs && durationMs > 0 ? durationMs : FORM_CLIP_SECONDS * 1000;
   const endMs = Math.min(dur, REP_SCAN_MAX_MS);
   return { startMs: 0, endMs, fps: poseFps(endMs) };
@@ -246,9 +251,15 @@ export function scanCovers(scan: { startMs: number; endMs: number; fps: number }
 }
 
 /** The reps in a clip, or null (no body tracking on this build, nothing found, cancelled, too slow). Never throws. */
-export async function scanReps(uri: string, durationMs: number | null, pattern: string | null, lift: string | null): Promise<RepScan | null> {
+export async function scanReps(
+  uri: string,
+  durationMs: number | null,
+  pattern: string | null,
+  lift: string | null,
+  win?: { start: number; end: number } | null,
+): Promise<RepScan | null> {
   if (!bodyPoseAvailable() || !uri) return null;
-  const span = repScanSpan(durationMs);
+  const span = repScanSpan(durationMs, win);
   try {
     const track = await trackPose(uri, span.startMs, span.endMs);
     if (!track) return null;

@@ -30,17 +30,28 @@ test("today's lifts, then recent ones, then the common six — nine chips at mos
   assert.ok(SCREEN.indexOf('for (const k of recent)') < SCREEN.indexOf('for (const n of COMMON)'));
 });
 
-test('the rep scan starts when the clip is picked, and a read reuses it or stops it — never two passes at once', () => {
-  assert.match(SCREEN, /if \(bodyPoseAvailable\(\)\) \{[\s\S]*?scan = scanReps\(video\.uri, video\.durationMs, pattern, lift\.name\);/);
+test('the rep scan: the clip up to a minute, else the window under the handles — and never two passes at once', () => {
+  assert.match(SCREEN, /rescan=\{bodyPoseAvailable\(\) \? \(w\) => beginScan\(stage\.clip\.uri, stage\.clip\.durationMs, w\) : null\}/);
+  assert.match(SCREEN, /if \(settling\) await settling;\n\s+if \(token !== scanToken\.current\) return null;/, 'a new scan waits for the cancelled one');
   assert.match(SCREEN, /if \(scanCovers\(job\.span, startMs, endMs\)\) scan = await job\.promise;\n\s+else \{\n\s+cancelFormTracking\(\);\n\s+await job\.promise;/);
+  assert.match(SCREEN, /if \(scanSettling\.current\) await scanSettling\.current;/, 'a read waits for a cancelled scan too');
   assert.match(SCREEN, /const restart = \(\) => \{\n\s+stopScan\(\);/);
   assert.match(LIVE, /const scan = opts\.scan && opts\.scan\.uri === uri && scanCovers\(opts\.scan, start, end\) \? opts\.scan : null;/);
   assert.match(LIVE, /scan\.fps >= poseFps\(end - start\)/, 'a slice is only used when it sampled at least as finely');
+  assert.match(LIVE, /if \(win && win\.end > win\.start\) return \{ startMs: win\.start, endMs: win\.end, fps: poseFps\(win\.end - win\.start\) \};/);
+});
+
+test('a clip over a minute is scanned where the handles are, again whenever a handle is let go', () => {
+  assert.match(TRIM, /const long = dur > REP_SCAN_MAX_MS;/);
+  assert.match(TRIM, /onPanResponderRelease: \(\) => \{\n\s+finish\(\);\n\s+if \(long\) look\(false\);/);
+  assert.match(TRIM, /void rescan\(long \? \{ \.\.\.live\.trim \} : undefined\)/);
+  assert.match(TRIM, /if \(!live\.alive \|\| seq !== live\.seq\) return;/, 'only the newest look counts');
+  assert.match(TRIM, /Put the handles over your set and I’ll find the reps\./);
 });
 
 test('the trim marks the reps: waiting line, numbered ticks, the wrap, and "Just rep N"', () => {
   assert.match(TRIM, /Finding your reps…/);
-  assert.match(TRIM, /pans\.wrap\(rs\);/);
+  assert.match(TRIM, /setReps\(rs\);\n\s+wrap\(rs\);/);
   assert.match(TRIM, /const w = live\.touched \? null : wrapReps\(/, 'never moves a window the athlete has moved');
   assert.match(TRIM, /onPress=\{\(\) => pans\.pick\(just === i \? null : i, reps\)\}/);
   assert.match(TRIM, /`Just rep \$\{just \+ 1\}`/);
