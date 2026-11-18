@@ -1,0 +1,10 @@
+{
+  "caseId": "stop-diabetes",
+  "promptHash": "997a593f3e136fb3f6755a775b0ca91190f4cfe516589d2be4d87e48a51749e8",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T18:07:20.718Z",
+  "reply": {
+    "skipped": "code_stop"
+  },
+  "usage": null
+}

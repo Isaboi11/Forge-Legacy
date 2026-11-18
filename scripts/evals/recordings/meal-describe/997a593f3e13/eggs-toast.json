@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-toast",
+  "promptHash": "997a593f3e136fb3f6755a775b0ca91190f4cfe516589d2be4d87e48a51749e8",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T18:06:51.012Z",
+  "reply": {
+    "text": "{\"isFood\":true,\"items\":[{\"name\":\"scrambled eggs\",\"search\":\"egg scrambled\",\"amount\":2,\"unit\":\"piece\",\"grams\":100,\"confidence\":\"high\"},{\"name\":\"whole wheat toast\",\"search\":\"bread whole wheat toasted\",\"amount\":1,\"unit\":\"slice\",\"grams\":30,\"confidence\":\"high\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 52,
+    "cache_creation_input_tokens": 2940,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 2940,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 119,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

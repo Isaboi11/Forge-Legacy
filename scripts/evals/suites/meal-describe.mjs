@@ -100,8 +100,11 @@ export function gradeAnswer(c, reply) {
     }
     used.add(k);
     const it = items[k];
-    if (want.amount != null && (it.amount == null || Math.abs(it.amount - want.amount) > 0.01)) misses.push(`${want.name[0]} amount ${it.amount} ≠ ${want.amount}`);
-    if (want.unit && !want.unit.some((u) => has(it.unit, u))) misses.push(`${want.name[0]} unit "${it.unit}" ∉ ${want.unit.join('/')}`);
+    // A weight in grams may come back as the schema's own "grams only" form (`MealItem.amount`: "null when it gave only
+    // grams") — the review then starts from exactly that weight (`initialPortion` → `gramsServing`), so it is right.
+    const gramsOnly = want.unit?.includes('g') && it.amount == null && it.grams != null && Math.abs(it.grams - want.amount) <= 1;
+    if (want.amount != null && !gramsOnly && (it.amount == null || Math.abs(it.amount - want.amount) > 0.01)) misses.push(`${want.name[0]} amount ${it.amount} ≠ ${want.amount}`);
+    if (want.unit && !gramsOnly && !want.unit.some((u) => has(it.unit, u))) misses.push(`${want.name[0]} unit "${it.unit}" ∉ ${want.unit.join('/')}`);
     for (const s of want.search ?? []) if (!has(it.search, s)) misses.push(`${want.name[0]} search "${it.search}" lacks ${s}`);
   }
   // No invented foods: at most one item beyond what was said (a split the case did not foresee, e.g. "toast" + "butter").
