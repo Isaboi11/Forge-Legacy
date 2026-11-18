@@ -101,7 +101,7 @@ prompt's answers to them (recorded live, $0.21) vs the old card reads (`1ef22a`)
 - (this commit) report, round 2
 
 ## Tests
-`node --test` over all of `src` (round 2): 6919 tests, 6915 pass, **4 fail — the 4 known**, none in a file this branch touched:
+`node --test` over all of `src` (round 2): 6917 tests, 6913 pass, **4 fail — the 4 known**, none in a file this branch touched:
 `onboarding-missing-profile` (complete_onboarding vs 0066, CRLF checkout), `consent.test` (`crm-live.ts` → bug-plain),
 `migration-0234` ×2. `scripts/evals` + `scripts/deploy-ai` tests: 60/60. `npx tsc --noEmit` = 0 (with the generated,
 git-ignored `expo-env.d.ts` copied in — the worktree lacked it). eslint = 0 on every changed file (the pre-existing
