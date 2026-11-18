@@ -20,7 +20,7 @@ import { narrowPatch } from '../../../src/domain/coach/interpret-narrow.ts';
 import { VOICE } from '../../../src/domain/coach/rulebook/voice.ts';
 import { readJsonl } from '../lib/suite-kit.mjs';
 import { judge, narrowedExpectation } from './chat-answers.mjs';
-import { CAPS_KNOBS, CAPS_SOURCES, TODAY, capsRounds } from './ask-actions.mjs';
+import { CAPS_KNOBS, CAPS_SOURCES, TODAY, capsRounds, liveShard } from './ask-actions.mjs';
 
 const askFor = (qid) => VOICE[`ask_${qid}`]?.[0] ?? null;
 const rows = () => readJsonl('scripts/holt-corpus/corpus-answers.jsonl');
@@ -45,7 +45,7 @@ export const suite = {
   functions: ['coach-ask'],
   promptSources: [...CAPS_SOURCES, { file: 'scripts/evals/suites/ask-actions.mjs', exportName: 'CAPS_KNOBS' }, { file: 'scripts/evals/suites/ask-answers.mjs', exportName: 'buildingFor' }],
   model: 'claude-sonnet-5-5',
-  cases: async () => rows().map((r) => ({ id: r.id, input: { qid: r.qid, text: r.text }, expect: r.expect ?? {} })),
+  cases: async () => liveShard(rows().map((r) => ({ id: r.id, input: { qid: r.qid, text: r.text }, expect: r.expect ?? {} })), suite),
   deterministic: async () => [
     { id: 'corpus-size', pass: rows().length >= 1100, notes: `${rows().length} lines` },
     { id: 'every-question-has-holts-words', pass: rows().every((r) => askFor(r.qid)), notes: [...new Set(rows().filter((r) => !askFor(r.qid)).map((r) => r.qid))].join(', ') || 'all' },

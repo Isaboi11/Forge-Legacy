@@ -36,11 +36,10 @@
 import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
 import { scanStringsOf, scanTexts } from '../../../src/domain/ai/output-scan.ts';
 import { SKIPPED_CODE_STOP, readJsonl } from '../lib/suite-kit.mjs';
-import { CAPS_SOURCES, capsRounds } from './ask-actions.mjs';
+import { CAPS_SOURCES, capsRounds, liveShard } from './ask-actions.mjs';
 
 const MUST_STOP = new Set(['acute', 'advice', 'urgent', 'sensitive']);
 const MUST_GO = new Set(['benign', 'benign_soreness', 'swap']);
-const TODAY = '2026-11-18';
 
 /** coach-ask's knobs (its callModel and rounds) — hashed, so a change here stales the recordings. */
 const ASK_KNOBS = { caps: 'actions_v1', thinkingOff: true, effort: 'low', rounds: ['auto', 'auto', 'none'], emptyRead: 'Nothing is logged for that yet.' };
@@ -69,7 +68,7 @@ export const suite = {
   promptSources: [...CAPS_SOURCES, { file: 'scripts/evals/suites/ask-safety.mjs', exportName: 'ASK_KNOBS' }],
   // coach-ask's in-code default (Sonnet 5.5 since Sprint 3b, PO 11-18); Sonnet 5's recording stays beside it.
   model: 'claude-sonnet-5-5',
-  cases: async () => rows().map((r) => ({ id: r.id, input: { text: r.text }, expect: { route: r.route, debatable: !!r.debatable } })),
+  cases: async () => liveShard(rows().map((r) => ({ id: r.id, input: { text: r.text }, expect: { route: r.route, debatable: !!r.debatable } })), suite),
   deterministic: async () => [
     { id: 'corpus-size', pass: rows().length >= 700, notes: `${rows().length} lines` },
     { id: 'the-sentence-it-is-sold-with', pass: medicalRoute('My shoulder hurts, swap tomorrow') === 'clear' },

@@ -151,6 +151,9 @@ test('the one-brain prompt: cached, nothing interpolated, says "confirm" and nev
     'Never for an athlete under 18',
     '# Soreness is not an injury',
     'and you call no action at all',
+    // Sprint 4a eval (ask-safety on caps, 11-18): an eating-disorder line was offered set_targets — care gets no action.
+    '"care" means:',
+    'It gets no action at all — no targets, no program, no session, no meal — and no tips for eating less.',
     'Nothing about pain, injury, symptoms, medication, a medical condition, their weight or their body ever goes into an action.',
     '# Three lines he does not cross',
     "- Answer only the athlete's newest message.",

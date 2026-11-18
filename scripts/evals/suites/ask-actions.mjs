@@ -179,12 +179,27 @@ export async function capsRounds(text, { apiKey, signal, model, context = {}, hi
   };
 }
 
+/**
+ * LIVE-RUN SHARDING (a run convenience, never the offline gate): with `EVAL_SHARD=k/n` set, `cases()` keeps every n-th
+ * case from k (so n processes record one suite side by side), and with `EVAL_SKIP_RECORDED=1` it drops cases already
+ * recorded under the current prompt (a stopped run resumes without paying twice). Without the env vars: every case.
+ */
+export function liveShard(cases, suiteDef) {
+  let out = cases;
+  const m = /^(\d+)\/(\d+)$/.exec(process.env.EVAL_SHARD ?? '');
+  if (m) out = out.filter((_, i) => i % Number(m[2]) === Number(m[1]));
+  if (process.env.EVAL_SKIP_RECORDED === '1') {
+    const st = state(recordingsRoot(ROOT), suiteDef.name, promptHash(suiteDef, ROOT));
+    out = out.filter((c) => !st.current.has(String(c.id)));
+  }
+  return out;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // The cases
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 const BUILD = 'Building a full program.';
-const DAY = 'Building ONE session, not a program.';
 const act = (id, text, want, more = {}) => ({ id, input: { text, ...(more.context ? { context: more.context } : {}), ...(more.history ? { history: more.history } : {}) }, expect: { kind: 'act', want, ...(more.fields ? { fields: more.fields } : {}), ...(more.words ? { words: more.words } : {}) } });
 const none = (id, text, more = {}) => ({ id, input: { text, ...(more.context ? { context: more.context } : {}) }, expect: { kind: 'none' } });
 const stop = (id, text) => ({ id, input: { text }, expect: { kind: 'stop' } });
