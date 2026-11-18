@@ -55,6 +55,7 @@ import { plannedDays, trainingDays } from '../program/progress-core.ts';
    would drift, and the local `prescriptionText` below is already the shape that drift takes. */
 import { schemeText } from '../program/prescription.ts';
 import { shiftYmd, todayYmd } from '../dates/local-date.ts';
+import type { ActionCardModel, ApplyResult, HoltActionName } from './holt-actions.ts';
 import { MEDICAL_CONTEXT } from './medical-routing.ts';
 import { pluralWord } from '../text/plural.ts';
 import type { ProgramDay, ProgramExercise, ProgramStructure } from '@/data/programs-live';
@@ -95,7 +96,39 @@ export type Turn =
   | { kind: 'wall' }
   /** Holt's Kitchen (Kitchen Scope §1): up to three dishes, numbers from the app's catalogue. `numbers` is
    *  false under 18 (NUT-D5 — recipes yes, calorie steering no). */
-  | { kind: 'dishes'; dishes: DishCard[]; numbers: boolean };
+  | { kind: 'dishes'; dishes: DishCard[]; numbers: boolean }
+  /** AI Road to 10 Sprint 4a: one of Holt's actions as a card (`HoltActionCard`) — what WILL change, computed by the app
+   *  (`cardFor`), and nothing written until Confirm. `id` names the held action in the sheet's memory (its input, its
+   *  executor, its Undo token); a card restored from storage has none, so an unconfirmed one is never restored. */
+  | {
+      kind: 'action';
+      id: number;
+      name: HoltActionName;
+      card: ActionCardModel;
+      state: ActionTurnState;
+      /** The executor's line after a write; why a write failed; why there is nothing to undo; an Undo that missed. */
+      said?: string;
+      reason?: Extract<ApplyResult, { ok: false }>['reason'];
+      noUndo?: string;
+      undoFailed?: boolean;
+    };
+
+/** The card's state, as lane C's `HoltActionCard` draws it (`ActionCardState`). */
+export type ActionTurnState = 'ready' | 'working' | 'done' | 'undone' | 'failed' | 'dismissed';
+
+/** One action card's state changes (Confirm → working → done, Undo → undone, a failed write → failed). */
+export const withCardState = (
+  t: readonly Turn[],
+  id: number,
+  state: ActionTurnState,
+  extra: { said?: string; reason?: Extract<ApplyResult, { ok: false }>['reason']; noUndo?: string; undoFailed?: boolean } = {},
+): Turn[] => t.map((x) => (x.kind === 'action' && x.id === id ? { ...x, state, ...extra } : x));
+/**
+ * A restored thread never brings back a card that was still waiting for Confirm: its input and executor lived in the
+ * sheet's memory, which a reload empties — a Confirm on it could write nothing true. Done / undone / failed stay as history.
+ */
+export const withoutHeldCards = (t: readonly Turn[]): Turn[] =>
+  t.filter((x) => !(x.kind === 'action' && (x.state === 'ready' || x.state === 'working')));
 
 /*
  * ══ AN ANSWER STILL ARRIVING (QA R2-F5) ══ — the three thread operations a coach-ask stream makes, kept

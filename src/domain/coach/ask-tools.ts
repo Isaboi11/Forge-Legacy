@@ -370,52 +370,38 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
   {
     name: 'swap_exercise_today',
     description:
-      "Swap one exercise in TODAY's workout only — the one running now, else today's planned session. 'to' only when they named the replacement; leave it out and the app offers its own substitutes. A change from now on is propose_program_edit instead.",
+      "Swap one exercise in TODAY's workout only — the one running now, else today's planned session — for one they named ('swap bench for dumbbell press today'). Both in their words. A change from now on is propose_program_edit instead.",
     input_schema: {
       type: 'object',
       properties: {
-        exercise: { type: 'string', description: "The exercise to swap out, as they named it ('squats')." },
-        to: { type: 'string', description: 'The replacement as they named it, only if they did.' },
+        from: { type: 'string', description: "The exercise to swap out, as they named it ('squats')." },
+        to: { type: 'string', description: "The replacement, as they named it ('leg press')." },
       },
-      required: ['exercise'],
+      required: ['from', 'to'],
       additionalProperties: false,
     },
   },
   {
     name: 'start_workout',
     description:
-      "Start a workout now and open it ('let's go', 'start today's workout', 'start my push day', 'start my leg template'). Leave session out for today's planned session.",
+      "Start a workout now and open it ('let's go', 'start today's workout', 'start my push day', 'start my leg template'). Leave name out for today's planned session.",
     input_schema: {
       type: 'object',
       properties: {
-        session: { type: 'string', description: "A session or template they named ('push day', 'Upper A', 'my leg template')." },
+        name: { type: 'string', description: "A session or template they named ('push day', 'Upper A', 'my leg template')." },
       },
-      additionalProperties: false,
-    },
-  },
-  {
-    name: 'schedule_session',
-    description:
-      "Put a session on a day ('put a run on Saturday', 'schedule leg day for tomorrow'). Copy the day as they said it; the app works out the date.",
-    input_schema: {
-      type: 'object',
-      properties: {
-        session: { type: 'string', description: "The session as named ('leg day', 'a 5 mile run', 'Upper B')." },
-        day: { type: 'string', description: "The day as said ('Saturday', 'tomorrow', 'next Monday', 'the 24th')." },
-      },
-      required: ['day'],
       additionalProperties: false,
     },
   },
   {
     name: 'set_targets',
     description:
-      "Set the athlete's daily calorie and macro targets. Send only the goal and the pace as they said them — never a number: the app works the targets out from their own height, weight and activity, with safe floors, and shows them before anything is saved. Never for an athlete under 18.",
+      "Set the athlete's daily calorie and macro targets for a goal. The app works the targets out from their own height, weight and activity, with safe floors, and shows them before anything is saved — never send calories, macros or a target. pace only when they said one, in pounds a week (convert kg). Never for an athlete under 18.",
     input_schema: {
       type: 'object',
       properties: {
         goal: { type: 'string', enum: ['lose', 'maintain', 'gain'] },
-        pace: { type: 'string', enum: ['slow', 'steady', 'fast'], description: 'Only when they said how fast.' },
+        pace: { type: 'number', description: "Pounds a week, only as they said it ('a pound a week' = 1). Leave it out otherwise." },
       },
       required: ['goal'],
       additionalProperties: false,
@@ -427,8 +413,8 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
       "Offer to remember a lasting fact the athlete just told you about themselves or their training — a preference, their schedule, their gym, their handedness ('Hates lunges', 'Runs Tuesdays and Thursdays', 'Gym has no leg press'). Their words, under 80 characters. Never anything you inferred, and never their health, body, weight, injuries or eating. One call per fact, at most two in a message; most messages have none.",
     input_schema: {
       type: 'object',
-      properties: { note: { type: 'string', description: 'One short line in their words.' } },
-      required: ['note'],
+      properties: { text: { type: 'string', description: 'One short line in their words.' } },
+      required: ['text'],
       additionalProperties: false,
     },
   },
@@ -438,14 +424,35 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
       "Open a screen the app has: import (they already have a program — from a coach, a PDF, a spreadsheet, a photo — and want it in), pick (recommend one of the app's ready-made programs), meal_plan (a meal plan), targets (to see or change their targets themselves), form_check (check their form on a video).",
     input_schema: {
       type: 'object',
-      properties: { to: { type: 'string', enum: ['import', 'pick', 'meal_plan', 'targets', 'form_check'] } },
-      required: ['to'],
+      properties: { door: { type: 'string', enum: ['import', 'pick', 'meal_plan', 'targets', 'form_check'] } },
+      required: ['door'],
       additionalProperties: false,
     },
   },
 ];
 
 export const ASK_ACTION_V1_NAMES: readonly string[] = ASK_ACTIONS_V1.map((a) => a.name);
+
+/**
+ * ⚠ WRITTEN, NOT OFFERED (integrator 2026-11-18, pending a PO call): the app has nowhere to keep a session on a date
+ * (programs are sequential; Calendar's scheduled-workout store was never built — lane C's report §1). Lane C's card
+ * resolves the day and then says it cannot, with no Confirm. Kept here, out of ASK_ACTIONS_V1, so the caps prefix
+ * does not offer it; adding it back is one line and a re-recorded eval.
+ */
+export const SCHEDULE_SESSION_TOOL: AskToolDef = {
+  name: 'schedule_session',
+  description:
+    "Put a session on a day ('put a run on Saturday', 'schedule leg day for tomorrow'). Copy the day as they said it; the app works out the date.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      when: { type: 'string', description: "The day as said ('Saturday', 'tomorrow', 'next Monday', 'the 24th')." },
+      what: { type: 'string', description: "The session as named ('leg day', 'a 5 mile run', 'Upper B')." },
+    },
+    required: ['when'],
+    additionalProperties: false,
+  },
+};
 
 /**
  * What the model gets back after a v1 action. The app holds it and shows a card only once the reply ends cleanly; the

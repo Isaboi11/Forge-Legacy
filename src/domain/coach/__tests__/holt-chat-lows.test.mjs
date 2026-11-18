@@ -41,7 +41,8 @@ test('kitchen-14: a stored answer just above the greeting stays conversation, no
 });
 
 test('kitchen-14: the sheet cleans the stored thread before greeting, and does not chase the end past Home', () => {
-  assert.match(SHEET, /const kept = stored \? withoutStaleHome\(stored\) : \[\]/);
+  // Sprint 4a: and a card still waiting for Confirm is never restored (`withoutHeldCards`).
+  assert.match(SHEET, /const kept = stored \? withoutHeldCards\(withoutStaleHome\(stored\)\) : \[\]/);
   assert.match(SHEET, /if \(isHomeTurn\(thread\[thread\.length - 1\]\)\) return;/);
   assert.match(SHEET, /onLayout=\{b\.key === freshGreeting \? greetingAtTop : undefined\}/);
 });

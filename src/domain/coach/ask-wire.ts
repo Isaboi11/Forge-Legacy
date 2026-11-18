@@ -330,6 +330,23 @@ export interface AskStatusDetail {
 /** A lift or food name on a status line, at most this long. */
 export const ASK_DETAIL_NAME_CHARS = 30;
 
+/**
+ * The tools the app has a template for (lane C's `STATUS_TEMPLATE_TOOLS`, holt-status.ts — pinned equal by
+ * coach-ask-caps.test.mjs). Detail for any other tool would only ever fall back to the table line, so it is not sent.
+ */
+export const ASK_DETAIL_TOOLS: readonly string[] = [
+  'get_lift_history',
+  'get_personal_records',
+  'get_training_summary',
+  'get_recent_workouts',
+  'get_cardio_history',
+  'get_nutrition_log',
+  'get_body_metrics',
+  'get_past_chats',
+  'get_foods',
+  'get_recipes',
+];
+
 const DETAIL_NAME = /^[\p{L}\p{N}' -]+$/u;
 const plainWords = (s: string): string =>
   s
@@ -355,7 +372,7 @@ const detailInt = (v: unknown, lo: number, hi: number): number | undefined =>
  * only its numbers and the names the athlete typed survive. Days are as the tool reads them (weeks × 7).
  */
 export function askStatusDetail(toolName: unknown, input: unknown, question: string): AskStatusDetail | null {
-  if (typeof toolName !== 'string' || !askStatusFor(toolName) || !input || typeof input !== 'object') return null;
+  if (typeof toolName !== 'string' || !askStatusFor(toolName) || !ASK_DETAIL_TOOLS.includes(toolName) || !input || typeof input !== 'object') return null;
   const i = input as Record<string, unknown>;
   const out: AskStatusDetail = { tool: toolName };
   const weeks = detailInt(i.weeks, 1, 260);
@@ -365,6 +382,10 @@ export function askStatusDetail(toolName: unknown, input: unknown, question: str
   if (toolName === 'get_lift_history' || toolName === 'get_personal_records') {
     const lift = athletesOwnName(i.exercise, question);
     if (lift) out.lift = lift;
+  }
+  if (toolName === 'get_recipes') {
+    const food = athletesOwnName(i.query, question);
+    if (food) out.food = food;
   }
   if (toolName === 'get_foods') {
     const list = Array.isArray(i.foods) ? i.foods : Array.isArray(i.queries) ? i.queries : null;

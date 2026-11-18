@@ -485,6 +485,18 @@ export interface AskStatusDetail {
     days?: number;
 }
 export const ASK_DETAIL_NAME_CHARS = 30;
+export const ASK_DETAIL_TOOLS: readonly string[] = [
+    'get_lift_history',
+    'get_personal_records',
+    'get_training_summary',
+    'get_recent_workouts',
+    'get_cardio_history',
+    'get_nutrition_log',
+    'get_body_metrics',
+    'get_past_chats',
+    'get_foods',
+    'get_recipes',
+];
 const DETAIL_NAME = /^[\p{L}\p{N}' -]+$/u;
 const plainWords = (s: string): string => s
     .toLowerCase()
@@ -502,7 +514,7 @@ export function athletesOwnName(name: unknown, question: string): string | null 
 }
 const detailInt = (v: unknown, lo: number, hi: number): number | undefined => typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : undefined;
 export function askStatusDetail(toolName: unknown, input: unknown, question: string): AskStatusDetail | null {
-    if (typeof toolName !== 'string' || !askStatusFor(toolName) || !input || typeof input !== 'object')
+    if (typeof toolName !== 'string' || !askStatusFor(toolName) || !ASK_DETAIL_TOOLS.includes(toolName) || !input || typeof input !== 'object')
         return null;
     const i = input as Record<string, unknown>;
     const out: AskStatusDetail = { tool: toolName };
@@ -516,6 +528,11 @@ export function askStatusDetail(toolName: unknown, input: unknown, question: str
         const lift = athletesOwnName(i.exercise, question);
         if (lift)
             out.lift = lift;
+    }
+    if (toolName === 'get_recipes') {
+        const food = athletesOwnName(i.query, question);
+        if (food)
+            out.food = food;
     }
     if (toolName === 'get_foods') {
         const list = Array.isArray(i.foods) ? i.foods : Array.isArray(i.queries) ? i.queries : null;
@@ -967,49 +984,36 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
     },
     {
         name: 'swap_exercise_today',
-        description: "Swap one exercise in TODAY's workout only \u2014 the one running now, else today's planned session. 'to' only when they named the replacement; leave it out and the app offers its own substitutes. A change from now on is propose_program_edit instead.",
+        description: "Swap one exercise in TODAY's workout only \u2014 the one running now, else today's planned session \u2014 for one they named ('swap bench for dumbbell press today'). Both in their words. A change from now on is propose_program_edit instead.",
         input_schema: {
             type: 'object',
             properties: {
-                exercise: { type: 'string', description: "The exercise to swap out, as they named it ('squats')." },
-                to: { type: 'string', description: 'The replacement as they named it, only if they did.' },
+                from: { type: 'string', description: "The exercise to swap out, as they named it ('squats')." },
+                to: { type: 'string', description: "The replacement, as they named it ('leg press')." },
             },
-            required: ['exercise'],
+            required: ['from', 'to'],
             additionalProperties: false,
         },
     },
     {
         name: 'start_workout',
-        description: "Start a workout now and open it ('let's go', 'start today's workout', 'start my push day', 'start my leg template'). Leave session out for today's planned session.",
+        description: "Start a workout now and open it ('let's go', 'start today's workout', 'start my push day', 'start my leg template'). Leave name out for today's planned session.",
         input_schema: {
             type: 'object',
             properties: {
-                session: { type: 'string', description: "A session or template they named ('push day', 'Upper A', 'my leg template')." },
+                name: { type: 'string', description: "A session or template they named ('push day', 'Upper A', 'my leg template')." },
             },
-            additionalProperties: false,
-        },
-    },
-    {
-        name: 'schedule_session',
-        description: "Put a session on a day ('put a run on Saturday', 'schedule leg day for tomorrow'). Copy the day as they said it; the app works out the date.",
-        input_schema: {
-            type: 'object',
-            properties: {
-                session: { type: 'string', description: "The session as named ('leg day', 'a 5 mile run', 'Upper B')." },
-                day: { type: 'string', description: "The day as said ('Saturday', 'tomorrow', 'next Monday', 'the 24th')." },
-            },
-            required: ['day'],
             additionalProperties: false,
         },
     },
     {
         name: 'set_targets',
-        description: "Set the athlete's daily calorie and macro targets. Send only the goal and the pace as they said them \u2014 never a number: the app works the targets out from their own height, weight and activity, with safe floors, and shows them before anything is saved. Never for an athlete under 18.",
+        description: "Set the athlete's daily calorie and macro targets for a goal. The app works the targets out from their own height, weight and activity, with safe floors, and shows them before anything is saved \u2014 never send calories, macros or a target. pace only when they said one, in pounds a week (convert kg). Never for an athlete under 18.",
         input_schema: {
             type: 'object',
             properties: {
                 goal: { type: 'string', enum: ['lose', 'maintain', 'gain'] },
-                pace: { type: 'string', enum: ['slow', 'steady', 'fast'], description: 'Only when they said how fast.' },
+                pace: { type: 'number', description: "Pounds a week, only as they said it ('a pound a week' = 1). Leave it out otherwise." },
             },
             required: ['goal'],
             additionalProperties: false,
@@ -1020,8 +1024,8 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
         description: "Offer to remember a lasting fact the athlete just told you about themselves or their training \u2014 a preference, their schedule, their gym, their handedness ('Hates lunges', 'Runs Tuesdays and Thursdays', 'Gym has no leg press'). Their words, under 80 characters. Never anything you inferred, and never their health, body, weight, injuries or eating. One call per fact, at most two in a message; most messages have none.",
         input_schema: {
             type: 'object',
-            properties: { note: { type: 'string', description: 'One short line in their words.' } },
-            required: ['note'],
+            properties: { text: { type: 'string', description: 'One short line in their words.' } },
+            required: ['text'],
             additionalProperties: false,
         },
     },
@@ -1030,13 +1034,26 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
         description: "Open a screen the app has: import (they already have a program \u2014 from a coach, a PDF, a spreadsheet, a photo \u2014 and want it in), pick (recommend one of the app's ready-made programs), meal_plan (a meal plan), targets (to see or change their targets themselves), form_check (check their form on a video).",
         input_schema: {
             type: 'object',
-            properties: { to: { type: 'string', enum: ['import', 'pick', 'meal_plan', 'targets', 'form_check'] } },
-            required: ['to'],
+            properties: { door: { type: 'string', enum: ['import', 'pick', 'meal_plan', 'targets', 'form_check'] } },
+            required: ['door'],
             additionalProperties: false,
         },
     },
 ];
 export const ASK_ACTION_V1_NAMES: readonly string[] = ASK_ACTIONS_V1.map((a) => a.name);
+export const SCHEDULE_SESSION_TOOL: AskToolDef = {
+    name: 'schedule_session',
+    description: "Put a session on a day ('put a run on Saturday', 'schedule leg day for tomorrow'). Copy the day as they said it; the app works out the date.",
+    input_schema: {
+        type: 'object',
+        properties: {
+            when: { type: 'string', description: "The day as said ('Saturday', 'tomorrow', 'next Monday', 'the 24th')." },
+            what: { type: 'string', description: "The session as named ('leg day', 'a 5 mile run', 'Upper B')." },
+        },
+        required: ['when'],
+        additionalProperties: false,
+    },
+};
 export function actionAckV1(name: string): string {
     if (name === 'propose_program_edit' || name === 'offer_online_recipe_search')
         return actionAck(name);
@@ -2662,6 +2679,7 @@ export interface ActionCardModel {
         key: string;
     };
     credit?: string;
+    plan?: Record<string, unknown>;
 }
 export type UndoToken = {
     action: HoltActionName;
@@ -2671,6 +2689,8 @@ export type ApplyResult = {
     ok: true;
     undo: UndoToken;
     said: string;
+    go?: string;
+    noUndo?: string;
 } | {
     ok: false;
     reason: 'offline' | 'not_allowed' | 'gone' | 'failed';
@@ -2682,6 +2702,27 @@ export interface HoltActionExecutor<I = Record<string, unknown>> {
     undo(token: UndoToken): Promise<boolean>;
 }
 export type HoltActionOutcome = 'confirmed' | 'undone' | 'dismissed' | 'failed';
+export interface SwapExerciseTodayInput {
+    from: string;
+    to: string;
+}
+export interface StartWorkoutInput {
+    name?: string;
+}
+export interface ScheduleSessionInput {
+    when: string;
+    what?: string;
+}
+export interface SetTargetsInput {
+    goal: 'lose' | 'maintain' | 'gain';
+    pace?: number;
+}
+export interface RememberNoteInput {
+    text: string;
+}
+export interface OpenDoorInput {
+    door: Door;
+}
 export interface FoodToolDef {
     name: string;
     description: string;
@@ -2848,7 +2889,7 @@ If you do not know where something is, say so rather than inventing a screen. Ne
 - Answer the question first. End with a nudge back to training only when it is natural.
 - Answer only the athlete's newest message. Earlier messages are context: never answer one again, repeat a refusal you already gave, or recap what you said before.
 - If the question is genuinely unclear, ask what they meant in your own words \u2014 one short question.`;
-const SYSTEM_V1 = `You are Coach Holt, a strength and endurance coach in the Forge Legacy training app. You talk with the athlete: you answer their questions about training, their exercises and their plan in Holt's voice, and when they want the app to do something \u2014 build a program or a session, change the program they run, swap or start or schedule a workout, log food, set their targets, remember something about them, open a screen \u2014 you hand it to the app with one of your action tools. The app has a rules engine that builds programs and workouts and works out every number. You never do its job in prose, and you never invent a number for it.
+const SYSTEM_V1 = `You are Coach Holt, a strength and endurance coach in the Forge Legacy training app. You talk with the athlete: you answer their questions about training, their exercises and their plan in Holt's voice, and when they want the app to do something \u2014 build a program or a session, change the program they run, swap a lift or start a workout, log food, set their targets, remember something about them, open a screen \u2014 you hand it to the app with one of your action tools. The app has a rules engine that builds programs and workouts and works out every number. You never do its job in prose, and you never invent a number for it.
 
 # Who Holt is
 
@@ -2907,9 +2948,9 @@ Which one:
 - propose_program_edit \u2014 change the program they are already running: swap an exercise, sets, reps, a run's distance or time, rebuild a day, move or skip a session or a week, add or remove an exercise, more or less of a muscle group. One call per change; never choose a replacement, a number or a day they did not say. Sessions they have already trained never change.
 - swap_exercise_today \u2014 swap an exercise in today's workout only ("swap bench for dumbbell press today", "the squat rack's taken, swap squats"). From now on, or on another day, is propose_program_edit.
 - start_workout \u2014 start training now ("let's go", "start today's workout", "start my push day").
-- schedule_session \u2014 put a session on a day ("put a run on Saturday", "schedule leg day tomorrow").
+- Putting a session on a calendar date ("put a run on Saturday") is not something the app can do yet: say so in one line, and offer to build it or start it when they are ready.
 - log_food \u2014 they ate something and want it in their food log. Look every food up with get_foods first and log what came back; never a food or an amount get_foods did not return. propose_meal \u2014 save foods as a meal to reuse.
-- set_targets \u2014 they want their calorie or macro targets set or changed for a goal ("set my macros for a cut", "I want to lose weight slowly", "targets for bulking"). The goal and the pace as they said them, never a number. Never for an athlete under 18: tell them that one is not something the app sets for under-18s.
+- set_targets \u2014 they want their calorie or macro targets set or changed for a goal ("set my macros for a cut", "I want to lose a pound a week", "targets for bulking"). The goal, and the pace only if they said one (pounds a week) \u2014 never calories, macros or a target. Never for an athlete under 18: tell them that one is not something the app sets for under-18s.
 - remember_note \u2014 they stated a lasting fact about themselves or their training ("I hate lunges", "I run Tuesdays and Thursdays", "my gym has no leg press", "I'm left-handed"): offer it as a note, alongside whatever else you do. Their words, never an inference, never the body.
 - open_door \u2014 a screen the app has: import (they already have a program from a coach, a PDF, a spreadsheet or a photo and want it in), pick (they want you to recommend one of the app's ready-made programs), meal_plan, targets (to see or set their targets themselves), form_check (check their form on a video).
 - offer_online_recipe_search \u2014 see Recipes below.
