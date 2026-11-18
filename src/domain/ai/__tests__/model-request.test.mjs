@@ -178,3 +178,31 @@ test('web search only goes to a model that has it (never Haiku)', async () => {
   assert.deepEqual(KNOWN_MODELS.filter(takesWebSearch), ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-opus-5-5', 'claude-opus-5']);
   assert.equal(takesWebSearch('nope'), false);
 });
+
+test('a function that still writes its request by hand sends its own MODEL only what that model accepts', async () => {
+  const { readdirSync } = await import('node:fs');
+  const dir = resolve(ROOT, 'supabase/functions');
+  const handWritten = [];
+  for (const slug of readdirSync(dir)) {
+    let src;
+    try {
+      src = readFileSync(resolve(dir, slug, 'index.ts'), 'utf8');
+    } catch {
+      continue;
+    }
+    const model = /^const MODEL = '([^']+)';/m.exec(src)?.[1];
+    if (!model) continue;
+    const thinking = [...src.matchAll(/^\s*thinking: \{ type: '(\w+)' \},/gm)].map((m) => m[1]);
+    const efforts = [...src.matchAll(/output_config: \{ effort: '(\w+)'/g)].map((m) => m[1]);
+    if (!thinking.length && !efforts.length) continue;
+    handWritten.push(slug);
+    for (const t of thinking.length ? thinking : [null])
+      for (const e of efforts.length ? efforts : [null]) {
+        const body = { ...(t ? { thinking: { type: t } } : {}), ...(e ? { output_config: { effort: e } } : {}) };
+        assert.equal(rejects(modelFamily(model), body), null, `${slug} sends ${model} ${JSON.stringify(body)}`);
+      }
+  }
+  // Sprint 3b: these still write it by hand (no bundle builder to inline model-request.ts, or owned elsewhere). Each
+  // is pinned to the model it was written for — moving one means wiring it to requestFields first.
+  assert.deepEqual(handWritten.sort(), ['bug-plain', 'coach-form-check', 'social-plan', 'workout-card-read', 'workout-tidy']);
+});

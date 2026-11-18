@@ -119,8 +119,10 @@ const MODEL = 'claude-sonnet-5';
  * ⚠ Haiku 4.5 caches only a prefix of 4,096+ tokens and `SYSTEM` is shorter, so on Haiku the system block
  * is billed in full every call while Sonnet reads it at ~0.1×. Which is cheaper per message is therefore
  * a measurement, not an assumption — hence `usage` on every reply.
+ * PL-7 (Sprint 3b): Haiku 5.5, not Haiku 4.5 — retired on this function's own evals (chat-safety, chat-answers;
+ * numbers in Docs/AI-Sprint-3b-models-Report.md §5), at a tenth of Haiku 4.5's price. Sonnet 5 stays the default.
  */
-const HAIKU = 'claude-haiku-4-5';
+const HAIKU = 'claude-haiku-5-5';
 const ALLOWED_MODELS = [MODEL, HAIKU];
 /** The in-code default effort; `coach_ai_model_config` (0274) can set another per function (PL-7). */
 const EFFORT = 'low';
