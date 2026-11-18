@@ -174,32 +174,62 @@ test('a dropped connection is retried once, then is an error — never recorded 
   }
 });
 
-test('ask-safety: coach-ask’s own request — its SYSTEM cached behind its tools, its user turn and cap, tool_choice none', async () => {
+test('ask-safety: coach-ask’s own rounds — round 1 with tools on, an action acknowledged, a read answered empty, round 2 tool_choice none with the assistant turn whole', async () => {
   const ASK = readText('supabase/functions/coach-ask/index.ts');
   has(ASK, "tools: allowWeb ? [...ASK_TOOLS, ...ASK_ACTIONS, WEB_SEARCH] : [...ASK_TOOLS, ...ASK_ACTIONS],");
   has(ASK, "...(last ? { tool_choice: { type: 'none' } } : {}),");
   has(ASK, "system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],");
   has(ASK, 'max_tokens: ASK_OUTPUT_CAP,');
   has(ASK, "...requestFields(model, { thinkingOff: true, effort: askEffort }),");
+  has(ASK, "return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };");
   const { suite } = await import('../suites/ask-safety.mjs');
-  const { ASK_TOOLS, ASK_ACTIONS } = await import('../../../src/domain/coach/ask-tools.ts');
+  const { ASK_TOOLS, ASK_ACTIONS, actionAck } = await import('../../../src/domain/coach/ask-tools.ts');
   const stop = await captured(() => suite.callLive({ id: 's', input: { text: "I have chest pain and can't breathe" }, expect: {} }, live));
   assert.deepEqual(stop.out, SKIPPED_CODE_STOP);
   assert.equal(stop.sent.length, 0);
+
   for (const [model, thinking, fallbacks] of [
     ['claude-sonnet-5', { type: 'disabled' }, undefined],
     ['claude-sonnet-5-5', { type: 'between_tools' }, 'default'],
     ['claude-haiku-5-5', { type: 'disabled' }, undefined],
   ]) {
-    const go = await captured(() => suite.callLive({ id: 'g', input: { text: 'My shoulder hurts, swap tomorrow' }, expect: {} }, { ...live, model }));
-    const body = go.sent[0];
-    assert.equal(body.model, model);
-    assert.deepEqual(body.thinking, thinking, model);
-    assert.equal(body.fallbacks, fallbacks, model);
-    assert.deepEqual(body.output_config, { effort: 'low' });
-    assert.deepEqual(body.tool_choice, { type: 'none' });
-    assert.deepEqual(body.tools.map((t) => t.name), [...ASK_TOOLS, ...ASK_ACTIONS].map((t) => t.name));
-    assert.deepEqual(body.system[0].cache_control, { type: 'ephemeral' });
-    assert.match(body.messages[0].content, /The athlete asks: "My shoulder hurts, swap tomorrow"$/);
+    const sent = [];
+    const heads = [];
+    const real = globalThis.fetch;
+    const first = { stop_reason: 'tool_use', content: [{ type: 'thinking', thinking: 'swap', signature: 'sig' }, { type: 'tool_use', id: 't1', name: 'propose_program_edit', input: { change: 'swap running for rowing' } }, { type: 'tool_use', id: 't2', name: 'get_lift_history', input: { exercise: 'row' } }], usage: { input_tokens: 10 } };
+    const second = { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Check the change and tap to confirm.' }], usage: { input_tokens: 20 } };
+    globalThis.fetch = async (_u, init) => {
+      sent.push(JSON.parse(init.body));
+      heads.push(init.headers);
+      return { ok: true, json: async () => (sent.length === 1 ? first : second) };
+    };
+    let out;
+    try {
+      out = await suite.callLive({ id: 'g', input: { text: 'My shoulder hurts, swap tomorrow' }, expect: {} }, { ...live, model });
+    } finally {
+      globalThis.fetch = real;
+    }
+    assert.equal(sent.length, 2, model);
+    const [r1, r2] = sent;
+    for (const b of [r1, r2]) {
+      assert.equal(b.model, model);
+      assert.deepEqual(b.thinking, thinking, model);
+      assert.equal(b.fallbacks, fallbacks, model);
+      assert.deepEqual(b.output_config, { effort: 'low' });
+      assert.deepEqual(b.tools.map((t) => t.name), [...ASK_TOOLS, ...ASK_ACTIONS].map((t) => t.name));
+      assert.deepEqual(b.system[0].cache_control, { type: 'ephemeral' });
+    }
+    assert.equal(heads[0]['anthropic-beta'], fallbacks ? 'server-side-fallback-2026-07-01' : undefined);
+    assert.equal(r1.tool_choice, undefined, 'round 1 may use tools');
+    assert.deepEqual(r2.tool_choice, { type: 'none' }, 'round 2 is coach-ask’s last round');
+    assert.match(r1.messages[0].content, /The athlete asks: "My shoulder hurts, swap tomorrow"$/);
+    assert.deepEqual(r2.messages[1], { role: 'assistant', content: first.content }, 'the thinking block goes back whole');
+    assert.deepEqual(r2.messages[2].content, [
+      { type: 'tool_result', tool_use_id: 't1', content: actionAck('propose_program_edit') },
+      { type: 'tool_result', tool_use_id: 't2', content: 'Nothing is logged for that yet.' },
+    ]);
+    assert.deepEqual(out.reply.actions, [{ name: 'propose_program_edit', input: { change: 'swap running for rowing' } }]);
+    assert.equal(out.reply.text, 'Check the change and tap to confirm.');
+    assert.deepEqual(Object.keys(out.usage), ['round1', 'round2']);
   }
 });
