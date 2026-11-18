@@ -181,7 +181,7 @@ Left at start: **$5.43** of $30. **PO 2026-11-18: cap raised to $37 (+$7) for th
 
 ## 4. Integrator (this session)
 - Merge B → A into `ai/s4b` (A last: its export reads B's chats and its screen links B's route), rebuild the
-  `coach-ask` bundle, the full gate (`--changed 36749b02`), web port onto `ai/s4b-web` (off `ai/s4a-web` `ab9ba77b`),
+  `coach-ask` bundle, the full gate (`--changed 36749b02`), web port onto `ai/s4b-web` (off `web/squad-comment-preview` — see the log),
   ONE release ask: SQL `0278` → `0279` on the PO's clipboard · `coach-ask` byte-exact · OTA to build 11 only from a
   clean worktree with its own `npm ci`, fingerprint MATCH `4d98eb22` · ff `feat/build11` + GitHub `main` · web.
   Order: SQL → function (safe for old phones by §1.1) → OTA → web.
@@ -190,3 +190,4 @@ Left at start: **$5.43** of $30. **PO 2026-11-18: cap raised to $37 (+$7) for th
 - 2026-11-18 — `ai/s4b` + 2 lane worktrees off `36749b02`; contract written; stubs committed.
 - 2026-11-18 — PO: yes to the $7 cap raise ($30 → $37) for the 38 ask-answers lines. Step 2 is unblocked once step 1 is done (subset first, full re-records only if the subset holds).
 - 2026-11-18 — `ai/s4b-chats` merged (`8aa5b72b`): 0279 `holt_chats` (+ `preview` column, trigram index — pg_trgm 1.6 already on), `past-chats.ts` store rules, `/holt-chats` (search, Continue), sign-out clears the device thread. tsc 0, eslint 0, src 7161 / 5 known fails, web export built. Integrator rulings: `preview` column OK · Premium-AI-only OK (AI is pay-only) · telemetry prop is `kind` not `event` (`event` isn't in ALLOWED_PROP_KEYS) — lane A's `holt_memory` must use `kind` too. $0.
+- 2026-11-18 — ⚠ Another session shipped a build-11 OTA + web (squad comment previews + who-trained-today faces): `feat/build11` → `0eac343b` (+2 squad commits on 36749b02); web from `web/squad-comment-preview` (= `ai/s4a-web` `ab9ba77b` + those 2); SQL `0280` APPLIED (next free 0281 — ours stay 0278/0279). ⛔ Release: merge `feat/build11` HEAD into `ai/s4b` before the OTA; base the 4b web port on `web/squad-comment-preview`, not `ai/s4a-web`.
