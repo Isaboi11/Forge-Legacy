@@ -53,7 +53,7 @@ import { useToast } from '@/hooks/useCeremony';
 import { usePlansDoor } from '@/hooks/usePremiumGate';
 import { autoPrompts, consentAllows, NUTRITION_DOOR } from '@/domain/consent/consent';
 import { ensureConsent, useConsent, warmConsents } from '@/lib/consent';
-import { useEntitlementState, useNutritionAccess, useNutritionPlanner } from '@/lib/entitlement';
+import { useEntitlementState, useNutritionAccess, useNutritionPlanner, usePremiumAi } from '@/lib/entitlement';
 import { labelScanAvailable } from '@/lib/label-scan';
 import { useProfile } from '@/lib/profile';
 import { useShownMacros } from '@/lib/settings';
@@ -170,6 +170,9 @@ export default function NutritionScreen() {
   const mayUseNutrition = useNutritionAccess();
   /* 0244: the meal planner, grocery list and building recipes are Premium; logging stays free. */
   const planner = useNutritionPlanner();
+  /* Snap a plate / Describe a meal (Sprint 4a §1.6): Premium AI AND Nutrition — the camera icon on Log Food's rule. */
+  const premiumAi = usePremiumAi();
+  const aiMealOn = premiumAi && mayUseNutrition;
   /* `planner` is false while loading too: the plan screen opens only for a plan that has been read, and never
      mid-workout (M-7 §10, M7-D13 — sweep G5). */
   const openPlans = usePlansDoor();
@@ -663,6 +666,24 @@ export default function NutritionScreen() {
         {/* One row per KIND of thing (PO 09-26: "a lot of options for the same category"). How it gets in —
             typed, a picture, a camera — is chosen on the screen the row opens, not here. */}
         <View style={styles.addList}>
+          {/* AI Road to 10 Sprint 4a §1.6: a plate in a photo, or in words — both the same review, every number from the
+              food database. Shown only to an athlete with Premium AI and Nutrition, as Log Food's camera is. */}
+          {aiMealOn ? (
+            <>
+              <AddRow
+                icon="camera"
+                title="Snap a plate"
+                sub="A photo of your meal becomes a list to check and log."
+                onPress={() => addGo({ pathname: '/meal-photo', params: { date: iso, meal: mealForHour(new Date().getHours()) } })}
+              />
+              <AddRow
+                icon="edit"
+                title="Describe a meal"
+                sub="Type it or say it — “2 eggs and toast”, a restaurant order."
+                onPress={() => addGo({ pathname: '/describe-meal', params: { date: iso, meal: mealForHour(new Date().getHours()) } })}
+              />
+            </>
+          ) : null}
           <AddRow
             icon="book"
             title="Recipe"
@@ -728,7 +749,7 @@ function AddRow({
   last,
   onPress,
 }: {
-  icon: 'book' | 'list-plus' | 'bookmark';
+  icon: 'book' | 'list-plus' | 'bookmark' | 'camera' | 'edit';
   title: string;
   sub: string;
   last?: boolean;
