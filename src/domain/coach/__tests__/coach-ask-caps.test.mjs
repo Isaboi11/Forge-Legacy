@@ -134,12 +134,11 @@ test('the one-brain prompt: cached, nothing interpolated, says "confirm" and nev
     'propose_day —',
     'swap_exercise_today —',
     'start_workout —',
-    'schedule_session —',
     'set_targets —',
     'remember_note —',
     'open_door —',
     'log_food —',
-    'never a number',
+    'never calories, macros or a target',
     'Never for an athlete under 18',
     '# Soreness is not an injury',
     'and you call no action at all',
@@ -150,7 +149,11 @@ test('the one-brain prompt: cached, nothing interpolated, says "confirm" and nev
   ]) assert.ok(v1.includes(rule), `missing: ${rule}`);
   // Every action the prompt names is offered, and every v1 action is named.
   for (const a of ASK_ACTIONS_V1) assert.ok(v1.includes(`${a.name} —`), `${a.name} is not explained`);
-  for (const n of [...LEGACY_ACTIONS, ...NEW_ACTIONS]) assert.ok(v1.includes(n), `${n} missing from the prompt`);
+  // schedule_session is written but NOT offered (integrator 11-18: no store for a dated session) — and never named.
+  for (const n of [...LEGACY_ACTIONS, ...NEW_ACTIONS].filter((x) => x !== 'schedule_session')) assert.ok(v1.includes(n), `${n} missing from the prompt`);
+  assert.ok(!v1.includes('schedule_session'));
+  assert.ok(!ASK_ACTIONS_V1.some((a) => a.name === 'schedule_session'));
+  assert.ok(v1.includes('is not something the app can do yet'));
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -158,12 +161,12 @@ test('the one-brain prompt: cached, nothing interpolated, says "confirm" and nev
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('caps: a clean action is forwarded as {action:{name,input}}, acknowledged with its v1 line, and the turn ends end_turn', async (t) => {
-  const { events, log } = await run(t, [actionRound('swap_exercise_today', { exercise: 'squats', to: 'leg press' }), answerRound('Swap is on the card — check it and confirm.')], {
+  const { events, log } = await run(t, [actionRound('swap_exercise_today', { from: 'squats', to: 'leg press' }), answerRound('Swap is on the card — check it and confirm.')], {
     question: 'squat rack is taken, swap squats for leg press today',
     caps: CAPS,
   });
   const acts = events.filter((e) => e.action);
-  assert.deepEqual(acts, [{ action: { name: 'swap_exercise_today', input: { exercise: 'squats', to: 'leg press' } } }]);
+  assert.deepEqual(acts, [{ action: { name: 'swap_exercise_today', input: { from: 'squats', to: 'leg press' } } }]);
   const result = log.requests[1].messages.at(-1).content[0];
   assert.equal(result.type, 'tool_result');
   assert.match(result.content, /nothing changes until they tap Confirm/);
@@ -182,9 +185,9 @@ test('without caps a 4a action name is NOT forwarded (an old phone has no card f
 // ─────────────────────────────────────────────────────────────────────────────
 
 for (const [label, name, input] of [
-  ['a note with a dose', 'remember_note', { note: 'Takes 2 advil before long runs' }],
-  ['a note the guard stops', 'remember_note', { note: 'doing physio exercises for my knee' }],
-  ['exercise words the guard stops', 'swap_exercise_today', { exercise: 'squats', to: 'physio exercises' }],
+  ['a note with a dose', 'remember_note', { text: 'Takes 2 advil before long runs' }],
+  ['a note the guard stops', 'remember_note', { text: 'doing physio exercises for my knee' }],
+  ['exercise words the guard stops', 'swap_exercise_today', { from: 'squats', to: 'physio exercises' }],
   ['a build whose focus the guard stops', 'propose_day', { dayFocus: 'ibuprofen before runs' }],
   ['a legacy edit (old phones too)', 'propose_program_edit', { op: 'swap', exercise: 'bench', to: 'physio exercises' }],
 ]) {
@@ -298,4 +301,10 @@ test('§1.5 old phones: a stream with `detail` reads exactly as the same stream 
 
 test('the harness fake supabase is the one in use (sanity)', () => {
   assert.equal(typeof fakeSupabase, 'function');
+});
+
+test('§1.5 the server sends detail only for the tools the app can template (lane C’s STATUS_TEMPLATE_TOOLS)', async () => {
+  const { ASK_DETAIL_TOOLS } = await import('../ask-wire.ts');
+  const { STATUS_TEMPLATE_TOOLS } = await import('../holt-status.ts');
+  assert.deepEqual([...ASK_DETAIL_TOOLS].sort(), [...STATUS_TEMPLATE_TOOLS].sort());
 });

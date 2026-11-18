@@ -44,14 +44,30 @@ import { useCloseSignal } from '@/lib/useCloseSignal';
 import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } from '@/lib/entitlement';
 import { holtBlockDoor, holtKeepOnce, holtKeepVerdict, holtSpendVerdict, holtUncapped } from '@/domain/entitlement/caps-core';
 import { consumeHoltAllowance } from '@/data/entitlement-live';
-import { fetchCoachAiBalance, interpretTyped, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
-import { addNotes, fetchNotes } from '@/data/holt-notes-live';
+/* AI Road to 10 Sprint 4a (PO 11-18): coach-interpret is retired from this app — every typed line goes to Holt's chat
+   (coach-ask, caps `actions_v1`). Only the balance read and the step types stay from that module. */
+import { fetchCoachAiBalance, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
+import { HoltActionCard } from '@/components/forge/HoltActionCard';
+import { HoltStatusLine, holtStatusText } from '@/components/forge/HoltStatusLine';
+import { holdTurnActions, type ShownCard, type TurnEnd } from '@/domain/coach/holt-action-cards';
+import { confirmHoltAction, dismissHoltAction, liveCardContext, undoHoltAction } from '@/data/holt-actions-live';
+import { cardsMayShow, type UndoToken } from '@/domain/coach/holt-actions';
+import { fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
 import { fetchWebSearchCost, streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
-import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
-import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
+import { ASK_QUESTION_CHARS, type AskStatusDetail } from '@/domain/coach/ask-wire';
+import {
+  AI_BALANCE_LOOKUP_MS,
+  ASK_RETRY_LABEL,
+  askOfflineCard,
+  CARD_DROPPED_LINE,
+  CARD_EXPIRED_LINE,
+  outOfAiCreditsLine,
+  planHoltActions,
+  takeBackReply,
+} from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
 import { afterStop, askEndedWell, askEndResult, askToolsUsed, lastReplySid, questionOf, withCreditCost, withoutReply } from '@/domain/coach/chat-basics';
 import { overCeilingLine, typedBlock, typedBlockLine, typedOverCeiling } from '@/domain/coach/typed-block';
@@ -89,7 +105,6 @@ import {
   replyOffersOnline,
   medicalStopIsDietitian,
 } from '@/domain/coach/kitchen';
-import { narrowEdit } from '@/domain/coach/interpret-narrow';
 import { buildAskContext } from '@/domain/coach/ask-context';
 import { otherProgramNamed, resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { resolveAvoid } from '@/domain/coach/avoid';
@@ -158,6 +173,8 @@ import {
   weeksBetween,
   answerArriving,
   streamEnded,
+  withCardState,
+  withoutHeldCards,
   streamInto,
   cutOffReply,
   programSessionOffer,
@@ -761,7 +778,8 @@ export function CoachChatSheet({
       /* He greets you on arrival — unless a question of his is still on the table, which is what a stored
          thread ending in chips means. The greeting and Home he last opened with come out first, so a
          reopen greets ONCE rather than stacking another hello and another set of doors (kitchen-14). */
-      const kept = stored ? withoutStaleHome(stored) : [];
+      /* Sprint 4a: a card still waiting for Confirm is never restored — its input and Undo lived in memory. */
+      const kept = stored ? withoutHeldCards(withoutStaleHome(stored)) : [];
       const endsWaiting = kept[kept.length - 1]?.kind === 'chips';
       setThread([...kept, ...stamped(endsWaiting ? [] : kitchen ? greetKitchen(firstName) : greetReturning(firstName))]);
     })();
@@ -2323,7 +2341,8 @@ export function CoachChatSheet({
    * coach-ask's fixed lines, never the model's words. Set only before an ask's first word, by that ask's `sid`,
    * and cleared by that ask when its words start or it ends, so one ask's line never sits under another's dots.
    */
-  const [askStatus, setAskStatus] = useState<{ sid: number; text: string } | null>(null);
+  /* Sprint 4a §1.5: with what he is looking at (`detail`, caps only) — drawn by lane C's HoltStatusLine. */
+  const [askStatus, setAskStatus] = useState<{ sid: number; text: string; detail: AskStatusDetail | null } | null>(null);
   const retryAsks = useRef(new Map<number, AskAgain>());
   /*
    * ══ STOP · REGENERATE · EDIT AND RESEND (AI Road to 10 Sprint 3a, CH-6) — rules in `chat-basics.ts` ══
@@ -2528,6 +2547,69 @@ export function CoachChatSheet({
    */
   const historyFrom = (t: Turn[]): AskTurn[] => askHistory(rewound.current ?? t);
 
+  /*
+   * ⚠ `respondTo` THROUGH A REF (Sprint 4a). `actOn` runs a build / door / edit through `respondTo`, which is declared
+   * further down (it calls `askAloud`'s neighbours); react-compiler reads a call to a later const from inside the ask
+   * as a call during render. Same pattern as `tapChipRef`: written in an effect, never in render.
+   */
+  const respondToRef = useRef<(r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => Promise<void>>(async () => undefined);
+  /*
+   * ══ HOLT'S ACTION CARDS (Sprint 4a §1.2) ══ — lane C's `HoltActionCard`, `cardFor` and `executorFor`.
+   *
+   * A card shows what WILL change, computed by the app; nothing writes until Confirm, and every write has an Undo that
+   * puts back only that write. The action's input and its Undo token live HERE, in memory, under the card's id — never
+   * in the stored thread — so a card from before a reload can be looked at but never confirmed (CARD_EXPIRED_LINE).
+   * Telemetry: `holt_action` {name, outcome} — names only (§1.9).
+   */
+  const heldCards = useRef(new Map<number, { shown: ShownCard; undo: UndoToken | null; busy: boolean }>());
+  const cardSeq = useRef(0);
+  const showCard = (shown: ShownCard) => {
+    cardSeq.current += 1;
+    const id = Date.now() * 100 + (cardSeq.current % 100);
+    heldCards.current.set(id, { shown, undo: null, busy: false });
+    say({ kind: 'action', id, name: shown.action.name, card: shown.card, state: 'ready' });
+  };
+  /* The ONLY road from a card to a write is lane C's `confirmHoltAction` (it tracks `holt_action` too). */
+  const confirmCard = async (id: number, key?: string) => {
+    const held = heldCards.current.get(id);
+    if (!held) {
+      setThread((t) => withCardState(t, id, 'failed'));
+      return void say({ kind: 'holt', text: CARD_EXPIRED_LINE });
+    }
+    if (held.busy || held.undo) return;
+    held.busy = true;
+    setThread((t) => withCardState(t, id, 'working'));
+    const res = await confirmHoltAction(held.shown, key);
+    held.busy = false;
+    if (!res.ok) return void setThread((t) => withCardState(t, id, 'failed', { reason: res.reason }));
+    held.undo = res.undo;
+    setThread((t) => withCardState(t, id, 'done', { said: res.said, ...(res.noUndo ? { noUndo: res.noUndo } : {}) }));
+    /* start_workout → /workout, open_door → its screen: a hand-off, so the conversation survives coming back. */
+    if (res.go) {
+      const go = res.go;
+      handOff();
+      router.push(go as Parameters<typeof router.push>[0]);
+    }
+  };
+  const undoCard = async (id: number) => {
+    const held = heldCards.current.get(id);
+    if (!held || !held.undo) return void say({ kind: 'holt', text: CARD_EXPIRED_LINE });
+    if (held.busy) return;
+    held.busy = true;
+    const ok = await undoHoltAction(held.shown.action.name, held.undo);
+    held.busy = false;
+    if (!ok) return void setThread((t) => withCardState(t, id, 'done', { undoFailed: true }));
+    held.undo = null;
+    setThread((t) => withCardState(t, id, 'undone'));
+  };
+  const dismissCard = (id: number) => {
+    const held = heldCards.current.get(id);
+    if (held?.busy) return;
+    heldCards.current.delete(id);
+    setThread((t) => withCardState(t, id, 'dismissed'));
+    if (held) dismissHoltAction(held.shown.action.name);
+  };
+
   /**
    * ══ WHAT HOLT ASKED THE APP TO DO ══
    *
@@ -2537,23 +2619,63 @@ export function CoachChatSheet({
    * the athlete's own thumb (edit-ops header). The online offer is a chip, and tapping it is the consent.
    * True when something was shown, so the caller adds nothing on top.
    */
-  const actOn = async (actions: AskAction[], asked: string): Promise<boolean> => {
-    /* Not `edit` / `intent`: both name sheet-wide state and props here (C-I7 — no name shadows another). */
-    const proposed = actions.find((a) => a.name === 'propose_program_edit');
-    const proposedEdit = proposed ? narrowEdit(proposed.input) : null;
-    if (proposedEdit) {
-      await editByWords(proposedEdit, asked);
-      return true;
+  const actOn = async (
+    actions: AskAction[],
+    asked: string,
+    end: TurnEnd,
+    clean: boolean,
+    q: ReturnType<typeof nextQuestion>,
+    m: ChatMode,
+  ): Promise<{ shown: boolean; flow: boolean }> => {
+    if (!actions.length) return { shown: false, flow: false };
+    /* Sprint 4a: routed in one pure place (`planHoltActions`, ask-outcome.ts) — and ⛔ nothing at all unless the turn
+       ended cleanly (§1.3). Builds and edits go through the SAME handling a typed line always had (`respondTo`). */
+    const plan = planHoltActions(actions, {
+      clean,
+      todayISO: localToday(),
+      knownNotes: notesRef.current ?? heardNotes.current,
+      asked,
+      nutrition: nutritionAccess,
+    });
+    let shown = false;
+    let flow = false;
+    /* Lane C's hold: the card actions of THIS turn, released only after a clean ending (`cardsMayShow`, again). */
+    const hold = holdTurnActions();
+    for (const step of plan.steps) {
+      switch (step.kind) {
+        case 'edit':
+          await respondToRef.current({ kind: 'door', to: 'edit', edit: step.edit }, asked, q, m);
+          shown = flow = true;
+          break;
+        case 'door':
+          await respondToRef.current({ kind: 'door', to: step.to }, asked, q, m);
+          shown = flow = true;
+          break;
+        case 'patch':
+          await respondToRef.current({ kind: 'patch', patch: step.patch as Partial<ChatState>, say: null, remaining: null }, asked, q, m);
+          shown = flow = true;
+          break;
+        case 'web':
+          say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: step.lookingFor }] });
+          shown = true;
+          break;
+        case 'card':
+          hold.hold(step.action);
+          break;
+      }
     }
-    const web = actions.find((a) => a.name === 'offer_online_recipe_search');
-    if (web && nutritionAccess) {
-      const want = (web.input as { looking_for?: unknown } | null)?.looking_for;
-      const lookingFor = (typeof want === 'string' && want.trim() ? want : asked).trim().slice(0, 80);
-      say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: lookingFor }] });
-      return true;
+    const held = hold.count;
+    const cards = held ? await hold.release(end, await liveCardContext({ units, nutritionAccess })) : [];
+    for (const c of cards) showCard(c);
+    if (cards.length) shown = true;
+    /* A card this app could not draw (`cardFor` → null): dropped, and he says nothing changed. */
+    if (held > cards.length) {
+      say({ kind: 'holt', text: CARD_DROPPED_LINE });
+      shown = true;
     }
-    return false;
+    return { shown, flow };
   };
+
 
   /**
    * ══ HOLT ANSWERS, WORD BY WORD (CA-D10, §4.3 streaming) ══
@@ -2694,7 +2816,7 @@ export function CoachChatSheet({
     text: string,
     history: AskTurn[],
     q: ReturnType<typeof nextQuestion>,
-    opts: { allowWeb?: boolean; kitchen?: boolean } = {},
+    opts: { allowWeb?: boolean; kitchen?: boolean; building?: string | null } = {},
   ) => {
     /**
      * ══ "WHAT DO I NEED TO WORK ON?" IS ANSWERED HERE, WITHOUT A MODEL ══
@@ -2773,6 +2895,9 @@ export function CoachChatSheet({
       },
       askSourcesLive(),
     );
+    /* Sprint 4a: a build under way rides along — what he asked, the answers offered, what is settled (interpret's
+       `ask` / `chips` / `known`) — so an answer to his question comes back as propose_program with that field. */
+    if (opts.building) context.building = opts.building;
     /* CH-6: stopped while the dots showed — the call never left the phone, so nothing was reserved or charged. */
     if (ctl.signal.aborted) {
       asking.current.delete(ctl);
@@ -2810,10 +2935,11 @@ export function CoachChatSheet({
         recipes,
         signal: ctl.signal,
         /* The waiting bubble says what he is looking up — until his first word, never after. */
-        onStatus: (line) => {
-          lookups += 1;
+        onStatus: (line, detail) => {
+          /* A detail line repeats the table line it details — counted once, as a lookup. */
+          if (!detail) lookups += 1;
           statusLines.push(line);
-          if (!started) setAskStatus({ sid, text: line });
+          if (!started) setAskStatus({ sid, text: line, detail: detail ?? null });
         },
       },
     );
@@ -2825,6 +2951,7 @@ export function CoachChatSheet({
     setThread((t) => streamEnded(t, sid));
     const result = askEndResult(r, stopped.current.has(ctl));
     const tools = askToolsUsed(statusLines, r.kind === 'answer' ? r.actions.map((a) => a.name) : []);
+    /* §1.9: `tools` carries the action names he forwarded too (askToolsUsed — every contract name since 4a). */
     track('holt_ask_ended', { source, result, ms: Date.now() - askedAt, count: lookups, tools, success: askEndedWell(result) });
     switch (r.kind) {
       case 'answer':
@@ -2842,8 +2969,15 @@ export function CoachChatSheet({
         if (r.text) AccessibilityInfo.announceForAccessibility(`Holt: ${r.text}`);
         /* C-D4: stopped at the length cap. The words stand, and he says they are not all of it. */
         if (r.cut) say({ kind: 'holt', text: pick('reply_ran_long') });
-        /* What he asked the APP to do — a change to confirm, or the online-search offer. */
-        if (await actOn(r.actions, text)) return;
+        /* What he asked the APP to do — a build, a change to confirm, a door, a card, the online-search offer.
+           ⛔ §1.3: only after a clean ending (`cardsMayShow`): a length cut drops them all, as a refusal does. */
+        {
+          const end: TurnEnd = { done: r.complete, stop: r.stop ?? null };
+          const acted = await actOn(r.actions, text, end, cardsMayShow(end) && !r.cut, q, mode ?? 'program');
+          /* A card or a button under a reply mid-build: the build question still comes back under it. */
+          if (acted.shown && !acted.flow && q && !opts.kitchen) say({ kind: 'holt', text: q.ask }, { kind: 'chips', chips: q.chips, ctl: q.ctl });
+          if (acted.shown) return;
+        }
         /* kitchen-07: he SAID he'd look online without calling the tool — the chip goes under him anyway. */
         if (nutritionAccess && !opts.allowWeb && replyOffersOnline(r.text)) {
           say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: text.trim().slice(0, 80) }] });
@@ -2990,16 +3124,6 @@ export function CoachChatSheet({
     heardNotes.current = notesRef.current;
     return notesRef.current;
   };
-  const rememberSaid = async (lines: string[]) => {
-    const res = await addNotes(lines, 'chat').catch(() => null);
-    if (!res) return;
-    notesRef.current = null;
-    /* Full notebook: he says so once, rather than silently dropping what they told him. */
-    if (res.skipped.some((x) => x.reason === 'cap')) {
-      say({ kind: 'holt', text: "My notes on you are full. Clear one in What Holt Remembers and I'll keep that too." });
-    }
-  };
-
   /** One understood step — a single reply, or one part of a message that asked for several things. */
   const respondTo = async (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => {
     switch (r.kind) {
@@ -3130,25 +3254,51 @@ export function CoachChatSheet({
     }
   };
 
+  /**
+   * ══ PREMIUM AI: EVERY TYPED LINE GOES TO HOLT'S CHAT (AI Road to 10 Sprint 4a, CH-3 — PO 11-18) ══
+   *
+   * `coach-interpret` used to read every line that was not a question. Now `coach-ask` reads them all — one brain — and
+   * hands back what the app should do as actions (`actOn`): a build (`propose_program` / `propose_day`) runs the SAME
+   * 'patch' handling a typed request always had, a door the same door, a change the same edit flow, and everything new
+   * is a card. Old phones keep calling coach-interpret, which stays deployed and unchanged.
+   *
+   * The free local matcher still places a typed answer to the question on the table ("4 days") — no model, no credit
+   * (it was interpretTyped's step 1). Anything it cannot place goes to Holt with the build line (`buildingLine`).
+   */
+  const buildingLine = (q: ReturnType<typeof nextQuestion>, m: ChatMode): string | null => {
+    if (!mode) return null;
+    const settled = Object.fromEntries(
+      Object.entries(constraints).filter(
+        ([k, v]) => SETTLED_KEYS.has(k) && v != null && !(Array.isArray(v) && v.length === 0),
+      ),
+    );
+    return [
+      m === 'day' ? 'Building ONE session, not a program.' : 'Building a full program.',
+      q ? `Holt just asked: "${q.ask}"` : null,
+      q?.chips.length ? `Offered answers: ${q.chips.map((c) => c.label).join(' · ')}` : null,
+      Object.keys(settled).length ? `Already settled, do not re-fill: ${JSON.stringify(settled)}` : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
+  };
+
+  useEffect(() => {
+    respondToRef.current = respondTo;
+  });
+
   const understand = async (text: string) => {
     const m: ChatMode = mode ?? 'program';
     const q = mode ? nextQuestion(constraints, m) : null;
     /* This conversation's own recent words (CA-D1) — the current message is not in `thread` yet. */
     const history = historyFrom(thread);
-    /* A question streams from coach-ask in Holt's words; everything else is parsed for the engine. */
-    if (looksLikeQuestion(text)) return askAloud(text, history, q);
-    setBusy('thinking');
-    const r = await interpretTyped(text, q, m === 'day' ? 'day' : 'program', constraints, history, await loadNotes(), closeSignal());
-    setBusy(null);
-    /* "Not now" on the AI consent sheet (MHMDA) — nothing left the phone. */
-    if (r.kind === 'no_consent') return void say({ kind: 'holt', text: AI_DECLINED_HOLT });
-    if (r.remember?.length) void rememberSaid(r.remember);
-    /* "Build me a 3 day program and also what's RPE?" — each part answered, in the order it was said. */
-    if (r.kind === 'multi') {
-      for (const step of r.steps) await respondTo(step, text, q, m);
-      return;
+    /* What Holt knows about them (CA-D2), read once per sheet — the build's coach-author write carries it
+       (`heardNotes`), and a note he offers that they already have is not offered twice. Bounded (C-D2). */
+    await within(ASK_CONTEXT_MS, loadNotes(), []);
+    if (q && !looksLikeQuestion(text)) {
+      const local = interpret(text, q);
+      if (local) return respondTo({ kind: 'patch', patch: local, say: null, remaining: null }, text, q, m);
     }
-    return respondTo(r, text, q, m);
+    return askAloud(text, history, q, { building: buildingLine(q, m) });
   };
 
   /** Everything that happens to a message after it is on screen. */
@@ -3465,6 +3615,9 @@ export function CoachChatSheet({
     onStart: startNow,
     onSave: rebuildable ? rebuild : saveForLater,
     saveLabel: rebuildable ? 'Ask me again' : built?.kind === 'program' ? 'Adjust it' : 'Save for later',
+    onCardConfirm: (id, key) => void confirmCard(id, key),
+    onCardUndo: (id) => void undoCard(id),
+    onCardDismiss: (id) => dismissCard(id),
   };
 
   const reallyStart = async () => {
@@ -3767,7 +3920,9 @@ export function CoachChatSheet({
               </TurnEnter>
             );
           })}
-          {waiting ? <Waiting kind={waiting} status={waiting === 'thinking' ? askStatus?.text ?? null : null} /> : null}
+          {waiting ? (
+            <Waiting kind={waiting} status={waiting === 'thinking' ? askStatus?.text ?? null : null} detail={waiting === 'thinking' ? askStatus?.detail ?? null : null} />
+          ) : null}
         </Reanimated.ScrollView>
         )}
 
@@ -4298,7 +4453,7 @@ function clockOf(at: number | undefined): string | null {
  * the counter-offer. What does not: `stop` and `error`, which are their own moment and are already
  * emitted alone.
  */
-const ATTACHES: ReadonlySet<Turn['kind']> = new Set(['chips', 'program', 'day', 'refusal', 'explain', 'saved', 'wall', 'dishes']);
+const ATTACHES: ReadonlySet<Turn['kind']> = new Set(['chips', 'program', 'day', 'refusal', 'explain', 'saved', 'wall', 'dishes', 'action']);
 
 type Block =
   | { key: number; kind: 'home' }
@@ -4339,7 +4494,13 @@ type Block =
 type TurnFeedback = { feature: 'chat' | 'kitchen' | 'author'; ref: string; after: 'words' | 'attached' };
 
 /** One coach-ask as Try again and Regenerate send it again (C-D5, CH-6). */
-type AskAgain = { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean } };
+type AskAgain = { text: string; history: AskTurn[]; q: ReturnType<typeof nextQuestion>; opts: { allowWeb?: boolean; kitchen?: boolean; building?: string | null } };
+
+/** The build fields Holt is told are settled mid-build (Sprint 4a — coach-interpret's `known`, minus the long lists). */
+const SETTLED_KEYS: ReadonlySet<string> = new Set([
+  'goal', 'daysPerWeek', 'sessionMinutes', 'environment', 'experience', 'limitations', 'raceDate', 'weeks',
+  'currentWeeklyMi', 'liftDays', 'strengthGoal', 'goalTimeSec', 'focusMuscles', 'dayFocus',
+]);
 
 /** What Holt says when the athlete stopped him before his first word (CH-6) — Try again goes under it. */
 const ASK_STOPPED_LINE = 'Stopped.';
@@ -4663,9 +4824,9 @@ function SendGlyph({ color }: { color: string }) {
  * The two waits. Building names its steps, because a spinner would waste the moment. Thinking names its lookup
  * when coach-ask says which one is running (`status`, Sprint 1 C-G5) — the same bubble, with the line beside the dots.
  */
-function Waiting({ kind, status }: { kind: 'thinking' | 'building'; status?: string | null }) {
+function Waiting({ kind, status, detail = null }: { kind: 'thinking' | 'building'; status?: string | null; detail?: AskStatusDetail | null }) {
   // Where his next line will land, in the shape it will land in (§9.1–9.2).
-  if (kind === 'thinking') return <View style={styles.dotsWrap}><TypingBubble status={status ?? null} /></View>;
+  if (kind === 'thinking') return <View style={styles.dotsWrap}><TypingBubble status={status ?? null} detail={detail} /></View>;
   return <BuildingCard />;
 }
 
@@ -4744,7 +4905,7 @@ function BuildingCard() {
  * The dots are the same component the `thinking` state uses. That is deliberate: both mean Holt is
  * working, and giving them two different animations would be inventing a distinction nobody asked for.
  */
-function TypingBubble({ status = null }: { status?: string | null }) {
+function TypingBubble({ status = null, detail = null }: { status?: string | null; detail?: AskStatusDetail | null }) {
   /*
    * ⚠ THE STATUS LINE IS COACH-ASK'S FIXED PHRASE (`ASK_STATUS_PHRASES`), not anything the model wrote — the wire
    * drops any other string. It sits after the dots in the same bubble, in the secondary ink of either theme (no
@@ -4753,16 +4914,17 @@ function TypingBubble({ status = null }: { status?: string | null }) {
   return (
     <View
       style={styles.typingBubble}
-      accessibilityLabel={status ?? 'Holt is typing'}
+      accessibilityLabel={status ? holtStatusText(status, detail) : 'Holt is typing'}
       accessibilityLiveRegion={status ? 'polite' : 'none'}
     >
       {[0, 1, 2].map((i) => (
         <ThinkingDot key={i} delay={i * 180} />
       ))}
+      {/* Sprint 4a §1.5: lane C's line — "Reading your bench history…" from `detail`, else the table line. */}
       {status ? (
-        <Text style={styles.typingStatus} numberOfLines={1}>
-          {status}
-        </Text>
+        <View style={styles.typingStatusWrap}>
+          <HoltStatusLine status={status} detail={detail} />
+        </View>
       ) : null}
     </View>
   );
@@ -4801,6 +4963,10 @@ interface Handoff {
   onLogDish: (c: DishCard) => void;
   /** CH-6 (Sprint 3b): what "Find one online" costs, from the server — null shows the chip without a number. */
   webCost: number | null;
+  /** Sprint 4a: an action card's three buttons, by the card's id. */
+  onCardConfirm: (id: number, key?: string) => void;
+  onCardUndo: (id: number) => void;
+  onCardDismiss: (id: number) => void;
 }
 
 function TurnView({
@@ -4879,6 +5045,22 @@ function TurnView({
 
     case 'dishes':
       return <DishCardsView dishes={turn.dishes} numbers={turn.numbers} onOpen={handoff.onOpenDish} onLog={handoff.onLogDish} />;
+
+    /* Sprint 4a: one of Holt's actions — lane C's card. Confirm writes, Undo puts back only that write. */
+    case 'action':
+      return (
+        <HoltActionCard
+          card={turn.card}
+          state={turn.state}
+          said={turn.said}
+          reason={turn.reason}
+          noUndo={turn.noUndo}
+          undoFailed={turn.undoFailed}
+          onConfirm={(key) => handoff.onCardConfirm(turn.id, key)}
+          onUndo={() => handoff.onCardUndo(turn.id)}
+          onDismiss={() => handoff.onCardDismiss(turn.id)}
+        />
+      );
 
     case 'saved':
       return (
@@ -6204,6 +6386,8 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: flColor.bronze400, opacity: 0.5 },
   /* The lookup line after the dots (C-G5). Layout for both themes; the ink is the secondary token, never bronze. */
   typingStatus: { marginLeft: 5, flexShrink: 1, fontSize: 13, lineHeight: 18, color: flColor.gray400 },
+  /* Sprint 4a: lane C's HoltStatusLine sits where the status Text did. */
+  typingStatusWrap: { marginLeft: 5, flexShrink: 1 },
   buildCard: {
     marginLeft: 52,
     padding: 18,

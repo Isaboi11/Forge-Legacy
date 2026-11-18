@@ -43,7 +43,9 @@ test('⚠ the public switch stays off; the composer shows for Premium AI only', 
 });
 
 test('⚠ a Premium AI sentence reaches the model, and the broad word list no longer blocks swaps there', () => {
-  assert.match(sheet, /const r = await interpretTyped\(/);
+  // Sprint 4a (PO 11-18): coach-interpret is retired from this app — every typed line goes to Holt's chat with the caps.
+  assert.doesNotMatch(sheet, /interpretTyped\(/);
+  assert.match(sheet, /return askAloud\(text, history, q, \{ building: buildingLine\(q, m\) \}\);/);
   assert.match(sheet, /if \(premiumAi\) \{\s*void understand\(text\);/);
   assert.match(sheet, /if \(!premiumAi && isMedical\(text\)\)/);
   // Every route the function can return has an answer — an unhandled one would be silence.
@@ -122,7 +124,8 @@ test('⚠ conversation memory is this conversation, eight turns, into both AI jo
   // The eight-turn window (and the stopped-line drop, QA R2-F1) lives in the one builder, `askHistory`.
   assert.match(sheet, /const historyFrom = \(t: Turn\[\]\): AskTurn\[\] => askHistory\(rewound\.current \?\? t\);/);
   assert.match(readFileSync(path.join(here, '../chat-history.ts'), 'utf8'), /export const CHAT_HISTORY_TURNS = 8;/);
-  assert.match(sheet, /interpretTyped\(text, q, m === 'day' \? 'day' : 'program', constraints, history, await loadNotes\(\), closeSignal\(\)\)/);
+  // Sprint 4a: the notes are read before the ask (the build's coach-author write carries them as `heardNotes`).
+  assert.match(sheet, /await within\(ASK_CONTEXT_MS, loadNotes\(\), \[\]\);/);
   assert.match(sheet, /streamCoachAsk\(\s*text,\s*history,\s*context,/);
 });
 
@@ -141,8 +144,13 @@ test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — nev
 
 test('⚠ several things in one message run in order; a skip saves as skip marks; what they said is remembered', () => {
   const u = sheet.slice(sheet.indexOf('const understand = async'), sheet.indexOf('const process = (text'));
-  assert.match(u, /if \(r\.kind === 'multi'\) \{\s*for \(const step of r\.steps\) await respondTo\(step, text, q, m\);/);
-  assert.match(u, /if \(r\.remember\?\.length\) void rememberSaid\(r\.remember\);/);
+  // Sprint 4a: several things are several actions, run in order by `actOn` (one build/door/edit, then cards); a fact
+  // they told him is a remember_note CARD now — offered, never saved silently.
+  const act = sheet.slice(sheet.indexOf('const actOn = async ('), sheet.indexOf('return { shown, flow };'));
+  assert.match(act, /for \(const step of plan\.steps\) \{/);
+  assert.match(act, /const cards = held \? await hold\.release\(end, await liveCardContext\(\{ units, nutritionAccess \}\)\) : \[\];/);
+  assert.doesNotMatch(sheet, /rememberSaid\(/);
+  void u;
   const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
   assert.match(finish, /if \(pe\.plan\.kind === 'skip'\) \{\s*for \(const at of pe\.plan\.sessions\) await skipProgramSession\(pe\.programId, at\.weekIndex, at\.dayIndex\);/);
   // Loaded in parallel with the program and the recipe book since 2026-09-25 (`Promise.all`).

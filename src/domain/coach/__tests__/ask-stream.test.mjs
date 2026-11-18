@@ -40,7 +40,7 @@ const settle = async (chunks, opts) => settleAskRead(await readAskStream(fakeRea
 
 test('a whole answer is complete, not cut, and carries the balance', async () => {
   const r = await settle([line({ t: 'Three sets ' }), line({ t: 'of eight.' }), done()]);
-  assert.deepEqual(r, { kind: 'answer', text: 'Three sets of eight.', remaining: 140, complete: true, cut: false, actions: [] });
+  assert.deepEqual(r, { kind: 'answer', text: 'Three sets of eight.', remaining: 140, complete: true, cut: false, actions: [], stop: 'end_turn' });
 });
 
 test('⚠ a refusal with no words is Holt declining — never the outage card', async () => {

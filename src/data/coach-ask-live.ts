@@ -7,8 +7,10 @@ import {
   ASK_HISTORY_MAX,
   trimHistory,
   type AskContext,
+  type AskStatusDetail,
   type AskTurn,
 } from '@/domain/coach/ask-wire';
+import { HOLT_ACTION_CAPS } from '@/domain/coach/holt-actions';
 import {
   ASK_FIRST_BYTE_MS,
   ASK_IDLE_MS,
@@ -103,7 +105,7 @@ export interface AskOptions {
    * Each status line while he looks something up ("Checking your lift log…" — `ASK_STATUS_PHRASES`, never the
    * model's words), for the waiting bubble. Only before the first word matters; the sheet ignores the rest.
    */
-  onStatus?: (status: string) => void;
+  onStatus?: (status: string, detail?: AskStatusDetail) => void;
   /** Override the clock (`ask-stream.ts`) — for a test, never the sheet. */
   firstByteMs?: number;
   idleMs?: number;
@@ -221,6 +223,10 @@ async function askOnce(
         ...(options.model ? { model: options.model } : {}),
         ...(options.allowWeb ? { allowWeb: true } : {}),
         ...(options.recipes?.length ? { recipes: options.recipes } : {}),
+        /* AI Road to 10 Sprint 4a §1.1: this app draws Holt's action cards (HoltActionCard) and holds them until the
+           turn ends cleanly, so it asks for the actions, the one-brain prompt and status detail. A phone without
+           this line gets the v28 function, byte for byte. */
+        caps: [HOLT_ACTION_CAPS],
       }),
       signal: clock.signal,
     }));

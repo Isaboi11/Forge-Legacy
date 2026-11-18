@@ -312,6 +312,11 @@ export type AskSettled =
       complete: boolean;
       cut: boolean;
       actions: { name: string; input: unknown }[];
+      /**
+       * Sprint 4a §1.3: the `done` line's stop reason (null when there was none). With `complete`, it is what
+       * `cardsMayShow` (holt-actions.ts) reads — a held action becomes a card only after end_turn / tool_use.
+       */
+      stop?: string | null;
       refunded?: true;
     }
   /** He declined it (the model's `refusal`). Whatever streamed is taken back. Not an outage. */
@@ -363,6 +368,7 @@ export function settleAskRead(read: AskRead, early: AskEarlyStop | null = null):
     complete: read.finished,
     cut: read.finished && read.stop != null && CUT_STOPS.has(read.stop),
     actions: read.actions,
+    stop: read.stop,
     ...refunded,
   };
 }
