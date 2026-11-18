@@ -172,12 +172,12 @@ AUTHOR; the PO pastes.
   "▶ RESUME HERE" list so a usage pause costs time, not work.
 
 ## 3. Budget log (integrator)
-Left at start: **$5.43** of $30.
+Left at start: **$5.43** of $30. **PO 2026-11-18: cap raised to $37 (+$7) for the 38 fix** → ~$12.43 to spend.
 | Run | Lane | Estimate | Real |
 |---|---|---|---|
 | memory suite (Haiku facts + recap, Sonnet `earlier`), ≤ 2 runs | A | ~$1.00 | |
 | chat-summary re-run (new summary prompt, Haiku) | A | ~$0.10 | |
-| step 2 — the 38: subset (38 + 110 gained) + full re-record ask-answers / ask-safety / ask-actions | A | ~$10.35 | ⛔ needs PO money |
+| step 2 — the 38: subset (38 + 110 gained) + full re-record ask-answers / ask-safety / ask-actions | A | ~$10.35 | ✅ PO approved 11-18 (cap → $37) |
 
 ## 4. Integrator (this session)
 - Merge B → A into `ai/s4b` (A last: its export reads B's chats and its screen links B's route), rebuild the
@@ -188,3 +188,4 @@ Left at start: **$5.43** of $30.
 
 ## 5. Log
 - 2026-11-18 — `ai/s4b` + 2 lane worktrees off `36749b02`; contract written; stubs committed.
+- 2026-11-18 — PO: yes to the $7 cap raise ($30 → $37) for the 38 ask-answers lines. Step 2 is unblocked once step 1 is done (subset first, full re-records only if the subset holds).
