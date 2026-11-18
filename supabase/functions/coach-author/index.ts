@@ -63,6 +63,10 @@ import {
   UPSTREAM_ABORT_MS,
   withAgeLine,
 } from '../../../src/domain/ai/meter-server.ts';
+// ⚠ WHAT EACH MODEL IS SENT, AND WHICH MODEL RUNS (Sprint 3b, PL-7) — one request shape per model; the model + effort
+// read from coach_ai_model_config (0274), this file's default on any failure.
+import { answeredBy, anthropicHeaders, EFFORTS, KNOWN_MODELS, requestFields } from '../../../src/domain/ai/model-request.ts';
+import { modelConfigReader, uidFromAuthorization } from '../../../src/domain/ai/model-config.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -71,8 +75,19 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 /** This function's deployed slug — the meter's `fn` (0268). */
 const FN = 'coach-author';
 
-/** The model already locked for Holt (Holt-AI benchmark 2026-09-24). */
+/**
+ * The IN-CODE DEFAULT (Holt-AI benchmark 2026-09-24): Sonnet 5, effort low. What runs is `coach_ai_model_config`
+ * (0274) when it has a row for 'coach-author' — read with the service role, kept 60 s, this default on any failure.
+ */
 const MODEL = 'claude-sonnet-5';
+const EFFORT = 'low';
+const modelConfig = modelConfigReader({
+  url: SUPABASE_URL,
+  serviceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+  fetch: (u, init) => fetch(u, init),
+  known: KNOWN_MODELS,
+  efforts: EFFORTS,
+});
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -228,7 +243,17 @@ Deno.serve(async (req) => {
   // about a cent and keeps the athlete's own words in the session.
   let plan: ReturnType<typeof authoredFromModelText> = null;
   const total = { input: 0, cacheRead: 0, cacheWrite: 0, output: 0 };
-  let modelUsed = MODEL;
+  const choice = await modelConfig.pick(FN, uidFromAuthorization(authorization), { model: MODEL, effort: EFFORT });
+  const model = choice.model;
+  // Thinking off, effort low (or the configured effort), in the form THIS model takes, + the refusal fallback where it
+  // exists (model-request.ts). ⛔ The schema has no field for a load — he cannot write a weight because there is
+  // nowhere to put one.
+  const modelFields = requestFields(model, {
+    thinkingOff: true,
+    effort: choice.effort ?? EFFORT,
+    format: { type: 'json_schema', schema: AUTHOR_SCHEMA },
+  });
+  let modelUsed = model;
   let latencyMs = 0;
   let lastStop: string | undefined;
   /** Settled ONCE for both asks, before the answer is returned (contract §1.3). Every outcome but `ok` refunds. */
@@ -256,13 +281,11 @@ Deno.serve(async (req) => {
         fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           signal,
-          headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          headers: anthropicHeaders(ANTHROPIC_API_KEY!, modelFields),
           body: JSON.stringify({
-            model: MODEL,
+            model,
             max_tokens: AUTHOR_OUTPUT_CAP[request.kind],
-            thinking: { type: 'disabled' },
-            // ⛔ The schema has no field for a load — he cannot write a weight because there is nowhere to put one.
-            output_config: { effort: 'low', format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },
+            ...modelFields,
             system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
             messages: [{ role: 'user', content: turn }],
           }),
@@ -280,7 +303,8 @@ Deno.serve(async (req) => {
 
     const payload = call.payload;
     const usage = payload?.usage ?? {};
-    modelUsed = payload?.model ?? MODEL;
+    // Priced as the model that answered (a refusal fallback answers as another), PL-7.
+    modelUsed = answeredBy(payload, model);
     total.input += usage.input_tokens ?? 0;
     total.output += usage.output_tokens ?? 0;
     total.cacheRead += usage.cache_read_input_tokens ?? 0;

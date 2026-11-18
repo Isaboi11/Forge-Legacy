@@ -98,9 +98,14 @@ test('the system prompt carries the rules the brief asks for', () => {
 test('streamed, capped, low effort, no thinking — as coach-interpret', () => {
   assert.match(SRC, /max_tokens: ASK_OUTPUT_CAP,/);
   assert.match(SRC, /stream: true,/);
-  assert.match(SRC, /thinking: \{ type: 'disabled' \}, output_config: \{ effort: 'low' \}/);
+  // PL-7 (Sprint 3b): thinking off + effort low in the form THIS model takes — one table, model-request.ts, whose test
+  // walks every model. The default effort is low; the config (0274) can set another.
+  assert.match(SRC, /\.\.\.requestFields\(model, \{ thinkingOff: true, effort: askEffort \}\),/);
+  assert.match(SRC, /headers: anthropicHeaders\(ANTHROPIC_API_KEY!, askFields\),/);
+  assert.match(SRC, /const EFFORT = 'low';/);
   assert.match(SRC, /const ALLOWED_MODELS = \[MODEL, HAIKU\];/);
   assert.match(SRC, /const MODEL = 'claude-sonnet-5';/);
+  assert.doesNotMatch(SRC, /thinking: \{ type: 'disabled' \}/, 'no hand-written thinking field: Sonnet 5.5 and Opus 5.5 reject it');
 });
 
 test('settle carries all four token counts, the latency and the outcome — however the stream ends', () => {
@@ -132,8 +137,11 @@ test('the SSE the app reads: {t}, {status}, then {done, usage, remaining} or {er
   // ⛔ P-D8: no client event carries the upstream's words. The failure line is built in one place.
   assert.doesNotMatch(SRC, /\bdetail:/);
   assert.match(SRC, /send\(askFailureEvent\(failure, \{ refunded, remaining \}\)\);/);
-  // C-D8: the model is chosen in one place, and a web search is always the default (Sonnet).
-  assert.match(SRC, /const model = askModel\(body\.model, allowWeb, ALLOWED_MODELS, MODEL\);/);
+  // C-D8: the model is chosen in one place — the configured model (PL-7, 0274) or MODEL — and a tapped web search never
+  // goes to a model without the web search tool (Haiku): then it runs MODEL (Sonnet).
+  assert.match(SRC, /const choice = await modelConfig\.pick\('coach-ask', uidFromAuthorization\(authorization\), \{ model: MODEL, effort: EFFORT \}\);/);
+  assert.match(SRC, /const webModel = takesWebSearch\(choice\.model\) \? choice\.model : MODEL;/);
+  assert.match(SRC, /const model = askModel\(body\.model, allowWeb, \[choice\.model, \.\.\.ALLOWED_MODELS\], allowWeb \? webModel : choice\.model\);/);
   assert.doesNotMatch(SRC, /body\.model && ALLOWED_MODELS\.includes/);
 });
 
