@@ -640,6 +640,30 @@ test('every build the matrix makes lands inside its weekly per-muscle bands, eve
   assert.deepEqual(outside, [], `${outside.length} muscle-weeks outside their band:\n  ${outside.slice(0, 20).join('\n  ')}`);
 });
 
+/*
+ * PB-4, the validator bullet (Sprint 3b): the validator itself now holds a build to the weekly bands — the gate a typed
+ * build and the AI layer go through. It must agree with the count above on every one of the matrix's builds, or the
+ * builder and its validator are reading two different tables.
+ */
+test('PB-4: validateProgram holds every matrix build to the same weekly bands, and finds nothing', () => {
+  const broken = [];
+  let checked = 0;
+  for (const { c, goal, experience, daysPerWeek, room, limitations, sessionMinutes, res } of matrixBuilds()) {
+    if (!res.ok) continue;
+    checked++;
+    const v = validateProgram(res.assembly.structure, {
+      knownKeys: KNOWN,
+      patternOf,
+      category: GOAL_CATEGORY[goal],
+      weekly: { experience: c.experience.lifting, muscles: (k) => BY_KEY.get(k), trainable: trainableFor(c), enforce: true },
+    });
+    const weekly = v.failures.filter((f) => f.code.startsWith('weekly_'));
+    if (weekly.length) broken.push(`${goal}/${experience}/${daysPerWeek}d/${room}/${limitations}/${sessionMinutes}min: ${weekly[0].message}`);
+  }
+  assert.ok(checked > 4000, `the matrix shrank to ${checked} builds`);
+  assert.deepEqual(broken, [], `${broken.length} builds the validator's weekly gate rejects:\n  ${broken.slice(0, 12).join('\n  ')}`);
+});
+
 test('a full gym with no limitation can train all twelve groups, so no floor there is ever waived', () => {
   for (const experience of EXPERIENCES) {
     for (const room of ['full_gym', 'home']) {

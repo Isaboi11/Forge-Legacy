@@ -3,7 +3,8 @@
  *
  *   1. **Catalogue** — every exercise is one the app can actually open
  *   2. **Structure** — the schedule walks cleanly and the counts agree
- *   3. **Policy** — PAS-D11 volume, PAS-D8 deload encoding, the Builder's own clamps
+ *   3. **Policy** — PAS-D11 volume, PAS-D8 deload encoding, the Builder's own clamps — and, when the caller says
+ *      who it is for, the weekly sets per muscle against `WEEKLY_SET_BANDS` (PB-2's bands; PB-4, Sprint 3b)
  *
  * ══ WHY A GENERATOR NEEDS A VALIDATOR AT ALL ══
  *
@@ -42,7 +43,11 @@ import {
   DELOAD_MARKER,
   deloadWeeks,
   HIGH_FREQUENCY_DAYS,
+  VOLUME_GROUPS,
+  weeklyBandFor,
+  weeklyMuscleSets,
   type PasCategory,
+  type VolumeGroup,
 } from './rulebook/volume.ts';
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -62,7 +67,9 @@ export type FailureCode =
   | 'deload_not_marked'
   | 'deload_not_lighter'
   | 'duplicate_exercise'
-  | 'mileage_jump';
+  | 'mileage_jump'
+  | 'weekly_volume_ceiling'
+  | 'weekly_volume_floor';
 
 export interface Failure {
   code: FailureCode;
@@ -72,10 +79,13 @@ export interface Failure {
 }
 
 export interface Deviation {
-  code: 'volume_floor_high_frequency' | 'volume_floor';
+  code: 'volume_floor_high_frequency' | 'volume_floor' | 'weekly_volume_ceiling' | 'weekly_volume_floor';
   message: string;
   weekIndex: number;
-  dayIndex: number;
+  /** Absent on a weekly (whole-week) note. */
+  dayIndex?: number;
+  /** The muscle group a weekly note is about. */
+  group?: VolumeGroup;
 }
 
 export interface ValidationResult {
@@ -324,6 +334,73 @@ function checkPolicy(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// GATE 3b — THE WEEKLY BANDS (PB-2's per-muscle volume, PB-4: typed builds held to the same table)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** A catalogue key's muscles (`primaryMuscleIds` count 1 set, `muscleIds` 0.5 — PAS-A4-D1). */
+export type MuscleLookup = (key: string) => { primaryMuscleIds: readonly string[]; muscleIds: readonly string[] } | null | undefined;
+
+export interface WeeklyBandOptions {
+  experience: 'beginner' | 'intermediate' | 'advanced';
+  muscles: MuscleLookup;
+  /**
+   * The groups this athlete can train directly (`trainableGroups`, volume-balance.ts). A FLOOR is owed only for
+   * these; without the set, no floor is checked at all — the ceiling still is.
+   */
+  trainable?: ReadonlySet<VolumeGroup>;
+  /**
+   * true  = the rulebook's own build (`assemble` balances every week into the bands): out of band is a FAILURE —
+   *         a table drifted.
+   * false = a program typed to Holt (Amendment 003: what the athlete asked for is not rebalanced): out of band is a
+   *         DEVIATION the caller says once — the ceiling as "past what most people recover from", the floor not at
+   *         all unless it asked for one with `trainable`.
+   */
+  enforce: boolean;
+}
+
+/**
+ * Every working week's sets per muscle against `weeklyBandFor` — the same table, counting and frequency scaling the
+ * builder balances to (`volume-balance.ts`) and the matrix test holds 4,320 builds to. A deload week (PAS-D7's
+ * weeks, PAS-A4-D3) owes no floor; its ceiling is held like every week's. Categories with no row (mobility,
+ * running) are not counted.
+ */
+function checkWeeklyBands(
+  structure: ProgramStructure,
+  category: PasCategory,
+  opts: WeeklyBandOptions,
+  out: Failure[],
+  deviations: Deviation[],
+): void {
+  if (!weeklyBandFor(category, opts.experience, 'chest', structure.daysPerWeek)) return;
+  const deloads = deloadWeeks(structure.weeks);
+  for (let w = 0; w < structure.weeks; w++) {
+    const isDeload = deloads.includes(w);
+    const rows = weekDays(structure, w).flatMap((d) =>
+      d.main.flatMap((e) => {
+        const m = !isCardio(e) && e.catalogKey && typeof e.sets === 'number' ? opts.muscles(e.catalogKey) : null;
+        return m ? [{ sets: e.sets as number, primaryMuscleIds: m.primaryMuscleIds, muscleIds: m.muscleIds }] : [];
+      }),
+    );
+    const sets = weeklyMuscleSets(rows);
+    for (const group of VOLUME_GROUPS) {
+      const band = weeklyBandFor(category, opts.experience, group, structure.daysPerWeek);
+      if (!band) continue;
+      const floor = isDeload || !opts.trainable?.has(group) ? 0 : band.min;
+      const got = sets[group];
+      const issue =
+        got > band.max
+          ? { code: 'weekly_volume_ceiling' as const, message: `week ${w + 1}: ${got} sets of ${group} is past ${category}'s ${band.max} a week` }
+          : got < floor
+            ? { code: 'weekly_volume_floor' as const, message: `week ${w + 1}: ${got} sets of ${group} is under ${category}'s ${floor} a week` }
+            : null;
+      if (!issue) continue;
+      if (opts.enforce) out.push({ ...issue, weekIndex: w });
+      else deviations.push({ ...issue, weekIndex: w, group });
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
 // WALKING
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -350,6 +427,8 @@ export interface ValidateOptions {
   /** Movement pattern by key, for the compound count. Missing is treated as not-a-compound. */
   patternOf: (key: string) => string | undefined;
   category: PasCategory;
+  /** Also hold every week's sets per muscle to the weekly bands (PB-4). Omitted = not checked, as before. */
+  weekly?: WeeklyBandOptions;
 }
 
 /**
@@ -365,6 +444,7 @@ export function validateProgram(structure: ProgramStructure, opts: ValidateOptio
   checkCatalogue(structure, opts.knownKeys, failures);
   checkStructure(structure, failures);
   checkPolicy(structure, opts.category, opts.patternOf, failures, deviations);
+  if (opts.weekly) checkWeeklyBands(structure, opts.category, opts.weekly, failures, deviations);
 
   return { ok: failures.length === 0, failures, deviations };
 }
