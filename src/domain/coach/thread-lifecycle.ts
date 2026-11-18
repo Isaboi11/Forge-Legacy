@@ -128,6 +128,10 @@ export function clearsOnUnmount(exit: Exit | null): boolean {
 export interface ThreadPlace {
   mode: ChatMode | null;
   constraints: ChatState;
+  /** Sprint 4b §1.5 (lane B): this chat's row in `holt_chats`, made at its first athlete line. */
+  chatId?: string;
+  /** Sprint 4b §1.2 (lane A): the rolling recap of the turns older than the ask's window. */
+  recap?: { text: string; through: number };
 }
 
 const MODES: readonly ChatMode[] = ['program', 'day', 'pick'];
@@ -136,12 +140,18 @@ const MODES: readonly ChatMode[] = ['program', 'day', 'pick'];
 export function readThreadPlace(raw: string | null | undefined): ThreadPlace | null {
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as { mode?: unknown; constraints?: unknown };
+    const parsed = JSON.parse(raw) as { mode?: unknown; constraints?: unknown; chatId?: unknown; recap?: unknown };
     if (!parsed || typeof parsed !== 'object') return null;
     const mode = MODES.includes(parsed.mode as ChatMode) ? (parsed.mode as ChatMode) : null;
     const c = parsed.constraints;
     const constraints = c && typeof c === 'object' && !Array.isArray(c) ? (c as ChatState) : {};
-    return { mode, constraints };
+    const place: ThreadPlace = { mode, constraints };
+    if (typeof parsed.chatId === 'string' && parsed.chatId.length > 0 && parsed.chatId.length <= 64) place.chatId = parsed.chatId;
+    const r = parsed.recap as { text?: unknown; through?: unknown } | null | undefined;
+    if (r && typeof r === 'object' && typeof r.text === 'string' && r.text.trim() && Number.isInteger(r.through) && (r.through as number) > 0) {
+      place.recap = { text: r.text, through: r.through as number };
+    }
+    return place;
   } catch {
     return null;
   }

@@ -41,11 +41,18 @@ const SUMMARY_FAILED = new Set(['upstream_error', 'upstream_unreachable', 'faile
  * `options.signal` — abort it (the chat is gone with the app, say) and the call stops; `timeoutMs` is for tests.
  * Never throws, and never shows anything: a failure is reported to `client_errors` / Sentry (PL-4) and that is all.
  */
-export async function summarizeChat(turns: readonly AskTurn[], options: { signal?: AbortSignal; timeoutMs?: number } = {}): Promise<void> {
-  if (turns.filter((t) => t.role === 'athlete').length < SUMMARY_MIN_ATHLETE_TURNS) return;
+/** Sprint 4b §1.6: what the end-of-chat call kept — the summary text (for the past-chat row) and how many facts. */
+export interface SummarizeResult {
+  summary: string | null;
+  kept: number;
+}
+
+export async function summarizeChat(turns: readonly AskTurn[], options: { signal?: AbortSignal; timeoutMs?: number } = {}): Promise<SummarizeResult> {
+  const none: SummarizeResult = { summary: null, kept: 0 };
+  if (turns.filter((t) => t.role === 'athlete').length < SUMMARY_MIN_ATHLETE_TURNS) return none;
   /* A summary is written by the model, so it is sharing too — but nobody tapped anything, so it never asks:
      without a yes already given, the chat simply is not remembered (MHMDA / Nevada SB 370). */
-  if (!consentAllowsNow('ai_sharing')) return;
+  if (!consentAllowsNow('ai_sharing')) return none;
   const ms = options.timeoutMs ?? SUMMARY_TIMEOUT_MS;
   /* One wall for the whole call: the session, the request and the reply (`askClock`, the ask's own clock). */
   const clock = askClock({ firstByteMs: ms, idleMs: ms, totalMs: ms, signal: options.signal });
@@ -54,7 +61,7 @@ export async function summarizeChat(turns: readonly AskTurn[], options: { signal
   try {
     const { data: auth } = await clock.race(supabase.auth.getSession());
     const jwt = auth.session?.access_token;
-    if (!jwt) return;
+    if (!jwt) return none;
     const res = await clock.race(
       fetch(FUNCTION_URL, {
         method: 'POST',
@@ -66,7 +73,7 @@ export async function summarizeChat(turns: readonly AskTurn[], options: { signal
     status = res.status;
     const body = (await clock.race(res.json()).catch(() => null)) as { reason?: unknown; upstream?: unknown } | null;
     const reason = typeof body?.reason === 'string' ? body.reason : null;
-    if (res.ok && !(reason && SUMMARY_FAILED.has(reason))) return;
+    if (res.ok && !(reason && SUMMARY_FAILED.has(reason))) return none;
     const why = reason ?? `http_${res.status}`;
     reportAiFailure({
       fn: 'coach-ask',
@@ -90,6 +97,7 @@ export async function summarizeChat(turns: readonly AskTurn[], options: { signal
   } finally {
     clock.done();
   }
+  return none;
 }
 
 export interface ChatSummary {
