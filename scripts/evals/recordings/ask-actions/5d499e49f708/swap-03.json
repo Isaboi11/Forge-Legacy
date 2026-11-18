@@ -1,0 +1,93 @@
+{
+  "caseId": "swap-03",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:05:48.582Z",
+  "reply": {
+    "text": "Bands work fine for rows. Anchor the band at chest height, set your feet so there's tension at the start, and pull to your lower ribs with your shoulder blades squeezing back. Since a band gets harder as it stretches, take 2 to 3 seconds on the way back and pause at the end of each rep to keep the work honest. If the band feels too light, step back or double it up.\n\nI can swap it in for today's session if you tell me which band row you want it to read as. Bands work for rows: anchor at chest height, step back until there's tension at the start, pull to your lower ribs, and take 2 to 3 seconds coming back. I've set up the swap to band rows for today, so check the card and confirm it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "swap_exercise_today"
+    ],
+    "actions": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "cable rows",
+          "to": "band rows"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "cable rows",
+          "to": "band rows"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 225,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 225,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 510,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 510,
+          "output_tokens": 79,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 79,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

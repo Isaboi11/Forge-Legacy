@@ -1,0 +1,79 @@
+{
+  "caseId": "S0031",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:09:39.229Z",
+  "reply": {
+    "text": "I'll pull your bench history and where you are in your program first. Nothing's logged for bench yet and you don't have a program running, so I'm working from general principles.\n\nA bigger bench comes down to three things. Bench heavy two to three times a week, with one day heavier and low-rep and one lighter with more volume. Add 10 to 15 hard sets a week for chest, shoulders and triceps, including rows and upper-back work, because a strong back gives you a stable base to press from. Then progress it slowly: add a rep or a little weight when your top sets feel solid, and ease off when the bar speed stalls.\n\nTell me how many days you can train and how long you've been lifting, and I'll have the app build it around your bench. If you want, say \"build me a bench program\" and I'll set it up.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_program_status",
+      "get_goals"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 206,
+          "output_tokens": 144,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 144,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 473,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 473,
+          "output_tokens": 233,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 233,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
