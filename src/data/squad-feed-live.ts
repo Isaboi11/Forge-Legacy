@@ -11,6 +11,7 @@ import type { WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import type { TemplateExercise } from '@/data/templates-live';
 import { isMilestoneCard, type MilestoneCard } from '@/domain/share/milestone-card';
 import { parseStoryFacts, type StoryFacts } from '@/domain/squad/week-story';
+import { buildCommentPreviews, type CommentPreview, type PreviewCommentRow } from '@/domain/squad/comment-preview';
 import { timeAgoAt } from '@/domain/text/time-ago';
 
 /**
@@ -1163,6 +1164,42 @@ export async function fetchMyReactionKinds(postIds: readonly string[]): Promise<
     out[r.post_id] = ((r.kind ?? 'respect') as AckKind);
   }
   return out;
+}
+
+/**
+ * The newest comments on each of these posts, for the feed's inline preview (PO 2026-11-18).
+ *
+ * ⚠ ONE QUERY FOR THE WHOLE PAGE, read here rather than added to `squad_feed` — the same reason
+ * `fetchMyReactionKinds` gives: widening that RPC's OUT columns is a drop-and-recreate, and rebuilding a
+ * function body from an older copy has cost this schema features three times. It reads the same table,
+ * through the same RLS (members only, blocks applied — 0171), as the thread itself, so the preview can
+ * never show a comment the thread would not.
+ *
+ * Newest first with a ceiling, then grouped and trimmed to two per post by `buildCommentPreviews`. A squad
+ * is capped at 50 and a page is a handful of posts, so the ceiling is a guard, not a budget.
+ *
+ * Silent on failure: a missing preview must never stop the feed from drawing — the count still shows.
+ */
+export async function fetchCommentPreviews(postIds: readonly string[]): Promise<Record<string, CommentPreview>> {
+  if (!postIds.length) return {};
+  const { data, error } = await supabase
+    .from('squad_post_comments')
+    .select('id, post_id, body, created_at, author_id, profiles(name)')
+    .in('post_id', postIds as string[])
+    .order('created_at', { ascending: false })
+    .limit(400);
+  if (error || !data) return {};
+  const rows: PreviewCommentRow[] = (
+    data as unknown as { id: string; post_id: string; body: string | null; created_at: string; author_id: string; profiles: { name: string | null } | null }[]
+  ).map((c) => ({
+    id: String(c.id),
+    postId: c.post_id,
+    body: c.body ?? '',
+    createdAt: c.created_at,
+    authorId: c.author_id,
+    authorName: c.profiles?.name ?? 'Athlete',
+  }));
+  return buildCommentPreviews(rows);
 }
 
 /**
