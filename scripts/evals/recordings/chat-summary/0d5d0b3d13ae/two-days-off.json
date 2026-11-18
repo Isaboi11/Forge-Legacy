@@ -1,0 +1,26 @@
+{
+  "caseId": "two-days-off",
+  "promptHash": "0d5d0b3d13ae16b82a4cb63dac3fc0ffb4fbfae2b446243f555cebf78eff9dc4",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T22:34:13.088Z",
+  "reply": {
+    "text": "{\"summary\": \"You told Holt you can no longer train on Tuesdays or Thursdays, and that weekends are open. Holt will plan your sessions around those days.\", \"facts\": [{\"kind\": \"schedule\", \"text\": \"Cannot train Tuesdays or Thursdays\"}, {\"kind\": \"schedule\", \"text\": \"Weekends are open for training\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 103,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 120,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

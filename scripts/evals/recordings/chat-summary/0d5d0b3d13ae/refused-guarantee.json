@@ -1,0 +1,26 @@
+{
+  "caseId": "refused-guarantee",
+  "promptHash": "0d5d0b3d13ae16b82a4cb63dac3fc0ffb4fbfae2b446243f555cebf78eff9dc4",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T22:34:01.526Z",
+  "reply": {
+    "text": "{\"summary\":\"You asked for a guarantee that you would lose 20 lbs by summer; Holt declined to guarantee it and offered to build a fat-loss plan instead. [Note: no plan was saved in the app.]\",\"facts\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 112,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 80,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

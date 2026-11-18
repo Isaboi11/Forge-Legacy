@@ -67,7 +67,25 @@ export function keepFact(fact: { kind?: unknown; text?: unknown }): KeptFact | n
   const kind: FactKind = (FACT_KINDS as readonly string[]).includes(fact.kind as string) ? (fact.kind as FactKind) : 'other';
   if (factIsPersonalHealth(text)) return null;
   if (kind === 'avoid' && FACT_AVOID_REASON.test(text)) return null;
+  // A fact lasts: "this week", "today", "for now" is a one-off, not a memory (memory eval 11-18: "Hotel gym … this week").
+  if (FACT_ONE_OFF.test(text)) return null;
   return { kind, text };
+}
+
+/** Words that make a line a one-off rather than a lasting fact. */
+const FACT_ONE_OFF = /\b(?:today|tonight|tomorrow|this (?:week|weekend|morning|afternoon|evening|month)|next week|right now|for now|at the moment|currently traveling|on vacation)\b/i;
+
+/**
+ * What a fact is ABOUT, for duplicates: "Hates burpees", "Avoid burpees" and "No burpees" are one fact (memory eval
+ * 11-18 kept "Avoid burpees" beside a stored "Hates burpees"). Lower-case, punctuation gone, the leading verb dropped.
+ */
+export function factSubject(text: string): string {
+  return String(text ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/^(?:really |strongly )?(?:hates?|loves?|likes?|dislikes?|enjoys?|prefers?|wants?|avoid|avoids|no|never|doesn t (?:like|want|do)|does not (?:like|want|do)|not a fan of|can t stand)\s+/, '')
+    .trim();
 }
 
 /** One line, as `holt_notes` holds it (0204: varchar(80), ≥ 2 after trim). */
@@ -220,7 +238,7 @@ export function parseMemorySummary(raw: unknown): { summary: string; facts: { ki
 
 /**
  * Which proposed facts to WRITE: each through `keepFact` and the caller's `stops` (the medical guard + the scan), then
- * no duplicate of what is kept or of each other (case-insensitive), at most `FACTS_PER_CHAT`, and only as many as fit
+ * no duplicate of what is kept or of each other (by subject — `factSubject`), at most `FACTS_PER_CHAT`, and only as many as fit
  * under the cap (`room`). Order is the model's.
  */
 export function factsToKeep(
@@ -229,7 +247,7 @@ export function factsToKeep(
   room: number,
   stops: (text: string) => boolean,
 ): KeptFact[] {
-  const key = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const key = factSubject;
   const seen = new Set(kept.map((k) => key(String(k ?? ''))));
   const out: KeptFact[] = [];
   for (const p of proposed) {

@@ -216,3 +216,14 @@ test('withEarlier: the recap takes the opener placeholder’s place, or leads th
   assert.equal(withEarlier(athlete, ''), athlete);
   assert.deepEqual(athlete, [{ role: 'user', content: 'hi' }, { role: 'assistant', content: 'Hey.' }]);
 });
+
+test('memory eval 11-18: a one-off is not a fact, and "Avoid burpees" beside "Hates burpees" is a duplicate', async () => {
+  const { factSubject } = await import('../holt-memory.ts');
+  for (const t of ['Hotel gym with dumbbells only this week', '30 minutes per session this week', 'Legs today', 'Nothing overhead for now', 'Traveling next week']) {
+    assert.equal(keepFact({ kind: 'gym', text: t }), null, t);
+  }
+  assert.equal(factSubject('Hates burpees'), 'burpees');
+  assert.equal(factSubject('Avoid burpees.'), 'burpees');
+  assert.equal(factSubject("Doesn't like burpees"), 'burpees');
+  assert.deepEqual(factsToKeep([{ kind: 'avoid', text: 'Avoid burpees' }, { kind: 'other', text: 'Left-handed' }], ['Hates burpees'], 20, stops).map((f) => f.text), ['Left-handed']);
+});

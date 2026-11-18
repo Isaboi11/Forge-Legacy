@@ -3127,7 +3127,18 @@ export function keepFact(fact: {
         return null;
     if (kind === 'avoid' && FACT_AVOID_REASON.test(text))
         return null;
+    if (FACT_ONE_OFF.test(text))
+        return null;
     return { kind, text };
+}
+const FACT_ONE_OFF = /\b(?:today|tonight|tomorrow|this (?:week|weekend|morning|afternoon|evening|month)|next week|right now|for now|at the moment|currently traveling|on vacation)\b/i;
+export function factSubject(text: string): string {
+    return String(text ?? '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/^(?:really |strongly )?(?:hates?|loves?|likes?|dislikes?|enjoys?|prefers?|wants?|avoid|avoids|no|never|doesn t (?:like|want|do)|does not (?:like|want|do)|not a fan of|can t stand)\s+/, '')
+        .trim();
 }
 export const FACT_MAX_CHARS = 80;
 export const FACT_MIN_CHARS = 2;
@@ -3240,7 +3251,7 @@ export function factsToKeep(proposed: readonly {
     kind?: unknown;
     text?: unknown;
 }[], kept: readonly string[], room: number, stops: (text: string) => boolean): KeptFact[] {
-    const key = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const key = factSubject;
     const seen = new Set(kept.map((k) => key(String(k ?? ''))));
     const out: KeptFact[] = [];
     for (const p of proposed) {
