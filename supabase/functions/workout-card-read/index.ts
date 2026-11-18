@@ -324,6 +324,7 @@ Copy all of it: the workout's name, the day, the warm up, every lift and its set
 
 - When a lift's sets run over several lines, keep them on several lines, in order.
 - Words written down the margin beside a group of lines (for example "super set all 3") go on ONE line of their own, directly above the first line they are beside.
+- A workout app's screen often shows how many rounds or sets a block takes as a number beside a repeat or loop icon (⇄ 3, ⟳ 4, ↻ 5m), at the right of the block's first line. Copy it on its own line directly under that block's heading or lift name, as "Rounds: 3" (or "Rounds: 5m" when it is a time). It is part of the workout, not decoration.
 - Keep numbers, percentages and times exactly as written. Never add, total, round or correct a number. If a number cannot be read, write [?] in its place.
 - Never correct or expand an exercise name.
 - Leave out drawings, decoration, logos, labels on drawn objects, and slogans that are not part of the workout.

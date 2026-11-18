@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-23",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:15:34.930Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PRESSURE COOKER\"\nDay: 23  Wednesday 10-23-24\n\nWarm Up: Check yourself, cause we are about to stare ADVERSITY right in the face. Hit some build up squat sets. 3 reps @ 65%, 75%\n\n1. BACK SQUAT 80%\nPerform as many SETS of 2 reps as possible in a 10 minute window of time\nRecord how many SETS you got here 9\n335LBS\n*Please read caption.\n\n2. BENCH PRESS = same warm up and same pressure cooker as the squat.\nRecord how many SETS you got here 11\n265LBS\n\n3. BB Bent Over Rows 5 sets of 5 reps\n2min rest between sets\n\nCardio\nsuper set\na. DB Laterals 4x15 reps\nb. Ez Bar/or BB Skullcrushers 4x15reps\nc. DB Rear Laterals 4x15 reps\n2min rest between each superset\n\nRecovery\nFried Chicken\nMashed tators\n30 min walk\nDeep heavy\nSleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PRESSURE COOKER\"\nWarm up: Check yourself, cause we are about to stare ADVERSITY right in the face. Hit some build up squat sets.\nBack Squat warm up sets: 3 reps @ 65%, 3 reps @ 75%\n1. Back Squat 1 set of 2 reps @ 80%\n* Perform as many sets of 2 reps as possible in a 10 minute window of time\n* Please read caption.\nBench Press warm up sets: 3 reps @ 65%, 3 reps @ 75%\n2. Bench Press 1 set of 2 reps @ 80%\n* Perform as many sets of 2 reps as possible in a 10 minute window of time\n3. BB Bent Over Rows 5 sets of 5 reps\nrest 2:00\n4. a. DB Laterals 4 sets of 15 reps\nsuper set b. Ez Bar Skullcrushers 4 sets of 15 reps\n* Or BB\nsuper set c. DB Rear Laterals 4 sets of 15 reps\nrest 2:00 between each super set\nRecovery: Fried Chicken · Mashed tators · 30 min walk · Deep heavy · Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4528,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 355,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 378,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 399,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

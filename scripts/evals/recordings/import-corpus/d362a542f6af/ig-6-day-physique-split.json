@@ -1,0 +1,36 @@
+{
+  "caseId": "ig-6-day-physique-split",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:13:04.619Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "6-DAY PHYSIQUE\nTRANSFORMATION SPLIT\n\nDAY 1\nCHEST + TRICEPS\nBench Press 3 × 8-12\nIncline DB Press 3 × 10\nChest Fly 3 × 12\nTricep Pushdown 3 × 12\nOH Tricep Extension 3 × 10\nPush-ups 2 sets\n\nDAY 2\nBACK + BICEPS\nLat Pulldown 3 × 10\nSeated Cable Row 3 × 10\nOne-arm DB Row 3 × 10\nBarbell Curl 3 × 12\nHammer Curl 3 × 12\nDead Hang 2 sets\n\nDAY 3\nLEGS\nSquats 4 × 8\nLeg Press 3 × 10\nLeg Curl 3 × 12\nLeg Extension 3 × 12\nCalf Raises 4 × 15\n\nDAY 4\nSHOULDERS + ABS\nShoulder Press 3 × 10\nLateral Raises 3 × 12\nFront Raises 3 × 12\nShrugs 3 × 15\nCrunches 3 × 20\nLeg Raises 3 × 15\nPlank 3 × 30 sec\n\nDAY 5\nCHEST + BACK\nIncline Bench Press 3 × 10\nLat Pulldown 3 × 10\nDumbbell Press 3 × 10\nCable Row 3 × 10\nPush-ups 2 sets\n\nDAY 6\nARMS + ABS\nBarbell Curl 3 × 10\nHammer Curl 3 × 12\nTricep Dips 3 × 10\nRope Pushdown 3 × 12\nRussian Twists 3 × 20\nPlank 3 × 45 sec\n\nDAY 7\nREST DAY\nWALKING OR CYCLING\nSTRETCHING\nSTAY\nSLEEP"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1517,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 634,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

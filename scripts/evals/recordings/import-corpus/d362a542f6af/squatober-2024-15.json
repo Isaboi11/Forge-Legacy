@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-15",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:14:38.896Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"BORING SIMPLE STRENGTH\"\nBill Starr Tribute\nDay:15  Tuesday 10-15-24\n\nWarm Up: Take a couple minutes and\nlearn about Bill Starr. 5 x 5\n\n1. BACK SQUAT\n5 reps @ 67%, 70%, 73%, 75%, 77%\n2 to 2½ min rest between sets\n\n2. BENCH PRESS  5 sets of 5 reps\nsame %'s as the above squats\nsame rest\n\n3. BB BENT OVER ROWS  5 sets of 5reps\n2 min rest\n\nCardio\nDB RDL's\n5 sets of 5 reps\n2min rest between sets\n\nRecovery\nChicken Casserole\nextra helping\n30 min walk\n8-9 hrs sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Boring Simple Strength\"\nWarm up: Take a couple minutes and learn about Bill Starr.\n1. Back Squat 5,5,5,5,5 reps @ 67%, 70%, 73%, 75%, 77%\nrest 2:30\n2. Bench Press 5,5,5,5,5 reps @ 67%, 70%, 73%, 75%, 77%\nrest 2:30\n3. BB Bent Over Rows 5 sets of 5 reps\nrest 2:00\n4. DB RDL's 5 sets of 5 reps\n* Cardio\nrest 2:00\nRecovery: Chicken Casserole, extra helping · 30 min walk · 8-9 hrs sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 265,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 288,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 238,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}
