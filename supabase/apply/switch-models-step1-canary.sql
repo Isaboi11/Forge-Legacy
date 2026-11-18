@@ -11,7 +11,7 @@
 --   coach-kitchen  Sonnet 5 → Haiku 5.5   kitchen eval 34/36 = 34/36; 0 real allergen ingredients in a shown dish on
 --                                         either (each "leak" is a dish NAME like "Sesame-Free …"); ~1/19 the price
 --   coach-ask      Sonnet 5 → Sonnet 5.5  Holt's chat on ITS OWN request (ask-safety, new — chat-safety measures
---                                         coach-interpret): 676/704 vs 625/704; must-stop lines let through 6 vs 28,
+--                                         coach-interpret): 677/704 vs 626/704; must-stop lines let through 5 vs 27,
 --                                         none Sonnet 5 stopped lost; same list price, cheaper cache reads (run $1.56 vs
 --                                         $1.75). Refusal fallback on (Sonnet 5.5 → Sonnet 5 on a cyber/frontier decline).
 -- Everyone else keeps Sonnet 5 (the row's `model`); an operator (a row in app_admins) gets the `canary_model`.
@@ -42,7 +42,7 @@ end $$;
 insert into public.coach_ai_model_config (fn, model, effort, canary_model, canary_effort, canary, note) values
   ('coach-author',  'claude-sonnet-5', 'low', 'claude-haiku-5-5', 'low', 'operators', 'PL-7 step 1, PO 11-18: author eval 130/130 = 130/130'),
   ('coach-kitchen', 'claude-sonnet-5', 'low', 'claude-haiku-5-5', 'low', 'operators', 'PL-7 step 1, PO 11-18: kitchen eval 34/36 = 34/36, 0 real leaks'),
-  ('coach-ask',     'claude-sonnet-5', 'low', 'claude-sonnet-5-5', 'low', 'operators', 'PL-7 step 1, PO 11-18: ask-safety 676/704 vs 625/704')
+  ('coach-ask',     'claude-sonnet-5', 'low', 'claude-sonnet-5-5', 'low', 'operators', 'PL-7 step 1, PO 11-18: ask-safety 677/704 vs 626/704')
 on conflict (fn) do update
   set model = excluded.model, effort = excluded.effort, canary_model = excluded.canary_model,
       canary_effort = excluded.canary_effort, canary = excluded.canary, note = excluded.note, updated_at = now();
