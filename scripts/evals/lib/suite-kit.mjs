@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 import { constantString, constantText } from './prompt-hash.mjs';
+import { anthropicHeaders, requestFields } from '../../../src/domain/ai/model-request.ts';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -58,7 +59,8 @@ export async function callAnthropic({ apiKey, signal, model, system, messages, m
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       signal,
-      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      // The functions' own headers (model-request.ts): the refusal fallback's beta header rides exactly when the body has it.
+      headers: anthropicHeaders(apiKey, extra),
       body: JSON.stringify({ model, max_tokens: maxTokens, system: cacheSystem ? cachedSystem(system) : system, messages, ...extra }),
     });
   /* A dropped connection ("fetch failed") once ended a whole 1,158-case run (11-17). One retry after a pause; a second
@@ -81,7 +83,9 @@ export async function callAnthropic({ apiKey, signal, model, system, messages, m
   }
   const j = await res.json();
   const text = (j.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('');
-  return { reply: { text, stop_reason: j.stop_reason ?? null }, usage: j.usage ?? null };
+  // `model` = who answered (a refusal fallback answers as another model, PL-7); kept only when it differs, so a
+  // recording of an ordinary answer is byte-for-byte what it was.
+  return { reply: { text, stop_reason: j.stop_reason ?? null, ...(j.model && j.model !== model ? { answeredBy: j.model } : {}) }, usage: j.usage ?? null };
 }
 
 /** Per-call estimate: input + output tokens at a model's list price (USD per million). */
@@ -106,27 +110,24 @@ export const FUNCTION_KNOBS = {
 /**
  * ══ THE SAME KNOBS, AS ANOTHER MODEL TAKES THEM (Sprint 3, PL-7 — `run.mjs --model`) ══
  *
- * A comparison only means something if each model gets the function's settings in the form that model accepts
- * (claude-api skill, models table, 11-17):
- *   · Sonnet 5.5 — `thinking: disabled` is a 400; thinking off is `{ type: 'between_tools' }` (effort high or below).
- *   · Opus 5.5 — thinking cannot be turned off at any effort; it runs adaptive, held down by effort `low`.
- *   · Haiku 5.5 — `disabled` is accepted at effort high or below, so the function's own knobs stand.
- *   · Haiku 4.5 — takes neither `effort` nor the disabled form (coach-interpret's own HAIKU branch): both dropped.
- * Everything else (Sonnet 5, the functions' model today) gets the knobs unchanged.
+ * A comparison only means something if each model gets the function's settings in the form that model accepts. Since
+ * Sprint 3b the functions build those fields with src/domain/ai/model-request.ts, and so does the harness — one table,
+ * so the eval can never send a model something the function would not (Sonnet 5.5 `between_tools`, Opus 5.5 no
+ * thinking field, Haiku 4.5 no effort, the refusal fallback on Sonnet 5.5 / Opus 5.5).
+ * `base` is a FUNCTION_KNOBS entry (plus `output_config.format` where the function sends a schema).
+ * ⚠ The refusal fallback (`fallbacks: "default"`) is OFF here unless asked for: it needs its beta header, which
+ * callAnthropic adds but a suite's own fetch (import-corpus) does not. A recording made without it differs from the
+ * function only when the model refuses — and then the case fails, never passes.
  */
-export function knobsFor(model, base) {
-  const k = { ...base, ...(base.output_config ? { output_config: { ...base.output_config } } : {}) };
-  const m = String(model ?? '');
-  if (m.startsWith('claude-sonnet-5-5') && k.thinking?.type === 'disabled') k.thinking = { type: 'between_tools' };
-  if (m.startsWith('claude-opus-5-5') && k.thinking?.type === 'disabled') delete k.thinking;
-  if (m.startsWith('claude-haiku-4-5')) {
-    delete k.thinking;
-    if (k.output_config) {
-      delete k.output_config.effort;
-      if (!Object.keys(k.output_config).length) delete k.output_config;
-    }
-  }
-  return k;
+export function knobsFor(model, base, { fallback = false } = {}) {
+  const t = base?.thinking?.type;
+  return requestFields(model, {
+    thinkingOff: t === 'disabled',
+    adaptive: t === 'adaptive',
+    effort: base?.output_config?.effort ?? null,
+    format: base?.output_config?.format,
+    fallback,
+  });
 }
 
 /** The system block as every function sends it: one text block, cached (the variable part is in the user turn). */
