@@ -2,7 +2,7 @@
   "caseId": "bridger-logan-w6e",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:17:45.697Z",
+  "recordedAt": "2026-11-18T14:27:12.111Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
@@ -10,6 +10,13 @@
         "body": {
           "ok": true,
           "text": "(Optional) Stairmaster\n3 min\n\nCIRCUIT\nRounds: 2\nWarmup\n30s 90/90 Stretch\n30s DB Reverse Lunge\n30s DB Squat\n30s DB Staggered-Stance Rom deadlift\n\nConventional Deadlift\nRounds: 5\n5-5-5-5-5 reps\n\nBarbell Hip Thrust\nRounds: 4\n8-8-8-8 reps\n\nCIRCUIT\nRounds: 4\nHIIT\n20 Wall Balls\n1m Assault Bike\n20 Ball Slams\n20s DB Suitcase Carry\n20 V Ups"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Circuit\"\nWarm up: (Optional) Stairmaster 3 min\n1. 90/90 Stretch 2 sets\n* 30s, part of warmup circuit, 2 rounds\n2. Dumbbell Reverse Lunge 2 sets\n* 30s, part of warmup circuit, 2 rounds\n3. Dumbbell Squat 2 sets\n* 30s, part of warmup circuit, 2 rounds\n4. Dumbbell Staggered-Stance RDL 2 sets\n* 30s, part of warmup circuit, 2 rounds\n5. Conventional Deadlift 5 sets of 5 reps\n6. Barbell Hip Thrust 4 sets of 8 reps\n7. a. Wall Balls 4 sets of 20 reps\nsuper set b. Assault Bike 4 sets\n* 1m, part of HIIT circuit\nsuper set c. Ball Slams 4 sets of 20 reps\nsuper set d. Dumbbell Suitcase Carry 4 sets\n* 20s, part of HIIT circuit\nsuper set e. V Ups 4 sets of 20 reps"
         }
       }
     }
@@ -26,6 +33,23 @@
       "output_tokens": 221,
       "output_tokens_details": {
         "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 244,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 607,
+      "output_tokens_details": {
+        "thinking_tokens": 230
       },
       "service_tier": "standard",
       "inference_geo": "global",

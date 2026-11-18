@@ -2,7 +2,7 @@
   "caseId": "bridger-logan-w4b",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:17:11.080Z",
+  "recordedAt": "2026-11-18T14:25:36.255Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
@@ -10,6 +10,13 @@
         "body": {
           "ok": true,
           "text": "(Optional) Stairmaster\n3 min\n\nCIRCUIT\nRounds: 2\nWarmup\n30s  90/90 Stretch\n30s  DB Reverse Lunge\n30s  DB Squat\n30s  DB Staggered-Stance Rom deadlift\n\nBarbell Squat\nRounds: 5\n5-5-5-5-5 reps\n\nRomanian Deadlift\nRounds: 4\n8-8-8-8 reps\n\nDB Bulgarian Split Squat\nRounds: 3\n16-16-16 reps\n\nLying Hamstring Curl Machine\nRounds: 3\n12-12-12 reps\n\nCalf raise\nRounds: 3\n15-15-15 reps\n\nCIRCUIT\nRounds: 3\nCore Finisher\n24  Alt DB Sit Ups\n24  KB Russian Twists"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "Warm up: (Optional) Stairmaster 3 min\n* CIRCUIT Rounds: 2 Warmup — 30s 90/90 Stretch, 30s DB Reverse Lunge, 30s DB Squat, 30s DB Staggered-Stance RDL\n\n1. Barbell Squat 5 sets of 5 reps\n\n2. Romanian Deadlift 4 sets of 8 reps\n\n3. DB Bulgarian Split Squat 3 sets of 16 reps\n\n4. Lying Hamstring Curl Machine 3 sets of 12 reps\n\n5. Calf Raise 3 sets of 15 reps\n\n* CIRCUIT Rounds: 3 Core Finisher — 24 Alt DB Sit Ups, 24 KB Russian Twists"
         }
       }
     }
@@ -26,6 +33,23 @@
       "output_tokens": 286,
       "output_tokens_details": {
         "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 309,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 683,
+      "output_tokens_details": {
+        "thinking_tokens": 417
       },
       "service_tier": "standard",
       "inference_geo": "global",

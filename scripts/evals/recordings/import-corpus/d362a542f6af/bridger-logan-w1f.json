@@ -2,7 +2,7 @@
   "caseId": "bridger-logan-w1f",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:16:35.988Z",
+  "recordedAt": "2026-11-18T14:23:47.760Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
@@ -10,6 +10,13 @@
         "body": {
           "ok": true,
           "text": "CIRCUIT\nRounds: 8m\nAMRAP #1\n20    Pulse Squats\n20    DB Plank Pull Through\n10    DB half burpee row\nReverse Lunge, Hammer Curl, Press (Left)\n\nCIRCUIT\nRounds: 8m\nAMRAP #2\n10    Reverse Crunches\n10    Narrow Squat, hammer curl, front raise\n12    Narrow Stance Snatch\nReverse Lunge, Hammer Curl, Press (Right)"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Circuit\"\n1. Pulse Squats 20 reps\n* AMRAP #1, 8 min rounds\n2. DB Plank Pull Through 20 reps\n* AMRAP #1, 8 min rounds\n3. DB Half Burpee Row 10 reps\n* AMRAP #1, 8 min rounds\n4. Reverse Lunge, Hammer Curl, Press\n* Left, AMRAP #1, 8 min rounds\n5. Reverse Crunches 10 reps\n* AMRAP #2, 8 min rounds\n6. Narrow Squat, Hammer Curl, Front Raise 10 reps\n* AMRAP #2, 8 min rounds\n7. Narrow Stance Snatch 12 reps\n* AMRAP #2, 8 min rounds\n8. Reverse Lunge, Hammer Curl, Press\n* Right, AMRAP #2, 8 min rounds"
         }
       }
     }
@@ -26,6 +33,23 @@
       "output_tokens": 177,
       "output_tokens_details": {
         "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1024,
+      "output_tokens_details": {
+        "thinking_tokens": 714
       },
       "service_tier": "standard",
       "inference_geo": "global",

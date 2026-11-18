@@ -2,21 +2,21 @@
   "caseId": "squatober-2024-09",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:14:02.945Z",
+  "recordedAt": "2026-11-18T14:20:28.291Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"THIGHS and WINGS\"\nDay: 9  Wednesday 10-09-24\n\nWarm Up: Hit up 5 or more of your\nlifting buddies to meet you for some\nLEGs and BACK Strength Training.\n\nsuper set\n1. a. BACK SQUAT 5 sets of 5 reps @ 70%\nb. STRICT Pull Ups 5 sets of 2-5 reps\n2½ min rest between each super set\n* Full range of Motion*\n\nsuper set\n2. a. DB REVERSE LUNGES 3 sets of 5 reps\nb. BB BENT OVER ROW 3 sets of 10 reps\n2 min rest between each superset\n\nCardio\nsuper set\na. ONE Arm DB Row\n3x10 reps each arm\nb. DB/or KB Farmers walk\n3 sets of 40 yards\n90 sec rest between\neach superset\n\nRecovery\n30 min Walk\nPulled Pork\nsandwiches\nMac and Cheese\n8+ hrs of sleep"
+          "text": "\"THIGHS and WINGS\"\nDay: 9  Wednesday 10-09-24\n\nWarm Up: Hit up 5 or more of your lifting buddies to meet you for some LEGs and BACK Strength Training.\n\nsuper set\n1. a. BACK SQUAT 5 sets of 5 reps @ 70%\nb. STRICT Pull Ups 5 sets of 2-5 reps\n2½ min rest between each super set\n* Full range of Motion*\n\nsuper set\n2. a. DB REVERSE LUNGES 3 sets of 5 reps\nb. BB BENT OVER ROW 3 sets of 10 reps\n2 min rest between each superset\n\nCardio\nsuper set\na. ONE Arm DB Row\n3x10 reps each arm\nb. DB/or KB Farmers walk\n3 sets of 40 yards\n90 sec rest between each superset\n\nRecovery\n30 min Walk\nPulled Pork sandwiches\nMac and Cheese\n8+ hrs of sleep"
         }
       },
       "workout-tidy": {
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"THIGHS and WINGS\"\nWarm up: Hit up 5 or more of your lifting buddies to meet you for some LEGs and BACK Strength Training.\n1. a. Back Squat 5 sets of 5 reps @ 70%\nsuper set b. Strict Pull Ups 5 sets of 2-5 reps\n* Full range of Motion\nrest 2:30 between each super set\n2. a. Dumbbell Reverse Lunges 3 sets of 5 reps\nsuper set b. BB Bent Over Row 3 sets of 10 reps\nrest 2:00 between each super set\nCardio\n3. a. One Arm Dumbbell Row 3 sets of 10 reps\n* each arm\nsuper set b. Dumbbell Farmers walk 3 sets\n* 40 yards, or KB\nrest 1:30 between each super set\nRecovery: 30 min Walk · Pulled Pork sandwiches · Mac and Cheese · 8+ hrs of sleep"
+          "text": "\"THIGHS and WINGS\"\nWarm up: Hit up 5 or more of your lifting buddies to meet you for some LEGs and BACK Strength Training.\n1. a. Back Squat 5 sets of 5 reps @ 70%\nsuper set b. Strict Pull Ups 5 sets of 2-5 reps\n* Full range of Motion\nrest 2:30 between each super set\n2. a. Dumbbell Reverse Lunges 3 sets of 5 reps\nsuper set b. BB Bent Over Row 3 sets of 10 reps\nrest 2:00 between each super set\n3. a. One Arm Dumbbell Row 3 sets of 10 reps\n* each arm\nsuper set b. Dumbbell Farmers Walk\n* Or KB\n* 3 sets of 40 yards\nrest 1:30 between each super set\nRecovery: 30 min Walk · Pulled Pork sandwiches · Mac and Cheese · 8+ hrs of sleep"
         }
       }
     }
@@ -30,7 +30,7 @@
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 338,
+      "output_tokens": 334,
       "output_tokens_details": {
         "thinking_tokens": 0
       },
@@ -40,14 +40,14 @@
       "model": "claude-sonnet-5"
     },
     "workout-tidy": {
-      "input_tokens": 361,
+      "input_tokens": 357,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 1955,
       "cache_creation": {
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 328,
+      "output_tokens": 327,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

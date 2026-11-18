@@ -2,7 +2,7 @@
   "caseId": "squatober-2024-5-6",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:13:37.378Z",
+  "recordedAt": "2026-11-18T14:20:06.250Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
@@ -23,7 +23,7 @@
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 164,
+      "output_tokens": 167,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

@@ -133,12 +133,14 @@ test('a refusal keeps its name, and nothing else is asked', async () => {
   assert.deepEqual(calls, { 'workout-card-read': 1 });
 });
 
-test('a workout app\'s screen is read by code line for line — no AI layout asked, its rounds are the sets (Sprint 3b, IM-1)', async () => {
-  answers({ 'workout-card-read': [{ ok: true, text: APP.W6E_ROUNDS }] });
+test('a workout app\'s screen still gets the AI pass (PO 11-18); with no layout back it is read by code, never cut into days (Sprint 3b, IM-1)', async () => {
+  answers({ 'workout-card-read': [{ ok: true, text: APP.W6E_ROUNDS }], 'workout-tidy': [{ ok: false, reason: 'unavailable' }, 503] });
   const r = await readImportPhoto(photo(), resolveKey);
   assert.equal(r.kind, 'ok');
   assert.equal(r.via, 'card');
-  assert.deepEqual(calls, { 'workout-card-read': 1 }, 'the layout pass is not paid for when code reads every line');
+  assert.deepEqual(calls, { 'workout-card-read': 1, 'workout-tidy': 1 }, 'every photo is sent to the AI layout');
+  assert.equal(r.weeks[0].days.length, 1, 'one screen, one day');
+  assert.ok(r.checks.some((c) => /AI check didn’t run/.test(c)), 'and it says the AI check did not run');
   const items = r.weeks[0].days[0].items.filter((i) => !i.section);
   assert.equal(items[0].name, 'Conventional Deadlift');
   assert.deepEqual(items.slice(2).map((i) => i.sets), [4, 4, 4, 4, 4]);
@@ -151,4 +153,24 @@ test('two days printed side by side are a program sheet, read down each column (
   assert.equal(r.via, 'table');
   assert.deepEqual([r.weeks.length, r.weeks[0].days.length], [3, 4]);
   assert.deepEqual(calls, { 'workout-card-read': 1 });
+});
+
+test('the AI layout of an app screen is held to the screen: a number moved to the wrong lift throws it away (Sprint 3b, 11-18 run)', async () => {
+  answers({ 'workout-card-read': [{ ok: true, text: APP.W1E_CARD_1118 }], 'workout-tidy': [{ ok: true, text: APP.W1E_TIDY_1118 }] });
+  const r = await readImportPhoto(photo(), resolveKey);
+  assert.deepEqual(calls, { 'workout-card-read': 1, 'workout-tidy': 1 }, 'the AI pass ran');
+  const squat = r.weeks[0].days[0].items.find((i) => i.name === 'Heel Elevated DB Front Squat');
+  assert.deepEqual([squat.sets, squat.reps], [3, 10], 'the screen says Rounds: 3 / 10-10-10 — the layout wrote 4 sets');
+  assert.match(r.checks[0], /AI check changed a number/);
+});
+
+test('an AI layout that agrees with the screen is the one shown (Sprint 3b)', async () => {
+  const { readCircuitCard, circuitWorkout } = await import('@/domain/program/circuit-card');
+  const { rowsToWrittenText, writtenToTemplate } = await import('@/domain/workout/written-workout');
+  const cw = circuitWorkout(readCircuitCard(APP.W6E_ROUNDS));
+  const faithful = rowsToWrittenText({ name: 'Lower', how: cw.how, after: cw.after, rows: writtenToTemplate(cw, resolveKey) });
+  answers({ 'workout-card-read': [{ ok: true, text: APP.W6E_ROUNDS }], 'workout-tidy': [{ ok: true, text: faithful }] });
+  const r = await readImportPhoto(photo(), resolveKey);
+  assert.equal(r.text, faithful, 'the layout is kept');
+  assert.ok(!r.checks.some((c) => /AI check/.test(c)));
 });
