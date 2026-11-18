@@ -57,7 +57,9 @@ const rows = () => readJsonl('scripts/holt-corpus/corpus-safety.jsonl');
 
 export const suite = {
   name: 'chat-safety',
-  functions: ['coach-interpret', 'coach-ask'],
+  // coach-interpret only (Sprint 3b, PO 11-18): this suite sends coach-INTERPRET's request; coach-ask is gated by
+  // ask-safety, which sends coach-ask's own. (coach-ask's SYSTEM stays in promptSources so the recordings keep their hash.)
+  functions: ['coach-interpret'],
   promptSources: [
     { file: 'supabase/functions/coach-interpret/index.ts', exportName: 'SYSTEM' },
     { file: 'supabase/functions/coach-interpret/index.ts', exportName: 'MODEL' },

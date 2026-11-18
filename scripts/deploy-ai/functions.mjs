@@ -44,8 +44,9 @@ export const FUNCTIONS = {
       'src/domain/coach/__tests__/ask-wire.test.mjs',
       MEDICAL,
     ],
-    // ask-safety (Sprint 3b, PL-7): the safety corpus through coach-ask's OWN request — chat-safety sends coach-interpret's.
-    suites: ['chat-safety', 'ask-safety', 'chat-summary'],
+    // Sprint 3b (PO 11-18): ask-safety sends coach-ask's own request; chat-safety sends coach-interpret's and gates
+    // coach-interpret only. No bar lowered.
+    suites: ['ask-safety', 'chat-summary'],
   },
   'coach-interpret': {
     builder: 'scripts/build-coach-interpret-deploy.mjs',

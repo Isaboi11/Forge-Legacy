@@ -84,12 +84,24 @@ test('a refusal fallback answers as Sonnet 5: the meter prices the model that AN
   assert.equal(settles(log)[0].p_model, 'claude-sonnet-5');
 });
 
-test('a failed config read runs the in-code default — Sonnet 5, disabled, no fallback, no beta header', async (t) => {
+test('a failed config read runs the in-code default — Sonnet 5.5 (PO 11-18), between_tools, the fallback and its header', async (t) => {
   const log = newLog();
-  fakeNet(t, log, { config: () => new Response('{"message":"permission denied"}', { status: 401 }), reply: () => answer('Fine.', 'claude-sonnet-5') });
+  fakeNet(t, log, { config: () => new Response('{"message":"permission denied"}', { status: 401 }), reply: () => answer('Fine.', 'claude-sonnet-5-5') });
   const handler = await loadFunction(log, {}, ENV);
   const events = await ask(handler, 'how many sets should a beginner do');
   assert.ok(events.find((e) => e.done));
+  const r = log.requests[0];
+  assert.equal(r.model, 'claude-sonnet-5-5');
+  assert.deepEqual(r.thinking, { type: 'between_tools' });
+  assert.equal(r.fallbacks, 'default');
+  assert.equal(log.inits[0].headers['anthropic-beta'], 'server-side-fallback-2026-07-01');
+});
+
+test('the revert row (Sonnet 5) runs Sonnet 5 with its own settings — disabled, no fallback, no beta header', async (t) => {
+  const log = newLog();
+  fakeNet(t, log, { config: [{ model: 'claude-sonnet-5', effort: 'low', canary: false }], reply: () => answer('Fine.', 'claude-sonnet-5') });
+  const handler = await loadFunction(log, {}, ENV);
+  await ask(handler, 'how many sets should a beginner do');
   const r = log.requests[0];
   assert.equal(r.model, 'claude-sonnet-5');
   assert.deepEqual(r.thinking, { type: 'disabled' });
@@ -99,22 +111,22 @@ test('a failed config read runs the in-code default — Sonnet 5, disabled, no f
 
 test('no service key: no config read at all, the default runs (the pre-0274 behaviour)', async (t) => {
   const log = newLog();
-  fakeNet(t, log, { config: () => assert.fail('no read without the key'), reply: () => answer('Fine.', 'claude-sonnet-5') });
+  fakeNet(t, log, { config: () => assert.fail('no read without the key'), reply: () => answer('Fine.', 'claude-sonnet-5-5') });
   const handler = await loadFunction(log);
   await ask(handler, 'how many sets should a beginner do');
   assert.equal(log.configReads.length, 0);
-  assert.equal(log.requests[0].model, 'claude-sonnet-5');
+  assert.equal(log.requests[0].model, 'claude-sonnet-5-5', 'the in-code default');
 });
 
-test('a tapped web search never goes to a model without the web tool: config Haiku 5.5 → the search runs on Sonnet 5', async (t) => {
+test('a tapped web search never goes to a model without the web tool: config Haiku 5.5 → the search runs on the default, Sonnet 5.5', async (t) => {
   const log = newLog();
-  fakeNet(t, log, { config: [{ model: 'claude-haiku-5-5', effort: 'low', canary: false }], reply: () => answer('Found one.', 'claude-sonnet-5') });
+  fakeNet(t, log, { config: [{ model: 'claude-haiku-5-5', effort: 'low', canary: false }], reply: () => answer('Found one.', 'claude-sonnet-5-5') });
   const handler = await loadFunction(log, {}, ENV);
   await askRaw(handler, { question: 'find me a high protein chili', history: [], context: {}, tz: 0, allowWeb: true });
   const r = log.requests[0];
-  assert.equal(r.model, 'claude-sonnet-5');
+  assert.equal(r.model, 'claude-sonnet-5-5');
   assert.ok(r.tools.some((x) => x.type === 'web_search_20260209'));
-  assert.deepEqual(r.thinking, { type: 'disabled' });
+  assert.deepEqual(r.thinking, { type: 'between_tools' });
 
   const plain = newLog();
   fakeNet(t, plain, { config: [{ model: 'claude-haiku-5-5', effort: 'low', canary: false }], reply: () => answer('Sure.', 'claude-haiku-5-5') });

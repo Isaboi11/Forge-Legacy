@@ -4,7 +4,8 @@
 -- PASTE THIS WHOLE FILE into the Supabase SQL editor once step 1 has run on the operators and looked right (the
 -- read in step 1's header: outcomes `ok`, no rise in `bad_output` / `refusal`, cost down). Safe to run twice.
 -- Promotes every row that has a canary: model ← canary_model, effort ← canary_effort (else effort), canary cleared.
--- Rows without a canary are untouched. Undo: switch-models-revert.sql.
+-- Rows without a canary are untouched — coach-ask is already Sonnet 5.5 for everyone from step 1. Undo:
+-- switch-models-revert.sql.
 --
 -- ══ PREDICTED §3 ══ coach-ask = claude-sonnet-5-5 · coach-author = claude-haiku-5-5 ·
 --   coach-kitchen = claude-haiku-5-5, canary null everywhere, athlete_gets = model.
