@@ -1453,6 +1453,7 @@ function ReadStage({
           {repRows.length ? (
             <View style={s.repSection}>
               <Text style={s.label}>{repStripLabel(r.facts?.kind)}</Text>
+              <View style={s.repRows}>
               {repRows.map((row, ri) => (
                 <View key={ri} style={s.repRow}>
                   {row.map((c, ci) =>
@@ -1487,6 +1488,7 @@ function ReadStage({
                   )}
                 </View>
               ))}
+              </View>
             </View>
           ) : null}
 
@@ -1868,6 +1870,8 @@ const s = StyleSheet.create({
   fixItem: { gap: 8, paddingBottom: 6 },
   /* The .dc's rep strip: three to a row, 92 pt frames at radius 8, "Rep N" 11.5/600, the note in bronze. */
   repSection: { gap: 10 },
+  /* The .dc's grid: 8 between rows as between cells (the section's 10 is label to grid). */
+  repRows: { gap: 8 },
   repRow: { flexDirection: 'row', gap: 8 },
   repCell: { flex: 1, gap: 5 },
   repThumb: { borderRadius: 8, overflow: 'hidden' },
