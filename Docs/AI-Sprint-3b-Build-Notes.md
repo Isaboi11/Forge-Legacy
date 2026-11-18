@@ -135,3 +135,4 @@ a §3 verification block that predicts its own result. Lanes AUTHOR migrations; 
 
 ## 5. Log
 - 2026-11-18 — branches + worktrees made off `c543e3eb`; contract written.
+- 2026-11-18 — `ai/s3b-gate` merged (`427f306c` `ed280216` `f7311afd`). ✅ **coach-kitchen v12 DEPLOYED** byte-exact (mgmt_api, read back `same`, probes 200/401, `ai_deploy_log` v12; gate 34/36 vs live 31/36, no case regressed). ⛔ workout-tidy held: 32/61 vs live 29 but 2 cases live passes now fail (squatober-2024-07, -21) → lane D re-records (~$1.36 of its $5) and re-gates.
