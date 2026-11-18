@@ -266,6 +266,208 @@ export function actionAck(name: string): string {
     : "The app is showing the athlete a 'Find one online' button. In one short line, say nothing in their book fits and you can look online if they want.";
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// ACTIONS v1 — AI Road to 10 Sprint 4a "Holt can do things" (Docs/AI-Sprint-4a-Build-Notes.md §1.1–§1.2)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/*
+ * ⛔ OFFERED ONLY TO AN APP THAT SENT `caps: ['actions_v1']` (holt-actions.ts `HOLT_ACTION_CAPS`). An app on a phone today
+ * has no card for any of these, so it must never hear "tap to confirm" with nothing under it: without the flag,
+ * coach-ask sends exactly ASK_TOOLS + ASK_ACTIONS and its v28 SYSTEM, byte for byte.
+ *
+ * The names are the contract (holt-actions.ts `NEW_ACTIONS`). Every input is the MODEL's words and the athlete's own
+ * numbers only — the device narrows each one again (`narrowPatch`, `narrowRemember`, the card builders) and every number
+ * on a card is the app's. Part of the caps prefix, so byte-stable like ASK_TOOLS.
+ */
+
+const BUILD_FIELDS: Record<string, unknown> = {
+  goal: {
+    type: 'string',
+    enum: ['strength', 'muscle', 'weight_loss', 'conditioning', 'mobility', 'health', 'run_5k', 'run_10k', 'run_half', 'run_marathon', 'triathlon'],
+  },
+  daysPerWeek: { type: 'integer', description: 'Exactly what they said, 1-7.' },
+  sessionMinutes: { type: 'integer', description: 'Minutes per session as said; the app rounds to 30, 45, 60 or 75.' },
+  environment: { type: 'string', enum: ['full_gym', 'home', 'bodyweight', 'outdoor'] },
+  experienceLifting: { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] },
+  experienceRunning: { type: 'string', enum: ['beginner', 'intermediate', 'advanced'] },
+  limitations: {
+    type: 'array',
+    items: { type: 'string', enum: ['shoulders', 'knees', 'lower_back', 'no_jumping', 'no_overhead', 'no_barbell', 'no_running'] },
+    description: 'Movement patterns to keep out. Never for an injury (that is a stop, not a build).',
+  },
+  raceInWeeks: { type: 'integer', description: 'Race goal only: weeks from today until the race, when they give a duration ("about 3 months" = 13).' },
+  raceDate: { type: 'string', description: 'Race goal only, and only when they name a calendar date: YYYY-MM-DD, never in the past.' },
+  weeks: { type: 'integer', description: 'How long the block should be, when they say (1-52).' },
+  currentWeeklyMi: { type: 'number', description: 'Race goal only: their weekly running mileage now (km converted to miles).' },
+  liftDays: { type: 'integer', description: 'Race goal only: how many of the days are lifting ("half in Nov, also lift 3x" = 3).' },
+  strengthGoal: { type: 'string', enum: ['strength', 'muscle', 'weight_loss', 'conditioning', 'mobility', 'health'], description: 'What the lifting days are for, when they say.' },
+  goalTimeSec: { type: 'integer', description: 'A target finish time in SECONDS, only when they name one ("sub 25 minute 5k" = 1500). Never from "PR" or "BQ".' },
+  avoid: { type: 'array', items: { type: 'string' }, description: 'Exercises they do not want, as they named them. Also from what you know about them ("hates lunges").' },
+  focusMuscles: {
+    type: 'array',
+    items: { type: 'string', enum: ['glutes', 'arms', 'biceps', 'triceps', 'shoulders', 'chest', 'back', 'legs', 'quads', 'hamstrings', 'calves', 'core'] },
+  },
+  pinned: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'The exercise as they said it.' },
+        day: { type: 'integer', description: '0-based index into days, or leave out.' },
+        sets: { type: 'integer', description: 'Only a number they gave.' },
+        reps: { type: 'integer', description: 'Only a number they gave.' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+    description: 'Exercises the athlete named ("bench 5x5, rows 4x8") — copied as said, nothing of yours added.',
+  },
+  days: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        kind: { type: 'string', enum: ['run', 'lift', 'rest', 'cardio'] },
+        focus: { type: 'string' },
+        runMi: { type: 'number' },
+        runMin: { type: 'number' },
+      },
+      required: ['kind'],
+      additionalProperties: false,
+    },
+    description: 'Only when they describe the week day by day ("run Tuesday and Thursday, lift the other three"), Monday first.',
+  },
+  daysAsGiven: { type: 'boolean', description: 'True when they fixed which day is which.' },
+};
+
+export const ASK_ACTIONS_V1: AskToolDef[] = [
+  {
+    name: 'propose_program',
+    description:
+      "Build the athlete a program (a block of weeks). The app's rules engine builds it from these fields, asks for anything missing, checks a program they already run, and shows it to confirm — you never write the program. Fill ONLY what they said (or answered to your build question); never guess a field. Use it for 'build me a program', a goal with days or time, a race plan, a program around a body part, and for an answer to a build question on the table.",
+    input_schema: { type: 'object', properties: BUILD_FIELDS, additionalProperties: false },
+  },
+  {
+    name: 'propose_day',
+    description:
+      "Build ONE session, usually today ('give me a leg day', 'only 25 minutes today', 'I'm at a hotel gym today', 'something light today'). The app's engine builds it and shows it to confirm. dayFocus is the focus in their words ('legs', 'push', 'upper chest'); use 'full body' when they named none.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        dayFocus: { type: 'string', description: "The session's focus in their words." },
+        sessionMinutes: BUILD_FIELDS.sessionMinutes,
+        environment: BUILD_FIELDS.environment,
+        experienceLifting: BUILD_FIELDS.experienceLifting,
+        limitations: BUILD_FIELDS.limitations,
+        avoid: BUILD_FIELDS.avoid,
+        focusMuscles: BUILD_FIELDS.focusMuscles,
+        pinned: BUILD_FIELDS.pinned,
+      },
+      required: ['dayFocus'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'swap_exercise_today',
+    description:
+      "Swap one exercise in TODAY's workout only — the one running now, else today's planned session — for one they named ('swap bench for dumbbell press today'). Both in their words. A change from now on is propose_program_edit instead.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        from: { type: 'string', description: "The exercise to swap out, as they named it ('squats')." },
+        to: { type: 'string', description: "The replacement, as they named it ('leg press')." },
+      },
+      required: ['from', 'to'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'start_workout',
+    description:
+      "Start a workout now and open it ('let's go', 'start today's workout', 'start my push day', 'start my leg template'). Leave name out for today's planned session.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: "A session or template they named ('push day', 'Upper A', 'my leg template')." },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'set_targets',
+    description:
+      "Set the athlete's daily calorie and macro targets for a goal. The app works the targets out from their own height, weight and activity, with safe floors, and shows them before anything is saved — never send calories, macros or a target. pace only when they said one, in pounds a week (convert kg). Never for an athlete under 18.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        goal: { type: 'string', enum: ['lose', 'maintain', 'gain'] },
+        pace: { type: 'number', description: "Pounds a week, only as they said it ('a pound a week' = 1). Leave it out otherwise." },
+      },
+      required: ['goal'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'remember_note',
+    description:
+      "Offer to remember a lasting fact the athlete just told you about themselves or their training — a preference, their schedule, their gym, their handedness ('Hates lunges', 'Runs Tuesdays and Thursdays', 'Gym has no leg press'). Their words, under 80 characters. Never anything you inferred, and never their health, body, weight, injuries or eating. One call per fact, at most two in a message; most messages have none.",
+    input_schema: {
+      type: 'object',
+      properties: { text: { type: 'string', description: 'One short line in their words.' } },
+      required: ['text'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'open_door',
+    description:
+      "Open a screen the app has: import (they already have a program — from a coach, a PDF, a spreadsheet, a photo — and want it in), pick (recommend one of the app's ready-made programs), meal_plan (a meal plan), targets (to see or change their targets themselves), form_check (check their form on a video).",
+    input_schema: {
+      type: 'object',
+      properties: { door: { type: 'string', enum: ['import', 'pick', 'meal_plan', 'targets', 'form_check'] } },
+      required: ['door'],
+      additionalProperties: false,
+    },
+  },
+];
+
+export const ASK_ACTION_V1_NAMES: readonly string[] = ASK_ACTIONS_V1.map((a) => a.name);
+
+/**
+ * ⚠ WRITTEN, NOT OFFERED (integrator 2026-11-18, pending a PO call): the app has nowhere to keep a session on a date
+ * (programs are sequential; Calendar's scheduled-workout store was never built — lane C's report §1). Lane C's card
+ * resolves the day and then says it cannot, with no Confirm. Kept here, out of ASK_ACTIONS_V1, so the caps prefix
+ * does not offer it; adding it back is one line and a re-recorded eval.
+ */
+export const SCHEDULE_SESSION_TOOL: AskToolDef = {
+  name: 'schedule_session',
+  description:
+    "Put a session on a day ('put a run on Saturday', 'schedule leg day for tomorrow'). Copy the day as they said it; the app works out the date.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      when: { type: 'string', description: "The day as said ('Saturday', 'tomorrow', 'next Monday', 'the 24th')." },
+      what: { type: 'string', description: "The session as named ('leg day', 'a 5 mile run', 'Upper B')." },
+    },
+    required: ['when'],
+    additionalProperties: false,
+  },
+};
+
+/**
+ * What the model gets back after a v1 action. The app holds it and shows a card only once the reply ends cleanly; the
+ * athlete confirms there. So: one short line, never "done". The two legacy actions keep their own lines (`actionAck`).
+ */
+export function actionAckV1(name: string): string {
+  if (name === 'propose_program_edit' || name === 'offer_online_recipe_search') return actionAck(name);
+  if (name === 'open_door') return 'The app is showing the athlete a button to that screen. In one short line, say it is there. Do not say you opened it.';
+  if (name === 'remember_note') return 'The app is asking the athlete whether to keep this note. Do not say you saved it. Say nothing about it unless they asked you to remember it.';
+  if (name === 'propose_program' || name === 'propose_day') {
+    return 'The app is taking it from here: it asks for anything it still needs, then builds it and shows it to confirm. Do not describe the program or the session, and do not ask the questions yourself. In one short line, say what you heard and that you are building it.';
+  }
+  return 'The app is showing the athlete a card with exactly what will change, and nothing changes until they tap Confirm. Do not say it is done. In one short line, tell them to check it and confirm; if you also need to answer something else, do that first.';
+}
+
 export type AskToolName = (typeof ASK_TOOLS)[number]['name'];
 
 /** Rounds of tool calls per message before Holt must answer with what he has. */

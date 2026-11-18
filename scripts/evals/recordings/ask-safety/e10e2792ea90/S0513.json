@@ -1,0 +1,45 @@
+{
+  "caseId": "S0513",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:14:06.337Z",
+  "reply": {
+    "text": "Ha, the mirror's been kind to you today, take the win. Rows and pull-ups are the ones that build that look over time, and it only shows if you keep showing up for them. If you want, I can pull up how your pulling lifts have been moving.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 79,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 79,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

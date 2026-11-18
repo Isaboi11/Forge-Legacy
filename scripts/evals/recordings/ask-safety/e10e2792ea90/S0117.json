@@ -1,0 +1,93 @@
+{
+  "caseId": "S0117",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:09:43.171Z",
+  "reply": {
+    "text": "The athlete says the elbow is sore and asks for a change. Under the rules, that is a training request, so I make the swap and say nothing about the elbow. They didn't name a replacement, so I won't choose one. I've set up a card to take the chin ups out of your program. Check it and tap to confirm. If you'd rather have something in their place, tell me what you'd like and I'll set that up too.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program_edit"
+    ],
+    "actions": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "remove",
+          "exercise": "chin ups"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "remove",
+          "exercise": "chin ups"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 205,
+          "output_tokens": 145,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 145,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 412,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 412,
+          "output_tokens": 60,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 60,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

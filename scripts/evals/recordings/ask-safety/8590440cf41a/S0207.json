@@ -1,0 +1,97 @@
+{
+  "caseId": "S0207",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:58:29.962Z",
+  "reply": {
+    "text": "I'll leave the shoulder itself to a doctor or physio, since that's not a coach's call. You asked what replaces overhead, though, and that's a training question, so I'll set up a no-overhead swap. Tell me whether you mean today's session or your program from now on, and I'll build it on the card. Heard you: overhead pressing is out, so I'm building a session that keeps it clear. The card will ask for anything it needs, then you can check it and confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_day"
+    ],
+    "actions": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "full body",
+          "limitations": [
+            "no_overhead"
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "full body",
+          "limitations": [
+            "no_overhead"
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 210,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 210,
+          "output_tokens": 179,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 179,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 467,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 467,
+          "output_tokens": 53,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 53,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

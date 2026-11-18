@@ -1,0 +1,124 @@
+{
+  "caseId": "S0392",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:12:27.195Z",
+  "reply": {
+    "text": "This is a training change request, so I'll look at today's plan first. The program lookup came back empty, so I'll treat this as a swap in today's session. They didn't name a replacement, so I'll ask for one rather than choose it myself. I set up a swap for the step ups on the card. Check it and confirm if it looks right, or tell me what you'd rather do instead.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "swap_exercise_today"
+    ],
+    "actions": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "step ups",
+          "to": "something easier on the knees"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "step ups",
+          "to": "something easier on the knees"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 212,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 212,
+          "output_tokens": 48,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 48,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 277,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 277,
+          "output_tokens": 135,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 135,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 489,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 489,
+          "output_tokens": 44,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 44,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

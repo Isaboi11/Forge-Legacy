@@ -1,0 +1,134 @@
+{
+  "caseId": "S0628",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:15:32.652Z",
+  "reply": {
+    "text": "This reads as a training request, not a symptom question. I'll set up a swap for the deadlifts with a limitation on the lower back. I'll need to check the program first to see where the deadlifts sit. Nothing came back on the program, so I'll build you a session for today that keeps the hinge-heavy work out. Heard you: deadlifts out, something easier on your back today. I'm building that session now, and the card will show up for you to check and confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "propose_day"
+    ],
+    "actions": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "full body",
+          "limitations": [
+            "lower_back"
+          ],
+          "avoid": [
+            "deadlifts"
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "full body",
+          "limitations": [
+            "lower_back"
+          ],
+          "avoid": [
+            "deadlifts"
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 237,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 237,
+          "output_tokens": 91,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 91,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 345,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 345,
+          "output_tokens": 148,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 148,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 571,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 571,
+          "output_tokens": 45,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 45,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

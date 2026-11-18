@@ -14,6 +14,7 @@
  */
 import { withOutputScan } from './ask-stream.ts';
 import { ASK_ACTION_NAMES } from './ask-tools.ts';
+import { isHoltAction } from './holt-actions.ts';
 import { ASK_STATUS_PHRASES } from './ask-wire.ts';
 import { CUT_OFF_KEEP_CHARS, type Turn } from './chat-core.ts';
 
@@ -134,7 +135,8 @@ export function askToolsUsed(statusLines: readonly string[], actionNames: readon
     if (n && !names.includes(n)) names.push(n);
   };
   for (const line of statusLines) add(TOOL_BY_STATUS.get(line));
-  for (const n of actionNames) add(ASK_ACTION_NAMES.includes(n) ? n : undefined);
+  /* Sprint 4a: every name in the action contract (holt-actions.ts) — the app now draws all of them. */
+  for (const n of actionNames) add(ASK_ACTION_NAMES.includes(n) || isHoltAction(n) ? n : undefined);
   let out = '';
   for (const n of names) {
     const next = out ? `${out},${n}` : n;

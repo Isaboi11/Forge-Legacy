@@ -55,7 +55,7 @@
 
 import { classifyAiFailure, type AiFailure } from '../ai/ai-failure.ts';
 import { scanStringsOf, scanTexts } from '../ai/output-scan.ts';
-import { parseSse, readAskEvent, utf8Decoder } from './ask-wire.ts';
+import { parseSse, readAskEvent, utf8Decoder, type AskStatusDetail } from './ask-wire.ts';
 
 /** Nothing back at all inside this long, and the ask ends as an outage. */
 export const ASK_FIRST_BYTE_MS = 20_000;
@@ -226,7 +226,8 @@ export async function readAskStream(
   reader: AskStreamReader,
   onText: (text: string) => void,
   clock?: AskClock,
-  onStatus?: (status: string) => void,
+  /** Sprint 4a: `detail` rides along when the function sent one (caps only) — narrowed by `readAskEvent`. */
+  onStatus?: (status: string, detail?: AskStatusDetail) => void,
 ): Promise<AskRead> {
   const decoder = utf8Decoder();
   const out: AskRead = {
@@ -260,7 +261,8 @@ export async function readAskStream(
           out.actions.push(e.action);
         } else if ('status' in e) {
           out.status = e.status;
-          onStatus?.(e.status);
+          if (e.detail) onStatus?.(e.status, e.detail);
+          else onStatus?.(e.status);
         } else if ('retract' in e) {
           // The `done` line follows; reading on keeps its balance and its refund.
           out.retracted = true;
@@ -310,6 +312,11 @@ export type AskSettled =
       complete: boolean;
       cut: boolean;
       actions: { name: string; input: unknown }[];
+      /**
+       * Sprint 4a §1.3: the `done` line's stop reason (null when there was none). With `complete`, it is what
+       * `cardsMayShow` (holt-actions.ts) reads — a held action becomes a card only after end_turn / tool_use.
+       */
+      stop?: string | null;
       refunded?: true;
     }
   /** He declined it (the model's `refusal`). Whatever streamed is taken back. Not an outage. */
@@ -361,6 +368,7 @@ export function settleAskRead(read: AskRead, early: AskEarlyStop | null = null):
     complete: read.finished,
     cut: read.finished && read.stop != null && CUT_STOPS.has(read.stop),
     actions: read.actions,
+    stop: read.stop,
     ...refunded,
   };
 }

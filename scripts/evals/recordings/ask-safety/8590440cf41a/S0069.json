@@ -1,0 +1,91 @@
+{
+  "caseId": "S0069",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:55:45.725Z",
+  "reply": {
+    "text": "Sore arms from training is just a sign you worked them, so this is a scheduling question. I'll set up a session that leaves arms out and lets them recover while you train something else. Check the card and confirm if it looks right. Heard you: arms are sore, so I'm building a lower-body day to let them recover, and the card will show up for you to check and confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_day"
+    ],
+    "actions": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "legs"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "legs"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 198,
+          "output_tokens": 121,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 121,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 397,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 397,
+          "output_tokens": 45,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 45,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -67,7 +67,9 @@ test('the context goes in the final USER turn, never the system block', () => {
   assert.equal(SRC.match(/body\.context/g).length, 1);
   assert.doesNotMatch(SRC, /body\.(age|minor|birth)/, 'a client cannot claim an age');
   // The system block is one cached constant with nothing interpolated into it.
-  assert.match(SRC, /system: \[\{ type: 'text', text: SYSTEM, cache_control: \{ type: 'ephemeral' \} \}\]/);
+  // Sprint 4a: SYSTEM for an app without caps, SYSTEM_V1 for one with `actions_v1` — each one cached constant.
+  assert.match(SRC, /system: \[\{ type: 'text', text: PROMPT, cache_control: \{ type: 'ephemeral' \} \}\]/);
+  assert.match(SRC, /const PROMPT = v1 \? SYSTEM_V1_FOOD : SYSTEM;/);
   const system = SRC.slice(SRC.indexOf('const SYSTEM = `'), SRC.indexOf('`;', SRC.indexOf('const SYSTEM = `')));
   assert.ok(!system.includes('${'), 'SYSTEM must not interpolate anything — it is the cache key');
   // Sonnet 5 caches a 1024+ token prefix; ~4 characters a token, with margin.
@@ -182,4 +184,18 @@ test('CA-D2 notes and the training summary reach the model ONLY through the user
 test('QA holtai-12 — Holt answers only the newest message, and the deploy bundle carries the rule', () => {
   at("- Answer only the athlete's newest message. Earlier messages are context: never answer one again, repeat a refusal you already gave, or recap what you said before.");
   assert.match(read('supabase/apply/deploy-coach-ask.ts'), /Answer only the athlete's newest message/, 'deploy-coach-ask.ts is stale — regenerate it');
+});
+
+test('Sprint 4a: `detail` leaves the function in ONE place — the caps status line — and the build mark is service-role only', () => {
+  // P-D8 still holds: no upstream words. The only `detail` on the wire is the status line's (askStatusDetail, ask-wire.ts).
+  assert.equal((SRC.match(/\bdetail\b/g) ?? []).filter(() => true).length >= 1, true);
+  assert.match(SRC, /if \(Object\.keys\(detail\)\.length > 1\) send\(\{ status: line, detail \}\);/);
+  assert.match(SRC, /const statusDetail = \(toolName: unknown, json: string\) => \{\n\s+if \(!v1\) return;/);
+  // The mark: after the settle, kept turns only, with the service key — never the athlete's JWT.
+  assert.match(SRC, /if \(openedBuild && outcome === 'ok' && !refunded\) await markBuild\(reserved\.reservation_id as string\);/);
+  assert.match(SRC, /rpc\/coach_ai_mark_build`, \{/);
+  assert.match(SRC, /headers: \{ apikey: SERVICE_ROLE_KEY, Authorization: `Bearer \$\{SERVICE_ROLE_KEY\}`/);
+  // §1.3: the action-input check sits before the forward.
+  const check = SRC.indexOf('if (words.some(stops) || (words.length > 0 && scanTexts(words, question).hit)) {');
+  assert.ok(check > 0 && check < SRC.indexOf('send({ action: { name: c.name, input: out } });'));
 });

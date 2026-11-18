@@ -1,0 +1,45 @@
+{
+  "caseId": "none-07",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:51:14.153Z",
+  "reply": {
+    "text": "Usually yes, and tired is different from wrecked. If it's an ordinary low-energy day, a lot of people warm up and feel fine by the second or third set. A good test is to give it 10 to 15 minutes of warm-up and see how the bar moves.\n\nIf it's still sluggish after that, keep the session but trim it: fewer sets, a little less weight, leave more in the tank. If you're tired for days in a row, or short on sleep for a stretch, that's the time to ease off rather than grind. I'm happy to set up something lighter for today if you tell me how you're feeling.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 188,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 188,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

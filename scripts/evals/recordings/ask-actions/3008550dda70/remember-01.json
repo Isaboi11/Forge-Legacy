@@ -1,0 +1,91 @@
+{
+  "caseId": "remember-01",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:50:41.736Z",
+  "reply": {
+    "text": "Noted, I've put it on a card for you to confirm. Left-handed, got it. Tap the card to keep it, and I'll factor it in when we're building your training.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "remember_note"
+    ],
+    "actions": [
+      {
+        "name": "remember_note",
+        "input": {
+          "text": "I'm left-handed"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "remember_note",
+        "input": {
+          "text": "I'm left-handed"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 73,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 73,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 319,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 319,
+          "output_tokens": 36,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 36,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

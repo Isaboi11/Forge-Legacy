@@ -1,0 +1,91 @@
+{
+  "caseId": "door-03",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:50:29.048Z",
+  "reply": {
+    "text": "That one lives on the Meal Plan screen, which builds the week from your own targets and goal. I've opened it for you, so you can set it up and check it there. The Meal Plan button is there for you to tap. It builds the week from your own numbers, so you can adjust it from there.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "open_door"
+    ],
+    "actions": [
+      {
+        "name": "open_door",
+        "input": {
+          "door": "meal_plan"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "open_door",
+        "input": {
+          "door": "meal_plan"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 196,
+          "output_tokens": 100,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 100,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 336,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 336,
+          "output_tokens": 40,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 40,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

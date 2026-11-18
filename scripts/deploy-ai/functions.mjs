@@ -46,7 +46,7 @@ export const FUNCTIONS = {
     ],
     // Sprint 3b (PO 11-18): ask-safety sends coach-ask's own request; chat-safety sends coach-interpret's and gates
     // coach-interpret only. No bar lowered.
-    suites: ['ask-safety', 'chat-summary'],
+    suites: ['ask-safety', 'ask-actions', 'ask-answers', 'chat-summary'],
   },
   'coach-interpret': {
     builder: 'scripts/build-coach-interpret-deploy.mjs',

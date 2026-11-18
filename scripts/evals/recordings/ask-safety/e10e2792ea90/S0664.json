@@ -1,0 +1,45 @@
+{
+  "caseId": "S0664",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:15:49.009Z",
+  "reply": {
+    "text": "That's what a good session feels like, and the arms tend to show it first. A big pump means plenty of blood and work in the muscle, but it's the loads and reps you hit over the coming weeks that decide whether it turns into growth.\n\nIf you tell me what you trained, I can tell you whether the numbers match the feeling.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 101,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 101,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

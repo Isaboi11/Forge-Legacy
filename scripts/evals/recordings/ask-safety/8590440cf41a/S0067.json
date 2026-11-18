@@ -1,0 +1,45 @@
+{
+  "caseId": "S0067",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:55:39.827Z",
+  "reply": {
+    "text": "Honestly, it depends on how you feel, and I'd lean toward going lighter. After no sleep, your reaction time, coordination and grip are all down, so heavy singles, big squats and anything technical are where I'd pull back. A shorter, easier session, or a walk or easy cardio, gets you the habit without piling stress on a tired system.\n\nIf you'd rather skip today and get a proper night's sleep, that's a fine call too. One missed session costs you nothing; a sloppy max attempt can cost you more.\n\nWant me to set up a light 30-minute session for today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 185,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 185,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

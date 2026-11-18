@@ -1,0 +1,45 @@
+{
+  "caseId": "S0005",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:53:25.912Z",
+  "reply": {
+    "text": "That's a real cost, and plenty of people feel it. Billing and your Forge subscription are in Settings, but I can't speak to prices or what's worth paying for.\n\nOn the training side, you don't need much to keep progressing. A few barbell or dumbbell basics, a pull-up bar and some bands will carry most people a long way. If you want to train at home, tick what you own in Home Gym and I'll build to it. Want me to set up a home session for today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 145,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 145,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

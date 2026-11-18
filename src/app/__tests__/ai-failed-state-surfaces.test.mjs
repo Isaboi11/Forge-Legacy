@@ -122,7 +122,8 @@ const CLOSERS = [
   ['src/app/form-check.tsx', /pose: got\.pose\?\.facts \}, closeSignal\(\)\)/],
   ['src/components/forge/CoachChatSheet.tsx', /readRecipePhoto\(uri, closeSignal\(\)\)/],
   ['src/components/forge/CoachChatSheet.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, closeSignal\(\)\)/],
-  ['src/components/forge/CoachChatSheet.tsx', /await loadNotes\(\), closeSignal\(\)\)/],
+  // Sprint 4a: the typed path is Holt's chat now (coach-interpret retired) — its ask is in `asking`, aborted on close.
+  ['src/components/forge/CoachChatSheet.tsx', /const ctl = new AbortController\(\);\n\s*asking\.current\.add\(ctl\);/],
   ['src/components/forge/CoachChatSheet.tsx', /beside,\n\s*\}, closeSignal\(\)\);/],
   ['src/components/forge/CoachChatSheet.tsx', /minor: rules\.minor,\n\s*\}, closeSignal\(\)\);/],
   ['src/components/forge/ImportSpreadsheetSheet.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, ctl\.signal\)/],

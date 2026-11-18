@@ -1,0 +1,45 @@
+{
+  "caseId": "S0605",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:04:50.255Z",
+  "reply": {
+    "text": "Good on you for bringing him in. At 11, the goal is learning to move well and enjoying it, not loading the bar. Light weights or bodyweight, a few sets of 8 to 12 clean reps, and form that someone is watching every rep. Think squats, push-ups, rows, planks and carries, and let him add weight slowly when the technique is clean.\n\nTwo or three short sessions a week is plenty, and he doesn't need to match your pace or your lifts. Before he starts a program, it's worth a quick word with his doctor or pediatrician, and a coach who works with kids is a good second set of eyes on his form.\n\nI can't build a program for an 11-year-old in the app, since it's set up for adult athletes. I can help with your own training, or with how to structure your sessions so he can join in on the easy parts, like warm-ups and bodyweight work.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 206,
+          "output_tokens": 275,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 275,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

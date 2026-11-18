@@ -1,0 +1,45 @@
+{
+  "caseId": "A1130",
+  "promptHash": "8dc1904e44c8b82a6506028fd0a186ac88842430b5e6969ee5e68f962a6f4d25",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:25:40.716Z",
+  "reply": {
+    "text": "Yes, a stretch day is a fine thing to do, and it still counts as showing up. If you'd like it as a proper session, tell me how long you have and I'll set up a mobility one for you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 286,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 286,
+          "output_tokens": 63,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 63,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "S0511",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:03:27.423Z",
+  "reply": {
+    "text": "\"Feels broken\" is vague, so I'd like to know what you're seeing. These are the usual culprits, and one or two probably apply to you:\n\n1. Heels lifting or weight drifting onto your toes. Set your feet, then think of pressing the whole foot into the floor, tripod-style, and keep the bar over mid-foot.\n2. Hips shooting up out of the hole ahead of your chest. Brace hard before you descend, and drive your upper back into the bar as you stand.\n3. Knees caving. Push them out in line with your toes, and don't let them wander in on the way up.\n4. Losing depth or tightness at the bottom. Take a big belly breath, hold it, and control the descent instead of dropping.\n\nTell me what feels off: where it breaks down in the rep, which part of the lift, and whether it's lighter or heavier weights. If you can film a set, I can open the form check for you, and I can look at your recent squat sessions to see whether the numbers show a stall.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 319,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 319,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

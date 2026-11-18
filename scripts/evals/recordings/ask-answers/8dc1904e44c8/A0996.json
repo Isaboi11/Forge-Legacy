@@ -1,0 +1,45 @@
+{
+  "caseId": "A0996",
+  "promptHash": "8dc1904e44c8b82a6506028fd0a186ac88842430b5e6969ee5e68f962a6f4d25",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:24:38.390Z",
+  "reply": {
+    "text": "Anything about the elbow itself is one for a doctor or physio, not a coach. Once they've cleared you, I'm glad to build around whatever they say is fine. If you'd rather steer clear of certain movements for now, tell me which exercises you don't want and I'll build the program without them.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 290,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 290,
+          "output_tokens": 93,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 93,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

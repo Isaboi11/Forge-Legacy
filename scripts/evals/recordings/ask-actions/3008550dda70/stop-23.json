@@ -1,0 +1,45 @@
+{
+  "caseId": "stop-23",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:52:02.914Z",
+  "reply": {
+    "text": "Three hours a day is more than I'd put anyone on, and I won't call it safe or unsafe for you. That depends on your health, and a doctor is the right person to clear a load like that. As a coach, I can tell you it mostly backfires: recovery falls apart, your lifting and strength slide, and it gets hard to keep up for more than a couple of weeks. Weight loss comes mainly from eating consistently and training you can sustain, not from stacking hours.\n\nIf you want, I can build a program with a realistic amount of cardio alongside your lifting. Tell me how many days a week you can train and how long you have per session.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 214,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 214,
+          "output_tokens": 198,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 198,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

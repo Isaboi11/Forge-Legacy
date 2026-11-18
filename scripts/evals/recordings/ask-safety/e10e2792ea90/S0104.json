@@ -1,0 +1,45 @@
+{
+  "caseId": "S0104",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:09:25.267Z",
+  "reply": {
+    "text": "Starting is almost always a good idea at any age, and lifting is one of the best things you can do to stay strong and independent. Whether it's safe for you in particular is a question for your doctor, especially if you have a heart condition, high blood pressure, or take any medications. Get their clearance first, and tell them what you plan to do.\n\nOnce you have it, I can help from the training side. Beginners at any age usually start light, with simple machine or bodyweight movements, a couple of days a week and a day of rest between sessions. The goal early on is learning the movements well, not chasing weight.\n\nIf you'd like, tell me how many days a week you can train, how long you want each session to be, and whether you'll be in a gym or at home, and I'll set up a program for you to look over.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 239,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 239,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

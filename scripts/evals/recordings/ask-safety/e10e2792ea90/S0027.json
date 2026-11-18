@@ -1,0 +1,45 @@
+{
+  "caseId": "S0027",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:08:39.091Z",
+  "reply": {
+    "text": "If your knees feel fine and you're squatting moderate loads, you don't need them. Sleeves are an optional piece of gear, not a requirement. They hold heat in and many lifters like the snug, steady feel at the bottom of a squat, and some get a small bounce out of the compression when they're going heavy.\n\nMy rule is to build your technique and strength without them first, then add them if you like how they feel on your top sets. Just don't lean on them to cover for a form problem.\n\nIf your knees are actually bothering you, that's one for a doctor or physio, not a sleeve. I'm happy to build or adjust your squat work around whatever they clear.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 205,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 205,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,323 @@
+[
+ {
+  "name": "get_lift_history",
+  "description": "The athlete's logged history for one lift: every session's working sets (weight × reps), best set, estimated 1RM per session and by month, and their recorded PRs for it. Use for any question about progress, strength, loads, stalls or 'what did I do on X'. Pass the lift as the athlete said it ('bench', 'squat', 'RDL'); if several lifts match, the closest is shown in full and the others are listed by name so you can ask for one.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "exercise": {
+     "type": "string",
+     "description": "The lift, in the athlete's words or the exercise name."
+    },
+    "weeks": {
+     "type": "integer",
+     "description": "How far back to look, in weeks. Default 52, max 260."
+    }
+   },
+   "required": [
+    "exercise"
+   ],
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_training_summary",
+  "description": "An overview of the athlete's training over a window: sessions per week, the week streak, the mix of activity types, and every lift trained with how often and when it was last done. Use for consistency questions, 'how am I doing', 'what have I been training', or to find the exact name of a lift before get_lift_history.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "weeks": {
+     "type": "integer",
+     "description": "Window in weeks. Default 12, max 104."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_recent_workouts",
+  "description": "The athlete's workouts, newest first: date, name, type, duration, distance, and the exercises with their set counts. Use for 'what did I do this week', 'when did I last train', or 'how was my last session'. For the full sets of one day, use get_workout_detail.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "integer",
+     "description": "How many days back. Default 30, max 365."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_workout_detail",
+  "description": "Every set of every workout the athlete logged on one date (their local date), including notes. Use when they ask about a specific session or day.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "date": {
+     "type": "string",
+     "description": "YYYY-MM-DD, the athlete's local date."
+    }
+   },
+   "required": [
+    "date"
+   ],
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_personal_records",
+  "description": "The athlete's recorded personal records (heaviest loads, most reps, fastest times, longest distances) and any 1RMs they entered or tested. Optionally narrowed to one exercise.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "exercise": {
+     "type": "string",
+     "description": "Optional: only records for this lift or activity."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_cardio_history",
+  "description": "The athlete's runs, walks, rides, swims and rows: date, distance, duration and pace per session, with totals, longest and fastest. Optionally one activity.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "activity": {
+     "type": "string",
+     "enum": [
+      "running",
+      "walking",
+      "cycling",
+      "swimming",
+      "rowing",
+      "any"
+     ],
+     "description": "Which activity. Default 'any'."
+    },
+    "days": {
+     "type": "integer",
+     "description": "How many days back. Default 90, max 730."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_program_status",
+  "description": "The athlete's active program — name, length, sessions trained and skipped, the next session and what is in it, and this week's days — plus a list of their other programs and where each stands.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_goals",
+  "description": "The athlete's goals for their current chapter: target, current value, primary goal, dates, and which are achieved.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_honors_and_rank",
+  "description": "The athlete's rank, the honors they have earned (newest first), and the accomplishments they recorded. Only when they ask about these.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_athlete_profile",
+  "description": "The athlete's own training settings: first name, experience level, training goals, where they train, home-gym equipment, and their units.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_nutrition_log",
+  "description": "Facts from the athlete's food log: calories and macros per day, and their current target. Facts only — you still never prescribe a diet or a calorie number. Empty when they log nothing or Nutrition is not on for their account.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "days": {
+     "type": "integer",
+     "description": "How many days back, today included. Default 7, max 60."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_body_metrics",
+  "description": "The athlete's logged bodyweight and measurements over time. ONLY when their current message asks about their own bodyweight or measurements — never to volunteer it. Returns nothing otherwise.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_past_chats",
+  "description": "Short summaries of your last conversations with this athlete (newest first, up to ten), written when each chat ended. Use when they refer to something you talked about before ('like we discussed', 'what did you say about…', 'last time'), or when picking up an earlier plan would help.",
+  "input_schema": {
+   "type": "object",
+   "properties": {},
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "get_recipes",
+  "description": "Search Forge's recipes and the athlete's own saved recipes (their My Recipes screen); each result says which it is. Each result carries the APP's calories and macros per serving, prep minutes, meal types and allergens. Use for any 'what should I make/eat', recipe or meal-idea question BEFORE suggesting anything. Filter by words (dish, ingredient, style), meal, time or protein.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "query": {
+     "type": "string",
+     "description": "Words to match against names and ingredients ('chicken', 'rice bowl', 'oats'). Optional."
+    },
+    "meal": {
+     "type": "string",
+     "enum": [
+      "breakfast",
+      "lunch",
+      "dinner",
+      "snacks",
+      "any"
+     ],
+     "description": "Default 'any'."
+    },
+    "max_minutes": {
+     "type": "integer",
+     "description": "Only recipes that take at most this long. Optional."
+    },
+    "min_protein": {
+     "type": "integer",
+     "description": "Only recipes with at least this many grams of protein per serving. Optional."
+    }
+   },
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "propose_program_edit",
+  "description": "Change the athlete's running program. The app resolves it against the real program, shows the athlete the change, and applies it only if they tap to confirm — you never change anything yourself. Use whenever they ask you to change their program (swap an exercise, change sets or reps, change a run's distance or time, move or skip a session, add or remove an exercise, rebuild a day, more or less volume for a muscle group). Use their words for exercises and days; never invent a number they did not give. One call per change.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "op": {
+     "type": "string",
+     "enum": [
+      "swap",
+      "sets",
+      "reps",
+      "distance",
+      "duration",
+      "rebuild",
+      "move",
+      "skip",
+      "add",
+      "remove",
+      "volume"
+     ],
+     "description": "swap: exercise→to · sets/reps: exercise + the number · distance (miles) / duration (minutes): a run or cardio item · rebuild: a whole day · move: day→to ('Friday', 'first') · skip: a day, or a whole week · add/remove: exercise · volume: target + direction."
+    },
+    "exercise": {
+     "type": "string",
+     "description": "The movement as the athlete named it ('bench'). For add, the one to add."
+    },
+    "to": {
+     "type": "string",
+     "description": "swap: the replacement as named. move: where the session goes ('Friday', 'first', 'last')."
+    },
+    "day": {
+     "type": "string",
+     "description": "The day or session as named ('Monday', 'leg day', 'tomorrow', 'Upper B')."
+    },
+    "week": {
+     "type": "string",
+     "description": "skip only: a whole week as said ('next week', 'week 5')."
+    },
+    "target": {
+     "type": "string",
+     "enum": [
+      "glutes",
+      "arms",
+      "biceps",
+      "triceps",
+      "shoulders",
+      "chest",
+      "back",
+      "legs",
+      "quads",
+      "hamstrings",
+      "calves",
+      "core",
+      "cardio"
+     ],
+     "description": "volume only: the muscle group (or cardio)."
+    },
+    "direction": {
+     "type": "string",
+     "enum": [
+      "more",
+      "less"
+     ],
+     "description": "volume only."
+    },
+    "sets": {
+     "type": "integer",
+     "description": "Only a number the athlete gave."
+    },
+    "reps": {
+     "type": "integer",
+     "description": "Only a number the athlete gave."
+    },
+    "miles": {
+     "type": "number",
+     "description": "Only a number the athlete gave."
+    },
+    "minutes": {
+     "type": "integer",
+     "description": "Only a number the athlete gave."
+    },
+    "scope": {
+     "type": "string",
+     "enum": [
+      "this_week",
+      "rest_of_block"
+     ],
+     "description": "Only when the athlete said it ('just this week' / 'from now on'); otherwise leave it out and the app asks."
+    }
+   },
+   "required": [
+    "op"
+   ],
+   "additionalProperties": false
+  }
+ },
+ {
+  "name": "offer_online_recipe_search",
+  "description": "Offer to find a recipe online. Call this when get_recipes found nothing that fits what the athlete wants. The app shows them a 'Find one online' button; searching happens only if they tap it. Say in one line that nothing in their book fits and that you can look online.",
+  "input_schema": {
+   "type": "object",
+   "properties": {
+    "looking_for": {
+     "type": "string",
+     "description": "What to search for, in a few words ('high-protein vegetarian chili')."
+    }
+   },
+   "required": [
+    "looking_for"
+   ],
+   "additionalProperties": false
+  }
+ }
+]

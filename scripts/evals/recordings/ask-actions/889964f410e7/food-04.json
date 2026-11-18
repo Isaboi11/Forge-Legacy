@@ -1,0 +1,200 @@
+{
+  "caseId": "food-04",
+  "promptHash": "889964f410e7da7a504c86c7f8ae6e1edd5de8ffa20b25c919f6377a3fd307bd",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:10:12.108Z",
+  "reply": {
+    "text": "I'll look up each food first. The card for \"Post-Workout Bowl\" is up with grilled chicken breast, cooked white rice and cooked broccoli, each at the app's standard serving. Check it over, then tap Save as a meal, or Log it if you ate it today.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_foods",
+      "get_foods",
+      "get_foods",
+      "propose_meal"
+    ],
+    "actions": [
+      {
+        "name": "propose_meal",
+        "input": {
+          "name": "Post-Workout Bowl",
+          "items": [
+            {
+              "food": {
+                "key": "evals:grilled-chicken-breast",
+                "source": "usda",
+                "name": "grilled chicken breast",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": null,
+              "unit": null
+            },
+            {
+              "food": {
+                "key": "evals:white-rice-cooked",
+                "source": "usda",
+                "name": "white rice cooked",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": null,
+              "unit": null
+            },
+            {
+              "food": {
+                "key": "evals:broccoli-cooked",
+                "source": "usda",
+                "name": "broccoli cooked",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": null,
+              "unit": null
+            }
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_meal",
+        "input": {
+          "name": "Post-Workout Bowl",
+          "items": [
+            {
+              "key": "evals:grilled-chicken-breast"
+            },
+            {
+              "key": "evals:white-rice-cooked"
+            },
+            {
+              "key": "evals:broccoli-cooked"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 212,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 212,
+          "output_tokens": 166,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 166,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 812,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 812,
+          "output_tokens": 136,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 136,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 1047,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 1047,
+          "output_tokens": 80,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 80,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

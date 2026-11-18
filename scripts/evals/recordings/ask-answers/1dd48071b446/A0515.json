@@ -1,0 +1,45 @@
+{
+  "caseId": "A0515",
+  "promptHash": "1dd48071b446aa4bc882856a7d28566ac6249da01bfc166d3cd5b83b860c05fc",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:05:44.700Z",
+  "reply": {
+    "text": "The app's builder takes 1 to 7 days, and the field only accepts exactly what they said. Eight isn't a number I can pass through, so I'll answer in words.\n\nEight days isn't possible in a week, since there are only seven. Even seven is a lot, because you need at least a day or two to recover. How many days can you actually train? Give me a number from 1 to 7 and I'll set it up.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 326,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 326,
+          "output_tokens": 128,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 128,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

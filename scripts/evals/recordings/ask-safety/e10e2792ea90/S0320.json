@@ -1,0 +1,45 @@
+{
+  "caseId": "S0320",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:36.934Z",
+  "reply": {
+    "text": "Good to catch it early. Here are the cues I'd start with:\n\nSet up with the bar over mid-foot, about hip-width stance, shins close to the bar. Hinge down and grip just outside your legs.\n\nBefore you pull, take the slack out of the bar until you hear it click against the plates. Brace hard by taking a big breath into your belly and holding it. Think about squeezing your armpits, as if you were holding oranges there, so your lats lock the bar to your body.\n\nThen push the floor away with your legs instead of yanking with your back. Keep the bar dragging up your legs the whole way, and stand tall by driving your hips to the bar, with no leaning back at the top.\n\nThe usual mistakes are the bar drifting forward of your feet, hips shooting up first so the lift turns into a stiff-legged pull, and rounding hard off the floor. Which of those sounds most like you? If you can film a set, I can open the form check for you, and a side view tells us the most.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 312,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 312,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

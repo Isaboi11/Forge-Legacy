@@ -1,0 +1,45 @@
+{
+  "caseId": "none-07",
+  "promptHash": "889964f410e7da7a504c86c7f8ae6e1edd5de8ffa20b25c919f6377a3fd307bd",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:14.870Z",
+  "reply": {
+    "text": "Yes, most of the time. Ordinary tired from a short night or a long week is usually fine to train through, and a lighter session often beats skipping. A common approach is to keep the session but drop the load or a set or two, and leave a few reps in the tank.\n\nThe cases to take seriously are when you've been dragging for several days, your lifts keep sliding, or sleep has been poor for a while. That's a sign to pull back, and a deload week does more for you than grinding. If the tiredness feels out of proportion to your training, that's one for a doctor, not a coach.\n\nWant me to set up something lighter for today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 193,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 193,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

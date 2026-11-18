@@ -1,0 +1,45 @@
+{
+  "caseId": "none-05",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:51:07.682Z",
+  "reply": {
+    "text": "That depends on what you're after, so here's the general picture. Most people do well with a squat or leg press pattern, a hinge like Romanian deadlifts, something single-leg like split squats, and a little work for hamstring curls and calves. Two leg days a week is plenty for most lifters, with a few hard sets per movement.\n\nIf you want me to set up an actual session, say the word, like \"give me a leg day\", and tell me how much time you've got. I'll have the app build it for you to check and confirm.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 196,
+          "output_tokens": 158,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 158,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

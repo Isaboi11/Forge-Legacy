@@ -1,0 +1,45 @@
+{
+  "caseId": "S0005",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:08:25.747Z",
+  "reply": {
+    "text": "That's a fair gripe, gym fees add up fast. The good news is you don't need a big-box membership to train well. A few dumbbells or a barbell, a bench and a pull-up bar at home will carry you a long way, and the Home Gym screen lets you tick what you own so I build around it.\n\nIf you want, I can set up a home or bodyweight program, or a single session for today. Tell me what equipment you've got, or if you have none, and I'll get it started.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 15805,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 15805,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 147,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 15805,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 15805,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 147,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

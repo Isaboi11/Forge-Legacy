@@ -22,6 +22,8 @@
 
 import type { Turn } from './chat-core.ts';
 import { pick, type Chooser } from './rulebook/voice.ts';
+import { DOORS, isHoltAction, type HoltAction } from './holt-actions.ts';
+import { narrowEdit, narrowPatch, narrowRemember, type EditIntent } from './interpret-narrow.ts';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -122,3 +124,118 @@ export function askOfflineCard(o: { started: boolean; timedOut: boolean; refunde
  * already says something.
  */
 export const takeBackReply = (t: readonly Turn[], sid: number): Turn[] => t.filter((x) => !(x.kind === 'holt' && x.sid === sid));
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// HOLT'S ACTIONS, ROUTED (AI Road to 10 Sprint 4a, CH-3 — Docs/AI-Sprint-4a-Build-Notes.md §1.2–§1.3)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the sheet does with one action Holt forwarded. Pure, so the routing — which action opens a build, which is a
+ * door, which is a card, and what is dropped — is walked by a test, and the sheet only decides WHEN.
+ *
+ *   · `patch`  — propose_program / propose_day, narrowed by `narrowPatch` (coach-interpret's own narrower): the sheet's
+ *                existing 'patch' handling runs it (allowance, active-program guard, block door, room, splitAsSaid,
+ *                typedEquipment, focusSaid, avoid — all of it, unchanged).
+ *   · `door`   — a door the app already has (build / build_day when a build named nothing; import / pick).
+ *   · `edit`   — propose_program_edit, narrowed by `narrowEdit`, through `editByWords` as today.
+ *   · `web`    — the "Find one online" offer, as today.
+ *   · `card`   — every other action, and open_door to a screen (meal plan, targets, form check): lane C's
+ *                `HoltActionCard` (`holdTurnActions` → `confirmHoltAction`). Nothing writes without a tap.
+ *
+ * ONE build/door/edit per reply (the first): two would fight over the same conversation. Cards are not limited.
+ */
+export type HoltActionStep =
+  | { kind: 'patch'; patch: Record<string, unknown>; name: 'propose_program' | 'propose_day' }
+  | { kind: 'door'; to: 'build' | 'build_day' | 'import' | 'pick' }
+  | { kind: 'edit'; edit: EditIntent }
+  | { kind: 'web'; lookingFor: string }
+  | { kind: 'card'; action: HoltAction };
+
+export interface HoltActionPlan {
+  steps: HoltActionStep[];
+  /** Actions that were dropped (unknown, unusable, a second build, or the turn did not end cleanly). Names only. */
+  dropped: string[];
+}
+
+const FLOW = new Set(['patch', 'door', 'edit']);
+
+/**
+ * ⛔ §1.3 FIRST: `clean` is `cardsMayShow(...)` for the turn. A refusal, a retract, an error, a length cut, a timeout,
+ * Stop or a closed sheet drops EVERY action — nothing is shown, nothing is written.
+ */
+export function planHoltActions(
+  actions: readonly { name: string; input: unknown }[],
+  o: { clean: boolean; todayISO: string; knownNotes?: readonly string[]; asked?: string; nutrition?: boolean },
+): HoltActionPlan {
+  if (!o.clean) return { steps: [], dropped: actions.map((a) => a.name) };
+  const steps: HoltActionStep[] = [];
+  const dropped: string[] = [];
+  const flowTaken = () => steps.some((s) => FLOW.has(s.kind));
+  const obj = (v: unknown): Record<string, unknown> => (v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+  for (const a of actions) {
+    const input = obj(a.input);
+    const flow = (s: HoltActionStep) => {
+      if (flowTaken()) dropped.push(a.name);
+      else steps.push(s);
+    };
+    switch (a.name) {
+      case 'propose_program_edit': {
+        const edit = narrowEdit(input);
+        if (edit) flow({ kind: 'edit', edit });
+        else dropped.push(a.name);
+        break;
+      }
+      case 'offer_online_recipe_search': {
+        if (o.nutrition === false) {
+          dropped.push(a.name);
+          break;
+        }
+        const want = typeof input.looking_for === 'string' && input.looking_for.trim() ? input.looking_for : o.asked ?? '';
+        const lookingFor = want.trim().slice(0, 80);
+        if (lookingFor) steps.push({ kind: 'web', lookingFor });
+        else dropped.push(a.name);
+        break;
+      }
+      case 'propose_program': {
+        const patch = narrowPatch(input, o.todayISO);
+        delete patch.dayFocus;
+        flow(Object.keys(patch).length ? { kind: 'patch', name: 'propose_program', patch } : { kind: 'door', to: 'build' });
+        break;
+      }
+      case 'propose_day': {
+        const patch = narrowPatch(input, o.todayISO);
+        const focus = typeof patch.dayFocus === 'string' ? patch.dayFocus : null;
+        const bare = Object.keys(patch).filter((k) => k !== 'dayFocus').length === 0;
+        /* "Give me a workout" names nothing: the build_day door, which offers the running program's session first. */
+        if (bare && (!focus || /^full[ -]?body$/i.test(focus))) flow({ kind: 'door', to: 'build_day' });
+        else flow({ kind: 'patch', name: 'propose_day', patch: { ...patch, dayFocus: focus ?? 'full body' } });
+        break;
+      }
+      case 'open_door': {
+        /* import / pick are the chat's own doors (the import chips, the recommender); a screen is lane C's Open card. */
+        const door = input.door;
+        if (door === 'import' || door === 'pick') flow({ kind: 'door', to: door });
+        else if ((DOORS as readonly unknown[]).includes(door)) steps.push({ kind: 'card', action: { name: 'open_door', input: { door } } });
+        else dropped.push(a.name);
+        break;
+      }
+      case 'remember_note': {
+        /* coach-interpret's `remember` rule, in code: their words, ≤80, never the body, not one they already have. */
+        const lines = narrowRemember([input.text], o.knownNotes ?? []);
+        if (lines.length) steps.push({ kind: 'card', action: { name: 'remember_note', input: { text: lines[0] } } });
+        else dropped.push(a.name);
+        break;
+      }
+      default:
+        if (isHoltAction(a.name)) steps.push({ kind: 'card', action: { name: a.name, input } });
+        else dropped.push(a.name);
+    }
+  }
+  return { steps, dropped };
+}
+
+/** Holt's line when a card could not be drawn on this app (`cardFor` gave nothing): it was dropped, nothing changed. */
+export const CARD_DROPPED_LINE = "I couldn't set that one up from here, so nothing changed.";
+
+/** Holt's line when a card's Confirm or Undo is tapped after the app forgot it (a reload): nothing is written. */
+export const CARD_EXPIRED_LINE = 'That card is from before, so nothing changed. Ask me again and I’ll set it up fresh.';

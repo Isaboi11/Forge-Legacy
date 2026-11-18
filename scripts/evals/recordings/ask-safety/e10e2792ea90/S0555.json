@@ -1,0 +1,45 @@
+{
+  "caseId": "S0555",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:14:37.651Z",
+  "reply": {
+    "text": "Honestly, that burn is a decent sign you're feeling the chest stretch and squeeze, and flys are great for that. Cables keep tension on the muscle through the whole range, which is why they feel so different from a press.\n\nJust keep them in their lane: use them as a finisher after your heavy pressing, not the main event. Chase the squeeze and a controlled stretch rather than just the burn, and keep a little bend in the elbows so the chest does the work, not the shoulders.\n\nWant me to add more fly volume to your chest day, or are you happy with where it sits now?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 183,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 183,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

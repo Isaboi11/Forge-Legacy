@@ -251,7 +251,8 @@ test('status: every read tool has a line, no action has one, and web search has 
   for (const a of ASK_ACTION_NAMES) assert.equal(askStatusFor(a), null, `${a} is a card, not a wait`);
   assert.equal(askStatusFor('web_search'), 'Searching online…');
   // Nothing in the table is not a tool we run.
-  const known = new Set([...ASK_TOOLS.map((t) => t.name), 'web_search']);
+  // get_foods: lane B's food lookup (ask-food-tools.ts), offered only with caps `actions_v1` (Sprint 4a).
+  const known = new Set([...ASK_TOOLS.map((t) => t.name), 'web_search', 'get_foods']);
   for (const k of Object.keys(ASK_STATUS_PHRASES)) assert.ok(known.has(k), `${k} is not a tool`);
 });
 

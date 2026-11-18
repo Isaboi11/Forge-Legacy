@@ -183,11 +183,14 @@ test('Sprint 1 (P-D2): "Not charged." only when coach-ask SAID it refunded — n
 
 test('Sprint 1 (C-G5): the waiting bubble says the lookup — only before the first word, only this ask’s', () => {
   const ask = between('const askAloud = async', 'const onChip = (chip');
-  assert.match(ask, /onStatus: \(line\) => \{\s*lookups \+= 1;\s*statusLines\.push\(line\);\s*if \(!started\) setAskStatus\(\{ sid, text: line \}\);\s*\}/); // CH-6 counts lookups and names the tools (telemetry)
+  // CH-6 counts lookups and names the tools (telemetry); Sprint 4a: a detail line repeats its table line, counted once.
+  assert.match(ask, /onStatus: \(line, detail\) => \{[^}]*if \(!detail\) lookups \+= 1;\s*statusLines\.push\(line\);\s*if \(!started\) setAskStatus\(\{ sid, text: line, detail: detail \?\? null \}\);\s*\}/);
   // The first word clears it; the ask ending clears it only if it is still this ask's line.
   assert.match(ask, /setBusy\(null\);\s*setAskStatus\(null\);\s*say\(\{ kind: 'holt', text: acc, streaming: true, sid \}\);/);
   assert.match(ask, /setAskStatus\(\(s\) => \(s\?\.sid === sid \? null : s\)\);/);
-  assert.match(sheet, /<Waiting kind=\{waiting\} status=\{waiting === 'thinking' \? askStatus\?\.text \?\? null : null\} \/>/);
+  assert.match(sheet, /<Waiting kind=\{waiting\} status=\{waiting === 'thinking' \? askStatus\?\.text \?\? null : null\} detail=\{waiting === 'thinking' \? askStatus\?\.detail \?\? null : null\} \/>/);
+  // Sprint 4a: lane C's HoltStatusLine draws the line (its templates, else the table line).
+  assert.match(sheet, /<HoltStatusLine status=\{status\} detail=\{detail\} \/>/);
   // Secondary ink from the theme tokens, never bronze (Alabaster: bronze is earned).
   assert.match(sheet, /typingStatus: \{[^}]*color: flColor\.gray400 \}/);
   assert.doesNotMatch(sheet, /typingStatus: \{[^}]*bronze/);

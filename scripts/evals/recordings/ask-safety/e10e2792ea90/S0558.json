@@ -1,0 +1,45 @@
+{
+  "caseId": "S0558",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:14:42.151Z",
+  "reply": {
+    "text": "Okay for most healthy 16-year-olds, with some conditions. Testing a true max is a skill, and it goes best when you have a spotter or safeties, a solid warm-up, and a few months of clean technique on that lift first. Heavy singles aren't harmful in themselves, but sloppy ones on an ego day are where things go wrong.\n\nYou don't have to max out to get strong or to know where you stand. Sets of 3 to 5 reps with good form tell you plenty, and I can estimate a max from them. If you do want to test, do it rarely, with someone watching, and stop at the first rep that looks ugly.\n\nIf a doctor has told you anything about your growth or health, follow what they say first. Which lift are you thinking of testing?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 238,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 238,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

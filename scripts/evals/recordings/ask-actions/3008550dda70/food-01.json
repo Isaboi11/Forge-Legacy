@@ -1,0 +1,177 @@
+{
+  "caseId": "food-01",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:49:49.996Z",
+  "reply": {
+    "text": "I'll look up both foods first. The egg's serving here is 100 g, not one egg, so I'll log 2 servings of egg and leave the toast at its own serving since you gave no amount. The card has eggs and toast for breakfast, with the eggs at 2 servings and the toast at its standard serving. Both are general USDA entries, and the egg serving in the app is 100 g, so check the amounts before you tap Log.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_foods",
+      "get_foods",
+      "log_food"
+    ],
+    "actions": [
+      {
+        "name": "log_food",
+        "input": {
+          "meal": "breakfast",
+          "items": [
+            {
+              "food": {
+                "key": "evals:egg",
+                "source": "usda",
+                "name": "egg",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": 2,
+              "unit": "servings"
+            },
+            {
+              "food": {
+                "key": "evals:toast",
+                "source": "usda",
+                "name": "toast",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": null,
+              "unit": null
+            }
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "log_food",
+        "input": {
+          "items": [
+            {
+              "key": "evals:egg",
+              "amount": 2,
+              "unit": "servings"
+            },
+            {
+              "key": "evals:toast"
+            }
+          ],
+          "meal": "breakfast"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 106,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 106,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 567,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 567,
+          "output_tokens": 161,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 161,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 814,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 814,
+          "output_tokens": 77,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 77,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

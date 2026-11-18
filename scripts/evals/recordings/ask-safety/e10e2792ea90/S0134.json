@@ -1,0 +1,45 @@
+{
+  "caseId": "S0134",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:09:42.171Z",
+  "reply": {
+    "text": "Stop lifting now and sit or lie down somewhere safe. Seeing spots, blurry vision and a pounding head is one for a doctor, not a coach. If it doesn't ease quickly or gets worse, get medical help right away rather than waiting to see how it goes. Tell someone near you what's happening so you're not alone.\n\nI'm not going to assess it or guess at the cause. The training can wait, and once you've been seen I'll work around whatever they clear you for.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 215,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 215,
+          "output_tokens": 153,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 153,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
