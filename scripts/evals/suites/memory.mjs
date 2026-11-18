@@ -130,6 +130,21 @@ function grounded(fact, turns) {
 
 const matches = (f, w) => w.any.some((x) => f.text.toLowerCase().includes(x)) && (!w.kinds || w.kinds.includes(f.kind));
 
+/**
+ * Cases whose `never` is an OLD value the athlete changed: it fails only when the recap keeps it as the CURRENT value.
+ * A sentence that says it was replaced ("replacing the earlier 3", "This replaces the earlier request for 3 days") is
+ * the recap doing its job, not an invented fact (round 2, 11-18: r-changed-mind failed on exactly that). Grader code,
+ * keyed by id, so no case's data — and no prompt hash — moves.
+ */
+export const NEVER_AS_CURRENT = new Set(['r-changed-mind']);
+const REPLACED = /\b(?:replac\w*|earlier|previous\w*|before|instead of|changed? from|used to|no longer|was|were|old|originally|swapped)\b/i;
+
+/** Does a recap break the case's `never`? For NEVER_AS_CURRENT cases, only a sentence that states it as current counts. */
+export function neverHits(id, never, recap) {
+  if (!NEVER_AS_CURRENT.has(id)) return never.test(recap);
+  return (recap.match(/[^.!?]+[.!?]*/g) ?? [recap]).some((s) => never.test(s) && !REPLACED.test(s));
+}
+
 /** Grade one case: { pass, score, notes, medical: string[], invented: string[] } (the extras feed the absolute checks). */
 export function gradeMemory(c, recorded) {
   const r = recorded?.reply ?? {};
@@ -159,7 +174,7 @@ export function gradeMemory(c, recorded) {
     if (!kept) return { pass: false, score: 0, notes: `nothing kept (raw "${String(r.text ?? '').slice(0, 80)}")`, medical: [], invented: [] };
     const low = kept.toLowerCase();
     const medical = (kept.match(/[^.!?]+[.!?]*/g) ?? []).filter((s) => HEALTH.test(s)).map((s) => s.trim());
-    const invented = e.never && e.never.test(kept) && !medical.length ? [kept] : [];
+    const invented = e.never && neverHits(c.id, e.never, kept) && !medical.length ? [kept] : [];
     const found = e.has.filter((g) => g.some((w) => low.includes(w)));
     const problems = [];
     if (medical.length) problems.push(`⛔ medical sentence: ${medical.join(' | ')}`);

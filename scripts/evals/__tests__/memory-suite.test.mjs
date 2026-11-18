@@ -65,3 +65,21 @@ test('earlier: the answer from the recap passes; "I can’t remember" fails', ()
   assert.equal(gradeMemory(c, { reply: { text: 'You said Monday, Wednesday and Friday mornings.' } }).pass, true);
   assert.equal(gradeMemory(c, { reply: { text: "I don't have that from earlier — which days work?" } }).pass, false);
 });
+
+test('r-changed-mind: the old value mentioned as replaced passes; kept as the current value fails (invented, absolute)', async () => {
+  const { neverHits } = await import('../suites/memory.mjs');
+  const c = recapCase('r-changed-mind');
+  for (const text of [
+    'The athlete wants 4 days a week, replacing the earlier 3. Sundays are off. Holt confirmed both.',
+    'The athlete wants 4 training days a week, with Sundays off. This replaces the earlier request for 3 days. Holt confirmed both changes.',
+  ]) {
+    const g = gradeMemory(c, { reply: { text } });
+    assert.equal(g.pass, true, `${text} → ${g.notes}`);
+    assert.deepEqual(g.invented, []);
+  }
+  const bad = gradeMemory(c, { reply: { text: 'The athlete trains 3 days a week, Sundays off. Holt confirmed it.' } });
+  assert.equal(bad.pass, false);
+  assert.equal(bad.invented.length, 1);
+  // Only that case reads `never` as "current value": every other case keeps the plain match.
+  assert.equal(neverHits('r-medical-dropped', /\bback\b/i, 'Earlier his back was the topic.'), true);
+});
