@@ -110,5 +110,6 @@ export const suite = {
     }),
   // ~3k input (system + foods) + up to 2,600 output on Sonnet 5 ≈ $0.032 a call. Plus 20%.
   estimateUsd: (cases) => cases.length * 0.032 * 1.2,
-  threshold: { metric: 'pass_rate', min: 1 },
+  // PO 11-18: gated "no worse than live" (baselines.json, the deployed coach-kitchen's 31/36); 100% is the target.
+  threshold: { metric: 'pass_rate', min: 1, floor: 'live' },
 };

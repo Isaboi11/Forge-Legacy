@@ -56,7 +56,7 @@ test('the suite is the §1.4 shape, and its prompt sources are real', async () =
     assert.ok(k in suite, k);
   }
   assert.equal(suite.name, 'import-corpus');
-  assert.deepEqual(suite.threshold, { metric: 'pass_rate', min: 0.95 });
+  assert.deepEqual(suite.threshold, { metric: 'pass_rate', min: 0.95, floor: 'live' });
   for (const s of suite.promptSources) {
     const src = fs.readFileSync(path.join(ROOT, s.file), 'utf8');
     assert.match(src, new RegExp(`const ${s.exportName} = \``), `${s.file} holds ${s.exportName}`);

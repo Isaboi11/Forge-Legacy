@@ -331,3 +331,37 @@ test('the real suites: each validates, gates functions that exist, and every sui
     for (const n of m.suites) assert.ok(names.has(n), `${slug} expects suite ${n}`);
   }
 });
+
+test('the live floor is on import-corpus and kitchen-allergens ONLY, and each has a real baseline from real recordings', async () => {
+  const suites = await loadSuites(ROOT);
+  const floored = suites.filter((s) => s.threshold.floor === 'live').map((s) => s.name).sort();
+  assert.deepEqual(floored, ['import-corpus', 'kitchen-allergens'], 'PO 11-18: tidy and Kitchen only');
+  // ⛔ The medical stop keeps an absolute bar.
+  assert.equal(suites.find((s) => s.name === 'chat-safety').threshold.floor, undefined);
+  const baselines = loadBaselines(ROOT);
+  for (const name of floored) {
+    const s = suites.find((x) => x.name === name);
+    const b = baselines[name];
+    assert.ok(b, `${name} has a baseline`);
+    const ids = new Set((await s.cases()).map((c) => String(c.id)));
+    assert.equal(b.metricName, s.threshold.metric);
+    assert.equal(new Set(b.passedCaseIds).size, b.passedCaseIds.length, `${name}: no duplicate ids`);
+    for (const id of b.passedCaseIds) assert.ok(ids.has(id), `${name}: baseline case ${id} is a case`);
+    assert.equal(b.passed, b.passedCaseIds.length);
+    assert.equal(b.cases, ids.size, `${name}: the baseline graded every case there is today`);
+    assert.equal(b.metric, b.passed / b.cases);
+    assert.match(b.promptHash, /^[0-9a-f]{64}$/);
+    assert.match(b.recordedAt, /^2026-11-17T/);
+    assert.ok(b.source.length > 40, `${name}: says where it came from`);
+    // The recordings it names exist, were made under the hash it names, and cover every case.
+    const dir = path.join(ROOT, b.recordings);
+    assert.equal(path.basename(dir), b.promptHash.slice(0, 12));
+    const recs = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+    assert.equal(recs.length, b.cases);
+    for (const r of recs) assert.equal(r.promptHash, b.promptHash);
+    for (const r of recs) assert.equal(r.model, b.model);
+  }
+  // 11-18 numbers (PO): live tidy/import 29 of 61, live Kitchen 31 of 36.
+  assert.equal(baselines['import-corpus'].passed, 29);
+  assert.equal(baselines['kitchen-allergens'].passed, 31);
+});

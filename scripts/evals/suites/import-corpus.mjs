@@ -595,7 +595,8 @@ export const suite = {
     const total = list.length * usd(TOKENS.card) + (list.length - sheets) * usd(TOKENS.tidy);
     return Math.round(total * 100) / 100;
   },
-  threshold: { metric: 'pass_rate', min: 0.95 },
+  // PO 11-18: gated "no worse than live" (baselines.json, the deployed workout-tidy's 29/61); 95% is the target.
+  threshold: { metric: 'pass_rate', min: 0.95, floor: 'live' },
 };
 
 /** The meter's own rate table, loaded at import so `estimateUsd` can stay synchronous. */
