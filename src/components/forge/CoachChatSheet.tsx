@@ -2942,8 +2942,8 @@ export function CoachChatSheet({
       {
         allowWeb: opts.allowWeb,
         recipes,
-        earlier: chatRecap.earlier,
         signal: ctl.signal,
+        earlier: chatRecap.earlier,
         /* The waiting bubble says what he is looking up — until his first word, never after. */
         onStatus: (line, detail) => {
           /* A detail line repeats the table line it details — counted once, as a lookup. */
