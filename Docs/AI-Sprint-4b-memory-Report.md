@@ -136,4 +136,46 @@ created or changed (none touched → no `pg_get_functiondef` needed).
 6. `forgetEverything()` returns false until lane B's `deleteAllPastChats` lands (stub).
 
 ## Step 2 — the 38 accepted ask-answers lines ($0, offline)
-(filled in by the step-2 commit)
+
+**Read from the 4a recordings** (`scripts/evals/recordings/ask-answers/5a55ed59584e/`, graded by today's grader). Of the 38:
+
+| Group | n | Lines | What the model did |
+|---|---|---|---|
+| The "leave an ambiguous answer out" rule, over-applied | **29** | days A0467 weekends · A0496 not more than 4 · A0497 no more than 3 · A0499 not 5, maybe 4 · A0538 3-ish · A0543 at most 5; weekly miles A0362 fifty · A0375 prob 5 · A0376 idk like 6 · A0397 100 · A0418 low teens · A0424 10 but ramping up; block A0049 a week · A0064 30 days; goal A0080 shred · A0082 dad bod · A0085 lean out · A0098 move better · A0109 feel better · A0131 tri · A0159 jeans to fit; where A0570 crossfit box · A0590 backyard · A0591 the beach · A0602 jim · A0613 the box · A0625 membership but home · A0644 base gym; time A0742 no less than an hour | forwarded `propose_program{}` (or nothing) — and TOLD the athlete so ("I'll leave the field for the app to ask…"): a second defect, Holt narrating his own rules |
+| environment mapping | 3 | A0567 apartment gym (best home) · A0627 basement gym "with everything" (best full_gym) · A0642 work gym with a few dumbbells (want home) | the prompt said every work gym is full_gym, every home gym is home |
+| day focus | 2 | A1103 "beach muscles" (forwarded raw — no DayFocus) · A1122 "chest or arms, whichever" (forwarded both; best = chest) | |
+| artefacts (no prompt fix) | 4 | A0255 "next week" — a model blip (no text, no action; 4a saw it twice) · A0265 NYC marathon — the corpus's best date 2026-11-01 is already past, the model's 2027-11-07 is right · A0857 — corpus shape (`experience` string vs the app's `{lifting}`) · A1131 "recovery" → mobility — `focusSaid` reads both the same | |
+
+**The rule, narrowed** (the step-2 commit; SYSTEM_V1 only — v28's SYSTEM untouched): take the plain reading; a number
+with a limit or hedge is that number; a bare weekly running number is miles; "weekends" = 2; "a week" / "30 days" = 1 / 4
+weeks; everyday goal words → the nearest goal (shred / lean out / dad bod / jeans → weight_loss, move better → mobility,
+feel better → health, tri → triathlon); leave a field out ONLY when the answer names two different choices or nothing the
+field can hold ("tone up", "a 10 miler", "no gym membership"); offered two with "whichever" → the first; **never tell the
+athlete you left a field out or why**. Environment: CrossFit box / the box / base gym / "jim" / a home or basement gym
+"with everything" → full_gym; a small gym with a few pieces (apartment, work) or an unused membership + "home" → home;
+backyard / park / beach → outdoor. Day focus: "beach muscles" → chest and arms. Targets 34 of the 38; the 4 artefacts
+need a corpus/grader call (or stay accepted), not a prompt.
+
+⚠ It changes SYSTEM_V1, so every caps recording goes STALE: ask-safety `03049e4bf679`, ask-actions `f40ce232b284`,
+ask-answers `3d5b431ea5cb`, memory `51a9ba56189a` (its Sonnet cases send SYSTEM_V1). chat-summary is unaffected. The gate
+FAILS (STALE) until they are re-recorded — hold this commit back (revert it) if the money is not approved.
+
+### Run plan (⛔ only when the integrator says the PO approved the money)
+The key is `ANTHROPIC_API_KEY` from ForgeLegacy/.env.local, passed via env. Every run prints its estimate first.
+
+| # | Command | Estimate | Expected real (4a's actuals) |
+|---|---|---|---|
+| 1 | `EVAL_CASES=<the 148 below> node scripts/evals/run.mjs --suite ask-answers --live --budget 1.0 --record` — the 38 + the 110 gained over interpret | **$0.87** | ~$0.82 |
+| 1b | only if 1 shows a regression: fix the rule, repeat 1 | $0.87 each | |
+| 2 | `EVAL_SHARD=k/5 EVAL_SKIP_RECORDED=1 node scripts/evals/run.mjs --suite ask-answers --live --budget 1.4 --record`, k = 0…4 (skips the 148 already recorded) | **$5.90** (1010 left) | ~$5.65 |
+| 3 | `node scripts/evals/run.mjs --suite ask-safety --live --budget 2.6 --record` | **$1.92** | ~$2.31 |
+| 4 | `node scripts/evals/run.mjs --suite ask-actions --live --budget 0.7 --record` | **$0.65** | ~$0.44 |
+| 5 | `node scripts/evals/run.mjs --suite memory --live --budget 0.2 --record` | **$0.11** | ~$0.07 |
+| | **Total** | **$9.45** (+$0.87 per extra subset) | **~$9.30** |
+
+Bars after: ask-answers ≥ live 949 with every interpret-passed line kept except what the PO re-accepts (then drop the
+fixed ids from `baselines.json` → `ask-answers.accepted`, keeping only re-accepted ones with the PO's words); ask-safety
+≥ 0.95, let-through ≤ 5; ask-actions ≥ 0.90 and 0 actions on stops; memory 0 medical / 0 invented.
+
+The 148 ids (`EVAL_CASES`):
+`A0049,A0064,A0080,A0082,A0085,A0098,A0109,A0131,A0159,A0255,A0265,A0362,A0375,A0376,A0397,A0418,A0424,A0467,A0496,A0497,A0499,A0538,A0543,A0567,A0570,A0590,A0591,A0602,A0613,A0625,A0627,A0642,A0644,A0742,A0857,A1103,A1122,A1131,A0009,A0029,A0030,A0036,A0044,A0081,A0095,A0113,A0137,A0171,A0182,A0185,A0186,A0193,A0199,A0200,A0201,A0207,A0211,A0225,A0226,A0230,A0234,A0259,A0284,A0294,A0354,A0355,A0359,A0369,A0381,A0401,A0419,A0453,A0469,A0503,A0505,A0506,A0508,A0547,A0573,A0580,A0630,A0648,A0698,A0720,A0743,A0744,A0745,A0746,A0747,A0748,A0772,A0783,A0802,A0804,A0808,A0819,A0828,A0839,A0842,A0858,A0861,A0868,A0869,A0872,A0873,A0887,A0899,A0904,A0911,A0913,A0915,A0916,A0917,A0918,A0919,A0920,A0921,A0923,A0924,A0925,A0926,A0928,A0932,A0941,A0945,A0946,A0955,A0956,A0959,A0965,A0978,A0982,A0987,A0992,A0994,A0997,A0998,A1001,A1002,A1018,A1033,A1044,A1046,A1063,A1069,A1085,A1089,A1152`
