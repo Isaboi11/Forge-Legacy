@@ -23,11 +23,12 @@
  * ══ COST — fractions of a cent ══
  *
  * Each probe is `max_tokens: 1` with a three-word prompt: about 12 input tokens and at most 1 output token.
- *   claude-sonnet-5   12 × $2/M  + 1 × $10/M  ≈ $0.000034
- *   claude-haiku-4-5  12 × $1/M  + 1 × $5/M   ≈ $0.000017
- *   claude-opus-5-5   12 × $4/M  + 1 × $20/M  ≈ $0.000068   (thinking cannot be turned off on Opus 5.5; low
- *                                                            effort, and max_tokens 1 caps it all the same)
- *   ≈ $0.00012 a run (0.012¢) · ≈ $0.004 a month at one run a day · ≈ $0.04 a year.
+ *   claude-sonnet-5    12 × $2/M   + 1 × $10/M   ≈ $0.000034
+ *   claude-sonnet-5-5  12 × $2/M   + 1 × $10/M   ≈ $0.000034   (thinking off = between_tools, effort low)
+ *   claude-haiku-5-5   12 × $0.1/M + 1 × $0.5/M  ≈ $0.0000017  (thinking disabled, effort low)
+ *   claude-opus-5-5    12 × $4/M   + 1 × $20/M   ≈ $0.000068   (thinking cannot be turned off on Opus 5.5; low
+ *                                                              effort, and max_tokens 1 caps it all the same)
+ *   ≈ $0.00014 a run (0.014¢) · ≈ $0.004 a month at one run a day · ≈ $0.05 a year.
  * Nothing runs until the PO sets `ai_ops_config.canary_url` (0269's tick returns at once while it is null).
  *
  * ══ DEPLOY ══ (PO — see supabase/apply/pending-0269.sql's header for the order)
@@ -48,8 +49,12 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 // ── CANARY CORE: begin ─────────────────────────────────────────────────────────────────────────────────
 
-/** Every model a deployed function calls today: Sonnet 5 (11 functions), Haiku 4.5 (interpret, tidy), Opus 5.5 (admin tools). */
-export const CANARY_MODELS = ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-5-5'] as const;
+/**
+ * Every model a deployed function calls (Sprint 3b, PL-7): Sonnet 5 (every function's in-code default), Sonnet 5.5
+ * (coach-ask after the 0274 switch), Haiku 5.5 (coach-author + coach-kitchen after the switch, chat summaries, the
+ * routing slots), Opus 5.5 (admin tools). Haiku 4.5 is retired — no function can run it any more.
+ */
+export const CANARY_MODELS = ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5'] as const;
 
 /** Each probe gives up after this long and is recorded as `timeout`. */
 export const PROBE_ABORT_MS = 20_000;
@@ -108,8 +113,12 @@ export function probeBody(model: string): Record<string, unknown> {
     max_tokens: 1,
     messages: [{ role: 'user', content: 'Reply with OK.' }],
   };
-  // Opus 5.5 always thinks; the lowest effort keeps it as short as the 1-token cap already forces.
+  // Each model's thinking-off form, as src/domain/ai/model-request.ts sends it (this file imports nothing, so the
+  // shapes are written out; ai-canary.test.mjs holds them to requestFields). No refusal fallback: a probe asks whether
+  // THIS model answers. Opus 5.5 always thinks — the lowest effort keeps it as short as the 1-token cap forces.
   if (model.startsWith('claude-opus-5-5')) body.output_config = { effort: 'low' };
+  if (model.startsWith('claude-sonnet-5-5')) Object.assign(body, { thinking: { type: 'between_tools' }, output_config: { effort: 'low' } });
+  if (model.startsWith('claude-haiku-5-5')) Object.assign(body, { thinking: { type: 'disabled' }, output_config: { effort: 'low' } });
   return body;
 }
 

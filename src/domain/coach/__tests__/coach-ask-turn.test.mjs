@@ -366,22 +366,23 @@ test('⛔ contract §1.3: the reservation id is never on the wire — stream, fa
 // C-D8 — SONNET WHENEVER WEB SEARCH IS ON
 // ─────────────────────────────────────────────────────────────────────────────
 
-test('C-D8: a web search asked on Haiku runs on Sonnet; Haiku without one is still allowed', async (t) => {
+test('C-D8: a web search asked on Haiku runs on Sonnet; Haiku without one is still allowed (Haiku 5.5 since Sprint 3b)', async (t) => {
   const log = newLog();
   fakeAnthropic(t, log, () => answerRound('Found one.'));
   const handler = await loadFunction(log);
-  await askRaw(handler, { question: 'Find me a recipe online: chili', allowWeb: true, model: 'claude-haiku-4-5' });
+  await askRaw(handler, { question: 'Find me a recipe online: chili', allowWeb: true, model: 'claude-haiku-5-5' });
   const web = log.requests[0];
   assert.equal(web.model, 'claude-sonnet-5');
   assert.ok(web.tools.some((x) => x.type === 'web_search_20260209'));
   assert.deepEqual(web.thinking, { type: 'disabled' }, 'Sonnet’s own settings come with it');
   assert.deepEqual(log.rpcs.find(([n]) => n === 'coach_ai_reserve')[1], { p_action: 'web', p_fn: 'coach-ask' });
 
-  await askRaw(handler, { question: 'how should I warm up?', model: 'claude-haiku-4-5' });
+  await askRaw(handler, { question: 'how should I warm up?', model: 'claude-haiku-5-5' });
   const plain = log.requests[1];
-  assert.equal(plain.model, 'claude-haiku-4-5');
+  assert.equal(plain.model, 'claude-haiku-5-5');
   assert.ok(!plain.tools.some((x) => x.type?.startsWith('web_search')));
-  assert.equal(plain.thinking, undefined, 'Haiku takes no thinking form');
+  assert.deepEqual(plain.thinking, { type: 'disabled' }, 'Haiku 5.5 takes disabled at low effort');
+  assert.equal(plain.fallbacks, undefined, 'Haiku 5.5 has no server-side fallback');
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

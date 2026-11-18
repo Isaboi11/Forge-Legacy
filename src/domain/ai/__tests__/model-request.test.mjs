@@ -8,6 +8,7 @@ import {
   EFFORTS,
   FALLBACK_BETA,
   KNOWN_MODELS,
+  RETIRED_MODELS,
   anthropicHeaders,
   answeredBy,
   fellBack,
@@ -76,7 +77,7 @@ for (const thinkingOff of [false, true])
       for (const format of [undefined, { type: 'json_schema', schema: { type: 'object' } }])
         for (const fallback of [undefined, false]) KNOB_SETS.push({ thinkingOff, adaptive, effort, format, fallback });
 
-const MODELS = [...KNOWN_MODELS, 'claude-haiku-4-5-20251001', 'claude-sonnet-5-5-20261001', 'claude-fable-5-2', 'gpt-something', '', null];
+const MODELS = [...KNOWN_MODELS, ...RETIRED_MODELS, 'claude-haiku-4-5-20251001', 'claude-sonnet-5-5-20261001', 'claude-fable-5-2', 'gpt-something', '', null];
 
 test('no model is ever sent a field it rejects — every model × every knob a function uses', () => {
   let checked = 0;
@@ -139,11 +140,13 @@ test('families: dated ids belong to their model; an unknown id is never mistaken
   assert.equal(modelFamily(undefined), 'unknown');
   assert.equal(isKnownModel('claude-haiku-5-5'), true);
   assert.equal(isKnownModel('claude-haiku-4-5-20251001'), false, 'config only takes the plain ids');
+  assert.equal(isKnownModel('claude-haiku-4-5'), false, 'retired (Sprint 3b): recognised, never configurable');
+  assert.equal(modelFamily('claude-haiku-4-5'), 'claude-haiku-4-5');
 });
 
 test('every model a function can be configured to run has its own rate (never the default)', () => {
   for (const m of KNOWN_MODELS) assert.equal(rateKeyFor(m), m, m);
-  for (const k of Object.keys(MODEL_RATES)) if (k !== 'default') assert.ok(KNOWN_MODELS.includes(k), `${k} is priced but not configurable`);
+  for (const k of Object.keys(MODEL_RATES)) if (k !== 'default') assert.ok(KNOWN_MODELS.includes(k) || RETIRED_MODELS.includes(k), `${k} is priced but neither configurable nor retired`);
 });
 
 test('the answering model: the response says, else the one asked for; a fallback is seen', () => {

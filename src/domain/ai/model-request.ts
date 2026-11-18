@@ -40,9 +40,15 @@ export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'ma
 /** The beta header the server-side refusal fallback needs. */
 export const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 
-/** Every model a function may be configured to run. Same list as 0274's CHECK and `model-rates.ts`'s keys. */
-export const KNOWN_MODELS = ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5', 'claude-haiku-4-5'] as const;
-export type KnownModel = (typeof KNOWN_MODELS)[number];
+/** Every model a function may be configured to run. Same list as 0274's CHECK; each has its own rate in `model-rates.ts`. */
+export const KNOWN_MODELS = ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5'] as const;
+/**
+ * Retired in Sprint 3b (PL-7) wherever it was selectable: Haiku 5.5 proved as good on every job it did (chat summaries,
+ * coach-interpret's and coach-ask's routing slot) at a tenth of the price. Still RECOGNISED (its rules below, its rate
+ * for the ledger's history), never configurable.
+ */
+export const RETIRED_MODELS = ['claude-haiku-4-5'] as const;
+export type KnownModel = (typeof KNOWN_MODELS)[number] | (typeof RETIRED_MODELS)[number];
 
 export interface ModelRule {
   /** What "thinking off" is on this model: a `thinking` object to send, or `null` = leave `thinking` out. */
@@ -73,14 +79,15 @@ export const MODEL_RULES: Readonly<Record<KnownModel | 'unknown', ModelRule>> = 
 export function modelFamily(model: unknown): KnownModel | 'unknown' {
   const m = typeof model === 'string' ? model : '';
   let best: KnownModel | null = null;
-  for (const k of KNOWN_MODELS) {
+  for (const k of [...KNOWN_MODELS, ...RETIRED_MODELS]) {
     if (m === k) return k;
     if (m.startsWith(`${k}-`) && (best == null || k.length > best.length)) best = k;
   }
   return best ?? 'unknown';
 }
 
-export const isKnownModel = (model: unknown): model is KnownModel => typeof model === 'string' && (KNOWN_MODELS as readonly string[]).includes(model);
+/** Configurable (known and not retired). */
+export const isKnownModel = (model: unknown): boolean => typeof model === 'string' && (KNOWN_MODELS as readonly string[]).includes(model);
 
 export const isEffort = (e: unknown): e is Effort => typeof e === 'string' && (EFFORTS as readonly string[]).includes(e);
 

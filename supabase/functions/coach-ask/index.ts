@@ -144,8 +144,12 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
  */
 const MODEL = 'claude-sonnet-5';
 const EFFORT = 'low';
-/** ⚠ Haiku 4.5 caches only a 4,096+ token prefix; `SYSTEM` is shorter, so on Haiku it is billed in full. */
-const HAIKU = 'claude-haiku-4-5';
+/**
+ * The selectable Haiku (CA-D7 routing benchmark; the app sends no model). Haiku 5.5 since Sprint 3b (PL-7): on this
+ * function's own eval (ask-safety) 674/704 against Haiku 4.5's 673, must-stop lines let through 3 against 15, at a
+ * tenth of the price — Docs/AI-Sprint-3b-models-Report.md §5.
+ */
+const HAIKU = 'claude-haiku-5-5';
 /** What a request may name (the CA-D7 routing benchmark), besides whatever the config runs. */
 const ALLOWED_MODELS = [MODEL, HAIKU];
 const modelConfig = modelConfigReader({
@@ -307,7 +311,7 @@ interface Body {
 /**
  * Summaries run on Haiku: a short, cheap write-up, not a conversation. Haiku 5.5 since Sprint 3b (PL-7): the
  * chat-summary eval scored it 19/20 against Haiku 4.5's 18/20 with nothing Haiku 4.5 got right lost, at a tenth of the
- * price. The default only — `coach_ai_model_config` row 'coach-ask:summary' (0274) can run another (Haiku 4.5 too).
+ * price. The default only — `coach_ai_model_config` row 'coach-ask:summary' (0274) can run another model.
  */
 const SUMMARY_MODEL = 'claude-haiku-5-5';
 /** The chat a summary is written from — at most this many turns, newest kept. */
