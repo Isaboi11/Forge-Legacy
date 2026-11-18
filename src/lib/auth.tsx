@@ -9,6 +9,7 @@ import { flushPendingReferral } from '@/data/referral-live';
 import { stopAnalytics } from './analytics';
 import { releaseThisDevicesPushToken } from '@/data/push-live';
 import { breadcrumb } from './diagnostics';
+import { clearThread } from './coach-thread';
 
 /**
  * Auth session — the real identity the app runs on (Phase 1). `session.user.id` is `auth.uid()`,
@@ -170,6 +171,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await stopAnalytics();
     // …and this phone's push token, while the session that owns its row still exists (launch QA, H12).
     await releaseThisDevicesPushToken();
+    /* Holt's conversation on this phone goes with the session (Sprint 4b §1.5 — the device half of the account wipe;
+       Delete Account comes through here too). `clearThread`, never `endThread`: nothing is summarised or saved on
+       the way out. Cannot throw. */
+    await clearThread();
     /*
      * ⚠ `scope: 'local'` — THIS DEVICE ONLY (QA 09-26 auth-12).
      *
