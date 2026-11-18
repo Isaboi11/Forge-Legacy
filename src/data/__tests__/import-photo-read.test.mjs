@@ -15,6 +15,7 @@ const { refreshConsents } = await import('@/lib/consent');
 const { readImportPhoto } = await import('@/data/import-photo-read');
 const { resolveExerciseName } = await import('@/domain/exercise-picker/data');
 const S12 = await import('../../domain/workout/__tests__/fixtures/squatober-2026-day1.mjs');
+const APP = await import('../../domain/workout/__tests__/fixtures/app-screen-cards.mjs');
 const resolveKey = (n) => resolveExerciseName(n)?.key;
 
 globalThis.FileReader ??= class {
@@ -129,5 +130,25 @@ test('a program sheet still goes to the table reader when the card reader is dow
 test('a refusal keeps its name, and nothing else is asked', async () => {
   answers({ 'workout-card-read': [{ ok: false, reason: 'not_a_program' }] });
   assert.equal((await readImportPhoto(photo(), resolveKey)).kind, 'not_a_program');
+  assert.deepEqual(calls, { 'workout-card-read': 1 });
+});
+
+test('a workout app\'s screen is read by code line for line — no AI layout asked, its rounds are the sets (Sprint 3b, IM-1)', async () => {
+  answers({ 'workout-card-read': [{ ok: true, text: APP.W6E_ROUNDS }] });
+  const r = await readImportPhoto(photo(), resolveKey);
+  assert.equal(r.kind, 'ok');
+  assert.equal(r.via, 'card');
+  assert.deepEqual(calls, { 'workout-card-read': 1 }, 'the layout pass is not paid for when code reads every line');
+  const items = r.weeks[0].days[0].items.filter((i) => !i.section);
+  assert.equal(items[0].name, 'Conventional Deadlift');
+  assert.deepEqual(items.slice(2).map((i) => i.sets), [4, 4, 4, 4, 4]);
+  assert.match(r.text, /^\(Optional\) Stairmaster/);
+});
+
+test('two days printed side by side are a program sheet, read down each column (Sprint 3b, IM-1)', async () => {
+  answers({ 'workout-card-read': [{ ok: true, text: APP.PO_3WEEK_SHEET }] });
+  const r = await readImportPhoto(photo(), resolveKey);
+  assert.equal(r.via, 'table');
+  assert.deepEqual([r.weeks.length, r.weeks[0].days.length], [3, 4]);
   assert.deepEqual(calls, { 'workout-card-read': 1 });
 });

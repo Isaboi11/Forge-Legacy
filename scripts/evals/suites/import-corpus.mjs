@@ -484,10 +484,10 @@ const casesOf = (m = readManifest()) =>
 /**
  * Today's parser on the TYPED transcripts the repo already holds for corpus items (Squatober cards typed from the
  * images, and the 3-week sheet's table read) — $0, no model. A floor that only ever moves up: a parser change that
- * reads fewer of these right fails the deterministic check. 9 of 10 on 2026-11-17; the tenth is a real parser gap
- * (Day 10's "Skullcrushers x 50 reps" on its own line reads as 0 reps) — raise this when it is fixed.
+ * reads fewer of these right fails the deterministic check. 9 of 10 on 2026-11-17; 10 of 10 from 2026-11-18 (Sprint
+ * 3b: Day 10's "Skullcrushers x 50 reps" is one set of fifty, not a total to reach).
  */
-export const LEGACY_FLOOR = 9;
+export const LEGACY_FLOOR = 10;
 
 async function legacyReplays() {
   const m = readManifest();

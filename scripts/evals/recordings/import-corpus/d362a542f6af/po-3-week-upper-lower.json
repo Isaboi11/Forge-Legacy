@@ -1,0 +1,36 @@
+{
+  "caseId": "po-3-week-upper-lower",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:13:00.018Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "Monday- Upper Body A | Thursday- Upper Body B\nBench Press | 3 X 8-12 | Dips | 3 X 8-12\nBent Over Row | 3 X 8-12 | Pull-Ups | 3 X 8-12\nDB Shoulder Press | 3 X 8-12 | DB Side Lateral | 3 X 8-12\nLying Tricep Extension | 3 X 8-12 | Tricep Cable Pressdown | 3 X 8-12\nBarbell or DB Curl | 3 X 8-12 | Cable Curl | 3 X 8-12\nTuesday- Lower Body A | Friday- Lower Body B\nSquat | 3 X 8-12 | Deadlift | 3 X 8-12\nStiff Leg Deadlift | 3 X 8-12 | Leg Press | 3 X 8-12\nLeg Extension | 3 X 8-12 | Lunges | 3 X 8-12\nLeg Curl | 3 X 8-12 | Seated Calf Raise | 3 X 8-12\nStanding Calf Raise | 3 X 8-12 | DB Shrugs (Optional) | 3 X 8-12\nAbs | | Abs |\nLying Leg Raise | 3 X 10-15 | Incline Crunch | 3 X 10-15\nSwiss Ball Crunch | 3 X 10-15 | Back Extension | 3 X 10-15\nNote: Rest Periods = 1 Minute\n\nMonday- Upper Body A | Thursday- Upper Body B\nBench Press | 3 X 6-8 | Dips | 3 X 6-8\nBent Over Row | 3 X 6-8 | Pull-Ups | 3 X 6-8\nDB Shoulder Press | 3 X 6-8 | DB Side Lateral | 3 X 6-8\nLying Tricep Extension | 3 X 6-8 | Tricep Cable Pressdown | 3 X 6-8\nBarbell or DB Curl | 3 X 6-8 | Cable Curl | 3 X 6-8\nTuesday- Lower Body A | Friday- Lower Body B\nSquat | 3 X 6-8 | Deadlift | 3 X 6-8\nStiff Leg Deadlift | 3 X 6-8 | Leg Press | 3 X 6-8\nLeg Extension | 3 X 6-8 | Lunges | 3 X 6-8\nLeg Curl | 3 X 6-8 | Seated Calf Raise | 3 X 6-8\nStanding Calf Raise | 3 X 6-8 | DB Shrugs (Optional) | 3 X 6-8\nAbs | | Abs |\nLying Leg Raise | 3 X 10-15 | Incline Crunch | 3 X 10-15\nSwiss Ball Crunch | 3 X 10-15 | Back Extension | 3 X 10-15\nNote: Rest Periods = 90 Seconds\n\nMonday- Upper Body A | Thursday- Upper Body B\nBench Press | 3 X 4-6 | Dips | 3 X 4-6\nBent Over Row | 3 X 4-6 | Pull-Ups | 3 X 4-6\nDB Shoulder Press | 3 X 4-6 | DB Side Lateral | 3 X 4-6\nLying Tricep Extension | 3 X 4-6 | Tricep Cable Pressdown | 3 X 4-6\nBarbell or DB Curl | 3 X 4-6 | Cable Curl | 3 X 4-6\nTuesday- Lower Body A | Friday- Lower Body B\nSquat | 3 X 4-6 | Deadlift | 3 X 4-6\nStiff Leg Deadlift | 3 X 4-6 | Leg Press | 3 X 4-6\nLeg Extension | 3 X 4-6 | Lunges | 3 X 4-6\nLeg Curl | 3 X 4-6 | Seated Calf Raise | 3 X 4-6\nStanding Calf Raise | 3 X 4-6 | DB Shrugs (Optional) | 3 X 4-6\nAbs | | Abs |\nLying Leg Raise | 3 X 10-15 | Incline Crunch | 3 X 10-15\nSwiss Ball Crunch | 3 X 10-15 | Back Extension | 3 X 10-15\nNote: Rest Periods = 2 Minute"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1482,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1520,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

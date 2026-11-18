@@ -6,7 +6,8 @@ import { tidyWrittenWorkout } from '@/data/workout-tidy-live';
 import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-parse';
 import type { PhotoReadResult } from '@/domain/program/photo-read-result';
 import type { ImportPhase } from '@/domain/ai/ai-status';
-import { cardTableTsv, isMultiDaySheet, writtenToWeeks } from '@/domain/program/written-import';
+import { cardTableTsv, isMultiDaySheet, sideBySideTsv, writtenToWeeks } from '@/domain/program/written-import';
+import { circuitCardText, circuitWorkout, readCircuitCard } from '@/domain/program/circuit-card';
 import { checkBeforePosting, readWrittenWorkout, tsvToWrittenText, writtenToTemplate } from '@/domain/workout/written-workout';
 
 /**
@@ -18,7 +19,12 @@ import { checkBeforePosting, readWrittenWorkout, tsvToWrittenText, writtenToTemp
  *
  *   1. the whole card, line by line (`workout-card-read`) — or, until that function is deployed, the table read,
  *      turned into the same words (`tsvToWrittenText`);
- *   2. a sheet of SEVERAL days or weeks is a program table — that stays the table reader's job, as it always was;
+ *   2. a sheet of SEVERAL days or weeks is a program table — that stays the table reader's job, as it always was
+ *      (two days printed side by side are unfolded into it first, `sideBySideTsv`);
+ *   2b. a workout APP's screen ("CIRCUIT" / "Rounds: 3" / "20 Wall Balls", "Barbell Squat" / "10-8-6-4 reps") is read
+ *      by code when every line fits that shape (`circuit-card.ts`) — no AI layout is asked or paid for, because
+ *      there is nothing for it to do that the code does not do exactly (Sprint 3b, IM-1: the layout filed warm-up
+ *      circuits as lifts and finishers as Recovery);
  *   3. one workout goes through the AI layout (`workout-tidy`), which `checkAiRewrite` throws away if it changed a
  *      single number, and the written reader reads what is left: sets, ramps, percentages, rest, supersets;
  *   4. it comes back as the import preview's weeks (`writtenToWeeks`), with anything to check listed.
@@ -79,11 +85,25 @@ export async function readImportPhoto(
   /* ── 2. A sheet of several days or weeks is a program table (`isMultiDaySheet` says why that is its own test) ── */
   /* The card reader copies a sheet as lines of text — tabs, pipes or spaced columns. `cardTableTsv` cuts them back
      into the table reader's TSV, which `parseProgramTable` reads (it reads tabs and markdown only). */
-  const sheet = tsv ?? cardTableTsv(text);
+  /* Two days printed side by side ("Monday | Thursday") are unfolded into the same TSV, one day after the other. */
+  const sideTsv = tsv ? null : sideBySideTsv(text);
+  const sheet = tsv ?? sideTsv ?? cardTableTsv(text);
   const table = parseProgramTable(sheet ?? text);
   const dayCount = table.ok ? table.weeks.reduce((n, w) => n + w.days.length, 0) : 0;
-  if (table.ok && isMultiDaySheet(text, tsv)) {
+  if (table.ok && isMultiDaySheet(text, tsv ?? sideTsv)) {
     return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks: [], via: 'table', text: sheet ?? text };
+  }
+
+  /* ── 2b. A workout app's screen that code reads line for line (`circuit-card.ts`) ── */
+  const blocks = readCircuitCard(text);
+  if (blocks) {
+    const cw = circuitWorkout(blocks);
+    const cRows = writtenToTemplate(cw, resolveKey);
+    if (cRows.length) {
+      const read = writtenToWeeks(cw, cRows);
+      const cChecks = checkBeforePosting(cw, cRows).filter((c) => !/isn’t in the exercise library/.test(c));
+      return { kind: 'ok', weeks: read.weeks, skipped: read.skipped, checks: cChecks, via: 'card', text: circuitCardText(blocks) };
+    }
   }
 
   /* ── 3. One workout: AI lays it out, the code reads it ── */

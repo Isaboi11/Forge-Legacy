@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-30",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:16:14.251Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PR PARTY\"\nDay: 30  Wednesday 10-30-24\n\nWarm Up: Kick the door down as you enter the weight room. Chili so hot your nickname is \"Dragon Breath\"\n\n1. BACK SQUAT\n5 reps @ 55%, 3 @65%, 2 @75%, 1 @ 85%, 93%, 100%\n2 to 2½ min rest between these ramp up sets\n1 rep @ 105%, 108%, 110%, 112%...\n2½ to 3min rest between these sets\nKeep climbing 2-3% each set if it is there to get.\n\nCardio\nPlanned\nDay\nOff!!\n\nRecovery\nSpaghetti and Meatballs\nFavorite Halloween Candy\nBig Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE PR PARTY\"\nWarm up: Kick the door down as you enter the weight room. Chili so hot your nickname is \"Dragon Breath\"\n1. Back Squat 5 reps @ 55%, 3 reps @ 65%, 2 reps @ 75%, 1 reps @ 85%, 1 reps @ 93%, 1 reps @ 100%, 1 reps @ 105%, 1 reps @ 108%, 1 reps @ 110%, 1 reps @ 112%\n* 2 to 2½ min rest between the ramp up sets (55%-100%); 2½ to 3 min rest between the sets after that (105%+); Keep climbing 2-3% each set if it is there to get.\nCardio: Planned Day Off!!\nRecovery: Spaghetti and Meatballs · Favorite Halloween Candy · Big Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 255,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 278,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 292,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

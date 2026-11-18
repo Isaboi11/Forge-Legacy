@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-24",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:15:41.247Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Cool Down the Biscuits\"\nDay: 24 Thursday 10-24-24\n\nWarm Up: KB Swings 3x10 reps\n1 min rest between set\n\n1. a. BACK SQUAT 5 sets of 5 reps @ 65%\nsuper set\nb. KB/or DB Farmers Walk\n5 sets of 30 yds\n30-40% of BW in each hand\n2 min rest between each superset\n\n2. a. BB RDL's 4 sets of 5 reps\nsuper set\nb. Walking BW Lunges 4 sets of 10 reps each leg\n90 sec rest between each superset\n\nCardio\nKB Swings\n3 x 10 reps\n1 min rest\n\nRecovery\nSloppy Joes and tator tots\n30 min walk\n8+ hrs of sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Cool Down the Biscuits\"\nWarm up: KB Swings 3 sets of 10 reps\nrest 1:00\n\n1. a. Back Squat 5 sets of 5 reps @ 65%\nsuper set b. Kettlebell/or Dumbbell Farmers Walk 5 sets of 30 yds\n* 30-40% of BW in each hand\nrest 2:00 between each super set\n\n2. a. Barbell RDL's 4 sets of 5 reps\nsuper set b. Walking Bodyweight Lunges 4 sets of 10 reps each leg\nrest 1:30 between each super set\n\nCardio: KB Swings 3 sets of 10 reps\nrest 1:00\n\nRecovery: Sloppy Joes and tator tots · 30 min walk · 8+ hrs of sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 264,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 287,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 268,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

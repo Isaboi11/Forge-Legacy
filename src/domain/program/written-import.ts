@@ -22,9 +22,10 @@ const HOLD = /^(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?)\b(?:\s+each\s+set)?
 /**
  * IM-1 (Sprint 3): "F-F-F reps" under a lift with no rep count of its own — every set to failure, one F per set (the
  * Bridger Logan cards; the AI layout keeps it as a note). Only a whole ladder of F's; "10-10-10-F" stays the
- * author's words. "to failure" / "AMRAP" in the note does the same, with the lift's own set count.
+ * author's words. "to failure" / "AMRAP" in the note does the same, with the lift's own set count. The layout's own
+ * gloss after it — "F-F-F reps (failure each set)", a live run 2026-11-18 — is still the whole ladder (Sprint 3b).
  */
-const ALL_F = /^\s*(F(?:\s*[-–]\s*F){1,19})\s*reps?\.?\s*$/i;
+const ALL_F = /^\s*(F(?:\s*[-–]\s*F){1,19})\s*reps?\.?\s*(?:\([^)]*\))?\s*$/i;
 const TO_FAILURE_WORDS = /\b(?:(?:to|till?|until)\s+failure|amrap|max\s+reps|as\s+many\s+(?:reps\s+)?as\s+possible)\b/i;
 
 function failureFromNote(note: string, sets: number): { sets: number; note: string } | null {
@@ -250,6 +251,76 @@ export function cardTableTsv(text: string): string | null {
   if (!t) return null;
   const below = t.lines.slice(t.at + 1).flatMap((l, k) => (t.rows[k] ? [t.rows[k]!.join('\t')] : isRule(l) ? [] : [l.trim()]));
   return [...t.lines.slice(0, t.at).map((l) => l.trim()), t.head.join('\t'), ...below].join('\n');
+}
+
+/*
+ * TWO DAYS SIDE BY SIDE (AI Road to 10 Sprint 3b, IM-1). A program sheet laid out in two columns of days — the PO's
+ * 3-week upper/lower sheet — comes off the card reader one printed row per line:
+ *
+ *   Monday- Upper Body A | Thursday- Upper Body B          ← the two days this part of the sheet holds
+ *   Bench Press | 3 X 8-12 | Dips | 3 X 8-12              ← a lift for each, side by side
+ *   Abs | | Abs |                                          ← a sub-heading in both columns (more of the same days)
+ *   Note: Rest Periods = 1 Minute                          ← the week's own words
+ *
+ * Read across, it was one day of 24 lifts with the abs on the wrong days. Read down each column it is the sheet: the
+ * left day, then the right, every week; a day name seen again starts the next week. Days in a week go in weekday order
+ * (Monday, Tuesday, Thursday, Friday), as the athlete trains them. Only when EVERY line with pipes is one of those
+ * three shapes; anything else and this is not that sheet (null).
+ */
+const PAIR_DAY = (cell: string) => WEEKDAY.test(cell) || /^day\s*\d/i.test(cell);
+const WEEKDAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+export function sideBySideTsv(text: string): string | null {
+  const lines = text.replace(/\r/g, '').split('\n').map((l) => l.trim()).filter(Boolean);
+  type Day = { name: string; rows: [string, string][] };
+  const weeks: Day[][] = [];
+  let week: Day[] = [];
+  let pair: [Day, Day] | null = null;
+  let pairs = 0;
+  for (const line of lines) {
+    if (!line.includes('|')) continue; // a note ("Note: Rest Periods = 1 Minute") — the week's words, not a row
+    const cells = line.replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+    if (cells.length === 2 && cells.every(PAIR_DAY)) {
+      if (cells.some((c) => week.some((d) => d.name.toLowerCase() === c.toLowerCase()))) {
+        weeks.push(week);
+        week = [];
+      }
+      pair = [
+        { name: cells[0], rows: [] },
+        { name: cells[1], rows: [] },
+      ];
+      week.push(...pair);
+      pairs++;
+      continue;
+    }
+    if (!pair) return null;
+    const rx = /^\d{1,2}\s*[x×]\s*\d{1,3}(?:\s*[-–]\s*\d{1,3})?$/i;
+    /* "Abs | | Abs |" or "Abs | Abs": a sub-heading over more of the same two days — no prescription in any cell. */
+    if (cells.length <= 4 && !cells.some((c) => rx.test(c))) continue;
+    while (cells.length < 4) cells.push('');
+    if (cells.length !== 4) return null;
+    const [ln, lr, rn, rr] = cells;
+    if ((ln && !rx.test(lr)) || (rn && !rx.test(rr))) return null;
+    if (ln) pair[0].rows.push([ln, lr]);
+    if (rn) pair[1].rows.push([rn, rr]);
+  }
+  if (week.length) weeks.push(week);
+  if (pairs < 1 || !weeks.length || weeks.some((w) => w.some((d) => !d.rows.length))) return null;
+  const order = (d: Day) => {
+    const i = WEEKDAY_ORDER.indexOf(d.name.slice(0, 3).toLowerCase());
+    return i < 0 ? 99 : i;
+  };
+  const out = ['Week\tDay\tExercise\tSets\tReps'];
+  weeks.forEach((w, wi) => {
+    const days = [...w].sort((a, b) => order(a) - order(b) || w.indexOf(a) - w.indexOf(b));
+    for (const d of days) {
+      for (const [name, rx] of d.rows) {
+        const m = /^(\d{1,2})\s*[x×]\s*(.+)$/i.exec(rx)!;
+        out.push([String(wi + 1), d.name, name, m[1], m[2].replace(/\s+/g, '')].join('\t'));
+      }
+    }
+  });
+  return out.join('\n');
 }
 
 /** Two or more different values in the Day, Week or Session column. */

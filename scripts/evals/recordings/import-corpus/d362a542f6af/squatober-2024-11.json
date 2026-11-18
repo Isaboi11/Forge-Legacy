@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-11",
+  "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:14:14.526Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"AT YOUR DISCRETION\"\nDay: 11  Friday 10-11-24\n\nWarm Up: It's at your discretion!!\nJust make sure you are warm and ready.\n\n1. BACK SQUAT: Choose an option below\nOption one: 33 reps @ 70%\nOption Two: 26 reps @ 75%\nOption Three: 21 reps @ 80%\nOption Four: 15 reps @ 85%\nOption Five: 10 reps @ 90%\n*sets/reps breakdown and rest time\nis \"at your discretion\"\n\n2. Strict Chin Ups 5 sets of 2-6reps\n*Full range of motion, add weight if can\n2min rest\n\nCardio\nBB Bicep Curls\n50 reps at\nyour discretion\n\nRecovery\nMeatloaf\nGreen Beans\n30 min walk\n8+ hrs Sleep"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"At Your Discretion\"\nWarm up: It's at your discretion!! Just make sure you are warm and ready.\n1. Back Squat: Choose an option below\n* Option one: 33 reps @ 70%\n* Option Two: 26 reps @ 75%\n* Option Three: 21 reps @ 80%\n* Option Four: 15 reps @ 85%\n* Option Five: 10 reps @ 90%\n* sets/reps breakdown and rest time is \"at your discretion\"\n2. Strict Chin Ups 5 sets of 2-6 reps\n* Full range of motion, add weight if can\nrest 2:00\n* Cardio: BB Bicep Curls 50 reps at your discretion\nRecovery: Meatloaf · Green Beans · 30 min walk · 8+ hrs Sleep"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 287,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 310,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1955,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 270,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

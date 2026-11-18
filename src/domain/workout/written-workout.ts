@@ -196,6 +196,9 @@ function labelOf(line: string): { n: string | null; letter: string | null; super
 /** Title Case for a shouted card — "BACK SQUAT" → "Back Squat", "DEADlift" → "Deadlift". Leaves "DB"/"KB"/"BB". */
 function tidyName(raw: string): string {
   raw = raw.replace(/\bez\s*bar\b/gi, 'EZ Bar');
+  /* "Push downs" / "Pull downs" are one word in every gym and in the library — the card reader splits them on some
+     reads of the same card and not others (Squatober Day 21: "Push downs" once, "Pushdowns" three times; Sprint 3b). */
+  raw = raw.replace(/\b(push|pull)\s+(downs?)\b/gi, (_, a: string, b: string) => `${a}${b.toLowerCase()}`);
   const keep = new Set(['DB', 'KB', 'BB', 'EZ', 'RDL', 'RDLS', 'OHP', 'SSB']);
   return raw
     .replace(/["“”]/g, '')
@@ -381,7 +384,9 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
   if (count) {
     const c = Number(count[1]);
     ex.sets = 1;
-    if (c >= 50) {
+    /* "Skullcrushers x 50 reps" (2024 Day 10, "UNBROKEN"): the "x" makes it ONE set of fifty, as written — only a
+       bare "100 reps" is a total to reach (AI Road to 10 Sprint 3b, IM-1). */
+    if (c >= 50 && !/^[x×]/i.test(count[0])) {
       ex.reps = null;
       ex.note = joinNote(ex.note, `${c} reps total, in as few sets as you can. Add a set each time you rack it.`);
     } else {
@@ -439,6 +444,9 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
 
 const joinNote = (a: string | null, b: string): string | null => (!b ? a : a ? (a.includes(b) ? a : `${a} · ${b}`) : b);
 
+/** A heading that names only what to hold — "KB or DB", "DB/KB", "Barbell" — never a lift of its own. */
+const EQUIPMENT_ONLY = /^(?:(?:kb|db|bb|ez\s*bar|kettlebells?|dumbbells?|barbells?|bands?|cables?|plates?)\s*(?:\/\s*(?:or\s+)?|,\s*|\bor\b\s*|$))+$/i;
+
 /** Words that are only the author talking to the page — kept out of notes. */
 const FILLER = /^(?:reps?|sets?|total|each|between|super\s*set)$/i;
 
@@ -469,7 +477,13 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
   const how: string[] = [];
   const after: string[] = [];
 
+  /** Said under a heading before its lift — "Cardio: KB or DB", "* 60 sec rest between sets" — for the next lift. */
+  const pending: { note: string | null; rest: number | null } = { note: null, rest: null };
   const push = (ex: WrittenExercise) => {
+    if (pending.note) ex.note = joinNote(pending.note, ex.note ?? '');
+    if (pending.rest != null && ex.restSec == null) ex.restSec = pending.rest;
+    pending.note = null;
+    pending.rest = null;
     out.exercises.push(ex);
     cur = ex;
   };
@@ -548,7 +562,15 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
        when it names no number and a NEWLY NUMBERED lift follows ("4. a. Dips"). Inside a superset ("* Cardio "Scary
        Arms"" under 4a, before "super set b.", another live run) it is that lift's note, as before. */
     const noted = /^[*•·]\s*(?:cardio|finisher|conditioning)\s*:?\s*([^\d]*)$/i.exec(line);
-    const cardio = /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line) ?? (noted && labelOf(nextLine)?.n ? noted : null);
+    /* "* Cardio: BB Bicep Curls 50 reps at your discretion" — the layout wrote the card's whole Cardio block as a note
+       under the lift above (Squatober Day 11, a live run 2026-11-18). A lift with its count is still a lift — unless
+       a lettered lift follows, when it is that superset's note as before. */
+    const nextLab = labelOf(nextLine);
+    const notedLift = /^[*•·]\s*(?:cardio|finisher|conditioning)\s*:\s*([A-Za-z][^\d]*?\s\d.*)$/i.exec(line);
+    const cardio =
+      /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line) ??
+      (noted && nextLab?.n ? noted : null) ??
+      (notedLift && (!nextLab || nextLab.n) && splitName(notedLift[1]).rx ? notedLift : null);
     if (cardio) {
       /* The card's "Cardio" is the last block of the SAME workout — curls and shrugs, KB swings — so it stays
          in the main list, and its lines are read like any other. "Planned Day off" is a note, not a lift. */
@@ -565,6 +587,10 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       const next = labelOf(nextLine);
       if (cardio[1] && !/\d/.test(cardio[1]) && (next?.n || next?.letter)) {
         blockTitle = { n: next.n ?? String(Number(lastN ?? 0) + 1), text: cardio[1].replace(/["“”]/g, '').trim() };
+      } else if (cardio[1] && EQUIPMENT_ONLY.test(cardio[1].trim())) {
+        /* "Cardio: KB or DB" — the card's "KB or DB" above the carry it is for (Squatober Day 14, a live run
+           2026-11-18): what to carry, never a lift called "KB or DB". The next lift carries it as its note. */
+        pending.note = joinNote(pending.note, cardio[1].trim());
       } else if (cardio[1]) handleLift(cardio[1], true);
       continue;
     }
@@ -642,6 +668,29 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       ex.sets = ex.repScheme!.length;
       ex.note = joinNote(ex.note, `The cluster, ${times} times through`);
       return;
+    }
+
+    /*
+     * "2. a. Bench Press" / "* same as above" (AI Road to 10 Sprint 3b, IM-1): the AI layout moved the card's "same as
+     * above" off the lift's line onto a note of its own, and the bench was left one set of nothing (Squatober Day 7).
+     * On a lift with nothing of its own yet it means what it means on the lift's line: the prescription above it.
+     */
+    if (cur && /^[*•·]?\s*["“]?\s*same\s+as\s+above\s*["”]?\s*[.!]?$/i.test(line.trim())) {
+      const ex = cur as WrittenExercise;
+      const src = [...out.exercises].reverse().find((e) => e !== ex && e.section !== 'warmup' && (e.repScheme || e.percentScheme || e.percent != null || e.reps != null));
+      if (src && !ex.sets && !ex.repScheme && ex.reps == null && ex.percent == null) {
+        Object.assign(ex, {
+          sets: src.sets,
+          reps: src.reps,
+          repsMax: src.repsMax,
+          repScheme: src.repScheme ? [...src.repScheme] : null,
+          percent: src.percent,
+          percentScheme: src.percentScheme ? [...src.percentScheme] : null,
+          restScheme: src.restScheme ? [...src.restScheme] : null,
+          restSec: ex.restSec ?? src.restSec,
+        });
+        return;
+      }
     }
 
     /* "Planned Day off" under Cardio — a day off from cardio is not an exercise called that. */
@@ -735,6 +784,11 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
     /* A rest line: belongs to the lift (or superset) above it. */
     if (REST_ONLY.test(line) || (/\brest\b/i.test(line) && !labelOf(line) && cur)) {
       const r = restOf(line);
+      /* "* 60 sec rest between sets" under a heading, before its lift (Squatober Day 14) — the next lift's rest. */
+      if (r != null && !cur && mode === 'lifts' && REST_ONLY.test(unbullet(line))) {
+        pending.rest = r;
+        return;
+      }
       if (r != null && cur && rungsFilled.has(cur as WrittenExercise)) {
         /* Under a staircase of rungs, a rest line is the rest for the rungs ABOVE IT since the last one — Day 16's
            missions: 2½ min for one and two, 3 min for three. */
@@ -977,6 +1031,9 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       name = `${pair[1]}${pair[2]} ${pair[4]}`;
       ex.note = joinNote(ex.note, `Or ${pair[3]}`);
     }
+    /* "7. Row sets" / "* 10 min": the layout's "N sets" with the count left out because the card gave none (its own
+       rule) — "sets" is not part of the lift's name (Sprint 3b, IM-1). A drop set or a warm-up set keeps its word. */
+    if (!/\b(?:drop|super|giant|cluster|warm[\s-]?up|build[\s-]?up)\s+sets?\s*$/i.test(name)) name = name.replace(/\s+sets?\s*$/i, '');
     ex.name = tidyName(name);
     const left = applyRx(ex, rx, true);
     if (left && !left.split(' ').every((w) => FILLER.test(w))) ex.note = joinNote(ex.note, tidySentence(left));
