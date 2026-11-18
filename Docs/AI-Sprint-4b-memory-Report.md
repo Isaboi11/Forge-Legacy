@@ -6,7 +6,9 @@ integrator's stubs). **Contract** `Docs/AI-Sprint-4b-Build-Notes.md` (Lane A row
 
 ## ▶ RESUME HERE
 1. ✅ Step 1 built and committed (below). Gate `node scripts/evals/gate.mjs coach-ask` = PASS on the step-1 commits.
-2. Step 2 (the 38) — the narrowed rule is the LAST commit, on its own, so it can be held back. ⛔ Not run live (PO money).
+2. Step 2 (the 38) — PO approved (cap $37). Round 1 subset ran ($0.93): 35/38 back but 23 gained lines lost → STOPPED
+   before the full re-records (the coordinator's condition). Next: the coordinator's go for round 2 ("Step 2, round 1" at
+   the end). The rule is still its own commit (928673c9) so it can be held back.
    When the integrator says the money is approved, run §Step 2 "Run plan" in order. Until then the step-2 commit makes
    ask-safety / ask-actions / ask-answers / memory STALE (it changes SYSTEM_V1) — hold it back or re-record.
 3. Integrator: merge B first (A's export reads `fetchExportChats`, Forget everything calls `deleteAllPastChats`, the
@@ -126,8 +128,7 @@ created or changed (none touched → no `pg_get_functiondef` needed).
 ## Contract deviations / open items
 1. Telemetry keys: `holt_memory` uses the analytics allowlist's own `kind` (event) + `count` (n) — `event`/`n` are not
    allowlisted keys. Lane B's `holt_past_chat` will need the same.
-2. The 4a in-chat `remember_note` card still saves on Confirm when memory is off (lane C's executor). The athlete tapped
-   it, but the switch copy says "keeps nothing new" — integrator: gate that executor on `getRemembers()` or soften copy.
+2. ✅ `1e74058b`: the 4a `remember_note` card and executor are gated on `getRemembers()`.
 3. `memory_unknown`: a prefs read that fails for a reason other than "no table" keeps nothing (privacy first).
 4. Old phones' summary (4a path) still keeps guard-clear body sentences like "…takes creatine" — unchanged on purpose
    (byte-for-byte old path); the memory path drops them.
@@ -179,3 +180,40 @@ fixed ids from `baselines.json` → `ask-answers.accepted`, keeping only re-acce
 
 The 148 ids (`EVAL_CASES`):
 `A0049,A0064,A0080,A0082,A0085,A0098,A0109,A0131,A0159,A0255,A0265,A0362,A0375,A0376,A0397,A0418,A0424,A0467,A0496,A0497,A0499,A0538,A0543,A0567,A0570,A0590,A0591,A0602,A0613,A0625,A0627,A0642,A0644,A0742,A0857,A1103,A1122,A1131,A0009,A0029,A0030,A0036,A0044,A0081,A0095,A0113,A0137,A0171,A0182,A0185,A0186,A0193,A0199,A0200,A0201,A0207,A0211,A0225,A0226,A0230,A0234,A0259,A0284,A0294,A0354,A0355,A0359,A0369,A0381,A0401,A0419,A0453,A0469,A0503,A0505,A0506,A0508,A0547,A0573,A0580,A0630,A0648,A0698,A0720,A0743,A0744,A0745,A0746,A0747,A0748,A0772,A0783,A0802,A0804,A0808,A0819,A0828,A0839,A0842,A0858,A0861,A0868,A0869,A0872,A0873,A0887,A0899,A0904,A0911,A0913,A0915,A0916,A0917,A0918,A0919,A0920,A0921,A0923,A0924,A0925,A0926,A0928,A0932,A0941,A0945,A0946,A0955,A0956,A0959,A0965,A0978,A0982,A0987,A0992,A0994,A0997,A0998,A1001,A1002,A1018,A1033,A1044,A1046,A1063,A1069,A1085,A1089,A1152`
+
+### Step 2, round 1 — the subset (PO approved 11-18, cap → $37; coordinator: hard ceiling $10.50) — ⛔ STOPPED
+`EVAL_CASES=<148> run.mjs --suite ask-answers --live --budget 1.0 --record`, prompt `3d5b431ea5cb` (928673c9):
+estimate $0.87, **real $0.93**. **122/148.**
+- **The 38: 35 back.** Still failing: A0265, A0857, A1131 — the three artefacts (no prompt can pass them as graded).
+  A0255's blip did not recur.
+- **The 110 gained: 23 lost** → the coordinator's condition for the full re-records ("the 38 back without losing gained
+  lines") is NOT met. Full re-records NOT run; no second subset run (needs the coordinator's go). Step-2 spend: $0.93.
+  - **13 experience lines** (A0808 A0819 A0828 A0839 A0842 A0858 A0861 A0868 A0869 A0873 A0887 A0899 A0904) — the
+    model now gives `experienceLifting` instead of leaving it out, and **the grader fails every one**, even where it picks
+    the corpus's own best (A0808/A0819/A0839/A0861/A0868/A0899 picked "intermediate" = best). Same artefact as A0857:
+    the corpus writes `best.experience` as a string, the app keeps `experience: {lifting}` — the shapes never match, so
+    on an `ambiguous` experience line only "leave it out" can pass. A grader/corpus call, not a prompt one.
+  - **6 ranges / hedged pairs** (A0354 "10-15", A0355 "5 to 10", A0419 "single digits", A0547 "like 2 or 3",
+    A0744 "30-45 mins", A0720 "lunch hour") — the new "plain reading" made the model pick an end (or 60 for a lunch
+    hour) where the corpus marks them ambiguous (best = midpoint / lower). Real over-reach of the new rule.
+  - **2 goal/date** — A0113 "look good naked" → muscle (best weight_loss); A0294 "the 18th of october, but I might do the
+    november one" → 2027-10-18 (best 2026-10-18, already past on the suite's date).
+  - **2 limits** — A0955 "wrist" → `no_barbell` (was `[]`); A1033 "high blood pressure" → doctor line, no action (was
+    `[]`) — likely the new "leave out only when…" wording tipping two train-around answers.
+- **Proposed round 2 (not committed — it would stale this subset again; $0.87 to re-run the 148):** keep the plain
+  readings for limits, casual words and single numbers, and add: "A range or two numbers ('10-15', '2 or 3', '30-45
+  mins', 'single digits', 'a lunch hour') is not one answer — leave it out. How long they have trained, described in
+  words, is leave-it-out unless they name a level. A body part with no matching limitation, or a condition, is
+  limitations: []." Plus a decision on the experience grader shape (fixing it would also pass A0857 and likely most of
+  the 13). Expected: +19–21 of the 23 back, the 35 kept.
+- If round 2 passes, the full plan below stands: rest of ask-answers ~$5.90 · ask-safety $1.92 · ask-actions $0.65 ·
+  memory $0.11. Spent so far $0.93; with round 2 ($0.87) the total estimate is $10.25 — inside $10.50, with ~$0.25 spare
+  (no room for a round 3).
+
+`baselines.json` is unchanged (no full run). 928673c9 stays HOLD: with it, ask-safety / ask-actions / memory are STALE
+and ask-answers has 148 of 1158 under `3d5b431ea5cb` — the coach-ask gate fails until the full re-records.
+
+**Also done (coordinator's ask, `1e74058b`):** the 4a `remember_note` card + executor are gated on `getRemembers()` —
+memory off: the card reads "Holt's memory is off, so he can't keep this. Turn it on in What Holt Remembers. Nothing was
+changed." with no Confirm (`CardContext.loadRemembers`), and an executor that runs after the switch went off keeps
+nothing (`ExecDeps.remembers` → `gone`). Tests in holt-action-cards / holt-action-exec. Open item 2 above is closed.
