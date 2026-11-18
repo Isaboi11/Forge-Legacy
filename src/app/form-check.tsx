@@ -12,13 +12,11 @@ import {
   Text,
   TextInput,
   View,
-  type AccessibilityActionEvent,
-  type ViewStyle,
 } from 'react-native';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEvent, useEventListener } from 'expo';
-import { useVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
+import { useEvent } from 'expo';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { HoltMark } from '@/components/forge/HoltMark';
@@ -49,11 +47,11 @@ import {
   FORM_HELD,
   FORM_MEDICAL_STOP,
   FORM_NO_READ,
+  FORM_TRIM_MIN_MS,
   FORM_UNDER_18_LINE,
   formAgeGate,
   formBirthYear,
   knownFromCoaching,
-  moveTrimGrip,
   trimWindow,
   viewLabel,
 } from '@/domain/coach/form-check-view';
@@ -265,14 +263,6 @@ export default function FormCheckScreen() {
   const [ageGate, setAgeGate] = useState<'loading' | 'adult' | 'minor' | 'unknown' | 'failed'>('loading');
 
   const canRead = formCheckAvailable();
-
-  /* No swipe-back while trimming: on iOS 26 a sideways drag anywhere on a pushed screen is "go back", and the
-     trim's grips ARE sideways drags (PO 11-17, see TrimStage). The AppBar × still closes. */
-  const navigation = useNavigation();
-  const trimming = stage.step === 'trim';
-  useEffect(() => {
-    navigation.setOptions({ gestureEnabled: !trimming });
-  }, [navigation, trimming]);
 
   useEffect(() => {
     let live = true;
@@ -760,216 +750,78 @@ function ClipIcon({ color }: { color: string }) {
 
 // ── 02 Trim ────────────────────────────────────────────────────────────────────────────────────────────
 
-/*
- * ══ IT TRIMS LIKE THE PHOTOS APP (PO, 2026-11-17) ══
- *
- * *"The drag … is finicky and keeps trying to swipe the whole screen. As well as I can't see where I'm swiping
- * to. Should be working like apple clipping a video."* Three causes, three fixes:
- *
- *   1. THE SCREEN WAS SWIPING BACK. On iOS 26 react-native-screens hands back-navigation to iOS's own
- *      full-screen swipe (`interactiveContentPopGestureRecognizer`), so a rightward drag ANYWHERE on a pushed
- *      screen starts "go back" — and no JS responder can outbid a UIKit recogniser. `FormCheckScreen` turns the
- *      swipe off while this stage is up (`gestureEnabled: false`); the AppBar × is the way out.
- *   2. THE PICTURE DIDN'T FOLLOW THE FINGER. Now a grip pauses the clip and scrubs it to the grip's frame as it
- *      moves (expo-video's scrubbing mode: it chases the finger and drops stale seeks, Apple QA1820), so the big
- *      player IS the preview. A playhead rides the strip; touching the strip between the grips scrubs it, and
- *      Play loops the chosen part only. The play button hides while scrubbing — it sat on the lifter.
- *   3. THE GRIP JUMPED AND SLIPPED. It followed the finger's absolute position against a rail measured once on
- *      layout — mid push-animation, so off by the slide — and any other responder could take the touch. Now the
- *      drag is RELATIVE (where the grip was + how far the finger moved), the touch is held until lift-off, and
- *      each grip reaches ~50 × 92 pt, mostly OUTWARD; two grips close together split the gap at its middle.
- *
- * Drawn as the .dc draws it (bronze bracket, 14 pt grips, 64 pt strip, the shades). Not in the .dc, added: the
- * playhead, and tenths of a second on the times while a finger is down.
- */
-
 const HANDLE = 14;
-const STRIP_H = 64;
-/** Touch room above and below the strip — inside the touch layer, so nothing clips it. */
-const TOUCH_PAD = 14;
-/** A grip's reach past the grip itself: mostly outward (away from the other grip), a little into the window. */
-const REACH_OUT = 26;
-const REACH_IN = 10;
-/** VoiceOver's swipe up / down on a grip moves it by this much. */
-const A11Y_STEP_MS = 500;
-const A11Y_ADJUST = [{ name: 'increment' }, { name: 'decrement' }];
-
-/** "0:04.2" — the times while a finger is down, where a whole second is too coarse to see a grip move. */
-const mmssT = (ms: number) => {
-  const tenths = Math.max(0, Math.round(ms / 100));
-  const sec = Math.floor(tenths / 10);
-  return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}.${tenths % 10}`;
-};
-
-type TrimDrag = 'start' | 'end' | 'head';
-
-/** Seek expo-video's player — through its setter, which a hook's value may only be written through out here. */
-function seekPlayer(p: VideoPlayer, ms: number) {
-  p.currentTime = ms / 1000;
-}
-
-/** expo-video's scrubbing mode (iOS: chase the newest seek, drop the stale ones) — on while a finger is down. */
-function scrubMode(p: VideoPlayer, on: boolean) {
-  try {
-    p.scrubbingModeOptions = { scrubbingModeEnabled: on };
-  } catch {
-    // a player without it still seeks, just less smoothly
-  }
-}
-
-/** Web scrolls in the browser, where no responder reaches — the strip keeps its touches (see `useCompareDrag`). */
-const TRIM_TOUCH_STYLE = Platform.OS === 'web' ? ({ touchAction: 'none' } as unknown as ViewStyle) : null;
 
 function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs: number, endMs: number) => void; onRepick: () => void }) {
   const insets = useSafeAreaInsets();
   const dur = clip.durationMs && clip.durationMs > 0 ? clip.durationMs : FORM_CLIP_MS;
   const [trim, setTrim] = useState(() => trimWindow(dur, 0, Math.min(dur, FORM_CLIP_MS)));
   const [strip, setStrip] = useState<(string | null)[]>([]);
-  /** Where the picture is, in ms — the playhead. */
-  const [head, setHead] = useState(0);
-  const [drag, setDrag] = useState<TrimDrag | null>(null);
-  /** The strip's width in points — render needs it to split the touch room between two grips close together. */
-  const [stripW, setStripW] = useState(0);
+  /* Where the strip sits in the window. The handles follow the finger's ABSOLUTE position against it, so a
+     drag needs no remembered starting point (and no ref read during render — the react-compiler rule). */
+  const stripRef = useRef<View>(null);
+  const [rail, setRail] = useState({ x: 0, w: 1 });
+
   const player = useVideoPlayer(clip.uri, (p) => {
     p.loop = true;
     p.muted = true;
-    p.timeUpdateEventInterval = 0.1;
+    p.timeUpdateEventInterval = 0.25;
   });
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: false, oldIsPlaying: false });
-  /* Play covers the chosen part only: past its end (or looped round to before its start) it goes again. */
-  useEventListener(player, 'timeUpdate', ({ currentTime }) => {
-    if (drag) return; // the finger owns the picture
-    const ms = currentTime * 1000;
-    if (isPlaying && (ms >= trim.end || ms < trim.start - 250)) {
-      seekPlayer(player, trim.start);
-      setHead(trim.start);
-      return;
-    }
-    setHead(ms);
-  });
+  const tick = useEvent(player, 'timeUpdate', { currentTime: 0, currentLiveTimestamp: null, currentOffsetFromLive: null, bufferedPosition: 0 });
 
   useEffect(() => {
-    let alive = true;
+    let live = true;
     void filmstrip(clip.uri, dur, 8).then((f) => {
-      if (alive) setStrip(f);
+      if (live) setStrip(f);
     });
     return () => {
-      alive = false;
+      live = false;
     };
   }, [clip.uri, dur]);
 
-  /*
-   * The gestures, built ONCE (a PanResponder keeps its gesture state in its own closure, so a rebuilt one mid-drag
-   * would start again from dx 0). What they read has to be live — the window, the strip's width, where this drag
-   * began — so it sits in `live`, a plain object in this closure: not a ref (the compiler forbids reaching one from
-   * anything built during render) and not state (frozen at the first render). Render reads `trim` / `head` state.
-   * `player` and `dur` are fixed for the life of this stage: a different clip goes back through Start.
-   */
-  const [pans] = useState(() => {
-    const live = { trim, w: 1, grab: 0, x0: 0 };
-    const show = (ms: number) => {
-      seekPlayer(player, ms);
-      setHead(ms);
-    };
-    const begin = (which: TrimDrag) => {
-      player.pause();
-      scrubMode(player, true);
-      setDrag(which);
-    };
-    const finish = () => {
-      scrubMode(player, false);
-      setDrag(null);
-    };
-    const put = (which: 'start' | 'end', want: number) => {
-      const next = moveTrimGrip(which, want, live.trim, dur);
-      live.trim = next;
-      setTrim(next);
-      show(next[which]);
-    };
-    const grip = (which: 'start' | 'end') =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        // Once a grip has the finger it keeps it until lift-off.
-        onPanResponderTerminationRequest: () => false,
-        onPanResponderGrant: () => {
-          live.grab = live.trim[which];
-          begin(which);
-          show(live.grab);
-        },
-        onPanResponderMove: (_e, g) => put(which, live.grab + (g.dx / live.w) * dur),
-        onPanResponderRelease: finish,
-        onPanResponderTerminate: finish,
-      });
-    /* The strip itself: touch to put the playhead there (inside the window), drag to scrub. */
-    const place = (x: number) => show(Math.max(live.trim.start, Math.min(live.trim.end, (x / live.w) * dur)));
-    const scrub = PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderTerminationRequest: () => false,
-      onPanResponderGrant: (e) => {
-        live.x0 = e.nativeEvent.locationX;
-        begin('head');
-        place(live.x0);
-      },
-      onPanResponderMove: (_e, g) => place(live.x0 + g.dx),
-      onPanResponderRelease: finish,
-      onPanResponderTerminate: finish,
-    });
-    /* VoiceOver: a grip is adjustable — swipe up / down moves it half a second. */
-    const nudge = (which: 'start' | 'end') => (e: AccessibilityActionEvent) => {
-      const by = e.nativeEvent.actionName === 'increment' ? A11Y_STEP_MS : e.nativeEvent.actionName === 'decrement' ? -A11Y_STEP_MS : 0;
-      if (by) put(which, live.trim[which] + by);
-    };
+  const pans = useMemo(() => {
+    const at = (pageX: number) => Math.max(0, Math.min(dur, ((pageX - rail.x) / rail.w) * dur));
     return {
-      start: grip('start'),
-      end: grip('end'),
-      scrub,
-      nudgeStart: nudge('start'),
-      nudgeEnd: nudge('end'),
-      /** The strip's width, from its onLayout — the drag turns points into milliseconds with it. */
-      measured: (w: number) => {
-        live.w = Math.max(1, w);
-      },
+      start: PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (_e, g) => {
+          const p = at(g.moveX);
+          setTrim((t) => {
+            const start = Math.min(p, t.end - FORM_TRIM_MIN_MS);
+            return { start: Math.max(0, start), end: Math.min(t.end, Math.max(0, start) + FORM_CLIP_MS) };
+          });
+        },
+      }),
+      end: PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (_e, g) => {
+          const p = at(g.moveX);
+          setTrim((t) => {
+            const end = Math.min(dur, Math.max(p, t.start + FORM_TRIM_MIN_MS));
+            return { start: Math.max(t.start, end - FORM_CLIP_MS), end };
+          });
+        },
+      }),
     };
-  });
+  }, [rail, dur]);
 
   const leftPct = (trim.start / dur) * 100;
   const rightPct = 100 - (trim.end / dur) * 100;
-  const headPct = (Math.max(0, Math.min(dur, head)) / dur) * 100;
   const win = trim.end - trim.start;
   const whole = trim.start === 0 && dur <= FORM_CLIP_MS && Math.abs(trim.end - dur) < 50;
-  const at = drag ? mmssT : mmss;
-  /* Each grip reaches REACH_OUT outward and, inward, up to half the window — so two grips close together split
-     the space between them at the middle instead of the later one covering the other. */
-  const reachIn = Math.min(HANDLE + REACH_IN, stripW > 0 ? ((win / dur) * stripW) / 2 : HANDLE + REACH_IN);
 
   return (
     <>
       <View style={s.player}>
         <VideoView player={player} style={StyleSheet.absoluteFill} contentFit="contain" nativeControls={false} />
         <Text style={s.clipTag}>YOUR CLIP</Text>
-        {drag ? null : (
-          <Pressable
-            onPress={() => {
-              if (isPlaying) return player.pause();
-              // Play starts the chosen part over unless the playhead is already inside it.
-              if (head < trim.start || head >= trim.end - 100) {
-                seekPlayer(player, trim.start);
-                setHead(trim.start);
-              }
-              player.play();
-            }}
-            style={s.playBtn}
-            accessibilityRole="button"
-            accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
-          >
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="#F0EDE8">
-              {isPlaying ? <Path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /> : <Path d="M8 5.5v13l10.5-6.5z" />}
-            </Svg>
-          </Pressable>
-        )}
-        <Text style={s.timeTag}>{`${at(head)} / ${mmss(dur)}`}</Text>
+        <Pressable onPress={() => (isPlaying ? player.pause() : player.play())} style={s.playBtn} accessibilityRole="button" accessibilityLabel={isPlaying ? 'Pause' : 'Play'}>
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="#F0EDE8">
+            {isPlaying ? <Path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" /> : <Path d="M8 5.5v13l10.5-6.5z" />}
+          </Svg>
+        </Pressable>
+        <Text style={s.timeTag}>{`${mmss((tick.currentTime ?? 0) * 1000)} / ${mmss(dur)}`}</Text>
       </View>
 
       <View style={s.trimBody}>
@@ -977,63 +829,48 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
         {clip.notice ? <Text style={s.hint}>{`That clip is long — I'll watch up to ${Math.round(FORM_CLIP_MS / 1000)} seconds of it.`}</Text> : null}
 
         <View style={s.stripWrap}>
-          {/* The touch layer: the strip plus room above and below it, none of it clipped. */}
           <View
-            style={[s.stripTouch, TRIM_TOUCH_STYLE]}
-            onLayout={(e) => {
-              pans.measured(e.nativeEvent.layout.width);
-              setStripW(e.nativeEvent.layout.width);
+            ref={stripRef}
+            style={s.strip}
+            onLayout={() => {
+              stripRef.current?.measureInWindow((x, _y, w) => setRail({ x, w: Math.max(1, w) }));
             }}
           >
-            {/* What you see — the .dc's strip and bracket. None of it takes a touch. */}
-            <View pointerEvents="none" style={s.strip}>
-              {Array.from({ length: 8 }, (_, i) => (
-                <View key={i} style={s.stripCell}>
-                  <FrameFill />
-                  {strip[i] ? <Image source={{ uri: strip[i] as string }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
-                </View>
-              ))}
-              <View style={[s.shade, { left: 0, width: `${leftPct}%` }]} />
-              <View style={[s.shade, { right: 0, width: `${rightPct}%` }]} />
-              <View style={[s.rail, { top: 0, left: `${leftPct}%`, right: `${rightPct}%` }]} />
-              <View style={[s.rail, { bottom: 0, left: `${leftPct}%`, right: `${rightPct}%` }]} />
-              <View style={[s.grip, s.gripL, { left: `${leftPct}%` }]}>
-                <View style={s.gripLine} />
+            {Array.from({ length: 8 }, (_, i) => (
+              <View key={i} style={s.stripCell}>
+                <FrameFill />
+                {strip[i] ? <Image source={{ uri: strip[i] as string }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
               </View>
-              <View style={[s.grip, s.gripR, { right: `${rightPct}%` }]}>
+            ))}
+            <View pointerEvents="none" style={[s.shade, { left: 0, width: `${leftPct}%` }]} />
+            <View pointerEvents="none" style={[s.shade, { right: 0, width: `${rightPct}%` }]} />
+            <View pointerEvents="none" style={[s.rail, { top: 0, left: `${leftPct}%`, right: `${rightPct}%` }]} />
+            <View pointerEvents="none" style={[s.rail, { bottom: 0, left: `${leftPct}%`, right: `${rightPct}%` }]} />
+            <View
+              {...pans.start.panHandlers}
+              style={[s.handle, { left: `${leftPct}%`, marginLeft: -8 }]}
+              accessibilityRole="adjustable"
+              accessibilityLabel={`Trim start, ${mmss(trim.start)}`}
+            >
+              <View style={[s.grip, s.gripL]}>
                 <View style={s.gripLine} />
               </View>
             </View>
-            {/* The playhead — hidden while a grip moves, when the picture is the grip's frame anyway. */}
-            {drag === 'start' || drag === 'end' ? null : <View pointerEvents="none" style={[s.playhead, { left: `${headPct}%` }]} />}
-
-            {/* What you touch. The scrub layer first, so the grips sit over it. */}
-            <View {...pans.scrub.panHandlers} style={StyleSheet.absoluteFill} />
-            <View
-              {...pans.start.panHandlers}
-              style={[s.gripTouch, { left: `${leftPct}%`, marginLeft: -REACH_OUT, width: REACH_OUT + reachIn }]}
-              accessible
-              accessibilityRole="adjustable"
-              accessibilityLabel="Trim start"
-              accessibilityValue={{ text: mmss(trim.start) }}
-              accessibilityActions={A11Y_ADJUST}
-              onAccessibilityAction={pans.nudgeStart}
-            />
             <View
               {...pans.end.panHandlers}
-              style={[s.gripTouch, { right: `${rightPct}%`, marginRight: -REACH_OUT, width: REACH_OUT + reachIn }]}
-              accessible
+              style={[s.handle, { right: `${rightPct}%`, marginRight: -8 }]}
               accessibilityRole="adjustable"
-              accessibilityLabel="Trim end"
-              accessibilityValue={{ text: mmss(trim.end) }}
-              accessibilityActions={A11Y_ADJUST}
-              onAccessibilityAction={pans.nudgeEnd}
-            />
+              accessibilityLabel={`Trim end, ${mmss(trim.end)}`}
+            >
+              <View style={[s.grip, s.gripR]}>
+                <View style={s.gripLine} />
+              </View>
+            </View>
           </View>
-          <View style={s.trimLabels} pointerEvents="none">
-            <Text style={[s.trimTime, drag === 'start' && s.trimTimeOn]}>{at(trim.start)}</Text>
-            <Text style={s.trimMid}>{whole ? `${Math.round(win / 1000)} s · whole set` : drag ? `${(win / 1000).toFixed(1)} s` : `${Math.round(win / 1000)} s`}</Text>
-            <Text style={[s.trimTime, drag === 'end' && s.trimTimeOn]}>{at(trim.end)}</Text>
+          <View style={s.trimLabels}>
+            <Text style={s.trimTime}>{mmss(trim.start)}</Text>
+            <Text style={s.trimMid}>{whole ? `${Math.round(win / 1000)} s · whole set` : `${Math.round(win / 1000)} s`}</Text>
+            <Text style={s.trimTime}>{mmss(trim.end)}</Text>
           </View>
         </View>
       </View>
@@ -1484,22 +1321,17 @@ const s = StyleSheet.create({
   timeTag: { position: 'absolute', right: 14, bottom: 12, paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, backgroundColor: 'rgba(10,10,10,0.6)', fontSize: 12, fontWeight: '600', color: '#F0EDE8', fontVariant: ['tabular-nums'], overflow: 'hidden' },
   trimBody: { flex: 1, paddingTop: 18, paddingHorizontal: 20, gap: 16 },
   stripWrap: { gap: 8 },
-  /* The touch room overhangs by TOUCH_PAD each way and the negative margin gives it back, so the .dc's
-     spacing is unchanged. The labels under it take no touches (`pointerEvents`) so the overhang works there. */
-  stripTouch: { height: STRIP_H + TOUCH_PAD * 2, marginVertical: -TOUCH_PAD, justifyContent: 'center' },
-  strip: { height: STRIP_H, borderRadius: 10, overflow: 'hidden', flexDirection: 'row', gap: 2, backgroundColor: C.line },
+  strip: { height: 64, borderRadius: 10, overflow: 'hidden', flexDirection: 'row', gap: 2, backgroundColor: C.line },
   stripCell: { flex: 1, overflow: 'hidden' },
   shade: { position: 'absolute', top: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.55)' },
   rail: { position: 'absolute', height: 2, backgroundColor: C.brzHi },
-  grip: { position: 'absolute', top: 0, bottom: 0, width: HANDLE, backgroundColor: C.brzHi, alignItems: 'center', justifyContent: 'center' },
+  handle: { position: 'absolute', top: 0, bottom: 0, width: HANDLE + 16, alignItems: 'center', justifyContent: 'center' },
+  grip: { width: HANDLE, alignSelf: 'stretch', backgroundColor: C.brzHi, alignItems: 'center', justifyContent: 'center', marginHorizontal: 8 },
   gripL: { borderTopLeftRadius: 4, borderBottomLeftRadius: 4 },
   gripR: { borderTopRightRadius: 4, borderBottomRightRadius: 4 },
   gripLine: { width: 2, height: 18, borderRadius: 1, backgroundColor: 'rgba(20,14,8,0.6)' },
-  gripTouch: { position: 'absolute', top: 0, bottom: 0 },
-  playhead: { position: 'absolute', top: TOUCH_PAD - 5, height: STRIP_H + 10, width: 4, marginLeft: -2, borderRadius: 2, backgroundColor: '#F0EDE8', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(10,10,10,0.45)' },
   trimLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   trimTime: { fontSize: 12, color: C.ink3, fontVariant: ['tabular-nums'] },
-  trimTimeOn: { color: C.ink, fontWeight: '600' },
   trimMid: { fontSize: 12, color: C.ink2, fontWeight: '600', fontVariant: ['tabular-nums'] },
   trimFoot: { paddingTop: 12, paddingHorizontal: 20, gap: 6 },
   textBtn: { height: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
