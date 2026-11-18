@@ -70,8 +70,6 @@ function arg(name) {
 }
 
 function apiKey() {
-  /* The environment first (as scripts/evals/run.mjs takes it), so a worktree never needs a copy of the key on disk. */
-  if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY.trim();
   const env = fs.readFileSync(path.join(ROOT, '.env.local'), 'utf8');
   const line = env.split(/\r?\n/).find((l) => l.startsWith('ANTHROPIC_API_KEY='));
   if (!line) throw new Error('ANTHROPIC_API_KEY missing from .env.local');

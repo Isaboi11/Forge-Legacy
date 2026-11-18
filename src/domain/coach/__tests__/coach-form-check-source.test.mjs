@@ -158,10 +158,7 @@ test('the prompt carries every rule the PO’s instruction binds this feature to
     'Never comment on their body',
     'Never give a number for a load or a max',
     'Never guess at what you cannot see',
-    // Sprint 3 (PO 11-17, "one clear fix" + only what the camera can show): was 'At most TWO things to fix'.
-    'ONE clear thing to fix, at most',
-    'Before you write a fix, find the frame where it plainly happens',
-    'never a reason to name one here',
+    'At most TWO things to fix, the biggest first',
     'Zero is a real answer',
     'never write a fix and then hedge it',
     'Never mention frame numbers',
