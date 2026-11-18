@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { useCrm } from '@/components/forge/admin/crm-theme';
+import { ImportMissesCard } from '@/components/forge/admin/ImportMissesCard';
 import { Block, BlockGrid, Chip, FootNote, Full, HeroFigures, PageHeader, Row, Rows, when, type Figure } from '@/components/forge/admin/crm-ui';
 import { fetchAiDeploys, fetchAiHealth } from '@/data/ai-health-live';
 import {
@@ -92,6 +93,11 @@ export function AiHealthPage({ tz }: { tz: string }) {
       ) : (
         <Loaded h={h} />
       )}
+
+      {/* Sprint 3b (IM-5, 0275): its own read, so a failed AI-health load never hides the queue, and the reverse. */}
+      <View style={{ marginTop: 48 }}>
+        <ImportMissesCard />
+      </View>
     </View>
   );
 }

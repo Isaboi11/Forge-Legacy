@@ -78,6 +78,9 @@ import { errorMessage } from '@/lib/useQuery';
 import { pickImagesFromLibrary } from '@/lib/useMediaPicker';
 import { AI_DECLINED_LINE } from '@/domain/consent/consent';
 import { AiFeedback } from '@/components/forge/AiFeedback';
+import { ImportMissOffer } from '@/components/forge/ImportMissOffer';
+import { sendImportMiss } from '@/data/import-miss-live';
+import { importMissCorrected, importMissRead, importUnsureReasons } from '@/domain/program/import-miss';
 import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
 import { uuid } from '@/lib/app-session';
 import { withNotCharged } from '@/domain/ai/ai-call';
@@ -175,7 +178,12 @@ function ProgramImport() {
   /** What the paste called the program (`ParseResult.title`) — the draft's name, and said in the preview (QA programs-07). */
   const [title, setTitle] = useState<string | null>(null);
   /** uri → what that photo read. See the file header: a read costs money, so it happens once. */
-  const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[]; checks: string[] }>());
+  const reads = useRef(new Map<string, { weeks: ParsedWeek[]; skipped: string[]; checks: string[]; text: string }>());
+  /*
+   * IM-5 (Sprint 3b): the read the "Send this to Forge" offer is about — its id (a new read asks again), the words it
+   * was made from, and the preview as it was READ (so what the athlete changed by hand can be sent with it).
+   */
+  const [miss, setMiss] = useState<{ id: string; text: string; read: ParsedWeek[] } | null>(null);
   /* Leaving mid-read stops the photo reads (Sprint 1, P-G3). */
   const closeSignal = useCloseSignal();
 
@@ -208,6 +216,7 @@ function ProgramImport() {
       return;
     }
     showPreview(r.weeks, r.skipped, [], r.title ?? null);
+    setMiss({ id: uuid(), text, read: fitToScope(r.weeks, scope).weeks });
   };
 
   const uploadPdf = async () => {
@@ -267,6 +276,7 @@ function ProgramImport() {
     const parts: ParsedWeek[][] = [];
     const notRead: string[] = [];
     const toCheck: string[] = [];
+    const texts: string[] = [];
     const tag = (i: number, s: string) => (photos.length > 1 ? `Photo ${i + 1}: ${s}` : s);
     for (let i = 0; i < photos.length; i += 1) {
       const uri = photos[i];
@@ -275,6 +285,7 @@ function ProgramImport() {
         parts.push(cached.weeks);
         notRead.push(...cached.skipped);
         toCheck.push(...cached.checks.map((c) => tag(i, c)));
+        texts.push(cached.text);
         continue;
       }
       setBusy(photos.length > 1 ? `Reading photo ${i + 1} of ${photos.length}…` : 'Reading your photo…');
@@ -304,15 +315,19 @@ function ProgramImport() {
         failedAt(withNotCharged(photoError(r, i + 1, photos.length), r.refunded), r.refunded);
         return;
       }
-      reads.current.set(uri, { weeks: r.weeks, skipped: r.skipped, checks: r.checks });
+      reads.current.set(uri, { weeks: r.weeks, skipped: r.skipped, checks: r.checks, text: r.text });
+      texts.push(r.text);
       parts.push(r.weeks);
       notRead.push(...r.skipped);
       toCheck.push(...r.checks.map((c) => tag(i, c)));
     }
     setBusy(null);
     setAiState(null);
+    const merged = mergeParsedWeeks(parts);
     setPhotoRef(uuid());
-    showPreview(mergeParsedWeeks(parts), notRead, toCheck);
+    showPreview(merged, notRead, toCheck);
+    const words = texts.map((t, k) => (texts.length > 1 ? `── Photo ${k + 1} ──\n${t}` : t)).join('\n\n');
+    setMiss({ id: uuid(), text: words, read: fitToScope(merged, scope).weeks });
   };
 
   // ── create ───────────────────────────────────────────────────────────────────────────────────────
@@ -386,6 +401,17 @@ function ProgramImport() {
     await writeDraft();
   };
 
+  /* IM-5: offered only on an unsure read, about the read on screen. */
+  const unsure = preview && miss ? importUnsureReasons({ weeks: miss.read, skipped, checks, isKnown: (n) => !!resolveImportedName(n) }) : [];
+  const sendMiss = (includePhoto: boolean) =>
+    sendImportMiss({
+      kind: mode,
+      text: miss?.text ?? null,
+      photoUri: includePhoto && photos.length === 1 ? photos[0] : null,
+      read: importMissRead({ weeks: miss?.read ?? [], skipped, checks, reasons: unsure, via: mode === 'paste' ? 'paste' : 'photos' }),
+      corrected: preview && miss ? importMissCorrected(miss.read, preview) : null,
+    });
+
   const canPreview = mode === 'paste' ? text.trim().length >= MIN_PASTE_CHARS : photos.length > 0 && busy == null;
 
   return (
@@ -417,6 +443,9 @@ function ProgramImport() {
               <ImportPreview weeks={preview} onChange={setPreview} scope={scope} scopeNote={scopeNote} skipped={skipped} checks={checks} title={title} />
               {/* Only a photo read is the model's work — a paste is the app's own parser and carries no vote. */}
               {mode === 'photo' && photoRef ? <AiFeedback feature="import" aiRef={photoRef} style={styles.feedback} /> : null}
+              {miss && unsure.length ? (
+                <ImportMissOffer readId={miss.id} kind={mode} reasons={unsure} canIncludePhoto={mode === 'photo' && photos.length === 1} onSend={sendMiss} />
+              ) : null}
             </>
           ) : mode === 'paste' ? (
             <>
