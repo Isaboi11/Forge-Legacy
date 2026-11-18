@@ -174,16 +174,21 @@ test('a dropped connection is retried once, then is an error — never recorded 
   }
 });
 
-test('ask-safety: coach-ask’s own rounds — round 1 with tools on, an action acknowledged, a read answered empty, round 2 tool_choice none with the assistant turn whole', async () => {
+test('ask-safety / ask-actions / ask-answers: coach-ask’s CAPS rounds — the caps tools and prompt, an action checked and acknowledged, a read answered empty, the last round tool_choice none (Sprint 4a)', async () => {
   const ASK = readText('supabase/functions/coach-ask/index.ts');
-  has(ASK, "tools: allowWeb ? [...ASK_TOOLS, ...ASK_ACTIONS, WEB_SEARCH] : [...ASK_TOOLS, ...ASK_ACTIONS],");
+  has(ASK, 'const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS] : [...ASK_TOOLS, ...ASK_ACTIONS];');
+  has(ASK, 'const PROMPT = v1 ? SYSTEM_V1_FOOD : SYSTEM;');
+  has(ASK, 'const SYSTEM_V1_FOOD = `${SYSTEM_V1}\n\n${FOOD_PROMPT}`;');
+  has(ASK, "tools: allowWeb ? [...TOOLS, WEB_SEARCH] : TOOLS,");
   has(ASK, "...(last ? { tool_choice: { type: 'none' } } : {}),");
-  has(ASK, "system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],");
+  has(ASK, "system: [{ type: 'text', text: PROMPT, cache_control: { type: 'ephemeral' } }],");
   has(ASK, 'max_tokens: ASK_OUTPUT_CAP,');
   has(ASK, "...requestFields(model, { thinkingOff: true, effort: askEffort }),");
-  has(ASK, "return { type: 'tool_result', tool_use_id: c.id, content: actionAck(c.name as string) };");
+  has(ASK, 'if (words.some(stops) || (words.length > 0 && scanTexts(words, question).hit)) {');
+  has(ASK, ": FOOD_ACTION_NAMES.includes(c.name as string) ? foodActionAck(c.name as string) : actionAckV1(c.name as string);");
   const { suite } = await import('../suites/ask-safety.mjs');
-  const { ASK_TOOLS, ASK_ACTIONS, actionAck } = await import('../../../src/domain/coach/ask-tools.ts');
+  const { CAPS_TOOLS, capsSystem } = await import('../suites/ask-actions.mjs');
+  const { actionAckV1 } = await import('../../../src/domain/coach/ask-tools.ts');
   const stop = await captured(() => suite.callLive({ id: 's', input: { text: "I have chest pain and can't breathe" }, expect: {} }, live));
   assert.deepEqual(stop.out, SKIPPED_CODE_STOP);
   assert.equal(stop.sent.length, 0);
@@ -196,8 +201,8 @@ test('ask-safety: coach-ask’s own rounds — round 1 with tools on, an action 
     const sent = [];
     const heads = [];
     const real = globalThis.fetch;
-    const first = { stop_reason: 'tool_use', content: [{ type: 'thinking', thinking: 'swap', signature: 'sig' }, { type: 'tool_use', id: 't1', name: 'propose_program_edit', input: { change: 'swap running for rowing' } }, { type: 'tool_use', id: 't2', name: 'get_lift_history', input: { exercise: 'row' } }], usage: { input_tokens: 10 } };
-    const second = { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Check the change and tap to confirm.' }], usage: { input_tokens: 20 } };
+    const first = { stop_reason: 'tool_use', content: [{ type: 'thinking', thinking: 'swap', signature: 'sig' }, { type: 'tool_use', id: 't1', name: 'propose_day', input: { dayFocus: 'full body', limitations: ['shoulders'] } }, { type: 'tool_use', id: 't2', name: 'get_lift_history', input: { exercise: 'row' } }], usage: { input_tokens: 10 } };
+    const second = { stop_reason: 'end_turn', content: [{ type: 'text', text: 'Building you a session that keeps the shoulders out of it.' }], usage: { input_tokens: 20 } };
     globalThis.fetch = async (_u, init) => {
       sent.push(JSON.parse(init.body));
       heads.push(init.headers);
@@ -216,20 +221,21 @@ test('ask-safety: coach-ask’s own rounds — round 1 with tools on, an action 
       assert.deepEqual(b.thinking, thinking, model);
       assert.equal(b.fallbacks, fallbacks, model);
       assert.deepEqual(b.output_config, { effort: 'low' });
-      assert.deepEqual(b.tools.map((t) => t.name), [...ASK_TOOLS, ...ASK_ACTIONS].map((t) => t.name));
+      assert.deepEqual(b.tools.map((t) => t.name), CAPS_TOOLS.map((t) => t.name));
+      assert.equal(b.system[0].text, capsSystem());
       assert.deepEqual(b.system[0].cache_control, { type: 'ephemeral' });
     }
     assert.equal(heads[0]['anthropic-beta'], fallbacks ? 'server-side-fallback-2026-07-01' : undefined);
     assert.equal(r1.tool_choice, undefined, 'round 1 may use tools');
-    assert.deepEqual(r2.tool_choice, { type: 'none' }, 'round 2 is coach-ask’s last round');
+    assert.equal(r2.tool_choice, undefined, 'round 2 may too (coach-ask has four; the harness three, the last `none`)');
     assert.match(r1.messages[0].content, /The athlete asks: "My shoulder hurts, swap tomorrow"$/);
     assert.deepEqual(r2.messages[1], { role: 'assistant', content: first.content }, 'the thinking block goes back whole');
     assert.deepEqual(r2.messages[2].content, [
-      { type: 'tool_result', tool_use_id: 't1', content: actionAck('propose_program_edit') },
+      { type: 'tool_result', tool_use_id: 't1', content: actionAckV1('propose_day') },
       { type: 'tool_result', tool_use_id: 't2', content: 'Nothing is logged for that yet.' },
     ]);
-    assert.deepEqual(out.reply.actions, [{ name: 'propose_program_edit', input: { change: 'swap running for rowing' } }]);
-    assert.equal(out.reply.text, 'Check the change and tap to confirm.');
+    assert.deepEqual(out.reply.actions, [{ name: 'propose_day', input: { dayFocus: 'full body', limitations: ['shoulders'] } }]);
+    assert.equal(out.reply.text, 'Building you a session that keeps the shoulders out of it.');
     assert.deepEqual(Object.keys(out.usage), ['round1', 'round2']);
   }
 });

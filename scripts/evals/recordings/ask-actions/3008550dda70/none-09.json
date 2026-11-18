@@ -1,0 +1,45 @@
+{
+  "caseId": "none-09",
+  "promptHash": "3008550dda70513bddb8946572f132e3867248d0a5480bc100b0ca3a9960a4e4",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:51:20.522Z",
+  "reply": {
+    "text": "A deload is a planned lighter week, where you cut back the weight, the sets, or both for about a week so your body can catch up on recovery. You've been stacking hard weeks, and the deload is where that work turns into strength instead of just fatigue.\n\nMost people drop the volume by roughly a third to a half and keep the movements the same. You'll still train, just with plenty left in the tank. It's usually every 4 to 8 weeks, or sooner if your lifts are sliding and you feel flat.\n\nIt isn't taking a week off. It's a lighter week that makes the next block better.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 195,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 195,
+          "output_tokens": 185,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 185,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
