@@ -69,7 +69,7 @@ Every action is forwarded to the app as today: `data: {"action":{"name","input"}
 |---|---|---|---|---|
 | `propose_program_edit` (exists) | A | A (as today) | applies the change | as today |
 | `propose_program` / `propose_day` (new) | A | A (existing builder card) | runs the existing builder with the patch (missing questions as chips, the active-program guard), `coach-author` writes it — §1.4 | Start → put the previous active program back |
-| `remember_note` (new; replaces interpret's `remember`) | A | C card, A executor (`holt_notes`) | saves the note | deletes it |
+| `remember_note` (new; replaces interpret's `remember`) | A | C (card + executor, via `holt-notes-live.ts`) | saves the note | deletes it |
 | `open_door` (new; replaces interpret's `door`) | A | C card (a button, no write) | navigates: import · pick · meal_plan · targets · form_check | — |
 | `get_foods` (read, from 095d8bf6) | B | — | — | — |
 | `log_food` (new) / `propose_meal` (095d8bf6) | B | C card, B executor | diary rows (Log) / a saved meal (Save) | deletes exactly those rows |
@@ -84,6 +84,14 @@ fine; calories, macros, targets, weights never); (b) the card shows what WILL ch
 Confirm; (c) a card that cannot be computed (under-18 targets, an unweighed food — HF-D5, no program running) shows why
 and has no Confirm; (d) Undo is offered after every write and undoes only that write (holtai-08's rule); (e) nothing
 writes without a tap.
+
+**Cross-lane stubs (committed by the integrator so every lane compiles alone; the owner replaces the body, never the
+signature):** C — `holt-action-cards.ts` `cardFor(action, ctx)`, `holt-status.ts` `statusLine(status, detail)`,
+`holt-actions-live.ts` `executorFor(name)`, `HoltActionCard` (props `HoltActionCardProps`), `HoltStatusLine`.
+B — `ask-food-tools.ts` `FOOD_TOOLS`, `FOOD_ACTIONS`, `runFoodTool(name, input, ctx, seen)`, `checkFoodAction(name, input, seen)`
+(the enriched input carries the foods whole to the device), plus `holt-meal.ts` `mealCard(...)` → `ActionCardModel`
+and `holt-meal-live.ts` executors. The integrator wires B's meal card + executors into C's `cardFor` / `executorFor`,
+and A's mounts onto C's components, at merge.
 
 **Executor shape** (`holt-actions.ts`): `apply(input, ctx) → Promise<{ ok: true; undo: UndoToken; said: string } | { ok: false; reason }>`,
 `undo(token) → Promise<boolean>`. Each executor has a test that a failed apply leaves nothing behind.
