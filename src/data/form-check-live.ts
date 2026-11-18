@@ -103,6 +103,7 @@ export type MediaPick = (config: {
   title?: string;
   hint?: string;
   videoMaxDuration?: number;
+  localOnly?: boolean;
   directCamera?: boolean;
   directLibrary?: boolean;
 }) => Promise<ImagePickerAsset | null>;
