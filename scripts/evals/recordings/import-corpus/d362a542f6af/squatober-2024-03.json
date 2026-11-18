@@ -2,21 +2,21 @@
   "caseId": "squatober-2024-03",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:13:28.737Z",
+  "recordedAt": "2026-11-18T14:19:56.907Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"Carry On My Wayward Son\" -Kansas\nDay: 3 Thursday 10-03-24\nWarm Up: Get awake and Loosen Up!\n\n1. a. BACK SQUAT 5 sets of 3reps @ 80%\nsuper\nset b. DB/or KB Farmers Walk 5 sets of 30 yds\nAim to get 30-40% of Bodyweight in each hand\n2½ min rest between each superset\n\n2. a. BB BENT OVER Rows 5 sets of 5 reps\nsuper\nset b. DB/or KB Farmers Walk 5 sets of 30yds\n30-40% of BW in each hand\n2 min rest between each super set\n\n3. a. Heavy Alternating DB Curls 5 sets of 5 reps\nsuper\nset b. DB/or KB Farmers Walk 5 sets of 30yds\n30-40% in each hand. 2 min rest\n\nCardio\nPlanned\nDay\noff\n\nRecovery\nSalisbury Steak\nMashed Tators\n30 min Walk\n8-9 Hrs Sleep"
+          "text": "\"Carry On My Wayward Son\" -Kansas\nDay: 3 Thursday 10-03-24\n\nWarm Up: Get awake and Loosen Up!\n\n1. a. BACK SQUAT 5 sets of 3 reps @ 80%\nsuper set\nb. DB/or KB Farmers Walk 5 sets of 30yds\nAim to get 30-40% of Bodyweight in each hand\n2½ min rest between each superset\n\n2. a. BB BENT OVER Rows 5 sets of 5 reps\nsuper set\nb. DB/or KB Farmers Walk 5 sets of 30yds\n30-40% of BW in each hand\n2 min rest between each super set\n\n3. a. Heavy Alternating DB Curls 5 sets of 5 reps\nsuper set\nb. DB/or KB Farmers Walk 5 sets of 30yds\n30-40% in each hand. 2 min rest\n\nCardio\nPlanned\nDay\noff\n\nRecovery\nSalisbury Steak\nMashed Tators\n30 min Walk\n8-9 Hrs Sleep"
         }
       },
       "workout-tidy": {
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"Carry On My Wayward Son\" -Kansas\nWarm up: Get awake and Loosen Up!\n1. a. Back Squat 5 sets of 3 reps @ 80%\nsuper set b. Dumbbell Farmers Walk 5 sets\n* 30 yds\n* Aim to get 30-40% of Bodyweight in each hand\nrest 2:30 between each super set\n2. a. BB Bent Over Rows 5 sets of 5 reps\nsuper set b. Dumbbell Farmers Walk 5 sets\n* 30 yds\n* 30-40% of BW in each hand\nrest 2:00 between each super set\n3. a. Heavy Alternating DB Curls 5 sets of 5 reps\nsuper set b. Dumbbell Farmers Walk 5 sets\n* 30 yds\n* 30-40% in each hand\nrest 2:00 between each super set\nRecovery: Cardio Planned Day off · Salisbury Steak · Mashed Tators · 30 min Walk · 8-9 Hrs Sleep"
+          "text": "\"Carry On My Wayward Son\" -Kansas\nWarm up: Get awake and Loosen Up!\n1. a. Back Squat 5 sets of 3 reps @ 80%\nsuper set b. Dumbbell Farmers Walk 5 sets\n* 30yds, Aim to get 30-40% of Bodyweight in each hand\nrest 2:30 between each super set\n2. a. BB Bent Over Rows 5 sets of 5 reps\nsuper set b. Dumbbell Farmers Walk 5 sets\n* 30yds, 30-40% of BW in each hand\nrest 2:00 between each super set\n3. a. Heavy Alternating Dumbbell Curls 5 sets of 5 reps\nsuper set b. Dumbbell Farmers Walk 5 sets\n* 30yds, 30-40% in each hand\nrest 2:00 between each super set\nRecovery: Cardio Planned Day off · Salisbury Steak · Mashed Tators · 30 min Walk · 8-9 Hrs Sleep"
         }
       }
     }
@@ -47,7 +47,7 @@
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 348,
+      "output_tokens": 346,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

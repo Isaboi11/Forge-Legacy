@@ -2,7 +2,7 @@
   "caseId": "squatober-2024-08",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:13:55.072Z",
+  "recordedAt": "2026-11-18T14:20:21.207Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
@@ -16,7 +16,7 @@
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"Day 8: Tempo Tuesday\"\nWarm up: Get Loose and memorize the rep tempo.\n* The Rep Tempo of the Day: 5 seconds on the way down, 2 second pause in the bottom, normal tempo on the way up\n1. Back Squat 4 sets of 4 reps @ 60%\nrest 2:00\n2. Front Squat 3 sets of 4 reps @ 45% of back squat max\nrest 2:00\n3. Dumbbell Bulgarian Split Squats 3 sets of 5 reps\n* each leg\nrest 2:00\n4. BB RDL's 3 sets of 5 reps\nrest 1:30\nRecovery: All you can eat tacos. · 8-4 hrs sleep · 30 min walk"
+          "text": "\"Day 8: Tempo Tuesday\"\nWarm up: Get Loose and memorize the rep tempo.\n* The Rep Tempo of the Day!! 5 seconds on the way Down, 2 second pause in the Bottom, Normal tempo on the way up\n1. Back Squat 4 sets of 4 reps @ 60%\n* 2 min rest between sets\n2. Front Squat 3 sets of 4 reps @ 45% of back squat max\n* 2 min rest between sets\n3. Dumbbell Bulgarian Split Squats 3 sets of 5 reps\n* each leg\nrest 2:00\n4. BB RDL's 3 sets of 5 reps\nrest 1:30\nRecovery: All you can eat tacos. · 8-4 hrs sleep · 30 min walk"
         }
       }
     }
@@ -47,7 +47,7 @@
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 258,
+      "output_tokens": 270,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

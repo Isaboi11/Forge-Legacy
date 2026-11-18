@@ -2,7 +2,7 @@
   "caseId": "squatober-2024-15",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:14:38.896Z",
+  "recordedAt": "2026-11-18T14:21:00.555Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
@@ -16,7 +16,7 @@
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"Boring Simple Strength\"\nWarm up: Take a couple minutes and learn about Bill Starr.\n1. Back Squat 5,5,5,5,5 reps @ 67%, 70%, 73%, 75%, 77%\nrest 2:30\n2. Bench Press 5,5,5,5,5 reps @ 67%, 70%, 73%, 75%, 77%\nrest 2:30\n3. BB Bent Over Rows 5 sets of 5 reps\nrest 2:00\n4. DB RDL's 5 sets of 5 reps\n* Cardio\nrest 2:00\nRecovery: Chicken Casserole, extra helping · 30 min walk · 8-9 hrs sleep"
+          "text": "\"Boring Simple Strength\"\nWarm up: Take a couple minutes and learn about Bill Starr.\n1. Back Squat 5 reps @ 67%, 5 reps @ 70%, 5 reps @ 73%, 5 reps @ 75%, 5 reps @ 77%\nrest 2:30\n2. Bench Press 5 reps @ 67%, 5 reps @ 70%, 5 reps @ 73%, 5 reps @ 75%, 5 reps @ 77%\nrest 2:30\n3. BB Bent Over Rows 5 sets of 5 reps\nrest 2:00\n4. DB RDL's 5 sets of 5 reps\n* Cardio\nrest 2:00\nRecovery: Chicken Casserole, extra helping · 30 min walk · 8-9 hrs sleep"
         }
       }
     }
@@ -47,7 +47,7 @@
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 238,
+      "output_tokens": 278,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

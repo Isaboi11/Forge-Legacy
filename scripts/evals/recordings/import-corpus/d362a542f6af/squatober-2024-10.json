@@ -2,21 +2,21 @@
   "caseId": "squatober-2024-10",
   "promptHash": "d362a542f6aff3d93a77967a49b2f85d74f1212fa8c141484559139d71891db8",
   "model": "claude-sonnet-5",
-  "recordedAt": "2026-11-18T13:14:08.662Z",
+  "recordedAt": "2026-11-18T14:20:34.506Z",
   "reply": {
     "bodies": {
       "workout-card-read": {
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"SQUATS NEVER STOP\"\nDay: 10 Thursday 10-10-24\n\nWarm Up: Practice Doing some\n\"Unbroken Sets\" of back Squats. These\nare done with absolutely no pauses\nor breaks during the set. The reps\ngo down and up continuously until\nthe set is done.\n\n1. BACK SQUAT \"UNBROKEN\"\n6 sets of 6 reps @ 65%\n6total sets. 36 total reps. 2min rest\n\n2. BENCH PRESS \"UNBROKEN\"\n5 sets of 8 reps @ 65%\n2min rest\n\nCardio\nEZ Bar/or BB\nskullcrushers x30 reps\n\"UNBROKEN\"\n\nRecovery\nSalisbury steak\nand gravy\nMashed taters\n30 Min walk\n8+ hrs sleep"
+          "text": "\"SQUATS NEVER STOP\"\nDay: 10 Thursday 10-10-24\n\nWarm Up: Practice Doing some\n\"Unbroken Sets\" of back Squats. These\nare done with absolutely no pauses\nor breaks during the set. The reps\ngo down and up continuously until\nthe set is done.\n\n1. BACK SQUAT \"UNBROKEN\"\n6 sets of 6 reps @ 65%\n6 total sets. 36 total reps. 2min rest\n\n2. BENCH PRESS \"UNBROKEN\"\n5 sets of 8 reps @ 65%\n2min rest\n\nCardio\nEZ Bar/or BB\nSkullcrushers x30 reps\n\"UNBROKEN\"\n\nRecovery\nSalisbury Steak\nand gravy\nMashed taters\n30 Min walk\n8+ hrs sleep"
         }
       },
       "workout-tidy": {
         "status": 200,
         "body": {
           "ok": true,
-          "text": "\"Day 10: Squats Never Stop\"\nWarm up: Practice doing some \"Unbroken Sets\" of back squats. These are done with absolutely no pauses or breaks during the set. The reps go down and up continuously until the set is done.\n1. Back Squat \"Unbroken\" 6 sets of 6 reps @ 65%\nrest 2:00\n2. Bench Press \"Unbroken\" 5 sets of 8 reps @ 65%\nrest 2:00\n3. EZ Bar Skullcrushers 1 set of 30 reps\n* Or BB, \"Unbroken\", Cardio\nRecovery: Salisbury steak and gravy · Mashed taters · 30 Min walk · 8+ hrs sleep"
+          "text": "\"Day 10: Squats Never Stop\"\nWarm up: Practice Doing some \"Unbroken Sets\" of back Squats. These are done with absolutely no pauses or breaks during the set. The reps go down and up continuously until the set is done.\n1. Back Squat \"Unbroken\" 6 sets of 6 reps @ 65%\nrest 2:00\n2. Bench Press \"Unbroken\" 5 sets of 8 reps @ 65%\nrest 2:00\n3. EZ Bar Skullcrushers 1 set of 30 reps\n* Or BB, \"Unbroken\"\nRecovery: Cardio · Salisbury Steak and gravy · Mashed taters · 30 Min walk · 8+ hrs sleep"
         }
       }
     }
@@ -30,7 +30,7 @@
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 279,
+      "output_tokens": 282,
       "output_tokens_details": {
         "thinking_tokens": 0
       },
@@ -40,14 +40,14 @@
       "model": "claude-sonnet-5"
     },
     "workout-tidy": {
-      "input_tokens": 302,
+      "input_tokens": 305,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 1955,
       "cache_creation": {
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 243,
+      "output_tokens": 247,
       "output_tokens_details": {
         "thinking_tokens": 0
       },
