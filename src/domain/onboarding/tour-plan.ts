@@ -609,7 +609,7 @@ export const SCREEN_TOURS: Record<ScreenTourKey, readonly ScreenTourStep[]> = {
     {
       key: 'wc-finish',
       title: 'Finish here',
-      body: 'Nothing is posted until you press this. It says Save to Legacy, or Save & Share once you’ve picked where to post.',
+      body: 'It says Save to Legacy, or Save & Share once you’ve picked where to post. Save to Legacy keeps it to yourself.',
       anchor: 'complete-finish',
       pad: 6,
       radius: 14,

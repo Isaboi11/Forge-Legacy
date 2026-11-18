@@ -191,13 +191,15 @@ test('⚠ they have ONE phase, so phase 2 never makes them owed again', () => {
   assert.equal(surfacePhase('workout', 10), 3, 'every other surface still phases');
 });
 
-test('the first finish teaches sealing, details, the photo, and that posting waits for the button', () => {
+test('the first finish teaches sealing, details, the photo, and what each button does', () => {
   const said = (k, key) => { const s = SCREEN_TOURS[k].find((x) => x.key === key); return s.title + ' ' + s.body; };
   assert.match(said('workout-seal', 'ws-seal'), /already saved/i, 'the hold is not what saves it');
   assert.match(said('workout-seal', 'ws-seal'), /hold/i);
   assert.match(said('workout-seal', 'ws-details'), /optional/i);
   assert.match(said('workout-capture', 'wc-record'), /photo/i);
   assert.match(said('workout-capture', 'wc-share'), /Friends[\s\S]*Squads[\s\S]*outside Forge/);
-  assert.match(said('workout-capture', 'wc-finish'), /Nothing is posted until you press/i);
+  /* Not "nothing is posted until you press this" — with auto-post on, leaving the screen posts too (11-18). */
+  assert.doesNotMatch(said('workout-capture', 'wc-finish'), /nothing is posted/i);
+  assert.match(said('workout-capture', 'wc-finish'), /keeps it to yourself/i);
   assert.match(said('workout-capture', 'wc-finish'), /Save to Legacy[\s\S]*Save & Share/);
 });
