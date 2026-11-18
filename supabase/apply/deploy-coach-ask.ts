@@ -2479,7 +2479,7 @@ interface Body {
     allowWeb?: boolean;
     recipes?: unknown;
 }
-const SUMMARY_MODEL = HAIKU;
+const SUMMARY_MODEL = 'claude-haiku-5-5';
 const SUMMARY_TURNS = 40;
 const WEB_SEARCH = { type: 'web_search_20260209', name: 'web_search', max_uses: 2 };
 type Usage = {
@@ -2528,13 +2528,15 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
     let res: Response | null = null;
     let out: any = null;
     let failure: AskTurnFailure | null = null;
-    const summaryFields = requestFields(SUMMARY_MODEL, { thinkingOff: true, effort: 'low' });
+    const summaryChoice = await modelConfig.pick('coach-ask:summary', uidFromAuthorization(authorization), { model: SUMMARY_MODEL, effort: 'low' });
+    const summaryModel = summaryChoice.model;
+    const summaryFields = requestFields(summaryModel, { thinkingOff: true, effort: summaryChoice.effort ?? 'low' });
     try {
         res = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
             headers: anthropicHeaders(ANTHROPIC_API_KEY!, summaryFields),
             body: JSON.stringify({
-                model: SUMMARY_MODEL,
+                model: summaryModel,
                 max_tokens: 200,
                 ...summaryFields,
                 system: [{ type: 'text', text: SUMMARY_SYSTEM, cache_control: { type: 'ephemeral' } }],
@@ -2563,7 +2565,7 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
         cacheWrite: u.cache_creation_input_tokens ?? 0,
     };
     const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
-    const settled = await settle(outcome, refund, answeredBy(out, SUMMARY_MODEL), usage);
+    const settled = await settle(outcome, refund, answeredBy(out, summaryModel), usage);
     const refunded = settled?.refunded === true ? { refunded: true } : {};
     if (failure)
         return json({ ok: true, saved: false, reason: failure === 'timeout' ? 'upstream_error' : failure, ...(failure === 'timeout' ? { upstream: 'timeout' } : {}), ...refunded });

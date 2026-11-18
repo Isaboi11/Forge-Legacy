@@ -1,0 +1,26 @@
+{
+  "caseId": "failed-build",
+  "promptHash": "4d8d2be69782d7c04b84041b1970ece258680ab19ecc2266a36ebb8f91641d98",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:20:18.780Z",
+  "reply": {
+    "text": "You asked for a 6-day bro split, but that failed and nothing was built or changed, so you still don't have a plan.",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 509,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 39,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

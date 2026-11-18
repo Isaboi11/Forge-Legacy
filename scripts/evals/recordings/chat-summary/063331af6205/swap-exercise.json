@@ -1,0 +1,24 @@
+{
+  "caseId": "swap-exercise",
+  "promptHash": "063331af6205f9fd7548427d3bf80d96c4dace8cb72fb9399e9ce72b463847a3",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:20:08.560Z",
+  "reply": {
+    "text": "You asked to swap barbell rows for chest-supported rows in your program, and Holt made that change.",
+    "stop_reason": "end_turn",
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "input_tokens": 392,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 27,
+    "service_tier": "standard",
+    "inference_geo": "not_available",
+    "speed": "standard"
+  }
+}

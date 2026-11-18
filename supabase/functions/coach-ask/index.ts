@@ -304,8 +304,12 @@ interface Body {
   recipes?: unknown;
 }
 
-/** Summaries run on Haiku: a short, cheap write-up, not a conversation. */
-const SUMMARY_MODEL = HAIKU;
+/**
+ * Summaries run on Haiku: a short, cheap write-up, not a conversation. Haiku 5.5 since Sprint 3b (PL-7): the
+ * chat-summary eval scored it 19/20 against Haiku 4.5's 18/20 with nothing Haiku 4.5 got right lost, at a tenth of the
+ * price. The default only — `coach_ai_model_config` row 'coach-ask:summary' (0274) can run another (Haiku 4.5 too).
+ */
+const SUMMARY_MODEL = 'claude-haiku-5-5';
 /** The chat a summary is written from — at most this many turns, newest kept. */
 const SUMMARY_TURNS = 40;
 
@@ -375,13 +379,15 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
   // deno-lint-ignore no-explicit-any
   let out: any = null;
   let failure: AskTurnFailure | null = null;
-  const summaryFields = requestFields(SUMMARY_MODEL, { thinkingOff: true, effort: 'low' });
+  const summaryChoice = await modelConfig.pick('coach-ask:summary', uidFromAuthorization(authorization), { model: SUMMARY_MODEL, effort: 'low' });
+  const summaryModel = summaryChoice.model;
+  const summaryFields = requestFields(summaryModel, { thinkingOff: true, effort: summaryChoice.effort ?? 'low' });
   try {
     res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: anthropicHeaders(ANTHROPIC_API_KEY!, summaryFields),
       body: JSON.stringify({
-        model: SUMMARY_MODEL,
+        model: summaryModel,
         max_tokens: 200,
         // A short write-up: thinking off where the model has an off (Haiku 5.5 would otherwise think inside the
         // 200-token cap). Haiku 4.5 is sent nothing extra, as before (PL-7, model-request.ts).
@@ -412,7 +418,7 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
   // A summary cut at its 200-token cap is still a summary (`cleanSummary` trims it) — only a refusal is not.
   const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
   // Priced as the model that answered (the response's own `model`), PL-7.
-  const settled = await settle(outcome, refund, answeredBy(out, SUMMARY_MODEL), usage);
+  const settled = await settle(outcome, refund, answeredBy(out, summaryModel), usage);
   const refunded = settled?.refunded === true ? { refunded: true } : {};
   // ⛔ The reason is ours, never Anthropic's words (P-D8). A timeout is `upstream_error` + `upstream` (contract §1.2).
   if (failure) return json({ ok: true, saved: false, reason: failure === 'timeout' ? 'upstream_error' : failure, ...(failure === 'timeout' ? { upstream: 'timeout' } : {}), ...refunded });

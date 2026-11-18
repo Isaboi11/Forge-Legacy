@@ -45,7 +45,7 @@ export const FUNCTIONS = {
       MEDICAL,
     ],
     // ask-safety (Sprint 3b, PL-7): the safety corpus through coach-ask's OWN request — chat-safety sends coach-interpret's.
-    suites: ['chat-safety', 'ask-safety'],
+    suites: ['chat-safety', 'ask-safety', 'chat-summary'],
   },
   'coach-interpret': {
     builder: 'scripts/build-coach-interpret-deploy.mjs',

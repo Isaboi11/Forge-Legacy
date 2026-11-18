@@ -162,7 +162,7 @@ test('web search is offered only on a TAPPED ask, and that ask meters as web', a
   assert.deepEqual(log.rpcs.find(([n]) => n === 'coach_ai_reserve')[1], { p_action: 'web', p_fn: 'coach-ask' });
 });
 
-test('the end of a chat writes one summary as the athlete, via the Premium AI gate, on Haiku', async (t) => {
+test('the end of a chat writes one summary as the athlete, via the Premium AI gate, on Haiku (5.5 since Sprint 3b, PL-7)', async (t) => {
   const log = newLog();
   fakeAnthropic(
     t,
@@ -190,14 +190,18 @@ test('the end of a chat writes one summary as the athlete, via the Premium AI ga
     }),
   );
   assert.deepEqual(await res.json(), { ok: true, saved: true });
-  assert.equal(log.requests[0].model, 'claude-haiku-4-5');
+  assert.equal(log.requests[0].model, 'claude-haiku-5-5');
+  // Thinking off and effort low in Haiku 5.5's form — it would otherwise think inside the 200-token cap.
+  assert.deepEqual(log.requests[0].thinking, { type: 'disabled' });
+  assert.deepEqual(log.requests[0].output_config, { effort: 'low' });
+  assert.equal(log.requests[0].fallbacks, undefined, 'Haiku 5.5 has no server-side fallback');
   assert.equal(log.rpcs[0][0], 'coach_ai_reserve');
   assert.deepEqual(log.rpcs[0][1], { p_action: 'summary', p_fn: 'coach-ask' });
   // Settled once, as a delivered summary, with its tokens.
   const [s] = settles(log);
   assert.equal(s.p_outcome, 'ok');
   assert.equal(s.p_refund, false);
-  assert.equal(s.p_model, 'claude-haiku-4-5');
+  assert.equal(s.p_model, 'claude-haiku-5-5');
   assert.equal(s.p_input_tokens, 300);
   assert.equal(s.p_output_tokens, 40);
   // The medical sentence never reached storage.
