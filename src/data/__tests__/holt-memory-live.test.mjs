@@ -67,3 +67,16 @@ test('the "New" marks: when the screen was last seen', async () => {
   await markMemorySeen(new Date('2026-11-18T12:00:00Z'));
   assert.equal(await readMemorySeen(), '2026-11-18T12:00:00.000Z');
 });
+
+test('Export My Data reads every note (with its kind), every chat note, and lane B’s past chats — this athlete only', async () => {
+  const { fetchExportHolt } = await import('@/data/export-live');
+  db.rows('holt_notes').push(
+    { id: 'n1', athlete_id: ATHLETE, text: 'Hates burpees', created_at: '2026-11-18T10:00:00Z', source: 'chat', kind: 'dislike' },
+    { id: 'n2', athlete_id: 'someone-else', text: 'Not mine', created_at: '2026-11-18T10:00:00Z', source: 'chat', kind: 'like' },
+  );
+  db.rows('holt_chat_summaries').push({ id: 's1', athlete_id: ATHLETE, summary: 'You asked about squats.', created_at: '2026-11-17T10:00:00Z' });
+  const h = await fetchExportHolt();
+  assert.deepEqual(h.notes, [{ kind: 'dislike', text: 'Hates burpees', createdAt: '2026-11-18T10:00:00Z', source: 'chat' }]);
+  assert.deepEqual(h.summaries, [{ createdAt: '2026-11-17T10:00:00Z', summary: 'You asked about squats.' }]);
+  assert.deepEqual(h.chats, [], 'lane B’s stub until it merges');
+});
