@@ -312,7 +312,10 @@ export function withSafeTemps(d: KitchenDish): KitchenDish {
  *
  * ⚠ AI AUDIT 11-16 (N-D1): the list named the plain foods and missed the dishes and sauces that hide them —
  * basil pesto, buttermilk, kefir, creamer, penne, naan, Worcestershire, sea bass, aioli, calamari and soybean
- * oil were all SHOWN to someone avoiding them (11 of 14 probes). So each list covers the foods an allergy
+ * oil were all SHOWN to someone avoiding them (11 of 14 probes). Sprint 3b (11-18): "creamed" (creamed spinach,
+ * creamed chicken) and plural "creams" were shown too — `cream\b` stopped at the e. "Creamy" is a texture word
+ * (creamy avocado, creamy peanut butter) and is NOT read as dairy; a creamy dish with cream in it is caught by its
+ * lines. So each list covers the foods an allergy
  * covers AND the everyday dishes and sauces made from them. Erring wide is the point: a dish wrongly dropped
  * costs a card; a dish wrongly shown is what this list exists to stop. It is the second layer — `dishCards`
  * also drops any dish with an unmatched line once the athlete avoids anything. `allergensByWord` folds
@@ -323,7 +326,7 @@ export const ALLERGEN_WORDS: Record<string, RegExp> = {
   tree_nuts:
     /\b(nuts?|almonds?|cashews?|walnuts?|pecans?|pistachios?|hazelnuts?|filberts?|macadamias?|chestnuts?|pignoli|pesto|pralines?|marzipan|frangipane|nougat|gianduja|nutella|amaretti|baklava|romesco|dukkah|granola|trail\s+mix)\b/i,
   dairy:
-    /\b(milk|buttermilk|cheeses?|feta|parmesan|parmigiano|pecorino|mozzarella|cheddar|brie|camembert|gouda|gruyere|provolone|mascarpone|burrata|halloumi|paneer|ricotta|queso|labneh|skyr|kefir|yogh?urts?|butter|cream|creamers?|creme\s+fraiche|half[\s-]+and[\s-]+half|ghee|whey|casein\w*|lactose|custard|gelato|alfredo|bechamel|tzatziki|raita|lassi|ranch|caesar|pesto|naan|brioche|croissants?|doughnuts?|donuts?|chocolate\s+chips?|dulce\s+de\s+leche|eggnog)\b/i,
+    /\b(milk|buttermilk|cheeses?|feta|parmesan|parmigiano|pecorino|mozzarella|cheddar|brie|camembert|gouda|gruyere|provolone|mascarpone|burrata|halloumi|paneer|ricotta|queso|labneh|skyr|kefir|yogh?urts?|butter|creams?|creamed|creamers?|creme\s+fraiche|half[\s-]+and[\s-]+half|ghee|whey|casein\w*|lactose|custard|gelato|alfredo|bechamel|tzatziki|raita|lassi|ranch|caesar|pesto|naan|brioche|croissants?|doughnuts?|donuts?|chocolate\s+chips?|dulce\s+de\s+leche|eggnog)\b/i,
   eggs: /\b(eggs?|egg\s+(whites?|yolks?|wash|noodles)|yolks?|albumen|mayo|mayonnaise|aioli|remoulade|tartar\s+sauce|meringues?|pavlova|custard|hollandaise|bearnaise|carbonara|frittatas?|omelett?e?s?|quiches?|tiramisu|mousse|eggnog|brioche|challah|naan|doughnuts?|donuts?|marshmallows?|caesar|ranch)\b/i,
   gluten:
     /\b(wheat|flour|\w*breads?|breadcrumbs?|crumbs|panko|croutons?|pasta|noodles?|spaghetti|penne|linguine|fettuccine|rigatoni|fusilli|farfalle|macaroni|lasagnas?|lasagne|orzo|ravioli|tortellini|gnocchi|ramen|udon|soba|couscous|bulgh?ur|farro|spelt|semolina|durum|freekeh|kamut|barley|rye|malt(ed)?|seitan|tortillas?|pitas?|naan|bagels?|buns?|croissants?|brioche|challah|crackers?|pretzels?|biscuits?|muffins?|pastry|pastries|phyllo|filo|wontons?|dumplings?|gyoza|matzo\w*|tempura|roux|gravy|stuffing|dough|crust|cookies?|brownies?|pancakes?|waffles?|graham|doughnuts?|donuts?|oats?|oatmeal|granola|jerky|wraps?|beer|soy\s+sauce|teriyaki|hoisin|carbonara|tiramisu|quiches?)\b/i,

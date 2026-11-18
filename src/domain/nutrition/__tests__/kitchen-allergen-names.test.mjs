@@ -26,3 +26,17 @@ test('"<allergen>-free" in a name is not the allergen; an ordinary name adds not
   // The ingredient lines still count exactly as before.
   assert.ok(allergensByWord(dish('Weeknight Bowl', ['2 tbsp soy sauce'])).includes('soy'));
 });
+
+// Sprint 3b (11-18), lane C probe beside the eval's two "creamy" flags: `cream\b` stopped at the e, so "creamed" and
+// "creams" were SHOWN to a dairy avoider — by name and by line. Fail closed.
+test('"creamed" and "creams" are dairy - in a name and in a line', async () => {
+  const { dishCards } = await import('../kitchen-cards.ts');
+  const named = dish('Creamed Chicken', ['6 oz chicken breast']);
+  assert.ok(allergensByWord(named).includes('dairy'));
+  assert.ok(allergensByWord(dish('Chicken Bowl', ['1 cup creamed spinach'])).includes('dairy'));
+  assert.ok(allergensByWord(dish('Sundae Bar', ['2 ice creams'])).includes('dairy'));
+  const card = (name, text, food) => ({ name, why: '', cuisine: 'American', method: 'pan', minutes: 20, servings: 1, mealType: 'dinner', ingredients: [{ text: '6 oz chicken breast', quantity: 170, unit: 'g', food: 'chicken breast' }, { text, quantity: 30, unit: 'g', food }], steps: ['a', 'b'] });
+  assert.equal(dishCards([card('Creamed Spinach Chicken', '1 cup creamed spinach', 'baby spinach')], ['dairy'], null).length, 0);
+  // Nothing avoided: the same dish is still shown.
+  assert.equal(dishCards([card('Creamed Spinach Chicken', '1 cup creamed spinach', 'baby spinach')], [], null).length, 1);
+});
