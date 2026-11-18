@@ -2,7 +2,6 @@ import Constants from 'expo-constants';
 import * as Updates from 'expo-updates';
 
 import { supabase } from '@/lib/supabase';
-import { requireUserId } from '@/lib/require-user-id';
 import { shapeImportMisses, type ImportMiss } from '@/domain/program/import-miss';
 
 /**
@@ -37,7 +36,13 @@ function appVersion(): string | null {
 const randomId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
 async function uploadPhoto(uri: string): Promise<string | null> {
-  const uid = await requireUserId();
+  /* Web line: build 11's `require-user-id` (H42, the offline session read) is not on this line, so this is the
+     line's own signed-in read. Signed out throws, and the send says 'failed' (sendImportMiss's catch). */
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in');
+  const uid = user.id;
   const res = await fetch(uri);
   if (!res.ok) return null;
   const bytes = await res.arrayBuffer();
