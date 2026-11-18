@@ -51,9 +51,12 @@ export function fakeSupabase(log) {
   const from = (table) => {
     const q = { table, eq: [] };
     log.reads.push(q);
-    const rows = { workouts: BENCH, profiles: [{ app_prefs: { units: 'imperial' } }] }[table] ?? [];
+    /* Sprint 4b: `meter.tables` adds a table's rows (holt_memory_prefs, holt_notes); `meter.tableErrors` makes its read
+       fail; `meter.insertErrors[table]` is a queue of errors its inserts return in turn. */
+    const rows = log.meter.tables?.[table] ?? { workouts: BENCH, profiles: [{ app_prefs: { units: 'imperial' } }] }[table] ?? [];
+    const readError = log.meter.tableErrors?.[table] ?? null;
     const result = () => {
-      const r = { data: rows, error: null };
+      const r = { data: readError ? null : rows, error: readError };
       const ms = log.meter.readDelayMs ?? 0;
       return ms ? new Promise((ok) => setTimeout(() => ok(r), ms)) : Promise.resolve(r);
     };
@@ -66,8 +69,12 @@ export function fakeSupabase(log) {
       in: () => b,
       order: () => b,
       limit: () => b,
-      maybeSingle: () => Promise.resolve({ data: rows[0] ?? null, error: null }),
-      insert: (row) => (log.inserts.push([table, row]), Promise.resolve({ error: null })),
+      maybeSingle: () => Promise.resolve({ data: readError ? null : rows[0] ?? null, error: readError }),
+      insert: (row) => {
+        log.inserts.push([table, row]);
+        const queue = log.meter.insertErrors?.[table];
+        return Promise.resolve({ error: queue?.length ? queue.shift() : null });
+      },
       then: (ok, bad) => result().then(ok, bad),
     };
     return b;

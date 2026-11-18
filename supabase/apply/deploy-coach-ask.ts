@@ -1837,6 +1837,7 @@ export function transcriptOf(turns: readonly {
         .join('\n')
         .slice(0, 8000);
 }
+export const PAST_CHATS_MEMORY_OFF = "The athlete has switched Holt's memory off in What Holt Remembers, so nothing from earlier conversations is kept or read. If they refer back to one, say you don't keep past chats while memory is off, and that they can turn it back on in What Holt Remembers.";
 export function formatPastChats(rows: readonly {
     summary: string;
     created_at: string;
@@ -1849,6 +1850,7 @@ export const asTyped = (v: string): string => `"${v.replace(/["\u201c\u201d]/g, 
 export interface AskToolContext {
     recipes?: readonly RecipeCard[];
     keepText?: (text: string) => boolean;
+    memoryOff?: () => Promise<boolean>;
     db: AskDb;
     uid: string;
     question: string;
@@ -2215,6 +2217,8 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
                 return { text: cap(lines.join('\n')), isError: false };
             }
             case 'get_past_chats': {
+                if (ctx.memoryOff && (await ctx.memoryOff()))
+                    return { text: PAST_CHATS_MEMORY_OFF, isError: false };
                 const { data } = await ctx.db
                     .from('holt_chat_summaries')
                     .select('summary, created_at')
@@ -3085,6 +3089,226 @@ export function checkFoodAction(name: string, input: Record<string, unknown>, se
     }
     return { ok: false, error: `${name} is not a food action.` };
 }
+export const HOLT_MEMORY_CAPS = 'memory_v1';
+export const FACT_KINDS = ['schedule', 'gym', 'like', 'dislike', 'avoid', 'goal', 'other'] as const;
+export type FactKind = (typeof FACT_KINDS)[number];
+export interface KeptFact {
+    kind: FactKind;
+    text: string;
+}
+export const RECAP_MAX_CHARS = 600;
+export const RECAP_WIRE_CHARS = 800;
+export const RECAP_BATCH = 4;
+export interface ChatRecap {
+    text: string;
+    through: number;
+}
+export const PAST_CHATS_ROUTE = '/holt-chats';
+export interface StoredTurn {
+    role: 'athlete' | 'holt' | 'note';
+    text: string;
+}
+export function keepFact(fact: {
+    kind?: unknown;
+    text?: unknown;
+}): KeptFact | null {
+    if (!fact || typeof fact !== 'object' || typeof fact.text !== 'string')
+        return null;
+    const text = fact.text
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^["'\u201c\u201d\u2018\u2019]+|["'\u201c\u201d\u2018\u2019]+$/g, '')
+        .replace(/\.$/, '')
+        .trim();
+    if (text.length < FACT_MIN_CHARS || text.length > FACT_MAX_CHARS)
+        return null;
+    const kind: FactKind = (FACT_KINDS as readonly string[]).includes(fact.kind as string) ? (fact.kind as FactKind) : 'other';
+    if (factIsPersonalHealth(text))
+        return null;
+    if (kind === 'avoid' && FACT_AVOID_REASON.test(text))
+        return null;
+    return { kind, text };
+}
+export const FACT_MAX_CHARS = 80;
+export const FACT_MIN_CHARS = 2;
+export const FACTS_PER_CHAT = 5;
+export const HOLT_NOTES_CAP = 20;
+const FACT_TRAINING_PHRASE = /\b(?:shoulder|hip|back|chest|leg|calf|calves|neck|wrist|ankle|knee|arm|ab|core|glute|lower[- ]body|upper[- ]body|full[- ]body)s?[- ](?:press(?:es)?|raises?|thrusts?|days?|squats?|extensions?|curls?|fl(?:y|ies|ys)|openers?|bridges?|abduction|adduction|rows?|workouts?|sessions?|training|exercises?|work|focus|machines?|hinges?|dips?|ups?|swings?|circuits?|blasters?|kickbacks?)\b|\bbooty days?\b|\bmedicine balls?\b|\bhip[- ]hinge|\b(?:full|upper|lower)[- ]body\b|\bpush[- ]?ups?\b|\bpull[- ]?ups?\b|\bchin[- ]?ups?\b|\bsit[- ]?ups?\b|\bbodyweight (?:workouts?|training|exercises?|sessions?|only|moves|circuits?)\b|\bweight (?:training|room|lifting|belt|vest|bench|plates?|rack|machines?|stack)\b|\bback squats?\b/gi;
+const FACT_BODY_PART = /\b(?:knees?|kneecaps?|ankles?|wrists?|elbows?|necks?|spine|spinal|hips?|shoulders?|lower back|upper back|feet|foot|toes?|heels?|achilles|shins?|groin|ribs?|joints?|tendons?|ligaments?|acl|mcl|pcl|meniscus|rotator|cuffs?|discs?|vertebrae?|sciatic|hearts?|lungs?|bladder|pelvic|pelvis|cervix|uterus|womb|breasts?|nipples?|skin|blood|headaches?|eyes?|eyesight|jaw|teeth|tooth|stomach|gut|bowels?|colon|kidneys?|liver|thyroid|nerves?|brain|bones?|cartilage|hernia|prostate|testicles?|ovar(?:y|ies))\b/i;
+const FACT_MY_BODY = /\b(?:my|his|her|their|bad|weak|sore|tight|stiff|cranky|dodgy|tweaked|injured|hurt|hurting|aching|achy|busted|torn|pulled|strained|sprained|broken|fractured|swollen|surgical|surgery on (?:my|the))\s+(?:\w+\s+)?(?:back|body|core|abs|arms?|legs?|chest|glutes?|butt|bum|quads?|hamstrings?|hams|calf|calves|biceps?|triceps?|lats?|traps?|pecs?|delts?|forearms?|thighs?|belly|waist|hips?|muscles?|frame|physique|figure|shape)\b/i;
+const FACT_SYMPTOM = /\b(?:pains?|painful|hurts?|hurting|hurt|aches?|aching|achy|sore(?:ness)?|tight(?:ness)?|stiff(?:ness)?|numb(?:ness)?|tingl\w*|swell\w*|swollen|inflam\w*|injur\w*|tears?|torn|strain(?:ed|s)?|sprain(?:ed|s)?|pulled|tweak(?:ed|s)?|broke|broken|fractur\w*|dislocat\w*|surger(?:y|ies)|surgical|operations?|operated|rehab\w*|physio\w*|physical therap\w*|pt|chiro\w*|doctors?|dr|gp|cardiolog\w*|ortho\w*|clinic\w*|hospital\w*|flare\w*|bruis\w*|cramp\w*|dizz\w*|faint\w*|nause\w*|vomit\w*|migraines?|concussion\w*|limp\w*|bleed\w*|recover(?:ing)? from|healing|heal(?:ed|s)?|scars?|scarring|stitches|cast|brace|splint|crutch\w*|cane|wheelchair|sling)\b/i;
+const FACT_CONDITION = /\b(?:asthma\w*|diabet\w*|arthrit\w*|hernias?|scoliosis|tendin\w*|bursitis|plantar|fasciitis|sciatica|epilep\w*|seizures?|blood pressure|hypertension|cholesterol|cancer|chemo\w*|tumou?rs?|adhd|autis\w*|anxiety|anxious|depress\w*|bipolar|ptsd|ocd|panic|mental|therap(?:y|ist|ists)|counsel\w*|eating disorders?|anorexi\w*|bulimi\w*|binge\w*|purg\w*|pcos|endometriosis|ibs|crohn\w*|colitis|celiac|coeliac|allerg\w*|intoleran\w*|lactose|gluten|thyroid\w*|osteo\w*|lupus|fibromyalgia|covid|condition|conditions|illness\w*|ill|sick\w*|disease\w*|disorders?|syndromes?|chronic|disab\w*|prosthe\w*|amput\w*|insomnia|apnea|apnoea|menopaus\w*|perimenopaus\w*|menstrua\w*|my period|cardiac|stroke|clots?|anemi\w*|anaemi\w*|hiv|hepatitis|sober|sobriety|addict\w*|alcoholi\w*|recovery from)\b/i;
+const FACT_MEDICATION = /\b(?:medic\w*|meds|pills?|prescri\w*|insulin|metformin|ozempic|wegovy|mounjaro|zepbound|semaglutide|tirzepatide|glp-?1|statins?|steroids?|trt|testosterone|hormones?|hrt|sarms?|peptides?|adderall|ritalin|ssris?|antidepress\w*|inhalers?|epipen|advil|ibuprofen|tylenol|acetaminophen|paracetamol|aspirin|naproxen|aleve|painkillers?|opioids?|cbd|thc|marijuana|cannabis|supplements?|creatine|caffeine|pre-?workouts?|protein (?:powder|shakes?)|whey|casein|bcaas?|melatonin|vitamins?|birth control|contracepti\w*|doses?|dosage|dosing|mg|mcg|injections?|inject\w*)\b/i;
+const FACT_PREGNANCY = /\b(?:pregnan\w*|expecting|trimester|postpartum|post-partum|prenatal|antenatal|breastfeed\w*|nursing|newborn|baby|c-section|miscarri\w*|ivf|fertility|conceiv\w*|ttc)\b/i;
+const FACT_DIAGNOSIS = /\b(?:diagnos\w*|mri|x-?rays?|ct scans?|ultrasounds?|scans?|tested positive|blood ?tests?|bloodwork|lab (?:results|work|tests?))\b/i;
+const FACT_BODY_SHAPE = /\b(?:weigh|weighs|weighed|weighing|weight|bodyweight|body (?:image|shape|type|comp\w*|recomp\w*|dysmorph\w*)|fat|fatter|body ?fat|belly|love handles|dad bod|mom bod|skinny|thin|thinner|slim\w*|overweight|obes\w*|bmi|physique|figure|curves?|curvy|toned?|tone up|lean(?:er)? out|get lean|leaner|shred\w*|six-?pack|flat (?:stomach|belly|tummy)|beach body|bikini|waist\w*|thighs?|hips|butt|booty|measurements?|inches|bulk(?:ing)? up|size|calories?|kcal|deficit|surplus|diet\w*|fasting|keto|appearance|ribs)\b/i;
+const FACT_WEIGHT_CHANGE = /\b(?:lose|lost|losing|gain|gained|gaining|drop|dropped|dropping|shed|shedding|cut|cutting|put on|down)\s+(?:about\s+|around\s+|another\s+)?(?:\d+(?:\.\d+)?\s*)?(?:lbs?|pounds|kgs?|kilos?|stone)\b|\b\d+(?:\.\d+)?\s*(?:lbs?|pounds|kgs?|kilos?)\s+(?:down|lighter|heavier|to go|to lose|overweight)\b/i;
+const FACT_AVOID_REASON = /\b(?:because|due to|since|cause|'cause|cuz|coz|bc|b\/c|as (?:my|it|of|i)|after (?:my|the|a|an|i)|until|so (?:my|it|i)|for (?:my|the|a|an) |told (?:me|to)|recommended|advised|orders?)\b/i;
+export function factIsPersonalHealth(text: string): boolean {
+    const t = String(text ?? '').replace(/[\u2018\u2019\u02bc]/g, "'");
+    const rest = t.replace(FACT_TRAINING_PHRASE, ' ');
+    return FACT_MY_BODY.test(rest) || FACT_WEIGHT_CHANGE.test(rest) || FACT_BODY_PART.test(rest) || FACT_SYMPTOM.test(rest) || FACT_CONDITION.test(rest) || FACT_MEDICATION.test(rest) || FACT_PREGNANCY.test(rest) || FACT_DIAGNOSIS.test(rest) || FACT_BODY_SHAPE.test(rest);
+}
+export const SUMMARY_SYSTEM_V1 = `You write Coach Holt's private memory of a chat with an athlete in a training app. You return two things as JSON: a short summary of the chat, and the lasting facts the athlete told Holt about themselves.
+
+# The summary
+
+Write 1 to 3 short plain sentences, at most 400 characters in total, that Holt would want to know next time: what the athlete asked or wanted, what was decided, built or changed, and anything they said about themselves that matters for coaching (schedule, likes, dislikes, goals, equipment).
+
+- The athlete reads these notes, so write to them in the second person ("You asked how your bench is progressing; it went from 205x5 to 225x5 since March."). Never "the athlete" or "they".
+- Only what was actually said in the chat. Never guess or infer.
+- Lines in [square brackets] are notes from the app about what it actually did. Trust them over the words: something Holt built or showed is only started or saved if a note says so, otherwise write that Holt offered it. A request that failed, was refused, or that Holt said he could not do was asked for and NOT done \u2014 never write it as done or underway.
+- Never include anything about health, pain, injury, illness, medication, supplements, pregnancy, mental health, or their body or weight.
+- If nothing worth remembering happened (a greeting, a single tap), the summary is exactly: NOTHING
+- Plain text only. No lists, no markdown.
+
+# The facts
+
+A fact is something lasting the ATHLETE said about themselves or their training \u2014 still true next month \u2014 that Holt should not have to ask again. Each has a kind:
+- schedule \u2014 the days, times or how long they can train ("Trains Mon, Wed, Fri mornings", "45 minutes max on weekdays")
+- gym \u2014 where they train and what they have ("Trains at home: adjustable dumbbells to 50 lb and a bench", "Gym has no leg press")
+- like \u2014 what they enjoy ("Likes rowing for conditioning")
+- dislike \u2014 what they don't enjoy ("Hates burpees")
+- avoid \u2014 something they asked never to be given, written as "Avoid <movement or exercise>" ("Avoid jumping", "Avoid overhead pressing")
+- goal \u2014 what they are working toward, with their own numbers and dates ("Half marathon on April 12", "Wants a 225 bench by March")
+- other \u2014 any other lasting coaching preference ("Left-handed", "Prefers to be told the why")
+
+Rules for facts:
+- Only what the athlete said in their own lines. Never something Holt suggested, offered or built, never what the app did, never an inference. If you are not sure they said it, leave it out.
+- One short line each, at most 80 characters, in plain words close to theirs. No "you", no "the athlete" \u2014 a note, like the examples.
+- Never anything about health, pain, injury, illness, medication, supplements, pregnancy, mental health, their body, their weight or their shape \u2014 not even as a goal ("lose 20 lbs", "get lean" and "bigger arms" are not facts). If they mentioned an injury or pain in passing and asked to avoid a movement, keep only "Avoid <movement>" \u2014 no body part, no reason, nothing about why.
+- Not a fact: something for today or this week only, a question, a one-off request, how they feel today, or anything already in "Already kept" below (or a close rewording of it).
+- At most 5 facts. None is fine: an empty list.`;
+export const MEMORY_SUMMARY_SCHEMA = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['summary', 'facts'],
+    properties: {
+        summary: { type: 'string' },
+        facts: {
+            type: 'array',
+            items: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['kind', 'text'],
+                properties: {
+                    kind: { type: 'string', enum: ['schedule', 'gym', 'like', 'dislike', 'avoid', 'goal', 'other'] },
+                    text: { type: 'string' },
+                },
+            },
+        },
+    },
+} as const;
+export function memorySummaryTurn(transcript: string, kept: readonly string[]): string {
+    const known = kept
+        .map((k) => String(k ?? '').replace(/\s+/g, ' ').trim())
+        .filter(Boolean)
+        .slice(0, 20);
+    return `Already kept about this athlete:\n${known.length ? known.map((k) => `- ${k}`).join('\n') : '(nothing yet)'}\n\nThe chat:\n${transcript}`;
+}
+export function parseMemorySummary(raw: unknown): {
+    summary: string;
+    facts: {
+        kind: unknown;
+        text: unknown;
+    }[];
+} | null {
+    let v: unknown = raw;
+    if (typeof raw === 'string') {
+        const s = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+        try {
+            v = JSON.parse(s);
+        }
+        catch {
+            return null;
+        }
+    }
+    if (!v || typeof v !== 'object' || Array.isArray(v))
+        return null;
+    const o = v as {
+        summary?: unknown;
+        facts?: unknown;
+    };
+    const summary = typeof o.summary === 'string' ? o.summary : '';
+    const facts = Array.isArray(o.facts) ? (o.facts.filter((f) => f && typeof f === 'object') as {
+        kind: unknown;
+        text: unknown;
+    }[]) : [];
+    return { summary, facts };
+}
+export function factsToKeep(proposed: readonly {
+    kind?: unknown;
+    text?: unknown;
+}[], kept: readonly string[], room: number, stops: (text: string) => boolean): KeptFact[] {
+    const key = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const seen = new Set(kept.map((k) => key(String(k ?? ''))));
+    const out: KeptFact[] = [];
+    for (const p of proposed) {
+        if (out.length >= Math.min(FACTS_PER_CHAT, Math.max(0, room)))
+            break;
+        const f = keepFact(p);
+        if (!f || stops(f.text))
+            continue;
+        const k = key(f.text);
+        if (!k || seen.has(k))
+            continue;
+        seen.add(k);
+        out.push(f);
+    }
+    return out;
+}
+export const RECAP_SYSTEM = `You keep Coach Holt's running notes of the chat he is having right now with an athlete in a training app. The chat is too long to send whole, so the older part is folded into these notes, and Holt reads them before the newest turns.
+
+You are given the notes so far (maybe none) and the next part of the chat. Write the updated notes: everything from the old notes that still matters, plus what the new part adds.
+
+- Keep what Holt would need to carry on the conversation: what the athlete asked for and decided, every number, day, date, time, distance, weight on the bar and name they gave, what Holt offered or explained, what is still open or was left for later.
+- Short plain sentences about "the athlete" and "Holt", at most 600 characters in total. Newest decisions win: if they changed their mind, keep only the latest.
+- Only what was said. Never guess, never add advice.
+- Never include anything about health, pain, injury, illness, medication, supplements, pregnancy, mental health, or their body or weight \u2014 leave those parts out entirely.
+- If there is nothing worth keeping, reply with exactly: NOTHING
+- Plain text only. No lists, no markdown, no headings.`;
+export function recapTurn(prior: string, transcript: string): string {
+    const p = String(prior ?? '').replace(/\s+/g, ' ').trim();
+    return `Notes so far:\n${p || '(none)'}\n\nThe next part of the chat:\n${transcript}`;
+}
+export function cleanRecap(raw: unknown, stops: (sentence: string) => boolean, max: number = RECAP_MAX_CHARS): string | null {
+    const t = typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim() : '';
+    if (!t || /^nothing\.?$/i.test(t))
+        return null;
+    const sentences = (t.match(/[^.!?]+[.!?]*/g) ?? [t]).map((x) => x.trim()).filter(Boolean);
+    const kept: string[] = [];
+    let len = 0;
+    for (const s of sentences) {
+        if (stops(s))
+            continue;
+        const add = (kept.length ? 1 : 0) + s.length;
+        if (len + add > max) {
+            if (!kept.length)
+                kept.push(`${s.slice(0, max - 1).trimEnd()}\u2026`);
+            break;
+        }
+        kept.push(s);
+        len += add;
+    }
+    const out = kept.join(' ').trim();
+    return out.length >= 10 ? out : null;
+}
+export function earlierBlock(recap: string): string {
+    return `[Earlier in this conversation \u2014 the app's short notes of the turns before the ones below, not the athlete's own words: ${String(recap ?? '').replace(/\s+/g, ' ').trim()}]`;
+}
+export const OPENED_PLACEHOLDER = '(The athlete opened the chat with Holt.)';
+export function withEarlier<M extends {
+    role: 'user' | 'assistant';
+    content: string;
+}>(messages: M[], recap: string | null | undefined): M[] {
+    if (!recap || !messages.length)
+        return messages;
+    const block = earlierBlock(recap);
+    const first = messages[0];
+    if (first.role !== 'user')
+        return [{ role: 'user', content: block } as M, ...messages];
+    return [{ ...first, content: first.content === OPENED_PLACEHOLDER ? block : `${block}\n\n${first.content}` }, ...messages.slice(1)];
+}
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -3376,6 +3600,7 @@ interface Body {
     allowWeb?: boolean;
     recipes?: unknown;
     caps?: unknown;
+    earlier?: unknown;
 }
 const SUMMARY_MODEL = 'claude-haiku-5-5';
 const SUMMARY_TURNS = 40;
@@ -3411,11 +3636,146 @@ const reservationIdOf = (row: unknown): string | null => {
     const r = row as Partial<AskReservation> | null;
     return r?.allowed === true && typeof r.reservation_id === 'string' && r.reservation_id ? r.reservation_id : null;
 };
+const memoryCapsOf = (body: Body): boolean => Array.isArray(body.caps) && body.caps.includes(HOLT_MEMORY_CAPS);
+const NOT_THERE_YET = new Set(['PGRST205', '42P01', 'PGRST204', '42703']);
+async function memorySwitch(supabase: ReturnType<typeof createClient>, authorization: string): Promise<'on' | 'off' | 'unknown'> {
+    try {
+        const uid = uidFromAuthorization(authorization);
+        let q = supabase.from('holt_memory_prefs').select('remembers');
+        if (uid)
+            q = q.eq('athlete_id', uid);
+        const { data, error } = await q.limit(1).maybeSingle();
+        if (error)
+            return NOT_THERE_YET.has(String((error as {
+                code?: unknown;
+            }).code ?? '')) ? 'on' : 'unknown';
+        return (data as {
+            remembers?: unknown;
+        } | null)?.remembers === false ? 'off' : 'on';
+    }
+    catch {
+        return 'unknown';
+    }
+}
+const memoryStops = (minor: boolean) => (s: string): boolean => guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit;
+async function memoryModelCall(settle: ReturnType<typeof settler>, authorization: string, { system, user, maxTokens, format }: {
+    system: string;
+    user: string;
+    maxTokens: number;
+    format?: unknown;
+}): Promise<{
+    text: string;
+    failure: AskTurnFailure | null;
+    outcome: AskOutcome;
+    refunded: boolean;
+}> {
+    const upstream = new AbortController();
+    const timer = setTimeout(() => upstream.abort(), SUMMARY_UPSTREAM_MS);
+    let res: Response | null = null;
+    let out: any = null;
+    let failure: AskTurnFailure | null = null;
+    const choice = await modelConfig.pick('coach-ask:summary', uidFromAuthorization(authorization), { model: SUMMARY_MODEL, effort: 'low' });
+    const fields = requestFields(choice.model, { thinkingOff: true, effort: choice.effort ?? 'low', ...(format ? { format } : {}) });
+    try {
+        res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: anthropicHeaders(ANTHROPIC_API_KEY!, fields),
+            body: JSON.stringify({
+                model: choice.model,
+                max_tokens: maxTokens,
+                ...fields,
+                system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+                messages: [{ role: 'user', content: user }],
+            }),
+            signal: upstream.signal,
+        });
+        out = await res.json().catch(() => null);
+        if (!res.ok) {
+            console.error('anthropic memory', res.status, JSON.stringify(out ?? {}).slice(0, 800));
+            failure = 'upstream_error';
+        }
+    }
+    catch (e) {
+        failure = upstream.signal.aborted ? 'timeout' : 'upstream_unreachable';
+        console.error('anthropic memory', failure, String((e as Error)?.message ?? e).slice(0, 300));
+    }
+    finally {
+        clearTimeout(timer);
+    }
+    const u = (out?.usage ?? {}) as Record<string, number>;
+    const usage: Usage = { input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0 };
+    const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
+    const settled = await settle(outcome, refund, answeredBy(out, choice.model), usage);
+    const text = ((out?.content ?? []) as {
+        type: string;
+        text?: string;
+    }[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
+    return { text, failure, outcome, refunded: settled?.refunded === true };
+}
+const memoryFailure = (failure: AskTurnFailure | null, outcome: AskOutcome, refunded: boolean) => ({
+    reason: failure ? (failure === 'timeout' ? 'upstream_error' : failure) : outcome,
+    ...(failure === 'timeout' ? { upstream: 'timeout' } : {}),
+    ...(refunded ? { refunded: true } : {}),
+});
+async function recap(body: Body, authorization: string): Promise<Response> {
+    const adult = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
+    if (adult.length === 0)
+        return json({ ok: true, recap: null, reason: 'too_short' });
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
+    const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
+    const reservation = error ? null : reservationIdOf(row);
+    if (!reservation)
+        return json({ ok: true, recap: null, reason: 'not_allowed' });
+    const minor = (row as AskReservation | null)?.minor === true;
+    const stops = memoryStops(minor);
+    const turns = withoutStoppedTurns(adult, (t) => guardRoute(t, minor) !== null);
+    const prior = cleanRecap(typeof body.earlier === 'string' ? body.earlier.slice(0, RECAP_WIRE_CHARS * 2) : '', stops, RECAP_WIRE_CHARS) ?? '';
+    const settle = settler(supabase, reservation, Date.now());
+    if (turns.length === 0) {
+        await settle('guarded', true, SUMMARY_MODEL, NO_USAGE);
+        return json({ ok: true, recap: null, reason: 'too_short' });
+    }
+    const r = await memoryModelCall(settle, authorization, { system: RECAP_SYSTEM, user: recapTurn(prior, transcriptOf(turns)), maxTokens: 300 });
+    if (r.failure || r.outcome !== 'ok')
+        return json({ ok: true, recap: null, ...memoryFailure(r.failure, r.outcome, r.refunded) });
+    const text = cleanRecap(r.text, stops, RECAP_MAX_CHARS);
+    return json(text ? { ok: true, recap: text } : { ok: true, recap: null, reason: 'nothing_to_keep' });
+}
+async function keepFacts(supabase: ReturnType<typeof createClient>, proposed: readonly {
+    kind: unknown;
+    text: unknown;
+}[], kept: readonly string[], minor: boolean): Promise<number> {
+    const facts = factsToKeep(proposed, kept, HOLT_NOTES_CAP - kept.length, memoryStops(minor));
+    let n = 0;
+    for (const f of facts) {
+        try {
+            let { error } = await supabase.from('holt_notes').insert({ text: f.text, source: 'chat', kind: f.kind });
+            if (error && NOT_THERE_YET.has(String((error as {
+                code?: unknown;
+            }).code ?? '')))
+                ({ error } = await supabase.from('holt_notes').insert({ text: f.text, source: 'chat' }));
+            if (error)
+                break;
+            n += 1;
+        }
+        catch {
+            break;
+        }
+    }
+    return n;
+}
 async function summarize(body: Body, authorization: string): Promise<Response> {
     const turns = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
+    const v2 = memoryCapsOf(body);
+    const extra = (summary: string | null, kept: number) => (v2 ? { summary, kept } : {});
     if (turns.filter((t) => t.role === 'athlete').length < 2)
-        return json({ ok: true, saved: false, reason: 'too_short' });
+        return json({ ok: true, saved: false, reason: 'too_short', ...extra(null, 0) });
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
+    const remembers = await memorySwitch(supabase, authorization);
+    if (remembers !== 'on')
+        return json({ ok: true, saved: false, reason: remembers === 'off' ? 'memory_off' : 'memory_unknown', ...extra(null, 0) });
+    if (v2)
+        return summarizeV2(turns, supabase, authorization);
     const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
     const reservation = error ? null : reservationIdOf(row);
     if (!reservation)
@@ -3482,6 +3842,58 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
     }
     catch {
         return json({ ok: true, saved: false, reason: 'failed' });
+    }
+}
+async function summarizeV2(turns: {
+    role: 'athlete' | 'holt';
+    text: string;
+}[], supabase: ReturnType<typeof createClient>, authorization: string): Promise<Response> {
+    const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
+    const reservation = error ? null : reservationIdOf(row);
+    if (!reservation)
+        return json({ ok: true, saved: false, reason: 'not_allowed', summary: null, kept: 0 });
+    const minor = (row as AskReservation | null)?.minor === true;
+    const settle = settler(supabase, reservation, Date.now());
+    const uid = uidFromAuthorization(authorization);
+    let kept: string[] | null = null;
+    try {
+        let q = supabase.from('holt_notes').select('text');
+        if (uid)
+            q = q.eq('athlete_id', uid);
+        const { data, error: readError } = await q;
+        if (!readError && Array.isArray(data))
+            kept = (data as {
+                text?: unknown;
+            }[]).map((r) => String(r?.text ?? '')).filter(Boolean);
+    }
+    catch {
+        kept = null;
+    }
+    const r = await memoryModelCall(settle, authorization, {
+        system: SUMMARY_SYSTEM_V1,
+        user: memorySummaryTurn(transcriptOf(turns), kept ?? []),
+        maxTokens: 600,
+        format: { type: 'json_schema', schema: MEMORY_SUMMARY_SCHEMA },
+    });
+    if (r.failure || r.outcome !== 'ok')
+        return json({ ok: true, saved: false, ...memoryFailure(r.failure, r.outcome, r.refunded), summary: null, kept: 0 });
+    try {
+        const parsed = parseMemorySummary(r.text);
+        if (!parsed)
+            return json({ ok: true, saved: false, reason: 'nothing_to_keep', summary: null, kept: 0 });
+        const summary = cleanSummary(parsed.summary, memoryStops(minor));
+        let saved = false;
+        if (summary) {
+            const { error: insertError } = await supabase.from('holt_chat_summaries').insert({ summary });
+            saved = !insertError;
+        }
+        const n = kept ? await keepFacts(supabase, parsed.facts, kept, minor) : 0;
+        if (!summary && n === 0)
+            return json({ ok: true, saved: false, reason: 'nothing_to_keep', summary: null, kept: 0 });
+        return json({ ok: true, saved, summary: saved ? summary : null, kept: n });
+    }
+    catch {
+        return json({ ok: true, saved: false, reason: 'failed', summary: null, kept: 0 });
     }
 }
 function guardRoute(text: string, minor = false): 'crisis' | 'urgent' | 'care' | 'medical_stop' | null {
@@ -3552,6 +3964,8 @@ Deno.serve(async (req) => {
     }
     if (body.mode === 'summarize')
         return summarize(body, req.headers.get('Authorization') ?? '');
+    if (body.mode === 'recap' && memoryCapsOf(body))
+        return recap(body, req.headers.get('Authorization') ?? '');
     const question = (typeof body.question === 'string' ? body.question : '').trim();
     if (!question || question.length > ASK_QUESTION_CHARS)
         return json({ route: 'error', reason: 'bad_request' }, 400);
@@ -3592,8 +4006,10 @@ Deno.serve(async (req) => {
     const context = cleanContext(body.context);
     context.notes = (context.notes ?? []).filter((n) => !stops(n) && !scanReply(n).hit);
     const keepText = (t: string) => !stops(t) && !mentionsDiscomfort(t) && !scanReply(t).hit;
+    let memoryOnce: Promise<boolean> | null = null;
+    const memoryOff = () => (memoryOnce ??= memorySwitch(supabase, authorization).then((s) => s !== 'on'));
     const today = new Date().toISOString().slice(0, 10);
-    const messages: {
+    let messages: {
         role: 'user' | 'assistant';
         content: string;
     }[] = history.map((t) => ({
@@ -3604,6 +4020,10 @@ Deno.serve(async (req) => {
         messages.unshift({ role: 'user', content: '(The athlete opened the chat with Holt.)' });
     }
     messages.push({ role: 'user', content: askUserTurn(question, context, today, { ageYears: reserved.age_years, minor }) });
+    if (memoryCapsOf(body) && typeof body.earlier === 'string') {
+        const earlier = cleanRecap(body.earlier.slice(0, RECAP_WIRE_CHARS * 2), memoryStops(minor), RECAP_WIRE_CHARS);
+        messages = withEarlier(messages, earlier);
+    }
     if (allowWeb) {
         messages[messages.length - 1].content += '\n\n(The athlete tapped "Find one online" \u2014 you have web search for this message.)';
     }
@@ -3959,7 +4379,7 @@ Deno.serve(async (req) => {
                                     const fr = await runFoodTool(c.name as string, (input ?? {}) as Record<string, unknown>, { authorization, supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON_KEY, fetch: (u, init) => fetch(u, init as RequestInit) }, seenFoods);
                                     return { type: 'tool_result', tool_use_id: c.id, content: fr.text, ...(fr.isError ? { is_error: true } : {}) };
                                 }
-                                const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes, keepText });
+                                const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes, keepText, memoryOff });
                                 return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
                             }));
                         };

@@ -39,6 +39,9 @@ export const FUNCTIONS = {
       'src/domain/coach/__tests__/coach-ask-caps.test.mjs',
       'src/domain/coach/__tests__/coach-ask-source.test.mjs',
       'src/domain/ai/__tests__/migration-0276.test.mjs',
+      'src/domain/coach/__tests__/coach-ask-memory.test.mjs',
+      'src/domain/coach/__tests__/holt-memory.test.mjs',
+      'src/domain/coach/__tests__/migration-0278.test.mjs',
       'src/domain/coach/__tests__/chat-history.test.mjs',
       'src/domain/coach/__tests__/coach-ask-loop.test.mjs',
       'src/domain/coach/__tests__/coach-ask-turn.test.mjs',
@@ -48,7 +51,7 @@ export const FUNCTIONS = {
     ],
     // Sprint 3b (PO 11-18): ask-safety sends coach-ask's own request; chat-safety sends coach-interpret's and gates
     // coach-interpret only. No bar lowered.
-    suites: ['ask-safety', 'ask-actions', 'ask-answers', 'chat-summary'],
+    suites: ['ask-safety', 'ask-actions', 'ask-answers', 'chat-summary', 'memory'],
   },
   'coach-interpret': {
     builder: 'scripts/build-coach-interpret-deploy.mjs',
