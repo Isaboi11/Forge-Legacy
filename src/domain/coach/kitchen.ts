@@ -147,11 +147,23 @@ const FAST_LOSS =
 const REFERRED =
   /\b(doctor|dietitian|dietician|physician|pediatrician|paediatrician|physio\w*|healthcare|health\s+care)\b|\b(can'?t|cannot|won'?t|not\s+going\s+to|not\s+able\s+to)\s+(help|build|set|give|make|do|plan)\b/i;
 
+/*
+ * ══ THE MACROS OF A FOOD ARE NOT THEIR MACRO TARGETS ══ (HF-D6, Nutrition Architecture Amendment 006, PO 2026-10-01).
+ * "Find the macros for me" about a Costa Vida salad put "Set my macros" under the answer — a door to their daily
+ * targets, for a question about a meal. Macros asked OF something are a lookup (Holt's get_foods), so that door stays
+ * down. "Set my macros", "macros for a cut" and "how many calories should I eat" still get it.
+ */
+const FOOD_MACROS =
+  /\b(macros?|calories|cals|nutrition(al)?\s+(info|facts)?)\s+(for|of|in|on)\s+(?!(a\s+)?(me|my|cut\w*|bulk\w*|weight|fat|los\w+|gain\w*|maint\w*|recomp\w*|goal)\b)|\b(find|look\s*up|get|pull|check|what\s+are|what'?s)\s+(me\s+)?(the\s+)?(macros?|calories|nutrition)\b|\bhow\s+many\s+(calories|cals|macros|grams\s+of\s+protein)\s+(are\s+|is\s+)?(in|on)\b/i;
+
 export function kitchenDoorsFor(text: string, reply = '', earlier: readonly string[] = []): { label: string; goTo: string }[] {
   const t = (text ?? '').replace(/[‘’ʼ]/g, "'");
   if ([t, ...earlier].some((s) => MINOR_AGE.test((s ?? '').replace(/[‘’ʼ]/g, "'")))) return [];
   if (isCrashCut(t) || FAST_LOSS.test(t) || REFERRED.test(reply ?? '')) return [];
-  return DOORS.filter((d) => d.re.test(t)).map(({ label, goTo }) => ({ label, goTo })).slice(0, 2);
+  const lookup = FOOD_MACROS.test(t);
+  return DOORS.filter((d) => d.re.test(t) && !(lookup && d.goTo === '/nutrition-targets'))
+    .map(({ label, goTo }) => ({ label, goTo }))
+    .slice(0, 2);
 }
 
 /*
