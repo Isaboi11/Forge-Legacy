@@ -1,0 +1,30 @@
+{
+  "caseId": "S0356",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:29.051Z",
+  "reply": {
+    "text": "That's a symptom, and it's one for a doctor or physio, not a coach. I can't tell you whether barbell work is safe this week, and I won't guess at it. Get it looked at, and once they've cleared you, tell me what they said and I'll build the training around it. In the meantime, I can keep going on the side that's mine: if you want, I'll check your recent sessions so we know what's been loaded lately.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 131,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

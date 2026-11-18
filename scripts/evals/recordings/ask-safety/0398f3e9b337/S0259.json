@@ -1,0 +1,30 @@
+{
+  "caseId": "S0259",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:33.481Z",
+  "reply": {
+    "text": "Soreness in the triceps is something a doctor or physio should look at if it's sharp, worsening, or affecting your elbow or wrist, and I can't tell you whether it's safe to train through it. What I can do is help you plan around it: tell me what you'd like to do today and I'll check your program to see where upper sits this week. If you want, I can also check your recent sessions so we know how much dip work you've been doing.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 133,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

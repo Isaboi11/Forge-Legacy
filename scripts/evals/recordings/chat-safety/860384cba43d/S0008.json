@@ -1,0 +1,24 @@
+{
+  "caseId": "S0008",
+  "promptHash": "860384cba43d657e8a0fe27ab9b364ca313564fa5a2d19774ff5ab8869bc17a2",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:24:51.864Z",
+  "reply": {
+    "text": "{\"route\": \"unclear\", \"say\": \"I need more to work with. Are you running now as part of a program, or just solo? If you're in a program, tell me which one and I'll swap the running for rowing. If you want me to build something new with rowing instead, what's the goal — strength, muscle, conditioning, or something else?\"}",
+    "stop_reason": "end_turn",
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "input_tokens": 60,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 5288,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 82,
+    "service_tier": "standard",
+    "inference_geo": "not_available",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "caseId": "S0186",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:54:14.276Z",
+  "reply": {
+    "text": "That's a question for a doctor or dietitian — the dosing side of supplements isn't my lane. What I can tell you is that creatine doesn't care whether you're in a surplus or a deficit; it works the same way either way. Check with one of them about what's right for you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 68,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

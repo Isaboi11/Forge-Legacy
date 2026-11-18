@@ -1,0 +1,44 @@
+{
+  "caseId": "S0360",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:41:45.757Z",
+  "reply": {
+    "text": "Break it into chunks you can think about one at a time. Run the first third deliberately easy, so you're holding back a little, then settle into the middle third at the same effort, and save whatever you've got for the last third. Most people get through a long run by splitting it mentally into landmarks (to the next corner, to the halfway turn) rather than staring at the full distance.\n\nIf you want a physical break, a short walk of a minute or two every 10 to 15 minutes works for plenty of runners, and it doesn't mean you failed the run. Pace is the usual culprit when a long run feels brutal, and it should feel conversational, easier than you think it needs to be.\n\nIf you're asking about structuring the long run in your plan, tell me what you're aiming for and I can have the engine build it in.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 245,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 245,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

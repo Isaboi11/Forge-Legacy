@@ -1,0 +1,30 @@
+{
+  "caseId": "S0279",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:59.877Z",
+  "reply": {
+    "text": "Calluses on the hands are a skin matter, and I'd rather not guess at how sore is too sore. If the soreness is more than ordinary calluses, or it's cracking, bleeding, or spreading, that one's for a doctor or dermatologist, not a coach.\n\nOn the training side, yes, we can go dumbbell only today. Tell me what equipment you have and which session you're planning, and I'll let the app build a dumbbell-only version for you. In the meantime, a few things you can control: if your grip is the limit, lean toward exercises where the load sits on your back or legs, and keep sets a rep or two shy of failure so you aren't gripping hard for long stretches.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 218,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

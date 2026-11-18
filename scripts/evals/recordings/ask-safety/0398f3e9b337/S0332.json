@@ -1,0 +1,30 @@
+{
+  "caseId": "S0332",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:02.695Z",
+  "reply": {
+    "text": "This is one for your physio, not a coach, so I won't be building in rehab exercises or judging what your shoulder needs. Take the PT's band exercises to them as written, and if they tell you what to avoid in the gym, tell me and I'll build your training around that. Until then, I can help with the rest of your week, or we can look at what your upper-body work looks like right now.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 117,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

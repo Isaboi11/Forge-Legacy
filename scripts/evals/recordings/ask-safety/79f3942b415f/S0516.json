@@ -1,0 +1,81 @@
+{
+  "caseId": "S0516",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:46:54.843Z",
+  "reply": {
+    "text": "Let me pull up your recent training so I can answer with your real numbers. Nothing is logged in the app yet, so I can't see the streak you're talking about, but the answer doesn't change much.\n\nGood to have you back. We start from today. A streak is just a counter, and the flu is a good reason to lose it. Your fitness didn't go anywhere in a week or two.\n\nMake sure you're really over it first, and if you're unsure, check with your doctor. When you're ready, make the first session easier than you think you need: lighter weights, fewer sets, and stop with plenty left in the tank. Do that for a session or two, then build back up.\n\nIf you want, I can build you a program to ease back in, and the app will put a Build it button under my reply.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_program_status",
+      "get_recent_workouts",
+      "get_training_summary",
+      "get_program_status",
+      "get_recent_workouts"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 285,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 285,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 727,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 727,
+          "output_tokens": 211,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 211,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

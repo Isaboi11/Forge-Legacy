@@ -1,0 +1,30 @@
+{
+  "caseId": "S0559",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:01.516Z",
+  "reply": {
+    "text": "This sounds like post-workout soreness, and you want to train again. I can't tell from here whether that soreness is ordinary muscle fatigue or something that needs attention, so before we go back under the bar, if any of it is sharp, joint-specific, numb or tingly, or getting worse rather than easing, that is one for a doctor or physio, not a coach, and I'll train around whatever they clear. If it's just general muscle soreness, tell me which session you did and where it's sitting, and we can decide whether to repeat it, go lighter, or pick a different day. I'll keep the training side moving with you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 193,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

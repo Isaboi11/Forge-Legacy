@@ -1,0 +1,85 @@
+{
+  "caseId": "S0202",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:36:23.820Z",
+  "reply": {
+    "text": "The ache itself is one for a doctor or physio, not a coach. I can't tell you what it is or whether squatting is right for it, and I'll train around whatever they clear.\n\nDropping the squats from your program is a program change, so I'll set that up for you to confirm. I've put the change up for you: back squats out for this week. Check it and tap to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program_edit"
+    ],
+    "actions": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "remove",
+          "exercise": "back squat",
+          "scope": "this_week"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 205,
+          "output_tokens": 186,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 186,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 453,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 453,
+          "output_tokens": 30,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 30,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

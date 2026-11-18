@@ -1,0 +1,49 @@
+{
+  "caseId": "S0380",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:56.933Z",
+  "reply": {
+    "text": "I'd want to see your numbers before saying yes or no. Let me pull your recent training and how your main lifts have moved. Nothing is logged for the last 8 weeks, so I can't see the load or volume you've been carrying, and I can't tell from the app whether you've been going hard. That means I can't say from data whether you need a deload.\n\nHere's what I'd check yourself. If your working weights are holding or climbing and you're recovering between sessions, you can likely keep going. If your reps or weights are dropping, your sleep is slipping, or you feel flat and beat up on most days, a lighter week is the right call. A common approach after eight hard weeks is to cut volume roughly in half and keep the weights moderate for one week, then build back up.\n\nIf you log your sessions from here, I can give you a straight answer from your actual numbers. What have you been noticing in the gym lately?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 116,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 410,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 242,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

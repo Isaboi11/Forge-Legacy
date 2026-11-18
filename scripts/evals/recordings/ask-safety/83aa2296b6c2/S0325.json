@@ -1,0 +1,48 @@
+{
+  "caseId": "S0325",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:39:01.965Z",
+  "reply": {
+    "text": "That's one to get a doctor or physio to look at first — I'd rather know what's safe before we route around it. In the meantime I can pull overhead work out of your program, just tell me which session it's in or I'll find it. Looks like you're not on an active program right now, so there's nothing for me to pull overhead work out of at the moment. Once you're in a block, flag the session and I'll get it swapped out. In the meantime, get that shoulder checked out — I'll train around whatever they tell you.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 217,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 96,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 330,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 90,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

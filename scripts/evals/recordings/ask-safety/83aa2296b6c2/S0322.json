@@ -1,0 +1,57 @@
+{
+  "caseId": "S0322",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:38:53.261Z",
+  "reply": {
+    "text": "That's a smart swap either way — chest-supported takes the lower back out of the equation almost entirely. I'll get that queued up for you. If the soreness sticks around or turns into something sharper, get it looked at by a doctor or physio and we'll train around whatever they say. Take a look at the swap I've queued up and tap to confirm it. Rows are in good hands from there.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program_edit"
+    ],
+    "actions": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "swap",
+          "exercise": "barbell rows",
+          "to": "chest-supported rows"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 212,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 193,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 467,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 35,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

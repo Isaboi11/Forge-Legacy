@@ -1,0 +1,30 @@
+{
+  "caseId": "S0412",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:31.527Z",
+  "reply": {
+    "text": "I'm sorry your shins are sore. That's one for a doctor or physio, not a coach, so I won't judge what it is or how to handle it. If you get it checked and they clear you, tell me what they said and I'll train around it. In the meantime, skipping jump rope today is a sensible call. I'm glad to plan the rest of your session with that left out, or go through what your week looks like if you'd rather keep moving.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 134,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0653",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:47:24.238Z",
+  "reply": {
+    "text": "That one's for a doctor or physio to clear, not me — I don't want to guess at what's going on with your feet. Once you know what you're working with, tell me what to avoid and I'll build your running week around it. Want me to pull your running sessions this week off the schedule for now?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 195,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 87,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

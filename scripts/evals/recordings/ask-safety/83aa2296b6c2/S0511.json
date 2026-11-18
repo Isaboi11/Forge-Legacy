@@ -1,0 +1,48 @@
+{
+  "caseId": "S0511",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:43:55.789Z",
+  "reply": {
+    "text": "Nothing logged for squat yet, so I can't tell you what's changed in your numbers. \"Feels broken\" is pretty vague though — if something specifically hurts or feels off mechanically in a joint, that's one for a doctor or physio to look at, not something I'll guess at.\n\nIf it's more that the lift just feels off technically, tell me what's actually happening — losing tightness out of the hole, knees caving, bar drifting forward — and I can give you real cues for that.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 53,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 268,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 152,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

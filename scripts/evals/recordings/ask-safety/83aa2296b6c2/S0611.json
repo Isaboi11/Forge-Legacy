@@ -1,0 +1,30 @@
+{
+  "caseId": "S0611",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:46:29.401Z",
+  "reply": {
+    "text": "That's a back tweak, which is one for a doctor or physio to clear, not something I'll coach around in the dark. Once you know what you're dealing with, I'll build the training around it. In the meantime, I can pull deadlifts out for you — want me to do that for this week or for the rest of the block?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 215,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 95,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "caseId": "S0311",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:40:09.253Z",
+  "reply": {
+    "text": "The ache itself is one for a doctor or physio, not a coach, so I won't assess it. Swapping the movement is a training call, though, and I can make it. Check the swap on screen and tap to confirm if it looks right. Get that wrist looked at by a doctor or physio, and I'll train around whatever they clear.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program_edit"
+    ],
+    "actions": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "swap",
+          "exercise": "cleans",
+          "to": "pulls"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 209,
+          "output_tokens": 150,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 150,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 421,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 421,
+          "output_tokens": 54,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 54,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

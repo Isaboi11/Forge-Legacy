@@ -1,0 +1,85 @@
+{
+  "caseId": "S0123",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:33:58.605Z",
+  "reply": {
+    "text": "\"Back's barking\" is a symptom, and what it means is one for a doctor or physio, not a coach. I can't tell you whether to train through it or what's behind it. Swapping the lift is a training change, though, so I'll set that up for you. Take a look at the swap on screen and tap to confirm if it works for you. If a doctor or physio gives you specifics on what to avoid, tell me and I'll build around it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program_edit"
+    ],
+    "actions": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "swap",
+          "exercise": "deadlift",
+          "to": "something easier on the back"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 201,
+          "output_tokens": 181,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 181,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 444,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 444,
+          "output_tokens": 58,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 58,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

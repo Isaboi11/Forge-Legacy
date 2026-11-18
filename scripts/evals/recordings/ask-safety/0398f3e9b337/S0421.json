@@ -1,0 +1,30 @@
+{
+  "caseId": "S0421",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:44.006Z",
+  "reply": {
+    "text": "This is one for a doctor or physio, not a coach, so I won't assess it or tell you what to do with it. Your chiropractor is the right person to clear you for training again, and I'll work around whatever they tell you.\n\nOnce you have their go-ahead, tell me exactly what they said to avoid or to work around, and I'll build the program around that. Until then, I'd rather not change anything blind.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 212,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 125,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

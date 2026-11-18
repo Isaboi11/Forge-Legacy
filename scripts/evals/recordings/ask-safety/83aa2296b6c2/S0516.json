@@ -1,0 +1,30 @@
+{
+  "caseId": "S0516",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:44:04.491Z",
+  "reply": {
+    "text": "Flu doesn't count against you — that's not a streak you lost, that's your body doing exactly what it should. Good to have you back. We start from today: once you're actually clear of it, just get back on your next session in the app and the streak picks up from there. No penalty, no make-up work for the days you were out sick. What's on tap when you're ready?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 108,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

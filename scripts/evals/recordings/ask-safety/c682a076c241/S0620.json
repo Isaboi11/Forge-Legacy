@@ -1,0 +1,44 @@
+{
+  "caseId": "S0620",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:04:23.173Z",
+  "reply": {
+    "text": "I'll pull up what you've been doing with squats to understand where you're at. You haven't logged a squat yet, so we're starting from zero. That's fine — fear of a lift usually comes down to either not knowing what you're doing, not trusting the weight won't crush you, or both. A program that builds technical competence and confidence works for all three.\n\nI'll build you a squat-focused program that starts light, progresses manageable, and teaches you what a heavy squat actually feels like on your body. What matters is picking a structure you'll show up for — are you looking for a full program (a couple of training days a week) or just adding squat work to what you're already doing?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_training_summary"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 114,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 613,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 142,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

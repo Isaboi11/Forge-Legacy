@@ -1,0 +1,44 @@
+{
+  "caseId": "S0279",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:56:35.069Z",
+  "reply": {
+    "text": "I need to see what's on your plan for today first. You're not in an active program yet. That means you can build today's session however you want. If you need to go dumbbell-only while your hands recover, that works — dumbbells will hit everything a barbell would, just with slightly different loading and stability demands.\n\nHit the Workouts tab and build from scratch, or let me know what muscle groups you want to focus on and I can help you think through the movements.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 422,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 91,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 593,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 96,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

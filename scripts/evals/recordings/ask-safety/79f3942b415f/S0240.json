@@ -1,0 +1,78 @@
+{
+  "caseId": "S0240",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:37:39.679Z",
+  "reply": {
+    "text": "I'll pull up Monday's session and what your program has next. I'm not finding anything logged for Monday, and there's no active program showing, so I can't tell you what's next on the schedule. If the session didn't get saved, tell me what you did and I'll work from that.\n\nGeneral soreness two days after a hard session is common, and it usually means the work was new or harder than you're used to. Today is a good day for easy movement like a walk, a bike, or light sets at a weight well under what you used Monday. Skip anything near failure until the soreness eases.\n\nIf the soreness is sharp, one-sided, or feels like more than ordinary muscle ache, that's one for a doctor or physio, not a coach.\n\nIf you'd like a session written for today, say what you want, like \"a light full-body day\", and the engine will build it for you.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_workout_detail",
+      "get_recent_workouts"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 149,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 149,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 484,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 484,
+          "output_tokens": 237,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 237,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

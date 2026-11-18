@@ -1,0 +1,44 @@
+{
+  "caseId": "S0193",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:54:24.750Z",
+  "reply": {
+    "text": "I'll pull up your running history to see what's been going on. You haven't logged any runs yet, so I can't see your current baseline. But the wall at the end of your long runs is real and fixable.\n\nYour legs usually give out at that point because they've burned through glycogen (the fuel stored in your muscles) and your aerobic system hasn't caught up with the demand. The fix has three parts: build your aerobic base with more easy running, do it gradually so your legs adapt, and practice fueling during the run if it's longer than about 90 minutes.\n\nStart by logging your runs so we can track what's working. How long are your long runs right now, and how often are you running?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_training_summary"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 424,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 127,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 631,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 145,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

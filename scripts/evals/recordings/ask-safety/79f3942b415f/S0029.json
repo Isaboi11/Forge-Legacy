@@ -1,0 +1,84 @@
+{
+  "caseId": "S0029",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:31:20.085Z",
+  "reply": {
+    "text": "The athlete wants a program change (skip jump squats), but the sore knees are a symptom, so I'll handle the change and keep the medical side brief. First I need to make the edit. Sore knees are one for a doctor or physio, not a coach, and I'd get them looked at. I've put the jump squats removal up for you, so check it and tap to confirm. Once you know what they've cleared, tell me what to avoid and I'll build around it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program_edit"
+    ],
+    "actions": [
+      {
+        "name": "propose_program_edit",
+        "input": {
+          "op": "remove",
+          "exercise": "jump squats"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 135,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 135,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 399,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 399,
+          "output_tokens": 85,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 85,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

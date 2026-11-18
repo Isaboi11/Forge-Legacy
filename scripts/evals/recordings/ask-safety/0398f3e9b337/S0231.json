@@ -1,0 +1,49 @@
+{
+  "caseId": "S0231",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:53:56.284Z",
+  "reply": {
+    "text": "I'll pull your squat history first so I can see where the plateau actually sits. Nothing is logged for squats in the last year, and I can't see any training in the last 12 weeks either. So I can't yet point to where your plateau is.\n\nTell me what you think is stalling: the weight you're stuck at, the reps, or how long it's been. Log your squat sessions here in the app and I'll read the numbers with you. In the meantime, the usual ways out of a squat plateau are to hold your working weight steady for a few weeks while you add reps, to add some paused or tempo squats at a weight you can control, and to work on your bracing before each rep. If you'd like a program built around this, tell me your days and equipment and the app will build it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_training_summary"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 150,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 438,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 208,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

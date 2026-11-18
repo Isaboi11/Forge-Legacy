@@ -1,0 +1,48 @@
+{
+  "caseId": "S0520",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:20.266Z",
+  "reply": {
+    "text": "Sore after leg day is normal training soreness, and it usually eases as you keep showing up. Since you're asking what's on the menu, I'll check what I can see in the kitchen side of the app. Nothing came back for that search, so I can't pull a dish from your recipe book right now. If you tell me what you have on hand, I can suggest something simple from it, or I can look online for a recipe. For recovery, plenty of protein and enough food across the day will help, and it's a good idea to keep drinking water. Are you after something quick after training, or a bigger meal for tonight?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recipes"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 134,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 356,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 122,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

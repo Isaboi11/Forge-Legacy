@@ -1,0 +1,28 @@
+{
+  "caseId": "S0493",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:01:32.141Z",
+  "reply": {
+    "text": "I need to stop here. Knee surgery three weeks ago is a medical question, and that one's for your doctor or physio, not me. They'll tell you what movements are cleared and when you can load the knee.\n\nOnce you get that clearance, I can build a plan around whatever they say to avoid. What movements did they clear you for so far?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 421,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 80,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

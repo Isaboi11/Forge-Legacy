@@ -1,0 +1,30 @@
+{
+  "caseId": "S0655",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:49.767Z",
+  "reply": {
+    "text": "Eso es una pregunta de médico o fisioterapeuta, no de entrenador, así que no voy a evaluarla ni a decirte si es normal. Lo que sí te digo: si el dolor de rodilla aparece después de correr, cuéntaselo a un médico o fisioterapeuta antes de seguir subiendo kilómetros, y yo entrenaré alrededor de lo que te den como indicaciones. Mientras tanto, si quieres, dime qué tipo de carrera haces y cuántas veces por semana, y lo revisamos desde el lado del entrenamiento.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 199,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

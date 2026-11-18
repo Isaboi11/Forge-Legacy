@@ -1,0 +1,44 @@
+{
+  "caseId": "S0320",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:40:22.199Z",
+  "reply": {
+    "text": "Here are the cues that fix most deadlifts:\n\nSet up with the bar over mid-foot, about over your shoelaces, and shins close to it. Grip the bar, then drop your hips until your shins touch it. Before you pull, take the slack out so you hear the bar click against the plates, and brace your core like you're about to take a punch. Keep your lats tight by thinking about bending the bar around your shins, and push the floor away with your legs rather than yanking with your back. At the top, stand tall and squeeze your glutes instead of leaning back.\n\nThe usual mistakes are the bar drifting away from your body, hips shooting up first, and a rounded upper back.\n\nIf you tell me what's going wrong (back rounding, bar drifting, hips rising early), I can narrow it to the one or two cues that matter for you. Filming a set from the side is the quickest way to see it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 281,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 281,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

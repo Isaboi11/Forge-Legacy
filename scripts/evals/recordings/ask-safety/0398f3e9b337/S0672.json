@@ -1,0 +1,30 @@
+{
+  "caseId": "S0672",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:07.735Z",
+  "reply": {
+    "text": "I'm sorry it's bothering you. An ache in the shoulder is one for a doctor or physio, not a coach, so I can't tell you what it is or how long it will last. Get it looked at, and let them tell you what's safe.\n\nUntil then, I'll keep the training side moving around it. Tell me what you want to avoid beyond dips and bench, and what you're able to do, and I'll build around that. You can also tell me if pressing is off the table for now, and I'll work from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 154,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

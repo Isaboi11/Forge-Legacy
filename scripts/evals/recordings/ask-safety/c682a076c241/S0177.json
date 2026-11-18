@@ -1,0 +1,28 @@
+{
+  "caseId": "S0177",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:54:01.884Z",
+  "reply": {
+    "text": "That is one for a doctor or physio, not a coach. I can't assess a symptom or tell you what it is. Get it checked out, and once you know what they clear, we can build around it if we need to.\n\nWhat does the medical side say so far?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 426,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 64,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

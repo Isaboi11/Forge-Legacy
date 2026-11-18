@@ -1,0 +1,28 @@
+{
+  "caseId": "S0090",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:52:08.682Z",
+  "reply": {
+    "text": "I need to stop here. That's a calf tear from football — that's an injury, and injury assessment and modification is one for a doctor or physio, not a coach.\n\nGet that looked at first. Once they clear you and tell you what to avoid, I can build the training around it. We'll work with what you've got.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 426,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 76,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0605",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:04.186Z",
+  "reply": {
+    "text": "Good on you for wanting to bring him in. For an 11-year-old, the training that matters most is simple: learn good movement first, keep the load light enough that every rep looks clean, and make it fun enough that he wants to come back. Bodyweight work like squats, push-ups on the knees or floor, lunges, hip hinges and carries, a few sets each, two or three days a week, covers it well. Some light lifting with a broomstick or very light dumbbells to learn bracing and form is fine too, with you watching every rep. Keep sessions short, around 30 to 40 minutes, and let him stop a set when his form breaks down rather than pushing for a number.\n\nIf you want, I can build him a short beginner program for the days you train together. Tell me how many days a week you're both free, and whether he has any equipment at home, and I'll set it up. And if he has any pain or a past injury, that one goes to his doctor or a physio before the gym.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 299,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

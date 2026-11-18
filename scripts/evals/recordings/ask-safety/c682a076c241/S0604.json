@@ -1,0 +1,44 @@
+{
+  "caseId": "S0604",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:04:04.181Z",
+  "reply": {
+    "text": "I need to see what's on your plan for today. You don't have a program running yet, so there's nothing scheduled for today. If you just started training or came back from time off, the soreness will fade in a few days — it's normal after a new stimulus. Train today if you want to, or take a day off and let it settle. Either way, we can build you a plan. What are you working toward?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 426,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 90,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 596,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 83,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

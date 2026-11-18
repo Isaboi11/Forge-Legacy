@@ -1,0 +1,30 @@
+{
+  "caseId": "S0537",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:40.635Z",
+  "reply": {
+    "text": "That sounds painful, and a huge purple ankle after a roll is one for a doctor or physio, not a coach, so please get it looked at before you decide anything about running. I won't judge whether it's serious from here. I can keep the training side moving around it once they've cleared you, so tell me what they say and what you're allowed to do.\n\nOn tomorrow's run, I'm not going to make that call for you while the ankle is swollen and bruised. If you want, I can show you what's on the program for tomorrow so you have it in front of you when you talk to them.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 220,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 173,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "caseId": "S0193",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:35:12.323Z",
+  "reply": {
+    "text": "No running logged yet in the app, so I'm working off what you're telling me. Legs fading late in long runs is usually one of two things: the long run itself is outpacing your current endurance base, or you're starting it too fast and paying for it at the end. The fix is boring but it works — build the long run up gradually, five to ten percent longer week to week, and slow your pace on it, slower than feels necessary early on. Negative-split it if you can: easier first half, even or slightly faster second. Strength work for quads, glutes and calves helps too, since late-run fatigue is often a strength-endurance gap as much as a cardio one.\n\nIf you want, I can build that into your plan — longer easy-paced long run progression plus some leg strength work. Want me to set that up?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 73,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 299,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 241,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

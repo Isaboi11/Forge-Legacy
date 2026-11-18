@@ -1,0 +1,30 @@
+{
+  "caseId": "S0280",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:55:01.170Z",
+  "reply": {
+    "text": "Holt here. I'll take the energy, but I'd push back on the \"no pain no gain\" part. Hard work and training effort are what move the numbers. Sharp or lingering pain is a different thing, and that's one for a doctor or physio, not a coach. If something's bothering you, tell me and we'll work out what I'd need to train around. Otherwise, what are we lifting today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 123,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

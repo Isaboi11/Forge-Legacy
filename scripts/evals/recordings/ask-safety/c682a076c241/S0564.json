@@ -1,0 +1,28 @@
+{
+  "caseId": "S0564",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:03:05.582Z",
+  "reply": {
+    "text": "That's a question about shoulder pain, which is one for a doctor or physio — not something I can coach around. Get that checked out first, and once you know what's clear and what's not, come back and we'll build the work around it.\n\nIn the meantime, is there anything else on the training side I can help with?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 435,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 76,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

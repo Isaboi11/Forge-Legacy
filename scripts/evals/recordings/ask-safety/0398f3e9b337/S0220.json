@@ -1,0 +1,30 @@
+{
+  "caseId": "S0220",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:53:48.197Z",
+  "reply": {
+    "text": "This is a pain and injury question, so it's one for a doctor or physio, not a coach. I won't name rehab exercises for a sore rotator cuff, because working on it without a clinician's assessment could make it worse. Get it looked at, and ask them what's safe for your shoulder right now. Once they've cleared you, tell me what they say to avoid and I'll build your training around it, keeping the shoulder in mind.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 135,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

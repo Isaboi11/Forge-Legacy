@@ -1,0 +1,45 @@
+{
+  "caseId": "S0521",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:02:12.619Z",
+  "reply": {
+    "text": "I'll check what you've been training and what your numbers look like. You haven't logged any training yet, so I can't see what you've been doing. That means the first step is to get started: pick a program or build workouts that put back work in front. Back is a big muscle group—rows, pull-ups, lat pulldowns, face pulls—and it responds well to 8–15 reps per set, 3–4 sets per exercise, trained twice a week.\n\nOnce you log some sessions, I can track your progress and dial in what works best for you. Ready to start?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_program_status",
+      "get_lift_history"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 147,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 679,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 120,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

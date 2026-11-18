@@ -1,0 +1,30 @@
+{
+  "caseId": "S0501",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:03.766Z",
+  "reply": {
+    "text": "Knee soreness that has lasted all week is one for a doctor or physio, not a coach, so I won't tell you what it is or whether it's safe to load. Get it looked at, and once they've cleared you, I'll train around whatever they say. In the meantime, if you want a leg session that avoids deep knee flexion, tell me what to keep out and I'll build it around that. Do you want me to start from your current legs day?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 134,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

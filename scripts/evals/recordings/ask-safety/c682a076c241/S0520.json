@@ -1,0 +1,45 @@
+{
+  "caseId": "S0520",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:02:08.854Z",
+  "reply": {
+    "text": "I'll check what's on your plan and what you've got logged for food. Looks like you haven't logged anything yet. For food: nothing beats enough protein and eating well around your training, so search for recipes you like and eat them. If you want meal-planning help or macro targets, that's set up on your Meal Plan and Targets screens.\n\nWhat kind of food are you after — something quick, something specific, or just ideas?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_nutrition_log",
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 133,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 666,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 81,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

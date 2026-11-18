@@ -1,0 +1,43 @@
+{
+  "caseId": "S0335",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:57:52.022Z",
+  "reply": {
+    "text": "I'll grab your current program so we can adjust the sprints. You're not running a program right now, so there's nothing to skip. If you pick one up and want to pull the sprint sessions before you start, just let me know the program name and we'll swap them out or drop them.\n\nFor this week — keep the hamstring loose and mobile, stay off the high-intensity work, and if it doesn't settle down by next week, that's a conversation for a physio.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 53,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 489,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 93,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

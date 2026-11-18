@@ -1,0 +1,78 @@
+{
+  "caseId": "S0562",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:48:26.219Z",
+  "reply": {
+    "text": "Let me look at how your training has actually been going. Nothing is logged yet and there's no active program, so we're starting from a clean slate, which is a fine place to build consistency from.\n\nStart smaller than feels worthwhile: pick two or three fixed days and a fixed time, and treat them like appointments. A short session you actually do beats the perfect one you skip, so decide now what your minimum version looks like, say 20 minutes, and on bad days do that and call it a win. Missing once is just a miss; the thing to protect is never missing twice in a row.\n\nIf you want, tell me how many days a week you can honestly commit to and what usually knocks you off, and I'll build a program that fits that schedule. That's the part the engine does well.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_program_status",
+      "get_past_chats"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 210,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 210,
+          "output_tokens": 118,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 118,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 453,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 453,
+          "output_tokens": 218,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 218,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

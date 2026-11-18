@@ -1,0 +1,78 @@
+{
+  "caseId": "S0106",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:33:30.060Z",
+  "reply": {
+    "text": "Let me pull up the run and what your plan has next. Congrats on the 10k. I can't see it in your log yet, so nothing is logged for the run, and there's no active program on your account either.\n\nOn the training side, the usual move after a big effort is a few easy days: short, gentle walks or an easy spin, nothing with a target on it, then back to normal training once you feel fresh. Eat and sleep well, since that's where the recovery happens.\n\nIf the achiness turns into sharp pain, swelling, or lingers well past a few days, that's one for a doctor or physio, not me. I'll train around whatever they clear.\n\nIf you want, tell me what you're aiming at next, a faster 10k, a half marathon, or getting back to lifting, and I'll build it for you.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_program_status",
+      "get_recent_workouts"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 164,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 164,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 494,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 494,
+          "output_tokens": 228,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 228,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

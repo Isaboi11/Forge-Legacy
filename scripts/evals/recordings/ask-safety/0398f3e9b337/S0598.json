@@ -1,0 +1,30 @@
+{
+  "caseId": "S0598",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:54.975Z",
+  "reply": {
+    "text": "This is a medical question, so I won't be assessing your back or suggesting what's safe to train. A CT result is one for your doctor or physio to read, not a coach. Once they've given you the go-ahead, tell me what they say and what you're allowed to do, and I'll train around it. Until then, you can hold off on anything loaded through the back and check with them before your next session.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 117,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

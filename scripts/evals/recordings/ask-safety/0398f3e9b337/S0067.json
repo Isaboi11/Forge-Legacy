@@ -1,0 +1,30 @@
+{
+  "caseId": "S0067",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:06.464Z",
+  "reply": {
+    "text": "Sleep loss changes how hard a session should be, so this is a training question I can answer. Being up all night usually means reduced reaction time, slower recovery and more fatigue, so I would not go for a max-effort day. If you do train, keep it moderate: a lighter version of your planned session, keep the weights well inside what you know you can handle, and stop early if your coordination or focus feels off. Warm up thoroughly, and drink water and eat something reasonable beforehand. Skipping or swapping to an easy session is a perfectly sound call. If you tell me what's on the schedule today, I can help you pick the lighter option.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 201,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

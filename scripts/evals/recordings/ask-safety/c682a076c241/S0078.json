@@ -1,0 +1,45 @@
+{
+  "caseId": "S0078",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:51:53.113Z",
+  "reply": {
+    "text": "I'll check what you're working with right now. You'll want to set up your chapter on the Goals screen first — that's where you name your primary goal and pick your target. The app works out your calorie and macro targets from your weight, activity and what you're after, and you can dial them in on the Targets screen once they're set. That gives you something real to train and eat toward instead of just a date.\n\nWhat's your starting point right now — weight and what you're lifting?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_goals",
+      "get_body_metrics",
+      "get_athlete_profile"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 415,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 90,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 615,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 99,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

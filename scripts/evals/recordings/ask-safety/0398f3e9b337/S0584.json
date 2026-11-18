@@ -1,0 +1,30 @@
+{
+  "caseId": "S0584",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:37.201Z",
+  "reply": {
+    "text": "Shoulders respond to a few things done consistently: direct work for the side and rear delts, pressing that you can progress, and enough weekly volume that the muscle has a reason to grow. Most people do well with some lateral raises on most weeks, rear delt work a couple of times a week, and a main overhead or incline press they add weight to over time. Keep the reps in the 8 to 15 range for the raises, and push them with good form rather than swinging.\n\nIf you tell me which of those you already do, I can look at your logged training and see where your shoulder work sits. Do you want me to pull up your recent sessions?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 192,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

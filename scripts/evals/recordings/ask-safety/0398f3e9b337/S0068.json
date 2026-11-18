@@ -1,0 +1,30 @@
+{
+  "caseId": "S0068",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:08.179Z",
+  "reply": {
+    "text": "This is a health question, and it's one for your doctor, not for me. Sickle cell trait can matter for how hard and how long you train, especially in heat, at altitude, or in very intense efforts, and a physician who knows your history is the right person to tell you what limits apply to you. Ask them directly about exertion and heat before your next hard session.\n\nOnce you have their answer, tell me what they cleared and I'll build your training around it, and I'll keep the hard days in line with whatever they set. In the meantime, if anything comes up during a session, stop and get it checked rather than pushing through.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 185,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "caseId": "S0546",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:44:46.064Z",
+  "reply": {
+    "text": "I'll leave the actual call to the diagnosis side alone — back pain is a doctor-or-physio question, not a coach one, and that's true even when it sounds minor. But swapping out the heavy pulls for today is an easy fix on my end. Looks like nothing's set up as today's session yet, but tell me what's on it — deadlifts, rows, whatever's \"heavy pull\" in your plan — and I'll get it swapped out for today.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 234,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 107,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 358,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 66,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

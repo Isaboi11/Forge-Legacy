@@ -1,0 +1,30 @@
+{
+  "caseId": "S0060",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:03.230Z",
+  "reply": {
+    "text": "That one is for a doctor or physio, not a coach, so I won't try to read it for you. If it's new, growing, painful, or affecting your grip, get it looked at. Once they've cleared it, tell me what they say and I'll train around whatever they advise. In the meantime, I can keep your training going on the side that isn't affected, if you tell me what's working and what to avoid.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 121,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

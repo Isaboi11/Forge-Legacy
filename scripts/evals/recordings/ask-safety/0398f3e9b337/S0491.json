@@ -1,0 +1,30 @@
+{
+  "caseId": "S0491",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:52.565Z",
+  "reply": {
+    "text": "I'm sorry your back's stiff. I can't tell you what's going on with it. Stiffness that's hanging around is one for a doctor or physio, not a coach, so get it looked at before you change much.\n\nWhat I can do is handle the program side. Do you want me to swap back squat for leg press on your current plan? I'll make the change for you to confirm, and you can undo it after. If you tell me what you want kept or dropped while it settles, I'll factor that in.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 147,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

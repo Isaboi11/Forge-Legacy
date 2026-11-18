@@ -1,0 +1,30 @@
+{
+  "caseId": "S0571",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:17.457Z",
+  "reply": {
+    "text": "Sounds like you're asking for a session that works around your knees, and that's a build I can do for you. Tell me which parts of the knee you're avoiding and what feels off, and I'll build around that and keep lunges out.\n\nOne thing I can't do: \"crusty\" knees sounds like they're bothering you, and what that means is a question for a doctor or physio, not me. If it's pain, swelling or a catch when you move, get that looked at before you load them. In the meantime I'm glad to keep the training side going, so tell me what you want to train today.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 172,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

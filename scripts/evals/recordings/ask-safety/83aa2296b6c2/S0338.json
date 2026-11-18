@@ -1,0 +1,30 @@
+{
+  "caseId": "S0338",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:39:27.701Z",
+  "reply": {
+    "text": "Not a question I'll put a number on — dosing supplements isn't my lane. General context: most people do fine getting protein from food first and using powder to fill gaps, and your gut tends to tell you fast if you're overdoing any one source. For what's right for you, check with a doctor or dietitian. If you want, I can help you look at what your food log shows for protein on the days you've logged.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 122,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

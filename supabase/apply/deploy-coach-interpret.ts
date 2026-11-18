@@ -666,6 +666,224 @@ export function replySays(reply: NarrowedReply): string[] {
         return reply.actions.flatMap(one);
     return one(reply as WireAction);
 }
+export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
+export const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
+export const KNOWN_MODELS = ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5'] as const;
+export const RETIRED_MODELS = ['claude-haiku-4-5'] as const;
+export type KnownModel = (typeof KNOWN_MODELS)[number] | (typeof RETIRED_MODELS)[number];
+export interface ModelRule {
+    off: {
+        type: 'disabled';
+    } | {
+        type: 'between_tools';
+    } | null;
+    offMaxEffort: Effort | null;
+    effort: boolean;
+    adaptive: boolean;
+    fallbacks: boolean;
+    webSearch: boolean;
+}
+export const MODEL_RULES: Readonly<Record<KnownModel | 'unknown', ModelRule>> = {
+    'claude-sonnet-5': { off: { type: 'disabled' }, offMaxEffort: 'max', effort: true, adaptive: true, fallbacks: false, webSearch: true },
+    'claude-sonnet-5-5': { off: { type: 'between_tools' }, offMaxEffort: 'high', effort: true, adaptive: true, fallbacks: true, webSearch: true },
+    'claude-haiku-5-5': { off: { type: 'disabled' }, offMaxEffort: 'high', effort: true, adaptive: true, fallbacks: false, webSearch: false },
+    'claude-opus-5-5': { off: null, offMaxEffort: null, effort: true, adaptive: true, fallbacks: true, webSearch: true },
+    'claude-opus-5': { off: { type: 'disabled' }, offMaxEffort: 'high', effort: true, adaptive: true, fallbacks: true, webSearch: true },
+    'claude-haiku-4-5': { off: null, offMaxEffort: null, effort: false, adaptive: false, fallbacks: false, webSearch: false },
+    unknown: { off: null, offMaxEffort: null, effort: false, adaptive: false, fallbacks: false, webSearch: false },
+};
+export function modelFamily(model: unknown): KnownModel | 'unknown' {
+    const m = typeof model === 'string' ? model : '';
+    let best: KnownModel | null = null;
+    for (const k of [...KNOWN_MODELS, ...RETIRED_MODELS]) {
+        if (m === k)
+            return k;
+        if (m.startsWith(`${k}-`) && (best == null || k.length > best.length))
+            best = k;
+    }
+    return best ?? 'unknown';
+}
+export const isKnownModel = (model: unknown): boolean => typeof model === 'string' && (KNOWN_MODELS as readonly string[]).includes(model);
+export const isEffort = (e: unknown): e is Effort => typeof e === 'string' && (EFFORTS as readonly string[]).includes(e);
+export interface RequestKnobs {
+    thinkingOff?: boolean;
+    adaptive?: boolean;
+    effort?: Effort | null;
+    format?: unknown;
+    fallback?: boolean;
+}
+export interface RequestFields {
+    thinking?: {
+        type: 'disabled' | 'between_tools' | 'adaptive';
+    };
+    output_config?: {
+        effort?: Effort;
+        format?: unknown;
+    };
+    fallbacks?: 'default';
+}
+const effortRank = (e: Effort) => EFFORTS.indexOf(e);
+export function requestFields(model: unknown, knobs: RequestKnobs = {}): RequestFields {
+    const rule = MODEL_RULES[modelFamily(model)];
+    const effort = rule.effort && isEffort(knobs.effort) ? knobs.effort : null;
+    const out: RequestFields = {};
+    if (knobs.thinkingOff) {
+        const offOk = rule.off != null && (effort == null || rule.offMaxEffort == null || effortRank(effort) <= effortRank(rule.offMaxEffort));
+        if (offOk && rule.off)
+            out.thinking = { ...rule.off };
+    }
+    else if (knobs.adaptive && rule.adaptive) {
+        out.thinking = { type: 'adaptive' };
+    }
+    const oc: {
+        effort?: Effort;
+        format?: unknown;
+    } = {};
+    if (effort)
+        oc.effort = effort;
+    if (knobs.format !== undefined && knobs.format !== null)
+        oc.format = knobs.format;
+    if (Object.keys(oc).length)
+        out.output_config = oc;
+    if (knobs.fallback !== false && rule.fallbacks)
+        out.fallbacks = 'default';
+    return out;
+}
+export const takesWebSearch = (model: unknown): boolean => MODEL_RULES[modelFamily(model)].webSearch;
+export function requestBetas(fields: RequestFields): string[] {
+    return fields.fallbacks ? [FALLBACK_BETA] : [];
+}
+export function anthropicHeaders(apiKey: string, fields: RequestFields): Record<string, string> {
+    const h: Record<string, string> = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' };
+    const betas = requestBetas(fields);
+    if (betas.length)
+        h['anthropic-beta'] = betas.join(',');
+    return h;
+}
+export function answeredBy(payload: unknown, requested: string): string {
+    const m = (payload as {
+        model?: unknown;
+    } | null | undefined)?.model;
+    return typeof m === 'string' && m ? m : requested;
+}
+export function fellBack(payload: unknown): boolean {
+    const it = (payload as {
+        usage?: {
+            iterations?: unknown;
+        };
+    } | null | undefined)?.usage?.iterations;
+    return Array.isArray(it) && it.some((e) => (e as {
+        type?: unknown;
+    } | null)?.type === 'fallback_message');
+}
+export interface ModelChoice {
+    model: string;
+    effort: string | null;
+    canary: boolean;
+    source: 'config' | 'default' | 'default_no_row' | 'default_read_failed' | 'default_invalid';
+}
+export interface ModelDefault {
+    model: string;
+    effort: string | null;
+}
+export interface ModelConfigDeps {
+    url: string | undefined;
+    serviceKey: string | undefined;
+    fetch: (input: string, init: Record<string, unknown>) => Promise<{
+        ok: boolean;
+        json: () => Promise<unknown>;
+    }>;
+    now?: () => number;
+    ttlMs?: number;
+    timeoutMs?: number;
+    known: readonly string[];
+    efforts: readonly string[];
+}
+export const MODEL_CONFIG_TTL_MS = 60000;
+export const MODEL_CONFIG_FAIL_TTL_MS = 10000;
+export const MODEL_CONFIG_TIMEOUT_MS = 1500;
+const MODEL_CONFIG_CACHE_MAX = 500;
+export function uidFromAuthorization(authorization: string | null | undefined): string | null {
+    try {
+        const jwt = String(authorization ?? '').replace(/^Bearer\s+/i, '');
+        const part = jwt.split('.')[1];
+        if (!part)
+            return null;
+        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        const json = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
+        const sub = json?.sub;
+        return typeof sub === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sub) ? sub : null;
+    }
+    catch {
+        return null;
+    }
+}
+export function choiceFromRow(row: unknown, dflt: ModelDefault, deps: Pick<ModelConfigDeps, 'known' | 'efforts'>): ModelChoice {
+    const r = (Array.isArray(row) ? row[0] : row) as {
+        model?: unknown;
+        effort?: unknown;
+        canary?: unknown;
+    } | null | undefined;
+    if (!r || typeof r !== 'object' || r.model == null)
+        return { ...dflt, canary: false, source: 'default_no_row' };
+    if (typeof r.model !== 'string' || !deps.known.includes(r.model))
+        return { ...dflt, canary: false, source: 'default_invalid' };
+    if (r.effort != null && (typeof r.effort !== 'string' || !deps.efforts.includes(r.effort)))
+        return { ...dflt, canary: false, source: 'default_invalid' };
+    return { model: r.model, effort: (r.effort as string | null) ?? null, canary: r.canary === true, source: 'config' };
+}
+export function modelConfigReader(deps: ModelConfigDeps) {
+    const now = deps.now ?? (() => Date.now());
+    const ttl = deps.ttlMs ?? MODEL_CONFIG_TTL_MS;
+    const cache = new Map<string, {
+        at: number;
+        ttl: number;
+        choice: ModelChoice;
+    }>();
+    async function read(fn: string, uid: string | null, dflt: ModelDefault): Promise<{
+        choice: ModelChoice;
+        ttl: number;
+    }> {
+        if (!deps.url || !deps.serviceKey)
+            return { choice: { ...dflt, canary: false, source: 'default' }, ttl };
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        try {
+            const ctl = new AbortController();
+            timer = setTimeout(() => ctl.abort(), deps.timeoutMs ?? MODEL_CONFIG_TIMEOUT_MS);
+            const res = await deps.fetch(`${deps.url}/rest/v1/rpc/coach_ai_model_pick`, {
+                method: 'POST',
+                signal: ctl.signal,
+                headers: { apikey: deps.serviceKey, Authorization: `Bearer ${deps.serviceKey}`, 'content-type': 'application/json' },
+                body: JSON.stringify({ p_fn: fn, p_uid: uid }),
+            });
+            if (!res.ok)
+                return { choice: { ...dflt, canary: false, source: 'default_read_failed' }, ttl: MODEL_CONFIG_FAIL_TTL_MS };
+            return { choice: choiceFromRow(await res.json(), dflt, deps), ttl };
+        }
+        catch {
+            return { choice: { ...dflt, canary: false, source: 'default_read_failed' }, ttl: MODEL_CONFIG_FAIL_TTL_MS };
+        }
+        finally {
+            if (timer != null)
+                clearTimeout(timer);
+        }
+    }
+    return {
+        async pick(fn: string, uid: string | null, dflt: ModelDefault): Promise<ModelChoice> {
+            const key = `${fn}|${uid ?? ''}`;
+            const hit = cache.get(key);
+            if (hit && now() - hit.at < hit.ttl)
+                return hit.choice;
+            const { choice, ttl: keep } = await read(fn, uid, dflt);
+            if (cache.size >= MODEL_CONFIG_CACHE_MAX)
+                cache.delete(cache.keys().next().value as string);
+            cache.set(key, { at: now(), ttl: keep, choice });
+            return choice;
+        },
+        size: () => cache.size,
+    };
+}
 export type SettleOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'not_a_program' | 'unreadable' | 'bad_output' | 'cancelled' | 'guarded';
 export const UPSTREAM_ABORT_MS: Readonly<Record<string, number>> = {
     'meal-photo-read': 75000,
@@ -847,8 +1065,16 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const FN = 'coach-interpret';
 const MODEL = 'claude-sonnet-5';
-const HAIKU = 'claude-haiku-4-5';
+const HAIKU = 'claude-haiku-5-5';
 const ALLOWED_MODELS = [MODEL, HAIKU];
+const EFFORT = 'low';
+const modelConfig = modelConfigReader({
+    url: SUPABASE_URL,
+    serviceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+    fetch: (u, init) => fetch(u, init),
+    known: KNOWN_MODELS,
+    efforts: EFFORTS,
+});
 const CORS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -1099,7 +1325,9 @@ Deno.serve(async (req) => {
         : '';
     const notes = narrowNotes(body.notes).filter((n) => medicalRoute(n) === 'clear' && !scanReply(n).hit);
     const knows = notes.length ? `What you know about this athlete:\n${notes.map((n) => `- "${n.replace(/["\u201c\u201d]/g, "'")}"`).join('\n')}\n\n` : '';
-    const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
+    const choice = await modelConfig.pick(FN, uidFromAuthorization(authorization), { model: MODEL, effort: EFFORT });
+    const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : choice.model;
+    const modelFields = requestFields(model, { thinkingOff: true, effort: model === choice.model ? choice.effort ?? EFFORT : EFFORT });
     const settle = async (outcome: SettleOutcome, call: ModelCall) => {
         const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, model))).maybeSingle();
         return settledTail(settledFrom(data, error), meter.remaining);
@@ -1107,16 +1335,11 @@ Deno.serve(async (req) => {
     const call = await timedModelCall((signal) => fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         signal,
-        headers: {
-            'x-api-key': ANTHROPIC_API_KEY,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-        },
+        headers: anthropicHeaders(ANTHROPIC_API_KEY!, modelFields),
         body: JSON.stringify({
             model,
             max_tokens: 1024,
-            ...(model === HAIKU ? {} : { thinking: { type: 'disabled' } }),
-            ...(model === HAIKU ? {} : { output_config: { effort: 'low' } }),
+            ...modelFields,
             system: [
                 { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
             ],

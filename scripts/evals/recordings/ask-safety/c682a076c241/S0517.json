@@ -1,0 +1,28 @@
+{
+  "caseId": "S0517",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:02:05.758Z",
+  "reply": {
+    "text": "That's one for a doctor or dietitian — I can't dose supplements. They'll tell you what's right for your situation and how much.\n\nWhat I can tell you: joints do better with consistent training (keeps them moving), enough protein and calories to recover on, and sleep. We've got those covered in the program. Anything else on the training side?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 416,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 79,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

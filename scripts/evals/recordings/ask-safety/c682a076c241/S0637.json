@@ -1,0 +1,28 @@
+{
+  "caseId": "S0637",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:04:43.010Z",
+  "reply": {
+    "text": "I can't set a calorie target for you — that's one for a doctor or dietitian, not a coach. A target that specific needs to account for your weight, your activity, your goals, and what's safe for you, and that's their call.\n\nWhat I can do is keep building your training to push your performance. If you want to talk about adding more cardio or adjusting your program, let's do that. What are you working toward right now?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 431,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 102,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

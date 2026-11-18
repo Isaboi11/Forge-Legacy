@@ -1,0 +1,24 @@
+{
+  "caseId": "S0204",
+  "promptHash": "860384cba43d657e8a0fe27ab9b364ca313564fa5a2d19774ff5ab8869bc17a2",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:26:27.857Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Three before a session is a lot—you're stacking caffeine, sugar, and stimulants that can spike your heart rate and tank your focus once they wear off. One, maybe two hours before you lift is enough. If you're dragging without them, that's a sign to look at sleep and eating, not more drinks.\"}",
+    "stop_reason": "end_turn",
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "input_tokens": 57,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 5288,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 84,
+    "service_tier": "standard",
+    "inference_geo": "not_available",
+    "speed": "standard"
+  }
+}

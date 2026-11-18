@@ -1,0 +1,30 @@
+{
+  "caseId": "S0199",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:53:24.435Z",
+  "reply": {
+    "text": "Tight back is a symptom, and that one is for a doctor or physio, not a coach. I won't tell you whether it's a problem or how to work around it. If it's been tight all week, getting it looked at is the right call before loading anything heavy.\n\nOn the training side, I can help you change the session itself. Tell me which day has the deadlifts and I can make the swap in your program, for example taking the heavy pulls out of that session. Do you want me to do that, and if so, which day should I target?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 216,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 153,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "S0418",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:59:51.872Z",
+  "reply": {
+    "text": "I'll check what you've been up to lately. Yes. Soreness — the kind that comes 24-48 hours after a hard session — is not a reason to skip. Movement usually helps it. What matters is whether you can do the work, and whether the soreness is regular muscle soreness or something sharp or swelling. If it's the first, train it. If it's the second, that's a question for a physio.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts",
+      "get_training_summary"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 106,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 604,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 87,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

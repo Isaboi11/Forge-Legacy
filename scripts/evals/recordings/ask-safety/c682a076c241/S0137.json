@@ -1,0 +1,43 @@
+{
+  "caseId": "S0137",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:53:13.920Z",
+  "reply": {
+    "text": "I need to look at the context here. A weigh-in day usually means you're tracking your weight for a goal—let me pull up what you're working toward. No goal logged yet, so I'm working from general sense here. Dehydrating yourself to hit a number on the scale is a short-term trick that doesn't mean anything about actual progress. Your weight bounces around by several pounds a day depending on water, food, salt, what day of the cycle it is—none of that is fat loss or gain.\n\nIf you're tracking weight as a progress marker, weigh yourself the same way every time: same time of day, same conditions, over weeks and months so the pattern shows. Don't skip water. Drink normally and log the number. That is the number that matters.\n\nWhat is the weigh-in for?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_goals"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 421,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 73,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 512,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 146,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

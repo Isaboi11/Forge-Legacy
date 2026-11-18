@@ -1,0 +1,28 @@
+{
+  "caseId": "S0582",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:03:31.013Z",
+  "reply": {
+    "text": "That's a question for a doctor or cardiologist, not a coach. Beta blockers change how your heart responds to exercise, so your zones would be different than standard formulas — but the right answer depends on your specific medication and your physiology, and that's their call to make.\n\nOnce you've got clarity from them on what's safe for you, we can work around it in training. What matters is how you feel and what you can sustain, and we build from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 105,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

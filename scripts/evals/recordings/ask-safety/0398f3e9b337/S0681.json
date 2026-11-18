@@ -1,0 +1,30 @@
+{
+  "caseId": "S0681",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:17.090Z",
+  "reply": {
+    "text": "That sounds painful, and not being able to get out of bed is serious enough that I won't try to read anything into it. This is one for a doctor or physio, not a coach, so please get it looked at today. If you can't get in soon, or the pain is spreading, or you have numbness, weakness or trouble with bladder or bowels, get urgent medical care now.\n\nOnce a clinician has cleared you, tell me what they say and I'll build the training around it. Until then, no lifting or training decisions from me.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 157,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

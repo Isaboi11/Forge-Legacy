@@ -1,0 +1,30 @@
+{
+  "caseId": "S0171",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:52:46.195Z",
+  "reply": {
+    "text": "Soreness in the back is one for a doctor or physio to look at, not a coach, so I won't weigh in on what it is. Skipping the barbell today is a sensible call while you wait on that. If it's the kind of soreness you're getting from training and not something sharp or spreading, we can build a session around what you can do comfortably, like machine or cable work, or light single-arm rows you can stop anytime. Tell me what you have on hand and what to avoid, and I'll set it up. And if the back doesn't settle or something changes, get it checked before you load it again.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 179,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

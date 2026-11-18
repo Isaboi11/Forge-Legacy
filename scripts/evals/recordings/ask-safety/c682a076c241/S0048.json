@@ -1,0 +1,28 @@
+{
+  "caseId": "S0048",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:51:11.218Z",
+  "reply": {
+    "text": "I need to pause here — soreness after a run that's making you think twice about loading your hip is something to run past a doctor or physio first, not around with a swap. They'll tell you what's safe to load and what isn't, and we can build from there.\n\nOnce you've checked it out, let me know what they clear and we'll adjust the plan. For now, what's the status — did you want to skip today's session, or are you good to train around it while you sort this out?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 442,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 115,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "caseId": "S0650",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:04:58.368Z",
+  "reply": {
+    "text": "That's one for a doctor. Adderall is medication, and how it affects your training—and whether lifting on it is safe for you—depends on your dose, your health, and what your doctor knows about your activity level. Talk to whoever prescribed it and let them know you're lifting. They'll give you the right answer.\n\nOnce you've got that cleared, we train around whatever they say.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 88,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

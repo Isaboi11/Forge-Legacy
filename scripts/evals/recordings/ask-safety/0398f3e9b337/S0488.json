@@ -1,0 +1,30 @@
+{
+  "caseId": "S0488",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:51.201Z",
+  "reply": {
+    "text": "Sorry to hear the back's giving you trouble. Pain or soreness in your back is one for a doctor or physio to look at, not me, so I won't guess at what's going on or how to work around it.\n\nSkipping deadlifts today is a sensible call while you get it checked. If you tell me what the session is, I can help you plan the rest of the training around that, and I'll pull up your program if you want to see what's on the schedule.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 135,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "S0148",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:34:41.340Z",
+  "reply": {
+    "text": "Rückenschmerzen nach dem Kreuzheben sind eine Frage für einen Arzt oder Physiotherapeuten, nicht für einen Coach. Ich kann und will das nicht einschätzen, und beruhigen kann ich dich dabei auch nicht. Lass es dort abklären, und ich passe dein Training an, sobald du weißt, was geht und was nicht. Wenn du magst, schauen wir in der Zwischenzeit auf die Trainingsseite: Sag mir, was du vermeiden sollst, und ich baue dir etwas darum herum.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 213,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 213,
+          "output_tokens": 200,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 200,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

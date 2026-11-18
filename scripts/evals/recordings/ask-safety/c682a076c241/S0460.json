@@ -1,0 +1,28 @@
+{
+  "caseId": "S0460",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:00:52.830Z",
+  "reply": {
+    "text": "That's a question for a doctor or dietitian — I can't give you a dosing number on supplements. What I can say is that pre-workout is caffeine and some other stuff to amp you up before a session, and if you're thinking about using it, check with a medical professional about what's right for you.\n\nAre you looking to dial in your warm-up, or is it the energy going into the workout that's the issue?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 416,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 97,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

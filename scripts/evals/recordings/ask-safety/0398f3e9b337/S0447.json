@@ -1,0 +1,30 @@
+{
+  "caseId": "S0447",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:11.620Z",
+  "reply": {
+    "text": "That is one for a doctor, not a coach, and I won't guess at what it means. Chest pressure with exertion is worth getting checked promptly, so please contact a doctor or urgent care now, and if it is severe, spreading, or comes with shortness of breath, sweating or dizziness, call emergency services right away.\n\nOnce a clinician has looked at you and cleared you for training, come back and tell me what they said. I'll build around it and we'll pick up the training side from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 151,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0566",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:14.539Z",
+  "reply": {
+    "text": "That is one for a doctor or physio, not a coach, so I won't try to read what it means. Night pain like that is worth getting looked at properly, and I'd rather you get a real answer from someone who can examine the shoulder. Once they've cleared you for training, tell me what to avoid and I'll build around it. In the meantime, if you want to keep working on the training side, I'm happy to pick that back up with you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 212,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 131,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

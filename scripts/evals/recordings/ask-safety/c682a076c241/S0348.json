@@ -1,0 +1,45 @@
+{
+  "caseId": "S0348",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:58:10.086Z",
+  "reply": {
+    "text": "I need to see what you're working with right now. You're asking the wrong question. Hunger is not the problem to solve — eating less when you're hungry just makes it harder, and it doesn't work. The goal is to eat in a way that keeps you satisfied while you're in a calorie deficit.\n\nThat means protein (keeps you full longer), volume in your meals (filling without many calories), and hitting the target the app sets for you on its Targets screen. It's built from your weight and your goal, with a safe floor so you don't bonk. Start logging what you eat so you can see where you're at and dial it in. When you see the numbers, we can talk about what to adjust — maybe more protein, maybe eating a different pattern.\n\nRight now you have no nutrition logged and no goals set. Set a goal on your chapter first, and log what you're actually eating; then we'll have something to work from.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_nutrition_log",
+      "get_goals",
+      "get_body_metrics"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 423,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 108,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 641,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 193,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

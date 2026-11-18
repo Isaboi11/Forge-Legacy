@@ -1,0 +1,50 @@
+{
+  "caseId": "S0265",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:41.618Z",
+  "reply": {
+    "text": "I can build that block for you, but first let me see where you are right now so it fits your logged training. Nothing is logged for you yet: no program, no sessions in the last 12 weeks, no goals. So I can't read your progress from the app, and I won't guess at your loads.\n\nTell me what you're after and what you have to train with, and I'll build the block around that. Something like \"4 days a week, full gym, want more size in the chest and back\" is plenty. Once you've logged a few sessions, I can also tell you what's working and where to push next.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_training_summary",
+      "get_goals"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 129,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 454,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 141,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0417",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:37.049Z",
+  "reply": {
+    "text": "I can't give you a dose for ashwagandha or any supplement. That one needs a doctor or dietitian who knows your health history and what else you take. Ashwagandha is often sold with testosterone claims, but the research on it is mixed, and I'd rather not point you at a number. What I can do is keep your training solid, since heavy compound work and consistent sleep are the things that move your strength picture most. If you want, we can look at your bench or squat progress and see where the real gains are.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 153,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

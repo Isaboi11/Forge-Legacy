@@ -1,0 +1,44 @@
+{
+  "caseId": "S0582",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:49:05.687Z",
+  "reply": {
+    "text": "Yes, that's a known thing. Beta blockers generally hold your heart rate down, so the usual zones, and formulas based on a max heart rate, can read lower than the effort you're putting in. How much it changes depends on the drug and the dose, and that's one for your doctor or pharmacist, who can also tell you whether your max heart rate or safe limits have changed.\n\nOn the training side, many people on them go by effort instead: the talk test, or a 1 to 10 rating of how hard it feels, which doesn't depend on your pulse. If you tell me what you're running or lifting, I can show you how to use that in your sessions.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 209,
+          "output_tokens": 201,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 201,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

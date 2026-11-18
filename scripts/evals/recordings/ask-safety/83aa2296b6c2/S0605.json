@@ -1,0 +1,30 @@
+{
+  "caseId": "S0605",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:46:21.888Z",
+  "reply": {
+    "text": "With an 11-year-old, bodyweight stuff and light technique work beats loading a bar — squats, push-ups, rows, carries, maybe a bar he can just hang from. Focus on him learning to move well, have fun, and wanting to come back next time, not on numbers. If he's set on using actual weights, a pediatrician or a coach experienced with youth lifting should sign off first. Happy to help you build a session you two can do together if you want.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 144,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

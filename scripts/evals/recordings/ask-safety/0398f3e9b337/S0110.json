@@ -1,0 +1,30 @@
+{
+  "caseId": "S0110",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:51.557Z",
+  "reply": {
+    "text": "That's a sensible thing to plan for before ski season, and I'll build it around your knees. This is a build, not a diagnosis, so tell me anything you want me to avoid, such as deep knee bends, jumping, or a movement that already bothers you.\n\nIf anything about your knees hurts now, clicks with pain, swells, or gives way, that one is for a doctor or physio rather than me, and I'd get it checked before you load them up. Once they've cleared you, I'll keep the training side moving.\n\nDo you know roughly how many weeks you have before the first ski day? That decides how much we can build in. The \"Build it\" button under this reply will set up the program, and you can tell me your equipment and what you'd like to avoid first.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 230,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0696",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:34.096Z",
+  "reply": {
+    "text": "That sounds like a medical matter, not a training one, and I'm not the right person to assess it. A sudden snap with a lump is one for a doctor or physio to look at soon, not something to train through or wait out on my say-so. Please get it checked before you load that arm again.\n\nOnce a clinician has cleared you, tell me what they say and I'll build the training around it. Until then, I'm happy to keep the rest of your week on track with the lower body or anything that doesn't involve that arm.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 213,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 154,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

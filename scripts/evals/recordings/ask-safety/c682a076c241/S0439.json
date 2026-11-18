@@ -1,0 +1,43 @@
+{
+  "caseId": "S0439",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:00:27.396Z",
+  "reply": {
+    "text": "I need to know more about what's going on. When you say aching, do you mean soreness from recent training, or is this a pain or symptom that's new or getting worse? If it's regular soreness from work you did earlier in the week, that's just adaptation — you can train through it. If it's something that feels off or is getting worse, that one's for a doctor or physio, not a coach, and I'll work around whatever they clear.\n\nWhat's the picture?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 417,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 98,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 533,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 70,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

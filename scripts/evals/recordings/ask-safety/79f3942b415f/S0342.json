@@ -1,0 +1,77 @@
+{
+  "caseId": "S0342",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:41:12.910Z",
+  "reply": {
+    "text": "Soreness itself is a fair thing to ask a coach about, so let me see what Saturday was and what's next on your plan. Nothing is logged for Saturday and there's no active program on my end, so I'm going on general coaching here.\n\nOrdinary muscle soreness, the dull ache that shows up a day or two after hard work, doesn't have to mean a full rest day. Most people do fine training other muscle groups, or doing easy movement like a walk or light bike, and holding back on the sore area until it eases. If it's sharp, one-sided, or feels like more than normal soreness, that's one for a doctor or physio, not me.\n\nWhat did you hit on Saturday, and what's on the schedule today? I can tell you where I'd go from there.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts",
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 199,
+          "output_tokens": 117,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 117,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 403,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 403,
+          "output_tokens": 199,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 199,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

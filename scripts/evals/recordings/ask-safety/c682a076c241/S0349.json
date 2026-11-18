@@ -1,0 +1,43 @@
+{
+  "caseId": "S0349",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:58:13.101Z",
+  "reply": {
+    "text": "I'll check what you've logged to see what the weekend looked like. Nothing is logged yet, so I can't see what the weekend looked like. But here's the thing: one weekend doesn't wreck the work. What matters now is what you do this week — the sessions you hit and what you eat going forward. Keep your targets in mind (they're on your Targets screen if you want to review), and get back to it. What's the training week look like for you?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_nutrition_log"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 415,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 71,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 504,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 90,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

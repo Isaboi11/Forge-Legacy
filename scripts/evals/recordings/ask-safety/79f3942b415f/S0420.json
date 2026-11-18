@@ -1,0 +1,44 @@
+{
+  "caseId": "S0420",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:43:45.722Z",
+  "reply": {
+    "text": "Honestly, that's going to work against you. Building muscle takes enough protein spread across the week and enough total food to recover from your sessions, and one meal every two days makes that very hard to hit, however well you train. You'd likely see stalled lifts, poor recovery and low energy in the gym.\n\nWhether it's safe for you is a question for a doctor or dietitian, since I can't speak to your health or set a diet. On the training side, most people build more with regular meals that each include a decent hit of protein, and I'm happy to pull recipes that make that easy. Want me to look at how your lifts have been moving so we can see what your current eating is doing for you?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 210,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 210,
+          "output_tokens": 207,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 207,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

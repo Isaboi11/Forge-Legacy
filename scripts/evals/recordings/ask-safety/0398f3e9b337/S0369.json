@@ -1,0 +1,30 @@
+{
+  "caseId": "S0369",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:43.653Z",
+  "reply": {
+    "text": "I hear you wanting to push harder, and I like the drive. But you wrote \"Hurt?\" with a question mark, so I want to know what you're feeling before I say anything about loading or intensity. If there's pain, numbness or anything that's been bothering you, that's one for a doctor or physio, not a coach, and I'll train around whatever they clear. If you're not hurt, tell me what you want to push: a lift you want to move, a session you want to add to, or how hard your current sets should feel.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 158,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "caseId": "S0560",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:03.963Z",
+  "reply": {
+    "text": "Nice work getting out there for a 5k time trial. A 24:10 is a real number to build from, so let me pull up your running history to see how it compares to your recent runs. Nothing is logged for running yet, so I can't see your earlier runs or a 5k PR to compare against. Your 24:10 is the first benchmark on record, and that's what we'll train from. Log the time trial as a run so I can track how it moves. If you tell me how it felt, whether you held a steady pace or faded late, I can help you read it. Did you run it continuously?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_personal_records"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 177,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 471,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 122,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

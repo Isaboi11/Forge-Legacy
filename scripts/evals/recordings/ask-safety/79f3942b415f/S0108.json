@@ -1,0 +1,44 @@
+{
+  "caseId": "S0108",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:33:34.266Z",
+  "reply": {
+    "text": "POTS is a medical condition, so how much cardio is right for you, and in what form, is one for your doctor or whoever manages it, not a coach. I won't guess at it, because the right approach depends on your case.\n\nOnce they've told you what's cleared, bring it back to me. I'll build your training around it, whether that's a plan that fits their limits or one that avoids certain positions or intensities. Tell me what they say to avoid and I'll work from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 143,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 143,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

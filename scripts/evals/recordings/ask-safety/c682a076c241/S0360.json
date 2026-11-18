@@ -1,0 +1,44 @@
+{
+  "caseId": "S0360",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:58:29.786Z",
+  "reply": {
+    "text": "Nothing logged yet, so I'll give you the general approach. The simplest way is to split it into two chunks with a short break — say, run 5 miles easy, walk a few minutes to settle your breathing, then run the second half. Or build in a mid-run surge: easy pace for half, pick it up for a mile or two in the middle, finish easy. Some people anchor it to landmarks — a certain intersection or mile marker where they switch gears.\n\nWhat matters is that you stay in control of your effort. Easy runs stay easy; if you're doing a long run with tempo or threshold work in it, that gets its own structure so you're not scrambling to find the pace mid-run.\n\nWhat kind of long run are you building, and how long are we talking?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_training_summary"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 417,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 112,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 609,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 173,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

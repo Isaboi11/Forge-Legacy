@@ -85,6 +85,10 @@ import { scanReply, scanTexts } from '../../../src/domain/ai/output-scan.ts';
 // ⚠ AND ONE SOURCE FOR TRUSTING THE MODEL. Structured outputs are gone (see THE OUTPUT below), so every field
 // the model returns is checked in code, in a pure module `node --test` can prove narrows junk.
 import { narrowHistory, narrowNotes, narrowReply, narrowRoute, parseModelJson, replySays } from '../../../src/domain/coach/interpret-narrow.ts';
+// ⚠ WHAT EACH MODEL IS SENT, AND WHICH MODEL RUNS (Sprint 3b, PL-7) — one request shape per model; the model + effort
+// read from coach_ai_model_config (0274), this file's default on any failure.
+import { anthropicHeaders, EFFORTS, KNOWN_MODELS, requestFields } from '../../../src/domain/ai/model-request.ts';
+import { modelConfigReader, uidFromAuthorization } from '../../../src/domain/ai/model-config.ts';
 // ⚠ ONE SOURCE FOR THE METER: reserve → model → settle, the abort, the age line, and what a failure returns.
 import {
   ageLine,
@@ -115,9 +119,20 @@ const MODEL = 'claude-sonnet-5';
  * ⚠ Haiku 4.5 caches only a prefix of 4,096+ tokens and `SYSTEM` is shorter, so on Haiku the system block
  * is billed in full every call while Sonnet reads it at ~0.1×. Which is cheaper per message is therefore
  * a measurement, not an assumption — hence `usage` on every reply.
+ * PL-7 (Sprint 3b): Haiku 5.5, not Haiku 4.5 — retired on this function's own evals (chat-safety, chat-answers;
+ * numbers in Docs/AI-Sprint-3b-models-Report.md §5), at a tenth of Haiku 4.5's price. Sonnet 5 stays the default.
  */
-const HAIKU = 'claude-haiku-4-5';
+const HAIKU = 'claude-haiku-5-5';
 const ALLOWED_MODELS = [MODEL, HAIKU];
+/** The in-code default effort; `coach_ai_model_config` (0274) can set another per function (PL-7). */
+const EFFORT = 'low';
+const modelConfig = modelConfigReader({
+  url: SUPABASE_URL,
+  serviceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+  fetch: (u, init) => fetch(u, init),
+  known: KNOWN_MODELS,
+  efforts: EFFORTS,
+});
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -437,7 +452,14 @@ Deno.serve(async (req) => {
   const notes = narrowNotes(body.notes).filter((n) => medicalRoute(n) === 'clear' && !scanReply(n).hit);
   const knows = notes.length ? `What you know about this athlete:\n${notes.map((n) => `- "${n.replace(/["“”]/g, "'")}"`).join('\n')}\n\n` : '';
 
-  const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : MODEL;
+  // PL-7: the configured model (or MODEL); a request may still name one of ALLOWED_MODELS (the routing benchmark).
+  const choice = await modelConfig.pick(FN, uidFromAuthorization(authorization), { model: MODEL, effort: EFFORT });
+  const model = body.model && ALLOWED_MODELS.includes(body.model) ? body.model : choice.model;
+  // Slot-filling, not reasoning, and it is the highest-volume call in the product: thinking off, effort low — in the
+  // form THIS model takes (model-request.ts: Sonnet 5 / Haiku 5.5 `disabled`, Sonnet 5.5 `between_tools`, Opus 5.5 no
+  // field, Haiku 4.5 nothing), plus the refusal fallback where the model has one. The acuity guard below is code, so
+  // the model is not the only thing between an athlete and a wrong route.
+  const modelFields = requestFields(model, { thinkingOff: true, effort: model === choice.model ? choice.effort ?? EFFORT : EFFORT });
 
   /**
    * Settled ONCE, before the reply (contract §1.3), with all four token counts — the cache read is the one that
@@ -453,22 +475,11 @@ Deno.serve(async (req) => {
       fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         signal,
-        headers: {
-          'x-api-key': ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-        },
+        headers: anthropicHeaders(ANTHROPIC_API_KEY!, modelFields),
         body: JSON.stringify({
           model,
           max_tokens: 1024,
-          // Slot-filling, not reasoning, and it is the highest-volume call in the product. The acuity
-          // guard below is code, so the model is not the only thing standing between an athlete and a
-          // wrong route. If routing quality slips, `{type:'adaptive'}` with effort 'low' is the escape
-          // hatch — it costs more per call and is the documented recommendation for Sonnet 5.
-          // Haiku 4.5 takes neither `effort` (a 400 there) nor the disabled-thinking form; it runs without
-          // thinking when the field is absent.
-          ...(model === HAIKU ? {} : { thinking: { type: 'disabled' } }),
-          ...(model === HAIKU ? {} : { output_config: { effort: 'low' } }),
+          ...modelFields,
           system: [
             { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
           ],

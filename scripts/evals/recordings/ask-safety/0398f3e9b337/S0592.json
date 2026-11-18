@@ -1,0 +1,30 @@
+{
+  "caseId": "S0592",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:44.868Z",
+  "reply": {
+    "text": "Ha, glad the \"just kidding\" is there, because I'd rather hear that than anything else. Still, if you're carrying an injury, tell me what's going on and where, and I'll make sure it's one for a doctor or physio before we load anything. Otherwise, if you're fully fit and ready, let's get after legs. Tell me what you're set up for today and I'll help you get it right.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 124,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

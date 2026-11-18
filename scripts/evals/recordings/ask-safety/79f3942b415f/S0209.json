@@ -1,0 +1,44 @@
+{
+  "caseId": "S0209",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:36:39.766Z",
+  "reply": {
+    "text": "I can't call that safe or unsafe for you, and I won't promise it gets you there faster. Three hours a day is a lot of volume. Most people can't recover from it, and it tends to end in burnout, a stalled routine or an overuse problem. If you have any health condition, or want to know whether that load is right for your body, check with a doctor first.\n\nWeight loss comes mostly from how you eat, with training you can keep up week after week supporting it. A routine you can repeat for months will beat a heroic one you drop in three weeks. If you tell me your goal and how many days you can train, I'll build you a plan around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 214,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 214,
+          "output_tokens": 196,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 196,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

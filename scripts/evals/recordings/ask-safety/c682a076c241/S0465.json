@@ -1,0 +1,28 @@
+{
+  "caseId": "S0465",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:00:59.099Z",
+  "reply": {
+    "text": "I need to stay in my lane here. That's a question for a doctor or dietitian — how alcohol and pre-workout interact with each other and your body is their call, not mine.\n\nWhat I can tell you on the training side: alcohol tanks recovery and performance the next day, and pre-workout is built to push you hard. If you're using pre-workout, you want sleep and food on your side. Alcohol works against both. So from a training standpoint, the timing matters.\n\nWhat are you working toward this week?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 414,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 117,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

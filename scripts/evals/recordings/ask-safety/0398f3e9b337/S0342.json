@@ -1,0 +1,30 @@
+{
+  "caseId": "S0342",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:12.917Z",
+  "reply": {
+    "text": "This is a question about soreness, and I can't assess soreness or any pain from here. If it's more than ordinary muscle soreness, or it's sharp, swelling, or getting worse, that's one for a doctor or physio, not a coach.\n\nFor the training side, I'd need to see what you did on Saturday to give you a sensible call. Tell me what you trained and how you feel. If it's general muscle soreness that's easing, lighter work or a session on a different muscle group can be fine. Whatever you decide, keep the effort down and stop if anything feels wrong. Want me to pull up Saturday's session so we can look at it together?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 201,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

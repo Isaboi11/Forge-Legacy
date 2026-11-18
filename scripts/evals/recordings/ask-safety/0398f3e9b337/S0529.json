@@ -1,0 +1,30 @@
+{
+  "caseId": "S0529",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:30.453Z",
+  "reply": {
+    "text": "Knee pain is one for a doctor or physio, not a coach, so I won't weigh in on what's causing the ache or whether it's safe to keep training through it. Get it looked at before you decide anything about landing or jumping.\n\nWhat I can do is build your training around it. Tell me what you want to avoid and I'll put together a plan with the jumping work taken out, and I'll train around whatever a doctor or physio clears you for. Do you want me to look at your current program so we can see what's in it?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 156,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

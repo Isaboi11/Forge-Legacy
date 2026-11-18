@@ -1,0 +1,30 @@
+{
+  "caseId": "S0691",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:27.702Z",
+  "reply": {
+    "text": "Yes, 20 minutes is a real session, and on a day like this it counts. Keep it simple: a warm-up of a few minutes, then one or two of your main lifts at a working weight you know well, stopping a couple of reps short of grinding. Leave the ego at the door and head home feeling you did something.\n\nIf you tell me what you have planned for tonight, I can check your program and what you have been doing lately so we pick the right 20 minutes.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 142,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

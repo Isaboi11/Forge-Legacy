@@ -1,0 +1,30 @@
+{
+  "caseId": "S0075",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:32:31.121Z",
+  "reply": {
+    "text": "Good call either way, but yeah — skip it or at least cut it way down. You don't want fresh quad soreness going into a climb that long; save the legs for the mountain. If you want to move, keep it light: easy walk, some mobility, maybe light upper body if you're itching to do something. Have a great hike.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 214,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 99,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

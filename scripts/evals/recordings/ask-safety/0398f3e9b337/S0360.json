@@ -1,0 +1,30 @@
+{
+  "caseId": "S0360",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:35.043Z",
+  "reply": {
+    "text": "Splitting a long run into two shorter efforts is a useful way to build volume when a single long outing feels like too much. Most runners do it as two runs in one day, or a longer run with a short walk break in the middle, which keeps the legs moving without a hard stop. Keep the first chunk easy and conversational, and treat the second as the same easy pace rather than a race against the first. If you tell me your usual long-run distance and how it's been feeling, I can look at your running history and suggest where the split should fall.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 160,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0186",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:53:05.398Z",
+  "reply": {
+    "text": "That one is a dosing question, and I don't give amounts for creatine or any supplement. What I can say in general: creatine is one of the most studied supplements for strength work, and people use it across training phases, cutting included. For the amount that's right for you, and whether it fits with anything else you take, check with a doctor or a registered dietitian.\n\nWhile you're cutting, the training side that matters most is holding your working weights. If your bench or squat numbers start dropping, tell me and we'll look at the logs together.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 158,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "caseId": "S0027",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:50:38.265Z",
+  "reply": {
+    "text": "I'll grab your squat history so I can see what you've been doing. No squats logged yet, so this is more general. Knee sleeves are useful—they give you compression, a bit of warmth, and sometimes a small bounce out of the hole. But they're not mandatory. Most people train fine without them, especially starting out. If your knees feel good and you're not dealing with any stiffness, you don't need them. If you pick them up later and find they help, great. What matters more right now is solid form and gradual load progression. Are you about to start squats in your program?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 74,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 510,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 121,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

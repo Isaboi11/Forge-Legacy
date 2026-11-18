@@ -1,0 +1,49 @@
+{
+  "caseId": "S0701",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:41.190Z",
+  "reply": {
+    "text": "The good kind of sore is a fair report, and I'd like to see what you actually did before I say much more. Let me pull up today's session. Nothing is logged for today yet, so I can't see what you trained. If you did a session, it may not have been saved to the app. Tell me the lifts you did and I'll tell you what they hit. If you're heading in later, I can also check your program for the day. And a quad soreness that feels good is still just soreness; if it turns into anything sharp or lingering, that's one for a doctor or physio.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_workout_detail",
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 217,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 123,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 426,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 126,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

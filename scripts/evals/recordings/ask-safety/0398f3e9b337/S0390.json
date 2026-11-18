@@ -1,0 +1,49 @@
+{
+  "caseId": "S0390",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:06.139Z",
+  "reply": {
+    "text": "I'm sorry that comment stung. If you want to talk through what he said, I'm happy to hear it, and I'd like to know what was said before I weigh in on it. For today, let's look at what's on your plan and what you've trained lately so we pick something that fits how you're feeling. Give me a sec to pull up your program. Nothing shows up in your program or your workouts from the last week, so I don't have a session to point you to yet. That's fine. Tell me what equipment you have and roughly how much time you've got, and I'll help you pick a sensible session. And if you want to tell me what your trainer said, I'm listening.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_recent_workouts"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 216,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 179,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 482,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 97,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

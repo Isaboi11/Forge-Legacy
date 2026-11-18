@@ -1,0 +1,49 @@
+{
+  "caseId": "S0193",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:53:16.139Z",
+  "reply": {
+    "text": "I can help with building endurance for the last mile. To give you a grounded answer, let me pull your running history first. Nothing is logged for running in the last 90 days, so I can't see your long runs or pace yet. That doesn't stop us. If you log your next few runs, I can read your pace and distance trend and tell you where the fade is.\n\nFor the legs giving out, the usual cause is that the long run is either too far too fast or the weekly volume is too thin for the distance. Two things to work on. First, make the long run the easy one: run it at a pace you could hold in conversation, and let the last mile be slower rather than a sprint-and-fade. Second, add distance gradually, roughly 10 percent a week or less, and keep one long run a week as the anchor. Strength work for the legs, like squats, lunges and calf raises, also helps the last mile hold together.\n\nIf the legs are giving out in a way that feels like pain, sharpness or something that won't settle, that is one for a doctor or physio rather than a coach, and I'll train around whatever they clear. Otherwise, log a few runs and tell me your typical long-run distance, and we'll set the next step from there.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_athlete_profile"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 135,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 435,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 337,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

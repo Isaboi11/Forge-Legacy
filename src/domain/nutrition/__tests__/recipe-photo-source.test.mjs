@@ -63,8 +63,13 @@ test('CORS: the preflight is answered first, and every response carries the head
 
 test('Sonnet 5, no thinking, low effort, the cap from the shared module', () => {
   assert.match(SRC, /const MODEL = 'claude-sonnet-5';/);
-  assert.match(SRC, /thinking: \{ type: 'disabled' \},/);
-  assert.match(SRC, /output_config: \{ effort: 'low', format: \{ type: 'json_schema', schema: RECIPE_READ_SCHEMA \} \},/);
+  // PL-7 (Sprint 3b): thinking off + effort low + the schema, in the form THIS model takes (model-request.ts, whose test
+  // walks every model); the model + effort can come from the config (0274), default Sonnet 5 / low.
+  assert.match(SRC, /const EFFORT = 'low';/);
+  assert.match(SRC, /const modelFields = requestFields\(model, \{\s+thinkingOff: true,\s+effort: choice\.effort \?\? EFFORT,\s+format: \{ type: 'json_schema', schema: RECIPE_READ_SCHEMA \},\s+\}\);/);
+  assert.match(SRC, /headers: anthropicHeaders\(ANTHROPIC_API_KEY!, modelFields\),/);
+  assert.match(SRC, /\.\.\.modelFields,/);
+  assert.doesNotMatch(SRC, /thinking: \{ type: 'disabled' \}/, 'no hand-written thinking field: Sonnet 5.5 and Opus 5.5 reject it');
   assert.match(SRC, /max_tokens: RECIPE_PHOTO_OUTPUT_CAP,/);
   assert.ok(!/max_tokens: \d/.test(SRC));
 });
@@ -79,7 +84,7 @@ test('the system block is ONE cached constant, nothing interpolated, long enough
 
 test('usage is recorded with all four counts, on success and on failure', () => {
   // One settle per call, with the call's own usage (all four counts are mapped in meter-server.ts `settleArgs`).
-  assert.equal(SRC.match(/rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, MODEL\)\)\)/g).length, 1);
+  assert.equal(SRC.match(/rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, model\)\)\)/g).length, 1);
   for (const outcome of ['settle(call.kind, call)', "settle('refusal', call)", 'settle(outcome, call)', "settle('ok', call)"]) {
     assert.ok(SRC.includes(outcome), `missing ${outcome}`);
   }

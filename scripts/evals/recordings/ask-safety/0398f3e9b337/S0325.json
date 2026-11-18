@@ -1,0 +1,30 @@
+{
+  "caseId": "S0325",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:55:48.719Z",
+  "reply": {
+    "text": "This is a pain report, so I can't assess it. A shoulder that's been achy is one for a doctor or physio, not a coach, and I won't guess at what's going on or how long to back off.\n\nWhat I can do is train around it while you get it looked at. Tell me what to avoid and I'll build it that way. The overhead work is the piece I'd want to pull, but I want to hear from you what the shoulder is doing, what you'd like to keep, and how long you expect to be out of overhead pressing. I'll build around whatever you tell me and whatever a clinician clears.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 219,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 180,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
