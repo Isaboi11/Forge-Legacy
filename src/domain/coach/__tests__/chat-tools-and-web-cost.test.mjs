@@ -77,5 +77,6 @@ test('old client: a phone without this code sends no tools key and reads the chi
   // The server is untouched (coach_ai_quote is live since 0221; coach-ask's wire is the same), so an older app is
   // unaffected by construction. What this pins: the older event shape still sanitises the same way.
   assert.deepEqual(sanitizeProps({ source: 'web', result: 'answer', ms: 900, count: 1, success: true }), { source: 'web', result: 'answer', ms: 900, count: 1, success: true });
-  assert.doesNotMatch(readFileSync(new URL('../../../../supabase/functions/coach-ask/index.ts', import.meta.url), 'utf8'), /\btools:\s*askToolsUsed/);
+  // The names come from tables every shipped app already reads: status lines (Sprint 1) and action names (Sprint 0).
+  assert.match(LIVE, /from '@\/domain\/coach\/chat-basics'/);
 });

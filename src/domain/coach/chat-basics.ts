@@ -148,7 +148,7 @@ export function askToolsUsed(statusLines: readonly string[], actionNames: readon
  * ══ WEB SEARCH SAYS WHAT IT COSTS BEFORE THE TAP (AI Road to 10 Sprint 3b, CH-6 / C-G6) ══
  *
  * "Find one online" asks again WITH web search, metered as `web` — 2 credits since 0272, not the 1 a message costs.
- * The chip says so before it is tapped: "Find one online · 2 credits". ⛔ The number is the SERVER's, read through
+ * The chip says so before it is tapped: "Find one online · N credits". ⛔ The number is the SERVER's, read through
  * `coach_ai_quote('web')` (0221, live; `action_credits ->> p_action`) — never one typed into the app. A read that
  * fails, an older server, an athlete without Premium AI (the quote answers cost 0) → no number, the chip reads as
  * it always has.
@@ -162,7 +162,7 @@ export function webSearchCostFrom(row: unknown): number | null {
   return typeof cost === 'number' && Number.isInteger(cost) && cost > 0 && cost < 100 ? cost : null;
 }
 
-/** "Find one online · 2 credits" — the chip as shown. The chip's own label (what the transcript says) is unchanged. */
+/** "Find one online · N credits" — the chip as shown. The chip's own label (what the transcript says) is unchanged. */
 export function withCreditCost(label: string, cost: number | null | undefined): string {
   if (cost == null || cost <= 0) return label;
   return `${label} · ${cost} ${cost === 1 ? 'credit' : 'credits'}`;
