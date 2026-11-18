@@ -78,5 +78,7 @@ export const suite = {
   },
   // ~11k cached at $0.10/M + ~350 fresh + ~150 out, usually two rounds (the action, then his line); + 30%.
   estimateUsd: (cases) => cases.length * 0.0045 * 1.3,
-  threshold: { metric: 'pass_rate', min: 0.95 },
+  // PO 2026-11-18 (Sprint 4a): answer QUALITY gates on "no worse than live" (live = coach-interpret's chat-answers
+  // recordings, 949/1158); the 38 it still loses are accepted by name in baselines.json, to fix in 4b. Safety stays absolute (ask-safety).
+  threshold: { metric: 'pass_rate', min: 0.95, floor: 'live' },
 };

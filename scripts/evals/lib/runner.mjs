@@ -18,8 +18,13 @@
  * baseline passed now fails — a gain somewhere never buys a regression somewhere else. The `min` is still printed,
  * as a target: "target 0.95 — at 0.525 (live 0.475)". The baseline is scripts/evals/baselines.json, written from the
  * real recordings that graded the deployed function; a suite held to live with no baseline FAILS (never a guess),
- * and so does one with no graded run under the current prompt (UNRECORDED). ⛔ Only import-corpus and
- * kitchen-allergens carry it; chat-safety and anything gating the medical stop keep absolute bars.
+ * and so does one with no graded run under the current prompt (UNRECORDED). ⛔ Only import-corpus,
+ * kitchen-allergens and ask-answers (Sprint 4a, PO 2026-11-18) carry it; ask-safety, chat-safety and anything gating
+ * the medical stop keep absolute bars.
+ *
+ * ACCEPTED LOSSES (Sprint 4a, PO 2026-11-18): a baseline may list `accepted: [{ id, po, why? }]` — cases live passes
+ * that the PO knowingly ships failing, by name. They do not fail the gate, and EVERY run prints them as still to fix.
+ * An entry with no `po` is refused (the baseline is unusable), so nobody can quietly accept a loss.
  *
  * Live (`run.mjs --live --budget <usd>`): prints the estimate, refuses without a budget or when the estimate is
  * over it, stops the moment the MEASURED spend passes it, and with --record writes recordings. ⛔ No branch runs
@@ -118,6 +123,8 @@ function usableBaseline(b, metricName) {
   if (typeof b.metric !== 'number' || !Number.isFinite(b.metric)) return { why: 'its live baseline has no metric' };
   if (b.metricName && b.metricName !== metricName) return { why: `its live baseline is a ${b.metricName}, the suite measures ${metricName}` };
   if (!Array.isArray(b.passedCaseIds) || b.passedCaseIds.some((x) => typeof x !== 'string')) return { why: 'its live baseline has no passedCaseIds' };
+  if (b.accepted !== undefined && (!Array.isArray(b.accepted) || b.accepted.some((a) => !a || typeof a.id !== 'string' || typeof a.po !== 'string' || !a.po.trim())))
+    return { why: 'its live baseline has an accepted loss without the PO decision that accepted it' };
   return { baseline: b };
 }
 
@@ -185,12 +192,14 @@ export async function evaluateSuite(suite, { root, recordings = recordingsRoot(r
   }
   const metric = suite.threshold.metric === 'pass_rate' ? passed / Math.max(1, cases.length) : scoreSum / Math.max(1, cases.length);
   const graded = { n: cases.length - missing, passed, missing, metric };
+  /** The ids that passed — what a live baseline's `passedCaseIds` is derived from. */
+  const passedCaseIds = [...passedIds];
   if (missing) messages.push(`${missing} case(s) have no recording under the current prompt (counted as fails) — re-record them`);
 
   if (!live) {
     const meets = metric >= suite.threshold.min;
     if (!meets) messages.push(`${suite.threshold.metric} ${metric.toFixed(3)} < ${suite.threshold.min}: ${fails.slice(0, 5).join(' | ')}`);
-    return { ...base, status: 'GRADED', verdict: meets && !detFailed.length ? 'pass' : 'fail', graded, messages };
+    return { ...base, status: 'GRADED', verdict: meets && !detFailed.length ? 'pass' : 'fail', graded, passedCaseIds, messages };
   }
 
   // ── floor: 'live' ──
@@ -200,13 +209,17 @@ export async function evaluateSuite(suite, { root, recordings = recordingsRoot(r
     return { ...base, status: 'GRADED', verdict: 'fail', graded, floor: { kind: 'live', baseline: null, regressed: [] }, messages };
   }
   const caseIds = new Set(cases.map((c) => String(c.id)));
-  const regressed = b.passedCaseIds.filter((id) => !passedIds.has(id)).map((id) => ({ id, notes: caseIds.has(id) ? failNotes.get(id) : 'no longer a case in the suite — re-baseline it' }));
+  const acceptedById = new Map((b.accepted ?? []).map((a) => [a.id, a]));
+  const lost = b.passedCaseIds.filter((id) => !passedIds.has(id)).map((id) => ({ id, notes: caseIds.has(id) ? failNotes.get(id) : 'no longer a case in the suite — re-baseline it' }));
+  const regressed = lost.filter((r) => !acceptedById.has(r.id));
+  const accepted = lost.filter((r) => acceptedById.has(r.id)).map((r) => ({ ...r, po: acceptedById.get(r.id).po }));
   const atLeastLive = metric + EPS >= b.metric;
   messages.push(`target ${suite.threshold.min} — at ${metric.toFixed(3)} (live ${b.metric.toFixed(3)})`);
   if (!atLeastLive) messages.push(`${suite.threshold.metric} ${metric.toFixed(3)} < live ${b.metric.toFixed(3)}: ${fails.slice(0, 5).join(' | ')}`);
   if (regressed.length) messages.push(`${regressed.length} case(s) live passes now fail: ${regressed.slice(0, 5).map((r) => `${r.id}: ${r.notes}`).join(' | ')}`);
+  if (accepted.length) messages.push(`⚠ ${accepted.length} case(s) live passes now fail, ACCEPTED by the PO (${[...new Set(accepted.map((a) => a.po))].join('; ')}) — still to fix: ${accepted.map((a) => a.id).join(', ')}`);
   const verdict = !detFailed.length && atLeastLive && !regressed.length ? 'pass' : 'fail';
-  return { ...base, status: 'GRADED', verdict, graded, floor: { kind: 'live', baseline: { metric: b.metric, passed: b.passedCaseIds.length, promptHash: b.promptHash ?? null }, regressed }, messages };
+  return { ...base, status: 'GRADED', verdict, graded, floor: { kind: 'live', baseline: { metric: b.metric, passed: b.passedCaseIds.length, promptHash: b.promptHash ?? null }, regressed, accepted }, passedCaseIds, messages };
 }
 
 /**

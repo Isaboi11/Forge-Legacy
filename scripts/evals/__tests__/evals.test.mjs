@@ -186,6 +186,26 @@ test('floor live: a case live passed that now fails fails the suite, even when t
   assert.match(unrecordedCase.messages.join('\n'), /b: no recording under the current prompt/);
 });
 
+test('floor live: an ACCEPTED loss (named, with the PO decision) does not fail the gate, and every run prints it as still to fix', async () => {
+  const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'wrong', c: 'ok', d: 'ok' });
+  const base = liveBaseline(['a', 'b']);
+  const r = await evaluateSuite(s, { root, recordings, baselines: { fake: { ...base.fake, accepted: [{ id: 'b', po: 'PO 2026-11-18', why: 'test' }] } } });
+  assert.equal(r.verdict, 'pass');
+  assert.deepEqual(r.floor.regressed, []);
+  assert.deepEqual(r.floor.accepted.map((x) => x.id), ['b']);
+  assert.match(r.messages.join('\n'), /1 case\(s\) live passes now fail, ACCEPTED by the PO \(PO 2026-11-18\) — still to fix: b/);
+  // Accepting b never excuses another loss.
+  const other = await evaluateSuite(s, { root, recordings, baselines: { fake: { ...liveBaseline(['a', 'b', 'c']).fake, accepted: [{ id: 'c', po: 'PO' }] } } });
+  assert.equal(other.verdict, 'fail');
+  assert.deepEqual(other.floor.regressed.map((x) => x.id), ['b']);
+  // An accepted entry without the PO's decision makes the baseline unusable: fail.
+  const noPo = await evaluateSuite(s, { root, recordings, baselines: { fake: { ...base.fake, accepted: [{ id: 'b' }] } } });
+  assert.equal(noPo.verdict, 'fail');
+  assert.match(noPo.messages.join('\n'), /accepted loss without the PO decision/);
+  // The ids that passed come back, for deriving a baseline.
+  assert.deepEqual([...r.passedCaseIds].sort(), ['a', 'c', 'd']);
+});
+
 test('floor live: no baseline (or a malformed one) fails — never a guessed baseline; unrecorded fails too; deterministic still decides', async () => {
   const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'ok', c: 'ok', d: 'ok' });
   const none = await evaluateSuite(s, { root, recordings, baselines: {} });
@@ -332,12 +352,13 @@ test('the real suites: each validates, gates functions that exist, and every sui
   }
 });
 
-test('the live floor is on import-corpus and kitchen-allergens ONLY, and each has a real baseline from real recordings', async () => {
+test('the live floor is on import-corpus, kitchen-allergens and ask-answers ONLY, and each has a real baseline from real recordings', async () => {
   const suites = await loadSuites(ROOT);
   const floored = suites.filter((s) => s.threshold.floor === 'live').map((s) => s.name).sort();
-  assert.deepEqual(floored, ['import-corpus', 'kitchen-allergens'], 'PO 11-18: tidy and Kitchen only');
+  assert.deepEqual(floored, ['ask-answers', 'import-corpus', 'kitchen-allergens'], 'PO 11-18: tidy and Kitchen; Sprint 4a: answer quality');
   // ⛔ The medical stop keeps an absolute bar.
   assert.equal(suites.find((s) => s.name === 'chat-safety').threshold.floor, undefined);
+  assert.equal(suites.find((s) => s.name === 'ask-safety').threshold.floor, undefined);
   const baselines = loadBaselines(ROOT);
   for (const name of floored) {
     const s = suites.find((x) => x.name === name);
@@ -364,6 +385,12 @@ test('the live floor is on import-corpus and kitchen-allergens ONLY, and each ha
   // 11-18 numbers (PO): live tidy/import 29 of 61, live Kitchen 31 of 36.
   assert.equal(baselines['import-corpus'].passed, 29);
   assert.equal(baselines['kitchen-allergens'].passed, 31);
+  // Sprint 4a (PO 11-18): live typed path = coach-interpret 949 of 1158; 38 losses shipped by name, each with the PO's decision.
+  assert.equal(baselines['ask-answers'].passed, 949);
+  assert.equal(baselines['ask-answers'].accepted.length, 38);
+  for (const a of baselines['ask-answers'].accepted) assert.match(a.po, /^PO 2026-11-18/);
+  assert.equal(baselines['import-corpus'].accepted, undefined, 'no accepted losses on import');
+  assert.equal(baselines['kitchen-allergens'].accepted, undefined, 'no accepted losses on Kitchen');
 });
 
 test('live-run case filter (Sprint 4a): EVAL_CASES keeps only those ids, EVAL_SHARD splits, none of it without the env', async () => {
