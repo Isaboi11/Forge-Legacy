@@ -111,6 +111,10 @@ import {
   SUMMARY_SYSTEM,
   transcriptOf,
 } from '../../../src/domain/coach/ask-tools.ts';
+// ⚠ WHAT EACH MODEL IS SENT, AND WHICH MODEL RUNS (Sprint 3b, PL-7) — one request shape per model, and the model +
+// effort read from coach_ai_model_config (0274) with the in-code default on any failure.
+import { answeredBy, anthropicHeaders, EFFORTS, KNOWN_MODELS, requestFields, takesWebSearch } from '../../../src/domain/ai/model-request.ts';
+import { modelConfigReader, uidFromAuthorization } from '../../../src/domain/ai/model-config.ts';
 // ⚠ THE TURN'S RULES — reserve/settle, the one retry, the clock (Sprint 1). Pure, so node --test walks them.
 import {
   ASK_KEEPALIVE_MS,
@@ -134,11 +138,23 @@ const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-/** Sonnet 5 by default. CA-D7 routes simple `ask` turns to Haiku once the benchmark says it holds the voice. */
+/**
+ * The IN-CODE DEFAULT: Sonnet 5, effort low. What runs is `coach_ai_model_config` (0274) when it has a row for
+ * 'coach-ask' — read with the service role, kept 60 s, this default on any failure (PL-7).
+ */
 const MODEL = 'claude-sonnet-5';
+const EFFORT = 'low';
 /** ⚠ Haiku 4.5 caches only a 4,096+ token prefix; `SYSTEM` is shorter, so on Haiku it is billed in full. */
 const HAIKU = 'claude-haiku-4-5';
+/** What a request may name (the CA-D7 routing benchmark), besides whatever the config runs. */
 const ALLOWED_MODELS = [MODEL, HAIKU];
+const modelConfig = modelConfigReader({
+  url: SUPABASE_URL,
+  serviceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+  fetch: (u, init) => fetch(u, init),
+  known: KNOWN_MODELS,
+  efforts: EFFORTS,
+});
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -359,13 +375,17 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
   // deno-lint-ignore no-explicit-any
   let out: any = null;
   let failure: AskTurnFailure | null = null;
+  const summaryFields = requestFields(SUMMARY_MODEL, { thinkingOff: true, effort: 'low' });
   try {
     res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'x-api-key': ANTHROPIC_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      headers: anthropicHeaders(ANTHROPIC_API_KEY!, summaryFields),
       body: JSON.stringify({
         model: SUMMARY_MODEL,
         max_tokens: 200,
+        // A short write-up: thinking off where the model has an off (Haiku 5.5 would otherwise think inside the
+        // 200-token cap). Haiku 4.5 is sent nothing extra, as before (PL-7, model-request.ts).
+        ...summaryFields,
         system: [{ type: 'text', text: SUMMARY_SYSTEM, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: transcriptOf(turns) }],
       }),
@@ -391,7 +411,8 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
   };
   // A summary cut at its 200-token cap is still a summary (`cleanSummary` trims it) — only a refusal is not.
   const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
-  const settled = await settle(outcome, refund, SUMMARY_MODEL, usage);
+  // Priced as the model that answered (the response's own `model`), PL-7.
+  const settled = await settle(outcome, refund, answeredBy(out, SUMMARY_MODEL), usage);
   const refunded = settled?.refunded === true ? { refunded: true } : {};
   // ⛔ The reason is ours, never Anthropic's words (P-D8). A timeout is `upstream_error` + `upstream` (contract §1.2).
   if (failure) return json({ ok: true, saved: false, reason: failure === 'timeout' ? 'upstream_error' : failure, ...(failure === 'timeout' ? { upstream: 'timeout' } : {}), ...refunded });
@@ -503,8 +524,12 @@ Deno.serve(async (req) => {
   // ⛔ THE RESERVATION ID STAYS IN THIS FUNCTION (contract §1.3). Only `settle` holds it; nothing sends `reserved`.
   const settle = settler(supabase, reserved.reservation_id as string, Date.now());
 
-  // C-D8: a tapped online search is always Sonnet — Haiku 4.5 has no web search tool.
-  const model = askModel(body.model, allowWeb, ALLOWED_MODELS, MODEL);
+  // PL-7: the configured model (or this file's default) — then C-D8: a tapped online search never goes to a model
+  // without the web search tool (Haiku); it runs the in-code default instead.
+  const choice = await modelConfig.pick('coach-ask', uidFromAuthorization(authorization), { model: MODEL, effort: EFFORT });
+  const webModel = takesWebSearch(choice.model) ? choice.model : MODEL;
+  const model = askModel(body.model, allowWeb, [choice.model, ...ALLOWED_MODELS], allowWeb ? webModel : choice.model);
+  const askEffort = model === choice.model ? choice.effort ?? EFFORT : EFFORT;
 
   // ── 1b. The server's own age (P-G8) ─────────────────────────────────────────
   //
@@ -606,21 +631,19 @@ Deno.serve(async (req) => {
    * caches both — the tool list is as stable as `SYSTEM` and must stay that way. The last round sends
    * `tool_choice: none`, so a model that keeps reaching for data still has to answer with what it has.
    */
+  const askFields = requestFields(model, { thinkingOff: true, effort: askEffort });
   const callModel = (last: boolean) =>
     fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
+      headers: anthropicHeaders(ANTHROPIC_API_KEY!, askFields),
       body: JSON.stringify({
         model,
         max_tokens: ASK_OUTPUT_CAP,
         stream: true,
-        // A short conversational answer, not reasoning — same settings as `coach-interpret`. Haiku 4.5
-        // takes neither `effort` nor the disabled-thinking form; it runs without thinking when absent.
-        ...(model === HAIKU ? {} : { thinking: { type: 'disabled' }, output_config: { effort: 'low' } }),
+        // A short conversational answer, not reasoning — same settings as `coach-interpret` — in the form THIS model
+        // takes (model-request.ts): Sonnet 5 / Haiku 5.5 `disabled`, Sonnet 5.5 `between_tools`, Opus 5.5 no field,
+        // Haiku 4.5 nothing at all; plus the refusal fallback where the model has one (PL-7).
+        ...requestFields(model, { thinkingOff: true, effort: askEffort }),
         // Reads, then actions, then (only when tapped for) web search — in that fixed order, so the two
         // variants each keep one stable cached prefix.
         tools: allowWeb ? [...ASK_TOOLS, ...ASK_ACTIONS, WEB_SEARCH] : [...ASK_TOOLS, ...ASK_ACTIONS],
@@ -798,6 +821,12 @@ Deno.serve(async (req) => {
                     send({ t: d.text });
                   } else if (d?.type === 'input_json_delta' && typeof d.partial_json === 'string' && at) {
                     at.json += d.partial_json;
+                  } else if (d?.type === 'thinking_delta' && at?.raw) {
+                    // PL-7: Sonnet 5.5's between-tool notes (and Opus 5.5's thinking) are `thinking` blocks, and a tool
+                    // round must hand them back WHOLE — text and signature — or the next round is a 400.
+                    at.raw.thinking = String(at.raw.thinking ?? '') + String((d as { thinking?: string }).thinking ?? '');
+                  } else if (d?.type === 'signature_delta' && at?.raw) {
+                    at.raw.signature = String((d as { signature?: string }).signature ?? '');
                   }
                   break;
                 }

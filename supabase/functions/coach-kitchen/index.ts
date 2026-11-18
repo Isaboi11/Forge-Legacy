@@ -73,6 +73,10 @@ import {
   UPSTREAM_ABORT_MS,
   withAgeLine,
 } from '../../../src/domain/ai/meter-server.ts';
+// ⚠ WHAT EACH MODEL IS SENT, AND WHICH MODEL RUNS (Sprint 3b, PL-7) — one request shape per model; the model + effort
+// read from coach_ai_model_config (0274), this file's default on any failure.
+import { anthropicHeaders, EFFORTS, KNOWN_MODELS, requestFields } from '../../../src/domain/ai/model-request.ts';
+import { modelConfigReader, uidFromAuthorization } from '../../../src/domain/ai/model-config.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -83,6 +87,15 @@ const FN = 'coach-kitchen';
 
 /** The model already locked for Holt (Holt-AI benchmark 2026-09-24). */
 const MODEL = 'claude-sonnet-5';
+/** The in-code default effort. `coach_ai_model_config` (0274) can run another model / effort here, 60 s cache (PL-7). */
+const EFFORT = 'low';
+const modelConfig = modelConfigReader({
+  url: SUPABASE_URL,
+  serviceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+  fetch: (u, init) => fetch(u, init),
+  known: KNOWN_MODELS,
+  efforts: EFFORTS,
+});
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -207,9 +220,18 @@ Deno.serve(async (req) => {
     // No Premium AI reads as out_of_credits with an allowance of 0, as it always has (0203).
     return json({ ok: false, reason: 'out_of_credits', remaining: meter.remaining, allowance: meter.allowance });
   }
+  const choice = await modelConfig.pick(FN, uidFromAuthorization(authorization), { model: MODEL, effort: EFFORT });
+  const model = choice.model;
+  // Thinking off, effort low (or the configured effort), in the form THIS model takes, + the refusal fallback where it
+  // exists (model-request.ts: Sonnet 5 / Haiku 5.5 `disabled`, Sonnet 5.5 `between_tools`, Opus 5.5 no field).
+  const modelFields = requestFields(model, {
+    thinkingOff: true,
+    effort: choice.effort ?? EFFORT,
+    format: { type: 'json_schema', schema: KITCHEN_SCHEMA },
+  });
   /** Settled ONCE, before the answer is returned (contract §1.3). Every outcome but `ok` refunds. */
   const settle = async (outcome: SettleOutcome, call: ModelCall) => {
-    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, MODEL))).maybeSingle();
+    const { data, error } = await supabase.rpc('coach_ai_settle', settleArgs(meter.id, outcome, callFacts(call, model))).maybeSingle();
     return settledTail(settledFrom(data, error), meter.remaining);
   };
 
@@ -223,13 +245,12 @@ Deno.serve(async (req) => {
       fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         signal,
-        headers: { 'x-api-key': ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        headers: anthropicHeaders(ANTHROPIC_API_KEY!, modelFields),
         body: JSON.stringify({
-          model: MODEL,
+          model,
           max_tokens: KITCHEN_OUTPUT_CAP,
-          thinking: { type: 'disabled' },
           // ⛔ The schema is the NUT-D4 wall: it has no field for a nutrition number.
-          output_config: { effort: 'low', format: { type: 'json_schema', schema: KITCHEN_SCHEMA } },
+          ...modelFields,
           system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
           // The age is per request, so it is in the user turn — never the cached block.
           messages: [{ role: 'user', content: withAgeLine(kitchenUserTurn({ ...request, minor }), meter.ageYears, minor) }],

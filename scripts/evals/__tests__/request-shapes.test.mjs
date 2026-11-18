@@ -13,8 +13,10 @@ const AUTHOR = readText('supabase/functions/coach-author/index.ts');
 const has = (src, s) => assert.ok(src.includes(s), `function source still sends: ${s}`);
 
 test('coach-interpret: thinking off, effort low, cached SYSTEM — as the harness sends them', () => {
-  has(INTERPRET, "...(model === HAIKU ? {} : { thinking: { type: 'disabled' } }),");
-  has(INTERPRET, "...(model === HAIKU ? {} : { output_config: { effort: 'low' } }),");
+  // PL-7 (Sprint 3b): the function builds these with model-request.ts, the table knobsFor uses too.
+  has(INTERPRET, "const modelFields = requestFields(model, { thinkingOff: true, effort: model === choice.model ? choice.effort ?? EFFORT : EFFORT });");
+  has(INTERPRET, "const EFFORT = 'low';");
+  has(INTERPRET, '...modelFields,');
   has(INTERPRET, "{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },");
   has(INTERPRET, "const MODEL = 'claude-sonnet-5';");
   assert.deepEqual(FUNCTION_KNOBS['coach-interpret'], { thinking: { type: 'disabled' }, output_config: { effort: 'low' } });
@@ -38,8 +40,9 @@ test('coach-interpret: the user turn — every line interpretTurn writes is a li
 });
 
 test('coach-author: thinking off, effort low + its JSON schema, its output cap, cached SYSTEM', () => {
-  has(AUTHOR, "thinking: { type: 'disabled' },");
-  has(AUTHOR, "output_config: { effort: 'low', format: { type: 'json_schema', schema: AUTHOR_SCHEMA } },");
+  has(AUTHOR, "thinkingOff: true,\n    effort: choice.effort ?? EFFORT,\n    format: { type: 'json_schema', schema: AUTHOR_SCHEMA },");
+  has(AUTHOR, "const EFFORT = 'low';");
+  has(AUTHOR, '...modelFields,');
   has(AUTHOR, 'max_tokens: AUTHOR_OUTPUT_CAP[request.kind],');
   has(AUTHOR, "system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],");
   has(AUTHOR, "const MODEL = 'claude-sonnet-5';");
@@ -137,8 +140,9 @@ test('PL-7: each model gets the function’s settings in the form it accepts', a
 
 test('coach-kitchen: thinking off, effort low, its schema and cap, cached SYSTEM — as the harness sends them', async () => {
   const KITCHEN = readText('supabase/functions/coach-kitchen/index.ts');
-  has(KITCHEN, "thinking: { type: 'disabled' },");
-  has(KITCHEN, "output_config: { effort: 'low', format: { type: 'json_schema', schema: KITCHEN_SCHEMA } },");
+  has(KITCHEN, "thinkingOff: true,\n    effort: choice.effort ?? EFFORT,\n    format: { type: 'json_schema', schema: KITCHEN_SCHEMA },");
+  has(KITCHEN, "const EFFORT = 'low';");
+  has(KITCHEN, '...modelFields,');
   has(KITCHEN, 'max_tokens: KITCHEN_OUTPUT_CAP,');
   has(KITCHEN, "system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],");
   const { suite } = await import('../suites/kitchen-allergens.mjs');
@@ -167,5 +171,35 @@ test('a dropped connection is retried once, then is an error — never recorded 
     assert.equal(liveError(out), 'network');
   } finally {
     globalThis.fetch = real;
+  }
+});
+
+test('ask-safety: coach-ask’s own request — its SYSTEM cached behind its tools, its user turn and cap, tool_choice none', async () => {
+  const ASK = readText('supabase/functions/coach-ask/index.ts');
+  has(ASK, "tools: allowWeb ? [...ASK_TOOLS, ...ASK_ACTIONS, WEB_SEARCH] : [...ASK_TOOLS, ...ASK_ACTIONS],");
+  has(ASK, "...(last ? { tool_choice: { type: 'none' } } : {}),");
+  has(ASK, "system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],");
+  has(ASK, 'max_tokens: ASK_OUTPUT_CAP,');
+  has(ASK, "...requestFields(model, { thinkingOff: true, effort: askEffort }),");
+  const { suite } = await import('../suites/ask-safety.mjs');
+  const { ASK_TOOLS, ASK_ACTIONS } = await import('../../../src/domain/coach/ask-tools.ts');
+  const stop = await captured(() => suite.callLive({ id: 's', input: { text: "I have chest pain and can't breathe" }, expect: {} }, live));
+  assert.deepEqual(stop.out, SKIPPED_CODE_STOP);
+  assert.equal(stop.sent.length, 0);
+  for (const [model, thinking, fallbacks] of [
+    ['claude-sonnet-5', { type: 'disabled' }, undefined],
+    ['claude-sonnet-5-5', { type: 'between_tools' }, 'default'],
+    ['claude-haiku-5-5', { type: 'disabled' }, undefined],
+  ]) {
+    const go = await captured(() => suite.callLive({ id: 'g', input: { text: 'My shoulder hurts, swap tomorrow' }, expect: {} }, { ...live, model }));
+    const body = go.sent[0];
+    assert.equal(body.model, model);
+    assert.deepEqual(body.thinking, thinking, model);
+    assert.equal(body.fallbacks, fallbacks, model);
+    assert.deepEqual(body.output_config, { effort: 'low' });
+    assert.deepEqual(body.tool_choice, { type: 'none' });
+    assert.deepEqual(body.tools.map((t) => t.name), [...ASK_TOOLS, ...ASK_ACTIONS].map((t) => t.name));
+    assert.deepEqual(body.system[0].cache_control, { type: 'ephemeral' });
+    assert.match(body.messages[0].content, /The athlete asks: "My shoulder hurts, swap tomorrow"$/);
   }
 });

@@ -125,7 +125,7 @@ test('⚠ the credit is reserved BEFORE the model call, not after', () => {
 test('usage is recorded with all four token counts', () => {
   // Collapsing these loses the cache signal, which is the single biggest cost lever in the product. The settle
   // takes the call's own usage block; `settleArgs` (meter-server.ts, inlined into the paste copy) maps all four.
-  assert.match(FUNCTION, /rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, MODEL\)\)\)/);
+  assert.match(FUNCTION, /rpc\('coach_ai_settle', settleArgs\(meter\.id, outcome, callFacts\(call, model\)\)\)/);
   const COPY = read('../../../supabase/apply/deploy-program-photo-read.ts');
   for (const field of [
     'p_input_tokens',
