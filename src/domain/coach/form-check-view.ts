@@ -417,3 +417,51 @@ export function formResultFrom(body: unknown, lift?: string, frameCount?: number
       return { kind: 'unavailable' };
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// The rep count a read SHOWS
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+const COUNT_WORDS: Record<string, number> = {
+  one: 1, single: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+};
+
+/**
+ * The rep count a line claims: a number; `null` for a claim that is not ONE number ("two or three reps", "a few
+ * reps"); `undefined` when the line says nothing about reps.
+ */
+export function repsClaimed(line: string): number | null | undefined {
+  if (!/\breps?\b/i.test(line)) return undefined;
+  if (/\b\w+\s*(?:-|–|to|or)\s*\w+\s+reps?\b/i.test(line)) return null;
+  const m = line.match(/\b(\d+|one|single|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+reps?\b/i);
+  if (!m) return null;
+  const w = m[1].toLowerCase();
+  return /^\d+$/.test(w) ? Number(w) : (COUNT_WORDS[w] ?? null);
+}
+
+/**
+ * ══ A REP COUNT IS SHOWN ONLY WHEN THE PHONE COUNTED IT (PO 2026-11-17) ══
+ *
+ * *"It said I did 2-3 reps and it was just one rep."* A bench set at a diagonal: body tracking measured nothing,
+ * so "3 reps" was the model's guess from the frames (an unrack or a re-rack reads like a rep) and the screen showed
+ * it as a fact — in the header, in Holt's opening line, on each marked frame, and in form history.
+ *
+ * `phoneReps` is how many reps body tracking found (null when it found none or did not run — the web, an old
+ * build, an athlete it could not lock on to). The read then:
+ *   · carries that count, or none — never the model's (`reps`, which the header and form history show);
+ *   · keeps Holt's opening line only when it claims no count, or the phone's count; otherwise drops it, and the
+ *     screen opens on a line built from the view and the phone's count instead;
+ *   · keeps a mark's "Rep N" only when the phone counted at least N reps.
+ * Holt's own sentences are not rewritten — a fix that names a rep is step 2's problem (getting the fix right).
+ */
+export function trustRepCount(read: FormRead, phoneReps: number | null | undefined): FormRead {
+  const n = typeof phoneReps === 'number' && Number.isInteger(phoneReps) && phoneReps > 0 ? phoneReps : null;
+  const said = repsClaimed(read.viewLine);
+  const keepLine = said === undefined || (n != null && said === n);
+  return {
+    ...read,
+    reps: n,
+    viewLine: keepLine ? read.viewLine : '',
+    marks: read.marks.map((m) => (m.rep != null && (n == null || m.rep > n) ? { ...m, rep: null } : m)),
+  };
+}

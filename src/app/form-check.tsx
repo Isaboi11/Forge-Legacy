@@ -57,6 +57,7 @@ import {
   knownFromCoaching,
   moveTrimGrip,
   trimWindow,
+  trustRepCount,
   viewLabel,
 } from '@/domain/coach/form-check-view';
 import { fetchNutritionProfile, saveBirthYear } from '@/data/nutrition-live';
@@ -489,7 +490,9 @@ export default function FormCheckScreen() {
         // "Writing it up" is real work: the read is recorded so Useful / Save have a row to act on.
         setStage({ step: 'watching', phase: 2, lift: chosen });
         // Holt's marks moved onto the real joints of the frames he named (body tracking; unchanged without it).
-        const read = got.pose ? { ...res.read, marks: snapMarks(res.read.marks, got.pose.stills, got.sizes) } : res.read;
+        const snapped = got.pose ? { ...res.read, marks: snapMarks(res.read.marks, got.pose.stills, got.sizes) } : res.read;
+        /* The count shown (and saved) is the phone's, or none — never the model's guess (PO 11-17, `trustRepCount`). */
+        const read = trustRepCount(snapped, got.pose && got.pose.level !== 'off' ? got.pose.reps.length : null);
         const id = await insertFormCheck({ lift: chosen.name, exerciseKey: chosen.key, read, measured: measuredForSave(got.pose?.facts ?? null) });
         if (cancelRef.current) return;
         setStage({

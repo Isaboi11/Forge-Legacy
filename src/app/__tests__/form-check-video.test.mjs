@@ -85,3 +85,8 @@ test('swipe-back stays off on the read too — its timeline is a sideways drag',
   assert.match(SCREEN, /const dragsSideways = stage\.step === 'trim' \|\| stage\.step === 'read';/);
   assert.match(SET, /onPanResponderTerminationRequest: \(\) => false/);
 });
+
+test('the rep count shown and saved is the phone\'s, never the model\'s guess (PO 11-17)', () => {
+  assert.match(SCREEN, /const read = trustRepCount\(snapped, got\.pose && got\.pose\.level !== 'off' \? got\.pose\.reps\.length : null\);/);
+  assert.ok(SCREEN.indexOf('trustRepCount(snapped') < SCREEN.indexOf('insertFormCheck({'), 'form history saves the trusted count too');
+});
