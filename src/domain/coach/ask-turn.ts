@@ -197,7 +197,7 @@ export interface AskSettleRow {
   remaining: number | null;
 }
 
-const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+const finiteOr0 = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 
 /**
  * What the app is told when the meter said no — or null when the credit is held and the ask goes ahead.
@@ -219,7 +219,7 @@ export function reserveRefusal(row: unknown): { status: number; body: Record<str
       : { status: 503, body: { route: 'error', reason: 'meter_unavailable' } };
   }
   if (r.reason === 'no_consent') return { status: 403, body: { route: 'error', reason: 'no_consent' } };
-  return { status: 200, body: { route: 'out_of_credits', remaining: num(r.remaining), allowance: num(r.allowance) } };
+  return { status: 200, body: { route: 'out_of_credits', remaining: finiteOr0(r.remaining), allowance: finiteOr0(r.allowance) } };
 }
 
 /** How a turn failed on OUR side of the wire. `upstream_dropped` — the stream broke partway. */
@@ -288,4 +288,4 @@ export function askFailureEvent(
 }
 
 /** Clamp a token count or a latency for the settle call (the SQL clamps too). */
-export const meterInt = (v: unknown, max: number): number => Math.min(max, Math.max(0, Math.round(num(v))));
+export const meterInt = (v: unknown, max: number): number => Math.min(max, Math.max(0, Math.round(finiteOr0(v))));

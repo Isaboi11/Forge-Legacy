@@ -114,7 +114,7 @@ export function trimHistory(history: unknown, max: number = ASK_HISTORY_MAX): As
 // The user turn
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
-const str = (v: unknown, cap: number): string | null =>
+const cappedStr = (v: unknown, cap: number): string | null =>
   typeof v === 'string' && v.trim() ? v.trim().slice(0, cap) : null;
 
 /**
@@ -128,8 +128,8 @@ export function cleanContext(ctx: unknown): AskContext {
   const coaching = Array.isArray(c.coaching)
     ? c.coaching
         .map((r) => {
-          const name = str((r as { name?: unknown } | null)?.name, 80);
-          const text = str((r as { text?: unknown } | null)?.text, 700);
+          const name = cappedStr((r as { name?: unknown } | null)?.name, 80);
+          const text = cappedStr((r as { text?: unknown } | null)?.text, 700);
           return name && text ? { name, text } : null;
         })
         .filter((r): r is { name: string; text: string } => r !== null)
@@ -146,14 +146,14 @@ export function cleanContext(ctx: unknown): AskContext {
     }
   }
   return {
-    program: str(c.program, 300),
+    program: cappedStr(c.program, 300),
     coaching,
-    rationale: str(c.rationale, 700),
+    rationale: cappedStr(c.rationale, 700),
     notes,
-    training: str(c.training, ASK_TRAINING_CHARS),
-    nutrition: str(c.nutrition, ASK_NUTRITION_CHARS),
+    training: cappedStr(c.training, ASK_TRAINING_CHARS),
+    nutrition: cappedStr(c.nutrition, ASK_NUTRITION_CHARS),
     // Sprint 4a: present only when the app sent one, so an old app's context narrows exactly as it always has.
-    ...(typeof c.building === 'string' && c.building.trim() ? { building: str(c.building, ASK_BUILDING_CHARS) } : {}),
+    ...(typeof c.building === 'string' && c.building.trim() ? { building: cappedStr(c.building, ASK_BUILDING_CHARS) } : {}),
   };
 }
 

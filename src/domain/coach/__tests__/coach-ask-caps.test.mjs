@@ -24,6 +24,7 @@ import { readAskStream as readAskStream25, settleAskRead as settleAskRead25 } fr
 import { readAskStream as readAskStreamNow } from '../ask-stream.ts';
 import { ASK_ACTIONS, ASK_ACTIONS_V1, ASK_TOOLS } from '../ask-tools.ts';
 import { HOLT_ACTION_CAPS, LEGACY_ACTIONS, NEW_ACTIONS } from '../holt-actions.ts';
+import { FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS } from '../ask-food-tools.ts';
 
 const V28_TOOLS = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'v28-ask-tool-list.json'), 'utf8'));
 const V28_SYSTEM_SHA = 'b3cb1ee88eea110ef7769bf461e7d6ec9db670dc301ec756f5dc01c735c41dab';
@@ -50,6 +51,10 @@ function fakeNet(t, log, reply, { markOk = true } = {}) {
       log.timeline.push(['model', Date.now()]);
       n += 1;
       return reply(body, n);
+    }
+    if (u.endsWith('/functions/v1/food-search')) {
+      log.foodSearches = [...(log.foodSearches ?? []), { body: JSON.parse(init.body), auth: init.headers.Authorization }];
+      return new Response(JSON.stringify({ foods: [{ key: 'usda:egg', source: 'usda', name: 'Egg, whole, cooked', kcal100: 155, protein100: 13, carb100: 1, fat100: 11, servings: [{ label: '1 large', grams: 50 }] }] }), { status: 200, headers: { 'content-type': 'application/json' } });
     }
     if (u.endsWith('/rest/v1/rpc/coach_ai_model_pick')) return new Response('[]', { status: 200, headers: { 'content-type': 'application/json' } });
     if (u.endsWith('/rest/v1/rpc/coach_ai_mark_build')) {
@@ -114,8 +119,12 @@ test('§1.1 caps → the 4a prefix: reads, food reads, actions, the v1 actions, 
   const { log } = await run(t, [answerRound('Bench is moving.')], { question: 'hi', caps: CAPS });
   const sent = log.requests[0];
   const names = sent.tools.map((x) => x.name);
-  assert.deepEqual(names, [...ASK_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1].map((x) => x.name), 'lane B’s FOOD_* are still the empty stub here');
-  assert.equal(sent.system[0].text, constantBody('SYSTEM_V1').slice('const SYSTEM_V1 = `'.length));
+  assert.deepEqual(names, [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS].map((x) => x.name));
+  assert.ok(names.includes('get_foods') && names.includes('log_food') && names.includes('propose_meal'));
+  assert.ok(!names.includes('schedule_session'), 'written, not offered (PO 11-18)');
+  assert.equal(sent.system[0].text, `${constantBody('SYSTEM_V1').slice('const SYSTEM_V1 = `'.length)}
+
+${FOOD_PROMPT}`);
   assert.notEqual(sent.system[0].text, constantBody('SYSTEM').slice('const SYSTEM = `'.length));
   // Two prefixes, each stable: the same caps body twice sends the same bytes before the messages.
   const again = await run(t, [answerRound('Again.')], { question: 'something else', caps: CAPS });
@@ -307,4 +316,20 @@ test('§1.5 the server sends detail only for the tools the app can template (lan
   const { ASK_DETAIL_TOOLS } = await import('../ask-wire.ts');
   const { STATUS_TEMPLATE_TOOLS } = await import('../holt-status.ts');
   assert.deepEqual([...ASK_DETAIL_TOOLS].sort(), [...STATUS_TEMPLATE_TOOLS].sort());
+});
+
+test('caps: get_foods runs AS THE ATHLETE, then log_food is forwarded carrying the foods whole, acknowledged with lane B’s line', async (t) => {
+  const { events, log } = await run(t, [
+    actionRound('get_foods', { query: '2 eggs' }, 'tu_f'),
+    actionRound('log_food', { meal: 'breakfast', items: [{ key: 'usda:egg', amount: 2, unit: 'servings' }] }, 'tu_l'),
+    answerRound('Two eggs are on the card for breakfast.'),
+  ], { question: 'log 2 eggs for breakfast', caps: CAPS });
+  assert.equal(log.foodSearches.length, 1);
+  assert.equal(log.foodSearches[0].auth, 'Bearer jwt-abc', 'the athlete’s own JWT (HF-D1)');
+  const acts = events.filter((e) => e.action);
+  assert.equal(acts.length, 1);
+  assert.equal(acts[0].action.name, 'log_food');
+  assert.ok(JSON.stringify(acts[0].action.input).includes('Egg, whole, cooked'), 'the food itself rides to the device');
+  assert.match(log.requests[2].messages.at(-1).content[0].content, /Do not say it is logged/);
+  assert.equal(events.at(-1).stop, 'end_turn');
 });

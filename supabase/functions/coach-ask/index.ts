@@ -139,7 +139,7 @@ import {
 // ⚠ HOLT CAN DO THINGS (Sprint 4a, CH-3) — the caps flag and the action names (the shared contract), and lane B's food
 // lookup and food actions. Both import-free; both inlined into the paste copy. Offered ONLY with caps `actions_v1`.
 import { HOLT_ACTION_CAPS, LEGACY_ACTIONS, NEW_ACTIONS } from '../../../src/domain/coach/holt-actions.ts';
-import { checkFoodAction, FOOD_ACTIONS, FOOD_TOOLS, runFoodTool } from '../../../src/domain/coach/ask-food-tools.ts';
+import { checkFoodAction, FOOD_ACTION_NAMES, FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS, foodActionAck, runFoodTool } from '../../../src/domain/coach/ask-food-tools.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -451,6 +451,15 @@ If you do not know where something is, say so rather than inventing a screen. Ne
 - Answer only the athlete's newest message. Earlier messages are context: never answer one again, repeat a refusal you already gave, or recap what you said before.
 - If the message is genuinely unclear, ask what they meant in your own words — one short question.`;
 
+
+/**
+ * The caps system block as sent: the one-brain prompt, then lane B's food section (`FOOD_PROMPT`, byte-stable). Built
+ * once at load, so every caps request sends the same bytes — the cache key for that prefix.
+ */
+const SYSTEM_V1_FOOD = `${SYSTEM_V1}
+
+${FOOD_PROMPT}`;
+
 // ─────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface Body {
@@ -696,9 +705,6 @@ async function markBuild(reservation: string): Promise<boolean> {
 /** The longest the `done` line waits on the build mark. */
 const MARK_BUILD_MS = 3000;
 
-/** The two food actions (lane B): checked against this turn's lookups before they leave (HF-D4). */
-const FOOD_ACTION_NAMES: readonly string[] = ['log_food', 'propose_meal'];
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
 
@@ -819,7 +825,7 @@ Deno.serve(async (req) => {
 
   // Sprint 4a: what this turn offers, fixed per caps value so each keeps ONE stable cached prefix — reads, then actions.
   const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS] : [...ASK_TOOLS, ...ASK_ACTIONS];
-  const PROMPT = v1 ? SYSTEM_V1 : SYSTEM;
+  const PROMPT = v1 ? SYSTEM_V1_FOOD : SYSTEM;
   /** What is forwarded to the app instead of run here. With caps: every name in the contract (holt-actions.ts). */
   const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS] : ASK_ACTION_NAMES;
   const foodReads: readonly string[] = v1 ? FOOD_TOOLS.map((t) => t.name) : [];
@@ -1174,7 +1180,8 @@ Deno.serve(async (req) => {
                     if (v1 && (c.name === 'propose_program' || c.name === 'propose_day')) openedBuild = true;
                     // The card's words are the model's too (an online-search chip shows `looking_for`): scanned at the end.
                     acted.push(...words);
-                    return { type: 'tool_result', tool_use_id: c.id, content: v1 ? actionAckV1(c.name as string) : actionAck(c.name as string) };
+                    const ack = !v1 ? actionAck(c.name as string) : FOOD_ACTION_NAMES.includes(c.name as string) ? foodActionAck(c.name as string) : actionAckV1(c.name as string);
+                    return { type: 'tool_result', tool_use_id: c.id, content: ack };
                   }
                   if (!uid) return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
                   if (foodReads.includes(c.name as string)) {

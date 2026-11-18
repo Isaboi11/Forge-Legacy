@@ -165,6 +165,13 @@ export const SAID_PASS = [
 
 /** The athlete typed it, and it must stop before a credit or a model (`medicalRoute` is not `clear`). */
 export const TYPED_STOP = [
+  // Sprint 4a (integrator 11-18): purging in the past tense / with an object — each read `clear` before.
+  { text: 'ate a whole pizza then made myself throw up', route: 'care' },
+  { text: 'I made myself sick after eating', route: 'care' },
+  { text: 'threw it up on purpose', route: 'care' },
+  { text: 'binged on cereal and made myself sick', route: 'care' },
+  { text: "i've been making myself puke after dinner", route: 'care' },
+  { text: 'threw it all back up on purpose so the scale would move', route: 'care' },
   // Named conditions (Sprint 2): a diagnosis carries a severity the limitation list cannot hold (ACUTE's reasoning).
   { text: 'I have tendinitis in my elbow, swap the curls' },
   { text: 'my tennis elbow is flaring up again' },
@@ -220,6 +227,10 @@ export const TYPED_STOP = [
 
 /** The athlete typed it, and it must go through (`medicalRoute` is `clear`). */
 export const TYPED_PASS = [
+  // Sprint 4a: exercise nausea is not purging (the corpus treats "threw up" without a meal as benign — S0456).
+  { text: 'I threw up after leg day lol', why: 'workout nausea' },
+  { text: 'made myself sick running sprints yesterday, go easier today', why: 'overexertion, no eating' },
+  { text: 'threw it all up after the race but I PRed', why: 'race nausea' },
   { text: 'My shoulder hurts, swap tomorrow', why: 'the sentence the feature is sold with' },
   { text: 'my legs are sore from yesterday, what’s today?' },
   { text: 'doms is real. anyway, whats on today?' },
