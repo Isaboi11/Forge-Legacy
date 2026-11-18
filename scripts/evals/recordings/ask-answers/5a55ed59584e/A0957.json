@@ -1,0 +1,45 @@
+{
+  "caseId": "A0957",
+  "promptHash": "5a55ed59584e414520a1d790242fd45a04d07c1dd75b194670e775fbecb1c685",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:59:48.020Z",
+  "reply": {
+    "text": "The word \"hip\" alone names a body part to train around, not damage or a question about a symptom. The system rules map it to a limitation, but the limitation vocabulary has no hip option. The closest movement-pattern limitations are knees, lower_back and no_jumping, and mapping a hip onto one of those would be a guess about their body. The athlete gave a body part with no detail, so I'll ask what movements to avoid, keeping it a training question.\n\nWhich movements bother it: squatting deep, lunging, running, or something else? Tell me what to keep out and I'll build around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 280,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 280,
+          "output_tokens": 184,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 184,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

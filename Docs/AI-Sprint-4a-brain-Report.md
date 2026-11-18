@@ -6,6 +6,7 @@
 Nothing deployed, applied, published or pushed. SQL authored only.
 
 ## ▶ RESUME HERE
+0. Round 2 (below): narrow the ambiguity rule, re-run the subset (`EVAL_CASES`), then one full re-record — needs ~$10 more.
 1. ✅ Server, 0276, client, guard, evals — all committed.
 2. ✅ ask-answers GRADED under the current prompt (8dc1904e44c8). A stopped live run resumes with
    `EVAL_SKIP_RECORDED=1 EVAL_SHARD=k/n … --live --record`.
@@ -115,3 +116,56 @@ not mine to touch) and `meal-describe-source` (lane B's). `scripts/evals/__tests
    here — not my bar to move).
 8. Status detail `n` for get_lift_history is unknown at input time — the server sends `days` + `lift`; C's template
    then reads "Reading your bench log…".
+
+## Round 2 — the 55 ask-answers lines (PO 11-18, budget ≤ $10)
+
+**Offline first ($0).** Of the 55 lines interpret passed and caps lost (prompt 8dc1…):
+- 20 were a **harness date**: the suite said "Today is 2026-11-18" while chat-answers' expectations are narrowed from
+  2026-11-17, so every race "in N weeks" came out one day late. `ask-answers` now sends and narrows with chat-answers'
+  date (`ANSWERS_TODAY`). Re-grading the old recordings that way alone: 955 → 978.
+- 7 were **app-equivalent day focuses** — `focusSaid` builds the same day from both words ("leg day"/"legs",
+  "push day"/"push", "uppr"→"upper"/"upper body", "bi's and tri's"/"arms", "lats"/"back", "pecho (chest)"/"chest",
+  "back and bis"/"back and biceps").
+- The rest were real: "none" to what to train around sent nothing (the app would ask again), "the Y" not a gym, slang /
+  other-language day focuses ("booty day", "espalda y bíceps", "beach muscles" → no DayFocus at all), train-around
+  answers stopped as medical, weekdays without daysPerWeek, "a year" as a calendar date, a question-shaped answer.
+
+**Fixes** (f1c280c1): those rules in SYSTEM_V1's build fields, plus an "ambiguous → leave it out" rule; the planner drops
+an empty build mid-build (the question comes back) instead of opening a fresh build door; `EVAL_CASES=id,…` subset runs.
+
+**Subset** (the 55 + the 61 gained, prompt 5a55…): 51/55 back, 54/61 kept, $0.82.
+
+**One full re-record each, prompt 5a55… / 81f5… / ca61…**
+| Suite | Before (8dc1… / e10e… / 8899…) | After | Bar |
+|---|---|---|---|
+| ask-answers | 955/1158 · lost 55 · gained 61 | **1021/1158 (0.882)** · lost **38** · gained **110** (vs interpret 949) | metric ≥ 949 ✓ · no interpret line lost ✕ · 0.95 ✕ |
+| ask-safety | 689/710, let-through 1 | **685/710 (0.965)**, let-through **2** (S0332, S0421 — both in v28's 5) | ≥0.95 ✓ · ≤5 ✓ |
+| ask-actions | 85/86 | **83/86 (0.965)**, 0 actions on stop lines | ≥0.90 ✓ · 0 on stops ✓ |
+
+**The 38 still lost — why.** Mostly the new "leave an ambiguous answer out" rule, over-applied: "not more than 4", "no
+more than 3", "3-ish", "at most 5", "weekends", "fifty" / "prob 5" / "low teens" (weekly miles), "lose the dad bod",
+"lean out", "shred for summer", "move better", "feel better", "tri", "a week", "30 days", "no less than an hour",
+"crossfit box", "the box", "jim", "my backyard", "the beach", "base gym" — the model now leaves them out. The fix is
+to narrow the rule to answers that would build two different programs ("tone up", "a 10 miler") and say the plain
+readings take the number / the word as given. **Not applied: the $10 is spent** ($9.48). Estimate to finish: subset of
+the 38 + the 110 gained ≈ $0.85, then one full re-record each ≈ $9.5 (ask-answers $6.8 · ask-safety $2.3 · ask-actions
+$0.4).
+
+**Grader / corpus artefacts (for the integrator / PO — no grader changed):**
+1. 20 race lines, one day off — harness date, fixed in the suite (above).
+2. A0265 "NYC marathon": the corpus's best raceDate 2026-11-01 is already past on 11-17; the model's 2027-11-07 (first
+   Sunday of November 2027) is right.
+3. A0857 / A0859 experience: the corpus writes `best.experience` as a string; the app keeps `experience: {lifting}` —
+   the shapes can never match ("315 squat and 225 bench" → intermediate is the corpus's own best).
+4. A1131 "recovery" → mobility and A1132 "hiit" → "HIIT": `focusSaid` reads both the same (null / cardio).
+5. A0010 / A0011 "three months" / "a quarter" → weeks 13, corpus 12 (interpret also 13, so not a loss): the app snaps a
+   typed block length to 1/4/8/12 (`BLOCK_LENGTHS`, chat-core.ts:1264), so 12 is what the app would offer; 13 is the
+   literal conversion and builds a 13-week block (narrowPatch keeps 1–52). Arguably right either way; one prompt line
+   ("block lengths are 1, 4, 8 or 12 weeks") would align it.
+6. A0255 "next week": twice the model returned no text and no action (81 output tokens, end_turn) — a model blip; in the
+   app that is the refunded empty-reply card.
+7. A1103 "beach muscles" / A1122 "chest or arms": judgement calls the corpus marks ambiguous.
+
+**Spend, round 2:** subset $0.82 (in the $6.77 below) · ask-answers $6.77 · ask-safety $2.31 · ask-actions $0.40 =
+**$9.48** of $10. Sprint total for lane A: $15.08 + $9.48 = **$24.56**.
+

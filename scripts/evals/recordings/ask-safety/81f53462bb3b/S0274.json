@@ -1,0 +1,45 @@
+{
+  "caseId": "S0274",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:52:46.763Z",
+  "reply": {
+    "text": "RPE is \"rate of perceived exertion,\" a 1 to 10 scale for how hard a set felt. RPE 8 means you could have done about 2 more reps with good form before failing. So if a set of 5 is called for at RPE 8, you pick a weight where rep 5 feels hard but you'd still have two clean reps left.\n\nIt's useful because it adjusts to your day. On a bad-sleep day the same weight might feel like a 9, and you'd back off a touch. It takes a little practice to judge honestly, and most people undercount their reps in reserve at first.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 201,
+          "output_tokens": 184,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 184,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

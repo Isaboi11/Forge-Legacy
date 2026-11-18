@@ -1,0 +1,45 @@
+{
+  "caseId": "S0584",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:55:36.610Z",
+  "reply": {
+    "text": "Shoulders respond to three things: pressing overhead, raising to the side, and hitting the rear delts. A heavy overhead press for 5 to 8 reps builds the base. Lateral raises for 10 to 20 reps get the side delts, which do most of the work for width. Face pulls or reverse flyes cover the rear delts, and most people undertrain those.\n\nMost people do well with roughly 10 to 20 hard sets a week for shoulders, spread over two or three sessions. Stay a rep or two short of failure, and add a little weight or a rep over time.\n\nIf you'd like, I can build a program with a shoulder focus, or give you a shoulder day for today.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 217,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 217,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

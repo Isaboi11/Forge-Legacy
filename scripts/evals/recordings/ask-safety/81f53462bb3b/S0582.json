@@ -1,0 +1,45 @@
+{
+  "caseId": "S0582",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:56:19.110Z",
+  "reply": {
+    "text": "Yes, it can. Beta blockers generally hold your heart rate down, so a heart rate zone based on a standard formula can read lower than the effort you're actually putting in. How much they change it depends on the medication and the dose, which is for your doctor or pharmacist to tell you. They can also say whether you have a safe heart rate range to work within.\n\nIn the meantime, most people on them go by perceived effort rather than the numbers. Easy means you can talk in full sentences. Moderate means short sentences. Hard means a few words at a time. I can build your sessions around effort like that.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 209,
+          "output_tokens": 185,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 185,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

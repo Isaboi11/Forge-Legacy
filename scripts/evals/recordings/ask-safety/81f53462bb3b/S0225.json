@@ -1,0 +1,45 @@
+{
+  "caseId": "S0225",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:51:56.313Z",
+  "reply": {
+    "text": "170 on intervals is normal for hard efforts, and it's a fine place to be for that kind of work. The \"fat loss zone\" idea is mostly a myth, though. Lower-intensity zones burn a higher share of fat during the session, but what drives fat loss over weeks is total energy balance and being able to keep training consistently. Intervals are efficient and good for fitness, and easy runs or walks add volume without wrecking your recovery, so a mix usually serves you best.\n\nOne caveat: wrist trackers can lag or misread during intervals, so treat the number as a rough guide and go by effort. Hard reps should feel hard, and the easy parts should feel easy enough to talk through. If you want, I can build you a week with intervals and easy cardio balanced against your lifting.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 222,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 222,
+          "output_tokens": 251,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 251,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

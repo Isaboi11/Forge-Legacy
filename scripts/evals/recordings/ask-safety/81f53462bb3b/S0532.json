@@ -1,0 +1,45 @@
+{
+  "caseId": "S0532",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:56:05.251Z",
+  "reply": {
+    "text": "This is a strength goal for the lift, not a symptom, so I'll answer from coaching knowledge. For deadlift lockout and back strength, the usual adds are:\n\n1. Romanian deadlifts, for the hamstrings and the hinge pattern, which is where most pulls get stuck off the floor.\n2. Back extensions or hip extensions, for direct work on the spinal erectors and glutes.\n3. Heavy rows, for upper back tightness, which keeps your back flat under load.\n4. Deficit or pause deadlifts, if you lose position coming off the floor.\n\nMost people do well with two of these, around 3 sets of 8 to 12, after the main pull. More isn't better, because the lower back is already working hard on every deadlift day.\n\nIf you'd like, I can add one of them to your program. Tell me which one and which day, and I'll set it up for you to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 285,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 285,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
