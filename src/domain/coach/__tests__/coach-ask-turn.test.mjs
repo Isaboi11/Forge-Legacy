@@ -372,9 +372,9 @@ test('C-D8: a web search asked on Haiku runs on Sonnet; Haiku without one is sti
   const handler = await loadFunction(log);
   await askRaw(handler, { question: 'Find me a recipe online: chili', allowWeb: true, model: 'claude-haiku-5-5' });
   const web = log.requests[0];
-  assert.equal(web.model, 'claude-sonnet-5');
+  assert.equal(web.model, 'claude-sonnet-5-5', 'the default (Sonnet 5.5 since Sprint 3b, PO 11-18)');
   assert.ok(web.tools.some((x) => x.type === 'web_search_20260209'));
-  assert.deepEqual(web.thinking, { type: 'disabled' }, 'Sonnet’s own settings come with it');
+  assert.deepEqual(web.thinking, { type: 'between_tools' }, 'Sonnet 5.5’s own settings come with it');
   assert.deepEqual(log.rpcs.find(([n]) => n === 'coach_ai_reserve')[1], { p_action: 'web', p_fn: 'coach-ask' });
 
   await askRaw(handler, { question: 'how should I warm up?', model: 'claude-haiku-5-5' });

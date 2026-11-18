@@ -104,7 +104,7 @@ test('streamed, capped, low effort, no thinking — as coach-interpret', () => {
   assert.match(SRC, /headers: anthropicHeaders\(ANTHROPIC_API_KEY!, askFields\),/);
   assert.match(SRC, /const EFFORT = 'low';/);
   assert.match(SRC, /const ALLOWED_MODELS = \[MODEL, HAIKU\];/);
-  assert.match(SRC, /const MODEL = 'claude-sonnet-5';/);
+  assert.match(SRC, /const MODEL = 'claude-sonnet-5-5';/, 'PO 11-18: Holt’s chat runs Sonnet 5.5 for everyone');
   assert.doesNotMatch(SRC, /thinking: \{ type: 'disabled' \}/, 'no hand-written thinking field: Sonnet 5.5 and Opus 5.5 reject it');
 });
 
