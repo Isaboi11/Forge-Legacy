@@ -188,7 +188,7 @@ export const answerRound = (text, stop = 'end_turn') => sse(answerEvents(text, s
  * Load the deploy copy with the fakes wired in; returns the Deno.serve handler. `overrides` rewrites a constant
  * in the bundle (`{ ASK_SERVER_IDLE_MS: 80 }`) so a clock test runs in milliseconds — the line must exist.
  */
-export async function loadFunction(log, overrides = {}) {
+export async function loadFunction(log, overrides = {}, env = {}) {
   let src = buildCoachAskDeploy().replace(
     /^import \{ createClient \} from 'jsr:@supabase\/supabase-js@2';$/m,
     'const createClient = (...a) => globalThis.__fakeCreateClient(...a);',
@@ -203,7 +203,8 @@ export async function loadFunction(log, overrides = {}) {
   fs.writeFileSync(file, src);
   let handler = null;
   globalThis.Deno = {
-    env: { get: (k) => ({ ANTHROPIC_API_KEY: 'test-key', SUPABASE_URL: 'http://fake', SUPABASE_ANON_KEY: 'anon' })[k] },
+    // `env` adds to the defaults (PL-7: SUPABASE_SERVICE_ROLE_KEY turns the model-config read on).
+    env: { get: (k) => ({ ANTHROPIC_API_KEY: 'test-key', SUPABASE_URL: 'http://fake', SUPABASE_ANON_KEY: 'anon', ...env })[k] },
     serve: (h) => (handler = h),
   };
   globalThis.__fakeCreateClient = () => fakeSupabase(log);
