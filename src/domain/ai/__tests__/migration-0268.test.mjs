@@ -152,7 +152,8 @@ test('the reserve function slugs are the AiFunction list (plus social-plan); any
   const sqlList = [...r.match(/when p_fn in \(([^)]*)\)/)[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]).sort();
   const ts = read('src/domain/ai/ai-failure.ts');
   const union = ts.slice(ts.indexOf('export type AiFunction'), ts.indexOf(';', ts.indexOf('export type AiFunction')));
-  const tsList = [...union.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
+  // Sprint 4a: meal-describe joined the AiFunction list with 0277, which adds it to the live list (migration-0277.test).
+  const tsList = [...union.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]).filter((f) => f !== 'meal-describe');
   assert.deepEqual(sqlList, [...tsList, 'social-plan'].sort());
   assert.match(r, /else 'other'/);
 });
