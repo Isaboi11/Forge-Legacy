@@ -23,6 +23,7 @@
  * Pure, relative imports: tested under `node --test` (`circuit-card.test.mjs`).
  */
 import type { WrittenExercise, WrittenWorkout } from '../workout/written-workout.ts';
+import type { ParsedItem } from './import-parse.ts';
 
 export type CircuitKind = 'warmup' | 'cooldown' | 'work';
 
@@ -311,4 +312,39 @@ export function circuitCardText(blocks: readonly CircuitBlock[]): string {
         : ['CIRCUIT', b.rounds != null ? `Rounds: ${b.rounds}` : null, b.clock != null ? `Rounds: ${b.clock / 60}m` : null, b.heading, ...b.moves.map(moveWords)].filter(Boolean).join('\n'),
     )
     .join('\n\n');
+}
+
+/**
+ * THE AI LAYOUT, HELD TO THE SCREEN (PO 2026-11-18: every photo still goes through the AI layout). On a screen this
+ * file reads whole, the layout's reading must say what the screen says, lift for lift, in order: the same number of
+ * lifts, and each with the same sets, reps or ladder, clock and to-failure. `checkAiRewrite` already throws away a
+ * rewrite that wrote a number NOT on the card; this catches one that moved a number that IS on it to the wrong lift
+ * ("Rounds: 3" read as 4 sets because a 4 is two lines up; a 10 written as the 12 below it — the 11-18 re-record).
+ * Returns why they differ, or null when they agree. A name may be spelled out ("DB" → "Dumbbell") or made plural, but
+ * keeps every word the screen has: "Row" is not "Row - 20 sec hard / 40 sec easy", "Incline" is not the screen's
+ * "Inclined", "Bench Press" is not "Bench Press - Max Effort" (11-18 runs). Where it drops one, the screen's own
+ * words are shown.
+ */
+const SPELLED: Record<string, string> = { db: 'dumbbell', kb: 'kettlebell', bb: 'barbell', alt: 'alternating', rdl: 'romanian' };
+const nameWords = (n: string) =>
+  n
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .map((w) => SPELLED[w] ?? w.replace(/ies$/, 'y').replace(/s$/, ''));
+
+export function layoutDisagrees(ai: readonly ParsedItem[], card: readonly ParsedItem[]): string | null {
+  const main = (xs: readonly ParsedItem[]) => xs.filter((i) => !i.section);
+  const a = main(ai);
+  const c = main(card);
+  if (a.length !== c.length) return `the AI layout has ${a.length} lifts, the screen ${c.length}`;
+  const rx = (i: ParsedItem) =>
+    JSON.stringify([i.rx?.repScheme?.length || i.sets, i.toFailure ? 'F' : i.durationSec ? 0 : i.rx?.repScheme ?? i.reps, i.durationSec ?? null, !!i.toFailure]);
+  for (let k = 0; k < c.length; k++) if (rx(a[k]) !== rx(c[k])) return `“${c[k].name}” reads differently in the AI layout`;
+  for (let k = 0; k < c.length; k++) {
+    const mine = new Set(nameWords(a[k].name));
+    const theirs = nameWords(c[k].name);
+    if (theirs.some((w) => !mine.has(w))) return `“${c[k].name}” is named “${a[k].name}” in the AI layout`;
+  }
+  return null;
 }

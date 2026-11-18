@@ -7,7 +7,7 @@ import { parseProgramTable, type ParsedWeek } from '@/domain/program/import-pars
 import type { PhotoReadResult } from '@/domain/program/photo-read-result';
 import type { ImportPhase } from '@/domain/ai/ai-status';
 import { cardTableTsv, isMultiDaySheet, sideBySideTsv, writtenToWeeks } from '@/domain/program/written-import';
-import { circuitCardText, circuitWorkout, readCircuitCard } from '@/domain/program/circuit-card';
+import { circuitCardText, circuitWorkout, layoutDisagrees, readCircuitCard } from '@/domain/program/circuit-card';
 import { checkBeforePosting, readWrittenWorkout, tsvToWrittenText, writtenToTemplate } from '@/domain/workout/written-workout';
 
 /**
@@ -21,12 +21,11 @@ import { checkBeforePosting, readWrittenWorkout, tsvToWrittenText, writtenToTemp
  *      turned into the same words (`tsvToWrittenText`);
  *   2. a sheet of SEVERAL days or weeks is a program table — that stays the table reader's job, as it always was
  *      (two days printed side by side are unfolded into it first, `sideBySideTsv`);
- *   2b. a workout APP's screen ("CIRCUIT" / "Rounds: 3" / "20 Wall Balls", "Barbell Squat" / "10-8-6-4 reps") is read
- *      by code when every line fits that shape (`circuit-card.ts`) — no AI layout is asked or paid for, because
- *      there is nothing for it to do that the code does not do exactly (Sprint 3b, IM-1: the layout filed warm-up
- *      circuits as lifts and finishers as Recovery);
- *   3. one workout goes through the AI layout (`workout-tidy`), which `checkAiRewrite` throws away if it changed a
- *      single number, and the written reader reads what is left: sets, ramps, percentages, rest, supersets;
+ *   3. one workout goes through the AI layout (`workout-tidy`) — EVERY photo (PO 09-30, re-affirmed 2026-11-18) —
+ *      which `checkAiRewrite` throws away if it changed a single number, and the written reader reads what is left:
+ *      sets, ramps, percentages, rest, supersets. A workout APP's screen that code reads line for line
+ *      (`circuit-card.ts`) holds the layout to it lift for lift, and is read that way when the layout is thrown away
+ *      or did not run — never split into days on its CIRCUIT headings;
  *   4. it comes back as the import preview's weeks (`writtenToWeeks`), with anything to check listed.
  *
  * The athlete still sees every number on the preview and presses Create; nothing is made from here.
@@ -94,30 +93,36 @@ export async function readImportPhoto(
     return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks: [], via: 'table', text: sheet ?? text };
   }
 
-  /* ── 2b. A workout app's screen that code reads line for line (`circuit-card.ts`) ── */
+  /* ── 3. One workout: AI lays it out, the code reads it ── */
+  /* A workout app's screen that code reads line for line (`circuit-card.ts`, Sprint 3b): its own reading, held
+     ready — the AI layout must agree with it, and stands in for it when the layout is thrown away or did not run. */
   const blocks = readCircuitCard(text);
-  if (blocks) {
+  const screen = (() => {
+    if (!blocks) return null;
     const cw = circuitWorkout(blocks);
     const cRows = writtenToTemplate(cw, resolveKey);
-    if (cRows.length) {
-      const read = writtenToWeeks(cw, cRows);
-      const cChecks = checkBeforePosting(cw, cRows).filter((c) => !/isn’t in the exercise library/.test(c));
-      return { kind: 'ok', weeks: read.weeks, skipped: read.skipped, checks: cChecks, via: 'card', text: circuitCardText(blocks) };
-    }
-  }
+    if (!cRows.length) return null;
+    const read = writtenToWeeks(cw, cRows);
+    return { ...read, checks: checkBeforePosting(cw, cRows).filter((c) => !/isn’t in the exercise library/.test(c)), text: circuitCardText(blocks) };
+  })();
+  const screenRead = (why: string): ImportPhotoRead => ({ kind: 'ok', weeks: screen!.weeks, skipped: screen!.skipped, checks: [why, ...screen!.checks], via: 'card', text: screen!.text });
 
-  /* ── 3. One workout: AI lays it out, the code reads it ── */
   const checks: string[] = [];
   let words = text;
   onStep?.('layout');
   const tidy = await tidyWrittenWorkout(text, resolveKey, signal);
   if (tidy.kind === 'ok') words = tidy.text;
   else if (tidy.kind === 'no_consent') return tidy;
-  else checks.push(aiMissLine(tidy.kind));
+  else {
+    /* No layout to read: the screen's own reading, never the written reader's cut of it into a "day" per CIRCUIT. */
+    if (screen) return screenRead(aiMissLine(tidy.kind));
+    checks.push(aiMissLine(tidy.kind));
+  }
 
   const w = readWrittenWorkout(words);
   const rows = writtenToTemplate(w, resolveKey);
   if (!rows.length) {
+    if (screen) return screenRead(aiMissLine('unfaithful'));
     /* Nothing the written reader could make a lift of: the table reader's reading, if it had one. */
     if (table.ok && dayCount) return { kind: 'ok', weeks: table.weeks, skipped: table.skipped ?? [], checks, via: 'table', text: sheet ?? text };
     return { kind: 'unparsed', error: 'No exercises could be read from that photo. Try a closer, straighter shot.' };
@@ -127,5 +132,10 @@ export async function readImportPhoto(
 
   /* ── 4. The preview's weeks ── */
   const { weeks, skipped } = writtenToWeeks(w, rows);
+  /* On an app's screen the layout is held to the screen, lift for lift (`layoutDisagrees`): a number moved to the
+     wrong lift is a changed number, and the layout is thrown away as `checkAiRewrite` throws one away. */
+  if (screen && tidy.kind === 'ok' && layoutDisagrees(weeks[0]?.days[0]?.items ?? [], screen.weeks[0]?.days[0]?.items ?? [])) {
+    return screenRead(aiMissLine('unfaithful'));
+  }
   return { kind: 'ok', weeks, skipped, checks, via: 'card', text: words };
 }

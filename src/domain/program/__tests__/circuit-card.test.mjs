@@ -110,3 +110,17 @@ test('two days side by side unfold into a 3-week, 4-day sheet with the abs on th
   /* A single card with a pipe in it is not this sheet. */
   assert.equal(sideBySideTsv('Bench Press | 3 X 8'), null);
 });
+
+test('layoutDisagrees: same lifts, same numbers, names kept — or it says which lift differs', async () => {
+  const { layoutDisagrees } = await import('../circuit-card.ts');
+  const { items } = itemsOf(F.W6E_ROUNDS);
+  assert.equal(layoutDisagrees(items, items), null);
+  const moved = items.map((i, k) => (k === 2 ? { ...i, sets: 1 } : i));
+  assert.match(layoutDisagrees(moved, items), /Wall Balls/);
+  assert.match(layoutDisagrees(items.slice(0, -1), items), /lifts/);
+  const renamed = items.map((i) => (i.name === 'DB Suitcase Carry' ? { ...i, name: 'Dumbbell Suitcase Carries' } : i));
+  assert.equal(layoutDisagrees(renamed, items), null, 'DB spelled out and a plural are the same name');
+  const cut = itemsOf(F.W5D_NO_CIRCUIT_WORD).items;
+  const short = cut.map((i) => (/^Row -/.test(i.name) ? { ...i, name: 'Row' } : i));
+  assert.match(layoutDisagrees(short, cut), /named “Row”/);
+});
