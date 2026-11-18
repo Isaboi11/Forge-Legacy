@@ -124,7 +124,8 @@ export const suite = {
     { file: 'src/domain/coach/ask-tools.ts', exportName: 'ASK_ACTIONS' },
     { file: 'scripts/evals/suites/ask-safety.mjs', exportName: 'ASK_KNOBS' },
   ],
-  model: 'claude-sonnet-5',
+  // coach-ask's in-code default (Sonnet 5.5 since Sprint 3b, PO 11-18); Sonnet 5's recording stays beside it.
+  model: 'claude-sonnet-5-5',
   cases: async () => rows().map((r) => ({ id: r.id, input: { text: r.text }, expect: { route: r.route, debatable: !!r.debatable } })),
   deterministic: async () => [
     { id: 'corpus-size', pass: rows().length >= 700, notes: `${rows().length} lines` },

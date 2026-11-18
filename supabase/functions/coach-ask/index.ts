@@ -139,10 +139,13 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 
 /**
- * The IN-CODE DEFAULT: Sonnet 5, effort low. What runs is `coach_ai_model_config` (0274) when it has a row for
- * 'coach-ask' — read with the service role, kept 60 s, this default on any failure (PL-7).
+ * The IN-CODE DEFAULT: Sonnet 5.5, effort low — PO 2026-11-18, for everyone in this release (Sprint 3b, PL-7):
+ * ask-safety, this function's own eval, 677/704 against Sonnet 5's 626, must-stop lines let through 5 against 27, the
+ * same list price. What runs is `coach_ai_model_config` (0274) when it has a row for 'coach-ask' — read with the
+ * service role, kept 60 s, this default on any failure; `switch-models-revert.sql` puts a Sonnet 5 row back.
+ * Sonnet 5.5 is sent `between_tools` (its thinking-off form) and the refusal fallback to Sonnet 5 (model-request.ts).
  */
-const MODEL = 'claude-sonnet-5';
+const MODEL = 'claude-sonnet-5-5';
 const EFFORT = 'low';
 /**
  * The selectable Haiku (CA-D7 routing benchmark; the app sends no model). Haiku 5.5 since Sprint 3b (PL-7): on this

@@ -149,6 +149,42 @@ export const DISORDERED_EATING =
 /* Widened 2026-09-26 (QA R2-F6): "I threw up after dinner on purpose" and "vomit after meals" both reached a
    model. The vomit words need a meal or "on purpose" beside them — "I threw up after sprints" is not this. */
 
+/** "every other day", "every 2 days", "every 2-3 days", "every few days", "every couple of days". */
+const FEW_DAYS = String.raw`(\d+([-/]\d+)?|two|three|four|five|six|seven|(a\s+)?few|(a\s+)?couple(\s+of)?|several)\s+days`;
+const EVERY_FEW_DAYS = String.raw`(other\s+day|${FEW_DAYS})`;
+
+/**
+ * Two more disordered-eating behaviours (AI Road to 10 Sprint 3b, PO 11-18): chewing food and spitting it out, and
+ * eating once every few days. Both reached every model through the guard (ask-safety S0187 "chew and spit to save
+ * cals", S0420 "I only eat one meal every two days") and Haiku 5.5 answered both. → care, BEFORE any model or credit.
+ * Each alternative needs the behaviour, not its words: "chew slowly", "spit out the gum", "one cheat meal every two
+ * weeks", "two meals a day", "I eat eggs every other day" and "I train every other day" all go through
+ * (safety-both-ways.mjs holds both directions).
+ */
+export const SPARSE_EATING = new RegExp(
+  String.raw`\b(` +
+    [
+      // chew and spit — "chew and spit", "chew n spit", "chew-and-spit", "chewing and spitting", "chew then spit"
+      String.raw`chew(s|ed|ing)?[-\s]*(and|n'?|&|\+|then)[-\s]*(then\s+)?spit\w*`,
+      // "chew my food and spit it out", "chewing snacks then spitting them"
+      String.raw`chew(s|ed|ing)?\s+(my\s+|the\s+|your\s+|up\s+)?(food|it|meals?|snacks?|dinner|lunch|breakfast|treats?|candy|sweets|chips|pizza|cake|cookies)\s+(and|then|&)\s+(then\s+)?spit\w*`,
+      // "spit my food out so I don't get the calories", "spit it out to save cals"
+      String.raw`spit(s|ting)?\s+(my\s+|the\s+)?(food|it|everything|them)\s+out\s+(\w+\s+){0,5}(calories|cals?|swallow\w*|weight)`,
+      // "one meal every two days", "a single meal every 3 days"
+      String.raw`(one|1|a\s+single|only\s+one)\s+meal\s+(every|each|per|in)\s+${EVERY_FEW_DAYS}`,
+      // "eat once every 2/3 days", "eating one time every few days"
+      String.raw`eat(s|ing)?\s+(only\s+)?(once|one\s+time|1x)\s+(every|each|per|in)\s+${EVERY_FEW_DAYS}`,
+      // "I only eat every other day", "eating every 3 days" — no object between: "I eat eggs every other day" is food
+      String.raw`eat(s|ing)?\s+(only\s+)?every\s+${EVERY_FEW_DAYS}`,
+      // "skipping days of eating", "skip whole days of food"
+      String.raw`skip(s|ping|ped)?\s+(whole\s+|entire\s+|full\s+)?days\s+(of\s+)?(eating|food|meals)`,
+      // "I go 2 days without food", "going a few days between meals"
+      String.raw`go(es|ing)?\s+${FEW_DAYS}\s+(without|between)\s+(eating|food|meals?)`,
+    ].join('|') +
+    String.raw`)\b`,
+  'i',
+);
+
 /**
  * The diagnosis named (QA R2-F6: "I'm anorexic", "I have an eating disorder" both reached a model — and the
  * second went to the dish writer). → care, unless the sentence is about recovery, which → advice: still a stop
@@ -353,7 +389,7 @@ const FOODISH = /\b(eat|eating|ate|food|meal|breakfast|lunch|dinner|snack\w*|rec
 function routeOnce(t: string): MedicalRoute {
   if (CRISIS.test(t)) return 'crisis';
   if (URGENT.test(t) || FOOD_URGENT.test(t)) return 'urgent';
-  if (DISORDERED_EATING.test(t) || RESTRICTION.test(t) || isCrashCut(t) || DIET_DRUG.test(t)) return 'care';
+  if (DISORDERED_EATING.test(t) || SPARSE_EATING.test(t) || RESTRICTION.test(t) || isCrashCut(t) || DIET_DRUG.test(t)) return 'care';
   if (EATING_DISORDER_NAMED.test(t)) return RECOVERY.test(t) ? 'advice' : 'care';
   if (MINOR_AGE.test(t) && MINOR_TOPIC.test(t)) return 'care';
   if (DOSE.test(t)) return 'care';
