@@ -117,6 +117,25 @@ export function trimWindow(durationMs: number, startMs?: number | null, endMs?: 
 }
 
 /**
+ * One trim grip dragged to `wantMs` (PO 11-17, the Photos-style trim): the window it makes, kept valid. A grip
+ * stops {@link FORM_TRIM_MIN_MS} short of the other one and never leaves the clip; dragged past one read's
+ * length ({@link FORM_CLIP_MS}) it pulls the other grip along, so a long clip's window slides instead of sticking.
+ */
+export function moveTrimGrip(
+  which: 'start' | 'end',
+  wantMs: number,
+  current: { start: number; end: number },
+  durationMs: number,
+): { start: number; end: number } {
+  if (which === 'start') {
+    const start = Math.max(0, Math.min(wantMs, current.end - FORM_TRIM_MIN_MS));
+    return { start, end: Math.min(current.end, start + FORM_CLIP_MS) };
+  }
+  const end = Math.min(durationMs, Math.max(wantMs, current.start + FORM_TRIM_MIN_MS));
+  return { start: Math.max(current.start, end - FORM_CLIP_MS), end };
+}
+
+/**
  * How many stills to read from a window: {@link FORM_FRAMES_PER_SECOND} a second, never fewer than eight
  * (a short trim is usually ONE rep the athlete cares about, so it is read densely) and never more than
  * {@link FORM_FRAMES_MAX}.
