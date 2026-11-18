@@ -70,7 +70,7 @@ test('⛔ the number is read from the server (coach_ai_quote, action "web") — 
   assert.doesNotMatch(SHEET, /Find one online · \d/);
   // Only the web chip gets the number, and the transcript line stays the chip's own label.
   assert.match(SHEET, /const shown = c\.webSearch \? withCreditCost\(c\.label, webCost\) : c\.label;/);
-  assert.match(SHEET, /if \(!chip\.webSearch\) return tapChip\(chip\);\n\s*say\(\{ kind: 'me', text: chip\.label \}\);/);
+  assert.match(SHEET, /if \(!chip\.webSearch\) return tapChip\(chip\);\r?\n\s*say\(\{ kind: 'me', text: chip\.label \}\);/);
 });
 
 test('old client: a phone without this code sends no tools key and reads the chip as before — nothing the server sends changed', () => {
