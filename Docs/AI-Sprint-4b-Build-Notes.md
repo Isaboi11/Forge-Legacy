@@ -175,8 +175,9 @@ AUTHOR; the PO pastes.
 Left at start: **$5.43** of $30. **PO 2026-11-18: cap raised to $37 (+$7) for the 38 fix** → ~$12.43 to spend.
 | Run | Lane | Estimate | Real |
 |---|---|---|---|
-| memory suite (Haiku facts + recap, Sonnet `earlier`), ≤ 2 runs | A | ~$1.00 | |
-| chat-summary re-run (new summary prompt, Haiku) | A | ~$0.10 | |
+| memory suite (Haiku facts + recap, Sonnet `earlier`), 1 run + offline re-grade | A | ~$1.00 | $0.066 |
+| chat-summary re-run (new summary prompt, Haiku) | A | ~$0.10 | $0.0013 |
+| step 2 round 1 subset (148 ids, Sonnet) — 35/38 back, 23 gained lost → stopped | A | $0.87 | $0.93 |
 | step 2 — the 38: subset (38 + 110 gained) + full re-record ask-answers / ask-safety / ask-actions | A | ~$10.35 | ✅ PO approved 11-18 (cap → $37) |
 
 ## 4. Integrator (this session)
@@ -191,3 +192,4 @@ Left at start: **$5.43** of $30. **PO 2026-11-18: cap raised to $37 (+$7) for th
 - 2026-11-18 — PO: yes to the $7 cap raise ($30 → $37) for the 38 ask-answers lines. Step 2 is unblocked once step 1 is done (subset first, full re-records only if the subset holds).
 - 2026-11-18 — `ai/s4b-chats` merged (`8aa5b72b`): 0279 `holt_chats` (+ `preview` column, trigram index — pg_trgm 1.6 already on), `past-chats.ts` store rules, `/holt-chats` (search, Continue), sign-out clears the device thread. tsc 0, eslint 0, src 7161 / 5 known fails, web export built. Integrator rulings: `preview` column OK · Premium-AI-only OK (AI is pay-only) · telemetry prop is `kind` not `event` (`event` isn't in ALLOWED_PROP_KEYS) — lane A's `holt_memory` must use `kind` too. $0.
 - 2026-11-18 — ⚠ Another session shipped a build-11 OTA + web (squad comment previews + who-trained-today faces): `feat/build11` → `0eac343b` (+2 squad commits on 36749b02); web from `web/squad-comment-preview` (= `ai/s4a-web` `ab9ba77b` + those 2); SQL `0280` APPLIED (next free 0281 — ours stay 0278/0279). ⛔ Release: merge `feat/build11` HEAD into `ai/s4b` before the OTA; base the 4b web port on `web/squad-comment-preview`, not `ai/s4a-web`.
+- 2026-11-18 — lane A step 1 done (`cfd1e6dc`): memory_v1 byte-identical prompt proven, 0278 authored, memory 30/30 (0 medical, 0 invented), chat-summary 18/20, gate PASS. Step 2 round 1: subset 122/148 — 35 of 38 back, 23 of 110 gained lost (13 experience-in-words, 6 ranges, 2 goal/date, 2 limits). Remember-note card gated on the switch (`1e74058b`). Round 2 sent: narrower rule, grader unchanged, PASS = 35 kept + ≤ 3 gained lost; else revert both rule commits and ship with the 38 accepted. No third round.
