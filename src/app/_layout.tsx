@@ -418,6 +418,7 @@ function RootNavigator() {
         <Stack.Screen name="create-food" />
         {/* Log from a photo (Premium AI) — Log Food's camera door. Reads the plate, matches the database. */}
         <Stack.Screen name="meal-photo" />
+        <Stack.Screen name="describe-meal" />
         {/* Scan label — the camera over Create Food (`Scan Nutrition Label v2.dc.html`). Build 9+, iPhone only. */}
         <Stack.Screen name="scan-label" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
         <Stack.Screen name="nutrition-details" />

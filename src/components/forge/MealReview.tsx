@@ -1,0 +1,409 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
+import { BottomSheet } from '@/components/forge/composites/BottomSheet';
+import { Button } from '@/components/forge/composites/Button';
+import { InputField } from '@/components/forge/composites/InputField';
+import { flBorder, flColor, flFont, flRadius } from '@/constants/foundation';
+import { forgeOr } from '@/constants/theme-scrim';
+import { dayLabel, MEAL_LABELS, MEAL_SLOTS, type MealSlot } from '@/domain/nutrition/day';
+import { loggable, rowMacros, unmatchedNote, withFood, withPortion, type ReviewRow } from '@/domain/nutrition/meal-photo-match';
+import { looksSane, portionLabel, portionMacros, servingOptions, SOURCE_LABEL, type CatalogFood, type Portion, type Serving } from '@/domain/nutrition/serving';
+import { searchFoods } from '@/data/nutrition-live';
+
+/**
+ * THE MEAL REVIEW — the list a read meal becomes before anything is logged, shared by Snap a plate (`meal-photo.tsx`)
+ * and Describe a meal (`describe-meal.tsx`, AI Road to 10 Sprint 4a §1.6). Moved out of `meal-photo.tsx` unchanged in
+ * look and behaviour; the only new thing is `from`, which says where the portions came from ("the photo" / "your words").
+ *
+ * ⚠ EVERY CALORIE HERE IS DATABASE FOOD × PORTION (`meal-photo-match.ts` → `portionMacros`). A row with no match shows
+ * no calories and is not logged; the note above the button says so. Drawn in Log Food's own language (flat rows of
+ * "name / meta" with the number on the right, quiet uppercase actions), from the shared tokens, so both themes follow.
+ */
+
+export type MealReviewFrom = 'photo' | 'words';
+
+const FROM_WORDS: Record<MealReviewFrom, { estimated: string; fine: string }> = {
+  photo: { estimated: 'estimated from the photo', fine: 'Portions are estimates from the photo. Calories come from the matched food.' },
+  words: { estimated: 'from what you wrote', fine: 'Portions are what you wrote, or a usual serving. Calories come from the matched food.' },
+};
+
+/** The totals, the rows, Add a food, the notes — and the sheet that edits a row. The screen owns the rows and the Log. */
+export function MealReview({
+  rows,
+  onRowsChange,
+  totals,
+  searchFailed,
+  from,
+  feedback,
+}: {
+  rows: ReviewRow[];
+  onRowsChange: (next: (prev: ReviewRow[]) => ReviewRow[]) => void;
+  totals: { kcal: number; protein: number; carb: number; fat: number };
+  searchFailed: number;
+  from: MealReviewFrom;
+  /** "Was this helpful?" for this read, when there is one. */
+  feedback?: ReactNode;
+}) {
+  /** The row being edited, by id; `'new'` is the Add-a-food sheet. */
+  const [editing, setEditing] = useState<string | null>(null);
+  const [addCount, setAddCount] = useState(0);
+  const note = unmatchedNote(rows);
+  const editRow = editing && editing !== 'new' ? rows.find((r) => r.id === editing) ?? null : null;
+
+  return (
+    <>
+      <View style={styles.totals}>
+        <Text style={styles.totalKcal}>{totals.kcal}</Text>
+        <Text style={styles.totalLabel}>cal</Text>
+        <Text style={styles.totalMacros}>{`${totals.protein}P · ${totals.carb}C · ${totals.fat}F`}</Text>
+      </View>
+      <Text style={styles.sectionLabel}>{`${rows.length} ${rows.length === 1 ? 'item' : 'items'} · tap to change`}</Text>
+
+      {rows.map((row) => (
+        <ReviewRowView key={row.id} row={row} from={from} onPress={() => setEditing(row.id)} />
+      ))}
+
+      <Pressable accessibilityRole="button" style={styles.more} onPress={() => setEditing('new')}>
+        <Text style={styles.footerAction}>Add a food</Text>
+      </Pressable>
+
+      {note ? <Text style={styles.note}>{note}</Text> : null}
+      {searchFailed ? (
+        <Text style={styles.note}>{`Couldn’t reach food search for ${searchFailed === 1 ? 'one item' : `${searchFailed} items`}. Tap to search again.`}</Text>
+      ) : null}
+      <Text style={styles.fine}>{FROM_WORDS[from].fine}</Text>
+      {feedback}
+
+      {/* Keyed by the row, so the sheet's draft starts from THAT row every time it opens. */}
+      <RowSheet
+        key={editing === 'new' ? `new-${addCount}` : (editRow?.id ?? 'none')}
+        open={editing != null && (editing === 'new' || editRow != null)}
+        row={editRow}
+        from={from}
+        onClose={() => setEditing(null)}
+        onSave={(next) => {
+          if (editing === 'new') {
+            onRowsChange((prev) => [...prev, { ...next, id: `a${addCount}`, seen: next.food?.name ?? '' }]);
+            setAddCount((n) => n + 1);
+          } else {
+            onRowsChange((prev) => prev.map((r) => (r.id === next.id ? next : r)));
+          }
+          setEditing(null);
+        }}
+        onRemove={() => {
+          if (editRow) onRowsChange((prev) => prev.filter((r) => r.id !== editRow.id));
+          setEditing(null);
+        }}
+      />
+    </>
+  );
+}
+
+/** "ADDING TO Lunch ⌄" — the slot (and the day, when it is not today) the meal goes to. */
+export function MealSlotLine({ meal, iso, today, onPress }: { meal: MealSlot; iso: string; today: string; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`Adding to ${MEAL_LABELS[meal]}. Change meal`} style={styles.mealLine} onPress={onPress}>
+      <Text style={styles.mealLineLabel}>Adding to</Text>
+      <Text style={styles.mealLineValue}>{MEAL_LABELS[meal]}</Text>
+      <EngravedIcon name="chevron-down" size={13} color={forgeOr(flColor.bronze400, flColor.gray600)} />
+      {iso !== today ? <Text style={styles.mealLineDay}>{dayLabel(iso, today)}</Text> : null}
+    </Pressable>
+  );
+}
+
+/* ── a row ───────────────────────────────────────────────────────────────── */
+
+function ReviewRowView({ row, from, onPress }: { row: ReviewRow; from: MealReviewFrom; onPress: () => void }) {
+  const m = rowMacros(row);
+  const ok = loggable(row);
+  const seenDiffers = row.item != null && row.food != null && row.food.name.toLowerCase() !== row.seen.toLowerCase();
+  const meta = ok
+    ? [portionLabel(row.portion!), row.estimated && from === 'photo' ? 'estimated' : null, SOURCE_LABEL[row.food!.source]].filter(Boolean).join(' · ')
+    : row.food
+      ? 'Set a portion'
+      : 'No match yet — tap to pick a food';
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`Change ${row.food?.name ?? row.seen}`} style={styles.row} onPress={onPress}>
+      <View style={styles.rowBody}>
+        <Text style={styles.rowName} numberOfLines={1}>
+          {row.food?.name ?? row.seen}
+        </Text>
+        {seenDiffers ? (
+          <Text style={styles.rowSeen} numberOfLines={1}>{`${from === 'photo' ? 'Seen' : 'You wrote'}: ${row.seen}`}</Text>
+        ) : null}
+        <Text style={[styles.rowMeta, !ok && styles.rowMetaWarn]} numberOfLines={1}>
+          {meta}
+        </Text>
+        {row.item?.confidence === 'low' && ok ? <Text style={styles.rowCheck}>Not sure about this one — check it</Text> : null}
+      </View>
+      <Text style={styles.rowKcal}>{ok ? `${m.kcal}` : '—'}</Text>
+    </Pressable>
+  );
+}
+
+/* ── the edit / add sheet ────────────────────────────────────────────────── */
+
+function RowSheet({
+  open,
+  row,
+  from,
+  onClose,
+  onSave,
+  onRemove,
+}: {
+  open: boolean;
+  /** Null = adding a food by hand. */
+  row: ReviewRow | null;
+  from: MealReviewFrom;
+  onClose: () => void;
+  onSave: (row: ReviewRow) => void;
+  onRemove: () => void;
+}) {
+  const adding = row == null;
+  const [draft, setDraft] = useState<ReviewRow>(
+    () => row ?? { id: 'new', seen: '', item: null, food: null, portion: null, estimated: false, candidates: [] },
+  );
+  const [swapping, setSwapping] = useState(() => row == null || row.food == null);
+  const [query, setQuery] = useState(() => (row?.item ? row.item.search : ''));
+  const [qty, setQty] = useState(() => (row?.portion ? String(row.portion.quantity) : '1'));
+  /* Keyed by its query, as Log Food's search is — a stale reply can never land on a newer query. */
+  const [search, setSearch] = useState<{ q: string; foods: CatalogFood[]; failed: boolean }>({ q: '', foods: [], failed: false });
+
+  useEffect(() => {
+    const q = query.trim();
+    if (!swapping || q.length < 2) return;
+    let live = true;
+    const timer = setTimeout(async () => {
+      const found = await searchFoods(q);
+      if (live) setSearch({ q, foods: found.foods.filter(looksSane), failed: found.failed });
+    }, 350);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [query, swapping]);
+
+  const trimmed = query.trim();
+  const results = trimmed.length >= 2 && search.q === trimmed ? search.foods : trimmed.length < 2 ? draft.candidates : null;
+  const searching = trimmed.length >= 2 && search.q !== trimmed;
+
+  const food = draft.food;
+  const options: Serving[] = food ? servingOptions(food) : [];
+  const current = draft.portion?.serving ?? null;
+  const chips = current && !options.some((s) => s.label === current.label) ? [current, ...options] : options;
+  const preview = food && draft.portion ? portionMacros(food, draft.portion) : null;
+
+  const choose = (f: CatalogFood) => {
+    const next = withFood(draft, f);
+    setDraft(next);
+    setQty(next.portion ? String(next.portion.quantity) : '1');
+    setSwapping(false);
+  };
+
+  const setServing = (serving: Serving) => {
+    const q = Number(qty) > 0 ? Number(qty) : 1;
+    setDraft(withPortion(draft, { serving, quantity: q } satisfies Portion));
+  };
+
+  const setQuantity = (text: string) => {
+    setQty(text);
+    const q = Number(text);
+    if (draft.portion && q > 0) setDraft(withPortion(draft, { serving: draft.portion.serving, quantity: q }));
+  };
+
+  return (
+    <BottomSheet open={open} onClose={onClose} title={adding ? 'Add a food' : draft.seen || 'Change food'} scroll>
+      <View style={styles.sheetBody}>
+        {food && !swapping ? (
+          <View style={styles.sheetFood}>
+            <View style={styles.rowBody}>
+              <Text style={styles.rowName}>{food.name}</Text>
+              <Text style={styles.rowMeta}>{[food.brand, SOURCE_LABEL[food.source]].filter(Boolean).join(' · ')}</Text>
+            </View>
+            <Pressable accessibilityRole="button" hitSlop={6} onPress={() => setSwapping(true)}>
+              <Text style={styles.footerAction}>Swap</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <InputField
+              value={query}
+              onChange={setQuery}
+              placeholder="Search foods, brands, meals"
+              autoCorrect={false}
+              returnKeyType="search"
+              leadingIcon={<EngravedIcon name="search" size={18} color={flColor.gray600} />}
+            />
+            {searching ? <Text style={styles.status}>Searching…</Text> : null}
+            {(results ?? []).map((f) => (
+              <Pressable key={f.key} accessibilityRole="button" style={styles.row} onPress={() => choose(f)}>
+                <View style={styles.rowBody}>
+                  <Text style={styles.rowName} numberOfLines={1}>
+                    {f.name}
+                  </Text>
+                  <Text style={styles.rowMeta} numberOfLines={1}>
+                    {[f.kcal100 != null ? `${Math.round(f.kcal100)} cal / 100 g` : null, f.brand, SOURCE_LABEL[f.source]].filter(Boolean).join(' · ')}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+            {!searching && results != null && results.length === 0 && trimmed.length >= 2 ? (
+              <Text style={styles.status}>
+                {search.failed ? 'Couldn’t connect to food search. Check your signal and try again.' : `Nothing found for "${trimmed}". Try a simpler word.`}
+              </Text>
+            ) : null}
+          </>
+        )}
+
+        {food && !swapping ? (
+          <>
+            <Text style={styles.fieldLabel}>Portion{draft.estimated ? ` · ${FROM_WORDS[from].estimated}` : ''}</Text>
+            <View style={styles.servingWrap}>
+              {chips.map((s) => (
+                <Pressable
+                  key={s.label}
+                  accessibilityRole="button"
+                  style={[styles.choice, current?.label === s.label && styles.choiceOn]}
+                  onPress={() => setServing(s)}
+                >
+                  <Text style={[styles.choiceText, current?.label === s.label && styles.choiceTextOn]}>{s.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.qtyRow}>
+              <Text style={styles.fieldLabel}>Amount</Text>
+              <TextInput
+                returnKeyType="done"
+                value={qty}
+                onChangeText={setQuantity}
+                keyboardType="decimal-pad"
+                style={styles.numberInput}
+                accessibilityLabel="Amount"
+                selectTextOnFocus
+              />
+            </View>
+            {preview ? (
+              <View style={styles.previewRow}>
+                <Text style={styles.previewKcal}>{preview.kcal}</Text>
+                <Text style={styles.previewLabel}>cal</Text>
+                <Text style={styles.previewMacros}>{`${preview.protein}P · ${preview.carb}C · ${preview.fat}F`}</Text>
+              </View>
+            ) : (
+              <Text style={styles.status}>Pick a portion that has a weight.</Text>
+            )}
+            {food.attribution ? <Text style={styles.fine}>{food.attribution}</Text> : null}
+            <Button variant="primary" fullWidth disabled={!loggable(draft)} onPress={() => onSave(draft)}>
+              {adding ? 'Add to the meal' : 'Done'}
+            </Button>
+          </>
+        ) : null}
+
+        {!adding ? (
+          <Pressable accessibilityRole="button" style={styles.more} onPress={onRemove}>
+            <Text style={styles.removeAction}>Remove from the meal</Text>
+          </Pressable>
+        ) : null}
+      </View>
+    </BottomSheet>
+  );
+}
+
+/** The four slots, as a sheet. */
+export function MealPicker({ open, meal, onPick, onClose }: { open: boolean; meal: MealSlot; onPick: (m: MealSlot) => void; onClose: () => void }) {
+  return (
+    <BottomSheet open={open} onClose={onClose} title="Adding to">
+      <View style={styles.sheetBody}>
+        {MEAL_SLOTS.map((slot) => (
+          <Pressable
+            key={slot}
+            accessibilityRole="button"
+            style={[styles.choice, slot === meal && styles.choiceOn]}
+            onPress={() => {
+              onPick(slot);
+              onClose();
+            }}
+          >
+            <Text style={[styles.choiceText, slot === meal && styles.choiceTextOn]}>{MEAL_LABELS[slot]}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </BottomSheet>
+  );
+}
+
+/** The pieces of the screen around the review, shared so the two screens stay one look. */
+export const mealReviewStyles = StyleSheet.create({
+  footer: {
+    gap: 4,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: flColor.divider,
+    backgroundColor: flColor.charcoal900,
+  },
+  footerAction: { fontSize: 12, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray400 },
+  footerButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  intro: { gap: 12, paddingTop: 20 },
+  introTitle: { fontFamily: flFont.display, fontSize: 24, lineHeight: 30, color: flColor.cream100 },
+  introBody: { fontSize: 14, lineHeight: 21, color: flColor.gray400 },
+  introFine: { fontSize: 12.5, color: flColor.gray600 },
+  problem: { fontSize: 14, lineHeight: 21, color: flColor.cream100, paddingTop: 8 },
+  aiStatus: { marginVertical: 32 },
+  feedback: { paddingTop: 12 },
+});
+
+const styles = StyleSheet.create({
+  mealLine: { flexDirection: 'row', alignItems: 'center', gap: 7, alignSelf: 'flex-start', marginHorizontal: 20, marginBottom: 4, paddingVertical: 4, paddingHorizontal: 2 },
+  mealLineLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600 },
+  mealLineValue: { fontSize: 13.5, fontWeight: '600', letterSpacing: 0.3, color: flColor.bronzeInk },
+  mealLineDay: { fontSize: 12.5, color: flColor.gray600, marginLeft: 4 },
+
+  totals: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingBottom: 6 },
+  totalKcal: { fontFamily: flFont.display, fontSize: 40, color: flColor.cream100 },
+  totalLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
+  totalMacros: { flex: 1, textAlign: 'right', fontSize: 13, color: flColor.gray400 },
+  sectionLabel: { fontSize: 11, fontWeight: '600', letterSpacing: 1.6, textTransform: 'uppercase', color: flColor.gray600, paddingTop: 10, paddingBottom: 2 },
+
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 13, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: flColor.divider },
+  rowBody: { flex: 1, minWidth: 0, gap: 3 },
+  rowName: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  rowSeen: { fontSize: 12, color: flColor.gray400 },
+  rowMeta: { fontSize: 12.5, color: flColor.gray600 },
+  rowMetaWarn: { color: flColor.bronzeInk },
+  rowCheck: { fontSize: 12, color: flColor.bronzeInk },
+  rowKcal: { fontSize: 15, fontWeight: '600', color: flColor.cream100, minWidth: 44, textAlign: 'right' },
+
+  more: { alignItems: 'center', paddingVertical: 16 },
+  note: { fontSize: 13, lineHeight: 19, color: flColor.gray400, paddingTop: 4 },
+  fine: { fontSize: 11.5, lineHeight: 16, color: flColor.gray600, paddingTop: 10 },
+  status: { fontSize: 12.5, color: flColor.gray600, paddingVertical: 10 },
+
+  footerAction: { fontSize: 12, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray400 },
+  removeAction: { fontSize: 12, fontWeight: '600', letterSpacing: 1.1, textTransform: 'uppercase', color: flColor.gray600 },
+
+  sheetBody: { gap: 12, paddingBottom: 8 },
+  sheetFood: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  fieldLabel: { fontSize: 10.5, fontWeight: '600', letterSpacing: 1.3, textTransform: 'uppercase', color: flColor.gray600 },
+  servingWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  choice: { paddingVertical: 9, paddingHorizontal: 14, borderRadius: flRadius.pill, backgroundColor: flColor.charcoal800, ...flBorder.subtle },
+  choiceOn: { backgroundColor: flColor.bronzeDark, borderColor: flColor.accentBorder },
+  choiceText: { fontSize: 13, fontWeight: '600', color: flColor.gray400 },
+  choiceTextOn: { color: flColor.selectedInk },
+  qtyRow: { gap: 6 },
+  numberInput: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: flColor.cream100,
+    backgroundColor: flColor.charcoal800,
+    borderRadius: flRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    ...flBorder.subtle,
+  },
+  previewRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, paddingTop: 4 },
+  previewKcal: { fontFamily: flFont.display, fontSize: 30, color: flColor.cream100 },
+  previewLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase', color: flColor.labelInk },
+  previewMacros: { flex: 1, textAlign: 'right', fontSize: 12.5, color: flColor.gray400 },
+});
