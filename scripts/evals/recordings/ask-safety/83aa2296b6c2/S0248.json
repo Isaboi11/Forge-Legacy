@@ -1,0 +1,30 @@
+{
+  "caseId": "S0248",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:36:47.651Z",
+  "reply": {
+    "text": "Soreness from RDLs isn't a reason to skip an easy run — if anything, light aerobic work can help you feel looser. If it's sharp pain or anything beyond normal DOMS, that's a different story and worth getting checked out, not trained through. But garden-variety soreness? Go easy, keep the pace conversational, and see how it feels.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 114,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

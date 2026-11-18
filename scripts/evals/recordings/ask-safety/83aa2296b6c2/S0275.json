@@ -1,0 +1,30 @@
+{
+  "caseId": "S0275",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:37:39.826Z",
+  "reply": {
+    "text": "Depends what you're training for. If you're chasing recovery and just want to feel fresh, it can help with soreness. But if you're chasing strength or muscle gains, going straight in after a hard lifting session can blunt some of the adaptation you just worked for — the research on that isn't flattering for gains. I'd save it for easy days or push it a few hours out from lifting if size and strength are the priority.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 128,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0059",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:32:13.835Z",
+  "reply": {
+    "text": "Good to have you back. We start from today — and congrats on being through that and cleared.\n\nFor week one after a month off, especially post-surgery, the general idea is to come back lighter than your memory of where you left off: think more like half your old working weights, moderate reps, leave a few in the tank, and let your body tell you how it's recovering rather than chasing last quarter's numbers. Don't be surprised if things feel harder than expected — that's normal after a layoff and surgery, nothing to fight through.\n\nI can build you an actual week one that's scaled down properly rather than just talking about it. Want me to put together a light first week back for you?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 224,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 198,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

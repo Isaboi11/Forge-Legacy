@@ -1,0 +1,24 @@
+{
+  "caseId": "A0599",
+  "promptHash": "78a6f199e403c1932fd85c974dbaf9dec1ff6d9dad66c82bfc60bf6f7a0c3832",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:39:53.026Z",
+  "reply": {
+    "text": "```json\n{\"route\": \"patch\", \"say\": \"Bodyweight it is.\", \"patch\": {\"environment\": \"bodyweight\"}}\n```",
+    "stop_reason": "end_turn",
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "input_tokens": 47,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 5288,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 35,
+    "service_tier": "standard",
+    "inference_geo": "not_available",
+    "speed": "standard"
+  }
+}

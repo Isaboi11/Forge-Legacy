@@ -1,0 +1,30 @@
+{
+  "caseId": "S0292",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:38:11.006Z",
+  "reply": {
+    "text": "Congratulations! That's real news, and no, that's not something I'd navigate alone with you — pregnancy training needs sign-off and specifics from your doctor or an OB-cleared trainer, since the right adjustments depend on things only they can assess.\n\nOnce you've got that clearance, bring me whatever guidance they give you and I'll happily build your training around it. Until then, let's keep it conservative — tell me what you're still up for and I'll work with that.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 224,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 146,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

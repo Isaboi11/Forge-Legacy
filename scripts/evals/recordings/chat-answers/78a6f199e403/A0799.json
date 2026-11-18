@@ -1,0 +1,24 @@
+{
+  "caseId": "A0799",
+  "promptHash": "78a6f199e403c1932fd85c974dbaf9dec1ff6d9dad66c82bfc60bf6f7a0c3832",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:42:34.741Z",
+  "reply": {
+    "text": "```json\n{\"route\": \"answer\", \"say\": \"Five years in, you've got a solid foundation. What's the main thing you want to focus on now — strength, muscle, conditioning, or running a race?\"}\n```",
+    "stop_reason": "end_turn",
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "input_tokens": 48,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 5288,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 53,
+    "service_tier": "standard",
+    "inference_geo": "not_available",
+    "speed": "standard"
+  }
+}

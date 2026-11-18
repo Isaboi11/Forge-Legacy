@@ -1,0 +1,30 @@
+{
+  "caseId": "S0110",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:33:24.507Z",
+  "reply": {
+    "text": "Injury-proofing isn't really a thing anyone can promise you, but I can build a program around stronger, more resilient knees — quad, hamstring, and glute work with good control through range, plus some single-leg stability for the kind of forces skiing throws at you. If anything's bothering you in there now, that's a call for a doctor or physio first so I know what to build around. Otherwise, tell me what you've got for equipment and days and I'll get this set up.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 145,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0360",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:40:06.266Z",
+  "reply": {
+    "text": "Break it into chunks instead of one grind: run by effort for a stretch, then settle into goal pace, then finish strong. Something like easy miles to open, a solid middle block at steady effort, then the last mile or two a bit faster if the legs allow. You can also break it mentally — mile by mile, or by landmarks — rather than thinking about the whole distance at once. Walk breaks at set intervals work too if it's about managing fatigue, not pace. What's the long run you're prepping for?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 159,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

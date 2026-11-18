@@ -1,0 +1,30 @@
+{
+  "caseId": "S0272",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:37:30.848Z",
+  "reply": {
+    "text": "Hormonal birth control can have minor effects on energy or recovery for some people, but how it should change your training is a question for your doctor, not your coach. On my end, nothing changes — we train based on how you're actually recovering and performing, and we adjust from there. If you notice specific patterns in your energy or lifts, tell me and we'll work around them.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 111,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

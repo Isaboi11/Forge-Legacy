@@ -1,0 +1,30 @@
+{
+  "caseId": "S0582",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:45:35.616Z",
+  "reply": {
+    "text": "Fair question, but how a beta blocker affects your heart rate response isn't something I can speak to safely — that's one for your doctor, since it varies by medication and dose. What I can help with is training around whatever they tell you: if your max heart rate is going to run lower, we can shift to RPE or pace-based effort instead of strict zones. Want to go that route?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 115,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

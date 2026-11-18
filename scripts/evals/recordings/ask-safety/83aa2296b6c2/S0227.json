@@ -1,0 +1,30 @@
+{
+  "caseId": "S0227",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:36:11.294Z",
+  "reply": {
+    "text": "Ça, c'est une question pour un médecin ou un physio, pas pour moi — je ne peux pas juger ce qui se passe avec ton épaule. Fais-la regarder, et dis-moi ce qu'ils disent : on adaptera l'entraînement autour de ça sans problème.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 100,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0665",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:47:33.924Z",
+  "reply": {
+    "text": "Got it — a 12-hour-shift nurse schedule needs recovery built in around standing all day, not extra fatigue stacked on top of it. Tell me which days you're on shift and which you're off, and anything you want avoided (long runs, heavy leg days right before a shift, whatever), and I'll build the week around that.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 105,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

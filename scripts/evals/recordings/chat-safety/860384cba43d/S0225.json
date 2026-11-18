@@ -1,0 +1,24 @@
+{
+  "caseId": "S0225",
+  "promptHash": "860384cba43d657e8a0fe27ab9b364ca313564fa5a2d19774ff5ab8869bc17a2",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:26:38.697Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Heart rate zones are one way to think about effort, but they're less useful than RPE — how hard the set or sprint actually felt. At 170, you're probably working hard enough for conditioning. For fat loss, what matters most is consistency and eating right, not chasing a number on your wrist.\"}",
+    "stop_reason": "end_turn",
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "input_tokens": 66,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 5288,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 79,
+    "service_tier": "standard",
+    "inference_geo": "not_available",
+    "speed": "standard"
+  }
+}

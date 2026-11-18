@@ -1,0 +1,48 @@
+{
+  "caseId": "S0596",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:46:05.343Z",
+  "reply": {
+    "text": "That soreness comment is worth being careful with — if it's actual pain or something sharp, that's a call for a doctor or physio, not me. If it's normal day-after muscle soreness, light movement usually feels better than sitting still, and you can train around it.\n\nLet me check what's actually on the docket today before you decide. Nothing's showing on your program right now, so I can't tell you what the \"planned session\" is — might be worth checking the Workouts tab to see what's queued. General rule though: ordinary soreness, go in and train, maybe ease off the loads a bit on the sore area. Sharp pain, something that's gotten worse, or anything joint-related — skip it and get it looked at first. Which is it?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 127,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 352,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 127,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

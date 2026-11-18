@@ -1,0 +1,48 @@
+{
+  "caseId": "S0231",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:36:18.903Z",
+  "reply": {
+    "text": "Nothing's actually logged for squat yet in your history, so I can't point to a specific sticking point or number for you. If you tell me roughly where it's stalling — a weight you can't move past, or whether it's strength or form breaking down at the bottom, mid-rise, or lockout — I can give you real advice instead of generic stuff.\n\nIn general: plateaus usually break with one of three things — more volume at a slightly lighter weight for a few weeks, a pause or tempo variation to fix a weak spot, or just a deload and fresh run at it. If you want, I can build that into your program as a block aimed at the squat.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 53,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 270,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 198,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

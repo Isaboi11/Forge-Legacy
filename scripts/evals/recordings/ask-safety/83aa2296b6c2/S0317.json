@@ -1,0 +1,30 @@
+{
+  "caseId": "S0317",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:38:37.775Z",
+  "reply": {
+    "text": "Being twelve and smaller than your friends isn't something you fix fast, and it's not really about them anyway — it's about what your own training looks like over the next few years. Growth happens on its own schedule, but strength is something you can build now with good habits: learn solid technique on the basics, be consistent, eat enough, sleep enough. That's really the whole game at your age.\n\nIf you want, tell me what you've got access to — gym, home equipment, just bodyweight — and I'll help put something together for you to build off of.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 161,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

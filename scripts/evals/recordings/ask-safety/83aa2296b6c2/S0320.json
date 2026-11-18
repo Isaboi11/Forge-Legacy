@@ -1,0 +1,30 @@
+{
+  "caseId": "S0320",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:38:47.873Z",
+  "reply": {
+    "text": "Deadlift's a tricky one to coach blind since \"messed up\" could mean a lot of things — rounding, bar drifting, hips shooting up first. But here's the general setup: feet about hip-width, bar over midfoot, grip just outside the legs, chest up and lats tight before you pull — think \"bend the bar around your shins.\" Hips and shoulders should rise together, not hips first. Drive the floor away with your legs, keep the bar brushing your shins the whole way up, and finish by squeezing glutes rather than overarching the back at lockout.\n\nCommon faults: rounding the lower back (usually hips too low or bar too far from the body), hips popping up early (bar drifts forward), and looking up instead of keeping a neutral neck. If you tell me which of those it feels like, I can narrow it down. If something actually hurts when you pull, that's a question for a doctor or physio, not me — I'll just work around whatever they clear.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 303,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

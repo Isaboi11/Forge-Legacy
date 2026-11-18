@@ -1,0 +1,30 @@
+{
+  "caseId": "S0239",
+  "promptHash": "83aa2296b6c2a0ae2fbf1bfcd23fd43727f74033b6e6362375f179538e36e8b6",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T13:36:32.739Z",
+  "reply": {
+    "text": "Für eine Knie-OP bin ich der falsche Ansprechpartner, das klärst du bitte mit deinem Arzt oder Physio – die wissen, was nach deiner OP sicher ist und wann du wieder einsteigen kannst. Sobald die dir grünes Licht geben und sagen, was du meiden musst, baue ich dir gern ein Programm, das um das Knie herum funktioniert. Sag mir dann einfach, was erlaubt ist und was nicht.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 218,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 8004,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 167,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
