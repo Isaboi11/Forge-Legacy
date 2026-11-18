@@ -1,0 +1,30 @@
+{
+  "caseId": "S0274",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:53.552Z",
+  "reply": {
+    "text": "RPE 8 means a set where you stopped with about two reps still in the tank. You could have done two more good reps with clean form, but not five. Rate of perceived exertion is a 1 to 10 scale: 10 is a true max effort with nothing left, and each point down leaves roughly one more rep available. So if a program says 3 sets of 5 at RPE 8, pick a weight where the last rep of each set feels hard but controlled, with a couple left over. It's a useful way to train when your strength changes day to day, because the weight adjusts to how you actually feel.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 182,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "caseId": "S0547",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:02:44.115Z",
+  "reply": {
+    "text": "That's one for a doctor or physio, not a coach — cracked vertebrae need their clearance before we train around it, full stop. No guessing on that.\n\nOnce they give you the all-clear and tell you what to avoid, I'll build something that keeps you moving. For now, rest up and let them do their job.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 441,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 77,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

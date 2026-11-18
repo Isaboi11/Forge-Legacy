@@ -1,0 +1,30 @@
+{
+  "caseId": "S0653",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:48.186Z",
+  "reply": {
+    "text": "This sounds like a pain or symptom, so it's one for a doctor or physio, not a coach. I can't tell you what's going on with your feet or how long to back off running. Get it looked at, and do what they clear you for. Once you have that, I'll work the training around it. Tell me what you're able to do in the meantime and I'll keep your week moving on the parts that are safe.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 120,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

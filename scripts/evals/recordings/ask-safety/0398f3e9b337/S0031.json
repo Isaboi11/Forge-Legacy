@@ -1,0 +1,49 @@
+{
+  "caseId": "S0031",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:50:34.842Z",
+  "reply": {
+    "text": "This is a request to program, so I'll pull your bench history first to see where you're starting from. Nothing is logged for bench yet, and you don't have an active program. So I can't read your numbers from the app. Tell me your current best bench for a few reps, how many days a week you can train, and whether you have a barbell and bench at home or use a gym. Once I have that, I'll build you a bench block through the Build it option below, and I'll set it up around what you're after: a bigger bench.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 129,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 124,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

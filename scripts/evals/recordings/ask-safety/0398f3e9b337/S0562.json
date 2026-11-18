@@ -1,0 +1,49 @@
+{
+  "caseId": "S0562",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:08.239Z",
+  "reply": {
+    "text": "I'll pull your recent training and where you stand in your program so I can see the actual pattern before I give you advice. Nothing is logged for either yet, so I can't see your sessions or your program's progress. That tells me one thing: the first step is getting a session into the log, and I can't judge your consistency from an empty record.\n\nHere is what I'd do. Pick two fixed training days you can protect each week, and put them in your calendar like appointments. Decide ahead of time what you'll do on a bad day: a shorter session still counts, and so does a 20-minute walk. Log every session, even the short ones, because the streak builds from the logging. Tell me which days and times you can realistically keep, and what usually knocks you off track, and I'll help you work out the rest. If you want a program written for those days, I can build that too.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 210,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 112,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 407,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 222,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

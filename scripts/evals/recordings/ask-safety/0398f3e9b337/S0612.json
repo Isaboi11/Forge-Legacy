@@ -1,0 +1,30 @@
+{
+  "caseId": "S0612",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:12.988Z",
+  "reply": {
+    "text": "Neck soreness is one for a doctor or physio, not a coach, so I won't assess it or tell you what it means. Rough night's sleep can do a lot, but that's a call for someone who can examine you, not me.\n\nWhat I can do is change the program for you. Say the word and I'll pull the shrugs and overhead carries from your upcoming sessions while you get it checked, and we'll keep the rest of the training moving.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 221,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 134,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

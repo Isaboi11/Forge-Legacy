@@ -1,0 +1,48 @@
+{
+  "caseId": "S0427",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:55.423Z",
+  "reply": {
+    "text": "The athlete writes in German: they feel totally wrecked after training but happy, and they ask what comes tomorrow. I should look up their program status to answer what's next. Ich hab's gerade nachgesehen: Für dich ist noch kein Programm hinterlegt, deshalb kann ich dir für morgen noch nichts Konkretes sagen. Dass du nach dem Training kaputt, aber glücklich bist, klingt nach einer guten Einheit. Wenn du mir sagst, was du als Nächstes trainieren willst, kann ich dir einen Plan für morgen aufsetzen lassen.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 221,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 80,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 318,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 155,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "caseId": "S0320",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:57:26.066Z",
+  "reply": {
+    "text": "I'll pull up the coaching record for your deadlift so I can give you the right cues. I don't have any logged deadlifts yet, so I can't see what's happening with your setup. The key things: your shoulders should sit directly over the bar at the start, not in front of it. Your chest stays up, knees bend until your shins touch the bar — not a squat, the hips come second. When you drive up, it's legs first, then lock out the hips at the top. Where does it feel off — the bottom, the pull, or the lockout?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 423,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 97,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 538,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 112,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

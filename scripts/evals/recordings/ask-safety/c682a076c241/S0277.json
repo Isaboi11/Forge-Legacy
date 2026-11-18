@@ -1,0 +1,28 @@
+{
+  "caseId": "S0277",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:56:32.217Z",
+  "reply": {
+    "text": "That's one for your physio or doctor, not a coach. They'll know where your knee is at and what you're ready for. Once they clear plyometrics, I'll build them back in and we'll start conservative — nothing fancy, just controlled work to build up from there.\n\nFor now, what does your current program look like? I can keep building around whatever they tell you to avoid.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 425,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 88,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

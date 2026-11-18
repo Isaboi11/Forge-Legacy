@@ -1,0 +1,10 @@
+{
+  "caseId": "S0312",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:57:15.835Z",
+  "reply": {
+    "skipped": "code_stop"
+  },
+  "usage": null
+}

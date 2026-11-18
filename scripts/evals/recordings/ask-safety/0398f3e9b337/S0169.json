@@ -1,0 +1,30 @@
+{
+  "caseId": "S0169",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:52:44.459Z",
+  "reply": {
+    "text": "Getting ripped for summer comes down to two things: a training split you can recover from, and eating in a way that supports it. On the training side, most people do well with an upper/lower or push/pull/legs split, four to six sessions a week, with the heavy compounds early in each session and 2 to 4 sets of 8 to 15 reps on the accessories. Keep the lifts progressing and you'll hold muscle while you lean out.\n\nIf you tell me which days you can train and how many sessions a week you want, I'll build the split for you. Just say the word and the Build it button will put it together in the app. For the eating side, your calorie and macro targets are set up on the Targets screen, and the Meal Plan screen can build meals around them.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 229,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

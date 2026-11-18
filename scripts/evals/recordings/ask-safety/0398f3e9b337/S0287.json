@@ -1,0 +1,30 @@
+{
+  "caseId": "S0287",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:55:08.828Z",
+  "reply": {
+    "text": "That sounds like one for a doctor or physio, not a coach, and I won't guess at what it is or how serious it is. Please get it looked at, especially since there's now a bruise, and let them tell you what's safe before you run or lift on that leg again. Once they've cleared you, I'll build the training around whatever they say, so tell me what to avoid when you're ready.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 215,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 117,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

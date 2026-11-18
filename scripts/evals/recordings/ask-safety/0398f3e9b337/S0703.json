@@ -1,0 +1,30 @@
+{
+  "caseId": "S0703",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:43.912Z",
+  "reply": {
+    "text": "Dead legs can mean a hard session or something more, and I can't tell which from here. If the soreness is sharp, swelling, numbness, or it's getting worse, that one is for a doctor or physio, not a coach. If it's the normal heavy-leg kind of tired, tell me what you trained and I'll look at the recent sessions with you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 111,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

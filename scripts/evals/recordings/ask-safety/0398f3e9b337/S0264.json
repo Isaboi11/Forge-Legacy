@@ -1,0 +1,30 @@
+{
+  "caseId": "S0264",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:39.212Z",
+  "reply": {
+    "text": "Knee soreness is one for a doctor or physio, not a coach, so I won't assess it or say what it means. Once they've cleared you, I'm happy to keep the training side going, and I can build around what they tell you to avoid. If you let me know what the clinician says, we can shape the hamstring-leaning work from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 217,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 103,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

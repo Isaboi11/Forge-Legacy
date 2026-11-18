@@ -1,0 +1,30 @@
+{
+  "caseId": "S0466",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:32.134Z",
+  "reply": {
+    "text": "I'm sorry your back is sore. That one needs a doctor or physio to look at, not a coach, so please get it checked if it's not settling. I can't tell you what the soreness means or how long it will last.\n\nOn the training side, I can make the program change for you. Tell me which session the rows are in and what you'd like them swapped to, and I'll set it up for you to confirm in the app.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 121,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

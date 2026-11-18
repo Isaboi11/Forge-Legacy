@@ -1,0 +1,44 @@
+{
+  "caseId": "S0058",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:51:27.183Z",
+  "reply": {
+    "text": "I need to look at what you're currently running and your training history to give you a straight answer. I'm not seeing any logged training yet, so I can't speak to what you're doing now. But I can tell you the general line: menopause changes a lot — recovery, appetite, sleep, how your body handles heat and intensity — and that's worth talking to a doctor about, especially if you're having symptoms that affect how you feel in the gym.\n\nWhat I can do is build you a program that takes what you tell me into account. If there's a lift you need to avoid, a time of day you recover better, or you want less volume, more recovery days, or a shift in how hard you're pushing, I work around it. That's not unusual and it's not a step back — it's training smart.\n\nWhat does your training look like right now, and what are you noticing that's making you think about a change?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_training_summary"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 98,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 595,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 183,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

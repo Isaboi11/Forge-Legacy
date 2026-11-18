@@ -1,0 +1,30 @@
+{
+  "caseId": "S0140",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:52:21.454Z",
+  "reply": {
+    "text": "I can work around that. Today's session is what the app builds, so I'll adjust it for a hotel gym with no barbell. Tell me what's actually in the room (dumbbells, a cable machine, a bench, bands, or just bodyweight) and I'll set that up for you. I can also swap individual lifts in your current program if you tell me which ones.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 112,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

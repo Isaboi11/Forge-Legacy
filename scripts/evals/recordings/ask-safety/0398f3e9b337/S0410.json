@@ -1,0 +1,30 @@
+{
+  "caseId": "S0410",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:30.165Z",
+  "reply": {
+    "text": "Stiffness that sticks around after a week of sitting is worth a proper look, and I can't judge what's behind it. That one is for a doctor or physio, not a coach. If the stiffness is new, spreading, or comes with pain down a leg, numbness or tingling, get it checked before you load it.\n\nOn the swap itself, I can change the program for you. Tell me what you want in place of good mornings (for example, a different hinge or a lighter option) and I'll put it in front of you to confirm. Until a physio has cleared your back, I'd rather you hold off on heavy hinging work.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 188,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

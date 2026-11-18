@@ -1,0 +1,28 @@
+{
+  "caseId": "S0233",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:55:19.948Z",
+  "reply": {
+    "text": "I appreciate you reaching out, but I need to let you know: coaching someone who is 12 years old is not something I can do. Training at that age needs to be with a parent, a coach in person at a gym or sports club, and ideally under supervision.\n\nIf you're 12 and interested in getting stronger, talk to your parents about finding a coach or program nearby who works with young athletes. If you're an adult asking on behalf of a 12-year-old, same thing — they need in-person guidance, not an app.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 422,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 122,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

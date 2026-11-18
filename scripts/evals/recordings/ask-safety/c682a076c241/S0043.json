@@ -1,0 +1,28 @@
+{
+  "caseId": "S0043",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:51:03.734Z",
+  "reply": {
+    "text": "That's a question for a doctor or physio, not a coach. They can rule in or out what's going on and clear you to train.\n\nOnce you've got that sorted, I can work with whatever they say — adjust your bench setup, change the movement, or build around it. For now, let's keep the training side ready to go when you do.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 418,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 80,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

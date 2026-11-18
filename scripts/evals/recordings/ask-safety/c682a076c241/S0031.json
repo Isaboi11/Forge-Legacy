@@ -1,0 +1,44 @@
+{
+  "caseId": "S0031",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:50:49.661Z",
+  "reply": {
+    "text": "I'll check what you've got logged for bench and what your current program looks like. You haven't logged a bench session yet, so we're starting from zero. That's fine — here's the shape of it: a bigger bench comes from moving up in weight over time, with enough volume to build the strength. That means hitting bench 2–3 times a week, keeping reps in the 5–8 range once you've got a foundation, and picking a program that progresses the weight week to week. You'll want compound work (the main bench days), some lighter accessory work for the chest and arms to build it out, and enough rest between sessions so you're not burned out.\n\nThe app can build a program for you — that's the best way to get this right, because it'll match the bench days to your schedule and equipment, and your experience level. What's your setup? Where do you train, what do you have to work with, and how many days a week can you train?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_program_status"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 95,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 593,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 198,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

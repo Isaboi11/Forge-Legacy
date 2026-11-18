@@ -1,0 +1,44 @@
+{
+  "caseId": "S0257",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:55:56.758Z",
+  "reply": {
+    "text": "I'll check what you've been training and your shoulder situation before we talk about this. I don't see any logged sessions yet, so I can't tell if you're in the middle of something. But I can tell you the sign: a week off is for recovery from overuse that training rest can fix — things like a dull soreness that gets worse through the week, or volume that's piled up faster than your body can keep up.\n\nIf your shoulder has pain — sharp, catching, or pain that doesn't improve with a day or two off training — that's different and needs a doctor or physio first. Once they clear it, we can build a plan around whatever they want you to avoid.\n\nWhich is this: overuse fatigue, or something that hurts?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 421,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 113,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 614,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 149,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

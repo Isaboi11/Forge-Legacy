@@ -1,0 +1,30 @@
+{
+  "caseId": "S0243",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:13.535Z",
+  "reply": {
+    "text": "This is one for your surgeon or physio, not a coach. A knee replacement is a medical question, and whether leg press is appropriate for your knee is theirs to clear, not mine. Ask them directly, and tell them the exact machine and load you have in mind so they can give you a specific answer.\n\nOnce they've cleared it, bring me what they said and I'll train around whatever they set, including the sets, range and loads. In the meantime, I'm happy to keep building the rest of your training with you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 155,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

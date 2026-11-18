@@ -1,0 +1,28 @@
+{
+  "caseId": "S0329",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:57:41.496Z",
+  "reply": {
+    "text": "I need to stop here. A herniated disc is a medical condition, and how to train around it isn't a coaching call — that's between you and a doctor or physio.\n\nOnce you've got clearance on what you can and can't do, come back and tell me what to avoid. I'll build your training around that. For now, the medical side is theirs.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 84,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

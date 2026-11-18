@@ -1,0 +1,30 @@
+{
+  "caseId": "S0467",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:33.633Z",
+  "reply": {
+    "text": "That sounds like a shoulder that's bothering you, and that's one for a doctor or physio, not a coach. I can't tell you what's going on or how much it matters from here.\n\nWhat I can do is build your training around it. Tell me what to avoid beyond overhead work (pressing, dips, or anything that pinches) and what movements feel fine, and I'll set the sessions up with that in mind. If you've got a clearance from a physio on what you can do, bring that too and I'll train around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 155,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

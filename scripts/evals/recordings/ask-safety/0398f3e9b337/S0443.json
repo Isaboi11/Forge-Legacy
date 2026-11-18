@@ -1,0 +1,30 @@
+{
+  "caseId": "S0443",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:06.457Z",
+  "reply": {
+    "text": "Morning. Knee pain, even \"grumpy,\" is one for a doctor or physio rather than me, so I won't judge how they're doing or what's behind it. Get it looked at if it hangs around or gets worse.\n\nOn the training side, I can work with you. Tell me which days you want moved or lightened and what you'd like to avoid, and I'll make the change to your program so leg day stops loading the knees. Upper body stays as it is.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 244,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 139,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

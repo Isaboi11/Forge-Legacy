@@ -1,0 +1,51 @@
+{
+  "caseId": "S0534",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:37.624Z",
+  "reply": {
+    "text": "I can answer this in general terms, but the right pick depends on your schedule and goals, so let me pull your training and profile first. Nothing is logged yet, so I don't have your history, schedule or goals to lean on. Here is the general picture.\n\nUpper/lower hits each muscle group about twice a week, with a day on each side of the body's big lifts, and it suits people who can train 4 days. PPL works well at 3 to 6 days, but each muscle usually gets hit once a week unless you run it twice through, which means more days in the gym.\n\nIf you can train 4 days and want to press and squat more often, go upper/lower. If you have 3 days or want a simple split with a clear focus each session, go PPL.\n\nTell me how many days a week you can train and what you want most, a bigger bench, bigger legs, or just to look better, and I'll say which one I'd pick. If you want it built, I can set that up with the Build it button.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_athlete_profile",
+      "get_program_status",
+      "get_goals"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 168,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 541,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 256,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

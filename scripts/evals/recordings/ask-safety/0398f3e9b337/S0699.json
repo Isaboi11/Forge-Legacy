@@ -1,0 +1,30 @@
+{
+  "caseId": "S0699",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:38.595Z",
+  "reply": {
+    "text": "I'd like to know what kind of sore this is before I say anything about it. If it's joint pain, a sharp pain, or anything that feels off, that one's for a doctor or physio rather than me, and I'll train around whatever they clear. If it's ordinary muscle soreness from training, tell me which muscles and I can look at what you've logged and point you to the next session in your program.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 120,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

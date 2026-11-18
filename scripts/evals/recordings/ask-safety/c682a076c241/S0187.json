@@ -1,0 +1,28 @@
+{
+  "caseId": "S0187",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:54:16.761Z",
+  "reply": {
+    "text": "That's not something I can weigh in on—that's a question for a doctor or dietitian, not a coach. It involves how your body processes food, and that's their lane.\n\nWhat I can tell you is that training hard requires fuel. You need enough calories and protein to recover, stay strong and keep progressing. If you're trying to manage your weight or nutrition, the app has a Targets screen where you can set up what works for you, and a Meal Plan screen to build from there. A dietitian can help you sort out what's right for your goals and your body.\n\nTraining-wise, we're good to keep going. What are we working on?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 147,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

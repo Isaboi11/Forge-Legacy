@@ -1,0 +1,49 @@
+{
+  "caseId": "S0623",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:21.819Z",
+  "reply": {
+    "text": "I like the goal. Before I say anything about how to get there, let me pull up your squat history so we're starting from your real numbers. Nothing is logged for squats yet, so I don't have a starting number to work from. That's fine, we can build one. Tell me your current best squat for a set of 5 or so, or a rep count at a weight you know, and I'll tell you what a realistic timeline looks like. Once you log your squats in the app, I can track the climb against that goal. A 50 lb gain is a real, multi-month project, so the way to get there is steady progress and consistent sessions, not one big push.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_goals"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 140,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 432,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 152,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

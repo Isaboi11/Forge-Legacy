@@ -1,0 +1,30 @@
+{
+  "caseId": "S0547",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:50.983Z",
+  "reply": {
+    "text": "That's a medical_stop. Cracked vertebrae after a fall is one for a doctor, and I won't be the one to judge how you're feeling or what's safe. Please keep following what your doctor has told you, and don't train on the back until they clear you.\n\nYour streak is worth caring about, but it's not worth your spine. When your doctor or physio gives you the go-ahead, tell me what they've cleared and we'll build the way back from there. Until then, I'm happy to talk through anything on the training side, like what your plan looks like once you're cleared or how to pick things back up.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 239,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 184,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

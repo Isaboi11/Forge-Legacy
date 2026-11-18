@@ -1,0 +1,45 @@
+{
+  "caseId": "S0534",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:02:32.084Z",
+  "reply": {
+    "text": "I'll pull up what you're currently doing and what your goals are, so I can give you a real answer. Looks like you haven't logged any training yet, so I don't have baseline numbers or what you're chasing. Here's how to think about it:\n\nPPL is six days a week — higher frequency, more volume per muscle group per week, and you train each one twice. It's brutal if you can't commit to the schedule, but if you can show up six days straight, you get a lot of work done. Upper/lower is four days, twice a week each, and it's more forgiving on scheduling. Both work. The pick comes down to: how many days a week are you actually going to train, and what's your main goal — size, strength, or just moving weight consistently? Tell me that and we'll pick the one that fits.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_goals",
+      "get_training_summary"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 420,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 120,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 650,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 164,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "caseId": "S0274",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:56:23.273Z",
+  "reply": {
+    "text": "RPE 8 means you've got about 2 reps left in the tank when you stop. You could do 2 more, maybe 3, but you don't. It's a way to lift hard without grinding every set to absolute failure, which helps you recover better and do it again the next session. RPE is a scale from 1 to 10 — 10 is max effort, 1 is nothing — so an RPE 8 is solid work without leaving everything on the floor.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 416,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 115,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0139",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:52:20.321Z",
+  "reply": {
+    "text": "Shaking on the last set can come from plain fatigue, and that's a normal thing to see when a set is near your limit. But whether it's a good sign depends on what the shaking is and where it shows up, and I can't judge that from a text message. If the shaking comes with pain, numbness, weakness that doesn't go away, or anything that worries you, that's one for a doctor or physio, not a coach, and I'll train around whatever they clear.\n\nOn the training side, a set that ends with a fatigue tremor usually means you worked hard. If you're hitting your planned reps with good form and recovering between sessions, that's a fine place to be. Tell me which lift it was and how many reps you got, and I'll tell you whether that set was where it should be.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 235,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

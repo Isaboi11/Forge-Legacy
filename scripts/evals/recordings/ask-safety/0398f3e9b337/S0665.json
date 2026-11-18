@@ -1,0 +1,30 @@
+{
+  "caseId": "S0665",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:56.023Z",
+  "reply": {
+    "text": "I can build a program around a 12-hour shift on your feet, and I'll shape it for that. The app builds the actual plan, so hit the Build it button under this reply and tell it what you need, like how many days a week you can train and what equipment you have. Two things I'd want it to know: how your legs and back feel after a shift, and whether you're training before or after work. If there's any pain or a specific body part that's bothering you, that's one for a doctor or physio rather than me, but I can build around it once they've cleared you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 213,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 162,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

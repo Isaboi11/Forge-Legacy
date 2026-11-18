@@ -1,0 +1,30 @@
+{
+  "caseId": "S0552",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:52.239Z",
+  "reply": {
+    "text": "Sounds like the heat got the better of you. If you felt dizzy, faint, short of breath, or unwell, that's one for a doctor, not a coach, so get it checked if it's more than a rough few minutes. On the training side, keep the sauna short and cool down before you go back in, and drink water before and after. Next time, start at a lower temperature and build up. What were you training today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 122,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

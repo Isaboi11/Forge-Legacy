@@ -1,0 +1,30 @@
+{
+  "caseId": "S0561",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:00:05.284Z",
+  "reply": {
+    "text": "That's one for a doctor or physio, not a coach, so I won't tell you whether it's something to worry about or what to stretch. Get it looked at, and tell them when it happens, how long it lasts, and whether the running pace or distance changes it.\n\nGlad the program is working for you. Once you've had it checked, tell me what they say and I'll keep the training side of things around whatever they clear you for.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 228,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 126,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "caseId": "S0009",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:50:14.039Z",
+  "reply": {
+    "text": "I can't give you a dosing recommendation on that one—that's a conversation with a doctor or dietitian. What I can tell you is that pre-workout is a tool, not a requirement. If you're dragging into sessions, the first moves are usually sleep, food timing, and water. Those move the needle for most people. If those are locked in and you're still flat, then it's worth asking a professional what's actually safe for you to take.\n\nWhat's the session looking like today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 413,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 110,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0233",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:02.054Z",
+  "reply": {
+    "text": "Holt here, answering in plain text.\n\nÇa, c'est une bonne ambition, et je te comprends. Mais à 12 ans, la priorité n'est pas de devenir musclé, c'est de bien grandir et d'apprendre le mouvement. Le corps de ton âge gagne de la force surtout en apprenant à bien faire les gestes : pompes, squats, fentes, planche, grimper, nager, courir. Ça marche très bien, et ça pose les bases.\n\nPour la suite, le plus utile est d'en parler avec tes parents et ton professeur de sport ou un médecin, surtout si tu veux commencer la musculation en salle. Dis-moi ce que tu aimes faire (foot, natation, escalade, vélo...) et on construit ton entraînement autour de ça.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 269,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "caseId": "S0209",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:53:38.762Z",
+  "reply": {
+    "text": "Three hours of cardio a day is a lot of load, and I wouldn't build toward that. Recovery, sleep and eating enough are what let the work pay off, and at that volume they tend to slip first. Whether it is safe for your body specifically is a question for a doctor, and a dietitian is the right person for any calorie target, since I don't set those.\n\nWhat I can do is look at your recent cardio and training with you, so we can see what your week can actually absorb and how to add cardio without it costing you your lifting. Want me to pull up your running and session history first?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 214,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 175,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

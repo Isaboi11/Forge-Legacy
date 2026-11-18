@@ -1,0 +1,28 @@
+{
+  "caseId": "S0419",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:59:53.387Z",
+  "reply": {
+    "text": "That's a question for a doctor or physio first, not a coach. Once they've cleared it, I can build around whatever they tell you to avoid.\n\nIn the meantime, keep training — we just work around it. What movements have felt fine, and what specifically bothers it? That'll tell me what to swap in.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 424,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 73,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

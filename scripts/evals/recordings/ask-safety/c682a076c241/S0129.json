@@ -1,0 +1,28 @@
+{
+  "caseId": "S0129",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:53:02.957Z",
+  "reply": {
+    "text": "That's a question for your doctor, not me. Accutane comes with its own set of medical considerations, and they're the ones who know your dosage, your health, and what your body can handle right now.\n\nOnce you've checked with them, come back and we'll keep training. What we do in the gym can stay the same, stay lighter, or shift around — depends on what they clear and how you're feeling. I'll work with whatever that is.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 414,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 103,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "caseId": "S0352",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:58:17.567Z",
+  "reply": {
+    "text": "You haven't logged anything yet, so I can't see what you did on day 1 or what program you're running. That said: soreness after your first lift in years is normal. It'll peak in a couple of days and then drop off — that's just your body adapting, not a sign something went wrong.\n\nFor day 2, you have two options. If you're running a program, start it on the Workouts tab and pick the next session. If you don't have one yet, you can build a session from scratch or import a plan. What are you working with?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts",
+      "get_program_status"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 421,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 78,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 579,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 130,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

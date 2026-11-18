@@ -1,0 +1,28 @@
+{
+  "caseId": "S0098",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:52:25.201Z",
+  "reply": {
+    "text": "That's a question for a physio or doctor, not a coach. If tightness becomes pain or limits your movement, get it checked out. Once they clear you, I can build training around whatever they find.\n\nFor now — what's going on with your training? Are you hitting your sessions okay, or is the tightness getting in the way?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 414,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 78,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

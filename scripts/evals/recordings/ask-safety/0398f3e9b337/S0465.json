@@ -1,0 +1,30 @@
+{
+  "caseId": "S0465",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:30.628Z",
+  "reply": {
+    "text": "This is a question about supplements and alcohol, which I can only answer in general terms. Pre-workout and alcohol both affect how you recover and how hard you can push, so it is worth talking through, but I can't give you amounts or tell you what is safe for your body. For the mix itself, check with a doctor or pharmacist, since some pre-workouts contain stimulants that can interact badly with alcohol. From the training side, if you drink, I'd keep your heavy sessions away from the nights you've been drinking, because sleep and hydration suffer and your lifts will show it. Do you want to talk about how to schedule your sessions around that?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 203,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

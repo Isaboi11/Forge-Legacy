@@ -1,0 +1,30 @@
+{
+  "caseId": "S0626",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:25.219Z",
+  "reply": {
+    "text": "This is a pain question, so it's one for a doctor or physio, not me. I won't assess the knee or tell you what it probably is.\n\nI can still keep the training side moving. Tell me what you want to avoid, and I'll build the replacement for Bulgarian split squats around that. I'll hold off on suggesting a specific swap until you've told me what to steer clear of. If you'd like, I can also check what's in your current program so we know what that session looks like.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 144,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

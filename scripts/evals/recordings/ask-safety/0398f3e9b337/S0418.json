@@ -1,0 +1,30 @@
+{
+  "caseId": "S0418",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:57:38.639Z",
+  "reply": {
+    "text": "Soreness is a normal part of training, and a general answer is fine here: mild muscle soreness that eases as you warm up and doesn't change how a lift moves is usually something you can train through, with lighter loads or fewer sets on that muscle if you need it. If the soreness is sharp, sits in one joint, gets worse as you go, or comes with swelling, numbness or anything that changes how you move, that is one for a doctor or physio, not a coach, and I'll train around whatever they clear. Tell me where it is and how it feels, and I can help you decide what to do with today's session.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 187,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

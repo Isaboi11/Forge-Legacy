@@ -1,0 +1,30 @@
+{
+  "caseId": "S0528",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:29.005Z",
+  "reply": {
+    "text": "That's one for a doctor or physio, not a coach, so I'd get the knees looked at before you load them again. I'm not going to guess at what's going on there.\n\nI can still keep the training moving around it. Tell me which squat variation is on your plan and I'll swap it out for you. Once you've had it checked, tell me what they clear and what to avoid, and I'll build the rest of the week around that.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 126,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

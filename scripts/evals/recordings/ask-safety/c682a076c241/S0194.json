@@ -1,0 +1,28 @@
+{
+  "caseId": "S0194",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:54:26.644Z",
+  "reply": {
+    "text": "I need to stop here. Pain, injury, or anything about whether you need medical care—that's not a coaching call, that's a doctor or physio call. I can't assess that.\n\nWhat I can do: once they clear you or tell you what to avoid, I'll build training around it. For now, get it looked at and come back with what they say.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 83,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

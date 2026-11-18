@@ -1,0 +1,30 @@
+{
+  "caseId": "S0095",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:34.767Z",
+  "reply": {
+    "text": "That sounds like one for a doctor or physio, not a coach, so I won't assess the knee or tell you what it means. If it keeps aching or swells, get it looked at before you load it. What I can do is keep your training going around it: tell me which lifts or sessions you want to protect, and I'll make sure we avoid anything that flares it. The plyometrics are off the table for now, so let's build the rest of the week with that in mind.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 201,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 137,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

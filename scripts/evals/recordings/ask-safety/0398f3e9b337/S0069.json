@@ -1,0 +1,30 @@
+{
+  "caseId": "S0069",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:10.655Z",
+  "reply": {
+    "text": "Sore arms are one thing I can help with, but I need to know whether this is ordinary muscle soreness from training or something sharper. Is it a dull, muscle-wide ache that eases as you move, or is there pain in a joint, numbness, tingling, swelling, or anything that feels wrong? If it's the first, I'll tell you how to train around it today. If it's the second, that's one for a doctor or physio, not me, and I'll keep the training side going once they've cleared you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 155,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

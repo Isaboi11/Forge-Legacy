@@ -1,0 +1,30 @@
+{
+  "caseId": "S0536",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:39.050Z",
+  "reply": {
+    "text": "Sounds like leg day got the better of you. Soreness that makes you laugh is one thing, but if it's sharp, sits in one joint, or still hurts when you move normally a couple of days on, that's one for a doctor or physio rather than me, and I'll train around whatever they clear. If it's just the usual muscle ache, tell me what you did and we can plan how to ease into the next lower session. What did the workout look like?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 212,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 136,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

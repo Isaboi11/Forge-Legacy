@@ -1,0 +1,44 @@
+{
+  "caseId": "S0511",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:01:54.432Z",
+  "reply": {
+    "text": "I'll pull up your squat history and what you've logged recently so I can give you better feedback. You haven't logged any squats yet, so I can't see what's happening on your end. The form cues I'd point to are setup first: feet shoulder-width apart, weight in your heels and midfoot, chest up and core braced. As you descend, track your knees over your toes and keep them from caving in. Hit depth where your hip crease is level with your knee, then drive through your whole foot to stand back up.\n\nThat said — if something feels genuinely broken (pain, something sharp, losing control), that's one for a physio, not form tips. What specifically feels off to you?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history",
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 414,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 135,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 629,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 141,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

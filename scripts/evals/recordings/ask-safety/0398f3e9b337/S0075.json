@@ -1,0 +1,49 @@
+{
+  "caseId": "S0075",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:51:15.647Z",
+  "reply": {
+    "text": "Pikes Peak is a big day, and I'd like to know what your legs and your program look like before I answer. Let me pull up your program status and recent workouts. Nothing is logged for your program or your last week of workouts, so I can't see what legs you'd be taking into tomorrow. Here is my general take. A long hike at altitude is a lot of work for the quads and calves, and it is a lot of work for the lungs and the whole body, so a heavy leg session the day before will leave you stiff and flat on the trail. If today's session is a heavy squat or deadlift day, I'd skip it or cut it to light, easy work with plenty of rest between sets. If it's a light day, a short easy session is fine.\n\nTell me what you had planned for legs today, and I'll give you a straighter answer. And if you'd like, I can also walk you through getting ready for the altitude itself.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "get_recent_workouts"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 216,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 127,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 430,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 231,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

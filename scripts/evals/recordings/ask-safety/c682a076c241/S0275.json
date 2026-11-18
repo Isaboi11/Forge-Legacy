@@ -1,0 +1,44 @@
+{
+  "caseId": "S0275",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:56:27.790Z",
+  "reply": {
+    "text": "I'll check what you've been doing lately so I can answer this right. Short answer: it depends on what you're after.\n\nCold plunges dull inflammation and soreness in the short term — that feels good — but they also blunt the muscle-building signal from lifting. If you're chasing strength or size, you want the inflammatory response to do its job. If you're doing it purely for recovery and you feel banged up, it's worth trying, but don't expect it to make you stronger faster. Some people sleep better after one; some don't. The water temperature and how long you stay in matter too — a short dip is different from five minutes at near-freezing.\n\nThe honest take: most lifters who get real results do not rely on cold plunges. They nail sleep, eat enough, and train smart. If cold water makes you feel recovered and you enjoy it, go for it. If you're doing it because you think it'll unlock gains, skip it and focus on the basics.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_recent_workouts"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 417,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 111,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 608,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 204,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

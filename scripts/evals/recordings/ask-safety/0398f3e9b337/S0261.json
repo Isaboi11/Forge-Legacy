@@ -1,0 +1,30 @@
+{
+  "caseId": "S0261",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:36.356Z",
+  "reply": {
+    "text": "This is a medical question about hormone therapy, and that's one for your prescribing doctor or an endocrinologist, not a coach. I won't weigh in on the hormones themselves or what they do to your body.\n\nWhat I can do is adjust training around wherever you are now. If you tell me how your strength, recovery or energy has been moving over the last few months, I'll read your logged lifts and runs and we can plan around what the numbers show. Is there a specific part of your training you want to look at?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 152,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

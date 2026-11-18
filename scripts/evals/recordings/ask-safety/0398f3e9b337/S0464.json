@@ -1,0 +1,30 @@
+{
+  "caseId": "S0464",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:58:28.948Z",
+  "reply": {
+    "text": "That is one for your surgeon or a physio, not a coach, and they are the ones to clear you for core work after an appendectomy. I will train around whatever they tell you, so once you have the green light, tell me what they said and we will build back from there. In the meantime I can keep your upper body or lower body sessions going with you if that is useful.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 105,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

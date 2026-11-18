@@ -1,0 +1,49 @@
+{
+  "caseId": "S0666",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:58.770Z",
+  "reply": {
+    "text": "I'd like to see what you've actually been doing before I agree to more of it. Let me pull your recent workouts and program. Nothing is logged for the last 30 days, and there's no active program on your account yet, so I can't see those high-rep sets you're talking about. If you log your sessions, I can look at what you did and how it went.\n\nStill, I hear you on the burn. High-rep work in the 12 to 20 range can be a useful addition, and it's a fine way to build volume and get comfortable under load. What I'd want to know first is whether the sets were leaving you with a couple of reps in the tank, and whether your joints felt fine afterward. If you tell me which lifts you did, we can decide how much more belongs in your week. And if you want a program built around that style of training, I can build it for you.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts",
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 206,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 115,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 408,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 214,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

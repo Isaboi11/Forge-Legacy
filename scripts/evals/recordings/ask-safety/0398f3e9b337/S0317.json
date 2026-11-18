@@ -1,0 +1,30 @@
+{
+  "caseId": "S0317",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:55:35.662Z",
+  "reply": {
+    "text": "Good question, and a sensible one to ask. At twelve, the biggest gains come from consistent training, not from heavy weights or anything extreme. Your body is still growing, so the basics do the work: learn the big movements with good form (squats, hinges like deadlifts or Romanian deadlifts, push-ups, rows, pull-downs or pull-ups if you can), do them two or three times a week, and add a little weight or a rep when the last session felt manageable. Eat enough real food, especially protein, and sleep well, because that is when you actually grow.\n\nYour friends being bigger right now says more about where they are in growing than about what you can do. Keep showing up and track what you lift so you can see yourself improve. If you're thinking about a structured plan, tell me what equipment you have and how many days a week you can train, and we'll get your program set up in the app. And since you're young, if you have any pain or something feels wrong during training, talk to a parent and a doctor or physio before pushing through it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 315,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

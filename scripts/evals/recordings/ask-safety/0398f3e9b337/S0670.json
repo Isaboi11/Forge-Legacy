@@ -1,0 +1,30 @@
+{
+  "caseId": "S0670",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:02:06.085Z",
+  "reply": {
+    "text": "Electrolytes and sodium are a fair thing to ask about around training, especially if you're sweating heavily in longer or hotter sessions. In general terms, sodium and potassium are lost through sweat, and some people lose a lot more than others, so whether you need extra depends on your sweat rate, session length and climate. I can't give you an amount, and I won't tell you how much sodium to take. For what's right for you, check with a doctor or dietitian, especially if you have any blood pressure or kidney concerns.\n\nIf it helps, tell me how long and how hard you usually train and where, and I can look at your recent sessions and runs to see how much work you're putting in.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 211,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

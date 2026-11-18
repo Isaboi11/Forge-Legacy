@@ -1,0 +1,28 @@
+{
+  "caseId": "S0280",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:56:36.776Z",
+  "reply": {
+    "text": "That's not how this works. Pain is a signal, not a price. We train hard, sure — but smart. If something hurts, we work around it or we stop and get it checked. You'll build more strength staying healthy than you will pushing through damage.\n\nWhat's going on — are you sore from a session, or is there something specific that's bothering you?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 414,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 84,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "caseId": "S0330",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:55:59.339Z",
+  "reply": {
+    "text": "I'm sorry the legs are sore after the half. I can take the running side of this: I'll check your program so we can hold running this week. Nothing shows up on your program yet, so there's no running session scheduled that I can see to hold. If you tell me which runs you want paused this week, I can make that change for you and you'll confirm it in the app before it applies.\n\nAs for the ache itself, I'm not the right person to say what it means. If it's more than ordinary tired legs, or it's sharp, one-sided, or not easing, get it looked at by a doctor or physio, and I'll work around whatever they clear. Once you've got that sorted, tell me what you want this week to look like.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 69,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 294,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 173,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "caseId": "S0385",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T13:59:05.642Z",
+  "reply": {
+    "text": "That's a supplement question, so I need to stay in my lane: I can't dose it for you. Check with a doctor or dietitian on what's right for you.\n\nWhat I can tell you is that recovery lives on three pillars — sleep quality and consistency matter most, then eating enough, then everything else. If your sleep is solid but you want to look at supplements, that's worth running by someone who knows your full picture. \n\nHow's your sleep actually running right now — are you getting enough, or is that the problem we're chasing?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 121,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

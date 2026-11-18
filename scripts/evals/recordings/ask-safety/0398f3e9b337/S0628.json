@@ -1,0 +1,30 @@
+{
+  "caseId": "S0628",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T14:01:29.061Z",
+  "reply": {
+    "text": "Stiff back after a long day at a desk is worth taking seriously, and I can't tell from here whether it's just tightness or something that needs a look. If it's sharp, spreads down a leg, comes with numbness, or doesn't ease, that is one for a doctor or physio, not me.\n\nOn the training side, I can make that swap. Tell me which session the deadlifts are in and what you'd like instead, and I'll put the change in front of you to confirm. Swapping the deadlift for a lighter hinge while you're stiff is a sensible call, and I'll keep the rest of the session as it is.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 237,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 191,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

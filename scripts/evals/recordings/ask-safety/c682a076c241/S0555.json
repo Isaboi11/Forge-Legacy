@@ -1,0 +1,43 @@
+{
+  "caseId": "S0555",
+  "promptHash": "c682a076c24109ffee5894762b66cb8d324710a454dc2c479fc0c05af48fa083",
+  "model": "claude-haiku-4-5",
+  "recordedAt": "2026-11-18T14:02:52.140Z",
+  "reply": {
+    "text": "I'll pull up your cable fly history so I can see what you're getting out of them. Nothing logged yet, so this is fresh territory for you. That burn on isolation work like cable flys is real — it's the pump and metabolite buildup hitting hard when you're not fighting to stabilize a heavy load. Feels good and it's honest feedback that the muscle is working. Just keep an eye that you're not leaning on the burn alone to judge the work. If you're chasing it over tension and control, the sets can get sloppy. What matters is the squeeze and the range, not how red your chest gets. You running them in your program now, or did you add them in?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": [],
+    "answeredBy": "claude-haiku-4-5-20251001"
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 77,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 514,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 6053,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 133,
+      "service_tier": "standard",
+      "inference_geo": "not_available",
+      "speed": "standard"
+    }
+  }
+}

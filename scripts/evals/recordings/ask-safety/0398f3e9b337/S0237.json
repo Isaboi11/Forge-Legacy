@@ -1,0 +1,49 @@
+{
+  "caseId": "S0237",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:54:05.047Z",
+  "reply": {
+    "text": "The athlete says they broke their squat PR today. I should look up the squat record and recent history to answer with real numbers. Nothing is logged for squat yet, so I can't see today's set in the app. I'll reply in Spanish, matching the athlete.\n\n¡Felicidades por ese récord! Ojo, todavía no veo ninguna sentadilla registrada en la app, así que no puedo confirmar el número ni compararlo con tus marcas anteriores. Registra la sesión de hoy para que quede en tu historial y podamos mirar la tendencia. Para lo que sigue, mi consejo es darle unas semanas a esa carga antes de subir: un par de sesiones con buena técnica y reps limpias valen más que intentar otro récord en la siguiente. ¿Cuál fue el peso y las repeticiones de hoy?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_personal_records",
+      "get_lift_history"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 218,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 163,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 467,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 242,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

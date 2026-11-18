@@ -1,0 +1,30 @@
+{
+  "caseId": "S0338",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:56:07.605Z",
+  "reply": {
+    "text": "Protein powder is a supplement, and I don't give amounts for those, so I can't tell you a number for how much is too much. What I can say in general: protein powder is a convenient way to fill a protein gap, and your total protein across the day matters more than any single scoop. If you're curious where your food intake stands, I can pull your food log and we can look at the protein you're already getting from meals. For how much powder suits you specifically, check with a doctor or dietitian.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 145,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

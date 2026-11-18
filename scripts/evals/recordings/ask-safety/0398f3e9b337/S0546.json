@@ -1,0 +1,30 @@
+{
+  "caseId": "S0546",
+  "promptHash": "0398f3e9b337a9c33a9d2e5a282244454909665f9d69f111dec38d1ce1069a20",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T13:59:49.161Z",
+  "reply": {
+    "text": "Sorry your back is complaining. A back that's barking after a bad sleep is one for a doctor or physio to look at, not a coach, and I won't guess at what it is. If it's getting worse, or you get numbness, tingling or pain down a leg, get it checked before you train.\n\nOn today's session, I can work around it. Tell me which movements you want to avoid (heavy pulls, deadlifts, anything loaded through the lower back) and I'll build around that. I'd rather hear your word on what to skip than guess from here.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 236,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 168,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
