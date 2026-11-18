@@ -105,8 +105,8 @@ test('the sheet: interpret retired, every action through actOn with the turn’s
   assert.ok(!ask.slice(ask.indexOf("case 'refused':")).includes('actOn('));
   // A card from before a reload is never restored waiting for Confirm.
   assert.match(SHEET, /withoutHeldCards\(withoutStaleHome\(stored\)\)/);
-  // caps on every coach-ask body.
-  assert.match(fs.readFileSync(path.join(process.cwd(), 'src/data/coach-ask-live.ts'), 'utf8'), /caps: \[HOLT_ACTION_CAPS\],/);
+  // caps on every coach-ask body (+ memory_v1 since Sprint 4b).
+  assert.match(fs.readFileSync(path.join(process.cwd(), 'src/data/coach-ask-live.ts'), 'utf8'), /caps: \[HOLT_ACTION_CAPS, HOLT_MEMORY_CAPS\],/);
 });
 
 test('mid-build, a build that names nothing is dropped (the question comes back) — never a fresh build door', () => {

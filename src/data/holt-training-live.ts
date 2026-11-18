@@ -1,5 +1,5 @@
 import { fetchRecentTraining } from '@/data/lift-history-live';
-import { fetchNotes } from '@/data/holt-notes-live';
+import { fetchBriefNotes } from '@/data/holt-notes-live';
 import { isTrainingQuestion, summarizeTraining } from '@/domain/coach/training-summary';
 import { isNutritionQuestion } from '@/domain/nutrition/holt-summary';
 import { fetchNutritionSummary } from '@/data/holt-nutrition-live';
@@ -37,7 +37,8 @@ export async function askBriefLive(
      ordinary question pays for neither, and a question about food does not drag the training summary
      along behind it. */
   const [notes, training, nutrition] = await Promise.all([
-    fetchNotes().catch(() => []),
+    /* Sprint 4b §1.4: none when the athlete switched Holt's memory off. */
+    fetchBriefNotes().catch(() => []),
     isTrainingQuestion(question) ? fetchTrainingSummary(units) : Promise.resolve(null),
     isNutritionQuestion(question) ? fetchNutritionSummary() : Promise.resolve(null),
   ]);

@@ -39,8 +39,10 @@ export interface HoltNote {
   text: string;
   /** ISO timestamp. */
   createdAt: string;
-  /** Where it came from ('ask', 'build-program', …). Shown to the athlete; never sent to the model. */
+  /** Where it came from ('ask', 'build-program', 'chat' — kept by the end-of-chat summary, Sprint 4b). Shown to the athlete; never sent to the model. */
   source: string | null;
+  /** What kind of fact (0278, Sprint 4b — `FACT_KINDS`). Null on notes kept before 0278, or before it is applied. */
+  kind: string | null;
 }
 
 export type SkipReason = 'duplicate' | 'cap' | 'invalid' | 'unavailable' | 'failed';
@@ -126,11 +128,16 @@ export interface NotesClient {
   };
 }
 
-const COLUMNS = 'id, text, created_at, source';
+const COLUMNS = 'id, text, created_at, source, kind';
+/** Before 0278 is applied there is no `kind` column, and naming it fails the whole read — so the read asks again without it. */
+const COLUMNS_BEFORE_0278 = 'id, text, created_at, source';
+/** PostgREST / Postgres codes for "that column is not there". */
+const MISSING_COLUMN = new Set(['42703', 'PGRST204']);
+export const isMissingColumn = (e: DbError): boolean => !!e && MISSING_COLUMN.has(String(e.code ?? ''));
 
-type Row = { id: string; text: string; created_at: string; source: string | null };
+type Row = { id: string; text: string; created_at: string; source: string | null; kind?: string | null };
 
-const toNote = (r: Row): HoltNote => ({ id: r.id, text: r.text, createdAt: r.created_at, source: r.source ?? null });
+const toNote = (r: Row): HoltNote => ({ id: r.id, text: r.text, createdAt: r.created_at, source: r.source ?? null, kind: typeof r.kind === 'string' ? r.kind : null });
 
 const rowsOf = (data: unknown): HoltNote[] =>
   Array.isArray(data)
@@ -150,12 +157,18 @@ export interface HoltNotesStore {
  */
 export function holtNotesStore(client: NotesClient, userId: () => Promise<string | null>): HoltNotesStore {
   const table = () => client.from('holt_notes');
+  /** The athlete's notes, oldest first — with `kind` once 0278 is there, without it before. */
+  const readAll = async (uid: string) => {
+    const first = await table().select(COLUMNS).eq('athlete_id', uid).order('created_at', { ascending: true });
+    if (!isMissingColumn(first.error)) return first;
+    return table().select(COLUMNS_BEFORE_0278).eq('athlete_id', uid).order('created_at', { ascending: true });
+  };
 
   async function fetchNotes(): Promise<HoltNote[]> {
     try {
       const uid = await userId();
       if (!uid) return [];
-      const { data, error } = await table().select(COLUMNS).eq('athlete_id', uid).order('created_at', { ascending: true });
+      const { data, error } = await readAll(uid);
       if (error) return [];
       return rowsOf(data);
     } catch {
@@ -169,7 +182,7 @@ export function holtNotesStore(client: NotesClient, userId: () => Promise<string
       const uid = await userId();
       if (!uid) return { added: [], skipped: all('unavailable', texts) };
 
-      const { data, error } = await table().select(COLUMNS).eq('athlete_id', uid).order('created_at', { ascending: true });
+      const { data, error } = await readAll(uid);
       if (error) return { added: [], skipped: all(isMissingTable(error) ? 'unavailable' : 'failed', texts) };
 
       const plan = planAdd(
@@ -181,7 +194,7 @@ export function holtNotesStore(client: NotesClient, userId: () => Promise<string
       const cleanSource = typeof source === 'string' && source.trim() ? source.trim().slice(0, 40) : null;
       const res = await table()
         .insert(plan.insert.map((text) => ({ text, source: cleanSource })))
-        .select(COLUMNS);
+        .select(COLUMNS_BEFORE_0278);
       if (res.error) {
         const reason: SkipReason = isCapError(res.error) ? 'cap' : isMissingTable(res.error) ? 'unavailable' : 'failed';
         return { added: [], skipped: [...plan.skipped, ...all(reason, plan.insert)] };

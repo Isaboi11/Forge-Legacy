@@ -9,6 +9,8 @@ import { Button } from '@/components/forge/composites/Button';
 import { ConfirmSheet } from '@/components/forge/composites/ConfirmSheet/ConfirmSheet';
 import { InputField } from '@/components/forge/composites/InputField';
 import { useKeyboardPrimer } from '@/components/forge/KeyboardPrimer';
+import { SettingsToggle } from '@/components/forge/SettingsToggle';
+import { EngravedIcon } from '@/components/forge/primitives/icons/EngravedIcon';
 import { ScreenBackground } from '@/components/screen-background';
 import { SCREEN_BG } from '@/constants/backgrounds';
 import { flColor, flRadius } from '@/constants/foundation';
@@ -22,12 +24,25 @@ import {
   type HoltNote,
 } from '@/data/holt-notes-live';
 import { deleteChatSummary, fetchChatSummaries, type ChatSummary } from '@/data/holt-chats-live';
+import { forgetEverything, getRemembers, markMemorySeen, readMemorySeen, setRemembers } from '@/data/holt-memory-live';
 import { useToast } from '@/hooks/useCeremony';
 import { useCoachDoor } from '@/hooks/useCoachDoor';
 import { TYPING_ENABLED } from '@/domain/coach/chat-core';
+import { PAST_CHATS_ROUTE } from '@/domain/coach/holt-memory';
+import { FORGET_COPY, FULL_LINE, groupNotes, isFull, noteOrigin, SWITCH_COPY } from '@/domain/coach/holt-memory-screen';
 import { countOf } from '@/domain/text/plural';
+import { track } from '@/lib/analytics';
 import { usePremiumAi } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
+
+/** When this screen was last seen, read BEFORE this visit is recorded — so this visit's "New" marks survive it. */
+async function seenBeforeThisVisit(): Promise<string | null> {
+  const before = await readMemorySeen();
+  await markMemorySeen();
+  return before;
+}
+
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
 /**
  * What Holt Remembers (`/holt-memory`) — Settings → Training.
@@ -41,14 +56,19 @@ import { useQuery } from '@/lib/useQuery';
  * chats, which he reads back only when a question needs it. Same rule — every one is listed, and Delete
  * makes him forget that chat.
  *
+ * SPRINT 4b "HOLT REMEMBERS YOU" (Docs/AI-Sprint-4b-Build-Notes.md §1.3, §1.4 — PO 2026-11-18: remembers by
+ * default, with an off switch; everything visible and deletable):
+ *   · THE SWITCH, on by default. Off = Holt keeps nothing new and reads nothing old (the server enforces it too);
+ *     what is already kept stays here until deleted, and the screen says so.
+ *   · Facts kept from a chat (`source: 'chat'`) are GROUPED by kind (0278) and marked "New · from a chat on <date>"
+ *     until the athlete has looked. At 20 the screen says it is full.
+ *   · Past chats (lane B's `/holt-chats`) and Forget everything (one confirm).
+ *
  * ⚠ NO ADD PATH, ON PURPOSE. Notes come from what the athlete tells Holt in a conversation; this screen
  *   is the audit and the undo, not a second place to write them.
  *
- * ⚠ BEFORE 0204 IS APPLIED the read returns [] quietly and this shows the empty state — true, since
- *   Holt remembers nothing until the table exists.
- *
  * Both themes: every colour is a ROLE token from `foundation`, and the background is `ScreenBackground`,
- * which flips its scrim for Alabaster. Nothing here picks a literal colour.
+ * which flips its scrim for Alabaster. Nothing here picks a literal colour. Icons are the engraved set.
  */
 export default function HoltMemoryRoute() {
   const router = useRouter();
@@ -56,7 +76,12 @@ export default function HoltMemoryRoute() {
   const { showToast } = useToast();
   const { data, loading, refetch } = useQuery(fetchNotes, []);
   const chats = useQuery(fetchChatSummaries, []);
+  const remembersRead = useQuery(getRemembers, []);
+  const seen = useQuery(seenBeforeThisVisit, []);
   const [confirmChat, setConfirmChat] = useState<ChatSummary | null>(null);
+  const [confirmForget, setConfirmForget] = useState(false);
+  /** The switch as the athlete just set it, ahead of the read (null = what was read). */
+  const [remembersSet, setRemembersSet] = useState<boolean | null>(null);
 
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [confirm, setConfirm] = useState<HoltNote | null>(null);
@@ -81,9 +106,26 @@ export default function HoltMemoryRoute() {
   };
 
   const notes = data ?? [];
+  const groups = groupNotes(notes);
+  const full = isFull(notes.length, HOLT_NOTES_MAX);
+  const remembers = remembersSet ?? remembersRead.data ?? true;
   const draft = editing ? cleanNoteText(editing.text) : null;
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/account-settings'));
+
+  const flip = async (on: boolean) => {
+    if (busy) return;
+    setRemembersSet(on);
+    setBusy(true);
+    const ok = await setRemembers(on);
+    setBusy(false);
+    if (!ok) {
+      setRemembersSet(!on);
+      showToast('That didn’t save. Try again.');
+      return;
+    }
+    showToast(on ? 'Holt will remember what you tell him.' : 'Holt won’t keep or read anything now.');
+  };
 
   const save = async () => {
     if (!editing || !draft || busy) return;
@@ -107,6 +149,7 @@ export default function HoltMemoryRoute() {
       showToast('That didn’t delete. Try again.');
       return;
     }
+    track('holt_memory', { kind: 'fact_deleted' });
     if (editing?.id === note.id) setEditing(null);
     showToast('Holt has forgotten that.');
     await refetch();
@@ -125,7 +168,77 @@ export default function HoltMemoryRoute() {
     await chats.refetch();
   };
 
+  const forgetAll = async () => {
+    setConfirmForget(false);
+    setBusy(true);
+    const ok = await forgetEverything();
+    setBusy(false);
+    setEditing(null);
+    showToast(ok ? FORGET_COPY.done : FORGET_COPY.failed);
+    refetch();
+    chats.refetch();
+  };
+
   const pastChats = chats.data ?? [];
+
+  const noteRow = (n: HoltNote) => {
+    /* Once the last visit is read — before that nothing is marked, so nothing flickers from New to not. */
+    const origin = seen.settled ? noteOrigin(n, seen.data, shortDate) : null;
+    if (editing?.id === n.id) {
+      return (
+        <View key={n.id} style={styles.row}>
+          <InputField
+            value={editing.text}
+            onChange={(text) => setEditing({ id: n.id, text })}
+            maxLength={HOLT_NOTE_CHARS}
+            showCount
+            autoFocus
+            error={draft ? undefined : 'Between 2 and 80 characters.'}
+            accessibilityLabel="Edit note"
+            onSubmitEditing={() => void save()}
+          />
+          <View style={styles.editActions}>
+            <Button variant="secondary" size="md" onPress={() => setEditing(null)} accessibilityLabel="Cancel editing">
+              Cancel
+            </Button>
+            <Button disabled={!draft || busy} onPress={() => void save()} accessibilityLabel="Save note">
+              {busy ? 'Saving…' : 'Save'}
+            </Button>
+          </View>
+        </View>
+      );
+    }
+    return (
+      <View key={n.id} style={styles.row}>
+        <View accessible accessibilityLabel={origin ? `${n.text}. ${origin.line}.` : n.text}>
+          <Text style={styles.note}>{n.text}</Text>
+          {origin ? <Text style={[styles.origin, origin.isNew && styles.originNew]}>{origin.line}</Text> : null}
+        </View>
+        <View style={styles.rowActions}>
+          <Pressable
+            onPress={() => startEdit(n)}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit: ${n.text}`}
+            hitSlop={8}
+            style={({ pressed }) => (pressed || busy ? styles.pressed : null)}
+          >
+            <Text style={styles.edit}>Edit</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setConfirm(n)}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete: ${n.text}`}
+            hitSlop={8}
+            style={({ pressed }) => (pressed || busy ? styles.pressed : null)}
+          >
+            <Text style={styles.delete}>Delete</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <View style={styles.root}>
@@ -142,6 +255,15 @@ export default function HoltMemoryRoute() {
           he’ll forget it straight away.
         </Text>
 
+        {/* §1.4 — the switch, on by default. Its words say what off does AND what it does not. */}
+        <View style={styles.switchRow}>
+          <View style={styles.switchText}>
+            <Text style={styles.switchLabel}>{SWITCH_COPY.label}</Text>
+            <Text style={styles.switchSub}>{remembers ? SWITCH_COPY.on : SWITCH_COPY.off}</Text>
+          </View>
+          <SettingsToggle value={remembers} onChange={(on) => void flip(on)} accessibilityLabel={SWITCH_COPY.label} />
+        </View>
+
         {loading && notes.length === 0 ? (
           <View style={styles.center}>
             <ActivityIndicator color={flColor.bronze400} />
@@ -151,7 +273,7 @@ export default function HoltMemoryRoute() {
             <Text style={styles.emptyTitle}>Nothing yet.</Text>
             <Text style={styles.emptyText}>
               {canType
-                ? 'When you type something worth keeping to Holt — a lift you hate, the days you can train — it shows up here.'
+                ? 'When you tell Holt something worth keeping — a lift you hate, the days you can train — it shows up here.'
                 : 'Holt keeps notes from what you type to him, and typing to Holt comes with Premium AI. When you tap through with him, he works from your answers each time instead.'}
             </Text>
             <View style={styles.emptyAction}>
@@ -165,58 +287,15 @@ export default function HoltMemoryRoute() {
             <Text style={styles.count}>
               {notes.length} of {HOLT_NOTES_MAX}
             </Text>
-            <View style={styles.list}>
-              {notes.map((n) =>
-                editing?.id === n.id ? (
-                  <View key={n.id} style={styles.row}>
-                    <InputField
-                      value={editing.text}
-                      onChange={(text) => setEditing({ id: n.id, text })}
-                      maxLength={HOLT_NOTE_CHARS}
-                      showCount
-                      autoFocus
-                      error={draft ? undefined : 'Between 2 and 80 characters.'}
-                      accessibilityLabel="Edit note"
-                      onSubmitEditing={() => void save()}
-                    />
-                    <View style={styles.editActions}>
-                      <Button variant="secondary" size="md" onPress={() => setEditing(null)} accessibilityLabel="Cancel editing">
-                        Cancel
-                      </Button>
-                      <Button disabled={!draft || busy} onPress={() => void save()} accessibilityLabel="Save note">
-                        {busy ? 'Saving…' : 'Save'}
-                      </Button>
-                    </View>
-                  </View>
-                ) : (
-                  <View key={n.id} style={styles.row}>
-                    <Text style={styles.note}>{n.text}</Text>
-                    <View style={styles.rowActions}>
-                      <Pressable
-                        onPress={() => startEdit(n)}
-                        disabled={busy}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Edit: ${n.text}`}
-                        hitSlop={8}
-                        style={({ pressed }) => (pressed || busy ? styles.pressed : null)}
-                      >
-                        <Text style={styles.edit}>Edit</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => setConfirm(n)}
-                        disabled={busy}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Delete: ${n.text}`}
-                        hitSlop={8}
-                        style={({ pressed }) => (pressed || busy ? styles.pressed : null)}
-                      >
-                        <Text style={styles.delete}>Delete</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ),
-              )}
-            </View>
+            {full ? <Text style={styles.full}>{FULL_LINE}</Text> : null}
+            {groups.map((g) => (
+              <View key={g.kind} style={styles.group}>
+                <Text style={styles.groupHeading} accessibilityRole="header">
+                  {g.heading}
+                </Text>
+                <View style={styles.list}>{g.notes.map(noteRow)}</View>
+              </View>
+            ))}
           </>
         )}
 
@@ -231,7 +310,7 @@ export default function HoltMemoryRoute() {
             <View style={styles.list}>
               {pastChats.map((c) => (
                 <View key={c.id} style={styles.row}>
-                  <Text style={styles.date}>{new Date(c.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</Text>
+                  <Text style={styles.date}>{shortDate(c.createdAt)}</Text>
                   <Text style={styles.note}>{c.summary}</Text>
                   <View style={styles.rowActions}>
                     <Pressable
@@ -250,6 +329,31 @@ export default function HoltMemoryRoute() {
             </View>
           </>
         ) : null}
+
+        {/* §1.5 — the whole conversations (lane B's screen). */}
+        <Pressable
+          onPress={() => router.push(PAST_CHATS_ROUTE as Parameters<typeof router.push>[0])}
+          accessibilityRole="button"
+          accessibilityLabel="Past chats"
+          accessibilityHint="Browse, search and continue your earlier conversations with Holt"
+          style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}
+        >
+          <EngravedIcon name="history" size={18} />
+          <Text style={styles.linkText}>Past chats</Text>
+          <EngravedIcon name="chevron-right" size={15} color={flColor.gray600} />
+        </Pressable>
+
+        <Pressable
+          onPress={() => setConfirmForget(true)}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={FORGET_COPY.row}
+          accessibilityHint="Deletes every fact, chat note and past chat Holt kept"
+          style={({ pressed }) => [styles.linkRow, (pressed || busy) && styles.pressed]}
+        >
+          <EngravedIcon name="trash" size={18} color={flColor.redMuted} />
+          <Text style={[styles.linkText, styles.forgetText]}>{FORGET_COPY.row}</Text>
+        </Pressable>
       </ScrollView>
 
       <ConfirmSheet
@@ -274,6 +378,15 @@ export default function HoltMemoryRoute() {
           if (confirmChat) void forgetChat(confirmChat);
         }}
       />
+      <ConfirmSheet
+        open={confirmForget}
+        onClose={() => setConfirmForget(false)}
+        headline={FORGET_COPY.headline}
+        body={FORGET_COPY.body}
+        confirmLabel={FORGET_COPY.confirm}
+        cancelLabel="Keep it"
+        onConfirm={() => void forgetAll()}
+      />
     </View>
   );
 }
@@ -283,6 +396,20 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 18, paddingTop: 12, gap: 16 },
   lead: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
   center: { paddingVertical: 48, alignItems: 'center' },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.charcoal800,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  switchText: { flex: 1, gap: 4 },
+  switchLabel: { fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  switchSub: { fontSize: 12.5, lineHeight: 18, color: flColor.gray400 },
   empty: {
     paddingVertical: 28,
     paddingHorizontal: 20,
@@ -302,6 +429,9 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: flColor.labelInk,
   },
+  full: { fontSize: 13, lineHeight: 19, color: flColor.bronzeInk, marginTop: -8 },
+  group: { gap: 8 },
+  groupHeading: { fontSize: 13, fontWeight: '600', color: flColor.cream100 },
   list: { gap: 8 },
   row: {
     gap: 10,
@@ -313,10 +443,25 @@ const styles = StyleSheet.create({
     borderColor: flColor.charcoal600,
   },
   note: { fontSize: 15, lineHeight: 21, color: flColor.cream100 },
+  origin: { marginTop: 4, fontSize: 11.5, color: flColor.gray400 },
+  originNew: { fontWeight: '600', color: flColor.bronzeInk },
   date: { fontSize: 11, fontWeight: '600', letterSpacing: 0.6, color: flColor.gray400 },
   rowActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 20 },
   edit: { fontSize: 13, fontWeight: '600', color: flColor.bronzeInk },
   delete: { fontSize: 13, fontWeight: '600', color: flColor.redMuted },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: flRadius.md,
+    backgroundColor: flColor.charcoal800,
+    borderWidth: 1,
+    borderColor: flColor.charcoal600,
+  },
+  linkText: { flex: 1, fontSize: 15, fontWeight: '600', color: flColor.cream100 },
+  forgetText: { color: flColor.redMuted },
   pressed: { opacity: 0.6 },
   editActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
 });

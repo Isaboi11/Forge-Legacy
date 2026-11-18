@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { holtNotesStore, type NotesClient } from '@/domain/coach/holt-notes';
+import { holtNotesStore, type HoltNote, type NotesClient } from '@/domain/coach/holt-notes';
+import { getRemembers } from '@/data/holt-memory-live';
 
 export type { AddNotesResult, HoltNote, SkipReason } from '@/domain/coach/holt-notes';
 export { HOLT_NOTES_MAX, HOLT_NOTE_CHARS, HOLT_NOTE_MIN, cleanNoteText } from '@/domain/coach/holt-notes';
@@ -31,3 +32,13 @@ export const fetchNotes = store.fetchNotes;
 export const addNotes = store.addNotes;
 export const updateNote = store.updateNote;
 export const deleteNote = store.deleteNote;
+
+/**
+ * The notes as the BRIEF sends them to Holt (every ask, the builder's coach-author write): `fetchNotes`, unless the
+ * athlete switched memory off (Sprint 4b §1.4) — then none. What Holt Remembers still lists them all: off means Holt
+ * reads nothing old, not that the athlete cannot see or delete what is kept.
+ */
+export async function fetchBriefNotes(): Promise<HoltNote[]> {
+  if (!(await getRemembers())) return [];
+  return fetchNotes();
+}
