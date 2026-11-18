@@ -18,6 +18,10 @@ import { KITCHEN_OUTPUT_CAP, KITCHEN_SCHEMA, kitchenFromModelText, kitchenUserTu
 import { KITCHEN_FOODS } from '../../../src/domain/nutrition/kitchen-foods.ts';
 import { FUNCTION_KNOBS, callAnthropic, knobsFor, templateOf } from '../lib/suite-kit.mjs';
 
+/** A word that gives its allergen away only when NOT followed by these letters. PO 11-18: "creamy" on its own is not
+ * dairy (a creamy avocado pasta has none) — cream, creams and creamed still are. */
+const NOT_BEFORE = { cream: 'y' };
+
 /** allergen → words that give it away in a dish line. Written for this suite, not copied from the filter. */
 export const INDEPENDENT = {
   peanuts: ['peanut', 'groundnut', 'satay', 'goober'],
@@ -58,7 +62,7 @@ const dish = (lines) => ({
 /** The allergens an ingredient list names, by the independent list. */
 export function leaksIn(d, avoid) {
   const text = [d.name, ...(d.ingredients ?? []).map((i) => `${i.text ?? ''} ${i.food ?? ''}`)].join(' ').toLowerCase();
-  return avoid.filter((a) => (INDEPENDENT[a] ?? []).some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(text)));
+  return avoid.filter((a) => (INDEPENDENT[a] ?? []).some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${NOT_BEFORE[w] ? `(?!${NOT_BEFORE[w]})` : ''}`, 'i').test(text)));
 }
 
 export const suite = {
