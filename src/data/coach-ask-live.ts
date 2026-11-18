@@ -24,6 +24,7 @@ import {
   type AskSettled,
 } from '@/domain/coach/ask-stream';
 import { elapsedMs, reportAiFailure } from '@/lib/ai-telemetry';
+import { WEB_SEARCH_ACTION, webSearchCostFrom } from '@/domain/coach/chat-basics';
 import type { AskSources } from '@/domain/coach/ask-context';
 import type { RecipeCard } from '@/domain/coach/ask-tools';
 import { catalogForMatching } from '@/domain/exercise-picker/data';
@@ -273,4 +274,18 @@ export function askSourcesLive(): AskSources {
     };
   }
   return sources;
+}
+
+/**
+ * What a web search costs, from the server, WITHOUT spending (`coach_ai_quote`, 0221 — the weight in
+ * `coach_ai_config.action_credits`, which the app cannot read itself since 0267). For "Find one online · 2 credits"
+ * (CH-6, Sprint 3b). ⚠ FAILS TO NULL, never to a number of its own: the chip then reads as it always has.
+ */
+export async function fetchWebSearchCost(): Promise<number | null> {
+  try {
+    const { data, error } = await supabase.rpc('coach_ai_quote', { p_action: WEB_SEARCH_ACTION });
+    return error ? null : webSearchCostFrom(data);
+  } catch {
+    return null;
+  }
 }

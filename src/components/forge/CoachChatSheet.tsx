@@ -49,11 +49,11 @@ import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
-import { streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
+import { fetchWebSearchCost, streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
-import { afterStop, askEndedWell, askEndResult, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
+import { afterStop, askEndedWell, askEndResult, askToolsUsed, lastReplySid, questionOf, withCreditCost, withoutReply } from '@/domain/coach/chat-basics';
 import { overCeilingLine, typedBlock, typedBlockLine, typedOverCeiling } from '@/domain/coach/typed-block';
 import { track } from '@/lib/analytics';
 import { NOT_CHARGED } from '@/domain/ai/ai-failure';
@@ -322,6 +322,23 @@ export function CoachChatSheet({
   const nutritionAccess = useNutritionAccess();
   const { units } = useUnits();
   const canType = TYPING_ENABLED || premiumAi;
+  /*
+   * CH-6 (Sprint 3b): what a web search costs, read from the SERVER once per sheet (`coach_ai_quote('web')`) so the
+   * "Find one online" chip says it before the tap. Null until read, on a failed read, or without Premium AI +
+   * Nutrition (the only athletes the chip is ever shown to) — the chip then reads as it always has.
+   */
+  const [webCostRead, setWebCostRead] = useState<number | null>(null);
+  useEffect(() => {
+    if (!premiumAi || !nutritionAccess) return;
+    let live = true;
+    void fetchWebSearchCost().then((c) => {
+      if (live) setWebCostRead(c);
+    });
+    return () => {
+      live = false;
+    };
+  }, [premiumAi, nutritionAccess]);
+  const webCost = premiumAi && nutritionAccess ? webCostRead : null;
 
   /*
    * ══ HOLT REMEMBERS THE CHAT (Coach-AI-Amendment-002) ══
@@ -2709,6 +2726,8 @@ export function CoachChatSheet({
     const source = opts.allowWeb ? 'web' : opts.kitchen ? 'kitchen' : 'chat';
     const askedAt = Date.now();
     let lookups = 0;
+    /* Sprint 3b (C-G7): the status lines that arrived — turned into tool NAMES by `askToolsUsed`, never sent as words. */
+    const statusLines: string[] = [];
     track('holt_ask_sent', { source });
     /*
      * ⚠ IN PARALLEL, NOT ONE AFTER ANOTHER (stress test 2026-09-25). These were three awaits in a row before
@@ -2753,7 +2772,7 @@ export function CoachChatSheet({
       asking.current.delete(ctl);
       setAsksLive(asking.current.size);
       setBusy(null);
-      track('holt_ask_ended', { source, result: stopped.current.has(ctl) ? 'stopped' : 'closed', ms: Date.now() - askedAt, count: 0, success: false });
+      track('holt_ask_ended', { source, result: stopped.current.has(ctl) ? 'stopped' : 'closed', ms: Date.now() - askedAt, count: 0, tools: 'none', success: false });
       if (stopped.current.has(ctl)) say({ kind: 'holt', text: ASK_STOPPED_LINE }, retryChip({ text, history, q, opts }));
       return;
     }
@@ -2787,6 +2806,7 @@ export function CoachChatSheet({
         /* The waiting bubble says what he is looking up — until his first word, never after. */
         onStatus: (line) => {
           lookups += 1;
+          statusLines.push(line);
           if (!started) setAskStatus({ sid, text: line });
         },
       },
@@ -2798,7 +2818,8 @@ export function CoachChatSheet({
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
     setThread((t) => streamEnded(t, sid));
     const result = askEndResult(r, stopped.current.has(ctl));
-    track('holt_ask_ended', { source, result, ms: Date.now() - askedAt, count: lookups, success: askEndedWell(result) });
+    const tools = askToolsUsed(statusLines, r.kind === 'answer' ? r.actions.map((a) => a.name) : []);
+    track('holt_ask_ended', { source, result, ms: Date.now() - askedAt, count: lookups, tools, success: askEndedWell(result) });
     switch (r.kind) {
       case 'answer':
         /* ⚠ CUT OFF PARTWAY (kitchen-09, QA 09-26): a dropped line came back as a finished one-letter answer
@@ -3418,6 +3439,7 @@ export function CoachChatSheet({
     : null;
   const handoff: Handoff = {
     liveCard,
+    webCost,
     /* Kitchen Scope §1.4: the full recipe opens in My Recipes, UNSAVED, with the app's numbers. */
     onOpenDish: (c: DishCard) => {
       stashRecipeDraft(c.read);
@@ -4771,6 +4793,8 @@ interface Handoff {
   saveLabel: string;
   onOpenDish: (c: DishCard) => void;
   onLogDish: (c: DishCard) => void;
+  /** CH-6 (Sprint 3b): what "Find one online" costs, from the server — null shows the chip without a number. */
+  webCost: number | null;
 }
 
 function TurnView({
@@ -4795,7 +4819,7 @@ function TurnView({
       return <HoltLine text={turn.text} />;
 
     case 'chips':
-      return <Answers chips={turn.chips} ctl={turn.ctl} answer={answer ?? null} onChip={onChip} />;
+      return <Answers chips={turn.chips} ctl={turn.ctl} answer={answer ?? null} onChip={onChip} webCost={handoff.webCost} />;
 
     case 'program':
       return (
@@ -4900,12 +4924,15 @@ function Answers({
   ctl,
   answer,
   onChip,
+  webCost = null,
 }: {
   chips: Chip[];
   ctl?: QuestionControl;
   /** The label the athlete went with, once they have. §6's selected state, read off the thread. */
   answer?: string | null;
   onChip: (c: Chip) => void;
+  /** CH-6 (Sprint 3b): what a web search costs, from the server. Shown on "Find one online" only. */
+  webCost?: number | null;
 }) {
   const chosen = (c: Chip) => answer != null && c.label === answer;
   /*
@@ -5027,17 +5054,20 @@ function Answers({
       {chips.map((c) => {
         /* holtai-08: Undo stays tappable after a later message; the sheet checks it is still the newest. */
         const locked = settled && c.typedEdit !== 'undo';
+        /* CH-6 (Sprint 3b): "Find one online · N credits" — the server's number, before the tap. The chip's label (the
+           transcript line, the answer it is matched by) is unchanged. */
+        const shown = c.webSearch ? withCreditCost(c.label, webCost) : c.label;
         return (
           <Pressable
             key={c.label}
             onPress={() => (locked ? undefined : onChip(c))}
             disabled={locked}
             accessibilityRole="button"
-            accessibilityLabel={c.label}
+            accessibilityLabel={shown}
             accessibilityState={{ selected: chosen(c), disabled: locked }}
-            style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (pressed || chosen(c)) && styles.ctlOn]}
+            style={({ pressed }) => [styles.chipCell, isWideChip(shown) && styles.chipCellWide, (pressed || chosen(c)) && styles.ctlOn]}
           >
-            <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+            <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{shown}</Text>
             {chosen(c) ? <Tick size={13} /> : null}
           </Pressable>
         );
