@@ -56,7 +56,8 @@ import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
 import { afterStop, askEndedWell, askEndResult, askToolsUsed, lastReplySid, questionOf, withCreditCost, withoutReply } from '@/domain/coach/chat-basics';
 import { overCeilingLine, typedBlock, typedBlockLine, typedOverCeiling } from '@/domain/coach/typed-block';
 import { track } from '@/lib/analytics';
-import { NOT_CHARGED } from '@/domain/ai/ai-failure';
+import { AiStatus } from '@/components/forge/AiStatus';
+import { chatFailure } from '@/domain/ai/ai-status';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
@@ -2632,8 +2633,13 @@ export function CoachChatSheet({
        to coach-ask, which only reads the recipe book — so a failure came back looking like his real answer
        ("nothing in your book, want me to look online?"). Now it is named, with a way to ask again. */
     /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+    /* UX-1 (Sprint 3b): the kitchen failing is the app failing — the chat's failure card (the AI state kit), with
+       "Not charged." on its own line when refunded, and Try again under it. */
     if (r.kind === 'unavailable' || r.kind === 'offline') {
-      return void say({ kind: 'holt', text: withNotCharged(kitchenError(r), r.refunded) }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
+      return void say(
+        { kind: 'error', text: kitchenError(r), sub: '', action: '', ...(r.refunded ? { notCharged: true as const } : {}) },
+        { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] },
+      );
     }
     if (r.kind !== 'ok') return void say({ kind: 'holt', text: withNotCharged(kitchenError(r), r.refunded) });
     const cards = dishCards(r.dishes, rules.allergens, rules.diet);
@@ -4866,18 +4872,10 @@ function TurnView({
 
     case 'error':
       /* The ONE place red appears. A refusal is Holt deciding; this is the app failing, and conflating
-         the two would make him look arbitrary. "Not charged." sits UNDER the card, in the quiet secondary
-         ink — it is reassurance, not part of the failure (Sprint 1, P-D2; shown only when coach-ask refunded). */
-      return (
-        <View style={styles.errorWrap}>
-          <View style={styles.error}>
-            <Text style={styles.errorTitle}>{turn.text}</Text>
-            <Text style={styles.errorSub}>{turn.sub}</Text>
-            <Text style={styles.errorAction}>{turn.action}</Text>
-          </View>
-          {turn.notCharged ? <Text style={styles.errorFoot}>{NOT_CHARGED}</Text> : null}
-        </View>
-      );
+         the two would make him look arbitrary. UX-1 (Sprint 3b): drawn by the one AI state kit — the line, what
+         happened and what to do, then "Not charged." on its own quiet line, once (Sprint 1, P-D2; only when the
+         server refunded). The Try again chip under it (C-D5) is the retry, so the card offers none of its own. */
+      return <AiStatus status={chatFailure(turn)} />;
 
     case 'dishes':
       return <DishCardsView dishes={turn.dishes} numbers={turn.numbers} onOpen={handoff.onOpenDish} onLog={handoff.onLogDish} />;
@@ -6228,12 +6226,6 @@ const styles = StyleSheet.create({
   railFill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
   /* Layout, so both themes (§2.0): the card, then the "Not charged." line under it. Colours are tokens. */
-  errorWrap: { gap: 6 },
-  error: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.dangerBorder, backgroundColor: flColor.dangerBg, padding: 13, gap: 3 },
-  errorTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.dangerText },
-  errorSub: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
-  errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: flColor.dangerText },
-  errorFoot: { paddingHorizontal: 13, fontSize: 12.5, lineHeight: 17, color: flColor.gray400 },
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
   kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },
