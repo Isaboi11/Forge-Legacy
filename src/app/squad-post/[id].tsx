@@ -48,7 +48,18 @@ import type { PickedMention } from '@/domain/squad/mentions';
  */
 
 export default function SquadPostRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  /*
+   * ══ ARRIVING FROM A FEED PREVIEW (PO 2026-11-18) ══ `comment` = the previewed comment that was tapped; the
+   * thread scrolls to it once it is drawn. `reply` / `replyName` = its author, from "Reply": the composer
+   * opens focused with "@Name " already in it and TAGGED (the same pick the tag list makes), unless the
+   * author is you — tagging yourself would notify nobody and read as a slip. `reply` present at all means
+   * "put me in the box".
+   */
+  const { id, comment: jumpTo, reply, replyName } = useLocalSearchParams<{ id: string; comment?: string; reply?: string; replyName?: string }>();
+  /* Moved up from beside the Report control: the reply seed below needs to know who you are. */
+  const { session } = useAuth();
+  const myId = session?.user?.id ?? null;
+  const replySeed = reply && replyName && reply !== myId ? { id: reply, name: replyName } : null;
   const router = useRouter();
   const postId = String(id ?? '');
   const { data, loading, error, refetch } = useQuery(() => fetchSquadPost(postId), [postId]);
@@ -72,7 +83,18 @@ export default function SquadPostRoute() {
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   /** The comment waiting on its "Delete this comment?" answer. Null = nobody is deleting. */
   const [removing, setRemoving] = useState<{ id: string; mine: boolean } | null>(null);
-  const [commentText, setCommentText] = useState('');
+  const [commentText, setCommentText] = useState(() => (replySeed ? `@${replySeed.name.trim()} ` : ''));
+  /* Scroll-to-comment: where the comments block and the target comment landed. Refs, read in the layout
+     handlers only, so the jump happens once — never again when the thread re-lays-out on a refetch. */
+  const scrollRef = useRef<ScrollView>(null);
+  const commentsY = useRef<number | null>(null);
+  const targetY = useRef<number | null>(null);
+  const jumped = useRef(false);
+  const tryJump = () => {
+    if (jumped.current || commentsY.current == null || targetY.current == null) return;
+    jumped.current = true;
+    scrollRef.current?.scrollTo({ y: Math.max(0, commentsY.current + targetY.current - 24), animated: false });
+  };
   const [sending, setSending] = useState(false);
   /*
    * ══ TAG SQUAD-MATES IN A COMMENT (0265, PO 2026-11-13) ══ "@" or a capitalised name opens the post's squad
@@ -83,7 +105,7 @@ export default function SquadPostRoute() {
     const squadId = await fetchPostSquadId(postId);
     return squadId ? fetchSquadMentionables(squadId) : [];
   }, [postId]);
-  const mentions = useMentions(commentText, setCommentText, mentionables);
+  const mentions = useMentions(commentText, setCommentText, mentionables, replySeed ? [replySeed] : undefined);
   const [tagsTick, setTagsTick] = useState(0);
   const { data: tags } = useQuery(() => fetchPostMentions(postId), [postId, tagsTick]);
   /** Measured, so a progress card fills the column it is in rather than assuming the screen's width. */
@@ -106,8 +128,6 @@ export default function SquadPostRoute() {
   const [working, setWorking] = useState(false);
   const primeKeyboard = useKeyboardPrimer();
   /* Only to decide whether the Report control is offered — reporting your own post is operator noise. */
-  const { session } = useAuth();
-  const myId = session?.user?.id ?? null;
 
   useFocusEffect(
     useCallback(() => {
@@ -588,7 +608,7 @@ export default function SquadPostRoute() {
         targetName={reportComment?.authorName}
       />
 
-      <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} style={styles.flex} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.body}>
           {/* author — or the squad itself, on a post nobody wrote (a goal's close, 0200). No profile to open,
               and "Athlete" over the squad's own announcement would invent a person. */}
@@ -757,12 +777,28 @@ export default function SquadPostRoute() {
         </View>
 
         {/* comments */}
-        <View style={styles.comments}>
+        <View
+          style={styles.comments}
+          onLayout={(e) => {
+            commentsY.current = e.nativeEvent.layout.y;
+            tryJump();
+          }}
+        >
           <Text style={styles.commentsCount}>{comments.length === 1 ? '1 Comment' : `${comments.length} Comments`}</Text>
           {comments.length > 0 ? (
             comments.map((c) => (
-              <CommentItem
+              <View
                 key={c.id}
+                onLayout={
+                  jumpTo && String(c.id) === jumpTo
+                    ? (e) => {
+                        targetY.current = e.nativeEvent.layout.y;
+                        tryJump();
+                      }
+                    : undefined
+                }
+              >
+              <CommentItem
                 comment={c}
                 isMine={!!myId && c.authorId === myId}
                 /* The author's own, and any comment for the squad's owner — the two the delete policy admits. */
@@ -772,6 +808,7 @@ export default function SquadPostRoute() {
                 onReport={() => setReportComment({ id: String(c.id), authorId: c.authorId, authorName: c.authorName })}
                 tagged={tags?.byComment[c.id]}
               />
+              </View>
             ))
           ) : (
             <Text style={styles.noComments}>No comments yet. Be the first to respond.</Text>
@@ -814,6 +851,8 @@ export default function SquadPostRoute() {
       >
         <TextInput
           ref={composerRef}
+          /* "Reply" on a feed preview lands here with the keyboard up (see `reply` above). */
+          autoFocus={reply != null}
           value={commentText}
           onChangeText={mentions.onChangeText}
           onSelectionChange={mentions.onSelectionChange}

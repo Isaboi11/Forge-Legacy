@@ -33,6 +33,7 @@ import {
   fetchPinnedSquadPosts,
   pinSquadPost,
   fetchMyReactionKinds,
+  fetchCommentPreviews,
   setSquadReactionKind,
   ACK_KINDS,
   ACK_LABEL,
@@ -57,6 +58,7 @@ import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { milestoneAckLabel } from '@/domain/share/milestone-card';
 import { recapNoteLines } from '@/domain/share/recap-stats';
 import { displayOf } from '@/domain/squad/post-photos';
+import type { CommentPreview } from '@/domain/squad/comment-preview';
 import { earlyLabel, goalDraft, parseGoalEditMode, type GoalEditMode, type GoalPhase } from '@/domain/squad/goal-state';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
@@ -316,6 +318,27 @@ function SquadDetailRoute() {
       alive = false;
     };
   }, [feedIds, kindsTick]);
+
+  /*
+   * ══ WHAT WAS SAID, ON THE FEED (PO 2026-11-18) ══ The newest two comments on every post on screen, pinned
+   * ones included — one query for the page (`fetchCommentPreviews`). Same placement rule as the kinds read
+   * above (no hooks after the early return), and the same `kindsTick`, so coming back from a thread you just
+   * commented on re-reads it and your comment is there.
+   *
+   * ⚠ REPLACED, NEVER MERGED. A comment deleted in the thread must leave the feed too; merging would keep it.
+   */
+  const previewIds = [...new Set([...(pinnedData ?? []), ...(feedData ?? [])].map((p) => p.id))].join(',');
+  const [previews, setPreviews] = useState<Record<string, CommentPreview>>({});
+  useEffect(() => {
+    if (!previewIds) return;
+    let alive = true;
+    void fetchCommentPreviews(previewIds.split(',')).then((m) => {
+      if (alive) setPreviews(m);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [previewIds, kindsTick]);
 
   const squad = data?.squad;
   const members = data?.members ?? [];
@@ -686,6 +709,17 @@ function SquadDetailRoute() {
             : openPost(p.id)
       }
       onComments={() => openPost(p.id)}
+      commentPreview={previews[p.id]?.shown}
+      /* A previewed comment opens the thread AT it; Reply opens it with the composer ready and the comment's
+         author tagged (the thread skips the tag when that author is you). */
+      onOpenComment={(cid) => router.push({ pathname: '/squad-post/[id]', params: { id: p.id, comment: cid } })}
+      onReply={(c) => {
+        const row = previews[p.id]?.shown.find((x) => x.id === c.id);
+        router.push({
+          pathname: '/squad-post/[id]',
+          params: row ? { id: p.id, comment: c.id, reply: row.authorId, replyName: row.authorName } : { id: p.id, comment: c.id },
+        });
+      }}
       /* The clip PLAYS. The card's one handler above sent a tap on the video to the workout
          summary — what the PO reported — and the band now opens the same full-screen player a
          pinned video uses.
@@ -1656,6 +1690,9 @@ function FeedCard({
   onOpen,
   onMedia,
   onComments,
+  commentPreview,
+  onOpenComment,
+  onReply,
   onAuthor,
   onReact,
   onLongReact,
@@ -1676,6 +1713,10 @@ function FeedCard({
   ackKind?: AckKind;
   onOpen: () => void;
   onComments: () => void;
+  /** The newest two comments, oldest first — see `LedgerPost`'s `commentPreview`. */
+  commentPreview?: readonly { id: string; authorName: string; body: string }[];
+  onOpenComment?: (commentId: string) => void;
+  onReply?: (comment: { id: string; authorName: string }) => void;
   /** Absent on a post the squad wrote — there is no profile to open. */
   onAuthor?: () => void;
   onReact: () => void;
@@ -1841,6 +1882,9 @@ function FeedCard({
       onAcknowledge={onReact}
       onLongAcknowledge={onLongReact}
       onComments={onComments}
+      commentPreview={commentPreview}
+      onOpenComment={onOpenComment}
+      onReply={onReply}
     />
   );
 }

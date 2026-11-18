@@ -28,9 +28,15 @@ import {
  * `onSelectionChange` where the platform reports it. Web reports selection only on some events, so the
  * estimate is what makes the list open there at all.
  */
-export function useMentions(text: string, setText: (v: string) => void, people: readonly Mentionable[] | null | undefined) {
+export function useMentions(
+  text: string,
+  setText: (v: string) => void,
+  people: readonly Mentionable[] | null | undefined,
+  /** Tags the field opens already holding — "Reply" from a feed preview seeds its author (PO 2026-11-18). */
+  initialPicked?: readonly PickedMention[],
+) {
   const [cursor, setCursor] = useState<number | null>(null);
-  const [picked, setPicked] = useState<PickedMention[]>([]);
+  const [picked, setPicked] = useState<PickedMention[]>(() => (initialPicked ? [...initialPicked] : []));
 
   const suggestion = useMemo(
     () => (people && people.length ? mentionSuggestions(text, Math.min(cursor ?? text.length, text.length), people) : null),
