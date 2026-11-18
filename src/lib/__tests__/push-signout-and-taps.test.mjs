@@ -28,5 +28,7 @@ test('H14 — a tap is routed once, by its notification id', () => {
 test('H16 — a cheer reply opens who replied; operator alerts open /admin', () => {
   assert.deepEqual(destinationFor({ kind: 'workout_cheer_reply', actorId: 'a1' }), { pathname: '/athlete/[id]', params: { id: 'a1' } });
   assert.equal(destinationFor({ kind: 'athlete_signup', actorId: 'a2' }), '/admin');
+  assert.equal(destinationFor({ kind: 'athlete_plan', actorId: 'a2' }), '/admin');
+  assert.equal(destinationFor({ kind: 'athlete_found_via', actorId: 'a2' }), '/admin');
   assert.equal(destinationFor({ kind: 'feedback_filed' }), '/admin');
 });
