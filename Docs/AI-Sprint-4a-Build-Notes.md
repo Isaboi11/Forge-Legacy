@@ -175,6 +175,9 @@ and A's mounts onto C's components, at merge.
 | Run | Lane | Estimate | Real |
 |---|---|---|---|
 | meal-describe (33 cases, Haiku 5.5) | B | $0.06 | $0.0029 |
+| round 1: ask-actions ×2, ask-safety ×2, ask-answers ×2 (one stopped early) | A | $18.68 | $15.08 |
+| round 2: ask-answers subset + full, ask-safety, ask-actions | A | ~$10 | $9.48 |
+| **4a total** | | | **$24.57 of $30** |
 
 ## 4. Integrator (this session)
 - Merge C → B → A into `ai/s4a` (A last: it mounts C's components and registers B's tools), rebuild every bundle, the
@@ -192,3 +195,5 @@ and A's mounts onto C's components, at merge.
 - 2026-11-18 — `ai/s4a-brain` merged (`63bd4753`): caps flag, action tools, one-brain prompt, interpret retired on the phone, status detail, `0276` AUTHORED, purging guard. Gates: ask-actions 85/86 (0 actions on 24 stop lines) · ask-safety 689/710 = 0.970, let-through 1 (live 677/704, 5) · import 57/61 · Kitchen 36/36 · ⛔ ask-answers 955/1158 = 0.825 (interpret 949) — 55 lines lost, 61 gained. Lane A spend $15.08 of $16. Integrator: deploy map lists the 0276 + caps tests. Known src failures: the 4 + `coach-form-check-source` (form check's paste copy is stale for the new guard — form check's session rebuilds it).
 - 2026-11-18 — PO: FIX the 55 ask-answers regressions before release (≈ $10 more → ≈ $25 of $30). Lane A resumed.
 - 2026-11-18 — web port `ai/s4a-web` `5a6f340e` (worktree `C:\Users\isaia\ai-s4a-web-wt`, off `ai/s3b-web` `2a9b1be6`): 27 picks + `usePlansDoor` for the toolbox; tsc 0, eslint 0, web export builds (use `--clear`); src 6 fails = web's 5 + form check's paste copy. Needs lane A's fix commits picked on top before deploy.
+- 2026-11-18 — lane A round 2 merged (`30247b66`): ask-answers 955 → **1021/1158** (live 949); 20 of the 55 were the suite's own date, 7 same-day focuses; ask-safety 685/710 (0.965), let-through 2 (S0332, S0421 — both among v28's 5); ask-actions 83/86, 0 actions on stops. 38 interpret-passed lines still lost (an over-applied 'leave ambiguous answers out' rule → Holt asks again). PO: **ship now, fix the 38 in 4b**. `13c7a004`: ask-answers gates on 'no worse than live' (baseline derived from chat-answers' live recordings, 949) with the 38 as named ACCEPTED losses, printed on every run. Gate (--changed e1abd8ef): PASS coach-ask, coach-author, coach-kitchen, meal-describe; coach-interpret FAIL (held, unchanged, for old phones — as 3b). src 7115 / 5 fail (the 4 known + form check's stale paste copy). tsc 0. No native/dependency change. Live checked 11-18: `coach_ai_reserve` md5 `fe40ac39` (what 0276/0277 expect); functions at their 3b versions.
+- 2026-11-18 — web `ai/s4a-web` `ab9ba77b` (+ round 2's client fix). Release plan: SQL 0276 → 0277 · functions coach-ask (v29), meal-describe (new, verify_jwt on), coach-author, coach-kitchen (the purging guard) byte-exact · OTA to build 11 from `ai/s4a`, fingerprint `4d98eb22` · ff `feat/build11` + GitHub `main` · web from `ai/s4a-web` (export `--clear`).
