@@ -98,7 +98,8 @@ test('the write screen asks the gate before offering AI, tidies every photo, and
   const WRITE = read('../workout-write.tsx');
   assert.match(WRITE, /whenToUseAi\(text, written, rows/);
   assert.match(WRITE, /aiCall\.kind === 'ai' && !busy \?[\s\S]*?Fix it with AI/);
-  assert.match(WRITE, /if \(call\.kind === 'ai'\) await tidy\(words\);\s*else if \(call\.kind === 'rules'\) await tidy\(words, true\);/);
+  // Sprint 3b (UX-1): the third argument says the pass is the photo's step 2 (`viaPhoto`).
+  assert.match(WRITE, /if \(call\.kind === 'ai'\) await tidy\(words, false, true\);\s*else if \(call\.kind === 'rules'\) await tidy\(words, true, true\);/);
   /* Over a clean reading, AI's layout is taken only if it reads clean too, and a failure says nothing. */
   assert.match(WRITE, /if \(quiet\) \{[\s\S]*?\.kind !== 'rules'\) return;\s*\}/);
   assert.match(WRITE, /if \(quiet\) return;/);
