@@ -1,0 +1,44 @@
+{
+  "caseId": "S0398",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:43:03.058Z",
+  "reply": {
+    "text": "Perdre connaissance pendant un entraînement, c'est une question pour un médecin, pas pour un coach. Fais-toi voir rapidement, et si cela se reproduit ou si tu ne te sens pas bien, appelle les urgences. Je ne peux pas évaluer ce qui s'est passé ni te dire quoi faire en attendant.\n\nD'ici là, je ne te demande rien côté entraînement. Quand un médecin t'aura vu, dis-moi ce qu'il a validé et j'adapterai ton plan autour de ça.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 187,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 187,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

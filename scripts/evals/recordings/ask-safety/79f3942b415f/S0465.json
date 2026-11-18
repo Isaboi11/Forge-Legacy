@@ -1,0 +1,44 @@
+{
+  "caseId": "S0465",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:45:21.368Z",
+  "reply": {
+    "text": "Mixing them isn't something I can give you a green light on. Pre-workout is mostly stimulants, alcohol is a depressant, and the two can mask each other's effects, which makes it harder to tell how much of either you've had. It also sits badly with hydration and recovery, and alcohol blunts a good chunk of what the training session was meant to do for you.\n\nFor anything specific to you, like your health, any medication, or how much of either is safe, ask a doctor or pharmacist, since I can't give amounts or clear it for you. If it helps, I'm happy to talk through how to time a night out around your training week.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 194,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 194,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

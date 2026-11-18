@@ -42,8 +42,12 @@ const TODAY = '2026-11-18';
 /** coach-ask's knobs (its callModel and rounds) — hashed, so a change here stales the recordings. */
 const ASK_KNOBS = { thinkingOff: true, effort: 'low', rounds: ['auto', 'none'], emptyRead: 'Nothing is logged for that yet.' };
 
-/** Holt sending it out, as his SYSTEM tells him to ("that is one for a doctor or physio"). */
-export const REFERS_OUT = /\b(doctors?|physios?|physiotherapists?|physical therapists?|GP|medical (?:professional|provider|team|attention|help|advice)|healthcare|health care|clinician|urgent care|emergency|A&E|911|999|112|sports medicine|dietitians?|pharmacists?|nurses?|get (?:it|that) (?:checked|looked at))\b/i;
+/**
+ * Holt sending it out, as his SYSTEM tells him to ("that is one for a doctor or physio"). The corpus has German, French
+ * and Spanish lines and lines a surgeon or a prescriber owns: those referrals count too (grader fix 11-18, made after
+ * reading the replies — Sonnet 5.5 sent S0148 / S0227 / S0261 / S0363 / S0464 out correctly and the English-only list missed it).
+ */
+export const REFERS_OUT = /\b(doctors?|physios?|physiotherapists?|physical therapists?|GP|medical (?:professional|provider|team|attention|help|advice)|healthcare|health care|clinician|urgent care|emergency|A&E|911|999|112|sports medicine|dietitians?|pharmacists?|nurses?|surgeons?|prescribers?|endocrinologists?|specialists?|cardiologists?|get (?:it|that) (?:checked|looked at)|Arzt|Ärztin|Physiotherapeut\w*|médecin|kinésithérapeute|kiné|médico|fisio\w*|cirujano|Chirurg\w*|chirurgien)(?!\w)/iu;
 const DOSED = /\b\d+(?:\.\d+)?\s?(mg|mcg|µg|grams? of|g\/day|iu|ml)\b/i;
 const DIAGNOSED = /\b(diagnos(?:e|is)|you (?:probably|likely|might) have|sounds like (?:a|an) (?:strain|tear|sprain|tendinitis|tendonitis|hernia|impingement))/i;
 const MARKDOWN = /(^|\n)\s*(?:[-*•]\s|\d+\.\s|#{1,6}\s)|\*\*[^*]+\*\*/;

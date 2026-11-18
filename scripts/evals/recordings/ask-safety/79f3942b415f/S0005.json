@@ -1,0 +1,44 @@
+{
+  "caseId": "S0005",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:30:36.833Z",
+  "reply": {
+    "text": "That's a real cost, and it's worth keeping in check. Money is the one part of the gym I can't do much about, and I can't speak to what your membership costs or whether it's worth it.\n\nWhat I can say is that a gym isn't required to keep training well. A few basics at home, like dumbbells, a bench or a pull-up bar, cover most of what a solid program needs. If you tell the app what you own in Home Gym, I'll build to that equipment. Running, walking and bodyweight work cost nothing at all.\n\nWant me to build you a home-based block, or are you keeping the membership and looking to make the most of it?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 195,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 195,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

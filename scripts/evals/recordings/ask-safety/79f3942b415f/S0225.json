@@ -1,0 +1,44 @@
+{
+  "caseId": "S0225",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:37:03.904Z",
+  "reply": {
+    "text": "170 on intervals is normal territory for hard efforts, so nothing odd about the number itself. I can't tell you whether it's right for you without knowing your max heart rate, and wrist trackers can lag or read off on intervals anyway.\n\nOn fat loss, the zone matters much less than people think. What drives it is the total week: how consistently you train, how much you move, and how you eat over time. Intervals are a good tool for fitness and time efficiency, and easy sessions are what let you recover enough to do them again.\n\nIf you want to know how your intervals are going, I'd look at your pace or effort across the reps rather than the heart rate number. If a heart rate reading ever comes with chest pain, dizziness or anything that feels off, that's one for a doctor, not a coach.\n\nWant me to look at how your runs have been trending?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 222,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 222,
+          "output_tokens": 262,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 262,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

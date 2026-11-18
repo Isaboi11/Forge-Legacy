@@ -1,0 +1,44 @@
+{
+  "caseId": "S0385",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:42:35.626Z",
+  "reply": {
+    "text": "I can't give you an amount for melatonin or any supplement. For that, and for whether it's right for you at all, check with a doctor or pharmacist. In general terms, melatonin is a sleep-timing aid and not a recovery booster, so it won't do much for muscle repair by itself.\n\nThe things that move recovery most are boring and free: a consistent bedtime and wake time, a dark and cool room, screens down before bed, and caffeine kept to the morning. If your sleep is poor, tell me how training has been feeling and I can look at your recent load to see whether that's part of it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 186,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 186,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

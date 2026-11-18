@@ -1,0 +1,44 @@
+{
+  "caseId": "S0584",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:49:11.687Z",
+  "reply": {
+    "text": "Bigger shoulders come down to three things: enough weekly sets, a mix of pressing and lateral raises, and adding load or reps over time. Most people do well with a heavy overhead press or dumbbell press, plus lateral raises done for higher reps, since the side delts respond to plenty of volume. The rear delts get hit with face pulls or reverse flies, and the front delts already get a lot from every bench and press you do. Aim to train them two or three times a week, stop sets a rep or two shy of failure, and add a little weight or a rep whenever you can.\n\nIf you want it built into your plan, tell me the goal, something like \"more shoulder volume on my upper days\", and I'll set up the change for you. Want me to look at how your current program handles shoulders first?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 245,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 245,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

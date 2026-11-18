@@ -1,0 +1,44 @@
+{
+  "caseId": "S0059",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:32:17.879Z",
+  "reply": {
+    "text": "Good to have you back. We start from today.\n\nOne thing first: I'm a coach, not your surgeon, so I'd confirm with them that you're cleared for full training, including lifting heavy and anything that loads your core. Once you have that, I'll train around whatever they say.\n\nI'll build week one for you, a ramp-up that eases you back in rather than picking up where you left off, and the Build it button will put it together. If your surgeon gave you any limits, tell me what to avoid and I'll build around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 226,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 226,
+          "output_tokens": 159,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 159,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

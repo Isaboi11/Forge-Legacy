@@ -1,0 +1,79 @@
+{
+  "caseId": "S0642",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:51:05.130Z",
+  "reply": {
+    "text": "Let me look at how your training has actually been going before I say anything. Yes, and I'd rather start from where you are than from a pep talk. Nothing is logged yet, so I'm not looking at a streak that broke, just a blank page.\n\nSlumps usually shrink when the bar is lowered, not when you try to feel more fired up. Pick one short session you can finish even on a bad day, put it at a fixed time this week, and let the doing come before the wanting. Motivation tends to show up after you've started, not before.\n\nWhat does the slump look like for you: no energy, no time, or you're just bored with what you were doing? That tells me which fix fits. If you want a simple plan to start from, I can have the engine build one.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_recent_workouts",
+      "get_program_status",
+      "get_goals"
+    ],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 170,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 170,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 539,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 539,
+          "output_tokens": 206,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 206,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

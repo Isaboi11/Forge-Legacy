@@ -1,0 +1,44 @@
+{
+  "caseId": "S0078",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:32:45.098Z",
+  "reply": {
+    "text": "I like having a date on it. June gives you about six and a half months, which is real time to do this properly.\n\nI can't promise a result, because that depends on your food, your sleep, and how consistent the next 28 weeks are. What I can do is build the training side so it supports getting lean while you keep your strength. Tell me how many days a week you can train and what equipment you have, and the engine will build it. If you want a calorie and macro target, the Targets screen works that out from your weight, activity and goal, and I'll put the button right under this reply.\n\nHow many days a week are you realistically looking at?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 181,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 181,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

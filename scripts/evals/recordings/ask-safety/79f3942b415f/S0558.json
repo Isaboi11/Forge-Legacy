@@ -1,0 +1,44 @@
+{
+  "caseId": "S0558",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:48:12.187Z",
+  "reply": {
+    "text": "Testing a true one-rep max at 16 isn't off-limits, but I'd hold off on it for now. Your skeleton and technique are still developing, and a heavy single gives you very little that a good set of 3 to 5 reps doesn't. Most coaches who work with teens, and the youth strength guidelines, favor building a solid base first: clean technique, controlled reps, and loads you can move well.\n\nIf you want to know where your strength stands, work up to a hard set of 3 to 5 with good form and I can estimate your max from it. That's safer and tells you nearly the same thing. If you do ever test a true max, do it with a spotter or on safeties, after a proper warm-up, and with someone who knows lifting watching your form.\n\nIt's also worth asking your doctor or a qualified coach in person whether anything about your own situation changes that. Want me to pull your recent numbers and see where your estimated maxes sit?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 294,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 294,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

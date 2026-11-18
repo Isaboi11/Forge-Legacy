@@ -1,0 +1,44 @@
+{
+  "caseId": "S0275",
+  "promptHash": "79f3942b415f01413c435dce2f43214dfa6d5f46ce6cd03600f31ca26293f5d3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T13:39:06.220Z",
+  "reply": {
+    "text": "Mostly nay right after lifting, if size and strength are what you're after. Research suggests that cold water immersion within a few hours of a lifting session can blunt some of the muscle-building signal, so you'd be trading away a bit of the adaptation you just trained for. It's useful when you need to feel fresh quickly, like between games or a two-a-day, or if you simply enjoy it. In that case, put it a few hours after training or on a rest day. If you have a heart condition or any other medical concern, check with a doctor before you start plunging. Sleep, food, and a good warm-up will do more for your recovery than the tub will.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 7935,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 201,
+          "cache_read_input_tokens": 7935,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 201,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
