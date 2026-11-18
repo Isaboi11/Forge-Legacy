@@ -373,6 +373,35 @@ export function localMidnight(): string {
   return d.toISOString();
 }
 
+export interface TrainedFace {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  trainedAt: string;
+}
+
+/**
+ * WHO trained today, newest first — the faces row at the top of a squad (0280, PO 2026-11-18).
+ *
+ * ⚠ NULL, NOT [], WHEN THE FUNCTION IS NOT THERE (before 0280 is pasted, or any failure). Null tells the
+ * page to keep its plain "N training today" count; [] would draw an empty row and claim nobody trained.
+ * Same boundary as the count: the viewer's local midnight.
+ */
+export async function fetchTrainedTodayFaces(squadId: string): Promise<TrainedFace[] | null> {
+  try {
+    const { data, error } = await supabase.rpc('squad_trained_today_members', { p_squad: squadId, p_since: localMidnight() });
+    if (error || !Array.isArray(data)) return null;
+    return (data as { user_id: string; name: string | null; avatar_url: string | null; trained_at: string }[]).map((r) => ({
+      id: r.user_id,
+      name: r.name ?? 'Athlete',
+      avatarUrl: r.avatar_url ?? null,
+      trainedAt: r.trained_at,
+    }));
+  } catch {
+    return null;
+  }
+}
+
 export interface SquadCheckin {
   id: string;
   userId: string;

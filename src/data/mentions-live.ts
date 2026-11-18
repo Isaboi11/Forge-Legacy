@@ -66,6 +66,30 @@ export interface PostMentions {
 
 const NO_MENTIONS: PostMentions = { post: [], byComment: {} };
 
+/**
+ * Who each of these posts tagged in its OWN words (not its comments) — one read for a feed page, so the feed
+ * draws "@Name" the way the thread does (PO 2026-11-18). Empty on any failure (and before 0265).
+ */
+export async function fetchFeedPostMentions(postIds: readonly string[]): Promise<Record<string, PickedMention[]>> {
+  if (!postIds.length) return {};
+  try {
+    const { data, error } = await supabase
+      .from('squad_mentions')
+      .select('post_id, user_id, profiles!squad_mentions_user_id_fkey(name)')
+      .in('post_id', postIds as string[])
+      .is('comment_id', null);
+    if (error || !data) return {};
+    const out: Record<string, PickedMention[]> = {};
+    for (const r of data as unknown as { post_id: string; user_id: string; profiles: { name: string | null } | null }[]) {
+      const name = (r.profiles?.name ?? '').trim();
+      if (name) (out[r.post_id] ??= []).push({ id: r.user_id, name });
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 /** Who a post and its comments tagged, so the thread can draw them. Empty on any failure (and before 0265). */
 export async function fetchPostMentions(postId: string): Promise<PostMentions> {
   if (!postId) return NO_MENTIONS;

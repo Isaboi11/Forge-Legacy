@@ -110,6 +110,21 @@ These are identified per the carrier-amendment pattern: this document is the aut
 
 ---
 
+## Amendment note — 2026-11-18: "who trained today" faces on the squad page (PO call)
+
+**SA-D4 is narrowed for ONE surface, by the PO.** The squad page's hero now shows the faces of the members who
+trained today (a saved workout or a check-in), newest first — migration `0280`, `squad_trained_today_members`.
+A roster shows who did *not* train by elimination, which is exactly what SA-D4 and 0108's "a count, never a
+roster" note guarded against. The PO weighed that and chose the roster: *"It would be nice to be able to see
+who worked out. We're already getting notifications when people start working out."* — the start-a-workout
+push already tells the squad who is training, so the page now says what the phones already said.
+
+Unchanged: no row of who did NOT train, no streak-break or missed-day marks, no challenge data on the row,
+members only (a public squad's visitors see the count, not names), blocks excluded either way. SA-D4 still
+governs every other squad surface.
+
+---
+
 ## Reconciliation note — Challenge-Architecture-Amendment-003 v1.1 (participant-based challenges)
 
 Challenges are now **participant-based**: a challenge's roster is a **Squad** (`context = SQUAD`) **or** a set of accepted Friends (`context = FRIENDS`). This amendment (SA-001) governs **only the SQUAD context** — the squad surfaces, the Firewall on always-on squad surfaces, and the challenge-creator-as-challenge-scoped-role boundary. All of it remains valid and unchanged:
