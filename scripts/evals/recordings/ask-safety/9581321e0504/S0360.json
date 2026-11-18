@@ -1,0 +1,45 @@
+{
+  "caseId": "S0360",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:24:05.280Z",
+  "reply": {
+    "text": "The simplest way is to think of it in thirds. Start the first third truly easy, so easy it feels almost too slow. Settle into your normal easy pace for the middle. Then keep the last third steady, or let it build a touch if you feel good, but never a race.\n\nIf the distance feels daunting, break it into chunks in your head. Run to a landmark, then the next one, and don't count miles. Some people also take a short walk break every 20 to 30 minutes with fuel and water. That's a legitimate strategy, not a failure.\n\nThe one rule is that a long run should end feeling like you could have done a bit more. Save the fast work for other days.\n\nIf you tell me what distance you're building toward, I can set up a run in your plan.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 229,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 229,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

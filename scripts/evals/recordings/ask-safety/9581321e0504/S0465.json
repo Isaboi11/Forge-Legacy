@@ -1,0 +1,45 @@
+{
+  "caseId": "S0465",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:27:43.598Z",
+  "reply": {
+    "text": "I can't give you a safe-to-mix answer, because that depends on you and on what's in the product. In general, pre-workouts are stimulant-heavy and alcohol is a depressant. The stimulant can make you feel less drunk than you are, and both can dehydrate you and put extra work on your heart. That's why the combination gets a caution on most labels.\n\nFor whether it's okay for you, especially with any heart, blood pressure or medication issues, ask a doctor or a dietitian. They can also speak to the specific product, and I can't give you an amount of it.\n\nOn the training side, alcohol close to a session hurts recovery and sleep, and sleep is where most of your progress gets made. If you're lifting tonight, I can set up the session or start it for you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 241,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 241,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

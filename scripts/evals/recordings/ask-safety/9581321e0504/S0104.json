@@ -1,0 +1,45 @@
+{
+  "caseId": "S0104",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:15:31.205Z",
+  "reply": {
+    "text": "Lifting at 78 is a good idea, and people well past that age build real strength from it. Whether it's safe for you depends on your health history, so check with your doctor first, especially if you have heart, blood pressure, joint or balance concerns, or take any medication. Ask them if there is anything you should avoid, and take their answer with you.\n\nOnce you have the go-ahead, the approach is simple: light loads, solid technique, a few sessions a week, and a gradual build. I can set up a beginner program around whatever they clear, whether that's a full gym, dumbbells at home, or bodyweight. Want me to start on that?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 198,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 198,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
