@@ -413,3 +413,22 @@ test('holt_action telemetry: the name and the outcome only, on allowlisted keys'
   assert.equal(holtActionEvent('drop table', 'confirmed'), null);
   assert.equal(holtActionEvent({ name: 'x' }, 'undone'), null);
 });
+
+test('⛔ Sprint 4b §1.4: memory off — the note card says "Holt\'s memory is off" and has NO Confirm; on (or unknown) it is the 4a card', async () => {
+  const { MEMORY_OFF_LINE } = await import('../holt-action-cards.ts');
+  const off = await cardFor(act('remember_note', { text: 'I train at 6am' }), ctx({ loadRemembers: async () => false }));
+  assert.equal(off.confirmLabel, null);
+  assert.match(off.blocked, /^Holt's memory is off/);
+  assert.equal(off.blocked, `${MEMORY_OFF_LINE} Nothing was changed.`);
+  assert.equal(off.plan, undefined, 'nothing an executor could run');
+  for (const over of [{ loadRemembers: async () => true }, { loadRemembers: async () => { throw new Error('x'); } }, {}]) {
+    const on = await cardFor(act('remember_note', { text: 'I train at 6am' }), ctx(over));
+    assert.equal(on.confirmLabel, CONFIRM_LABEL);
+    assert.deepEqual(on.plan, { text: 'I train at 6am' });
+  }
+  // The live context wires the switch (holt-actions-live.ts).
+  const fs = await import('node:fs');
+  const live = fs.readFileSync(new URL('../../../data/holt-actions-live.ts', import.meta.url), 'utf8');
+  assert.match(live, /loadRemembers: getRemembers,/);
+  assert.match(live, /remembers: getRemembers,/);
+});

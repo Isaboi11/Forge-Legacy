@@ -99,7 +99,15 @@ export interface CardContext {
   canSchedule?: boolean;
   /** Integrator (append): the device's local hour, so a meal card picks breakfast / lunch / dinner (lane B's `mealCard`). */
   hour?: number;
+  /**
+   * Sprint 4b lane A (append): is Holt's memory on (`getRemembers`, 0278)? Off → the note card says so and has no Confirm
+   * (§1.4: off means Holt keeps nothing new). Absent reads as on.
+   */
+  loadRemembers?: () => Promise<boolean>;
 }
+
+/** Sprint 4b §1.4: the note card when the athlete switched Holt's memory off. */
+export const MEMORY_OFF_LINE = "Holt's memory is off, so he can't keep this. Turn it on in What Holt Remembers.";
 
 /** Every write card's button. `Coach-AI-Amendment-002` (LOCKED): nothing changes until the athlete taps Do it. */
 export const CONFIRM_LABEL = 'Do it';
@@ -433,9 +441,13 @@ async function targetsCard(input: Record<string, unknown>, ctx: CardContext): Pr
 
 /* ── remember a note ──────────────────────────────────────────────────────────────────────────────────────── */
 
-function noteCard(input: Record<string, unknown>): ActionCardModel {
+async function noteCard(input: Record<string, unknown>, ctx: CardContext): Promise<ActionCardModel> {
   const text = cleanNoteText(input.text);
   if (!text) return blocked('remember_note', 'Remember this', "That's too long to keep as one note.");
+  /* Sprint 4b §1.4: memory off keeps nothing new — the card says so, with the words, and no Confirm. */
+  if (ctx.loadRemembers && !(await ctx.loadRemembers().catch(() => true))) {
+    return blocked('remember_note', 'Remember this', MEMORY_OFF_LINE, [{ label: text }]);
+  }
   return {
     action: 'remember_note',
     title: 'Remember this',
@@ -491,7 +503,7 @@ export async function cardFor(action: HoltAction, ctx: CardContext): Promise<Act
     case 'set_targets':
       return targetsCard(input, ctx);
     case 'remember_note':
-      return noteCard(input);
+      return noteCard(input, ctx);
     case 'open_door':
       return doorCard(input, ctx);
     /* Lane B's meal cards (Amendment 006, HF-D5): the app's totals, never the model's. Food logging is Nutrition's. */
