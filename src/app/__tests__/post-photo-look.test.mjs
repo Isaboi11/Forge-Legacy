@@ -57,3 +57,7 @@ test('⚠ the uploaded picture is a JPEG at the drawing\'s own size — never th
   const exp = native.slice(native.indexOf('export async function exportStory'));
   assert.match(exp, /rasterizeStory\(spec\.drawing, photo\)/, 'the share sheet picture is untouched');
 });
+
+test('⚠ the canvas is drawn at the snapshot size — the snapshot crops, it never scales (PO recap, 11-18: top-left third)', () => {
+  assert.match(host, /<StoryCanvas ref=\{svgRef\} drawing=\{job\.drawing\} width=\{snapshotSize\(job\)\.width\}/, 'the canvas width matches the snapshot');
+});
