@@ -278,7 +278,7 @@ export function askSourcesLive(): AskSources {
 
 /**
  * What a web search costs, from the server, WITHOUT spending (`coach_ai_quote`, 0221 — the weight in
- * `coach_ai_config.action_credits`, which the app cannot read itself since 0267). For "Find one online · 2 credits"
+ * `coach_ai_config.action_credits`, which the app cannot read itself since 0267). For "Find one online · N credits"
  * (CH-6, Sprint 3b). ⚠ FAILS TO NULL, never to a number of its own: the chip then reads as it always has.
  */
 export async function fetchWebSearchCost(): Promise<number | null> {
