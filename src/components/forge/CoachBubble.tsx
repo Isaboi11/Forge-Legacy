@@ -13,6 +13,8 @@ import { useTour } from '@/hooks/useTour';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { CoachChatSheet } from '@/components/forge/CoachChatSheet';
 import { CoachSays } from '@/components/forge/CoachSays';
+import { HoltToolbox } from '@/components/forge/HoltToolbox';
+import { TOOLBOX_ACTION_LABEL, TOOLBOX_HINT } from '@/domain/coach/holt-toolbox';
 import { BottomSheet } from '@/components/forge/composites/BottomSheet';
 import { Button } from '@/components/forge/composites/Button';
 import { chooseNudge, type NudgeDef } from '@/domain/coach/nudges';
@@ -101,6 +103,20 @@ export function CoachBubble() {
   /* ⚠ FROM CONTEXT, NOT `useState` — so Home can open him. The sheet is still rendered here; only the
      flag moved. See `useCoachDoor`. */
   const { open, intent, openCoach: openSheet, closeCoach } = useCoachDoor();
+  /*
+   * ══ HOLD THE COIN → HOLT'S TOOLBOX (AI Road to 10 Sprint 4a §1.7, UX-3) ══
+   *
+   * Ask · Snap a plate · Describe a meal · Check my form · Import a photo · What can I make — every AI tool two taps
+   * away. The TAP is untouched: it still does exactly what `openCoach` below says. "What can I make" opens the same
+   * chat in Kitchen mode from any surface, so the kitchen flag is the pathname OR that ask, and the ask is spent when
+   * the sheet closes (in the close handler, not an effect — the strict hooks lint).
+   */
+  const [toolboxOpen, setToolboxOpen] = useState(false);
+  const [kitchenAsked, setKitchenAsked] = useState(false);
+  const closeSheet = () => {
+    setKitchenAsked(false);
+    closeCoach();
+  };
 
   /*
    * §3.4–3.5 — the teaser, and the rule that governs it: "only appears when there is a real, specific
@@ -459,7 +475,7 @@ export function CoachBubble() {
    */
   if (!HOME_SURFACES.has(pathname)) return null;
 
-  if (open) return <CoachChatSheet onClose={closeCoach} intent={intent} kitchen={kitchen} />;
+  if (open) return <CoachChatSheet onClose={closeSheet} intent={intent} kitchen={kitchen || kitchenAsked} />;
 
   return (
     <>
@@ -550,6 +566,20 @@ export function CoachBubble() {
         )}
       </BottomSheet>
 
+      <HoltToolbox
+        open={toolboxOpen}
+        onClose={() => setToolboxOpen(false)}
+        onAsk={() => {
+          setMet(true);
+          openSheet();
+        }}
+        onKitchen={() => {
+          setKitchenAsked(true);
+          setMet(true);
+          openSheet();
+        }}
+      />
+
       {/* Placement is the caller’s: 18px above the tab bar, 20 from the right edge (PROMPT §3.1). The
           Active Workout mounts the same component at its own height, above its action bar. */}
       <CoachSays
@@ -559,6 +589,9 @@ export function CoachBubble() {
       onDismiss={shownLine ? closeLine : undefined}
       openLabel={kitchen ? 'Open Coach Holt in the kitchen' : 'Open Coach Holt'}
       kitchen={kitchen}
+      onLongPress={() => setToolboxOpen(true)}
+      holdHint={TOOLBOX_HINT}
+      holdLabel={TOOLBOX_ACTION_LABEL}
       style={{ bottom: 96 + insets.bottom, right: 20 }}
     />
     </>

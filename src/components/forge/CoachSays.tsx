@@ -74,9 +74,17 @@ export interface CoachSaysProps {
    */
   replies?: readonly { key: string; label: string }[];
   onReply?: (key: string) => void;
+  /**
+   * Holding the MARK (AI Road to 10 Sprint 4a §1.7): Holt's toolbox. Omit it and the mark only taps, as before —
+   * `/workout` mounts this component too and passes none. `holdHint` is what VoiceOver says the hold does, and the
+   * same hold is offered as a named accessibility action (`holdLabel`) for anyone who cannot hold.
+   */
+  onLongPress?: () => void;
+  holdHint?: string;
+  holdLabel?: string;
 }
 
-export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style, kitchen = false, replies, onReply }: CoachSaysProps) {
+export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, style, kitchen = false, replies, onReply, onLongPress, holdHint, holdLabel }: CoachSaysProps) {
   const said = line?.trim() || null;
 
   return (
@@ -167,6 +175,10 @@ export function CoachSays({ line, named = false, onPress, onDismiss, openLabel, 
         accessibilityRole="button"
         accessibilityLabel={openLabel}
         onPress={onPress}
+        onLongPress={onLongPress}
+        accessibilityHint={onLongPress ? holdHint : undefined}
+        accessibilityActions={onLongPress ? [{ name: 'longpress', label: holdLabel ?? holdHint ?? 'More' }] : undefined}
+        onAccessibilityAction={onLongPress ? (e) => (e.nativeEvent.actionName === 'longpress' ? onLongPress() : undefined) : undefined}
         style={({ pressed }) => [styles.mark, pressed && styles.markPressed]}
       >
         <HoltMark size={BUBBLE_SIZE} kitchen={kitchen} />
