@@ -178,6 +178,7 @@ const FN_LABEL: Readonly<Record<string, string>> = {
   'coach-kitchen': 'Kitchen',
   'coach-form-check': 'Form check',
   'meal-photo-read': 'Meal photo',
+  'meal-describe': 'Describe a meal',
   'recipe-photo-read': 'Recipe photo',
   'recipe-link-read': 'Recipe link',
   'program-photo-read': 'Program photo',

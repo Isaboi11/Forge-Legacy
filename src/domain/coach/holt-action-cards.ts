@@ -27,6 +27,7 @@ import { CARE_LINE_COPY } from '../nutrition/care-line.ts';
 import { cleanNoteText } from './holt-notes.ts';
 import { shiftYmd, toLocalDate } from '../dates/local-date.ts';
 import { isCardioKey } from '../workout/conditioning.ts';
+import { mealCard } from '../nutrition/holt-meal.ts';
 
 /* ── what a card is told ──────────────────────────────────────────────────────────────────────────────────── */
 
@@ -96,6 +97,8 @@ export interface CardContext {
   loadTargetFacts?: () => Promise<TargetFactsRead | null>;
   /** Lane C (append): sessions can be put on a date. False in 4a — there is no store for one (lane C report). */
   canSchedule?: boolean;
+  /** Integrator (append): the device's local hour, so a meal card picks breakfast / lunch / dinner (lane B's `mealCard`). */
+  hour?: number;
 }
 
 /** Every write card's button. `Coach-AI-Amendment-002` (LOCKED): nothing changes until the athlete taps Do it. */
@@ -491,6 +494,11 @@ export async function cardFor(action: HoltAction, ctx: CardContext): Promise<Act
       return noteCard(input);
     case 'open_door':
       return doorCard(input, ctx);
+    /* Lane B's meal cards (Amendment 006, HF-D5): the app's totals, never the model's. Food logging is Nutrition's. */
+    case 'log_food':
+    case 'propose_meal':
+      if (!ctx.nutritionAccess) return blocked(action.name, 'Log a meal', 'Food logging is part of Nutrition, which is not open on this account.');
+      return mealCard({ name: action.name, input }, ctx.hour == null ? {} : { hour: ctx.hour });
     default:
       return null;
   }
