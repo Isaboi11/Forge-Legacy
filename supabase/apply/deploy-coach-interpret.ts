@@ -669,8 +669,9 @@ export function replySays(reply: NarrowedReply): string[] {
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export const EFFORTS: readonly Effort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
 export const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
-export const KNOWN_MODELS = ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5', 'claude-haiku-4-5'] as const;
-export type KnownModel = (typeof KNOWN_MODELS)[number];
+export const KNOWN_MODELS = ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5'] as const;
+export const RETIRED_MODELS = ['claude-haiku-4-5'] as const;
+export type KnownModel = (typeof KNOWN_MODELS)[number] | (typeof RETIRED_MODELS)[number];
 export interface ModelRule {
     off: {
         type: 'disabled';
@@ -695,7 +696,7 @@ export const MODEL_RULES: Readonly<Record<KnownModel | 'unknown', ModelRule>> = 
 export function modelFamily(model: unknown): KnownModel | 'unknown' {
     const m = typeof model === 'string' ? model : '';
     let best: KnownModel | null = null;
-    for (const k of KNOWN_MODELS) {
+    for (const k of [...KNOWN_MODELS, ...RETIRED_MODELS]) {
         if (m === k)
             return k;
         if (m.startsWith(`${k}-`) && (best == null || k.length > best.length))
@@ -703,7 +704,7 @@ export function modelFamily(model: unknown): KnownModel | 'unknown' {
     }
     return best ?? 'unknown';
 }
-export const isKnownModel = (model: unknown): model is KnownModel => typeof model === 'string' && (KNOWN_MODELS as readonly string[]).includes(model);
+export const isKnownModel = (model: unknown): boolean => typeof model === 'string' && (KNOWN_MODELS as readonly string[]).includes(model);
 export const isEffort = (e: unknown): e is Effort => typeof e === 'string' && (EFFORTS as readonly string[]).includes(e);
 export interface RequestKnobs {
     thinkingOff?: boolean;

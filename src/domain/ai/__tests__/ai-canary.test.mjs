@@ -99,7 +99,7 @@ test('with the secret: the database claims the run BEFORE any model call; a refu
 test('a run: one tiny call per model (max_tokens 1), then the record with kinds and numbers only', async () => {
   const w = world({
     answer: (model) =>
-      model === 'claude-haiku-4-5'
+      model === 'claude-haiku-5-5'
         ? { status: 400, body: '{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}' }
         : model === 'claude-opus-5-5'
           ? { status: 529, body: '{"error":{"message":"Overloaded"}}' }
@@ -108,7 +108,7 @@ test('a run: one tiny call per model (max_tokens 1), then the record with kinds 
   const res = await core.canaryHandler(w.deps)(req({ 'x-cron-secret': SECRET }));
   assert.equal(res.status, 200);
   assert.deepEqual(w.rpcs.map((r) => r.fn), ['ai_canary_begin', 'ai_canary_record']);
-  assert.deepEqual(w.fetches.map((f) => f.body.model), ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-5-5']);
+  assert.deepEqual(w.fetches.map((f) => f.body.model), ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5']);
   for (const f of w.fetches) {
     assert.equal(f.url, 'https://api.anthropic.com/v1/messages');
     assert.equal(f.body.max_tokens, 1);
@@ -117,12 +117,23 @@ test('a run: one tiny call per model (max_tokens 1), then the record with kinds 
     assert.equal(f.init.headers['x-api-key'], 'sk-test');
     assert.ok(f.init.signal instanceof AbortSignal, 'each call can be aborted');
   }
-  assert.deepEqual(w.fetches[2].body.output_config, { effort: 'low' }, 'Opus 5.5 always thinks: lowest effort');
+  assert.deepEqual(w.fetches[3].body.output_config, { effort: 'low' }, 'Opus 5.5 always thinks: lowest effort');
+  // PL-7: each probe is the thinking-off shape model-request.ts sends that model — never a field it rejects — minus
+  // the refusal fallback (a probe asks whether THIS model answers).
+  const { requestFields } = await import('../model-request.ts');
+  for (const f of w.fetches) {
+    const { fallbacks, ...want } = f.body.model === 'claude-sonnet-5' ? {} : requestFields(f.body.model, { thinkingOff: true, effort: 'low' });
+    void fallbacks;
+    const got = Object.fromEntries(Object.entries(f.body).filter(([k]) => k === 'thinking' || k === 'output_config'));
+    assert.deepEqual(got, want, f.body.model);
+    assert.equal(f.body.fallbacks, undefined);
+  }
   const sent = w.rpcs[1].args.p_results;
   assert.equal(w.rpcs[1].args.p_secret, SECRET);
   assert.deepEqual(sent.map((r) => [r.model, r.kind, r.status]), [
     ['claude-sonnet-5', 'ok', 200],
-    ['claude-haiku-4-5', 'key_drained', 400],
+    ['claude-sonnet-5-5', 'ok', 200],
+    ['claude-haiku-5-5', 'key_drained', 400],
     ['claude-opus-5-5', 'overloaded', 529],
   ]);
   for (const r of sent) {
@@ -163,8 +174,8 @@ test('classification of every answer', () => {
 });
 
 test('the models are the ones in use, and the file says what it costs and how it is deployed', () => {
-  assert.deepEqual([...core.CANARY_MODELS], ['claude-sonnet-5', 'claude-haiku-4-5', 'claude-opus-5-5']);
-  assert.match(SRC, /≈ \$0\.00012 a run/);
+  assert.deepEqual([...core.CANARY_MODELS], ['claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5']);
+  assert.match(SRC, /≈ \$0\.00014 a run/);
   assert.match(SRC, /≈ \$0\.004 a month/);
   assert.match(SRC, /"Verify JWT" OFF/);
   assert.doesNotMatch(CORE, /\bDeno\b|\bimport\b/, 'the core is pure');

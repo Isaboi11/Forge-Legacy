@@ -123,20 +123,28 @@ test('a tapped web search never goes to a model without the web tool: config Hai
   assert.equal(plain.requests[0].model, 'claude-haiku-5-5', 'a plain ask runs the configured Haiku');
 });
 
+const summaryReply = (model) => () =>
+  new Response(JSON.stringify({ model, content: [{ type: 'text', text: 'You asked how your bench is going.' }], usage: { input_tokens: 300, output_tokens: 20 }, stop_reason: 'end_turn' }), { status: 200, headers: { 'content-type': 'application/json' } });
+const summarize = (handler) => handler(request({ mode: 'summarize', question: '', history: [{ role: 'athlete', text: 'bench?' }, { role: 'holt', text: 'Up.' }, { role: 'athlete', text: 'nice' }] }));
+
 test('the summary reads its own row (coach-ask:summary) and settles as the answering model', async (t) => {
   const log = newLog();
-  fakeNet(t, log, {
-    config: [{ model: 'claude-haiku-4-5', effort: null, canary: false }],
-    reply: () => new Response(JSON.stringify({ model: 'claude-haiku-4-5-20251001', content: [{ type: 'text', text: 'You asked how your bench is going.' }], usage: { input_tokens: 300, output_tokens: 20 }, stop_reason: 'end_turn' }), { status: 200, headers: { 'content-type': 'application/json' } }),
-  });
+  fakeNet(t, log, { config: [{ model: 'claude-sonnet-5', effort: 'low', canary: false }], reply: summaryReply('claude-sonnet-5-20261101') });
   globalThis.__fakeCreateClient = () => fakeSupabase(log);
   const handler = await loadFunction(log, {}, ENV);
-  const res = await handler(request({ mode: 'summarize', question: '', history: [{ role: 'athlete', text: 'bench?' }, { role: 'holt', text: 'Up.' }, { role: 'athlete', text: 'nice' }] }));
-  assert.deepEqual(await res.json(), { ok: true, saved: true });
+  assert.deepEqual(await (await summarize(handler)).json(), { ok: true, saved: true });
   assert.deepEqual(log.configReads[0].body, { p_fn: 'coach-ask:summary', p_uid: null });
   const r = log.requests[0];
-  assert.equal(r.model, 'claude-haiku-4-5', 'the revert row works');
-  assert.equal(r.thinking, undefined, 'Haiku 4.5 is sent no thinking field');
-  assert.equal(r.output_config, undefined, 'nor effort');
-  assert.equal(settles(log)[0].p_model, 'claude-haiku-4-5-20251001');
+  assert.equal(r.model, 'claude-sonnet-5', 'the row runs');
+  assert.deepEqual(r.thinking, { type: 'disabled' });
+  assert.equal(settles(log)[0].p_model, 'claude-sonnet-5-20261101', 'priced as the model that answered');
+});
+
+test('a row naming retired Haiku 4.5 is refused — the summary runs its default, Haiku 5.5', async (t) => {
+  const log = newLog();
+  fakeNet(t, log, { config: [{ model: 'claude-haiku-4-5', effort: null, canary: false }], reply: summaryReply('claude-haiku-5-5') });
+  globalThis.__fakeCreateClient = () => fakeSupabase(log);
+  const handler = await loadFunction(log, {}, ENV);
+  assert.deepEqual(await (await summarize(handler)).json(), { ok: true, saved: true });
+  assert.equal(log.requests[0].model, 'claude-haiku-5-5');
 });

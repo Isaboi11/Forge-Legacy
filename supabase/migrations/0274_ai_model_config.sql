@@ -23,7 +23,7 @@
 --   that deletes the row (= back to the code's default).
 --
 -- ⚠ The CHECK lists are the models and efforts src/domain/ai/model-request.ts can send without a 400
---   (`KNOWN_MODELS`, `EFFORTS`); src/domain/ai/__tests__/model-request.test.mjs fails when the two lists disagree.
+--   (`KNOWN_MODELS`, `EFFORTS`) — not Haiku 4.5, retired in Sprint 3b wherever it was selectable; src/domain/ai/__tests__/model-request.test.mjs fails when the two lists disagree.
 --   A model outside them cannot be written, so a typo can never reach a function (and the function would ignore it
 --   anyway — `default_invalid`).
 --
@@ -62,7 +62,7 @@ begin
   if not exists (select 1 from pg_constraint where conname = 'coach_ai_model_config_model_check') then
     alter table public.coach_ai_model_config
       add constraint coach_ai_model_config_model_check
-      check (model in ('claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5', 'claude-haiku-4-5'));
+      check (model in ('claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5'));
   end if;
   if not exists (select 1 from pg_constraint where conname = 'coach_ai_model_config_effort_check') then
     alter table public.coach_ai_model_config
@@ -72,7 +72,7 @@ begin
   if not exists (select 1 from pg_constraint where conname = 'coach_ai_model_config_canary_model_check') then
     alter table public.coach_ai_model_config
       add constraint coach_ai_model_config_canary_model_check
-      check (canary_model is null or canary_model in ('claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5', 'claude-haiku-4-5'));
+      check (canary_model is null or canary_model in ('claude-sonnet-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-opus-5-5', 'claude-opus-5'));
   end if;
   if not exists (select 1 from pg_constraint where conname = 'coach_ai_model_config_canary_effort_check') then
     alter table public.coach_ai_model_config
