@@ -6,11 +6,9 @@ integrator's stubs). **Contract** `Docs/AI-Sprint-4b-Build-Notes.md` (Lane A row
 
 ## ▶ RESUME HERE
 1. ✅ Step 1 built and committed (below). Gate `node scripts/evals/gate.mjs coach-ask` = PASS on the step-1 commits.
-2. Step 2 (the 38) — PO approved (cap $37). Round 1 subset ran ($0.93): 35/38 back but 23 gained lines lost → STOPPED
-   before the full re-records (the coordinator's condition). Next: the coordinator's go for round 2 ("Step 2, round 1" at
-   the end). The rule is still its own commit (928673c9) so it can be held back.
-   When the integrator says the money is approved, run §Step 2 "Run plan" in order. Until then the step-2 commit makes
-   ask-safety / ask-actions / ask-answers / memory STALE (it changes SYSTEM_V1) — hold it back or re-record.
+2. Step 2 (the 38) — PO approved. Round 1 lost 23 gained lines; round 2 passed its subset (36/38 back, 1 gained lost) and
+   ask-actions, but memory came in 29/30 (a Haiku recap case the rule cannot touch) → stopped, both rules REVERTED
+   (`3265e82a`), gate PASS on 4a's recordings, the 38 stay accepted. Step-2 spend $2.45. See "Step 2, round 2" at the end.
 3. Integrator: merge B first (A's export reads `fetchExportChats`, Forget everything calls `deleteAllPastChats`, the
    screen links `/holt-chats`), then resolve the CoachChatSheet lines below.
 
@@ -217,3 +215,37 @@ and ask-answers has 148 of 1158 under `3d5b431ea5cb` — the coach-ask gate fail
 memory off: the card reads "Holt's memory is off, so he can't keep this. Turn it on in What Holt Remembers. Nothing was
 changed." with no Confirm (`CardContext.loadRemembers`), and an executor that runs after the switch went off keeps
 nothing (`ExecDeps.remembers` → `gone`). Tests in holt-action-cards / holt-action-exec. Open item 2 above is closed.
+
+### Step 2, round 2 (coordinator's go; ceiling $10.50) — ⛔ STOPPED on the memory bar, rule REVERTED
+Rule `a3ad00fc` (on top of round 1): a range or two numbers → leave out; training history said in words → leave out
+unless they name a level (the experience grader was NOT changed); a hedged goal/date → leave out; a body part with no
+matching limitation → `limitations: []`.
+
+| Run | Prompt | Estimate | Real | Result vs bar |
+|---|---|---|---|---|
+| subset (the same 148) | `695a26ef67a5` | $0.87 | **$0.91** | **145/148** — the 38: **36 back** (only A0265, A1131 still fail; A0857 passes by leaving it out); the 110 gained: **1 lost** (A1033 "high blood pressure" → a doctor line, no action — the care rule); no interpret-passed line lost beyond the 3 → **PASS** |
+| ask-actions | `5d499e49f708` | $0.65 | **$0.42** | **84/86 (0.977)**, 0 actions on stop lines → PASS |
+| memory | `6f62cd0ccf25` | $0.11 | **$0.06** | **29/30**, deterministic 5/6 → **MISS** (bar 30/30) |
+| ask-safety | `9581321e0504` | $1.92 | **$0.13** (stopped at 35/710) | not reached |
+| ask-answers rest (5 shards) | | $5.90 | — | not run |
+
+**The memory miss:** `r-changed-mind`, a Haiku RECAP case. Its request is RECAP_SYSTEM + the chat — it does not contain
+SYSTEM_V1, so the step-2 rule cannot have caused it; the hash moved only because the suite hashes CAPS_SOURCES for its
+Sonnet cases (all 6 `earlier` cases passed). Round 1 / step 1 wrote "…4 days a week, replacing the earlier 3."; this run
+wrote "…This replaces the earlier request for 3 days.", which the case's `never: /\b(3|three) days\b/` catches, and the
+grader files every `never` hit as INVENTED (absolute). It is sampling variance plus a grader that calls "kept the old
+value" invented — but it is the stated bar, so per the coordinator: stop spending, revert.
+
+**Done:** ask-safety stopped (TaskStop; no eval process left), recordings committed (`180e6d70`) so the run can resume,
+rounds 1+2 reverted in one commit (`3265e82a`) — coach-ask source and `deploy-coach-ask.ts` are byte-identical to
+`cfd1e6dc` again — and the gate re-run on that tree: **GATE PASS coach-ask** (ask-safety `81f53462bb3b` 685/710,
+ask-actions `ca61e0796507` 83/86, ask-answers `5a55ed59584e` 1021/1158 with the 38 accepted, chat-summary 18/20, memory
+`0c5c7766f567` 30/30). `baselines.json` unchanged: the 38 stay accepted (the PO's 4a call stands). `1e74058b` (memory-off
+note card) kept.
+
+**Step-2 spend: $0.93 + $0.91 + $0.42 + $0.06 + $0.13 = $2.45** of the $10.50 ceiling (lane total with step 1 ≈ $2.52).
+
+**If the coordinator wants to resume instead** (≈ $7.9 est left of the work, ~$8.05 of ceiling left): `git revert 3265e82a`;
+reclassify `never` hits on recap cases as a case FAIL rather than INVENTED (or loosen r-changed-mind's `never` to "3 days
+a week" as the CURRENT value) — either changes the grader, which is the coordinator's call; then `EVAL_SKIP_RECORDED=1`
+ask-safety ($1.85), the 5 ask-answers shards ($5.90), and memory re-graded (or re-recorded, $0.06).
