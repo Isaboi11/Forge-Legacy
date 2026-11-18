@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { FUNCTIONS } from '../../deploy-ai/functions.mjs';
 import { changedSlugs, gateSlug } from '../gate.mjs';
 import { constantString, constantText, promptHash } from '../lib/prompt-hash.mjs';
-import { costOf, evaluateSuite, loadSuites, ratesFor, runLive, validateSuite } from '../lib/runner.mjs';
+import { costOf, evaluateSuite, formatResult, loadBaselines, loadSuites, ratesFor, runLive, validateSuite } from '../lib/runner.mjs';
 import { state, writeRecording } from '../lib/store.mjs';
 import { parseArgs } from '../run.mjs';
 
@@ -130,6 +130,94 @@ test('duplicate case ids and malformed suites are refused loudly', async () => {
   assert.throws(() => validateSuite({ ...fakeSuite(), threshold: { metric: 'vibes', min: 1 } }), /threshold/);
   assert.throws(() => validateSuite({ ...fakeSuite(), functions: [] }), /functions/);
   assert.throws(() => validateSuite({ ...fakeSuite(), name: 'Bad Name' }), /kebab/);
+  assert.throws(() => validateSuite({ ...fakeSuite(), threshold: { metric: 'pass_rate', min: 1, floor: 'yesterday' } }), /floor/);
+  validateSuite({ ...fakeSuite(), threshold: { metric: 'pass_rate', min: 1, floor: 'live' } });
+});
+
+// ── floor: 'live' — "no worse than live" (Sprint 3b §1.1, PO 11-18) ───────────────────────────────────────────
+
+/** A suite held to live, four cases, graded from recordings whose reply is 'ok' or not. */
+async function liveFloorSetup(replies) {
+  const root = tempRoot();
+  const recordings = fs.mkdtempSync(path.join(os.tmpdir(), 'rec-'));
+  const s = fakeSuite({
+    threshold: { metric: 'pass_rate', min: 0.95, floor: 'live' },
+    cases: async () => ['a', 'b', 'c', 'd'].map((id) => ({ id, input: id, expect: 'ok' })),
+  });
+  const hash = promptHash(s, root);
+  for (const [caseId, reply] of Object.entries(replies)) writeRecording(recordings, { suite: 'fake', hash, model: s.model, caseId, reply, usage: null });
+  return { s, root, recordings };
+}
+const liveBaseline = (passedCaseIds, n = 4) => ({ fake: { metricName: 'pass_rate', metric: passedCaseIds.length / n, passedCaseIds, recordedAt: '2026-11-17T20:00:00.000Z', promptHash: 'f'.repeat(64), source: 'test' } });
+
+test('floor live: passes below the absolute bar when it beats live and keeps every case live passes — the bar prints as a target', async () => {
+  const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'ok', c: 'ok', d: 'wrong' });
+  const r = await evaluateSuite(s, { root, recordings, baselines: liveBaseline(['a', 'b']) });
+  assert.equal(r.verdict, 'pass', '0.75 is under the 0.95 bar, but over live (0.5) with a and b still passing');
+  assert.match(r.messages.join('\n'), /target 0\.95 — at 0\.750 \(live 0\.500\)/);
+  assert.deepEqual(r.floor.regressed, []);
+  assert.match(formatResult(r), /floor: live 2 passed \(0\.500\)/);
+  // Equal to live is "no worse": passes.
+  assert.equal((await evaluateSuite(s, { root, recordings, baselines: liveBaseline(['a', 'b', 'c']) })).verdict, 'pass');
+});
+
+test('floor live: a metric under live fails', async () => {
+  const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'wrong', c: 'wrong', d: 'wrong' });
+  const r = await evaluateSuite(s, { root, recordings, baselines: liveBaseline(['a', 'c']) });
+  assert.equal(r.verdict, 'fail');
+  assert.match(r.messages.join('\n'), /pass_rate 0\.250 < live 0\.500/);
+});
+
+test('floor live: a case live passed that now fails fails the suite, even when the metric went UP', async () => {
+  const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'wrong', c: 'ok', d: 'ok' });
+  const r = await evaluateSuite(s, { root, recordings, baselines: liveBaseline(['a', 'b']) });
+  assert.equal(r.graded.metric, 0.75, 'better than live overall (0.5)…');
+  assert.equal(r.verdict, 'fail', '…but b regressed, and a gain never buys a regression');
+  assert.deepEqual(r.floor.regressed.map((x) => x.id), ['b']);
+  assert.match(r.messages.join('\n'), /1 case\(s\) live passes now fail: b: wrong/);
+  // A case live passed that is no longer in the suite cannot be shown to pass: fail, and say re-baseline.
+  const gone = await evaluateSuite(s, { root, recordings, baselines: liveBaseline(['a', 'z']) });
+  assert.equal(gone.verdict, 'fail');
+  assert.match(gone.messages.join('\n'), /z: no longer a case in the suite — re-baseline it/);
+  // A case live passed with no recording under the current prompt is a regression too.
+  const { s: s2, root: root2, recordings: rec2 } = await liveFloorSetup({ a: 'ok', c: 'ok', d: 'ok' });
+  const unrecordedCase = await evaluateSuite(s2, { root: root2, recordings: rec2, baselines: liveBaseline(['b']) });
+  assert.equal(unrecordedCase.verdict, 'fail');
+  assert.match(unrecordedCase.messages.join('\n'), /b: no recording under the current prompt/);
+});
+
+test('floor live: no baseline (or a malformed one) fails — never a guessed baseline; unrecorded fails too; deterministic still decides', async () => {
+  const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'ok', c: 'ok', d: 'ok' });
+  const none = await evaluateSuite(s, { root, recordings, baselines: {} });
+  assert.equal(none.verdict, 'fail', 'a perfect score with no baseline still fails');
+  assert.match(none.messages.join('\n'), /no live baseline for fake in scripts\/evals\/baselines\.json/);
+  assert.match(formatResult(none), /floor: live \(NO BASELINE\)/);
+  assert.equal((await evaluateSuite(s, { root, recordings, baselines: { fake: { metric: 0.5 } } })).verdict, 'fail', 'no passedCaseIds');
+  assert.equal((await evaluateSuite(s, { root, recordings, baselines: { fake: { passedCaseIds: [] } } })).verdict, 'fail', 'no metric');
+  assert.equal((await evaluateSuite(s, { root, recordings, baselines: { fake: { ...liveBaseline([]).fake, metricName: 'mean_score' } } })).verdict, 'fail', 'another metric');
+  // The file itself: none in a fresh root → {}, so the suite fails.
+  assert.deepEqual(loadBaselines(root), {});
+  assert.equal((await evaluateSuite(s, { root, recordings })).verdict, 'fail');
+
+  const det = await evaluateSuite({ ...s, deterministic: async () => [{ id: 'd1', pass: false }] }, { root, recordings, baselines: liveBaseline(['a']) });
+  assert.equal(det.verdict, 'fail', 'a failed deterministic check fails, however good the graded run');
+  const unrec = await evaluateSuite(s, { root, recordings: fs.mkdtempSync(path.join(os.tmpdir(), 'rec-')), baselines: liveBaseline(['a']) });
+  assert.equal(unrec.status, 'UNRECORDED');
+  assert.equal(unrec.verdict, 'fail', 'deterministic checks alone cannot show "no worse than live"');
+  // Without the floor, the same graded run is held to its absolute bar as before.
+  const absolute = await evaluateSuite({ ...s, threshold: { metric: 'pass_rate', min: 0.95 } }, { root, recordings, baselines: {} });
+  assert.equal(absolute.verdict, 'pass');
+  assert.equal(absolute.floor, undefined);
+});
+
+test('the gate passes baselines through: GATE PASS / GATE FAIL by the live floor', async () => {
+  const { s, root, recordings } = await liveFloorSetup({ a: 'ok', b: 'wrong', c: 'ok', d: 'ok' });
+  fs.cpSync(recordings, path.join(root, 'scripts', 'evals', 'recordings'), { recursive: true });
+  const functions = { 'coach-ask': { suites: ['fake'] } };
+  assert.equal((await gateSlug('coach-ask', { root, suites: [s], functions, baselines: liveBaseline(['a', 'c']) })).ok, true);
+  const fail = await gateSlug('coach-ask', { root, suites: [s], functions, baselines: liveBaseline(['a', 'b']) });
+  assert.equal(fail.ok, false);
+  assert.equal(fail.lines.at(-1), 'GATE FAIL coach-ask');
 });
 
 // ── live: never without a budget ────────────────────────────────────────────────────────────────────────────

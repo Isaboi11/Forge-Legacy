@@ -10,6 +10,10 @@
  * and pass OFFLINE (scripts/evals/lib/runner.mjs: graded, stale = fail, unrecorded = deterministic only + a loud
  * warning). A suite found in suites/ that gates the slug but is not in the map runs too (and the map is named as
  * incomplete). A function with no suite passes only with its stated reason (`noSuite`). $0 — never a live call.
+ *
+ * A suite whose threshold says `floor: 'live'` (import-corpus, kitchen-allergens — PO 2026-11-18) passes when it is
+ * no worse than the deployed function: its metric at least the live baseline's in scripts/evals/baselines.json, and
+ * every case live passes still passing. Its absolute `min` prints as a target. No baseline = fail (lib/runner.mjs).
  */
 
 import path from 'node:path';
@@ -37,7 +41,7 @@ export function changedSlugs(files, functions = FUNCTIONS) {
  * Gate one slug.
  * @returns {Promise<{ slug: string, ok: boolean, lines: string[] }>}
  */
-export async function gateSlug(slug, { root = ROOT, suites, functions = FUNCTIONS } = {}) {
+export async function gateSlug(slug, { root = ROOT, suites, functions = FUNCTIONS, baselines } = {}) {
   const meta = functions[slug];
   if (!meta) return { slug, ok: false, lines: [`✕ ${slug} is not in scripts/deploy-ai/functions.mjs — add it (its tests, suites and verify_jwt) first`] };
   const all = suites ?? (await loadSuites(root));
@@ -53,7 +57,7 @@ export async function gateSlug(slug, { root = ROOT, suites, functions = FUNCTION
   }
   for (const s of found) {
     if (!wanted.has(s.name)) lines.push(`⚠ suite ${s.name} gates ${slug} but functions.mjs does not list it — add it there`);
-    const r = await evaluateSuite(s, { root });
+    const r = await evaluateSuite(s, { root, baselines });
     if (r.verdict !== 'pass') ok = false;
     lines.push(formatResult(r));
   }
