@@ -47,3 +47,20 @@ test('the AI check: "15-15 reps" and "F-F reps" are two sets, "20-20-20-20-20 se
   /* A two-rung RANGE is still a range: "8-12 reps" written as 2 sets is made up. */
   assert.ok(checkAiRewrite('Curls\n8-12 reps', '1. Curls 2 sets of 8-12 reps', resolveKey).some((p) => /wrote 2\b/.test(p)));
 });
+
+test('"* Cardio: BB Bicep Curls 50 reps at your discretion" under another lift is still a lift (Squatober Day 11, 11-18 run)', () => {
+  const rows = rowsOf(F.D11_TIDY_1118);
+  assert.deepEqual(rows.map((r) => r.name), ['Back Squat', 'Strict Chin Ups', 'BB Bicep Curls']);
+  assert.ok(!/Bicep/.test(rows[1].coachNote ?? ''), 'not left in the chin-ups\' note');
+  /* A cardio NOTE with no count, before a lettered lift, stays that superset's note (the 09-30 rule). */
+  const ss = rowsOf('4. a. Dips 3 sets of 10 reps\n* Cardio "Scary Arms"\nsuper set b. Curls 3 sets of 10 reps');
+  assert.equal(ss.length, 2);
+});
+
+test('"Cardio: KB or DB" names what to carry, not a lift; its rest line goes to the carry (Squatober Day 14, 11-18 run)', () => {
+  const rows = rowsOf(F.D14_TIDY_1118);
+  assert.ok(!rows.some((r) => /^KB or DB$/i.test(r.name)));
+  const carry = rows.find((r) => /suitcase/i.test(r.name));
+  assert.match(carry.coachNote, /KB or DB/);
+  assert.equal(carry.restSec, 60);
+});

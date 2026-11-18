@@ -15,7 +15,7 @@ const { refreshConsents } = await import('@/lib/consent');
 const { readImportPhoto } = await import('@/data/import-photo-read');
 const { resolveExerciseName } = await import('@/domain/exercise-picker/data');
 const S12 = await import('../../domain/workout/__tests__/fixtures/squatober-2026-day1.mjs');
-const APP = await import('../../domain/program/__tests__/fixtures/app-screen-cards.mjs');
+const APP = await import('../../domain/workout/__tests__/fixtures/app-screen-cards.mjs');
 const resolveKey = (n) => resolveExerciseName(n)?.key;
 
 globalThis.FileReader ??= class {
