@@ -50,6 +50,12 @@ export const ALLOWED_PROP_KEYS: ReadonlySet<string> = new Set([
   'ms',
   'step',
   'total',
+  /*
+   * Which of Holt's tools an ask used (AI Road to 10 Sprint 3b, CH-6): the app's own tool NAMES, comma-joined
+   * ('get_lift_history,web_search' or 'none'), built only from fixed tables (`askToolsUsed` in
+   * `domain/coach/chat-basics.ts`). Never a tool's input, never anything typed.
+   */
+  'tools',
   // Booleans about the app's own state.
   'success',
   'enabled',

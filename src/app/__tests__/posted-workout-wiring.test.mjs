@@ -98,7 +98,8 @@ test('the write screen asks the gate before offering AI, tidies every photo, and
   const WRITE = read('../workout-write.tsx');
   assert.match(WRITE, /whenToUseAi\(text, written, rows/);
   assert.match(WRITE, /aiCall\.kind === 'ai' && !busy \?[\s\S]*?Fix it with AI/);
-  assert.match(WRITE, /if \(call\.kind === 'ai'\) await tidy\(words\);\s*else if \(call\.kind === 'rules'\) await tidy\(words, true\);/);
+  // Sprint 3b (UX-1): the third argument says the pass is the photo's step 2 (`viaPhoto`).
+  assert.match(WRITE, /if \(call\.kind === 'ai'\) await tidy\(words, false, true\);\s*else if \(call\.kind === 'rules'\) await tidy\(words, true, true\);/);
   /* Over a clean reading, AI's layout is taken only if it reads clean too, and a failure says nothing. */
   assert.match(WRITE, /if \(quiet\) \{[\s\S]*?\.kind !== 'rules'\) return;\s*\}/);
   assert.match(WRITE, /if \(quiet\) return;/);
@@ -122,5 +123,10 @@ test('the write screen shows its AI buttons to Premium AI only', () => {
   assert.match(WRITE, /\{premiumAi \? \(\s*<Pressable onPress=\{\(\) => void fromPhoto\(\)\}/);
   assert.match(WRITE, /\{premiumAi \? \(\s*<Pressable onPress=\{\(\) => void tidy\(text\)\}/);
   assert.match(WRITE, /aiCall\.kind === 'too_long' && premiumAi \?/, '"too long for AI" means nothing to someone never offered it');
-  assert.equal((WRITE.match(/void fromPhoto\(\)|void tidy\(text\)/g) ?? []).length, 2, 'no other door to the model');
+  // Sprint 3b (UX-1): plus the kit's Try again, which only exists after one of those two failed (`failed` is set only
+  // inside them) — so it is no new door for anyone not already offered AI.
+  const retry = /\{failed && !busy \? <AiStatus status=\{failed\.status\} onRetry=\{failed\.retry === 'photo' \? \(\) => void fromPhoto\(\) : \(\) => void tidy\(text\)\} \/> : null\}/;
+  assert.match(WRITE, retry);
+  assert.equal((WRITE.replace(retry, '').match(/void fromPhoto\(\)|void tidy\(text\)/g) ?? []).length, 2, 'no other door to the model');
+  assert.equal((WRITE.match(/setFailed\(\{/g) ?? []).length, 2, 'failed is set only by the tidy and the photo read');
 });

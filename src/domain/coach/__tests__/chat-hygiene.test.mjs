@@ -17,7 +17,8 @@ test('the coach-author helper no longer shadows the imported coach-ask stream â€
   // Sprint 2 (C-I7): the import was `askHolt`, a name that also described the coach-author call; it is
   // `streamCoachAsk` now, nothing in the sheet is called `askHolt` (one comment remembers it), one call.
   assert.doesNotMatch(sheet, /\baskHolt\b(?!` that shadowed)/);
-  assert.match(sheet, /import \{ streamCoachAsk, askSourcesLive, type AskAction, type AskTurn \} from '@\/data\/coach-ask-live';/);
+  // Sprint 3b (CH-6): the same import also brings the web-search quote read.
+  assert.match(sheet, /import \{ fetchWebSearchCost, streamCoachAsk, askSourcesLive, type AskAction, type AskTurn \} from '@\/data\/coach-ask-live';/);
   assert.equal((sheet.match(/streamCoachAsk\(/g) ?? []).length, 1, 'one call â€” the coach-ask stream');
   assert.match(sheet, /const holtWrites = async \(kind: 'day' \| 'program'/);
   assert.equal((sheet.match(/await holtWrites\(/g) ?? []).length, 2, 'both builds still ask him to write');

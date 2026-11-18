@@ -49,14 +49,15 @@ import { addNotes, fetchNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
-import { streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
+import { fetchWebSearchCost, streamCoachAsk, askSourcesLive, type AskAction, type AskTurn } from '@/data/coach-ask-live';
 import { ASK_QUESTION_CHARS } from '@/domain/coach/ask-wire';
 import { AI_BALANCE_LOOKUP_MS, ASK_RETRY_LABEL, askOfflineCard, outOfAiCreditsLine, takeBackReply } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
-import { afterStop, askEndedWell, askEndResult, lastReplySid, questionOf, withoutReply } from '@/domain/coach/chat-basics';
+import { afterStop, askEndedWell, askEndResult, askToolsUsed, lastReplySid, questionOf, withCreditCost, withoutReply } from '@/domain/coach/chat-basics';
 import { overCeilingLine, typedBlock, typedBlockLine, typedOverCeiling } from '@/domain/coach/typed-block';
 import { track } from '@/lib/analytics';
-import { NOT_CHARGED } from '@/domain/ai/ai-failure';
+import { AiStatus } from '@/components/forge/AiStatus';
+import { chatFailure } from '@/domain/ai/ai-status';
 import { summarizeChat } from '@/data/holt-chats-live';
 import { HoltStatGrid } from '@/components/forge/HoltStatGrid';
 import { holtRecipeCardsLive } from '@/data/holt-recipes-live';
@@ -322,6 +323,23 @@ export function CoachChatSheet({
   const nutritionAccess = useNutritionAccess();
   const { units } = useUnits();
   const canType = TYPING_ENABLED || premiumAi;
+  /*
+   * CH-6 (Sprint 3b): what a web search costs, read from the SERVER once per sheet (`coach_ai_quote('web')`) so the
+   * "Find one online" chip says it before the tap. Null until read, on a failed read, or without Premium AI +
+   * Nutrition (the only athletes the chip is ever shown to) — the chip then reads as it always has.
+   */
+  const [webCostRead, setWebCostRead] = useState<number | null>(null);
+  useEffect(() => {
+    if (!premiumAi || !nutritionAccess) return;
+    let live = true;
+    void fetchWebSearchCost().then((c) => {
+      if (live) setWebCostRead(c);
+    });
+    return () => {
+      live = false;
+    };
+  }, [premiumAi, nutritionAccess]);
+  const webCost = premiumAi && nutritionAccess ? webCostRead : null;
 
   /*
    * ══ HOLT REMEMBERS THE CHAT (Coach-AI-Amendment-002) ══
@@ -2619,8 +2637,13 @@ export function CoachChatSheet({
        to coach-ask, which only reads the recipe book — so a failure came back looking like his real answer
        ("nothing in your book, want me to look online?"). Now it is named, with a way to ask again. */
     /* "Not charged." when the server gave the credit back (Sprint 1 contract §1.2). */
+    /* UX-1 (Sprint 3b): the kitchen failing is the app failing — the chat's failure card (the AI state kit), with
+       "Not charged." on its own line when refunded, and Try again under it. */
     if (r.kind === 'unavailable' || r.kind === 'offline') {
-      return void say({ kind: 'holt', text: withNotCharged(kitchenError(r), r.refunded) }, { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] });
+      return void say(
+        { kind: 'error', text: kitchenError(r), sub: '', action: '', ...(r.refunded ? { notCharged: true as const } : {}) },
+        { kind: 'chips', chips: [{ label: 'Try again', patch: {}, kitchen: 'go' }] },
+      );
     }
     if (r.kind !== 'ok') return void say({ kind: 'holt', text: withNotCharged(kitchenError(r), r.refunded) });
     const cards = dishCards(r.dishes, rules.allergens, rules.diet);
@@ -2713,6 +2736,8 @@ export function CoachChatSheet({
     const source = opts.allowWeb ? 'web' : opts.kitchen ? 'kitchen' : 'chat';
     const askedAt = Date.now();
     let lookups = 0;
+    /* Sprint 3b (C-G7): the status lines that arrived — turned into tool NAMES by `askToolsUsed`, never sent as words. */
+    const statusLines: string[] = [];
     track('holt_ask_sent', { source });
     /*
      * ⚠ IN PARALLEL, NOT ONE AFTER ANOTHER (stress test 2026-09-25). These were three awaits in a row before
@@ -2757,7 +2782,7 @@ export function CoachChatSheet({
       asking.current.delete(ctl);
       setAsksLive(asking.current.size);
       setBusy(null);
-      track('holt_ask_ended', { source, result: stopped.current.has(ctl) ? 'stopped' : 'closed', ms: Date.now() - askedAt, count: 0, success: false });
+      track('holt_ask_ended', { source, result: stopped.current.has(ctl) ? 'stopped' : 'closed', ms: Date.now() - askedAt, count: 0, tools: 'none', success: false });
       if (stopped.current.has(ctl)) say({ kind: 'holt', text: ASK_STOPPED_LINE }, retryChip({ text, history, q, opts }));
       return;
     }
@@ -2791,6 +2816,7 @@ export function CoachChatSheet({
         /* The waiting bubble says what he is looking up — until his first word, never after. */
         onStatus: (line) => {
           lookups += 1;
+          statusLines.push(line);
           if (!started) setAskStatus({ sid, text: line });
         },
       },
@@ -2802,7 +2828,8 @@ export function CoachChatSheet({
     /* Only this stream's flag clears — another answer still arriving keeps its own. */
     setThread((t) => streamEnded(t, sid));
     const result = askEndResult(r, stopped.current.has(ctl));
-    track('holt_ask_ended', { source, result, ms: Date.now() - askedAt, count: lookups, success: askEndedWell(result) });
+    const tools = askToolsUsed(statusLines, r.kind === 'answer' ? r.actions.map((a) => a.name) : []);
+    track('holt_ask_ended', { source, result, ms: Date.now() - askedAt, count: lookups, tools, success: askEndedWell(result) });
     switch (r.kind) {
       case 'answer':
         /* ⚠ CUT OFF PARTWAY (kitchen-09, QA 09-26): a dropped line came back as a finished one-letter answer
@@ -3434,6 +3461,7 @@ export function CoachChatSheet({
     : null;
   const handoff: Handoff = {
     liveCard,
+    webCost,
     /* Kitchen Scope §1.4: the full recipe opens in My Recipes, UNSAVED, with the app's numbers. */
     onOpenDish: (c: DishCard) => {
       stashRecipeDraft(c.read);
@@ -4799,6 +4827,8 @@ interface Handoff {
   saveLabel: string;
   onOpenDish: (c: DishCard) => void;
   onLogDish: (c: DishCard) => void;
+  /** CH-6 (Sprint 3b): what "Find one online" costs, from the server — null shows the chip without a number. */
+  webCost: number | null;
 }
 
 function TurnView({
@@ -4823,7 +4853,7 @@ function TurnView({
       return <HoltLine text={turn.text} />;
 
     case 'chips':
-      return <Answers chips={turn.chips} ctl={turn.ctl} answer={answer ?? null} onChip={onChip} />;
+      return <Answers chips={turn.chips} ctl={turn.ctl} answer={answer ?? null} onChip={onChip} webCost={handoff.webCost} />;
 
     case 'program':
       return (
@@ -4870,18 +4900,10 @@ function TurnView({
 
     case 'error':
       /* The ONE place red appears. A refusal is Holt deciding; this is the app failing, and conflating
-         the two would make him look arbitrary. "Not charged." sits UNDER the card, in the quiet secondary
-         ink — it is reassurance, not part of the failure (Sprint 1, P-D2; shown only when coach-ask refunded). */
-      return (
-        <View style={styles.errorWrap}>
-          <View style={styles.error}>
-            <Text style={styles.errorTitle}>{turn.text}</Text>
-            <Text style={styles.errorSub}>{turn.sub}</Text>
-            <Text style={styles.errorAction}>{turn.action}</Text>
-          </View>
-          {turn.notCharged ? <Text style={styles.errorFoot}>{NOT_CHARGED}</Text> : null}
-        </View>
-      );
+         the two would make him look arbitrary. UX-1 (Sprint 3b): drawn by the one AI state kit — the line, what
+         happened and what to do, then "Not charged." on its own quiet line, once (Sprint 1, P-D2; only when the
+         server refunded). The Try again chip under it (C-D5) is the retry, so the card offers none of its own. */
+      return <AiStatus status={chatFailure(turn)} />;
 
     case 'dishes':
       return <DishCardsView dishes={turn.dishes} numbers={turn.numbers} onOpen={handoff.onOpenDish} onLog={handoff.onLogDish} />;
@@ -4928,12 +4950,15 @@ function Answers({
   ctl,
   answer,
   onChip,
+  webCost = null,
 }: {
   chips: Chip[];
   ctl?: QuestionControl;
   /** The label the athlete went with, once they have. §6's selected state, read off the thread. */
   answer?: string | null;
   onChip: (c: Chip) => void;
+  /** CH-6 (Sprint 3b): what a web search costs, from the server. Shown on "Find one online" only. */
+  webCost?: number | null;
 }) {
   const chosen = (c: Chip) => answer != null && c.label === answer;
   /*
@@ -5055,17 +5080,20 @@ function Answers({
       {chips.map((c) => {
         /* holtai-08: Undo stays tappable after a later message; the sheet checks it is still the newest. */
         const locked = settled && c.typedEdit !== 'undo';
+        /* CH-6 (Sprint 3b): "Find one online · N credits" — the server's number, before the tap. The chip's label (the
+           transcript line, the answer it is matched by) is unchanged. */
+        const shown = c.webSearch ? withCreditCost(c.label, webCost) : c.label;
         return (
           <Pressable
             key={c.label}
             onPress={() => (locked ? undefined : onChip(c))}
             disabled={locked}
             accessibilityRole="button"
-            accessibilityLabel={c.label}
+            accessibilityLabel={shown}
             accessibilityState={{ selected: chosen(c), disabled: locked }}
-            style={({ pressed }) => [styles.chipCell, isWideChip(c.label) && styles.chipCellWide, (pressed || chosen(c)) && styles.ctlOn]}
+            style={({ pressed }) => [styles.chipCell, isWideChip(shown) && styles.chipCellWide, (pressed || chosen(c)) && styles.ctlOn]}
           >
-            <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{c.label}</Text>
+            <Text style={[styles.chipCellText, chosen(c) && styles.ctlTextOn]} numberOfLines={1}>{shown}</Text>
             {chosen(c) ? <Tick size={13} /> : null}
           </Pressable>
         );
@@ -6226,12 +6254,6 @@ const styles = StyleSheet.create({
   railFill: { height: 3, borderRadius: 2, backgroundColor: flColor.bronze400 },
 
   /* Layout, so both themes (§2.0): the card, then the "Not charged." line under it. Colours are tokens. */
-  errorWrap: { gap: 6 },
-  error: { borderRadius: flRadius.md, borderWidth: 1, borderColor: flColor.dangerBorder, backgroundColor: flColor.dangerBg, padding: 13, gap: 3 },
-  errorTitle: { fontSize: 14.5, fontWeight: '600', color: flColor.dangerText },
-  errorSub: { fontSize: 13, lineHeight: 19, color: flColor.gray400 },
-  errorAction: { marginTop: 6, fontSize: 13.5, fontWeight: '700', color: flColor.dangerText },
-  errorFoot: { paddingHorizontal: 13, fontSize: 12.5, lineHeight: 17, color: flColor.gray400 },
 
   /* ── shared card language ───────────────────────────────────────────────────────────────────── */
   kickerBronze: { fontSize: 10, fontWeight: '700', letterSpacing: 2.2, color: flColor.bronzeInk },

@@ -13,6 +13,8 @@
  *     after it, and no card (a change to confirm, a stop, an error) standing under it.
  */
 import { withOutputScan } from './ask-stream.ts';
+import { ASK_ACTION_NAMES } from './ask-tools.ts';
+import { ASK_STATUS_PHRASES } from './ask-wire.ts';
 import { CUT_OFF_KEEP_CHARS, type Turn } from './chat-core.ts';
 
 /** What a Stop leaves of the reply that was arriving: its words, nothing, or the medical stop in its place. */
@@ -108,3 +110,60 @@ export function askEndResult(
 
 /** A whole answer reached the athlete (cut at the length cap still counts — the words stand). */
 export const askEndedWell = (result: AskEndResult): boolean => result === 'answer' || result === 'cut';
+
+/*
+ * ══ CHAT TELEMETRY: WHICH TOOLS (AI Road to 10 Sprint 3b, CH-6 / C-G7) ══
+ *
+ * `holt_ask_ended` also says which tools the ask used, as `tools`: tool NAMES only, from two fixed tables — the
+ * status lines coach-ask sends during a tool round (`ASK_STATUS_PHRASES`, one line per read tool and for web search)
+ * and the actions he forwards (`ASK_ACTION_NAMES`). ⛔ Never a tool's input, never a word he or the athlete wrote: a
+ * line or a name that is not in those tables is dropped. The server is not changed — every phone already gets both.
+ *
+ * One string, because an analytics prop is a string, number or boolean (`sanitizeProps`): the names in the order
+ * first used, each once, joined by ',' (no spaces — a value with a space is read as prose and dropped), whole names
+ * only within `TOOLS_MAX_CHARS` (the sanitiser's 64). `'none'` when he used none, so "none" and "an older app"
+ * (no key) are told apart.
+ */
+export const TOOLS_MAX_CHARS = 64;
+
+const TOOL_BY_STATUS: ReadonlyMap<string, string> = new Map(Object.entries(ASK_STATUS_PHRASES).map(([name, line]) => [line, name]));
+
+export function askToolsUsed(statusLines: readonly string[], actionNames: readonly string[]): string {
+  const names: string[] = [];
+  const add = (n: string | undefined) => {
+    if (n && !names.includes(n)) names.push(n);
+  };
+  for (const line of statusLines) add(TOOL_BY_STATUS.get(line));
+  for (const n of actionNames) add(ASK_ACTION_NAMES.includes(n) ? n : undefined);
+  let out = '';
+  for (const n of names) {
+    const next = out ? `${out},${n}` : n;
+    if (next.length > TOOLS_MAX_CHARS) break;
+    out = next;
+  }
+  return out || 'none';
+}
+
+/*
+ * ══ WEB SEARCH SAYS WHAT IT COSTS BEFORE THE TAP (AI Road to 10 Sprint 3b, CH-6 / C-G6) ══
+ *
+ * "Find one online" asks again WITH web search, metered as `web` — 2 credits since 0272, not the 1 a message costs.
+ * The chip says so before it is tapped: "Find one online · N credits". ⛔ The number is the SERVER's, read through
+ * `coach_ai_quote('web')` (0221, live; `action_credits ->> p_action`) — never one typed into the app. A read that
+ * fails, an older server, an athlete without Premium AI (the quote answers cost 0) → no number, the chip reads as
+ * it always has.
+ */
+export const WEB_SEARCH_ACTION = 'web';
+
+/** The quote's cost, or null when it said nothing usable (failed, not entitled, unpriced). */
+export function webSearchCostFrom(row: unknown): number | null {
+  const r = Array.isArray(row) ? row[0] : row;
+  const cost = r && typeof r === 'object' ? (r as { cost?: unknown }).cost : null;
+  return typeof cost === 'number' && Number.isInteger(cost) && cost > 0 && cost < 100 ? cost : null;
+}
+
+/** "Find one online · N credits" — the chip as shown. The chip's own label (what the transcript says) is unchanged. */
+export function withCreditCost(label: string, cost: number | null | undefined): string {
+  if (cost == null || cost <= 0) return label;
+  return `${label} · ${cost} ${cost === 1 ? 'credit' : 'credits'}`;
+}

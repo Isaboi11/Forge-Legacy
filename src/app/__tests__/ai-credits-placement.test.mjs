@@ -76,13 +76,14 @@ test('thumbs on the card read and the typed tidy (workout-write): one output, on
   // A typed "Fix it with AI" is its own output; the photo's read and its tidy pass are ONE, so the photo's vote is
   // set after the pass and replaces the one the pass set.
   assert.match(WRITE, /setName\(null\);\n\s+setAiVote\(\{ feature: 'workout_tidy', ref: uuid\(\) \}\);\n\s+return;/);
-  assert.match(WRITE, /else if \(call\.kind === 'rules'\) await tidy\(words, true\);\n(\s+\/\*[^*]*\*\/\n|\s+\/\*[\s\S]*?\*\/\n)\s+setAiVote\(\{ feature: 'import', ref: uuid\(\) \}\);/);
-  assert.match(WRITE, /setAiVote\(null\);\n\s+setBusy\('Reading your photo…'\);/, 'a new photo takes the old control away');
-  assert.match(WRITE, /setBeforeAi\(null\); setError\(null\); setAiVote\(null\); \}\}/, 'Clear takes it away');
+  // Sprint 3b (UX-1): the photo's tidy pass says it is step 2 of the photo (`viaPhoto`), and Clear clears the kit too.
+  assert.match(WRITE, /else if \(call\.kind === 'rules'\) await tidy\(words, true, true\);\n(\s+\/\*[^*]*\*\/\n|\s+\/\*[\s\S]*?\*\/\n)\s+setAiVote\(\{ feature: 'import', ref: uuid\(\) \}\);/);
+  assert.match(WRITE, /setAiVote\(null\);\n\s+setBusy\(cardReadProgress\('reading'\)\);/, 'a new photo takes the old control away');
+  assert.match(WRITE, /setBeforeAi\(null\); setError\(null\); setFailed\(null\); setAiVote\(null\); \}\}/, 'Clear takes it away');
   assert.match(WRITE, /\{aiVote && !busy \? <AiFeedback feature=\{aiVote\.feature\} aiRef=\{aiVote\.ref\} \/> : null\}/);
-  const ok = WRITE.indexOf("if (r.kind !== 'ok') {\n        setError(withNotCharged(");
+  const ok = WRITE.indexOf("if (r.kind !== 'ok') {\n        const line = withNotCharged(");
   assert.ok(ok > 0 && ok < WRITE.indexOf("setAiVote({ feature: 'import'"), 'only after a read that worked');
-  assert.match(WRITE, /setBusy\('Tidying it up with AI…'\);\n\s+setError\(null\);\n\s+setAiVote\(null\);/, 'a new fix takes the old control away');
+  assert.match(WRITE, /setBusy\(viaPhoto \? cardReadProgress\('layout'\) : TIDY_WORKING\);\n\s+setError\(null\);\n\s+setFailed\(null\);\n\s+setAiVote\(null\);/, 'a new fix takes the old control away');
 });
 
 test('thumbs on the Kitchen’s dish and a recipe read from a picture (my-recipes); a page or a paste is the parser', () => {
