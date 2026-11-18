@@ -53,6 +53,10 @@ import type { RowUnit } from '@/domain/workout/conditioning';
 import { SERVICE_LABEL, type WorkoutPlaylistLink } from '@/domain/workout/playlist';
 import { artLabel } from '@/domain/workout/playlist-art';
 import { countOf } from '@/domain/text/plural';
+import { previewBody, viewAllLabel } from '@/domain/squad/comment-preview';
+import { isShortWords } from '@/domain/squad/feed-highlights';
+import type { PickedMention } from '@/domain/squad/mentions';
+import { MentionText } from '@/components/forge/compositions/MentionPicker';
 import { usePlaylistArt } from '@/lib/usePlaylistArt';
 
 /** The 18px gutter every non-media block sits on. Media ignores it — see `bleed`. */
@@ -99,6 +103,19 @@ export interface LedgerPostProps {
   partners?: string | null;
   /** At most three — Volume · Time · Lifts. Anything past that is trimmed here rather than by the caller. */
   stats?: LedgerStat[];
+  /**
+   * The one line that says why THIS session mattered — "New best · Bench Press, 225 lb × 5"
+   * (`domain/squad/feed-highlights`). Under the numbers, with the record mark. Null draws nothing.
+   *
+   * ⚠ THE ONE EARNED BRONZE. The header's rule is bronze on the type icon, type label and stat labels only;
+   * a record is the exception that rule exists to make legible — it is earned, so it may carry the accent.
+   */
+  highlight?: string | null;
+  /**
+   * The people tagged in the caption (0265), so their "@Name" is drawn in the accent ink and opens them —
+   * as it already does in the thread. Absent: the caption is plain text, as before.
+   */
+  captionTags?: readonly PickedMention[];
   playlist?: WorkoutPlaylistLink | null;
   caption: string | null;
   media?: LedgerMediaItem[];
@@ -173,6 +190,21 @@ export interface LedgerPostProps {
   onLongAcknowledge?: () => void;
   onComments: () => void;
   /**
+   * ══ WHAT WAS SAID, UNDER THE POST (PO 2026-11-18) ══
+   *
+   * The newest two comments, oldest first (`domain/squad/comment-preview`), drawn under the action row.
+   * Absent or empty draws nothing — a post nobody has answered gains no line.
+   *
+   * ⚠ NO SURFACE. No fill, no border, no radius: a box under every post is the box-inside-a-box this
+   * component's header exists to have stopped. They are told apart by size and ink alone — smaller than
+   * the caption, the name in the body ink, the words a step quieter — so the post stays the subject.
+   */
+  commentPreview?: readonly { id: string; authorName: string; body: string }[];
+  /** A tap on a previewed comment — opens the thread at it. Falls back to `onComments`. */
+  onOpenComment?: (commentId: string) => void;
+  /** "Reply" on a previewed comment — opens the thread with the composer ready, its author tagged. */
+  onReply?: (comment: { id: string; authorName: string }) => void;
+  /**
    * A "more" control beside the time — the author's door to editing or deleting their own post.
    *
    * The Friends feed passes it on YOUR posts only (social2-15, QA 09-26): a Friends post has no detail
@@ -213,13 +245,18 @@ export function workoutStats(summary: WorkoutSummary, units: UnitSystem, rowUnit
     return cardioStats(summary.cardio, summary.durationSec, units, rowUnit);
   }
   const v = displayWeight(summary.volume, units);
-  return [
-    { value: v.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','), label: `Volume (${v.unit})` },
-    { value: fmtDuration(summary.durationSec), label: 'Time' },
-    /* "1 Lift", not "1 Lifts" — and on a run the count was the run itself, which is why the cardio
-       strip above exists at all. */
-    { value: String(summary.exercises.length), label: liftsLabel(summary.exercises.length) },
-  ];
+  /*
+   * ⚠ A ZERO IS LEFT OUT, NOT PRINTED (PO 2026-11-18). A bodyweight or band session has no load, and
+   * "0 VOLUME (LB)" under somebody's leg day read as "did nothing" — the opposite of what they posted.
+   * The strip shows what the session had; a session with none of the three draws no strip.
+   */
+  const out: LedgerStat[] = [];
+  if (summary.volume > 0 && v.value > 0) out.push({ value: v.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','), label: `Volume (${v.unit})` });
+  if (summary.durationSec > 0) out.push({ value: fmtDuration(summary.durationSec), label: 'Time' });
+  /* "1 Lift", not "1 Lifts" — and on a run the count was the run itself, which is why the cardio
+     strip above exists at all. */
+  if (summary.exercises.length > 0) out.push({ value: String(summary.exercises.length), label: liftsLabel(summary.exercises.length) });
+  return out;
 }
 
 /**
@@ -246,6 +283,8 @@ export function LedgerPost({
   context,
   partners = null,
   stats = [],
+  highlight = null,
+  captionTags,
   playlist = null,
   caption,
   media = [],
@@ -266,10 +305,15 @@ export function LedgerPost({
   onAcknowledge,
   onLongAcknowledge,
   onComments,
+  commentPreview = [],
+  onOpenComment,
+  onReply,
   onMenu,
   onPlaylist,
   footer,
 }: LedgerPostProps) {
+  /* The icon's count and this line read the same number, so they can never disagree on one post. */
+  const viewAll = commentPreview.length ? viewAllLabel(commentCount, commentPreview.length) : null;
   const hasMedia = media.length > 0 || customMedia != null;
   /* A SET of photos is its own thing to handle: it swipes (or collages) in the feed, and a tap on a photo
      opens the full-screen viewer at it — never the post (PO 09-28). One photo, or a clip, keeps `onMedia`. */
@@ -381,6 +425,15 @@ export function LedgerPost({
             ))}
           </View>
         ) : null}
+
+        {showBody && highlight ? (
+          <View style={styles.highlight}>
+            <EngravedIcon name="pr" size={14} />
+            <Text style={styles.highlightText} numberOfLines={1}>
+              {highlight}
+            </Text>
+          </View>
+        ) : null}
       </Pressable>
 
       {playlist ? <PlaylistRow link={playlist} onPress={onPlaylist} /> : null}
@@ -388,9 +441,15 @@ export function LedgerPost({
       {/* ⚠ THE WORDS OPEN THE POST TOO (social-03, QA 09-26). The caption sits outside the Pressable above, so
           a text-only Discussion post — which is nothing BUT its caption — had no tap target except the small
           comment icon. Inert where the caller gives no destination. */}
+      {/* ⚠ A FEW WORDS AND NOTHING ELSE ARE THE POST, and are drawn like it (PO 2026-11-18): no title, no
+          numbers, no picture, and short — "@Moses Ruiz In da house!!!" was the smallest thing on the screen. */}
       {caption ? (
-        <Text onPress={onOpen} suppressHighlighting style={[styles.caption, hasMedia ? styles.captionUnderMedia : null]}>
-          {caption}
+        <Text
+          onPress={onOpen}
+          suppressHighlighting
+          style={[styles.caption, hasMedia ? styles.captionUnderMedia : null, !hasMedia && !title && !shownStats.length && isShortWords(caption) ? styles.captionShout : null]}
+        >
+          {captionTags && captionTags.length ? <MentionText text={caption} tagged={captionTags} /> : caption}
         </Text>
       ) : null}
 
@@ -426,6 +485,45 @@ export function LedgerPost({
           {commentCount > 0 ? <Text style={styles.actionCount}>{commentCount}</Text> : null}
         </Pressable>
       </View>
+
+      {/* ── what was said: "View all" first, then the newest two in the order they were written ── */}
+      {commentPreview.length ? (
+        <View style={styles.previews}>
+          {viewAll ? (
+            <Pressable onPress={onComments} accessibilityRole="button" hitSlop={{ top: 6, bottom: 6 }} style={styles.viewAllBtn}>
+              <Text style={styles.viewAll}>{viewAll}</Text>
+            </Pressable>
+          ) : null}
+          {commentPreview.map((c) => (
+            <View key={c.id} style={styles.previewRow}>
+              <Pressable
+                onPress={() => (onOpenComment ? onOpenComment(c.id) : onComments())}
+                accessibilityRole="button"
+                accessibilityLabel={`${c.authorName}: ${c.body}`}
+                accessibilityHint="Opens the conversation"
+                style={styles.previewHit}
+              >
+                <Text style={styles.previewText} numberOfLines={2}>
+                  <Text style={styles.previewName}>{c.authorName}</Text>
+                  {'  '}
+                  {previewBody(c.body)}
+                </Text>
+              </Pressable>
+              {onReply ? (
+                <Pressable
+                  onPress={() => onReply({ id: c.id, authorName: c.authorName })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Reply to ${c.authorName}`}
+                  hitSlop={{ top: 10, bottom: 10, left: 8, right: 10 }}
+                  style={styles.replyBtn}
+                >
+                  <Text style={styles.reply}>Reply</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
       {photoSet ? <PhotoViewer urls={media.map((m) => m.url)} index={viewerAt} onClose={() => setViewerAt(null)} /> : null}
     </View>
   );
@@ -705,6 +803,11 @@ const styles = StyleSheet.create({
   caption: { marginTop: 16, paddingHorizontal: LEDGER_GUTTER, fontSize: 14, lineHeight: 21.7, color: flColor.gray400 },
   /* Under the image, never above it — a photo post's body copy is a response to the picture. */
   captionUnderMedia: { marginTop: 12 },
+  /* The words ARE the post: body ink, a size up. Still the sans — the display serif is for titles. */
+  captionShout: { marginTop: 14, fontSize: 18, lineHeight: 25, fontWeight: '500', color: flColor.cream100 },
+
+  highlight: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 14, paddingHorizontal: LEDGER_GUTTER },
+  highlightText: { flexShrink: 1, fontSize: 13, fontWeight: '600', color: flColor.selectedInk },
   footer: { marginTop: 12, paddingHorizontal: LEDGER_GUTTER },
 
   actions: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16, paddingHorizontal: LEDGER_GUTTER - 8 },
@@ -712,6 +815,18 @@ const styles = StyleSheet.create({
   actionLabel: { fontSize: 12.5, fontWeight: '600', color: flColor.gray400 },
   actionLabelOn: { color: flColor.selectedInk },
   actionCount: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+
+  /* On the ground, no surface (see `commentPreview`). The action row's 44pt minimum already gives the
+     space above; the post's own bottom padding gives the space below. */
+  previews: { paddingHorizontal: LEDGER_GUTTER, gap: 2 },
+  viewAllBtn: { alignSelf: 'flex-start', paddingVertical: 3 },
+  viewAll: { fontSize: 12.5, fontWeight: '600', color: flColor.gray600 },
+  previewRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  previewHit: { flex: 1, minWidth: 0, paddingVertical: 3 },
+  previewText: { fontSize: 13, lineHeight: 18.5, color: flColor.gray400 },
+  previewName: { fontWeight: '600', color: flColor.cream100 },
+  replyBtn: { flexGrow: 0, flexShrink: 0, paddingVertical: 3 },
+  reply: { fontSize: 12, lineHeight: 18.5, fontWeight: '600', color: flColor.gray600 },
 
   end: { alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 10, paddingTop: 26, paddingBottom: 34 },
   endDiamond: { width: 4, height: 4, transform: [{ rotate: '45deg' }], backgroundColor: flColor.bronze400 },

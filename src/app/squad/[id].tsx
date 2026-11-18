@@ -23,7 +23,7 @@ import { Button } from '@/components/forge/composites/Button';
 import { InputField } from '@/components/forge/composites/InputField';
 import { SquadCrest } from '@/components/forge/SquadCrest';
 import { UploadError } from '@/lib/storage-upload';
-import { deleteCheckin, fetchSquadInvite, goalUnitOf, fetchSquad, fetchSquadCheckins, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
+import { deleteCheckin, fetchSquadInvite, goalUnitOf, fetchSquad, fetchSquadCheckins, fetchTrainedTodayFaces, uploadCheckinVideo, postCheckin, markCheckinViewed, setSquadGoal, clearSquadGoal, removeSquadMember, type SquadCheckin, type SquadMemberView, type SquadGoalMetric } from '@/data/squad-live';
 import { CHALLENGE_TYPES, daysLeft, fetchSquadCompetitions, fetchSquadHall, formatScore, metricLabel, placeLabel } from '@/data/challenges-live';
 import { daysLeftLabel } from '@/domain/challenges/season';
 import {
@@ -33,6 +33,7 @@ import {
   fetchPinnedSquadPosts,
   pinSquadPost,
   fetchMyReactionKinds,
+  fetchCommentPreviews,
   setSquadReactionKind,
   ACK_KINDS,
   ACK_LABEL,
@@ -57,6 +58,10 @@ import { MilestoneBand } from '@/components/forge/compositions/MilestoneBand';
 import { milestoneAckLabel } from '@/domain/share/milestone-card';
 import { recapNoteLines } from '@/domain/share/recap-stats';
 import { displayOf } from '@/domain/squad/post-photos';
+import type { CommentPreview } from '@/domain/squad/comment-preview';
+import { prHighlight } from '@/domain/squad/feed-highlights';
+import type { PickedMention } from '@/domain/squad/mentions';
+import { fetchFeedPostMentions } from '@/data/mentions-live';
 import { earlyLabel, goalDraft, parseGoalEditMode, type GoalEditMode, type GoalPhase } from '@/domain/squad/goal-state';
 import { TransformationLayout } from '@/components/forge/TransformationLayout';
 import { EndOfLedger, LedgerPost, recapMarker, workoutStats, type LedgerMarker } from '@/components/forge/compositions/LedgerPost';
@@ -183,6 +188,8 @@ function SquadDetailRoute() {
     return fetchSquadFeed(squadId, feedLimit);
   }, [squadId, feedLimit]);
   const { data: checkinsData, refetch: refetchCheckins } = useQuery(() => fetchSquadCheckins(squadId), [squadId]);
+  /* WHO trained today (0280) — null before 0280 is pasted, and the hero keeps its plain count. */
+  const { data: faces, refetch: refetchFaces } = useQuery(() => fetchTrainedTodayFaces(squadId), [squadId]);
   // Whether YOU may hand out this squad's code — owner always, members only if the owner opened it
   // up (0056). Resolved server-side; the Options row follows it rather than assuming.
   const { data: inviteInfo } = useQuery(() => fetchSquadInvite(squadId), [squadId]);
@@ -289,10 +296,11 @@ function SquadDetailRoute() {
       refetchFeed();
       refetchPinned();
       refetchCheckins();
+      refetchFaces();
       setReactMap({}); // let fresh server truth win each time the screen regains focus
       setKindMap({});
       setKindsTick((t) => t + 1);
-    }, [refetch, refetchFeed, refetchPinned, refetchCheckins]),
+    }, [refetch, refetchFeed, refetchPinned, refetchCheckins, refetchFaces]),
   );
 
   /*
@@ -316,6 +324,33 @@ function SquadDetailRoute() {
       alive = false;
     };
   }, [feedIds, kindsTick]);
+
+  /*
+   * ══ WHAT WAS SAID, ON THE FEED (PO 2026-11-18) ══ The newest two comments on every post on screen, pinned
+   * ones included — one query for the page (`fetchCommentPreviews`). Same placement rule as the kinds read
+   * above (no hooks after the early return), and the same `kindsTick`, so coming back from a thread you just
+   * commented on re-reads it and your comment is there.
+   *
+   * ⚠ REPLACED, NEVER MERGED. A comment deleted in the thread must leave the feed too; merging would keep it.
+   */
+  const previewIds = [...new Set([...(pinnedData ?? []), ...(feedData ?? [])].map((p) => p.id))].join(',');
+  const [previews, setPreviews] = useState<Record<string, CommentPreview>>({});
+  /* Who each post tagged in its own words, so "@Name" draws in the accent ink here as it does in the thread. */
+  const [postTags, setPostTags] = useState<Record<string, PickedMention[]>>({});
+  useEffect(() => {
+    if (!previewIds) return;
+    let alive = true;
+    const ids = previewIds.split(',');
+    void fetchCommentPreviews(ids).then((m) => {
+      if (alive) setPreviews(m);
+    });
+    void fetchFeedPostMentions(ids).then((m) => {
+      if (alive) setPostTags(m);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [previewIds, kindsTick]);
 
   const squad = data?.squad;
   const members = data?.members ?? [];
@@ -686,6 +721,18 @@ function SquadDetailRoute() {
             : openPost(p.id)
       }
       onComments={() => openPost(p.id)}
+      commentPreview={previews[p.id]?.shown}
+      captionTags={postTags[p.id]}
+      /* A previewed comment opens the thread AT it; Reply opens it with the composer ready and the comment's
+         author tagged (the thread skips the tag when that author is you). */
+      onOpenComment={(cid) => router.push({ pathname: '/squad-post/[id]', params: { id: p.id, comment: cid } })}
+      onReply={(c) => {
+        const row = previews[p.id]?.shown.find((x) => x.id === c.id);
+        router.push({
+          pathname: '/squad-post/[id]',
+          params: row ? { id: p.id, comment: c.id, reply: row.authorId, replyName: row.authorName } : { id: p.id, comment: c.id },
+        });
+      }}
       /* The clip PLAYS. The card's one handler above sent a tap on the video to the workout
          summary — what the PO reported — and the band now opens the same full-screen player a
          pinned video uses.
@@ -771,9 +818,37 @@ function SquadDetailRoute() {
             <View style={styles.metaDot} />
             <View style={styles.metaBtn}>
               <View style={styles.greenDot} />
-              <Text style={styles.metaText}>{squad.trainedToday} training today</Text>
+              {/* The row's own length once 0280 answers — it leaves out anyone a block hides, and the number
+                  above a row of faces must match the faces. */}
+              <Text style={styles.metaText}>{faces ? faces.length : squad.trainedToday} training today</Text>
             </View>
           </TourAnchor>
+
+          {/*
+            ══ WHO TRAINED TODAY (PO 2026-11-18, 0280) ══ "It would be nice to be able to see who worked out." Their
+            faces, newest first; a tap opens them. ⚠ Amends SA-D4 by the PO's call — the start-a-workout push
+            already tells the squad who is training. Absent when nobody has yet, or before 0280 is pasted.
+          */}
+          {faces && faces.length ? (
+            <ScrollView keyboardDismissMode={KEYBOARD_DISMISS_MODE} automaticallyAdjustKeyboardInsets={false} horizontal showsHorizontalScrollIndicator={false} style={styles.facesScroll} contentContainerStyle={styles.faces}>
+              {faces.map((f) => (
+                <Pressable
+                  key={f.id}
+                  onPress={() => router.push({ pathname: '/athlete/[id]', params: { id: f.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${f.name} trained today. View profile`}
+                  style={styles.face}
+                >
+                  <View style={styles.faceRing}>
+                    <Avatar src={f.avatarUrl ?? undefined} name={f.name} size={46} />
+                  </View>
+                  <Text style={styles.faceName} numberOfLines={1}>
+                    {f.name.split(' ')[0]}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : null}
 
           <View style={styles.heroDivider} />
 
@@ -1656,6 +1731,10 @@ function FeedCard({
   onOpen,
   onMedia,
   onComments,
+  commentPreview,
+  captionTags,
+  onOpenComment,
+  onReply,
   onAuthor,
   onReact,
   onLongReact,
@@ -1676,6 +1755,12 @@ function FeedCard({
   ackKind?: AckKind;
   onOpen: () => void;
   onComments: () => void;
+  /** The newest two comments, oldest first — see `LedgerPost`'s `commentPreview`. */
+  commentPreview?: readonly { id: string; authorName: string; body: string }[];
+  onOpenComment?: (commentId: string) => void;
+  onReply?: (comment: { id: string; authorName: string }) => void;
+  /** Who the post tagged in its own words (0265). */
+  captionTags?: readonly PickedMention[];
   /** Absent on a post the squad wrote — there is no profile to open. */
   onAuthor?: () => void;
   onReact: () => void;
@@ -1786,6 +1871,9 @@ function FeedCard({
          shared. Absent on every recap posted before 2026-09-23, which renders as no line at all. */
       partners={summary ? recapNoteLines(summary.partners, summary.food) : null}
       stats={summary ? workoutStats(summary, units, rowUnit) : []}
+      /* Why this session mattered — a record, from the snapshot it was shared with. Never invented. */
+      highlight={summary ? prHighlight(summary.exercises, units) : null}
+      captionTags={captionTags}
       playlist={summary?.playlist ?? null}
       onPlaylist={summary?.playlist ? () => void openPlaylist(summary.playlist!) : undefined}
       /* The member's own words. On a media post they move BELOW the image — `LedgerPost` places them,
@@ -1841,6 +1929,9 @@ function FeedCard({
       onAcknowledge={onReact}
       onLongAcknowledge={onLongReact}
       onComments={onComments}
+      commentPreview={commentPreview}
+      onOpenComment={onOpenComment}
+      onReply={onReply}
     />
   );
 }
@@ -2025,6 +2116,13 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 11, fontWeight: '600', letterSpacing: 1.2, textTransform: 'uppercase', color: flColor.gray400 },
   metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: flColor.bronze400 },
   greenDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#5B7A61' },
+  /* Bleeds to the screen edge so a long row scrolls under the gutter, then pays the gutter back inside. */
+  facesScroll: { marginTop: 16, marginHorizontal: -20, flexGrow: 0 },
+  faces: { gap: 14, paddingHorizontal: 20 },
+  face: { width: 56, alignItems: 'center', gap: 6 },
+  /* The same quiet green as the dot beside the count: trained today, not a rank. */
+  faceRing: { padding: 2, borderRadius: 999, borderWidth: 1.5, borderColor: '#5B7A61' },
+  faceName: { maxWidth: 56, fontSize: 11.5, color: flColor.gray400 },
   heroDivider: { height: 1, backgroundColor: flColor.bronzeBorderSubtle, marginTop: 20, marginBottom: 16 },
 
   // current goal
