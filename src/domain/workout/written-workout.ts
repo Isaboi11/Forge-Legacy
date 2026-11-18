@@ -278,6 +278,19 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
   noteTally(ex, text);
   take(/\b\d{1,3}\s*total\s+(?:sets|reps)\b\s*,?/gi);
 
+  /*
+   * SEVERAL "N sets of R reps @ P%" ON ONE LINE — "2 sets of 6 reps @ 70%, 2 sets of 4 reps @ 80%, 2 sets of 2 reps @ 85%"
+   * (Squatober Day 14 as an 11-18 AI layout wrote it): each group is its sets, in order — eight sets, not one per group.
+   * First, before the per-set ramp rules below read each group's "6 reps @ 70%" as ONE set.
+   */
+  const groups = [...text.matchAll(/(\d{1,2})\s*sets?\s*of\s*(\d{1,3})\s*reps?\s*(?:@|\bat\b|\be\b)\s*(\d{1,3}(?:\.\d+)?)\s*%/gi)];
+  if (groups.length >= 2) {
+    ex.repScheme = groups.flatMap((m) => Array.from({ length: Number(m[1]) }, () => Number(m[2])));
+    ex.percentScheme = groups.flatMap((m) => Array.from({ length: Number(m[1]) }, () => Number(m[3])));
+    ex.sets = ex.repScheme.length;
+    for (const m of groups) take(m[0]);
+  }
+
 
   /*
    * ONE rep count at SEVERAL percentages — "7 reps @ 60%, 65%, 70%, 72%" (2024 Day 18), "3 reps @ 65%, 75%" (the Pressure
@@ -566,7 +579,9 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
        under the lift above (Squatober Day 11, a live run 2026-11-18). A lift with its count is still a lift — unless
        a lettered lift follows, when it is that superset's note as before. */
     const nextLab = labelOf(nextLine);
-    const notedLift = /^[*•·]\s*(?:cardio|finisher|conditioning)\s*:\s*([A-Za-z][^\d]*?\s\d.*)$/i.exec(line);
+    /* ONE lift only: "* Cardio: Triceps 100 reps, Biceps 100 reps, Shrugs 100 reps" (Day 31, an 11-18 run) is the
+       block's list in words and stays a note, as live read it. */
+    const notedLift = /^[*•·]\s*(?:cardio|finisher|conditioning)\s*:\s*([A-Za-z][^\d]*?\s\d(?:(?!,\s*[A-Za-z][^,\d]*\s\d).)*)$/i.exec(line);
     const cardio =
       /^(?:cardio|finisher|conditioning)\s*:?\s*(.*)$/i.exec(line) ??
       (noted && nextLab?.n ? noted : null) ??

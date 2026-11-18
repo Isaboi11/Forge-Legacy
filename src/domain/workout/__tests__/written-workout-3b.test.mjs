@@ -71,3 +71,14 @@ test('"* F-F-F reps (failure each set)" — the layout\'s gloss after the ladder
   const [it] = writtenToWeeks(w, writtenToTemplate(w, resolveKey)).weeks[0].days[0].items;
   assert.deepEqual([it.sets, it.toFailure], [3, true]);
 });
+
+test('"2 sets of 6 reps @ 70%, 2 sets of 4 reps @ 80%, …" on one line is every group\'s sets, in order (Squatober Day 14, 11-18 run)', () => {
+  const [r] = rowsOf('1. Back Squat 2 sets of 6 reps @ 70%, 2 sets of 4 reps @ 80%, 2 sets of 2 reps @ 85%, 2 sets of 10 reps @ 60%');
+  assert.deepEqual(r.repScheme, [6, 6, 4, 4, 2, 2, 10, 10]);
+  assert.deepEqual(r.percentScheme, [70, 70, 80, 80, 85, 85, 60, 60]);
+});
+
+test('"* Cardio: Triceps 100 reps, Biceps 100 reps, Shrugs 100 reps" — a LIST — stays the block\'s words (Squatober Day 31, 11-18 run)', () => {
+  const rows = rowsOf('2. a. Deadlifts 4 sets of 3 reps @ 70%\nsuper set b. Chin Ups 4 sets of 3-6 reps\n* Cardio: Triceps 100 reps, Biceps 100 reps, Shrugs 100 reps\n* 100% at your discretion');
+  assert.deepEqual(rows.map((r) => r.name), ['Deadlifts', 'Chin Ups']);
+});
