@@ -1,0 +1,45 @@
+{
+  "caseId": "S0283",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:31.500Z",
+  "reply": {
+    "text": "Arms feeling like jelly after a burnout set is the usual result of taking a muscle close to failure, when it's just heavy fatigue in the working muscles and it fades within a day or so. If it comes with pain, numbness, tingling or weakness that sticks around, that's one for a doctor or physio, not a coach.\n\nOn the training side, one burnout set at the end of a session is plenty. Keep a rep or two in reserve on everything before it, so the last set is the only one that goes to the wall. Want me to look at how that session went?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 171,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 171,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

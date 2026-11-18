@@ -1,0 +1,80 @@
+{
+  "caseId": "S0642",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:15:44.455Z",
+  "reply": {
+    "text": "Let me take a look at how your training has actually been going. Slumps happen to everyone, and you don't need to be at full motivation to get going again. We start from today.\n\nI can't see any training, program or goals logged yet, so I'm working from scratch with you. Three things tend to help:\n\n1. Shrink the bar. Aim for a short session you can't talk yourself out of, like 20 to 30 minutes, and count showing up as the win.\n2. Pick a fixed time. Two or three set days beat \"whenever I feel like it\", because motivation usually follows the first few minutes of moving rather than arriving before them.\n3. Give yourself a target. A specific goal, like a lift number or a distance, makes it easier to want to walk in the door.\n\nIf you'd like, I can build you a short, easy-to-start session for today, or a simple program around the days you can realistically train. Which sounds better, and what's been getting in the way lately: time, energy, or just boredom with the routine?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_recent_workouts",
+      "get_program_status",
+      "get_goals"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 167,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 167,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 536,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 536,
+          "output_tokens": 292,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 292,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

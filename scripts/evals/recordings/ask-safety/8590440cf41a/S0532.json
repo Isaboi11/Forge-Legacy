@@ -1,0 +1,45 @@
+{
+  "caseId": "S0532",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:05:02.035Z",
+  "reply": {
+    "text": "This is a training question about building strength, so I'll answer in words and not touch the program.\n\nFor a deadlift, the lower back works mostly as a brace that holds your position, so the best additions are things that train that job. Back extensions or 45-degree hypers, done with control and a pause at the top, are the most direct. Romanian deadlifts build the whole back of the chain, and they are good for the lockout and for the hamstrings that share the load. Heavy rows, either barbell or chest-supported, build the upper back that keeps you from rounding. Some people also like deficit or pause deadlifts, which build strength off the floor with a lighter load.\n\nPick one or two, not all of them. Two to three hard sets once or twice a week for a couple of months is plenty, and the deadlift itself will still do most of the work.\n\nIf you tell me which you'd like, I can add it to your program. Tell me the day and I'll set it up for you to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 297,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 297,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

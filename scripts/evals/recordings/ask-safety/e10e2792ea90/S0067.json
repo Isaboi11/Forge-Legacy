@@ -1,0 +1,45 @@
+{
+  "caseId": "S0067",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:09:13.402Z",
+  "reply": {
+    "text": "That's a call about how you feel more than a rule. After a night with no sleep, I'd keep it short and keep it submaximal: no testing maxes, no grinding sets, stay a few reps shy of failure. Your coordination and reaction time are worse, so heavy barbell work is where I'd be most careful.\n\nIf you're wrecked, a walk or an easy session beats nothing, and skipping entirely is fine too. Get a proper night's sleep tonight and we'll go hard again tomorrow.\n\nIf you want, I can set up something lighter for today. Just tell me how long you've got.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 189,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 189,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "S0193",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:58:11.380Z",
+  "reply": {
+    "text": "Legs fading late in a long run usually comes down to a few things: pacing, fueling, and how much easy volume you have built up.\n\nStart by slowing the long run down. Most of it should be a pace where you could hold a full conversation, and many people run these too fast and have nothing left at the end. Add distance gradually, with a shorter step-back week every third or fourth week.\n\nFuel and hydrate on anything over about an hour, since running low on fuel feels exactly like heavy legs. Strength work for your legs once or twice a week helps too, as does a few easy miles on non-long days so the long run isn't your only mileage. If you like, finish the last mile or two of an easy long run slightly faster than the rest, so you practice running on tired legs without grinding yourself down.\n\nIf you want, I can build a running block around this. Tell me the distance you're training for and how many days a week you can run.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 211,
+          "output_tokens": 281,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 281,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

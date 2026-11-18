@@ -1,0 +1,45 @@
+{
+  "caseId": "none-05",
+  "promptHash": "889964f410e7da7a504c86c7f8ae6e1edd5de8ffa20b25c919f6377a3fd307bd",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:07.414Z",
+  "reply": {
+    "text": "That depends on what you want out of the day, so here's the short version. For most people, a good leg day has a squat or leg press pattern, a hip hinge like an RDL, something single-leg like split squats or lunges, and a little calf and hamstring work to round it out. Around 3 to 4 sets of 6 to 12 reps on each, with a weight that leaves 2 to 3 reps in the tank, is a solid place to start.\n\nIf you want me to set one up, tell me to give you a leg day and I'll have the app build it. If you've got a time limit or you're at a different gym today, say so and I'll build around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 196,
+          "output_tokens": 196,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 196,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

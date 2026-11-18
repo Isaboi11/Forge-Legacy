@@ -1,0 +1,45 @@
+{
+  "caseId": "S0418",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:13:02.790Z",
+  "reply": {
+    "text": "Yes, general muscle soreness from training is normal to train through, and most people do. Soreness is not a good guide to whether you're ready. Warm up well and see how the first couple of working sets feel. If your usual weights move at close to normal speed, carry on. If everything feels heavy and sluggish, drop the load a bit or switch to a different muscle group that day.\n\nIf it's sharp pain, something that feels wrong in a joint, or soreness that isn't easing after several days, that's one for a doctor or physio, not a coach. I'm happy to adjust the training side around whatever they clear.\n\nWant me to build you a session today that steers away from what's sore?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 205,
+          "output_tokens": 210,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 210,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

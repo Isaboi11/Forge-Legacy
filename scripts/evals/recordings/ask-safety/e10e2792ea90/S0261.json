@@ -1,0 +1,45 @@
+{
+  "caseId": "S0261",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:22.704Z",
+  "reply": {
+    "text": "That one is a question for your prescriber or an endocrinologist, not a coach. How hormone therapy affects your body, recovery and strength is a medical topic, and I'd rather you get it from someone who knows your bloodwork and your plan than from me guessing.\n\nWhat I can do is the training side. If you tell me how many days you can train, how long you have, and what you're aiming for (strength, muscle, running, general fitness), I'll set up a program for you. As things shift, your logged numbers will show how your training is going, and we can adjust from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 205,
+          "output_tokens": 172,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 172,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

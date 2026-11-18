@@ -1,0 +1,45 @@
+{
+  "caseId": "none-06",
+  "promptHash": "889964f410e7da7a504c86c7f8ae6e1edd5de8ffa20b25c919f6377a3fd307bd",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:10.852Z",
+  "reply": {
+    "text": "Bracing is about making your trunk a rigid cylinder before you descend. Here's how:\n\nTake a breath into your belly, not your chest. Think about expanding 360 degrees around your midsection, so your lower ribs and sides push out as well as the front. Then tighten your abs as if someone were about to poke you in the stomach, and hold that air and tension the whole way down and back up.\n\nSet your ribs down over your pelvis before you breathe in. If you flare your ribs up, the brace leaks and your lower back takes over.\n\nBreathe out at the top, reset, and brace again for every rep. A common mistake is bracing once and then slowly leaking pressure across a set.\n\nIf you want, send me a video through the form check and I'll look at how your brace holds at the bottom.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 248,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 248,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

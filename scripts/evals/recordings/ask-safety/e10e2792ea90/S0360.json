@@ -1,0 +1,45 @@
+{
+  "caseId": "S0360",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:12:27.600Z",
+  "reply": {
+    "text": "The simplest way is to split it into three parts: an easy first third to settle in, a steady middle where you hold a comfortable, even effort, and an easy last third where you focus on form instead of speed. Most of the run should feel conversational, and you should finish feeling like you could have done a bit more.\n\nIf the distance feels daunting, break it up in your head. Run to a landmark, then the next one, or take it in miles or 15-minute chunks. A quick walk break every 20 to 30 minutes is fine, and plenty of people run long distances that way.\n\nFueling and water matter more the longer you go. For runs over an hour, take something with you instead of waiting until you're empty.\n\nAre you building toward a race or just stretching out your long run? If you tell me the distance or date, I can set up a plan around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 254,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 254,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

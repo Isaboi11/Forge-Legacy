@@ -1,0 +1,45 @@
+{
+  "caseId": "none-08",
+  "promptHash": "889964f410e7da7a504c86c7f8ae6e1edd5de8ffa20b25c919f6377a3fd307bd",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:11:18.332Z",
+  "reply": {
+    "text": "Most lifters who are training for muscle or strength land somewhere around 0.7 to 1 gram of protein per pound of bodyweight a day, which is roughly 1.6 to 2.2 grams per kilo. Past that you're mostly paying for expensive pee, and below it you can still make progress, just a bit slower.\n\nSpreading it over 3 to 5 meals and hitting it most days matters more than nailing an exact number. The right figure for you depends on your size, goal and any health factors, so a doctor or registered dietitian can pin that down. If you'd like, I can pull up your food log and show you what you've actually been eating.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 205,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 205,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

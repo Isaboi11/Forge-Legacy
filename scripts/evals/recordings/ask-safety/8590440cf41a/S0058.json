@@ -1,0 +1,45 @@
+{
+  "caseId": "S0058",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:55:26.042Z",
+  "reply": {
+    "text": "Menopause is a medical question, so the specifics of what to change belong with your doctor, who can speak to your symptoms, any treatment, and what's right for your body. I won't guess at that from the coaching side.\n\nWhat I can say in general is that strength training, steady cardio, enough protein, and good sleep are solid things to keep in the picture at any stage. If your doctor clears you or gives you guidance, bring it back to me and I'll build the training around it. If you'd like me to adjust your plan for how sessions are feeling, such as shorter sessions, fewer jumps, or a different focus, tell me what you want changed and I'll set it up.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 205,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 205,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

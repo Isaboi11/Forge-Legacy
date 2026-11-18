@@ -1,0 +1,45 @@
+{
+  "caseId": "S0225",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T18:58:45.957Z",
+  "reply": {
+    "text": "170 on intervals is normal for hard work, and intervals are meant to push you up there. The idea of a \"fat loss zone\" is mostly a myth, though. Lower-intensity work does burn a larger share of its calories from fat, but what drives fat loss is your total weekly energy balance, not the zone you train in. Intervals get a lot done in a short time, easy days build your base, and the best mix is whatever you can keep doing week after week.\n\nI can't say what your max heart rate is or what 170 means for you. Wrist trackers can also drift on intervals, so treat the number as a rough guide, not a verdict. If you have a heart or health concern, take it to your doctor. Want me to look at how your intervals and easy runs are spread across the week?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 222,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 222,
+          "output_tokens": 240,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 240,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

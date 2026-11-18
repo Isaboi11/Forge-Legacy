@@ -1,0 +1,10 @@
+{
+  "caseId": "S0382",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:12:30.305Z",
+  "reply": {
+    "skipped": "code_stop"
+  },
+  "usage": null
+}

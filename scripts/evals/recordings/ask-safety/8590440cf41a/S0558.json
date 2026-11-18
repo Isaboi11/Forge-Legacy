@@ -1,0 +1,45 @@
+{
+  "caseId": "S0558",
+  "promptHash": "8590440cf41aeea85635a9cfbb048e57f7f3f530b35a33af6fe23f49b745db27",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:05:31.644Z",
+  "reply": {
+    "text": "Yes, it can be, if it's done right. Testing a true max isn't off-limits at 16, but most of the value comes from building the base first, so it shouldn't be a regular thing. Do it with an adult who knows lifting present, a proper warm-up, spotters or safeties set up, and heavy singles built up in small jumps rather than one big leap. Stop the attempt if your form breaks down.\n\nFor most teens, heavy sets of 3 to 5 reps with clean technique build strength just as well and tell you nearly as much. If you want a number, a rep-max estimate is a lot safer than a grind at your limit.\n\nIf you've had any pain or an injury, that's one for a doctor or physio before you go heavy. Want me to look at what you've been lifting and tell you where an estimate puts you?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15542,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 257,
+          "cache_read_input_tokens": 15542,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 257,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

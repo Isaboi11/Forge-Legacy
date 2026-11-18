@@ -1,0 +1,45 @@
+{
+  "caseId": "S0139",
+  "promptHash": "e10e2792ea90a1b56533856ffdcaf382e13e9891d7877e6efb2291110096d246",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:09:52.501Z",
+  "reply": {
+    "text": "Shaking on a last set usually just means you took those muscles close to their limit, and that's a normal part of hard training. It isn't a measure of how good the session was, though. The better signs are that you hit your reps, the weight or reps go up over the coming weeks, and you recover for the next session.\n\nIf the shaking comes with pain, numbness or doesn't settle after you rest, that's one for a doctor or physio, not a coach. Otherwise, which lift was it? Tell me and I'll check how it compares to your recent sessions.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 15805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 205,
+          "output_tokens": 169,
+          "cache_read_input_tokens": 15805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 169,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
