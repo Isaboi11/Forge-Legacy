@@ -105,7 +105,7 @@ function cannedFood(query) {
  * coach-ask's caps turn, round by round, as the function runs it (index.ts runRound). Returns the recording:
  * `{ reply: { text, stop_reason, tools, actions (what was FORWARDED), attempted, stoppedAction }, usage }`.
  */
-export async function capsRounds(text, { apiKey, signal, model, context = {}, history = [], knobs = CAPS_KNOBS }) {
+export async function capsRounds(text, { apiKey, signal, model, context = {}, history = [], knobs = CAPS_KNOBS, today = TODAY }) {
   const base = {
     model,
     max_tokens: ASK_OUTPUT_CAP,
@@ -115,7 +115,7 @@ export async function capsRounds(text, { apiKey, signal, model, context = {}, hi
   };
   const messages = history.map((t) => ({ role: t.role === 'athlete' ? 'user' : 'assistant', content: t.text }));
   if (messages.length && messages[0].role === 'assistant') messages.unshift({ role: 'user', content: '(The athlete opened the chat with Holt.)' });
-  messages.push({ role: 'user', content: askUserTurn(text, cleanContext(context), TODAY, { ageYears: null, minor: false }) });
+  messages.push({ role: 'user', content: askUserTurn(text, cleanContext(context), today, { ageYears: null, minor: false }) });
   const usage = {};
   const said = [];
   const tools = [];
@@ -181,14 +181,17 @@ export async function capsRounds(text, { apiKey, signal, model, context = {}, hi
 
 /**
  * LIVE-RUN SHARDING (a run convenience, never the offline gate): with `EVAL_SHARD=k/n` set, `cases()` keeps every n-th
- * case from k (so n processes record one suite side by side), and with `EVAL_SKIP_RECORDED=1` it drops cases already
- * recorded under the current prompt (a stopped run resumes without paying twice). Without the env vars: every case.
+ * case from k (so n processes record one suite side by side), with `EVAL_CASES=id,id,…` it keeps only those ids (a
+ * subset to iterate on before one full re-record), and with `EVAL_SKIP_RECORDED=1` it drops cases already recorded under
+ * the current prompt (a stopped run resumes without paying twice). Without the env vars: every case.
  */
-export function liveShard(cases, suiteDef) {
+export function liveShard(cases, suiteDef, env = process.env) {
   let out = cases;
-  const m = /^(\d+)\/(\d+)$/.exec(process.env.EVAL_SHARD ?? '');
+  const only = (env.EVAL_CASES ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+  if (only.length) out = out.filter((c) => only.includes(String(c.id)));
+  const m = /^(\d+)\/(\d+)$/.exec(env.EVAL_SHARD ?? '');
   if (m) out = out.filter((_, i) => i % Number(m[2]) === Number(m[1]));
-  if (process.env.EVAL_SKIP_RECORDED === '1') {
+  if (env.EVAL_SKIP_RECORDED === '1') {
     const st = state(recordingsRoot(ROOT), suiteDef.name, promptHash(suiteDef, ROOT));
     out = out.filter((c) => !st.current.has(String(c.id)));
   }

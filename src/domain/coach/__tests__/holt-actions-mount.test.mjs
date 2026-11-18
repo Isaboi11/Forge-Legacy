@@ -108,3 +108,12 @@ test('the sheet: interpret retired, every action through actOn with the turn’s
   // caps on every coach-ask body.
   assert.match(fs.readFileSync(path.join(process.cwd(), 'src/data/coach-ask-live.ts'), 'utf8'), /caps: \[HOLT_ACTION_CAPS\],/);
 });
+
+test('mid-build, a build that names nothing is dropped (the question comes back) — never a fresh build door', () => {
+  const p = planHoltActions([{ name: 'propose_program', input: {} }], { clean: true, todayISO: TODAY, building: true });
+  assert.deepEqual(p.steps, []);
+  assert.deepEqual(p.dropped, ['propose_program']);
+  // "none" to what to train around is an ANSWER: limitations [] survives narrowPatch.
+  assert.deepEqual(planHoltActions([{ name: 'propose_program', input: { limitations: [] } }], { clean: true, todayISO: TODAY, building: true }).steps, [{ kind: 'patch', name: 'propose_program', patch: { limitations: [] } }]);
+  assert.deepEqual(planHoltActions([{ name: 'propose_day', input: { dayFocus: 'full body' } }], { clean: true, todayISO: TODAY, building: true }).steps, [{ kind: 'patch', name: 'propose_day', patch: { dayFocus: 'full body' } }]);
+});

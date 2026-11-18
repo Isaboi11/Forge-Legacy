@@ -20,9 +20,16 @@ import { narrowPatch } from '../../../src/domain/coach/interpret-narrow.ts';
 import { VOICE } from '../../../src/domain/coach/rulebook/voice.ts';
 import { readJsonl } from '../lib/suite-kit.mjs';
 import { judge, narrowedExpectation } from './chat-answers.mjs';
-import { CAPS_KNOBS, CAPS_SOURCES, TODAY, capsRounds, liveShard } from './ask-actions.mjs';
+import { CAPS_KNOBS, CAPS_SOURCES, capsRounds, liveShard } from './ask-actions.mjs';
 
 const askFor = (qid) => VOICE[`ask_${qid}`]?.[0] ?? null;
+
+/**
+ * The date the request says and the fields are narrowed with: chat-answers' own (its expectations are narrowed with
+ * 2026-11-17 — a race "in 10 weeks" is a date counted from it). The first caps run sent 2026-11-18 and lost 20 race
+ * lines by exactly one day (11-18 report, open items) — a harness date, not the model.
+ */
+export const ANSWERS_TODAY = '2026-11-17';
 const rows = () => readJsonl('scripts/holt-corpus/corpus-answers.jsonl');
 
 /** The sheet's `buildingLine` for one question on the table (CoachChatSheet.tsx), with no chips and nothing settled. */
@@ -35,7 +42,7 @@ export const buildingFor = (qid) => {
 export function forwardedFields(reply) {
   const out = {};
   for (const a of reply?.actions ?? []) {
-    if (a.name === 'propose_program' || a.name === 'propose_day') Object.assign(out, narrowPatch(a.input ?? {}, TODAY));
+    if (a.name === 'propose_program' || a.name === 'propose_day') Object.assign(out, narrowPatch(a.input ?? {}, ANSWERS_TODAY));
   }
   return out;
 }
@@ -43,7 +50,7 @@ export function forwardedFields(reply) {
 export const suite = {
   name: 'ask-answers',
   functions: ['coach-ask'],
-  promptSources: [...CAPS_SOURCES, { file: 'scripts/evals/suites/ask-actions.mjs', exportName: 'CAPS_KNOBS' }, { file: 'scripts/evals/suites/ask-answers.mjs', exportName: 'buildingFor' }],
+  promptSources: [...CAPS_SOURCES, { file: 'scripts/evals/suites/ask-actions.mjs', exportName: 'CAPS_KNOBS' }, { file: 'scripts/evals/suites/ask-answers.mjs', exportName: 'buildingFor' }, { file: 'scripts/evals/suites/ask-answers.mjs', exportName: 'ANSWERS_TODAY' }],
   model: 'claude-sonnet-5-5',
   cases: async () => liveShard(rows().map((r) => ({ id: r.id, input: { qid: r.qid, text: r.text }, expect: r.expect ?? {} })), suite),
   deterministic: async () => [
@@ -64,6 +71,7 @@ export const suite = {
       signal,
       model,
       knobs: CAPS_KNOBS,
+      today: ANSWERS_TODAY,
       context: { building: buildingFor(c.input.qid) },
       history: ask ? [{ role: 'holt', text: ask }] : [],
     });

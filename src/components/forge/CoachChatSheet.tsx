@@ -2640,6 +2640,7 @@ export function CoachChatSheet({
       knownNotes: notesRef.current ?? heardNotes.current,
       asked,
       nutrition: nutritionAccess,
+      building: mode != null,
     });
     let shown = false;
     let flow = false;
