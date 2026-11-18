@@ -22,9 +22,10 @@ const HOLD = /^(\d{1,3})\s*(s|secs?|seconds?|mins?|minutes?)\b(?:\s+each\s+set)?
 /**
  * IM-1 (Sprint 3): "F-F-F reps" under a lift with no rep count of its own — every set to failure, one F per set (the
  * Bridger Logan cards; the AI layout keeps it as a note). Only a whole ladder of F's; "10-10-10-F" stays the
- * author's words. "to failure" / "AMRAP" in the note does the same, with the lift's own set count.
+ * author's words. "to failure" / "AMRAP" in the note does the same, with the lift's own set count. The layout's own
+ * gloss after it — "F-F-F reps (failure each set)", a live run 2026-11-18 — is still the whole ladder (Sprint 3b).
  */
-const ALL_F = /^\s*(F(?:\s*[-–]\s*F){1,19})\s*reps?\.?\s*$/i;
+const ALL_F = /^\s*(F(?:\s*[-–]\s*F){1,19})\s*reps?\.?\s*(?:\([^)]*\))?\s*$/i;
 const TO_FAILURE_WORDS = /\b(?:(?:to|till?|until)\s+failure|amrap|max\s+reps|as\s+many\s+(?:reps\s+)?as\s+possible)\b/i;
 
 function failureFromNote(note: string, sets: number): { sets: number; note: string } | null {

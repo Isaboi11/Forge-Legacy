@@ -64,3 +64,10 @@ test('"Cardio: KB or DB" names what to carry, not a lift; its rest line goes to 
   assert.match(carry.coachNote, /KB or DB/);
   assert.equal(carry.restSec, 60);
 });
+
+test('"* F-F-F reps (failure each set)" — the layout\'s gloss after the ladder — is still every set to failure (11-18 run)', async () => {
+  const { writtenToWeeks } = await import('../../program/written-import.ts');
+  const w = readWrittenWorkout('6. Neutral Grip Pull Ups 3 sets\n* F-F-F reps (failure each set)');
+  const [it] = writtenToWeeks(w, writtenToTemplate(w, resolveKey)).weeks[0].days[0].items;
+  assert.deepEqual([it.sets, it.toFailure], [3, true]);
+});
