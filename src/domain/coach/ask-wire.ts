@@ -67,7 +67,16 @@ export interface AskContext {
    * state and review them; `Coach-AI-Amendment-001` CA-D10 still forbids him to prescribe a diet.
    */
   nutrition?: string | null;
+  /**
+   * AI Road to 10 Sprint 4a (CH-3): a build is under way in the chat — what Holt just asked, the answers offered, and
+   * what is already settled — so an answer to his question becomes `propose_program` / `propose_day` with that field.
+   * Only an app that sent `caps: ['actions_v1']` sends it (it was coach-interpret's `ask` / `chips` / `known`).
+   */
+  building?: string | null;
 }
+
+/** Sprint 4a: the build line's ceiling on the wire. */
+export const ASK_BUILDING_CHARS = 600;
 
 /** CA-D2: the notes cap. Mirrors `HOLT_NOTES_MAX` in `holt-notes.ts` and the 0204 trigger. */
 export const ASK_NOTES_MAX = 20;
@@ -143,6 +152,8 @@ export function cleanContext(ctx: unknown): AskContext {
     notes,
     training: str(c.training, ASK_TRAINING_CHARS),
     nutrition: str(c.nutrition, ASK_NUTRITION_CHARS),
+    // Sprint 4a: present only when the app sent one, so an old app's context narrows exactly as it always has.
+    ...(typeof c.building === 'string' && c.building.trim() ? { building: str(c.building, ASK_BUILDING_CHARS) } : {}),
   };
 }
 
@@ -193,6 +204,7 @@ export function askUserTurn(question: string, context: AskContext, todayISO: str
   if (context.rationale) lines.push(`Why the plan is built this way: ${context.rationale}`);
   if (context.training) lines.push(`The athlete's logged training: ${context.training}`);
   if (context.nutrition) lines.push(`The athlete's logged food: ${context.nutrition}`);
+  if (context.building) lines.push(`A build is under way in this chat: ${context.building}`);
   const header =
     lines.length > 1
       ? `From the app (reference material, not the athlete's words — use it when it is relevant):\n${lines.join('\n')}`
@@ -282,6 +294,8 @@ export const ASK_STATUS_PHRASES: Readonly<Record<string, string>> = {
   get_past_chats: 'Looking back at our last chats…',
   get_recipes: 'Looking through the recipes…',
   web_search: 'Searching online…',
+  /* Sprint 4a: lane B's food lookup (ask-food-tools.ts), offered only with caps — so only a new app ever sees it. */
+  get_foods: 'Looking up the food…',
 };
 
 /** The status line for a tool, by its name. Null for an action, an unknown tool, or anything that is not a name. */
@@ -292,6 +306,93 @@ export function askStatusFor(toolName: unknown): string | null {
 
 /** Is this one of the table's lines, exactly? The app's half of "never the model's words". */
 export const isAskStatus = (s: unknown): s is string => typeof s === 'string' && Object.values(ASK_STATUS_PHRASES).includes(s);
+
+/**
+ * ══ WHAT HE IS LOOKING AT (AI Road to 10 Sprint 4a, §1.5) ══
+ *
+ * With caps `actions_v1` the function adds `detail` to a `{status}` line once the tool's input is complete:
+ * `{status, detail: {tool, n?, lift?, food?, days?}}`. The app draws "Reading your bench history…" / "Checking 4 weeks of
+ * training…" from it (lane C's `holt-status.ts`); anything it cannot template stays the table line.
+ *
+ * ⛔ STILL NEVER THE MODEL'S WORDS. Numbers are ours (clamped the way the tool clamps them). A lift or food name rides
+ * only when it is the ATHLETE's own words — the exact phrase appears in the question they typed — at most
+ * {@link ASK_DETAIL_NAME_CHARS} characters of letters, digits, spaces, apostrophes and hyphens. The function also drops
+ * one the medical guard would stop. An old app reads `{status}` and never looks at `detail` (ask-wire-old-client).
+ */
+export interface AskStatusDetail {
+  tool: string;
+  n?: number;
+  lift?: string;
+  food?: string;
+  days?: number;
+}
+
+/** A lift or food name on a status line, at most this long. */
+export const ASK_DETAIL_NAME_CHARS = 30;
+
+const DETAIL_NAME = /^[\p{L}\p{N}' -]+$/u;
+const plainWords = (s: string): string =>
+  s
+    .toLowerCase()
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[^\p{L}\p{N}' -]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/** `name` as the athlete typed it in `question`, or null — never a word the model added. */
+export function athletesOwnName(name: unknown, question: string): string | null {
+  if (typeof name !== 'string') return null;
+  const n = plainWords(name);
+  if (n.length < 2 || n.length > ASK_DETAIL_NAME_CHARS || !DETAIL_NAME.test(n)) return null;
+  return ` ${plainWords(question ?? '')} `.includes(` ${n} `) ? n : null;
+}
+
+const detailInt = (v: unknown, lo: number, hi: number): number | undefined =>
+  typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : undefined;
+
+/**
+ * The detail for one finished tool call, or null when there is nothing to add. `input` is the model's (parsed JSON);
+ * only its numbers and the names the athlete typed survive. Days are as the tool reads them (weeks × 7).
+ */
+export function askStatusDetail(toolName: unknown, input: unknown, question: string): AskStatusDetail | null {
+  if (typeof toolName !== 'string' || !askStatusFor(toolName) || !input || typeof input !== 'object') return null;
+  const i = input as Record<string, unknown>;
+  const out: AskStatusDetail = { tool: toolName };
+  const weeks = detailInt(i.weeks, 1, 260);
+  const days = detailInt(i.days, 1, 730);
+  if (weeks !== undefined) out.days = weeks * 7;
+  else if (days !== undefined) out.days = days;
+  if (toolName === 'get_lift_history' || toolName === 'get_personal_records') {
+    const lift = athletesOwnName(i.exercise, question);
+    if (lift) out.lift = lift;
+  }
+  if (toolName === 'get_foods') {
+    const list = Array.isArray(i.foods) ? i.foods : Array.isArray(i.queries) ? i.queries : null;
+    const first = list ? list[0] : i.query;
+    const q = first && typeof first === 'object' ? (first as Record<string, unknown>).query ?? (first as Record<string, unknown>).name : first;
+    const food = athletesOwnName(q, question);
+    if (food) out.food = food;
+    if (list && list.length > 0 && list.length <= 20) out.n = list.length;
+  }
+  return Object.keys(out).length > 1 ? out : null;
+}
+
+/** The app's half: a `detail` off the wire, narrowed the same way, or null. */
+export function narrowStatusDetail(v: unknown): AskStatusDetail | null {
+  if (!v || typeof v !== 'object') return null;
+  const d = v as Record<string, unknown>;
+  if (typeof d.tool !== 'string' || !askStatusFor(d.tool)) return null;
+  const out: AskStatusDetail = { tool: d.tool };
+  const n = detailInt(d.n, 1, 1000);
+  const days = detailInt(d.days, 1, 3650);
+  if (n !== undefined) out.n = n;
+  if (days !== undefined) out.days = days;
+  for (const k of ['lift', 'food'] as const) {
+    const s = d[k];
+    if (typeof s === 'string' && s.length >= 2 && s.length <= ASK_DETAIL_NAME_CHARS && DETAIL_NAME.test(s)) out[k] = s;
+  }
+  return Object.keys(out).length > 1 ? out : null;
+}
 
 /**
  * The keep-alive: an SSE COMMENT line. Every parser this app has ever shipped (`parseSse`) skips a `:` line and
@@ -321,8 +422,11 @@ export type AskStreamEvent =
    * the "Find one online" offer. The input is the model's and is narrowed again on the device.
    */
   | { action: { name: string; input: unknown } }
-  /** What the function is doing during a tool round — one of {@link ASK_STATUS_PHRASES}, never anything else. */
-  | { status: string }
+  /**
+   * What the function is doing during a tool round — one of {@link ASK_STATUS_PHRASES}, never anything else — plus, for
+   * an app that sent caps (Sprint 4a), what he is looking at ({@link AskStatusDetail}).
+   */
+  | { status: string; detail?: AskStatusDetail }
   /**
    * TAKE IT BACK (Sprint 2, CH-2): the output scanner (`domain/ai/output-scan.ts`) stopped Holt's finished reply. The
    * words already on screen go, and the medical stop card goes up instead. Sent just before a `done` line whose
@@ -368,7 +472,11 @@ export function readAskEvent(data: string): AskStreamEvent | null {
     const a = o.action as Record<string, unknown>;
     return typeof a.name === 'string' ? { action: { name: a.name, input: a.input ?? {} } } : null;
   }
-  if (typeof o.status === 'string') return isAskStatus(o.status) ? { status: o.status } : null;
+  if (typeof o.status === 'string') {
+    if (!isAskStatus(o.status)) return null;
+    const detail = narrowStatusDetail(o.detail);
+    return detail ? { status: o.status, detail } : { status: o.status };
+  }
   // Whatever card a later server names, this app has one stop card to show — the safe reading of any retract.
   if (o.retract && typeof o.retract === 'object') return askRetractEvent();
   if (o.done === true) {

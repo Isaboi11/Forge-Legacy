@@ -62,7 +62,7 @@ test('⛔ a reply to a symptom that says "that’s normal" is about the symptom 
   assert.ok(events.some((e) => e.retract));
 });
 
-test('⛔ a forwarded card’s words are scanned too — the online-search chip shows `looking_for`', async (t) => {
+test('⛔ a card’s words are scanned BEFORE it is forwarded — the online-search chip shows `looking_for`', async (t) => {
   const replies = [
     sse([
       { type: 'message_start', message: { model: 'claude-sonnet-5', usage: { input_tokens: 8, output_tokens: 1 } } },
@@ -74,8 +74,9 @@ test('⛔ a forwarded card’s words are scanned too — the online-search chip 
     answerRound('I can look online for one.'),
   ];
   const { events } = await run(t, () => replies.shift());
-  assert.ok(events.some((e) => e.action), 'the card went out');
-  assert.ok(events.some((e) => e.retract), 'and is taken back with the turn');
+  // ⛔ Sprint 4a §1.3: the card's words are checked BEFORE it leaves — it never goes out, and the turn is taken back.
+  assert.ok(!events.some((e) => e.action), 'the card never went out');
+  assert.ok(events.some((e) => e.retract), 'and the turn is taken back');
 });
 
 test('⛔ words that streamed before the line dropped are scanned, and retracted instead of the outage line', async (t) => {
