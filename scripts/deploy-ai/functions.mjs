@@ -93,6 +93,15 @@ export const FUNCTIONS = {
     tests: ['src/domain/nutrition/__tests__/meal-photo-source.test.mjs', ...META],
     suites: ['meal-photo'],
   },
+  'meal-describe': {
+    builder: 'scripts/build-meal-describe-deploy.mjs',
+    exportName: 'buildMealDescribeDeploy',
+    verifyJwt: true,
+    ai: true,
+    probe: { options: 200, post: 401 },
+    tests: ['src/domain/nutrition/__tests__/meal-describe-source.test.mjs', MEDICAL, ...META],
+    suites: ['meal-describe'],
+  },
   'recipe-photo-read': {
     builder: 'scripts/build-recipe-photo-read-deploy.mjs',
     exportName: 'buildRecipePhotoReadDeploy',

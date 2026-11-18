@@ -1,0 +1,26 @@
+{
+  "caseId": "chicken-grams",
+  "promptHash": "997a593f3e136fb3f6755a775b0ca91190f4cfe516589d2be4d87e48a51749e8",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T18:07:00.676Z",
+  "reply": {
+    "text": "{\"isFood\": true, \"items\": [{\"name\": \"grilled chicken breast\", \"search\": \"chicken breast grilled\", \"amount\": 200, \"unit\": \"g\", \"grams\": 200, \"confidence\": \"high\"}, {\"name\": \"sweet potato\", \"search\": \"sweet potato baked\", \"amount\": 150, \"unit\": \"g\", \"grams\": 150, \"confidence\": \"high\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 51,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 2940,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 126,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

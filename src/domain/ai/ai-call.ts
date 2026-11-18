@@ -34,6 +34,7 @@ export const AI_APP_TIMEOUT_MS = {
   'coach-author': 30_000,
   'recipe-link-read': 30_000,
   'bug-plain': 90_000,
+  'meal-describe': 45_000,
 } as const satisfies Partial<Record<AiFunction, number>>;
 
 /** The functions this app calls through `invokeAi` (every AI function but the chat's streamed `coach-ask`). */
