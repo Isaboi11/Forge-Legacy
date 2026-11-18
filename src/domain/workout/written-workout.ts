@@ -196,6 +196,9 @@ function labelOf(line: string): { n: string | null; letter: string | null; super
 /** Title Case for a shouted card — "BACK SQUAT" → "Back Squat", "DEADlift" → "Deadlift". Leaves "DB"/"KB"/"BB". */
 function tidyName(raw: string): string {
   raw = raw.replace(/\bez\s*bar\b/gi, 'EZ Bar');
+  /* "Push downs" / "Pull downs" are one word in every gym and in the library — the card reader splits them on some
+     reads of the same card and not others (Squatober Day 21: "Push downs" once, "Pushdowns" three times; Sprint 3b). */
+  raw = raw.replace(/\b(push|pull)\s+(downs?)\b/gi, (_, a: string, b: string) => `${a}${b.toLowerCase()}`);
   const keep = new Set(['DB', 'KB', 'BB', 'EZ', 'RDL', 'RDLS', 'OHP', 'SSB']);
   return raw
     .replace(/["“”]/g, '')
@@ -381,7 +384,9 @@ function applyRx(ex: WrittenExercise, rx: string, bare = false): string {
   if (count) {
     const c = Number(count[1]);
     ex.sets = 1;
-    if (c >= 50) {
+    /* "Skullcrushers x 50 reps" (2024 Day 10, "UNBROKEN"): the "x" makes it ONE set of fifty, as written — only a
+       bare "100 reps" is a total to reach (AI Road to 10 Sprint 3b, IM-1). */
+    if (c >= 50 && !/^[x×]/i.test(count[0])) {
       ex.reps = null;
       ex.note = joinNote(ex.note, `${c} reps total, in as few sets as you can. Add a set each time you rack it.`);
     } else {
@@ -642,6 +647,29 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       ex.sets = ex.repScheme!.length;
       ex.note = joinNote(ex.note, `The cluster, ${times} times through`);
       return;
+    }
+
+    /*
+     * "2. a. Bench Press" / "* same as above" (AI Road to 10 Sprint 3b, IM-1): the AI layout moved the card's "same as
+     * above" off the lift's line onto a note of its own, and the bench was left one set of nothing (Squatober Day 7).
+     * On a lift with nothing of its own yet it means what it means on the lift's line: the prescription above it.
+     */
+    if (cur && /^[*•·]?\s*["“]?\s*same\s+as\s+above\s*["”]?\s*[.!]?$/i.test(line.trim())) {
+      const ex = cur as WrittenExercise;
+      const src = [...out.exercises].reverse().find((e) => e !== ex && e.section !== 'warmup' && (e.repScheme || e.percentScheme || e.percent != null || e.reps != null));
+      if (src && !ex.sets && !ex.repScheme && ex.reps == null && ex.percent == null) {
+        Object.assign(ex, {
+          sets: src.sets,
+          reps: src.reps,
+          repsMax: src.repsMax,
+          repScheme: src.repScheme ? [...src.repScheme] : null,
+          percent: src.percent,
+          percentScheme: src.percentScheme ? [...src.percentScheme] : null,
+          restScheme: src.restScheme ? [...src.restScheme] : null,
+          restSec: ex.restSec ?? src.restSec,
+        });
+        return;
+      }
     }
 
     /* "Planned Day off" under Cardio — a day off from cardio is not an exercise called that. */
@@ -977,6 +1005,9 @@ export function readWrittenWorkout(text: string): WrittenWorkout {
       name = `${pair[1]}${pair[2]} ${pair[4]}`;
       ex.note = joinNote(ex.note, `Or ${pair[3]}`);
     }
+    /* "7. Row sets" / "* 10 min": the layout's "N sets" with the count left out because the card gave none (its own
+       rule) — "sets" is not part of the lift's name (Sprint 3b, IM-1). A drop set or a warm-up set keeps its word. */
+    if (!/\b(?:drop|super|giant|cluster|warm[\s-]?up|build[\s-]?up)\s+sets?\s*$/i.test(name)) name = name.replace(/\s+sets?\s*$/i, '');
     ex.name = tidyName(name);
     const left = applyRx(ex, rx, true);
     if (left && !left.split(' ').every((w) => FILLER.test(w))) ex.note = joinNote(ex.note, tidySentence(left));

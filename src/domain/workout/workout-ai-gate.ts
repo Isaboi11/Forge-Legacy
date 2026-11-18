@@ -132,11 +132,17 @@ function numbersOf(text: string): { plain: Set<number>; secs: Set<number> } {
 /**
  * How many rungs each rep ladder on the card has — "6-6-4-4 reps" is 4, "F-F-F reps" is 3 (IM-1, 11-17). The layout
  * writes that as "4 sets", which is READ off the card, not made up; 30 of the corpus's 57 AI layouts were thrown away
- * over exactly this. Only a ladder followed by "reps" counts, and only with three rungs or more ("8-12 reps" is a range).
+ * over exactly this. Only a ladder followed by "reps" (or a clock unit) counts; two rungs only when equal or F.
  */
 function ladderLengths(text: string): Set<number> {
   const out = new Set<number>();
-  for (const m of text.matchAll(/(?:\b\d{1,3}|\bF)(?:\s*[-–]\s*(?:\d{1,3}|F)\b){2,19}(?=\s*reps?\b)/gi)) out.add(m[0].split(/[-–]/).length);
+  for (const m of text.matchAll(/(?:\b\d{1,3}|\bF)(?:\s*[-–]\s*(?:\d{1,3}|F)\b){1,19}(?=\s*(?:reps?|sec(?:ond)?s?|s)\b)/gi)) {
+    const rungs = m[0].split(/[-–]/).map((x) => x.trim().toUpperCase());
+    /* Two rungs count only when they cannot be a range: "15-15 reps", "F-F reps" (Sprint 3b) — never "8-12 reps".
+       A ladder of clocks ("20-20-20-20-20 sec") is that many sets too. */
+    if (rungs.length === 2 && rungs[0] !== rungs[1] && !rungs.includes('F')) continue;
+    out.add(rungs.length);
+  }
   return out;
 }
 

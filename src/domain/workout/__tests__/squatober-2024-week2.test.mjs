@@ -33,7 +33,10 @@ test('Day 10 "Unbroken": squat 6×6 @ 65% = 205, bench 5×8 @ 65% = 145, 2 min; 
   assert.equal(rows[1].restSec, 120);
   assert.equal(rows[0].coachNote, 'UNBROKEN', 'the prescription is not repeated in the note');
   assert.equal(rows[2].name, 'EZ Bar Skullcrushers', 'one name, written across two lines');
-  assert.match(rows[2].coachNote, /50 reps total/);
+  /* "x 50 reps" "UNBROKEN" is ONE set of fifty — the "x" says so (Sprint 3b, IM-1; the corpus key since 11-17). It was
+     read as a 50-rep total to reach in as few sets as you can, the opposite of unbroken. */
+  assert.deepEqual([rows[2].sets, rows[2].targetReps], [1, 50]);
+  assert.doesNotMatch(rows[2].coachNote, /reps total/);
   assert.match(rows[2].coachNote, /UNBROKEN/);
 });
 
