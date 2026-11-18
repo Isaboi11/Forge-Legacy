@@ -22,7 +22,7 @@ const DAMAGE_NEAR_BODY = new RegExp(String.raw `\b(?:${AMBIGUOUS_DAMAGE.source.s
     `|` +
     String.raw `\b(?:${BODY_PART.source.slice(3, -3)})\s+${WORDS}(?:${AMBIGUOUS_DAMAGE.source.slice(3, -3)})\b`, 'i');
 export const SEEKING_ADVICE = /\b(what('?s| is)\s+wrong|why\s+does\s+(it|my)|should\s+i\s+(see\s+(a|someone|somebody|the|my)|go\s+to\s+(a|the)\s+(doctor|er|hospital|clinic)|worry|rest\s+(it|my|this|that)\b|stop\s+(training|lifting|running)\s+(on|with|because)|ice|stretch\s+(it|my|this|that)\b)|is\s+(it|this|that)\s+(ok|okay|serious|bad|normal|fine)(?!\s+(to|if|for)\b)|do\s+i\s+need\s+(a\s+(brace|scan|doctor|cast|splint|x[-\s]?ray|mri)|to\s+(see|get\s+it\s+(checked|looked\s+at)))|how\s+do\s+i\s+(fix|heal|treat|rehab)\s+(it|this|that|my)\b|diagnos\w*|what\s+(should|do)\s+i\s+do\s+about|will\s+it\s+heal)\b/i;
-export const DISORDERED_EATING = /\b(purg(e|es|ed|ing)|(throw(ing|n)?|threw)\s+up\s+after\s+(i\s+eat|eating|meals?|food)|make\s+myself\s+(throw\s+up|sick|puke)|starv(e|ing)\s+myself|laxatives?\s+(to|for)\s+(lose|drop|cut)|(eat|eating)\s+(only\s+)?([1-7]\d{2}|[1-9]\d)\s+cal\w*\b(?!\s+(of|before|pre|after|post|for\s+(breakfast|lunch|dinner|a\s+snack)))|stop(ped)?\s+eating\s+(to|so)\b|(vomit\w*|puk(e|es|ed|ing)|barf\w*|(throw(s|ing|n)?|threw)\s+up)\s+(\w+\s+){0,3}(after|when)\s+(i\s+)?(eat\w*|ate|meals?|food|dinner|lunch|breakfast|snacks?|bing\w*)|(vomit\w*|puk(e|es|ed|ing)|sick|(throw(s|ing|n)?|threw)\s+up)\s+(\w+\s+){0,4}on\s+purpose|self[-\s]induced\s+vomit\w*)/i;
+export const DISORDERED_EATING = /\b(purg(e|es|ed|ing)|(throw(ing|n)?|threw)\s+up\s+after\s+(i\s+eat|eating|meals?|food)|make\s+myself\s+(throw\s+up|sick|puke)|starv(e|ing)\s+myself|laxatives?\s+(to|for)\s+(lose|drop|cut)|(eat|eating)\s+(only\s+)?([1-7]\d{2}|[1-9]\d)\s+cal\w*\b(?!\s+(of|before|pre|after|post|for\s+(breakfast|lunch|dinner|a\s+snack)))|stop(ped)?\s+eating\s+(to|so)\b|(vomit\w*|puk(e|es|ed|ing)|barf\w*|(throw(s|ing|n)?|threw)\s+up)\s+(\w+\s+){0,3}(after|when)\s+(i\s+)?(eat\w*|ate|meals?|food|dinner|lunch|breakfast|snacks?|bing\w*)|(vomit\w*|puk(e|es|ed|ing)|sick|(throw(s|ing|n)?|threw)\s+up)\s+(\w+\s+){0,4}on\s+purpose|self[-\s]induced\s+vomit\w*|(made|making|makes)\s+my\s?self\s+(throw\s+up|puke|vomit\w*|barf\w*)|(made|making|makes)\s+my\s?self\s+sick\s+(\w+\s+){0,3}(after|when)\s+(i\s+)?(eat\w*|ate|meals?|food|dinner|lunch|breakfast|snacks?|bing\w*)|\b(ate|eat|eating|binged?|binging)\b[^.!?]{0,60}?\b(then|and)\s+(made|make|making)\s+my\s?self\s+sick|(threw|throw(s|ing|n)?)\s+(it|that|them|everything|it\s+all|all\s+of\s+it)\s+(back\s+)?up\s+(\w+\s+){0,4}on\s+purpose)/i;
 const FEW_DAYS = String.raw `(\d+([-/]\d+)?|two|three|four|five|six|seven|(a\s+)?few|(a\s+)?couple(\s+of)?|several)\s+days`;
 const EVERY_FEW_DAYS = String.raw `(other\s+day|${FEW_DAYS})`;
 export const SPARSE_EATING = new RegExp(String.raw `\b(` +
@@ -335,7 +335,7 @@ export function trimHistory(history: unknown, max: number = ASK_HISTORY_MAX): As
     }
     return clean.slice(-Math.max(0, max));
 }
-const str = (v: unknown, cap: number): string | null => typeof v === 'string' && v.trim() ? v.trim().slice(0, cap) : null;
+const cappedStr = (v: unknown, cap: number): string | null => typeof v === 'string' && v.trim() ? v.trim().slice(0, cap) : null;
 export function cleanContext(ctx: unknown): AskContext {
     if (!ctx || typeof ctx !== 'object')
         return {};
@@ -343,10 +343,10 @@ export function cleanContext(ctx: unknown): AskContext {
     const coaching = Array.isArray(c.coaching)
         ? c.coaching
             .map((r) => {
-            const name = str((r as {
+            const name = cappedStr((r as {
                 name?: unknown;
             } | null)?.name, 80);
-            const text = str((r as {
+            const text = cappedStr((r as {
                 text?: unknown;
             } | null)?.text, 700);
             return name && text ? { name, text } : null;
@@ -371,13 +371,13 @@ export function cleanContext(ctx: unknown): AskContext {
         }
     }
     return {
-        program: str(c.program, 300),
+        program: cappedStr(c.program, 300),
         coaching,
-        rationale: str(c.rationale, 700),
+        rationale: cappedStr(c.rationale, 700),
         notes,
-        training: str(c.training, ASK_TRAINING_CHARS),
-        nutrition: str(c.nutrition, ASK_NUTRITION_CHARS),
-        ...(typeof c.building === 'string' && c.building.trim() ? { building: str(c.building, ASK_BUILDING_CHARS) } : {}),
+        training: cappedStr(c.training, ASK_TRAINING_CHARS),
+        nutrition: cappedStr(c.nutrition, ASK_NUTRITION_CHARS),
+        ...(typeof c.building === 'string' && c.building.trim() ? { building: cappedStr(c.building, ASK_BUILDING_CHARS) } : {}),
     };
 }
 export interface AskAbout {
@@ -2569,7 +2569,7 @@ export interface AskSettleRow {
     cost_usd: number | null;
     remaining: number | null;
 }
-const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+const finiteOr0 = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
 export function reserveRefusal(row: unknown): {
     status: number;
     body: Record<string, unknown>;
@@ -2584,7 +2584,7 @@ export function reserveRefusal(row: unknown): {
     }
     if (r.reason === 'no_consent')
         return { status: 403, body: { route: 'error', reason: 'no_consent' } };
-    return { status: 200, body: { route: 'out_of_credits', remaining: num(r.remaining), allowance: num(r.allowance) } };
+    return { status: 200, body: { route: 'out_of_credits', remaining: finiteOr0(r.remaining), allowance: finiteOr0(r.allowance) } };
 }
 export type AskTurnFailure = 'timeout' | 'upstream_error' | 'upstream_unreachable' | 'upstream_dropped';
 export type AskOutcome = 'ok' | 'upstream_error' | 'upstream_unreachable' | 'timeout' | 'refusal' | 'truncated' | 'bad_output' | 'cancelled' | 'guarded' | 'other';
@@ -2630,7 +2630,7 @@ export function askFailureEvent(failure: AskTurnFailure, settled: {
         ...(typeof settled.remaining === 'number' && Number.isFinite(settled.remaining) ? { remaining: settled.remaining } : {}),
     };
 }
-export const meterInt = (v: unknown, max: number): number => Math.min(max, Math.max(0, Math.round(num(v))));
+export const meterInt = (v: unknown, max: number): number => Math.min(max, Math.max(0, Math.round(finiteOr0(v))));
 export const HOLT_ACTION_CAPS = 'actions_v1';
 export const LEGACY_ACTIONS = ['propose_program_edit', 'offer_online_recipe_search'] as const;
 export const NEW_ACTIONS = [
@@ -2733,8 +2733,227 @@ export interface FoodToolDef {
         additionalProperties: false;
     };
 }
-export const FOOD_TOOLS: FoodToolDef[] = [];
-export const FOOD_ACTIONS: FoodToolDef[] = [];
+export interface FoodHit {
+    key: string;
+    source: string;
+    name: string;
+    brand: string | null;
+    kcal100: number | null;
+    protein100: number | null;
+    carb100: number | null;
+    fat100: number | null;
+    servings: {
+        label: string;
+        grams: number | null;
+    }[];
+    attribution: string | null;
+}
+const FOODS_KEPT = 20;
+const FOODS_SHOWN = 6;
+const RESULT_CHARS = 4000;
+const MEAL_NAME_CHARS = 40;
+const ITEMS_MAX = 12;
+const AMOUNT_MAX = 2000;
+const num = (x: unknown): number | null => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? x : null);
+const str = (x: unknown, n: number): string => (typeof x === 'string' ? x.trim().slice(0, n) : '');
+export function narrowFoods(data: unknown): FoodHit[] {
+    const foods = (data as {
+        foods?: unknown;
+    })?.foods;
+    if (!Array.isArray(foods))
+        return [];
+    const out: FoodHit[] = [];
+    for (const f of foods) {
+        if (!f || typeof f !== 'object')
+            continue;
+        const o = f as Record<string, unknown>;
+        const key = str(o.key, 120);
+        const name = str(o.name, 120);
+        if (!key || !name || num(o.kcal100) == null)
+            continue;
+        out.push({
+            key,
+            source: str(o.source, 20),
+            name,
+            brand: str(o.brand, 80) || null,
+            kcal100: num(o.kcal100),
+            protein100: num(o.protein100),
+            carb100: num(o.carb100),
+            fat100: num(o.fat100),
+            servings: (Array.isArray(o.servings) ? o.servings : [])
+                .filter((s): s is Record<string, unknown> => !!s && typeof s === 'object')
+                .map((s) => ({ label: str(s.label, 60), grams: (num(s.grams) ?? 0) > 0 ? (s.grams as number) : null }))
+                .filter((s) => s.label)
+                .slice(0, 8),
+            attribution: str(o.attribution, 80) || null,
+        });
+        if (out.length >= FOODS_KEPT)
+            break;
+    }
+    return out;
+}
+export function foodServingOptions(food: FoodHit): {
+    label: string;
+    grams: number | null;
+}[] {
+    const out: {
+        label: string;
+        grams: number | null;
+    }[] = [];
+    const seen = new Set<string>();
+    for (const s of food.servings ?? []) {
+        const label = s.label?.trim();
+        if (!label || seen.has(label.toLowerCase()))
+            continue;
+        seen.add(label.toLowerCase());
+        out.push({ label, grams: s.grams != null && s.grams > 0 ? s.grams : null });
+    }
+    if (!out.some((s) => s.grams === 100 && /^100\s*(g|ml)/i.test(s.label)))
+        out.push({ label: '100 g', grams: 100 });
+    return out;
+}
+export function foodDefaultServing(food: FoodHit): {
+    label: string;
+    grams: number | null;
+} {
+    const options = foodServingOptions(food);
+    return options.find((s) => s.grams != null && !/^100\s*(g|ml)/i.test(s.label)) ?? options[0];
+}
+export function foodServingMacros(food: FoodHit, grams: number | null): {
+    kcal: number;
+    protein: number;
+    carb: number;
+    fat: number;
+} | null {
+    if (grams == null || grams <= 0)
+        return null;
+    const f = grams / 100;
+    const r = (n: number, dp: number) => Math.round(n * 10 ** dp) / 10 ** dp;
+    return { kcal: r((food.kcal100 ?? 0) * f, 0), protein: r((food.protein100 ?? 0) * f, 1), carb: r((food.carb100 ?? 0) * f, 1), fat: r((food.fat100 ?? 0) * f, 1) };
+}
+const FOOD_SOURCE: Record<string, string> = {
+    usda: 'USDA',
+    fs: 'FatSecret (restaurants and brands)',
+    off: 'packaged food, community data',
+    community: 'shared by Forge athletes',
+    custom: 'their own food',
+};
+function foodWords(s: string): string[] {
+    return s
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((w) => (w.length >= 5 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
+}
+export function formatFoodSearch(query: string, foods: readonly FoodHit[]): string {
+    if (foods.length === 0) {
+        return `Nothing in the app's food database for "${query}". Try a shorter or more general name \u2014 for a part of an order, drop the restaurant ("ranch dressing"). If it is still not there, say plainly the app doesn't have it; never give a number of your own.`;
+    }
+    const words = foodWords(query).filter((w) => w.length > 2);
+    const scored = foods
+        .map((f, i) => {
+        const hay = foodWords(`${f.brand ?? ''} ${f.name}`);
+        return { f, i, hits: words.filter((w) => hay.some((h) => h.startsWith(w))).length };
+    })
+        .sort((a, b) => b.hits - a.hits || a.i - b.i)
+        .slice(0, FOODS_SHOWN);
+    const lines = [`Results for "${query}" from the app's food database (the app's numbers: quote them as written, never add them up or scale them):`];
+    for (const { f } of scored) {
+        const s = foodDefaultServing(f);
+        const m = foodServingMacros(f, s.grams);
+        const per100 = foodServingMacros(f, 100) as {
+            kcal: number;
+            protein: number;
+            carb: number;
+            fat: number;
+        };
+        const at = m
+            ? `per ${s.label}${/^\d+(\.\d+)?\s*(g|ml)\b/i.test(s.label) ? '' : ` (${s.grams} g)`}: ${m.kcal} kcal, ${m.protein} g protein, ${m.carb} g carbs, ${m.fat} g fat`
+            : `per 100 g: ${per100.kcal} kcal, ${per100.protein} g protein, ${per100.carb} g carbs, ${per100.fat} g fat`;
+        const other = foodServingOptions(f)
+            .filter((x) => x.label !== s.label && x.grams != null)
+            .slice(0, 3)
+            .map((x) => x.label);
+        lines.push(`key ${f.key} \u2014 ${f.name}${f.brand ? ` (${f.brand})` : ''}, ${FOOD_SOURCE[f.source] ?? f.source}; ${at}${other.length ? `; other servings: ${other.join(', ')}` : ''}.`);
+    }
+    return lines.join('\n');
+}
+const ITEMS_SCHEMA = {
+    type: 'array',
+    minItems: 1,
+    maxItems: ITEMS_MAX,
+    items: {
+        type: 'object',
+        properties: {
+            key: { type: 'string', description: 'A key from get_foods.' },
+            amount: { type: 'number', description: 'Only a number the athlete gave.' },
+            unit: { type: 'string', enum: ['oz', 'g', 'servings'], description: "The athlete's unit for amount. 'servings' counts the food's own serving." },
+        },
+        required: ['key'],
+        additionalProperties: false,
+    },
+};
+export const FOOD_MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
+export type FoodMealSlot = (typeof FOOD_MEAL_SLOTS)[number];
+export const FOOD_TOOLS: FoodToolDef[] = [
+    {
+        name: 'get_foods',
+        description: "Search the app's food database \u2014 the same one the athlete logs from: USDA foods, packaged foods, and restaurant and chain menu items. Each result has a key, its source, and the APP's calories and macros for its serving and per 100 g. Use for any 'how many calories/macros in X' or restaurant-order question, and before log_food or propose_meal. One food per search: for a restaurant order, search the restaurant's item first ('Costa Vida chicken salad'), then any part they named on its own ('Costa Vida ranch dressing').",
+        input_schema: {
+            type: 'object',
+            properties: {
+                query: { type: 'string', description: "One food, with the restaurant or brand when there is one ('Chick-fil-A nuggets', 'ranch dressing', 'grilled chicken breast')." },
+            },
+            required: ['query'],
+            additionalProperties: false,
+        },
+    },
+];
+export const FOOD_ACTIONS: FoodToolDef[] = [
+    {
+        name: 'log_food',
+        description: "Log foods from get_foods to the athlete's food diary today, each as its own entry. The app shows a card with every food, its amount and the app's numbers, and a Log button; nothing is logged unless they tap. Use when they ask you to log what they ate ('log 2 eggs and toast for breakfast'). Every item must be a key that get_foods returned in THIS message. Give an amount only when the athlete said one; otherwise leave it out and the app uses that food's own serving. Give meal only when they named one or the time of day makes it plain. Never add up or scale numbers yourself \u2014 the card does.",
+        input_schema: {
+            type: 'object',
+            properties: {
+                meal: { type: 'string', enum: [...FOOD_MEAL_SLOTS], description: "The diary meal they named ('for breakfast'). Leave it out when they didn't." },
+                items: ITEMS_SCHEMA,
+            },
+            required: ['items'],
+            additionalProperties: false,
+        },
+    },
+    {
+        name: 'propose_meal',
+        description: "Put foods from get_foods together as one meal the athlete can log or save in one tap. The app shows a card with every item, the app's totals, and Log it / Save as a meal buttons; nothing is written unless they tap. Use when they want an order or a plate made into ONE thing ('make it a meal called \u2026'). Every item must be a key that get_foods returned in THIS message. Give an amount only when the athlete said one ('4 oz of ranch'); otherwise leave it out and the app uses that food's own serving. Never add up or scale numbers yourself \u2014 the card does.",
+        input_schema: {
+            type: 'object',
+            properties: {
+                name: { type: 'string', description: "What to call it, in the athlete's words ('Costa Vida Chicken Salad')." },
+                items: ITEMS_SCHEMA,
+            },
+            required: ['name', 'items'],
+            additionalProperties: false,
+        },
+    },
+];
+export const FOOD_ACTION_NAMES: readonly string[] = FOOD_ACTIONS.map((a) => a.name);
+export const FOOD_PROMPT = `# Looking up, logging or saving a food
+
+- When they ask what is in a food, a dish or a restaurant order, or want one logged or saved, look it up with get_foods. Never say you can't look it up or don't have a restaurant's numbers until get_foods has come back empty.
+- Search one food at a time. For a restaurant order, search the restaurant's own item first ("Costa Vida chicken salad"), and each extra they named on its own ("Costa Vida ranch dressing", "Costa Vida red sauce"). If the restaurant's version isn't there, search the plain food ("ranch dressing") and use the closest match.
+- Pick the result that is really what they ate \u2014 the restaurant's own item over a general one. When you had to use a general food for part of it, say which part in a few words.
+- You may quote a result's numbers exactly as the tool gives them, for the serving it names. Never add foods together, scale a serving to their amount, or estimate a total: the app's card shows the totals.
+- To log what they ate, call log_food with the keys get_foods returned in this message and only the amounts they gave ("2 eggs" is amount 2, unit servings, when the egg's serving is one egg; "4 oz" is amount 4, unit oz). When they gave no amount, leave it out.
+- When they want the whole order as one thing ("make it a meal", "save it as one"), call propose_meal instead, with the name they asked for.
+- After log_food or propose_meal, say in one short line what is on the card. Never say it is logged or saved: they tap the card.`;
+export function foodActionAck(name: string): string {
+    return name === 'propose_meal'
+        ? "The app is showing the athlete the meal card with its items and the app's totals, and Log it and Save as a meal buttons. Do not say it is saved or logged, and do not state the totals. In one short line, say what is on it \u2014 and if any part is a general food standing in for the restaurant's own, say which."
+        : "The app is showing the athlete a card with each food, its amount and the app's numbers, and a Log button. Do not say it is logged, and do not state any total. In one short line, say what is on it \u2014 and if any food is a general one standing in for what they named, say which.";
+}
 export interface FoodToolCtx {
     authorization: string;
     supabaseUrl: string;
@@ -2745,15 +2964,109 @@ export interface FoodToolCtx {
         json(): Promise<unknown>;
     }>;
 }
+const FOOD_SEARCH_TIMEOUT_MS = 15000;
+const capped = (t: string): string => (t.length > RESULT_CHARS ? `${t.slice(0, RESULT_CHARS - 40)}\n\u2026(cut for length)` : t);
 export async function runFoodTool(name: string, input: Record<string, unknown>, ctx: FoodToolCtx, seen: Map<string, unknown>): Promise<{
     text: string;
     isError?: boolean;
 }> {
-    void name;
-    void input;
-    void ctx;
-    void seen;
-    return { text: 'Food lookup is not available.', isError: true };
+    if (name !== 'get_foods')
+        return { text: `Unknown tool: ${name}`, isError: true };
+    const query = typeof input?.query === 'string' ? input.query.replace(/\s+/g, ' ').trim().slice(0, 80) : '';
+    if (query.length < 2)
+        return { text: 'query is required', isError: true };
+    if (!ctx?.fetch || !ctx.supabaseUrl)
+        return { text: "Food search isn't available just now. Tell the athlete you couldn't look it up.", isError: true };
+    let found: FoodHit[];
+    try {
+        const res = await ctx.fetch(`${ctx.supabaseUrl}/functions/v1/food-search`, {
+            method: 'POST',
+            headers: { Authorization: ctx.authorization, apikey: ctx.anonKey, 'content-type': 'application/json' },
+            body: JSON.stringify({ q: query, limit: 12 }),
+            signal: AbortSignal.timeout(FOOD_SEARCH_TIMEOUT_MS),
+        });
+        if (res.status === 403) {
+            return { text: "Nutrition is not on for this account, so the food database can't be searched. Say so in one line; never give a number of your own.", isError: false };
+        }
+        if (!res.ok)
+            throw new Error(`food search answered ${res.status}`);
+        found = narrowFoods(await res.json());
+    }
+    catch {
+        return { text: "The food search didn't answer, so you couldn't pull it. Tell the athlete you couldn't look it up just now; never give a number of your own.", isError: true };
+    }
+    for (const f of found)
+        seen.set(f.key, f);
+    return { text: capped(formatFoodSearch(query, found)), isError: false };
+}
+export interface MealProposalItem {
+    food: FoodHit;
+    amount: number | null;
+    unit: 'oz' | 'g' | 'servings' | null;
+}
+export interface MealProposal {
+    name: string;
+    items: MealProposalItem[];
+}
+export interface FoodLogProposal {
+    meal: FoodMealSlot | null;
+    items: MealProposalItem[];
+}
+function resolveItems(raw: unknown, seen: ReadonlyMap<string, unknown>): {
+    items: MealProposalItem[];
+    unknown: string[];
+} {
+    const list = Array.isArray(raw) ? raw.slice(0, ITEMS_MAX) : [];
+    const items: MealProposalItem[] = [];
+    const unknown: string[] = [];
+    for (const r of list) {
+        const o = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
+        const key = typeof o.key === 'string' ? o.key.trim() : '';
+        const food = seen.get(key) as FoodHit | undefined;
+        if (!food) {
+            unknown.push(key || '(no key)');
+            continue;
+        }
+        const amount = typeof o.amount === 'number' && Number.isFinite(o.amount) && o.amount > 0 && o.amount <= AMOUNT_MAX ? o.amount : null;
+        const unit = o.unit === 'oz' || o.unit === 'g' || o.unit === 'servings' ? o.unit : null;
+        items.push({ food, amount, unit: amount == null ? null : (unit ?? 'servings') });
+    }
+    return { items, unknown };
+}
+const notSeen = (action: string, keys: string[]) => `Not keys get_foods returned in this message: ${keys.join(', ')}. Search for those foods first, then call ${action} again with keys from the results. Nothing was shown to the athlete.`;
+export function resolveMealProposal(input: unknown, seen: ReadonlyMap<string, unknown>): {
+    ok: true;
+    meal: MealProposal;
+} | {
+    ok: false;
+    text: string;
+} {
+    const i = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
+    const name = typeof i.name === 'string' ? i.name.replace(/\s+/g, ' ').trim().slice(0, MEAL_NAME_CHARS) : '';
+    if (!name)
+        return { ok: false, text: 'propose_meal needs a name.' };
+    if (!Array.isArray(i.items) || i.items.length === 0)
+        return { ok: false, text: 'propose_meal needs at least one item.' };
+    const { items, unknown } = resolveItems(i.items, seen);
+    if (unknown.length)
+        return { ok: false, text: notSeen('propose_meal', unknown) };
+    return { ok: true, meal: { name, items } };
+}
+export function resolveFoodLog(input: unknown, seen: ReadonlyMap<string, unknown>): {
+    ok: true;
+    log: FoodLogProposal;
+} | {
+    ok: false;
+    text: string;
+} {
+    const i = (input && typeof input === 'object' ? input : {}) as Record<string, unknown>;
+    if (!Array.isArray(i.items) || i.items.length === 0)
+        return { ok: false, text: 'log_food needs at least one item.' };
+    const { items, unknown } = resolveItems(i.items, seen);
+    if (unknown.length)
+        return { ok: false, text: notSeen('log_food', unknown) };
+    const meal = (FOOD_MEAL_SLOTS as readonly string[]).includes(i.meal as string) ? (i.meal as FoodMealSlot) : null;
+    return { ok: true, log: { meal, items } };
 }
 export function checkFoodAction(name: string, input: Record<string, unknown>, seen: Map<string, unknown>): {
     ok: true;
@@ -2762,10 +3075,15 @@ export function checkFoodAction(name: string, input: Record<string, unknown>, se
     ok: false;
     error: string;
 } {
-    void name;
-    void input;
-    void seen;
-    return { ok: false, error: 'Search for the foods with get_foods first.' };
+    if (name === 'propose_meal') {
+        const r = resolveMealProposal(input, seen);
+        return r.ok ? { ok: true, input: r.meal as unknown as Record<string, unknown> } : { ok: false, error: r.text };
+    }
+    if (name === 'log_food') {
+        const r = resolveFoodLog(input, seen);
+        return r.ok ? { ok: true, input: r.log as unknown as Record<string, unknown> } : { ok: false, error: r.text };
+    }
+    return { ok: false, error: `${name} is not a food action.` };
 }
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -3039,6 +3357,9 @@ If you do not know where something is, say so rather than inventing a screen. Ne
 - With an action, your words are one short line about it \u2014 never a list of what the card shows.
 - Answer only the athlete's newest message. Earlier messages are context: never answer one again, repeat a refusal you already gave, or recap what you said before.
 - If the message is genuinely unclear, ask what they meant in your own words \u2014 one short question.`;
+const SYSTEM_V1_FOOD = `${SYSTEM_V1}
+
+${FOOD_PROMPT}`;
 interface Body {
     question: string;
     history?: unknown;
@@ -3210,7 +3531,6 @@ async function markBuild(reservation: string): Promise<boolean> {
     }
 }
 const MARK_BUILD_MS = 3000;
-const FOOD_ACTION_NAMES: readonly string[] = ['log_food', 'propose_meal'];
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS')
         return new Response('ok', { headers: CORS });
@@ -3293,7 +3613,7 @@ Deno.serve(async (req) => {
         };
     }) => r.data.user?.id ?? null, () => null));
     const TOOLS = v1 ? [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS] : [...ASK_TOOLS, ...ASK_ACTIONS];
-    const PROMPT = v1 ? SYSTEM_V1 : SYSTEM;
+    const PROMPT = v1 ? SYSTEM_V1_FOOD : SYSTEM;
     const forwards: readonly string[] = v1 ? [...LEGACY_ACTIONS, ...NEW_ACTIONS] : ASK_ACTION_NAMES;
     const foodReads: readonly string[] = v1 ? FOOD_TOOLS.map((t) => t.name) : [];
     const seenFoods = new Map<string, unknown>();
@@ -3624,7 +3944,8 @@ Deno.serve(async (req) => {
                                     if (v1 && (c.name === 'propose_program' || c.name === 'propose_day'))
                                         openedBuild = true;
                                     acted.push(...words);
-                                    return { type: 'tool_result', tool_use_id: c.id, content: v1 ? actionAckV1(c.name as string) : actionAck(c.name as string) };
+                                    const ack = !v1 ? actionAck(c.name as string) : FOOD_ACTION_NAMES.includes(c.name as string) ? foodActionAck(c.name as string) : actionAckV1(c.name as string);
+                                    return { type: 'tool_result', tool_use_id: c.id, content: ack };
                                 }
                                 if (!uid)
                                     return { type: 'tool_result', tool_use_id: c.id, content: 'Not signed in.', is_error: true };
