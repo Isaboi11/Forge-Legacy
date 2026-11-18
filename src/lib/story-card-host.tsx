@@ -31,6 +31,12 @@ interface Job {
  * picture came back 3240×4050 at 16 bits — a 50 MB PNG the squad feed never finished showing. Asking for
  * the size ÷ the scale makes the pixels come out at the drawing's size. iOS only: Android draws the size
  * it is given.
+ *
+ * ⚠ THE CANVAS IS DRAWN AT THAT SIZE TOO (11-18, the PO's own recap). The snapshot draws the Svg at its
+ * LAID-OUT size and only crops to the size asked for — it never scales. With the canvas still laid out at
+ * 1080×1350 and a 360×450 snapshot, the post went up as the top-left third of the picture blown up 3×
+ * (just the FORGE LEGACY mark on sky). The canvas takes the same `width`, so its viewBox fits the whole
+ * picture into the snapshot.
  */
 function snapshotSize(job: Job): { width: number; height: number } {
   const scale = job.trueSize && Platform.OS === 'ios' ? PixelRatio.get() || 1 : 1;
@@ -126,7 +132,7 @@ export function StoryCardHost() {
   if (!job) return null;
   return (
     <View style={styles.offscreen} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      <StoryCanvas ref={svgRef} drawing={job.drawing} photoUri={job.photo} onPhotoLoad={() => setLoadedJob(job)} />
+      <StoryCanvas ref={svgRef} drawing={job.drawing} width={snapshotSize(job).width} photoUri={job.photo} onPhotoLoad={() => setLoadedJob(job)} />
     </View>
   );
 }
