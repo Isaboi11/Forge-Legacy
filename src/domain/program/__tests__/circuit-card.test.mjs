@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 /*
  * A WORKOUT APP'S SCREEN, READ BY CODE (AI Road to 10 Sprint 3b, IM-1). Every input is a REAL card-reader answer from the
- * import corpus (`fixtures/app-screen-cards.mjs`). Before this, the AI layout read these screens with the warm-up
+ * import corpus (`workout/__tests__/fixtures/app-screen-cards.mjs`). Before this, the AI layout read these screens with the warm-up
  * circuit as lift 1, the finisher under Recovery, every circuit move one set, and "Rounds: 8m" as a lift's name.
  */
 
@@ -13,7 +13,7 @@ const { writtenToTemplate } = await import('../../workout/written-workout.ts');
 const { writtenToWeeks, sideBySideTsv, isMultiDaySheet } = await import('../written-import.ts');
 const { parseProgramTable } = await import('../import-parse.ts');
 const { resolveExerciseName } = await import('../../exercise-picker/data.ts');
-const F = await import('./fixtures/app-screen-cards.mjs');
+const F = await import('../../workout/__tests__/fixtures/app-screen-cards.mjs');
 const S12 = await import('../../workout/__tests__/fixtures/squatober-2026-day1.mjs');
 
 const resolveKey = (n) => resolveExerciseName(n)?.key;
