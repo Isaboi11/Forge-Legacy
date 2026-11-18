@@ -1,0 +1,93 @@
+{
+  "caseId": "S0424",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:54:42.798Z",
+  "reply": {
+    "text": "This is a training change request with a body part named, so it's a swap for today with the lower back limitation and no comment on the back. I set up a swap of the RDLs for a leg curl today, and the card is there to check and confirm. If you'd rather have a different replacement, tell me which one and we'll change it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "swap_exercise_today"
+    ],
+    "actions": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "RDLs",
+          "to": "leg curl"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "RDLs",
+          "to": "leg curl"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 229,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 229,
+          "output_tokens": 116,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 116,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 422,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 422,
+          "output_tokens": 59,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 59,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

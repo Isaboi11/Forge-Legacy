@@ -1,0 +1,45 @@
+{
+  "caseId": "S0005",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:49:32.154Z",
+  "reply": {
+    "text": "That's a real cost, and it's worth fixing rather than just putting up with. If you want to cut it, a home setup can carry you a long way: a pair of adjustable dumbbells, a bench and a pull-up bar will cover most of what a good program needs. Outdoor running and bodyweight work cost nothing at all.\n\nIf you'd like, tell me what you have at home and how many days a week you want to train, and I'll build you something that fits. Or I can build a bodyweight-only block so you're not spending a cent.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 165,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 165,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -165,7 +165,7 @@ const FLOW = new Set(['patch', 'door', 'edit']);
  */
 export function planHoltActions(
   actions: readonly { name: string; input: unknown }[],
-  o: { clean: boolean; todayISO: string; knownNotes?: readonly string[]; asked?: string; nutrition?: boolean },
+  o: { clean: boolean; todayISO: string; knownNotes?: readonly string[]; asked?: string; nutrition?: boolean; building?: boolean },
 ): HoltActionPlan {
   if (!o.clean) return { steps: [], dropped: actions.map((a) => a.name) };
   const steps: HoltActionStep[] = [];
@@ -199,7 +199,9 @@ export function planHoltActions(
       case 'propose_program': {
         const patch = narrowPatch(input, o.todayISO);
         delete patch.dayFocus;
-        flow(Object.keys(patch).length ? { kind: 'patch', name: 'propose_program', patch } : { kind: 'door', to: 'build' });
+        /* Mid-build, a build with nothing usable is not a NEW build: dropped, and the question on the table comes back. */
+        if (!Object.keys(patch).length && o.building) dropped.push(a.name);
+        else flow(Object.keys(patch).length ? { kind: 'patch', name: 'propose_program', patch } : { kind: 'door', to: 'build' });
         break;
       }
       case 'propose_day': {
@@ -207,7 +209,8 @@ export function planHoltActions(
         const focus = typeof patch.dayFocus === 'string' ? patch.dayFocus : null;
         const bare = Object.keys(patch).filter((k) => k !== 'dayFocus').length === 0;
         /* "Give me a workout" names nothing: the build_day door, which offers the running program's session first. */
-        if (bare && (!focus || /^full[ -]?body$/i.test(focus))) flow({ kind: 'door', to: 'build_day' });
+        if (bare && !focus && o.building) dropped.push(a.name);
+        else if (bare && (!focus || /^full[ -]?body$/i.test(focus)) && !o.building) flow({ kind: 'door', to: 'build_day' });
         else flow({ kind: 'patch', name: 'propose_day', patch: { ...patch, dayFocus: focus ?? 'full body' } });
         break;
       }

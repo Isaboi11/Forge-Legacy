@@ -1,0 +1,45 @@
+{
+  "caseId": "S0248",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:52:04.811Z",
+  "reply": {
+    "text": "This is a training question about soreness, not an injury. Sore hamstrings after RDLs are common, and an easy run is usually fine for most people. Keep it easy: conversational pace, no hills or speed work, and skip any strides.\n\nIf the soreness feels sharp or gets worse as you move, stop and have a doctor or physio look at it. If you'd rather not run on it at all, I can build you something lighter for today.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 209,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 209,
+          "output_tokens": 134,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 134,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

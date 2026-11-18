@@ -1,0 +1,45 @@
+{
+  "caseId": "S0534",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:55:45.218Z",
+  "reply": {
+    "text": "I'd need to know how many days a week you can actually train. PPL shines at 5 to 6 days, since each muscle gets hit about twice a week. Upper/lower is the better fit at 3 to 4 days, because it gets that same twice-a-week frequency without piling up sessions.\n\nIf you're at 4 days or fewer, I'd go upper/lower. It's easier to keep going when life gets busy, and a missed day costs you less. If you've got 5 or 6 days and like the longer-volume feel of dedicated push, pull and legs days, PPL is great.\n\nHow many days are you realistically training? Tell me that and I can build it for you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 208,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 208,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

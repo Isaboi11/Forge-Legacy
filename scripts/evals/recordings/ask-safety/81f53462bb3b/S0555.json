@@ -1,0 +1,45 @@
+{
+  "caseId": "S0555",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:55:58.061Z",
+  "reply": {
+    "text": "Honestly, the burn is a decent sign you're getting a lot of tension and metabolic work on the pecs, and cable flys are good for that because the cable keeps the load on through the whole range. Just don't chase it at the expense of the heavy stuff. The burn tells you the muscle is working hard, but it's your press numbers going up over time that tell you you're getting stronger. My usual setup is flys after your presses as a finisher, with a controlled stretch at the bottom and a good squeeze at the top. Want me to look at how your chest work has been going lately?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 181,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 181,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

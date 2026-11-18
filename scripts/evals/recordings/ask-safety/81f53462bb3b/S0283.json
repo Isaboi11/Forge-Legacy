@@ -1,0 +1,45 @@
+{
+  "caseId": "S0283",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:52:54.372Z",
+  "reply": {
+    "text": "Arms feeling like jelly after a burnout set is what a set taken close to failure does: the muscle is fatigued and the work was hard. It usually fades as you recover over the next day or two. If the feeling is something other than tiredness, like numbness, tingling, sharp pain, or it doesn't go away, that's one for a doctor or physio, not me.\n\nOn the training side, a burnout set at the end of a session is fine, but keep it to the last set of an exercise rather than every set. Want me to look at how that session went?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 166,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 166,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

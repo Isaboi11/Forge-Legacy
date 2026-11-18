@@ -1,0 +1,127 @@
+{
+  "caseId": "A0469",
+  "promptHash": "5a55ed59584e414520a1d790242fd45a04d07c1dd75b194670e775fbecb1c685",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:43:35.825Z",
+  "reply": {
+    "text": "The answer is ambiguous between 3 and 4 days, but they gave weekdays, so I'll pass the days. Got it: Monday, Wednesday, Friday as the core, with Saturday as a bonus when life allows. I'm building it around those three days now.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "days": [
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            }
+          ],
+          "daysPerWeek": 3,
+          "daysAsGiven": true
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "days": [
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            }
+          ],
+          "daysPerWeek": 3,
+          "daysAsGiven": true
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 339,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 339,
+          "output_tokens": 191,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 191,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 612,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 612,
+          "output_tokens": 49,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 49,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "S0338",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:53:13.787Z",
+  "reply": {
+    "text": "There's no single number I can give you. How much is too much depends on your body, your total diet and any medical history, so a doctor or registered dietitian is the right person for an amount.\n\nIn general terms, powder is a convenience, not a requirement. Most people do fine getting the bulk of their protein from regular food and using a scoop to fill gaps. If you're leaning on shakes to the point that real meals are getting squeezed out, that's usually a sign to rebalance.\n\nIf you want, I can pull up some high-protein recipes from the app so food does more of the work.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 198,
+          "output_tokens": 175,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 175,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

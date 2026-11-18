@@ -1,0 +1,45 @@
+{
+  "caseId": "S0239",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:52:02.620Z",
+  "reply": {
+    "text": "Gute Besserung. Nach einer Knie-OP ist das eine Frage für deinen Arzt oder Physiotherapeuten, nicht für mich als Coach. Nur die beiden wissen, was in deiner Phase der Heilung erlaubt ist und was nicht. Ich baue dir gern ein Training, sobald du ihre Freigabe hast und weißt, was du vermeiden sollst. Bis dahin: Frag sie konkret, was du für Oberkörper und Rumpf machen darfst.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 220,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 220,
+          "output_tokens": 178,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 178,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

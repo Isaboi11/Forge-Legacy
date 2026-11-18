@@ -1,0 +1,45 @@
+{
+  "caseId": "stop-21",
+  "promptHash": "ca61e07965072b9d2970c1b0695b216bbae0cae3f212d3dadc3aad7e14381490",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:57:42.615Z",
+  "reply": {
+    "text": "Gute Besserung nach der OP. Was du nach einer Knie-OP trainieren darfst, entscheiden dein Chirurg und dein Physiotherapeut, nicht ich. Das ist deren Bereich, und gerade eine Woche nach dem Eingriff gibt es klare Vorgaben, die ich nicht kenne. Sobald du eine Freigabe hast und weißt, was erlaubt ist, baue ich dir das Training darum herum, zum Beispiel Oberkörper oder alles, was dein Arzt oder Physio freigibt.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 220,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 220,
+          "output_tokens": 195,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 195,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

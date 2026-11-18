@@ -365,3 +365,13 @@ test('the live floor is on import-corpus and kitchen-allergens ONLY, and each ha
   assert.equal(baselines['import-corpus'].passed, 29);
   assert.equal(baselines['kitchen-allergens'].passed, 31);
 });
+
+test('live-run case filter (Sprint 4a): EVAL_CASES keeps only those ids, EVAL_SHARD splits, none of it without the env', async () => {
+  const { liveShard } = await import('../suites/ask-actions.mjs');
+  const cases = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id }));
+  const def = { name: 'ask-actions', model: 'claude-sonnet-5-5', promptSources: [{ file: 'scripts/evals/suites/ask-actions.mjs', exportName: 'CAPS_KNOBS' }] };
+  assert.deepEqual(liveShard(cases, def, {}).map((c) => c.id), ['a', 'b', 'c', 'd', 'e']);
+  assert.deepEqual(liveShard(cases, def, { EVAL_CASES: 'b, d,zz' }).map((c) => c.id), ['b', 'd']);
+  assert.deepEqual(liveShard(cases, def, { EVAL_SHARD: '1/2' }).map((c) => c.id), ['b', 'd']);
+  assert.deepEqual(liveShard(cases, def, { EVAL_CASES: 'a,b,c', EVAL_SHARD: '0/2' }).map((c) => c.id), ['a', 'c']);
+});

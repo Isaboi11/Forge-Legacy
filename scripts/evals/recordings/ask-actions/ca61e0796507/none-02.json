@@ -1,0 +1,45 @@
+{
+  "caseId": "none-02",
+  "promptHash": "ca61e07965072b9d2970c1b0695b216bbae0cae3f212d3dadc3aad7e14381490",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:56:47.426Z",
+  "reply": {
+    "text": "Most beginners do well starting each lift at about 3 sets of 8 to 12 reps, with a weight that leaves 2 or 3 reps in the tank. Across a week, that usually works out to roughly 10 to 15 hard sets per muscle group, spread over two or three sessions.\n\nStart at the low end and add a set only once the current volume feels easy and you're recovering well. Beginners tend to progress on less than they think, because the main work early on is learning the movements and showing up consistently.\n\nIf you want, I can build you a program that sets all of this up for you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 198,
+          "output_tokens": 180,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 180,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

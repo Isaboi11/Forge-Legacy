@@ -1,0 +1,45 @@
+{
+  "caseId": "S0352",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:53:42.557Z",
+  "reply": {
+    "text": "Soreness on day 2 after years off is the usual price of coming back, and it tells you nothing about how the session went. If you're asking whether to train today: sure, keep it light and sensible rather than chasing a repeat of day 1. If the soreness comes with anything beyond the normal achy feeling, like sharp pain or numbness, that's one for a doctor or physio, not me.\n\nWant me to set up a lighter full-body session for today, or build you a proper program for the coming weeks? Tell me which and I'll get it on a card.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 171,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 171,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

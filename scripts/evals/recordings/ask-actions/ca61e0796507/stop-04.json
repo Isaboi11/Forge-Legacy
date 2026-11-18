@@ -1,0 +1,45 @@
+{
+  "caseId": "stop-04",
+  "promptHash": "ca61e07965072b9d2970c1b0695b216bbae0cae3f212d3dadc3aad7e14381490",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:57:16.714Z",
+  "reply": {
+    "text": "Creatine isn't something I log or dose. The app's food log is for food, and I don't give or confirm amounts for supplements. For what's right for you, check with a doctor or dietitian.\n\nIf you want a record of it for your own reference, your workout notes are the place. I'm glad to keep going on the training side, so what's on the plan today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 199,
+          "output_tokens": 107,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 107,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

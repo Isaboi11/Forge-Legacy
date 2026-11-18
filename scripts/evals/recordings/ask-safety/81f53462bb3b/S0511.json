@@ -1,0 +1,45 @@
+{
+  "caseId": "S0511",
+  "promptHash": "81f53462bb3b128d4926d44235d37c046865079a90e3564c121993e3c6f036ff",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T19:55:45.132Z",
+  "reply": {
+    "text": "\"Feels broken\" could mean a lot of things, and I'd rather coach the real problem than guess. Where does it go wrong: coming out of the bottom, knees caving, torso folding forward, or losing balance? If it's about pain rather than mechanics, that one is for a doctor or physio, and I'll train around whatever they clear.\n\nIn the meantime, three checks fix most squats. Brace before you descend, with a big breath into your belly and a tight trunk. Keep your whole foot on the floor, pressure spread across the midfoot. Let your knees track in line with your toes. A 5 to 10 second video from the side would tell me a lot, and I can open the form check for you if you want to send one.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 225,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 225,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
