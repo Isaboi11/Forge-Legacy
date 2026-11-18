@@ -362,12 +362,21 @@ export const ALLERGEN_COVERS: Record<string, string> = {
 const ACCENTS: Record<string, string> = { à: 'a', á: 'a', â: 'a', ä: 'a', è: 'e', é: 'e', ê: 'e', ë: 'e', ì: 'i', í: 'i', î: 'i', ï: 'i', ò: 'o', ó: 'o', ô: 'o', ö: 'o', ù: 'u', ú: 'u', û: 'u', ü: 'u', ñ: 'n', ç: 'c' };
 export const foldAccents = (s: string): string => s.replace(/[àáâäèéêëìíîïòóôöùúûüñç]/gi, (c) => ACCENTS[c.toLowerCase()] ?? c);
 
-/** Allergens a dish's own lines name, by word. The catalogue's tags are added on the device. */
+/**
+ * The dish's NAME as the allergen words read it (Sprint 3, 11-17): "Grilled Teriyaki Chicken" for someone avoiding
+ * soy was shown because only the ingredient lines were read — the recipe was soy-free (honey and vinegar), but the name
+ * sends people to a bottled teriyaki sauce. "<allergen>-free" / "no <allergen>" phrases come out first, so a
+ * "Dairy-Free Mac" is judged by what else it says, not by the word it disclaims.
+ */
+const nameForAllergens = (name: string): string =>
+  name.replace(/\b\w+[-\s]free\b/gi, ' ').replace(/\b(?:no|without|free\s+of)\s+\w+/gi, ' ');
+
+/** Allergens a dish's own lines — and its name — name, by word. The catalogue's tags are added on the device. */
 export function allergensByWord(d: KitchenDish): string[] {
   // "Peanut butter" is not dairy: a nut or seed butter is renamed before the dairy word can match "butter" (the
   // nut itself still reads as its allergen). Water chestnuts and chestnut mushrooms are not tree nuts, and a
   // lettuce or rice-paper wrap is not a flour one.
-  const text = foldAccents(d.ingredients.map((i) => `${i.food} ${i.text}`).join(' | '))
+  const text = foldAccents([nameForAllergens(d.name ?? ''), ...d.ingredients.map((i) => `${i.food} ${i.text}`)].join(' | '))
     .replace(/\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy)\s+butter\b/gi, '$1 spread')
     .replace(/\bwater\s+chestnuts?\b/gi, 'water caltrop')
     .replace(/\bchestnut\s+mushrooms?\b/gi, 'brown mushrooms')

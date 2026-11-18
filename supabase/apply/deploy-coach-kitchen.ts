@@ -291,8 +291,9 @@ export const ALLERGEN_COVERS: Record<string, string> = {
 };
 const ACCENTS: Record<string, string> = { \u00e0: 'a', \u00e1: 'a', \u00e2: 'a', \u00e4: 'a', \u00e8: 'e', \u00e9: 'e', \u00ea: 'e', \u00eb: 'e', \u00ec: 'i', \u00ed: 'i', \u00ee: 'i', \u00ef: 'i', \u00f2: 'o', \u00f3: 'o', \u00f4: 'o', \u00f6: 'o', \u00f9: 'u', \u00fa: 'u', \u00fb: 'u', \u00fc: 'u', \u00f1: 'n', \u00e7: 'c' };
 export const foldAccents = (s: string): string => s.replace(/[\u00e0\u00e1\u00e2\u00e4\u00e8\u00e9\u00ea\u00eb\u00ec\u00ed\u00ee\u00ef\u00f2\u00f3\u00f4\u00f6\u00f9\u00fa\u00fb\u00fc\u00f1\u00e7]/gi, (c) => ACCENTS[c.toLowerCase()] ?? c);
+const nameForAllergens = (name: string): string => name.replace(/\b\w+[-\s]free\b/gi, ' ').replace(/\b(?:no|without|free\s+of)\s+\w+/gi, ' ');
 export function allergensByWord(d: KitchenDish): string[] {
-    const text = foldAccents(d.ingredients.map((i) => `${i.food} ${i.text}`).join(' | '))
+    const text = foldAccents([nameForAllergens(d.name ?? ''), ...d.ingredients.map((i) => `${i.food} ${i.text}`)].join(' | '))
         .replace(/\b(peanut|almond|cashew|sunflower|seed|nut|apple|pumpkin|soy)\s+butter\b/gi, '$1 spread')
         .replace(/\bwater\s+chestnuts?\b/gi, 'water caltrop')
         .replace(/\bchestnut\s+mushrooms?\b/gi, 'brown mushrooms')
