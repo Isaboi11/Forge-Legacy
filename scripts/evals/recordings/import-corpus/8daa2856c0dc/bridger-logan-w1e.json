@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w1e",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:59:11.157Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "(Optional) Stairmaster\n3 min\n\nCIRCUIT\nRounds: 2\nWarmup\n30s   90/90 Stretch\n30s   DB Reverse Lunge\n30s   DB Squat\n30s   DB Staggered-Stance Rom deadlift\n\nBarbell Hip Thrust\nRounds: 4\n8-8-6-6 reps\n\nConventional Deadlift\nRounds: 4\n8-8-6-6 reps\n\nHeel Elevated DB Front Squat\nRounds: 3\n10-10-10 reps\n\nDB Staggered-Stance\nRom deadlift\nRounds: 3\n12-12-12 reps\n\n45° Back Extension\nRounds: 3\n10-10-10 reps\n\nHanging Knee Raise - CORE\nRounds: 4\n10-10-10-10 reps"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"Untitled Workout\"\nWarm up: (Optional) Stairmaster 3 min\n1. a. 90/90 Stretch 2 sets\n* 30s\nsuper set b. DB Reverse Lunge 2 sets\n* 30s\nsuper set c. DB Squat 2 sets\n* 30s\nsuper set d. DB Staggered-Stance Rom Deadlift 2 sets\n* 30s\n2. Barbell Hip Thrust 8,8,6,6 reps\n3. Conventional Deadlift 8,8,6,6 reps\n4. Heel Elevated DB Front Squat 3 sets of 10 reps\n5. DB Staggered-Stance Rom Deadlift 3 sets of 12 reps\n6. 45° Back Extension 3 sets of 10 reps\n7. Hanging Knee Raise - CORE 4 sets of 10 reps"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4528,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 281,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 304,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 292,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

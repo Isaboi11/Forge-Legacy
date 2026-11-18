@@ -1,0 +1,26 @@
+{
+  "caseId": "days-in-words",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:25:21.631Z",
+  "reply": {
+    "text": "{\"say\":\"Four days: Monday and Friday upper, Wednesday and Saturday lower, built for muscle with a different mix of angles each time.\",\"title\":\"Upper / Lower Split\",\"days\":[{\"name\":\"Monday - Upper\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the lowering phase\"},{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Flat back, pull to the lower ribs\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Wednesday - Lower\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hit depth you can control\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":4,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips back, soft knees\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the top\"},{\"key\":\"hanging-knee-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Friday - Upper\",\"exercises\":[{\"key\":\"barbell-overhead-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"pull-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Use assistance if needed\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"machine-seated-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"ez-bar-skull-crusher\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"ez-bar-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Saturday - Lower\",\"exercises\":[{\"key\":\"barbell-deadlift\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace hard before each pull\"},{\"key\":\"machine-leg-press\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-hip-thrust\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze glutes at the top\"},{\"key\":\"leg-extension-machine\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"seated-calf-raise-machine\",\"sets\":4,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"plank*\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 143,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1638,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -2,9 +2,9 @@
   "caseId": "A0282",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:15:40.515Z",
+  "recordedAt": "2026-11-18T04:09:34.641Z",
   "reply": {
-    "text": "{\"route\": \"answer\", \"say\": \"Most people give a half marathon 10 to 14 weeks if they're already running a few days a week. Starting from scratch, closer to 16. Tell me roughly when the race is and I'll build the block backwards from it.\"}",
+    "text": "{\"route\": \"answer\", \"say\": \"Most people give a half marathon 12 to 16 weeks if they can already run comfortably for 30 minutes or so. Starting from scratch, 16 to 20 weeks is kinder. Tell me roughly when your race is and I'll build backwards from it.\"}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 83,
+    "output_tokens": 98,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

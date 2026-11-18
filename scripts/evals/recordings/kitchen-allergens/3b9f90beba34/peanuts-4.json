@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:11:25.342Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Lemon Garlic Chicken Thighs\",\"why\":\"Bold flavour with almost no fuss\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"330 g boneless chicken thighs, sliced\",\"quantity\":330,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Season the sliced chicken with salt, pepper and oregano.\",\"Heat the olive oil in a pan over medium-high heat.\",\"Cook the chicken 4 to 5 minutes per side until golden and no pink remains inside, reaching 165°F.\",\"Add the garlic for 30 seconds, then take off the heat.\",\"Squeeze over the lemon juice and serve.\"]},{\"name\":\"Chicken Stir-Fry with Soy Sauce\",\"why\":\"Quick and takes whatever vegetables you have\",\"cuisine\":\"Chinese-inspired\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"330 g boneless chicken thighs, sliced thin\",\"quantity\":330,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 onion, sliced\",\"quantity\":110,\"unit\":\"g\",\"food\":\"onion\"}],\"steps\":[\"Heat the oil in a wide pan over high heat.\",\"Cook the chicken and onion, stirring, until the chicken is cooked through at 165°F, about 7 minutes.\",\"Add the garlic and cook 30 seconds.\",\"Pour in the soy sauce and honey, toss for 1 minute until glossy, and serve.\"]},{\"name\":\"Garlic Chicken Skewers Air-Fried\",\"why\":\"Hands-off and crisp on the outside\",\"cuisine\":\"Greek-inspired\",\"method\":\"air-fryer\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"330 g boneless chicken thighs, cut into chunks\",\"quantity\":330,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Toss the chicken chunks with oil, garlic powder, paprika, salt and lemon juice.\",\"Thread onto skewers if you have them, or spread in the air fryer basket.\",\"Air-fry at 200°C for 12 to 15 minutes, turning halfway, until cooked through at 165°F.\",\"Rest 2 minutes and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 97,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1346,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

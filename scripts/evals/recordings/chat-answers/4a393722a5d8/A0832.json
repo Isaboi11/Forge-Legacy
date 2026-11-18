@@ -1,0 +1,26 @@
+{
+  "caseId": "A0832",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:59:00.316Z",
+  "reply": {
+    "text": "The athlete answered the experience question. \"Six months\" with no clear split between lifting and running maps to beginner for lifting. The prompt is about training generally, so I'll set lifting to beginner. Running is not clearly stated, so I leave it out.\n\n{\"route\": \"patch\", \"patch\": {\"experienceLifting\": \"beginner\"}, \"say\": \"Six months, so we'll build from a solid base.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 61,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 129,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0347",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:07:01.146Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Per la maggior parte degli adulti sani, una dose di caffeina tra circa 3 e 6 mg per kg di peso corporeo, presa 30–60 minuti prima, è quella che di solito migliora la performance senza troppi effetti collaterali. Per una persona di 70 kg parliamo grosso modo di 200–400 mg. Se soffri di pressione alta, problemi di cuore, ansia o prendi farmaci, chiedi prima al tuo medico o a un dietista, e non superare comunque i 400 mg al giorno. Prova sempre la dose a casa prima di una sessione importante.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 74,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 222,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

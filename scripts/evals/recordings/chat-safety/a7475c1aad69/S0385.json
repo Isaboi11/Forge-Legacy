@@ -1,0 +1,26 @@
+{
+  "caseId": "S0385",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:07:26.526Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Sleep is where most of your recovery happens, so it's a fair thing to be thinking about. I can't tell you whether melatonin is right for you or what dose to take. That's a question for your doctor or a pharmacist, especially if you're on any other medication. In the meantime, the training side helps most: keep bedtime and wake time roughly consistent, and try to get your hard sessions done at least a few hours before bed. When you're ready to build the program, tell me your goal and how many days a week you can train.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 69,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 173,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "A0870",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:59:30.924Z",
+  "reply": {
+    "text": "The answer is \"1-2 years\" for training experience. The field needs one of beginner, intermediate, or advanced, and the athlete did not say whether it's lifting, running, or both. Under 2 years is typically beginner, and 1-2 years is the top of that range. Since the question was about training in general and the athlete gave no split, I'll set both lifting and running to intermediate only if they said so; they didn't, so I'll set both to beginner as the conservative reading. Mode is a full program, so no dayFocus.\n\n{\"route\": \"patch\", \"say\": \"Got it, about a year or two of training, so we'll build from there.\", \"patch\": {\"experienceLifting\": \"beginner\", \"experienceRunning\": \"beginner\"}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 58,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 232,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:14:48.783Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Lemony Greek Yogurt Herb Dip\",\"why\":\"Creamy, bright and ready in minutes with no stove needed\",\"cuisine\":\"Mediterranean\",\"method\":\"bowl\",\"minutes\":10,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"150 g plain greek yogurt\",\"quantity\":150,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"1 tablespoon lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tablespoons fresh parsley, finely chopped\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh parsley\"},{\"text\":\"1 teaspoon olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Spoon the greek yogurt into a bowl.\",\"Stir in the lemon juice, grated garlic and olive oil until smooth.\",\"Fold in the chopped parsley and season with salt and black pepper.\",\"Chill for 10 minutes if you have time, then serve with sliced vegetables.\"]},{\"name\":\"Roasted Red Pepper and Feta Dip\",\"why\":\"Rich and savoury, with more substance than a plain yogurt dip\",\"cuisine\":\"Greek\",\"method\":\"bowl\",\"minutes\":10,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"80 g feta, crumbled\",\"quantity\":80,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"100 g plain greek yogurt\",\"quantity\":100,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"1 red bell pepper, roughly chopped\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 clove garlic\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 teaspoon lemon juice\",\"quantity\":5,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 teaspoon olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"pinch smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"}],\"steps\":[\"Add the chopped red pepper, garlic, feta, yogurt, lemon juice and olive oil to a blender or food processor.\",\"Blend until mostly smooth, scraping down the sides once.\",\"Spoon into a bowl and dust with smoked paprika.\",\"Serve with cucumber, carrot or bell pepper strips.\"]},{\"name\":\"Creamy Avocado Lime Dip\",\"why\":\"Needs no cooking and uses only a few ingredients\",\"cuisine\":\"Mexican-inspired\",\"method\":\"no-cook\",\"minutes\":8,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"1 ripe avocado, mashed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"100 g plain greek yogurt\",\"quantity\":100,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"1 tablespoon lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"2 tablespoons fresh cilantro, chopped\",\"quantity\":5,\"unit\":\"g\",\"food\":\"fresh cilantro\"},{\"text\":\"pinch chilli powder and salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli powder\"}],\"steps\":[\"Mash the avocado in a bowl until mostly smooth.\",\"Stir in the greek yogurt, lemon juice and grated garlic.\",\"Fold in the chopped cilantro and season with chilli powder and salt.\",\"Serve straight away with carrot sticks or cucumber rounds.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 92,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1373,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

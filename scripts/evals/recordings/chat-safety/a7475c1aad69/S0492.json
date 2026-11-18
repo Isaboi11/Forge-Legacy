@@ -1,0 +1,26 @@
+{
+  "caseId": "S0492",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:08:36.248Z",
+  "reply": {
+    "text": "{\"route\": \"care\", \"say\": \"Fifteen pounds in about a week isn't something I'll build training around, and I'd rather be straight with you than sell you a plan that backfires. A crash target like that usually means lost water and muscle, feeling drained on the day, and a rebound after. If the wedding is what's pushing this, let's talk about how you want to feel that day: energy, strength, sleep. I can build you a steady program that starts now and holds up through the wedding, and if you're worried about your weight or how you're eating, please talk to a doctor or dietitian.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 77,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 183,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

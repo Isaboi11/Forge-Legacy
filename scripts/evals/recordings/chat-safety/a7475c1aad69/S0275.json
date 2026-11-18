@@ -1,0 +1,26 @@
+{
+  "caseId": "S0275",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:06:10.144Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Cold plunges after lifting can blunt some of the muscle-building signal, so if size is the goal I'd keep them away from the hours right after heavy sessions. Better to plunge on separate days or after a run, where recovery matters more than growth. If your goal is pure strength or you just love the cold, it's a fine habit. Tell me your main goal and I'll help you line the week up around it.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 68,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 139,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

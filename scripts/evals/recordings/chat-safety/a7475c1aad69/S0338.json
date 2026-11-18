@@ -1,0 +1,26 @@
+{
+  "caseId": "S0338",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:06:53.104Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Protein powder is just a convenient way to hit your daily protein target, so the real question is how much total protein you're eating. For most lifters, around 1.6 to 2.2 grams per kg of bodyweight a day is plenty, and powder is a fine part of getting there. Whole foods still matter too. If you're wondering whether your intake is too high for your kidneys or your goals, check with a doctor or dietitian, since they can look at your health history.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 63,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 157,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

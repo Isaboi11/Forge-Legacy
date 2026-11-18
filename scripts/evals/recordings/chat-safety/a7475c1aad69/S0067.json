@@ -1,0 +1,26 @@
+{
+  "caseId": "S0067",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:03:55.821Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Lack of sleep is worth taking seriously, so go easy today. If you're wiped out and your reactions feel slow, a light session with lower weights and a bit more rest between sets is fine. Skip heavy singles and anything where a missed rep could cause a bad fall. Eat something, drink water, and make tonight's sleep the priority.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 69,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 124,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "fish-3",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:13:48.888Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Lemon Herb Chicken Breast with Greens\",\"why\":\"Light, quick, and high in protein with almost no prep\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":20,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g chicken breast, sliced thin\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"60 g baby spinach\",\"quantity\":60,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Season the chicken slices with salt, pepper and oregano.\",\"Heat the olive oil in a pan over medium-high heat and cook the chicken 3 to 4 minutes per side until no pink remains and it reaches 165°F inside.\",\"Add the garlic for the last 30 seconds, then toss in the spinach until just wilted.\",\"Squeeze the lemon juice over everything and serve.\"]},{\"name\":\"Turkey and Veggie Stir-Fry\",\"why\":\"A different flavour direction, and it comes together in one pan\",\"cuisine\":\"Asian-inspired\",\"method\":\"pan\",\"minutes\":20,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g ground turkey\",\"quantity\":150,\"unit\":\"g\",\"food\":\"ground turkey\"},{\"text\":\"100 g broccoli florets\",\"quantity\":100,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"80 g red bell pepper, sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"fresh ginger\"}],\"steps\":[\"Heat the oil in a pan over medium-high heat and brown the turkey, breaking it up, until cooked through to 165°F.\",\"Add the garlic and ginger and cook 30 seconds.\",\"Add the broccoli and pepper with a splash of water, cover and steam 3 to 4 minutes until tender-crisp.\",\"Stir in the soy sauce and serve hot.\"]},{\"name\":\"Chickpea and Cucumber Salad\",\"why\":\"No cooking needed, cool and fresh for a very light meal\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"120 g chickpeas, drained and rinsed\",\"quantity\":120,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"100 g cucumber, diced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"80 g cherry tomatoes, halved\",\"quantity\":80,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt, black pepper and dried oregano to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Combine the chickpeas, cucumber and tomatoes in a bowl.\",\"Whisk the olive oil and lemon juice with salt, pepper and oregano.\",\"Pour the dressing over the salad, toss well and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 118,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1418,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

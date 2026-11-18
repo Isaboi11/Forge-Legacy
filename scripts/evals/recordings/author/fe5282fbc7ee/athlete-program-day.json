@@ -1,0 +1,26 @@
+{
+  "caseId": "athlete-program-day",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:38:49.541Z",
+  "reply": {
+    "text": "{\"say\":\"Here is Arnold's chest and back day exactly as you listed it: bench, incline bench, pullovers, chin-ups, bent-over rows, then deadlifts to finish.\",\"title\":\"Arnold's Chest & Back\",\"days\":[{\"name\":\"Chest & Back\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Touch mid-chest, drive feet into the floor\"},{\"key\":\"barbell-incline-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline, bar to upper chest\"},{\"key\":\"dumbbell-pullover\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slight elbow bend, deep stretch behind head\"},{\"key\":\"chin-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full hang at the bottom, chest to bar\"},{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Flat back, pull to lower ribs\"},{\"key\":\"barbell-deadlift\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Bar close to shins, brace before each pull\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 125,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 534,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

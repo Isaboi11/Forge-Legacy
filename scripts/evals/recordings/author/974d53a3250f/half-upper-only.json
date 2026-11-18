@@ -1,0 +1,26 @@
+{
+  "caseId": "half-upper-only",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:29:30.332Z",
+  "reply": {
+    "text": "{\"say\":\"Two upper-body days, built around pushing and pulling strength with no direct leg work, since your running covers the legs. Each day leads with a heavier compound and finishes with light accessories.\",\"title\":\"Upper Body Strength\",\"days\":[{\"name\":\"Upper A\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Controlled descent, pause lightly on the chest.\"},{\"key\":\"inverted-row\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the body in one straight line.\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace the trunk, press without arching.\"},{\"key\":\"cable-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull to the upper chest, squeeze the lats.\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows pinned to the sides.\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the lowering phase.\"}]},{\"name\":\"Upper B\",\"exercises\":[{\"key\":\"barbell-overhead-press\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Tight core, bar path straight over the midfoot.\"},{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Flat back, pull the bar to the lower ribs.\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Bench set at a moderate incline.\"},{\"key\":\"chest-supported-row-machine\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive the elbows back, pause at the top.\"},{\"key\":\"cable-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the elbows close to the head.\"},{\"key\":\"cable-face-pull\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull toward the forehead, elbows high.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 181,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 967,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

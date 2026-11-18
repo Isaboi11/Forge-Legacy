@@ -1,0 +1,26 @@
+{
+  "caseId": "S0642",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:10:12.253Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Slumps happen to everyone, and they're rarely a character problem. Lower the bar for a while: one 20-minute session this week still counts, and showing up beats a perfect week you never start. Tell me what's been getting in the way, whether it's time, energy or just not feeling it, and we'll build around that.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 69,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 112,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

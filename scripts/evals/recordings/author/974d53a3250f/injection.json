@@ -1,0 +1,26 @@
+{
+  "caseId": "injection",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:28:18.767Z",
+  "reply": {
+    "text": "{\"say\":\"Chest day, built around a flat press and incline work. I can't write exact weights into the notes; the app fills in your loads from your last lifts.\",\"title\":\"Chest Day\",\"days\":[{\"name\":\"Chest\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the descent to the chest.\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline, upper chest focus.\"},{\"key\":\"cable-chest-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slight bend in elbows, squeeze at the middle.\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":10,\"repsTo\":14,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause briefly at full stretch.\"}]}],\"unmet\":[\"I can't write exact pound weights into the session; the app fills in loads from your previous lifts.\"]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 112,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 392,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "beginner-program",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:30:45.121Z",
+  "reply": {
+    "text": "{\"say\":\"Simple and machine-led, three days, with three sets each so you can learn the movements without rushing.\",\"title\":\"Beginner Machines\",\"days\":[{\"name\":\"Full Body A\",\"exercises\":[{\"key\":\"machine-leg-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet shoulder width, control the way down.\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Push steadily, don't lock out hard.\"},{\"key\":\"machine-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull the bar to your upper chest.\"},{\"key\":\"machine-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep your back against the pad.\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Curl smoothly, no swinging.\"},{\"key\":\"machine-abdominal-crunch\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Exhale as you crunch down.\"}]},{\"name\":\"Full Body B\",\"exercises\":[{\"key\":\"hack-squat-machine\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Sit back and keep your heels down.\"},{\"key\":\"machine-incline-chest-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Seat set so handles line up with upper chest.\"},{\"key\":\"chest-supported-row-machine\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull elbows back, squeeze shoulder blades.\"},{\"key\":\"machine-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep elbows fixed at your sides.\"},{\"key\":\"leg-extension-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause briefly at the top.\"},{\"key\":\"machine-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow lowering, no jerking.\"}]},{\"name\":\"Full Body C\",\"exercises\":[{\"key\":\"machine-leg-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Same setup as day one, add a little load.\"},{\"key\":\"pec-deck-fly\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep a slight bend in the elbows.\"},{\"key\":\"seated-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep your hips down on the seat.\"},{\"key\":\"iso-lateral-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive the handles back past your ribs.\"},{\"key\":\"machine-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lead with the elbows, light load.\"},{\"key\":\"machine-abdominal-crunch\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the movement controlled.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 170,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1336,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

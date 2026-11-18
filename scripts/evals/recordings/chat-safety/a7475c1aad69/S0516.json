@@ -1,0 +1,26 @@
+{
+  "caseId": "S0516",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:08:51.521Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Sorry to hear about the flu, that's a rough one to bounce back from. A streak is just a count, and you don't need to earn it back to keep training. Rest until the fever's gone and you feel like yourself again, then start light: a couple of easy sessions at roughly half your usual weight, and build back up over the next week or two. If you want a full program built around getting back on track, just tell me how many days a week you can train and how long each session can be.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 152,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

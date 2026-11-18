@@ -1,0 +1,60 @@
+{
+  "caseId": "squatober-2024-25-b",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T02:57:59.561Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE DRESS REHEARSAL\"\nDay: 25 Friday 10-25-24\n\nWarm Up: Caffeinate Up!! Crack the\nknuckles. Chili Temp on lava level.\n\n1. BACK SQUAT\n1st Skit: 5 reps @ 60%, 4 @ 70%, 3 @ 80%, 2 @ 85%, 1 @ 90%\n2nd Skit: 3 reps @ 82%, 2 @ 88%, 1 @ 93%\n3rd Skit: 2 reps @ 90%, 1 @ 95%\n10 total sets, 24 total reps\n2 1/2 to 3 1/2 min rest between each set\n\n2. BENCH PRESS 5 sets of 5 reps @ 70%\n2 min rest between each set\n\n3. SLOW Strict Chin Ups 4 sets of 3-6 reps\n2 min rest between sets. Full range of motion\n\nsuper set all 3\nCardio\na. Close Grip Bench Press\n4 sets of 10 reps\nb. BB Bicep Curls\n4 sets of 10 reps\n90 sec rest\nbetween each super set\n\nRecovery\nExtra Meaty\nChili!!\n30 min walk\nSleep Deep\nand Heavy"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "\"THE DRESS REHEARSAL\"\nWarm up: Caffeinate Up!! Crack the knuckles. Chili Temp on lava level.\n1. Back Squat 5 reps @ 60%, 4 reps @ 70%, 3 reps @ 80%, 2 reps @ 85%, 1 rep @ 90%, 3 reps @ 82%, 2 reps @ 88%, 1 rep @ 93%, 2 reps @ 90%, 1 rep @ 95%\n* 10 total sets, 24 total reps\n* 2 1/2 to 3 1/2 min rest between each set\n2. Bench Press 5 sets of 5 reps @ 70%\nrest 2:00\n3. Slow Strict Chin Ups 4 sets of 3-6 reps\n* Full range of motion\nrest 2:00\n* Cardio\n* super set all 3\n4. a. Close Grip Bench Press 4 sets of 10 reps\nsuper set b. BB Bicep Curls 4 sets of 10 reps\nrest 1:30 between each super set\nRecovery: Extra Meaty Chili!! · 30 min walk · Sleep Deep and Heavy"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 1722,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 422,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 445,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 760,
+      "output_tokens_details": {
+        "thinking_tokens": 364
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

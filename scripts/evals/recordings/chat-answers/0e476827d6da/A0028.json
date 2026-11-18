@@ -2,9 +2,9 @@
   "caseId": "A0028",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:10:27.772Z",
+  "recordedAt": "2026-11-18T04:03:47.292Z",
   "reply": {
-    "text": "{\"route\": \"answer\", \"say\": \"For most people, 8 to 12 weeks is a solid block. That's long enough to see real progress and short enough to stay locked in. If you've got a race or a date in mind, tell me and we'll build to it. Otherwise, give me a number of weeks and I'll take it from there.\"}",
+    "text": "{\"route\": \"answer\", \"say\": \"For a first block, 8 to 12 weeks is a solid run: long enough to see real progress, short enough to stay fresh. Tell me how many weeks you want, or how many days a week you can train, and I'll take it from there.\"}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 103,
+    "output_tokens": 86,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

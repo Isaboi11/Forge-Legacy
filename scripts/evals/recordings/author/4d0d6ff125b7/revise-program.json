@@ -1,0 +1,26 @@
+{
+  "caseId": "revise-program",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:24:15.133Z",
+  "reply": {
+    "text": "{\"say\":\"Push, Pull and Legs are written out as asked, and the fourth day is arms and abs only: biceps, triceps and core, with no other direct work.\",\"title\":\"PPL + Arms & Abs\",\"days\":[{\"name\":\"Push\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Shoulder blades pinned back\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-chest-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow stretch at the bottom\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-rope-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Pull\",\"exercises\":[{\"key\":\"cable-lat-pulldown\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive elbows down\"},{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Flat back, pull to the belly\"},{\"key\":\"cable-seated-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-face-pull\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-rear-delt-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"barbell-biceps-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Legs\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hit depth you can control\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips back, soft knees\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"leg-extension-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the stretch\"}]},{\"name\":\"Arms & Abs\",\"exercises\":[{\"key\":\"ez-bar-biceps-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"ez-bar-skull-crusher\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"B\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"B\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-incline-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"hanging-leg-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"No swinging\"},{\"key\":\"cable-crunch\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"plank*\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"main\",\"note\":\"Ribs down, squeeze glutes\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 151,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1765,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

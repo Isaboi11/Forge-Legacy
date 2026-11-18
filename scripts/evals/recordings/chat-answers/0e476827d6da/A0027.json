@@ -2,9 +2,9 @@
   "caseId": "A0027",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:10:26.546Z",
+  "recordedAt": "2026-11-18T04:03:46.097Z",
   "reply": {
-    "text": "{\"route\": \"answer\", \"say\": \"Most people land on three or four days a week, 45 to 60 minutes a session. Three is plenty if you're newer or busy, and four gives you room for more volume. Tell me how many days you can realistically hold and how long you've got, and I'll set it from there.\"}",
+    "text": "{\"route\": \"answer\", \"say\": \"Most people land on 3 to 4 days a week, 45 to 60 minutes a session. That's enough to progress without training taking over your life. If you're new, 3 days is a great place to start. Tell me what fits your week and I'll set it up.\"}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 96,
+    "output_tokens": 92,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

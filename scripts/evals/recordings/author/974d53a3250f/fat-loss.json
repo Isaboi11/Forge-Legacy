@@ -1,0 +1,26 @@
+{
+  "caseId": "fat-loss",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:28:01.724Z",
+  "reply": {
+    "text": "{\"say\":\"A full-body circuit to keep the heart rate up and build lean muscle while you drop body fat. Everything is paired back to back so you move without long rests.\",\"title\":\"Full Body Circuit\",\"days\":[{\"name\":\"Full Body Circuit\",\"exercises\":[{\"key\":\"dumbbell-goblet-squat\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Keep chest up and sit between your heels.\"},{\"key\":\"push-up\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Body in one straight line.\"},{\"key\":\"dumbbell-bent-over-row\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"B\",\"part\":\"main\",\"note\":\"Pull elbows back toward hips.\"},{\"key\":\"kettlebell-swing\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"B\",\"part\":\"main\",\"note\":\"Drive the hips, let the bell float to chest height.\"},{\"key\":\"dumbbell-reverse-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"C\",\"part\":\"main\",\"note\":\"Step back, keep front knee over ankle.\"},{\"key\":\"dumbbell-overhead-press\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"C\",\"part\":\"main\",\"note\":\"Brace the core, press straight overhead.\"},{\"key\":\"bicycle-crunch\",\"sets\":3,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"D\",\"part\":\"main\",\"note\":\"Slow and controlled, elbow to opposite knee.\"},{\"key\":\"high-knee-skip-plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"D\",\"part\":\"main\",\"note\":\"Hold a steady plank, brace hard.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 82,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 663,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

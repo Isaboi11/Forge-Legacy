@@ -1,0 +1,26 @@
+{
+  "caseId": "light",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:18:08.957Z",
+  "reply": {
+    "text": "{\"say\":\"Easy and light all the way through: low-load full-body movements, moderate reps, nothing taken near failure.\",\"title\":\"Easy Recovery Full Body\",\"days\":[{\"name\":\"Recovery Full Body\",\"exercises\":[{\"key\":\"bodyweight-squat\",\"sets\":2,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Smooth tempo, stay well short of fatigue\"},{\"key\":\"incline-push-up\",\"sets\":2,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Easy pace, full range\"},{\"key\":\"inverted-row\",\"sets\":2,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet flat, keep it easy\"},{\"key\":\"glute-bridge\",\"sets\":2,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze at the top\"},{\"key\":\"bird-dog\",\"sets\":2,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow and controlled\"},{\"key\":\"dead-hang*\",\"sets\":2,\"reps\":0,\"repsTo\":0,\"seconds\":20,\"group\":\"\",\"part\":\"main\",\"note\":\"Relax the shoulders\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 466,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

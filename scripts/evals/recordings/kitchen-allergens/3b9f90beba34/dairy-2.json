@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-2",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:02.761Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Lemon Garlic Pasta with Olive Oil\",\"why\":\"Creamy-feeling with no dairy, and done in one pot in about 20 minutes.\",\"cuisine\":\"Italian\",\"method\":\"pot\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"4 oz spaghetti\",\"quantity\":115,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":25,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"3 cloves garlic, minced\",\"quantity\":9,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Bring a large pot of salted water to a boil and cook the spaghetti until just tender, about 9 to 10 minutes.\",\"Reserve a half cup of the starchy cooking water, then drain the pasta.\",\"While the pasta cooks, warm the olive oil in a pan over medium heat and cook the garlic for about 1 minute until fragrant.\",\"Add the spinach and stir until wilted, then toss in the pasta, a splash of reserved water, and the lemon juice.\",\"Season with salt and pepper and serve right away.\"]},{\"name\":\"Creamy Avocado Pasta\",\"why\":\"Avocado gives the sauce a rich, silky body with no dairy at all.\",\"cuisine\":\"American\",\"method\":\"pot\",\"minutes\":18,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"4 oz spaghetti\",\"quantity\":115,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"1 ripe avocado, flesh only\",\"quantity\":150,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"1 clove garlic\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":25,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook the spaghetti in salted boiling water until tender, about 9 to 10 minutes, then drain and keep a splash of the cooking water.\",\"While the pasta cooks, mash the avocado with the garlic, lemon juice, olive oil, and a spoonful of the pasta water until smooth.\",\"Season the sauce with salt and pepper.\",\"Toss the hot pasta with the avocado sauce until every strand is coated, adding more pasta water if it looks thick.\",\"Serve warm.\"]},{\"name\":\"Chickpea and Tahini Pasta\",\"why\":\"Tahini and mashed chickpeas turn into a smooth, creamy sauce with no dairy.\",\"cuisine\":\"Middle Eastern\",\"method\":\"pot\",\"minutes\":22,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"4 oz spaghetti\",\"quantity\":115,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"1/2 cup chickpeas, drained\",\"quantity\":90,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"2 tbsp tahini\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":13,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"ground cumin and salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook the spaghetti in salted boiling water until tender, about 9 to 10 minutes, then drain and reserve a half cup of the cooking water.\",\"While the pasta cooks, mash the chickpeas with the garlic, tahini, lemon juice, and a few spoonfuls of pasta water until creamy.\",\"Warm the olive oil in a pan, add the chickpea sauce and cumin, and cook for 2 minutes, loosening with more pasta water.\",\"Toss the pasta through the sauce until coated and season with salt.\",\"Serve warm.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 117,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1560,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

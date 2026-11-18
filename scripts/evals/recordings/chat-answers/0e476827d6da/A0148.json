@@ -2,9 +2,9 @@
   "caseId": "A0148",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:12:52.713Z",
+  "recordedAt": "2026-11-18T04:06:31.780Z",
   "reply": {
-    "text": "{\"route\": \"patch\", \"patch\": {\"goal\": \"strength\", \"limitations\": [\"no_running\"]}, \"say\": \"Heavy lifting it is.\"}",
+    "text": "{\"route\": \"patch\", \"say\": \"Heavy lifting it is.\", \"patch\": {\"goal\": \"strength\", \"experienceRunning\": \"beginner\"}, \"remember\": [\"Not a runner, wants to lift heavy\"]}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 52,
+    "output_tokens": 76,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

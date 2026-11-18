@@ -1,0 +1,26 @@
+{
+  "caseId": "gluten-3",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:58.065Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Sesame Rice Noodle Stir-Fry\",\"why\":\"uses the noodles you mentioned and cooks fast in one pan\",\"cuisine\":\"Asian\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g rice noodles\",\"quantity\":100,\"unit\":\"g\",\"food\":\"rice noodles\"},{\"text\":\"100 g red bell pepper, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"80 g broccoli florets\",\"quantity\":80,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"1 tbsp sesame seeds\",\"quantity\":15,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 tbsp tamari\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tamari\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Soak or boil the rice noodles according to the packet until just tender, then drain and rinse cold.\",\"Heat the olive oil in a large pan over medium-high heat and cook the broccoli and pepper for 4 minutes until crisp-tender.\",\"Add the garlic and cook 30 seconds, then add the noodles and tamari and toss for 2 minutes until hot.\",\"Season with pepper, sprinkle sesame seeds on top and serve.\"]},{\"name\":\"Cold Rice Noodle Salad with Cucumber\",\"why\":\"no stove needed, ready in minutes\",\"cuisine\":\"Vietnamese-style\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"100 g rice noodles, cooked and cooled\",\"quantity\":100,\"unit\":\"g\",\"food\":\"rice noodles\"},{\"text\":\"120 g cucumber, sliced thin\",\"quantity\":120,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"60 g carrot, grated\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"30 g baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"2 tbsp tamari\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tamari\"},{\"text\":\"1 tbsp cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tbsp sesame seeds\",\"quantity\":15,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Cook the rice noodles per the packet, drain and rinse under cold water until cool.\",\"Whisk the tamari, vinegar and honey in a bowl.\",\"Toss the noodles, cucumber, carrot and spinach with the dressing.\",\"Top with sesame seeds and serve chilled or at room temperature.\"]},{\"name\":\"Garlic Noodle Bowl with Spinach and Egg\",\"why\":\"fastest hot option, and the egg adds protein\",\"cuisine\":\"Chinese-style\",\"method\":\"pot\",\"minutes\":18,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g rice noodles\",\"quantity\":100,\"unit\":\"g\",\"food\":\"rice noodles\"},{\"text\":\"2 large eggs\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"90 g baby spinach\",\"quantity\":90,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp tamari\",\"quantity\":15,\"unit\":\"g\",\"food\":\"tamari\"},{\"text\":\"chilli flakes to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Boil the rice noodles per the packet, drain, and set aside.\",\"In the same pot, simmer the eggs for 9 minutes, cool in cold water, peel and halve.\",\"Warm the olive oil and garlic in a pan for 1 minute, add the spinach and wilt it.\",\"Add the noodles and tamari, toss, then top with the halved eggs and chilli flakes and serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 154,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1561,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

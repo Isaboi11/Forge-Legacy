@@ -1,0 +1,26 @@
+{
+  "caseId": "bike-first",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:19:52.892Z",
+  "reply": {
+    "text": "{\"say\":\"The bike opener isn't available to you, so I opened with chest pressing, an incline then a flat press, followed by a fly, and finished with two triceps movements.\",\"title\":\"Chest & Triceps\",\"days\":[{\"name\":\"Chest & Triceps\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Shoulder blades pinched, control the descent\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline\"},{\"key\":\"cable-chest-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slight elbow bend, squeeze at the middle\"},{\"key\":\"parallel-bar-dip\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lean forward slightly\"},{\"key\":\"cable-triceps-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows pinned to your sides\"},{\"key\":\"cable-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep elbows pointing forward\"}]}],\"unmet\":[\"I couldn't add the five minutes on the bike because bike cardio isn't something you can do here, so the session starts with chest.\"]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 105,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 553,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "fish-2",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:13:43.487Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Smoked Paprika Chicken Thighs\",\"why\":\"Smoky, savoury flavour that reads like salmon-style richness without any fish\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g chicken thighs, boneless\",\"quantity\":300,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"Salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Pat the chicken dry and season with smoked paprika, garlic powder, salt and pepper.\",\"Heat the olive oil in a pan over medium-high heat.\",\"Cook the thighs 5 to 6 minutes per side until golden and the centre reaches 165°F.\",\"Rest for 3 minutes, then squeeze over the lemon juice and serve.\"]},{\"name\":\"Smoked Paprika Egg Scramble\",\"why\":\"Quickest option, and the smoky seasoning carries the flavour\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":10,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"3 large eggs\",\"quantity\":3,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"1/2 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1 tsp butter\",\"quantity\":5,\"unit\":\"g\",\"food\":\"butter\"},{\"text\":\"Salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"1 tbsp fresh parsley, chopped\",\"quantity\":4,\"unit\":\"g\",\"food\":\"fresh parsley\"}],\"steps\":[\"Whisk the eggs with smoked paprika, salt and pepper.\",\"Melt the butter in a non-stick pan over medium-low heat.\",\"Pour in the eggs and stir gently until just set, about 3 minutes.\",\"Scatter with parsley and serve straight away.\"]},{\"name\":\"Sesame Tofu Crispy Bowl\",\"why\":\"Savoury, toasty and umami-rich, a different cuisine and a no-stove-needed route\",\"cuisine\":\"Asian-inspired\",\"method\":\"air-fryer\",\"minutes\":25,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"250 g firm tofu, cubed\",\"quantity\":250,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":16,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"100 g baby spinach\",\"quantity\":100,\"unit\":\"g\",\"food\":\"baby spinach\"}],\"steps\":[\"Press the tofu dry, cube it, and toss with soy sauce, olive oil and garlic powder.\",\"Air-fry at 200°C for 15 minutes, shaking halfway, until crisp.\",\"Wilt the spinach briefly in a dry pan or over the hot tofu.\",\"Divide between bowls and sprinkle with sesame seeds.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 121,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1304,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

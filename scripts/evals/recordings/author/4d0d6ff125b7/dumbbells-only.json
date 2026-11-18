@@ -1,0 +1,26 @@
+{
+  "caseId": "dumbbells-only",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:16:51.804Z",
+  "reply": {
+    "text": "{\"say\":\"Dumbbells only: shoulders open with a press, then lateral and rear delt work, then biceps and triceps get two to three movements each.\",\"title\":\"Shoulders & Arms\",\"days\":[{\"name\":\"Shoulders & Arms\",\"exercises\":[{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Press straight up, ribs down\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lead with the elbows, no swinging\"},{\"key\":\"incline-dumbbell-rear-delt-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the lowering\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-skull-crusher\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows fixed, lower to the forehead\"},{\"key\":\"two-hand-dumbbell-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 100,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 569,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

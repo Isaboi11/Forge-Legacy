@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-3",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:32.148Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Vegetable Fried Rice\",\"why\":\"uses pantry staples and is quick on the stove\",\"cuisine\":\"Chinese\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"80 g long-grain white rice, dry (cooked and cooled)\",\"quantity\":80,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"80 g frozen green beans, chopped\",\"quantity\":80,\"unit\":\"g\",\"food\":\"green beans\"},{\"text\":\"60 g onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat the oil in a large pan over medium-high heat.\",\"Add the onion and green beans and cook for 3 to 4 minutes until softened.\",\"Add the garlic and cook for 30 seconds.\",\"Add the cold cooked rice and spread it out, letting it crisp slightly for 3 minutes.\",\"Stir in the soy sauce and pepper, toss well until hot, and serve.\"]},{\"name\":\"Chicken Fried Rice\",\"why\":\"adds protein for a more filling plate\",\"cuisine\":\"Chinese\",\"method\":\"pan\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g chicken breast, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"80 g long-grain white rice, dry (cooked and cooled)\",\"quantity\":80,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"60 g onion, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Season the diced chicken with salt and pepper.\",\"Heat half the oil in a large pan over high heat and cook the chicken until golden and cooked through to 165°F, about 6 minutes. Remove and set aside.\",\"Add the remaining oil, the onion and garlic, and cook for 2 minutes.\",\"Add the cold cooked rice and fry for 4 minutes until toasted.\",\"Return the chicken to the pan, add the soy sauce, toss together and serve hot.\"]},{\"name\":\"Garlic Fried Rice Skillet with Rice Bowl Crunch\",\"why\":\"a one-pan version with a crisp finish\",\"cuisine\":\"Korean-style\",\"method\":\"pan\",\"minutes\":20,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"70 g long-grain white rice, dry (cooked and cooled)\",\"quantity\":70,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"4 g garlic, minced\",\"quantity\":4,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp hot sauce\",\"quantity\":5,\"unit\":\"g\",\"food\":\"hot sauce\"},{\"text\":\"1 tsp soy sauce\",\"quantity\":5,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Heat the oil in a small pan over medium-high heat and cook the garlic for 30 seconds.\",\"Add the cold rice and press it flat, cooking undisturbed for 3 minutes to crisp.\",\"Stir in the soy sauce, hot sauce and chilli flakes and toss until heated through.\",\"Serve immediately while the edges are crisp.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 96,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1471,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

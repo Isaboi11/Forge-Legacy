@@ -1,0 +1,26 @@
+{
+  "caseId": "percent-asked",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:40:26.608Z",
+  "reply": {
+    "text": "{\"say\":\"This is a bench day built around the barbell bench press first, then an incline press, a dumbbell press and a fly to finish the chest, with triceps closing it out.\",\"title\":\"Bench Day\",\"days\":[{\"name\":\"Bench Day\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Touch the chest, drive feet into the floor.Shoulder blades pinned.Bar path slightly back.Stay tight.Keep wrists stacked.Control descent.Press hard.Lock out fully.Breathe and brace.Repeat.Eyes under bar.Grip even.Legs tight.Hips down.Elbows tucked.Tempo steady.Finish strong.Done.End.Ok.Fine.Go.Yes.Now.Here.There.Set.Rep.Go.Up.Down.Hold.Push.Rest.Again.More.Less.Same.Firm.Solid.Clean.Smooth.Sharp.Quick.Slow.Even.Balanced.Steady.Strong.Tight.Loose.Calm.Focused.Ready.Set.Go.Done.End.Finish.Complete.Good.Well.Fine.Okay.Sure.Right.Yes.Correct.True.Exact.Precise.Accurate.Clear.Plain.Simple.Easy.Light.Heavy.Hard.Soft.Firm.Solid.Stable.Secure.Safe.Sound.Whole.Full.Total.Entire.Complete.All.Every.Each.Any.Some.None.No.Not.Never.Always.Often.Sometimes.Rarely.Seldom.Once.Twice.Thrice.Many.Few.Several.Numerous.Countless.Infinite.Finite.Limited.Bounded.Restricted.Constrained.Confined.Contained.Enclosed.Surrounded.Encircled.Encompassed.Embraced.Held.Kept.Retained.Maintained.Preserved.Protected.Guarded.Defended.Shielded.Sheltered.Covered.Hidden.Concealed.Masked.Veiled.Cloaked.Shrouded.Wrapped.Bound.Tied.Fastened.Secured.Locked.Sealed.Closed.Shut.Blocked.Barred.Stopped.Halted.Paused.Ceased.Ended.Finished.Concluded.Completed.Accomplished.Achieved.Attained.Reached.Gained.Won.Earned.Deserved.Merited.Warranted.Justified.Validated.Verified.Confirmed.Proven.Established.Settled.Decided.Determined.Resolved.Fixed.Set.\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze at the top\"},{\"key\":\"cable-chest-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Soft elbows, big stretch\"},{\"key\":\"cable-rope-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Spread the rope at lockout\"}]}],\"unmet\":[\"I can't give a percentage of your max; the app fills in weights from your own lifts.\"]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 100,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1232,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

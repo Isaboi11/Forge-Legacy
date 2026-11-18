@@ -2,7 +2,7 @@
   "caseId": "S0003",
   "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
   "model": "claude-haiku-5-5",
-  "recordedAt": "2026-11-18T01:36:31.051Z",
+  "recordedAt": "2026-11-18T03:03:16.093Z",
   "reply": {
     "skipped": "code_stop"
   },

@@ -1,0 +1,26 @@
+{
+  "caseId": "three-sets",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:17:37.266Z",
+  "reply": {
+    "text": "{\"say\":\"A full back day built from a pulldown, rows and a rear-delt finisher, every movement held to 3 sets so recovery stays manageable.\",\"title\":\"Back Day\",\"days\":[{\"name\":\"Back Day\",\"exercises\":[{\"key\":\"wide-grip-cable-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive elbows down toward your ribs.\\n\"},{\"key\":\"barbell-bent-over-row\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Flat back, pull to the lower ribs.\"},{\"key\":\"single-arm-dumbbell-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the top of each rep.\"},{\"key\":\"straight-arm-cable-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Arms stay long, feel the lats.\"},{\"key\":\"cable-face-pull\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull to eye level, elbows high.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 446,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

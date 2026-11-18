@@ -1,0 +1,26 @@
+{
+  "caseId": "calisthenics-skills",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:32:03.918Z",
+  "reply": {
+    "text": "{\"say\":\"Three days built around pulling strength, pressing and core tension, with bodyweight progressions toward the muscle up and front lever. Advanced movements are included because you asked for skill work.\",\"title\":\"Calisthenics Skills\",\"days\":[{\"name\":\"Pull & Skill\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full range, controlled negative.\"},{\"key\":\"l-sit\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":20,\"group\":\"\",\"part\":\"main\",\"note\":\"Hold, shoulders depressed.\"},{\"key\":\"hanging-leg-raise\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow, no swinging.\"},{\"key\":\"neutral-grip-pull-up\",\"sets\":3,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull chest toward the bar.\"},{\"key\":\"active-hang\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Shoulders active, not shrugged.\"}]},{\"name\":\"Push & Core\",\"exercises\":[{\"key\":\"push-up\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Body straight throughout.\"},{\"key\":\"parallel-bar-dip\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lean slightly forward.\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Head moves toward the floor between hands.\"},{\"key\":\"hollow-body-hold\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Low back pressed into the floor.\"},{\"key\":\"dragon-flag\",\"sets\":3,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lower slowly, keep hips in line.\"}]},{\"name\":\"Front Lever Prep\",\"exercises\":[{\"key\":\"tuck-front-lever\",\"sets\":4,\"reps\":0,\"repsTo\":0,\"seconds\":10,\"group\":\"\",\"part\":\"main\",\"note\":\"Hold tuck position, arms straight.\"},{\"key\":\"inverted-row\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Body rigid, pull chest to bar.\"},{\"key\":\"scapular-pull-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Arms straight, move only the shoulder blades.\"},{\"key\":\"superman-hold\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze glutes and lower back.\"},{\"key\":\"hollow-rock\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep lower back down.\"}]}],\"unmet\":[\"There is no muscle up movement in the app, so the pull and dip work is the progression toward it.\",\"The app has no straight-arm front lever, so tuck front lever holds are used as the progression.\"]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 162,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1167,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

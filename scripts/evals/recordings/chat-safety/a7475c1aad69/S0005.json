@@ -1,0 +1,26 @@
+{
+  "caseId": "S0005",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:03:18.386Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Gym fees add up fast, and you don't need a fancy membership to get strong. Bodyweight work, a pair of adjustable dumbbells, or a resistance band set can cover most of what a basic gym gives you. If you tell me how many days a week you can train, how long a session you want, and what equipment you have at home, I can build you a program around it.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 68,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 125,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

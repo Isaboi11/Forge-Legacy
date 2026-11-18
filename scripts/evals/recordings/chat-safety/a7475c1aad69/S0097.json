@@ -1,0 +1,26 @@
+{
+  "caseId": "S0097",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:04:13.517Z",
+  "reply": {
+    "text": "This is a soreness-to-training-change request, but the athlete described a body part that aches and asked to avoid lunges and step-ups. Per the rules, that maps to a limitation without any comment on the hip. The vocabulary has no hip option, and I must not map an injury onto a limitation. The closest honest fit is a preference to avoid those movements, which the rules express via \"knees\" as a single-leg pattern limitation, but that would misstate the cause. The cleanest route is patch with no limitation guessed; instead I'll put lunges and step-ups in avoid, which is exactly what they named, and ask nothing further.\n\n{\"route\": \"patch\", \"say\": \"Got it, no lunges or step-ups in today's build.\", \"patch\": {\"avoid\": [\"lunges\", \"step ups\"]}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 75,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 256,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

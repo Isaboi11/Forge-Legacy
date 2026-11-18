@@ -1,0 +1,26 @@
+{
+  "caseId": "grip-forearms",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:29:08.656Z",
+  "reply": {
+    "text": "{\"say\":\"Forearms and grip get the work, four movements, built for arm wrestling. Wrist and grip strength lead, with carries to finish.\",\"title\":\"Forearms & Grip\",\"days\":[{\"name\":\"Forearms & Grip\",\"exercises\":[{\"key\":\"ez-bar-wrist-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow lowering on every rep.\"},{\"key\":\"ez-bar-reverse-wrist-curl\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep forearms resting on the bench.\"},{\"key\":\"ez-bar-reverse-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze the bar hard at the top.\"},{\"key\":\"dumbbell-farmer-carry\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":40,\"group\":\"\",\"part\":\"main\",\"note\":\"Tall posture, heavy grip, short steps.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 106,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 385,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

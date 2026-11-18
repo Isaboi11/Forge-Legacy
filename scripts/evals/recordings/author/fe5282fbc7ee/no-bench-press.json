@@ -1,0 +1,26 @@
+{
+  "caseId": "no-bench-press",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:34:35.873Z",
+  "reply": {
+    "text": "{\"say\":\"Chest day with no bench in sight: dips and machine presses up front, then cable and machine flies to finish, so you can work around the crowd.\",\"title\":\"Chest Day\",\"days\":[{\"name\":\"Chest\",\"exercises\":[{\"key\":\"parallel-bar-dip\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lean forward slightly to bias the chest.\\u200b\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the return, full stretch.\"},{\"key\":\"machine-incline-chest-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive through the upper chest.\"},{\"key\":\"cable-crossover\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze hands together, pause one second.\"},{\"key\":\"pec-deck-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow stretch, keep elbows soft.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 114,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 428,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

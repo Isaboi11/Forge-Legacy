@@ -1,0 +1,26 @@
+{
+  "caseId": "S0390",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:07:28.932Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"That's a rough thing to hear from someone you trust to coach you, and it's fair that it stung. You don't have to shrug it off. If you want, tell me what they said and we can talk through it. For today, let's keep it simple: a session that fits how you feel, and we can build it from there. What's your time and what equipment do you have?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 81,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0186",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:05:05.201Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Creatine monohydrate is one of the most studied supplements, and 3 to 5 grams a day is the usual range; it doesn't change much whether you're cutting or bulking. Taking it daily matters more than the timing. Because the right dose depends on your body and any health conditions, check with a doctor or dietitian before you start. Now, what do you want the program to look like?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 68,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 133,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

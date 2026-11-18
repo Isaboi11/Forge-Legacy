@@ -1,0 +1,26 @@
+{
+  "caseId": "powerbuilding",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:45:33.226Z",
+  "reply": {
+    "text": "{\"say\":\"Each of your four days opens with a heavy compound in the 3 to 5 range, then moves into bodybuilding work at 10 to 15. Squat, bench, deadlift and overhead press each get their own heavy day.\",\"title\":\"Powerbuilding\",\"days\":[{\"name\":\"Lower A - Squat\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":5,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace hard, hit depth every rep\"},{\"key\":\"machine-leg-press\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full range, control the descent\"},{\"key\":\"dumbbell-walking-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Long stride, upright torso\"},{\"key\":\"leg-extension-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze at the top\"},{\"key\":\"seated-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause in the stretch\"}]},{\"name\":\"Upper A - Bench\",\"exercises\":[{\"key\":\"barbell-bench-press\",\"sets\":5,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the chest\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline\"},{\"key\":\"chest-supported-row-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze shoulder blades together\"},{\"key\":\"cable-chest-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lead with the elbows\"},{\"key\":\"cable-rope-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Spread the rope at lockout\"}]},{\"name\":\"Lower B - Deadlift\",\"exercises\":[{\"key\":\"barbell-deadlift\",\"sets\":5,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull the slack out first\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips back, soft knees\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"hip-thrust-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at full lockout\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-crunch\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Curl the ribs to hips\"}]},{\"name\":\"Upper B - Press\",\"exercises\":[{\"key\":\"barbell-overhead-press\",\"sets\":5,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze glutes, bar over midfoot\"},{\"key\":\"cable-lat-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive elbows to ribs\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"single-arm-dumbbell-row\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull toward the hip\"},{\"key\":\"reverse-pec-deck\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"ez-bar-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"No swinging\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 168,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1709,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

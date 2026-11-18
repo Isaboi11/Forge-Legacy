@@ -1,0 +1,26 @@
+{
+  "caseId": "A1004",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T04:01:10.362Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Ha. Running gets a lot of bad press, but a lot of people who run do it because they love it. Tell me your goal and I'll build around it. If you want the gym instead, that's fine too, and I'll build you a lifting program.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 67,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 88,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

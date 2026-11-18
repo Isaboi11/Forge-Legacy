@@ -1,0 +1,26 @@
+{
+  "caseId": "shellfish-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:14:22.955Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Salmon Poke Bowl\",\"why\":\"Classic poke flavour with the most protein for the effort.\",\"cuisine\":\"Hawaiian\",\"method\":\"no-cook\",\"minutes\":20,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"250 g salmon fillet, skinless, cubed\",\"quantity\":250,\"unit\":\"g\",\"food\":\"salmon fillet\"},{\"text\":\"150 g long-grain white rice, dry\",\"quantity\":150,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"1 cucumber, diced\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 avocado, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"1 tsp sesame oil or olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook the rice according to packet instructions and let it cool slightly.\",\"Whisk the soy sauce with the oil in a bowl.\",\"Toss the cubed salmon in the soy mixture and leave for 10 minutes.\",\"Divide rice between two bowls, then top with salmon, cucumber and avocado.\",\"Sprinkle with sesame seeds and serve.\"]},{\"name\":\"Tofu Poke Bowl\",\"why\":\"A vegetarian take that's ready quickly with a pan.\",\"cuisine\":\"Hawaiian-inspired\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"300 g firm tofu, cubed\",\"quantity\":300,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"150 g long-grain white rice, dry\",\"quantity\":150,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"1 cucumber, diced\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 carrot, grated\",\"quantity\":70,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"}],\"steps\":[\"Cook the rice and set aside.\",\"Pat the tofu dry, then fry in hot oil for 6 to 8 minutes until golden on all sides.\",\"Add the soy sauce to the pan and toss until the tofu is glazed.\",\"Arrange rice, tofu, cucumber and carrot in bowls.\",\"Finish with sesame seeds.\"]},{\"name\":\"Chicken Poke-Style Rice Bowl\",\"why\":\"Uses chicken for a hearty, cooked take on the bowl.\",\"cuisine\":\"American-Asian fusion\",\"method\":\"pan\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g chicken breast, cubed\",\"quantity\":300,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"150 g long-grain white rice, dry\",\"quantity\":150,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"100 g baby spinach\",\"quantity\":100,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 avocado, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp garlic powder\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic powder\"}],\"steps\":[\"Cook the rice according to packet instructions.\",\"Season the chicken with garlic powder and cook in hot oil for 6 to 8 minutes, turning until the internal temperature reaches 165°F.\",\"Add soy sauce to the pan and toss the chicken to coat.\",\"Wilt the spinach briefly in the same pan.\",\"Serve chicken and spinach over rice with avocado slices.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 113,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1535,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -2,9 +2,9 @@
   "caseId": "A0281",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:15:38.597Z",
+  "recordedAt": "2026-11-18T04:09:32.605Z",
   "reply": {
-    "text": "{\"route\": \"answer\", \"say\": \"Depends on the race. A 5K wants about 8 weeks, a 10K 10, a half 12 to 16, a marathon 16 to 20, and more runway never hurts. Give me a rough date or a number of weeks and I'll build back from it. If it's closer than that, tell me anyway and we'll make it work.\"}",
+    "text": "{\"route\": \"answer\", \"say\": \"Depends on the distance and where you're starting from. A 5K block is usually 8 to 10 weeks for a newer runner, a half marathon more like 12 to 16, a full marathon 16 to 20. If you're short of that, we shorten the goal or the ambition, not the corners. Give me a rough race date and I'll tell you straight if it works.\"}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 117,
+    "output_tokens": 127,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

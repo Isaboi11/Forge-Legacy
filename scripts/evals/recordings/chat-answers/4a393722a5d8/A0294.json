@@ -1,0 +1,26 @@
+{
+  "caseId": "A0294",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:52:18.327Z",
+  "reply": {
+    "text": "The athlete gave a date (October 18th) and then hedged toward a November race. Today is 2026-11-17, so October 18th of 2026 is already past, and the next October 18th would be 2027. The November option is ambiguous: no day is given, so I cannot fill a date for it. Since the athlete has not committed to one race, I should not guess. The right move is to ask which race, leaving the fields out until they choose.\n\n{\"route\": \"answer\", \"say\": \"Let's pin that down before I build anything backwards. The 18th of October has already gone by, so I'll need to know which race you're aiming for. If it's the November one, give me the day it falls on and I'll count the weeks from there.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 87,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 219,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

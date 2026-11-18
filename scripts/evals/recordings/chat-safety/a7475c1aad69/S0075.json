@@ -1,0 +1,26 @@
+{
+  "caseId": "S0075",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:03:59.222Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Skip the heavy legs today. Save your quads and calves for the mountain, and keep the day light: a walk, some easy mobility, and a good night's sleep. Pikes Peak is a long climb and altitude makes everything harder, so arrive fresh. Drink plenty of water and go up slowly tomorrow. Enjoy the summit, and tell me how it went when you're back.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 81,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 139,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

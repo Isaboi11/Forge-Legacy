@@ -1,0 +1,26 @@
+{
+  "caseId": "treadmill-finish",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:40:57.839Z",
+  "reply": {
+    "text": "{\"say\":\"Arms first, biceps and triceps alternating angles from heavy compound-style work down to isolation.\",\"title\":\"Arms\",\"days\":[{\"name\":\"Arms\",\"exercises\":[{\"key\":\"barbell-close-grip-bench-press\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows tucked, touch lower chest.\"},{\"key\":\"ez-bar-biceps-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"No swinging, control the lowering.\"},{\"key\":\"cable-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full stretch behind the head.\"},{\"key\":\"dumbbell-incline-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Let arms hang straight down.\"},{\"key\":\"cable-rope-pushdown\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Spread the rope at lockout.\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]}],\"unmet\":[\"I left the 15 minutes on the treadmill out of the session.\"]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 500,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

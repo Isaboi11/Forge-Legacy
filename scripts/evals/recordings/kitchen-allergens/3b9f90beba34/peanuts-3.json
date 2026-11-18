@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-3",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:11:19.484Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Crispy Chickpea Snack Bowl\",\"why\":\"crunchy and ready in minutes, no stove needed\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":25,\"servings\":1,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"1 can chickpeas, drained and dried (about 240 g)\",\"quantity\":240,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"1 tbsp olive oil (about 14 g)\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/2 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1/2 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"Salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 200°C (400°F).\",\"Pat the chickpeas completely dry with a towel.\",\"Toss the chickpeas with the olive oil, smoked paprika, garlic powder and salt.\",\"Spread them on a baking tray in a single layer.\",\"Roast for 20 to 25 minutes, shaking the tray halfway, until deep golden and crunchy.\",\"Let them cool for 5 minutes before eating so they crisp further.\"]},{\"name\":\"Crunchy Cucumber and Sesame Pita Chips\",\"why\":\"light crunch with a cool finish, great for a quick bite\",\"cuisine\":\"Middle Eastern\",\"method\":\"oven\",\"minutes\":15,\"servings\":1,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"1 whole wheat pita (about 60 g)\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"1 tbsp olive oil (about 14 g)\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":4,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"1/2 small cucumber, sliced (about 50 g)\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"2 tbsp hummus (about 30 g)\",\"quantity\":30,\"unit\":\"g\",\"food\":\"hummus\"},{\"text\":\"Salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 190°C (375°F).\",\"Split the pita open and cut each half into triangles.\",\"Brush the triangles lightly with olive oil and sprinkle with sesame seeds and salt.\",\"Bake for 8 to 10 minutes until crisp and lightly browned at the edges.\",\"Serve the pita chips with cucumber slices and a spoon of hummus for dipping.\"]},{\"name\":\"Crispy Egg and Veggie Skillet Bites\",\"why\":\"fast in one pan and gives a satisfying crunch\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":12,\"servings\":1,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"2 large eggs\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"1 tsp olive oil (about 5 g)\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/2 red bell pepper, diced (about 60 g)\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"30 g baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"Black pepper and salt to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Heat the olive oil in a small non-stick pan over medium heat.\",\"Cook the diced red pepper for 3 to 4 minutes until it starts to char at the edges.\",\"Add the spinach and let it wilt for 1 minute.\",\"Crack the eggs into the pan, season with salt and pepper, and cook until the whites are set and the bottoms are golden.\",\"Cook until the eggs reach 74°C (165°F) in the center, then slide onto a plate and cut into bite-sized pieces.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 101,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1400,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

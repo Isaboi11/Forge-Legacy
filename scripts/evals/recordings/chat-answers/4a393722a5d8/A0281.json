@@ -1,0 +1,26 @@
+{
+  "caseId": "A0281",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:52:07.969Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Honest answer: it depends on where you're starting from. If you can already run most days, a 5K is realistic in 8 to 12 weeks and a half marathon in about 16 to 20. Tell me roughly when the race is and I'll work out how much time we have to build from.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 74,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 100,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "hotel",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:27:07.761Z",
+  "reply": {
+    "text": "{\"say\":\"Full body with dumbbells and a bench, keeping it to what the hotel setup allows. Squat and press lead, with a row, hinge and core to balance it out.\",\"title\":\"Full Body Dumbbell\",\"days\":[{\"name\":\"Full Body\",\"exercises\":[{\"key\":\"dumbbell-goblet-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hold the dumbbell at your chest, sit between your heels.\"},{\"key\":\"dumbbell-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the lowering, pause briefly at the bottom.\"},{\"key\":\"dumbbell-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hinge at the hips, keep the back flat.\"},{\"key\":\"dumbbell-bent-over-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull toward the hip, squeeze the shoulder blades.\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Press straight up, don't arch the lower back.\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":2,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Rear foot on the bench, keep the torso upright.\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":2,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the elbows still at your sides.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 125,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 637,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

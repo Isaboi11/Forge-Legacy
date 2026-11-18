@@ -2,9 +2,9 @@
   "caseId": "A1018",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:30:52.997Z",
+  "recordedAt": "2026-11-18T04:26:15.380Z",
   "reply": {
-    "text": "{\"route\": \"patch\", \"patch\": {\"avoid\": [\"running\"]}, \"say\": \"Noted, no running in this one.\", \"remember\": [\"Can't stand running\"]}",
+    "text": "{\"route\": \"patch\", \"patch\": {\"limitations\": [\"no_running\"]}, \"say\": \"Understood, no running in this one.\", \"remember\": [\"Can't stand running\"]}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 57,
+    "output_tokens": 59,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0444",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:08:07.424Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Rough way to start a session, and headphones are a pain. Shake it off, reset your playlist or grab a cheap pair, and we'll get back to work. Tell me what you want the next session to look like, or just say the word and I'll build the whole program.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 71,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 93,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

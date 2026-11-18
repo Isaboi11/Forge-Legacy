@@ -1,0 +1,26 @@
+{
+  "caseId": "S0701",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:10:52.368Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Good sore is the best kind, and you earned it. I'm not building a session out of nothing, though. Tell me what the program is for and how many days you train a week, and I'll put the next one together for you.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 82,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 76,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

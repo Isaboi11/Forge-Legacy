@@ -2,7 +2,7 @@
   "caseId": "A1057",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:31:43.733Z",
+  "recordedAt": "2026-11-18T04:27:08.278Z",
   "reply": {
     "text": "{\"route\": \"patch\", \"patch\": {\"dayFocus\": \"pull\"}, \"say\": \"Pull day it is.\"}",
     "stop_reason": "end_turn"

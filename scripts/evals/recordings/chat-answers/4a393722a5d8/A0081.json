@@ -1,0 +1,26 @@
+{
+  "caseId": "A0081",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:49:28.221Z",
+  "reply": {
+    "text": "{\"route\": \"care\", \"say\": \"I hear you, and I want to help you get there the right way. Twenty pounds in a short window is not something I'll build a training plan around. Fast drops like that tend to cost you muscle, strength and energy, and they can push eating into territory that isn't safe. What's your current weight and height, and over what timeframe are you hoping to see change? If you'd like, we can talk through a steady approach, and I can point you to a doctor or dietitian for anything about how much to eat.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 60,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 161,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

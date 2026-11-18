@@ -1,0 +1,26 @@
+{
+  "caseId": "S0562",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:09:20.410Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Consistency is the one most people struggle with, so you're not alone in that. The fix is usually boring: pick a fixed number of days you can actually keep through a bad week, put them in your calendar like appointments, and aim to make the minimum session happen even on rough days. Missing one session is nothing. Missing two in a row is where habits start to slip. Tell me your schedule and what you're training for, and we'll build something you can stick to.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 75,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 151,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

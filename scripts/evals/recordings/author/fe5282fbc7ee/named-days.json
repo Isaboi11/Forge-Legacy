@@ -1,0 +1,26 @@
+{
+  "caseId": "named-days",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:45:49.396Z",
+  "reply": {
+    "text": "{\"say\":\"Heavy Lower opens with squats and deadlifts for low reps, Upper Pump keeps the reps high with supersets-free volume across chest, back, shoulders and arms, and Athletic pairs jumps with loaded carries.\",\"title\":\"Heavy, Pump, Athletic\",\"days\":[{\"name\":\"Heavy Lower\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":5,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace hard, drive up through midfoot\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":4,\"reps\":6,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips back, bar close to legs\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the bottom\"}]},{\"name\":\"Upper Pump\",\"exercises\":[{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline\"},{\"key\":\"cable-lat-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull elbows to ribs\"},{\"key\":\"machine-chest-press\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-seated-row\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze shoulder blades together\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"cable-rope-pushdown\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"},{\"key\":\"dumbbell-incline-curl\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"\"}]},{\"name\":\"Athletic\",\"exercises\":[{\"key\":\"box-jump\",\"sets\":4,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Land soft, step down\"},{\"key\":\"broad-jump\",\"sets\":3,\"reps\":5,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Stick the landing\"},{\"key\":\"kettlebell-swing\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Snap the hips\"},{\"key\":\"dumbbell-farmer-carry\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":40,\"group\":\"\",\"part\":\"main\",\"note\":\"Tall posture, quick steps\"},{\"key\":\"dumbbell-suitcase-carry\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Don't lean toward the weight\"},{\"key\":\"medicine-ball-rotational-throw\",\"sets\":3,\"reps\":6,\"repsTo\":0,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Rotate from the hips\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 173,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1300,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

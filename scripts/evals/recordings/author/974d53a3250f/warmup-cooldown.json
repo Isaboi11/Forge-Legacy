@@ -1,0 +1,26 @@
+{
+  "caseId": "warmup-cooldown",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:28:42.324Z",
+  "reply": {
+    "text": "{\"say\":\"Leg day with a proper warm-up to start and stretching to finish, as you asked. The main work is squat-pattern and hinge-pattern lifts, with a unilateral movement and calves.\",\"title\":\"Leg Day\",\"days\":[{\"name\":\"Legs\",\"exercises\":[{\"key\":\"foam-roll-quadriceps*\",\"sets\":1,\"reps\":0,\"repsTo\":0,\"seconds\":60,\"group\":\"\",\"part\":\"warmup\",\"note\":\"Slow passes over the front of the thighs.\"},{\"key\":\"bodyweight-squat\",\"sets\":2,\"reps\":10,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"warmup\",\"note\":\"Light reps, full depth, before loading.\"},{\"key\":\"barbell-back-squat\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace hard and control the descent.\"},{\"key\":\"barbell-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hinge at the hips, keep the bar close to the legs.\"},{\"key\":\"leg-extension-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause briefly at the top.\"},{\"key\":\"lying-leg-curl-machine\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow lowering phase.\"},{\"key\":\"dumbbell-bulgarian-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the drop on each side.\"},{\"key\":\"standing-calf-raise-machine\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full stretch at the bottom, pause at the top.\"},{\"key\":\"couch-stretch*\",\"sets\":1,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"cooldown\",\"note\":\"Hold each side, ease into the hip.\"},{\"key\":\"standing-quad-stretch*\",\"sets\":1,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"cooldown\",\"note\":\"Keep knees together, hold each side.\"},{\"key\":\"hamstring-stretch*\",\"sets\":1,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"cooldown\",\"note\":\"Gentle pull, no bouncing.\"}]}], \"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 106,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 878,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "po-marathon-lifts",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:29:26.396Z",
+  "reply": {
+    "text": "{\"say\":\"Three lifting days built for a runner: a squat or leg press for leg strength, a hinge, single-leg work, calves, a trunk, and pushing and pulling for the upper body. Lower-body volume stays moderate so your running holds up.\",\"title\":\"Marathon Strength\",\"days\":[{\"name\":\"Strength A\",\"exercises\":[{\"key\":\"barbell-back-squat\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace hard before each rep\"},{\"key\":\"barbell-bench-press\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Controlled descent\"},{\"key\":\"barbell-bent-over-row\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Flat back, pull to lower ribs\"},{\"key\":\"barbell-pallof-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Resist the rotation\"},{\"key\":\"barbell-calf-raise\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the top\"}]},{\"name\":\"Strength B\",\"exercises\":[{\"key\":\"barbell-deadlift\",\"sets\":4,\"reps\":3,\"repsTo\":5,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Neutral spine, push the floor away\"},{\"key\":\"barbell-overhead-press\",\"sets\":4,\"reps\":4,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze glutes at lockout\"},{\"key\":\"lat-pulldown\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull to upper chest\"},{\"key\":\"bulgarian-split-squat\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the front shin vertical\"},{\"key\":\"dead-bug\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lower back stays flat\"}]},{\"name\":\"Strength C\",\"exercises\":[{\"key\":\"barbell-romanian-deadlift\",\"sets\":3,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hinge at the hips, soft knees\"},{\"key\":\"leg-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full range, knees track toes\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"30-degree incline\"},{\"key\":\"seated-cable-row\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lead with the elbows\"},{\"key\":\"single-leg-calf-raise\",\"sets\":2,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow lowering\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 194,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1125,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

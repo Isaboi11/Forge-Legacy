@@ -1,0 +1,26 @@
+{
+  "caseId": "circuit",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:28:36.306Z",
+  "reply": {
+    "text": "{\"say\":\"Five movements back to back, three rounds, covering legs, pushing, pulling, hinge and core so the whole body works each round.\",\"title\":\"Full Body Circuit\",\"days\":[{\"name\":\"Full Body Circuit\",\"exercises\":[{\"key\":\"goblet-squat\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Keep chest tall, elbows inside knees.\"},{\"key\":\"dumbbell-bench-press\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Control the lowering phase.\"},{\"key\":\"dumbbell-romanian-deadlift\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Soft knees, hinge at the hips.\"},{\"key\":\"two-hand-dumbbell-overhead-triceps-extension\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Keep elbows close to the head.\"},{\"key\":\"dumbbell-bent-over-row\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"A\",\"part\":\"main\",\"note\":\"Pull elbows toward the hips.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 111,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 452,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-1",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:19.514Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Turkey Sausage and Veggie Skillet\",\"why\":\"Lean protein and vegetables in one pan, ready in about 20 minutes.\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":20,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"130 g turkey sausage, sliced\",\"quantity\":130,\"unit\":\"g\",\"food\":\"turkey sausage\"},{\"text\":\"60 g baby spinach\",\"quantity\":60,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"60 g red bell pepper, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"40 g onion, diced\",\"quantity\":40,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"5 g olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oil in a non-stick pan over medium heat.\",\"Add the sliced turkey sausage and cook until browned, about 5 minutes.\",\"Add the onion and pepper and cook until softened, about 4 minutes.\",\"Stir in the spinach until just wilted, then season with salt and pepper and serve.\"]},{\"name\":\"Greek Yogurt Berry Parfait\",\"why\":\"No stove needed, and the yogurt brings a solid protein hit.\",\"cuisine\":\"Greek\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"200 g plain Greek yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"60 g blueberries\",\"quantity\":60,\"unit\":\"g\",\"food\":\"blueberries\"},{\"text\":\"30 g granola\",\"quantity\":30,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"10 g honey\",\"quantity\":10,\"unit\":\"g\",\"food\":\"honey\"}],\"steps\":[\"Spoon half the yogurt into a glass or bowl.\",\"Add half the blueberries and half the granola.\",\"Repeat with the remaining yogurt, blueberries and granola.\",\"Drizzle with honey and serve.\"]},{\"name\":\"Cottage Cheese Tomato Toast\",\"why\":\"Savory and filling, with a high-protein topping on whole-grain bread.\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":10,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"2 slices whole-wheat bread\",\"quantity\":70,\"unit\":\"g\",\"food\":\"whole-wheat bread\"},{\"text\":\"150 g cottage cheese\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cottage cheese\"},{\"text\":\"80 g tomatoes, sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"5 g olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Toast the bread until golden and crisp.\",\"Spread the cottage cheese over the toast.\",\"Top with sliced tomatoes, drizzle with olive oil, and season with salt and pepper.\",\"Serve immediately.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 99,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1124,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

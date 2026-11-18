@@ -1,0 +1,26 @@
+{
+  "caseId": "S0496",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:08:39.770Z",
+  "reply": {
+    "text": "{\"route\": \"care\", \"say\": \"I don't build training around drug or peptide dosing, so I can't give you a dose for BPC-157. Talk to a doctor who knows your history before you use anything like that. I'm glad to plan a solid recovery block around your training: sleep, load management, and the lifts and runs you actually want to hit.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 67,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 109,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

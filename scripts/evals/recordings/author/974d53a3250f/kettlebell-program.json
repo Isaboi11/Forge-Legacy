@@ -1,0 +1,26 @@
+{
+  "caseId": "kettlebell-program",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:31:59.098Z",
+  "reply": {
+    "text": "{\"say\":\"Three days, one kettlebell, nothing else. Each day trains the full body with a kettlebell squat, press, hinge and row, so the week covers everything your kit allows.\",\"title\":\"Kettlebell Full Body\",\"days\":[{\"name\":\"Day 1\",\"exercises\":[{\"key\":\"kettlebell-goblet-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows inside the knees, chest tall.\"},{\"key\":\"kettlebell-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Ribs down, press straight up.\"},{\"key\":\"kettlebell-romanian-deadlift\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips back, bell close to the legs.\"},{\"key\":\"single-arm-kettlebell-row\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull to the hip, keep the torso still.\"}]},{\"name\":\"Day 2\",\"exercises\":[{\"key\":\"kettlebell-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hold the bell at the chest.\"},{\"key\":\"single-arm-kettlebell-floor-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbow at about 45 degrees.\"},{\"key\":\"kettlebell-swing\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Snap the hips, arms just guide it.\"},{\"key\":\"renegade-kettlebell-row\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips square, no rocking.\"}]},{\"name\":\"Day 3\",\"exercises\":[{\"key\":\"kettlebell-sumo-deadlift\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Stand tall at the top, brace before each rep.\"},{\"key\":\"single-arm-kettlebell-press\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the wrist stacked over the elbow.\"},{\"key\":\"kettlebell-step-up\",\"sets\":3,\"reps\":8,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive through the working leg.\"},{\"key\":\"kettlebell-gorilla-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet wide, pull straight back.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 151,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 982,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

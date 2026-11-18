@@ -1,0 +1,26 @@
+{
+  "caseId": "A0845",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:59:10.526Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Fair enough, I've got a few years on me in the ways that count, so I'll take the jab. But your experience is what I need, not mine. Roughly how many years have you been lifting, and how about running? A rough answer is fine: a beginner, intermediate, or advanced level for each is all I need.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 64,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 108,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

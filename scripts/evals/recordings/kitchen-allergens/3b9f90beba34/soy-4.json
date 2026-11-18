@@ -1,0 +1,26 @@
+{
+  "caseId": "soy-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:13:31.094Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Salmon Poke-Style Rice Bowl\",\"why\":\"closest to a sushi bowl with no soy needed\",\"cuisine\":\"Japanese-inspired\",\"method\":\"no-cook\",\"minutes\":25,\"servings\":1,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"75 g dry short-grain rice cooked as directed (about 200 g cooked)\",\"quantity\":75,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"110 g smoked salmon, sliced\",\"quantity\":110,\"unit\":\"g\",\"food\":\"smoked salmon\"},{\"text\":\"1/2 avocado, sliced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"1/2 cucumber, thinly sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 tbsp rice vinegar or cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"Hot sauce to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"hot sauce\"}],\"steps\":[\"Cook the rice and while warm stir in the vinegar and a pinch of salt. Let it cool slightly.\",\"Divide the rice into a bowl and arrange the salmon, avocado and cucumber over the top.\",\"Sprinkle with sesame seeds and add hot sauce to taste. Eat right away.\"]},{\"name\":\"Crispy Chicken Sushi Bowl\",\"why\":\"hot and filling, uses the cooked-protein approach of a sushi bowl\",\"cuisine\":\"Japanese-inspired\",\"method\":\"pan\",\"minutes\":30,\"servings\":1,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g chicken breast, cut into strips\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"75 g dry long-grain white rice cooked (about 200 g cooked)\",\"quantity\":75,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"50 g cucumber, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"50 g carrot, julienned\",\"quantity\":50,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp rice vinegar or cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"Salt, pepper and garlic powder to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook the rice, then stir in the vinegar and a pinch of salt.\",\"Season the chicken with salt, pepper and garlic powder. Heat the oil in a pan and cook the chicken 5 to 6 minutes, turning, until golden and cooked through to 165°F inside.\",\"Spoon the rice into a bowl, top with the chicken, cucumber and carrot, and sprinkle with sesame seeds.\"]},{\"name\":\"Egg and Cucumber Sushi Bowl\",\"why\":\"quickest of the three, no stove for the protein\",\"cuisine\":\"Japanese-inspired\",\"method\":\"bowl\",\"minutes\":15,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"2 large eggs, scrambled\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"75 g dry long-grain white rice cooked (about 200 g cooked)\",\"quantity\":75,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"1/2 avocado, sliced\",\"quantity\":70,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"50 g cucumber, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 tbsp cider vinegar\",\"quantity\":15,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tsp sesame seeds\",\"quantity\":3,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"Hot sauce to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"hot sauce\"}],\"steps\":[\"Cook the rice and season with the vinegar and a pinch of salt.\",\"Gently scramble the eggs in a small pan over low heat until just set, about 2 minutes.\",\"Layer the rice in a bowl with the eggs, avocado and cucumber. Finish with sesame seeds and hot sauce.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 108,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1595,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

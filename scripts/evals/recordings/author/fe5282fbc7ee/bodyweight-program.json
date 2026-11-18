@@ -1,0 +1,26 @@
+{
+  "caseId": "bodyweight-program",
+  "promptHash": "fe5282fbc7ee4b9f5e840db9f64a90c094b4ad03a3f38c3e9085428867d2c6ec",
+  "model": "claude-opus-5-5",
+  "recordedAt": "2026-11-18T03:44:32.790Z",
+  "reply": {
+    "text": "{\"say\":\"Four bodyweight days built around your pull-up bar: two upper days pairing push-ups and dips-free pressing with pull-ups and chin-ups, and two lower days with single-leg work and core. Every movement needs nothing but your body and the bar.\",\"title\":\"Calisthenics Program\",\"days\":[{\"name\":\"Upper A\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full hang at the bottom, chin over bar\"},{\"key\":\"push-up\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Body in one straight line\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips high, head travels forward of hands\"},{\"key\":\"close-grip-push-up\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows tight to your sides\"},{\"key\":\"hanging-knee-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"No swinging, curl the pelvis up\"}]},{\"name\":\"Lower A\",\"exercises\":[{\"key\":\"bulgarian-split-squat\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Rear foot on a chair or couch\"},{\"key\":\"single-leg-glute-bridge\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause and squeeze at the top\"},{\"key\":\"reverse-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slow lowering, drive through front heel\"},{\"key\":\"single-leg-calf-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full stretch at the bottom\"},{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze glutes and brace\"}]},{\"name\":\"Upper B\",\"exercises\":[{\"key\":\"chin-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Underhand grip, chest to the bar\"},{\"key\":\"decline-push-up\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet raised on a chair\"},{\"key\":\"wide-grip-pull-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull elbows down to your ribs\"},{\"key\":\"diamond-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hands under chest, elbows back\"},{\"key\":\"hanging-leg-raise\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Legs straight, control the descent\"}]},{\"name\":\"Lower B\",\"exercises\":[{\"key\":\"split-squat\",\"sets\":4,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Back knee lightly touches the floor\"},{\"key\":\"sliding-hamstring-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips stay up, use socks or towel\"},{\"key\":\"step-up\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Use a sturdy step, no push-off\"},{\"key\":\"calf-raise\",\"sets\":3,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the top\"},{\"key\":\"hollow-body-hold\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Lower back pressed into the floor\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 160,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14416,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1483,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

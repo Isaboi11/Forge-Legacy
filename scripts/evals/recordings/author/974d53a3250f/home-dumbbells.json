@@ -1,0 +1,26 @@
+{
+  "caseId": "home-dumbbells",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:30:24.501Z",
+  "reply": {
+    "text": "{\"say\":\"Three full-body days built around adjustable dumbbells and the bench, with a lower-body hinge, squat, press, and row each session.\",\"title\":\"Home Dumbbell Full Body\",\"days\":[{\"name\":\"Full Body A\",\"exercises\":[{\"key\":\"dumbbell-goblet-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hold the dumbbell at chest height.\"},{\"key\":\"dumbbell-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep shoulder blades pinned on the bench.\"},{\"key\":\"dumbbell-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Push hips back, keep the bar close to legs.\"},{\"key\":\"dumbbell-bent-over-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull elbows toward the hips.\"},{\"key\":\"dumbbell-biceps-curl\",\"sets\":2,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the lowering phase.\"}]},{\"name\":\"Full Body B\",\"exercises\":[{\"key\":\"dumbbell-split-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the front heel planted.\"},{\"key\":\"dumbbell-incline-bench-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Set the bench to about 30 degrees.\"},{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Press straight up over the shoulders.\"},{\"key\":\"single-arm-dumbbell-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the torso still.\"},{\"key\":\"two-hand-dumbbell-overhead-triceps-extension\",\"sets\":2,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep elbows close to the head.\"}]},{\"name\":\"Full Body C\",\"exercises\":[{\"key\":\"dumbbell-sumo-squat\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the chest tall.\"},{\"key\":\"dumbbell-floor-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause briefly on the floor.\"},{\"key\":\"single-leg-dumbbell-romanian-deadlift\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Balance over the working leg.\"},{\"key\":\"dumbbell-renegade-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Brace the core and keep hips square.\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":2,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep wrists neutral.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 159,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1190,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

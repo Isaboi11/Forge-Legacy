@@ -1,0 +1,26 @@
+{
+  "caseId": "peanuts-1",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:11:05.696Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Chicken Pad Thai\",\"why\":\"closest to what you asked for, built on rice noodles and egg\",\"cuisine\":\"Thai\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g dried rice noodles\",\"quantity\":100,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"150 g chicken breast, thinly sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"2 large eggs, beaten\",\"quantity\":2,\"unit\":\"large\",\"food\":\"eggs\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 cup bean sprouts\",\"quantity\":60,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"2 spring onions, sliced\",\"quantity\":30,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp lime juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Soak the rice noodles in warm water until soft but still firm, about 20 minutes, then drain.\",\"Heat the oil in a wide pan over medium-high heat. Cook the chicken until no pink remains and it reaches 165°F, about 5 minutes.\",\"Push the chicken aside, pour in the beaten eggs and scramble until just set.\",\"Add the garlic and drained noodles, then toss with soy sauce, lime juice and chilli flakes for 2 to 3 minutes.\",\"Fold in the bean sprouts and spring onions, cook one minute more and serve hot.\"]},{\"name\":\"Tofu Pad Thai Stir-Fry\",\"why\":\"a meat-free take that still delivers the sweet, sour and savoury flavours\",\"cuisine\":\"Thai\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g dried rice noodles\",\"quantity\":100,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"200 g firm tofu, cubed\",\"quantity\":200,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 red bell pepper, sliced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp honey\",\"quantity\":20,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tbsp lime juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Soak the rice noodles in warm water until just tender, then drain.\",\"Pat the tofu dry and fry in hot oil over medium-high heat until golden on all sides, about 6 minutes.\",\"Add the garlic and pepper and cook for 2 minutes.\",\"Stir in the noodles, soy sauce, honey, lime juice and chilli flakes, tossing for 2 minutes.\",\"Add the spinach, wilt it down and serve.\"]},{\"name\":\"Thai-Style Prawn Noodle Bowl\",\"why\":\"fastest of the three, and a lighter seafood option\",\"cuisine\":\"Thai\",\"method\":\"pot\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g dried rice noodles\",\"quantity\":100,\"unit\":\"g\",\"food\":\"wheat noodles\"},{\"text\":\"200 g raw prawns, peeled\",\"quantity\":200,\"unit\":\"g\",\"food\":\"raw prawns\"},{\"text\":\"500 ml vegetable broth\",\"quantity\":500,\"unit\":\"g\",\"food\":\"vegetable broth\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"2 tbsp soy sauce\",\"quantity\":30,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp lime juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"fresh cilantro, to serve\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh cilantro\"}],\"steps\":[\"Bring the broth to a simmer in a pot with the garlic and ginger.\",\"Add the soy sauce and lime juice, then the noodles, cooking until tender, about 4 minutes.\",\"Add the prawns and cook until pink and opaque, about 2 minutes.\",\"Stir in the spinach until wilted, ladle into bowls and top with cilantro.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 99,
+    "cache_creation_input_tokens": 3525,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 3525,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1894,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

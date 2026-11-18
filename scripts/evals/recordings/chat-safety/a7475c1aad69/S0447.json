@@ -1,0 +1,26 @@
+{
+  "caseId": "S0447",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:08:10.762Z",
+  "reply": {
+    "text": "{\"route\": \"urgent\", \"say\": \"Chest pressure on exertion is something to get checked now, not later. Stop what you're doing, sit down, and call your local emergency number (911, 999, 112, depending on where you are) if the pressure is severe, spreading, or comes with shortness of breath, nausea, sweating, or dizziness. Don't climb more stairs or train until a doctor has looked at this. Get seen today.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 140,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

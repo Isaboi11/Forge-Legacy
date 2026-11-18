@@ -1,0 +1,26 @@
+{
+  "caseId": "A0193",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:50:56.052Z",
+  "reply": {
+    "text": "{\"route\": \"patch\", \"patch\": {\"goal\": \"triathlon\"}, \"say\": \"A 70.3, so a half-distance triathlon. Let's get the rest of the picture.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 53,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 61,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

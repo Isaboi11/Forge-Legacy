@@ -1,0 +1,26 @@
+{
+  "caseId": "back-thickness",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:26:07.382Z",
+  "reply": {
+    "text": "{\"say\":\"Back day built around rows for thickness: heavy compound rows first, then a pull-in and rear-delt finish, with pulldowns kept as a single vertical pull.\",\"title\":\"Back: Thickness\",\"days\":[{\"name\":\"Back\",\"exercises\":[{\"key\":\"barbell-bent-over-row\",\"sets\":4,\"reps\":6,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull to lower ribs, pause at the top\"},{\"key\":\"chest-supported-row-machine\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze shoulder blades together\"},{\"key\":\"single-arm-cable-row\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep torso still, drive elbow back\"},{\"key\":\"cable-lat-pulldown\",\"sets\":3,\"reps\":10,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull to upper chest\"},{\"key\":\"cable-face-pull\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull rope to forehead, elbows high\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 101,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 441,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

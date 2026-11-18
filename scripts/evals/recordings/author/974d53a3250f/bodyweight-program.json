@@ -1,0 +1,26 @@
+{
+  "caseId": "bodyweight-program",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:30:28.760Z",
+  "reply": {
+    "text": "{\"say\":\"Four days of bodyweight work with the pull-up bar as the only tool, built around pulling, pushing and legs so each day stays balanced.\",\"title\":\"Calisthenics Week\",\"days\":[{\"name\":\"Pull A\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full dead hang at the bottom.\"},{\"key\":\"chin-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Underhand grip, controlled descent.\"},{\"key\":\"inverted-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep the body in a straight line.\"},{\"key\":\"scapular-pull-up\",\"sets\":2,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull the shoulder blades down and back.\"}]},{\"name\":\"Push A\",\"exercises\":[{\"key\":\"push-up\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows at about 45 degrees.\"},{\"key\":\"decline-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet on the bar or a chair.\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips high, head to the floor.\"},{\"key\":\"diamond-push-up\",\"sets\":2,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hands together under the chest.\"}]},{\"name\":\"Legs\",\"exercises\":[{\"key\":\"bodyweight-squat\",\"sets\":4,\"reps\":12,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Heels down, chest up.\"},{\"key\":\"reverse-lunge\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Each leg.\"},{\"key\":\"glute-bridge\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze at the top.\"},{\"key\":\"calf-raise\",\"sets\":3,\"reps\":15,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause at the top.\"}]},{\"name\":\"Pull and Push B\",\"exercises\":[{\"key\":\"neutral-grip-pull-up\",\"sets\":3,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Palms facing each other.\"},{\"key\":\"wide-grip-pull-up\",\"sets\":3,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull the chest toward the bar.\"},{\"key\":\"parallel-bar-dip\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Use a chair or bench if the bar is not available.\"},{\"key\":\"wide-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hands wider than shoulders.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 160,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1158,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

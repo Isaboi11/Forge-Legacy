@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-1",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:11:32.734Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Basil Pasta with Sun-Dried Tomatoes\",\"why\":\"uses pantry staples and tastes like pesto without any nuts\",\"cuisine\":\"Italian\",\"method\":\"pot\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"140 g spaghetti, dry\",\"quantity\":140,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"30 g parmesan, grated\",\"quantity\":30,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"30 g baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":10,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"20 g olive oil\",\"quantity\":20,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"30 g sun-dried tomatoes in oil, sliced\",\"quantity\":30,\"unit\":\"g\",\"food\":\"sun-dried tomatoes in oil\"},{\"text\":\"dried oregano, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Bring a large pot of salted water to a boil and cook the spaghetti until al dente. Reserve a cup of cooking water, then drain.\",\"While the pasta cooks, warm the olive oil in a pan over medium heat and soften the garlic for about 1 minute.\",\"Add the spinach and sun-dried tomatoes and stir until the spinach wilts, about 2 minutes.\",\"Toss the pasta into the pan with a splash of pasta water, the parmesan, oregano, salt and pepper until glossy, then serve.\"]},{\"name\":\"Garlic Herb Spaghetti with Crispy Chickpeas\",\"why\":\"fastest option with a little protein\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"140 g spaghetti, dry\",\"quantity\":140,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"130 g chickpeas, drained and rinsed\",\"quantity\":130,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"20 g olive oil\",\"quantity\":20,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"3 cloves garlic, sliced\",\"quantity\":15,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"30 g parmesan, grated\",\"quantity\":30,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"dried parsley, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried parsley\"},{\"text\":\"lemon juice, a squeeze\",\"quantity\":null,\"unit\":\"\",\"food\":\"lemon juice\"},{\"text\":\"salt and chilli flakes, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Cook the spaghetti in salted boiling water until al dente, then drain and keep a splash of the water.\",\"Pat the chickpeas dry. Fry them in half the oil over medium-high heat for 6 to 8 minutes until golden and crisp.\",\"Lower the heat, add the remaining oil and garlic, and cook until just golden, about 1 minute.\",\"Toss the pasta with the garlic oil, parmesan, parsley, lemon juice and chilli, then top with the crispy chickpeas.\"]},{\"name\":\"Creamy Tomato Baked Pasta\",\"why\":\"oven does the work while you rest\",\"cuisine\":\"Italian-American\",\"method\":\"oven\",\"minutes\":40,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g spaghetti, broken into short pieces, dry\",\"quantity\":100,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"200 g canned tomatoes\",\"quantity\":200,\"unit\":\"g\",\"food\":\"canned tomatoes\"},{\"text\":\"60 g part-skim mozzarella, shredded\",\"quantity\":60,\"unit\":\"g\",\"food\":\"part-skim mozzarella\"},{\"text\":\"30 g parmesan, grated\",\"quantity\":30,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"30 g baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"dried oregano and salt, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Preheat the oven to 200°C (400°F). Cook the spaghetti in salted water for 3 minutes less than the packet says, then drain.\",\"Warm the oil, cook the garlic briefly, then stir in the tomatoes, oregano and salt and simmer for 5 minutes.\",\"Fold the pasta and spinach into the sauce, spoon into an oven dish, and top with mozzarella and parmesan.\",\"Bake for 15 to 20 minutes until bubbling and golden on top, then rest 5 minutes before serving.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 127,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1764,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

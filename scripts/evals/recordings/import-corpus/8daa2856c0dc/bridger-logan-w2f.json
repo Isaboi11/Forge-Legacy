@@ -1,0 +1,60 @@
+{
+  "caseId": "bridger-logan-w2f",
+  "promptHash": "8daa2856c0dc0cbf11f7496546f95b999b46d862e652057edf9901dc16817ad8",
+  "model": "claude-sonnet-5",
+  "recordedAt": "2026-11-18T03:00:06.096Z",
+  "reply": {
+    "bodies": {
+      "workout-card-read": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "CIRCUIT\nRounds: 10m\nAMRAP #1\n10\tWall Ball Burpee\n10\tWall Ball Sit Up\n12\tWall Ball Alt Jump Lunge\n20\tWall Ball Mt Climbers\n\nCIRCUIT\nRounds: 10m\nAMRAP #2\n12\tKneeling Rotational Wall Ball Throw\n15\tWall Ball Squat Toss\n12\tWall Ball Alt Kneeling Roll Out"
+        }
+      },
+      "workout-tidy": {
+        "status": 200,
+        "body": {
+          "ok": true,
+          "text": "1. a. Wall Ball Burpee 10 reps\n* Rounds: 10m, AMRAP #1\nsuper set b. Wall Ball Sit Up 10 reps\nsuper set c. Wall Ball Alt Jump Lunge 12 reps\nsuper set d. Wall Ball Mt Climbers 20 reps\n\n2. a. Kneeling Rotational Wall Ball Throw 12 reps\n* Rounds: 10m, AMRAP #2\nsuper set b. Wall Ball Squat Toss 15 reps\nsuper set c. Wall Ball Alt Kneeling Roll Out 12 reps"
+        }
+      }
+    }
+  },
+  "usage": {
+    "workout-card-read": {
+      "input_tokens": 4528,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 171,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    },
+    "workout-tidy": {
+      "input_tokens": 194,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 2070,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 247,
+      "output_tokens_details": {
+        "thinking_tokens": 40
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard",
+      "model": "claude-sonnet-5"
+    }
+  }
+}

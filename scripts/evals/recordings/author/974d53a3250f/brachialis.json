@@ -1,0 +1,26 @@
+{
+  "caseId": "brachialis",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:26:18.178Z",
+  "reply": {
+    "text": "{\"say\":\"Biceps session built around hammer curls and reverse curls for the forearms, with a few classic biceps curls alongside so the whole arm gets worked.\",\"title\":\"Biceps & Forearms\",\"days\":[{\"name\":\"Biceps\",\"exercises\":[{\"key\":\"barbell-biceps-curl\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep elbows pinned at your sides.\"},{\"key\":\"dumbbell-hammer-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Neutral grip, control the lowering.\"},{\"key\":\"ez-bar-reverse-curl\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Overhand grip, squeeze at the top.\"},{\"key\":\"cable-biceps-curl\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Constant tension, slow negative.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 108,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 377,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0139",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:04:39.109Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Shaking on the last set is usually just fatigue. Your muscles are working hard and the nervous system is firing a lot of effort, so it's a normal part of pushing near your limit, not a sign of anything wrong. Whether it's a good sign depends on what you were doing: if the weight was challenging and your form stayed clean, you're doing it right. If the shaking came with sharp pain, numbness, or made your form break down, drop the weight and back off. Keep an eye on how your arms feel the next day too.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 70,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 177,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

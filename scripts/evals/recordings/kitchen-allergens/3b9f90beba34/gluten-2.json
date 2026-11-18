@@ -1,0 +1,26 @@
+{
+  "caseId": "gluten-2",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:52.154Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Crispy Chickpea Lettuce Wraps\",\"why\":\"no bread needed and comes together fast\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"240 g chickpeas, drained and patted dry\",\"quantity\":240,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":25,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"Salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"100 g baby spinach\",\"quantity\":100,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"60 g cucumber, sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"60 g hummus\",\"quantity\":60,\"unit\":\"g\",\"food\":\"hummus\"}],\"steps\":[\"Heat the olive oil in a pan over medium-high heat.\",\"Add the chickpeas with the paprika, garlic powder, salt and pepper.\",\"Cook 6 to 8 minutes, shaking the pan, until the chickpeas are golden and crisp.\",\"Spread hummus on lettuce or spinach leaves, add the chickpeas and cucumber, then roll and eat.\"]},{\"name\":\"Chicken Salad Lettuce Cups\",\"why\":\"most protein per bite with no stove needed\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"200 g sliced turkey breast, chopped\",\"quantity\":200,\"unit\":\"g\",\"food\":\"sliced turkey breast\"},{\"text\":\"60 g light mayonnaise\",\"quantity\":60,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"1 tsp lemon juice\",\"quantity\":5,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"60 g red bell pepper, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"60 g cucumber, diced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"Black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"},{\"text\":\"100 g rocket\",\"quantity\":100,\"unit\":\"g\",\"food\":\"rocket\"}],\"steps\":[\"Combine the turkey, mayonnaise, lemon juice, pepper and cucumber in a bowl.\",\"Season with black pepper and stir well.\",\"Spoon the mixture onto rocket leaves and serve cold.\"]},{\"name\":\"Sesame Tofu Rice Bowl\",\"why\":\"filling and uses the rice you have most of\",\"cuisine\":\"Japanese-inspired\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"250 g firm tofu, cubed\",\"quantity\":250,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":12,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"90 g long-grain white rice, dry\",\"quantity\":90,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"100 g broccoli florets\",\"quantity\":100,\"unit\":\"g\",\"food\":\"broccoli florets\"},{\"text\":\"1 tbsp sesame seeds\",\"quantity\":9,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"1 tbsp teriyaki sauce\",\"quantity\":18,\"unit\":\"g\",\"food\":\"teriyaki sauce\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"fresh ginger\"}],\"steps\":[\"Cook the rice according to the packet and keep warm.\",\"Pat the tofu dry, then fry in hot oil until golden on all sides, about 8 minutes.\",\"Steam or stir-fry the broccoli until just tender, about 4 minutes.\",\"Add the teriyaki sauce and ginger to the tofu and toss for 1 minute.\",\"Serve the tofu and broccoli over the rice, topped with sesame seeds.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 156,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1495,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

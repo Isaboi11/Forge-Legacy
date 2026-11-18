@@ -1,0 +1,26 @@
+{
+  "caseId": "bodyweight-push",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:17:12.371Z",
+  "reply": {
+    "text": "{\"say\":\"Push day with bodyweight only: chest leads with a push-up variation, then shoulders and triceps finish it off.\",\"title\":\"Bodyweight Push Day\",\"days\":[{\"name\":\"Push\",\"exercises\":[{\"key\":\"push-up\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Body in one line, chest to the floor\"},{\"key\":\"decline-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet raised, control the lowering\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips high, head travels between the hands\"},{\"key\":\"diamond-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows tucked close to the ribs\"},{\"key\":\"bench-dip\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Use a chair or step, shoulders down\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 113,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 408,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0380",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:07:23.474Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Eight hard weeks is a good stretch to look at a deload. Signs you need one: lifts stalling or going backwards, reps feeling heavier than they should at the same weight, sleep getting worse, and joints or motivation dragging. If you're feeling several of those, drop your volume by about half for a week and keep the weights around 60 to 70 percent of your usual. Hold back on pushing to failure. If you feel fine and still progressing, you can keep going, but plan one in soon. If you tell me your goal and how many days a week you train, I can build the next block with a deload week in it.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 74,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 202,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

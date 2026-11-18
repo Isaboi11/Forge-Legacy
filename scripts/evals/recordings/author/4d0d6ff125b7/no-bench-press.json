@@ -1,0 +1,26 @@
+{
+  "caseId": "no-bench-press",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:16:31.239Z",
+  "reply": {
+    "text": "{\"say\":\"No bench pressing here: a machine press and a dip lead, then cable and pec deck flies finish the chest, with a push-up to close.\",\"title\":\"Chest Day (No Bench)\",\"days\":[{\"name\":\"Chest Day\",\"exercises\":[{\"key\":\"machine-chest-press\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze the handles together at the top\"},{\"key\":\"parallel-bar-dip\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lean forward slightly to load the chest\"},{\"key\":\"machine-incline-chest-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Control the lowering phase\"},{\"key\":\"cable-crossover\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Slight elbow bend, hug the arc\"},{\"key\":\"pec-deck-fly\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause when the handles meet\"},{\"key\":\"low-to-high-cable-fly\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Sweep up toward chin height\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 114,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 494,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "S0274",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:06:08.814Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"RPE is how hard a set felt on a scale of 1 to 10, where 10 is an all-out max. An RPE 8 means you finished the set with about two good reps still in the tank. It's a handy way to pick your working weight when a number doesn't quite fit the day you're having.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 66,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 104,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

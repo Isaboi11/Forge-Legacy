@@ -1,0 +1,26 @@
+{
+  "caseId": "A0827",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:58:55.922Z",
+  "reply": {
+    "text": "The athlete answered how long they've been training: two years. That's an experience level, but the system only accepts beginner, intermediate or advanced per discipline, and \"two years\" doesn't say which they mean for lifting versus running, nor does it say which. Two years is a reasonable intermediate signal, but I shouldn't guess the split. The answer also doesn't tell me anything else new, so I'll return a patch with no fields I'm unsure of, and the app will ask the next question. Since I have no clear experience value to fill in, an empty patch is the honest route.\n\n{\"route\": \"patch\", \"say\": \"Two years, good. That's enough to build on.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 55,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 206,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

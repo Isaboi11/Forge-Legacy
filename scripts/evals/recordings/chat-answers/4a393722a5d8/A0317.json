@@ -1,0 +1,26 @@
+{
+  "caseId": "A0317",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:52:38.007Z",
+  "reply": {
+    "text": "The 10k date given is October 25, and today is November 17, 2026. October 25 of 2026 has already passed, and the athlete wrote \"the 10k is oct 25\" as a future race. A date without a year means the next time it comes round, so that is October 25, 2027, about 49 weeks away. I should not put a race date in the past into the fields. Instead I'll use the next occurrence.\n\nRace goal: run_10k. Date: 2027-10-25, which is 49 weeks from today (345 days). Weekly mileage is about 10 miles.\n\n{\"route\": \"patch\", \"say\": \"A 10k on October 25 next year, about 49 weeks out, and you're running around 10 miles a week. That gives us a long block to build from.\", \"patch\": {\"goal\": \"run_10k\", \"raceDate\": \"2027-10-25\", \"raceInWeeks\": 49, \"currentWeeklyMi\": 10}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 89,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 292,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

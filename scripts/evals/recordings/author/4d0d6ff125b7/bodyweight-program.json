@@ -1,0 +1,26 @@
+{
+  "caseId": "bodyweight-program",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:23:02.691Z",
+  "reply": {
+    "text": "{\"say\":\"Four bodyweight days built around the pull-up bar: push and pull split across Upper A and B, with Legs and Core and Full Body in between. No equipment beyond the bar.\",\"title\":\"Calisthenics Builder\",\"days\":[{\"name\":\"Upper A\",\"exercises\":[{\"key\":\"pull-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full hang to chin over bar\"},{\"key\":\"push-up\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Chest to floor, body straight\"},{\"key\":\"parallel-bar-dip\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Use a sturdy support, lean slightly forward\"},{\"key\":\"inverted-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Under the bar, squeeze shoulder blades\"},{\"key\":\"pike-push-up\",\"sets\":3,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hips high, head between hands\"},{\"key\":\"hanging-knee-raise\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Curl the pelvis up, no swinging\"}]},{\"name\":\"Legs & Core\",\"exercises\":[{\"key\":\"bulgarian-split-squat\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Rear foot on a chair or couch\"},{\"key\":\"bodyweight-squat\",\"sets\":3,\"reps\":15,\"repsTo\":25,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full depth, steady tempo\"},{\"key\":\"reverse-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":14,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Step back, knee barely touches floor\"},{\"key\":\"single-leg-glute-bridge\",\"sets\":3,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze at the top\"},{\"key\":\"single-leg-calf-raise\",\"sets\":3,\"reps\":12,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Full stretch at the bottom\"},{\"key\":\"plank\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":45,\"group\":\"\",\"part\":\"main\",\"note\":\"Ribs down, glutes tight\"}]},{\"name\":\"Upper B\",\"exercises\":[{\"key\":\"chin-up\",\"sets\":4,\"reps\":6,\"repsTo\":10,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Underhand grip, control the lowering\"},{\"key\":\"decline-push-up\",\"sets\":4,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Feet up on a chair\"},{\"key\":\"close-grip-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Elbows tucked close\"},{\"key\":\"underhand-inverted-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull chest to the bar\"},{\"key\":\"scapular-pull-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Depress the shoulders, arms straight\"},{\"key\":\"hanging-leg-raise\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Legs straight, no kipping\"}]},{\"name\":\"Full Body\",\"exercises\":[{\"key\":\"wide-grip-pull-up\",\"sets\":4,\"reps\":5,\"repsTo\":8,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lead with the chest\"},{\"key\":\"pistol-squat\",\"sets\":3,\"reps\":3,\"repsTo\":6,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hold a support if needed\"},{\"key\":\"diamond-push-up\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Hands under the chest\"},{\"key\":\"walking-lunge\",\"sets\":3,\"reps\":10,\"repsTo\":14,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Long steps, upright torso\"},{\"key\":\"hollow-body-hold\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Lower back pressed to the floor\"},{\"key\":\"dead-hang\",\"sets\":3,\"reps\":0,\"repsTo\":0,\"seconds\":30,\"group\":\"\",\"part\":\"main\",\"note\":\"Relax the grip tension, shoulders packed\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 160,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1712,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

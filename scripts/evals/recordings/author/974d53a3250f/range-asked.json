@@ -1,0 +1,26 @@
+{
+  "caseId": "range-asked",
+  "promptHash": "974d53a3250f73f3cd594b90658af7dce6f3bdd2564b6527486787dc55ca7626",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:28:48.888Z",
+  "reply": {
+    "text": "{\"say\":\"Back day in the 8 to 12 rep range: a vertical pull, a horizontal pull, and rear-delt work, with no deadlift since you asked for a back day.\",\"title\":\"Back Day\",\"days\":[{\"name\":\"Back\",\"exercises\":[{\"key\":\"cable-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull elbows to ribs, control the return.\"},{\"key\":\"chest-supported-row-machine\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Squeeze shoulder blades together at the top.\"},{\"key\":\"dumbbell-chest-supported-row\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Keep chest on the bench throughout.\"},{\"key\":\"cable-face-pull\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pull rope toward your face, elbows high.\"},{\"key\":\"single-arm-cable-lat-pulldown\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Drive the elbow down and back.\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 102,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 451,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

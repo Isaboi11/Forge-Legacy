@@ -1,0 +1,26 @@
+{
+  "caseId": "S0546",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:09:08.442Z",
+  "reply": {
+    "text": "Per the rules: a request to change training because the lower back is complaining is a limitation request, not a damage description. \"Could today's workout skip the heavy pulls\" maps to limitations: [\"lower_back\"], and no comment about the back itself. The athlete says \"nothing crazy,\" so it is soreness-level, which keeps this a patch.\n\n{\"route\": \"patch\", \"say\": \"Got it, we'll keep heavy pulls off your plate while your lower back settles.\", \"patch\": {\"limitations\": [\"lower_back\"]}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 101,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 169,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

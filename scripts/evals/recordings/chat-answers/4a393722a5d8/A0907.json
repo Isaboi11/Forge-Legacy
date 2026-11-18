@@ -1,0 +1,26 @@
+{
+  "caseId": "A0907",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T04:00:00.781Z",
+  "reply": {
+    "text": "\"Six months\" is a fact about experience, not a number of weeks, so it maps to a level. Six months of training is past the first few weeks but not yet years, which fits intermediate for lifting and for running if they've been doing both. Since the athlete gave one answer covering their training generally, I'll set both experience fields to intermediate. Nothing else was given, so I'll leave the rest out.\n\n{\"route\": \"patch\", \"patch\": {\"experienceLifting\": \"intermediate\", \"experienceRunning\": \"intermediate\"}, \"say\": \"Six months, got it. That's enough to build on.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 56,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 188,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

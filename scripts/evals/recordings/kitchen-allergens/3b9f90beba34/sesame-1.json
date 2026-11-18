@@ -1,0 +1,26 @@
+{
+  "caseId": "sesame-1",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:14:29.112Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Roasted Chickpea and Cucumber Mezze Plate\",\"why\":\"Quick, filling, and built from pantry staples with no stove needed for most of it\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"1 can chickpeas, drained (about 240 g)\",\"quantity\":240,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"1 cucumber, sliced\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"100 g feta, crumbled\",\"quantity\":100,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"Salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 200°C (400°F).\",\"Toss the drained chickpeas with the olive oil, smoked paprika, oregano, salt and pepper, then spread on a tray.\",\"Roast for 20 to 25 minutes, shaking the tray halfway, until the chickpeas are crisp and golden.\",\"Arrange the cucumber slices and feta on a plate, drizzle with lemon juice, and pile the warm chickpeas alongside.\"]},{\"name\":\"Garlic Lemon Prawn Mezze Skillet\",\"why\":\"Fastest protein on the plate, ready in one pan\",\"cuisine\":\"Greek\",\"method\":\"pan\",\"minutes\":15,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"225 g raw prawns, peeled and deveined\",\"quantity\":225,\"unit\":\"g\",\"food\":\"raw prawns\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 tbsp fresh parsley, chopped\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh parsley\"},{\"text\":\"100 g cherry tomatoes, halved\",\"quantity\":100,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"Chilli flakes, salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Heat the olive oil in a pan over medium-high heat.\",\"Add the garlic and tomatoes and cook 2 minutes until the tomatoes soften.\",\"Add the prawns with salt, pepper and chilli flakes, and cook 2 to 3 minutes per side until pink and opaque.\",\"Finish with lemon juice and parsley, then serve on the mezze plate.\"]},{\"name\":\"Spiced Lentil and Yogurt Bowl\",\"why\":\"Hearty and high in protein, and it makes good leftovers\",\"cuisine\":\"Middle Eastern\",\"method\":\"pot\",\"minutes\":35,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"150 g brown or green lentils, dry\",\"quantity\":150,\"unit\":\"g\",\"food\":\"brown or green lentils\"},{\"text\":\"1 onion, diced\",\"quantity\":110,\"unit\":\"g\",\"food\":\"onion\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp ground cumin\",\"quantity\":null,\"unit\":\"\",\"food\":\"cumin\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"500 ml vegetable broth\",\"quantity\":500,\"unit\":\"g\",\"food\":\"vegetable broth\"},{\"text\":\"200 g plain Greek yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"Salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the olive oil in a pot, add the onion and cook 5 minutes until soft.\",\"Stir in the garlic and cumin for 30 seconds, then add the lentils and broth.\",\"Bring to a boil, then simmer 20 to 25 minutes until the lentils are tender and most of the liquid is absorbed. Season with salt and pepper.\",\"Spoon the lentils onto the mezze plate and top with a dollop of yogurt.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 91,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1654,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

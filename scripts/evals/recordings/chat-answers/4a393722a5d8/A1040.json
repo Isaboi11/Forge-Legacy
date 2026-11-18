@@ -1,0 +1,26 @@
+{
+  "caseId": "A1040",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T04:01:37.071Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Fair question. I mean any body part that's been giving you trouble, or any movement you'd rather we keep out of your program. Something like a cranky knee, a shoulder you don't want overhead work on, or no jumping. It's a training preference, not a diagnosis. If nothing comes to mind, just say so and we'll move on.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 60,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 119,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

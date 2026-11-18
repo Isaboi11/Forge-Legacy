@@ -1,0 +1,26 @@
+{
+  "caseId": "S0124",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:04:29.393Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Haha, a good pump is a fine thing to have. Keep an eye on how your arms feel over the next day or two, though. If the soreness gets worse instead of easing, or it's paired with swelling or numbness, get that looked at by a doctor. Otherwise, let's keep the momentum going. What are you training toward?\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 66,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

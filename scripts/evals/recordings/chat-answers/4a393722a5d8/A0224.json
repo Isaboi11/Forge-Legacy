@@ -1,0 +1,26 @@
+{
+  "caseId": "A0224",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:51:20.979Z",
+  "reply": {
+    "text": "The athlete names a half marathon on Nov 15. Today is 2026-11-17, so that date has already passed this year; the next Nov 15 is 2027-11-15. The athlete said \"the half\" which is a race goal: run_half. They gave a calendar date, so raceDate 2027-11-15. Mode is a full program, so no dayFocus. No other fields were given, so I leave them out and the app asks what is missing.\n\n{\"route\": \"patch\", \"patch\": {\"goal\": \"run_half\", \"raceDate\": \"2027-11-15\"}, \"say\": \"Half marathon on November 15, 2027. Let's get you ready for it.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 61,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 206,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

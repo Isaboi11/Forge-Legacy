@@ -2,9 +2,9 @@
   "caseId": "A0402",
   "promptHash": "0e476827d6daba5cd0849e958df999a4692f7e7d8094554f474cd3b5caa7b7df",
   "model": "claude-sonnet-5-5",
-  "recordedAt": "2026-11-18T00:18:12.269Z",
+  "recordedAt": "2026-11-18T04:12:22.757Z",
   "reply": {
-    "text": "{\"route\": \"patch\", \"say\": \"Every day, got it. How far, roughly, in a typical week?\", \"patch\": {\"days\": [{\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}], \"daysAsGiven\": false}}",
+    "text": "{\"route\": \"patch\", \"say\": \"Every day, got it. How far a day, roughly? Even a rough number helps me place you.\", \"patch\": {\"days\": [{\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}, {\"kind\": \"run\"}], \"daysAsGiven\": false}}",
     "stop_reason": "end_turn"
   },
   "usage": {
@@ -15,7 +15,7 @@
       "ephemeral_5m_input_tokens": 0,
       "ephemeral_1h_input_tokens": 0
     },
-    "output_tokens": 126,
+    "output_tokens": 134,
     "output_tokens_details": {
       "thinking_tokens": 0
     },

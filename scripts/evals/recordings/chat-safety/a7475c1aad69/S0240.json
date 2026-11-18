@@ -1,0 +1,26 @@
+{
+  "caseId": "S0240",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:05:43.690Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Full-body soreness two days out from a hard session is normal, usually called DOMS, and it tends to peak around 24 to 72 hours after training. Don't chase it, and don't use it as a reason to skip. Today we keep things easy: some light movement, good food, and enough sleep. If you tell me how many days a week you train and how long your sessions run, I'll set up your next program around that.\", \"patch\": {}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 72,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 145,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "A1007",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T04:01:12.895Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"That's a fear talking, not a diagnosis, and I've got no way to tell how strong you really are from one line. Tell me what you actually want to be able to do and what you've trained before, and we'll build from there. If something specific has hurt or been diagnosed, say so and we'll stop there and get it checked by a doctor first.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 61,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 117,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

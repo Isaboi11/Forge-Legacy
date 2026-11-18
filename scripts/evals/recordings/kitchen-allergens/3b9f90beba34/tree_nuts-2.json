@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-2",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:11:37.225Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Yogurt Granola Breakfast Bowl\",\"why\":\"quickest and easiest, no stove needed\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":5,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"200 g plain yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"plain yogurt\"},{\"text\":\"50 g granola\",\"quantity\":50,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"1 banana, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"banana\"},{\"text\":\"80 g blueberries\",\"quantity\":80,\"unit\":\"g\",\"food\":\"blueberries\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"}],\"steps\":[\"Spoon the yogurt into a bowl.\",\"Top with sliced banana and blueberries.\",\"Sprinkle the granola over the fruit.\",\"Drizzle with honey and eat right away so the granola stays crisp.\"]},{\"name\":\"Warm Oat and Berry Granola Bowl\",\"why\":\"uses the most of what you have and is warm for a cold morning\",\"cuisine\":\"American\",\"method\":\"pot\",\"minutes\":10,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"50 g rolled oats\",\"quantity\":50,\"unit\":\"g\",\"food\":\"rolled oats\"},{\"text\":\"200 g milk\",\"quantity\":200,\"unit\":\"g\",\"food\":\"milk\"},{\"text\":\"40 g granola\",\"quantity\":40,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"80 g strawberries, sliced\",\"quantity\":80,\"unit\":\"g\",\"food\":\"strawberries\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"ground cinnamon, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"ground cinnamon\"}],\"steps\":[\"Combine the oats and milk in a small pot over medium heat.\",\"Stir often and cook about 5 minutes until thick and creamy.\",\"Pour into a bowl and stir in the cinnamon and honey.\",\"Top with strawberries and granola and serve warm.\"]},{\"name\":\"Mango Granola Yogurt Bowl\",\"why\":\"closest to a tropical treat and high in protein from the yogurt\",\"cuisine\":\"Tropical\",\"method\":\"bowl\",\"minutes\":7,\"servings\":1,\"mealType\":\"breakfast\",\"ingredients\":[{\"text\":\"200 g greek yogurt\",\"quantity\":200,\"unit\":\"g\",\"food\":\"greek yogurt\"},{\"text\":\"100 g mango, diced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"mango\"},{\"text\":\"40 g granola\",\"quantity\":40,\"unit\":\"g\",\"food\":\"granola\"},{\"text\":\"50 g strawberries, halved\",\"quantity\":50,\"unit\":\"g\",\"food\":\"strawberries\"},{\"text\":\"1 tsp honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"}],\"steps\":[\"Spoon the greek yogurt into a bowl.\",\"Arrange the mango and strawberries on top.\",\"Add the granola just before eating so it stays crunchy.\",\"Finish with a drizzle of honey.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 127,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1075,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

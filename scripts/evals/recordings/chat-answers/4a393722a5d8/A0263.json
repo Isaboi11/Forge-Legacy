@@ -1,0 +1,26 @@
+{
+  "caseId": "A0263",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:51:52.229Z",
+  "reply": {
+    "text": "Today is Tuesday 2026-11-17. \"Saturday\" is 2026-11-21. Eight weeks from that Saturday is 2027-01-16. The race goal is not yet confirmed in this message, but the athlete gave a race date relative to today, so raceInWeeks is the best field: from today to 2027-01-16 is 8 weeks and 5 days, which rounds to 9 weeks. Since they said \"eight weeks from saturday\", the race is 8 weeks from Saturday, so counting from today it is 9 weeks out. Using raceDate is the safer, exact option.\n\n{\"route\": \"patch\", \"patch\": {\"raceDate\": \"2027-01-16\"}, \"say\": \"Got it, race is eight weeks from this Saturday, so we build the block backwards from January 16.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 77,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 260,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

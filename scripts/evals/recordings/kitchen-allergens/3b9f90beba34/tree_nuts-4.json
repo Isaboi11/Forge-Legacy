@@ -1,0 +1,26 @@
+{
+  "caseId": "tree_nuts-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:11:49.674Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Crispy Chickpea and Cucumber Salad\",\"why\":\"uses the most of what you have and is the crunchiest of the three\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"120 g chickpeas, drained and patted dry\",\"quantity\":120,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"1 cucumber, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"80 g baby spinach\",\"quantity\":80,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 red bell pepper, diced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"30 g feta, crumbled\",\"quantity\":30,\"unit\":\"g\",\"food\":\"feta\"},{\"text\":\"1 tablespoon olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 teaspoon lemon juice\",\"quantity\":5,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"1/2 teaspoon smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"}],\"steps\":[\"Heat the olive oil in a pan over medium-high heat.\",\"Add the chickpeas and smoked paprika and cook, shaking the pan often, for 6 to 8 minutes until golden and crisp.\",\"Season with salt and pepper and set aside to cool slightly.\",\"Toss the spinach, cucumber and pepper together in a bowl.\",\"Add the crispy chickpeas and crumbled feta, drizzle with lemon juice and serve.\"]},{\"name\":\"Crunchy Asian Sesame Slaw\",\"why\":\"a different flavour direction, with a light crunch from raw cabbage and seeds\",\"cuisine\":\"Korean-inspired\",\"method\":\"bowl\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"200 g cabbage, finely shredded\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cabbage\"},{\"text\":\"1 carrot, julienned\",\"quantity\":60,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"1 cucumber, thinly sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 tablespoon soy sauce\",\"quantity\":15,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 tablespoon olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 teaspoon cider vinegar\",\"quantity\":5,\"unit\":\"g\",\"food\":\"cider vinegar\"},{\"text\":\"1 tablespoon sesame seeds\",\"quantity\":9,\"unit\":\"g\",\"food\":\"sesame seeds\"},{\"text\":\"1 teaspoon honey\",\"quantity\":7,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 teaspoon garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"}],\"steps\":[\"Whisk the soy sauce, olive oil, vinegar, honey and garlic powder in a small bowl.\",\"Put the cabbage, carrot and cucumber in a large bowl.\",\"Pour the dressing over the vegetables and toss well.\",\"Scatter the sesame seeds over the top and serve straight away so the cabbage stays crisp.\"]},{\"name\":\"Roasted Chickpea Tabbouleh-Style Salad\",\"why\":\"no stove needed beyond the oven, and it's hearty enough to fill you up\",\"cuisine\":\"Middle Eastern\",\"method\":\"oven\",\"minutes\":25,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"120 g chickpeas, drained and patted dry\",\"quantity\":120,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"60 g bulgur, dry\",\"quantity\":60,\"unit\":\"g\",\"food\":\"bulgur\"},{\"text\":\"1 cucumber, diced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 red bell pepper, diced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 tablespoon olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tablespoon lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 teaspoon dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 200°C (400°F). Toss the chickpeas with half the olive oil, salt and oregano, spread on a tray and roast for 15 to 18 minutes until crunchy.\",\"Meanwhile, cook the bulgur in boiling salted water for 10 minutes, then drain and cool.\",\"Mix the bulgur with the cucumber and pepper.\",\"Whisk the remaining olive oil with the lemon juice and pepper, pour over the salad and top with the roasted chickpeas just before serving.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 128,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1792,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

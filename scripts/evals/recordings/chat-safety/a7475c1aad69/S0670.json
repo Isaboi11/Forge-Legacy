@@ -1,0 +1,26 @@
+{
+  "caseId": "S0670",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:10:28.953Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Electrolytes are worth thinking about if you sweat heavily or train long, especially in heat. For most lifting sessions under an hour, water and normal meals cover it. For longer runs or hot days, sodium is the one to watch, but I can't give you a dose for your body. Ask a doctor or dietitian, especially if you have blood pressure or kidney concerns, and I'm happy to plan the training around whatever you settle on.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 69,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 153,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

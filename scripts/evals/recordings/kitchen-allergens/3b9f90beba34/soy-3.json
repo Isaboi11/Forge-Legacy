@@ -1,0 +1,26 @@
+{
+  "caseId": "soy-3",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:13:25.129Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Chickpea and Quinoa Power Bowl\",\"why\":\"Plant protein in every bite and it comes together in one pot.\",\"cuisine\":\"Mediterranean\",\"method\":\"pot\",\"minutes\":30,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"100 g quinoa, dry\",\"quantity\":100,\"unit\":\"g\",\"food\":\"quinoa\"},{\"text\":\"200 g canned chickpeas, drained\",\"quantity\":200,\"unit\":\"g\",\"food\":\"chickpeas\"},{\"text\":\"100 g baby spinach\",\"quantity\":100,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 cucumber, diced\",\"quantity\":200,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 red bell pepper, diced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 garlic clove, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Rinse the quinoa and simmer in twice its volume of water for about 15 minutes until the water is absorbed.\",\"Warm the chickpeas in a dry pan for 3 to 4 minutes until lightly crisp at the edges.\",\"Whisk olive oil, lemon juice, garlic, salt and pepper into a dressing.\",\"Divide quinoa, spinach, cucumber, pepper and chickpeas between bowls.\",\"Drizzle with dressing and serve.\"]},{\"name\":\"Lentil and Bulgur Bowl with Tahini\",\"why\":\"Hearty and filling, and the lentils carry a lot of protein for the cost.\",\"cuisine\":\"Middle Eastern\",\"method\":\"pot\",\"minutes\":35,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"100 g brown or green lentils, dry\",\"quantity\":100,\"unit\":\"g\",\"food\":\"brown or green lentils\"},{\"text\":\"80 g bulgur, dry\",\"quantity\":80,\"unit\":\"g\",\"food\":\"bulgur\"},{\"text\":\"100 g kale, stems removed and chopped\",\"quantity\":100,\"unit\":\"g\",\"food\":\"kale\"},{\"text\":\"1 carrot, grated\",\"quantity\":70,\"unit\":\"g\",\"food\":\"carrot\"},{\"text\":\"30 g tahini\",\"quantity\":30,\"unit\":\"g\",\"food\":\"tahini\"},{\"text\":\"10 g lemon juice\",\"quantity\":10,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"10 g olive oil\",\"quantity\":10,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp ground cumin\",\"quantity\":null,\"unit\":\"\",\"food\":\"cumin\"},{\"text\":\"salt, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Simmer the lentils in water for 20 to 25 minutes until tender, then drain.\",\"Cook the bulgur in boiling water for about 10 minutes until fluffy, then drain.\",\"Saute the kale and carrot in olive oil with cumin for 4 minutes until wilted.\",\"Stir tahini with lemon juice, a splash of water and salt into a smooth sauce.\",\"Layer lentils, bulgur and vegetables in bowls and spoon the tahini over the top.\"]},{\"name\":\"Black Bean and Sweet Potato Burrito Bowl\",\"why\":\"No stove needed for most of it, and the beans and rice make a complete plant protein.\",\"cuisine\":\"Mexican\",\"method\":\"oven\",\"minutes\":40,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"250 g sweet potato, cubed\",\"quantity\":250,\"unit\":\"g\",\"food\":\"sweet potato\"},{\"text\":\"200 g canned black beans, drained\",\"quantity\":200,\"unit\":\"g\",\"food\":\"black beans\"},{\"text\":\"100 g long-grain white rice, dry\",\"quantity\":100,\"unit\":\"g\",\"food\":\"long-grain white rice\"},{\"text\":\"15 g olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tsp chilli powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli powder\"},{\"text\":\"1 tsp ground cumin\",\"quantity\":null,\"unit\":\"\",\"food\":\"cumin\"},{\"text\":\"60 g salsa\",\"quantity\":60,\"unit\":\"g\",\"food\":\"salsa\"},{\"text\":\"100 g avocado, sliced\",\"quantity\":100,\"unit\":\"g\",\"food\":\"avocado\"},{\"text\":\"fresh cilantro, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"fresh cilantro\"}],\"steps\":[\"Heat the oven to 220°C (425°F).\",\"Toss sweet potato with olive oil, chilli powder, cumin and salt, then roast 25 minutes until tender and browned.\",\"Cook the rice in boiling water for about 15 minutes until soft, then drain.\",\"Warm the black beans in a small pan for 3 to 4 minutes.\",\"Build bowls with rice, beans and sweet potato, then top with salsa, avocado and cilantro.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 109,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1802,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

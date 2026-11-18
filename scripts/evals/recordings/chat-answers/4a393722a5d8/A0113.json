@@ -1,0 +1,26 @@
+{
+  "caseId": "A0113",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:49:53.844Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Fair enough, and that's a reasonable thing to want. Looking good is mostly built from muscle and a lower body-fat level, and that comes from consistent lifting plus enough food and sleep. Give me your goal in one line, like building muscle or losing some fat, and how many days a week you can train, and we'll set up the program.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 56,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 119,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

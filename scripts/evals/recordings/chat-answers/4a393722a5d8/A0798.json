@@ -1,0 +1,26 @@
+{
+  "caseId": "A0798",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:58:32.540Z",
+  "reply": {
+    "text": "The athlete answered Holt's question about training history with \"3 years\". This is a follow-up to a full program build. Experience is lifting and running; \"3 years\" doesn't say which, and the engine needs experience fields. Mode is a full program, so the reply should be a patch carrying what was given. Since the context is a general training history with no specific lifting or running split, I'll set experienceLifting as the most natural reading only if it's clearly about lifting. It isn't specified, so I should not guess. Best to return a patch with no fields guessed, and a short confirmation asking which they meant, or simply acknowledge. A patch with empty fields is not useful, so I'll return answer with a question instead.\n\n{\"route\": \"answer\", \"say\": \"Three years is a solid base to build on. Is that lifting, running, or both? Tell me which, and we'll set the starting point from there.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 56,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 275,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

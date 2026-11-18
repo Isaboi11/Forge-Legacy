@@ -1,0 +1,26 @@
+{
+  "caseId": "shellfish-2",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:14:09.317Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Garlic Chicken Thighs with Lemon\",\"why\":\"uses a pantry protein you can get anywhere and gives you the garlicky flavour without any shellfish\",\"cuisine\":\"Mediterranean\",\"method\":\"pan\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g boneless chicken thighs, sliced into strips\",\"quantity\":300,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"2 tablespoons olive oil\",\"quantity\":25,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"4 cloves garlic, minced\",\"quantity\":12,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tablespoon lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tablespoon dried parsley\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried parsley\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Season the chicken strips with salt and black pepper.\",\"Heat the olive oil in a pan over medium-high heat and cook the chicken in a single layer until golden, about 5 minutes per side.\",\"Lower the heat, add the garlic and stir for 1 minute until fragrant.\",\"Pour in the lemon juice, scrape up the bits from the pan and toss to coat.\",\"Check the thickest piece reaches 165°F, then sprinkle with dried parsley and serve.\"]},{\"name\":\"Garlic Herb Roast Potatoes and Chicken\",\"why\":\"hands-off oven dinner that fills the plate and keeps the garlic front and centre\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":45,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g potatoes, cut into chunks\",\"quantity\":300,\"unit\":\"g\",\"food\":\"potatoes\"},{\"text\":\"250 g boneless chicken thighs\",\"quantity\":250,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"2 tablespoons olive oil\",\"quantity\":25,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"4 cloves garlic, crushed\",\"quantity\":12,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 teaspoon dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"1 teaspoon garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Preheat the oven to 425°F.\",\"Toss the potatoes with half the oil, salt and pepper, and spread them on a baking tray.\",\"Rub the chicken with the remaining oil, crushed garlic, garlic powder, oregano, salt and pepper, then place it on the tray.\",\"Roast for 35 to 40 minutes until the potatoes are crisp and the chicken reaches 165°F inside.\",\"Rest the chicken for 3 minutes before slicing and serving with the potatoes.\"]},{\"name\":\"Garlic Tofu Stir Fry\",\"why\":\"quick one-pan dinner with a shrimp-style garlic and soy flavour, fully plant-based\",\"cuisine\":\"Chinese-inspired\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"300 g firm tofu, cubed\",\"quantity\":300,\"unit\":\"g\",\"food\":\"firm tofu\"},{\"text\":\"2 tablespoons olive oil\",\"quantity\":25,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"6 cloves garlic, minced\",\"quantity\":18,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tablespoon soy sauce\",\"quantity\":16,\"unit\":\"g\",\"food\":\"soy sauce\"},{\"text\":\"1 red bell pepper, sliced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"100 g baby spinach\",\"quantity\":100,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"a pinch of chilli flakes\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"}],\"steps\":[\"Pat the tofu dry and cook in the hot oil over medium-high heat until golden on all sides, about 8 minutes.\",\"Add the garlic and chilli flakes and stir for 30 seconds until fragrant.\",\"Add the red pepper and cook for 3 minutes until just tender.\",\"Stir in the soy sauce, then add the spinach and toss until wilted.\",\"Serve hot straight from the pan.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 119,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1625,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "dairy-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:14.733Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Flatbread Pizza with Pizza Sauce\",\"why\":\"Fast and classic, uses the most of a pizza night with no stove drama\",\"cuisine\":\"Italian-American\",\"method\":\"oven\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"2 pita breads\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"4 tablespoons pizza sauce\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"1 tablespoon olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 teaspoon dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"1/2 teaspoon garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"Pinch of salt\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Preheat the oven to 220°C (425°F).\",\"Brush the pita breads lightly with olive oil and place on a baking tray.\",\"Spread pizza sauce over each pita, leaving a small border.\",\"Sprinkle with oregano, garlic powder and a pinch of salt.\",\"Bake for 8 to 10 minutes until the edges are crisp and golden.\",\"Slice and serve hot.\"]},{\"name\":\"Turkey Pepperoni Skillet Pizza Bites\",\"why\":\"No oven needed, ready in a single pan\",\"cuisine\":\"Italian-American\",\"method\":\"pan\",\"minutes\":15,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"60 g turkey pepperoni, sliced\",\"quantity\":60,\"unit\":\"g\",\"food\":\"turkey pepperoni\"},{\"text\":\"4 tablespoons pizza sauce\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"2 low-carb mini wraps\",\"quantity\":60,\"unit\":\"g\",\"food\":\"low-carb mini wrap\"},{\"text\":\"1 teaspoon olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 teaspoon dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Warm the olive oil in a non-stick pan over medium heat.\",\"Place the mini wraps in the pan and spread a thin layer of pizza sauce on each.\",\"Top with turkey pepperoni and sprinkle with oregano.\",\"Cover the pan and cook 5 to 6 minutes until the base is crisp and the pepperoni is warmed through.\",\"Cut into wedges and serve.\"]},{\"name\":\"Tuna and Olive Pizza Wraps\",\"why\":\"Something different for pizza night, cold-prepped and quick\",\"cuisine\":\"Mediterranean\",\"method\":\"no-cook\",\"minutes\":10,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"2 flour tortillas\",\"quantity\":100,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1 can tuna in water, drained (about 120 g)\",\"quantity\":120,\"unit\":\"g\",\"food\":\"tuna in water\"},{\"text\":\"4 tablespoons pizza sauce\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"1 tablespoon capers\",\"quantity\":null,\"unit\":\"\",\"food\":\"capers\"},{\"text\":\"1/2 small red bell pepper, sliced\",\"quantity\":50,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 teaspoon dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Spread pizza sauce evenly over each tortilla.\",\"Flake the drained tuna over the sauce.\",\"Scatter the red pepper slices and capers on top.\",\"Sprinkle with oregano.\",\"Roll up tightly and slice in half to serve.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 114,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1338,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

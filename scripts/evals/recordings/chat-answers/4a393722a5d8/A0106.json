@@ -1,0 +1,26 @@
+{
+  "caseId": "A0106",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:49:46.947Z",
+  "reply": {
+    "text": "{\"route\": \"patch\", \"say\": \"Longevity it is. We'll build for strength, mobility and staying healthy for the long haul.\", \"patch\": {\"goal\": \"health\"}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 55,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 59,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

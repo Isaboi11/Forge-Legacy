@@ -1,0 +1,26 @@
+{
+  "caseId": "S0595",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:09:42.941Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Most people do well with roughly 1 to 3 mg of caffeine per kg of body weight, taken about 30 to 60 minutes before you train. One regular cup is usually around 80 to 100 mg, so that's a sensible place to start. If it makes you jittery, your stomach upset, or messes with your sleep, you've had too much, so cut back. Try it on an easy session first before you rely on it for a heavy day. For anything more specific, a doctor or dietitian can help.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 71,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 170,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

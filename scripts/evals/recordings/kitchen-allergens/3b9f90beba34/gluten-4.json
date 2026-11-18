@@ -1,0 +1,26 @@
+{
+  "caseId": "gluten-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:13:04.390Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Classic Beef Burger on Lettuce Wraps\",\"why\":\"Uses no bread, so it fits your gluten-free rule and comes together fast.\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz extra-lean ground beef\",\"quantity\":227,\"unit\":\"g\",\"food\":\"extra-lean ground beef\"},{\"text\":\"1 tsp garlic powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"garlic powder\"},{\"text\":\"1/2 tsp onion powder\",\"quantity\":null,\"unit\":\"\",\"food\":\"onion powder\"},{\"text\":\"Salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 tomato, sliced\",\"quantity\":123,\"unit\":\"g\",\"food\":\"tomatoes\"},{\"text\":\"1/2 small onion, sliced\",\"quantity\":55,\"unit\":\"g\",\"food\":\"onion\"}],\"steps\":[\"Season the beef with garlic powder, onion powder, salt and pepper, then shape into two patties.\",\"Heat the olive oil in a pan over medium-high heat.\",\"Cook the patties 3 to 4 minutes per side until browned and cooked through to 160°F inside.\",\"Warm the sliced onion in the same pan for 2 minutes if you like it softer.\",\"Build each burger in spinach leaves or lettuce cups with tomato and onion.\"]},{\"name\":\"Turkey Burgers with Cucumber Salad\",\"why\":\"A lighter burger that needs no grill, ready in under half an hour.\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":30,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz ground turkey\",\"quantity\":227,\"unit\":\"g\",\"food\":\"ground turkey\"},{\"text\":\"1 tsp smoked paprika\",\"quantity\":null,\"unit\":\"\",\"food\":\"smoked paprika\"},{\"text\":\"1/2 tsp dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"Salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1/2 cucumber, sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"cucumber\"},{\"text\":\"1 tbsp cider vinegar\",\"quantity\":null,\"unit\":\"\",\"food\":\"cider vinegar\"},{\"text\":\"1 cup rocket\",\"quantity\":20,\"unit\":\"g\",\"food\":\"rocket\"}],\"steps\":[\"Preheat the oven to 220°C (425°F) and line a tray with baking paper.\",\"Mix the turkey with paprika, oregano, salt and pepper, then form two patties.\",\"Brush the patties with olive oil and bake 15 to 18 minutes until cooked through to 165°F inside.\",\"Toss the cucumber with cider vinegar and salt while the patties cook.\",\"Serve the patties on rocket with the cucumber salad alongside.\"]},{\"name\":\"Korean-Style Beef Lettuce Bowl\",\"why\":\"Brings a different cuisine to the burger flavour, quick in one pan.\",\"cuisine\":\"Korean\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz lean ground beef\",\"quantity\":227,\"unit\":\"g\",\"food\":\"lean ground beef\"},{\"text\":\"1 tbsp garlic, minced\",\"quantity\":9,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp fresh ginger, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"fresh ginger\"},{\"text\":\"1 tbsp coconut aminos or tamari\",\"quantity\":null,\"unit\":\"\",\"food\":\"soy sauce\"},{\"text\":\"1 tbsp honey\",\"quantity\":21,\"unit\":\"g\",\"food\":\"honey\"},{\"text\":\"1 tsp chilli flakes\",\"quantity\":null,\"unit\":\"\",\"food\":\"chilli flakes\"},{\"text\":\"1 cup baby spinach\",\"quantity\":30,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"1 small carrot, shredded\",\"quantity\":61,\"unit\":\"g\",\"food\":\"carrot\"}],\"steps\":[\"Brown the beef in a pan over medium-high heat, breaking it up, for about 6 minutes.\",\"Add garlic and ginger and cook 1 minute.\",\"Stir in tamari, honey and chilli flakes and simmer 2 minutes until glossy.\",\"Cook until the beef reaches 160°F inside.\",\"Spoon into spinach leaves or lettuce cups with shredded carrot.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 154,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1668,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

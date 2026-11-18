@@ -1,0 +1,26 @@
+{
+  "caseId": "eggs-4",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:12:38.361Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Sheet Pan Lemon Herb Chicken Thighs\",\"why\":\"Simple oven bake that works with a normal pantry and needs almost no attention.\",\"cuisine\":\"Mediterranean\",\"method\":\"oven\",\"minutes\":40,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz boneless chicken thighs\",\"quantity\":225,\"unit\":\"g\",\"food\":\"chicken thighs\"},{\"text\":\"1 medium potato, cubed\",\"quantity\":150,\"unit\":\"g\",\"food\":\"potatoes\"},{\"text\":\"1 red bell pepper, sliced\",\"quantity\":120,\"unit\":\"g\",\"food\":\"red bell pepper\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 425°F and line a sheet pan with foil.\",\"Toss the potatoes and pepper with half the oil, salt and pepper, and spread them on the pan.\",\"Rub the chicken with the remaining oil, lemon juice, garlic, oregano, salt and pepper, and place it on the pan among the vegetables.\",\"Bake 25 to 30 minutes until the chicken reaches 165°F in the thickest part and the potatoes are tender and golden.\",\"Rest 5 minutes before serving.\"]},{\"name\":\"Baked Salmon with Garlic Potatoes\",\"why\":\"Fish cooks quickly in the oven and pairs well with simple potatoes.\",\"cuisine\":\"American\",\"method\":\"oven\",\"minutes\":35,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"8 oz salmon fillet\",\"quantity\":225,\"unit\":\"g\",\"food\":\"salmon fillet\"},{\"text\":\"1 medium potato, thinly sliced\",\"quantity\":150,\"unit\":\"g\",\"food\":\"potatoes\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":14,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":5,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp dried parsley\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried parsley\"},{\"text\":\"salt and black pepper to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"salt\"}],\"steps\":[\"Heat the oven to 400°F and oil a baking dish.\",\"Layer the potato slices in the dish, drizzle with half the oil, garlic, salt and pepper, and bake 15 minutes.\",\"Brush the salmon with the remaining oil, season, and place it on top of the potatoes.\",\"Bake 12 to 15 minutes until the salmon flakes easily and reaches 145°F.\",\"Sprinkle with parsley and serve.\"]},{\"name\":\"Baked Cheesy Pepperoni Pita Pizzas\",\"why\":\"Fastest bake of the three and easy to make for one or two.\",\"cuisine\":\"Italian-American\",\"method\":\"oven\",\"minutes\":15,\"servings\":2,\"mealType\":\"snacks\",\"ingredients\":[{\"text\":\"2 whole-wheat pitas\",\"quantity\":120,\"unit\":\"g\",\"food\":\"pita\"},{\"text\":\"4 tbsp pizza sauce\",\"quantity\":60,\"unit\":\"g\",\"food\":\"pizza sauce\"},{\"text\":\"1/2 cup part-skim mozzarella, shredded\",\"quantity\":60,\"unit\":\"g\",\"food\":\"part-skim mozzarella\"},{\"text\":\"12 slices pepperoni\",\"quantity\":30,\"unit\":\"g\",\"food\":\"pepperoni\"},{\"text\":\"1 tsp dried oregano\",\"quantity\":null,\"unit\":\"\",\"food\":\"dried oregano\"}],\"steps\":[\"Heat the oven to 425°F.\",\"Spread sauce over each pita and top with mozzarella, pepperoni and oregano.\",\"Bake 8 to 10 minutes until the cheese melts and the edges are crisp.\",\"Cool 2 minutes and cut into wedges.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 95,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1476,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "side-delts",
+  "promptHash": "4d0d6ff125b7afe91075627119de3fdfa4653a6906acf4866a21f87c5b6370e7",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T03:15:12.463Z",
+  "reply": {
+    "text": "{\"say\":\"Side delts lead and carry most of the day: four lateral raise variations across dumbbell, cable, behind-the-back and machine, with one press for overall shoulder size.\",\"title\":\"Shoulder Day: Wider Delts\",\"days\":[{\"name\":\"Shoulders\",\"exercises\":[{\"key\":\"seated-dumbbell-shoulder-press\",\"sets\":3,\"reps\":8,\"repsTo\":12,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Press up without shrugging\"},{\"key\":\"dumbbell-lateral-raise\",\"sets\":4,\"reps\":10,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Lead with the elbows, stop at shoulder height\"},{\"key\":\"cable-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Constant tension, slow lowering\"},{\"key\":\"behind-the-back-cable-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":15,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Cable behind the body, raise out to the side\"},{\"key\":\"machine-lateral-raise\",\"sets\":3,\"reps\":12,\"repsTo\":20,\"seconds\":0,\"group\":\"\",\"part\":\"main\",\"note\":\"Pause briefly at the top\"}]}],\"unmet\":[]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 110,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 14415,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 464,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

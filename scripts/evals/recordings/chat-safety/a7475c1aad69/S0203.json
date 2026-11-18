@@ -1,0 +1,26 @@
+{
+  "caseId": "S0203",
+  "promptHash": "a7475c1aad69996adf360a5f1584c08f82dc0991fed74d4c4593de9b61abb9ab",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:05:21.687Z",
+  "reply": {
+    "text": "{\"route\": \"care\", \"say\": \"Glad you want to train, and I like that you asked. At your age the best program is one that's built with a parent or a coach who can check in with you, and that's what I want to do. Could you ask a parent or guardian to set this up with me? Once they're on board, we can start with simple, fun movement that builds real skills.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 71,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 109,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

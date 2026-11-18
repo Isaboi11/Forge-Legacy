@@ -1,0 +1,26 @@
+{
+  "caseId": "fish-1",
+  "promptHash": "3b9f90beba34ea4ca567199a345c4872286a3d868329199f70bd2a2d4d59a01b",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:13:38.409Z",
+  "reply": {
+    "text": "{\"options\":[{\"name\":\"Chicken Caesar-Style Wrap\",\"why\":\"uses familiar Caesar flavours in a handheld form\",\"cuisine\":\"American\",\"method\":\"pan\",\"minutes\":20,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"250 g chicken breast, sliced thin\",\"quantity\":250,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"2 flour tortillas\",\"quantity\":2,\"unit\":\"g\",\"food\":\"flour tortilla\"},{\"text\":\"1 head romaine lettuce, chopped (about 150 g)\",\"quantity\":150,\"unit\":\"g\",\"food\":\"rocket\"},{\"text\":\"30 g parmesan, grated\",\"quantity\":30,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"2 tbsp olive oil\",\"quantity\":20,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"1 clove garlic, minced\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 tbsp light mayonnaise\",\"quantity\":30,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Season the chicken with salt and pepper, then cook in a hot pan with a little oil for 5 to 6 minutes, turning once, until cooked through to 165°F and no pink remains. Rest and slice.\",\"Whisk the mayonnaise, lemon juice, garlic, half the parmesan, and a pinch of pepper into a dressing.\",\"Toss the lettuce with the dressing and remaining parmesan.\",\"Warm the tortillas briefly, pile on the salad and chicken, roll tightly and serve.\"]},{\"name\":\"Caesar-Style Chicken Salad\",\"why\":\"fastest route to a full Caesar-style plate, no stove needed beyond the chicken\",\"cuisine\":\"American\",\"method\":\"no-cook\",\"minutes\":15,\"servings\":2,\"mealType\":\"lunch\",\"ingredients\":[{\"text\":\"250 g cooked chicken breast, sliced\",\"quantity\":250,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"200 g romaine or rocket leaves\",\"quantity\":200,\"unit\":\"g\",\"food\":\"rocket\"},{\"text\":\"40 g parmesan, shaved\",\"quantity\":40,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"3 tbsp light mayonnaise\",\"quantity\":45,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"1 clove garlic, grated\",\"quantity\":3,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tsp olive oil\",\"quantity\":5,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Whisk the mayonnaise, lemon juice, grated garlic, olive oil and a good grind of pepper until smooth.\",\"Toss the leaves with the dressing until lightly coated.\",\"Top with the sliced chicken and shaved parmesan.\",\"Finish with more pepper and serve straight away.\"]},{\"name\":\"Garlic Chicken Caesar Pasta\",\"why\":\"a hearty warm version of the salad, using pasta for a filling dinner\",\"cuisine\":\"Italian-American\",\"method\":\"pot\",\"minutes\":25,\"servings\":2,\"mealType\":\"dinner\",\"ingredients\":[{\"text\":\"120 g dry spaghetti\",\"quantity\":120,\"unit\":\"g\",\"food\":\"spaghetti\"},{\"text\":\"250 g chicken breast, cut into strips\",\"quantity\":250,\"unit\":\"g\",\"food\":\"chicken breast\"},{\"text\":\"150 g baby spinach\",\"quantity\":150,\"unit\":\"g\",\"food\":\"baby spinach\"},{\"text\":\"30 g parmesan, grated\",\"quantity\":30,\"unit\":\"g\",\"food\":\"parmesan\"},{\"text\":\"2 tbsp light mayonnaise\",\"quantity\":30,\"unit\":\"g\",\"food\":\"light mayonnaise\"},{\"text\":\"1 tbsp lemon juice\",\"quantity\":15,\"unit\":\"g\",\"food\":\"lemon juice\"},{\"text\":\"2 cloves garlic, minced\",\"quantity\":6,\"unit\":\"g\",\"food\":\"garlic\"},{\"text\":\"1 tbsp olive oil\",\"quantity\":15,\"unit\":\"g\",\"food\":\"olive oil\"},{\"text\":\"salt and black pepper, to taste\",\"quantity\":null,\"unit\":\"\",\"food\":\"black pepper\"}],\"steps\":[\"Boil the spaghetti in salted water until al dente, then drain, reserving a splash of the water.\",\"Season the chicken and cook in olive oil with the garlic for 6 minutes until cooked through to 165°F. Slice.\",\"Stir the mayonnaise, lemon juice, parmesan and a little pasta water into a sauce.\",\"Toss the pasta with the sauce, spinach and chicken, and serve with extra pepper.\"]}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 119,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 3525,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 1751,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

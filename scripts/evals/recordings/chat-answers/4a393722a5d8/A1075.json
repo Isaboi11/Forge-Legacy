@@ -1,0 +1,26 @@
+{
+  "caseId": "A1075",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T04:02:03.264Z",
+  "reply": {
+    "text": "{\"route\": \"answer\", \"say\": \"Good instinct, but I don't have your program in front of me from this chat. Open the Workouts tab and tap the next session in your program, and that's the one to run. If you tell me what you're after today instead, I'll build you a single session around it.\"}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 65,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 88,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

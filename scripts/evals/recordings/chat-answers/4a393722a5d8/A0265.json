@@ -1,0 +1,26 @@
+{
+  "caseId": "A0265",
+  "promptHash": "4a393722a5d8b806a58530b46bfc580540fef49cb46b84c9f604c846b0e910e5",
+  "model": "claude-haiku-5-5",
+  "recordedAt": "2026-11-18T03:51:54.689Z",
+  "reply": {
+    "text": "The NYC Marathon is held on the first Sunday of November. Today is 2026-11-17, so the 2026 race has already happened. The next one is November 1, 2027. The athlete said \"NYC marathon\" without a date, and the rules say a date without a year means the next time it comes round. That points to 2027-11-07 (first Sunday of November 2027). Actually, the first Sunday of November 2027 is November 7. I'll use that as the race date, and the engine builds the block backwards from it.\n\nThis is a race goal and they named a calendar date through the event, so I return raceDate. I have not been told their current weekly mileage, experience, or days, so those stay out and the app asks.\n\n{\"route\": \"patch\", \"say\": \"NYC Marathon it is, the next one is November 7, 2027, so we have plenty of runway to build toward it.\", \"patch\": {\"goal\": \"run_marathon\", \"raceDate\": \"2027-11-07\"}}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 74,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 6985,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 302,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}
