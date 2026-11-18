@@ -36,6 +36,7 @@ export const FUNCTIONS = {
     ai: true,
     probe: { options: 200, post: 401 },
     tests: [
+      'src/domain/coach/__tests__/coach-ask-caps.test.mjs',
       'src/domain/coach/__tests__/coach-ask-source.test.mjs',
       'src/domain/ai/__tests__/migration-0276.test.mjs',
       'src/domain/coach/__tests__/chat-history.test.mjs',
