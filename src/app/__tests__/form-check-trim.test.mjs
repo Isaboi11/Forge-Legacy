@@ -28,9 +28,9 @@ test('past one read\'s length a grip pulls the other along, so a long clip\'s wi
   assert.deepEqual(moveTrimGrip('start', 30_000, late, 90_000), { start: 30_000, end: 30_000 + FORM_CLIP_MS });
 });
 
-test('no swipe-back while trimming — iOS 26 makes a sideways drag anywhere on a pushed screen "go back"', () => {
-  assert.match(FORM, /const trimming = stage\.step === 'trim';/);
-  assert.match(FORM, /navigation\.setOptions\(\{ gestureEnabled: !trimming \}\)/);
+test('no swipe-back while trimming or reading — iOS 26 makes a sideways drag anywhere on a pushed screen "go back"', () => {
+  assert.match(FORM, /const dragsSideways = stage\.step === 'trim' \|\| stage\.step === 'read';/);
+  assert.match(FORM, /navigation\.setOptions\(\{ gestureEnabled: !dragsSideways \}\)/);
 });
 
 test('the grips drag RELATIVE to where they were, keep the finger, and are built once', () => {
@@ -42,7 +42,7 @@ test('the grips drag RELATIVE to where they were, keep the finger, and are built
 
 test('the picture follows the finger: pause, scrubbing mode, seek to the grip; play loops the chosen part', () => {
   assert.match(TRIM, /player\.pause\(\);\n\s+scrubMode\(player, true\);/);
-  assert.match(TRIM, /show\(next\[which\]\)/, 'the player shows the frame under the moving grip');
+  assert.match(TRIM, /set\(next, next\[which\]\)/, 'the player shows the frame under the moving grip');
   assert.match(TRIM, /scrubMode\(player, false\);/, 'scrubbing mode ends at lift-off');
   assert.match(TRIM, /if \(isPlaying && \(ms >= trim\.end \|\| ms < trim\.start - 250\)\)/);
   assert.match(TRIM, /s\.playhead/);

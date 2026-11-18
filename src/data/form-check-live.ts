@@ -20,6 +20,8 @@ import type { PoseFacts, PoseTag } from '@/domain/coach/pose/pose-facts';
 import { densePoseFrames } from '@/domain/coach/pose/pose-frames';
 import { analysePose, measureFacts, type PoseAnalysis, type PoseLevel } from '@/domain/coach/pose/pose-measure';
 import { anchorAt, pickStillAthlete } from '@/domain/coach/pose/pose-track';
+import { repSpans, type RepSpan } from '@/domain/coach/pose/pose-rep-view';
+import type { PoseTrack } from '@/domain/coach/pose/joints';
 import {
   formClipNotice,
   formFrameCount,
@@ -29,7 +31,7 @@ import {
   type FormCheckResult,
 } from '@/domain/coach/form-check-view';
 import { grabFrame, probeDurationMs, videoFramesAvailable } from '@/lib/video-frames';
-import { bodyPoseAvailable, cancelPose, detectPose, trackPose } from '@/lib/body-pose';
+import { bodyPoseAvailable, cancelPose, detectPose, poseFps, trackPose } from '@/lib/body-pose';
 
 /**
  * FORM CHECK — the device half.
@@ -202,6 +204,59 @@ export interface FormPose {
    * skeleton. ⛔ Never sent, never stored (PO decision 3).
    */
   stills: (number[] | null)[];
+  /**
+   * Each rep's moments, ms into the clip — for the read's rep strip and its video timeline (PO 11-17). `[]` when
+   * none were found. ⛔ Like `stills`: drawn, never sent, never stored.
+   */
+  reps: RepSpan[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// The rep scan (the trim screen's ticks)
+// ─────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** The most of a clip the trim screen scans for reps. Past it the ticks cover the start only. */
+export const REP_SCAN_MAX_MS = 60_000;
+
+/**
+ * Body tracking over the clip as it opens on the trim screen (PO 11-17: "the clip opens already wrapped around your
+ * reps, with Rep 1, 2, 3 marked"). It is the SAME dense pass a read runs, started early: when the trim the athlete
+ * sends sits inside it and it sampled at least as finely as a pass over that trim would, the read slices it instead
+ * of tracking again ({@link scanCovers}) — so the wait after Send gets shorter, not longer.
+ */
+export interface RepScan {
+  uri: string;
+  startMs: number;
+  endMs: number;
+  fps: number;
+  track: PoseTrack;
+  reps: RepSpan[];
+}
+
+/** The span a scan of this clip covers, known before it finishes (the read decides with it whether to wait). */
+export function repScanSpan(durationMs: number | null): { startMs: number; endMs: number; fps: number } {
+  const dur = durationMs && durationMs > 0 ? durationMs : FORM_CLIP_SECONDS * 1000;
+  const endMs = Math.min(dur, REP_SCAN_MAX_MS);
+  return { startMs: 0, endMs, fps: poseFps(endMs) };
+}
+
+/** Whether a scan can stand in for a fresh pass over `[start, end]`: it covers it, at least as densely. */
+export function scanCovers(scan: { startMs: number; endMs: number; fps: number }, start: number, end: number): boolean {
+  return scan.startMs <= start && scan.endMs >= end && scan.fps >= poseFps(end - start) - 1e-6;
+}
+
+/** The reps in a clip, or null (no body tracking on this build, nothing found, cancelled, too slow). Never throws. */
+export async function scanReps(uri: string, durationMs: number | null, pattern: string | null, lift: string | null): Promise<RepScan | null> {
+  if (!bodyPoseAvailable() || !uri) return null;
+  const span = repScanSpan(durationMs);
+  try {
+    const track = await trackPose(uri, span.startMs, span.endMs);
+    if (!track) return null;
+    const analysis = analysePose(track, pattern, lift);
+    return { uri, ...span, track, reps: analysis.level === 'off' ? [] : repSpans(analysis.reps) };
+  } catch {
+    return null;
+  }
 }
 
 export interface FrameOptions {
@@ -216,6 +271,8 @@ export interface FrameOptions {
   /** The exercise's catalogue `movementPattern` and name: which signal body tracking watches. */
   pattern?: string | null;
   lift?: string | null;
+  /** The trim screen's scan of this clip — sliced instead of tracking again when it covers the trim (`scanCovers`). */
+  scan?: RepScan | null;
 }
 
 /**
@@ -245,7 +302,10 @@ export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Pro
   let analysis: PoseAnalysis | null = null;
   const tracking = bodyPoseAvailable();
   if (tracking) {
-    const track = await trackPose(uri, start, end);
+    const scan = opts.scan && opts.scan.uri === uri && scanCovers(opts.scan, start, end) ? opts.scan : null;
+    const track = scan
+      ? { ...scan.track, frames: scan.track.frames.filter((f) => f.t >= start && f.t <= end) }
+      : await trackPose(uri, start, end);
     if (opts.cancelled?.()) return none;
     analysis = analysePose(track, opts.pattern, opts.lift);
     if (analysis.level === 'full') {
@@ -285,14 +345,14 @@ export async function framesFromVideo(uri: string, opts: FrameOptions = {}): Pro
   const kept = frames.length;
   const base = { frames, times: at.slice(0, kept), uris: uris.slice(0, kept), sizes: sizes.slice(0, kept) };
   if (!tracking) return { ...base, pose: null };
-  if (!analysis || analysis.level === 'off' || !kept) return { ...base, pose: { level: 'off', facts: null, stills: base.uris.map(() => null) } };
+  if (!analysis || analysis.level === 'off' || !kept) return { ...base, pose: { level: 'off', facts: null, stills: base.uris.map(() => null), reps: [] } };
 
   // The joints of the exact stills, the athlete picked in each by where the dense pass last saw them.
   const detected = await detectPose(base.uris);
   if (opts.cancelled?.()) return none;
   const series = analysis.series;
   const stills = base.uris.map((_, i) => pickStillAthlete(detected?.[i] ?? null, series ? anchorAt(series, base.times[i]) : null));
-  return { ...base, pose: { level: analysis.level, facts: measureFacts(analysis, tags.slice(0, kept)), stills } };
+  return { ...base, pose: { level: analysis.level, facts: measureFacts(analysis, tags.slice(0, kept)), stills, reps: repSpans(analysis.reps) } };
 }
 
 /** Stop body tracking mid-pass (design 03's Cancel). The frames loop stops on its own flag. */

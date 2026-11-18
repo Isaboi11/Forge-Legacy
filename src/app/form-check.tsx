@@ -1,5 +1,5 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Image,
   Linking,
@@ -18,12 +18,13 @@ import {
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEvent, useEventListener } from 'expo';
-import { useVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { HoltMark } from '@/components/forge/HoltMark';
 import { AppBar } from '@/components/forge/composites/AppBar';
 import { CloseGlyph, FC, FcPrimary, FcSecondary, FrameFill, HoltSays, MarkedFrame } from '@/components/forge/form-check/FormCheckParts';
+import { SlowReplay, YourSet, scrubMode, seekPlayer, type ClipMarker } from '@/components/forge/form-check/YourSet';
 import { StopCalls } from '@/components/forge/StopCalls';
 import { ScreenBackground } from '@/components/screen-background';
 import { flColor, flFont, flRadius } from '@/constants/foundation';
@@ -52,6 +53,7 @@ import {
   FORM_UNDER_18_LINE,
   formAgeGate,
   formBirthYear,
+  FORM_TRIM_MIN_MS,
   knownFromCoaching,
   moveTrimGrip,
   trimWindow,
@@ -69,6 +71,8 @@ import {
   type AiRating,
 } from '@/domain/ai/ai-feedback-core';
 import { skeletonBones, snapMarks } from '@/domain/coach/pose/pose-marks';
+import type { PoseFacts } from '@/domain/coach/pose/pose-facts';
+import { oneRep, repCards, repStripLabel, repsInside, showMeFrom, wrapReps, type RepCard, type RepSpan } from '@/domain/coach/pose/pose-rep-view';
 import { measuredForSave } from '@/domain/coach/pose/pose-measure';
 import { coachingContent } from '@/domain/exercise-coaching/query-service';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
@@ -82,8 +86,14 @@ import {
   formCheckAvailable,
   framesFromVideo,
   pickFormVideo,
+  repScanSpan,
+  scanCovers,
+  scanReps,
   type FormQuote,
+  type RepScan,
 } from '@/data/form-check-live';
+import { fetchRecentExerciseKeys } from '@/data/exercise-prefs-live';
+import { bodyPoseAvailable } from '@/lib/body-pose';
 import { formLiftKey, insertFormCheck, lastSavedForm, saveFormCheck, setFormUseful, shortDate } from '@/data/form-history-live';
 import { rateAiOutput } from '@/data/ai-feedback-live';
 import { uuid } from '@/lib/app-session';
@@ -207,6 +217,14 @@ type ReadState = {
   stills: (number[] | null)[];
   /** This build tracks bodies and could not lock on: the read says so in one small line (plan §8). */
   poseOff: boolean;
+  /** The clip itself, on the phone — "Your set" and "Show me" play it (PO 11-17). Never uploaded. */
+  clip: { uri: string; durationMs: number };
+  /** The part Holt watched, ms into the clip. */
+  win: { start: number; end: number };
+  /** Each rep body tracking found, and what it measured — the rep strip. Empty / null without tracking. */
+  reps: RepSpan[];
+  facts: PoseFacts | null;
+  sizes: [number, number][];
 };
 
 /** Plan §8: the only thing the athlete is told when body tracking fell back. */
@@ -214,7 +232,8 @@ const POSE_OFF_LINE = "Body tracking couldn't lock on, so this read is from the 
 
 type Stage =
   | { step: 'start' }
-  | { step: 'trim'; clip: Picked }
+  /** `scan`: body tracking looking for the reps (null on a build without it) — the trim's ticks. */
+  | { step: 'trim'; clip: Picked; scan: Promise<RepScan | null> | null }
   | { step: 'watching'; phase: 0 | 1 | 2; lift: Lift }
   | { step: 'read'; r: ReadState }
   | { step: 'unreadable'; charged: boolean }
@@ -241,11 +260,18 @@ export default function FormCheckScreen() {
   const { pick, mediaPickerSheet } = useMediaPicker();
 
   const [fromSet, setFromSet] = useState(!!params.lift);
-  const [lift, setLift] = useState<Lift | null>(() => {
-    if (params.lift) return { name: String(params.lift).slice(0, 60), key: params.key ? String(params.key) : null };
-    const first = findLift(COMMON[0]);
-    return first ? { name: first.name, key: first.key } : { name: COMMON[0], key: null };
-  });
+  /* Nothing is picked until the athlete picks (PO 11-17): a preset Back Squat read a deadlift as a squat when nobody
+     changed it. A set row's camera (`?lift=`) still arrives with its lift. */
+  const [lift, setLiftState] = useState<Lift | null>(() =>
+    params.lift ? { name: String(params.lift).slice(0, 60), key: params.key ? String(params.key) : null } : null,
+  );
+  /** Film / Choose was tapped before a lift was picked: say so at the lift, not with a disabled button. */
+  const [needLift, setNeedLift] = useState(false);
+  const setLift = (l: Lift | null) => {
+    setLiftState(l);
+    if (l) setNeedLift(false);
+  };
+  const [recent, setRecent] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [focus, setFocus] = useState<FormFocus[]>([]);
   const [note, setNote] = useState('');
@@ -266,13 +292,43 @@ export default function FormCheckScreen() {
 
   const canRead = formCheckAvailable();
 
-  /* No swipe-back while trimming: on iOS 26 a sideways drag anywhere on a pushed screen is "go back", and the
-     trim's grips ARE sideways drags (PO 11-17, see TrimStage). The AppBar × still closes. */
+  /*
+   * The trim screen's rep scan (PO 11-17): body tracking starts on the clip the moment it is picked, so the trim can
+   * mark the reps — and a read whose trim it covers slices it instead of tracking again (`scanCovers`). One job at a
+   * time: the native pass has ONE cancel flag, so a second pass is never started while this one runs (see `send`).
+   */
+  const scanJob = useRef<{ uri: string; span: { startMs: number; endMs: number; fps: number }; promise: Promise<RepScan | null> } | null>(null);
+  const stopScan = () => {
+    if (scanJob.current) cancelFormTracking();
+    scanJob.current = null;
+  };
+  useEffect(
+    () => () => {
+      if (scanJob.current) cancelFormTracking();
+    },
+    [],
+  );
+
+  /* No swipe-back while trimming or reading: on iOS 26 a sideways drag anywhere on a pushed screen is "go back", and
+     the trim's grips and the read's clip timeline ARE sideways drags (PO 11-17, see TrimStage). The × still closes. */
   const navigation = useNavigation();
-  const trimming = stage.step === 'trim';
+  const dragsSideways = stage.step === 'trim' || stage.step === 'read';
   useEffect(() => {
-    navigation.setOptions({ gestureEnabled: !trimming });
-  }, [navigation, trimming]);
+    navigation.setOptions({ gestureEnabled: !dragsSideways });
+  }, [navigation, dragsSideways]);
+
+  useEffect(() => {
+    let live = true;
+    void fetchRecentExerciseKeys(8).then(
+      (keys) => {
+        if (live) setRecent(keys);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
 
   useEffect(() => {
     let live = true;
@@ -301,14 +357,27 @@ export default function FormCheckScreen() {
 
   const close = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'));
 
-  const commonChips = useMemo(
-    () =>
-      COMMON.map((n) => {
-        const it = findLift(n);
-        return { label: SHORT[n] ?? n, lift: { name: it?.name ?? n, key: it?.key ?? null } };
-      }),
-    [],
-  );
+  /* Today's lifts (a workout is running), then the athlete's recent ones, then the common six — nine at most. */
+  const commonChips = useMemo(() => {
+    const out: { label: string; lift: Lift }[] = [];
+    const add = (name: string, key: string | null) => {
+      if (out.length >= 9 || out.some((c) => (key && c.lift.key === key) || c.lift.name.toLowerCase() === name.toLowerCase())) return;
+      out.push({ label: SHORT[name] ?? name, lift: { name, key } });
+    };
+    for (const l of session?.lifts ?? []) {
+      const it = l.catalogKey ? PICKER_DB.find((x) => x.key === l.catalogKey) : null;
+      if (it?.modality !== 'cardio') add(l.name, l.catalogKey ?? null);
+    }
+    for (const k of recent) {
+      const it = PICKER_DB.find((x) => x.key === k);
+      if (it && it.modality !== 'cardio') add(it.name, it.key);
+    }
+    for (const n of COMMON) {
+      const it = findLift(n);
+      add(it?.name ?? n, it?.key ?? null);
+    }
+    return out;
+  }, [session?.lifts, recent]);
   const results = useMemo(() => {
     const q = search.trim();
     if (q.length < 2) return [];
@@ -324,7 +393,7 @@ export default function FormCheckScreen() {
 
   // ── 01 → 02: the clip ────────────────────────────────────────────────────────
   const choose = async (source: 'camera' | 'library') => {
-    if (!lift) return;
+    if (!lift) return setNeedLift(true);
     const video = await pickFormVideo(pick, source);
     if (video.kind === 'cancelled') return;
     if (video.kind === 'unavailable') return; // the screen already shows 06d when this is true
@@ -332,7 +401,14 @@ export default function FormCheckScreen() {
       setStage({ step: 'problem', text: "That was a photo, not a clip. Film the set and I'll look at it." });
       return;
     }
-    setStage({ step: 'trim', clip: { uri: video.uri, durationMs: video.durationMs, notice: video.notice, source } });
+    stopScan();
+    let scan: Promise<RepScan | null> | null = null;
+    if (bodyPoseAvailable()) {
+      const pattern = lift.key ? (PICKER_DB.find((x) => x.key === lift.key)?.pattern ?? null) : null;
+      scan = scanReps(video.uri, video.durationMs, pattern, lift.name);
+      scanJob.current = { uri: video.uri, span: repScanSpan(video.durationMs), promise: scan };
+    }
+    setStage({ step: 'trim', clip: { uri: video.uri, durationMs: video.durationMs, notice: video.notice, source }, scan });
   };
 
   // ── 02 → 03 → 04: the read ───────────────────────────────────────────────────
@@ -346,6 +422,20 @@ export default function FormCheckScreen() {
     setLanded([]);
     setStage({ step: 'watching', phase: 0, lift: chosen });
 
+    /* The trim screen's scan: waited for when it covers this trim (it IS this read's tracking, started early), else
+       stopped first — two passes must not share the native cancel flag. */
+    let scan: RepScan | null = null;
+    const job = scanJob.current;
+    scanJob.current = null;
+    if (job && job.uri === clip.uri) {
+      if (scanCovers(job.span, startMs, endMs)) scan = await job.promise;
+      else {
+        cancelFormTracking();
+        await job.promise;
+      }
+    }
+    if (cancelRef.current) return;
+
     const got = await framesFromVideo(clip.uri, {
       durationMs: clip.durationMs,
       startMs,
@@ -355,6 +445,7 @@ export default function FormCheckScreen() {
       // Which signal body tracking watches: the catalogue's own movement pattern, else the name.
       pattern: chosen.key ? (PICKER_DB.find((x) => x.key === chosen.key)?.pattern ?? null) : null,
       lift: chosen.name,
+      scan,
     });
     if (cancelRef.current) return;
     if (got.frames.length === 0) {
@@ -391,6 +482,11 @@ export default function FormCheckScreen() {
             at: shortDate(new Date().toISOString()),
             stills: got.pose?.stills ?? [],
             poseOff: got.pose?.level === 'off',
+            clip: { uri: clip.uri, durationMs: clip.durationMs && clip.durationMs > 0 ? clip.durationMs : FORM_CLIP_MS },
+            win: trimWindow(clip.durationMs && clip.durationMs > 0 ? clip.durationMs : FORM_CLIP_MS, startMs, endMs),
+            reps: got.pose?.reps ?? [],
+            facts: got.pose?.facts ?? null,
+            sizes: got.sizes,
           },
         });
         return;
@@ -433,7 +529,10 @@ export default function FormCheckScreen() {
     }
   };
 
-  const restart = () => setStage({ step: 'start' });
+  const restart = () => {
+    stopScan();
+    setStage({ step: 'start' });
+  };
 
   /* A birth year was added on the age state. A minor is told so; an adult's refused set goes again, or Start opens. */
   const onBirthYear = (year: number) => {
@@ -486,6 +585,7 @@ export default function FormCheckScreen() {
       <Shell onClose={close}>
         <TrimStage
           clip={stage.clip}
+          scan={stage.scan}
           onSend={(a, b) => void send(stage.clip, a, b)}
           onRepick={() => {
             restart();
@@ -593,6 +693,11 @@ export default function FormCheckScreen() {
 
         <View style={s.group}>
           <Text style={s.label}>WHICH LIFT</Text>
+          {needLift ? (
+            <Text style={s.needLift} accessibilityLiveRegion="polite">
+              Pick the lift first, so I know what to look for.
+            </Text>
+          ) : null}
           {fromSet && lift ? (
             <>
               <View style={s.fromSet}>
@@ -781,6 +886,14 @@ function ClipIcon({ color }: { color: string }) {
  *
  * Drawn as the .dc draws it (bronze bracket, 14 pt grips, 64 pt strip, the shades). Not in the .dc, added: the
  * playhead, and tenths of a second on the times while a finger is down.
+ *
+ * ══ THE REPS, MARKED (PO 11-17, step 1 — the .dc's "Later version") ══
+ *
+ * Body tracking scans the clip as this screen opens (`scanReps`, started by `choose`). While it runs the tick row
+ * says "Finding your reps…"; then each rep gets a numbered tick at its turnaround and — unless the athlete has
+ * already moved a grip — the window wraps the reps it found. Tapping a number trims to that rep alone ("Just rep 3",
+ * the .dc's label); tapping it again puts the window back. Holt's line says what happened. No tracking (web, or no
+ * reps) = today's screen exactly.
  */
 
 const HANDLE = 14;
@@ -802,25 +915,23 @@ const mmssT = (ms: number) => {
 };
 
 type TrimDrag = 'start' | 'end' | 'head';
-
-/** Seek expo-video's player — through its setter, which a hook's value may only be written through out here. */
-function seekPlayer(p: VideoPlayer, ms: number) {
-  p.currentTime = ms / 1000;
-}
-
-/** expo-video's scrubbing mode (iOS: chase the newest seek, drop the stale ones) — on while a finger is down. */
-function scrubMode(p: VideoPlayer, on: boolean) {
-  try {
-    p.scrubbingModeOptions = { scrubbingModeEnabled: on };
-  } catch {
-    // a player without it still seeks, just less smoothly
-  }
-}
+type Win = { start: number; end: number };
 
 /** Web scrolls in the browser, where no responder reaches — the strip keeps its touches (see `useCompareDrag`). */
 const TRIM_TOUCH_STYLE = Platform.OS === 'web' ? ({ touchAction: 'none' } as unknown as ViewStyle) : null;
 
-function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs: number, endMs: number) => void; onRepick: () => void }) {
+function TrimStage({
+  clip,
+  scan,
+  onSend,
+  onRepick,
+}: {
+  clip: Picked;
+  /** The rep scan started when the clip was picked, or null on a build without body tracking. */
+  scan: Promise<RepScan | null> | null;
+  onSend: (startMs: number, endMs: number) => void;
+  onRepick: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const dur = clip.durationMs && clip.durationMs > 0 ? clip.durationMs : FORM_CLIP_MS;
   const [trim, setTrim] = useState(() => trimWindow(dur, 0, Math.min(dur, FORM_CLIP_MS)));
@@ -830,6 +941,10 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
   const [drag, setDrag] = useState<TrimDrag | null>(null);
   /** The strip's width in points — render needs it to split the touch room between two grips close together. */
   const [stripW, setStripW] = useState(0);
+  /** The reps body tracking found: null while it looks. */
+  const [reps, setReps] = useState<RepSpan[] | null>(scan ? null : []);
+  /** The rep the window is trimmed to on its own ("Just rep 3"), 0-based. */
+  const [just, setJust] = useState<number | null>(null);
   const player = useVideoPlayer(clip.uri, (p) => {
     p.loop = true;
     p.muted = true;
@@ -866,7 +981,9 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
    * `player` and `dur` are fixed for the life of this stage: a different clip goes back through Start.
    */
   const [pans] = useState(() => {
-    const live = { trim, w: 1, grab: 0, x0: 0 };
+    /* `touched`: a grip has moved, so the scan must not move the window under the athlete. `before`: the window to put
+       back when "Just rep N" is tapped off. */
+    const live = { trim, w: 1, grab: 0, x0: 0, touched: false, just: null as number | null, before: null as Win | null };
     const show = (ms: number) => {
       seekPlayer(player, ms);
       setHead(ms);
@@ -880,11 +997,23 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
       scrubMode(player, false);
       setDrag(null);
     };
-    const put = (which: 'start' | 'end', want: number) => {
-      const next = moveTrimGrip(which, want, live.trim, dur);
+    const set = (next: Win, at: number) => {
       live.trim = next;
       setTrim(next);
-      show(next[which]);
+      show(at);
+    };
+    const put = (which: 'start' | 'end', want: number) => {
+      const next = moveTrimGrip(which, want, live.trim, dur);
+      set(next, next[which]);
+    };
+    /* A grip moved by hand: the window is the athlete's now, and no longer "just" one rep. */
+    const handMoved = () => {
+      live.touched = true;
+      if (live.just != null) {
+        live.just = null;
+        live.before = null;
+        setJust(null);
+      }
     };
     const grip = (which: 'start' | 'end') =>
       PanResponder.create({
@@ -893,6 +1022,7 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
         // Once a grip has the finger it keeps it until lift-off.
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: () => {
+          handMoved();
           live.grab = live.trim[which];
           begin(which);
           show(live.grab);
@@ -919,9 +1049,33 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
     /* VoiceOver: a grip is adjustable — swipe up / down moves it half a second. */
     const nudge = (which: 'start' | 'end') => (e: AccessibilityActionEvent) => {
       const by = e.nativeEvent.actionName === 'increment' ? A11Y_STEP_MS : e.nativeEvent.actionName === 'decrement' ? -A11Y_STEP_MS : 0;
-      if (by) put(which, live.trim[which] + by);
+      if (!by) return;
+      handMoved();
+      put(which, live.trim[which] + by);
     };
     return {
+      /** The scan found reps: wrap them — unless a grip has already moved. */
+      wrap: (rs: RepSpan[]) => {
+        const w = live.touched ? null : wrapReps(rs, dur, FORM_TRIM_MIN_MS, FORM_CLIP_MS);
+        if (w) set(w, w.start);
+      },
+      /** A rep's number was tapped: that rep alone, or (null) the window from before. */
+      pick: (i: number | null, rs: RepSpan[]) => {
+        if (i == null || !rs[i]) {
+          const back = live.before ?? live.trim;
+          live.just = null;
+          live.before = null;
+          setJust(null);
+          set(back, back.start);
+          return;
+        }
+        if (live.just == null) live.before = live.trim;
+        live.just = i;
+        live.touched = true;
+        setJust(i);
+        const w = oneRep(rs[i], dur, FORM_TRIM_MIN_MS, FORM_CLIP_MS);
+        set(w, w.start);
+      },
       start: grip('start'),
       end: grip('end'),
       scrub,
@@ -934,11 +1088,37 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
     };
   });
 
+  useEffect(() => {
+    if (!scan) return undefined;
+    let alive = true;
+    void scan.then((found) => {
+      if (!alive) return;
+      const rs = found?.reps ?? [];
+      setReps(rs);
+      pans.wrap(rs);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [scan, pans]);
+
   const leftPct = (trim.start / dur) * 100;
   const rightPct = 100 - (trim.end / dur) * 100;
   const headPct = (Math.max(0, Math.min(dur, head)) / dur) * 100;
   const win = trim.end - trim.start;
   const whole = trim.start === 0 && dur <= FORM_CLIP_MS && Math.abs(trim.end - dur) < 50;
+  const found = reps?.length ?? 0;
+  const held = found ? repsInside(reps ?? [], trim) : 0;
+  const midLabel =
+    just != null
+      ? `Just rep ${just + 1}`
+      : drag
+        ? `${(win / 1000).toFixed(1)} s`
+        : whole
+          ? `${Math.round(win / 1000)} s · whole set`
+          : held
+            ? `${Math.round(win / 1000)} s · ${held} rep${held === 1 ? '' : 's'}`
+            : `${Math.round(win / 1000)} s`;
   const at = drag ? mmssT : mmss;
   /* Each grip reaches REACH_OUT outward and, inward, up to half the window — so two grips close together split
      the space between them at the middle instead of the later one covering the other. */
@@ -973,10 +1153,37 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
       </View>
 
       <View style={s.trimBody}>
-        <HoltSays text="Drag around the reps you want me to watch." label={false} size={32} />
+        <HoltSays
+          text={found ? `I found ${found} rep${found === 1 ? '' : 's'}. Tap a number for just that rep, or drag the handles.` : 'Drag around the reps you want me to watch.'}
+          label={false}
+          size={32}
+        />
         {clip.notice ? <Text style={s.hint}>{`That clip is long — I'll watch up to ${Math.round(FORM_CLIP_MS / 1000)} seconds of it.`}</Text> : null}
 
         <View style={s.stripWrap}>
+          {/* The .dc's rep ticks — over the strip's touch room (zIndex), and only the ticks themselves take a touch. */}
+          {scan ? (
+            <View style={s.tickRow} pointerEvents="box-none">
+              {reps === null ? (
+                <Text style={s.tickWait}>Finding your reps…</Text>
+              ) : (
+                reps.map((r, i) => (
+                  <Pressable
+                    key={r.turnMs}
+                    onPress={() => pans.pick(just === i ? null : i, reps)}
+                    hitSlop={{ top: 8, bottom: 2, left: 4, right: 4 }}
+                    style={[s.tickTap, { left: `${(r.turnMs / dur) * 100}%` }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={just === i ? `Rep ${i + 1} on its own. Tap for every rep` : `Just rep ${i + 1}`}
+                    accessibilityState={{ selected: just === i }}
+                  >
+                    <Text style={[s.tickN, just === i && s.tickOn]}>{i + 1}</Text>
+                    <View style={[s.tickBar, just === i && s.tickBarOn]} />
+                  </Pressable>
+                ))
+              )}
+            </View>
+          ) : null}
           {/* The touch layer: the strip plus room above and below it, none of it clipped. */}
           <View
             style={[s.stripTouch, TRIM_TOUCH_STYLE]}
@@ -1032,7 +1239,7 @@ function TrimStage({ clip, onSend, onRepick }: { clip: Picked; onSend: (startMs:
           </View>
           <View style={s.trimLabels} pointerEvents="none">
             <Text style={[s.trimTime, drag === 'start' && s.trimTimeOn]}>{at(trim.start)}</Text>
-            <Text style={s.trimMid}>{whole ? `${Math.round(win / 1000)} s · whole set` : drag ? `${(win / 1000).toFixed(1)} s` : `${Math.round(win / 1000)} s`}</Text>
+            <Text style={s.trimMid}>{midLabel}</Text>
             <Text style={[s.trimTime, drag === 'end' && s.trimTimeOn]}>{at(trim.end)}</Text>
           </View>
         </View>
@@ -1106,6 +1313,20 @@ function WatchingStage({ phase, lift, landed, onCancel }: { phase: 0 | 1 | 2; li
 }
 
 // ── 04 The read ────────────────────────────────────────────────────────────────────────────────────────
+/*
+ * ══ SEE IT IN YOUR VIDEO (PO 2026-11-17, step 1) ══
+ *
+ *   · "Your set" (`YourSet`) at the top: the athlete's own clip, looping the part Holt watched, with a bronze
+ *     numbered mark on its timeline at each fix's moment and a tick per rep. Not in the .dc — added.
+ *   · "Show me in your video" under each fix's frame: full screen, the clip plays slowly up to that moment
+ *     (`SlowReplay`, from `showMeFrom`), then freezes on the marked still with Holt's drawing on it — the still IS
+ *     that frame, so the picture does not jump. "Slow replay" runs it again from any frame.
+ *   · The rep strip (the .dc's "Later version", "Each rep, at the bottom"): one card per rep from body tracking — the
+ *     frame nearest its turnaround, what was measured (depth, the working half's seconds), and a bronze note on the
+ *     rep unlike the rest (`repCards`). Added beyond the .dc: the measured line under each rep (PO: "what was
+ *     measured"). Tap one for its frame full screen — captioned plainly, NOT in Holt's bubble, since the phone
+ *     measured it, Holt did not say it.
+ */
 
 function ReadStage({
   r,
@@ -1128,9 +1349,20 @@ function ReadStage({
      withdrawn, shown at once and put back with a line if the write fails — drawn as the .dc's Useful / Not useful. */
   const [vote, setVote] = useState<AiFeedbackState>(AI_FEEDBACK_IDLE);
   const [saved, setSaved] = useState<'no' | 'saving' | 'yes' | 'failed'>('no');
-  /* `at` is the frame on screen; it starts on Holt's marked frame and ‹ › step through the rest, so a mark
-     that landed one frame off still gets the athlete to the moment he meant. */
-  const [full, setFull] = useState<{ mark: FormMark; text: string; at: number } | null>(null);
+  /* `at` is the frame on screen; it starts on Holt's marked frame (or a rep's) and ‹ › step through the rest, so a
+     mark that landed one frame off still gets the athlete to the moment he meant. `play`: the slow replay is running
+     up to `at`. `holt`: the words are Holt's (his bubble) rather than a measured caption. */
+  const [full, setFull] = useState<{
+    mark: FormMark | null;
+    text: string;
+    holt: boolean;
+    at: number;
+    home: number;
+    title?: string;
+    play: boolean;
+  } | null>(null);
+  const endReplay = useCallback(() => setFull((f) => (f ? { ...f, play: false } : f)), []);
+  const cards = useMemo(() => repCards(r.facts, r.reps, r.times, r.stills, r.sizes), [r.facts, r.reps, r.times, r.stills, r.sizes]);
 
   const meta = [viewLabel(read.view), read.reps ? `${read.reps} rep${read.reps === 1 ? '' : 's'}` : '', r.at].filter(Boolean).join(' · ');
   const viewLine = read.viewLine || fallbackViewLine(read);
@@ -1139,10 +1371,28 @@ function ReadStage({
   const fixLabel = read.fix.length >= 2 ? 'TWO THINGS TO CLEAN UP' : 'ONE THING TO CLEAN UP';
   const markFor = (i: number) => read.marks.find((m) => m.fix === i) ?? null;
   const frameTag = (m: FormMark) => [m.rep ? `Rep ${m.rep}` : '', r.times[m.frame] != null ? secs(r.times[m.frame]) : ''].filter(Boolean).join(' · ');
-  const fullTag = (f: { mark: FormMark; at: number }) =>
-    f.at === f.mark.frame
+  const fullTag = (f: { mark: FormMark | null; at: number; home: number; title?: string }) =>
+    f.mark && f.at === f.mark.frame
       ? [frameTag(f.mark), f.mark.shows].filter(Boolean).join(' · ')
-      : [`Frame ${f.at + 1} of ${r.uris.length}`, r.times[f.at] != null ? secs(r.times[f.at]) : ''].filter(Boolean).join(' · ');
+      : f.title && f.at === f.home
+        ? f.title
+        : [`Frame ${f.at + 1} of ${r.uris.length}`, r.times[f.at] != null ? secs(r.times[f.at]) : ''].filter(Boolean).join(' · ');
+  /** Fix `i` in the athlete's video: full screen, slowly, up to the marked moment. */
+  const showMe = (i: number) => {
+    const m = markFor(i);
+    if (m && r.times[m.frame] != null) setFull({ mark: m, text: read.fix[i], holt: true, at: m.frame, home: m.frame, play: true });
+  };
+  /* The fixes that have a moment in the clip — the bronze marks on "Your set"'s timeline, numbered as the fixes are. */
+  const marked = read.fix.map((_, i) => i).filter((i) => {
+    const m = markFor(i);
+    return !!m && r.times[m.frame] != null;
+  });
+  const markers: ClipMarker[] = marked.map((i) => {
+    const t = r.times[(markFor(i) as FormMark).frame];
+    return { n: String(i + 1), atMs: t, label: `Show me fix ${i + 1}, at ${secs(t)}, slowly` };
+  });
+  const repRows: (RepCard | null)[][] = [];
+  for (let k = 0; k < cards.length; k += 3) repRows.push([0, 1, 2].map((j) => cards[k + j] ?? null));
   const step = (d: number) => setFull((f) => (f ? { ...f, at: Math.max(0, Math.min(r.uris.length - 1, f.at + d)) } : f));
 
   /*
@@ -1186,9 +1436,60 @@ function ReadStage({
           {r.poseOff ? <Text style={s.readMeta}>{POSE_OFF_LINE}</Text> : null}
         </View>
 
+        <YourSet
+          uri={r.clip.uri}
+          durationMs={r.clip.durationMs}
+          win={r.win}
+          frames={r.uris}
+          markers={markers}
+          reps={r.reps}
+          hold={!!full}
+          onMarker={(k) => showMe(marked[k])}
+        />
+
         {viewLine ? <HoltSays text={viewLine} /> : null}
 
         <View style={s.indent}>
+          {repRows.length ? (
+            <View style={s.repSection}>
+              <Text style={s.label}>{repStripLabel(r.facts?.kind)}</Text>
+              {repRows.map((row, ri) => (
+                <View key={ri} style={s.repRow}>
+                  {row.map((c, ci) =>
+                    c ? (
+                      <Pressable
+                        key={c.n}
+                        style={s.repCell}
+                        onPress={() =>
+                          setFull({
+                            mark: c.mark,
+                            text: [`Rep ${c.n}`, ...c.measured, c.note].filter(Boolean).join(' · '),
+                            holt: false,
+                            at: c.frame,
+                            home: c.frame,
+                            title: `Rep ${c.n} · ${secs(c.atMs)}`,
+                            play: false,
+                          })
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={[`Rep ${c.n}`, ...c.measured, c.note].filter(Boolean).join(', ')}
+                      >
+                        <View style={s.repThumb}>
+                          <MarkedFrame uri={r.uris[c.frame] ?? null} mark={c.mark} height={92} />
+                        </View>
+                        <Text style={s.repN}>{`Rep ${c.n}`}</Text>
+                        {c.measured.length ? <Text style={s.repMeasured}>{c.measured.join(' · ')}</Text> : null}
+                        {c.note ? <Text style={s.repNote}>{c.note}</Text> : null}
+                      </Pressable>
+                    ) : (
+                      <View key={`gap-${ci}`} style={s.repCell} />
+                    ),
+                  )}
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           {read.looksGood.length ? (
             <View style={s.section}>
               <Text style={s.label}>WHAT&apos;S WORKING</Text>
@@ -1210,8 +1511,20 @@ function ReadStage({
                   <View key={i} style={s.fixItem}>
                     <Text style={s.bubble}>{f}</Text>
                     {m && uri ? (
-                      <Pressable onPress={() => setFull({ mark: m, text: f, at: m.frame })} accessibilityRole="button" accessibilityLabel="Open frame full screen">
+                      <Pressable
+                        onPress={() => setFull({ mark: m, text: f, holt: true, at: m.frame, home: m.frame, play: false })}
+                        accessibilityRole="button"
+                        accessibilityLabel="Open frame full screen"
+                      >
                         <MarkedFrame uri={uri} mark={m} height={250} tag={frameTag(m)} />
+                      </Pressable>
+                    ) : null}
+                    {m && r.times[m.frame] != null ? (
+                      <Pressable onPress={() => showMe(i)} style={s.showMe} accessibilityRole="button" accessibilityLabel={`Show me fix ${i + 1} in my video, slowly`}>
+                        <View style={s.showMeN}>
+                          <Text style={s.showMeNText}>{i + 1}</Text>
+                        </View>
+                        <Text style={s.showMeText}>Show me in your video</Text>
                       </Pressable>
                     ) : null}
                   </View>
@@ -1306,42 +1619,56 @@ function ReadStage({
               </Pressable>
             </View>
             <View style={s.fullFrame}>
-              <MarkedFrame
-                uri={r.uris[full.at]}
-                mark={full.at === full.mark.frame ? full.mark : null}
-                skeleton={skeletonBones(r.stills[full.at])}
-                fill
-                contain
-              />
-              {r.uris.length > 1 ? (
+              {full.play && r.times[full.at] != null ? (
+                <SlowReplay uri={r.clip.uri} fromMs={showMeFrom(r.times[full.at], r.win.start)} toMs={r.times[full.at]} onDone={endReplay} />
+              ) : (
                 <>
-                  <Pressable
-                    onPress={() => step(-1)}
-                    disabled={full.at === 0}
-                    style={[s.stepBtn, s.stepLeft, full.at === 0 && s.stepOff]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Previous frame"
-                  >
-                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <Path d="M15 5l-7 7 7 7" />
-                    </Svg>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => step(1)}
-                    disabled={full.at === r.uris.length - 1}
-                    style={[s.stepBtn, s.stepRight, full.at === r.uris.length - 1 && s.stepOff]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Next frame"
-                  >
-                    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <Path d="M9 5l7 7-7 7" />
-                    </Svg>
-                  </Pressable>
+                  <MarkedFrame
+                    uri={r.uris[full.at]}
+                    mark={full.mark && full.at === full.mark.frame ? full.mark : null}
+                    skeleton={skeletonBones(r.stills[full.at])}
+                    fill
+                    contain
+                  />
+                  {r.times[full.at] != null ? (
+                    <Pressable onPress={() => setFull((f) => (f ? { ...f, play: true } : f))} style={s.replayBtn} accessibilityRole="button" accessibilityLabel="Slow replay up to this frame">
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="#F0EDE8">
+                        <Path d="M8 5.5v13l10.5-6.5z" />
+                      </Svg>
+                      <Text style={s.replayText}>Slow replay</Text>
+                    </Pressable>
+                  ) : null}
+                  {r.uris.length > 1 ? (
+                    <>
+                      <Pressable
+                        onPress={() => step(-1)}
+                        disabled={full.at === 0}
+                        style={[s.stepBtn, s.stepLeft, full.at === 0 && s.stepOff]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Previous frame"
+                      >
+                        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M15 5l-7 7 7 7" />
+                        </Svg>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => step(1)}
+                        disabled={full.at === r.uris.length - 1}
+                        style={[s.stepBtn, s.stepRight, full.at === r.uris.length - 1 && s.stepOff]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Next frame"
+                      >
+                        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#F0EDE8" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <Path d="M9 5l7 7-7 7" />
+                        </Svg>
+                      </Pressable>
                 </>
               ) : null}
+                </>
+              )}
             </View>
             <View style={[s.fullSays, { paddingBottom: 34 + insets.bottom }]}>
-              <HoltSays text={full.text} label={false} size={32} />
+              {full.holt ? <HoltSays text={full.text} label={false} size={32} /> : <Text style={s.fullCaption}>{full.text}</Text>}
             </View>
           </View>
         ) : null}
@@ -1459,6 +1786,7 @@ const s = StyleSheet.create({
   label: { fontSize: 11, fontWeight: '600', letterSpacing: 2, color: C.ink3 },
   labelSoft: { letterSpacing: 0.4, fontWeight: '500' },
   hint: { fontSize: 12.5, lineHeight: 18, color: C.ink3 },
+  needLift: { fontSize: 13, lineHeight: 18, color: C.ink2, fontWeight: '600' },
   fromSet: { flexDirection: 'row', alignItems: 'center', gap: 12, height: 56, paddingLeft: 16, paddingRight: 8, borderRadius: flRadius.md, backgroundColor: C.rec, borderWidth: 1, borderColor: C.recBd },
   fromSetName: { flex: 1, fontSize: 15.5, fontWeight: '600', color: C.ink },
   fromSetDetail: { fontSize: 13.5, fontWeight: '400', color: C.ink2 },
@@ -1500,6 +1828,14 @@ const s = StyleSheet.create({
   trimLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   trimTime: { fontSize: 12, color: C.ink3, fontVariant: ['tabular-nums'] },
   trimTimeOn: { color: C.ink, fontWeight: '600' },
+  /* The .dc's rep ticks: a 26 pt row over the strip, number 10/700 + a 2 × 8 tick, bronze when chosen. */
+  tickRow: { height: 26, zIndex: 2 },
+  tickTap: { position: 'absolute', top: 0, width: 28, height: 26, marginLeft: -14, alignItems: 'center', gap: 3 },
+  tickN: { fontSize: 10, fontWeight: '700', color: C.ink3 },
+  tickOn: { color: C.brzHi },
+  tickBar: { width: 2, height: 8, borderRadius: 1, backgroundColor: C.ink3 },
+  tickBarOn: { backgroundColor: C.brzHi },
+  tickWait: { fontSize: 11, lineHeight: 26, color: C.ink3 },
   trimMid: { fontSize: 12, color: C.ink2, fontWeight: '600', fontVariant: ['tabular-nums'] },
   trimFoot: { paddingTop: 12, paddingHorizontal: 20, gap: 6 },
   textBtn: { height: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
@@ -1530,6 +1866,18 @@ const s = StyleSheet.create({
   indent: { paddingLeft: 48, gap: 26 },
   section: { gap: 8 },
   fixItem: { gap: 8, paddingBottom: 6 },
+  /* The .dc's rep strip: three to a row, 92 pt frames at radius 8, "Rep N" 11.5/600, the note in bronze. */
+  repSection: { gap: 10 },
+  repRow: { flexDirection: 'row', gap: 8 },
+  repCell: { flex: 1, gap: 5 },
+  repThumb: { borderRadius: 8, overflow: 'hidden' },
+  repN: { fontSize: 11.5, fontWeight: '600', color: C.ink2 },
+  repMeasured: { fontSize: 11, lineHeight: 15, color: C.ink3 },
+  repNote: { fontSize: 11.5, lineHeight: 15, color: C.brz },
+  showMe: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, paddingLeft: 8, paddingRight: 14, borderRadius: flRadius.pill, borderWidth: 1, borderColor: C.chipBd, backgroundColor: C.chip },
+  showMeN: { width: 22, height: 22, borderRadius: 11, backgroundColor: C.brzHi, alignItems: 'center', justifyContent: 'center' },
+  showMeNText: { fontSize: 11, fontWeight: '700', color: 'rgba(20,14,8,0.9)' },
+  showMeText: { fontSize: 13.5, fontWeight: '600', color: C.ink },
   think: { fontSize: 14, color: C.ink2 },
   cue: { fontFamily: flFont.display, fontSize: 28, lineHeight: 34, fontWeight: '600', color: C.ink },
   quote: { color: C.brz },
@@ -1558,6 +1906,9 @@ const s = StyleSheet.create({
   stepRight: { right: 10 },
   stepOff: { opacity: 0.3 },
   fullSays: { paddingTop: 10, paddingHorizontal: 20 },
+  fullCaption: { fontSize: 14, lineHeight: 20, color: 'rgba(240,237,232,0.8)' },
+  replayBtn: { position: 'absolute', bottom: 12, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 7, height: 38, paddingHorizontal: 14, borderRadius: 19, backgroundColor: 'rgba(10,10,10,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
+  replayText: { fontSize: 13, fontWeight: '600', color: '#F0EDE8' },
 
   center: { flex: 1, justifyContent: 'center', paddingHorizontal: 20 },
   bottom: { paddingHorizontal: 20, alignItems: 'center', gap: 10 },
