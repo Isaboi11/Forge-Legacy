@@ -26,6 +26,20 @@ const DAMAGE_NEAR_BODY = new RegExp(String.raw `\b(?:${AMBIGUOUS_DAMAGE.source.s
     String.raw `\b(?:${BODY_PART.source.slice(3, -3)})\s+${WORDS}(?:${AMBIGUOUS_DAMAGE.source.slice(3, -3)})\b`, 'i');
 export const SEEKING_ADVICE = /\b(what('?s| is)\s+wrong|why\s+does\s+(it|my)|should\s+i\s+(see\s+(a|someone|somebody|the|my)|go\s+to\s+(a|the)\s+(doctor|er|hospital|clinic)|worry|rest\s+(it|my|this|that)\b|stop\s+(training|lifting|running)\s+(on|with|because)|ice|stretch\s+(it|my|this|that)\b)|is\s+(it|this|that)\s+(ok|okay|serious|bad|normal|fine)(?!\s+(to|if|for)\b)|do\s+i\s+need\s+(a\s+(brace|scan|doctor|cast|splint|x[-\s]?ray|mri)|to\s+(see|get\s+it\s+(checked|looked\s+at)))|how\s+do\s+i\s+(fix|heal|treat|rehab)\s+(it|this|that|my)\b|diagnos\w*|what\s+(should|do)\s+i\s+do\s+about|will\s+it\s+heal)\b/i;
 export const DISORDERED_EATING = /\b(purg(e|es|ed|ing)|(throw(ing|n)?|threw)\s+up\s+after\s+(i\s+eat|eating|meals?|food)|make\s+myself\s+(throw\s+up|sick|puke)|starv(e|ing)\s+myself|laxatives?\s+(to|for)\s+(lose|drop|cut)|(eat|eating)\s+(only\s+)?([1-7]\d{2}|[1-9]\d)\s+cal\w*\b(?!\s+(of|before|pre|after|post|for\s+(breakfast|lunch|dinner|a\s+snack)))|stop(ped)?\s+eating\s+(to|so)\b|(vomit\w*|puk(e|es|ed|ing)|barf\w*|(throw(s|ing|n)?|threw)\s+up)\s+(\w+\s+){0,3}(after|when)\s+(i\s+)?(eat\w*|ate|meals?|food|dinner|lunch|breakfast|snacks?|bing\w*)|(vomit\w*|puk(e|es|ed|ing)|sick|(throw(s|ing|n)?|threw)\s+up)\s+(\w+\s+){0,4}on\s+purpose|self[-\s]induced\s+vomit\w*)/i;
+const FEW_DAYS = String.raw `(\d+([-/]\d+)?|two|three|four|five|six|seven|(a\s+)?few|(a\s+)?couple(\s+of)?|several)\s+days`;
+const EVERY_FEW_DAYS = String.raw `(other\s+day|${FEW_DAYS})`;
+export const SPARSE_EATING = new RegExp(String.raw `\b(` +
+    [
+        String.raw `chew(s|ed|ing)?[-\s]*(and|n'?|&|\+|then)[-\s]*(then\s+)?spit\w*`,
+        String.raw `chew(s|ed|ing)?\s+(my\s+|the\s+|your\s+|up\s+)?(food|it|meals?|snacks?|dinner|lunch|breakfast|treats?|candy|sweets|chips|pizza|cake|cookies)\s+(and|then|&)\s+(then\s+)?spit\w*`,
+        String.raw `spit(s|ting)?\s+(my\s+|the\s+)?(food|it|everything|them)\s+out\s+(\w+\s+){0,5}(calories|cals?|swallow\w*|weight)`,
+        String.raw `(one|1|a\s+single|only\s+one)\s+meal\s+(every|each|per|in)\s+${EVERY_FEW_DAYS}`,
+        String.raw `eat(s|ing)?\s+(only\s+)?(once|one\s+time|1x)\s+(every|each|per|in)\s+${EVERY_FEW_DAYS}`,
+        String.raw `eat(s|ing)?\s+(only\s+)?every\s+${EVERY_FEW_DAYS}`,
+        String.raw `skip(s|ping|ped)?\s+(whole\s+|entire\s+|full\s+)?days\s+(of\s+)?(eating|food|meals)`,
+        String.raw `go(es|ing)?\s+${FEW_DAYS}\s+(without|between)\s+(eating|food|meals?)`,
+    ].join('|') +
+    String.raw `)\b`, 'i');
 export const EATING_DISORDER_NAMED = /\b(anorexi\w*|anorectic|bulimi\w*|eating\s+disorder\w*|binge[-\s]eating|arfid|orthorexi\w*|ednos)\b/i;
 const RECOVERY = /\b(recover(y|ing|ed)|in\s+treatment|my\s+(therapist|treatment\s+team))\b/i;
 export const DIET_DRUG = /\b(appetite\s+(suppress\w*|blocker\w*|killer\w*)|fat[-\s]?burners?|diet\s+(pills?|drugs?|tea)|slimming\s+(pills?|tea|drops)|weight[-\s]?loss\s+(pills?|drugs?|meds?|medications?|injections?|shots?|tea|supplements?)|phentermine|adipex|qsymia|contrave|orlistat|xenical|clenbuterol|clen|dnp|ephedrine|ephedra|garcinia|hydroxycut|lipozene|sibutramine)\b/i;
@@ -103,7 +117,7 @@ function routeOnce(t: string): MedicalRoute {
         return 'crisis';
     if (URGENT.test(t) || FOOD_URGENT.test(t))
         return 'urgent';
-    if (DISORDERED_EATING.test(t) || RESTRICTION.test(t) || isCrashCut(t) || DIET_DRUG.test(t))
+    if (DISORDERED_EATING.test(t) || SPARSE_EATING.test(t) || RESTRICTION.test(t) || isCrashCut(t) || DIET_DRUG.test(t))
         return 'care';
     if (EATING_DISORDER_NAMED.test(t))
         return RECOVERY.test(t) ? 'advice' : 'care';
