@@ -13,7 +13,8 @@ import { AUTHOR_CATALOGUE } from './author-catalogue.ts';
 import { canEdit } from './edit-ops.ts';
 import type { Rewrite, RewriteRow } from './engine/checker.ts';
 
-export const REWRITE_OUTPUT_CAP = 9000;
+/** Room for a real rewrite: variation across weeks on a 5-day block ran past 9,000 (live run 11-19). */
+export const REWRITE_OUTPUT_CAP = 16000;
 
 const ROW_SCHEMA = {
   type: 'object',
@@ -81,17 +82,17 @@ export const REWRITE_SYSTEM = `You are Coach Holt, a strength and endurance coac
 
 # What you return — only what changes
 
-- sessions: a session you change, written ONCE by its exact name as given ("Pull", "Upper"). The app applies it to that session in every remaining week, and each movement you keep keeps its own week-to-week sets and reps — so write the whole session as it should look from now on, with sets and reps for anything new.
+- sessions: a session you change, written ONCE by its exact name as given ("Pull", "Upper"). The app applies it to that session in every remaining week from the next one on — a session already trained THIS week still comes round again next week, so it is yours to change too; and each movement you keep keeps its own week-to-week sets and reps — so write the whole session as it should look from now on, with sets and reps for anything new.
 - weeks: only what differs week by week — every run's new distance or time (week, day number, name and rows), or a one-off change to one week. Days are numbered from 1 as given.
 - Leave out every session you do not change; it stays exactly as it is. A started program never changes its number of sessions: to give the athlete more rest, put that session in "rest" (week and day number) instead.
 - For each session you write: its rows. A lifting row is { key: an exact key from the exercise library below, part: warmup, main or cooldown, sets, reps, repsTo (the top of a rep range, else 0), seconds (a timed hold, else 0), miles 0, group }. A run is { key: "cardio-run", miles (or seconds for a timed run), sets 1 }. Another cardio bout is { key: "cardio-bike" (or cardio-row, cardio-walk, cardio-elliptical, cardio-stair), seconds }. Rows that share a group letter ("A", "B") are a superset, done back to back; otherwise group is "".
-- say: 2 to 4 short plain sentences in Holt's voice, to the athlete, saying what you changed and why — name the sessions and the movements ("On Pull and Upper I added face pulls and reverse cable flyes…"). No markdown. Never claim it is done or saved: they confirm it on a card.
+- say: 2 to 4 short plain sentences in Holt's voice, to the athlete, saying what you changed and why — name the sessions and the movements ("On Pull and Upper I added face pulls and reverse cable flyes…"). No markdown. Never claim it is done or saved: they confirm it on a card. Name movements the way a person says them ("cable face pulls", "an easy bike ride") — never a library key or code.
 - unmet: anything they asked for that you could not do, in a few words each. Empty when everything landed.
 
 # How you change it
 
 - Change what they asked for, and what it takes to do it well. Keep everything else as it is: the same movements, order and prescription.
-- Spread what they asked for sensibly across the week ("more rear delts" → on the sessions that train back or shoulders, at least twice a week). Swap out the least useful movements to make room rather than making sessions long.
+- Spread what they asked for sensibly across the week, on the sessions that already train that area ("more rear delts" → the back, pull, shoulder or upper sessions, at least twice a week — never a leg day; core can go anywhere). Swap out the least useful movements to make room rather than making sessions long.
 - Use only movements their equipment allows (listed below). Never a movement from outside the library.
 - Sets, reps and rest follow their goal and the program's existing pattern; carry the program's week-to-week progression and any deload week through.
 - Never write a weight or a load of any kind. Weights come from the athlete's own logged lifts.

@@ -130,7 +130,7 @@ for (const c of CASES) {
   const r = await call(REWRITE_SYSTEM, user);
   if (r.error) { console.log(`✖ ${c.id}: ${r.error}`); log.push({ id: c.id, error: r.error }); continue; }
   const parsed = rewriteFromModelText(r.text);
-  if (!parsed) { console.log(`✖ ${c.id}: unreadable (${r.stop})`); log.push({ id: c.id, unreadable: r.text.slice(0, 400) }); continue; }
+  if (!parsed) { console.log(`✖ ${c.id}: unreadable (${r.stop}, ${r.usage.output_tokens} tok)`); writeFileSync(path.join(HERE, `rewrite-raw-${c.id}.json`), r.text); log.push({ id: c.id, unreadable: r.text.slice(0, 400) }); continue; }
   const checked = checkRewrite(w.structure, w.marks, expandRewrite(w.structure, fromWeek, parsed), { athlete: w.athlete, catalog: catalog(), canDo: canDoExercise, race: w.race });
   console.log(`\n■ ${c.id}  ${(r.ms / 1000).toFixed(1)}s  $${r.cost.toFixed(3)}  out ${r.usage.output_tokens} tok`);
   console.log(`  Holt: ${parsed.say}`);
