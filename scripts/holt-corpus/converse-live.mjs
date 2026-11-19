@@ -231,7 +231,9 @@ async function converse(c) {
       /* A build question is on the table (the app's words may end "Zero is a fine answer."), or Holt asked one. */
       if (!(refs.mode || /\?/.test(last)) || refs.built || world.writes.some((x) => x.kind === 'update')) break;
       if (c.family === 'question' && !refs.mode) break;
-      const hit = [...(c.answers ?? []), ...DEFAULTS].find(([re]) => re.test(last));
+      /* Answer the question he is ASKING — the last sentence with a "?" — not one he restated ("Got it, 4 days. Now the goal?"). */
+      const asking = (last.match(/[^.!?]*\?/g) ?? [last]).at(-1);
+      const hit = [...(c.answers ?? []), ...DEFAULTS].find(([re]) => re.test(asking));
       if (!hit) break;
       line = typeof hit[1] === 'function' ? hit[1]() : hit[1];
       answered += 1;
