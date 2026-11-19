@@ -37,7 +37,7 @@ import { alsoSaid, process as turn } from '../../src/domain/coach/engine/turn.ts
 import { freshRefs } from '../../src/domain/coach/engine/types.ts';
 import { systemOf } from '../evals/lib/suite-kit.mjs';
 import { catalog } from '../../src/domain/coach/engine/__tests__/fixtures.mjs';
-import { CASES, CASES_MORE, WORLDS } from './converse-cases.mjs';
+import { CASES, CASES_LONG, CASES_MORE, CASES_PARA, REPEAT_IDS, WORLDS } from './converse-cases.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const envFile = process.env.FL_ENV_FILE ?? path.join(HERE, '../../.env.local');
@@ -274,7 +274,14 @@ const noButtonFlows = (r) => chipLabels(r.sink).every((l) => ALLOWED.has(l)) || 
 const FAMILY = arg('--family');
 /* --set base|more|all (default all) · --shard k/n runs every n-th case from k (parallel processes, one cap each). */
 const SET = arg('--set') ?? 'all';
-const POOL = SET === 'base' ? CASES : SET === 'more' ? CASES_MORE : [...CASES, ...CASES_MORE];
+const EVERY = [...CASES, ...CASES_MORE, ...CASES_PARA, ...CASES_LONG];
+const POOL =
+  SET === 'base' ? CASES
+  : SET === 'more' ? CASES_MORE
+  : SET === 'para' ? CASES_PARA
+  : SET === 'long' ? CASES_LONG
+  : SET === 'repeat' ? EVERY.filter((x) => REPEAT_IDS.includes(x.id))
+  : EVERY;
 const [SHARD_K, SHARD_N] = (arg('--shard') ?? '0/1').split('/').map(Number);
 const CONVOS = POOL.filter((_, i) => i % SHARD_N === SHARD_K).filter((x) => (!ONLY || ONLY.split(',').includes(x.id)) && (!FAMILY || x.family === FAMILY) && (!process.argv.includes('--po') || x.tags.includes('po')));
 

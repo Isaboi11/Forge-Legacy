@@ -425,3 +425,183 @@ export const CASES_MORE = [
   c('x-two-asks-one-msg', 'edge', 'benjamin', 'Build me a leg workout for today and also add calves to my program going forward.', [any(built('day'), saved)]),
   c('x-what-can-you-do', 'edge', 'newUser', 'What can you do?', [notSaved, words(/program|workout|build|change|plan/i, 'no answer')]),
 ];
+
+// ══════════════════════════════════════════════════════════════════════════════════════════════════════
+// ROUND 3 (PO 11-19, another ~$10): does he adapt however it is SAID (20 asks × 5 phrasings), across a LONG chat
+// (4–6 messages, changes stacked, undone, questions between), and run after run (repeats are a CLI choice).
+// Still tests of general behaviour — a failure is fixed in the prompt, the checker or a capability, never per sentence.
+// ══════════════════════════════════════════════════════════════════════════════════════════════════════
+const ca = (id, family, world, lines, checks, yes) => ({ ...c(id, family, world, lines, checks), answers: yes ? [[/\?/, yes]] : [] });
+const P = (intent, world, phrasings, checks, yes) => phrasings.map((line, i) => ca(`p-${intent}-${i + 1}`, 'paraphrase', world, line, checks, yes));
+const unchanged = (r) => JSON.stringify(after(r)) === JSON.stringify(before(r)) || 'not put back';
+
+export const CASES_PARA = [
+  ...P('reardelt', 'benjamin', [
+    'my shoulders look small from the back',
+    'back of my delts is lagging, fix that',
+    'need more rear delt work fr',
+    'can we hit rear delts more often',
+    'rear delts r weak, add stuff for them on a couple days',
+  ], CHANGE([atLeast('rear_deltoids', 2)]), 'Yes — add rear delt work, a couple of days a week.'),
+  ...P('core', 'strength4', [
+    'add abs',
+    'I want a six pack, put some ab work in',
+    'core is weak, twice a week pls',
+    'no ab work in here at all?? add some',
+    'throw in planks or something a couple times a week',
+  ], CHANGE([atLeast('core', 2, 3)]), 'Yes, twice a week.'),
+  ...P('shorter', 'benjamin', [
+    'these take too long',
+    'I’m in there 90 minutes, cut it down',
+    'shorter workouts please',
+    'can we trim the fat on these sessions',
+    'I keep running out of time before I finish',
+  ], CHANGE([(r) => totalSets(after(r), 5) < totalSets(before(r), 5) || mainOf(after(r), 5).length < mainOf(before(r), 5).length || 'not shorter']), 'About 45 minutes would be great.'),
+  ...P('nodeads', 'strength4', [
+    'no more conventional deads',
+    'I hate deadlifts, get rid of them',
+    'swap deadlifts for something else everywhere',
+    'deadlifts just aren’t for me, replace em',
+    'can you take deadlifting out of my plan',
+  ], CHANGE([absent(/^barbell-deadlift$/)]), 'Yes, replace them everywhere.'),
+  ...P('arms', 'benjamin', [
+    'want bigger arms',
+    'more bicep work',
+    'my arms are lagging behind',
+    'add more curls',
+    'I want my arms to pop more, add volume',
+  ], CHANGE([(r) => more('biceps')(r) === true || more('triceps')(r) === true || 'no more arm work']), 'Yes, more arm volume in the program.'),
+  ...P('cut', 'benjamin', [
+    'I want to lean out',
+    'trying to cut now, adjust the program',
+    'help me drop fat with this program',
+    'bulk is over, time to shred',
+    'add stuff to help me lose weight',
+  ], CHANGE([]), 'Yes, change the program for fat loss.'),
+  ...P('cables', 'benjamin', [
+    'use my cables more',
+    'you never program cable stuff, I have a full cable setup',
+    'I have a whole cable station, use it',
+    'more cable exercises',
+    'my cables are collecting dust',
+  ], CHANGE([(r) => countKey(after(r), 5, /^cable-/) > countKey(before(r), 5, /^cable-/) || 'no more cable work']), 'Yes, swap some movements to cables.'),
+  ...P('lessmiles', 'marathon', [
+    'too many miles',
+    'my legs are dead, less running',
+    'can we back off the mileage',
+    'running is eating my life, cut it some',
+    'dial back the miles a bit',
+  ], CHANGE([lessRunning(), raceWeekKept]), 'Yes, a bit less running.'),
+  ...P('restday', 'marathon', [
+    'I need another rest day each week',
+    'can I get one more day off',
+    'I’m worn down, add rest',
+    'give me an extra off day',
+    '4 runs is too many, make one a rest day',
+  ], CHANGE([restAdded, raceWeekKept]), 'Yes, one more rest day a week.'),
+  ...P('today', 'strength4', [
+    'quick upper body pump today',
+    'gimme a 30 min workout',
+    'what should I do today, I have 40 min and just dumbbells',
+    'full body today, nothing heavy',
+    'I’m at home today, bodyweight only, make me something',
+  ], [built('day')], 'Yes, build it.'),
+  ...P('newbuild', 'newUser', [
+    'make me a plan',
+    'i wanna get big, 4 days, gym',
+    'need a program for strength, 3 days, been lifting 2 yrs, full gym',
+    'can u build me a workout routine for losing weight, 3x a week at planet fitness',
+    'program for a beginner who wants to get fit, home, no equipment',
+  ], [built('program')]),
+  ...['undo that', 'nvm put it back', 'actually I liked it before, revert it', 'go back to how it was', 'scratch that change'].map((x, i) =>
+    ca(`p-undo-${i + 1}`, 'paraphrase', 'benjamin', ['Add face pulls to my pull days.', x], [unchanged], 'Yes.')),
+  ...P('supersets', 'strength4', [
+    'superset my stuff to save time',
+    'pair up exercises so I’m in and out faster',
+    'can my accessories be done back to back',
+    'make the accessories circuit style',
+    'I wanna do supersets',
+  ], CHANGE([(r) => mainOf(after(r), 4).some((e) => e.groupId) || 'no supersets']), 'Yes, superset the accessories.'),
+  ...P('strength', 'benjamin', [
+    'I want to get stronger now, not bigger',
+    'switch to powerlifting style',
+    'heavier and fewer reps please',
+    'focus on strength for the rest of the block',
+    'I care about my 1RM now',
+  ], CHANGE([(r) => mainOf(after(r), 5).some((e, i) => (e.reps ?? 99) < (mainOf(before(r), 5)[i]?.reps ?? 0)) || 'reps not lower anywhere']), 'Yes, change the rest of the block for strength.'),
+  ...P('legs', 'benjamin', [
+    'never skip leg day lol, give me more leg work',
+    'my legs are tiny',
+    'more quads and hams',
+    'legs need more volume',
+    'add another leg exercise to my leg days',
+  ], CHANGE([more('legs')]), 'Yes, more leg volume.'),
+  ...P('myprogram', 'benjamin', [
+    'what am I doing this week',
+    'how’s my program set up',
+    'what’s next',
+    'how many workouts are left this week',
+    'remind me what my split is',
+  ], [notSaved, words(/push|pull|leg|upper|lower|week|session/i, 'no answer about their program')]),
+  ...P('injury', 'benjamin', [
+    'tweaked my lower back, what now',
+    'my elbow is killing me when I curl',
+    'think I pulled a hamstring',
+    'sharp wrist pain on bench, adjust?',
+    'shoulder popped and it hurts',
+  ], [notSaved, stopped]),
+  ...P('offtopic', 'benjamin', [
+    'what’s a 15% tip on $80',
+    'recommend a netflix show',
+    'how do I fix my car’s brakes',
+    'write my history essay',
+    'what’s bitcoin at right now',
+  ], [notSaved]),
+  ...P('bike', 'marathon', [
+    'swap a run for the bike each week',
+    'can I do peloton instead of one easy run',
+    'less pounding, more biking',
+    'I’d rather cycle on one of the easy days',
+    'replace an easy run with cycling',
+  ], CHANGE([(r) => mainOf(after(r), 10).some((e) => e.activity === 'bike') || 'no ride', raceWeekKept]), 'Yes, one easy run a week on the bike.'),
+  ...P('variety', 'benjamin', [
+    'I’m bored',
+    'same exercises every week is boring',
+    'switch things up',
+    'mix it up a bit',
+    'give me new exercises',
+  ], CHANGE([]), 'Yes — switch up the exercises in the program.'),
+];
+
+// ── LONG CHATS: 3–5 messages, changes stacked and undone, questions between ──
+const longC = (id, world, lines, checks, yes) => ca(id, 'long', world, lines, checks, yes ?? 'Yes.');
+export const CASES_LONG = [
+  longC('l-stack-undo', 'benjamin', ['How’s my program looking?', 'Add rear delts twice a week.', 'Also more core.', 'Actually undo the core part.'], [saved, atLeast('rear_deltoids', 2)]),
+  longC('l-core-then-deads', 'strength4', ['Add core work twice a week.', 'Now take deadlifts out.', 'What does my Lower A look like now?'], [saved, atLeast('core', 2, 3), absent(/^barbell-deadlift$/)]),
+  longC('l-build-qa', 'newUser', ['I want to get in shape', 'Gym, 3 days', 'Beginner', 'Mostly weight loss'], [built('program'), builtDays(3)]),
+  longC('l-marathon-sore', 'marathon', ['I’m sore, less miles please', 'Also one more rest day per week', 'How long is my long run this weekend?'], [lessRunning(), restAdded, raceWeekKept]),
+  longC('l-today-refine', 'benjamin', ['give me a leg workout for today', 'make it 30 minutes', 'no lunges'], [built('day'), builtNever((e) => /lunge/.test(e.catalogKey ?? ''), 'lunges in it')]),
+  longC('l-cardio-qa', 'fatLoss3', ['Should I be doing cardio?', 'Ok add it after each workout then', 'Make it 10 minutes, not 15'], [saved, moreCardio(2)]),
+  longC('l-undo-redo', 'benjamin', ['Add face pulls to my pull days', 'undo that', 'Add face pulls to my upper days instead'], [saved, present(/face-pull/)]),
+  longC('l-build-refine', 'newUser', ['Build me a 4 day muscle program, full gym, intermediate', 'make it 3 days', 'and no barbell stuff'], [built('program'), builtDays(3), builtNever((e) => /^barbell-/.test(e.catalogKey ?? ''), 'barbell still in it')]),
+  longC('l-hotel', 'strength4', ['I’m traveling next week, hotel gym only', 'Give me something for Monday there — dumbbells up to 50, that’s it'], [built('day'), builtNever((e) => /barbell|cable|machine|smith/.test(e.catalogKey ?? ''), 'used kit the hotel lacks')]),
+  longC('l-known', 'knownNoProgram', ['What do you know about me?', 'Build me a strength program then, 4 days'], [built('program'), builtDays(4), builtNever((e) => GYM_ONLY.test(e.catalogKey ?? ''), 'used kit outside their garage')]),
+  longC('l-chest-legs', 'benjamin', ['My chest is lagging', 'Yeah add more chest volume', 'And a bit less legs'], [saved, more('chest'), less('legs')]),
+  longC('l-marathon-lift', 'marathon', ['Should I lift during marathon training?', 'Ok, add two short strength sessions a week'], [saved, raceWeekKept]),
+  longC('l-pl-pause', 'powerlifter', ['How’s my squat programmed right now?', 'Add a paused squat once a week'], [saved]),
+  longC('l-5k-longer', 'fiveK', ['this is getting easy', 'make the runs a bit longer', 'what’s my next run?'], [saved, (r) => miles(after(r), 4) >= miles(before(r), 4) || 'miles went down']),
+  longC('l-hey-shorter', 'benjamin', ['hey', 'what can you do', 'ok make my workouts shorter'], [saved, (r) => totalSets(after(r), 5) < totalSets(before(r), 5) || mainOf(after(r), 5).length < mainOf(before(r), 5).length || 'not shorter']),
+  longC('l-twoday', 'twoDay', ['I can only do 20 minutes now', 'and nothing on the floor, my mat is gone'], [saved]),
+  longC('l-new-marathon', 'newUser', ['I want to run a marathon in October. I’ve never run.', 'Build it anyway'], [built('program'), builtUses((e) => e.activity === 'run', 'no running')], 'Build it anyway.'),
+  longC('l-bench-swaps', 'benjamin', ['Swap barbell bench for dumbbell bench everywhere', 'And on Upper use incline dumbbell instead of flat'], [saved, absent(/^barbell-bench-press$/)]),
+  longC('l-injury-then', 'strength4', ['I hurt my wrist yesterday', 'ok well what about the rest of my week'], [stopped]),
+  longC('l-deload-flip', 'deloadNext', ['What’s this week?', 'Skip the deload, I feel great', 'Actually no, keep the deload'], [unchanged]),
+];
+
+/** Run twice for consistency (`--set repeat`): the PO's examples + a spread of the stress set. */
+export const REPEAT_IDS = [
+  'p3-rear-delts', 'third-day', 'benjamin-full', 'add-core', 'more-chest', 'less-legs', 'remove-deadlift', 'swap-everywhere', 'slim-45', 'beef-up',
+  'supersets', 'use-my-kit', 'regoal-strength', 'p6-weight-loss', 'arms-home-only-db', 'p2-sore', 'run-to-bike', 'more-miles', 'half-less-lift', 'p4-arms-hour',
+  'new-8wk-bulk', 'new-home-db', 'new-marathon-bike', 'new-hybrid', 'injury-shoulder', 'chest-pain', 'sore-not-injury', 'crash-diet',
+  'x-new-cable', 'x-pullup-goal', 'x-cardio-after', 'x-replace-active', 'x-5k-to-10k', 'x-tired-easy', 'x-legs-no-squat', 'x-calves', 'x-finishers', 'x-pump', 'x-exhausted', 'x-bike-instead',
+];
