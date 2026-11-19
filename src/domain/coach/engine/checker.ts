@@ -118,6 +118,15 @@ function runDayFrom(rd: RewriteDay, before: ProgramDay): ProgramDay {
   return { ...before, main };
 }
 
+const BOUT = /^cardio-(bike|row|walk|elliptical|stair)$/;
+/** A ride / row / walk bout as written → a cardio row (its minutes clamped 10–180). */
+function boutRow(r: RewriteRow): ProgramExercise {
+  const minutes = Math.max(10, Math.min(180, Math.round((r.seconds ?? 1800) / 60)));
+  const activity = r.key.slice('cardio-'.length) as 'bike' | 'row' | 'walk' | 'elliptical' | 'stair';
+  const easy = { bike: 'Easy Bike', row: 'Easy Row', walk: 'Brisk Walk', elliptical: 'Easy Elliptical', stair: 'Easy Stair Climb' }[activity];
+  return { catalogKey: cardioKey(activity), name: easy, kind: 'cardio' as const, activity, modality: activity === 'walk' ? ('outdoor' as const) : ('indoor' as const), sets: 1, targetSec: minutes * 60 };
+}
+
 /** One rewritten session → a `ProgramDay`, or null when nothing usable came back (the session is then kept). */
 function buildDay(rd: RewriteDay, before: ProgramDay, cx: CheckContext, dropped: Dropped[]): ProgramDay | null {
   const wasRunDay = before.main.length > 0 && before.main.every(isRunRow);
@@ -127,22 +136,18 @@ function buildDay(rd: RewriteDay, before: ProgramDay, cx: CheckContext, dropped:
   if (wasRunDay && runs.length && runs.length === mainRows.length) return runDayFrom(rd, before);
   // A run day he turned into a ride / row / walk (live run 11-19: "swap an easy run for a bike ride" was refused — a
   // lone cardio bout failed the LIFTING day's minimum). Its warm-up, cool-down and stretches stay the day's own.
-  const bouts = mainRows.filter((r) => /^cardio-(bike|row|walk|elliptical|stair)$/.test(r.key));
+  const bouts = mainRows.filter((r) => BOUT.test(r.key));
   if (wasRunDay && bouts.length && bouts.length === mainRows.length) {
-    const minutes = (r: RewriteRow) => Math.max(10, Math.min(180, Math.round((r.seconds ?? 1800) / 60)));
-    return {
-      ...before,
-      name: rd.name || before.name,
-      main: bouts.map((r) => {
-        const activity = r.key.slice('cardio-'.length) as 'bike' | 'row' | 'walk' | 'elliptical' | 'stair';
-        const easy = { bike: 'Easy Bike', row: 'Easy Row', walk: 'Brisk Walk', elliptical: 'Easy Elliptical', stair: 'Easy Stair Climb' }[activity];
-        return { catalogKey: cardioKey(activity), name: easy, kind: 'cardio' as const, activity, modality: activity === 'walk' ? ('outdoor' as const) : ('indoor' as const), sets: 1, targetSec: minutes(r) * 60 };
-      }),
-    };
+    return { ...before, name: rd.name || before.name, main: bouts.map(boutRow) };
   }
-  const rest = rd.rows.filter((r) => r.key !== RUN_KEY);
-  if (runs.length && !rest.length) {
-    return { ...before, name: rd.name || before.name, warmup: [], main: runs.map((r) => runRow(r, rd.name || 'Run')), cooldown: [] };
+  /* Stress run 11-19 ("15 minutes of cardio after every workout"): a run, ride, row or walk he writes on a LIFTING day,
+     in any part, is that day's finisher — added after the lifts, never sent through the lifting check (where a
+     cardio key is not a catalogue movement and was silently dropped, taking the change with it). */
+  const allRuns = rd.rows.filter((r) => r.key === RUN_KEY);
+  const finishers = rd.rows.filter((r) => BOUT.test(r.key));
+  const rest = rd.rows.filter((r) => r.key !== RUN_KEY && !BOUT.test(r.key));
+  if (allRuns.length && !rest.length && !finishers.length) {
+    return { ...before, name: rd.name || before.name, warmup: [], main: allRuns.map((r) => runRow(r, rd.name || 'Run')), cooldown: [] };
   }
   const v = validateAuthored({ say: '', title: rd.name, unmet: [], days: [{ name: rd.name, exercises: rest.map(authored) }] }, cx.athlete, cx.catalog, cx.canDo);
   if (!v) return null;
@@ -154,9 +159,9 @@ function buildDay(rd: RewriteDay, before: ProgramDay, cx: CheckContext, dropped:
   return {
     ...before,
     name: rd.name || before.name,
-    warmup: rd.rows.some((r) => r.part === 'warmup') ? day.warmup : before.warmup,
-    main: [...main, ...runs.map((r) => runRow(r, 'Run'))],
-    cooldown: rd.rows.some((r) => r.part === 'cooldown') ? day.cooldown : before.cooldown,
+    warmup: rest.some((r) => r.part === 'warmup') ? day.warmup : before.warmup,
+    main: [...main, ...allRuns.map((r) => runRow(r, 'Run')), ...finishers.map(boutRow)],
+    cooldown: rest.some((r) => r.part === 'cooldown') ? day.cooldown : before.cooldown,
   };
 }
 

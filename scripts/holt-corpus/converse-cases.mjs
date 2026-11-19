@@ -311,7 +311,7 @@ export const CASES_MORE = [
   c('x-exhausted', 'change', 'benjamin', 'I’m always exhausted after these. Cut the volume down.', CHANGE([(r) => totalSets(after(r), 5) < totalSets(before(r), 5) || 'total sets not down'])),
   c('x-db-not-bb', 'change', 'strength4', 'The barbells at my gym are always taken. Swap barbell stuff for dumbbells where you can.', CHANGE([(r) => countKey(after(r), 3, /^barbell-/) < countKey(before(r), 3, /^barbell-/) || 'no fewer barbell lifts'])),
   c('x-finishers', 'change', 'fatLoss3', 'Add a short conditioning finisher to the end of each workout.', CHANGE([])),
-  c('x-pump', 'change', 'strength4', 'I want more of a pump. Move my accessories to 12-15 reps.', CHANGE([(r) => avgReps(after(r), 3) > avgReps(before(r), 3) || mainOf(after(r), 3).some((e, i) => (e.repsTo ?? e.reps ?? 0) > (mainOf(before(r), 3)[i]?.repsTo ?? mainOf(before(r), 3)[i]?.reps ?? 0)) || 'reps not up'])),
+  c('x-pump', 'change', 'strength4', 'I want more of a pump. Move my accessories to 12-15 reps.', CHANGE([(r) => avgReps(after(r), 5) > avgReps(before(r), 5) || mainOf(after(r), 5).some((e, i) => (e.repsTo ?? e.reps ?? 0) > (mainOf(before(r), 5)[i]?.repsTo ?? mainOf(before(r), 5)[i]?.reps ?? 0)) || 'reps not up'])),
   c('x-upper-chest', 'change', 'benjamin', 'My upper chest is flat. Add more incline work.', CHANGE([(r) => countKey(after(r), 5, /incline/) > countKey(before(r), 5, /incline/) || 'no more incline work'])),
   c('x-less-legs-more-upper', 'change', 'strength4', 'Less leg stuff, more upper body. I’m fine with my legs.', CHANGE([less('legs', 3)])),
   c('x-new-cable', 'change', 'beginnerHome', 'I bought a cable machine for my garage! Start using it.', CHANGE([present(/^cable-/, 2)])),

@@ -83,3 +83,16 @@ test('propose_program carries replacesCurrent; propose_program_change carries on
   assert.equal(plan({ name: 'propose_program', input: { goal: 'strength', replacesCurrent: 'yes' } }).steps[0].patch.replacesCurrent, undefined);
   assert.deepEqual(plan({ name: 'propose_program_change', input: { brief: 'x', newEquipment: ['pullup', 'laser', 'pullup'] } }).steps[0].newEquipment, ['pullup']);
 });
+
+test('"15 minutes of cardio after every workout": a ride written on a lifting day (any part) is its finisher, not dropped', async () => {
+  const s = setup();
+  s.refs.constraints = { experience: { lifting: 'intermediate', running: 'beginner' }, environment: 'full_gym', goal: 'muscle' };
+  s.world.rewriteReplies.push(JSON.stringify({ say: 'Easy bike after Pull.', sessions: [{ name: 'Pull', rows: [...pullRows(s), { key: 'cardio-bike', part: 'cooldown', sets: 1, reps: 0, repsTo: 0, seconds: 900, miles: 0, group: '' }] }], weeks: [], rest: [], unmet: [] }));
+  await change(s, { brief: '15 min cardio after each session' }, 'Add 15 minutes of cardio after every workout.');
+  await finishTypedEdit(s.refs, s.port, s.sink, EDIT, { label: 'Do it', patch: {}, typedEdit: 'apply' });
+  const pull = trainingDays(plannedDays(s.world.active.structure, 6)).find((d) => d.name.startsWith('Pull'));
+  const ride = pull.main.find((e) => e.activity === 'bike');
+  assert.ok(ride, 'the ride is on Pull');
+  assert.equal(ride.targetSec, 900);
+  assert.ok(pull.main.some((e) => e.kind !== 'cardio'), 'the lifts are still there');
+});
