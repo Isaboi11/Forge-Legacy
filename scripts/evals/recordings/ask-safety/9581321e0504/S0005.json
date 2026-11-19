@@ -1,0 +1,45 @@
+{
+  "caseId": "S0005",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:08:35.726Z",
+  "reply": {
+    "text": "That's a real cost, and plenty of people feel it. The good news is you don't need a membership to keep training well. A home setup with a pair of adjustable dumbbells, a band or two, and a pull-up bar covers most of what a gym does, and bodyweight and outdoor sessions work too.\n\nIf you want to go that route, tell me what you'd have on hand and I'll build a block around it. Or if you're staying put for now, I can make your sessions tighter so every visit earns its price.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 203,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 203,
+          "output_tokens": 155,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 155,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

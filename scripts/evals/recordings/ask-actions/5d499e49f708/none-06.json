@@ -1,0 +1,45 @@
+{
+  "caseId": "none-06",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:07:23.494Z",
+  "reply": {
+    "text": "Think of bracing as making your torso a rigid cylinder before you unrack.\n\n1. Take a breath into your belly, not your chest. Your lower ribs and sides should expand, like you're filling a belt around your waist.\n2. Hold it, then tighten your abs as if someone were about to poke you in the stomach. Push your abs out against that air, rather than sucking them in.\n3. Keep the brace locked as you descend and drive up through the hardest part of the rep. Let the air out at the top, then reset with a new breath before the next rep.\n\nA common mistake is breathing only into the chest and letting the ribs flare, which makes the torso soft and the bar drift forward. Another is bracing once at the start of a set and then losing it by rep three, so reset each rep.\n\nIf you want a quick check, put your hands on your sides before you unrack and feel them push out when you breathe in. Want me to look at your squat on a video with the form check?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 299,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 299,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

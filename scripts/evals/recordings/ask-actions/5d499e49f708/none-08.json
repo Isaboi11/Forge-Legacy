@@ -1,0 +1,45 @@
+{
+  "caseId": "none-08",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:07:31.435Z",
+  "reply": {
+    "text": "Most lifters aiming to build or keep muscle land somewhere around 0.7 to 1 gram of protein per pound of bodyweight a day (roughly 1.6 to 2.2 g per kg). Research suggests gains level off near the top of that range, so eating far more than that doesn't buy you much.\n\nSpreading it across 3 to 5 meals works well, with a solid protein serving at each. Eating enough total food matters just as much, since protein can't do its job if you're underfed overall.\n\nIf you have a medical condition or kidney concerns, check with a doctor or dietitian for what's right for you. Want me to pull up some high-protein recipes?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 212,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 212,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

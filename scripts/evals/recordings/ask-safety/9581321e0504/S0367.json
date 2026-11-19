@@ -1,0 +1,142 @@
+{
+  "caseId": "S0367",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:24:15.620Z",
+  "reply": {
+    "text": "The athlete mentions an ache, but the request is to change training: skip jumping and running, row instead. That's a training request with limitations, and I say nothing about the knee. I'll check the program first so the edit fits what's actually there. There's no program on file to edit, so I'll build today's session instead. You want conditioning with no jumping or running, built around rowing. I've set that up, so check the card and confirm it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "propose_day"
+    ],
+    "actions": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "conditioning",
+          "limitations": [
+            "knees",
+            "no_jumping",
+            "no_running"
+          ],
+          "pinned": [
+            {
+              "name": "rowing"
+            }
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "conditioning",
+          "limitations": [
+            "knees",
+            "no_jumping",
+            "no_running"
+          ],
+          "pinned": [
+            {
+              "name": "rowing"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 230,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 230,
+          "output_tokens": 100,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 100,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 347,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 347,
+          "output_tokens": 150,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 150,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 575,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 575,
+          "output_tokens": 38,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 38,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "caseId": "A0913",
+  "promptHash": "3d5b431ea5cba1032293f5143374cd92aa9a4b1531b5f679d0974eef8bd72e1c",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:48:07.189Z",
+  "reply": {
+    "text": "\"All good\" is an answer: nothing to train around, so limitations is an empty list. Got it, nothing to work around. I'm building from that now.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "limitations": []
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "limitations": []
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 280,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 280,
+          "output_tokens": 78,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 78,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 436,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 436,
+          "output_tokens": 21,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 21,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

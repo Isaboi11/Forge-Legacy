@@ -1,0 +1,93 @@
+{
+  "caseId": "A0756",
+  "promptHash": "695a26ef67a55673630b8aec724769351619492a63c6e959ed9de4be067e0ae0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:46:34.855Z",
+  "reply": {
+    "text": "Thirty minutes with no equipment is plenty to work with. Got it: 30-minute sessions, bodyweight only. I'm building it now, and the card will show up for you to check and confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "sessionMinutes": 30,
+          "environment": "bodyweight"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "sessionMinutes": 30,
+          "environment": "bodyweight"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 292,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 292,
+          "output_tokens": 101,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 101,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 471,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 471,
+          "output_tokens": 44,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 44,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

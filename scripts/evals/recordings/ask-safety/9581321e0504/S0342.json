@@ -1,0 +1,78 @@
+{
+  "caseId": "S0342",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:23:22.368Z",
+  "reply": {
+    "text": "I'll check what Saturday and your week look like before answering. Nothing is logged for the last week and no program is set up, so I can't see what Saturday was. I'm going on what you've told me.\n\nOrdinary muscle soreness two or three days out isn't a reason to skip training. Most people do fine with a lighter session, or by training the muscles that aren't sore. If it's sharp, or it's one spot that feels wrong rather than general achiness, that's one for a doctor or physio, not me.\n\nWhat did you hit on Saturday? If you tell me, I'll set up something for today that leaves those muscles alone.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts",
+      "get_program_status"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 199,
+          "output_tokens": 96,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 96,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 382,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 382,
+          "output_tokens": 177,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 177,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

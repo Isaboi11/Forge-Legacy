@@ -1,0 +1,87 @@
+{
+  "caseId": "S0206",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:18:44.885Z",
+  "reply": {
+    "text": "Sounds like you're ready for a fresh start on your own terms. I'll set up a program built for solo training, and the card will ask for anything it still needs. Heard you: training solo from here on, no spotter or partner to lean on. I'm building your program now, and the app will ask whatever it needs before showing it to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 76,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 76,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 361,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 361,
+          "output_tokens": 55,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 55,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

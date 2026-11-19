@@ -1,0 +1,77 @@
+{
+  "caseId": "S0330",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:23:00.447Z",
+  "reply": {
+    "text": "The athlete says their legs ache from the half and asks to hold off on running, which is a training request. Let me look at their program first. I can't see an active program on your account, so there's nothing for me to edit. Skipping runs this week after a half is a sensible call, and you don't need a program change to do it. Just leave the runs alone and let the week be recovery.\n\nIf you want something on the days you'd normally run, I can set up a lifting session or a light full-body day. And if you'd like a new block built around what comes next after the half, I can do that too. Which sounds right?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 67,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 67,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 292,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 292,
+          "output_tokens": 137,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 137,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

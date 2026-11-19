@@ -1,0 +1,91 @@
+{
+  "caseId": "A1130",
+  "promptHash": "695a26ef67a55673630b8aec724769351619492a63c6e959ed9de4be067e0ae0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T03:08:39.607Z",
+  "reply": {
+    "text": "Absolutely, a stretch day is a fine call. I've set up a mobility session, so check the card and confirm. Stretching it is. I'm building a mobility session for today now, and the card will be there for you to check and confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_day"
+    ],
+    "actions": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "mobility"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "mobility"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 286,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 286,
+          "output_tokens": 91,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 91,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 455,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 455,
+          "output_tokens": 37,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 37,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

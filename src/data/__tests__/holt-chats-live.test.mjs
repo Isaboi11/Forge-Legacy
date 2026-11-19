@@ -14,6 +14,10 @@ registerHooks({
     if (specifier === 'expo/fetch') {
       return { url: 'data:text/javascript,export const fetch = (...a) => globalThis.__sumFetch(...a);', shortCircuit: true };
     }
+    /* Sprint 4b: the memory telemetry (`holt_memory`), recorded — the real module reaches expo-constants. */
+    if (specifier === '@/lib/analytics') {
+      return { url: 'data:text/javascript,export const track = (n, p) => void (globalThis.__tracks ??= []).push([n, p]);', shortCircuit: true };
+    }
     if (specifier === '@/lib/ai-telemetry') {
       return {
         url:
@@ -132,4 +136,64 @@ test('a greeting is not a chat, and no consent means nothing is sent', async () 
   await summarizeChat(TURNS);
   assert.equal(seen.calls, 0);
   assert.deepEqual(reports(), []);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sprint 4b — memory: caps, the kept count, the off switch, the recap
+// ─────────────────────────────────────────────────────────────────────────────
+
+const { recapChat, readKeptNotice, clearKeptNotice, MEMORY_CAPS } = await import('@/data/holt-chats-live');
+const { forgetRemembersCache } = await import('@/data/holt-memory-live');
+
+test('4b: the summary asks for memory (caps actions_v1 + memory_v1) and hands back what was kept', async () => {
+  forgetRemembersCache();
+  await clearKeptNotice();
+  globalThis.__tracks = [];
+  const seen = replyWith(() => json({ ok: true, saved: true, summary: 'You asked for no burpees.', kept: 2 }));
+  const r = await summarizeChat(TURNS);
+  assert.deepEqual(seen.body.caps, ['actions_v1', 'memory_v1']);
+  assert.deepEqual([...MEMORY_CAPS], ['actions_v1', 'memory_v1']);
+  assert.deepEqual(r, { summary: 'You asked for no burpees.', kept: 2 });
+  // The next sheet open says so, once — and telemetry is a name and a count, never text.
+  assert.equal(await readKeptNotice(), 2);
+  assert.deepEqual(globalThis.__tracks, [['holt_memory', { kind: 'facts_kept', count: 2 }]]);
+  await clearKeptNotice();
+  assert.equal(await readKeptNotice(), null);
+});
+
+test('4b: an old-shape reply (no summary, no kept) is { summary: null, kept: 0 } and leaves no line', async () => {
+  forgetRemembersCache();
+  await clearKeptNotice();
+  replyWith(() => json({ ok: true, saved: true }));
+  assert.deepEqual(await summarizeChat(TURNS), { summary: null, kept: 0 });
+  assert.equal(await readKeptNotice(), null);
+});
+
+test('⛔ 4b: memory switched off — the summary is never sent', async () => {
+  forgetRemembersCache();
+  db.rows('holt_memory_prefs').push({ athlete_id: ATHLETE, remembers: false });
+  const seen = replyWith(() => json({ ok: true, saved: true }));
+  assert.deepEqual(await summarizeChat(TURNS), { summary: null, kept: 0 });
+  assert.equal(seen.calls, 0);
+  forgetRemembersCache();
+});
+
+test('4b: recapChat sends mode recap with memory caps, the recap so far and the turns; returns the new recap or null', async () => {
+  const seen = replyWith(() => json({ ok: true, recap: 'The athlete trains Mondays.' }));
+  assert.equal(await recapChat('Earlier notes.', TURNS), 'The athlete trains Mondays.');
+  assert.equal(seen.body.mode, 'recap');
+  assert.deepEqual(seen.body.caps, ['actions_v1', 'memory_v1']);
+  assert.equal(seen.body.earlier, 'Earlier notes.');
+  assert.deepEqual(seen.body.history, TURNS);
+  for (const reply of [() => json({ ok: true, recap: null, reason: 'not_allowed' }), () => json({ route: 'error' }, 400), () => { throw new Error('offline'); }]) {
+    replyWith(reply);
+    assert.equal(await recapChat(null, TURNS), null);
+  }
+  // Nothing to fold, or no consent: nothing is sent.
+  const quiet = replyWith(() => json({ ok: true, recap: 'x' }));
+  assert.equal(await recapChat(null, []), null);
+  db.reset();
+  await refreshConsents();
+  assert.equal(await recapChat(null, TURNS), null);
+  assert.equal(quiet.calls, 0);
 });

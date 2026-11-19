@@ -1,0 +1,87 @@
+{
+  "caseId": "A0213",
+  "promptHash": "695a26ef67a55673630b8aec724769351619492a63c6e959ed9de4be067e0ae0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T02:36:45.458Z",
+  "reply": {
+    "text": "A 15k isn't one of the race goals I can build around directly, so I'll leave the goal open and let the app ask what it needs. Got it, a 15k. I'm building it now, and the app will ask for anything it still needs before showing you the card to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 272,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 272,
+          "output_tokens": 69,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 69,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 419,
+          "output_tokens": 42,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 42,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

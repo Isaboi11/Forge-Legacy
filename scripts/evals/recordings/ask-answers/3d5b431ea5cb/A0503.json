@@ -1,0 +1,91 @@
+{
+  "caseId": "A0503",
+  "promptHash": "3d5b431ea5cba1032293f5143374cd92aa9a4b1531b5f679d0974eef8bd72e1c",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:46:10.121Z",
+  "reply": {
+    "text": "The user gave a range \"3-4\". Two different choices, but a range of days. Per rules: \"A number with a limit or a hedge is that number\"; \"3-ish\" → 3. For a range, the nearest plain reading is ambiguous between two choices; \"When they offer two and let you pick, take the first\" → 3. Heard you: 3 to 4 days, so I'm starting the build at 3 and the card will let you check it before anything changes.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 3
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 3
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 328,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 328,
+          "output_tokens": 153,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 153,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 559,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 559,
+          "output_tokens": 42,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 42,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

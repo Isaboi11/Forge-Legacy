@@ -1,0 +1,45 @@
+{
+  "caseId": "A0218",
+  "promptHash": "695a26ef67a55673630b8aec724769351619492a63c6e959ed9de4be067e0ae0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T02:36:48.352Z",
+  "reply": {
+    "text": "I don't have the earlier options in front of me, so I'm assuming you mean race distance. For a first race I'd pick the 5K. It's short enough to train for without your life turning into a running schedule. Most people can get ready in a couple of months, and you'll still want to do another one afterward. If you've already got some base and want a bigger challenge, the 10K is a fair second choice. Tell me which one you land on and I'll carry on with the build.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 281,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 281,
+          "output_tokens": 141,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 141,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -21,9 +21,57 @@
 import type { Turn } from './chat-core.ts';
 import type { AskTurn } from './ask-wire.ts';
 import { withoutStoppedTurns } from './medical-routing.ts';
+import { RECAP_BATCH, RECAP_WIRE_CHARS, type ChatRecap } from './holt-memory.ts';
 
 /** How many spoken turns a question carries (CA-D1). The server trims again. */
 export const CHAT_HISTORY_TURNS = 8;
+
+/**
+ * ══ THE ROLLING RECAP (AI Road to 10 Sprint 4b §1.2, CH-4 C-G2) ══
+ *
+ * A question carries the last `CHAT_HISTORY_TURNS` spoken turns. Older ones used to be simply gone, so a long chat
+ * forgot its own start ("what days did I say?"). Now they are folded, a few at a time, into ONE short recap of THIS
+ * chat (coach-ask `mode: 'recap'`, Haiku), kept with the thread (`ThreadPlace.recap`) and sent with each question as
+ * `earlier`. `through` counts the spoken turns — as `askHistory` lists them, so the same stop rule — it covers.
+ *
+ * A recap is only true of the chat it was written from: when the thread has fewer spoken turns than it covers (a new
+ * chat, a cleared one), it is void (`liveRecap`).
+ */
+
+/** The recap, if it still belongs to this thread. */
+export function liveRecap(thread: readonly Turn[], recap: ChatRecap | null | undefined): ChatRecap | null {
+  if (!recap || typeof recap.text !== 'string' || !recap.text.trim() || !Number.isInteger(recap.through) || recap.through <= 0) return null;
+  return recap.through <= askHistory(thread, Infinity).length ? recap : null;
+}
+
+/**
+ * The next recap to write, or null: once at least `RECAP_BATCH` spoken turns have fallen out of the question's window
+ * and are not in the recap yet, the turns to fold (the uncovered ones, at most `max`, newest kept) and the new
+ * `through`. Never while a reply is still arriving.
+ */
+export function planRecap(
+  thread: readonly Turn[],
+  recap: ChatRecap | null | undefined,
+  window: number = CHAT_HISTORY_TURNS,
+  max = 40,
+): { turns: AskTurn[]; through: number } | null {
+  if (thread.some((t) => t.kind === 'holt' && (t.streaming || t.live))) return null;
+  const spoken = askHistory(thread, Infinity);
+  const fallen = spoken.length - window;
+  const covered = liveRecap(thread, recap)?.through ?? 0;
+  if (fallen - covered < RECAP_BATCH) return null;
+  return { turns: spoken.slice(covered, fallen).slice(-max), through: fallen };
+}
+
+/** What a question sends as `earlier`: the live recap, at most `RECAP_WIRE_CHARS`, or undefined. */
+export function earlierFor(thread: readonly Turn[], recap: ChatRecap | null | undefined): string | undefined {
+  const r = liveRecap(thread, recap);
+  if (!r) return undefined;
+  // Only when something has actually fallen out of the window — otherwise every turn it covers is sent anyway.
+  if (askHistory(thread, Infinity).length <= CHAT_HISTORY_TURNS) return undefined;
+  const t = r.text.replace(/\s+/g, ' ').trim();
+  return t.length > RECAP_WIRE_CHARS ? `${t.slice(0, RECAP_WIRE_CHARS - 1).trimEnd()}…` : t;
+}
 
 /**
  * The spoken turns of `thread` as a model may see them: athlete and Holt lines only, nothing stopped,

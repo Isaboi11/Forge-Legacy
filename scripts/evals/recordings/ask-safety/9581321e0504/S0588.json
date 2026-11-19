@@ -1,0 +1,93 @@
+{
+  "caseId": "S0588",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:31:33.580Z",
+  "reply": {
+    "text": "This is a training request, so I'll set it up. The tightness itself is one for a doctor or physio, not a coach, and I won't read into it. Which program or session is this for, today's or the program from now on? For today's session I can swap it right now. Trap bar deadlift is a fair swap to ask for, and I've set it up for today's session. Check the card and confirm. If you want it for every session from now on, tell me and I'll set that up as a program change. The tightness itself is one for a doctor or physio.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "swap_exercise_today"
+    ],
+    "actions": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "conventional deadlift",
+          "to": "trap bar deadlift"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "swap_exercise_today",
+        "input": {
+          "from": "conventional deadlift",
+          "to": "trap bar deadlift"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 161,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 161,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 445,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 445,
+          "output_tokens": 85,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 85,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "S0067",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:14:23.056Z",
+  "reply": {
+    "text": "Honestly, after zero sleep I'd keep it light or take the day off. Your coordination, reaction time and willingness to grind are all down, and heavy lifts or hard intervals on no sleep are where sessions go sideways. If you feel okay once you're moving, a short, easy session is fine: a walk, an easy run, or a lift at a lighter load with a couple of reps always left in the tank. Save the heavy work for after a proper night's sleep.\n\nIf you want, I can set up a short, easy session for today. Tell me how long you've got.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 176,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 176,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

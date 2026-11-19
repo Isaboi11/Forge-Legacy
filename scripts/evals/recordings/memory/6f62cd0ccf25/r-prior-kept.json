@@ -1,0 +1,26 @@
+{
+  "caseId": "r-prior-kept",
+  "promptHash": "6f62cd0ccf256d0a2d8d77d835953603b0e4ac247cfd1ab08635f6654d8960d0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:08:55.441Z",
+  "reply": {
+    "text": "The athlete trains at home with dumbbells up to 50 lb. Holt offered a 3-day full-body block. The athlete asked to move the Friday session to Saturday. Holt agreed, so the schedule now has the session on Saturday instead of Friday. Holt said the change will go on the card when the athlete confirms, and the athlete said \"Perfect.\"",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 495,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 118,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

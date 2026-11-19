@@ -1,0 +1,87 @@
+{
+  "caseId": "A0804",
+  "promptHash": "3d5b431ea5cba1032293f5143374cd92aa9a4b1531b5f679d0974eef8bd72e1c",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:47:25.850Z",
+  "reply": {
+    "text": "\"On and off for years\" has no clear level in it, so I'm leaving that field for the app to ask again. Got it, years of on-and-off training. I'm building your program now, and the app may ask a couple more things to get it right.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 281,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 281,
+          "output_tokens": 60,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 60,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 419,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 419,
+          "output_tokens": 39,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 39,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

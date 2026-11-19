@@ -1,0 +1,91 @@
+{
+  "caseId": "A0858",
+  "promptHash": "3d5b431ea5cba1032293f5143374cd92aa9a4b1531b5f679d0974eef8bd72e1c",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:47:43.329Z",
+  "reply": {
+    "text": "Machines for a couple of years is a solid base, so the free weights will come quicker than you'd expect. Got it: a couple of years on machines, new to free weights. I'm building your program from that, and the app will ask for anything else it needs.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "experienceLifting": "intermediate"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "experienceLifting": "intermediate"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 293,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 293,
+          "output_tokens": 89,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 89,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 460,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16805,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 460,
+          "output_tokens": 44,
+          "cache_read_input_tokens": 16805,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 44,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "f-burpees-rowing",
+  "promptHash": "6f62cd0ccf256d0a2d8d77d835953603b0e4ac247cfd1ab08635f6654d8960d0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:08:37.560Z",
+  "reply": {
+    "text": "{\"summary\":\"You asked for no burpees in your sessions, and that rowing is fine for conditioning. Holt noted both.\",\"facts\":[{\"kind\":\"avoid\",\"text\":\"Avoid burpees\"},{\"kind\":\"like\",\"text\":\"Likes rowing for conditioning\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 89,
+    "cache_creation_input_tokens": 1465,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 1465,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 95,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

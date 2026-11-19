@@ -11,6 +11,7 @@ import {
   type AskTurn,
 } from '@/domain/coach/ask-wire';
 import { HOLT_ACTION_CAPS } from '@/domain/coach/holt-actions';
+import { HOLT_MEMORY_CAPS, RECAP_WIRE_CHARS } from '@/domain/coach/holt-memory';
 import {
   ASK_FIRST_BYTE_MS,
   ASK_IDLE_MS,
@@ -116,6 +117,8 @@ export interface AskOptions {
   allowWeb?: boolean;
   /** The recipe book with the app's own numbers (`holtRecipeCardsLive`), for Holt's `get_recipes`. */
   recipes?: readonly RecipeCard[];
+  /** Sprint 4b §1.2: the rolling recap of this chat's turns older than `history` (`earlierFor`, chat-history.ts). */
+  earlier?: string;
 }
 
 const FUNCTION_URL = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/coach-ask`;
@@ -226,7 +229,10 @@ async function askOnce(
         /* AI Road to 10 Sprint 4a §1.1: this app draws Holt's action cards (HoltActionCard) and holds them until the
            turn ends cleanly, so it asks for the actions, the one-brain prompt and status detail. A phone without
            this line gets the v28 function, byte for byte. */
-        caps: [HOLT_ACTION_CAPS],
+        caps: [HOLT_ACTION_CAPS, HOLT_MEMORY_CAPS],
+        /* Sprint 4b §1.2: the recap of what fell out of the window — read by the function only with memory_v1, and
+           guarded there again. It rides in the messages, never the cached system block. */
+        ...(options.earlier ? { earlier: options.earlier.slice(0, RECAP_WIRE_CHARS) } : {}),
       }),
       signal: clock.signal,
     }));

@@ -1,0 +1,77 @@
+{
+  "caseId": "e-goal",
+  "promptHash": "0c5c7766f5670ccf28d6ae7422ba8e06bf2b3e6b6d1ff243ae551dec37def805",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:32:27.116Z",
+  "reply": {
+    "text": "Let me check your goals to confirm. No goal is saved in the app, but earlier in this chat you said 225 lb by March. With today being November 18, that gives you roughly four months. If you want it tracked, I can build a program around it with bench pinned.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_goals"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 380,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 380,
+          "output_tokens": 40,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 40,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 437,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16384,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 437,
+          "output_tokens": 69,
+          "cache_read_input_tokens": 16384,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 69,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

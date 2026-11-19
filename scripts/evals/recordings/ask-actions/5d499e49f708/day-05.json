@@ -1,0 +1,128 @@
+{
+  "caseId": "day-05",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:05:15.713Z",
+  "reply": {
+    "text": "Let me look at what's planned for tomorrow's session first. I'm not finding a program set up with tomorrow's session in it, so I'll build you a fresh one that keeps the shoulders out of it. I set up a session that avoids shoulder work. The card is there for you to check and confirm, and it may ask you a couple of quick questions first.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_program_status",
+      "propose_day"
+    ],
+    "actions": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "full body",
+          "limitations": [
+            "shoulders"
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_day",
+        "input": {
+          "dayFocus": "full body",
+          "limitations": [
+            "shoulders"
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 48,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 48,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 269,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 269,
+          "output_tokens": 128,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 128,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 475,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 475,
+          "output_tokens": 46,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 46,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

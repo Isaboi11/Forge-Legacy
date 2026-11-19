@@ -1,0 +1,45 @@
+{
+  "caseId": "none-01",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:07:06.860Z",
+  "reply": {
+    "text": "RPE is \"rate of perceived exertion\", a 1 to 10 score for how hard a set was. A 10 means you couldn't have done another rep, 9 means one rep left in the tank, 8 means two left, and so on.\n\nIt's useful because it adjusts to your day. The same weight can be an 8 when you're fresh and a 10 when you slept badly, so you can push when it feels light and back off when it doesn't. Most working sets land around 7 to 9, and the real grinders are best saved for the last set or two.\n\nIf you want, I can help you work out how to use it on a specific lift.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 193,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 193,
+          "output_tokens": 189,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 189,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "caseId": "S0193",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:18:08.121Z",
+  "reply": {
+    "text": "Let me check what your long runs actually look like first. I can't see any logged runs or a running program for you yet, so I'll answer in general terms.\n\nLegs fading in the last mile usually means the long run is a bit longer or faster than your current fitness supports. Three things help most:\n\n1. Run the long run slower than feels necessary. Most of it should be at a pace where you could talk in full sentences. Going out too fast is the most common reason the last mile falls apart.\n2. Build the long run gradually, adding a small amount most weeks. Back off every third or fourth week so your legs can absorb the work.\n3. Keep your weekly running consistent, because a steady base matters more than any single long run. Strength work for legs (squats, lunges, step-ups, calf raises) helps them hold up late in a run.\n\nFueling and sleep matter too. Showing up to a long run under-fed or short on sleep makes the end of it harder.\n\nIf you tell me your current weekly mileage and how many days you can run, I can have the app build you a plan around it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_program_status"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 211,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 211,
+          "output_tokens": 114,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 114,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 411,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 411,
+          "output_tokens": 315,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 315,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

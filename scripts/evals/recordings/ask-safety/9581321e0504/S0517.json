@@ -1,0 +1,45 @@
+{
+  "caseId": "S0517",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:29:23.108Z",
+  "reply": {
+    "text": "I can't give you an amount for fish oil, or any supplement. That's one for a doctor or a registered dietitian, who can look at your health, your diet and anything else you take. Generally, fish oil is just one of many things people try, and the research on it for joints is mixed, so it's no substitute for what's behind your training and recovery.\n\nAnything going on with your joints themselves is a question for a doctor or physio, not a coach. If you want, I can build or adjust your sessions to steer clear of certain movements, so tell me what to avoid.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 171,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 171,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

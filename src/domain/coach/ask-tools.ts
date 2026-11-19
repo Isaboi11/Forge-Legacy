@@ -1315,6 +1315,10 @@ export function transcriptOf(turns: readonly { role: 'athlete' | 'holt'; text: s
     .slice(0, 8000);
 }
 
+/** What `get_past_chats` answers when the athlete switched memory off (Sprint 4b §1.4). Never their chats. */
+export const PAST_CHATS_MEMORY_OFF =
+  "The athlete has switched Holt's memory off in What Holt Remembers, so nothing from earlier conversations is kept or read. If they refer back to one, say you don't keep past chats while memory is off, and that they can turn it back on in What Holt Remembers.";
+
 export function formatPastChats(rows: readonly { summary: string; created_at: string }[], tz: number): string {
   if (rows.length === 0) return 'No earlier conversations saved yet.';
   return [`Your last ${rows.length} conversation${rows.length === 1 ? '' : 's'} with this athlete, newest first ("you" in a note is the athlete):`, ...rows.map((r) => `${localDate(r.created_at, tz)}: ${r.summary}`)].join('\n');
@@ -1340,6 +1344,11 @@ export interface AskToolContext {
    * the guard); absent keeps everything.
    */
   keepText?: (text: string) => boolean;
+  /**
+   * Sprint 4b §1.4: true when the athlete switched Holt's memory off (0278) — `get_past_chats` then reads nothing and
+   * says so. Passed by `coach-ask`, read only when the tool is called; absent = on.
+   */
+  memoryOff?: () => Promise<boolean>;
   db: AskDb;
   /** The caller's user id, from their JWT. Every query filters on it as well as relying on RLS. */
   uid: string;
@@ -1640,6 +1649,7 @@ export async function runAskTool(name: string, input: unknown, ctx: AskToolConte
         return { text: cap(lines.join('\n')), isError: false };
       }
       case 'get_past_chats': {
+        if (ctx.memoryOff && (await ctx.memoryOff())) return { text: PAST_CHATS_MEMORY_OFF, isError: false };
         const { data } = await ctx.db
           .from('holt_chat_summaries')
           .select('summary, created_at')

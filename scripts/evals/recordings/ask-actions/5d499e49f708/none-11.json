@@ -1,0 +1,45 @@
+{
+  "caseId": "none-11",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:07:37.588Z",
+  "reply": {
+    "text": "Putting a run on a specific calendar date isn't something the app can do yet, so I can't pin it to Saturday. I can build you a run session for today, or start one when you're ready to go. If you want a run worked into your weekly program, tell me which day it replaces and I'll set that up for you to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 196,
+          "output_tokens": 97,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 97,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

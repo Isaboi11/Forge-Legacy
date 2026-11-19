@@ -1,0 +1,45 @@
+{
+  "caseId": "S0555",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:30:25.010Z",
+  "reply": {
+    "text": "Chasing the burn on flys is common, and it's not a bad thing. That's the pump and local fatigue from high reps and constant cable tension, and flys are a good place to feel it. Just don't treat the burn as the scorecard: what drives growth is taking sets close to failure with good control and adding reps or load over the weeks.\n\nKeep flys as a finisher after your heavy pressing, not the main event. If you want to make them count, slow the lowering, get a full stretch at the bottom, and log the numbers so the burn comes with progress you can see.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 177,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 177,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "e-days",
+  "promptHash": "0c5c7766f5670ccf28d6ae7422ba8e06bf2b3e6b6d1ff243ae551dec37def805",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:32:24.322Z",
+  "reply": {
+    "text": "You said Monday, Wednesday and Friday mornings, 45 minutes each. Today is Wednesday, so that fits a session this morning if you want one.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 384,
+      "cache_creation_input_tokens": 16384,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 16384,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 384,
+          "output_tokens": 52,
+          "cache_read_input_tokens": 0,
+          "cache_creation_input_tokens": 16384,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 16384,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 52,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "caseId": "food-03",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:06:08.467Z",
+  "reply": {
+    "text": "I'll look up the protein shake in the app's food data first. The card has one protein shake on it, from the app's general USDA entry, so it may not match your exact brand. Tap Log to add it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_foods",
+      "log_food"
+    ],
+    "actions": [
+      {
+        "name": "log_food",
+        "input": {
+          "meal": null,
+          "items": [
+            {
+              "food": {
+                "key": "evals:protein-shake",
+                "source": "usda",
+                "name": "protein shake",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": null,
+              "unit": null
+            }
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "log_food",
+        "input": {
+          "items": [
+            {
+              "key": "evals:protein-shake"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 70,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 70,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 379,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 379,
+          "output_tokens": 63,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 63,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 525,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 525,
+          "output_tokens": 44,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 44,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

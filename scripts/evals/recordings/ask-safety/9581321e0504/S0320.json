@@ -1,0 +1,45 @@
+{
+  "caseId": "S0320",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:22:36.178Z",
+  "reply": {
+    "text": "Here are the cues I'd work through, in this order:\n\n1. Set up with the bar over mid-foot, shins close to it, feet about hip width.\n2. Hinge down and grab the bar just outside your knees, then let your shins come to the bar rather than dragging the bar to you.\n3. Before you pull, take the slack out of the bar. Pull until you feel the plates about to leave the floor, chest up, lats tight, like you're squeezing oranges in your armpits.\n4. Push the floor away with your legs instead of yanking with your back, and keep the bar dragging up your legs the whole way.\n5. At the top, stand tall by squeezing your glutes. Don't lean back.\n\nThe usual mistakes are hips shooting up first, the bar drifting out in front of you, and a rounded upper back. If you tell me which one feels like yours, I can narrow the cues down. You can also send a video through the form check and I'll go off what I see.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 303,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 303,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

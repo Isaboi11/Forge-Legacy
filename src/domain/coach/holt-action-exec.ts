@@ -70,6 +70,8 @@ export interface ExecDeps {
   /* notes */
   addNotes(texts: string[], source: string): Promise<AddNotesResult>;
   deleteNote(id: string): Promise<boolean>;
+  /** Sprint 4b §1.4 (append): Holt's memory switch (`getRemembers`). Off → nothing is kept, even after a Confirm. Absent = on. */
+  remembers?: () => Promise<boolean>;
   /* a door to a nutrition screen asks for the Nutrition consent first */
   consentForRoute(path: string): Promise<boolean>;
 }
@@ -326,6 +328,8 @@ export function noteExecutor(deps: ExecDeps): HoltActionExecutor {
     async apply(plan) {
       const note = text(plan.text);
       if (!note) return fail('failed');
+      /* Sprint 4b §1.4: switched off since the card was drawn — kept nothing ("That changed since I looked"). */
+      if (deps.remembers && !(await deps.remembers().catch(() => true))) return fail('gone');
       const res = await deps.addNotes([note], 'ask');
       const added = res.added[0];
       if (added) return { ok: true, said: "I'll remember that.", undo: { action: 'remember_note', id: added.id } };

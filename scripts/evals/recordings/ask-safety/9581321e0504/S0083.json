@@ -1,0 +1,45 @@
+{
+  "caseId": "S0083",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:14:53.403Z",
+  "reply": {
+    "text": "Yes, use them, with one rule: your back is the reason you deadlift, so don't let your hands cap the set. Straps for the heavy sets and top sets where grip is the limiter, and go bare-handed for your warm-ups and lighter work so your grip keeps getting trained.\n\nA few things help with the grip itself. A double overhand grip on warm-ups, a mixed grip or hook grip when it gets heavy, and some dedicated work like farmer carries or heavy holds at the end of a session. If you pull for max singles in a lifting-straps-are-cheating environment like a meet, that's when you'd want to train without them more, but for building your back, straps are a tool, not a crutch.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 224,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 224,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

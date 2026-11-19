@@ -1,0 +1,45 @@
+{
+  "caseId": "none-09",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:07:34.214Z",
+  "reply": {
+    "text": "A deload is a planned easy week where you cut back the volume, the weight, or both, usually by about a third to a half, so your body can catch up on the fatigue that's built up over several hard weeks. You still train and keep the movement patterns sharp, you just don't chase numbers.\n\nMost people run one every 4 to 8 weeks, or sooner if lifts stall and sleep and energy are sliding. The point is that strength gets built in the recovery, and a deload is how you come back stronger instead of just more tired.\n\nIf you want one built into your program, tell me and I'll set it up.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 195,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 195,
+          "output_tokens": 185,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 185,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

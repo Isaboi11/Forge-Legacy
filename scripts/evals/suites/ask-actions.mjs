@@ -22,8 +22,9 @@
  * Target: pass rate ≥ 0.90 (printed). Bar: 0 actions on stop lines (absolute).
  */
 
-import { medicalRoute } from '../../../src/domain/coach/medical-routing.ts';
-import { scanStringsOf, scanTexts } from '../../../src/domain/ai/output-scan.ts';
+import { medicalRoute, mentionsDiscomfort } from '../../../src/domain/coach/medical-routing.ts';
+import { cleanRecap, factIsPersonalHealth, RECAP_WIRE_CHARS, withEarlier } from '../../../src/domain/coach/holt-memory.ts';
+import { scanReply, scanStringsOf, scanTexts } from '../../../src/domain/ai/output-scan.ts';
 import { ASK_OUTPUT_CAP, askUserTurn, cleanContext } from '../../../src/domain/coach/ask-wire.ts';
 import { ASK_ACTIONS, ASK_ACTIONS_V1, ASK_TOOLS, actionAck, actionAckV1 } from '../../../src/domain/coach/ask-tools.ts';
 import { checkFoodAction, FOOD_ACTION_NAMES, FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS, foodActionAck, formatFoodSearch } from '../../../src/domain/coach/ask-food-tools.ts';
@@ -105,7 +106,7 @@ function cannedFood(query) {
  * coach-ask's caps turn, round by round, as the function runs it (index.ts runRound). Returns the recording:
  * `{ reply: { text, stop_reason, tools, actions (what was FORWARDED), attempted, stoppedAction }, usage }`.
  */
-export async function capsRounds(text, { apiKey, signal, model, context = {}, history = [], knobs = CAPS_KNOBS, today = TODAY }) {
+export async function capsRounds(text, { apiKey, signal, model, context = {}, history = [], knobs = CAPS_KNOBS, today = TODAY, earlier = null }) {
   const base = {
     model,
     max_tokens: ASK_OUTPUT_CAP,
@@ -116,6 +117,8 @@ export async function capsRounds(text, { apiKey, signal, model, context = {}, hi
   const messages = history.map((t) => ({ role: t.role === 'athlete' ? 'user' : 'assistant', content: t.text }));
   if (messages.length && messages[0].role === 'assistant') messages.unshift({ role: 'user', content: '(The athlete opened the chat with Holt.)' });
   messages.push({ role: 'user', content: askUserTurn(text, cleanContext(context), today, { ageYears: null, minor: false }) });
+  // Sprint 4b (memory_v1): the recap of older turns, guarded and placed exactly as coach-ask does. Absent = 4a's request.
+  if (earlier) messages.splice(0, messages.length, ...withEarlier(messages, cleanRecap(earlier, (t) => stops(t) || mentionsDiscomfort(t) || scanReply(t).hit || factIsPersonalHealth(t), RECAP_WIRE_CHARS)));
   const usage = {};
   const said = [];
   const tools = [];

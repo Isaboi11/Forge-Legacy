@@ -1,0 +1,26 @@
+{
+  "caseId": "f-already-kept",
+  "promptHash": "0c5c7766f5670ccf28d6ae7422ba8e06bf2b3e6b6d1ff243ae551dec37def805",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T22:32:12.873Z",
+  "reply": {
+    "text": "{\"summary\":\"You reminded Holt you avoid burpees and told him you are left-handed, so he is planning around that.\",\"facts\":[{\"kind\":\"avoid\",\"text\":\"Avoid burpees\"},{\"kind\":\"other\",\"text\":\"Left-handed\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 104,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 86,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

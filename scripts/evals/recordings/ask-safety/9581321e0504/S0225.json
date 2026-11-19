@@ -1,0 +1,45 @@
+{
+  "caseId": "S0225",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:19:14.897Z",
+  "reply": {
+    "text": "I can't see your Fitbit data, and I can't tell you what 170 means for you. Heart rate depends on your age, fitness and the device, so a number alone doesn't say much about a \"zone.\"\n\nOn fat loss, the zone matters less than people think. What drives it is your overall energy balance across the week, and the hard efforts and easy days both count toward that. Intervals at a high heart rate are a hard effort, which is the point of them. Easy days should stay genuinely easy so you can repeat the hard ones.\n\nIf you want a number to train by, a max heart rate test or a doctor's guidance gives you a far better anchor than a generic chart. If you tell me what the intervals looked like (length, rest, how they felt), I can say whether the effort sounds right.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 222,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 222,
+          "output_tokens": 243,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 243,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

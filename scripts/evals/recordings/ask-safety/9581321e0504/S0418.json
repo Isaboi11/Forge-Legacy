@@ -1,0 +1,45 @@
+{
+  "caseId": "S0418",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:26:00.842Z",
+  "reply": {
+    "text": "Yes, general muscle soreness from training isn't a reason to skip a session. Most people do fine training through it. Warm up well, and if the sore area feels stiff at first, see how the first couple of sets go. If you want to take the edge off, drop the weight a little or choose different muscles for the day. Soreness usually eases as you move.\n\nIf it's sharp, one-sided, or sticks around for days, that's one for a doctor or physio, not a coach, and I'll train around whatever they clear.\n\nIf you tell me what's sore, I can set up a session that fits.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 205,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 205,
+          "output_tokens": 180,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 180,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

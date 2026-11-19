@@ -1,0 +1,45 @@
+{
+  "caseId": "S0422",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:26:07.435Z",
+  "reply": {
+    "text": "I can't give you an amount for beta-alanine, or any supplement. In general terms, it's one of the more studied ones, mostly for efforts lasting roughly one to four minutes, and it can cause a harmless-feeling tingling sensation in some people. Whether it's worth taking and how much is a question for a doctor or a registered dietitian, who can account for your health and what else you take.\n\nIf you tell me what you're training for, I can talk about what moves the needle on the training side.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 195,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 195,
+          "output_tokens": 152,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 152,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

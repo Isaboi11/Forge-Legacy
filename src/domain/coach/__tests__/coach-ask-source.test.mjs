@@ -46,10 +46,11 @@ test('history is never sent beyond 8 turns — trimmed on the server, from the w
   // (P-G8) — then cut to the window.
   assert.match(SRC, /const stops = \(t: string\) => guardRoute\(t, minor\) !== null;/);
   assert.match(SRC, /const history = withoutStoppedTurns\(trimHistory\(body\.history, ASK_HISTORY_MAX \* 4\), stops\)\.slice\(-ASK_HISTORY_MAX\);/);
-  // The raw body history is only ever read through a trim: the ask's (8 turns) and the end-of-chat
-  // summary's (0218) — never handed to the model as the client sent it.
-  assert.equal(SRC.match(/body\.history/g).length, 2);
+  // The raw body history is only ever read through a trim: the ask's (8 turns), the end-of-chat summary's (0218) and
+  // the rolling recap's (Sprint 4b §1.2) — never handed to the model as the client sent it.
+  assert.equal(SRC.match(/body\.history/g).length, 3);
   assert.match(SRC, /const turns = withoutStoppedTurns\(trimHistory\(body\.history, SUMMARY_TURNS \* 4\)\)\.slice\(-SUMMARY_TURNS\);/);
+  assert.match(SRC, /const adult = withoutStoppedTurns\(trimHistory\(body\.history, SUMMARY_TURNS \* 4\)\)\.slice\(-SUMMARY_TURNS\);/);
   // …and the app trims too, before sending.
   assert.match(LIVE, /history: trimHistory\(history, ASK_HISTORY_MAX\)/);
 });

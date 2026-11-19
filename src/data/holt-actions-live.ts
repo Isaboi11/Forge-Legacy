@@ -30,6 +30,7 @@ import { fetchPlannedWorkout } from '@/data/planned-workout-live';
 import { fetchBodyEntries, latestBodyReading } from '@/data/body-metrics-live';
 import { fetchNutritionProfile, fetchRangeTotals, fetchTargetHistory, saveTargets } from '@/data/nutrition-live';
 import { addNotes, deleteNote } from '@/data/holt-notes-live';
+import { getRemembers } from '@/data/holt-memory-live';
 import { HOLT_MEAL_EXECUTORS } from '@/data/holt-meal-live';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { slotStates } from '@/domain/program/progress-core';
@@ -134,6 +135,7 @@ const DEPS: ExecDeps = {
   saveTargets: (t, weightLb) => saveTargets(t, 'recommended', weightLb),
   restoreTargetRow,
   addNotes: (texts, source) => addNotes(texts, source),
+  remembers: getRemembers,
   deleteNote,
   consentForRoute,
 };
@@ -277,6 +279,8 @@ export async function liveCardContext(opts: { units: 'imperial' | 'metric'; nutr
     loadStartChoices,
     loadTargetFacts: () => loadTargetFacts(today),
     canSchedule: false,
+    /* Sprint 4b §1.4: memory off → the note card says so and has no Confirm. */
+    loadRemembers: getRemembers,
   };
 }
 

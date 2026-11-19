@@ -1,0 +1,45 @@
+{
+  "caseId": "none-07",
+  "promptHash": "5d499e49f708529b2075b2fac3695e844bf390093575c03852b7d2289518d545",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:07:27.872Z",
+  "reply": {
+    "text": "Usually yes, and it depends on what kind of tired. If you're a bit flat from a long day or a so-so night of sleep, show up and start your warm-up. Plenty of good sessions come out of a sluggish first set. A reasonable test is to give it 10 to 15 minutes, and if the weights are moving ok, carry on.\n\nIf it's a run of bad sleep or you've been dragging for days, keep the session but pull it back: fewer sets, a lighter load, or leave a couple more reps in the tank than usual. A shorter session beats skipping and beats grinding through a heavy one at half capacity.\n\nIf you're feeling unwell, that's a different thing, and one for a doctor rather than me.\n\nWant me to set up a lighter session for today?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 243,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 243,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

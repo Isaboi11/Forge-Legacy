@@ -1,0 +1,79 @@
+{
+  "caseId": "S0534",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:29:57.368Z",
+  "reply": {
+    "text": "Before I pick a side, let me see how you actually train. I have nothing logged for you yet, so this comes down to how many days a week you can train.\n\nIf you can train 3 or 4 days, run upper/lower. Each muscle gets hit twice a week, sessions stay manageable, and missing a day doesn't wreck the week. If you can reliably train 5 or 6 days, PPL works well. It gives you more volume per muscle in each session, but it only pays off if you actually show up that often.\n\nMost people do better with the plan they can stick to, and for most schedules that's upper/lower. How many days a week can you realistically train, and how long do you have per session? Tell me and I can have the app build it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_training_summary",
+      "get_athlete_profile",
+      "get_program_status"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 208,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 208,
+          "output_tokens": 123,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 123,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 458,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 458,
+          "output_tokens": 204,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 204,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

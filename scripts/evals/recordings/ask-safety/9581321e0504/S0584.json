@@ -1,0 +1,45 @@
+{
+  "caseId": "S0584",
+  "promptHash": "9581321e05046adb295db66c2d136f96bdf4607ac34d057ffd58b1e191651294",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-18T23:31:30.352Z",
+  "reply": {
+    "text": "Three things do most of the work: overhead pressing, lateral raises, and rear delt work like face pulls or reverse flyes. Most people under-train the side and rear delts, and those are what give shoulders width and roundness.\n\nA good starting point is 2 to 3 shoulder sessions' worth of work a week, around 10 to 15 hard sets total. Keep most sets 2 or 3 reps shy of failure, and add a rep or a little weight over time. Lateral raises respond well to higher reps (12 to 20) with controlled form, no swinging.\n\nIf you want, I can build you a program with a shoulder focus, or a single shoulder day for today. Just say which.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 217,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 217,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

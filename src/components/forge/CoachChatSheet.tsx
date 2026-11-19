@@ -49,10 +49,12 @@ import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { fetchCoachAiBalance, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { HoltActionCard } from '@/components/forge/HoltActionCard';
 import { HoltStatusLine, holtStatusText } from '@/components/forge/HoltStatusLine';
+import { useChatRecap } from '@/components/forge/useChatRecap';
+import { HoltKeptLine } from '@/components/forge/HoltKeptLine';
 import { holdTurnActions, type ShownCard, type TurnEnd } from '@/domain/coach/holt-action-cards';
 import { confirmHoltAction, dismissHoltAction, liveCardContext, undoHoltAction } from '@/data/holt-actions-live';
 import { cardsMayShow, type UndoToken } from '@/domain/coach/holt-actions';
-import { fetchNotes } from '@/data/holt-notes-live';
+import { fetchBriefNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
@@ -521,6 +523,8 @@ export function CoachChatSheet({
   /* Met from the kitchen, he introduces himself as the cook (`KITCHEN_INTRO`, same number of beats). */
   const intro = kitchen ? KITCHEN_INTRO : INTRO;
   const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: intro[0] }]));
+  /* Sprint 4b (lane A): the rolling recap of this chat + "Holt kept N things" — useChatRecap.ts. */
+  const chatRecap = useChatRecap(thread, { enabled: premiumAi });
   const [introStep, setIntroStep] = useState(1);
   const [draft, setDraft] = useState('');
   /* Focused by the NEW CHAT menu's "Training question" (holt-22) — read only in handlers, never in render. */
@@ -810,8 +814,8 @@ export function CoachChatSheet({
    */
   useEffect(() => {
     /* With where it had got to, so a refresh restores the build as well as the words (QA holt-08). */
-    void saveThread(thread, { mode, constraints });
-  }, [thread, mode, constraints]);
+    void saveThread(thread, { mode, constraints, ...(chatRecap.recap ? { recap: chatRecap.recap } : {}) });
+  }, [thread, mode, constraints, chatRecap.recap]);
   /* Sprint 4b §1.5 — past chats: the row in `holt_chats` follows this thread (usePastChatSync.ts). */
   usePastChatSync(thread, premiumAi);
 
@@ -2943,6 +2947,7 @@ export function CoachChatSheet({
         allowWeb: opts.allowWeb,
         recipes,
         signal: ctl.signal,
+        earlier: chatRecap.earlier,
         /* The waiting bubble says what he is looking up — until his first word, never after. */
         onStatus: (line, detail) => {
           /* A detail line repeats the table line it details — counted once, as a lookup. */
@@ -3128,7 +3133,7 @@ export function CoachChatSheet({
   const notesRef = useRef<string[] | null>(null);
   const loadNotes = async (): Promise<string[]> => {
     if (notesRef.current) return notesRef.current;
-    const rows = await fetchNotes().catch(() => []);
+    const rows = await fetchBriefNotes().catch(() => []);
     notesRef.current = rows.map((n) => n.text);
     heardNotes.current = notesRef.current;
     return notesRef.current;
@@ -3888,6 +3893,7 @@ export function CoachChatSheet({
           onScroll={FOLLOWS_KEYBOARD_PER_FRAME ? anchorScroll : undefined}
           scrollEventThrottle={16}
         >
+          {chatRecap.kept ? <HoltKeptLine count={chatRecap.kept} onDismiss={chatRecap.dismissKept} onSee={() => { chatRecap.dismissKept(); handOff(); router.push('/holt-memory'); }} /> : null}
           {blocks.map((b, bi) => {
             /*
              * ══ COACH HOME, DRAWN IN PLACE OF THE OPENER CHIPS ══

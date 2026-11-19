@@ -1,0 +1,139 @@
+{
+  "caseId": "A0494",
+  "promptHash": "695a26ef67a55673630b8aec724769351619492a63c6e959ed9de4be067e0ae0",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T02:50:31.707Z",
+  "reply": {
+    "text": "Weekends is 2 days, so that's 5 days a week: 3 lifting, 2 running. I'll lay it out as lift, lift, lift on weekdays and run on the weekend. Got it: three lifting days with runs on Saturday and Sunday. I'm building that now, so check the card and confirm when it's up.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 5,
+          "days": [
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "run"
+            },
+            {
+              "kind": "run"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 5,
+          "days": [
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "run"
+            },
+            {
+              "kind": "run"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 340,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 340,
+          "output_tokens": 233,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 233,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 657,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16979,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 657,
+          "output_tokens": 45,
+          "cache_read_input_tokens": 16979,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 45,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}
