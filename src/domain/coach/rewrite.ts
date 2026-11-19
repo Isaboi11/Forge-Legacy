@@ -10,9 +10,9 @@
 import type { ProgramDay, ProgramStructure } from '@/data/programs-live';
 import { plannedDays, trainingDays, type SessionMark } from '../program/progress-core.ts';
 import { AUTHOR_CATALOGUE } from './author-catalogue.ts';
-import { rewriteSystem, type ParsedRewrite, type RewriteAthlete } from './rewrite-wire.ts';
+import { rewriteSystem, type ParsedRewrite } from './rewrite-wire.ts';
 import { canEdit } from './edit-ops.ts';
-import type { Rewrite, RewriteRow } from './engine/checker.ts';
+import type { Rewrite } from './engine/checker.ts';
 
 export {
   narrowRewriteRequest,
