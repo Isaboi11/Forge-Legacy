@@ -167,6 +167,7 @@ async function converse(c) {
   /* The phone remembers where they train (lib/coach-memory) and their level (onboarding) — so does the test. */
   const refs = { ...freshRefs(), lane: 'ai', constraints: { ...w.constraints }, room: w.constraints.environment ?? null };
   const history = [];
+  let inflight = 0;
   const edit = {
     premiumAi: true,
     entitlementStatus: 'ready',
@@ -187,12 +188,17 @@ async function converse(c) {
     guard: () => true, blockDoorRefuses: () => false, keepRoom: (env) => void (refs.room = env),
     creditsLine: async () => 'Out of credits.', loadNotes: async () => [], history: () => history.slice(-8),
     askAloud: async (text, _h, q) => {
+      inflight += 1;
+      try {
       const r = await chat(text, history.slice(-8), world, refs.mode ? `Building ${refs.mode === 'day' ? 'ONE session' : 'a full program'}.${q ? ` Holt just asked: "${q.ask}"` : ''}` : null);
       for (const s of r.said) sink.say({ kind: 'holt', text: s });
       await actOn(refs, port, sink, { turn: hooks, knownNotes: () => [], cardContext: async () => ({}), showCard: () => undefined, canDo: canDoExercise }, r.actions, text, { done: true, stop: null }, true, q, refs.mode ?? 'program');
       history.push({ role: 'athlete', text }, { role: 'holt', text: r.said.join(' ') });
       c.trace.push(`  tools: ${r.actions.map((a) => a.name).join(', ') || 'none'}`);
       c.tools.push(...r.actions.map((a) => a.name));
+      } finally {
+        inflight -= 1;
+      }
     },
     runKitchen: async () => undefined,
     stops: { crisis: (t) => sink.say({ kind: 'stop', text: t }), urgent: (t) => sink.say({ kind: 'stop', text: t }), care: (t) => sink.say({ kind: 'stop', text: t }), medical: (t) => sink.say({ kind: 'stop', text: t }) },
@@ -232,7 +238,16 @@ async function converse(c) {
     } catch (e) {
       c.trace.push(`  (turn threw: ${e?.message})`);
     }
-    for (let i = 0; i < 600 && (sink.busyLog.at(-1) !== null || sink.turns.length === from); i += 1) await new Promise((r) => setTimeout(r, 100));
+    /* Run 3: the tester moved on while a rewrite was still running. Done = no ask in flight, not busy, and still so a
+       moment later (a build starts after his words), up to 3 minutes. */
+    const idle = () => inflight === 0 && sink.busyLog.at(-1) == null && sink.turns.length > from;
+    for (let i = 0; i < 1800; i += 1) {
+      await new Promise((r) => setTimeout(r, 100));
+      if (idle()) {
+        await new Promise((r) => setTimeout(r, 1500));
+        if (idle()) break;
+      }
+    }
     await new Promise((r) => setTimeout(r, 300));
     for (const t of sink.turns.slice(from)) c.trace.push(t.kind === 'chips' ? `  [${t.chips.map((x) => x.label).join(' | ')}]` : `  ${t.kind.toUpperCase()}: ${t.text ?? ''}`);
     const chips = [...sink.turns].slice(from).reverse().find((t) => t.kind === 'chips');
@@ -251,7 +266,7 @@ const ALLOWED = new Set(['Do it', 'Leave it', 'Undo', 'Show me the program', 'Ju
 /** The AI-lane bar (PO D10), on every conversation: no button flows. */
 const noButtonFlows = (r) => chipLabels(r.sink).every((l) => ALLOWED.has(l)) || `buttons shown: ${chipLabels(r.sink).filter((l) => !ALLOWED.has(l)).join(', ')}`;
 const FAMILY = arg('--family');
-const CONVOS = CASES.filter((x) => (!ONLY || x.id === ONLY) && (!FAMILY || x.family === FAMILY) && (!process.argv.includes('--po') || x.tags.includes('po')));
+const CONVOS = CASES.filter((x) => (!ONLY || ONLY.split(',').includes(x.id)) && (!FAMILY || x.family === FAMILY) && (!process.argv.includes('--po') || x.tags.includes('po')));
 
 const out = [];
 for (const c of CONVOS) {

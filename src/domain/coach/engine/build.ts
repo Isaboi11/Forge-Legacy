@@ -581,7 +581,11 @@ export async function advance(
       ...(raceLine ? [{ kind: 'holt' as const, text: raceLine }] : []),
       ...(load ? [{ kind: 'holt' as const, text: load }] : []),
       ...(concern ? [{ kind: 'holt' as const, text: concern.message }] : []),
-      ...(concern && alt && alt !== c.goal
+      /* AI lane (S7): the suggestion is said — "say the word and I'll build the half instead" — not a button. */
+      ...(concern && alt && alt !== c.goal && hooks.lane === 'ai'
+        ? [{ kind: 'holt' as const, text: `Say the word and I'll build the ${RACE_SPEC[alt].label} instead.` }]
+        : []),
+      ...(concern && alt && alt !== c.goal && hooks.lane !== 'ai'
         ? [{ kind: 'chips' as const, chips: [{ label: `Build the ${RACE_SPEC[alt].label} instead`, patch: { goal: alt } }] }]
         : []),
       /* Authored only when Holt wrote its lifting days (the race path above); a rulebook build carries no vote. */
