@@ -30,7 +30,7 @@ import type { CatalogExercise } from '../candidates.ts';
 import type { EditChangeId } from '../edit-chat.ts';
 import type { EditIntent, EditIntentResolution } from '../edit-intent.ts';
 import type { AskShown } from '../listens.ts';
-import type { Turn } from '../chat-core.ts';
+import type { ChatMode, ChatState, Turn } from '../chat-core.ts';
 import type { Chooser } from '../rulebook/voice.ts';
 
 /** Which conversation the athlete is in. Not `ChatMode` — that already means program / day / pick. */
@@ -78,6 +78,12 @@ export interface EngineRefs {
   /** Their own words for the request in flight (Coach-AI-Amendment-003). Empty = a tapped build. */
   typed: string[];
 
+  /* ── the build in flight (S4) ── the sheet keeps React copies for its save effect; every write goes through its
+     setters, which update both, so the engine always reads the newest value (never a stale closure). */
+  mode: ChatMode | null;
+  constraints: ChatState;
+  built: Built | null;
+
   /* ── changing a program already running (S2, `engine/edit.ts`) ── */
   /**
    * The tapped edit in progress, loaded fresh each time the flow starts. Deliberately not persisted: an edit against
@@ -110,9 +116,24 @@ export interface EditState {
   value?: { sets?: number; targetMi?: number; targetSec?: number; replacementKey?: string; replacementName?: string };
 }
 
+/**
+ * What Holt just built — the object, not a label for it.
+ *
+ * A week and a block come out of `assemble()` as the same shape and are two different things to save,
+ * so the distinction is made once, where the engine's own `structure.weeks` can be read, rather than
+ * re-derived at each button.
+ */
+export type Built =
+  | { kind: 'program'; structure: ProgramStructure }
+  | { kind: 'week'; structure: ProgramStructure }
+  | { kind: 'day'; day: ProgramDay };
+
 export const freshRefs = (): EngineRefs => ({
   askedAboutReplacing: false,
   typed: [],
+  mode: null,
+  constraints: {},
+  built: null,
   edit: null,
   pendingEdit: null,
   lastEdit: null,

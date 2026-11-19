@@ -1,6 +1,6 @@
 import { KEYBOARD_DISMISS_MODE } from '@/lib/keyboard-dismiss';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type SetStateAction } from 'react';
 /*
  * ⚠ NOT `useAnimatedValue` — IT DOES NOT EXIST ON WEB, AND IT TAKES THE WHOLE PAGE DOWN.
  *
@@ -34,7 +34,7 @@ import { HoltWords } from '@/components/forge/HoltWords';
 import { holtPlainText } from '@/domain/coach/holt-markdown';
 import { livePort } from '@/data/engine-port-live';
 import { ACTIVE_LOOKUP_TIMEOUT_MS, guardActiveProgram as engineGuard, offerProgramSession as engineOffer } from '@/domain/coach/engine/guards';
-import { freshRefs, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
+import { freshRefs, type Built, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
 import {
   beginEdit as engineBeginEdit,
   clearEdit,
@@ -286,18 +286,6 @@ import { KEEP_KEYBOARD } from '@/components/KeyboardTapAway';
  */
 /** PROMPT §2.4 — the sheet's top inset. The thread's bottom reserve is a share of `window - SHEET_TOP`. */
 const SHEET_TOP = 64;
-
-/**
- * What Holt just built — the object, not a label for it.
- *
- * A week and a block come out of `assemble()` as the same shape and are two different things to save,
- * so the distinction is made once, where the engine's own `structure.weeks` can be read, rather than
- * re-derived at each button.
- */
-type Built =
-  | { kind: 'program'; structure: ProgramStructure }
-  | { kind: 'week'; structure: ProgramStructure }
-  | { kind: 'day'; day: ProgramDay };
 
 /**
  * The label on the chip that declines the import, used by the offer and by the handler that answers it.
@@ -555,9 +543,14 @@ export function CoachChatSheet({
   /* ⚠ `reading` IS NOT A SYNONYM FOR `building`. He is not building anything when he reads the shelf —
      saying BUILDING over a catalogue lookup would be the status strip claiming authorship of somebody
      else's program, which is the same lie the card's kicker exists to prevent. */
+  /* Holt Listens HL-10 (S1): `typed` and `askedAboutReplacing` live in the engine's refs now (`engine/types.ts`), so the
+     moved guards and these handlers read the same memory. One instance for the life of the sheet, as the refs were. */
+  const engine = useRef<EngineRefs>(freshRefs());
+  /* The engine's world on this phone (`data/engine-port-live.ts`). Made once; tests use `engine/testing.ts`. */
+  const [port] = useState(livePort);
   const [busy, setBusy] = useState<'thinking' | 'building' | 'reading' | null>(null);
-  const [mode, setMode] = useState<ChatMode | null>(null);
-  const [constraints, setConstraints] = useState<ChatState>({});
+  const [mode, setModeState] = useState<ChatMode | null>(null);
+  const [constraints, setConstraintsState] = useState<ChatState>({});
   /**
    * What Holt just built, and enough of it to act on.
    *
@@ -565,7 +558,27 @@ export function CoachChatSheet({
    * artifact's buttons need the OBJECT: a week has to be written to `week_templates`, a day to
    * `workout_templates`, and neither can be reconstructed from a card that only carries strings.
    */
-  const [built, setBuilt] = useState<Built | null>(null);
+  const [built, setBuiltState] = useState<Built | null>(null);
+  /*
+   * ══ ONE WRITE, TWO COPIES (Holt Listens HL-10 S4a) ══ The build's state is the engine's (`engine.current.mode` /
+   * `.constraints` / `.built`), so moved code reads the newest value across an await. The React copies stay because the
+   * save effect and the restore follow them. Every write goes through these three, so the copies cannot drift.
+   */
+  const setMode = useCallback((next: SetStateAction<ChatMode | null>) => {
+    const v = typeof next === 'function' ? next(engine.current.mode) : next;
+    engine.current.mode = v;
+    setModeState(v);
+  }, []);
+  const setConstraints = useCallback((next: SetStateAction<ChatState>) => {
+    const v = typeof next === 'function' ? next(engine.current.constraints) : next;
+    engine.current.constraints = v;
+    setConstraintsState(v);
+  }, []);
+  const setBuilt = useCallback((next: SetStateAction<Built | null>) => {
+    const v = typeof next === 'function' ? next(engine.current.built) : next;
+    engine.current.built = v;
+    setBuiltState(v);
+  }, []);
   /** Which builds have been kept, and as which program — once each, however many times they are kept (B-D1, 0270). */
   const [keepOnce] = useState(() => holtKeepOnce<string>());
   /** The sheet going away stops Holt's interpret / author / kitchen / photo calls (Sprint 1, P-G3). The chat's own
@@ -657,11 +670,6 @@ export function CoachChatSheet({
    * whole, to `coach-author` when it is time to build. Empty means nothing was typed — a tapped build — and
    * the rulebook builds exactly as it always has.
    */
-  /* Holt Listens HL-10 (S1): `typed` and `askedAboutReplacing` live in the engine's refs now (`engine/types.ts`), so the
-     moved guards and these handlers read the same memory. One instance for the life of the sheet, as the refs were. */
-  const engine = useRef<EngineRefs>(freshRefs());
-  /* The engine's world on this phone (`data/engine-port-live.ts`). Made once; tests use `engine/testing.ts`. */
-  const [port] = useState(livePort);
   /* What onboarding recorded as their goal, and whether the goal on this request is that stand-in rather
      than something they said — a stand-in is never passed to the model as if it were their answer. */
   const profileGoal = useRef<Goal | null>(null);
@@ -791,7 +799,7 @@ export function CoachChatSheet({
     return () => {
       alive = false;
     };
-  }, [profileLoading, firstName, intro.length, kitchen]);
+  }, [profileLoading, firstName, intro.length, kitchen, setConstraints, setMode]);
 
   /**
    * ⚠ **NOTHING WRITES AFTER THE CONVERSATION HAS BEEN ENDED.**
@@ -1363,7 +1371,7 @@ export function CoachChatSheet({
         setBusy(null);
       }
     },
-    [say, gates, payHolt, closeSignal],
+    [say, gates, payHolt, closeSignal, setBuilt, setConstraints],
   );
 
   /*
