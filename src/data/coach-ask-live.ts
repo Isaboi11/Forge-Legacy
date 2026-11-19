@@ -10,7 +10,7 @@ import {
   type AskStatusDetail,
   type AskTurn,
 } from '@/domain/coach/ask-wire';
-import { HOLT_ACTION_CAPS } from '@/domain/coach/holt-actions';
+import { CHANGE_CAPS, HOLT_ACTION_CAPS } from '@/domain/coach/holt-actions';
 import { HOLT_MEMORY_CAPS, RECAP_WIRE_CHARS } from '@/domain/coach/holt-memory';
 import {
   ASK_FIRST_BYTE_MS,
@@ -228,8 +228,10 @@ async function askOnce(
         ...(options.recipes?.length ? { recipes: options.recipes } : {}),
         /* AI Road to 10 Sprint 4a §1.1: this app draws Holt's action cards (HoltActionCard) and holds them until the
            turn ends cleanly, so it asks for the actions, the one-brain prompt and status detail. A phone without
-           this line gets the v28 function, byte for byte. */
-        caps: [HOLT_ACTION_CAPS, HOLT_MEMORY_CAPS],
+           this line gets the v28 function, byte for byte.
+           Holt Listens (PO D12): `change_v1` — this app runs propose_program_change (engine/change.ts → coach-rewrite →
+           the checker → a Do it / Leave it card). A coach-ask without it ignores the flag. */
+        caps: [HOLT_ACTION_CAPS, HOLT_MEMORY_CAPS, CHANGE_CAPS],
         /* Sprint 4b §1.2: the recap of what fell out of the window — read by the function only with memory_v1, and
            guarded there again. It rides in the messages, never the cached system block. */
         ...(options.earlier ? { earlier: options.earlier.slice(0, RECAP_WIRE_CHARS) } : {}),
