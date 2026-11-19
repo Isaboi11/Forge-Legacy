@@ -114,10 +114,15 @@ test('B-D1 — a Holt block is paid for when it is KEPT, before anything is writ
 });
 
 test('H19 — every chat door to an edit lands in beginEdit, and beginEdit asks Premium AI first', () => {
-  const begin = chat.slice(chat.indexOf('const beginEdit = async () => {'), chat.indexOf("setBusy('thinking');", chat.indexOf('const beginEdit = async () => {')));
-  assert.match(begin, /if \(!premiumAi\) \{/);
+  // The edit flow is the engine's since Holt Listens HL-10 S2; the sheet hands it the live Premium AI read.
+  const engineEdit = read('../../domain/coach/engine/edit.ts');
+  const start = engineEdit.indexOf('export async function beginEdit(');
+  const begin = engineEdit.slice(start, engineEdit.indexOf("sink.busy('thinking');", start));
+  assert.match(begin, /if \(!hooks\.premiumAi\) \{/);
   assert.match(begin, /goTo: '\/subscription\?from=gate'/);
-  assert.match(begin, /entitlementStatus === 'ready'/, 'an unverified read is not a no');
+  assert.match(begin, /hooks\.entitlementStatus === 'ready'/, 'an unverified read is not a no');
+  assert.match(chat, /const editHooks = \(\): EditHooks => \(\{ premiumAi, entitlementStatus, ctx: editCtx, buildTheNewOne \}\);/);
+  assert.match(chat, /const beginEdit = \(\) => engineBeginEdit\(engine\.current, port, sink, editHooks\(\)\);/);
 });
 
 test('H19 — Program Detail\'s Ask Holt opens the plans without Premium AI — through the door that checks the read (G5)', () => {

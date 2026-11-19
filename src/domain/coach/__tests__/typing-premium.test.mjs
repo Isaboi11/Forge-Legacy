@@ -18,6 +18,9 @@ import { focusFromText, TYPING_ENABLED } from '../chat-core.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
+/* The typed edit flow moved into the engine (Holt Listens HL-10 S2) — same code, reads/writes through the port. */
+const engineEdit = readFileSync(path.join(here, '../engine/edit.ts'), 'utf8');
+const finishOf = () => engineEdit.slice(engineEdit.indexOf('export async function finishTypedEdit('), engineEdit.indexOf('export function clearEdit('));
 
 test('a day focus said in words becomes the same focus the taps make', () => {
   assert.deepEqual(focusFromText('back and bis'), { kind: 'body_parts', parts: ['back', 'biceps'] });
@@ -130,15 +133,15 @@ test('⚠ conversation memory is this conversation, eight turns, into both AI jo
 });
 
 test('⚠ a typed edit is resolved, confirmed, and applied only on a tap — never saved on its own', () => {
-  const edit = sheet.slice(sheet.indexOf('const editByWords = async'), sheet.indexOf('const finishTypedEdit = async'));
+  const edit = engineEdit.slice(engineEdit.indexOf('export async function editByWords('), engineEdit.indexOf('export async function finishTypedEdit('));
   // `wanted` since Sprint 2 (C-I7): the sheet's `intent` prop is in scope, and no name shadows another.
-  assert.match(edit, /resolveEditIntent\(wanted, active\.structure, marks, PICKER_DB/);
-  assert.doesNotMatch(edit, /updateProgram\(/, 'resolving must not save');
-  const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
+  assert.match(edit, /resolveEditIntent\(wanted, active\.structure, marks, port\.catalog/);
+  assert.doesNotMatch(edit, /programs\.update\(/, 'resolving must not save');
+  const finish = finishOf();
   assert.match(finish, /pe\.plan\.apply\(scope\)/);
   // What the athlete confirmed is what saves — stamped "Updated by Holt" on the way (PO 2026-10-01).
   assert.match(finish, /const saved = markHoltChange\(pe\.before, res\.structure, \{/);
-  assert.match(finish, /await updateProgram\(pe\.programId, saved\)/);
+  assert.match(finish, /await port\.programs\.update\(pe\.programId, saved\)/);
   assert.match(finish, /That change went stale/, 'a chip restored after a reload says so instead of doing nothing');
 });
 
@@ -151,8 +154,8 @@ test('⚠ several things in one message run in order; a skip saves as skip marks
   assert.match(act, /const cards = held \? await hold\.release\(end, await liveCardContext\(\{ units, nutritionAccess \}\)\) : \[\];/);
   assert.doesNotMatch(sheet, /rememberSaid\(/);
   void u;
-  const finish = sheet.slice(sheet.indexOf('const finishTypedEdit = async'), sheet.indexOf('const tapChip = (chip'));
-  assert.match(finish, /if \(pe\.plan\.kind === 'skip'\) \{\s*for \(const at of pe\.plan\.sessions\) await skipProgramSession\(pe\.programId, at\.weekIndex, at\.dayIndex\);/);
+  const finish = finishOf();
+  assert.match(finish, /if \(pe\.plan\.kind === 'skip'\) \{\s*for \(const at of pe\.plan\.sessions\) await port\.programs\.skip\(pe\.programId, at\.weekIndex, at\.dayIndex\);/);
   // Loaded in parallel with the program and the recipe book since 2026-09-25 (`Promise.all`).
   assert.match(sheet, /askBriefLive\(text, units\)/);
 });

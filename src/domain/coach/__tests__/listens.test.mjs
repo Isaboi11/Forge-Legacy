@@ -97,19 +97,22 @@ test('sheet: a TYPED request meets the active-program question with its words ca
   assert.match(SHEET, /engineGuard\(engine\.current, port, sink, request\)/);
 });
 
-test('sheet: the edit flow hears "replace" and "the whole program" before it asks for a session', () => {
-  assert.match(SHEET, /if \(!res\.ok && res\.ask === 'which_day'\) \{\n\s+const whole = wholeProgramAsk\(said\);/);
-  assert.match(SHEET, /return void buildTheNewOne\(said, REPLACE_LINE\);/);
-  assert.match(SHEET, /if \(whole === 'whole' && !rowChange\) \{/);
+// The edit flow is the engine's since HL-10 S2 (engine/__tests__/s2-edit.test.mjs runs it for real).
+const EDIT = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../engine/edit.ts'), 'utf8').replace(/\r\n/g, '\n');
+
+test('engine: the edit flow hears "replace" and "the whole program" before it asks for a session', () => {
+  assert.match(EDIT, /if \(!res\.ok && res\.ask === 'which_day'\) \{\n\s+const whole = wholeProgramAsk\(said\);/);
+  assert.match(EDIT, /return void hooks\.buildTheNewOne\(said, REPLACE_LINE\);/);
+  assert.match(EDIT, /if \(whole === 'whole' && !rowChange\) \{/);
 });
 
-test('sheet: the loop breaker runs before the question is asked again', () => {
-  const loop = SHEET.indexOf('sameAskAgain(lastEditAsk.current');
-  const ask = SHEET.indexOf("lastEditAsk.current = res.ask === 'not_editable' ? null");
+test('engine: the loop breaker runs before the question is asked again', () => {
+  const loop = EDIT.indexOf('sameAskAgain(refs.lastEditAsk');
+  const ask = EDIT.indexOf("refs.lastEditAsk = res.ask === 'not_editable' ? null");
   assert.ok(loop > 0 && ask > loop);
 });
 
-test('sheet: the session picker is split, and a later week opens to its sessions', () => {
-  assert.match(SHEET, /const \{ now, laterWeeks \} = splitSessionPicker\(sessions\);/);
-  assert.match(SHEET, /if \(pickStep\.step === 'week'\) \{/);
+test('engine: the session picker is split, and a later week opens to its sessions', () => {
+  assert.match(EDIT, /const \{ now, laterWeeks \} = splitSessionPicker\(sessions\);/);
+  assert.match(EDIT, /if \(pickStep\.step === 'week'\) \{/);
 });

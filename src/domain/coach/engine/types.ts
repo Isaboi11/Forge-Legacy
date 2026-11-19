@@ -24,9 +24,12 @@
  * Randomness is `port.choose` and time is `port.now`/`port.wait`, so a replay is byte-for-byte repeatable.
  */
 
-import type { SavedProgram, ProgramStructure } from '@/data/programs-live';
+import type { ProgramDay, SavedProgram, ProgramStructure } from '@/data/programs-live';
 import type { SessionMark } from '../../program/progress-core.ts';
 import type { CatalogExercise } from '../candidates.ts';
+import type { EditChangeId } from '../edit-chat.ts';
+import type { EditIntent, EditIntentResolution } from '../edit-intent.ts';
+import type { AskShown } from '../listens.ts';
 import type { Turn } from '../chat-core.ts';
 import type { Chooser } from '../rulebook/voice.ts';
 
@@ -74,6 +77,46 @@ export interface EngineRefs {
   askedAboutReplacing: boolean;
   /** Their own words for the request in flight (Coach-AI-Amendment-003). Empty = a tapped build. */
   typed: string[];
+
+  /* ── changing a program already running (S2, `engine/edit.ts`) ── */
+  /**
+   * The tapped edit in progress, loaded fresh each time the flow starts. Deliberately not persisted: an edit against
+   * a stale structure is how you edit the wrong day, so old chips simply do nothing.
+   */
+  edit: EditState | null;
+  /** The typed plan waiting for "Do it". Holds a function, so never persisted. */
+  pendingEdit: { programId: string; before: ProgramStructure; plan: Extract<EditIntentResolution, { ok: true }>['plan'] } | null;
+  /**
+   * The last change Holt made, so "Undo" can put it back (Coach-Holt-Everywhere rule 2). One level: the
+   * structure as it was before, or the sessions a skip marked. Cleared the moment it is used.
+   */
+  lastEdit: (({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number }) | null;
+  /** The question the typed flow is waiting on. */
+  pendingEditAsk: { intent: EditIntent; ask: string } | null;
+  /** The last question the typed-edit flow put to them (HL-1c) — never the same one twice in a row. */
+  lastEditAsk: AskShown | null;
+  /** The athlete's own words that started this change — shown as "You asked" on the updated workout. */
+  editAsked: string | null;
 }
 
-export const freshRefs = (): EngineRefs => ({ askedAboutReplacing: false, typed: [] });
+/** The tapped edit flow's place: which session, what about it, which row, what value. */
+export interface EditState {
+  program: SavedProgram;
+  marks: SessionMark[];
+  at?: { weekIndex: number; dayIndex: number };
+  day?: ProgramDay;
+  change?: EditChangeId;
+  rowIndex?: number;
+  value?: { sets?: number; targetMi?: number; targetSec?: number; replacementKey?: string; replacementName?: string };
+}
+
+export const freshRefs = (): EngineRefs => ({
+  askedAboutReplacing: false,
+  typed: [],
+  edit: null,
+  pendingEdit: null,
+  lastEdit: null,
+  pendingEditAsk: null,
+  lastEditAsk: null,
+  editAsked: null,
+});

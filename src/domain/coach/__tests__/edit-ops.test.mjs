@@ -430,6 +430,7 @@ test('holtai-09 — Push-Up 5×100 → a dumbbell press keeps its dose, and the 
 test('holtai-09 — the typed confirm and the tapped reply both carry the note', () => {
   const intent = readFileSync(path.join(here, '../edit-intent.ts'), 'utf8');
   assert.match(intent, /const note = carriedDoseNote\(row, r\.replacement\);/);
-  const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
-  assert.match(sheet, /carriedDoseNote\(row, replacement\)/);
+  // The tapped edit's reply is the engine's since Holt Listens HL-10 S2.
+  const engineEdit = readFileSync(path.join(here, '../engine/edit.ts'), 'utf8');
+  assert.match(engineEdit, /carriedDoseNote\(row, replacement\)/);
 });

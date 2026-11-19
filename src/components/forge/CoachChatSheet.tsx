@@ -36,18 +36,18 @@ import { livePort } from '@/data/engine-port-live';
 import { ACTIVE_LOOKUP_TIMEOUT_MS, guardActiveProgram as engineGuard, offerProgramSession as engineOffer } from '@/domain/coach/engine/guards';
 import { freshRefs, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
 import {
+  beginEdit as engineBeginEdit,
+  clearEdit,
+  editByWords as engineEditByWords,
+  finishTypedEdit as engineFinishTypedEdit,
+  PLAN_UNCHECKED,
+  stepEdit as engineStepEdit,
+  type EditHooks,
+} from '@/domain/coach/engine/edit';
+import {
   BUILD_THE_NEW_ONE,
   KEEP_AND_CHANGE,
-  LOOP_LINE,
   ONE_AT_A_TIME,
-  ONE_SESSION_FIRST_LINE,
-  REPLACE_LINE,
-  laterWeekLabel,
-  sameAskAgain,
-  splitSessionPicker,
-  wholeProgramAsk,
-  wholeProgramLine,
-  type AskShown,
 } from '@/domain/coach/listens';
 import { AiFeedback } from '@/components/forge/AiFeedback';
 import { AiCreditsChip } from '@/components/forge/AiCreditsChip';
@@ -126,7 +126,6 @@ import {
   medicalStopIsDietitian,
 } from '@/domain/coach/kitchen';
 import { buildAskContext } from '@/domain/coach/ask-context';
-import { otherProgramNamed, resolveEditIntent, type EditIntentResolution } from '@/domain/coach/edit-intent';
 import { resolveAvoid } from '@/domain/coach/avoid';
 import { useDictation } from '@/hooks/useDictation';
 import { toTemplateExercises } from '@/lib/workout-template-rows';
@@ -240,36 +239,20 @@ import { usePastChatSync } from '@/components/forge/usePastChatSync';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
   createProgram,
-  fetchMyPrograms,
-  fetchProgramSessions,
   keepHoltProgram,
   startProgram,
-  updateProgram,
-  skipProgramSession,
-  unskipProgramSession,
   type ProgramDay,
   type ProgramStructure,
   type SavedProgram,
 } from '@/data/programs-live';
-import { earnsStructuredDevelopmentCredit, type SessionMark } from '@/domain/program/progress-core';
+import { earnsStructuredDevelopmentCredit } from '@/domain/program/progress-core';
 import { plainError } from '@/lib/plain-error';
 import { contextFrom } from '@/domain/coach/candidates';
-import { carriedDoseNote, setCardioTarget, setPrescription, swapExercise, type EditScope } from '@/domain/coach/edit-ops';
-import { markHoltChange } from '@/domain/coach/holt-marks';
 import { limitationPatterns } from '@/domain/coach/rulebook/limitations';
 import { isEnduranceGoal, type Goal, type Limitation } from '@/domain/coach/constraints';
 import { RACE_SPEC } from '@/domain/coach/rulebook/endurance';
 import {
-  changesFor,
-  describeTappedEdit,
-  editableSessions,
-  replacementsFor,
-  rowsFor,
-  slotKeysElsewhere,
   swapTerms,
-  valuesFor,
-  SCOPE_CHOICES,
-  type EditChangeId,
 } from '@/domain/coach/edit-chat';
 import { FOLLOWS_KEYBOARD_PER_FRAME, useKeyboardAnchoredScroll, useKeyboardLift } from '@/lib/useKeyboardLift';
 import { useReducedMotion } from '@/lib/useReducedMotion';
@@ -330,7 +313,6 @@ const DECLINE_IMPORT = "I'll log as I go";
  */
 const BUILD_IT_OUT = 'Build it out';
 /** The plan could not be read: a retry, never a "no" and never an offer (M-7 §10). Said by every door that checks it. */
-const PLAN_UNCHECKED = 'I couldn’t check your plan just now. Try again in a moment.';
 
 export function CoachChatSheet({
   onClose,
@@ -608,15 +590,7 @@ export function CoachChatSheet({
    * edit against a stale structure is how you edit the wrong day, so the flow starts again on each visit
    * and the chips from last time simply do nothing.
    */
-  const [edit, setEdit] = useState<{
-    program: SavedProgram;
-    marks: SessionMark[];
-    at?: { weekIndex: number; dayIndex: number };
-    day?: ProgramDay;
-    change?: EditChangeId;
-    rowIndex?: number;
-    value?: { sets?: number; targetMi?: number; targetSec?: number; replacementKey?: string; replacementName?: string };
-  } | null>(null);
+  /* The tapped edit's place is the engine's now (`engine.current.edit`, HL-10 S2) — never drawn, only read by handlers. */
   const [lastCard, setLastCard] = useState<{ program?: ProgramCard; day?: DayCard } | null>(null);
 
   useEffect(() => {
@@ -1436,14 +1410,14 @@ export function CoachChatSheet({
 
   const newChat = () => {
     void endThread();
-    setEdit(null);
+    engine.current.edit = null;
     setMode(null);
     setBuilt(null);
     setLastCard(null);
     setPreview(false);
     setDraft('');
     engine.current.askedAboutReplacing = false;
-    lastEditAsk.current = null;
+    engine.current.lastEditAsk = null;
     beginRequest([]);
     /* Facts about the ATHLETE survive a new conversation; everything situational deliberately does not.
        Their skill level and the kit in their garage did not change because they tapped New chat, and
@@ -1503,7 +1477,7 @@ export function CoachChatSheet({
     setBuilt(null);
     setLastCard(null);
     setPreview(false);
-    setEdit(null);
+    engine.current.edit = null;
     setDraft('');
     engine.current.askedAboutReplacing = false;
     beginRequest([]);
@@ -1522,175 +1496,6 @@ export function CoachChatSheet({
    * sheet does no filtering of its own — duplicating the safety rules in a component is how the two
    * copies drift and the app starts offering something it then refuses.
    */
-
-  const beginEdit = async () => {
-    /*
-     * ⚠ HOLT CHANGING YOUR PROGRAM FOR YOU IS PREMIUM AI (Monetization Amendment 008, MA8 work owed #1; PO 11-08
-     * launch QA, H19). Every chat door to it — "Change my program", Home's ADJUST card, "Change the one I have" —
-     * lands here. The edit runs on the phone with no AI call, so the server cannot refuse it: the gate has to be
-     * here. Changing it yourself stays free on every plan. An unverified read is not a "no".
-     */
-    if (!premiumAi) {
-      say(
-        entitlementStatus === 'ready'
-          ? {
-              kind: 'holt',
-              text: 'Changing your program for you is part of Premium AI. You can still change it yourself — open a session on your program and swap or edit it.',
-            }
-          : { kind: 'holt', text: PLAN_UNCHECKED },
-        ...(entitlementStatus === 'ready'
-          ? [{ kind: 'chips' as const, chips: [{ label: 'See Premium AI', patch: {}, goTo: '/subscription?from=gate' }] }]
-          : []),
-      );
-      return;
-    }
-    setBusy('thinking');
-    const active = await Promise.race([
-      fetchActiveProgram().catch(() => null),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
-    ]);
-    if (!active) {
-      setBusy(null);
-      say(
-        { kind: 'holt', text: pick('no_active_program') },
-        { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] },
-      );
-      return;
-    }
-    const marks = await fetchProgramSessions(active.id).catch(() => [] as SessionMark[]);
-    setBusy(null);
-
-    /* QA holt-09: every session still ahead, not the first six — a change in week 5 is a real ask. */
-    const sessions = editableSessions(active.structure, marks, Number.POSITIVE_INFINITY);
-    if (sessions.length === 0) {
-      /* Everything left is already trained. Not a failure — the block is essentially done. */
-      say({ kind: 'holt', text: "There's nothing left in that block I'd change — you've trained all of it." });
-      return;
-    }
-    setEdit({ program: active, marks });
-    /* HL-1e (tester 2026-11-18: 22 chips): this week and next as chips, later weeks one more tap (holt-09 still holds). */
-    const { now, laterWeeks } = splitSessionPicker(sessions);
-    say(
-      /* HL-1d: a typed request is waiting - he is honest that this flow goes a session at a time. */
-      { kind: 'holt', text: engine.current.typed.length ? ONE_SESSION_FIRST_LINE : pick('ask_edit_session') },
-      {
-        kind: 'chips',
-        chips: [
-          ...now.map((sn) => ({ label: sn.label, patch: {}, edit: { step: 'session' as const, ...sn.at } })),
-          ...laterWeeks.map((w) => ({ label: laterWeekLabel(w), patch: {}, edit: { step: 'week' as const, weekIndex: w } })),
-        ],
-      },
-    );
-  };
-
-  /** One tap inside the flow. Each step narrows and asks the next question. */
-  const stepEdit = (pickStep: NonNullable<Chip['edit']>) => {
-    if (!edit) return;
-
-    /* HL-1e: a later week, opened - its open sessions as chips. */
-    if (pickStep.step === 'week') {
-      const inWeek = editableSessions(edit.program.structure, edit.marks, Number.POSITIVE_INFINITY).filter(
-        (sn) => sn.at.weekIndex === pickStep.weekIndex,
-      );
-      if (!inWeek.length) return;
-      say(
-        { kind: 'holt', text: `Which session in week ${pickStep.weekIndex + 1}?` },
-        { kind: 'chips', chips: inWeek.map((sn) => ({ label: sn.label, patch: {}, edit: { step: 'session' as const, ...sn.at } })) },
-      );
-      return;
-    }
-
-    if (pickStep.step === 'session') {
-      const at = { weekIndex: pickStep.weekIndex, dayIndex: pickStep.dayIndex };
-      const found = editableSessions(edit.program.structure, edit.marks, Number.POSITIVE_INFINITY).find(
-        (sn) => sn.at.weekIndex === at.weekIndex && sn.at.dayIndex === at.dayIndex,
-      );
-      if (!found) return;
-      setEdit({ ...edit, at, day: found.day, change: undefined, rowIndex: undefined, value: undefined });
-      say(
-        { kind: 'holt', text: pick('ask_edit_change') },
-        { kind: 'chips', chips: changesFor(found.day).map((c) => ({ label: c.label, patch: {}, edit: { step: 'change', change: c.id } })) },
-      );
-      return;
-    }
-
-    if (pickStep.step === 'change') {
-      const change = pickStep.change as EditChangeId;
-      const day = edit.day;
-      if (!day) return;
-      if (change === 'rebuild') {
-        /* ⚠ REBUILD IS DELIBERATELY NOT WIRED YET. `rebuildDay` exists and is tested, but it needs the
-           athlete to name what to work around, and a limitation picker is its own conversation. Saying so
-           is better than a chip that quietly does the wrong thing. */
-        /* QA holt-04: it was a dead end. Now it points at the program page, where Ask Holt on the session
-           does this, and keeps the other changes one tap away here. */
-        say(
-          {
-            kind: 'holt',
-            text: 'Reworking a whole session is on the program page — open it, tap the session, then Ask Holt. Or change one thing about it here.',
-          },
-          {
-            kind: 'chips',
-            chips: [
-              { label: 'Open the program', patch: {}, goTo: `/program/${edit.program.id}` },
-              ...changesFor(day)
-                .filter((c) => c.id !== 'rebuild')
-                .map((c) => ({ label: c.label, patch: {}, edit: { step: 'change' as const, change: c.id } })),
-            ],
-          },
-        );
-        return;
-      }
-      const rows = rowsFor(day, change);
-      setEdit({ ...edit, change, rowIndex: undefined, value: undefined });
-      say(
-        { kind: 'holt', text: pick('ask_edit_row') },
-        { kind: 'chips', chips: rows.map((r) => ({ label: r.label, patch: {}, edit: { step: 'row', index: r.index } })) },
-      );
-      return;
-    }
-
-    if (pickStep.step === 'row') {
-      const { day, change } = edit;
-      if (!day || !change) return;
-      const options =
-        change === 'swap'
-          ? replacementsFor(day.main[pickStep.index], PICKER_DB, editCtx(edit.program), 5, edit.at ? slotKeysElsewhere(edit.program.structure, { ...edit.at, exerciseIndex: pickStep.index }) : [])
-          : valuesFor(day, change, pickStep.index);
-      setEdit({ ...edit, rowIndex: pickStep.index, value: undefined });
-      say(
-        /* QA holt-07: a swap is a movement, not a number — never "Give me the number." */
-        { kind: 'holt', text: pick(change === 'swap' ? 'ask_edit_replacement' : 'ask_edit_value') },
-        {
-          kind: 'chips',
-          chips: options.map((v) => ({
-            label: v.label,
-            patch: {},
-            edit: {
-              step: 'value',
-              sets: v.sets,
-              targetMi: v.targetMi,
-              targetSec: v.targetSec,
-              replacementKey: v.replacement?.key,
-              replacementName: v.replacement?.name,
-            },
-          })),
-        },
-      );
-      return;
-    }
-
-    if (pickStep.step === 'value') {
-      setEdit({ ...edit, value: pickStep });
-      say(
-        { kind: 'holt', text: pick('ask_edit_scope') },
-        { kind: 'chips', chips: SCOPE_CHOICES.map((c) => ({ label: c.label, patch: {}, edit: { step: 'scope', scope: c.scope } })) },
-      );
-      return;
-    }
-
-    if (pickStep.step === 'scope') void applyEdit(pickStep.scope);
-  };
 
   /** The athlete's own constraints, as the candidate ranker needs them — judged against the program being
       edited: its room and never above its rung (QA holt-24, `swapTerms`). */
@@ -1713,90 +1518,7 @@ export function CoachChatSheet({
     });
   };
 
-  const applyEdit = async (scope: EditScope) => {
-    if (!edit?.at || !edit.change || edit.rowIndex == null || !edit.value) return;
-    const at = { ...edit.at, exerciseIndex: edit.rowIndex };
-    const v = edit.value;
-
-    /* ⚠ THE REPLACEMENT IS LOOKED UP, NOT RECONSTRUCTED. A chip carries only a key and a name, because
-       the thread is persisted and must stay JSON. Handing `swapExercise` a two-field object shaped like
-       a CatalogExercise would compile today and quietly pass `undefined` for anything it starts reading
-       tomorrow — so the real record comes back out of the catalogue. */
-    const replacement = edit.change === 'swap' ? PICKER_DB.find((e) => e.key === v.replacementKey) : null;
-    if (edit.change === 'swap' && !replacement) {
-      say({ kind: 'holt', text: "I can't find that movement any more. Pick another one." });
-      return;
-    }
-
-    setBusy('thinking');
-    try {
-      const res =
-        edit.change === 'swap'
-          ? swapExercise(edit.program.structure, edit.marks, at, replacement!, scope)
-          : edit.change === 'sets'
-            ? setPrescription(edit.program.structure, edit.marks, at, { sets: v.sets }, scope)
-            : setCardioTarget(edit.program.structure, edit.marks, at, { targetMi: v.targetMi, targetSec: v.targetSec }, scope);
-
-      if (!res.ok) {
-        /* The guard should be unreachable from here — everything offered was checked before it was shown.
-           It fires on a race: a session trained on another device since the list was drawn. */
-        say({ kind: 'holt', text: res.refusal.message });
-        setEdit(null);
-        return;
-      }
-
-      /* QA holt-05: the tapped path gets the same Undo the typed path has, and says what it changed. */
-      const undoId = Date.now();
-      const row = edit.day?.main[edit.rowIndex];
-      const what = describeTappedEdit(edit.change, row?.name ?? 'That one', v, scope);
-      /* "Updated by Holt" (PO 2026-10-01): the changed sessions carry what changed and how they were. */
-      const saved = markHoltChange(edit.program.structure, res.structure, { id: String(undoId), at: new Date().toISOString(), what, asked: null });
-      await updateProgram(edit.program.id, saved);
-      lastEdit.current = { programId: edit.program.id, before: edit.program.structure, id: undoId };
-      /* QA holtai-09: a bodyweight dose carried onto a loaded lift is said, with where to change it. */
-      const dose = replacement && row ? carriedDoseNote(row, replacement) : null;
-      const doseLine = dose ? ` It ${dose} — change the reps on the program if that's not what you meant.` : '';
-      setEdit({ ...edit, program: { ...edit.program, structure: saved }, at: undefined, change: undefined, rowIndex: undefined, value: undefined });
-      say(
-        { kind: 'holt', text: `${what}${doseLine} ${pick('edit_done')}` },
-        {
-          kind: 'chips',
-          chips: [
-            { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
-            { label: 'Change something else', patch: {} },
-            /* QA holt-06: to the program itself, not Home. */
-            { label: 'Show me the program', patch: {}, goTo: `/program/${edit.program.id}` },
-          ],
-        },
-      );
-    } catch (e) {
-      say({
-        kind: 'error',
-        text: "That did not save.",
-        sub: e instanceof Error ? e.message : String(e),
-        action: 'Your program is unchanged. Try again in a moment.',
-      });
-    } finally {
-      setBusy(null);
-    }
-  };
-
   /* ── a change the athlete typed ────────────────────────────────────────────────────────────────── */
-
-  /** The plan waiting for "Do it", and the question waiting for an answer. Refs: a plan holds a function. */
-  const pendingEdit = useRef<{ programId: string; before: ProgramStructure; plan: Extract<EditIntentResolution, { ok: true }>['plan'] } | null>(null);
-  /**
-   * The last change Holt made, so "Undo" can put it back (Coach-Holt-Everywhere rule 2). One level: the
-   * structure as it was before, or the sessions a skip marked. Cleared the moment it is used.
-   */
-  const lastEdit = useRef<
-    ({ programId: string; before: ProgramStructure } | { programId: string; skipped: SessionMark[] }) & { id: number } | null
-  >(null);
-  const pendingEditAsk = useRef<{ intent: EditIntent; ask: string } | null>(null);
-  /** The last question the typed-edit flow put to them (HL-1c) - the same one is never asked twice in a row. */
-  const lastEditAsk = useRef<AskShown | null>(null);
-  /** The athlete's own words that started this change — shown as "You asked" on the updated workout. */
-  const editAsked = useRef<string | null>(null);
 
   /**
    * Resolve "swap bench for dumbbell press on Monday" against the running program and confirm it.
@@ -1812,10 +1534,7 @@ export function CoachChatSheet({
    * question is not put to them again. Starting it still asks by name before anything ends (`startNow`, fails closed).
    */
   const buildTheNewOne = (said: string | undefined, line: string) => {
-    setEdit(null);
-    pendingEdit.current = null;
-    pendingEditAsk.current = null;
-    lastEditAsk.current = null;
+    clearEdit(engine.current);
     engine.current.askedAboutReplacing = true;
     if (said) alsoSaid(said);
     if (mode !== 'program') {
@@ -1826,204 +1545,17 @@ export function CoachChatSheet({
     void advance(constraints, 'program', line);
   };
 
-  const editByWords = async (wanted: EditIntent, said?: string) => {
-    if (said) editAsked.current = said;
-    setBusy('thinking');
-    const active = await Promise.race([
-      fetchActiveProgram().catch(() => null),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), ACTIVE_LOOKUP_TIMEOUT_MS)),
-    ]);
-    if (!active) {
-      setBusy(null);
-      say({ kind: 'holt', text: pick('no_active_program') }, { kind: 'chips', chips: [{ label: 'Build me something', patch: {} }] });
-      return;
-    }
-    const [marks, mine] = await Promise.all([
-      fetchProgramSessions(active.id).catch(() => [] as SessionMark[]),
-      said ? fetchMyPrograms().catch(() => []) : Promise.resolve([]),
-    ]);
-    setBusy(null);
-    const res = resolveEditIntent(wanted, active.structure, marks, PICKER_DB, new Date(), { ctx: editCtx(active) });
-    /*
-     * == HOLT LISTENS (HL-1c, tester 2026-11-18) == "Edit the entire workout", "replace the entire program" reached here
-     * and came back as "Which session should change?" - every time. A whole-program ask is not a session ask: "replace"
-     * builds the new one from everything they have said, "the whole thing" is told plainly what he can do today.
-     */
-    if (!res.ok && res.ask === 'which_day') {
-      const whole = wholeProgramAsk(said);
-      if (whole === 'replace') {
-        pendingEditAsk.current = null;
-        lastEditAsk.current = null;
-        return void buildTheNewOne(said, REPLACE_LINE);
-      }
-      /* ⚠ NOT for a named row change: "swap bench everywhere" / "4 sets of curls on every day" already work — which
-         session, then "the rest of the block" — so they keep that road. Only a change with no single movement in it
-         (add core, rebuild, more volume) is the whole-block rewrite this flow cannot do yet. */
-      const rowChange = !!wanted.exercise && wanted.op !== 'add' && wanted.op !== 'rebuild' && wanted.op !== 'volume';
-      if (whole === 'whole' && !rowChange) {
-        pendingEditAsk.current = null;
-        lastEditAsk.current = null;
-        say(
-          { kind: 'holt', text: wholeProgramLine(active.name) },
-          { kind: 'chips', chips: [{ label: BUILD_THE_NEW_ONE, patch: {} }, { label: ONE_AT_A_TIME, patch: {} }] },
-        );
-        return;
-      }
-    }
-    if (!res.ok && res.ask !== 'not_editable' && said && sameAskAgain(lastEditAsk.current, { ask: res.ask, message: res.message })) {
-      /* The loop breaker: they typed instead of tapping, and the resolver would ask the very same thing again. */
-      pendingEditAsk.current = { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
-      say(
-        { kind: 'holt', text: LOOP_LINE },
-        {
-          kind: 'chips',
-          chips: [
-            ...res.options.slice(0, 6).map((o) => ({ label: o, patch: {}, typedEdit: 'answer' as const })),
-            { label: BUILD_THE_NEW_ONE, patch: {} },
-          ],
-        },
-      );
-      return;
-    }
-    if (!res.ok) {
-      lastEditAsk.current = res.ask === 'not_editable' ? null : { ask: res.ask, message: res.message };
-      /* A `retarget` answer fills a different op — "shorter" on a lifting day becomes taking one out (holtai-06). */
-      pendingEditAsk.current = res.ask === 'not_editable' ? null : { intent: res.retarget ? { ...wanted, op: res.retarget } : wanted, ask: res.ask };
-      say(
-        { kind: 'holt', text: res.message },
-        ...(res.ask !== 'not_editable' && res.options.length
-          ? [{ kind: 'chips' as const, chips: res.options.map((o) => ({ label: o, patch: {}, typedEdit: 'answer' as const })) }]
-          : []),
-      );
-      return;
-    }
-    pendingEdit.current = { programId: active.id, before: active.structure, plan: res.plan };
-    pendingEditAsk.current = null;
-    lastEditAsk.current = null;
-    /*
-     * ⚠ EVERY CONFIRM NAMES THE PROGRAM IT TOUCHES (holtai-02). A typed change only reaches the one running;
-     * "In my QA Holt Plan, swap…" was confirmed as a bare "Week 1, Push — …" and landed in another program.
-     */
-    const other = otherProgramNamed(said, active.name, mine.map((p) => p.name));
-    say(
-      {
-        kind: 'holt',
-        text: other
-          ? `I can only change the program you're running, and that's ${active.name}, not ${other}. In ${active.name}: ${res.plan.label}. Want it there?`
-          : `In ${active.name}: ${res.plan.label}. Want it?`,
-      },
-      {
-        kind: 'chips',
-        chips: res.plan.scope
-          ? [
-              { label: 'Do it', patch: {}, typedEdit: 'apply' },
-              { label: 'Leave it', patch: {}, typedEdit: 'cancel' },
-            ]
-          : [
-              { label: 'Just this week', patch: {}, typedEdit: 'this_week' },
-              { label: 'The rest of the block', patch: {}, typedEdit: 'rest_of_block' },
-              { label: 'Leave it', patch: {}, typedEdit: 'cancel' },
-            ],
-      },
-    );
-  };
-
-  const finishTypedEdit = async (chip: Chip) => {
-    if (chip.typedEdit === 'answer') {
-      const p = pendingEditAsk.current;
-      if (!p) return say({ kind: 'holt', text: 'I lost the thread on that one. Tell me the change again.' });
-      const n = Number(chip.label.replace(/[^0-9.]/g, ''));
-      const next: EditIntent =
-        p.ask === 'which_day'
-          ? { ...p.intent, day: chip.label }
-          : p.ask === 'which_exercise'
-            ? { ...p.intent, exercise: chip.label }
-            : p.ask === 'which_replacement'
-              ? { ...p.intent, to: chip.label }
-              : p.intent.op === 'distance'
-                ? { ...p.intent, miles: n }
-                : p.intent.op === 'duration'
-                  ? { ...p.intent, minutes: n }
-                  : p.intent.op === 'reps'
-                    ? { ...p.intent, reps: n }
-                    : { ...p.intent, sets: n };
-      return editByWords(next);
-    }
-    if (chip.typedEdit === 'cancel') {
-      pendingEdit.current = null;
-      return say({ kind: 'holt', text: 'Left it as it was.' });
-    }
-    if (chip.typedEdit === 'undo') {
-      const le = lastEdit.current;
-      if (!le) return say({ kind: 'holt', text: 'Nothing to undo — that one is already settled.' });
-      /* holtai-08: an older Undo stays tappable, but it only ever undoes the change it was offered for. */
-      if (chip.undoOf != null && chip.undoOf !== le.id) {
-        return say({ kind: 'holt', text: "That's not the last change any more — I can only take back the newest one." });
-      }
-      lastEdit.current = null;
-      setBusy('thinking');
-      try {
-        /* The structure goes back exactly as it was; a skip is un-marked session by session. Both keep
-           the session count, so the live-edit guard (0123/0175) has nothing to refuse. */
-        if ('before' in le) await updateProgram(le.programId, le.before);
-        else for (const at of le.skipped) await unskipProgramSession(le.programId, at.weekIndex, at.dayIndex);
-        say({ kind: 'holt', text: 'Put it back the way it was.' });
-      } catch (e) {
-        say({ kind: 'error', text: 'That did not undo.', sub: e instanceof Error ? e.message : String(e), action: 'Open the program to check it.' });
-      } finally {
-        setBusy(null);
-      }
-      return;
-    }
-    const pe = pendingEdit.current;
-    if (!pe) return say({ kind: 'holt', text: "That change went stale. Tell me again and I'll set it up." });
-    const scope: EditScope | undefined =
-      chip.typedEdit === 'this_week' ? 'this_week' : chip.typedEdit === 'rest_of_block' ? 'rest_of_block' : undefined;
-    const res = pe.plan.apply(scope);
-    if (!res.ok) {
-      pendingEdit.current = null;
-      return say({ kind: 'holt', text: res.refusal.message });
-    }
-    setBusy('thinking');
-    const undoId = Date.now();
-    try {
-      /* A skip is a MARK on each session, never a structure change — saving the unchanged structure and
-         saying "done" is the defect this branch exists to prevent. The RPC ignores a session already done. */
-      if (pe.plan.kind === 'skip') {
-        for (const at of pe.plan.sessions) await skipProgramSession(pe.programId, at.weekIndex, at.dayIndex);
-        lastEdit.current = { programId: pe.programId, skipped: pe.plan.sessions.map((at) => ({ weekIndex: at.weekIndex, dayIndex: at.dayIndex, state: 'skipped' as const })), id: undoId };
-      } else {
-        /* "Updated by Holt" (PO 2026-10-01): the changed sessions carry what changed, what was asked and how they were. */
-        const saved = markHoltChange(pe.before, res.structure, { id: String(undoId), at: new Date().toISOString(), what: pe.plan.label, asked: editAsked.current });
-        await updateProgram(pe.programId, saved);
-        lastEdit.current = { programId: pe.programId, before: pe.before, id: undoId };
-      }
-      pendingEdit.current = null;
-      editAsked.current = null;
-      say(
-        { kind: 'holt', text: pick('edit_done') },
-        {
-          kind: 'chips',
-          chips: [
-            { label: 'Undo', patch: {}, typedEdit: 'undo', undoOf: undoId },
-            { label: 'Change something else', patch: {} },
-            /* QA holt-06: to the program itself, not Home. */
-            { label: 'Show me the program', patch: {}, goTo: `/program/${pe.programId}` },
-          ],
-        },
-      );
-    } catch (e) {
-      say({
-        kind: 'error',
-        text: 'That did not save.',
-        sub: e instanceof Error ? e.message : String(e),
-        action: 'Your program is unchanged. Try again in a moment.',
-      });
-    } finally {
-      setBusy(null);
-    }
-  };
-
+  /*
+   * ══ THE EDIT FLOW IS THE ENGINE'S (`engine/edit.ts`, Holt Listens HL-10 S2) ══ — same words, same chips, same
+   * invariants. What it still needs from here comes in as hooks, read fresh at each call: the Premium AI read, the
+   * swap ranker's context (`editCtx`, which reads this build's constraints) and "build the new one" (the build).
+   */
+  const editHooks = (): EditHooks => ({ premiumAi, entitlementStatus, ctx: editCtx, buildTheNewOne });
+  const beginEdit = () => engineBeginEdit(engine.current, port, sink, editHooks());
+  /** One tap inside the flow. Each step narrows and asks the next question. */
+  const stepEdit = (pickStep: NonNullable<Chip['edit']>) => engineStepEdit(engine.current, port, sink, editHooks(), pickStep);
+  const editByWords = (wanted: EditIntent, said?: string) => engineEditByWords(engine.current, port, sink, editHooks(), wanted, said);
+  const finishTypedEdit = (chip: Chip) => engineFinishTypedEdit(engine.current, port, sink, editHooks(), chip);
 
   /*
    * ══ A KITCHEN DOOR ══ — `KITCHEN_CARDS` / `KITCHEN_ROWS`. "What can I make?" opens the composer with the
