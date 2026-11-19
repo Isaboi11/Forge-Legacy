@@ -100,7 +100,9 @@ test('⚠ the sheet draws every Holt line through HoltWords — selectable, link
   assert.match(sheet, /return <HoltWords text=\{text\} style=\{styles\.holtText\} \/>;/);
   const words = readFileSync(path.join(here, '../../../components/forge/HoltWords.tsx'), 'utf8');
   assert.match(words, /<Text style=\{style\} selectable>/);
-  assert.match(words, /if \(isOpenableLink\(p\.url\)\) void Linking\.openURL\(p\.url\)\.catch\(\(\) => undefined\);/);
+  assert.match(words, /if \(isOpenableLink\(url\)\) void Linking\.openURL\(url\)\.catch\(\(\) => undefined\);/);
+  // HL-1a: the runs come from holtMarkdown, which splits links with splitLinks — so only http(s) is ever a link.
+  assert.match(words, /holtMarkdown\(text\)/);
   assert.match(words, /accessibilityRole="link"/);
   // A token, so each theme draws its own link colour; no raw colour value in the component.
   assert.match(words, /color: flColor\.bronzeInk/);
