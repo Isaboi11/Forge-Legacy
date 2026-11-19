@@ -96,3 +96,22 @@ test('"15 minutes of cardio after every workout": a ride written on a lifting da
   assert.equal(ride.targetSec, 900);
   assert.ok(pull.main.some((e) => e.kind !== 'cardio'), 'the lifts are still there');
 });
+
+test('"scratch that change": undo_last_change puts it back (free); with nothing to undo, he says so', async () => {
+  const s = setup();
+  s.hooks.turn.edit = EDIT;
+  const start = JSON.stringify(s.w.active.structure);
+  s.world.rewriteReplies.push(JSON.stringify({ say: 'Face pulls on Pull.', sessions: [{ name: 'Pull', rows: [...pullRows(s), ROW('cable-face-pull')] }], weeks: [], rest: [], unmet: [] }));
+  await change(s, { brief: 'face pulls', newEquipment: ['cable'] }, 'I got a cable machine, add face pulls');
+  await finishTypedEdit(s.refs, s.port, s.sink, EDIT, { label: 'Do it', patch: {}, typedEdit: 'apply' });
+  assert.notEqual(JSON.stringify(s.world.active.structure), start);
+  await actOn(s.refs, s.port, s.sink, s.hooks, [{ name: 'undo_last_change', input: {} }], 'scratch that change', { done: true, stop: null }, true, null, 'program');
+  assert.equal(JSON.stringify(s.world.active.structure), start, 'put back exactly');
+  assert.equal(s.world.rewriteAsks.length, 1, 'no second rewrite');
+
+  const t = setup();
+  t.hooks.turn.edit = EDIT;
+  await actOn(t.refs, t.port, t.sink, t.hooks, [{ name: 'undo_last_change', input: {} }], 'undo', { done: true, stop: null }, true, null, 'program');
+  assert.match(t.sink.holt().join(' '), /no change of mine to undo/);
+  assert.equal(t.world.writes.filter((x) => x.kind === 'update').length, 0);
+});

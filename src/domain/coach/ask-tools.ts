@@ -298,7 +298,7 @@ const BUILD_FIELDS: Record<string, unknown> = {
   raceInWeeks: { type: 'integer', description: 'Race goal only: weeks from today until the race, when they give a duration ("about 3 months" = 13).' },
   raceDate: { type: 'string', description: 'Race goal only, and only when they name a calendar date: YYYY-MM-DD, never in the past.' },
   weeks: { type: 'integer', description: 'How long the block should be, when they say (1-52).' },
-  currentWeeklyMi: { type: 'number', description: 'Race goal only: their weekly running mileage now (km converted to miles).' },
+  currentWeeklyMi: { type: 'number', description: 'Race goal only: their weekly running mileage now (km converted to miles). "I\'ve never run" / "I don\'t run" = 0.' },
   liftDays: { type: 'integer', description: 'Race goal only: how many of the days are lifting ("half in Nov, also lift 3x" = 3).' },
   replacesCurrent: { type: 'boolean', description: 'True only when they said the new program REPLACES the one they run now ("scrap it", "start over", "a 10k instead"). The app then builds it without asking again.' },
   crossTrain: { type: 'string', enum: ['bike'], description: 'Race goal only (not triathlon): they want biking in the plan too (a bike, spin, Peloton). One easy run a week becomes a ride.' },
@@ -470,12 +470,24 @@ export const ASK_ACTION_CHANGE: AskToolDef = {
   },
 };
 
+/** Holt Listens round 3 (11-19): "scratch that change" — the model decides it is an undo; the app puts it back (free). */
+export const ASK_ACTION_UNDO: AskToolDef = {
+  name: 'undo_last_change',
+  description:
+    "Put the program back the way it was before the last change you made in this chat ('scratch that', 'I liked it before', 'go back', 'never mind that change'). The app restores it and says so. Only for a change already made — a card still waiting to be confirmed is simply left.",
+  input_schema: { type: 'object', properties: {}, additionalProperties: false },
+};
+
 /** The caps prompt's paragraph for `change_v1` — appended after the one-brain prompt, its own cached prefix. */
 export const CHANGE_PROMPT = `# Changing the program they run
 
 When the athlete wants the program they are running changed in any way — a session they don't like, more of a muscle, less running, more rest, more variety, a new focus, slimmed down or beefed up, supersets, a swap "everywhere" or "from now on" — call propose_program_change with a brief: their ask and your plan. Describing a change without calling the tool changes nothing: if you say what you will change, you must call it in the same reply. Say your plan in one or two short sentences as you call it (which sessions, what goes in, what comes out, and why). One call covers the whole change, however big; propose_program_edit is only for one quick exact change to ONE named session ("swap bench for dumbbell press on Monday"). A brand-new program in place of this one is propose_program. Pain or an injury is still medical_stop and no change.
 
-Anything for TODAY only ("leg day today but no squats", "something easy today", "the bench is taken") is propose_day or swap_exercise_today — never a change to the program.
+Anything for TODAY only ("leg day today but no squats", "something easy today", "the bench is taken") is propose_day or swap_exercise_today — never a change to the program. "Now", "anymore", "these days", "going forward" ("I can only do 20 minutes now") mean the program.
+
+Do, don't quiz. When an ask has an obvious reading ("one more day off" = a rest day each week, "you never use my cables" = more cable work), call the tool with that reading and say in a few words what you took it to mean — the card lets them say no. Ask only when two readings would build truly different things, and then ask one short question.
+
+When they want the last change taken back ("scratch that", "go back to how it was", "I liked it before"), call undo_last_change — never a new change.
 
 When they lean on what you already know ("same as usual", "like last time", "my normal split"), look it up first — get_athlete_profile, get_program_status, get_past_chats — and build from that; ask only what is still missing.`;
 
@@ -509,6 +521,7 @@ export function actionAckV1(name: string): string {
   if (name === 'propose_program_change') {
     return 'The app is rewriting the weeks ahead from your brief and will show the athlete exactly what changes, to confirm. Do not list the changes or say it is done. If you have not yet said your plan in a sentence or two, say it now.';
   }
+  if (name === 'undo_last_change') return 'The app is putting the program back the way it was before your last change and will say so. Do not say anything else about it.';
   if (name === 'open_door') return 'The app is showing the athlete a button to that screen. In one short line, say it is there. Do not say you opened it.';
   if (name === 'remember_note') return 'The app is asking the athlete whether to keep this note. Do not say you saved it. Say nothing about it unless they asked you to remember it.';
   if (name === 'propose_program' || name === 'propose_day') {

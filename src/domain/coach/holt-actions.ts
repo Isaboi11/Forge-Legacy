@@ -17,7 +17,7 @@ export const HOLT_ACTION_CAPS = 'actions_v1';
  * `propose_program_change` — one tool for ANY change to the program they run. Old apps never see it.
  */
 export const CHANGE_CAPS = 'change_v1';
-export const CHANGE_ACTIONS = ['propose_program_change'] as const;
+export const CHANGE_ACTIONS = ['propose_program_change', 'undo_last_change'] as const;
 
 /** Actions every shipped app already understands. */
 export const LEGACY_ACTIONS = ['propose_program_edit', 'offer_online_recipe_search'] as const;

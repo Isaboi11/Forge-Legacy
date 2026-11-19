@@ -20,6 +20,7 @@ import { holdTurnActions, type CardContext, type ShownCard, type TurnEnd } from 
 import { localToday } from '../../nutrition/day.ts';
 import type { EquipmentGate } from '../candidates.ts';
 import { proposeChange } from './change.ts';
+import { finishTypedEdit } from './edit.ts';
 import { respondTo, type TurnHooks } from './turn.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
 
@@ -80,6 +81,19 @@ export async function actOn(
         break;
       case 'change':
         await proposeChange(refs, port, sink, { canDo: hooks.canDo }, step.brief, asked, step.newEquipment);
+        shown = flow = true;
+        break;
+      /* "Scratch that change" (round 3, 11-19): the model decided it is an undo — the app's own Undo, free. A card
+         still waiting is simply left; nothing of his to undo is said plainly. */
+      case 'undo':
+        if (refs.pendingRewrite) {
+          refs.pendingRewrite = null;
+          sink.say({ kind: 'holt', text: "Left it as it was — nothing changed." });
+        } else if (refs.lastEdit) {
+          await finishTypedEdit(refs, port, sink, hooks.turn.edit, { label: 'Undo', patch: {}, typedEdit: 'undo' });
+        } else {
+          sink.say({ kind: 'holt', text: "There's no change of mine to undo in this chat — your program is as it was." });
+        }
         shown = flow = true;
         break;
       case 'web':

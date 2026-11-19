@@ -151,6 +151,8 @@ export type HoltActionStep =
   | { kind: 'edit'; edit: EditIntent }
   /** Holt Listens (PO D12): any change to the running program — the app rewrites from his brief and checks it. */
   | { kind: 'change'; brief: string; newEquipment: string[] }
+  /** "Scratch that change" — the app's own Undo of the last change (free). */
+  | { kind: 'undo' }
   | { kind: 'web'; lookingFor: string }
   | { kind: 'card'; action: HoltAction };
 
@@ -160,7 +162,7 @@ export interface HoltActionPlan {
   dropped: string[];
 }
 
-const FLOW = new Set(['patch', 'door', 'edit', 'change']);
+const FLOW = new Set(['patch', 'door', 'edit', 'change', 'undo']);
 
 /**
  * ⛔ §1.3 FIRST: `clean` is `cardsMayShow(...)` for the turn. A refusal, a retract, an error, a length cut, a timeout,
@@ -190,6 +192,9 @@ export function planHoltActions(
         else dropped.push(a.name);
         break;
       }
+      case 'undo_last_change':
+        flow({ kind: 'undo' });
+        break;
       case 'propose_program_edit': {
         const edit = narrowEdit(input);
         if (edit) flow({ kind: 'edit', edit });

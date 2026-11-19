@@ -19,7 +19,7 @@ import { canDoExercise } from '../../src/domain/home-gym/equipment.ts';
 import { plannedDays, trainingDays } from '../../src/domain/program/progress-core.ts';
 import { assemble } from '../../src/domain/coach/assemble.ts';
 import { ASK_OUTPUT_CAP, askUserTurn, cleanContext } from '../../src/domain/coach/ask-wire.ts';
-import { ASK_ACTION_CHANGE, ASK_ACTIONS, ASK_ACTIONS_V1, ASK_TOOLS, CHANGE_PROMPT, actionAckV1 } from '../../src/domain/coach/ask-tools.ts';
+import { ASK_ACTION_CHANGE, ASK_ACTION_UNDO, ASK_ACTIONS, ASK_ACTIONS_V1, ASK_TOOLS, CHANGE_PROMPT, actionAckV1 } from '../../src/domain/coach/ask-tools.ts';
 import { FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS } from '../../src/domain/coach/ask-food-tools.ts';
 import { AUTHOR_OUTPUT_CAP, AUTHOR_SCHEMA, authoredFromModelText, authorUserTurn } from '../../src/domain/coach/author.ts';
 import { AUTHOR_CATALOGUE } from '../../src/domain/coach/author-catalogue.ts';
@@ -83,7 +83,7 @@ const cached = (text) => [{ type: 'text', text, cache_control: { type: 'ephemera
 
 // ── coach-ask, as the function runs it with caps actions_v1 + change_v1 ──
 const CHAT_SYSTEM = `${systemOf('coach-ask', 'SYSTEM_V1')}\n\n${FOOD_PROMPT}\n\n${CHANGE_PROMPT}`;
-const CHAT_TOOLS = [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ASK_ACTION_CHANGE];
+const CHAT_TOOLS = [...ASK_TOOLS, ...FOOD_TOOLS, ...ASK_ACTIONS, ...ASK_ACTIONS_V1, ...FOOD_ACTIONS, ASK_ACTION_CHANGE, ASK_ACTION_UNDO];
 const FORWARDS = [...LEGACY_ACTIONS, ...NEW_ACTIONS, ...CHANGE_ACTIONS];
 async function chat(text, history, world, building) {
   const program = world.active ? `${world.active.name}\n${programText(world.active.structure, world.marks, 0).slice(0, 2500)}` : null;
@@ -224,7 +224,7 @@ async function converse(c) {
   ];
   const queue = [...c.lines];
   let answered = 0;
-  while (queue.length || answered < 3) {
+  while (queue.length || answered < 5) {
     let line = queue.shift();
     if (line == null) {
       const last = sink.holt().at(-1) ?? '';
