@@ -15,7 +15,7 @@ import { canDoExercise } from '../../src/domain/home-gym/equipment.ts';
 import { plannedDays, trainingDays } from '../../src/domain/program/progress-core.ts';
 import { assemble } from '../../src/domain/coach/assemble.ts';
 import { checkRewrite } from '../../src/domain/coach/engine/checker.ts';
-import { REWRITE_OUTPUT_CAP, REWRITE_SCHEMA, REWRITE_SYSTEM, programText, rewriteFromModelText, rewriteUserTurn } from '../../src/domain/coach/rewrite.ts';
+import { REWRITE_OUTPUT_CAP, REWRITE_SCHEMA, REWRITE_SYSTEM, expandRewrite, programText, rewriteFromModelText, rewriteUserTurn } from '../../src/domain/coach/rewrite.ts';
 import { BENJAMIN_KIT, benjaminWorld, catalog } from '../../src/domain/coach/engine/__tests__/fixtures.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -131,7 +131,7 @@ for (const c of CASES) {
   if (r.error) { console.log(`✖ ${c.id}: ${r.error}`); log.push({ id: c.id, error: r.error }); continue; }
   const parsed = rewriteFromModelText(r.text);
   if (!parsed) { console.log(`✖ ${c.id}: unreadable (${r.stop})`); log.push({ id: c.id, unreadable: r.text.slice(0, 400) }); continue; }
-  const checked = checkRewrite(w.structure, w.marks, parsed.rewrite, { athlete: w.athlete, catalog: catalog(), canDo: canDoExercise, race: w.race });
+  const checked = checkRewrite(w.structure, w.marks, expandRewrite(w.structure, fromWeek, parsed), { athlete: w.athlete, catalog: catalog(), canDo: canDoExercise, race: w.race });
   console.log(`\n■ ${c.id}  ${(r.ms / 1000).toFixed(1)}s  $${r.cost.toFixed(3)}  out ${r.usage.output_tokens} tok`);
   console.log(`  Holt: ${parsed.say}`);
   if (parsed.unmet.length) console.log(`  unmet: ${parsed.unmet.join(' · ')}`);

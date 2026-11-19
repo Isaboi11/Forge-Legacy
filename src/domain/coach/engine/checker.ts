@@ -47,8 +47,8 @@ export interface RewriteDay {
   rows: RewriteRow[];
 }
 export interface Rewrite {
-  /** 1-based weeks, from the athlete's next session on. Days in schedule order (training days only). */
-  weeks: { week: number; days: RewriteDay[] }[];
+  /** 1-based weeks, from the athlete's next session on. Days in schedule order (training days only); `null` = unchanged. */
+  weeks: { week: number; days: (RewriteDay | null)[] }[];
   /** Sessions to rest instead (skip marks), 1-based week and day. */
   rest?: { week: number; day: number }[];
 }
@@ -95,9 +95,36 @@ const authored = (r: RewriteRow): AuthoredExercise => ({
   note: r.note ?? '',
 });
 
+/**
+ * A RUN day as the plan wrote it keeps its warm-up, cool-down, stretches, each run's name, coach note and pace — Holt
+ * sets only the distance or time of its runs (live run 11-19: rebuilding run days from his rows alone dropped all of
+ * that, and a tempo day with a warm-up and a walk failed outright). His run rows map onto the plan's main runs in
+ * order; any extra he wrote is appended as an easy run.
+ */
+function runDayFrom(rd: RewriteDay, before: ProgramDay): ProgramDay {
+  const wanted = rd.rows.filter((r) => r.key === RUN_KEY && (r.part ?? 'main') === 'main');
+  let k = 0;
+  const main = before.main.map((e) => {
+    if (!isRunRow(e)) return e;
+    const r = wanted[k];
+    k += 1;
+    if (!r) return e;
+    if (r.miles != null && r.miles > 0 && e.targetMi != null) return { ...e, targetMi: Math.max(1, round1(r.miles)) };
+    if (r.seconds != null && r.seconds > 0 && e.targetSec != null) return { ...e, targetSec: Math.max(600, Math.min(4 * 3600, Math.round(r.seconds / 60) * 60)) };
+    if (r.miles != null && r.miles > 0) return { ...e, targetMi: Math.max(1, round1(r.miles)), targetSec: null };
+    return e;
+  });
+  for (const extra of wanted.slice(k)) main.push(runRow(extra, 'Easy Run'));
+  return { ...before, main };
+}
+
 /** One rewritten session → a `ProgramDay`, or null when nothing usable came back (the session is then kept). */
 function buildDay(rd: RewriteDay, before: ProgramDay, cx: CheckContext, dropped: Dropped[]): ProgramDay | null {
-  const runs = rd.rows.filter((r) => r.key === RUN_KEY);
+  const wasRunDay = before.main.length > 0 && before.main.every(isRunRow);
+  const mainRows = rd.rows.filter((r) => (r.part ?? 'main') === 'main');
+  const runs = mainRows.filter((r) => r.key === RUN_KEY);
+  // A run day stays a run day when he wrote runs for it: only distances/times move.
+  if (wasRunDay && runs.length && runs.length === mainRows.length) return runDayFrom(rd, before);
   const rest = rd.rows.filter((r) => r.key !== RUN_KEY);
   if (runs.length && !rest.length) {
     return { ...before, name: rd.name || before.name, warmup: [], main: runs.map((r) => runRow(r, rd.name || 'Run')), cooldown: [] };
@@ -106,7 +133,16 @@ function buildDay(rd: RewriteDay, before: ProgramDay, cx: CheckContext, dropped:
   if (!v) return null;
   for (const d of v.dropped) if (!dropped.some((x) => x.name === d.name)) dropped.push(d);
   const day = v.days[0];
-  return { ...before, name: rd.name || before.name, warmup: day.warmup, main: [...day.main, ...runs.map((r) => runRow(r, 'Run'))], cooldown: day.cooldown };
+  /* What he did not write stays the session's own: its warm-up and cool-down, and the coach note on a movement kept. */
+  const notes = new Map(before.main.filter((e) => e.catalogKey && e.coachNote).map((e) => [e.catalogKey as string, e.coachNote]));
+  const main = day.main.map((e) => (!e.coachNote && e.catalogKey && notes.has(e.catalogKey) ? { ...e, coachNote: notes.get(e.catalogKey) } : e));
+  return {
+    ...before,
+    name: rd.name || before.name,
+    warmup: rd.rows.some((r) => r.part === 'warmup') ? day.warmup : before.warmup,
+    main: [...main, ...runs.map((r) => runRow(r, 'Run'))],
+    cooldown: rd.rows.some((r) => r.part === 'cooldown') ? day.cooldown : before.cooldown,
+  };
 }
 
 export function checkRewrite(before: ProgramStructure, marks: readonly SessionMark[], rw: Rewrite, cx: CheckContext): CheckResult {
@@ -135,7 +171,9 @@ export function checkRewrite(before: ProgramStructure, marks: readonly SessionMa
       const d = s;
       s += 1;
       if (!canEdit(marks, w, d)) continue;
-      const built = buildDay(wk.days[d], raw[i], cx, dropped);
+      const rd = wk.days[d];
+      if (!rd) continue;
+      const built = buildDay(rd, raw[i], cx, dropped);
       if (!built) {
         said.push(`I kept week ${w + 1}'s ${raw[i].name} as it was — what I wrote for it didn't hold up.`);
         continue;
