@@ -11,8 +11,12 @@ const chat = read('../../components/forge/CoachChatSheet.tsx');
 const wizard = read('../coach.tsx');
 const detail = read('../program/[id].tsx');
 
-/** `advance` — the chat's build — from its declaration to the next top-level declaration after it. */
-const advance = chat.slice(chat.indexOf('const advance = useCallback('), chat.indexOf('const guardActiveProgram = useCallback(')); // the guard moved to engine/guards.ts (HL-10 S1); its wrapper is the next declaration
+/* The build moved into the engine (Holt Listens HL-10 S4b) — same code; `say`/`setBusy` are the sink, data calls the
+   port, `gates`/`closeSignal` the hooks. The sheet keeps thin wrappers. */
+const engineBuild = read('../../domain/coach/engine/build.ts');
+/** `advance` — the chat's build — from its declaration to the end of the module. */
+const advance = engineBuild.slice(engineBuild.indexOf('export async function advance('));
+const payHoltSrc = engineBuild.slice(engineBuild.indexOf('export async function payHolt('), engineBuild.indexOf('export async function advance('));
 /** One top-level chat function, from its declaration to the next one. */
 const fn = (head) => {
   const at = chat.indexOf(head);
@@ -21,23 +25,24 @@ const fn = (head) => {
 };
 
 test('H18 — the allowance is spent by one payer, in the chat and in the wizard, and a refusal stops the build', () => {
-  assert.match(chat, /const payHolt = useCallback\(\n\s+async \(kind: 'day' \| 'program', offerWeek = false\): Promise<boolean> => \{\n\s+const spend = await consumeHoltAllowance\(kind\);/);
-  assert.equal(chat.match(/consumeHoltAllowance\(/g)?.length, 1, 'one spend in the chat, through payHolt');
+  assert.match(payHoltSrc, /export async function payHolt\(port: EnginePort, sink: EngineSink, hooks: BuildHooks, kind: 'day' \| 'program', offerWeek = false\): Promise<boolean> \{\n\s+const spend = await port\.build\.spend\(kind\);/);
+  assert.equal(engineBuild.match(/port\.build\.spend\(/g)?.length, 1, 'one spend in the chat, through payHolt');
+  assert.equal(chat.match(/consumeHoltAllowance\(/g)?.length ?? 0, 0, 'the sheet never spends on its own');
   const build = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('async function build() {') + 1400);
   assert.match(build, /const spend = await consumeHoltAllowance\(kind\);/);
 });
 
 test('B-D4 — a day pays once it EXISTS: never before the build, never for one he could not put together', () => {
   // The chat: both day paths — the one he wrote from their words and the rulebook's — pay before the draft.
-  assert.equal(advance.match(/if \(!\(await payHolt\('day'\)\)\) return;/g)?.length, 2);
-  assert.doesNotMatch(advance, /mode_ === 'day' && !\(await payHolt\('day'\)\)/, 'paying before the build was the bug');
+  assert.equal(advance.match(/if \(!\(await payHolt\(port, sink, hooks, 'day'\)\)\) return;/g)?.length, 2);
+  assert.doesNotMatch(advance, /mode_ === 'day' && !\(await payHolt\(/, 'paying before the build was the bug');
   const written = advance.slice(advance.indexOf("if (written && mode_ === 'day') {"));
-  assert.ok(written.indexOf("if (!(await payHolt('day'))) return;") < written.indexOf('await saveWorkoutDraft('));
+  assert.ok(written.indexOf("if (!(await payHolt(port, sink, hooks, 'day'))) return;") < written.indexOf('await port.drafts.saveWorkout('));
   const rulebook = advance.slice(advance.indexOf('const r = buildDayWorkout(dayReq'));
   const thin = rulebook.indexOf('if (thin) {');
-  const pays = rulebook.indexOf("if (!(await payHolt('day'))) return;");
+  const pays = rulebook.indexOf("if (!(await payHolt(port, sink, hooks, 'day'))) return;");
   assert.ok(thin > 0 && thin < pays, 'a thin day is answered before anything is spent');
-  assert.ok(pays < rulebook.indexOf('await saveWorkoutDraft('));
+  assert.ok(pays < rulebook.indexOf('await port.drafts.saveWorkout('));
   // The wizard: after the empty-day refusal, before the card.
   const wbuild = wizard.slice(wizard.indexOf('async function build() {'), wizard.indexOf('const onApply = async'));
   assert.doesNotMatch(wbuild, /mode === 'day' && !\(await pay\('day'\)\)/);
@@ -47,9 +52,10 @@ test('B-D4 — a day pays once it EXISTS: never before the build, never for one 
 });
 
 test('G4 — an unreadable spend answer stops a capped athlete with a retry, in the chat and in the wizard', () => {
-  const pay = chat.slice(chat.indexOf('const payHolt = useCallback('), chat.indexOf('const payHolt = useCallback(') + 900);
-  assert.match(pay, /const verdict = holtSpendVerdict\(spend, gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;\n\s+sayHoltRefused\(kind, verdict, offerWeek\);\n\s+return false;/);
-  assert.match(fn('const sayHoltRefused = '), /if \(verdict === 'retry'\) \{\n\s+say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return;/);
+  const pay = payHoltSrc;
+  assert.match(pay, /const verdict = holtSpendVerdict\(spend, hooks\.gates\(kind === 'day' \? 'holt_days_per_month' : 'holt_programs'\)\);\n\s+if \(verdict === 'build'\) return true;\n\s+sayHoltRefused\(port, sink, hooks, kind, verdict, offerWeek\);\n\s+return false;/);
+  const refused = engineBuild.slice(engineBuild.indexOf('export function sayHoltRefused('), engineBuild.indexOf('export async function payHolt('));
+  assert.match(refused, /if \(verdict === 'retry'\) \{\n\s+sink\.say\(\{ kind: 'holt', text: PLAN_UNCHECKED \}\);\n\s+return;/);
   assert.doesNotMatch(pay, /if \(!spend \|\| spend\.allowed\) return true;/, 'a null building anyway was the bug');
   // A block's keep (0270) reads its answer through the same rule, and says the same lines.
   const keep = fn('const keepAsProgram = ');
@@ -75,13 +81,13 @@ test('P6 (MA4-D5) — a block spends the Holt program only at four weeks or more
 
 test('B-D1 — a Holt block is paid for when it is KEPT, before anything is written, never when he builds it', () => {
   // Building spends nothing — so "Ask me again", which only builds again, spends nothing either.
-  assert.doesNotMatch(advance, /payHolt\('program'/, 'a build that spends the program is how a rebuild burned it');
+  assert.doesNotMatch(advance, /payHolt\(port, sink, hooks, 'program'/, 'a build that spends the program is how a rebuild burned it');
   assert.doesNotMatch(advance, /payForBlock/);
   assert.doesNotMatch(fn('const rebuild = '), /payHolt|keepAsProgram|keepHoltProgram|consumeHoltAllowance/);
   // At the build, the Builder draft is written only when keeping it owes nothing more (else it was a free copy).
-  assert.equal(advance.match(/saveProgramDraft\(/g)?.length, 2);
+  assert.equal(advance.match(/port\.drafts\.saveProgram\(/g)?.length, 2);
   assert.equal(advance.match(/if \(draftNow\(structure\)\)/g)?.length, 2, 'both build paths stage the draft through draftNow');
-  assert.match(advance, /const draftNow = \(structure: ProgramStructure\): boolean =>\n\s+!earnsStructuredDevelopmentCredit\(structure\) \|\| holtUncapped\(gates\('holt_programs'\)\);/);
+  assert.match(advance, /const draftNow = \(structure: ProgramStructure\): boolean =>\n\s+!earnsStructuredDevelopmentCredit\(structure\) \|\| holtUncapped\(hooks\.gates\('holt_programs'\)\);/);
   // 0270: every keep of a 4+-week block is ONE server step — the spend and the row together — through the ledger,
   // so the same build is kept once, as one program.
   const keep = fn('const keepAsProgram = ');

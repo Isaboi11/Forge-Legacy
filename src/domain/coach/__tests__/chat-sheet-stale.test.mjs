@@ -19,6 +19,8 @@ import path from 'node:path';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sheet = readFileSync(path.join(here, '../../../components/forge/CoachChatSheet.tsx'), 'utf8');
+/* The build is the engine's since Holt Listens HL-10 S4b — the race and concern checks read it there. */
+const build = readFileSync(path.join(here, '../engine/build.ts'), 'utf8').replace(/\r\n/g, '\n');
 
 const fn = (name) => {
   const start = sheet.indexOf(`function ${name}(`);
@@ -56,9 +58,9 @@ test('⚠ a new request starts from the athlete, not from the last request', () 
 });
 
 test('⚠ a race the athlete asked for is built, and the concern is said once with the suggestion as a tap', () => {
-  assert.match(sheet, /\.\.\.\(isEnduranceGoal\(c\.goal\) \? \{ buildAnyway: true \} : \{\}\)/);
-  assert.match(sheet, /const concern = res\.assembly\.concern;/);
-  assert.match(sheet, /label: `Build the \$\{RACE_SPEC\[alt\]\.label\} instead`, patch: \{ goal: alt \}/);
+  assert.match(build, /\.\.\.\(isEnduranceGoal\(c\.goal\) \? \{ buildAnyway: true \} : \{\}\)/);
+  assert.match(build, /const concern = res\.assembly\.concern;/);
+  assert.match(build, /label: `Build the \$\{RACE_SPEC\[alt\]\.label\} instead`, patch: \{ goal: alt \}/);
 });
 
 test('⚠ B-D10 (AI audit 11-16) — the wizard builds the race the chat builds, and says the concern', () => {
@@ -79,9 +81,9 @@ test('⚠ QA R2-F8 — a request interrupted by the active-program question is k
 });
 
 test('⚠ QA F14 — a race concern is said BEFORE the card with the Start button, never after it', () => {
-  const at = sheet.indexOf('const concern = res.assembly.concern;');
+  const at = build.indexOf('const concern = res.assembly.concern;');
   assert.ok(at > 0);
-  const said = sheet.slice(at, sheet.indexOf('const asm = res.assembly;', at));
+  const said = build.slice(at, build.indexOf('const asm = res.assembly;', at));
   const concernAt = said.indexOf('text: concern.message');
   // The card's prefix: it may carry `authored` when Holt wrote the race's lifting days (0269, the thumbs).
   const cardAt = said.indexOf("{ kind: 'program', card: programCard");

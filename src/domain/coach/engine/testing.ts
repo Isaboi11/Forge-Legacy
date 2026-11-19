@@ -11,6 +11,8 @@ import type { CatalogExercise } from '../candidates.ts';
 import type { Turn } from '../chat-core.ts';
 import type { Chooser } from '../rulebook/voice.ts';
 import type { Busy, EnginePort, EngineSink } from './types.ts';
+import { learnPreferences } from '../learned-preference.ts';
+import { NO_RECENT_WORK } from '../recent-work.ts';
 
 /** mulberry32 — small, fast, and the same sequence for the same seed on every machine. */
 export function seededChooser(seed: number): Chooser {
@@ -29,7 +31,11 @@ export function seededChooser(seed: number): Chooser {
 export type FakeWrite =
   | { kind: 'update'; programId: string; structure: ProgramStructure }
   | { kind: 'skip'; programId: string; weekIndex: number; dayIndex: number }
-  | { kind: 'unskip'; programId: string; weekIndex: number; dayIndex: number };
+  | { kind: 'unskip'; programId: string; weekIndex: number; dayIndex: number }
+  | { kind: 'spend'; what: 'program' | 'day' }
+  | { kind: 'draft'; what: 'workout' | 'program'; draft: unknown }
+  | { kind: 'told'; name: string | null }
+  | { kind: 'remember'; what: 'experience'; value: unknown };
 
 export interface FakeWorld {
   /** The running program, or none. `update` writes land here, so a later read sees them. */
@@ -39,6 +45,15 @@ export interface FakeWorld {
   writes: FakeWrite[];
   /** Make the next `active()` read throw (a dropped connection) or never answer (a hang). */
   failNext?: 'throw' | 'hang';
+  /**
+   * What Holt's writer (`coach-author`) answers, in order — a test scripts the model. Empty = `{ kind: 'none' }`
+   * ("he wrote nothing usable"), so the rulebook builds, exactly as on a phone that cannot reach him.
+   */
+  authorReplies: unknown[];
+  /** Every request the writer was sent — the harness checks what Holt was TOLD, not only what came back. */
+  authorAsks: unknown[];
+  /** The free allowance's answer to a spend. Default: allowed. */
+  spendReply: { allowed: boolean; used: number; allowance: number } | null;
 }
 
 export interface FakePortOptions {
@@ -48,6 +63,8 @@ export interface FakePortOptions {
   catalog?: readonly CatalogExercise[];
   seed?: number;
   now?: Date;
+  /** The built-in shelf (the phone reads JSON the test runner cannot import; tests pass what they need). */
+  definitions?: readonly unknown[];
 }
 
 export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world: FakeWorld } {
@@ -56,6 +73,9 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
     marks: [...(opts.marks ?? [])],
     mine: [...(opts.mine ?? (opts.active ? [opts.active] : []))],
     writes: [],
+    authorReplies: [],
+    authorAsks: [],
+    spendReply: { allowed: true, used: 1, allowance: 99 },
   };
   const now = opts.now ?? new Date('2026-11-18T18:00:00Z');
   const port: EnginePort = {
@@ -87,6 +107,27 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
         world.marks = world.marks.filter((m) => !(m.weekIndex === weekIndex && m.dayIndex === dayIndex && m.state === 'skipped'));
         return { ok: true, removed: world.marks.length < before };
       },
+    },
+    build: {
+      learned: async () => learnPreferences([]),
+      recent: async () => NO_RECENT_WORK,
+      author: async (req) => {
+        world.authorAsks.push(req);
+        return (world.authorReplies.shift() ?? { kind: 'none' }) as Awaited<ReturnType<EnginePort['build']['author']>>;
+      },
+      definitions: () => (opts.definitions ?? []) as ReturnType<EnginePort['build']['definitions']>,
+      spend: async (what) => {
+        world.writes.push({ kind: 'spend', what });
+        return world.spendReply;
+      },
+    },
+    drafts: {
+      saveWorkout: async (draft) => void world.writes.push({ kind: 'draft', what: 'workout', draft }),
+      saveProgram: async (draft) => void world.writes.push({ kind: 'draft', what: 'program', draft }),
+      setTold: async (name) => void world.writes.push({ kind: 'told', name }),
+    },
+    memory: {
+      rememberExperience: async (value) => void world.writes.push({ kind: 'remember', what: 'experience', value }),
     },
     catalog: opts.catalog ?? [],
     choose: seededChooser(opts.seed ?? 1),

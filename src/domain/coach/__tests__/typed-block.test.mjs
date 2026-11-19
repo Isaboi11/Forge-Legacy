@@ -74,7 +74,8 @@ test('Holt says the shape once: the wave where he gave a range, the lighter week
 });
 
 test('the chat builds a typed program through typedBlock (no more one week repeated)', () => {
-  const sheet = readFileSync(new URL('../../../components/forge/CoachChatSheet.tsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  // The build is the engine's since Holt Listens HL-10 S4b.
+  const sheet = readFileSync(new URL('../engine/build.ts', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
   assert.match(sheet, /typedBlock\(written\.valid\.title, written\.valid\.days, c\.weeks \?\? defaultWeeksFor\(c\.goal\)\)/);
   assert.match(sheet, /typedBlockLine\(structure, deloads\)/);
 });
@@ -108,6 +109,8 @@ test('⛔ floors are never owed by a typed program — an arms-only week is what
 });
 
 test('the chat says the ceiling line under a typed program, from the real catalogue', () => {
-  const sheet = readFileSync(new URL('../../../components/forge/CoachChatSheet.tsx', import.meta.url), 'utf8');
-  assert.match(sheet, /overCeilingLine\(typedOverCeiling\(written\.valid\.days, c\.goal, c\.experience\.lifting, itemByKey\)\)/);
+  // The build is the engine's since HL-10 S4b; `itemByKey` is the injected catalogue's lookup there (`byKey`).
+  const sheet = readFileSync(new URL('../engine/build.ts', import.meta.url), 'utf8');
+  assert.match(sheet, /overCeilingLine\(typedOverCeiling\(written\.valid\.days, c\.goal, c\.experience\.lifting, byKey\)\)/);
+  assert.match(sheet, /const byKey = keyed\(port\.catalog\);/);
 });

@@ -10,6 +10,8 @@ const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8').replace(/\
 const COMPONENT = read('../../components/forge/AiFeedback.tsx');
 const LIVE = read('../../data/ai-feedback-live.ts');
 const CHAT = read('../../components/forge/CoachChatSheet.tsx');
+/* The build — where Holt's own cards are put on the table — is the engine's since Holt Listens HL-10 S4b. */
+const BUILD = read('../../domain/coach/engine/build.ts');
 const MEAL_PLAN = read('../meal-plan.tsx');
 const MEAL_PHOTO = read('../meal-photo.tsx');
 const FORM = read('../form-check.tsx');
@@ -56,10 +58,11 @@ test('chat: only a finished coach-ask reply, the kitchen’s dishes and a Holt-w
   assert.match(CHAT, /\{feedback\?\.after === 'words' \? \(\s*<View style=\{styles\.replyTools\}>\s*<ReplyTools[\s\S]{0,300}?<AiFeedback feature=\{feedback\.feature\} aiRef=\{feedback\.ref\} compact \/>\s*<\/View>\s*\) : null\}/);
   assert.match(CHAT, /\{feedback\?\.after === 'attached' \? <AiFeedback/);
   // Authored is said where Holt's own plan is put on the table — the day, the program, and a race's lifting days.
-  assert.match(CHAT, /\{ kind: 'day', card: dayCard, authored: true \}/);
-  assert.match(CHAT, /\{ kind: 'program', card: programCard, authored: true \}/);
-  assert.match(CHAT, /\{ kind: 'program', card: programCard, \.\.\.\(holt\.written \? \{ authored: true \} : \{\}\) \}/);
-  assert.equal((CHAT.match(/authored: true/g) ?? []).length, 3);
+  assert.match(BUILD, /\{ kind: 'day', card: dayCard, authored: true \}/);
+  assert.match(BUILD, /\{ kind: 'program', card: programCard, authored: true \}/);
+  assert.match(BUILD, /\{ kind: 'program', card: programCard, \.\.\.\(holt\.written \? \{ authored: true \} : \{\}\) \}/);
+  assert.equal((BUILD.match(/authored: true/g) ?? []).length, 3);
+  assert.equal((CHAT.match(/authored: true/g) ?? []).length, 0, 'the sheet never marks a card authored on its own');
 });
 
 test('kitchen in the meal plan, meal photo and photo import: a ref made once when the answer arrives', () => {

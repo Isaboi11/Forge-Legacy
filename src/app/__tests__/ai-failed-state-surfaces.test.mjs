@@ -82,7 +82,6 @@ const SURFACES = [
   [
     'src/components/forge/CoachChatSheet.tsx',
     [
-      /holt\.fellBack = withNotCharged\(authorFallbackLine\(a\), a\.refunded\)/,
       /'The connection dropped before I heard back\.',\n\s*r\.refunded,\n\s*\),/,
       // UX-1 (Sprint 3b): the kitchen failing is the chat's failure card; "Not charged." rides as its flag.
       /\{ kind: 'error', text: kitchenError\(r\), sub: '', action: '', \.\.\.\(r\.refunded \? \{ notCharged: true as const \} : \{\}\) \},\n\s*\{ kind: 'chips'/,
@@ -90,6 +89,8 @@ const SURFACES = [
       /if \(r\.kind !== 'ok'\) return void say\(\{ kind: 'holt', text: withNotCharged\(attachErrorLine\(kind, r\.kind\), r\.refunded\) \}\);/,
     ],
   ],
+  // The build (coach-author's fallback) is the engine's since Holt Listens HL-10 S4b.
+  ['src/domain/coach/engine/build.ts', [/holt\.fellBack = withNotCharged\(authorFallbackLine\(a\), a\.refunded\)/]],
 ];
 
 test('refunded → "Not charged." on every non-chat AI surface', () => {
@@ -124,7 +125,7 @@ const CLOSERS = [
   ['src/components/forge/CoachChatSheet.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, closeSignal\(\)\)/],
   // Sprint 4a: the typed path is Holt's chat now (coach-interpret retired) — its ask is in `asking`, aborted on close.
   ['src/components/forge/CoachChatSheet.tsx', /const ctl = new AbortController\(\);\n\s*asking\.current\.add\(ctl\);/],
-  ['src/components/forge/CoachChatSheet.tsx', /beside,\n\s*\}, closeSignal\(\)\);/],
+  ['src/domain/coach/engine/build.ts', /beside,\n\s*\}, hooks\.closeSignal\(\)\);/],
   ['src/components/forge/CoachChatSheet.tsx', /minor: rules\.minor,\n\s*\}, closeSignal\(\)\);/],
   ['src/components/forge/ImportSpreadsheetSheet.tsx', /readImportPhoto\(uri, \(n\) => resolveExerciseName\(n\)\?\.key, ctl\.signal\)/],
 ];
@@ -132,9 +133,11 @@ const CLOSERS = [
 test('every screen that can close mid-call aborts the call on close', () => {
   for (const [file, line] of CLOSERS) assert.match(read(file), line, `${file}: ${line}`);
   for (const file of new Set(CLOSERS.map(([f]) => f))) {
-    if (file.endsWith('ImportSpreadsheetSheet.tsx')) continue;
+    if (file.endsWith('ImportSpreadsheetSheet.tsx') || file.endsWith('engine/build.ts')) continue;
     assert.match(read(file), /const closeSignal = useCloseSignal\(\);/, file);
   }
+  // The engine's build aborts through the SHEET's close signal, handed in as a hook (HL-10 S4b).
+  assert.match(read('src/components/forge/CoachChatSheet.tsx'), /const buildHooks = useMemo<BuildHooks>\(\n\s+\(\) => \(\{\n\s+gates,\n\s+closeSignal,/);
   // The sheet stays mounted when it closes, so its close aborts the read itself.
   assert.match(read('src/components/forge/ImportSpreadsheetSheet.tsx'), /gen\.current \+= 1;\n\s*reader\.current\?\.abort\(\);/);
   // One controller per call, every live one aborted on unmount.

@@ -30,7 +30,17 @@ import type { CatalogExercise } from '../candidates.ts';
 import type { EditChangeId } from '../edit-chat.ts';
 import type { EditIntent, EditIntentResolution } from '../edit-intent.ts';
 import type { AskShown } from '../listens.ts';
-import type { ChatMode, ChatState, Turn } from '../chat-core.ts';
+import type { ChatMode, ChatState, Room, Turn } from '../chat-core.ts';
+import type { Goal } from '../constraints.ts';
+import type { AuthorRequest, AuthorResult } from '../author.ts';
+import type { LearnedPreferences } from '../learned-preference.ts';
+import type { RecentWork } from '../recent-work.ts';
+import type { Refundable } from '../../ai/ai-call.ts';
+import type { ProgramDefinition } from '../../training/schema.ts';
+import type { NoAiConsent } from '@/lib/consent';
+import type { ProgramDraft } from '@/lib/program-draft-model';
+import type { WorkoutDraft } from '@/lib/workout-builder-draft';
+import type { RememberedExperience } from '@/lib/coach-memory';
 import type { Chooser } from '../rulebook/voice.ts';
 
 /** Which conversation the athlete is in. Not `ChatMode` — that already means program / day / pick. */
@@ -52,6 +62,27 @@ export interface ProgramPort {
 /** Everything outside the engine. Grows one slice at a time — only what moved code actually calls. */
 export interface EnginePort {
   programs: ProgramPort;
+  /** What a build reads and spends (S4b). */
+  build: {
+    learned(): Promise<LearnedPreferences>;
+    recent(): Promise<RecentWork>;
+    /** Holt writes it (`coach-author`). */
+    author(req: AuthorRequest, signal?: AbortSignal): Promise<Refundable<AuthorResult> | NoAiConsent>;
+    /** The built-in shelf. */
+    definitions(): readonly ProgramDefinition[];
+    /** `consume_holt_allowance` — the only spend of the free allowance; null = unreadable. */
+    spend(kind: 'program' | 'day'): Promise<{ allowed: boolean; used: number; allowance: number } | null>;
+  };
+  /** The Builder drafts a build hands over to (device storage). */
+  drafts: {
+    saveWorkout(d: WorkoutDraft): Promise<void>;
+    saveProgram(d: ProgramDraft): Promise<void>;
+    setTold(name: string | null): Promise<void>;
+  };
+  /** Holt's device memory of the athlete. */
+  memory: {
+    rememberExperience(e: RememberedExperience): Promise<void>;
+  };
   /** The visible catalogue (`PICKER_DB` on the phone; built from the source JSON in tests). */
   catalog: readonly CatalogExercise[];
   /** Holt's line picker's dice. Seeded in tests. */
@@ -83,6 +114,16 @@ export interface EngineRefs {
   mode: ChatMode | null;
   constraints: ChatState;
   built: Built | null;
+  /** Where they train, remembered (lib/coach-memory) — answered from memory when it would be asked. */
+  room: Room | null;
+  /** The room on this request came from memory, so Holt says he assumed it. */
+  roomAssumed: boolean;
+  /** What onboarding recorded as their goal — a stand-in, never passed to the model as their answer. */
+  profileGoal: Goal | null;
+  /** The goal on this request is that stand-in. */
+  goalGuessed: boolean;
+  /** Holt's notes on them (CA-D2), as last read — a build sends them. */
+  heardNotes: string[];
 
   /* ── changing a program already running (S2, `engine/edit.ts`) ── */
   /**
@@ -134,6 +175,11 @@ export const freshRefs = (): EngineRefs => ({
   mode: null,
   constraints: {},
   built: null,
+  room: null,
+  roomAssumed: false,
+  profileGoal: null,
+  goalGuessed: false,
+  heardNotes: [],
   edit: null,
   pendingEdit: null,
   lastEdit: null,
