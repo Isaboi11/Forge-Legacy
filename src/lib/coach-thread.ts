@@ -5,8 +5,10 @@ import type { Turn } from '@/domain/coach/chat-core';
    this one is a runtime import, and `node --test` cannot resolve the alias — `intro.test.mjs` reaches
    this file through the chat core and died with ERR_MODULE_NOT_FOUND the moment this was written as
    `@/domain/...`. Every runtime cross-import in `src/domain` is written this way for the same reason. */
-import { allowWrites, mayPersist, readThreadPlace, stopWrites, type ThreadPlace } from '../domain/coach/thread-lifecycle.ts';
+import { allowWrites, mayPersist, readThreadPlace, stopWrites, withHeldPlace, type ThreadPlace } from '../domain/coach/thread-lifecycle.ts';
 import { withoutPartialReplies } from '../domain/coach/chat-core.ts';
+// The app's own id minter (Hermes has no `crypto.randomUUID` everywhere) — import-free, so node can load it too.
+import { uuid } from './app-session.ts';
 
 /**
  * The conversation, kept between visits.
@@ -40,7 +42,27 @@ const MAX_TURNS = 100;
 
 /** The conversation as last saved — what `endThread` hands to whoever remembers it. */
 let current: Turn[] | null = null;
-let onEnd: ((turns: Turn[]) => void) | null = null;
+/* Whatever the summariser returns (`summarizeChat`'s promise) is handed on to `afterEnd` as the outcome. */
+let onEnd: ((turns: Turn[]) => unknown) | null = null;
+
+/**
+ * Sprint 4b §1.5 — the halves of the stored place the SHEET does not hold: this chat's id in `holt_chats` (minted
+ * here at the first athlete line), the recap, and a continued chat's head. Merged into every place written
+ * (`withHeldPlace`), restored with the thread, forgotten with it.
+ */
+let held: Pick<ThreadPlace, 'chatId' | 'recap' | 'continued'> | null = null;
+
+/** A conversation that just ended, as `afterThreadEnds` is told it. */
+export interface EndedThread {
+  turns: Turn[];
+  place: ThreadPlace | null;
+  /** What the summariser returned (its `SummarizeResult` once it settles), or undefined. Never rejects. */
+  outcome: Promise<unknown>;
+}
+let afterEnd: ((ended: EndedThread) => void) | null = null;
+
+const holdFrom = (p: ThreadPlace | null): typeof held =>
+  p ? { chatId: p.chatId, recap: p.recap, continued: p.continued } : null;
 
 /**
  * ⚠ **A STORED INTRODUCTION IS NOT A CONVERSATION, AND TREATING IT AS ONE BRICKED THE SHEET.**
@@ -65,12 +87,15 @@ export const isConversation = (turns: Turn[]): boolean => turns.some((t) => t.ki
 export async function loadThread(): Promise<Turn[] | null> {
   /* A sheet is opening and asking for the thread — whatever ended the last conversation is spent. */
   allowWrites();
+  held = null;
   try {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Turn[];
     if (!Array.isArray(parsed) || parsed.length === 0) return null;
     if (!isConversation(parsed)) return null;
+    /* The chat id (and recap, and a continued chat's head) come back WITH the words — only with them. */
+    held = holdFrom(readThreadPlace(await AsyncStorage.getItem(PLACE_KEY)));
     /* A thread saved before `saveThread` stripped them can still hold a reply marked "still arriving" — a
        cut-off answer, which is dropped rather than restored as finished (kitchen-09). */
     return withoutPartialReplies(parsed).map((t) => (t.kind === 'holt' && (t.streaming || t.sid != null) ? { ...t, streaming: undefined, sid: undefined } : t));
@@ -100,8 +125,14 @@ export async function saveThread(turns: Turn[], place?: ThreadPlace): Promise<vo
     const settled = withoutPartialReplies(turns.slice(-MAX_TURNS))
       .map((t) => (t.kind === 'holt' ? { ...t, live: false, streaming: undefined, sid: undefined } : t));
     current = settled;
+    /* Sprint 4b §1.5: the chat gets its id at its first athlete line — this is the first save that has one. */
+    if (!held?.chatId) held = { ...held, chatId: uuid() };
     await AsyncStorage.setItem(KEY, JSON.stringify(settled));
-    if (place) await AsyncStorage.setItem(PLACE_KEY, JSON.stringify(place));
+    if (place) {
+      const full = withHeldPlace(place, held);
+      held = holdFrom(full);
+      await AsyncStorage.setItem(PLACE_KEY, JSON.stringify(full));
+    }
   } catch {
     // Best-effort: losing the thread costs the conversation, never the training.
   }
@@ -125,8 +156,72 @@ export async function loadThreadPlace(): Promise<ThreadPlace | null> {
  * sheet, because `collapse` runs inside `PanResponder` and the unmount cleanup runs after the sheet's own
  * effects are gone — both reach this, neither can reach a component.
  */
-export function whenThreadEnds(fn: ((turns: Turn[]) => void) | null): void {
+export function whenThreadEnds(fn: ((turns: Turn[]) => unknown) | null): void {
   onEnd = fn;
+}
+
+/**
+ * Sprint 4b §1.5 — who ELSE is told when a conversation ends: the past-chat sync (`usePastChatSync`), which saves
+ * the row one last time and writes the summary onto it when the summariser's `outcome` settles. A second slot
+ * rather than a second job inside the summariser, so neither can stop the other; `null` unregisters.
+ */
+export function afterThreadEnds(fn: ((ended: EndedThread) => void) | null): void {
+  afterEnd = fn;
+}
+
+/**
+ * Sprint 4b §1.5 — this conversation's row in `holt_chats`, minting it if this is its first athlete line. Null
+ * when the conversation has been ended (the write gate is shut) or has no athlete line yet: nothing to keep.
+ */
+export function ensureChatId(turns: Turn[]): string | null {
+  if (!mayPersist() || !isConversation(turns)) return null;
+  if (!held?.chatId) held = { ...held, chatId: uuid() };
+  return held.chatId ?? null;
+}
+
+/** The stored place's held half as it stands — the chat id, the recap, a continued chat's head. */
+export function heldPlace(): Pick<ThreadPlace, 'chatId' | 'recap' | 'continued'> | null {
+  return held;
+}
+
+/**
+ * Sprint 4b §1.5 — **Continue this chat.** The conversation on the device ends as usual (the summariser and the
+ * past-chat sync are told, then it is cleared), and `turns` + `place` (the stored chat's lines, its recap, its
+ * chat id and head) are written as the thread, for the sheet to restore when it next opens.
+ *
+ * ⚠ THE SAME CHAT IS NOT ENDED. When the thread on the device already IS this chat (it was handed off to look at
+ * the list), it is kept as it is — it is the fresher copy — and nothing is written.
+ *
+ * ⚠ A THREAD ONLY IN STORAGE IS ENDED TOO. `current` is set by `saveThread`, so after a relaunch it is empty
+ * while a handed-off thread still sits in storage; it is read back first so it is summarised and saved rather
+ * than silently overwritten.
+ */
+export async function continueThread(turns: Turn[], place: ThreadPlace): Promise<boolean> {
+  if (!current) {
+    try {
+      const [raw, rawPlace] = await Promise.all([AsyncStorage.getItem(KEY), AsyncStorage.getItem(PLACE_KEY)]);
+      const parsed = raw ? (JSON.parse(raw) as Turn[]) : null;
+      if (Array.isArray(parsed) && isConversation(parsed)) {
+        current = withoutPartialReplies(parsed);
+        held = holdFrom(readThreadPlace(rawPlace)) ?? { chatId: uuid() };
+        if (!held.chatId) held = { ...held, chatId: uuid() };
+      }
+    } catch {
+      // Unreadable is nothing to end.
+    }
+  }
+  if (current && place.chatId && held?.chatId === place.chatId) return true;
+  await endThread();
+  try {
+    await AsyncStorage.setItem(KEY, JSON.stringify(turns.slice(-MAX_TURNS)));
+    await AsyncStorage.setItem(PLACE_KEY, JSON.stringify(place));
+    held = holdFrom(place);
+    /* Somebody with past chats has met him — the introduction must not play over the chat they asked for. */
+    await rememberMetHolt();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -138,12 +233,21 @@ export function whenThreadEnds(fn: ((turns: Turn[]) => void) | null): void {
  */
 export async function endThread(): Promise<void> {
   const ended = current;
+  const place = ended ? withHeldPlace({ mode: null, constraints: {} }, held) : null;
   current = null;
+  let outcome: unknown;
   if (ended && onEnd) {
     try {
-      onEnd(ended);
+      outcome = onEnd(ended);
     } catch {
       // A memory that fails to save never stops the conversation from ending.
+    }
+  }
+  if (ended && afterEnd) {
+    try {
+      afterEnd({ turns: ended, place, outcome: Promise.resolve(outcome).catch(() => undefined) });
+    } catch {
+      // Same rule: a past chat that fails to save never stops the conversation from ending.
     }
   }
   return clearThread();
@@ -151,6 +255,7 @@ export async function endThread(): Promise<void> {
 
 export async function clearThread(): Promise<void> {
   current = null;
+  held = null;
   /* ⚠ BEFORE THE AWAIT, AND OUTSIDE THE `try`. Deleting is the easy half; the flag is what makes it
      stick, and it must be set even if storage itself throws. */
   stopWrites();

@@ -65,10 +65,12 @@ import { consumeHoltAllowance } from '@/data/entitlement-live';
 import { fetchCoachAiBalance, type EditIntent, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
 import { HoltActionCard } from '@/components/forge/HoltActionCard';
 import { HoltStatusLine, holtStatusText } from '@/components/forge/HoltStatusLine';
+import { useChatRecap } from '@/components/forge/useChatRecap';
+import { HoltKeptLine } from '@/components/forge/HoltKeptLine';
 import { holdTurnActions, type ShownCard, type TurnEnd } from '@/domain/coach/holt-action-cards';
 import { confirmHoltAction, dismissHoltAction, liveCardContext, undoHoltAction } from '@/data/holt-actions-live';
 import { cardsMayShow, type UndoToken } from '@/domain/coach/holt-actions';
-import { fetchNotes } from '@/data/holt-notes-live';
+import { fetchBriefNotes } from '@/data/holt-notes-live';
 import { askBriefLive } from '@/data/holt-training-live';
 import { gapReplyLive, isGapQuestion } from '@/data/training-gaps-live';
 import { useUnits } from '@/lib/settings';
@@ -233,6 +235,8 @@ import { defaultWeeksFor } from '@/domain/coach/rulebook/skeletons';
 import { endsOnRace, firstWeeksOf, placeWrittenLifts, RACE_WEEK_LINE, raceWeekShape, stopsShortLine } from '@/domain/coach/author-race';
 import { endThread, hasMetHolt, loadThread, loadThreadPlace, rememberMetHolt, saveThread, whenThreadEnds } from '@/lib/coach-thread';
 import { clearsOnUnmount, type Exit } from '@/domain/coach/thread-lifecycle';
+import { PAST_CHATS_ROUTE } from '@/domain/coach/holt-memory';
+import { usePastChatSync } from '@/components/forge/usePastChatSync';
 import { forgetExperience, forgetRoom, loadExperience, loadRoom, rememberExperience, rememberRoom } from '@/lib/coach-memory';
 import {
   createProgram,
@@ -387,7 +391,7 @@ export function CoachChatSheet({
         ? (turns) =>
             /* A stopped line is never summarised either (QA R2-F1); and what the app DID — a failed request,
                a plan only shown — rides along so the memory cannot say it happened (QA holtai-13). */
-            void summarizeChat(summaryHistory(turns))
+            summarizeChat(summaryHistory(turns)) // returned, not voided: its summary goes onto the past chat (4b §1.6)
         : null,
     );
   }, [premiumAi]);
@@ -535,6 +539,8 @@ export function CoachChatSheet({
   /* Met from the kitchen, he introduces himself as the cook (`KITCHEN_INTRO`, same number of beats). */
   const intro = kitchen ? KITCHEN_INTRO : INTRO;
   const [thread, setThread] = useState<Turn[]>(() => stamped([{ kind: 'holt', text: intro[0] }]));
+  /* Sprint 4b (lane A): the rolling recap of this chat + "Holt kept N things" — useChatRecap.ts. */
+  const chatRecap = useChatRecap(thread, { enabled: premiumAi });
   const [introStep, setIntroStep] = useState(1);
   const [draft, setDraft] = useState('');
   /* Focused by the NEW CHAT menu's "Training question" (holt-22) — read only in handlers, never in render. */
@@ -821,8 +827,10 @@ export function CoachChatSheet({
    */
   useEffect(() => {
     /* With where it had got to, so a refresh restores the build as well as the words (QA holt-08). */
-    void saveThread(thread, { mode, constraints });
-  }, [thread, mode, constraints]);
+    void saveThread(thread, { mode, constraints, ...(chatRecap.recap ? { recap: chatRecap.recap } : {}) });
+  }, [thread, mode, constraints, chatRecap.recap]);
+  /* Sprint 4b §1.5 — past chats: the row in `holt_chats` follows this thread (usePastChatSync.ts). */
+  usePastChatSync(thread, premiumAi);
 
   /**
    * ⚠ **AND CLOSING IS NOT ONLY THE X.** `collapse` covers the three deliberate closes — the X, the
@@ -3064,6 +3072,7 @@ export function CoachChatSheet({
         allowWeb: opts.allowWeb,
         recipes,
         signal: ctl.signal,
+        earlier: chatRecap.earlier,
         /* The waiting bubble says what he is looking up — until his first word, never after. */
         onStatus: (line, detail) => {
           /* A detail line repeats the table line it details — counted once, as a lookup. */
@@ -3249,7 +3258,7 @@ export function CoachChatSheet({
   const notesRef = useRef<string[] | null>(null);
   const loadNotes = async (): Promise<string[]> => {
     if (notesRef.current) return notesRef.current;
-    const rows = await fetchNotes().catch(() => []);
+    const rows = await fetchBriefNotes().catch(() => []);
     notesRef.current = rows.map((n) => n.text);
     heardNotes.current = notesRef.current;
     return notesRef.current;
@@ -3869,6 +3878,7 @@ export function CoachChatSheet({
           />
           {/* §4.9 — it collapses to the bubble, and it DOES end the conversation. The comment here used
               to say the opposite; it had been wrong since 2026-08-11, when closing started clearing. */}
+          {premiumAi ? <HeaderAction label="PAST CHATS" onPress={() => { handOff(); router.push(PAST_CHATS_ROUTE as Parameters<typeof router.push>[0]); }} accessibilityLabel="Past chats" icon="history" bare={compact} /> : null}
           <HeaderAction label="CLOSE" onPress={collapse} accessibilityLabel="Close" pad={!compact} icon="close" bare={compact} />
         </View>
 
@@ -3989,6 +3999,7 @@ export function CoachChatSheet({
           onScroll={FOLLOWS_KEYBOARD_PER_FRAME ? anchorScroll : undefined}
           scrollEventThrottle={16}
         >
+          {chatRecap.kept ? <HoltKeptLine count={chatRecap.kept} onDismiss={chatRecap.dismissKept} onSee={() => { chatRecap.dismissKept(); handOff(); router.push('/holt-memory'); }} /> : null}
           {blocks.map((b, bi) => {
             /*
              * ══ COACH HOME, DRAWN IN PLACE OF THE OPENER CHIPS ══

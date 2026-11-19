@@ -440,6 +440,7 @@ function RootNavigator() {
         {/* What Holt Remembers (0204, CA-D2). Account Settings → Training — Holt's notes, each editable
             and deletable by the athlete. */}
         <Stack.Screen name="holt-memory" />
+        <Stack.Screen name="holt-chats" />
         {/* Form check (2026-09-22) — film a set, Holt reads the frames. Its own screen because the camera
             cannot be presented over Holt's sheet. */}
         <Stack.Screen name="form-check" />

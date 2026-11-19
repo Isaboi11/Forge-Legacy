@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import type { ExportWorkout } from '@/domain/settings/export-core';
 import type { ExportNutrition, ExportPlanItem } from '@/domain/settings/export-nutrition';
+import type { ExportHolt } from '@/domain/settings/export-holt';
+import { fetchExportChats } from '@/data/holt-past-chats-live';
 
 /**
  * Every workout the athlete has saved, with its exercises and sets — the read behind Export My Data
@@ -262,4 +264,43 @@ async function readAll<T>(page: (from: number, to: number) => PromiseLike<{ data
     if (!rows.length) return out;
     out.push(...rows);
   }
+}
+
+/**
+ * What Holt remembers — the third read behind Export My Data (AI Road to 10 Sprint 4b §1.7): every kept fact / note
+ * (holt_notes, with 0278's kind once it is there), the recent chat notes (holt_chat_summaries), and every stored line of
+ * every past chat (lane B's `fetchExportChats`). Throws like the reads above: an export that silently left out Holt's
+ * memory would say he keeps less than he does.
+ */
+export async function fetchExportHolt(): Promise<ExportHolt> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not signed in.');
+  const me = user.id;
+  const notesRead = async () => {
+    const withKind = await supabase.from('holt_notes').select('kind, text, created_at, source').eq('athlete_id', me).order('created_at', { ascending: true });
+    /* Before 0278 there is no kind column — naming it fails the whole read (`activity-live.ts`'s rule), so ask again. */
+    if (withKind.error && ['42703', 'PGRST204'].includes(String((withKind.error as { code?: unknown }).code ?? ''))) {
+      return supabase.from('holt_notes').select('text, created_at, source').eq('athlete_id', me).order('created_at', { ascending: true });
+    }
+    return withKind;
+  };
+  const [notes, summaries, chats] = await Promise.all([
+    notesRead(),
+    supabase.from('holt_chat_summaries').select('summary, created_at').eq('athlete_id', me).order('created_at', { ascending: true }),
+    fetchExportChats(),
+  ]);
+  if (notes.error) throw notes.error;
+  if (summaries.error) throw summaries.error;
+  return {
+    notes: ((notes.data ?? []) as Record<string, unknown>[]).map((r) => ({
+      kind: typeof r.kind === 'string' ? r.kind : null,
+      text: String(r.text ?? ''),
+      createdAt: String(r.created_at ?? ''),
+      source: typeof r.source === 'string' ? r.source : null,
+    })),
+    summaries: ((summaries.data ?? []) as Record<string, unknown>[]).map((r) => ({ createdAt: String(r.created_at ?? ''), summary: String(r.summary ?? '') })),
+    chats,
+  };
 }

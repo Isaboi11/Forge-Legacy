@@ -396,3 +396,13 @@ test('open_door: navigation only, after the Nutrition consent for a nutrition sc
   const { deps: noConsent } = world({ consent: false });
   assert.deepEqual(await doorExecutor(noConsent).apply({ go: '/nutrition-targets' }), { ok: false, reason: 'not_allowed' });
 });
+
+test('⛔ Sprint 4b §1.4: memory switched off — a confirmed note keeps nothing ("That changed since I looked"); on, it saves', async () => {
+  const off = world();
+  const res = await noteExecutor({ ...off.deps, remembers: async () => false }).apply({ text: 'I train at 6am' });
+  assert.deepEqual(res, { ok: false, reason: 'gone' });
+  assert.deepEqual(off.w.notes, []);
+  const on = world();
+  assert.equal((await noteExecutor({ ...on.deps, remembers: async () => true }).apply({ text: 'I train at 6am' })).ok, true);
+  assert.equal(on.w.notes.length, 1);
+});

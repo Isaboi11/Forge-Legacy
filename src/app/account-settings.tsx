@@ -36,7 +36,8 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useTier } from '@/lib/entitlement';
 import { useQuery } from '@/lib/useQuery';
-import { fetchExportNutrition, fetchExportWorkouts } from '@/data/export-live';
+import { fetchExportHolt, fetchExportNutrition, fetchExportWorkouts } from '@/data/export-live';
+import { hasHolt, holtCsvFiles, holtToastPart } from '@/domain/settings/export-holt';
 import { RECIPE_BY_ID } from '@/domain/nutrition/meal-planner';
 import { countSets, exportBaseName, toCsv } from '@/domain/settings/export-core';
 import { hasNutrition, nutritionCsvFiles, toZipEntries } from '@/domain/settings/export-nutrition';
@@ -125,18 +126,20 @@ export default function AccountSettingsScreen() {
     setExporting(true);
     void (async () => {
       try {
-        const [workouts, food] = await Promise.all([fetchExportWorkouts(), fetchExportNutrition()]);
+        const [workouts, food, holt] = await Promise.all([fetchExportWorkouts(), fetchExportNutrition(), fetchExportHolt()]);
         const now = new Date();
-        /* No food data: the same single CSV as always. Food data: one ZIP, workouts.csv plus the
-           nutrition CSVs (`export-nutrition.ts` says why). */
+        /* No food data and nothing Holt keeps: the same single CSV as always. Otherwise one ZIP: workouts.csv plus
+           the nutrition CSVs (`export-nutrition.ts` says why) and Holt's memory (Sprint 4b §1.7, `export-holt.ts`). */
         const withFood = hasNutrition(food);
-        const res = withFood
+        const withHolt = hasHolt(holt);
+        const res = withFood || withHolt
           ? await saveTextFile(
               `${exportBaseName(now)}.zip`,
               zipStore(
                 toZipEntries([
                   { name: 'workouts.csv', text: toCsv(workouts) },
-                  ...nutritionCsvFiles(food, (id) => RECIPE_BY_ID[id]?.name ?? null),
+                  ...(withFood ? nutritionCsvFiles(food, (id) => RECIPE_BY_ID[id]?.name ?? null) : []),
+                  ...holtCsvFiles(holt),
                 ]),
                 now,
               ),
@@ -147,11 +150,11 @@ export default function AccountSettingsScreen() {
           const sets = countSets(workouts);
           const foods = food.entries.length;
           showToast(
-            workouts.length === 0 && !withFood
+            workouts.length === 0 && !withFood && !withHolt
               ? 'Nothing logged yet — the file has its headings and no rows.'
               : `${workouts.length} workout${workouts.length === 1 ? '' : 's'} · ${sets} set${sets === 1 ? '' : 's'}${
                   withFood ? ` · ${foods} food${foods === 1 ? '' : 's'} logged` : ''
-                }. Photos aren’t included.`,
+                }${holtToastPart(holt)}. Photos aren’t included.`,
           );
         } else if (res.reason) {
           showToast(res.reason);

@@ -147,8 +147,29 @@ test('fetchNotes: the athlete’s notes, filtered on athlete_id explicitly', asy
   const { client, calls } = fakeClient({ rows: [row('a', 'Hates lunges'), row('b', 'Runs Tue/Thu', { athlete_id: 'u2' })] });
   const notes = await holtNotesStore(client, signedIn).fetchNotes();
   assert.deepEqual(notes.map((n) => n.text), ['Hates lunges']);
-  assert.deepEqual(Object.keys(notes[0]).sort(), ['createdAt', 'id', 'source', 'text']);
+  // Sprint 4b: `kind` (0278) — null on a note kept before it.
+  assert.deepEqual(Object.keys(notes[0]).sort(), ['createdAt', 'id', 'kind', 'source', 'text']);
+  assert.equal(notes[0].kind, null);
   assert.deepEqual(calls[0].filters, [['athlete_id', 'u1']], 'not left to RLS alone');
+});
+
+test('fetchNotes (Sprint 4b): reads kind once 0278 is there, and asks again without it before (42703 / PGRST204)', async () => {
+  for (const missing of [null, '42703', 'PGRST204']) {
+    const asked = [];
+    const q = (cols) => {
+      const chain = { eq: () => chain, order: () => chain, then: (ok, bad) => {
+        const err = missing && cols.includes('kind') ? { code: missing, message: 'column holt_notes.kind does not exist' } : null;
+        const data = err ? null : [{ id: 'a', text: 'Hates burpees', created_at: '2026-11-18T10:00:00Z', source: 'chat', ...(cols.includes('kind') ? { kind: 'dislike' } : {}) }];
+        return Promise.resolve({ data, error: err }).then(ok, bad);
+      } };
+      asked.push(cols);
+      return chain;
+    };
+    const client = { from: () => ({ select: q }) };
+    const notes = await holtNotesStore(client, signedIn).fetchNotes();
+    assert.deepEqual(notes.map((n) => [n.text, n.kind]), [['Hates burpees', missing ? null : 'dislike']]);
+    assert.deepEqual(asked, missing ? ['id, text, created_at, source, kind', 'id, text, created_at, source'] : ['id, text, created_at, source, kind']);
+  }
 });
 
 test('fetchNotes: before 0204 is applied (PGRST205 / 42P01) it is quietly empty', async () => {

@@ -140,6 +140,24 @@ import {
 // lookup and food actions. Both import-free; both inlined into the paste copy. Offered ONLY with caps `actions_v1`.
 import { HOLT_ACTION_CAPS, LEGACY_ACTIONS, NEW_ACTIONS } from '../../../src/domain/coach/holt-actions.ts';
 import { checkFoodAction, FOOD_ACTION_NAMES, FOOD_ACTIONS, FOOD_PROMPT, FOOD_TOOLS, foodActionAck, runFoodTool } from '../../../src/domain/coach/ask-food-tools.ts';
+// ⚠ HOLT REMEMBERS YOU (Sprint 4b, CH-4) — the memory caps, the memory filter, the recap and the memory summary. Import-
+// free, inlined into the paste copy. Read ONLY with caps `memory_v1`; the off switch (0278) is read for every app.
+import {
+  cleanRecap,
+  factIsPersonalHealth,
+  factsToKeep,
+  HOLT_MEMORY_CAPS,
+  HOLT_NOTES_CAP,
+  MEMORY_SUMMARY_SCHEMA,
+  memorySummaryTurn,
+  parseMemorySummary,
+  RECAP_MAX_CHARS,
+  RECAP_SYSTEM,
+  RECAP_WIRE_CHARS,
+  recapTurn,
+  SUMMARY_SYSTEM_V1,
+  withEarlier,
+} from '../../../src/domain/coach/holt-memory.ts';
 
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -498,8 +516,18 @@ interface Body {
    * Sprint 4a §1.1: what this app can draw. `['actions_v1']` (holt-actions.ts `HOLT_ACTION_CAPS`) turns on the action
    * tools, the food lookup, the one-brain prompt and status `detail`. Anything else — or nothing, every phone shipped
    * before 4a — is exactly the v28 function.
+   *
+   * Sprint 4b §1.1: `'memory_v1'` beside it (holt-memory.ts `HOLT_MEMORY_CAPS`) turns on `earlier`, the `recap` mode and
+   * the facts half of `summarize`. ⛔ It never changes the system block or the tool list — the recap rides in the
+   * messages — so every recording under the 4a prompt hashes stays valid.
    */
   caps?: unknown;
+  /**
+   * Sprint 4b §1.2 (memory_v1 only): the rolling recap of THIS chat's turns older than `history` (≤ RECAP_WIRE_CHARS,
+   * trimmed here). Guarded again here, sentence by sentence, before it reaches the model. With mode 'recap' it is the
+   * recap so far, to be folded forward.
+   */
+  earlier?: unknown;
 }
 
 /**
@@ -556,15 +584,171 @@ const reservationIdOf = (row: unknown): string | null => {
   return r?.allowed === true && typeof r.reservation_id === 'string' && r.reservation_id ? r.reservation_id : null;
 };
 
+/** Sprint 4b §1.1: did this app send `memory_v1`? */
+const memoryCapsOf = (body: Body): boolean => Array.isArray(body.caps) && body.caps.includes(HOLT_MEMORY_CAPS);
+
+/** PostgREST / Postgres codes for "that table or column is not there yet" — a migration not pasted. */
+const NOT_THERE_YET = new Set(['PGRST205', '42P01', 'PGRST204', '42703']);
+
+/**
+ * ══ THE OFF SWITCH (Sprint 4b §1.4, migration 0278) ══
+ *
+ * `holt_memory_prefs.remembers`, read AS THE ATHLETE (their JWT, RLS, and their own id). No row = ON (PO: Holt remembers
+ * by default), and so is no table yet (before 0278 is pasted, nobody can have turned it off). Any other failure is
+ * 'unknown' — and a caller that would KEEP something treats unknown as off: a person who switched memory off is never
+ * remembered because a read failed.
+ */
+async function memorySwitch(supabase: ReturnType<typeof createClient>, authorization: string): Promise<'on' | 'off' | 'unknown'> {
+  try {
+    const uid = uidFromAuthorization(authorization);
+    let q = supabase.from('holt_memory_prefs').select('remembers');
+    if (uid) q = q.eq('athlete_id', uid);
+    const { data, error } = await q.limit(1).maybeSingle();
+    if (error) return NOT_THERE_YET.has(String((error as { code?: unknown }).code ?? '')) ? 'on' : 'unknown';
+    return (data as { remembers?: unknown } | null)?.remembers === false ? 'off' : 'on';
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
+ * The summary's stop test — stricter than a question's guard: a stored memory keeps nothing about the body at all, not
+ * even the "it hurts, swap it" a live question is allowed (medical-routing.ts), so `mentionsDiscomfort` too. A minor's
+ * memory goes through the minor's guard as well. Sprint 4b: and the memory filter's word lists (`factIsPersonalHealth`) —
+ * the guard lets "The athlete mentioned their knee." or "…takes creatine." through (they ask nothing), and a memory must
+ * not keep them. Used for 4b's memory jobs (the recap both ways, the memory summary, the facts); 4a's summary is unchanged.
+ */
+const memoryStops = (minor: boolean) => (s: string): boolean =>
+  guardRoute(s, minor) !== null || mentionsDiscomfort(s) || scanReply(s).hit || factIsPersonalHealth(s);
+
+/**
+ * One Haiku call for a memory job (the summary, the recap): its own clock, the configured summary model
+ * (`coach-ask:summary`, 0274), thinking off, the reservation settled ONCE before it returns. Never throws.
+ */
+async function memoryModelCall(
+  settle: ReturnType<typeof settler>,
+  authorization: string,
+  { system, user, maxTokens, format }: { system: string; user: string; maxTokens: number; format?: unknown },
+): Promise<{ text: string; failure: AskTurnFailure | null; outcome: AskOutcome; refunded: boolean }> {
+  const upstream = new AbortController();
+  const timer = setTimeout(() => upstream.abort(), SUMMARY_UPSTREAM_MS);
+  let res: Response | null = null;
+  // deno-lint-ignore no-explicit-any
+  let out: any = null;
+  let failure: AskTurnFailure | null = null;
+  const choice = await modelConfig.pick('coach-ask:summary', uidFromAuthorization(authorization), { model: SUMMARY_MODEL, effort: 'low' });
+  const fields = requestFields(choice.model, { thinkingOff: true, effort: choice.effort ?? 'low', ...(format ? { format } : {}) });
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: anthropicHeaders(ANTHROPIC_API_KEY!, fields),
+      body: JSON.stringify({
+        model: choice.model,
+        max_tokens: maxTokens,
+        ...fields,
+        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: user }],
+      }),
+      signal: upstream.signal,
+    });
+    out = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.error('anthropic memory', res.status, JSON.stringify(out ?? {}).slice(0, 800));
+      failure = 'upstream_error';
+    }
+  } catch (e) {
+    failure = upstream.signal.aborted ? 'timeout' : 'upstream_unreachable';
+    console.error('anthropic memory', failure, String((e as Error)?.message ?? e).slice(0, 300));
+  } finally {
+    clearTimeout(timer);
+  }
+  const u = (out?.usage ?? {}) as Record<string, number>;
+  const usage: Usage = { input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, cacheRead: u.cache_read_input_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0 };
+  const { outcome, refund } = askSettlement({ failure, stop: out?.stop_reason === 'refusal' ? 'refusal' : null, delivered: true });
+  const settled = await settle(outcome, refund, answeredBy(out, choice.model), usage);
+  const text = ((out?.content ?? []) as { type: string; text?: string }[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
+  return { text, failure, outcome, refunded: settled?.refunded === true };
+}
+
+/** A memory job's failure as the app reads it — our reason, never Anthropic's words (P-D8). */
+const memoryFailure = (failure: AskTurnFailure | null, outcome: AskOutcome, refunded: boolean) => ({
+  reason: failure ? (failure === 'timeout' ? 'upstream_error' : failure) : outcome,
+  ...(failure === 'timeout' ? { upstream: 'timeout' } : {}),
+  ...(refunded ? { refunded: true } : {}),
+});
+
+/**
+ * ══ THE ROLLING RECAP (Sprint 4b §1.2) — `mode: 'recap'`, memory_v1 only ══
+ *
+ * Folds the chat's older turns (`history`, already through the app's stop rule) into the recap so far (`earlier`) and
+ * hands the new recap BACK — it is stored only where the chat is (the device thread, lane B's chat row), never here.
+ * Haiku, metered as 'summary' (0 credits, the Premium AI gate). Every stopped turn is dropped, the recap so far is
+ * guarded sentence by sentence, and so is what comes back. Runs with memory switched off too: it is this chat's own
+ * words, the ones the window already sends.
+ */
+async function recap(body: Body, authorization: string): Promise<Response> {
+  const adult = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
+  if (adult.length === 0) return json({ ok: true, recap: null, reason: 'too_short' });
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
+  const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
+  const reservation = error ? null : reservationIdOf(row);
+  if (!reservation) return json({ ok: true, recap: null, reason: 'not_allowed' });
+  const minor = (row as AskReservation | null)?.minor === true;
+  const stops = memoryStops(minor);
+  const turns = withoutStoppedTurns(adult, (t) => guardRoute(t, minor) !== null);
+  const prior = cleanRecap(typeof body.earlier === 'string' ? body.earlier.slice(0, RECAP_WIRE_CHARS * 2) : '', stops, RECAP_WIRE_CHARS) ?? '';
+  const settle = settler(supabase, reservation, Date.now());
+  if (turns.length === 0) {
+    await settle('guarded', true, SUMMARY_MODEL, NO_USAGE);
+    return json({ ok: true, recap: null, reason: 'too_short' });
+  }
+  const r = await memoryModelCall(settle, authorization, { system: RECAP_SYSTEM, user: recapTurn(prior, transcriptOf(turns)), maxTokens: 300 });
+  if (r.failure || r.outcome !== 'ok') return json({ ok: true, recap: null, ...memoryFailure(r.failure, r.outcome, r.refunded) });
+  const text = cleanRecap(r.text, stops, RECAP_MAX_CHARS);
+  return json(text ? { ok: true, recap: text } : { ok: true, recap: null, reason: 'nothing_to_keep' });
+}
+
+/**
+ * The facts (Sprint 4b §1.3): every proposed one through `keepFact` + the memory guard, no duplicates, at most what fits
+ * under the cap — then written AS THE ATHLETE (RLS), `source: 'chat'`, one at a time, so the cap trigger can refuse the
+ * last one without taking the others with it. Returns how many were kept. Before 0278 the `kind` column is not there:
+ * the fact is kept without it.
+ */
+async function keepFacts(supabase: ReturnType<typeof createClient>, proposed: readonly { kind: unknown; text: unknown }[], kept: readonly string[], minor: boolean): Promise<number> {
+  const facts = factsToKeep(proposed, kept, HOLT_NOTES_CAP - kept.length, memoryStops(minor));
+  let n = 0;
+  for (const f of facts) {
+    try {
+      let { error } = await supabase.from('holt_notes').insert({ text: f.text, source: 'chat', kind: f.kind });
+      if (error && NOT_THERE_YET.has(String((error as { code?: unknown }).code ?? ''))) ({ error } = await supabase.from('holt_notes').insert({ text: f.text, source: 'chat' }));
+      if (error) break;
+      n += 1;
+    } catch {
+      break;
+    }
+  }
+  return n;
+}
+
 /**
  * The chat ended: summarise it and store the summary as the athlete (RLS). Never streams, never throws
  * to the caller — a missed summary is a smaller memory, not an error the athlete should see.
+ *
+ * Sprint 4b: for EVERY app version, nothing is kept when the athlete switched memory off (§1.4). With `memory_v1` the
+ * same Haiku call also returns the facts (`SUMMARY_SYSTEM_V1`, JSON), the server keeps them (`keepFacts`), and the reply
+ * adds `summary` (the text stored, for lane B's chat row) and `kept` (how many facts). Without it: 4a's call and reply.
  */
 async function summarize(body: Body, authorization: string): Promise<Response> {
   // ⛔ A stopped line is never summarised (QA R2-F1) — the same drop the ask path makes below.
   const turns = withoutStoppedTurns(trimHistory(body.history, SUMMARY_TURNS * 4)).slice(-SUMMARY_TURNS);
-  if (turns.filter((t) => t.role === 'athlete').length < 2) return json({ ok: true, saved: false, reason: 'too_short' });
+  const v2 = memoryCapsOf(body);
+  const extra = (summary: string | null, kept: number) => (v2 ? { summary, kept } : {});
+  if (turns.filter((t) => t.role === 'athlete').length < 2) return json({ ok: true, saved: false, reason: 'too_short', ...extra(null, 0) });
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { headers: { Authorization: authorization } } });
+  // §1.4: switched off (or not readable) → nothing is kept, nothing is called, nothing is reserved.
+  const remembers = await memorySwitch(supabase, authorization);
+  if (remembers !== 'on') return json({ ok: true, saved: false, reason: remembers === 'off' ? 'memory_off' : 'memory_unknown', ...extra(null, 0) });
+  if (v2) return summarizeV2(turns, supabase, authorization);
   // 'summary' costs 0 credits but still passes the Premium AI gate (0203) — the gate is the point.
   const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
   const reservation = error ? null : reservationIdOf(row);
@@ -631,6 +815,52 @@ async function summarize(body: Body, authorization: string): Promise<Response> {
     return json({ ok: true, saved: !insertError });
   } catch {
     return json({ ok: true, saved: false, reason: 'failed' });
+  }
+}
+
+/**
+ * `summarize` with `memory_v1` (§1.3): ONE Haiku call returns `{summary, facts}` (structured output), given the notes
+ * already kept so nothing is kept twice. The summary is stored exactly as 4a stores it (`cleanSummary`, the memory
+ * guard); the facts go through `keepFacts`. A note list that cannot be read keeps no facts (it could not be deduplicated
+ * or counted against the cap) — the summary still saves.
+ */
+async function summarizeV2(turns: { role: 'athlete' | 'holt'; text: string }[], supabase: ReturnType<typeof createClient>, authorization: string): Promise<Response> {
+  const { data: row, error } = await supabase.rpc('coach_ai_reserve', { p_action: 'summary', p_fn: 'coach-ask' }).maybeSingle();
+  const reservation = error ? null : reservationIdOf(row);
+  if (!reservation) return json({ ok: true, saved: false, reason: 'not_allowed', summary: null, kept: 0 });
+  const minor = (row as AskReservation | null)?.minor === true;
+  const settle = settler(supabase, reservation, Date.now());
+  const uid = uidFromAuthorization(authorization);
+  let kept: string[] | null = null;
+  try {
+    let q = supabase.from('holt_notes').select('text');
+    if (uid) q = q.eq('athlete_id', uid);
+    const { data, error: readError } = await q;
+    if (!readError && Array.isArray(data)) kept = (data as { text?: unknown }[]).map((r) => String(r?.text ?? '')).filter(Boolean);
+  } catch {
+    kept = null;
+  }
+  const r = await memoryModelCall(settle, authorization, {
+    system: SUMMARY_SYSTEM_V1,
+    user: memorySummaryTurn(transcriptOf(turns), kept ?? []),
+    maxTokens: 600,
+    format: { type: 'json_schema', schema: MEMORY_SUMMARY_SCHEMA },
+  });
+  if (r.failure || r.outcome !== 'ok') return json({ ok: true, saved: false, ...memoryFailure(r.failure, r.outcome, r.refunded), summary: null, kept: 0 });
+  try {
+    const parsed = parseMemorySummary(r.text);
+    if (!parsed) return json({ ok: true, saved: false, reason: 'nothing_to_keep', summary: null, kept: 0 });
+    const summary = cleanSummary(parsed.summary, memoryStops(minor));
+    let saved = false;
+    if (summary) {
+      const { error: insertError } = await supabase.from('holt_chat_summaries').insert({ summary });
+      saved = !insertError;
+    }
+    const n = kept ? await keepFacts(supabase, parsed.facts, kept, minor) : 0;
+    if (!summary && n === 0) return json({ ok: true, saved: false, reason: 'nothing_to_keep', summary: null, kept: 0 });
+    return json({ ok: true, saved, summary: saved ? summary : null, kept: n });
+  } catch {
+    return json({ ok: true, saved: false, reason: 'failed', summary: null, kept: 0 });
   }
 }
 
@@ -727,6 +957,9 @@ Deno.serve(async (req) => {
   }
 
   if (body.mode === 'summarize') return summarize(body, req.headers.get('Authorization') ?? '');
+  // Sprint 4b §1.2: the recap exists only for an app that sent memory_v1. Anything else asking for it falls through to
+  // an ordinary ask with no question — a 400, exactly as before 4b.
+  if (body.mode === 'recap' && memoryCapsOf(body)) return recap(body, req.headers.get('Authorization') ?? '');
 
   const question = (typeof body.question === 'string' ? body.question : '').trim();
   if (!question || question.length > ASK_QUESTION_CHARS) return json({ route: 'error', reason: 'bad_request' }, 400);
@@ -800,9 +1033,12 @@ Deno.serve(async (req) => {
   // C-I5: free text a lookup hands the model — workout and exercise notes, saved chat summaries — gets the summary's
   // stricter line: nothing the guard stops, nothing about discomfort, nothing the scanner stops.
   const keepText = (t: string) => !stops(t) && !mentionsDiscomfort(t) && !scanReply(t).hit;
+  // Sprint 4b §1.4 (every app): get_past_chats reads nothing old when memory is off — read once, only if he asks.
+  let memoryOnce: Promise<boolean> | null = null;
+  const memoryOff = () => (memoryOnce ??= memorySwitch(supabase, authorization).then((s) => s !== 'on'));
   const today = new Date().toISOString().slice(0, 10);
 
-  const messages: { role: 'user' | 'assistant'; content: string }[] = history.map((t) => ({
+  let messages: { role: 'user' | 'assistant'; content: string }[] = history.map((t) => ({
     role: t.role === 'athlete' ? 'user' : 'assistant',
     content: t.text,
   }));
@@ -812,6 +1048,13 @@ Deno.serve(async (req) => {
   }
   // The age is per-athlete, so it rides in the user turn; the cached SYSTEM block stays byte-identical (P-G8).
   messages.push({ role: 'user', content: askUserTurn(question, context, today, { ageYears: reserved.age_years, minor }) });
+  // ── Sprint 4b §1.2: the recap of this chat's older turns — memory_v1 only, guarded AGAIN here sentence by sentence
+  // (the memory's stricter line, and the minor's guard for a minor), then a bracketed block AHEAD of the history. ⛔ Never
+  // in the system block: the cached prefix (SYSTEM / SYSTEM_V1_FOOD + the tools) is byte-identical with or without it.
+  if (memoryCapsOf(body) && typeof body.earlier === 'string') {
+    const earlier = cleanRecap(body.earlier.slice(0, RECAP_WIRE_CHARS * 2), memoryStops(minor), RECAP_WIRE_CHARS);
+    messages = withEarlier(messages, earlier);
+  }
   if (allowWeb) {
     messages[messages.length - 1].content += '\n\n(The athlete tapped "Find one online" — you have web search for this message.)';
   }
@@ -1199,7 +1442,7 @@ Deno.serve(async (req) => {
                     );
                     return { type: 'tool_result', tool_use_id: c.id, content: fr.text, ...(fr.isError ? { is_error: true } : {}) };
                   }
-                  const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes, keepText });
+                  const r = await runAskTool(c.name as string, input, { db: supabase, uid, question, tz, recipes, keepText, memoryOff });
                   return { type: 'tool_result', tool_use_id: c.id, content: r.text, ...(r.isError ? { is_error: true } : {}) };
                 }),
               );

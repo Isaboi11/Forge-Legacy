@@ -128,20 +128,62 @@ export function clearsOnUnmount(exit: Exit | null): boolean {
 export interface ThreadPlace {
   mode: ChatMode | null;
   constraints: ChatState;
+  /** Sprint 4b §1.5 (lane B): this chat's row in `holt_chats`, made at its first athlete line. */
+  chatId?: string;
+  /** Sprint 4b §1.2 (lane A): the rolling recap of the turns older than the ask's window. */
+  recap?: { text: string; through: number };
+  /**
+   * Sprint 4b §1.5 (lane B): this thread CONTINUES a stored chat — `head` is that chat as it was stored when
+   * "Continue this chat" was tapped (the app's notes included, which the thread itself cannot carry). Each later
+   * save writes `head` + what was said since (`mergeContinued`, past-chats.ts), so the row never loses its start.
+   */
+  continued?: { head: { role: 'athlete' | 'holt' | 'note'; text: string }[] };
 }
 
+const STORED_ROLES = new Set(['athlete', 'holt', 'note']);
+
 const MODES: readonly ChatMode[] = ['program', 'day', 'pick'];
+
+/**
+ * The place as it is WRITTEN: what the sheet passed, plus the halves of it the sheet does not hold — the chat id
+ * (minted in `coach-thread` at the first athlete line), the recap and a continued chat's head — so the sheet's
+ * `saveThread(thread, { mode, constraints })` cannot drop them. What the caller passed wins; a head only rides
+ * with the chat id it belongs to.
+ */
+export function withHeldPlace(given: ThreadPlace, held: Pick<ThreadPlace, 'chatId' | 'recap' | 'continued'> | null): ThreadPlace {
+  if (!held) return given;
+  const out: ThreadPlace = { ...given };
+  if (!out.chatId && held.chatId) out.chatId = held.chatId;
+  if (!out.recap && held.recap) out.recap = held.recap;
+  if (!out.continued && held.continued && out.chatId && out.chatId === held.chatId) out.continued = held.continued;
+  return out;
+}
 
 /** The stored place, or null for anything unreadable — a place we cannot trust is a question asked again. */
 export function readThreadPlace(raw: string | null | undefined): ThreadPlace | null {
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as { mode?: unknown; constraints?: unknown };
+    const parsed = JSON.parse(raw) as { mode?: unknown; constraints?: unknown; chatId?: unknown; recap?: unknown; continued?: unknown };
     if (!parsed || typeof parsed !== 'object') return null;
     const mode = MODES.includes(parsed.mode as ChatMode) ? (parsed.mode as ChatMode) : null;
     const c = parsed.constraints;
     const constraints = c && typeof c === 'object' && !Array.isArray(c) ? (c as ChatState) : {};
-    return { mode, constraints };
+    const place: ThreadPlace = { mode, constraints };
+    if (typeof parsed.chatId === 'string' && parsed.chatId.length > 0 && parsed.chatId.length <= 64) place.chatId = parsed.chatId;
+    const r = parsed.recap as { text?: unknown; through?: unknown } | null | undefined;
+    if (r && typeof r === 'object' && typeof r.text === 'string' && r.text.trim() && Number.isInteger(r.through) && (r.through as number) > 0) {
+      place.recap = { text: r.text, through: r.through as number };
+    }
+    /* A continued chat's head only travels WITH its chat id — without one there is no row to merge it into. */
+    const head = (parsed.continued as { head?: unknown } | null | undefined)?.head;
+    if (place.chatId && Array.isArray(head)) {
+      const lines = head.filter(
+        (t): t is { role: 'athlete' | 'holt' | 'note'; text: string } =>
+          !!t && typeof t === 'object' && STORED_ROLES.has((t as { role?: unknown }).role as string) && typeof (t as { text?: unknown }).text === 'string',
+      );
+      if (lines.length > 0) place.continued = { head: lines.map((t) => ({ role: t.role, text: t.text })) };
+    }
+    return place;
   } catch {
     return null;
   }
