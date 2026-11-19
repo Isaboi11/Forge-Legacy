@@ -6,10 +6,9 @@ integrator's stubs). **Contract** `Docs/AI-Sprint-4b-Build-Notes.md` (Lane A row
 
 ## ▶ RESUME HERE
 1. ✅ Step 1 built and committed (below). Gate `node scripts/evals/gate.mjs coach-ask` = PASS on the step-1 commits.
-2. Step 2 (the 38) — round 2 resumed after the memory grader fix (9ce5224b): memory 30/30, ask-safety 683/710 with
-   let-through 2, ask-actions 84/86 with 0 on stops, subset 145/148 — all bars met — but the ask-answers re-record
-   (est $5.91) would pass the $10.50 ceiling at $4.64 spent → stopped, rule reverted again (9275aeb1), gate PASS, the 38
-   stay accepted. To finish: `git revert 9275aeb1` + the 5 shards (~$6.2). See "Step 2, round 2 resumed" at the end.
+2. Step 2 (the 38) — FINISHED, not shipped: the full re-record on the round-2 rule scored 1078/1158 (36 of the 38 back)
+   but lost 3 interpret-passed lines nobody accepted (A0639, A1034, A1114) → rule reverted (a7b241a6), gate PASS on
+   4a's recordings, the 38 stay accepted. Step-2 spend $10.53 of $11.20. See "Step 2, finished" at the end.
 3. Integrator: merge B first (A's export reads `fetchExportChats`, Forget everything calls `deleteAllPastChats`, the
    screen links `/holt-chats`), then resolve the CoachChatSheet lines below.
 
@@ -278,3 +277,40 @@ k = 0…4 (≈ 202 cases, est $1.18 each). Everything else is already recorded u
 back; only A0265, A1131 still lost; 1 gained lost, A1033), ask-safety 683/710 / let-through 2, ask-actions 84/86 / 0 on
 stops, memory 30/30. Then rewrite `ask-answers.accepted` to what is still lost (expected A0265 + A1131 with their
 corpus/app `why`, plus anything else with the PO's 4a note) and re-run the gate.
+
+### Step 2, finished (ceiling $11.20) — ask-answers missed "no interpret-passed line lost" by 3 → rule REVERTED
+`da682be3` brought the rule back; the 5 shards ran one after another under a running-total guard:
+
+| Shard | Cases | Estimate | Real |
+|---|---|---|---|
+| 0/5 | 206 | $1.21 | $1.20 |
+| 1/5 | 202 | $1.18 | $1.21 |
+| 2/5 | 201 | $1.18 | $1.17 |
+| 3/5 | 197 | $1.15 | $1.14 |
+| 4/5 | 204 | $1.19 | $1.17 |
+| **shards** | 1010 | $5.91 | **$5.89** |
+
+**ask-answers on the rule (`695a26ef67a5`): 1078/1158 (0.931)** — vs live 949 ✓ (4a's caps run: 1021). Of the 38: 36 back,
+A0265 + A1131 still lost (the accepted artefacts). **But 3 interpret-passed lines that 4a's prompt kept are now lost —
+none of them accepted:**
+- A0639 [where] "office, during lunch" (ambiguous, best bodyweight) → `environment: home` (4a left it out → passed)
+- A1034 [limits] "scoliosis" (ambiguous, best lower_back) → `limitations: []` (4a: words only → passed) — the round-2
+  "a condition is limitations []" wording
+- A1114 [day_focus] "back's been feeling tight, maybe something light and some mobility" (best mobility) → dayFocus
+  "light full body with mobility" (4a: "mobility")
+→ the bar "no interpret-passed line lost beyond accepted" is MISSED. Per the coordinator: rule reverted (`a7b241a6`,
+reverts da682be3). `baselines.json` NOT rewritten (no accepted list can be right for a prompt that is not shipping); the
+38 stay accepted under the PO's 4a call. The other suites under the rule (recorded, all within bar): ask-safety 683/710,
+let-through 2 · ask-actions 84/86, 0 on stops · memory 30/30.
+
+**Shipped tree:** coach-ask source + `deploy-coach-ask.ts` byte-identical to `cfd1e6dc` (4a's caps prompt + memory);
+**GATE PASS coach-ask** (ask-safety 685/710 · ask-actions 83/86 · ask-answers 1021/1158 with the 38 accepted ·
+chat-summary 18/20 · memory 30/30). Kept: 1e74058b (memory-off note card), 9ce5224b (memory grader fix), every recording.
+
+**Step-2 spend: $4.64 + $5.89 = $10.53** (ceiling $11.20). Lane A total ≈ **$10.60** ($0.067 step 1).
+
+**If anyone picks this up again (no spend needed to see it):** `git revert a7b241a6` restores the rule with ALL its
+recordings already in place — the gate would then fail only on A0639 / A1034 / A1114. Either the PO accepts those 3 by
+name (then rewrite `accepted` to A0265, A1131 + those 3) or a rule tweak (an office / work place with no gear named →
+leave out; a named spinal condition → its matching limitation; "something light and some mobility" → mobility) costs a
+new prompt hash → a full re-record (~$10).
