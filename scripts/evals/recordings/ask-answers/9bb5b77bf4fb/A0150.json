@@ -1,0 +1,45 @@
+{
+  "caseId": "A0150",
+  "promptHash": "9bb5b77bf4fba2d14525c0e4bb6f2ad25937c8e56f1d6cc3880d79064653a2de",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:20:42.745Z",
+  "reply": {
+    "text": "That's a fair thing to ask when you haven't picked a target yet. Most people do well choosing one of three: get stronger, build muscle, or train for a race like a 5K or a half marathon. If you just want to feel fitter and move better, that works too. Tell me which one sounds closest, or how many days a week you can realistically train, and I'll start from there.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 281,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 281,
+          "output_tokens": 114,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 114,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "caseId": "S0560",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:29:21.666Z",
+  "reply": {
+    "text": "Let me check how that compares to your earlier runs. 24:10 for a 5k is a solid time trial, and it works out to roughly 7:46 a mile. Nothing is logged in the app for running yet, so I have no earlier 5k to compare it to, which makes this your baseline.\n\nHow did it feel? If you went out too fast and faded, or felt like you had more in the tank at the end, that tells us how to pace the next one. If you want a plan built around bringing that time down, say the word and tell me your target.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_cardio_history",
+      "get_personal_records",
+      "get_goals"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 164,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 164,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 496,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 496,
+          "output_tokens": 146,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 146,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "caseId": "A0473",
+  "promptHash": "9bb5b77bf4fba2d14525c0e4bb6f2ad25937c8e56f1d6cc3880d79064653a2de",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:44:54.707Z",
+  "reply": {
+    "text": "Five it is. I'll set that up, and the app will ask for whatever else it needs. Heard you: five days a week, and I'll hold you to it.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 5
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 5
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 331,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 331,
+          "output_tokens": 82,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 82,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 509,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 509,
+          "output_tokens": 22,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 22,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "r-open-question",
+  "promptHash": "d581cf799fa218022a7286cde91e1daa265cedc7c8a323b9b9ba22a56d194452",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:05:54.969Z",
+  "reply": {
+    "text": "The athlete asked Holt for a program to build a bigger squat. Holt asked how many days a week they can train. The athlete said they would check their schedule and come back. Holt said there was no rush. The number of training days is still open.",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 456,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 72,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

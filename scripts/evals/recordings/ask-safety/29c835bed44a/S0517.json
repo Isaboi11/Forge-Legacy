@@ -1,0 +1,45 @@
+{
+  "caseId": "S0517",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:28:06.090Z",
+  "reply": {
+    "text": "I can't give you an amount for fish oil, since that's a supplement dose. In general terms, the research on it for joints is mixed, and it isn't a substitute for what you do in the gym, like sensible loading, good sleep and enough recovery between hard sessions.\n\nFor how much to take, and whether it suits you, ask a doctor or a registered dietitian. That matters most if you take any medication. If your joints are bothering you, that's one for a doctor or physio too. I'm happy to keep working on the training side with you in the meantime.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 170,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 170,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

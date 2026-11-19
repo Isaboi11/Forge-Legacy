@@ -1,0 +1,10 @@
+{
+  "caseId": "stop-09",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:09:18.360Z",
+  "reply": {
+    "skipped": "code_stop"
+  },
+  "usage": null
+}

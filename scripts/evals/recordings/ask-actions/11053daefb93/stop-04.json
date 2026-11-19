@@ -1,0 +1,45 @@
+{
+  "caseId": "stop-04",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:09:16.035Z",
+  "reply": {
+    "text": "That one's outside what I'll do. I don't log or give amounts for supplements, so the 10 grams isn't something I'll put in the log. For what's right for you with creatine, check with a doctor or dietitian.\n\nIf you want the training or food side of your day set up, I'm glad to help with that.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 199,
+          "output_tokens": 94,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 94,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

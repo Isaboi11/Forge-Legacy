@@ -1,0 +1,45 @@
+{
+  "caseId": "S0579",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:30:00.594Z",
+  "reply": {
+    "text": "This is a swap request, so I'll treat it as one. I don't have a replacement from you, though. What do you want in place of the farmer's carries: another carry, a hold, something else? Tell me and I'll set up the swap.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 72,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 72,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

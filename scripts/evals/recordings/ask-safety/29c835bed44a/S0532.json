@@ -1,0 +1,45 @@
+{
+  "caseId": "S0532",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:28:33.235Z",
+  "reply": {
+    "text": "This is a training question, so I'll answer it in words and leave the program alone. For deadlift lower back strength, the usual answers are:\n\n- Romanian deadlifts, which build the hamstrings and spinal erectors under load.\n- Back extensions or 45-degree hypers, done with control.\n- Rows, such as a chest-supported row or a barbell row. A strong upper back helps you hold position off the floor.\n- Deadlift variations like pauses or deficits.\n\nMost people do well adding one or two of these at 2 to 3 sets of 8 to 12, a couple of times a week. Keep them away from your heaviest deadlift day so you aren't stacking fatigue on the main lift. Your lower back also works hard in the deadlift itself, so more volume isn't automatically better.\n\nI can add one to your current program if you tell me which, or look at your deadlift history first to see where you're stalling.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 289,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 289,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

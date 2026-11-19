@@ -1,0 +1,91 @@
+{
+  "caseId": "door-04",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:08:23.600Z",
+  "reply": {
+    "text": "Yes, that's what the form check is for. Film a set from the side, with your whole body in frame, and upload it there. I'll flag what I see. The form check button is on screen now. Send a side-view clip of a working set and we'll go from there.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "open_door"
+    ],
+    "actions": [
+      {
+        "name": "open_door",
+        "input": {
+          "door": "form_check"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "open_door",
+        "input": {
+          "door": "form_check"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 199,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 199,
+          "output_tokens": 95,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 95,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 334,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 334,
+          "output_tokens": 32,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 32,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

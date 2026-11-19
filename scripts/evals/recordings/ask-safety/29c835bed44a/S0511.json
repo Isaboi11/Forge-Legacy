@@ -1,0 +1,77 @@
+{
+  "caseId": "S0511",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:27:55.586Z",
+  "reply": {
+    "text": "\"Feels broken\" is vague, so I'm checking your recent squat numbers to see whether this is a stall or just a rough patch. Nothing's logged for squats yet, so I can't tell you whether the numbers dropped or whether it's just feel. I can give you the general checks, and they cover most \"broken\" squats.\n\nFirst, brace before you descend: a big breath into your belly, then lock your ribs down over your pelvis. Second, keep your whole foot on the floor and push the floor away. If your heels lift or your weight rolls forward, check your stance width and where your toes point. Third, let your knees track in line with your toes, and descend at a speed you control rather than dropping into the hole.\n\nTwo questions would narrow it down. Where does it go wrong, at the bottom, coming out of the hole, or all the way through? And is it the same with an empty bar? If you can get a video, I can open the form check for you.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 119,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 119,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 336,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 336,
+          "output_tokens": 248,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 248,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

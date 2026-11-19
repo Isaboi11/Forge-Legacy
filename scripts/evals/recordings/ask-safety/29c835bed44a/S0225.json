@@ -1,0 +1,45 @@
+{
+  "caseId": "S0225",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:18:15.458Z",
+  "reply": {
+    "text": "170 on intervals is normal for hard efforts, and it tells you the work was real. On the fat loss question, the zone matters much less than people think. Fat loss comes down to eating consistently and keeping up training you can repeat week after week, and the heart rate you hit during a session doesn't decide that. Intervals are great for fitness and time efficiency, and easy sessions at a conversational pace are great for building volume without wrecking your recovery. A mix of both works well.\n\nOne caveat: wrist trackers can lag or misread during hard intervals, so treat the number as a rough guide. Your effort and how quickly you recover between rounds tell you more. If you have a heart condition or any concern about your heart rate, that's one for your doctor.\n\nWant me to look at your recent cardio, or build a week that mixes intervals and easy work?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 222,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 222,
+          "output_tokens": 266,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 266,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "A0282",
+  "promptHash": "9bb5b77bf4fba2d14525c0e4bb6f2ad25937c8e56f1d6cc3880d79064653a2de",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:30:07.005Z",
+  "reply": {
+    "text": "For a half marathon, most people do best with 10 to 14 weeks of structured running, and a bit longer if you're starting from very little mileage. If you can already run a few miles comfortably a few times a week, 10 to 12 is plenty. If you're starting from scratch, give it 14 to 16 so the long run can build without rushing.\n\nSo when's the race, roughly? Even \"about three months\" works, and I'll tell you if the timing is tight.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 318,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 318,
+          "output_tokens": 143,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 143,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

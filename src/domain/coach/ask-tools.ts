@@ -346,7 +346,7 @@ export const ASK_ACTIONS_V1: AskToolDef[] = [
   {
     name: 'propose_program',
     description:
-      "Build the athlete a program (a block of weeks). The app's rules engine builds it from these fields, asks for anything missing, checks a program they already run, and shows it to confirm — you never write the program. Fill ONLY what they said (or answered to your build question); never guess a field. Use it for 'build me a program', a goal with days or time, a race plan, a program around a body part, and for an answer to a build question on the table.",
+      "Build the athlete a program (a block of weeks). The app's rules engine builds it from these fields, asks for anything missing, checks a program they already run, and shows it to confirm — you never write the program. Fill what they said (or answered to your build question), read the way anyone would read it: 'a month' is 4 weeks, 'Gold's' is a full gym, 'longevity' is health. Never fill a field they gave nothing for. Use it for 'build me a program', a goal with days or time, a race plan, a program around a body part, and for an answer to a build question on the table.",
     input_schema: { type: 'object', properties: BUILD_FIELDS, additionalProperties: false },
   },
   {

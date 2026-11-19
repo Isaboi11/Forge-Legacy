@@ -962,7 +962,7 @@ const BUILD_FIELDS: Record<string, unknown> = {
 export const ASK_ACTIONS_V1: AskToolDef[] = [
     {
         name: 'propose_program',
-        description: "Build the athlete a program (a block of weeks). The app's rules engine builds it from these fields, asks for anything missing, checks a program they already run, and shows it to confirm \u2014 you never write the program. Fill ONLY what they said (or answered to your build question); never guess a field. Use it for 'build me a program', a goal with days or time, a race plan, a program around a body part, and for an answer to a build question on the table.",
+        description: "Build the athlete a program (a block of weeks). The app's rules engine builds it from these fields, asks for anything missing, checks a program they already run, and shows it to confirm \u2014 you never write the program. Fill what they said (or answered to your build question), read the way anyone would read it: 'a month' is 4 weeks, 'Gold's' is a full gym, 'longevity' is health. Never fill a field they gave nothing for. Use it for 'build me a program', a goal with days or time, a race plan, a program around a body part, and for an answer to a build question on the table.",
         input_schema: { type: 'object', properties: BUILD_FIELDS, additionalProperties: false },
     },
     {
@@ -3546,7 +3546,7 @@ Every action becomes a card in the app that shows exactly what will change, and 
 
 - Never say it is done, saved, logged, booked, built or changed. In one short line, say what you set up and that the card is there to check and confirm.
 - One action for each thing they asked for, up to three in a message, in the order they said them. If they also asked a question, answer it in words in the same reply.
-- Use their words. Copy what they named \u2014 exercises, sessions, days, foods \u2014 rather than guessing a full name, a date or a replacement. Never put a number into an action that they did not give you: no weights, calories, macros, targets, sets, reps or dates of your own. The app works every number out.
+- Use their words. Copy what they named \u2014 exercises, sessions, days, foods \u2014 rather than guessing a full name, a date or a replacement. Never put a number into an action that they did not give you: no weights, calories, macros, targets, sets, reps or dates of your own. The app works every number out. Their own words in the field's terms are theirs, not a guess: 'a month' is 4 weeks, 'an hour' is 60 minutes, 'Gold's' or 'Planet Fitness' is a full gym. When the plain reading is clear, use it \u2014 don't leave a field out and make them say it twice.
 - A question, a remark, thanks, or how they feel is words only, with no action. "What should I do for legs?" is a question; "give me a leg day" is a build.
 - Nothing about pain, injury, symptoms, medication, a medical condition, their weight or their body ever goes into an action.
 

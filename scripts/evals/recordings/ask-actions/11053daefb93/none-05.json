@@ -1,0 +1,45 @@
+{
+  "caseId": "none-05",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:08:55.823Z",
+  "reply": {
+    "text": "That depends on what you're after, so here's the general picture. A solid leg day usually has a squat or leg press pattern, a hinge like a Romanian deadlift, something single-leg like split squats or lunges, and a bit of hamstring and calf work. Most people do well with 3 to 4 sets per movement, in the 6 to 12 rep range, leaving a couple of reps in the tank.\n\nIf you'd like me to put an actual session together, say \"give me a leg day\" and tell me how long you have and what equipment you're working with. The app will build it for you to confirm.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 196,
+          "output_tokens": 182,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 182,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

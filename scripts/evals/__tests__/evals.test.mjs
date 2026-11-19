@@ -308,7 +308,8 @@ test('run.mjs: --record needs --live, and --live runs one suite at a time', () =
   assert.throws(() => parseArgs(['--suite', 'a', '--record']), /--record only makes sense with --live/);
   assert.throws(() => parseArgs(['--suite', 'all', '--live', '--budget', '5']), /one suite at a time/);
   assert.throws(() => parseArgs([]), /--suite/);
-  assert.deepEqual(parseArgs(['--suite', 'author', '--live', '--budget', '2', '--record']), { suite: 'author', live: true, budget: 2, record: true, json: false, model: null });
+  assert.deepEqual(parseArgs(['--suite', 'author', '--live', '--budget', '2', '--record']), { suite: 'author', live: true, budget: 2, record: true, resume: false, json: false, model: null });
+  assert.equal(parseArgs(['--suite', 'author', '--live', '--budget', '2', '--record', '--resume']).resume, true);
   // PL-7: another model, recorded beside the function's own (the model is part of the recording key).
   assert.equal(parseArgs(['--suite', 'author', '--model', 'claude-opus-5-5']).model, 'claude-opus-5-5');
 });

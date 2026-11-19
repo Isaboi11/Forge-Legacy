@@ -19,6 +19,7 @@
 import { deepStrictEqual } from 'node:assert';
 
 import { narrowReply, parseModelJson } from '../../../src/domain/coach/interpret-narrow.ts';
+import { focusSaid } from '../../../src/domain/coach/chat-core.ts';
 import { VOICE } from '../../../src/domain/coach/rulebook/voice.ts';
 import { FUNCTION_KNOBS, callAnthropic, interpretTurn, knobsFor, readJsonl, systemOf } from '../lib/suite-kit.mjs';
 
@@ -69,7 +70,10 @@ export function judge(expect, fields) {
     const contradicts = best.filter(([k, v]) => k in fields && !same(fields[k], v));
     return { pass: contradicts.length === 0, notes: contradicts.length ? `contradicts best ${contradicts.map(([k]) => k).join(',')}` : 'ambiguous — asked again or took the best reading' };
   }
-  const wrong = wanted.filter(([k, v]) => !same(fields[k], v));
+  /* A day focus is the athlete's own words, read by the app (`focusSaid`): "lats" and "back" build the same day
+     (11-19, A1148) — so the grade is what the app makes of it, not the spelling. */
+  const sameFocus = (a, b) => typeof a === 'string' && typeof b === 'string' && JSON.stringify(focusSaid(a, a)) === JSON.stringify(focusSaid(b, b));
+  const wrong = wanted.filter(([k, v]) => !same(fields[k], v) && !(k === 'dayFocus' && sameFocus(fields[k], v)));
   return { pass: wrong.length === 0, notes: wrong.map(([k, v]) => `${k}: got ${JSON.stringify(fields[k])}, want ${JSON.stringify(v)}`).join('; ') };
 }
 

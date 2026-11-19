@@ -243,14 +243,26 @@ export function liveError(out) {
   return null;
 }
 
-export async function runLive(suite, { root, apiKey, budget, record = false, recordings = recordingsRoot(root), log = console.log, now = () => new Date(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
-  const cases = await suite.cases();
+export async function runLive(suite, { root, apiKey, budget, record = false, resume = false, recordings = recordingsRoot(root), log = console.log, now = () => new Date(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
+  const all = await suite.cases();
+  const hash = promptHash(suite, root);
+  /* --resume (11-19): a run that stopped at its budget picks up where it stopped — a case already recorded for THIS
+     prompt and model is not called again. */
+  const recorded = (c) => {
+    const f = path.join(recordings, suite.name, hash.slice(0, 12), `${c.id}.json`);
+    if (!fs.existsSync(f)) return false;
+    try {
+      return JSON.parse(fs.readFileSync(f, 'utf8')).model === suite.model;
+    } catch {
+      return false;
+    }
+  };
+  const cases = resume ? all.filter((c) => !recorded(c)) : all;
   const estimate = Number(suite.estimateUsd(cases)) || 0;
-  log(`${suite.name}: ${cases.length} case(s), estimated ${usd(estimate)} on ${suite.model}`);
+  log(`${suite.name}: ${cases.length} case(s)${resume ? ` (${all.length - cases.length} already recorded)` : ''}, estimated ${usd(estimate)} on ${suite.model}`);
   if (!(Number(budget) > 0)) throw new Error(`refusing: --live needs --budget <usd> (estimate ${usd(estimate)})`);
   if (estimate > Number(budget)) throw new Error(`refusing: the estimate ${usd(estimate)} is over the budget ${usd(Number(budget))}`);
   if (!apiKey) throw new Error('refusing: no ANTHROPIC_API_KEY (use the PO’s evals key, never the app’s)');
-  const hash = promptHash(suite, root);
   let spent = 0;
   let done = 0;
   let stoppedOn = null;

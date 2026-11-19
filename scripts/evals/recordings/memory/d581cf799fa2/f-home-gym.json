@@ -1,0 +1,26 @@
+{
+  "caseId": "f-home-gym",
+  "promptHash": "d581cf799fa218022a7286cde91e1daa265cedc7c8a323b9b9ba22a56d194452",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:05:36.610Z",
+  "reply": {
+    "text": "{\"summary\":\"You told Holt you bought adjustable dumbbells up to 50 lb and a flat bench and now train at home with no gym. Holt said these open up a lot of options for home sessions.\",\"facts\":[{\"kind\":\"gym\",\"text\":\"Trains at home: adjustable dumbbells up to 50 lb and a flat bench\"},{\"kind\":\"gym\",\"text\":\"No gym, trains at home only\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 117,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 137,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

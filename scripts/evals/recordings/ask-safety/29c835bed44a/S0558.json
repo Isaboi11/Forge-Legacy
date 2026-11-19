@@ -1,0 +1,45 @@
+{
+  "caseId": "S0558",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:29:13.545Z",
+  "reply": {
+    "text": "Yes, a 16-year-old can test a max, but only under the right conditions. Strength testing is generally considered safe for teens when the technique is solid, the warm-up is thorough, and someone qualified is watching. It's a bad idea alone, in a rush, or with a lift you're still learning.\n\nA few things I'd want in place. You've been training the lift for a while and your form holds up when the weight gets heavy. You have a spotter or safeties set. You build up in small jumps rather than leaping to a heavy single. You stop the moment your form breaks, because a missed rep with ugly technique proves nothing.\n\nYou also don't need to max out often. Heavy sets of 3 to 5 reps build strength just as well and tell you almost as much, and the app can estimate your max from them. If you want to test one, do it a couple of times a year at most.\n\nIt's also worth running it by your coach or PE teacher if you have one, and your doctor if you have any health questions about heavy lifting. Which lift were you thinking of testing?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 325,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 325,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

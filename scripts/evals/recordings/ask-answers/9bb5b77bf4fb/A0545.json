@@ -1,0 +1,139 @@
+{
+  "caseId": "A0545",
+  "promptHash": "9bb5b77bf4fba2d14525c0e4bb6f2ad25937c8e56f1d6cc3880d79064653a2de",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:50:30.062Z",
+  "reply": {
+    "text": "The athlete fixed which days, so I'll send them as given, Monday first, with rest on the other days. Tuesday, Thursday, Saturday, with the rest of the week off. That's a solid rhythm.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 3,
+          "days": [
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 3,
+          "days": [
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 335,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 335,
+          "output_tokens": 206,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 206,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 643,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 643,
+          "output_tokens": 37,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 37,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

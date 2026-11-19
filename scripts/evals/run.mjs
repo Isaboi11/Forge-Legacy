@@ -23,13 +23,14 @@ import { evaluateSuite, formatResult, loadSuites, runLive } from './lib/runner.m
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 export function parseArgs(argv) {
-  const a = { suite: null, live: false, budget: null, record: false, json: false, model: null };
+  const a = { suite: null, live: false, budget: null, record: false, resume: false, json: false, model: null };
   for (let i = 0; i < argv.length; i++) {
     const k = argv[i];
     if (k === '--suite') a.suite = argv[++i];
     else if (k === '--live') a.live = true;
     else if (k === '--budget') a.budget = Number(argv[++i]);
     else if (k === '--record') a.record = true;
+    else if (k === '--resume') a.resume = true;
     else if (k === '--json') a.json = true;
     /* PL-7: run (or grade) a suite on another model. The model is part of the recording key, so its recordings sit beside
        the function's own and never replace them. */
@@ -48,7 +49,7 @@ export async function main(argv, { root = ROOT, env = process.env, log = console
   const named = a.suite === 'all' ? all : all.filter((s) => s.name === a.suite);
   const chosen = a.model ? named.map((s) => ({ ...s, model: a.model })) : named;
   if (!chosen.length) throw new Error(`no suite named ${a.suite} (have: ${all.map((s) => s.name).join(', ')})`);
-  if (a.live) await runLive(chosen[0], { root, apiKey: env.ANTHROPIC_API_KEY, budget: a.budget, record: a.record, log });
+  if (a.live) await runLive(chosen[0], { root, apiKey: env.ANTHROPIC_API_KEY, budget: a.budget, record: a.record, resume: a.resume, log });
   const results = [];
   for (const s of chosen) results.push(await evaluateSuite(s, { root }));
   if (a.json) log(JSON.stringify(results, null, 2));

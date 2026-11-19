@@ -1,0 +1,45 @@
+{
+  "caseId": "none-06",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:08:59.905Z",
+  "reply": {
+    "text": "Think of bracing as making your trunk a rigid cylinder before you unrack. Take a breath in through your nose, down into your belly rather than your chest, so your ribs stay stacked over your pelvis and don't flare up. Then push your abdomen out against your belt line, or against your hands if you're beltless, as if you're about to take a punch. Everything around your midsection should feel 360 degrees tight, front, sides and back.\n\nHold that air and that tension through the descent and the drive out of the hole, then exhale at the top and reset before the next rep. Letting the air out at the bottom is the most common mistake, and it's where the trunk goes soft and the hips shoot up first.\n\nA good drill is to brace standing with nothing on the bar, then have someone push lightly on your sides and see if you stay firm. When you warm up, make the brace the same every set so it's automatic by the time the weight is heavy.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 292,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 292,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

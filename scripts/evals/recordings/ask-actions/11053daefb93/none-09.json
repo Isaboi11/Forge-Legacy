@@ -1,0 +1,45 @@
+{
+  "caseId": "none-09",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:09:08.600Z",
+  "reply": {
+    "text": "A deload is a planned lighter week where you cut back the work so your body can catch up on recovery. Most people keep the same exercises but drop the weight, the sets, or both, usually by around a third to a half, and stop well short of failure.\n\nYou do it because fatigue builds up across hard weeks, and it can hide the strength you've actually gained. A week of easier training lets that fatigue clear, and you usually come back to heavier lifts moving better. It's most useful every 4 to 8 weeks of hard training, or when your lifts stall and you feel run down.\n\nIt isn't time off or a failure of any kind. It's part of the plan, and you still show up and train.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 195,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 195,
+          "output_tokens": 210,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 210,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "none-02",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:08:48.873Z",
+  "reply": {
+    "text": "For most beginners, 2 to 3 working sets per exercise is plenty. A typical start is about 3 sets of 8 to 10 reps with a weight that leaves 2 or 3 reps in the tank. Across a week, that usually adds up to roughly 10 or so hard sets per muscle group, spread over two or three sessions.\n\nBeginners grow fast on modest volume, and the bigger gains come from showing up consistently and adding a little weight or a rep over time. Add sets only once the current load feels easy and you're recovering well.\n\nIf you'd like, I can build you a program with those numbers worked out. Just say the word.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 198,
+          "output_tokens": 203,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 203,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

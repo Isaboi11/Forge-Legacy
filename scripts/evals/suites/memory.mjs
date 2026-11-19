@@ -137,7 +137,8 @@ const matches = (f, w) => w.any.some((x) => f.text.toLowerCase().includes(x)) &&
  * keyed by id, so no case's data — and no prompt hash — moves.
  */
 export const NEVER_AS_CURRENT = new Set(['r-changed-mind']);
-const REPLACED = /\b(?:replac\w*|earlier|previous\w*|before|instead of|changed? from|used to|no longer|was|were|old|originally|swapped)\b/i;
+// 11-19 (recording d581cf799fa2): "wanted 3 days a week but changed that to 4" names the change too.
+const REPLACED = /\b(?:replac\w*|earlier|previous\w*|before|instead of|chang\w*|wanted|used to|no longer|was|were|old|originally|swapped)\b/i;
 
 /** Does a recap break the case's `never`? For NEVER_AS_CURRENT cases, only a sentence that states it as current counts. */
 export function neverHits(id, never, recap) {

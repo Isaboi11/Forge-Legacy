@@ -1,0 +1,26 @@
+{
+  "caseId": "f-schedule",
+  "promptHash": "d581cf799fa218022a7286cde91e1daa265cedc7c8a323b9b9ba22a56d194452",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:05:35.497Z",
+  "reply": {
+    "text": "{\"summary\":\"You told Holt you can only train mornings before work, Monday, Wednesday and Friday, for 45 minutes at most. Holt planned three 45-minute sessions around that.\",\"facts\":[{\"kind\":\"schedule\",\"text\":\"Trains mornings before work, Mon/Wed/Fri\"},{\"kind\":\"schedule\",\"text\":\"45 minutes max per session\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 109,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 128,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

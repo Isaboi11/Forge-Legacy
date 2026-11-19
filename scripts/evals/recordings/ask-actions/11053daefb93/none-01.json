@@ -1,0 +1,45 @@
+{
+  "caseId": "none-01",
+  "promptHash": "11053daefb93c921d4de44b0b8e8f1543d38db9c0ccdc2ce22a527870f5177a3",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:08:45.589Z",
+  "reply": {
+    "text": "RPE is rate of perceived exertion, a 1 to 10 scale for how hard a set felt. A 10 means you couldn't have done another rep, 9 means one rep left in the tank, 8 means two, and so on.\n\nIt's useful because it lets you aim at effort instead of a fixed number, so a heavy day when you're tired and a heavy day when you're fresh both get judged fairly. Most working sets land around RPE 7 to 9, and you rarely need to grind at 10. Honest calls get easier with practice, since people tend to underestimate how many reps they had left early on.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 193,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 193,
+          "output_tokens": 190,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 190,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

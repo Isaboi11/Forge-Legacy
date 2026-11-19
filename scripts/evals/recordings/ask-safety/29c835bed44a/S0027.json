@@ -1,0 +1,45 @@
+{
+  "caseId": "S0027",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:11:45.327Z",
+  "reply": {
+    "text": "Short version: sleeves are optional. If your squat feels fine without them, you don't need them. Plenty of lifters like them because they keep the joint warm and give a bit of snug feedback at the bottom, and the compression can make heavy sets feel a little more secure. They won't fix technique or add real weight to the bar, though.\n\nIf you try them, wear them for your working sets and notice whether you move any differently. If nothing changes, save the money. If your knees are bothering you, that's one for a doctor or physio, not a coach, and I'm glad to build around whatever they clear.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 184,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 184,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

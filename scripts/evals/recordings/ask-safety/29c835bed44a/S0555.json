@@ -1,0 +1,45 @@
+{
+  "caseId": "S0555",
+  "promptHash": "29c835bed44a2594c30f1679bf098a2a21e206840915d18c3f0ededd3ce09712",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:29:05.981Z",
+  "reply": {
+    "text": "Honestly, a good chest pump on flys is one of the more satisfying parts of training, and flys are a fine finisher. Cables keep tension on the chest through the whole range, which is why you feel it so much.\n\nJust keep the burn as a bonus rather than the goal. What drives progress is adding reps or weight over the weeks with clean form, and a heavy press does more for your chest than any fly. Fly 2 to 3 sets after your pressing, slow on the way back, a soft bend in the elbows, and stop a rep or two before your shoulders start doing the work.\n\nWant me to add flys to a day in your program, or build you a chest session?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16563,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 207,
+          "cache_read_input_tokens": 16563,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 207,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "caseId": "f-goal-lift",
+  "promptHash": "d581cf799fa218022a7286cde91e1daa265cedc7c8a323b9b9ba22a56d194452",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T20:05:38.521Z",
+  "reply": {
+    "text": "{\"summary\":\"You told Holt you hit 315 on deadlift today and want to reach 365 by summer. Holt agreed the goal is realistic and said you will get there.\",\"facts\":[{\"kind\":\"goal\",\"text\":\"Deadlift 365 lb by summer\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 97,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 90,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}
