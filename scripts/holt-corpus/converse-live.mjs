@@ -50,6 +50,7 @@ const ONLY = arg('--only');
 const TODAY = '2026-11-19';
 
 let spent = 0;
+let nudges = 0;
 process.on('unhandledRejection', (e) => console.log(`  (unhandled: ${e?.message ?? e})`));
 async function post(body) {
   /* Run 1 (11-19) died on one ECONNRESET 34 conversations in: retry twice, and never throw. */
@@ -92,7 +93,8 @@ async function chat(text, history, world, building) {
   messages.push({ role: 'user', content: askUserTurn(text, context, TODAY, { ageYears: null, minor: false }) });
   const said = [];
   const actions = [];
-  for (const choice of ['auto', 'auto', 'none']) {
+  let c_nudged = false;
+  for (const choice of ['auto', 'auto', 'auto', 'none']) {
     const r = await post({
       model: MODEL,
       max_tokens: ASK_OUTPUT_CAP,
@@ -105,6 +107,14 @@ async function chat(text, history, world, building) {
     if (r.error) return { said: [`(error ${r.error})`], actions };
     const words = textOf(r.j);
     if (words) said.push(words);
+    /* Live run 11-19: twice he said "check the card" and called no tool. Measured here first: one nudge, then the same
+       guard goes into coach-ask if it works. */
+    if (r.j.stop_reason !== 'tool_use' && !actions.length && !c_nudged && /\b(card|confirm)\b/i.test(words)) {
+      c_nudged = true;
+      nudges += 1;
+      messages.push({ role: 'assistant', content: r.j.content }, { role: 'user', content: '(The app: you mentioned a card, but no tool was called, so nothing will appear. Call the tool for what you described now — or say plainly that nothing changed.)' });
+      continue;
+    }
     if (r.j.stop_reason !== 'tool_use') break;
     const results = [];
     for (const b of (r.j.content ?? []).filter((c) => c.type === 'tool_use')) {
@@ -182,6 +192,7 @@ async function converse(c) {
       await actOn(refs, port, sink, { turn: hooks, knownNotes: () => [], cardContext: async () => ({}), showCard: () => undefined, canDo: canDoExercise }, r.actions, text, { done: true, stop: null }, true, q, refs.mode ?? 'program');
       history.push({ role: 'athlete', text }, { role: 'holt', text: r.said.join(' ') });
       c.trace.push(`  tools: ${r.actions.map((a) => a.name).join(', ') || 'none'}`);
+      c.tools.push(...r.actions.map((a) => a.name));
     },
     runKitchen: async () => undefined,
     stops: { crisis: (t) => sink.say({ kind: 'stop', text: t }), urgent: (t) => sink.say({ kind: 'stop', text: t }), care: (t) => sink.say({ kind: 'stop', text: t }), medical: (t) => sink.say({ kind: 'stop', text: t }) },
@@ -206,7 +217,8 @@ async function converse(c) {
     let line = queue.shift();
     if (line == null) {
       const last = sink.holt().at(-1) ?? '';
-      if (!/\?\s*$/.test(last) || refs.built || world.writes.some((x) => x.kind === "update")) break;
+      /* A build question is on the table (the app's words may end "Zero is a fine answer."), or Holt asked one. */
+      if (!(refs.mode || /\?/.test(last)) || refs.built || world.writes.some((x) => x.kind === 'update')) break;
       const hit = [...(c.answers ?? []), ...DEFAULTS].find(([re]) => re.test(last));
       if (!hit) break;
       line = typeof hit[1] === 'function' ? hit[1]() : hit[1];
@@ -245,9 +257,10 @@ const out = [];
 for (const c of CONVOS) {
   if (spent >= CAP) { console.log(`cap $${CAP} reached — stopping`); break; }
   c.trace = [];
+  c.tools = [];
   const before = spent;
   let res;
-  try { res = await converse(c); res.start = WORLDS[c.world](); } catch (e) { console.log(`✖ ${c.id}: crashed ${e?.message}`); out.push({ id: c.id, crash: String(e?.message) }); continue; }
+  try { res = await converse(c); res.start = WORLDS[c.world](); res.tools = c.tools; } catch (e) { console.log(`✖ ${c.id}: crashed ${e?.message}`); out.push({ id: c.id, crash: String(e?.message) }); continue; }
   const fails = [...c.checks, noButtonFlows].map((f) => { try { return f(res); } catch (e) { return `check crashed: ${e?.message}`; } }).filter((x) => x !== true);
   console.log(`\n${fails.length ? '✖' : '✓'} ${c.family}/${c.id}  $${(spent - before).toFixed(3)}`);
   for (const l of c.trace) console.log(l.length > 400 ? `${l.slice(0, 400)}…` : l);
@@ -255,6 +268,7 @@ for (const c of CONVOS) {
   out.push({ id: c.id, family: c.family, pass: !fails.length, fails, cost: spent - before, trace: c.trace });
   appendFileSync(path.join(HERE, `live-converse-${TODAY}.jsonl`), JSON.stringify(out.at(-1)) + '\n');
 }
+console.log(`card-claim nudges: ${nudges}`);
 console.log(`\n${out.filter((o) => o.pass).length}/${out.length} passed · spent $${spent.toFixed(3)} (cap $${CAP})`);
 const fam = {};
 for (const o of out) (fam[o.family ?? '?'] ??= [0, 0])[o.pass ? 0 : 1] += 1;

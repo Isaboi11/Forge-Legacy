@@ -40,10 +40,25 @@ import { medicalRoute } from '../medical-routing.ts';
 import { pick } from '../rulebook/voice.ts';
 import { typedEquipment } from '../typed-equipment.ts';
 import { advance, type BuildHooks } from './build.ts';
-import { editByWords, type EditHooks } from './edit.ts';
+import { editByWords, finishTypedEdit, type EditHooks } from './edit.ts';
+
 import { guardActiveProgram } from './guards.ts';
 import { askInWords, CHANGE_WHAT_LINE } from './lane.ts';
 import type { EnginePort, EngineRefs, EngineSink } from './types.ts';
+
+/** "undo that", "put it back", "never mind, change it back", "revert" — short lines that ask to take back the last change. */
+export const isUndoAsk = (text: string): boolean => {
+  const t = text.toLowerCase().replace(/[’']/g, "'");
+  if (t.length > 120) return false;
+  return (
+    /\b(undo|revert) (that|it|this|the (last )?change|what you (just )?(did|changed))\b/.test(t) ||
+    /^\s*(please )?(undo|revert)[.!]?\s*$/.test(t) ||
+    /\b(put|change|set) (it|that|them) back\b/.test(t) ||
+    /\btake (it|that|them) back\s*[.!]?\s*$/.test(t) ||
+    /\bgo back to (how|what) it was\b/.test(t) ||
+    /^\s*(actually,? )?never ?mind[.!,]?\s*(undo (that|it)[.!]?)?\s*$/.test(t)
+  );
+};
 
 /** What the typed turn still needs from the sheet (until S5/S7). */
 export interface TurnHooks {
@@ -310,6 +325,15 @@ export function process(refs: EngineRefs, port: EnginePort, sink: EngineSink, ho
    * has the recipe book, the diary and the NUT-D4 rules, unless it is plainly about training.
    */
   if (hooks.kitchen && danger !== 'clear') return void hooks.stops.medical(text);
+  /*
+   * ══ "UNDO THAT", TYPED, UNDOES IT (live run 11-19) ══ The model has no undo tool, and answered "no problem — leaving
+   * your Pull days as they are" about a change that had ALREADY SAVED. Typed undo of Holt's last change is the Undo
+   * button's job, done here, free, before any model — and it never claims what did not happen.
+   */
+  if (!hooks.kitchen && refs.lastEdit && isUndoAsk(text)) {
+    void finishTypedEdit(refs, port, sink, hooks.edit, { label: 'Undo', patch: {}, typedEdit: 'undo' });
+    return;
+  }
   if (hooks.kitchen && hooks.premiumAi && hooks.nutritionAccess && isMakeRequest(text)) {
     void hooks.runKitchen(text, null);
     return;

@@ -97,7 +97,11 @@ export async function actOn(
   if (cards.length) shown = true;
   /* A card this app could not draw (`cardFor` → null): dropped, and he says nothing changed. */
   if (held > cards.length) {
-    sink.say({ kind: 'holt', text: CARD_DROPPED_LINE });
+    /* Live run 11-19: "swap my bench" with no program got "I couldn't set that one up". With nothing running there is no
+       workout to swap or start — he says so and offers the build, which is what they need. */
+    const todayOnly = plan.steps.some((s) => s.kind === 'card' && (s.action.name === 'swap_exercise_today' || s.action.name === 'start_workout'));
+    const nothingRunning = todayOnly && !(await port.programs.active().catch(() => null));
+    sink.say({ kind: 'holt', text: nothingRunning ? "You don't have a program running yet, so there's no workout to change. Want me to build you one?" : CARD_DROPPED_LINE });
     shown = true;
   }
   return { shown, flow };
