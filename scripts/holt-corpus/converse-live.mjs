@@ -36,7 +36,8 @@ import { fakePort, recordingSink } from '../../src/domain/coach/engine/testing.t
 import { alsoSaid, process as turn } from '../../src/domain/coach/engine/turn.ts';
 import { freshRefs } from '../../src/domain/coach/engine/types.ts';
 import { systemOf } from '../evals/lib/suite-kit.mjs';
-import { BENJAMIN_KIT, benjaminWorld, catalog } from '../../src/domain/coach/engine/__tests__/fixtures.mjs';
+import { catalog } from '../../src/domain/coach/engine/__tests__/fixtures.mjs';
+import { CASES, WORLDS } from './converse-cases.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const envFile = process.env.FL_ENV_FILE ?? path.join(HERE, '../../.env.local');
@@ -124,25 +125,12 @@ async function author(req) {
   return plan ? { kind: 'ok', plan, remaining: null } : { kind: 'none' };
 }
 
-// ── worlds ──
 const UNCAPPED = { outcome: 'allowed', cap: -1, ok: true, showUpsell: false, showRetry: false, left: Infinity, label: '' };
-function benjamin() {
-  const w = benjaminWorld();
-  return { ...w, constraints: { experience: { lifting: 'intermediate', running: 'beginner' }, ownedEquipment: BENJAMIN_KIT, environment: 'home', goal: 'muscle' } };
-}
-function marathoner() {
-  const res = assemble({ goal: 'run_marathon', experience: { lifting: 'beginner', running: 'intermediate' }, daysPerWeek: 4, sessionMinutes: 60, environment: 'full_gym', ownedEquipment: [], limitations: [], excludeExercises: [], raceInWeeks: 20, currentWeeklyMi: 20 }, catalog(), canDoExercise);
-  const structure = { ...res.assembly.structure, name: 'Marathon — April' };
-  const marks = [];
-  for (let w = 0; w < 8; w += 1) for (let d = 0; d < 4; d += 1) marks.push({ weekIndex: w, dayIndex: d, state: 'completed', workoutId: null });
-  return { active: { id: 'prog-mara', name: structure.name, structure, state: 'active', startedAt: null, endedAt: null, createdAt: '', sourceDefinitionId: null }, marks, constraints: { experience: { lifting: 'beginner', running: 'intermediate' }, environment: 'full_gym', goal: 'run_marathon' } };
-}
-const newUser = () => ({ active: null, marks: [], constraints: {} });
 
 // ── one conversation ──
 async function converse(c) {
   resetVoice();
-  const w = c.world();
+  const w = WORLDS[c.world]();
   const { port, world } = fakePort({ active: w.active, marks: w.marks, catalog: catalog() });
   port.build.rewrite = rewriter;
   port.build.author = (req) => author(req);
@@ -196,100 +184,29 @@ async function converse(c) {
   return { sink, world, refs };
 }
 
-// ── the conversations (PO's examples, his words where he gave them) ──
-const weekKeys = (s, w) => trainingDays(plannedDays(s, w)).flatMap((d) => d.main.map((e) => e.catalogKey ?? e.activity));
-const miles = (s, w) => trainingDays(plannedDays(s, w)).reduce((t, d) => t + d.main.reduce((u, e) => u + (e.activity === 'run' ? e.targetMi ?? 0 : 0), 0), 0);
+// ── the conversations: scripts/holt-corpus/converse-cases.mjs (the PO's examples + the comprehensive set) ──
 const chipLabels = (sink) => sink.turns.filter((t) => t.kind === 'chips').flatMap((t) => t.chips.map((x) => x.label));
 const ALLOWED = new Set(['Do it', 'Leave it', 'Undo', 'Show me the program', 'Just this week', 'The rest of the block']);
-const noButtonFlows = (sink) => chipLabels(sink).every((l) => ALLOWED.has(l)) || `buttons shown: ${chipLabels(sink).filter((l) => !ALLOWED.has(l)).join(', ')}`;
-
-const CONVOS = [
-  {
-    id: 'p3-rear-delts', world: benjamin,
-    lines: ['I really want to implement more shoulders within my program. I’ve been thinking about rear delts, the back of my shoulders, and I want to really get those bigger. What workouts can we add? I need to implement that a lot more during the week.'],
-    check: ({ world, sink }) => [
-      world.writes.some((x) => x.kind === 'update') || 'nothing saved',
-      weekKeys(world.active.structure, 5).filter((k) => /rear-delt|face-pull/.test(k ?? '')).length >= 2 || 'fewer than 2 rear-delt movements in week 6',
-      noButtonFlows(sink),
-    ],
-  },
-  {
-    id: 'third-day', world: benjamin,
-    lines: ['I don’t like the third day. Change it up — I want more cable work on it, I’ve got a full cable setup.'],
-    check: ({ world }) => {
-      const b = trainingDays(plannedDays(benjaminWorld().active.structure, 5));
-      const a = trainingDays(plannedDays(world.active.structure, 5));
-      return [
-        world.writes.some((x) => x.kind === 'update') || 'nothing saved',
-        JSON.stringify(a[2].main.map((e) => e.catalogKey)) !== JSON.stringify(b[2].main.map((e) => e.catalogKey)) || 'day 3 unchanged',
-        a[2].main.some((e) => /^cable/.test(e.catalogKey ?? '')) || 'no cable movement on day 3',
-        JSON.stringify(a[0].main) === JSON.stringify(b[0].main) || 'day 1 changed too',
-      ];
-    },
-  },
-  {
-    id: 'p2-sore-marathon', world: marathoner,
-    lines: ['I’m feeling really, really sore. These miles are really taking a toll on me. We need to change the program up a bit. I just need less miles, less running, more rest days.'],
-    check: ({ world }) => [
-      world.writes.some((x) => x.kind === 'update') || 'nothing saved',
-      miles(world.active.structure, 9) < miles(marathoner().active.structure, 9) || 'week 10 not less running',
-      world.writes.some((x) => x.kind === 'skip') || 'no rest day added',
-    ],
-  },
-  {
-    id: 'p6-weight-loss', world: benjamin,
-    lines: ['I’m feeling stuck with my weight. Can we change our workout up a bit to help me with losing weight? I feel like I’m just bulking too much.'],
-    check: ({ world }) => [
-      world.writes.some((x) => x.kind === 'update') || 'nothing saved',
-      trainingDays(plannedDays(world.active.structure, 5)).some((d) => [...d.main, ...d.cooldown].some((e) => e.kind === 'cardio')) || 'no conditioning added',
-    ],
-  },
-  {
-    id: 'slim-down', world: benjamin,
-    lines: ['Work got crazy. I only have about 45 minutes now — slim my workouts down.'],
-    check: ({ world }) => {
-      const b = trainingDays(plannedDays(benjaminWorld().active.structure, 5)).reduce((t, d) => t + d.main.length, 0);
-      const a = trainingDays(plannedDays(world.active.structure, 5)).reduce((t, d) => t + d.main.length, 0);
-      return [world.writes.some((x) => x.kind === 'update') || 'nothing saved', a < b || `week 6 not slimmer (${a} vs ${b} movements)`];
-    },
-  },
-  {
-    id: 'new-8wk-bulk', world: newUser,
-    lines: ['Build me an 8 week bulking program, 4 days a week, I lift at a full gym and I’ve been lifting a couple years.'],
-    check: ({ refs, sink }) => [refs.built?.kind === 'program' || 'no program built', refs.built?.structure?.weeks === 8 || `weeks ${refs.built?.structure?.weeks}`, refs.built?.structure?.daysPerWeek === 4 || `days ${refs.built?.structure?.daysPerWeek}`, noButtonFlows(sink)],
-  },
-  {
-    id: 'p4-arms-hour', world: benjamin,
-    lines: ['I have an hour. I’m going to do arms. I want a really quick workout, about 8 exercises, supersets, and keep it so I’m not moving around too much.'],
-    check: ({ refs }) => {
-      const day = refs.built?.kind === 'day' ? refs.built.day : null;
-      return [!!day || 'no day built', !day || (day.main.length >= 7 && day.main.length <= 9) || `${day?.main.length} movements`, !day || day.main.some((e) => e.groupId) || 'no supersets'];
-    },
-  },
-  {
-    id: 'p1-marathon-bike', world: newUser,
-    lines: ['Hey Holt, I’m running a marathon in April next year. I don’t know anything about what to do. Build me a program. I want running in it and I also want biking in it.'],
-    check: ({ refs }) => {
-      const s = refs.built?.structure;
-      const all = s ? Array.from({ length: s.weeks }, (_, w) => trainingDays(plannedDays(s, w))).flat().flatMap((d) => d.main) : [];
-      return [!!s || 'no program built', all.some((e) => e.activity === 'run') || 'no running', all.some((e) => e.activity === 'bike') || 'no biking (HL-15 not built yet)'];
-    },
-  },
-];
+/** The AI-lane bar (PO D10), on every conversation: no button flows. */
+const noButtonFlows = (r) => chipLabels(r.sink).every((l) => ALLOWED.has(l)) || `buttons shown: ${chipLabels(r.sink).filter((l) => !ALLOWED.has(l)).join(', ')}`;
+const FAMILY = arg('--family');
+const CONVOS = CASES.filter((x) => (!ONLY || x.id === ONLY) && (!FAMILY || x.family === FAMILY) && (!process.argv.includes('--po') || x.tags.includes('po')));
 
 const out = [];
 for (const c of CONVOS) {
-  if (ONLY && c.id !== ONLY) continue;
   if (spent >= CAP) { console.log(`cap $${CAP} reached — stopping`); break; }
   c.trace = [];
   const before = spent;
   let res;
-  try { res = await converse(c); } catch (e) { console.log(`✖ ${c.id}: crashed ${e?.message}`); out.push({ id: c.id, crash: String(e?.message) }); continue; }
-  const fails = c.check(res).filter((x) => x !== true);
-  console.log(`\n${fails.length ? '✖' : '✓'} ${c.id}  $${(spent - before).toFixed(3)}`);
+  try { res = await converse(c); res.start = WORLDS[c.world](); } catch (e) { console.log(`✖ ${c.id}: crashed ${e?.message}`); out.push({ id: c.id, crash: String(e?.message) }); continue; }
+  const fails = [...c.checks, noButtonFlows].map((f) => { try { return f(res); } catch (e) { return `check crashed: ${e?.message}`; } }).filter((x) => x !== true);
+  console.log(`\n${fails.length ? '✖' : '✓'} ${c.family}/${c.id}  $${(spent - before).toFixed(3)}`);
   for (const l of c.trace) console.log(l.length > 400 ? `${l.slice(0, 400)}…` : l);
   for (const f of fails) console.log(`  FAIL: ${f}`);
-  out.push({ id: c.id, pass: !fails.length, fails, cost: spent - before, trace: c.trace });
+  out.push({ id: c.id, family: c.family, pass: !fails.length, fails, cost: spent - before, trace: c.trace });
 }
 console.log(`\n${out.filter((o) => o.pass).length}/${out.length} passed · spent $${spent.toFixed(3)} (cap $${CAP})`);
+const fam = {};
+for (const o of out) (fam[o.family ?? '?'] ??= [0, 0])[o.pass ? 0 : 1] += 1;
+for (const [f, [p2, x]] of Object.entries(fam)) console.log(`  ${f}: ${p2}/${p2 + x}`);
 writeFileSync(path.join(HERE, `live-converse-${TODAY}.jsonl`), out.map((o) => JSON.stringify(o)).join('\n') + '\n');
