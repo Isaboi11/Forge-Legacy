@@ -303,6 +303,8 @@ export interface CoachConstraints {
    * ride (`withCrossTraining`, rulebook/endurance.ts). Run plans only; a triathlon has its own rides. Absent = none.
    */
   crossTrain?: 'bike' | null;
+  /** They said the new program REPLACES the one they run ("scrap it", "a 10k instead") — Holt does not ask again. */
+  replacesCurrent?: boolean;
   /**
    * The athlete SAID how the week divides — "I want to run twice a week and lift 3 times a week".
    *

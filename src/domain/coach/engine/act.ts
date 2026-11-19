@@ -79,7 +79,7 @@ export async function actOn(
         shown = flow = true;
         break;
       case 'change':
-        await proposeChange(refs, port, sink, { canDo: hooks.canDo }, step.brief, asked);
+        await proposeChange(refs, port, sink, { canDo: hooks.canDo }, step.brief, asked, step.newEquipment);
         shown = flow = true;
         break;
       case 'web':

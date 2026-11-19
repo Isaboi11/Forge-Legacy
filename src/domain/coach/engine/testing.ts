@@ -35,7 +35,8 @@ export type FakeWrite =
   | { kind: 'spend'; what: 'program' | 'day' }
   | { kind: 'draft'; what: 'workout' | 'program'; draft: unknown }
   | { kind: 'told'; name: string | null }
-  | { kind: 'remember'; what: 'experience'; value: unknown };
+  | { kind: 'remember'; what: 'experience'; value: unknown }
+  | { kind: 'kit'; ids: string[] };
 
 export interface FakeWorld {
   /** The running program, or none. `update` writes land here, so a later read sees them. */
@@ -139,6 +140,7 @@ export function fakePort(opts: FakePortOptions = {}): { port: EnginePort; world:
     },
     memory: {
       rememberExperience: async (value) => void world.writes.push({ kind: 'remember', what: 'experience', value }),
+      addEquipment: async (ids) => void world.writes.push({ kind: 'kit', ids: [...ids] }),
     },
     catalog: opts.catalog ?? [],
     choose: seededChooser(opts.seed ?? 1),

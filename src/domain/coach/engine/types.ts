@@ -88,6 +88,8 @@ export interface EnginePort {
   /** Holt's device memory of the athlete. */
   memory: {
     rememberExperience(e: RememberedExperience): Promise<void>;
+    /** Adds home-gym ids to what they own (`profiles.home_gym_equipment`) — "I bought a cable machine". */
+    addEquipment(ids: readonly string[]): Promise<void>;
   };
   /** The visible catalogue (`PICKER_DB` on the phone; built from the source JSON in tests). */
   catalog: readonly CatalogExercise[];
@@ -154,7 +156,15 @@ export interface EngineRefs {
       ) & { id: number })
     | null;
   /** A rewrite waiting for "Do it" (PO D12): the checked structure and the rest marks it brings. */
-  pendingRewrite: { programId: string; before: ProgramStructure; after: ProgramStructure; rest: { weekIndex: number; dayIndex: number }[]; what: string } | null;
+  pendingRewrite: {
+    programId: string;
+    before: ProgramStructure;
+    after: ProgramStructure;
+    rest: { weekIndex: number; dayIndex: number }[];
+    what: string;
+    /** Home-gym ids the change uses that they said they now own — saved on Do it. */
+    kit?: string[];
+  } | null;
   /** The question the typed flow is waiting on. */
   pendingEditAsk: { intent: EditIntent; ask: string } | null;
   /** The last question the typed-edit flow put to them (HL-1c) — never the same one twice in a row. */

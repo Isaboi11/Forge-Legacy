@@ -18,6 +18,7 @@ import { isRoom } from '../chat-core.ts';
 import type { Environment, Experience, Limitation } from '../constraints.ts';
 import { editableSessions } from '../edit-chat.ts';
 import { markHoltChange } from '../holt-marks.ts';
+import { homeGymItem } from '../../home-gym/equipment.ts';
 import { expandRewrite, programText, rewriteFromModelText } from '../rewrite.ts';
 import { checkRewrite } from './checker.ts';
 import { activeOrNull } from './guards.ts';
@@ -89,7 +90,15 @@ export function changeFacts(before: ProgramStructure, after: ProgramStructure, f
 const isRacePlan = (s: ProgramStructure) =>
   trainingDays(plannedDays(s, Math.max(1, s.weeks) - 1)).some((d) => d.main.some((e) => e.activity === 'run' && (e.targetMi ?? 0) >= 13));
 
-export async function proposeChange(refs: EngineRefs, port: EnginePort, sink: EngineSink, hooks: ChangeHooks, brief: string, said: string): Promise<void> {
+export async function proposeChange(
+  refs: EngineRefs,
+  port: EnginePort,
+  sink: EngineSink,
+  hooks: ChangeHooks,
+  brief: string,
+  said: string,
+  newEquipment: readonly string[] = [],
+): Promise<void> {
   sink.busy('thinking');
   const active = await activeOrNull(port);
   if (!active) {
@@ -103,9 +112,14 @@ export async function proposeChange(refs: EngineRefs, port: EnginePort, sink: En
     return void sink.say({ kind: 'holt', text: "You've trained every session in that block — there's nothing left in it to change. Want a new one?" });
   }
   const c = refs.constraints;
-  const environment: Environment = (isRoom(refs.room) ? refs.room : c.environment) ?? 'full_gym';
+  const room: Environment = (isRoom(refs.room) ? refs.room : c.environment) ?? 'full_gym';
   const experience: Experience = c.experience?.lifting ?? 'intermediate';
-  const owned = c.ownedEquipment ?? [];
+  /* Stress run 11-19: "I bought a cable machine" — what they now own joins their kit for this change (a full gym
+     already has it), is checked against, shown on the card, and saved to their home gym on Do it. */
+  const kitBefore = c.ownedEquipment ?? [];
+  const gained = room === 'full_gym' ? [] : newEquipment.filter((id) => !kitBefore.includes(id));
+  const owned = [...kitBefore, ...gained];
+  const environment: Environment = gained.length ? 'home' : room;
   const limitations: readonly Limitation[] = c.limitations ?? [];
   const words = [...refs.typed.filter((t) => t !== said), said].filter(Boolean);
   const req = {
@@ -145,10 +159,20 @@ export async function proposeChange(refs: EngineRefs, port: EnginePort, sink: En
     (w) => JSON.stringify(plannedDays(checked.structure, w)) === JSON.stringify(plannedDays(active.structure, w)),
   );
   if (same || !facts.length) {
-    return void sink.say({ kind: 'holt', text: parsed.unmet.length ? `I couldn't make that change: ${andList(parsed.unmet)}.` : "That would leave your program exactly as it is — tell me a bit more about what you'd like different?" });
+    /* Stress run 11-19: when the checker took out everything he wrote, he says what and why — never "tell me more". */
+    const why = [droppedLine(checked.dropped), ...checked.said].filter((x): x is string => !!x);
+    return void sink.say({
+      kind: 'holt',
+      text: parsed.unmet.length
+        ? `I couldn't make that change: ${andList(parsed.unmet)}.`
+        : why.length
+          ? `Nothing I wrote could go in, so your program is unchanged. ${why.join(' ')}`
+          : "That would leave your program exactly as it is — tell me a bit more about what you'd like different?",
+    });
   }
-  refs.pendingRewrite = { programId: active.id, before: active.structure, after: checked.structure, rest: checked.rest, what: brief };
-  const notes = [droppedLine(checked.dropped), ...checked.said, parsed.unmet.length ? `Couldn't do: ${andList(parsed.unmet)}.` : null].filter((x): x is string => !!x);
+  refs.pendingRewrite = { programId: active.id, before: active.structure, after: checked.structure, rest: checked.rest, what: brief, kit: gained };
+  const kitLine = gained.length ? `Adds to your home gym: ${andList(gained.map((id) => homeGymItem(id)?.label ?? id))}.` : null;
+  const notes = [kitLine, droppedLine(checked.dropped), ...checked.said, parsed.unmet.length ? `Couldn't do: ${andList(parsed.unmet)}.` : null].filter((x): x is string => !!x);
   sink.say(
     ...(parsed.say ? [{ kind: 'holt' as const, text: parsed.say }] : []),
     { kind: 'holt', text: [`In ${active.name}:`, ...facts, ...notes].join('\n') },
@@ -173,6 +197,11 @@ export async function applyRewrite(refs: EngineRefs, port: EnginePort, sink: Eng
     const saved = markHoltChange(pr.before, pr.after, { id: String(undoId), at: stamp.toISOString(), what: pr.what, asked: refs.typed[refs.typed.length - 1] ?? null });
     await port.programs.update(pr.programId, saved);
     for (const r of pr.rest) await port.programs.skip(pr.programId, r.weekIndex, r.dayIndex);
+    /* The gear the change uses is theirs now — a failed save never undoes the change it came with. */
+    if (pr.kit?.length) {
+      await port.memory.addEquipment(pr.kit).catch(() => undefined);
+      refs.constraints = { ...refs.constraints, environment: 'home', ownedEquipment: [...new Set([...(refs.constraints.ownedEquipment ?? []), ...pr.kit])] };
+    }
     refs.lastEdit = { programId: pr.programId, before: pr.before, rested: pr.rest, id: undoId };
     refs.pendingRewrite = null;
     sink.say(

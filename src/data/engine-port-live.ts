@@ -18,6 +18,7 @@ import {
 } from '@/data/programs-live';
 import { fetchRecentWork } from '@/data/recent-work-live';
 import { rewriteLive } from '@/data/coach-rewrite-live';
+import { fetchHomeGym, saveHomeGym } from '@/data/home-gym-live';
 import type { EnginePort } from '@/domain/coach/engine/types';
 import { PICKER_DB } from '@/domain/exercise-picker/data';
 import { getProgramDefinitions } from '@/domain/training/programs';
@@ -51,6 +52,10 @@ export function livePort(): EnginePort {
     },
     memory: {
       rememberExperience: (e) => rememberExperience(e),
+      addEquipment: async (ids) => {
+        const now = (await fetchHomeGym()) ?? [];
+        await saveHomeGym([...new Set([...now, ...ids])]);
+      },
     },
     catalog: PICKER_DB,
     choose: (n) => Math.floor(Math.random() * n),

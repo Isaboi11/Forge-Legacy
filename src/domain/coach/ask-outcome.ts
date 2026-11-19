@@ -23,6 +23,7 @@
 import type { Turn } from './chat-core.ts';
 import { pick, type Chooser } from './rulebook/voice.ts';
 import { DOORS, isHoltAction, type HoltAction } from './holt-actions.ts';
+import { CHANGE_EQUIPMENT_IDS } from './ask-tools.ts';
 import { narrowEdit, narrowPatch, narrowRemember, type EditIntent } from './interpret-narrow.ts';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -149,7 +150,7 @@ export type HoltActionStep =
   | { kind: 'door'; to: 'build' | 'build_day' | 'import' | 'pick' }
   | { kind: 'edit'; edit: EditIntent }
   /** Holt Listens (PO D12): any change to the running program — the app rewrites from his brief and checks it. */
-  | { kind: 'change'; brief: string }
+  | { kind: 'change'; brief: string; newEquipment: string[] }
   | { kind: 'web'; lookingFor: string }
   | { kind: 'card'; action: HoltAction };
 
@@ -183,7 +184,9 @@ export function planHoltActions(
     switch (a.name) {
       case 'propose_program_change': {
         const brief = typeof input.brief === 'string' ? input.brief.trim().slice(0, 800) : '';
-        if (brief) flow({ kind: 'change', brief });
+        const ids: readonly string[] = CHANGE_EQUIPMENT_IDS;
+        const newEquipment = Array.isArray(input.newEquipment) ? [...new Set(input.newEquipment.filter((x): x is string => typeof x === 'string' && ids.includes(x)))] : [];
+        if (brief) flow({ kind: 'change', brief, newEquipment });
         else dropped.push(a.name);
         break;
       }
@@ -209,6 +212,7 @@ export function planHoltActions(
         delete patch.dayFocus;
         /* HL-15 — read here, not in narrowPatch: that one is coach-interpret's too (inlined in its paste copy). */
         if (input.crossTrain === 'bike') patch.crossTrain = 'bike';
+        if (input.replacesCurrent === true) patch.replacesCurrent = true;
         /* Mid-build, a build with nothing usable is not a NEW build: dropped, and the question on the table comes back. */
         if (!Object.keys(patch).length && o.building) dropped.push(a.name);
         else flow(Object.keys(patch).length ? { kind: 'patch', name: 'propose_program', patch } : { kind: 'door', to: 'build' });

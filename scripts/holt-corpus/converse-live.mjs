@@ -136,8 +136,11 @@ async function chat(text, history, world, building) {
 }
 
 // ── the rewriter and the writer ──
+let CURRENT = '';
 async function rewriter(user) {
   const r = await post({ model: MODEL, max_tokens: REWRITE_OUTPUT_CAP, thinking: { type: 'disabled' }, output_config: { effort: 'low', format: { type: 'json_schema', schema: REWRITE_SCHEMA } }, system: cached(REWRITE_SYSTEM), messages: [{ role: 'user', content: user }] });
+  /* Every rewrite as written, so a "no change" can be read afterwards (stress run 11-19). */
+  if (!r.error) appendFileSync(path.join(HERE, `live-rewrites-${TODAY}.jsonl`), JSON.stringify({ id: CURRENT, user, text: textOf(r.j) }) + '\n');
   return r.error ? { kind: 'unavailable' } : { kind: 'ok', text: textOf(r.j) };
 }
 /* coach-author's SYSTEM interpolates the catalogue — built the way author-live.mjs builds it. */
@@ -157,6 +160,7 @@ const UNCAPPED = { outcome: 'allowed', cap: -1, ok: true, showUpsell: false, sho
 
 // ── one conversation ──
 async function converse(c) {
+  CURRENT = c.id;
   resetVoice();
   const w = WORLDS[c.world]();
   const { port, world } = fakePort({ active: w.active, marks: w.marks, catalog: catalog() });
@@ -206,7 +210,7 @@ async function converse(c) {
   /* After the scripted lines, up to three answers to whatever Holt asks — this persona's own (per case `answers`
      first, then the defaults, answered from the world). Silence when nothing fits. */
   const DEFAULTS = [
-    [/lifting|training|experience|been at it|level/i, () => (w.constraints.experience?.lifting === 'beginner' ? 'Pretty new to it, a few months.' : w.constraints.experience?.lifting === 'advanced' ? 'Years — I know what I am doing.' : 'A couple of years.')],
+    [/how long have you been|experience|been at it|what level|lifting for/i, () => (w.constraints.experience?.lifting === 'beginner' ? 'Pretty new to it, a few months.' : w.constraints.experience?.lifting === 'advanced' ? 'Years — I know what I am doing.' : 'A couple of years.')],
     [/where.*train|gym|equipment|setup/i, () => (w.constraints.environment === 'home' ? 'At home, my own setup.' : w.constraints.environment === 'bodyweight' ? 'No equipment.' : 'A full gym.')],
     [/miles|running a week|run now/i, () => 'About 10 miles a week right now.'],
     [/when is the race|race date|when.*race/i, () => 'April 19th next year.'],
@@ -216,6 +220,7 @@ async function converse(c) {
     [/which distance/i, () => 'The full marathon.'],
     [/what do you want to (hit|work)|focus/i, () => 'Full body is fine.'],
     [/work around|leave out|hurt|injur/i, () => 'Nothing, I am healthy.'],
+    [/which one|both\?|either/i, () => 'All of them.'],
   ];
   const queue = [...c.lines];
   let answered = 0;
@@ -225,6 +230,7 @@ async function converse(c) {
       const last = sink.holt().at(-1) ?? '';
       /* A build question is on the table (the app's words may end "Zero is a fine answer."), or Holt asked one. */
       if (!(refs.mode || /\?/.test(last)) || refs.built || world.writes.some((x) => x.kind === 'update')) break;
+      if (c.family === 'question' && !refs.mode) break;
       const hit = [...(c.answers ?? []), ...DEFAULTS].find(([re]) => re.test(last));
       if (!hit) break;
       line = typeof hit[1] === 'function' ? hit[1]() : hit[1];

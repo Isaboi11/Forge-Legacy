@@ -61,6 +61,12 @@ export async function guardActiveProgram(
   sink.busy(null);
   if (!active) return true;
   refs.askedAboutReplacing = true;
+  /* Stress run 11-19: "scrap it and build me a new one" / "a 10k instead" already answered the question — the AI
+     lane builds it (the same path as "Build the new one"), and says what it replaces. */
+  if (lane === 'ai' && request?.replacesCurrent === true) {
+    sink.say({ kind: 'holt', text: `This one replaces ${active.name} once you start it.`, live: true });
+    return true;
+  }
   /* AI lane (S7, PO D10): the same three ways forward, said — the answer is typed, and Holt reads it (a new program
      builds, "keep it" goes to the change flow, "just a week" builds a week). Nothing to tap. */
   if (lane === 'ai') {

@@ -200,6 +200,9 @@ export async function respondTo(
       /* "Give me something for today, keep it light, mostly machines" opens the door with nothing the
          form could hold — and everything Holt needs. The door resets the request; the sentence is put
          back so he still reads it when it is time to build. */
+      /* AI lane (PO D10, stress run 11-19): "I slept 4 hours, something easy today" builds today's session from
+         their words — no "What should I train today?" chip. */
+      if (r.to === 'build_day' && hooks.premiumAi) return respondTo(refs, port, sink, hooks, { kind: 'patch', name: 'propose_day', patch: { dayFocus: 'full body' } } as unknown as InterpretStep, text, q, m);
       if (r.to === 'build' || r.to === 'build_day') setTimeout(() => alsoSaid(refs, text), 0);
       return hooks.tapChip(
         {

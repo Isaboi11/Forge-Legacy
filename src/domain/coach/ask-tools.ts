@@ -300,6 +300,7 @@ const BUILD_FIELDS: Record<string, unknown> = {
   weeks: { type: 'integer', description: 'How long the block should be, when they say (1-52).' },
   currentWeeklyMi: { type: 'number', description: 'Race goal only: their weekly running mileage now (km converted to miles).' },
   liftDays: { type: 'integer', description: 'Race goal only: how many of the days are lifting ("half in Nov, also lift 3x" = 3).' },
+  replacesCurrent: { type: 'boolean', description: 'True only when they said the new program REPLACES the one they run now ("scrap it", "start over", "a 10k instead"). The app then builds it without asking again.' },
   crossTrain: { type: 'string', enum: ['bike'], description: 'Race goal only (not triathlon): they want biking in the plan too (a bike, spin, Peloton). One easy run a week becomes a ride.' },
   strengthGoal: { type: 'string', enum: ['strength', 'muscle', 'weight_loss', 'conditioning', 'mobility', 'health'], description: 'What the lifting days are for, when they say.' },
   goalTimeSec: { type: 'integer', description: 'A target finish time in SECONDS, only when they name one ("sub 25 minute 5k" = 1500). Never from "PR" or "BQ".' },
@@ -439,6 +440,13 @@ export const ASK_ACTION_V1_NAMES: readonly string[] = ASK_ACTIONS_V1.map((a) => 
  * to give every example." Holt says what the athlete wants and his plan; the app's rewriter writes the new weeks
  * (`rewrite.ts`), the checker gates them (`engine/checker.ts`), and the athlete sees one before/after card.
  */
+/** The home-gym ids (`home-gym/equipment.ts` HOME_GYM_EQUIPMENT — kept equal by change-equipment.test.mjs; this file has no imports). */
+export const CHANGE_EQUIPMENT_IDS = [
+  'barbell', 'plates', 'rack', 'bench', 'ezbar', 'trapbar', 'smith', 'dumbbells', 'kettlebells', 'medball', 'sandbag', 'weightvest',
+  'cable', 'latpulldown', 'legpress', 'legmachine', 'treadmill', 'rower', 'bike', 'airbike', 'elliptical', 'jumprope', 'pullup', 'dip',
+  'rings', 'trx', 'plyobox', 'bands', 'minibands', 'abwheel', 'foamroller', 'mat',
+] as const;
+
 export const ASK_ACTION_CHANGE: AskToolDef = {
   name: 'propose_program_change',
   description:
@@ -451,6 +459,11 @@ export const ASK_ACTION_CHANGE: AskToolDef = {
         description:
           "What they asked, in their words, then your plan in a sentence or two ('More rear delts. Face pulls on Pull and Upper, at least twice a week.'). Never a weight, a body symptom or anything medical.",
       },
+      newEquipment: {
+        type: 'array',
+        items: { type: 'string', enum: [...CHANGE_EQUIPMENT_IDS] },
+        description: "Equipment they say they NOW have that they didn't before ('I bought a cable machine' = cable, 'a doorway pull-up bar' = pullup). The app adds it to their home gym when they confirm, and the change may use it.",
+      },
     },
     required: ['brief'],
     additionalProperties: false,
@@ -461,6 +474,8 @@ export const ASK_ACTION_CHANGE: AskToolDef = {
 export const CHANGE_PROMPT = `# Changing the program they run
 
 When the athlete wants the program they are running changed in any way — a session they don't like, more of a muscle, less running, more rest, more variety, a new focus, slimmed down or beefed up, supersets, a swap "everywhere" or "from now on" — call propose_program_change with a brief: their ask and your plan. Describing a change without calling the tool changes nothing: if you say what you will change, you must call it in the same reply. Say your plan in one or two short sentences as you call it (which sessions, what goes in, what comes out, and why). One call covers the whole change, however big; propose_program_edit is only for one quick exact change to ONE named session ("swap bench for dumbbell press on Monday"). A brand-new program in place of this one is propose_program. Pain or an injury is still medical_stop and no change.
+
+Anything for TODAY only ("leg day today but no squats", "something easy today", "the bench is taken") is propose_day or swap_exercise_today — never a change to the program.
 
 When they lean on what you already know ("same as usual", "like last time", "my normal split"), look it up first — get_athlete_profile, get_program_status, get_past_chats — and build from that; ask only what is still missing.`;
 
