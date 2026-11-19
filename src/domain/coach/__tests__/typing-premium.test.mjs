@@ -153,9 +153,12 @@ test('⚠ several things in one message run in order; a skip saves as skip marks
   const u = sheet.slice(sheet.indexOf('const understand = async'), sheet.indexOf('const process = (text'));
   // Sprint 4a: several things are several actions, run in order by `actOn` (one build/door/edit, then cards); a fact
   // they told him is a remember_note CARD now — offered, never saved silently.
-  const act = sheet.slice(sheet.indexOf('const actOn = async ('), sheet.indexOf('return { shown, flow };'));
+  // actOn is the engine's since Holt Listens HL-10 S3b; the sheet hands it the card context.
+  const actSrc = readFileSync(path.join(here, '../engine/act.ts'), 'utf8');
+  const act = actSrc.slice(actSrc.indexOf('export async function actOn('), actSrc.indexOf('return { shown, flow };'));
   assert.match(act, /for \(const step of plan\.steps\) \{/);
-  assert.match(act, /const cards = held \? await hold\.release\(end, await liveCardContext\(\{ units, nutritionAccess \}\)\) : \[\];/);
+  assert.match(act, /const cards = held \? await hold\.release\(end, await hooks\.cardContext\(\)\) : \[\];/);
+  assert.match(sheet, /cardContext: \(\) => liveCardContext\(\{ units, nutritionAccess \}\)/);
   assert.doesNotMatch(sheet, /rememberSaid\(/);
   void u;
   const finish = finishOf();

@@ -1,7 +1,7 @@
 /**
  * s3-turn.test.mjs — a typed line, end to end through the engine (Holt Listens HL-10, slice S3 — the HL-10 acceptance:
  * Benjamin's conversation replays headless). The model is scripted (`askAloud` → the step coach-ask's action would
- * become, exactly as `actOn` hands it to `respondTo`); everything after it is the real engine on his real-shaped block.
+ * become, through the engine's real `actOn`); everything after it is the real engine on his real-shaped block.
  *
  * Run (from the repo root):  node --test --experimental-strip-types src/domain/coach/engine/__tests__/s3-turn.test.mjs
  */
@@ -16,8 +16,9 @@ import { limitationPatterns } from '../../rulebook/limitations.ts';
 import { resetVoice } from '../../rulebook/voice.ts';
 import { advance } from '../build.ts';
 import { beginEdit, clearEdit } from '../edit.ts';
+import { actOn } from '../act.ts';
 import { fakePort, recordingSink } from '../testing.ts';
-import { alsoSaid, process, respondTo } from '../turn.ts';
+import { alsoSaid, process } from '../turn.ts';
 import { freshRefs } from '../types.ts';
 import { BENJAMIN_KIT, benjaminWorld, catalog } from './fixtures.mjs';
 
@@ -71,11 +72,14 @@ function sheet({ premiumAi = true, kitchen = false, world = benjaminWorld() } = 
     creditsLine: async () => 'Out of credits.',
     loadNotes: async () => [],
     history: () => [],
-    /* coach-ask, scripted: the action it would forward becomes the step actOn hands respondTo. */
+    /* coach-ask, scripted: its forwarded TOOL CALLS (what coach-ask streams as `action` events) go through the
+       engine's real actOn — planHoltActions, then respondTo — exactly as on the phone after a clean ending. */
     askAloud: async (text, _h, q) => {
       seen.asked.push(text);
-      const step = model.shift();
-      if (step) await respondTo(refs, port, sink, hooks, step, text, q, refs.mode ?? 'program');
+      const actions = model.shift();
+      if (actions) {
+        await actOn(refs, port, sink, { turn: hooks, knownNotes: () => [], cardContext: async () => ({}), showCard: () => undefined }, actions, text, { done: true, stop: null }, true, q, refs.mode ?? 'program');
+      }
     },
     runKitchen: async (text) => void seen.kitchen.push(text),
     stops: {
@@ -97,7 +101,7 @@ test('⭐ HL-10 acceptance — Benjamin 11-18, replayed headless through the eng
   const s = sheet();
 
   // Turn 2: typed → Holt (propose_program) → the active-program question, carrying his words.
-  s.model.push({ kind: 'patch', patch: { goal: 'muscle', daysPerWeek: 5 }, say: null, remaining: null });
+  s.model.push([{ name: 'propose_program', input: { goal: 'muscle', daysPerWeek: 5 } }]);
   process(s.refs, s.port, s.sink, s.hooks, TURN2);
   await tick();
   assert.deepEqual(s.seen.asked, [TURN2], 'his sentence went to Holt');
@@ -112,14 +116,14 @@ test('⭐ HL-10 acceptance — Benjamin 11-18, replayed headless through the eng
   assert.equal(s.sink.lastChips().length, 10, 'not 22');
 
   // Turn 4: typed → Holt (propose_program_edit, no day) → told plainly, not "Which session?".
-  s.model.push({ kind: 'door', to: 'edit', edit: { op: 'add', exercise: 'abs' } });
+  s.model.push([{ name: 'propose_program_edit', input: { op: 'add', exercise: 'abs' } }]);
   process(s.refs, s.port, s.sink, s.hooks, TURN4);
   await tick();
   assert.match(s.sink.holt().at(-1), /isn't something I can do yet/);
   assert.deepEqual(s.sink.lastChips(), ['Build the new one', 'One session at a time']);
 
   // Turn 5: typed → Holt (propose_program_edit) → builds the new one from everything he said.
-  s.model.push({ kind: 'door', to: 'edit', edit: { op: 'rebuild' } });
+  s.model.push([{ name: 'propose_program_edit', input: { op: 'rebuild' } }]);
   process(s.refs, s.port, s.sink, s.hooks, TURN5);
   await tick();
   assert.equal(s.sink.holt().filter((l) => /Which session should change\?/.test(l)).length, 0, 'never the loop');

@@ -35,12 +35,12 @@ import { holtPlainText } from '@/domain/coach/holt-markdown';
 import { livePort } from '@/data/engine-port-live';
 import { ACTIVE_LOOKUP_TIMEOUT_MS, guardActiveProgram as engineGuard, offerProgramSession as engineOffer } from '@/domain/coach/engine/guards';
 import { freshRefs, type Built, type EngineRefs, type EngineSink } from '@/domain/coach/engine/types';
+import { actOn as engineActOn } from '@/domain/coach/engine/act';
 import {
   alsoSaid as engineAlsoSaid,
   athleteFacts,
   beginRequest as engineBeginRequest,
   process as engineProcess,
-  respondTo as engineRespondTo,
   type TurnHooks,
 } from '@/domain/coach/engine/turn';
 import {
@@ -74,12 +74,12 @@ import { useCapGates, useEntitlementState, useNutritionAccess, usePremiumAi } fr
 import { holtBlockDoor, holtKeepOnce, holtKeepVerdict } from '@/domain/entitlement/caps-core';
 /* AI Road to 10 Sprint 4a (PO 11-18): coach-interpret is retired from this app — every typed line goes to Holt's chat
    (coach-ask, caps `actions_v1`). Only the balance read and the step types stay from that module. */
-import { fetchCoachAiBalance, type InterpretResult, type InterpretStep } from '@/data/coach-interpret-live';
+import { fetchCoachAiBalance } from '@/data/coach-interpret-live';
 import { HoltActionCard } from '@/components/forge/HoltActionCard';
 import { HoltStatusLine, holtStatusText } from '@/components/forge/HoltStatusLine';
 import { useChatRecap } from '@/components/forge/useChatRecap';
 import { HoltKeptLine } from '@/components/forge/HoltKeptLine';
-import { holdTurnActions, type ShownCard, type TurnEnd } from '@/domain/coach/holt-action-cards';
+import { type ShownCard, type TurnEnd } from '@/domain/coach/holt-action-cards';
 import { confirmHoltAction, dismissHoltAction, liveCardContext, undoHoltAction } from '@/data/holt-actions-live';
 import { cardsMayShow, type UndoToken } from '@/domain/coach/holt-actions';
 import { fetchBriefNotes } from '@/data/holt-notes-live';
@@ -92,10 +92,8 @@ import {
   AI_BALANCE_LOOKUP_MS,
   ASK_RETRY_LABEL,
   askOfflineCard,
-  CARD_DROPPED_LINE,
   CARD_EXPIRED_LINE,
   outOfAiCreditsLine,
-  planHoltActions,
   takeBackReply,
 } from '@/domain/coach/ask-outcome';
 import { ASK_CONTEXT_MS, within } from '@/domain/coach/ask-stream';
@@ -1611,7 +1609,9 @@ export function CoachChatSheet({
    * further down (it calls `askAloud`'s neighbours); react-compiler reads a call to a later const from inside the ask
    * as a call during render. Same pattern as `tapChipRef`: written in an effect, never in render.
    */
-  const respondToRef = useRef<(r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) => Promise<void>>(async () => undefined);
+  /* The typed turn's hooks, for `actOn` — through a ref so `askAloud` → `actOn` → hooks → `askAloud` is not a cycle the
+     compiler has to resolve at render (the same reason `respondToRef` existed). Filled by an effect before any tap. */
+  const turnHooksRef = useRef<(() => TurnHooks) | null>(null);
   /*
    * ══ HOLT'S ACTION CARDS (Sprint 4a §1.2) ══ — lane C's `HoltActionCard`, `cardFor` and `executorFor`.
    *
@@ -1678,63 +1678,26 @@ export function CoachChatSheet({
    * the athlete's own thumb (edit-ops header). The online offer is a chip, and tapping it is the consent.
    * True when something was shown, so the caller adds nothing on top.
    */
-  const actOn = async (
-    actions: AskAction[],
-    asked: string,
-    end: TurnEnd,
-    clean: boolean,
-    q: ReturnType<typeof nextQuestion>,
-    m: ChatMode,
-  ): Promise<{ shown: boolean; flow: boolean }> => {
-    if (!actions.length) return { shown: false, flow: false };
-    /* Sprint 4a: routed in one pure place (`planHoltActions`, ask-outcome.ts) — and ⛔ nothing at all unless the turn
-       ended cleanly (§1.3). Builds and edits go through the SAME handling a typed line always had (`respondTo`). */
-    const plan = planHoltActions(actions, {
-      clean,
-      todayISO: localToday(),
-      knownNotes: notesRef.current ?? engine.current.heardNotes,
+  /* What Holt asked the app to do is the engine's (`engine/act.ts`, HL-10 S3b) — same plan, same order; the card
+     shelf (ids, Undo tokens) stays here and comes in as hooks. */
+  const actOn = (actions: AskAction[], asked: string, end: TurnEnd, clean: boolean, q: ReturnType<typeof nextQuestion>, m: ChatMode) =>
+    engineActOn(
+      engine.current,
+      port,
+      sink,
+      {
+        turn: turnHooksRef.current!(),
+        knownNotes: () => notesRef.current ?? engine.current.heardNotes,
+        cardContext: () => liveCardContext({ units, nutritionAccess }),
+        showCard,
+      },
+      actions,
       asked,
-      nutrition: nutritionAccess,
-      building: mode != null,
-    });
-    let shown = false;
-    let flow = false;
-    /* Lane C's hold: the card actions of THIS turn, released only after a clean ending (`cardsMayShow`, again). */
-    const hold = holdTurnActions();
-    for (const step of plan.steps) {
-      switch (step.kind) {
-        case 'edit':
-          await respondToRef.current({ kind: 'door', to: 'edit', edit: step.edit }, asked, q, m);
-          shown = flow = true;
-          break;
-        case 'door':
-          await respondToRef.current({ kind: 'door', to: step.to }, asked, q, m);
-          shown = flow = true;
-          break;
-        case 'patch':
-          await respondToRef.current({ kind: 'patch', patch: step.patch as Partial<ChatState>, say: null, remaining: null }, asked, q, m);
-          shown = flow = true;
-          break;
-        case 'web':
-          say({ kind: 'chips', chips: [{ label: 'Find one online', patch: {}, webSearch: step.lookingFor }] });
-          shown = true;
-          break;
-        case 'card':
-          hold.hold(step.action);
-          break;
-      }
-    }
-    const held = hold.count;
-    const cards = held ? await hold.release(end, await liveCardContext({ units, nutritionAccess })) : [];
-    for (const c of cards) showCard(c);
-    if (cards.length) shown = true;
-    /* A card this app could not draw (`cardFor` → null): dropped, and he says nothing changed. */
-    if (held > cards.length) {
-      say({ kind: 'holt', text: CARD_DROPPED_LINE });
-      shown = true;
-    }
-    return { shown, flow };
-  };
+      end,
+      clean,
+      q,
+      m,
+    );
 
 
   /**
@@ -2209,13 +2172,10 @@ export function CoachChatSheet({
     runKitchen,
     stops: { crisis: crisisStop, urgent: urgentStop, care: careStop, medical: medicalStop },
   });
-  /** One understood step — a single reply, or one part of a message that asked for several things. */
-  const respondTo = (r: InterpretStep | InterpretResult, text: string, q: ReturnType<typeof nextQuestion>, m: ChatMode) =>
-    engineRespondTo(engine.current, port, sink, turnHooks(), r, text, q, m);
 
 
   useEffect(() => {
-    respondToRef.current = respondTo;
+    turnHooksRef.current = turnHooks;
   });
 
 
