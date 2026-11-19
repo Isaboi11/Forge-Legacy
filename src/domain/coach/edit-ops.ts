@@ -98,7 +98,7 @@ const trainedRefusal = (): EditRefusal => ({
  * The untouched weeks keep the plan they already had rather than inheriting the edit — the same move
  * `swapSessionOrder` makes, and the reason a program flips to `vary: true` on its first edit.
  */
-function materialise(structure: ProgramStructure): { days: ProgramDay[] }[] {
+export function materialise(structure: ProgramStructure): { days: ProgramDay[] }[] {
   return Array.from({ length: Math.max(1, structure.weeks) }, (_, wi) => ({
     days: [...plannedDays(structure, wi)].map((d) => ({ ...d, main: [...d.main] })),
   }));
@@ -111,7 +111,7 @@ function materialise(structure: ProgramStructure): { days: ProgramDay[] }[] {
  * a started program. If an op here ever broke that, the athlete would get a database error at save time
  * with no idea what they did. Failing here instead turns a mystery into a sentence.
  */
-function commit(before: ProgramStructure, plans: { days: ProgramDay[] }[]): EditResult {
+export function commit(before: ProgramStructure, plans: { days: ProgramDay[] }[]): EditResult {
   const after: ProgramStructure = { ...before, vary: true, weekPlans: plans, days: plans[0].days };
   if (totalSessions(after) !== totalSessions(before)) {
     return {
@@ -133,7 +133,7 @@ function commit(before: ProgramStructure, plans: { days: ProgramDay[] }[]): Edit
  * keeps the rest days. Indexing the raw array directly edited the wrong session on any week with a gap —
  * Friday's pull-ups asked for, Wednesday's squats changed (Decision Queue #23, stress test 2026-09-21).
  */
-function sessionAt(plans: { days: ProgramDay[] }[], w: number, dayIndex: number): ProgramDay | undefined {
+export function sessionAt(plans: { days: ProgramDay[] }[], w: number, dayIndex: number): ProgramDay | undefined {
   const days = plans[w]?.days;
   if (!days) return undefined;
   const i = rawIndexOf(days, dayIndex);
