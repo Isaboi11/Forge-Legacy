@@ -949,6 +949,8 @@ export type SessionRole =
   | 'run_walk'
   | 'swim'
   | 'bike'
+  /** HL-15 — an easy ride in a RUN plan, in place of one easy run (`withCrossTraining`). Not the triathlon's ride. */
+  | 'cross_bike'
   | 'brick'
   | 'shakeout'
   | 'race';
@@ -1013,6 +1015,23 @@ export function composeRunWeek(opts: {
   }
 
   return roles;
+}
+
+/**
+ * ══ HL-15 — "I WANT RUNNING IN IT AND I ALSO WANT BIKING IN IT" (PO voice dump, 2026-11-19) ══
+ *
+ * A run plan that asked for biking swaps ONE easy run a week for an easy ride — the classic cross-training day:
+ * aerobic work without the pounding. The long run and the quality sessions never move; race week is left as it
+ * is; a week with fewer than three sessions keeps every run. A run/walk week swaps one of its shorter run/walks
+ * (never the longest — that is how a beginner's block advances).
+ */
+export function withCrossTraining(roles: readonly SessionRole[], crossTrain: 'bike' | null | undefined, isRaceWeek: boolean): SessionRole[] {
+  const out = [...roles];
+  if (crossTrain !== 'bike' || isRaceWeek || out.length < 3) return out;
+  let i = out.indexOf('easy');
+  if (i < 0) i = out.findIndex((r, k) => r === 'run_walk' && k < out.length - 1);
+  if (i >= 0) out[i] = 'cross_bike';
+  return out;
 }
 
 /**
@@ -1348,6 +1367,22 @@ export function buildRunDay(input: RunDayInput, letter: string): ProgramDay {
         // EPS-D12 — distance only. A swimmer's honest metric is a per-100 split and the app computes none,
         // so prescribing a pace here would be inventing a number nobody can read back.
         main: [cardio('swim', { targetMi: swimMi }, 'Swim', `${swimMi} mi steady. Technique before volume — this is the discipline I cannot coach for you.`)],
+        cooldown: [],
+      };
+
+    case 'cross_bike':
+      return {
+        letter,
+        name: 'Easy Ride',
+        warmup: [],
+        main: [
+          cardio(
+            'bike',
+            { targetSec: step(30, 60) * 60 },
+            'Easy Ride',
+            'Cross-training in place of an easy run: an easy spin or ride, conversational the whole way. Aerobic work without the pounding.',
+          ),
+        ],
         cooldown: [],
       };
 
@@ -1789,7 +1824,7 @@ export function enduranceBlock(c: CoachConstraints, opts: EnduranceOpts): Endura
       };
     }
 
-    const roles = keepDays(
+    const planned = keepDays(
       composeRunWeek({
         daysPerWeek,
         experience: c.experience.running,
@@ -1801,7 +1836,9 @@ export function enduranceBlock(c: CoachConstraints, opts: EnduranceOpts): Endura
       opts,
     );
 
-    const hardCount = roles.filter((r) => r !== 'easy').length;
+    // Counted BEFORE a ride takes an easy run's place: the easy runs that stay are the size they were (HL-15).
+    const hardCount = planned.filter((r) => r !== 'easy').length;
+    const roles = withCrossTraining(planned, c.crossTrain, isRaceWeek);
     const longRunMi = longRunAfterTimeCap(v.longRunMi, paces?.easySec ?? null);
 
     return {

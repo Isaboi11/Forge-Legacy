@@ -299,6 +299,11 @@ export interface CoachConstraints {
    */
   liftDays?: number | null;
   /**
+   * HL-15 — they want biking in a race plan ("running and biking", a Peloton): one easy run a week becomes an easy
+   * ride (`withCrossTraining`, rulebook/endurance.ts). Run plans only; a triathlon has its own rides. Absent = none.
+   */
+  crossTrain?: 'bike' | null;
+  /**
    * The athlete SAID how the week divides — "I want to run twice a week and lift 3 times a week".
    *
    * ⚠ THEN IT IS THEIR SPLIT, AND THE RULEBOOK DOES NOT RE-CUT IT (CA-D12; PO, 2026-09-30). Without this a
@@ -543,6 +548,7 @@ export function normalise(c: CoachConstraints): CoachConstraints {
   /* Lifting days inside a race week are bounded by the week, not by Holt's own 2–6: the athlete asked for
      both halves and the split between them is `splitRaceWeek`'s to make, out loud. */
   if (out.liftDays != null) out.liftDays = isCount(out.liftDays) ? clamp(out.liftDays, 0, ATHLETE_MAX_DAYS_PER_WEEK) : undefined;
+  if (out.crossTrain != null && out.crossTrain !== 'bike') out.crossTrain = undefined;
   // A target of zero seconds is not a target, and neither is a time nobody could have meant.
   if (out.goalTimeSec != null) out.goalTimeSec = isCount(out.goalTimeSec) && out.goalTimeSec > 0 ? Math.round(out.goalTimeSec) : undefined;
   // A lifting goal the rulebook has never heard of is not guessed at — the lift days take the default.

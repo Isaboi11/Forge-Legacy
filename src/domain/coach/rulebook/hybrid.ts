@@ -183,6 +183,7 @@ export const RUN_DEMAND: Record<SessionRole, RunDemand> = {
   shakeout: 'easy',
   swim: 'easy',
   bike: 'easy',
+  cross_bike: 'easy',
 };
 
 /**

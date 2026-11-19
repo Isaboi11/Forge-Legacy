@@ -207,6 +207,8 @@ export function planHoltActions(
       case 'propose_program': {
         const patch = narrowPatch(input, o.todayISO);
         delete patch.dayFocus;
+        /* HL-15 — read here, not in narrowPatch: that one is coach-interpret's too (inlined in its paste copy). */
+        if (input.crossTrain === 'bike') patch.crossTrain = 'bike';
         /* Mid-build, a build with nothing usable is not a NEW build: dropped, and the question on the table comes back. */
         if (!Object.keys(patch).length && o.building) dropped.push(a.name);
         else flow(Object.keys(patch).length ? { kind: 'patch', name: 'propose_program', patch } : { kind: 'door', to: 'build' });

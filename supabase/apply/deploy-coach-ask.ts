@@ -918,6 +918,7 @@ const BUILD_FIELDS: Record<string, unknown> = {
     weeks: { type: 'integer', description: 'How long the block should be, when they say (1-52).' },
     currentWeeklyMi: { type: 'number', description: 'Race goal only: their weekly running mileage now (km converted to miles).' },
     liftDays: { type: 'integer', description: 'Race goal only: how many of the days are lifting ("half in Nov, also lift 3x" = 3).' },
+    crossTrain: { type: 'string', enum: ['bike'], description: 'Race goal only (not triathlon): they want biking in the plan too (a bike, spin, Peloton). One easy run a week becomes a ride.' },
     strengthGoal: { type: 'string', enum: ['strength', 'muscle', 'weight_loss', 'conditioning', 'mobility', 'health'], description: 'What the lifting days are for, when they say.' },
     goalTimeSec: { type: 'integer', description: 'A target finish time in SECONDS, only when they name one ("sub 25 minute 5k" = 1500). Never from "PR" or "BQ".' },
     avoid: { type: 'array', items: { type: 'string' }, description: 'Exercises they do not want, as they named them. Also from what you know about them ("hates lunges").' },

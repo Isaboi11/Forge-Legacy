@@ -90,7 +90,7 @@ export interface TurnHooks {
 /** The build fields Holt is told are settled mid-build (Sprint 4a — coach-interpret's `known`, minus the long lists). */
 export const SETTLED_KEYS: ReadonlySet<string> = new Set([
   'goal', 'daysPerWeek', 'sessionMinutes', 'environment', 'experience', 'limitations', 'raceDate', 'weeks',
-  'currentWeeklyMi', 'liftDays', 'strengthGoal', 'goalTimeSec', 'focusMuscles', 'dayFocus',
+  'currentWeeklyMi', 'liftDays', 'crossTrain', 'strengthGoal', 'goalTimeSec', 'focusMuscles', 'dayFocus',
 ]);
 
 /** A new request: their own words for it, and the goal no longer a stand-in. */
