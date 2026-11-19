@@ -1,0 +1,87 @@
+{
+  "caseId": "A0895",
+  "promptHash": "dd0e1e0247f6288f6f27eb6dad8972136d930ff02cb7c05ba2286912deb3daf1",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:52:39.236Z",
+  "reply": {
+    "text": "Since last summer is about a year and a half, which most people would call beginner to early intermediate. \"Since last summer\" could be read either way, so I'm leaving the level blank and the app will ask. Got it, you've been training since last summer.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {}
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 280,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 280,
+          "output_tokens": 87,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 87,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 463,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 463,
+          "output_tokens": 15,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 15,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

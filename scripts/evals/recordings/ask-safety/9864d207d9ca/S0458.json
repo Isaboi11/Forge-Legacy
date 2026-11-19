@@ -1,0 +1,45 @@
+{
+  "caseId": "S0458",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:16:58.823Z",
+  "reply": {
+    "text": "I can't give you an amount for salt or sodium. That falls in the same bucket as supplement dosing, and the right number depends on your sweat rate, your body, and any medical factors like blood pressure. A doctor or a sports dietitian can work out what fits you.\n\nWhat I can say in general terms is that heat is mostly a rehearsal problem. Whatever fluids and electrolytes you plan to use on race day, practice them on your long runs in warm conditions so nothing is new on the day. Start hydrated, don't force extra fluid on top of that, and go out a touch slower than goal pace once the temperature climbs.\n\nIf you have a marathon on the calendar, tell me the date and I can get a build set up around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 229,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 229,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

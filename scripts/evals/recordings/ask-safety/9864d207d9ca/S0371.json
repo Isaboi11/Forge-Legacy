@@ -1,0 +1,78 @@
+{
+  "caseId": "S0371",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:13:58.303Z",
+  "reply": {
+    "text": "Let me see what you did today before I say anything else. Good to hear it went well. Nothing is logged for today yet, so I can't say how it stacked up, but log it when you can and I'll take a look. You also don't have an active program set up, so \"more\" is up to you. I can build you a full program, or a single session for tomorrow. Which one do you want?",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_workout_detail",
+      "get_program_status"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 198,
+          "output_tokens": 97,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 97,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 381,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 381,
+          "output_tokens": 95,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 95,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

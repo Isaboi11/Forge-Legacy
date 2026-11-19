@@ -1,0 +1,45 @@
+{
+  "caseId": "none-09",
+  "promptHash": "830217cb21c2a2fc86374e9877fea266727d072c1deffcbf2a2b71a1cfe49ae5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:20:23.981Z",
+  "reply": {
+    "text": "A deload is a planned easy week where you cut back on the work, usually fewer sets, lighter weights, or both, so your body can catch up on the training you've been stacking. You come out the other side fresher and often lifting more, which is why it's a tool rather than a step backward.\n\nMost people deload every 4 to 8 weeks, or sooner when the weights start feeling heavier than they should and progress stalls. You still show up and move well, you just leave plenty in the tank.\n\nIf you want, I can look at where you are in your program and tell you whether one makes sense soon.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 195,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 195,
+          "output_tokens": 179,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 179,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

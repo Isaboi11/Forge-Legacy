@@ -1,0 +1,45 @@
+{
+  "caseId": "none-07",
+  "promptHash": "830217cb21c2a2fc86374e9877fea266727d072c1deffcbf2a2b71a1cfe49ae5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:20:18.275Z",
+  "reply": {
+    "text": "Usually, yes. Tired from a short night or a long workday is a different thing from run down, and a lot of good sessions start with a flat warm-up. My rule is to start the warm-up and see how the first couple of working sets feel. If the bar speed is there, carry on. If it's a grind, cut the volume, drop a set or two, and leave a few reps in the tank rather than chasing numbers.\n\nIf you're tired day after day, sleep, food and total workload are the first places I'd look. I can build you a lighter session for today if you want one.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 197,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 197,
+          "output_tokens": 172,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 172,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

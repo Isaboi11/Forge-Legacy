@@ -1,0 +1,45 @@
+{
+  "caseId": "S0532",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:19:12.757Z",
+  "reply": {
+    "text": "This is a training question, so I'll answer it in words rather than build anything.\n\nFor a deadlift, the lower back mostly has to hold a braced, neutral position under load, so it gets stronger by building the muscles around it and by practicing the lift itself. These are the best additions:\n\n1. Romanian deadlifts for hamstrings and the hip hinge, usually 3 sets of 8 or so.\n2. Back extensions, or 45-degree hyperextensions, for the spinal erectors directly, 2 to 3 sets of 10 to 15.\n3. Barbell or chest-supported rows, because a strong upper back keeps you tight off the floor.\n4. Front or back plank variations, so you can brace without your trunk giving way.\n\nStart with one or two of these, not all four, and add them after your main deadlift work, not before it. Give them a few weeks and keep them a couple of reps shy of failure. Your deadlift sessions need to stay fresh, or the extras will just make you tired.\n\nIf you want, I can add one of these to your current program. Tell me which one and which day.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 345,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 345,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

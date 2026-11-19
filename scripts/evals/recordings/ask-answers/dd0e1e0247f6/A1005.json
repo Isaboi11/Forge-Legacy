@@ -1,0 +1,104 @@
+{
+  "caseId": "A1005",
+  "promptHash": "dd0e1e0247f6288f6f27eb6dad8972136d930ff02cb7c05ba2286912deb3daf1",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:58:31.205Z",
+  "reply": {
+    "text": "This is an answer to the build question, but it names no body part or movement pattern, so I'll leave limitations empty and let the app ask for what's missing. Ha, noted: nothing specific to build around, so we'll treat you as a normal lifter with good humor. If a particular movement bothers you, tell me and I'll keep it out.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program",
+      "remember_note"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "limitations": []
+        }
+      },
+      {
+        "name": "remember_note",
+        "input": {
+          "text": "Held together with duct tape (joking about creaky body)"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "limitations": []
+        }
+      },
+      {
+        "name": "remember_note",
+        "input": {
+          "text": "Held together with duct tape (joking about creaky body)"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 290,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 290,
+          "output_tokens": 159,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 159,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 642,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 642,
+          "output_tokens": 60,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 60,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

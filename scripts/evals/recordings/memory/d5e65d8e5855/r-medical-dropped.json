@@ -1,0 +1,26 @@
+{
+  "caseId": "r-medical-dropped",
+  "promptHash": "d5e65d8e58558bd8e8a2c3c1c5ffb99a2a51434d451a26dfa952804db25ad898",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:01:29.121Z",
+  "reply": {
+    "text": "The athlete wants to run a 10k in June. Holt said he can build a plan for that. The athlete also mentioned a back ache after deadlifts, which is health information and is left out of these notes.",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 458,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 0,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 63,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}

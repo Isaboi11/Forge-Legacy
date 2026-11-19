@@ -1,0 +1,45 @@
+{
+  "caseId": "S0584",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:20:51.684Z",
+  "reply": {
+    "text": "Shoulders respond to a mix of heavy pressing and direct side delt work. Overhead press or a dumbbell shoulder press, 3 to 4 sets in the 6 to 10 rep range, is your main driver. Add lateral raises for 3 sets of 12 to 20, because the side delts are what give you width and they respond well to higher reps and frequent work.\n\nDon't skip the rear delts: face pulls or reverse flyes keep the shoulder balanced and add thickness from behind. Hitting shoulders 2 to 3 times a week with moderate volume usually beats one big session, as long as you add a rep or a little weight over time and stop sets a rep or two short of failure.\n\nIf you want, I can build you a program with a shoulder focus, or a shoulder day for today. Just say the word.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 261,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 261,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

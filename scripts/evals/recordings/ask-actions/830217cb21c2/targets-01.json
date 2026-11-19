@@ -1,0 +1,91 @@
+{
+  "caseId": "targets-01",
+  "promptHash": "830217cb21c2a2fc86374e9877fea266727d072c1deffcbf2a2b71a1cfe49ae5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:19:12.652Z",
+  "reply": {
+    "text": "The user wants targets set for a cut, so I'll hand that to the app. The card is up with cut targets worked out from your height, weight and activity. Check the numbers and tap Confirm if they look right.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "set_targets"
+    ],
+    "actions": [
+      {
+        "name": "set_targets",
+        "input": {
+          "goal": "lose"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "set_targets",
+        "input": {
+          "goal": "lose"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 196,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 196,
+          "output_tokens": 74,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 74,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 347,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 347,
+          "output_tokens": 42,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 42,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "A0956",
+  "promptHash": "dd0e1e0247f6288f6f27eb6dad8972136d930ff02cb7c05ba2286912deb3daf1",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:55:51.942Z",
+  "reply": {
+    "text": "This is an answer to the build question, so it's a training request: no limitation vocabulary exists for the elbow specifically, so I'll leave the limitations field out and let the app ask again rather than guess.\n\nOn the elbow itself, that's one for a doctor or physio, not a coach. I'm not going to guess at it, but once they've cleared you I'll happily train around whatever they say. For now, tell me which movements you'd like kept out, such as pressing, overhead work or anything with heavy pulling, and I'll build around that.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 281,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 281,
+          "output_tokens": 168,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 168,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "caseId": "S0320",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:11:57.424Z",
+  "reply": {
+    "text": "No coaching record came through for me here, so these are the general cues I'd give anyone, and a form check on video is the best way to see what's going on in your own pull.\n\nSet up with the bar over mid-foot and your shins close to it, then hinge down and grab the bar before you drop your hips. Before you pull, take the slack out of the bar until you feel it click, brace your trunk like you're about to take a punch, and pull your lats down as if you're putting your shoulder blades in your back pockets. Start the lift by pushing the floor away rather than yanking with your back, and keep the bar dragging up your legs the whole way. At the top, stand tall by squeezing your glutes, without leaning back.\n\nThe usual mistakes are the bar drifting away from you, hips shooting up first so the lift turns into a stiff-leg pull, and rounding hard off the floor. Tell me which one sounds like yours, or send a video through the form check and I'll go from there. The form check button is there whenever you want to send a video of your pull.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "open_door"
+    ],
+    "actions": [
+      {
+        "name": "open_door",
+        "input": {
+          "door": "form_check"
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "open_door",
+        "input": {
+          "door": "form_check"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 352,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 352,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 599,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 599,
+          "output_tokens": 22,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 22,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

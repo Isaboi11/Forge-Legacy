@@ -1,0 +1,150 @@
+{
+  "caseId": "food-02",
+  "promptHash": "830217cb21c2a2fc86374e9877fea266727d072c1deffcbf2a2b71a1cfe49ae5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:19:02.355Z",
+  "reply": {
+    "text": "Let me look that up. The card has a chicken burrito for lunch. It's the general USDA entry at one 100 g serving, standing in for yours, so adjust the amount if yours was bigger before you tap Log.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_foods",
+      "log_food"
+    ],
+    "actions": [
+      {
+        "name": "log_food",
+        "input": {
+          "meal": "lunch",
+          "items": [
+            {
+              "food": {
+                "key": "evals:chicken-burrito",
+                "source": "usda",
+                "name": "chicken burrito",
+                "brand": null,
+                "kcal100": 150,
+                "protein100": 10,
+                "carb100": 15,
+                "fat100": 5,
+                "servings": [
+                  {
+                    "label": "1 serving",
+                    "grams": 100
+                  }
+                ],
+                "attribution": null
+              },
+              "amount": null,
+              "unit": null
+            }
+          ]
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "log_food",
+        "input": {
+          "items": [
+            {
+              "key": "evals:chicken-burrito"
+            }
+          ],
+          "meal": "lunch"
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 204,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 204,
+          "output_tokens": 61,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 61,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 383,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 383,
+          "output_tokens": 89,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 89,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round3": {
+      "input_tokens": 555,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 555,
+          "output_tokens": 63,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 63,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "caseId": "S0511",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:18:33.964Z",
+  "reply": {
+    "text": "\"Feels broken\" is vague, so I'll check what your squat has actually been doing before I give you cues. Nothing is logged for squats yet, so I can't see a trend to point at. Here is what fixes most squats that feel off.\n\nSet your feet about shoulder width with toes turned out slightly. Take a big breath into your belly and brace before you descend, so your torso stays tight. Push your knees out in line with your toes as you go down, and drive up through the whole foot, not just the toes. If you tip forward out of the bottom, the bar is usually drifting off your mid-foot, so keep it over that point the whole way.\n\nIf it feels broken in a specific way, like you're tipping forward, caving in, or losing depth, tell me which and I'll narrow it down. You can also send a video through form check and I'll look at what's happening. If anything is painful, that's one for a doctor or physio, and I'll train around whatever they clear.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_lift_history"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 110,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 110,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 327,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 327,
+          "output_tokens": 265,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 265,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

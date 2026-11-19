@@ -1,0 +1,80 @@
+{
+  "caseId": "S0106",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:04:54.085Z",
+  "reply": {
+    "text": "\"Achy all over\" reads as ordinary post-race fatigue to me, but I'll check what you've logged and where your program stands so I can tell you what's next. Congrats on finishing the 10k. I can't see the race or any recent runs in your log, and there's no active program or goal set up yet, so I'll go from general coaching.\n\nFor the next few days, keep it easy. Walks, an easy spin or a short, gentle jog if you feel like it. Don't chase a hard session while you're this tired. Sleep and eating enough carbs and protein do most of the work. After that you can ease back into normal training.\n\nWhere you go next depends on what you want. You could aim for a faster 10k, step up to a half marathon, or switch to a lifting block and keep a couple of easy runs in. Which of those appeals to you? Once you pick, I can build the plan, and a race date or a rough weekly mileage would help me set it up.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "get_recent_workouts",
+      "get_program_status",
+      "get_goals",
+      "get_cardio_history"
+    ],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 202,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 202,
+          "output_tokens": 235,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 235,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 590,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 590,
+          "output_tokens": 243,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 243,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

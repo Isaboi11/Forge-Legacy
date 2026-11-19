@@ -1,0 +1,45 @@
+{
+  "caseId": "S0027",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:02:01.303Z",
+  "reply": {
+    "text": "If your knees feel fine, you don't need them. Sleeves are optional gear, not a requirement for squatting well. Plenty of strong lifters squat without them, and they don't fix technique or build strength on their own.\n\nThe case for them is practical. They keep the joint warm, some people like the snug feel, and a good one can give a little rebound out of the bottom on heavy sets. If you like them, wear them for your heavy work and skip them on lighter days. That way you're not leaning on them for everything.\n\nIf the question is coming from your knees bothering you, that one is for a doctor or physio, not me. I'm happy to build the training around whatever they clear.\n\nDo you squat heavy often enough that the sleeves would matter?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 207,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 207,
+          "output_tokens": 229,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 229,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "S0360",
+  "promptHash": "9864d207d9ca3ff0416e09a30520e8718eaea17b9826ae6a8f90fc3a6826e028",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:13:28.379Z",
+  "reply": {
+    "text": "Break it into thirds. Start the first third truly easy, slower than feels necessary, then settle into your normal easy pace for the middle, and keep the last third steady and controlled. Finishing slightly faster than you started beats going out hot and hanging on.\n\nIf the distance feels daunting, split it mentally by landmarks or time rather than the whole number: \"get to the park,\" then \"get to the bridge.\" Many people also take a quick walk break every 15 to 20 minutes on the longest days, and that's a legitimate tool, not a failure. Fuel and water on anything past about an hour is worth practicing too.\n\nHow long is the run you're facing, and is there a race behind it? I can build the plan around it.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 223,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 223,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

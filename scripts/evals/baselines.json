@@ -1240,6 +1240,21 @@
         "id": "A1131",
         "po": "PO 2026-11-18 (Sprint 4a): ship now, fix in 4b",
         "why": "the caps prompt's 'leave an ambiguous answer out' rule drops a plain answer, so Holt asks the question again (Docs/AI-Sprint-4a-brain-Report.md, Round 2)"
+      },
+      {
+        "id": "A0417",
+        "po": "PO 2026-11-19 (Holt Listens): ok, accept and ship",
+        "why": "\"mid 20s\" miles a week: Holt asks for the exact number rather than pick 25"
+      },
+      {
+        "id": "A0639",
+        "po": "PO 2026-11-19 (Holt Listens): ok, accept and ship",
+        "why": "\"at my office\": Holt reads an office gym and says to tell him if it is just a desk (best reading: no equipment)"
+      },
+      {
+        "id": "A1114",
+        "po": "PO 2026-11-19 (Holt Listens): ok, accept and ship",
+        "why": "\"lower back is tight\": Holt builds a light session with mobility, easy on the back (a different focus from the best reading)"
       }
     ]
   }

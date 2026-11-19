@@ -1,0 +1,45 @@
+{
+  "caseId": "e-days",
+  "promptHash": "d5e65d8e58558bd8e8a2c3c1c5ffb99a2a51434d451a26dfa952804db25ad898",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:01:33.699Z",
+  "reply": {
+    "text": "Monday, Wednesday and Friday mornings, 45 minutes each. Want me to build a program around that?",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 384,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 384,
+          "output_tokens": 37,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 37,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

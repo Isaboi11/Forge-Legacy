@@ -1,0 +1,45 @@
+{
+  "caseId": "none-02",
+  "promptHash": "830217cb21c2a2fc86374e9877fea266727d072c1deffcbf2a2b71a1cfe49ae5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:20:01.549Z",
+  "reply": {
+    "text": "For most beginners, about 2 to 3 sets per exercise is plenty, and 3 sets of 8 to 10 reps is a solid default. Pick a weight that leaves you 2 to 3 reps in the tank, since the goal early on is learning the movement and building a habit, not grinding.\n\nAcross a week, roughly 8 to 12 hard sets per muscle group is a good range to grow from. Start at the low end and add sets only when the current amount feels easy for a couple of weeks. More isn't better until your recovery shows you can handle it.\n\nIf you want, I can build you a program and the app will set the sets and reps for you.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 198,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 198,
+          "output_tokens": 203,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 203,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

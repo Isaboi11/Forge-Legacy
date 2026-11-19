@@ -1,0 +1,139 @@
+{
+  "caseId": "A0466",
+  "promptHash": "dd0e1e0247f6288f6f27eb6dad8972136d930ff02cb7c05ba2286912deb3daf1",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:28:39.255Z",
+  "reply": {
+    "text": "Two days a week, Tuesday and Thursday. That works, and we can build around it. Heard you: Tuesdays and Thursdays are your training days, everything else is rest.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 2,
+          "days": [
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "rest"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 2,
+          "days": [
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "rest"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 337,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 337,
+          "output_tokens": 201,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 201,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 640,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 640,
+          "output_tokens": 31,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 31,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "caseId": "none-08",
+  "promptHash": "830217cb21c2a2fc86374e9877fea266727d072c1deffcbf2a2b71a1cfe49ae5",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:20:21.430Z",
+  "reply": {
+    "text": "Most research on lifters lands around 0.7 to 1 gram of protein per pound of bodyweight per day (roughly 1.6 to 2.2 g per kg). Going higher than that doesn't hurt, but it rarely adds much. Past the daily total, spreading it across 3 or 4 meals tends to work better than cramming it all into one.\n\nThat's a general range, not a target for you. If you want one built around your weight and goal, I can have the app work it out. For anything medical, like kidney issues, check with a doctor or dietitian first.",
+    "stop_reason": "end_turn",
+    "tools": [],
+    "actions": [],
+    "attempted": []
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 200,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 200,
+          "output_tokens": 176,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 176,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

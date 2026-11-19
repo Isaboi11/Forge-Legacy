@@ -1,0 +1,139 @@
+{
+  "caseId": "A0456",
+  "promptHash": "dd0e1e0247f6288f6f27eb6dad8972136d930ff02cb7c05ba2286912deb3daf1",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:28:05.856Z",
+  "reply": {
+    "text": "Monday, Wednesday, Friday is a solid base. I've put it in as three days a week with the days fixed. Heard you: lifting Monday, Wednesday and Friday, with the rest days in between.",
+    "stop_reason": "end_turn",
+    "tools": [
+      "propose_program"
+    ],
+    "actions": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 3,
+          "days": [
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "rest"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ],
+    "attempted": [
+      {
+        "name": "propose_program",
+        "input": {
+          "daysPerWeek": 3,
+          "days": [
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "lift"
+            },
+            {
+              "kind": "rest"
+            },
+            {
+              "kind": "rest"
+            }
+          ],
+          "daysAsGiven": true
+        }
+      }
+    ]
+  },
+  "usage": {
+    "round1": {
+      "input_tokens": 336,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 336,
+          "output_tokens": 210,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 210,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "round2": {
+      "input_tokens": 648,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 16711,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "iterations": [
+        {
+          "input_tokens": 648,
+          "output_tokens": 32,
+          "cache_read_input_tokens": 16711,
+          "cache_creation_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "type": "message",
+          "model": null
+        }
+      ],
+      "output_tokens": 32,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    }
+  }
+}

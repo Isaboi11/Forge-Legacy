@@ -1,0 +1,26 @@
+{
+  "caseId": "f-home-gym",
+  "promptHash": "d5e65d8e58558bd8e8a2c3c1c5ffb99a2a51434d451a26dfa952804db25ad898",
+  "model": "claude-sonnet-5-5",
+  "recordedAt": "2026-11-19T22:01:15.442Z",
+  "reply": {
+    "text": "{\"summary\":\"You told me you bought adjustable dumbbells up to 50 lb and a flat bench, and that you now train at home with no gym. I noted that we will build your sessions around that setup.\",\"facts\":[{\"kind\":\"gym\",\"text\":\"Trains at home: adjustable dumbbells up to 50 lb and a flat bench\"},{\"kind\":\"gym\",\"text\":\"No gym; trains at home only\"}]}",
+    "stop_reason": "end_turn"
+  },
+  "usage": {
+    "input_tokens": 117,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 1465,
+    "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 0
+    },
+    "output_tokens": 136,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "service_tier": "standard",
+    "inference_geo": "global",
+    "speed": "standard"
+  }
+}
